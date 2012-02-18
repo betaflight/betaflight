@@ -206,6 +206,10 @@ void serialCom(void)
             serialize8('O');    //49
             // UartSendData();
             break;
+        case 'R':               // reboot to bootloader
+            systemResetToBootloader();
+            break;
+
         case 'W':              //GUI write params to eeprom @ arduino
             // while (uartAvailable() < (7 + 3 * PIDITEMS + 2 * CHECKBOXITEMS)) { }
             for (i = 0; i < PIDITEMS; i++) {

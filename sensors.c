@@ -201,14 +201,15 @@ static uint8_t magInit = 0;
 
 static void Mag_getRawADC(void)
 {
-    int16_t rawADC[3];
+    static int16_t rawADC[3];
     hmc5883lRead(rawADC);
     
     // Hearty FUCK-YOU goes to all teh breakout sensor faggots who make a new orientation for each shitty board they make
     // sensor order: X Z Y
-    magADC[ROLL] = -rawADC[0]; // X
+    magADC[ROLL] = rawADC[0]; // X or negative? who knows mag stuff in multiwii is broken hardcore
     magADC[PITCH] = rawADC[2]; // Y
     magADC[YAW] = rawADC[1]; // Z
+#endif
 }
 
 void Mag_init(void)

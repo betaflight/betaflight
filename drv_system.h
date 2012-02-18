@@ -18,3 +18,6 @@ void featureClear(uint32_t mask);
 
 // failure
 void failureMode(uint8_t mode);
+
+// bootloader/IAP
+void systemResetToBootloader(void);
