@@ -164,7 +164,6 @@ extern uint8_t calibratingM;
 extern uint16_t calibratingG;
 extern int16_t heading;
 extern int16_t annex650_overrun_count;
-extern int16_t i2c_errors_count;
 extern int32_t pressure;
 extern int16_t BaroAlt;
 extern uint8_t headFreeMode;

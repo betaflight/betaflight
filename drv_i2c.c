@@ -4,10 +4,26 @@
 // SCL  PB10
 // SDA  PB11
 
+#ifdef __gnuc__ // TODO check this
+#define DMB() asm volatile ("dmb":::"memory")
+#else
+#define DMB() __DMB()
+#endif
+
 static I2C_TypeDef *I2Cx;
 static void i2c_er_handler(void);
 static void i2c_ev_handler(void);
 static void i2cUnstick(void);
+
+void I2C1_ER_IRQHandler(void)
+{
+    i2c_er_handler();
+}
+
+void I2C1_EV_IRQHandler(void)
+{
+    i2c_ev_handler();
+}
 
 void I2C2_ER_IRQHandler(void)
 {
@@ -18,6 +34,10 @@ void I2C2_EV_IRQHandler(void)
 {
     i2c_ev_handler();
 }
+
+
+#define I2C_DEFAULT_TIMEOUT 30000
+static volatile uint16_t i2cErrorCount = 0;
 
 static volatile bool error = false;
 static volatile bool busy;
@@ -62,6 +82,7 @@ static void i2c_er_handler(void)
 bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 {
     uint8_t my_data[1];
+    uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     addr = addr_ << 1;
     reg = reg_;
@@ -81,12 +102,21 @@ bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);        //allow the interrupts to fire off again
     }
     
-    while (busy); // TODO timeout
+    while (busy && --timeout > 0);
+    if (timeout == 0) {
+        i2cErrorCount++;
+        // reinit peripheral + clock out garbage
+        i2cInit(I2Cx);
+        return false;
+    }
+
     return true;
 }
 
 bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
+    uint32_t timeout = I2C_DEFAULT_TIMEOUT;
+
     addr = addr_ << 1;
     reg = reg_;
     writing = 0;
@@ -103,7 +133,15 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
         }
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);        //allow the interrupts to fire off again
     }
-    while (busy); // TODO timeout
+
+    while (busy && --timeout > 0);
+    if (timeout == 0) {
+        i2cErrorCount++;
+        // reinit peripheral + clock out garbage
+        i2cInit(I2Cx);
+        return false;
+    }
+
     return true;
 }
 
@@ -130,17 +168,17 @@ void i2c_ev_handler(void)
     } else if (SReg_1 & 0x0002) {       //we just sent the address - EV6 in ref manual
         //Read SR1,2 to clear ADDR
         volatile uint8_t a;
-        __DMB(); // asm volatile ("dmb":::"memory");        //memory fence to control hardware
+        DMB(); // memory fence to control hardware
         if (bytes == 1 && reading && subaddress_sent) { //we are receiving 1 byte - EV6_3
             I2C_AcknowledgeConfig(I2Cx, DISABLE);       //turn off ACK
-            __DMB(); // asm volatile ("dmb":::"memory");
+            DMB();
             a = I2Cx->SR2;      //clear ADDR after ACK is turned off
             I2C_GenerateSTOP(I2Cx, ENABLE);     //program the stop
             final_stop = 1;
             I2C_ITConfig(I2Cx, I2C_IT_BUF, ENABLE);     //allow us to have an EV7
         } else {                //EV6 and EV6_1
             a = I2Cx->SR2;      //clear the ADDR here
-            __DMB(); // asm volatile ("dmb":::"memory");
+            DMB();
             if (bytes == 2 && reading && subaddress_sent) {     //rx 2 bytes - EV6_1
                 I2C_AcknowledgeConfig(I2Cx, DISABLE);   //turn off ACK
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);        //disable TXE to allow the buffer to fill
@@ -253,6 +291,11 @@ void i2cInit(I2C_TypeDef *I2C)
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
 
+}
+
+uint16_t i2cGetErrorCounter(void)
+{
+    return i2cErrorCount;
 }
 
 static void i2cUnstick(void)

@@ -15,7 +15,6 @@ uint8_t headFreeMode = 0;        // if head free mode is a activated
 uint8_t passThruMode = 0;        // if passthrough mode is activated
 int16_t headFreeModeHold;
 int16_t annex650_overrun_count = 0;
-int16_t i2c_errors_count = 0;
 uint8_t armed = 0;
 uint8_t vbat;            // battery voltage in 0.1V steps
 

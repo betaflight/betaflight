@@ -178,7 +178,7 @@ void serialCom(void)
             serialize16(intPowerTrigger1);
             serialize8(vbat);
             serialize16(BaroAlt);       // 4 variables are here for general monitoring purpose
-            serialize16(i2c_errors_count);      // debug2
+            serialize16(i2cGetErrorCounter());      // debug2
             serialize16(debug3);        // debug3
             serialize16(debug4);        // debug4
             serialize8('M');

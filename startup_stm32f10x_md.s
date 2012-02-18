@@ -141,9 +141,37 @@ Reset_Handler    PROC
                  LDR     R0, =__main
                  BX      R0
                  ENDP
-                 
+
+RCC_APB2ENR      EQU     0x40021018
+GPIO_AFIO_MASK   EQU     0x00000009
+GPIOB_CRL        EQU     0x40010C00
+GPIOB_BRR        EQU     0x40010C14
+AFIO_MAPR        EQU     0x40010004
+
 Reboot_Loader    PROC
                  EXPORT    Reboot_Loader
+
+                 ; RCC Enable GPIOB+AFIO
+                 LDR     R6, =RCC_APB2ENR
+                 LDR     R0, =GPIO_AFIO_MASK
+                 STR     R0, [R6]
+                 ; MAPR pt1
+                 LDR     R0, =AFIO_MAPR
+                 LDR     R1, [R0]
+                 BIC     R1, R1, #0xF000000
+                 STR     R1, [R0]
+                 ; MAPR pt2
+                 LSLS    R1, R0, #9
+                 STR     R1, [R0]
+                 ; BRR
+                 LDR     R4, =GPIOB_BRR
+                 MOVS    R0, #0x18
+                 STR     R0, [R4]
+                 ; CRL
+                 LDR     R1, =GPIOB_CRL
+                 LDR     R0, =0x44433444
+                 STR     R0, [R1]
+                 ; Reboot to ROM
                  LDR     R0, =0x1FFFF000
                  LDR     SP,[R0, #0]
                  LDR     R0,[R0, #4]

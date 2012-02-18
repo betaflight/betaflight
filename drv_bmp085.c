@@ -228,9 +228,10 @@ uint16_t bmp085_get_ut(void)
 {
     uint16_t ut;
     uint8_t data[2];    
+    uint16_t timeout = 10000;
 
     // wait in case of cockup
-    while (!convDone) {
+    while (!convDone && timeout-- > 0) {
         __nop();
     }
 
@@ -256,9 +257,10 @@ uint32_t bmp085_get_up(void)
 {
     uint32_t up = 0;
     uint8_t data[3];
+    uint16_t timeout = 10000;
     
     // wait in case of cockup
-    while (!convDone) {
+    while (!convDone && timeout-- > 0) {
         __nop();
     }
     

@@ -5,6 +5,14 @@ int main(void)
 {
     uint8_t i;
     
+#if 0
+    RCC->APB2ENR |= RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO; // GPIOB + AFIO
+    AFIO->MAPR &= 0xF0FFFFFF;
+    AFIO->MAPR = 0x02000000;
+    GPIOB->BRR = 0x18; // set low 4 & 3
+    GPIOB->CRL = 0x44433444; // PIN 4 & 3 Output 50MHz
+#endif    
+
     systemInit();
 
     readEEPROM();
