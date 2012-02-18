@@ -209,7 +209,6 @@ static void Mag_getRawADC(void)
     magADC[ROLL] = rawADC[0]; // X or negative? who knows mag stuff in multiwii is broken hardcore
     magADC[PITCH] = rawADC[2]; // Y
     magADC[YAW] = rawADC[1]; // Z
-#endif
 }
 
 void Mag_init(void)

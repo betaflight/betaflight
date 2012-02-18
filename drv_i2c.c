@@ -7,6 +7,7 @@
 static I2C_TypeDef *I2Cx;
 static void i2c_er_handler(void);
 static void i2c_ev_handler(void);
+static void i2cUnstick(void);
 
 void I2C2_ER_IRQHandler(void)
 {
@@ -223,6 +224,9 @@ void i2cInit(I2C_TypeDef *I2C)
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
     I2Cx = I2C;
+    
+    // clock out stuff to make sure slaves arent stuck
+    i2cUnstick();
 
     // Init I2C
     I2C_DeInit(I2Cx);
@@ -248,6 +252,7 @@ void i2cInit(I2C_TypeDef *I2C)
     NVIC_InitStructure.NVIC_IRQChannel = I2C2_EV_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
+
 }
 
 static void i2cUnstick(void)
@@ -265,6 +270,7 @@ static void i2cUnstick(void)
         // Wait for any clock stretching to finish
         while (!GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_10))
             delayMicroseconds(10);
+
         // Pull low
         GPIO_ResetBits(GPIOB, GPIO_Pin_10); //Set bus low
         delayMicroseconds(10);
@@ -272,6 +278,18 @@ static void i2cUnstick(void)
         GPIO_SetBits(GPIOB, GPIO_Pin_10); //Set bus high
         delayMicroseconds(10);
     }
+    
+    // Generate a start then stop condition
+    // SCL  PB10
+    // SDA  PB11
+
+    GPIO_ResetBits(GPIOB, GPIO_Pin_11); // Set bus data low
+    delayMicroseconds(10);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_10); // Set bus scl low
+    delayMicroseconds(10);
+    GPIO_SetBits(GPIOB, GPIO_Pin_10); // Set bus scl high
+    delayMicroseconds(10);
+    GPIO_SetBits(GPIOB, GPIO_Pin_11); // Set bus sda high
 
     // Init pins    
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
