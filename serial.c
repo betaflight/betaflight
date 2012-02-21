@@ -152,6 +152,7 @@ void serialCom(void)
 #else
             serialize16(cycleTime);
 #endif
+            serialize16(i2cGetErrorCounter());
             for (i = 0; i < 2; i++)
                 serialize16(angle[i]);
             serialize8(MULTITYPE);
@@ -177,10 +178,10 @@ void serialCom(void)
             serialize16(intPowerMeterSum);
             serialize16(intPowerTrigger1);
             serialize8(vbat);
-            serialize16(BaroAlt);       // 4 variables are here for general monitoring purpose
-            serialize16(i2cGetErrorCounter());      // debug2
-            serialize16(debug3);        // debug3
-            serialize16(debug4);        // debug4
+            serialize16(BaroAlt / 10);      // 4 variables are here for general monitoring purpose
+            serialize16(0);                 // debug2
+            serialize16(debug3);            // debug3
+            serialize16(debug4);            // debug4
             serialize8('M');
             // UartSendData();
             break;

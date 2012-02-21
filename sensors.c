@@ -71,6 +71,7 @@ static void ACC_Common(void)
         }
         //all values are measured
         if (InflightcalibratingA == 1) {
+            AccInflightCalibrationActive = 0;
             AccInflightCalibrationMeasurementDone = 1;
             blinkLED(10, 10, 2);        //buzzer for indicatiing the start inflight
             // recover saved values to maintain current flight behavior until new values are transferred
@@ -135,16 +136,16 @@ void Baro_update(void)
         case 2:
             bmp085_start_up();
             baroState++;
-            baroDeadline += 26000;
+            baroDeadline += 14000;
             break;
         case 3:
             baroUP = bmp085_get_up();
             baroTemp = bmp085_get_temperature(baroUT);
             pressure = bmp085_get_pressure(baroUP);
 
-            BaroAlt = (1.0f - pow(pressure / 101325.0f, 0.190295f)) * 443300.0f;    //decimeter
+            BaroAlt = (1.0f - pow(pressure / 101325.0f, 0.190295f)) * 4433000.0f; // centimeter
             baroState = 0;
-            baroDeadline += 20000;
+            baroDeadline += 5000;
             break;
     }
 }
@@ -219,9 +220,9 @@ void Mag_init(void)
     Mag_getRawADC();
     delay(10);
 
-    magCal[ROLL] = 1000.0 / magADC[ROLL];
-    magCal[PITCH] = 1000.0 / magADC[PITCH];
-    magCal[YAW] = -1000.0 / magADC[YAW];
+    magCal[ROLL] = 1000.0 / abs(magADC[ROLL]);
+    magCal[PITCH] = 1000.0 / abs(magADC[PITCH]);
+    magCal[YAW] = 1000.0 / abs(magADC[YAW]);
     
     hmc5883lFinishCal();
     magInit = 1;

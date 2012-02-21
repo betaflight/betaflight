@@ -99,6 +99,8 @@
   #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
 #elif defined(OCTOFLATX)
   #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
+#elif defined(VTAIL4)
+  #define MULTITYPE 15
 #endif
 
 /*********** RC alias *****************/
@@ -147,7 +149,6 @@ extern int16_t gyroZero[3];
 extern int16_t magZero[3];
 extern int16_t gyroData[3];
 extern int16_t angle[2];
-extern int16_t EstAlt;
 extern int16_t axisPID[3];
 extern int16_t rcCommand[4];
 
@@ -165,7 +166,12 @@ extern uint16_t calibratingG;
 extern int16_t heading;
 extern int16_t annex650_overrun_count;
 extern int32_t pressure;
-extern int16_t BaroAlt;
+extern int32_t BaroAlt;
+extern int32_t EstAlt;
+extern int32_t  AltHold;
+extern int16_t  errorAltitudeI;
+extern int32_t  EstVelocity;
+extern int16_t  BaroPID;
 extern uint8_t headFreeMode;
 extern int16_t headFreeModeHold;
 extern int8_t smallAngle25;
@@ -208,6 +214,7 @@ void imuInit(void);
 void annexCode(void);
 void computeIMU(void);
 void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat);
+void getEstimatedAltitude(void);
 
 // Sensors
 void sensorsAutodetect(void);

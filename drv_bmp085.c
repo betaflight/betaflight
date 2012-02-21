@@ -130,7 +130,7 @@ bool bmp085Init(void)
     i2cRead(p_bmp085->dev_addr, BMP085_CHIP_ID__REG, 1, &data);  /* read Chip Id */
     p_bmp085->chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
     p_bmp085->number_of_samples = 1;
-    p_bmp085->oversampling_setting = 3;
+    p_bmp085->oversampling_setting = 2;
     
     if (p_bmp085->chip_id == BMP085_CHIP_ID) {            /* get bitslice */
         p_bmp085->sensortype = BOSCH_PRESSURE_BMP085;

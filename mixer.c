@@ -19,8 +19,8 @@
 #define PRI_SERVO_TO     6
 #elif defined(TRI)
 #define NUMBER_MOTOR 3
-#define PRI_SERVO_FROM   5      // use only servo 5
-#define PRI_SERVO_TO     5
+#define PRI_SERVO_FROM   6      // use only servo 5
+#define PRI_SERVO_TO     6
 #elif defined(QUADP) || defined(QUADX) || defined(Y4)
 #define NUMBER_MOTOR 4
 #elif defined(Y6) || defined(HEX6) || defined(HEX6X)
@@ -78,7 +78,8 @@ void mixTable(void)
     motor[0] = PIDMIX(0, +4 / 3, 0);    //REAR
     motor[1] = PIDMIX(-1, -2 / 3, 0);   //RIGHT
     motor[2] = PIDMIX(+1, -2 / 3, 0);   //LEFT
-    servo[4] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX);        //REAR
+    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+
 #endif
 #ifdef QUADP
     motor[0] = PIDMIX(0, +1, -1);       //REAR
@@ -152,15 +153,25 @@ void mixTable(void)
     motor[6] = PIDMIX(-1 / 2, +1, -1);  //REAR_R
     motor[7] = PIDMIX(+1, +1 / 2, -1);  //MIDREAR_L 
 #endif
+#ifdef VTAIL4
+    motor[0] = PIDMIX(+0, +1, -1 / 2);      //REAR_R 
+    motor[1] = PIDMIX(-1, -1, +2 / 10); //FRONT_R 
+    motor[2] = PIDMIX(+0, +1, +1 / 2);      //REAR_L 
+    motor[3] = PIDMIX(+1, -1, -2 / 10); //FRONT_L
+#endif
+
 
 #ifdef SERVO_TILT
-    if ((rcOptions1 & activate1[BOXCAMSTAB]) || (rcOptions2 & activate2[BOXCAMSTAB])) { 
-        servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] / 16 + rcData[AUX3] - 1500, TILT_PITCH_MIN, TILT_PITCH_MAX);
-        servo[1] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP * angle[ROLL] / 16 + rcData[AUX4] - 1500, TILT_ROLL_MIN, TILT_ROLL_MAX);
-    } else {
-        servo[0] = constrain(TILT_PITCH_MIDDLE + rcData[AUX3] - 1500, TILT_PITCH_MIN, TILT_PITCH_MAX);
-        servo[1] = constrain(TILT_ROLL_MIDDLE + rcData[AUX4] - 1500, TILT_ROLL_MIN, TILT_ROLL_MAX);
+    servo[0] = TILT_PITCH_MIDDLE + rcData[AUX3] - 1500;
+    servo[1] = TILT_ROLL_MIDDLE + rcData[AUX4] - 1500;
+    
+    if (rcOptions[BOXCAMSTAB]) {
+        servo[0] += TILT_PITCH_PROP * angle[PITCH] / 16;
+        servo[1] += TILT_ROLL_PROP * angle[ROLL]  / 16;
     }
+    
+    servo[0] = constrain(servo[0], TILT_PITCH_MIN, TILT_PITCH_MAX);
+    servo[1] = constrain(servo[1], TILT_ROLL_MIN, TILT_ROLL_MAX);   
 #endif
 #ifdef GIMBAL
     servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] / 16 + rcCommand[PITCH], TILT_PITCH_MIN, TILT_PITCH_MAX);
@@ -168,13 +179,15 @@ void mixTable(void)
 #endif
 #ifdef FLYING_WING
     motor[0] = rcCommand[THROTTLE];
-    if (passThruMode) {         // use raw stick values to drive output 
-        servo[0] = constrain(wing_left_mid + PITCH_DIRECTION_L * (rcData[PITCH] - MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL] - MIDRC), WING_LEFT_MIN, WING_LEFT_MAX);    //LEFT
-        servo[1] = constrain(wing_right_mid + PITCH_DIRECTION_R * (rcData[PITCH] - MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL] - MIDRC), WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
+    if (passThruMode) {// do not use sensors for correction, simple 2 channel mixing
+        servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH] - MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL] - MIDRC);
+        servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH] - MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL] - MIDRC);
     } else {                    // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
-        servo[0] = constrain(wing_left_mid + PITCH_DIRECTION_L * axisPID[PITCH] + ROLL_DIRECTION_L * axisPID[ROLL], WING_LEFT_MIN, WING_LEFT_MAX);      //LEFT
-        servo[1] = constrain(wing_right_mid + PITCH_DIRECTION_R * axisPID[PITCH] + ROLL_DIRECTION_R * axisPID[ROLL], WING_RIGHT_MIN, WING_RIGHT_MAX);   //RIGHT
+        servo[0]  = PITCH_DIRECTION_L * axisPID[PITCH] + ROLL_DIRECTION_L * axisPID[ROLL];
+        servo[1]  = PITCH_DIRECTION_R * axisPID[PITCH] + ROLL_DIRECTION_R * axisPID[ROLL];
     }
+    servo[0]  = constrain(servo[0] + wing_left_mid , WING_LEFT_MIN, WING_LEFT_MAX);
+    servo[1]  = constrain(servo[1] + wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX);
 #endif
 #if defined(CAMTRIG)
     if (camCycle == 1) {
@@ -195,7 +208,7 @@ void mixTable(void)
             }
         }
     }
-    if ((rcOptions1 & activate1[BOXCAMTRIG]) || (rcOptions1 & activate2[BOXCAMTRIG]))
+    if (rcOptions[BOXCAMTRIG])
         camCycle = 1;
 #endif
 
@@ -225,7 +238,7 @@ void mixTable(void)
     0, 2, 6, 15, 30, 52, 82, 123, 175, 240, 320, 415, 528, 659, 811, 984, 1181, 1402, 1648, 1923, 2226, 2559, 2924, 3322, 3755, 4224, 4730, 5276, 5861, 6489, 7160, 7875, 8637, 9446, 10304, 11213, 12173, 13187, 14256, 15381, 16564, 17805, 19108, 20472, 21900, 23392, 24951, 26578, 28274, 30041, 31879, 33792, 35779, 37843, 39984, 42205, 44507, 46890, 49358, 51910, 54549, 57276, 60093, 63000};
 
     if (vbat) {                 // by all means - must avoid division by zero 
-        for (uint8_t i = 0; i < NUMBER_MOTOR; i++) {
+        for (i = 0; i < NUMBER_MOTOR; i++) {
             amp = amperes[((motor[i] - 1000) >> 4)] / vbat;     // range mapped from [1000:2000] => [0:1000]; then break that up into 64 ranges; lookup amp
 #if (LOG_VALUES == 2)
             pMeter[i] += amp;   // sum up over time the mapped ESC input 

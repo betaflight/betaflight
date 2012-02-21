@@ -5,7 +5,7 @@
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
 #define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * 63)    // use the last KB for storage
 
-static uint8_t checkNewConf = 150;
+static uint8_t checkNewConf = 151;
 
 typedef struct eep_entry_t {
     void *var;
@@ -121,9 +121,9 @@ void checkFirstTime(void)
     P8[YAW] = 85;
     I8[YAW] = 0;
     D8[YAW] = 0;
-    P8[PIDALT] = 47;
-    I8[PIDALT] = 0;
-    D8[PIDALT] = 30;
+    P8[PIDALT] = 16;
+    I8[PIDALT] = 15;
+    D8[PIDALT] = 7;
     P8[PIDGPS] = 10;
     I8[PIDGPS] = 0;
     D8[PIDGPS] = 0;
