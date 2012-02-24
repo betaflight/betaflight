@@ -1,58 +1,95 @@
 #include "board.h"
 #include "mw.h"
 
-#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)
-#define SERVO
-#endif
+static uint8_t numberMotor = 4;
+int16_t motor[8];
+int16_t servo[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
+uint8_t mixerConfiguration = MULTITYPE_TRI;
+uint16_t wing_left_mid = WING_LEFT_MID;
+uint16_t wing_right_mid = WING_RIGHT_MID;
+uint16_t tri_yaw_middle = TRI_YAW_MIDDLE;
 
-#if defined(GIMBAL)
-#define NUMBER_MOTOR 0
-#define PRI_SERVO_FROM   1      // use servo from 1 to 2
-#define PRI_SERVO_TO     2
-#elif defined(FLYING_WING)
-#define NUMBER_MOTOR 1
-#define PRI_SERVO_FROM   1      // use servo from 1 to 2
-#define PRI_SERVO_TO     2
-#elif defined(BI)
-#define NUMBER_MOTOR 2
-#define PRI_SERVO_FROM   5      // use servo from 5 to 6
-#define PRI_SERVO_TO     6
-#elif defined(TRI)
-#define NUMBER_MOTOR 3
-#define PRI_SERVO_FROM   6      // use only servo 5
-#define PRI_SERVO_TO     6
-#elif defined(QUADP) || defined(QUADX) || defined(Y4)
-#define NUMBER_MOTOR 4
-#elif defined(Y6) || defined(HEX6) || defined(HEX6X)
-#define NUMBER_MOTOR 6
-#elif defined(OCTOX8) || defined(OCTOFLATP) || defined(OCTOFLATX)
-#define NUMBER_MOTOR 8
-#endif
+void mixerInit(void)
+{
+    if (mixerConfiguration == MULTITYPE_BI || mixerConfiguration == MULTITYPE_TRI || mixerConfiguration == MULTITYPE_GIMBAL || mixerConfiguration == MULTITYPE_FLYING_WING)
+        featureSet(FEATURE_SERVO);
+
+    switch (mixerConfiguration) {
+        case MULTITYPE_GIMBAL:
+            numberMotor = 0;
+            break;
+        case MULTITYPE_FLYING_WING:
+            numberMotor = 1;
+            break;
+        case MULTITYPE_BI:
+            numberMotor = 2;
+            break;
+        case MULTITYPE_TRI:
+            numberMotor = 3;
+            break;
+
+        case MULTITYPE_QUADP:
+        case MULTITYPE_QUADX:
+        case MULTITYPE_Y4:
+        case MULTITYPE_VTAIL4:
+            numberMotor = 4;
+            break;
+
+        case MULTITYPE_Y6:
+        case MULTITYPE_HEX6:
+        case MULTITYPE_HEX6X:
+            numberMotor = 6;
+            break;
+
+        case MULTITYPE_OCTOX8:
+        case MULTITYPE_OCTOFLATP:
+        case MULTITYPE_OCTOFLATX:
+            numberMotor = 8;
+            break;
+    }
+}
 
 void writeServos(void)
 {
-#if defined(SERVO)
+    if (!feature(FEATURE_SERVO))
+        return;
 
-#endif
+    if (mixerConfiguration == MULTITYPE_TRI || mixerConfiguration == MULTITYPE_BI) {
+        /* One servo on Motor #4 */
+        pwmWrite(0, servo[4]);
+        if (mixerConfiguration == MULTITYPE_BI)
+            pwmWrite(1, servo[5]);
+    } else {
+        /* Two servos for camstab or FLYING_WING */
+        pwmWrite(0, servo[0]);
+        pwmWrite(1, servo[1]);
+    }
 }
 
 void writeMotors(void)
 {
     uint8_t i;
+    uint8_t offset = 0;
     
-    for (i = 0; i < NUMBER_MOTOR; i++)
-        pwmWrite(i, motor[i]);
+    // when servos are enabled, motor outputs 1..2 are for servos only
+    if (feature(FEATURE_SERVO))
+        offset = 2;
+
+    for (i = 0; i < numberMotor; i++)
+        pwmWrite(i + offset, motor[i]);
 }
 
 void writeAllMotors(int16_t mc)
 {
     uint8_t i;
-    
+
     // Sends commands to all motors
-    for (i = 0; i < NUMBER_MOTOR; i++)
+    for (i = 0; i < numberMotor; i++)
         motor[i] = mc;
     writeMotors();
 }
+
+#define PIDMIX(X,Y,Z) rcCommand[THROTTLE] + axisPID[ROLL] * X + axisPID[PITCH] * Y + YAW_DIRECTION * axisPID[YAW] * Z
 
 void mixTable(void)
 {
@@ -61,105 +98,133 @@ void mixTable(void)
     static uint8_t camCycle = 0;
     static uint8_t camState = 0;
     static uint32_t camTime = 0;
+    
+    if (numberMotor > 3) {
+        //prevent "yaw jump" during yaw correction
+        axisPID[YAW] = constrain(axisPID[YAW], -100 - abs(rcCommand[YAW]), +100 + abs(rcCommand[YAW]));
+    }
 
-#define PIDMIX(X,Y,Z) rcCommand[THROTTLE] + axisPID[ROLL] * X + axisPID[PITCH] * Y + YAW_DIRECTION * axisPID[YAW] * Z
+    switch (mixerConfiguration) {
+        case MULTITYPE_BI:
+            motor[0] = PIDMIX(+1, 0, 0);        //LEFT
+            motor[1] = PIDMIX(-1, 0, 0);        //RIGHT        
+            servo[4] = constrain(1500 + YAW_DIRECTION * (axisPID[YAW] + axisPID[PITCH]), 1020, 2000);   //LEFT
+            servo[5] = constrain(1500 + YAW_DIRECTION * (axisPID[YAW] - axisPID[PITCH]), 1020, 2000);   //RIGHT
+            break;
+    
+        case MULTITYPE_TRI:
+            motor[0] = PIDMIX(0, +4 / 3, 0);    //REAR
+            motor[1] = PIDMIX(-1, -2 / 3, 0);   //RIGHT
+            motor[2] = PIDMIX(+1, -2 / 3, 0);   //LEFT
+            servo[4] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+            break;
 
-#if NUMBER_MOTOR > 3
-    //prevent "yaw jump" during yaw correction
-    axisPID[YAW] = constrain(axisPID[YAW], -100 - abs(rcCommand[YAW]), +100 + abs(rcCommand[YAW]));
-#endif
-#ifdef BI
-    motor[0] = PIDMIX(+1, 0, 0);        //LEFT
-    motor[1] = PIDMIX(-1, 0, 0);        //RIGHT        
-    servo[4] = constrain(1500 + YAW_DIRECTION * (axisPID[YAW] + axisPID[PITCH]), 1020, 2000);   //LEFT
-    servo[5] = constrain(1500 + YAW_DIRECTION * (axisPID[YAW] - axisPID[PITCH]), 1020, 2000);   //RIGHT
-#endif
-#ifdef TRI
-    motor[0] = PIDMIX(0, +4 / 3, 0);    //REAR
-    motor[1] = PIDMIX(-1, -2 / 3, 0);   //RIGHT
-    motor[2] = PIDMIX(+1, -2 / 3, 0);   //LEFT
-    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+        case MULTITYPE_QUADP:
+            motor[0] = PIDMIX(0, +1, -1);       //REAR
+            motor[1] = PIDMIX(-1, 0, +1);       //RIGHT
+            motor[2] = PIDMIX(+1, 0, +1);       //LEFT
+            motor[3] = PIDMIX(0, -1, -1);       //FRONT
+            break;
 
-#endif
-#ifdef QUADP
-    motor[0] = PIDMIX(0, +1, -1);       //REAR
-    motor[1] = PIDMIX(-1, 0, +1);       //RIGHT
-    motor[2] = PIDMIX(+1, 0, +1);       //LEFT
-    motor[3] = PIDMIX(0, -1, -1);       //FRONT
-#endif
-#ifdef QUADX
-    motor[0] = PIDMIX(-1, +1, -1);      //REAR_R
-    motor[1] = PIDMIX(-1, -1, +1);      //FRONT_R
-    motor[2] = PIDMIX(+1, +1, +1);      //REAR_L
-    motor[3] = PIDMIX(+1, -1, -1);      //FRONT_L
-#endif
-#ifdef Y4
-    motor[0] = PIDMIX(+0, +1, -1);      //REAR_1 CW
-    motor[1] = PIDMIX(-1, -1, 0);       //FRONT_R CCW
-    motor[2] = PIDMIX(+0, +1, +1);      //REAR_2 CCW
-    motor[3] = PIDMIX(+1, -1, 0);       //FRONT_L CW
-#endif
-#ifdef Y6
-    motor[0] = PIDMIX(+0, +4 / 3, +1);  //REAR
-    motor[1] = PIDMIX(-1, -2 / 3, -1);  //RIGHT
-    motor[2] = PIDMIX(+1, -2 / 3, -1);  //LEFT
-    motor[3] = PIDMIX(+0, +4 / 3, -1);  //UNDER_REAR
-    motor[4] = PIDMIX(-1, -2 / 3, +1);  //UNDER_RIGHT
-    motor[5] = PIDMIX(+1, -2 / 3, +1);  //UNDER_LEFT    
-#endif
-#ifdef HEX6
-    motor[0] = PIDMIX(-1 / 2, +1 / 2, +1);      //REAR_R
-    motor[1] = PIDMIX(-1 / 2, -1 / 2, -1);      //FRONT_R
-    motor[2] = PIDMIX(+1 / 2, +1 / 2, +1);      //REAR_L
-    motor[3] = PIDMIX(+1 / 2, -1 / 2, -1);      //FRONT_L
-    motor[4] = PIDMIX(+0, -1, +1);      //FRONT
-    motor[5] = PIDMIX(+0, +1, -1);      //REAR
-#endif
-#ifdef HEX6X
-    motor[0] = PIDMIX(-1 / 2, +1 / 2, +1);      //REAR_R
-    motor[1] = PIDMIX(-1 / 2, -1 / 2, +1);      //FRONT_R
-    motor[2] = PIDMIX(+1 / 2, +1 / 2, -1);      //REAR_L
-    motor[3] = PIDMIX(+1 / 2, -1 / 2, -1);      //FRONT_L
-    motor[4] = PIDMIX(-1, +0, -1);      //RIGHT
-    motor[5] = PIDMIX(+1, +0, +1);      //LEFT
-#endif
-#ifdef OCTOX8
-    motor[0] = PIDMIX(-1, +1, -1);      //REAR_R
-    motor[1] = PIDMIX(-1, -1, +1);      //FRONT_R
-    motor[2] = PIDMIX(+1, +1, +1);      //REAR_L
-    motor[3] = PIDMIX(+1, -1, -1);      //FRONT_L
-    motor[4] = PIDMIX(-1, +1, +1);      //UNDER_REAR_R
-    motor[5] = PIDMIX(-1, -1, -1);      //UNDER_FRONT_R
-    motor[6] = PIDMIX(+1, +1, -1);      //UNDER_REAR_L
-    motor[7] = PIDMIX(+1, -1, +1);      //UNDER_FRONT_L
-#endif
-#ifdef OCTOFLATP
-    motor[0] = PIDMIX(+7 / 10, -7 / 10, +1);    //FRONT_L
-    motor[1] = PIDMIX(-7 / 10, -7 / 10, +1);    //FRONT_R
-    motor[2] = PIDMIX(-7 / 10, +7 / 10, +1);    //REAR_R
-    motor[3] = PIDMIX(+7 / 10, +7 / 10, +1);    //REAR_L
-    motor[4] = PIDMIX(+0, -1, -1);      //FRONT
-    motor[5] = PIDMIX(-1, +0, -1);      //RIGHT
-    motor[6] = PIDMIX(+0, +1, -1);      //REAR
-    motor[7] = PIDMIX(+1, +0, -1);      //LEFT 
-#endif
-#ifdef OCTOFLATX
-    motor[0] = PIDMIX(+1, -1 / 2, +1);  //MIDFRONT_L
-    motor[1] = PIDMIX(-1 / 2, -1, +1);  //FRONT_R
-    motor[2] = PIDMIX(-1, +1 / 2, +1);  //MIDREAR_R
-    motor[3] = PIDMIX(+1 / 2, +1, +1);  //REAR_L
-    motor[4] = PIDMIX(+1 / 2, -1, -1);  //FRONT_L
-    motor[5] = PIDMIX(-1, -1 / 2, -1);  //MIDFRONT_R
-    motor[6] = PIDMIX(-1 / 2, +1, -1);  //REAR_R
-    motor[7] = PIDMIX(+1, +1 / 2, -1);  //MIDREAR_L 
-#endif
-#ifdef VTAIL4
-    motor[0] = PIDMIX(+0, +1, -1 / 2);      //REAR_R 
-    motor[1] = PIDMIX(-1, -1, +2 / 10); //FRONT_R 
-    motor[2] = PIDMIX(+0, +1, +1 / 2);      //REAR_L 
-    motor[3] = PIDMIX(+1, -1, -2 / 10); //FRONT_L
-#endif
+        case MULTITYPE_QUADX:
+            motor[0] = PIDMIX(-1, +1, -1);      //REAR_R
+            motor[1] = PIDMIX(-1, -1, +1);      //FRONT_R
+            motor[2] = PIDMIX(+1, +1, +1);      //REAR_L
+            motor[3] = PIDMIX(+1, -1, -1);      //FRONT_L
+            break;
 
+        case MULTITYPE_Y4:
+            motor[0] = PIDMIX(+0, +1, -1);      //REAR_1 CW
+            motor[1] = PIDMIX(-1, -1, 0);       //FRONT_R CCW
+            motor[2] = PIDMIX(+0, +1, +1);      //REAR_2 CCW
+            motor[3] = PIDMIX(+1, -1, 0);       //FRONT_L CW
+            break;
+            
+        case MULTITYPE_Y6:
+            motor[0] = PIDMIX(+0, +4 / 3, +1);  //REAR
+            motor[1] = PIDMIX(-1, -2 / 3, -1);  //RIGHT
+            motor[2] = PIDMIX(+1, -2 / 3, -1);  //LEFT
+            motor[3] = PIDMIX(+0, +4 / 3, -1);  //UNDER_REAR
+            motor[4] = PIDMIX(-1, -2 / 3, +1);  //UNDER_RIGHT
+            motor[5] = PIDMIX(+1, -2 / 3, +1);  //UNDER_LEFT    
+            break;
+
+        case MULTITYPE_HEX6:
+            motor[0] = PIDMIX(-1 / 2, +1 / 2, +1);      //REAR_R
+            motor[1] = PIDMIX(-1 / 2, -1 / 2, -1);      //FRONT_R
+            motor[2] = PIDMIX(+1 / 2, +1 / 2, +1);      //REAR_L
+            motor[3] = PIDMIX(+1 / 2, -1 / 2, -1);      //FRONT_L
+            motor[4] = PIDMIX(+0, -1, +1);      //FRONT
+            motor[5] = PIDMIX(+0, +1, -1);      //REAR
+            break;
+
+        case MULTITYPE_HEX6X:
+            motor[0] = PIDMIX(-1 / 2, +1 / 2, +1);      //REAR_R
+            motor[1] = PIDMIX(-1 / 2, -1 / 2, +1);      //FRONT_R
+            motor[2] = PIDMIX(+1 / 2, +1 / 2, -1);      //REAR_L
+            motor[3] = PIDMIX(+1 / 2, -1 / 2, -1);      //FRONT_L
+            motor[4] = PIDMIX(-1, +0, -1);      //RIGHT
+            motor[5] = PIDMIX(+1, +0, +1);      //LEFT
+            break;
+
+        case MULTITYPE_OCTOX8:
+            motor[0] = PIDMIX(-1, +1, -1);      //REAR_R
+            motor[1] = PIDMIX(-1, -1, +1);      //FRONT_R
+            motor[2] = PIDMIX(+1, +1, +1);      //REAR_L
+            motor[3] = PIDMIX(+1, -1, -1);      //FRONT_L
+            motor[4] = PIDMIX(-1, +1, +1);      //UNDER_REAR_R
+            motor[5] = PIDMIX(-1, -1, -1);      //UNDER_FRONT_R
+            motor[6] = PIDMIX(+1, +1, -1);      //UNDER_REAR_L
+            motor[7] = PIDMIX(+1, -1, +1);      //UNDER_FRONT_L
+            break;
+
+        case MULTITYPE_OCTOFLATP:
+            motor[0] = PIDMIX(+7 / 10, -7 / 10, +1);    //FRONT_L
+            motor[1] = PIDMIX(-7 / 10, -7 / 10, +1);    //FRONT_R
+            motor[2] = PIDMIX(-7 / 10, +7 / 10, +1);    //REAR_R
+            motor[3] = PIDMIX(+7 / 10, +7 / 10, +1);    //REAR_L
+            motor[4] = PIDMIX(+0, -1, -1);      //FRONT
+            motor[5] = PIDMIX(-1, +0, -1);      //RIGHT
+            motor[6] = PIDMIX(+0, +1, -1);      //REAR
+            motor[7] = PIDMIX(+1, +0, -1);      //LEFT 
+            break;
+
+        case MULTITYPE_OCTOFLATX:
+            motor[0] = PIDMIX(+1, -1 / 2, +1);  //MIDFRONT_L
+            motor[1] = PIDMIX(-1 / 2, -1, +1);  //FRONT_R
+            motor[2] = PIDMIX(-1, +1 / 2, +1);  //MIDREAR_R
+            motor[3] = PIDMIX(+1 / 2, +1, +1);  //REAR_L
+            motor[4] = PIDMIX(+1 / 2, -1, -1);  //FRONT_L
+            motor[5] = PIDMIX(-1, -1 / 2, -1);  //MIDFRONT_R
+            motor[6] = PIDMIX(-1 / 2, +1, -1);  //REAR_R
+            motor[7] = PIDMIX(+1, +1 / 2, -1);  //MIDREAR_L 
+            break;
+
+        case MULTITYPE_VTAIL4:
+            motor[0] = PIDMIX(+0, +1, -1 / 2);      //REAR_R 
+            motor[1] = PIDMIX(-1, -1, +2 / 10); //FRONT_R 
+            motor[2] = PIDMIX(+0, +1, +1 / 2);      //REAR_L 
+            motor[3] = PIDMIX(+1, -1, -2 / 10); //FRONT_L
+            break;
+            
+        case MULTITYPE_GIMBAL:
+            servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] / 16 + rcCommand[PITCH], TILT_PITCH_MIN, TILT_PITCH_MAX);
+            servo[1] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP * angle[ROLL] / 16 + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
+            break;
+            
+        case MULTITYPE_FLYING_WING:
+            motor[0] = rcCommand[THROTTLE];
+            if (passThruMode) { // do not use sensors for correction, simple 2 channel mixing
+                servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH] - MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL] - MIDRC);
+                servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH] - MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL] - MIDRC);
+            } else {                    // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
+                servo[0]  = PITCH_DIRECTION_L * axisPID[PITCH] + ROLL_DIRECTION_L * axisPID[ROLL];
+                servo[1]  = PITCH_DIRECTION_R * axisPID[PITCH] + ROLL_DIRECTION_R * axisPID[ROLL];
+            }
+            servo[0]  = constrain(servo[0] + wing_left_mid , WING_LEFT_MIN, WING_LEFT_MAX);
+            servo[1]  = constrain(servo[1] + wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX);
+            break;
+        }
 
 #ifdef SERVO_TILT
     servo[0] = TILT_PITCH_MIDDLE + rcData[AUX3] - 1500;
@@ -172,22 +237,6 @@ void mixTable(void)
     
     servo[0] = constrain(servo[0], TILT_PITCH_MIN, TILT_PITCH_MAX);
     servo[1] = constrain(servo[1], TILT_ROLL_MIN, TILT_ROLL_MAX);   
-#endif
-#ifdef GIMBAL
-    servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] / 16 + rcCommand[PITCH], TILT_PITCH_MIN, TILT_PITCH_MAX);
-    servo[1] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP * angle[ROLL] / 16 + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
-#endif
-#ifdef FLYING_WING
-    motor[0] = rcCommand[THROTTLE];
-    if (passThruMode) {// do not use sensors for correction, simple 2 channel mixing
-        servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH] - MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL] - MIDRC);
-        servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH] - MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL] - MIDRC);
-    } else {                    // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
-        servo[0]  = PITCH_DIRECTION_L * axisPID[PITCH] + ROLL_DIRECTION_L * axisPID[ROLL];
-        servo[1]  = PITCH_DIRECTION_R * axisPID[PITCH] + ROLL_DIRECTION_R * axisPID[ROLL];
-    }
-    servo[0]  = constrain(servo[0] + wing_left_mid , WING_LEFT_MIN, WING_LEFT_MAX);
-    servo[1]  = constrain(servo[1] + wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX);
 #endif
 #if defined(CAMTRIG)
     if (camCycle == 1) {
@@ -213,10 +262,10 @@ void mixTable(void)
 #endif
 
     maxMotor = motor[0];
-    for (i = 1; i < NUMBER_MOTOR; i++)
+    for (i = 1; i < numberMotor; i++)
         if (motor[i] > maxMotor)
             maxMotor = motor[i];
-    for (i = 0; i < NUMBER_MOTOR; i++) {
+    for (i = 0; i < numberMotor; i++) {
         if (maxMotor > MAXTHROTTLE)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
             motor[i] -= maxMotor - MAXTHROTTLE;
         motor[i] = constrain(motor[i], MINTHROTTLE, MAXTHROTTLE);

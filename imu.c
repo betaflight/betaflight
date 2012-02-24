@@ -70,11 +70,11 @@ void computeIMU(void)
         if (!sensors(SENSOR_ACC))
             accADC[axis] = 0;
     }
-
-#if defined(TRI)
-    gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW] + 1) / 3;
-    gyroYawSmooth = gyroData[YAW];
-#endif
+    
+    if (mixerConfiguration == MULTITYPE_TRI) {
+        gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW] + 1) / 3;
+        gyroYawSmooth = gyroData[YAW];
+    }
 }
 
 // **************************************************
@@ -152,37 +152,11 @@ void rotateV(struct fp_vector *v, float *delta)
     v->Y += delta[PITCH] * v_tmp.Z + delta[YAW] * v_tmp.X;
 }
 
-#if 1
 static int16_t _atan2f(float y, float x)
 {
-#define fp_is_neg(val) (val < 0 ? 1 : 0)
-
-    float z = y / x;
-    int16_t zi = abs((int16_t)(z * 100));
-    int8_t y_neg = fp_is_neg(y);
-    if (zi < 100) {
-	if (zi > 10)
-	    z = z / (1.0f + 0.28f * z * z);
-	if (fp_is_neg(x)) {
-	    if (y_neg)
-		z -= M_PI;
-	    else
-		z += M_PI;
-	}
-    } else {
-	z = (M_PI / 2.0f) - z / (z * z + 0.28f);
-	if (y_neg)
-	    z -= M_PI;
-    }
-    z *= (180.0f / M_PI * 10);
-    return z;
+    // no need for aidsy inaccurate shortcuts on a proper platform
+    return (int16_t)(atan2f(y, x) * (180.0f / M_PI * 10.0f));
 }
-#else
-static int16_t _atan2f(float y, float x)
-{
-    return (int16_t)atan2f(y, x) * (180.0f / M_PI * 10.0f);
-}
-#endif
 
 static void getEstimatedAttitude(void)
 {

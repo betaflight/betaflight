@@ -42,12 +42,6 @@ uint8_t magMode = 0;     // if compass heading hold is a activated
 uint8_t baroMode = 0;    // if altitude hold is activated
 
 int16_t axisPID[3];
-int16_t motor[8];
-int16_t servo[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
-uint16_t wing_left_mid = WING_LEFT_MID;
-uint16_t wing_right_mid = WING_RIGHT_MID;
-uint16_t tri_yaw_middle = TRI_YAW_MIDDLE;
-
 volatile uint16_t rcValue[18] = { 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502 }; // interval [1000;2000]
 uint8_t rcChannel[8] = { ROLL, PITCH, THROTTLE, YAW, AUX1, AUX2, AUX3, AUX4 };
 

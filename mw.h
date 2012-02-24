@@ -1,7 +1,5 @@
 #pragma once
 
-#define QUADX
-
 #define MINCHECK 1100
 #define MAXCHECK 1900
 
@@ -59,6 +57,19 @@
 #define WING_RIGHT_MIN 1020 // limit servo travel range must be inside [1020;2000]
 #define WING_RIGHT_MAX 2000 // limit servo travel range must be inside [1020;2000]
 
+/* The following lines apply only for a pitch/roll tilt stabilization system
+   On promini board, it is not compatible with config with 6 motors or more
+   Uncomment the first line to activate it */
+//#define SERVO_TILT
+#define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
+#define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
+#define TILT_PITCH_MIDDLE 1500    //servo neutral value
+#define TILT_PITCH_PROP   10      //servo proportional (tied to angle) ; can be negative to invert movement
+#define TILT_ROLL_MIN     1020
+#define TILT_ROLL_MAX     2000
+#define TILT_ROLL_MIDDLE  1500
+#define TILT_ROLL_PROP    10
+
 /* for V BAT monitoring
    after the resistor divisor we should get [0V;5V]->[0;1023] on analog V_BATPIN
    with R1=33k and R2=51k
@@ -70,38 +81,28 @@
 #define VBATLEVEL3_3S 99  // 9.9V
 #define NO_VBAT       16 // Avoid beeping without any battery
 
-
 #define   VERSION  19
 
-#if defined(TRI)
-  #define MULTITYPE 1
-#elif defined(QUADP)
-  #define MULTITYPE 2
-#elif defined(QUADX)
-  #define MULTITYPE 3
-#elif defined(BI)
-  #define MULTITYPE 4
-#elif defined(GIMBAL)
-  #define MULTITYPE 5
-#elif defined(Y6)
-  #define MULTITYPE 6
-#elif defined(HEX6)
-  #define MULTITYPE 7
-#elif defined(FLYING_WING)
-  #define MULTITYPE 8
-#elif defined(Y4)
-  #define MULTITYPE 9
-#elif defined(HEX6X)
-  #define MULTITYPE 10
-#elif defined(OCTOX8)
-  #define MULTITYPE 11
-#elif defined(OCTOFLATP)
-  #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
-#elif defined(OCTOFLATX)
-  #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
-#elif defined(VTAIL4)
-  #define MULTITYPE 15
-#endif
+// Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
+typedef enum MultiType
+{
+    MULTITYPE_TRI = 1,              // XA
+    MULTITYPE_QUADP = 2,            // XB
+    MULTITYPE_QUADX = 3,            // XC
+    MULTITYPE_BI = 4,               // XD
+    MULTITYPE_GIMBAL = 5,           // XE
+    MULTITYPE_Y6 = 6,               // XF
+    MULTITYPE_HEX6 = 7,             // XG
+    MULTITYPE_FLYING_WING = 8,      // XH
+    MULTITYPE_Y4 = 9,               // XI
+    MULTITYPE_HEX6X = 10,           // XJ
+    MULTITYPE_OCTOX8 = 11,          // XK
+    MULTITYPE_OCTOFLATP = 12,	    // XL the GUI is the same for all 8 motor configs
+    MULTITYPE_OCTOFLATX = 13,       // XM the GUI is the same for all 8 motor configs
+                                    // XN missing for some reason??
+    MULTITYPE_VTAIL4 = 15,          // XO
+    MULTITYPE_LAST = 16
+} MultiType;
 
 /*********** RC alias *****************/
 #define ROLL       0
@@ -174,6 +175,7 @@ extern int32_t  EstVelocity;
 extern int16_t  BaroPID;
 extern uint8_t headFreeMode;
 extern int16_t headFreeModeHold;
+extern uint8_t passThruMode;
 extern int8_t smallAngle25;
 extern int16_t zVelocity;
 extern int16_t heading, magHold;
@@ -205,6 +207,10 @@ extern uint8_t GPSModeHold;
 extern uint8_t vbat;
 extern uint8_t powerTrigger1;
 extern int16_t lookupRX[7];     //  lookup table for expo & RC rate
+extern uint8_t mixerConfiguration;
+extern uint16_t wing_left_mid;
+extern uint16_t wing_right_mid;
+extern uint16_t tri_yaw_middle;
 
 // main
 void loop(void);
@@ -225,6 +231,7 @@ void Mag_init(void);
 void Mag_getADC(void);
 
 // Output
+void mixerInit(void);
 void writeServos(void);
 void writeMotors(void);
 void mixTable(void);
@@ -236,3 +243,9 @@ void serialCom(void);
 void readEEPROM(void);
 void writeParams(void);
 void checkFirstTime(void);
+bool sensors(uint32_t mask);
+void sensorsSet(uint32_t mask);
+void sensorsClear(uint32_t mask);
+bool feature(uint32_t mask);
+void featureSet(uint32_t mask);
+void featureClear(uint32_t mask);

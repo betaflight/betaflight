@@ -28,6 +28,8 @@ typedef enum {
 typedef enum {
     FEATURE_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,
+    FEATURE_SERVO = 1 << 2,
+    FEATURE_DIGITAL_SERVO = 1 << 3,
 } AvailableFeatures;
 
 #define digitalHi(p, i)     { p->BSRR = i; }

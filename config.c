@@ -5,7 +5,10 @@
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
 #define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * 63)    // use the last KB for storage
 
-static uint8_t checkNewConf = 151;
+static uint32_t enabledSensors = 0;
+static uint32_t enabledFeatures = 0;
+
+static uint8_t checkNewConf = 152;
 
 typedef struct eep_entry_t {
     void *var;
@@ -17,6 +20,8 @@ typedef struct eep_entry_t {
 // ************************************************************************************************************
 volatile eep_entry_t eep_entry[] = {
     {&checkNewConf, sizeof(checkNewConf)}
+    , {&enabledFeatures, sizeof(enabledFeatures)}
+    , {&mixerConfiguration, sizeof(mixerConfiguration)}
     , {&P8, sizeof(P8)}
     , {&I8, sizeof(I8)}
     , {&D8, sizeof(D8)}
@@ -31,14 +36,9 @@ volatile eep_entry_t eep_entry[] = {
     , {&activate1, sizeof(activate1)}
     , {&activate2, sizeof(activate2)}
     , {&powerTrigger1, sizeof(powerTrigger1)}
-#ifdef FLYING_WING
     , {&wing_left_mid, sizeof(wing_left_mid)}
     , {&wing_right_mid, sizeof(wing_right_mid)}
-#endif
-#ifdef TRI
     , {&tri_yaw_middle, sizeof(tri_yaw_middle)}
-#endif
-
 };
 
 #define EEBLOCK_SIZE sizeof(eep_entry) / sizeof(eep_entry_t)
@@ -56,15 +56,20 @@ void readEEPROM(void)
 #if defined(POWERMETER)
     pAlarm = (uint32_t) powerTrigger1 *(uint32_t) PLEVELSCALE *(uint32_t) PLEVELDIV;    // need to cast before multiplying
 #endif
+
     for (i = 0; i < 7; i++)
         lookupRX[i] = (2500 + rcExpo8 * (i * i - 25)) * i * (int32_t) rcRate8 / 1250;
-#ifdef FLYING_WING
-    wing_left_mid = constrain(wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
-    wing_right_mid = constrain(wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
-#endif
-#ifdef TRI
-    tri_yaw_middle = constrain(tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
-#endif
+        
+    switch (mixerConfiguration) {
+        case MULTITYPE_FLYING_WING:
+            wing_left_mid = constrain(wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
+            wing_right_mid = constrain(wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
+            break;
+            
+        case MULTITYPE_TRI:
+            tri_yaw_middle = constrain(tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+            break;
+    }
 }
 
 void writeParams(void)
@@ -80,7 +85,7 @@ void writeParams(void)
         memcpy(p, eep_entry[i].var, eep_entry[i].size);
         p += eep_entry[i].size;
     }
-    
+
     p = conf;
 
     FLASH_Unlock();
@@ -112,6 +117,9 @@ void checkFirstTime(void)
         return;
 
     // Default settings
+    mixerConfiguration = MULTITYPE_QUADX;
+    featureSet(FEATURE_VBAT | FEATURE_PPM);
+
     P8[ROLL] = 40;
     I8[ROLL] = 30;
     D8[ROLL] = 23;
@@ -146,12 +154,47 @@ void checkFirstTime(void)
     accTrim[0] = 0;
     accTrim[1] = 0;
     powerTrigger1 = 0;
-#ifdef FLYING_WING
-    wing_left_mid = WING_LEFT_MID;
-    wing_right_mid = WING_RIGHT_MID;
-#endif
-#ifdef TRI
-    tri_yaw_middle = TRI_YAW_MIDDLE;
-#endif
+
+    switch (mixerConfiguration) {
+        case MULTITYPE_FLYING_WING:
+            wing_left_mid = WING_LEFT_MID;
+            wing_right_mid = WING_RIGHT_MID;
+            break;
+            
+        case MULTITYPE_TRI:
+            tri_yaw_middle = TRI_YAW_MIDDLE;
+            break;
+    }
+
     writeParams();
+}
+
+bool sensors(uint32_t mask)
+{
+    return enabledSensors & mask;
+}
+
+void sensorsSet(uint32_t mask)
+{
+    enabledSensors |= mask;
+}
+
+void sensorsClear(uint32_t mask)
+{
+    enabledSensors &= ~(mask);
+}
+
+bool feature(uint32_t mask)
+{
+    return enabledFeatures & mask;
+}
+
+void featureSet(uint32_t mask)
+{
+    enabledFeatures |= mask;
+}
+
+void featureClear(uint32_t mask)
+{
+    enabledFeatures &= ~(mask);
 }

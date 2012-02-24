@@ -1,8 +1,5 @@
 #include "board.h"
 
-static uint32_t enabledSensors = 0;
-static uint32_t enabledFeatures = 0;
-
 // Cycle counter stuff - these should be defined by CMSIS, but they aren't
 #define DWT_CTRL	(*(volatile uint32_t *)0xE0001000)
 #define DWT_CYCCNT	((volatile uint32_t *)0xE0001004)
@@ -143,36 +140,6 @@ void delay(uint32_t ms)
 		delayMicroseconds(1000);
 }
 
-bool sensors(uint32_t mask)
-{
-    return enabledSensors & mask;
-}
-
-void sensorsSet(uint32_t mask)
-{
-    enabledSensors |= mask;
-}
-
-void sensorsClear(uint32_t mask)
-{
-    enabledSensors &= ~(mask);
-}
-
-bool feature(uint32_t mask)
-{
-    return enabledFeatures & mask;
-}
-
-void featureSet(uint32_t mask)
-{
-    enabledFeatures |= mask;
-}
-
-void featureClear(uint32_t mask)
-{
-    enabledFeatures &= ~(mask);
-}
-
 void failureMode(uint8_t mode)
 {
     LED1_ON;
@@ -189,11 +156,13 @@ void failureMode(uint8_t mode)
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
 
-void systemResetToBootloader(void)
+void systemReset(bool toBootloader)
 {
-    // 1FFFF000 -> 20000200 -> SP
-    // 1FFFF004 -> 1FFFF021 -> PC
-    *((uint32_t *)0x20004FF0) = 0xDEADBEEF; // 20KB STM32F103
+    if (toBootloader) {
+        // 1FFFF000 -> 20000200 -> SP
+        // 1FFFF004 -> 1FFFF021 -> PC
+        *((uint32_t *)0x20004FF0) = 0xDEADBEEF; // 20KB STM32F103
+    }        
 
     // Generate system reset
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;

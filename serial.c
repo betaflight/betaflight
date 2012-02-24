@@ -155,7 +155,7 @@ void serialCom(void)
             serialize16(i2cGetErrorCounter());
             for (i = 0; i < 2; i++)
                 serialize16(angle[i]);
-            serialize8(MULTITYPE);
+            serialize8(mixerConfiguration);
             for (i = 0; i < PIDITEMS; i++) {
                 serialize8(P8[i]);
                 serialize8(I8[i]);
@@ -207,8 +207,22 @@ void serialCom(void)
             serialize8('O');    //49
             // UartSendData();
             break;
-        case 'R':               // reboot to bootloader
-            systemResetToBootloader();
+        case 'R':               // reboot to bootloader (oops, apparently this w as used for other trash, fix later)
+            systemReset(true);
+            break;
+            
+        case 'X':               // dynamic mixer
+            i = uartReadPoll();
+            if (i > 64 && i < 64 + MULTITYPE_LAST) {
+                serialize8('O');
+                serialize8('K');
+                mixerConfiguration = i - '@'; // A..B..C.. index
+                writeParams();
+                systemReset(false);
+                break;
+            }
+            serialize8('N');
+            serialize8('G');
             break;
 
         case 'W':              //GUI write params to eeprom @ arduino

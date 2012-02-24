@@ -4,10 +4,8 @@
 // SCL  PB10
 // SDA  PB11
 
-#ifdef __gnuc__ // TODO check this
-#define DMB() asm volatile ("dmb":::"memory")
-#else
-#define DMB() __DMB()
+#ifdef __GNUC__ // TODO check this
+#define __DMB() asm volatile ("dmb":::"memory")
 #endif
 
 static I2C_TypeDef *I2Cx;
@@ -168,17 +166,17 @@ void i2c_ev_handler(void)
     } else if (SReg_1 & 0x0002) {       //we just sent the address - EV6 in ref manual
         //Read SR1,2 to clear ADDR
         volatile uint8_t a;
-        DMB(); // memory fence to control hardware
+        __DMB(); // memory fence to control hardware
         if (bytes == 1 && reading && subaddress_sent) { //we are receiving 1 byte - EV6_3
             I2C_AcknowledgeConfig(I2Cx, DISABLE);       //turn off ACK
-            DMB();
+            __DMB();
             a = I2Cx->SR2;      //clear ADDR after ACK is turned off
             I2C_GenerateSTOP(I2Cx, ENABLE);     //program the stop
             final_stop = 1;
             I2C_ITConfig(I2Cx, I2C_IT_BUF, ENABLE);     //allow us to have an EV7
         } else {                //EV6 and EV6_1
             a = I2Cx->SR2;      //clear the ADDR here
-            DMB();
+            __DMB();
             if (bytes == 2 && reading && subaddress_sent) {     //rx 2 bytes - EV6_1
                 I2C_AcknowledgeConfig(I2Cx, DISABLE);   //turn off ACK
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);        //disable TXE to allow the buffer to fill

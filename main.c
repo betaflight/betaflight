@@ -6,6 +6,7 @@ int main(void)
     uint8_t i;
     
 #if 0
+    // using this to write asm for bootloader :)
     RCC->APB2ENR |= RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO; // GPIOB + AFIO
     AFIO->MAPR &= 0xF0FFFFFF;
     AFIO->MAPR = 0x02000000;
@@ -22,8 +23,9 @@ int main(void)
     featureSet(FEATURE_VBAT | FEATURE_PPM);
     sensorsSet(SENSOR_ACC | SENSOR_BARO | SENSOR_MAG);
 
-    pwmInit(feature(FEATURE_PPM), false);
-    
+    mixerInit(); // this will configure FEATURE_SERVO depending on mixer type
+    pwmInit(feature(FEATURE_PPM), feature(FEATURE_SERVO), feature(FEATURE_DIGITAL_SERVO));
+
     LED1_ON;
     LED0_OFF;
     for (i = 0; i < 10; i++) {

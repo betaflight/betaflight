@@ -144,7 +144,7 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
     }
 }
 
-void pwmInit(bool usePPM, bool useServos)
+void pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
 {
     uint8_t i;
     GPIO_InitTypeDef GPIO_InitStructure = { 0, };
@@ -268,8 +268,11 @@ void pwmInit(bool usePPM, bool useServos)
 
     // Output timers
     if (useServos) {
-        // 50Hz period on ch1, 2 for servo
-        TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD_SERVO_ANALOG - 1;
+        // 50Hz/200Hz period on ch1, 2 for servo
+        if (useDigitalServos)
+            TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD_SERVO_DIGITAL - 1;
+        else
+            TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD_SERVO_ANALOG - 1;
         TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
         TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD - 1;
         TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
@@ -278,7 +281,7 @@ void pwmInit(bool usePPM, bool useServos)
         TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
         TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
     }
-    
+
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
