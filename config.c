@@ -60,16 +60,9 @@ void readEEPROM(void)
     for (i = 0; i < 7; i++)
         lookupRX[i] = (2500 + rcExpo8 * (i * i - 25)) * i * (int32_t) rcRate8 / 1250;
         
-    switch (mixerConfiguration) {
-        case MULTITYPE_FLYING_WING:
-            wing_left_mid = constrain(wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
-            wing_right_mid = constrain(wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
-            break;
-            
-        case MULTITYPE_TRI:
-            tri_yaw_middle = constrain(tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
-            break;
-    }
+    wing_left_mid = constrain(wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
+    wing_right_mid = constrain(wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
+    tri_yaw_middle = constrain(tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
 }
 
 void writeParams(void)
@@ -155,16 +148,9 @@ void checkFirstTime(void)
     accTrim[1] = 0;
     powerTrigger1 = 0;
 
-    switch (mixerConfiguration) {
-        case MULTITYPE_FLYING_WING:
-            wing_left_mid = WING_LEFT_MID;
-            wing_right_mid = WING_RIGHT_MID;
-            break;
-            
-        case MULTITYPE_TRI:
-            tri_yaw_middle = TRI_YAW_MIDDLE;
-            break;
-    }
+    wing_left_mid = WING_LEFT_MID;
+    wing_right_mid = WING_RIGHT_MID;
+    tri_yaw_middle = TRI_YAW_MIDDLE;
 
     writeParams();
 }
