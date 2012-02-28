@@ -249,3 +249,4 @@ void sensorsClear(uint32_t mask);
 bool feature(uint32_t mask);
 void featureSet(uint32_t mask);
 void featureClear(uint32_t mask);
+void featureClearAll(void);

@@ -19,8 +19,7 @@ int main(void)
     readEEPROM();
     checkFirstTime();
 
-    // configure features (TODO: pull them from eeprom)
-    featureSet(FEATURE_VBAT | FEATURE_PPM);
+    // We have these sensors
     sensorsSet(SENSOR_ACC | SENSOR_BARO | SENSOR_MAG);
 
     mixerInit(); // this will configure FEATURE_SERVO depending on mixer type

@@ -4,10 +4,6 @@
 // SCL  PB10
 // SDA  PB11
 
-#ifdef __GNUC__ // TODO check this
-#define __DMB() asm volatile ("dmb":::"memory")
-#endif
-
 static I2C_TypeDef *I2Cx;
 static void i2c_er_handler(void);
 static void i2c_ev_handler(void);

@@ -224,10 +224,6 @@ void bmp085_start_ut(void)
     i2cWrite(p_bmp085->dev_addr, BMP085_CTRL_MEAS_REG, BMP085_T_MEASURE);
 }
 
-#ifdef __GNUC__
-    #define __nop() asm("mov r0,r0");
-#endif
-
 uint16_t bmp085_get_ut(void)
 {
     uint16_t ut;
@@ -236,7 +232,7 @@ uint16_t bmp085_get_ut(void)
 
     // wait in case of cockup
     while (!convDone && timeout-- > 0) {
-        __nop();
+        __NOP();
     }
 
     i2cRead(p_bmp085->dev_addr, BMP085_ADC_OUT_MSB_REG, 2, data);
@@ -265,7 +261,7 @@ uint32_t bmp085_get_up(void)
     
     // wait in case of cockup
     while (!convDone && timeout-- > 0) {
-        __nop();
+        __NOP();
     }
     
    	i2cRead(p_bmp085->dev_addr, BMP085_ADC_OUT_MSB_REG, 3, data);

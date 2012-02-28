@@ -5,8 +5,8 @@
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
 #define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * 63)    // use the last KB for storage
 
-static uint32_t enabledSensors = 0;
-static uint32_t enabledFeatures = 0;
+uint32_t enabledSensors = 0;
+uint32_t enabledFeatures = 0;
 
 static uint8_t checkNewConf = 152;
 
@@ -111,6 +111,7 @@ void checkFirstTime(void)
 
     // Default settings
     mixerConfiguration = MULTITYPE_QUADX;
+    featureClearAll();
     featureSet(FEATURE_VBAT | FEATURE_PPM);
 
     P8[ROLL] = 40;
@@ -183,4 +184,9 @@ void featureSet(uint32_t mask)
 void featureClear(uint32_t mask)
 {
     enabledFeatures &= ~(mask);
+}
+
+void featureClearAll()
+{
+    enabledFeatures = 0;
 }
