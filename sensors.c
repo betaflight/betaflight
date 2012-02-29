@@ -207,8 +207,12 @@ static void Mag_getRawADC(void)
     
     // Hearty FUCK-YOU goes to all teh breakout sensor faggots who make a new orientation for each shitty board they make
     // sensor order: X Z Y
-    magADC[ROLL] = rawADC[0]; // X or negative? who knows mag stuff in multiwii is broken hardcore
-    magADC[PITCH] = rawADC[2]; // Y
+//    magADC[ROLL] = rawADC[0]; // X or negative? who knows mag stuff in multiwii is broken hardcore
+//    magADC[PITCH] = rawADC[2]; // Y
+
+    // no way? is this finally the proper orientation??
+    magADC[ROLL] = -rawADC[2]; // X or negative? who knows mag stuff in multiwii is broken hardcore
+    magADC[PITCH] = rawADC[0]; // Y
     magADC[YAW] = rawADC[1]; // Z
 }
 

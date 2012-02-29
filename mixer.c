@@ -105,6 +105,7 @@ void mixTable(void)
     }
 
     switch (mixerConfiguration) {
+
         case MULTITYPE_BI:
             motor[0] = PIDMIX(+1, 0, 0);        //LEFT
             motor[1] = PIDMIX(-1, 0, 0);        //RIGHT        
