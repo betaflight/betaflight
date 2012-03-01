@@ -173,7 +173,7 @@ static void getEstimatedAttitude(void)
     static uint32_t previousT;
     uint32_t currentT = micros();
     float scale, deltaGyroAngle[3];
-
+    
     scale = (currentT - previousT) * GYRO_SCALE;
     previousT = currentT;
 
@@ -237,8 +237,53 @@ static void getEstimatedAttitude(void)
     angle[PITCH] = _atan2f(EstG.V.Y, EstG.V.Z);
 
     if (sensors(SENSOR_MAG)) {
+#define GHETTO    
+    
+#ifdef GHETTO
         // Attitude of the cross product vector GxM
         heading = _atan2f(EstG.V.X * EstM.V.Z - EstG.V.Z * EstM.V.X, EstG.V.Z * EstM.V.Y - EstG.V.Y * EstM.V.Z) / 10;
+#else
+        static float Cos_Roll, Sin_Roll, Cos_Pitch, Sin_Pitch;
+    	static float Mx1, My1, Mz1, xh, yh;
+    	static float rollRadians;
+      	static float pitchRadians;
+
+        // proper tilt compensation
+		// Get pitch and roll in radians
+		rollRadians	= angle[ROLL] / 1800.0 * M_PI;
+		pitchRadians = angle[PITCH] /1800.0 * M_PI;
+
+		//rollRadians	= _atan2f(accADC[ROLL], accADC[YAW])/1800.0*M_PI;
+		//pitchRadians = _atan2f(accADC[PITCH], accADC[YAW])/1800.0*M_PI;
+
+		// Mx2 and My2 are the corrected values
+		// Mx1, My1 and Mz1 are the floating point values from the mag sensor
+		//Mx1 = magADC[ROLL];
+		//My1 = magADC[PITCH];
+		//Mz1 = magADC[YAW];
+
+		Mx1 = EstM.V.X;
+		My1 = EstM.V.Y;
+		Mz1 = EstM.V.Z;
+
+		// These are used more than once, so pre-calculate for efficiency
+		Cos_Roll = cosf(rollRadians);
+		Cos_Pitch = cosf(pitchRadians);
+		Sin_Roll = sinf(rollRadians);
+		Sin_Pitch = sinf(pitchRadians);
+
+		// The tilt-compensation equations are as follows
+		//X_h=X*cos(pitch)+Y*sin(roll)sin(pitch)-Z*cos(roll)*sin(pitch) 
+		//Y_h=Y*cos(roll)+Z*sin(roll)
+		xh = (Mx1 * Cos_Pitch) + (My1 * Sin_Roll * Sin_Pitch) - (Mz1 * Sin_Pitch * Cos_Roll); // Correct x axis
+		yh = (My1 * Cos_Roll) + (Mz1 * Sin_Roll);	// Correct y axis
+
+		// Tilt-adjusted heading in degrees
+	    heading = _atan2f(yh, xh) / 10; 
+
+
+
+#endif        
     }
 }
 
