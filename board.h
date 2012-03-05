@@ -1,8 +1,10 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
@@ -30,6 +32,10 @@ typedef enum {
     FEATURE_VBAT = 1 << 1,
     FEATURE_SERVO = 1 << 2,
     FEATURE_DIGITAL_SERVO = 1 << 3,
+    FEATURE_MOTOR_STOP = 1 << 4,
+    FEATURE_SERVO_TILT = 1 << 5,
+    FEATURE_CAMTRIG = 1 << 6,
+    FEATURE_GYRO_SMOOTHING = 1 << 7,
 } AvailableFeatures;
 
 #define digitalHi(p, i)     { p->BSRR = i; }

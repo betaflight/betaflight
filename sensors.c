@@ -6,7 +6,6 @@ uint16_t calibratingA = 0;       // the calibration is done is the main loop. Ca
 uint16_t calibratingG = 0;
 uint8_t calibratingM = 0;
 uint16_t acc_1G = 256;         // this is the 1G measured acceleration
-int16_t accTrim[2] = { 0, 0 };
 int16_t heading, magHold;
 
 void sensorsAutodetect(void)
@@ -33,15 +32,15 @@ static void ACC_Common(void)
             a[axis] += accADC[axis];
             // Clear global variables for next reading
             accADC[axis] = 0;
-            accZero[axis] = 0;
+            cfg.accZero[axis] = 0;
         }
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
         if (calibratingA == 1) {
-            accZero[ROLL] = a[ROLL] / 400;
-            accZero[PITCH] = a[PITCH] / 400;
-            accZero[YAW] = a[YAW] / 400 - acc_1G;       // for nunchuk 200=1G
-            accTrim[ROLL] = 0;
-            accTrim[PITCH] = 0;
+            cfg.accZero[ROLL] = a[ROLL] / 400;
+            cfg.accZero[PITCH] = a[PITCH] / 400;
+            cfg.accZero[YAW] = a[YAW] / 400 - acc_1G;       // for nunchuk 200=1G
+            cfg.accTrim[ROLL] = 0;
+            cfg.accTrim[PITCH] = 0;
             writeParams();      // write accZero in EEPROM
         }
         calibratingA--;
@@ -94,9 +93,9 @@ static void ACC_Common(void)
         writeParams();          // write accZero in EEPROM
     }
 #endif
-    accADC[ROLL] -= accZero[ROLL];
-    accADC[PITCH] -= accZero[PITCH];
-    accADC[YAW] -= accZero[YAW];
+    accADC[ROLL] -= cfg.accZero[ROLL];
+    accADC[PITCH] -= cfg.accZero[PITCH];
+    accADC[YAW] -= cfg.accZero[YAW];
 }
 
 
@@ -118,6 +117,8 @@ static int16_t baroTemp = 0;
 
 void Baro_update(void)
 {
+    int32_t pressure;
+    
     if (currentTime < baroDeadline)
         return;
 
@@ -155,6 +156,15 @@ static void GYRO_Common(void)
     static int16_t previousGyroADC[3] = { 0, 0, 0 };
     static int32_t g[3];
     uint8_t axis;
+    
+#if defined MMGYRO       
+    // Moving Average Gyros by Magnetron1
+    //---------------------------------------------------
+    static int16_t mediaMobileGyroADC[3][MMGYROVECTORLENGTH];
+    static int32_t mediaMobileGyroADCSum[3];
+    static uint8_t mediaMobileGyroIDX;
+    //---------------------------------------------------
+#endif
 
     if (calibratingG > 0) {
         for (axis = 0; axis < 3; axis++) {
@@ -174,12 +184,25 @@ static void GYRO_Common(void)
         calibratingG--;
     }
 
+#ifdef MMGYRO       
+    mediaMobileGyroIDX = ++mediaMobileGyroIDX % MMGYROVECTORLENGTH;
+    for (axis = 0; axis < 3; axis++) {
+        gyroADC[axis]  -= gyroZero[axis];
+        mediaMobileGyroADCSum[axis] -= mediaMobileGyroADC[axis][mediaMobileGyroIDX];
+        //anti gyro glitch, limit the variation between two consecutive readings
+        mediaMobileGyroADC[axis][mediaMobileGyroIDX] = constrain(gyroADC[axis], previousGyroADC[axis] - 800, previousGyroADC[axis] + 800);
+        mediaMobileGyroADCSum[axis] += mediaMobileGyroADC[axis][mediaMobileGyroIDX];
+        gyroADC[axis] = mediaMobileGyroADCSum[axis] / MMGYROVECTORLENGTH;
+        previousGyroADC[axis] = gyroADC[axis];
+    }
+#else
     for (axis = 0; axis < 3; axis++) {
         gyroADC[axis] -= gyroZero[axis];
         //anti gyro glitch, limit the variation between two consecutive readings
         gyroADC[axis] = constrain(gyroADC[axis], previousGyroADC[axis] - 800, previousGyroADC[axis] + 800);
         previousGyroADC[axis] = gyroADC[axis];
     }
+#endif
 }
 
 void Gyro_getADC(void)
@@ -204,14 +227,9 @@ static void Mag_getRawADC(void)
 {
     static int16_t rawADC[3];
     hmc5883lRead(rawADC);
-    
-    // Hearty FUCK-YOU goes to all teh breakout sensor faggots who make a new orientation for each shitty board they make
-    // sensor order: X Z Y
-//    magADC[ROLL] = rawADC[0]; // X or negative? who knows mag stuff in multiwii is broken hardcore
-//    magADC[PITCH] = rawADC[2]; // Y
 
     // no way? is this finally the proper orientation??
-    magADC[ROLL] = -rawADC[2]; // X or negative? who knows mag stuff in multiwii is broken hardcore
+    magADC[ROLL] = -rawADC[2]; // X
     magADC[PITCH] = rawADC[0]; // Y
     magADC[YAW] = rawADC[1]; // Z
 }
@@ -227,7 +245,7 @@ void Mag_init(void)
     magCal[ROLL] = 1000.0 / abs(magADC[ROLL]);
     magCal[PITCH] = 1000.0 / abs(magADC[PITCH]);
     magCal[YAW] = 1000.0 / abs(magADC[YAW]);
-    
+
     hmc5883lFinishCal();
     magInit = 1;
 }
@@ -249,7 +267,7 @@ void Mag_getADC(void)
     if (calibratingM == 1) {
         tCal = t;
         for (axis = 0; axis < 3; axis++) {
-            magZero[axis] = 0;
+            cfg.magZero[axis] = 0;
             magZeroTempMin[axis] = 0;
             magZeroTempMax[axis] = 0;
         }
@@ -259,9 +277,9 @@ void Mag_getADC(void)
     magADC[PITCH] = magADC[PITCH] * magCal[PITCH];
     magADC[YAW] = magADC[YAW] * magCal[YAW];
     if (magInit) {              // we apply offset only once mag calibration is done
-        magADC[ROLL] -= magZero[ROLL];
-        magADC[PITCH] -= magZero[PITCH];
-        magADC[YAW] -= magZero[YAW];
+        magADC[ROLL] -= cfg.magZero[ROLL];
+        magADC[PITCH] -= cfg.magZero[PITCH];
+        magADC[YAW] -= cfg.magZero[YAW];
     }
 
     if (tCal != 0) {
@@ -276,7 +294,7 @@ void Mag_getADC(void)
         } else {
             tCal = 0;
             for (axis = 0; axis < 3; axis++)
-                magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2;
+                cfg.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2;
             writeParams();
         }
     }

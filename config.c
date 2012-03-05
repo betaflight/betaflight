@@ -5,93 +5,45 @@
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
 #define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * 63)    // use the last KB for storage
 
-uint32_t enabledSensors = 0;
-uint32_t enabledFeatures = 0;
+config_t cfg;
 
-static uint8_t checkNewConf = 152;
-
-typedef struct eep_entry_t {
-    void *var;
-    uint8_t size;
-} eep_entry_t;
-
-// ************************************************************************************************************
-// EEPROM Layout definition
-// ************************************************************************************************************
-volatile eep_entry_t eep_entry[] = {
-    {&checkNewConf, sizeof(checkNewConf)}
-    , {&enabledFeatures, sizeof(enabledFeatures)}
-    , {&mixerConfiguration, sizeof(mixerConfiguration)}
-    , {&P8, sizeof(P8)}
-    , {&I8, sizeof(I8)}
-    , {&D8, sizeof(D8)}
-    , {&rcRate8, sizeof(rcRate8)}
-    , {&rcExpo8, sizeof(rcExpo8)}
-    , {&rollPitchRate, sizeof(rollPitchRate)}
-    , {&yawRate, sizeof(yawRate)}
-    , {&dynThrPID, sizeof(dynThrPID)}
-    , {&accZero, sizeof(accZero)}
-    , {&magZero, sizeof(magZero)}
-    , {&accTrim, sizeof(accTrim)}
-    , {&activate1, sizeof(activate1)}
-    , {&activate2, sizeof(activate2)}
-    , {&powerTrigger1, sizeof(powerTrigger1)}
-    , {&wing_left_mid, sizeof(wing_left_mid)}
-    , {&wing_right_mid, sizeof(wing_right_mid)}
-    , {&tri_yaw_middle, sizeof(tri_yaw_middle)}
-};
-
-#define EEBLOCK_SIZE sizeof(eep_entry) / sizeof(eep_entry_t)
+static uint32_t enabledSensors = 0;
+static uint8_t checkNewConf = 2;
 
 void readEEPROM(void)
 {
-    uint8_t i, _address = eep_entry[0].size;
+    uint8_t i;
 
     // Read flash
-    for (i = 1; i < EEBLOCK_SIZE; i++) {
-        memcpy(eep_entry[i].var, (char *)FLASH_WRITE_ADDR + _address, eep_entry[i].size);
-        _address += eep_entry[i].size;
-    }
+    memcpy(&cfg, (char *)FLASH_WRITE_ADDR, sizeof(config_t));
 
 #if defined(POWERMETER)
-    pAlarm = (uint32_t) powerTrigger1 *(uint32_t) PLEVELSCALE *(uint32_t) PLEVELDIV;    // need to cast before multiplying
+    pAlarm = (uint32_t) cfg.powerTrigger1 *(uint32_t) PLEVELSCALE *(uint32_t) PLEVELDIV;    // need to cast before multiplying
 #endif
 
     for (i = 0; i < 7; i++)
-        lookupRX[i] = (2500 + rcExpo8 * (i * i - 25)) * i * (int32_t) rcRate8 / 1250;
+        lookupRX[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t) cfg.rcRate8 / 1250;
         
-    wing_left_mid = constrain(wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
-    wing_right_mid = constrain(wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
-    tri_yaw_middle = constrain(tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+    cfg.wing_left_mid = constrain(cfg.wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
+    cfg.wing_right_mid = constrain(cfg.wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
+    cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
 }
 
 void writeParams(void)
 {
-    FLASH_Status FLASHStatus;
-    uint32_t address;
-    uint8_t conf[256];
-    uint8_t *p = conf;
-    uint8_t i;
+    FLASH_Status status;
+    uint32_t i;
     
-    // TODO this is garbage. do it properly later using FLASH_ProgramHalfWord without caching shit.
-    for (i = 0; i < EEBLOCK_SIZE; i++) {
-        memcpy(p, eep_entry[i].var, eep_entry[i].size);
-        p += eep_entry[i].size;
-    }
-
-    p = conf;
-
     FLASH_Unlock();
 
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
-
-    if ((FLASHStatus = FLASH_ErasePage(FLASH_WRITE_ADDR)) == FLASH_COMPLETE) {
-    	address = 0;
-    	while (FLASHStatus == FLASH_COMPLETE && address < sizeof(eep_entry)) {
-    	    if ((FLASHStatus = FLASH_ProgramWord(FLASH_WRITE_ADDR + address, *(uint32_t *)((char *)p + address))) != FLASH_COMPLETE)
-    		    break;
-    	    address += 4;
-    	}
+    
+    if (FLASH_ErasePage(FLASH_WRITE_ADDR) == FLASH_COMPLETE) {
+        for (i = 0; i < sizeof(config_t); i += 4) {
+            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *)((char *)&cfg + i));
+            if (status != FLASH_COMPLETE)
+                break; // TODO: fail
+        }
     }
 
     FLASH_Lock();
@@ -103,55 +55,69 @@ void writeParams(void)
 void checkFirstTime(void)
 {
     uint8_t test_val, i;
-    
+
     test_val = *(uint8_t *)FLASH_WRITE_ADDR;
 
     if (test_val == checkNewConf)
         return;
 
     // Default settings
-    mixerConfiguration = MULTITYPE_QUADX;
+    cfg.version = checkNewConf;
+    cfg.mixerConfiguration = MULTITYPE_QUADX;
     featureClearAll();
     featureSet(FEATURE_VBAT | FEATURE_PPM);
 
-    P8[ROLL] = 40;
-    I8[ROLL] = 30;
-    D8[ROLL] = 23;
-    P8[PITCH] = 40;
-    I8[PITCH] = 30;
-    D8[PITCH] = 23;
-    P8[YAW] = 85;
-    I8[YAW] = 0;
-    D8[YAW] = 0;
-    P8[PIDALT] = 16;
-    I8[PIDALT] = 15;
-    D8[PIDALT] = 7;
-    P8[PIDGPS] = 10;
-    I8[PIDGPS] = 0;
-    D8[PIDGPS] = 0;
-    P8[PIDVEL] = 0;
-    I8[PIDVEL] = 0;
-    D8[PIDVEL] = 0;
-    P8[PIDLEVEL] = 90;
-    I8[PIDLEVEL] = 45;
-    D8[PIDLEVEL] = 100;
-    P8[PIDMAG] = 40;
-    rcRate8 = 45;               // = 0.9 in GUI
-    rcExpo8 = 65;
-    rollPitchRate = 0;
-    yawRate = 0;
-    dynThrPID = 0;
+    cfg.P8[ROLL] = 40;
+    cfg.I8[ROLL] = 30;
+    cfg.D8[ROLL] = 23;
+    cfg.P8[PITCH] = 40;
+    cfg.I8[PITCH] = 30;
+    cfg.D8[PITCH] = 23;
+    cfg.P8[YAW] = 85;
+    cfg.I8[YAW] = 0;
+    cfg.D8[YAW] = 0;
+    cfg.P8[PIDALT] = 16;
+    cfg.I8[PIDALT] = 15;
+    cfg.D8[PIDALT] = 7;
+    cfg.P8[PIDGPS] = 50;
+    cfg.I8[PIDGPS] = 0;
+    cfg.D8[PIDGPS] = 15;
+    cfg.P8[PIDVEL] = 0;
+    cfg.I8[PIDVEL] = 0;
+    cfg.D8[PIDVEL] = 0;
+    cfg.P8[PIDLEVEL] = 90;
+    cfg.I8[PIDLEVEL] = 45;
+    cfg.D8[PIDLEVEL] = 100;
+    cfg.P8[PIDMAG] = 40;
+    cfg.rcRate8 = 45;               // = 0.9 in GUI
+    cfg.rcExpo8 = 65;
+    cfg.rollPitchRate = 0;
+    cfg.yawRate = 0;
+    cfg.dynThrPID = 0;
     for (i = 0; i < CHECKBOXITEMS; i++) {
-        activate1[i] = 0;
-        activate2[i] = 0;
+        cfg.activate1[i] = 0;
+        cfg.activate2[i] = 0;
     }
-    accTrim[0] = 0;
-    accTrim[1] = 0;
-    powerTrigger1 = 0;
+    cfg.accTrim[0] = 0;
+    cfg.accTrim[1] = 0;
+    cfg.gyro_smoothing_factor = 0x00141403; // default factors of 20, 20, 3 for R/P/Y
+    cfg.powerTrigger1 = 0;
+    
+    // Radio/ESC
+    cfg.midrc = 1500;
+    cfg.minthrottle = 1150;
+    cfg.maxthrottle = 1850;
+    cfg.mincommand = 1000;
 
-    wing_left_mid = WING_LEFT_MID;
-    wing_right_mid = WING_RIGHT_MID;
-    tri_yaw_middle = TRI_YAW_MIDDLE;
+    // servos
+    cfg.yaw_direction = 1;
+    cfg.wing_left_mid = 1500;
+    cfg.wing_right_mid = 1500;
+    cfg.tri_yaw_middle = 1500;
+    
+    // gimbal
+    cfg.tilt_pitch_prop = 10;
+    cfg.tilt_roll_prop = 10;
 
     writeParams();
 }
@@ -173,20 +139,20 @@ void sensorsClear(uint32_t mask)
 
 bool feature(uint32_t mask)
 {
-    return enabledFeatures & mask;
+    return cfg.enabledFeatures & mask;
 }
 
 void featureSet(uint32_t mask)
 {
-    enabledFeatures |= mask;
+    cfg.enabledFeatures |= mask;
 }
 
 void featureClear(uint32_t mask)
 {
-    enabledFeatures &= ~(mask);
+    cfg.enabledFeatures &= ~(mask);
 }
 
 void featureClearAll()
 {
-    enabledFeatures = 0;
+    cfg.enabledFeatures = 0;
 }

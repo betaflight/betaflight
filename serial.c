@@ -1,6 +1,9 @@
 #include "board.h"
 #include "mw.h"
 
+// signal that we're in cli mode
+uint8_t cliMode = 0;
+
 void serialize16(int16_t a)
 {
     uartWrite(a);
@@ -19,11 +22,21 @@ void UartSendData()
 
 void serialCom(void)
 {
-    int16_t a;
     uint8_t i;
+    
+    // in cli mode, all uart stuff goes to here. enter cli mode by sending #
+    if (cliMode) {
+        cliProcess();
+        return;
+    }
 
     if (uartAvailable()) {
         switch (uartRead()) {
+        case '#':
+            uartPrint("\r\nEntering CLI Mode, type 'exit' to return\r\n");
+            cliMode = 1;
+            break;
+
 #ifdef BTSERIAL
         case 'K':              //receive RC data from Bluetooth Serial adapter as a remote
             rcData[THROTTLE] = (SerialRead(0) * 4) + 1000;
@@ -155,20 +168,21 @@ void serialCom(void)
             serialize16(i2cGetErrorCounter());
             for (i = 0; i < 2; i++)
                 serialize16(angle[i]);
-            serialize8(mixerConfiguration);
+            serialize8(cfg.mixerConfiguration);
             for (i = 0; i < PIDITEMS; i++) {
-                serialize8(P8[i]);
-                serialize8(I8[i]);
-                serialize8(D8[i]);
+                serialize8(cfg.P8[i]);
+                serialize8(cfg.I8[i]);
+                serialize8(cfg.D8[i]);
             }
-            serialize8(rcRate8);
-            serialize8(rcExpo8);
-            serialize8(rollPitchRate);
-            serialize8(yawRate);
-            serialize8(dynThrPID);
+            serialize8(cfg.rcRate8);
+            serialize8(cfg.rcExpo8);
+            serialize8(cfg.rollPitchRate);
+            serialize8(cfg.yawRate);
+            serialize8(cfg.dynThrPID);
             for (i = 0; i < CHECKBOXITEMS; i++) {
-                serialize8(activate1[i]);
-                serialize8(activate2[i]);
+                serialize8(cfg.activate1[i]);
+                serialize8(cfg.activate2[i] | (rcOptions[i] << 7)); // use highest bit to transport state in mwc
+
             }
             serialize16(GPS_distanceToHome);
             serialize16(GPS_directionToHome);
@@ -179,7 +193,7 @@ void serialCom(void)
             serialize16(intPowerTrigger1);
             serialize8(vbat);
             serialize16(BaroAlt / 10);      // 4 variables are here for general monitoring purpose
-            serialize16(0);                 // debug2
+            serialize16(debug2);            // debug2
             serialize16(debug3);            // debug3
             serialize16(debug4);            // debug4
             serialize8('M');
@@ -216,7 +230,7 @@ void serialCom(void)
             if (i > 64 && i < 64 + MULTITYPE_LAST) {
                 serialize8('O');
                 serialize8('K');
-                mixerConfiguration = i - '@'; // A..B..C.. index
+                cfg.mixerConfiguration = i - '@'; // A..B..C.. index
                 writeParams();
                 systemReset(false);
                 break;
@@ -228,21 +242,21 @@ void serialCom(void)
         case 'W':              //GUI write params to eeprom @ arduino
             // while (uartAvailable() < (7 + 3 * PIDITEMS + 2 * CHECKBOXITEMS)) { }
             for (i = 0; i < PIDITEMS; i++) {
-                P8[i] = uartReadPoll();
-                I8[i] = uartReadPoll();
-                D8[i] = uartReadPoll();
+                cfg.P8[i] = uartReadPoll();
+                cfg.I8[i] = uartReadPoll();
+                cfg.D8[i] = uartReadPoll();
             }
-            rcRate8 = uartReadPoll();
-            rcExpo8 = uartReadPoll();    //2
-            rollPitchRate = uartReadPoll();
-            yawRate = uartReadPoll();    //4
-            dynThrPID = uartReadPoll();  //5
+            cfg.rcRate8 = uartReadPoll();
+            cfg.rcExpo8 = uartReadPoll();    //2
+            cfg.rollPitchRate = uartReadPoll();
+            cfg.yawRate = uartReadPoll();    //4
+            cfg.dynThrPID = uartReadPoll();  //5
             for (i = 0; i < CHECKBOXITEMS; i++) {
-                activate1[i] = uartReadPoll();
-                activate2[i] = uartReadPoll();
+                cfg.activate1[i] = uartReadPoll();
+                cfg.activate2[i] = uartReadPoll();
             }
 #if defined(POWERMETER)
-            powerTrigger1 = (uartReadPoll() + 256 * uartReadPoll()) / PLEVELSCALE;        // we rely on writeParams() to compute corresponding pAlarm value
+            cfg.powerTrigger1 = (uartReadPoll() + 256 * uartReadPoll()) / PLEVELSCALE;        // we rely on writeParams() to compute corresponding pAlarm value
 #else
             uartReadPoll();
             uartReadPoll();      //7 so we unload the two bytes

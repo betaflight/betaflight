@@ -431,6 +431,11 @@
               <FileType>1</FileType>
               <FilePath>.\config.c</FilePath>
             </File>
+            <File>
+              <FileName>cli.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\cli.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -979,6 +984,11 @@
               <FileName>config.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\config.c</FilePath>
+            </File>
+            <File>
+              <FileName>cli.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\cli.c</FilePath>
             </File>
           </Files>
         </Group>

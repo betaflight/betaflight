@@ -5,21 +5,17 @@
 
 int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
 int16_t acc_25deg = 0;
-int32_t pressure = 0;
 int32_t  BaroAlt;
 int32_t  EstAlt;             // in cm
 int16_t  BaroPID = 0;
 int32_t  AltHold;
 int16_t  errorAltitudeI = 0;
-int32_t  EstVelocity;
 
 // **************
 // gyro+acc IMU
 // **************
 int16_t gyroData[3] = { 0, 0, 0 };
 int16_t gyroZero[3] = { 0, 0, 0 };
-int16_t accZero[3] = { 0, 0, 0 };
-int16_t magZero[3] = { 0, 0, 0 };
 int16_t angle[2] = { 0, 0 };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 int8_t smallAngle25 = 1;
 
@@ -70,8 +66,22 @@ void computeIMU(void)
         if (!sensors(SENSOR_ACC))
             accADC[axis] = 0;
     }
-    
-    if (mixerConfiguration == MULTITYPE_TRI) {
+
+    if (feature(FEATURE_GYRO_SMOOTHING)) {
+        static uint8_t Smoothing[3] = { 0, 0, 0 };
+        static int16_t gyroSmooth[3] = { 0, 0, 0 };
+        if (Smoothing[0] == 0) {
+            // initialize
+            Smoothing[ROLL] = (cfg.gyro_smoothing_factor >> 16) & 0xff;
+            Smoothing[PITCH] = (cfg.gyro_smoothing_factor >> 8) & 0xff;
+            Smoothing[YAW] = (cfg.gyro_smoothing_factor) & 0xff;
+        }
+        for (axis = 0; axis < 3; axis++) {
+            Smoothing[axis] = constrain(Smoothing[axis], 1, 100); // Avoid to divide with Zero
+            gyroData[axis] = (gyroSmooth[axis] * (Smoothing[axis] - 1) + gyroData[axis] + 1) / Smoothing[axis];
+            gyroSmooth[axis] = gyroData[axis];
+        }
+    } else if (cfg.mixerConfiguration == MULTITYPE_TRI) {
         gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW] + 1) / 3;
         gyroYawSmooth = gyroData[YAW];
     }
@@ -287,76 +297,53 @@ static void getEstimatedAttitude(void)
     }
 }
 
-float InvSqrt(float x)
-{
-    union {
-        int32_t i;
-        float f;
-    } conv;
-    conv.f = x;
-    conv.i = 0x5f3759df - (conv.i >> 1);
-    return 0.5f * conv.f * (3.0f - x * conv.f * conv.f);
-}
-
-int32_t isq(int32_t x)
-{
-    return x * x;
-}
-
 #define UPDATE_INTERVAL 25000   // 40hz update rate (20hz LPF on acc)
 #define INIT_DELAY      4000000 // 4 sec initialization delay
 #define BARO_TAB_SIZE   40
-#define Kp1 5.5f                // PI observer velocity gain
-#define Kp2 10.0f               // PI observer position gain
-#define Ki  0.01f               // PI observer integral gain (bias cancellation)
-#define dt  (UPDATE_INTERVAL / 1000000.0f)
 
 void getEstimatedAltitude(void)
 {
-    static uint8_t inited = 0;
+    uint8_t index;
     static uint32_t deadLine = INIT_DELAY;
     static int16_t BaroHistTab[BARO_TAB_SIZE];
-    static int8_t BaroHistIdx = 0;
+    static int8_t BaroHistIdx;
     int32_t BaroHigh, BaroLow;
     int32_t temp32;
+    int16_t last;
 
     if (currentTime < deadLine)
         return;
     deadLine = currentTime + UPDATE_INTERVAL;
 
-    if (!inited) {
-        inited = 1;
-        EstAlt = BaroAlt;
-    }
-
     //**** Alt. Set Point stabilization PID ****
     //calculate speed for D calculation
-    BaroHistTab[BaroHistIdx] = BaroAlt;  
-    BaroHigh = 0;
-    BaroLow = 0;
-    BaroPID = 0;
-    for (temp32 = 0; temp32 < BARO_TAB_SIZE / 2; temp32++) {
-        BaroHigh += BaroHistTab[(BaroHistIdx - temp32 + BARO_TAB_SIZE) % BARO_TAB_SIZE];  // sum last half samples
-        BaroLow += BaroHistTab[(BaroHistIdx + temp32 + BARO_TAB_SIZE) % BARO_TAB_SIZE];  // sum older samples
-    }
+    last = BaroHistTab[BaroHistIdx];
+    BaroHistTab[BaroHistIdx] = BaroAlt / 10;
+    BaroHigh += BaroHistTab[BaroHistIdx];
+    index = (BaroHistIdx + (BARO_TAB_SIZE / 2)) % BARO_TAB_SIZE;
+    BaroHigh -= BaroHistTab[index];
+    BaroLow  += BaroHistTab[index];
+    BaroLow  -= last;
     BaroHistIdx++;
     if (BaroHistIdx >= BARO_TAB_SIZE)
         BaroHistIdx = 0;
 
-    temp32 = D8[PIDALT] * (BaroHigh - BaroLow) / 400;
+    BaroPID = 0;
+    //D
+    temp32 = cfg.D8[PIDALT] * (BaroHigh - BaroLow) / 40;
     BaroPID -= temp32;
     
-    EstAlt = BaroHigh / (BARO_TAB_SIZE / 2);
+    EstAlt = BaroHigh * 10 / (BARO_TAB_SIZE / 2);
 
-    temp32 = constrain(AltHold - EstAlt, -1000, 1000);
+    temp32 = AltHold - EstAlt;
     if (abs(temp32) < 10 && BaroPID < 10)
         BaroPID = 0;  // remove small D parametr to reduce noise near zoro position
     // P
-    BaroPID += P8[PIDALT] * constrain(temp32, (-2) * P8[PIDALT], 2 * P8[PIDALT]) / 100;
+    BaroPID += cfg.P8[PIDALT] * constrain(temp32, (-2) * cfg.P8[PIDALT], 2 * cfg.P8[PIDALT]) / 100;
     BaroPID = constrain(BaroPID, -150, +150); // sum of P and D should be in range 150
     
     // I
-    errorAltitudeI += temp32 * I8[PIDALT] / 50;
+    errorAltitudeI += temp32 * cfg.I8[PIDALT] / 50;
     errorAltitudeI = constrain(errorAltitudeI, -30000, 30000);
     temp32 = errorAltitudeI / 500; // I in range +/-60
     BaroPID += temp32;

@@ -139,3 +139,9 @@ void uartWrite(uint8_t ch)
     if (!(DMA1_Channel4->CCR & 1))
 	    uartTxDMA();
 }
+
+void uartPrint(uint8_t *str)
+{
+    while (*str)
+	    uartWrite(*(str++));
+}
