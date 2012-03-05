@@ -77,7 +77,6 @@ void computeIMU(void)
             Smoothing[YAW] = (cfg.gyro_smoothing_factor) & 0xff;
         }
         for (axis = 0; axis < 3; axis++) {
-            Smoothing[axis] = constrain(Smoothing[axis], 1, 100); // Avoid to divide with Zero
             gyroData[axis] = (gyroSmooth[axis] * (Smoothing[axis] - 1) + gyroData[axis] + 1) / Smoothing[axis];
             gyroSmooth[axis] = gyroData[axis];
         }

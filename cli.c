@@ -5,6 +5,7 @@
 extern uint8_t cliMode;
 static void cliExit(char *cmdline);
 static void cliHelp(char *cmdline);
+static void cliRMode(char *cmdline);
 static void cliVersion(char *cmdline);
 
 // buffer
@@ -21,6 +22,7 @@ typedef struct {
 const cliCmd cmdTable[] = {
     { "exit", "", cliExit },
     { "help", "", cliHelp },
+    { "rmode", "pwm / ppm", cliRMode },
     { "version", "", cliVersion },
 };
 #define CMD_COUNT (sizeof cmdTable / sizeof cmdTable[0])
@@ -60,6 +62,20 @@ static void cliHelp(char *cmdline)
     }
 }
 
+static void cliRMode(char *cmdline)
+{
+    if (strncasecmp(cmdline, "pwm", 3) == 0) {
+        uartPrint("PWM Mode");
+        featureClear(FEATURE_PPM);
+    } else {
+        uartPrint("PPM Mode");
+        featureSet(FEATURE_PPM);
+    }
+    
+    writeParams();
+    systemReset(false);
+}
+
 static void cliVersion(char *cmdline)
 {
     uartPrint("Afro32 CLI version 2.0-pre1");
@@ -88,7 +104,7 @@ void cliProcess(void)
             
             cmd = bsearch(&target, cmdTable, CMD_COUNT, sizeof cmdTable[0], cliCompare);
             if (cmd)
-                cmd->func(cliBuffer + strlen(cmd->name));
+                cmd->func(cliBuffer + strlen(cmd->name) + 1);
             else
                 uartPrint("ERR: Unknown command, try 'HELP'");
 
