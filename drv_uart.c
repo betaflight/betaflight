@@ -140,7 +140,7 @@ void uartWrite(uint8_t ch)
 	    uartTxDMA();
 }
 
-void uartPrint(uint8_t *str)
+void uartPrint(char *str)
 {
     while (*str)
 	    uartWrite(*(str++));

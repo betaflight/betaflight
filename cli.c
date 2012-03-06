@@ -55,9 +55,9 @@ static void cliHelp(char *cmdline)
     uartPrint("Available commands:\r\n");    
 
     for (i = 0; i < CMD_COUNT; i++) {
-    	uartPrint((uint8_t *)cmdTable[i].name);
+    	uartPrint(cmdTable[i].name);
     	uartWrite(' ');
-    	uartPrint((uint8_t *)cmdTable[i].param);
+    	uartPrint(cmdTable[i].param);
     	uartPrint("\r\n");
     }
 }
@@ -117,10 +117,10 @@ void cliProcess(void)
             if (bufferIndex > 1) {
         		cliBuffer[bufferIndex - 2] = 0;
         		uartPrint("\r# ");
-        		uartPrint((uint8_t *)cliBuffer);
+        		uartPrint(cliBuffer);
         		uartWrite(' ');
         		uartPrint("\r# ");
-        		uartPrint((uint8_t *)cliBuffer);
+        		uartPrint(cliBuffer);
         		bufferIndex -= 2;
             }
         } else if (c < 32 || c > 126) {

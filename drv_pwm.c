@@ -39,7 +39,7 @@ static struct PWM_State {
     uint16_t rise;
     uint16_t fall;
     uint16_t capture;
-} Inputs[8] = { 0, };
+} Inputs[8] = { { 0, } };
 
 static TIM_ICInitTypeDef  TIM_ICInitStructure = { 0, };
 static bool usePPMFlag = false;

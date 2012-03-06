@@ -82,7 +82,7 @@ typedef struct  {
 #define SMD500_PARAM_MH     -7357        //calibration parameter
 #define SMD500_PARAM_MI      3791        //calibration parameter
 
-static bmp085_t bmp085 = { 0, };
+static bmp085_t bmp085 = { { 0, } };
 static bmp085_t *p_bmp085 = &bmp085;                      /**< pointer to SMD500 / BMP085 device area */
 static bool bmp085InitDone = false;
 

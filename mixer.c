@@ -94,7 +94,7 @@ void writeAllMotors(int16_t mc)
 void mixTable(void)
 {
     int16_t maxMotor;
-    uint8_t i, axis;
+    uint8_t i;
     static uint8_t camCycle = 0;
     static uint8_t camState = 0;
     static uint32_t camTime = 0;
