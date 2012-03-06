@@ -387,54 +387,54 @@
           <GroupName>App</GroupName>
           <Files>
             <File>
-              <FileName>main.c</FileName>
+              <FileName>cli.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\main.c</FilePath>
-            </File>
-            <File>
-              <FileName>board.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\board.h</FilePath>
-            </File>
-            <File>
-              <FileName>imu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\imu.c</FilePath>
-            </File>
-            <File>
-              <FileName>mw.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\mw.c</FilePath>
-            </File>
-            <File>
-              <FileName>mw.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\mw.h</FilePath>
-            </File>
-            <File>
-              <FileName>sensors.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\sensors.c</FilePath>
-            </File>
-            <File>
-              <FileName>mixer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\mixer.c</FilePath>
-            </File>
-            <File>
-              <FileName>serial.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\serial.c</FilePath>
+              <FilePath>.\src\cli.c</FilePath>
             </File>
             <File>
               <FileName>config.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\config.c</FilePath>
+              <FilePath>.\src\config.c</FilePath>
             </File>
             <File>
-              <FileName>cli.c</FileName>
+              <FileName>imu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\cli.c</FilePath>
+              <FilePath>.\src\imu.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>mixer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\mixer.c</FilePath>
+            </File>
+            <File>
+              <FileName>mw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\mw.c</FilePath>
+            </File>
+            <File>
+              <FileName>sensors.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sensors.c</FilePath>
+            </File>
+            <File>
+              <FileName>serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\serial.c</FilePath>
+            </File>
+            <File>
+              <FileName>board.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\board.h</FilePath>
+            </File>
+            <File>
+              <FileName>mw.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\mw.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -442,49 +442,49 @@
           <GroupName>Drivers</GroupName>
           <Files>
             <File>
-              <FileName>drv_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_i2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_pwm.c</FilePath>
-            </File>
-            <File>
               <FileName>drv_adc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drv_adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_bmp085.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_bmp085.c</FilePath>
+              <FilePath>.\src\drv_adc.c</FilePath>
             </File>
             <File>
               <FileName>drv_adxl345.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drv_adxl345.c</FilePath>
+              <FilePath>.\src\drv_adxl345.c</FilePath>
             </File>
             <File>
-              <FileName>drv_mpu3050.c</FileName>
+              <FileName>drv_bmp085.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drv_mpu3050.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_system.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_system.c</FilePath>
+              <FilePath>.\src\drv_bmp085.c</FilePath>
             </File>
             <File>
               <FileName>drv_hmc5883l.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drv_hmc5883l.c</FilePath>
+              <FilePath>.\src\drv_hmc5883l.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_mpu3050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_mpu3050.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_system.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_system.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_uart.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -554,7 +554,7 @@
             <File>
               <FileName>startup_stm32f10x_md.s</FileName>
               <FileType>2</FileType>
-              <FilePath>.\startup_stm32f10x_md.s</FilePath>
+              <FilePath>.\src\baseflight_startups\startup_stm32f10x_md.s</FilePath>
             </File>
           </Files>
         </Group>
@@ -941,54 +941,54 @@
           <GroupName>App</GroupName>
           <Files>
             <File>
-              <FileName>main.c</FileName>
+              <FileName>cli.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\main.c</FilePath>
-            </File>
-            <File>
-              <FileName>board.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\board.h</FilePath>
-            </File>
-            <File>
-              <FileName>imu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\imu.c</FilePath>
-            </File>
-            <File>
-              <FileName>mw.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\mw.c</FilePath>
-            </File>
-            <File>
-              <FileName>mw.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\mw.h</FilePath>
-            </File>
-            <File>
-              <FileName>sensors.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\sensors.c</FilePath>
-            </File>
-            <File>
-              <FileName>mixer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\mixer.c</FilePath>
-            </File>
-            <File>
-              <FileName>serial.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\serial.c</FilePath>
+              <FilePath>.\src\cli.c</FilePath>
             </File>
             <File>
               <FileName>config.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\config.c</FilePath>
+              <FilePath>.\src\config.c</FilePath>
             </File>
             <File>
-              <FileName>cli.c</FileName>
+              <FileName>imu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\cli.c</FilePath>
+              <FilePath>.\src\imu.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>mixer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\mixer.c</FilePath>
+            </File>
+            <File>
+              <FileName>mw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\mw.c</FilePath>
+            </File>
+            <File>
+              <FileName>sensors.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sensors.c</FilePath>
+            </File>
+            <File>
+              <FileName>serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\serial.c</FilePath>
+            </File>
+            <File>
+              <FileName>board.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\board.h</FilePath>
+            </File>
+            <File>
+              <FileName>mw.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\mw.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -996,49 +996,49 @@
           <GroupName>Drivers</GroupName>
           <Files>
             <File>
-              <FileName>drv_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_i2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_pwm.c</FilePath>
-            </File>
-            <File>
               <FileName>drv_adc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drv_adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_bmp085.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_bmp085.c</FilePath>
+              <FilePath>.\src\drv_adc.c</FilePath>
             </File>
             <File>
               <FileName>drv_adxl345.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drv_adxl345.c</FilePath>
+              <FilePath>.\src\drv_adxl345.c</FilePath>
             </File>
             <File>
-              <FileName>drv_mpu3050.c</FileName>
+              <FileName>drv_bmp085.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drv_mpu3050.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_system.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\drv_system.c</FilePath>
+              <FilePath>.\src\drv_bmp085.c</FilePath>
             </File>
             <File>
               <FileName>drv_hmc5883l.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drv_hmc5883l.c</FilePath>
+              <FilePath>.\src\drv_hmc5883l.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_mpu3050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_mpu3050.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_system.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_system.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_uart.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1108,7 +1108,7 @@
             <File>
               <FileName>startup_stm32f10x_md.s</FileName>
               <FileType>2</FileType>
-              <FilePath>.\startup_stm32f10x_md.s</FilePath>
+              <FilePath>.\src\baseflight_startups\startup_stm32f10x_md.s</FilePath>
             </File>
           </Files>
         </Group>
