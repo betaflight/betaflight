@@ -109,8 +109,8 @@ void mixTable(void)
         case MULTITYPE_BI:
             motor[0] = PIDMIX(+1, 0, 0);        //LEFT
             motor[1] = PIDMIX(-1, 0, 0);        //RIGHT        
-            servo[4] = constrain(1500 + cfg.yaw_direction * (axisPID[YAW] + axisPID[PITCH]), 1020, 2000);   //LEFT
-            servo[5] = constrain(1500 + cfg.yaw_direction * (axisPID[YAW] - axisPID[PITCH]), 1020, 2000);   //RIGHT
+            servo[4] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) + axisPID[PITCH], 1020, 2000);   //LEFT
+            servo[5] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) - axisPID[PITCH], 1020, 2000);   //RIGHT
             break;
     
         case MULTITYPE_TRI:
