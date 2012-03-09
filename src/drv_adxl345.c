@@ -49,21 +49,23 @@ void adxl345Init(void)
 #else
     // MWC defaults
     i2cWrite(ADXL345_ADDRESS, ADXL345_POWER_CTL, 1 << 3);        //  register: Power CTRL  -- value: Set measure bit 3 on
-    // i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, 0x0B);  //  register: DATA_FORMAT -- value: Set bits 3(full range) and 1 0 on (+/- 16g-range)
-    // i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, 0x09);  //  register: BW_RATE     -- value: rate=50hz, bw=20hz
+#if 1
+    i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, 0x0B);  //  register: DATA_FORMAT -- value: Set bits 3(full range) and 1 0 on (+/- 16g-range)
+    i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, 0x09);  //  register: BW_RATE     -- value: rate=50hz, bw=20hz
+#else
+    // testing    
     i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, (ADXL_RANGE_8G & 0x03) | ADXL_FULL_RES);  //  register: DATA_FORMAT -- value: Set bits 3(full range) and 1 0 on (+/- 16g-range)
     i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL_RATE_800);  //  register: BW_RATE     -- value: rate=50hz, bw=20hz
-
-
-#endif
+#endif   
+#endif /* FreeFlight */
 }
 
 void adxl345Read(int16_t *accelData)
 {
-    uint8_t buf[6];
+    static uint8_t buf[6];
     
     i2cRead(ADXL345_ADDRESS, ADXL345_DATA_OUT, 6, buf);
-    accelData[0] = buf[1] << 8 | buf[0];
-    accelData[1] = buf[3] << 8 | buf[2];
-    accelData[2] = buf[5] << 8 | buf[4];
+    accelData[0] = buf[0] + (buf[1] << 8);
+    accelData[1] = buf[2] + (buf[3] << 8);
+    accelData[2] = buf[4] + (buf[5] << 8);
 }
