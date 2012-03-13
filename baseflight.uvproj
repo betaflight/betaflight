@@ -486,6 +486,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_uart.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_ledring.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_ledring.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1039,6 +1044,11 @@
               <FileName>drv_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_ledring.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_ledring.c</FilePath>
             </File>
           </Files>
         </Group>

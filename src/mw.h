@@ -164,6 +164,7 @@ typedef struct config_t {
     uint8_t powerTrigger1;                  // trigger for alarm based on power consumption
     
     // Radio/ESC-related configuration
+    uint8_t deadband;                       // introduce a deadband around the stick center. Must be greater than zero
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
     uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000

@@ -15,6 +15,7 @@
 #include "drv_bmp085.h"
 #include "drv_hmc5883l.h"
 #include "drv_i2c.h"
+#include "drv_ledring.h"
 #include "drv_mpu3050.h"
 #include "drv_pwm.h"
 #include "drv_uart.h"
@@ -36,6 +37,7 @@ typedef enum {
     FEATURE_SERVO_TILT = 1 << 5,
     FEATURE_CAMTRIG = 1 << 6,
     FEATURE_GYRO_SMOOTHING = 1 << 7,
+    FEATURE_LED_RING = 1 << 8,
 } AvailableFeatures;
 
 #define digitalHi(p, i)     { p->BSRR = i; }

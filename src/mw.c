@@ -126,13 +126,13 @@ void annexCode(void)
 
     for (axis = 0; axis < 3; axis++) {
         uint16_t tmp = min(abs(rcData[axis] - cfg.midrc), 500);
-#if defined(DEADBAND)
-        if (tmp > DEADBAND) {
-            tmp -= DEADBAND;
-        } else {
-            tmp = 0;
+        if (cfg.deadband > 0) {
+            if (tmp > cfg.deadband) {
+                tmp -= cfg.deadband;
+            } else {
+                tmp = 0;
+            }
         }
-#endif
         if (axis != 2) {        //ROLL & PITCH
             uint16_t tmp2 = tmp / 100;
             rcCommand[axis] = lookupRX[tmp2] + (tmp - tmp2 * 100) * (lookupRX[tmp2 + 1] - lookupRX[tmp2]) / 100;

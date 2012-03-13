@@ -8,7 +8,7 @@
 config_t cfg;
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 2;
+static uint8_t checkNewConf = 3;
 
 void readEEPROM(void)
 {
@@ -65,7 +65,7 @@ void checkFirstTime(void)
     cfg.version = checkNewConf;
     cfg.mixerConfiguration = MULTITYPE_QUADX;
     featureClearAll();
-    featureSet(FEATURE_VBAT | FEATURE_PPM);
+    featureSet(FEATURE_VBAT); // | FEATURE_PPM); // sadly, this is for hackers only
 
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;
@@ -102,8 +102,9 @@ void checkFirstTime(void)
     cfg.accTrim[1] = 0;
     cfg.gyro_smoothing_factor = 0x00141403; // default factors of 20, 20, 3 for R/P/Y
     cfg.powerTrigger1 = 0;
-    
+
     // Radio/ESC
+    cfg.deadband = 0;
     cfg.midrc = 1500;
     cfg.minthrottle = 1150;
     cfg.maxthrottle = 1850;
