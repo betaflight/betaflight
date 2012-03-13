@@ -73,20 +73,27 @@ static void i2c_er_handler(void)
     busy = 0;
 }
 
-bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
+bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-    uint8_t my_data[1];
+    uint8_t i;
+    uint8_t my_data[8];
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     addr = addr_ << 1;
     reg = reg_;
     writing = 1;
     reading = 0;
-    my_data[0] = data;
     write_p = my_data;
     read_p = my_data;
-    bytes = 1;
+    bytes = len_;
     busy = 1;
+    
+    // too long
+    if (len_ > 7)
+        return false;
+
+    for (i = 0; i < len_; i++)
+        my_data[i] = data[i];
 
     if (!(I2Cx->CR2 & I2C_IT_EVT)) {        //if we are restarting the driver
         if (!(I2Cx->CR1 & 0x0100)) {        // ensure sending a start
@@ -95,7 +102,7 @@ bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
         }
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);        //allow the interrupts to fire off again
     }
-    
+
     while (busy && --timeout > 0);
     if (timeout == 0) {
         i2cErrorCount++;
@@ -105,6 +112,11 @@ bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
     }
 
     return true;
+}
+
+bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
+{
+    return i2cWriteBuffer(addr_, reg_, 1, &data);
 }
 
 bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)

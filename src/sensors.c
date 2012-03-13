@@ -228,10 +228,17 @@ static void Mag_getRawADC(void)
     static int16_t rawADC[3];
     hmc5883lRead(rawADC);
 
-    // no way? is this finally the proper orientation??
+#if 0
+    // no way? is this finally the proper orientation?? (seems -180 swapped)
     magADC[ROLL] = -rawADC[2]; // X
     magADC[PITCH] = rawADC[0]; // Y
     magADC[YAW] = rawADC[1]; // Z
+#else
+    // no way? is THIS finally the proper orientation?? (by GrootWitBaas)
+    magADC[ROLL] = rawADC[2]; // X
+    magADC[PITCH] = -rawADC[0]; // Y
+    magADC[YAW] = -rawADC[1]; // Z
+#endif
 }
 
 void Mag_init(void)
