@@ -8,14 +8,41 @@ uint8_t calibratingM = 0;
 uint16_t acc_1G = 256;         // this is the 1G measured acceleration
 int16_t heading, magHold;
 
+extern uint16_t InflightcalibratingA;
+extern int16_t AccInflightCalibrationArmed;
+extern uint16_t AccInflightCalibrationMeasurementDone;
+extern uint16_t AccInflightCalibrationSavetoEEProm;
+extern uint16_t AccInflightCalibrationActive;
+
+sensor_t acc;                   // acc access functions
+sensor_t gyro;                  // gyro access functions
+
 void sensorsAutodetect(void)
 {
-    if (!adxl345Detect())
+    // Detect what's available
+    if (!adxl345Detect(&acc))
         sensorsClear(SENSOR_ACC);
     if (!bmp085Init())
         sensorsClear(SENSOR_BARO);
     if (!hmc5883lDetect())
         sensorsClear(SENSOR_MAG);
+
+    // Init sensors
+    if (sensors(SENSOR_ACC))
+        acc.init();
+    if (sensors(SENSOR_BARO))
+        bmp085Init();
+
+    // special case for supported gyros - MPU3050 and MPU6050
+    if (mpu6050Detect(&acc, &gyro)) { // first, try MPU6050, and re-enable acc (if ADXL345 is missing) since this chip has it built in
+        sensorsSet(SENSOR_ACC);
+        acc.init();
+    } else if (!mpu3050Detect(&gyro)) {
+        // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
+        failureMode(3);
+    }
+    // this is safe because either mpu6050 or mpu3050 sets it, and in case of fail, none do.
+    gyro.init();
 }
 
 static void ACC_Common(void)
@@ -45,54 +72,57 @@ static void ACC_Common(void)
         }
         calibratingA--;
     }
-#if defined(InflightAccCalibration)
-    static int32_t b[3];
-    static int16_t accZero_saved[3] = { 0, 0, 0 };
-    static int16_t accTrim_saved[2] = { 0, 0 };
-    //Saving old zeropoints before measurement
-    if (InflightcalibratingA == 50) {
-        accZero_saved[ROLL] = accZero[ROLL];
-        accZero_saved[PITCH] = accZero[PITCH];
-        accZero_saved[YAW] = accZero[YAW];
-        accTrim_saved[ROLL] = accTrim[ROLL];
-        accTrim_saved[PITCH] = accTrim[PITCH];
-    }
-    if (InflightcalibratingA > 0) {
-        for (uint8_t axis = 0; axis < 3; axis++) {
-            // Reset a[axis] at start of calibration
-            if (InflightcalibratingA == 50)
-                b[axis] = 0;
-            // Sum up 50 readings
-            b[axis] += accADC[axis];
-            // Clear global variables for next reading
-            accADC[axis] = 0;
-            accZero[axis] = 0;
+    
+    if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
+        static int32_t b[3];
+        static int16_t accZero_saved[3] = { 0, 0, 0 };
+        static int16_t accTrim_saved[2] = { 0, 0 };
+        //Saving old zeropoints before measurement
+        if (InflightcalibratingA == 50) {
+            accZero_saved[ROLL] = cfg.accZero[ROLL];
+            accZero_saved[PITCH] = cfg.accZero[PITCH];
+            accZero_saved[YAW] = cfg.accZero[YAW];
+            accTrim_saved[ROLL] = cfg.accTrim[ROLL];
+            accTrim_saved[PITCH] = cfg.accTrim[PITCH];
         }
-        //all values are measured
-        if (InflightcalibratingA == 1) {
-            AccInflightCalibrationActive = 0;
-            AccInflightCalibrationMeasurementDone = 1;
-            blinkLED(10, 10, 2);        //buzzer for indicatiing the start inflight
-            // recover saved values to maintain current flight behavior until new values are transferred
-            accZero[ROLL] = accZero_saved[ROLL];
-            accZero[PITCH] = accZero_saved[PITCH];
-            accZero[YAW] = accZero_saved[YAW];
-            accTrim[ROLL] = accTrim_saved[ROLL];
-            accTrim[PITCH] = accTrim_saved[PITCH];
+        if (InflightcalibratingA > 0) {
+            uint8_t axis;
+            for (axis = 0; axis < 3; axis++) {
+                // Reset a[axis] at start of calibration
+                if (InflightcalibratingA == 50)
+                    b[axis] = 0;
+                // Sum up 50 readings
+                b[axis] += accADC[axis];
+                // Clear global variables for next reading
+                accADC[axis] = 0;
+                cfg.accZero[axis] = 0;
+            }
+            //all values are measured
+            if (InflightcalibratingA == 1) {
+                AccInflightCalibrationActive = 0;
+                AccInflightCalibrationMeasurementDone = 1;
+                blinkLED(10, 10, 2);        //buzzer for indicatiing the start inflight
+                // recover saved values to maintain current flight behavior until new values are transferred
+                cfg.accZero[ROLL] = accZero_saved[ROLL];
+                cfg.accZero[PITCH] = accZero_saved[PITCH];
+                cfg.accZero[YAW] = accZero_saved[YAW];
+                cfg.accTrim[ROLL] = accTrim_saved[ROLL];
+                cfg.accTrim[PITCH] = accTrim_saved[PITCH];
+            }
+            InflightcalibratingA--;
         }
-        InflightcalibratingA--;
+        // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
+        if (AccInflightCalibrationSavetoEEProm == 1) {      //the copter is landed, disarmed and the combo has been done again
+            AccInflightCalibrationSavetoEEProm = 0;
+            cfg.accZero[ROLL] = b[ROLL] / 50;
+            cfg.accZero[PITCH] = b[PITCH] / 50;
+            cfg.accZero[YAW] = b[YAW] / 50 - acc_1G;    // for nunchuk 200=1G
+            cfg.accTrim[ROLL] = 0;
+            cfg.accTrim[PITCH] = 0;
+            writeParams();          // write accZero in EEPROM
+        }
     }
-    // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-    if (AccInflightCalibrationSavetoEEProm == 1) {      //the copter is landed, disarmed and the combo has been done again
-        AccInflightCalibrationSavetoEEProm = 0;
-        accZero[ROLL] = b[ROLL] / 50;
-        accZero[PITCH] = b[PITCH] / 50;
-        accZero[YAW] = b[YAW] / 50 - acc_1G;    // for nunchuk 200=1G
-        accTrim[ROLL] = 0;
-        accTrim[PITCH] = 0;
-        writeParams();          // write accZero in EEPROM
-    }
-#endif
+
     accADC[ROLL] -= cfg.accZero[ROLL];
     accADC[PITCH] -= cfg.accZero[PITCH];
     accADC[YAW] -= cfg.accZero[YAW];
@@ -101,11 +131,9 @@ static void ACC_Common(void)
 
 void ACC_getADC(void)
 {
-    int16_t rawADC[3];
-    
-    adxl345Read(rawADC);
+    acc.read(accADC);
+    acc.orient(accADC);
 
-    ACC_ORIENTATION(-(rawADC[1]), (rawADC[0]), (rawADC[2]));
     ACC_Common();
 }
 
@@ -207,15 +235,9 @@ static void GYRO_Common(void)
 
 void Gyro_getADC(void)
 {
-    int16_t rawADC[3];
-    
-    mpu3050Read(rawADC);
-    
     // range: +/- 8192; +/- 2000 deg/sec
-    GYRO_ORIENTATION(+((rawADC[1]) / 4), -((rawADC[0]) / 4), -((rawADC[2]) / 4));
-    gyroADC[ROLL] = rawADC[0] / 4;
-    gyroADC[PITCH] = rawADC[1] / 4;
-    gyroADC[YAW] = -rawADC[2] / 4;
+    gyro.read(gyroADC);
+    gyro.orient(gyroADC);
 
     GYRO_Common();
 }
@@ -228,17 +250,10 @@ static void Mag_getRawADC(void)
     static int16_t rawADC[3];
     hmc5883lRead(rawADC);
 
-#if 0
-    // no way? is this finally the proper orientation?? (seems -180 swapped)
-    magADC[ROLL] = -rawADC[2]; // X
-    magADC[PITCH] = rawADC[0]; // Y
-    magADC[YAW] = rawADC[1]; // Z
-#else
     // no way? is THIS finally the proper orientation?? (by GrootWitBaas)
     magADC[ROLL] = rawADC[2]; // X
     magADC[PITCH] = -rawADC[0]; // Y
     magADC[YAW] = -rawADC[1]; // Z
-#endif
 }
 
 void Mag_init(void)
@@ -271,12 +286,16 @@ void Mag_getADC(void)
     // Read mag sensor
     Mag_getRawADC();
 
+    magADC[ROLL]  = magADC[ROLL]  * magCal[ROLL];
+    magADC[PITCH] = magADC[PITCH] * magCal[PITCH];
+    magADC[YAW]   = magADC[YAW]   * magCal[YAW];
+
     if (calibratingM == 1) {
         tCal = t;
         for (axis = 0; axis < 3; axis++) {
             cfg.magZero[axis] = 0;
-            magZeroTempMin[axis] = 0;
-            magZeroTempMax[axis] = 0;
+            magZeroTempMin[axis] = magADC[axis];
+            magZeroTempMax[axis] = magADC[axis];
         }
         calibratingM = 0;
     }

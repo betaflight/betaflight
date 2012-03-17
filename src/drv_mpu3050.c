@@ -25,7 +25,28 @@
 
 static uint8_t mpuLowPassFliter = MPU3050_DLPF_42HZ;
 
-void mpu3050Init(void)
+static void mpu3050Init(void);
+static void mpu3050Read(int16_t *gyroData);
+static void mpu3050Align(int16_t *gyroData);
+
+bool mpu3050Detect(sensor_t *gyro)
+{
+    bool ack;
+
+    delay(25); // datasheet page 13 says 20ms. other stuff could have been running meanwhile. but we'll be safe
+
+    ack = i2cWrite(MPU3050_ADDRESS, MPU3050_SMPLRT_DIV, 0);
+    if (!ack)
+        return false;
+
+    gyro->init = mpu3050Init;
+    gyro->read = mpu3050Read;
+    gyro->orient = mpu3050Align;
+
+    return true;
+}
+
+static void mpu3050Init(void)
 {
     bool ack;
 
@@ -41,17 +62,25 @@ void mpu3050Init(void)
     i2cWrite(MPU3050_ADDRESS, MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
 }
 
+static void mpu3050Align(int16_t *gyroData)
+{
+    // official direction is RPY
+    gyroData[0] = gyroData[0] / 4;
+    gyroData[1] = gyroData[1] / 4;
+    gyroData[2] = -gyroData[2] / 4;
+}
+
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
-void mpu3050Read(int16_t *gyroData)
+static void mpu3050Read(int16_t *gyroData)
 {
     uint8_t buf[6];
     i2cRead(MPU3050_ADDRESS, MPU3050_GYRO_OUT, 6, buf);
-    gyroData[0] = buf[0] << 8 | buf[1];
-    gyroData[1] = buf[2] << 8 | buf[3];
-    gyroData[2] = buf[4] << 8 | buf[5];
+    gyroData[0] = (buf[0] << 8) | buf[1];
+    gyroData[1] = (buf[2] << 8) | buf[3];
+    gyroData[2] = (buf[4] << 8) | buf[5];
 }
 
-int16_t mpu3050ReadTemp(void)
+static int16_t mpu3050ReadTemp(void)
 {
     uint8_t buf[2];
     i2cRead(MPU3050_ADDRESS, MPU3050_TEMP_OUT, 2, buf);

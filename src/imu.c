@@ -336,8 +336,8 @@ void getEstimatedAltitude(void)
     EstAlt = BaroHigh * 10 / (BARO_TAB_SIZE / 2);
 
     temp32 = AltHold - EstAlt;
-    if (abs(temp32) < 10 && BaroPID < 10)
-        BaroPID = 0;  // remove small D parametr to reduce noise near zoro position
+    if (abs(temp32) < 10 && abs(BaroPID) < 10)
+        BaroPID = 0;  // remove small D parameter to reduce noise near zero position
     // P
     BaroPID += cfg.P8[PIDALT] * constrain(temp32, (-2) * cfg.P8[PIDALT], 2 * cfg.P8[PIDALT]) / 100;
     BaroPID = constrain(BaroPID, -150, +150); // sum of P and D should be in range 150

@@ -1,7 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-// March  2012     V2.0_pre_version_1
+// March  2012     V2.0_pre_version_3
 
 #define CHECKBOXITEMS 11
 #define PIDITEMS 8
@@ -56,6 +56,7 @@ uint16_t GPS_distanceToHome;     // in meters
 int16_t GPS_directionToHome = 0; // in degrees
 uint16_t GPS_distanceToHome, GPS_distanceToHold;       // distance to home or hold point in meters
 int16_t  GPS_directionToHome, GPS_directionToHold;     // direction to home or hol point in degrees
+uint16_t GPS_altitude, GPS_speed;                      // altitude in 0.1m and speed in 0.1m/s - Added by Mis
 uint8_t GPS_update = 0;  // it's a binary toogle to distinct a GPS position update
 int16_t GPS_angle[2];    // it's the angles that must be applied for GPS correction
 
@@ -72,7 +73,7 @@ uint16_t AccInflightCalibrationActive = 0;
 // power meter
 // **********************
 #define PMOTOR_SUM 8            // index into pMeter[] for sum
-uint32_t pMeter[PMOTOR_SUM + 1]; //we use [0:7] for eight motors,one extra for sum
+uint32_t pMeter[PMOTOR_SUM + 1]; // we use [0:7] for eight motors,one extra for sum
 uint8_t pMeterV;         // dummy to satisfy the paramStruct logic in ConfigurationLoop()
 uint32_t pAlarm;         // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
 // uint8_t powerTrigger1 = 0;       
@@ -94,8 +95,9 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
     }
 }
 
+// this code is executed at each loop and won't interfere with control loop if it lasts less than 650 microseconds
 void annexCode(void)
-{                               //this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds
+{                               
     static uint32_t buzzerTime, calibratedAccTime;
 #if defined(LCD_TELEMETRY)
     static uint16_t telemetryTimer = 0, telemetryAutoTimer = 0, psensorTimer = 0;
@@ -173,19 +175,12 @@ void annexCode(void)
     }
 #endif
 
-#define ADC_REF_VOLTAGE         3.3f
-#define ADC_TO_VOLTAGE		(ADC_REF_VOLTAGE / (1<<12)) // 12 bit ADC resolution
-#define ADC_VOLTS_PRECISION	12
-#define ADC_VOLTS_SLOPE		((10.0f + 1.0f) / 1.0f)    // Rtop = 10K, Rbot = 1.0K
-#define ADC_TO_VOLTS		((ADC_TO_VOLTAGE / ((1<<(ADC_VOLTS_PRECISION))+1)) * ADC_VOLTS_SLOPE)
-
     if (feature(FEATURE_VBAT)) {
         if (!(++vbatTimer % VBATFREQ)) {
-        	// avgVolts = adcAvgVolts * ADC_TO_VOLTS;
             vbatRawArray[(ind++) % 8] = adcGetBattery();
             for (i = 0; i < 8; i++)
                 vbatRaw += vbatRawArray[i];
-            vbat = vbatRaw / (VBATSCALE / 2);       // result is Vbatt in 0.1V steps
+            vbat = (((vbatRaw / 8) * 3.3f) / 4095) * 110;       // result is Vbatt in 0.1V steps
         }
         if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch 
             buzzerFreq = 7;
@@ -232,13 +227,13 @@ void annexCode(void)
         }
     }
 
-#if defined(LED_RING)
-    static uint32_t LEDTime;
-    if (currentTime > LEDTime) {
-        LEDTime = currentTime + 50000;
-        i2CLedRingState();
+    if (feature(FEATURE_LED_RING)) {
+        static uint32_t LEDTime;
+        if (currentTime > LEDTime) {
+            LEDTime = currentTime + 50000;
+            ledringState();
+        }
     }
-#endif
 
     if (currentTime > calibratedAccTime) {
         if (smallAngle25 == 0) {
@@ -369,16 +364,20 @@ void loop(void)
                     calibratingG = 400;
             } else if (rcData[YAW] > MAXCHECK && rcData[PITCH] > MAXCHECK && armed == 0) {
                 if (rcDelayCommand == 20) {
-                    servo[0] = 1500;    //we center the yaw gyro in conf mode
-                    writeServos();
+                    if (cfg.mixerConfiguration == MULTITYPE_TRI) {
+                        servo[5] = 1500; // we center the yaw servo in conf mode
+                        writeServos();
+                    } else if (cfg.mixerConfiguration == MULTITYPE_FLYING_WING) {
+                        servo[0]  = cfg.wing_left_mid;
+                        servo[1]  = cfg.wing_right_mid;
+                        writeServos();
+                    }
 #if defined(LCD_CONF)
                     configurationLoop();        //beginning LCD configuration
 #endif
                     previousTime = micros();
                 }
-            }
-#if defined(InflightAccCalibration)
-            else if (armed == 0 && rcData[YAW] < MINCHECK && rcData[PITCH] > MAXCHECK && rcData[ROLL] > MAXCHECK) {
+            } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (armed == 0 && rcData[YAW] < MINCHECK && rcData[PITCH] > MAXCHECK && rcData[ROLL] > MAXCHECK)) {
                 if (rcDelayCommand == 20) {
                     if (AccInflightCalibrationMeasurementDone) {        //trigger saving into eeprom after landing
                         AccInflightCalibrationMeasurementDone = 0;
@@ -392,9 +391,7 @@ void loop(void)
                         }
                     }
                 }
-            }
-#endif
-            else if ((cfg.activate1[BOXARM] > 0) || (cfg.activate2[BOXARM] > 0)) {
+            } else if ((cfg.activate1[BOXARM] > 0) || (cfg.activate2[BOXARM] > 0)) {
                 if (rcOptions[BOXARM] && okToArm) {
                     armed = 1;
                     headFreeModeHold = heading;
@@ -435,27 +432,23 @@ void loop(void)
             } else if (rcData[PITCH] > MAXCHECK) {
                 cfg.accTrim[PITCH] += 2;
                 writeParams();
-#if defined(LED_RING)
-                blinkLedRing();
-#endif
+                if (feature(FEATURE_LED_RING))
+                    ledringBlink();
             } else if (rcData[PITCH] < MINCHECK) {
                 cfg.accTrim[PITCH] -= 2;
                 writeParams();
-#if defined(LED_RING)
-                blinkLedRing();
-#endif
+                if (feature(FEATURE_LED_RING))
+                    ledringBlink();
             } else if (rcData[ROLL] > MAXCHECK) {
                 cfg.accTrim[ROLL] += 2;
                 writeParams();
-#if defined(LED_RING)
-                blinkLedRing();
-#endif
+                if (feature(FEATURE_LED_RING))
+                    ledringBlink();
             } else if (rcData[ROLL] < MINCHECK) {
                 cfg.accTrim[ROLL] -= 2;
                 writeParams();
-#if defined(LED_RING)
-                blinkLedRing();
-#endif
+                if (feature(FEATURE_LED_RING))
+                    ledringBlink();
             } else {
                 rcDelayCommand = 0;
             }
@@ -467,22 +460,22 @@ void loop(void)
             cycleTimeMin = cycleTime;   // remember lowscore
 #endif
 
-#if defined(InflightAccCalibration)
-        if (AccInflightCalibrationArmed && armed == 1 && rcData[THROTTLE] > MINCHECK && !rcOptions[BOXARM]) {      // Copter is airborne and you are turning it off via boxarm : start measurement
-            InflightcalibratingA = 50;
-            AccInflightCalibrationArmed = 0;
-        }
-        if (rcOptions[BOXPASSTHRU]) {   //Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
-            if (!AccInflightCalibrationArmed) {
-                AccInflightCalibrationArmed = 1;
+        if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
+            if (AccInflightCalibrationArmed && armed == 1 && rcData[THROTTLE] > MINCHECK && !rcOptions[BOXARM]) {      // Copter is airborne and you are turning it off via boxarm : start measurement
                 InflightcalibratingA = 50;
+                AccInflightCalibrationArmed = 0;
             }
-        } else if (AccInflightCalibrationMeasurementDone && armed == 0) {
-            AccInflightCalibrationArmed = 0;
-            AccInflightCalibrationMeasurementDone = 0;
-            AccInflightCalibrationSavetoEEProm = 1;
+            if (rcOptions[BOXPASSTHRU]) {   //Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
+                if (!AccInflightCalibrationArmed) {
+                    AccInflightCalibrationArmed = 1;
+                    InflightcalibratingA = 50;
+                }
+            } else if (AccInflightCalibrationMeasurementDone && armed == 0) {
+                AccInflightCalibrationArmed = 0;
+                AccInflightCalibrationMeasurementDone = 0;
+                AccInflightCalibrationSavetoEEProm = 1;
+            }
         }
-#endif
 
         for(i = 0; i < CHECKBOXITEMS; i++) {
             rcOptions[i] = (((rcData[AUX1] < 1300) | (1300 < rcData[AUX1] && rcData[AUX1] < 1700) << 1 | (rcData[AUX1] > 1700) << 2 | (rcData[AUX2] < 1300) << 3 | (1300 < rcData[AUX2] && rcData[AUX2] < 1700) << 4 | (rcData[AUX2] > 1700) << 5) & cfg.activate1[i]) || (((rcData[AUX3] < 1300) | (1300 < rcData[AUX3] && rcData[AUX3] < 1700) << 1 | (rcData[AUX3] > 1700) << 2 | (rcData[AUX4] < 1300) << 3 | (1300 < rcData[AUX4] && rcData[AUX4] < 1700) << 4 | (rcData[AUX4] > 1700) << 5) & cfg.activate2[i]);
@@ -599,7 +592,7 @@ void loop(void)
             if (dif >= +180)
                 dif -= 360;
             if (smallAngle25)
-                rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;        //18 deg
+                rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;        // 18 deg
         } else
             magHold = heading;
     }

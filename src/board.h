@@ -9,17 +9,6 @@
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
 
-#include "drv_system.h"         // timers, delays, etc
-#include "drv_adc.h"
-#include "drv_adxl345.h"
-#include "drv_bmp085.h"
-#include "drv_hmc5883l.h"
-#include "drv_i2c.h"
-#include "drv_ledring.h"
-#include "drv_mpu3050.h"
-#include "drv_pwm.h"
-#include "drv_uart.h"
-
 typedef enum {
     SENSOR_ACC = 1 << 0,
     SENSOR_BARO = 1 << 1,
@@ -38,7 +27,18 @@ typedef enum {
     FEATURE_CAMTRIG = 1 << 6,
     FEATURE_GYRO_SMOOTHING = 1 << 7,
     FEATURE_LED_RING = 1 << 8,
+    FEATURE_INFLIGHT_ACC_CAL = 1 << 9,
 } AvailableFeatures;
+
+typedef void (* sensorInitFuncPtr)(void);
+typedef void (* sensorReadFuncPtr)(int16_t *data);
+
+typedef struct sensor_t
+{
+    sensorInitFuncPtr init;
+    sensorReadFuncPtr read;
+    sensorReadFuncPtr orient;
+} sensor_t;
 
 #define digitalHi(p, i)     { p->BSRR = i; }
 #define digitalLo(p, i)     { p->BRR = i; }
@@ -69,3 +69,15 @@ typedef enum {
 
 #define BARO_OFF                 digitalLo(BARO_GPIO, BARO_PIN);
 #define BARO_ON                  digitalHi(BARO_GPIO, BARO_PIN);
+
+#include "drv_system.h"         // timers, delays, etc
+#include "drv_adc.h"
+#include "drv_adxl345.h"
+#include "drv_bmp085.h"
+#include "drv_hmc5883l.h"
+#include "drv_i2c.h"
+#include "drv_ledring.h"
+#include "drv_mpu3050.h"
+#include "drv_mpu6050.h"
+#include "drv_pwm.h"
+#include "drv_uart.h"

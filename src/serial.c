@@ -185,7 +185,7 @@ void serialCom(void)
 
             }
             serialize16(GPS_distanceToHome);
-            serialize16(GPS_directionToHome);
+            serialize16(GPS_directionToHome + 180);
             serialize8(GPS_numSat);
             serialize8(GPS_fix);
             serialize8(GPS_update);
@@ -214,17 +214,24 @@ void serialCom(void)
             for (i = 0; i < 6; i++) {
                 serialize16(rcData[i]);
             }                   //44
-            serialize8(sensors(SENSOR_ACC) << 1 | sensors(SENSOR_BARO) << 2 | sensors(SENSOR_MAG) << 3);
-            serialize8(accMode | baroMode << 1 | magMode << 2);
+            serialize8(sensors(SENSOR_ACC) << 1 | sensors(SENSOR_BARO) << 2 | sensors(SENSOR_MAG) << 3 | sensors(SENSOR_GPS) << 4);
+            serialize8(accMode | baroMode << 1 | magMode << 2 | GPSModeHome << 3 | GPSModeHold << 4 | armed << 5);
             serialize8(vbat);   // Vbatt 47
             serialize8(VERSION);        // MultiWii Firmware version
-            serialize8('O');    //49
-            // UartSendData();
+            serialize8(GPS_fix);        // Fix indicator for OSD
+            serialize8(GPS_numSat);
+            serialize16(GPS_latitude);
+            serialize16(GPS_latitude >> 16);
+            serialize16(GPS_longitude);
+            serialize16(GPS_longitude >> 16);
+            serialize16(GPS_altitude);
+            serialize16(GPS_speed);            // Speed for OSD
+            serialize8('O');    // NOT 49 anymore
             break;
         case 'R':               // reboot to bootloader (oops, apparently this w as used for other trash, fix later)
             systemReset(true);
             break;
-            
+
         case 'X':               // dynamic mixer
             i = uartReadPoll();
             if (i > 64 && i < 64 + MULTITYPE_LAST) {

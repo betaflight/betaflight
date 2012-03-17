@@ -15,7 +15,11 @@
 #define ADXL345_FULL_RANGE  0x08
 #define ADXL345_RANGE_16G   0x03
 
-bool adxl345Detect(void)
+static void adxl345Init(void);
+static void adxl345Read(int16_t *accelData);
+static void adxl345Align(int16_t *accelData);
+
+bool adxl345Detect(sensor_t *acc)
 {
     bool ack = false;
     uint8_t sig = 0;
@@ -23,6 +27,10 @@ bool adxl345Detect(void)
     ack = i2cRead(ADXL345_ADDRESS, 0x00, 1, &sig);
     if (!ack || sig != 0xE5)
         return false;
+        
+    acc->init = adxl345Init;
+    acc->read = adxl345Read;
+    acc->orient = adxl345Align;
     return true;
 }
 
@@ -38,7 +46,7 @@ bool adxl345Detect(void)
 #define ADXL_RANGE_8G      0x02
 #define ADXL_RANGE_16G     0x03
 
-void adxl345Init(void)
+static void adxl345Init(void)
 {
 #ifdef FREEFLIGHT
     i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_BW_RATE_200);
@@ -60,12 +68,17 @@ void adxl345Init(void)
 #endif /* FreeFlight */
 }
 
-void adxl345Read(int16_t *accelData)
+static void adxl345Read(int16_t *accelData)
 {
     static uint8_t buf[6];
-    
+
     i2cRead(ADXL345_ADDRESS, ADXL345_DATA_OUT, 6, buf);
     accelData[0] = buf[0] + (buf[1] << 8);
     accelData[1] = buf[2] + (buf[3] << 8);
     accelData[2] = buf[4] + (buf[5] << 8);
+}
+
+static void adxl345Align(int16_t *accData)
+{
+    // official direction is RPY, nothing to change here.
 }

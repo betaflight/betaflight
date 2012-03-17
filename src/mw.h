@@ -62,7 +62,7 @@
    with R1=33k and R2=51k
    vbat = [0;1023]*16/VBATSCALE */
 #define VBATFREQ 6        // to read battery voltage - keep equal to PSENSORFREQ (6) unless you know what you are doing
-#define VBATSCALE     151 // change this value if readed Battery voltage is different than real voltage
+#define VBATSCALE     160 // change this value if readed Battery voltage is different than real voltage
 #define VBATLEVEL1_3S 107 // 10,7V
 #define VBATLEVEL2_3S 103 // 10,3V
 #define VBATLEVEL3_3S 99  // 9.9V
@@ -75,7 +75,7 @@
 //#define MMSERVOGIMBAL                  // Active Output Moving Average Function for Servos Gimbal
 //#define MMSERVOGIMBALVECTORLENGHT 32   // Lenght of Moving Average Vector
 
-#define   VERSION  201
+#define   VERSION  203
 
 // Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
 typedef enum MultiType
@@ -230,10 +230,14 @@ extern int16_t GPS_directionToHome;
 extern uint8_t GPS_update;
 extern uint8_t GPSModeHome;
 extern uint8_t GPSModeHold;
+extern uint16_t GPS_altitude;
+extern uint16_t GPS_speed;                      // altitude in 0.1m and speed in 0.1m/s - Added by Mis
 extern uint8_t vbat;
 extern int16_t lookupRX[7];     //  lookup table for expo & RC rate
 
 extern config_t cfg;
+extern sensor_t acc;
+extern sensor_t gyro;
 
 // main
 void loop(void);
@@ -257,6 +261,7 @@ void Mag_getADC(void);
 void mixerInit(void);
 void writeServos(void);
 void writeMotors(void);
+void writeAllMotors(int16_t mc);
 void mixTable(void);
 
 // Serial

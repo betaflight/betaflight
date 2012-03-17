@@ -31,24 +31,15 @@ int main(void)
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(25);
-        BEEP_ON
+        BEEP_ON;
         delay(25);
         BEEP_OFF;
     }
     LED0_OFF;
     LED1_OFF;
 
-    // drop out any sensors that don't seem to work
-     sensorsAutodetect();
-
-    // Init sensors
-    if (sensors(SENSOR_BARO))
-        bmp085Init();
-    if (sensors(SENSOR_ACC))
-        adxl345Init();
-    // if this fails, we get a beep + blink pattern. we're doomed.
-    mpu3050Init();
-
+    // drop out any sensors that don't seem to work, init all the others. halt if gyro is dead.
+    sensorsAutodetect();
     imuInit(); // Mag is initialized inside imuInit
 
     previousTime = micros();
