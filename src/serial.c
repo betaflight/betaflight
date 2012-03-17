@@ -15,11 +15,6 @@ void serialize8(uint8_t a)
     uartWrite(a);
 }
 
-void UartSendData()
-{                               
-    // Data transmission acivated when the ring is not empty
-}
-
 void serialCom(void)
 {
     uint8_t i;
@@ -33,8 +28,7 @@ void serialCom(void)
     if (uartAvailable()) {
         switch (uartRead()) {
         case '#':
-            uartPrint("\r\nEntering CLI Mode, type 'exit' to return\r\n");
-            cliMode = 1;
+            cliProcess();
             break;
 
 #ifdef BTSERIAL
@@ -197,7 +191,6 @@ void serialCom(void)
             serialize16(debug3);            // debug3
             serialize16(debug4);            // debug4
             serialize8('M');
-            // UartSendData();
             break;
         case 'O':              // arduino to OSD data - contribution from MIS
             serialize8('O');
