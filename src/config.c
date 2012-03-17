@@ -8,7 +8,7 @@
 config_t cfg;
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 3;
+static uint8_t checkNewConf = 4;
 
 void readEEPROM(void)
 {
@@ -52,13 +52,13 @@ void writeParams(void)
     blinkLED(15, 20, 1);
 }
 
-void checkFirstTime(void)
+void checkFirstTime(bool reset)
 {
     uint8_t test_val, i;
 
     test_val = *(uint8_t *)FLASH_WRITE_ADDR;
 
-    if (test_val == checkNewConf)
+    if (!reset && test_val == checkNewConf)
         return;
 
     // Default settings
@@ -115,7 +115,9 @@ void checkFirstTime(void)
     cfg.wing_left_mid = 1500;
     cfg.wing_right_mid = 1500;
     cfg.tri_yaw_middle = 1500;
-    
+    cfg.tri_yaw_min = 1020;
+    cfg.tri_yaw_max = 2000;
+
     // gimbal
     cfg.tilt_pitch_prop = 10;
     cfg.tilt_roll_prop = 10;
@@ -156,4 +158,9 @@ void featureClear(uint32_t mask)
 void featureClearAll()
 {
     cfg.enabledFeatures = 0;
+}
+
+uint32_t featureMask(void)
+{
+    return cfg.enabledFeatures;
 }

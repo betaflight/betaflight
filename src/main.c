@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+extern uint8_t useServo;
+
 int main(void)
 {
     uint8_t i;
@@ -17,13 +19,13 @@ int main(void)
     systemInit();
 
     readEEPROM();
-    checkFirstTime();
+    checkFirstTime(false);
 
     // We have these sensors
     sensorsSet(SENSOR_ACC | SENSOR_BARO | SENSOR_MAG);
 
     mixerInit(); // this will configure FEATURE_SERVO depending on mixer type
-    pwmInit(feature(FEATURE_PPM), feature(FEATURE_SERVO), feature(FEATURE_DIGITAL_SERVO));
+    pwmInit(feature(FEATURE_PPM), useServo, feature(FEATURE_DIGITAL_SERVO));
 
     LED1_ON;
     LED0_OFF;

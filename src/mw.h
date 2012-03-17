@@ -175,6 +175,8 @@ typedef struct config_t {
     uint16_t wing_left_mid;                 // left servo center pos. - use this for initial trim
     uint16_t wing_right_mid;                // right servo center pos. - use this for initial trim
     uint16_t tri_yaw_middle;                // tail servo center pos. - use this for initial trim
+    uint16_t tri_yaw_min;                   // tail servo min
+    uint16_t tri_yaw_max;                   // tail servo max
     
     // gimbal-related configuration
     int8_t tilt_pitch_prop;                 // servo proportional (tied to angle) ; can be negative to invert movement
@@ -270,7 +272,7 @@ void serialCom(void);
 // Config
 void readEEPROM(void);
 void writeParams(void);
-void checkFirstTime(void);
+void checkFirstTime(bool reset);
 bool sensors(uint32_t mask);
 void sensorsSet(uint32_t mask);
 void sensorsClear(uint32_t mask);
@@ -278,6 +280,7 @@ bool feature(uint32_t mask);
 void featureSet(uint32_t mask);
 void featureClear(uint32_t mask);
 void featureClearAll(void);
+uint32_t featureMask(void);
 
 // cli
 void cliProcess(void);

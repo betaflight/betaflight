@@ -2,6 +2,7 @@
 #include "mw.h"
 
 static uint8_t numberMotor = 4;
+uint8_t useServo = 0;
 int16_t motor[8];
 int16_t servo[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
@@ -9,10 +10,10 @@ void mixerInit(void)
 {
     // enable servos for mixes that require them. note, this shifts motor counts.
     if (cfg.mixerConfiguration == MULTITYPE_BI || cfg.mixerConfiguration == MULTITYPE_TRI || cfg.mixerConfiguration == MULTITYPE_GIMBAL || cfg.mixerConfiguration == MULTITYPE_FLYING_WING)
-        featureSet(FEATURE_SERVO);
+        useServo = 1;
     // if we want camstab/trig, that also enabled servos. this is kinda lame. maybe rework feature bits later.
     if (feature(FEATURE_SERVO_TILT) || feature(FEATURE_CAMTRIG))
-        featureSet(FEATURE_SERVO);
+        useServo = 1;
 
     switch (cfg.mixerConfiguration) {
         case MULTITYPE_GIMBAL:
@@ -51,7 +52,7 @@ void mixerInit(void)
 
 void writeServos(void)
 {
-    if (!feature(FEATURE_SERVO))
+    if (!useServo)
         return;
 
     if (cfg.mixerConfiguration == MULTITYPE_TRI || cfg.mixerConfiguration == MULTITYPE_BI) {
@@ -66,13 +67,15 @@ void writeServos(void)
     }
 }
 
+extern uint8_t cliMode;
+
 void writeMotors(void)
 {
     uint8_t i;
     uint8_t offset = 0;
-    
+
     // when servos are enabled, motor outputs 1..2 are for servos only
-    if (feature(FEATURE_SERVO))
+    if (useServo)
         offset = 2;
 
     for (i = 0; i < numberMotor; i++)
