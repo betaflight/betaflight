@@ -180,7 +180,7 @@ void annexCode(void)
             vbatRawArray[(ind++) % 8] = adcGetBattery();
             for (i = 0; i < 8; i++)
                 vbatRaw += vbatRawArray[i];
-            vbat = (((vbatRaw / 8) * 3.3f) / 4095) * 110;       // result is Vbatt in 0.1V steps
+            vbat = (((vbatRaw / 8) * 3.3f) / 4095) * 110;       // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 4095 = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
         }
         if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch 
             buzzerFreq = 7;
