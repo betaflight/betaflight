@@ -276,7 +276,7 @@ void mixTable(void)
         if (maxMotor > cfg.maxthrottle)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
             motor[i] -= maxMotor - cfg.maxthrottle;
         motor[i] = constrain(motor[i], cfg.minthrottle, cfg.maxthrottle);
-        if ((rcData[THROTTLE]) < MINCHECK) {
+        if ((rcData[THROTTLE]) < cfg.mincheck) {
             if (!feature(FEATURE_MOTOR_STOP))
                 motor[i] = cfg.minthrottle;
             else

@@ -1,12 +1,5 @@
 #pragma once
 
-#define MINCHECK 1100
-#define MAXCHECK 1900
-
-/* this is the value for the ESCs when they are not armed
-   in some cases, this value must be lowered down to 900 for some specific ESCs */
-// #define MINCOMMAND 1000
-
 /* This option should be uncommented if ACC Z is accurate enough when motors are running*/
 /* should now be ok with BMA020 and BMA180 ACC */
 #define TRUSTED_ACCZ
@@ -62,7 +55,6 @@
    with R1=33k and R2=51k
    vbat = [0;1023]*16/VBATSCALE */
 #define VBATFREQ 6        // to read battery voltage - keep equal to PSENSORFREQ (6) unless you know what you are doing
-#define VBATSCALE     160 // change this value if readed Battery voltage is different than real voltage
 #define VBATLEVEL1_3S 107 // 10,7V
 #define VBATLEVEL2_3S 103 // 10,3V
 #define VBATLEVEL3_3S 99  // 9.9V
@@ -162,10 +154,13 @@ typedef struct config_t {
     uint8_t activate1[CHECKBOXITEMS];
     uint8_t activate2[CHECKBOXITEMS];
     uint8_t powerTrigger1;                  // trigger for alarm based on power consumption
+    uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
     
     // Radio/ESC-related configuration
     uint8_t deadband;                       // introduce a deadband around the stick center. Must be greater than zero
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
+    uint16_t mincheck;                      // minimum rc end
+    uint16_t maxcheck;                      // maximum rc end
     uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
     uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs

@@ -149,7 +149,7 @@ void annexCode(void)
         if (rcData[axis] < cfg.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
-    rcCommand[THROTTLE] = cfg.minthrottle + (int32_t) (cfg.maxthrottle - cfg.minthrottle) * (rcData[THROTTLE] - MINCHECK) / (2000 - MINCHECK);
+    rcCommand[THROTTLE] = cfg.minthrottle + (int32_t) (cfg.maxthrottle - cfg.minthrottle) * (rcData[THROTTLE] - cfg.mincheck) / (2000 - cfg.mincheck);
 
     if (headFreeMode) {
         float radDiff = (heading - headFreeModeHold) * 0.0174533f;      // where PI/180 ~= 0.0174533
@@ -180,7 +180,7 @@ void annexCode(void)
             vbatRawArray[(ind++) % 8] = adcGetBattery();
             for (i = 0; i < 8; i++)
                 vbatRaw += vbatRawArray[i];
-            vbat = (((vbatRaw / 8) * 3.3f) / 4095) * 110;       // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 4095 = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
+            vbat = (((vbatRaw / 8) * 3.3f) / 4095) * cfg.vbatscale;       // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 4095 = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
         }
         if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch 
             buzzerFreq = 7;
@@ -352,17 +352,17 @@ void loop(void)
         failsafeCnt++;
 #endif
         // end of failsave routine - next change is made with RcOptions setting
-        if (rcData[THROTTLE] < MINCHECK) {
+        if (rcData[THROTTLE] < cfg.mincheck) {
             errorGyroI[ROLL] = 0;
             errorGyroI[PITCH] = 0;
             errorGyroI[YAW] = 0;
             errorAngleI[ROLL] = 0;
             errorAngleI[PITCH] = 0;
             rcDelayCommand++;
-            if (rcData[YAW] < MINCHECK && rcData[PITCH] < MINCHECK && armed == 0) {
+            if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck && armed == 0) {
                 if (rcDelayCommand == 20)
                     calibratingG = 400;
-            } else if (rcData[YAW] > MAXCHECK && rcData[PITCH] > MAXCHECK && armed == 0) {
+            } else if (rcData[YAW] > cfg.maxcheck && rcData[PITCH] > cfg.maxcheck && armed == 0) {
                 if (rcDelayCommand == 20) {
                     if (cfg.mixerConfiguration == MULTITYPE_TRI) {
                         servo[5] = 1500; // we center the yaw servo in conf mode
@@ -377,7 +377,7 @@ void loop(void)
 #endif
                     previousTime = micros();
                 }
-            } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (armed == 0 && rcData[YAW] < MINCHECK && rcData[PITCH] > MAXCHECK && rcData[ROLL] > MAXCHECK)) {
+            } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (armed == 0 && rcData[YAW] < cfg.mincheck && rcData[PITCH] > cfg.maxcheck && rcData[ROLL] > cfg.maxcheck)) {
                 if (rcDelayCommand == 20) {
                     if (AccInflightCalibrationMeasurementDone) {        //trigger saving into eeprom after landing
                         AccInflightCalibrationMeasurementDone = 0;
@@ -398,18 +398,18 @@ void loop(void)
                 } else if (armed)
                     armed = 0;
                 rcDelayCommand = 0;
-            } else if ((rcData[YAW] < MINCHECK || rcData[ROLL] < MINCHECK)
+            } else if ((rcData[YAW] < cfg.mincheck || rcData[ROLL] < cfg.mincheck)
                        && armed == 1) {
                 if (rcDelayCommand == 20)
                     armed = 0;  // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
-            } else if ((rcData[YAW] > MAXCHECK || rcData[ROLL] > MAXCHECK)
-                       && rcData[PITCH] < MAXCHECK && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
+            } else if ((rcData[YAW] > cfg.maxcheck || rcData[ROLL] > cfg.maxcheck)
+                       && rcData[PITCH] < cfg.maxcheck && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
                 if (rcDelayCommand == 20) {
                     armed = 1;
                     headFreeModeHold = heading;
                 }
 #ifdef LCD_TELEMETRY_AUTO
-            } else if (rcData[ROLL] < MINCHECK && rcData[PITCH] > MAXCHECK && armed == 0) {
+            } else if (rcData[ROLL] < cfg.mincheck && rcData[PITCH] > cfg.maxcheck && armed == 0) {
                 if (rcDelayCommand == 20) {
                     if (telemetry_auto) {
                         telemetry_auto = 0;
@@ -420,31 +420,31 @@ void loop(void)
 #endif
             } else
                 rcDelayCommand = 0;
-        } else if (rcData[THROTTLE] > MAXCHECK && armed == 0) {
-            if (rcData[YAW] < MINCHECK && rcData[PITCH] < MINCHECK) {   //throttle=max, yaw=left, pitch=min
+        } else if (rcData[THROTTLE] > cfg.maxcheck && armed == 0) {
+            if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck) {   //throttle=max, yaw=left, pitch=min
                 if (rcDelayCommand == 20)
                     calibratingA = 400;
                 rcDelayCommand++;
-            } else if (rcData[YAW] > MAXCHECK && rcData[PITCH] < MINCHECK) {    //throttle=max, yaw=right, pitch=min  
+            } else if (rcData[YAW] > cfg.maxcheck && rcData[PITCH] < cfg.mincheck) {    //throttle=max, yaw=right, pitch=min  
                 if (rcDelayCommand == 20)
                     calibratingM = 1;   // MAG calibration request
                 rcDelayCommand++;
-            } else if (rcData[PITCH] > MAXCHECK) {
+            } else if (rcData[PITCH] > cfg.maxcheck) {
                 cfg.accTrim[PITCH] += 2;
                 writeParams();
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
-            } else if (rcData[PITCH] < MINCHECK) {
+            } else if (rcData[PITCH] < cfg.mincheck) {
                 cfg.accTrim[PITCH] -= 2;
                 writeParams();
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
-            } else if (rcData[ROLL] > MAXCHECK) {
+            } else if (rcData[ROLL] > cfg.maxcheck) {
                 cfg.accTrim[ROLL] += 2;
                 writeParams();
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
-            } else if (rcData[ROLL] < MINCHECK) {
+            } else if (rcData[ROLL] < cfg.mincheck) {
                 cfg.accTrim[ROLL] -= 2;
                 writeParams();
                 if (feature(FEATURE_LED_RING))
@@ -461,7 +461,7 @@ void loop(void)
 #endif
 
         if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-            if (AccInflightCalibrationArmed && armed == 1 && rcData[THROTTLE] > MINCHECK && !rcOptions[BOXARM]) {      // Copter is airborne and you are turning it off via boxarm : start measurement
+            if (AccInflightCalibrationArmed && armed == 1 && rcData[THROTTLE] > cfg.mincheck && !rcOptions[BOXARM]) {      // Copter is airborne and you are turning it off via boxarm : start measurement
                 InflightcalibratingA = 50;
                 AccInflightCalibrationArmed = 0;
             }

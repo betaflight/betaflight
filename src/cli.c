@@ -71,6 +71,9 @@ const clivalue_t valueTable[] = {
     { "minthrottle", VAR_UINT16, &cfg.minthrottle, 0, 2000 },
     { "maxthrottle", VAR_UINT16, &cfg.maxthrottle, 0, 2000 },
     { "mincommand", VAR_UINT16, &cfg.mincommand, 0, 2000 },
+    { "mincheck", VAR_UINT16, &cfg.mincheck, 0, 2000 },
+    { "maxcheck", VAR_UINT16, &cfg.maxcheck, 0, 2000 },
+    { "vbatscale", VAR_UINT8, &cfg.vbatscale, 10, 200 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
     { "wing_left_mid", VAR_UINT16, &cfg.wing_left_mid, 0, 2000 },
     { "wing_right_mid", VAR_UINT16, &cfg.wing_right_mid, 0, 2000 },
@@ -273,7 +276,7 @@ static void cliSave(char *cmdline)
 
 static void cliPrintVar(const clivalue_t *var)
 {
-    int32_t value;
+    int32_t value = 0;
     char buf[16];
 
     switch (var->type) {
@@ -338,7 +341,7 @@ static void cliSet(char *cmdline)
             uartPrint("\r\n");
             delay(10);
         }
-    } else if (eqptr = strstr(cmdline, "=")) {
+    } else if ((eqptr = strstr(cmdline, "="))) {
         // has equal, set var
         eqptr++;
         len--;
