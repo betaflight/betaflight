@@ -8,7 +8,7 @@
 config_t cfg;
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 5;
+static uint8_t checkNewConf = 6;
 
 void readEEPROM(void)
 {
@@ -103,6 +103,8 @@ void checkFirstTime(bool reset)
     cfg.gyro_smoothing_factor = 0x00141403; // default factors of 20, 20, 3 for R/P/Y
     cfg.powerTrigger1 = 0;
     cfg.vbatscale = 110;
+    cfg.vbatmaxcellvoltage = 43;
+    cfg.vbatmincellvoltage = 33;
 
     // Radio/ESC
     cfg.deadband = 0;

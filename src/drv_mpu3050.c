@@ -41,7 +41,7 @@ bool mpu3050Detect(sensor_t *gyro)
 
     gyro->init = mpu3050Init;
     gyro->read = mpu3050Read;
-    gyro->orient = mpu3050Align;
+    gyro->align = mpu3050Align;
 
     return true;
 }

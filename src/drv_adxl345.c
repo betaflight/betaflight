@@ -30,7 +30,7 @@ bool adxl345Detect(sensor_t *acc)
         
     acc->init = adxl345Init;
     acc->read = adxl345Read;
-    acc->orient = adxl345Align;
+    acc->align = adxl345Align;
     return true;
 }
 

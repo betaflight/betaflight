@@ -24,7 +24,7 @@ int main(void)
     // We have these sensors
     sensorsSet(SENSOR_ACC | SENSOR_BARO | SENSOR_MAG);
 
-    mixerInit(); // this will configure FEATURE_SERVO depending on mixer type
+    mixerInit(); // this will set useServo var depending on mixer type
     pwmInit(feature(FEATURE_PPM), useServo, feature(FEATURE_DIGITAL_SERVO));
 
     LED1_ON;
@@ -43,6 +43,10 @@ int main(void)
     // drop out any sensors that don't seem to work, init all the others. halt if gyro is dead.
     sensorsAutodetect();
     imuInit(); // Mag is initialized inside imuInit
+
+    // Check battery type/voltage
+    if (feature(FEATURE_VBAT))
+        batteryInit();
 
     previousTime = micros();
     calibratingG = 400;

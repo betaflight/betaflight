@@ -37,7 +37,7 @@ typedef struct sensor_t
 {
     sensorInitFuncPtr init;
     sensorReadFuncPtr read;
-    sensorReadFuncPtr orient;
+    sensorReadFuncPtr align;
 } sensor_t;
 
 #define digitalHi(p, i)     { p->BSRR = i; }

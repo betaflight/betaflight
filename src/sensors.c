@@ -13,6 +13,8 @@ extern int16_t AccInflightCalibrationArmed;
 extern uint16_t AccInflightCalibrationMeasurementDone;
 extern uint16_t AccInflightCalibrationSavetoEEProm;
 extern uint16_t AccInflightCalibrationActive;
+extern uint16_t batteryWarningVoltage;
+extern uint8_t batteryCellCount;
 
 sensor_t acc;                   // acc access functions
 sensor_t gyro;                  // gyro access functions
@@ -43,6 +45,34 @@ void sensorsAutodetect(void)
     }
     // this is safe because either mpu6050 or mpu3050 sets it, and in case of fail, none do.
     gyro.init();
+}
+
+uint16_t batteryAdcToVoltage(uint16_t src)
+{
+    // calculate battery voltage based on ADC reading
+    // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 4095 = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
+    return (((src) * 3.3f) / 4095) * cfg.vbatscale;
+}
+
+void batteryInit(void)
+{
+    uint8_t i;
+    uint32_t voltage = 0;
+
+    for (i = 0; i < 32; i++) {
+        voltage += adcGetBattery();
+        delay(10);
+    }
+
+    voltage = batteryAdcToVoltage((uint16_t)(voltage / 32));
+
+    // autodetect cell count, going from 2S..6S
+    for (i = 2; i < 6; i++) {
+    	if (voltage < i * cfg.vbatmaxcellvoltage)
+    	    break;
+    }
+    batteryCellCount = i;
+    batteryWarningVoltage = i * cfg.vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
 }
 
 static void ACC_Common(void)
@@ -132,7 +162,7 @@ static void ACC_Common(void)
 void ACC_getADC(void)
 {
     acc.read(accADC);
-    acc.orient(accADC);
+    acc.align(accADC);
 
     ACC_Common();
 }
@@ -237,7 +267,7 @@ void Gyro_getADC(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
     gyro.read(gyroADC);
-    gyro.orient(gyroADC);
+    gyro.align(gyroADC);
 
     GYRO_Common();
 }

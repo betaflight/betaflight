@@ -79,6 +79,8 @@ uint32_t pAlarm;         // we scale the eeprom value from [0:255] to this value
 // uint8_t powerTrigger1 = 0;       
 uint16_t powerValue = 0; // last known current
 uint16_t intPowerMeterSum, intPowerTrigger1;
+uint8_t batteryCellCount = 3;   // cell count
+uint16_t batteryWarningVoltage; // annoying buzzer after this one, battery ready to be dead
 
 void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 {
@@ -159,6 +161,7 @@ void annexCode(void)
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;
     }
+
 #if defined(POWERMETER_HARD)
     if (!(++psensorTimer % PSENSORFREQ)) {
         pMeterRaw = analogRead(PSENSORPIN);
@@ -180,15 +183,15 @@ void annexCode(void)
             vbatRawArray[(ind++) % 8] = adcGetBattery();
             for (i = 0; i < 8; i++)
                 vbatRaw += vbatRawArray[i];
-            vbat = (((vbatRaw / 8) * 3.3f) / 4095) * cfg.vbatscale;       // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 4095 = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
+            vbat = batteryAdcToVoltage(vbatRaw / 8);
         }
         if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch 
             buzzerFreq = 7;
-        } else if (((vbat > VBATLEVEL1_3S)
+        } else if (((vbat > batteryWarningVoltage)
     #if defined(POWERMETER)
                     && ((pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0))
     #endif
-                   ) || (NO_VBAT > vbat))   // ToLuSe
+                   ) || (vbat < cfg.vbatmincellvoltage))
         {                           //VBAT ok AND powermeter ok, buzzer off
             buzzerFreq = 0;
             buzzerState = 0;
@@ -197,12 +200,8 @@ void annexCode(void)
         } else if (pMeter[PMOTOR_SUM] > pAlarm) {   // sound alarm for powermeter
             buzzerFreq = 4;
     #endif
-        } else if (vbat > VBATLEVEL2_3S)
-            buzzerFreq = 1;
-        else if (vbat > VBATLEVEL3_3S)
-            buzzerFreq = 2;
-        else
-            buzzerFreq = 4;
+        } else
+            buzzerFreq = 4; // low battery
         if (buzzerFreq) {
             if (buzzerState && (currentTime > buzzerTime + 250000)) {
                 buzzerState = 0;
@@ -268,19 +267,19 @@ void annexCode(void)
     }
 #endif
 
-#if GPS
-    static uint32_t GPSLEDTime;
-    if (currentTime > GPSLEDTime && (GPS_fix_home == 1)) {
-        GPSLEDTime = currentTime + 150000;
-        LEDPIN_TOGGLE;
+    if (sensors(SENSOR_GPS)) {
+        static uint32_t GPSLEDTime;
+        if (currentTime > GPSLEDTime && (GPS_fix_home == 1)) {
+            GPSLEDTime = currentTime + 150000;
+            LED1_TOGGLE;
+        }
     }
-#endif
 }
 
 uint16_t readRawRC(uint8_t chan)
 {
     uint16_t data;
-    
+
     failsafeCnt = 0;
     data = pwmRead(rcChannel[chan]);
     if (data < 750 || data > 2250)
@@ -294,7 +293,7 @@ void computeRC(void)
     static int16_t rcData4Values[8][4], rcDataMean[8];
     static uint8_t rc4ValuesIndex = 0;
     uint8_t chan, a;
-    
+
 #if defined(SBUS)
     readSBus();
 #endif

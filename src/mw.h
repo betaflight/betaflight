@@ -50,15 +50,8 @@
 #define CAM_TIME_HIGH 1000   // the duration of HIGH state servo expressed in ms
 #define CAM_TIME_LOW 1000    // the duration of LOW state servo expressed in ms
 
-/* for V BAT monitoring
-   after the resistor divisor we should get [0V;5V]->[0;1023] on analog V_BATPIN
-   with R1=33k and R2=51k
-   vbat = [0;1023]*16/VBATSCALE */
+/* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - keep equal to PSENSORFREQ (6) unless you know what you are doing
-#define VBATLEVEL1_3S 107 // 10,7V
-#define VBATLEVEL2_3S 103 // 10,3V
-#define VBATLEVEL3_3S 99  // 9.9V
-#define NO_VBAT       16 // Avoid beeping without any battery
 
 // Moving Average Gyros by Magnetron1 (Michele Ardito) ########## beta
 //#define MMGYRO                         // Active Moving Average Function for Gyros
@@ -155,6 +148,8 @@ typedef struct config_t {
     uint8_t activate2[CHECKBOXITEMS];
     uint8_t powerTrigger1;                  // trigger for alarm based on power consumption
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
+    uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
+    uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery out alarms, in 0.1V units, default is 33 (3.3V)
     
     // Radio/ESC-related configuration
     uint8_t deadband;                       // introduce a deadband around the stick center. Must be greater than zero
@@ -248,6 +243,8 @@ void getEstimatedAltitude(void);
 
 // Sensors
 void sensorsAutodetect(void);
+void batteryInit(void);
+uint16_t batteryAdcToVoltage(uint16_t src);
 void ACC_getADC(void);
 void Baro_update(void);
 void Gyro_getADC(void);

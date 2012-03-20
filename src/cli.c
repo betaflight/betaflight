@@ -10,7 +10,11 @@ static void cliHelp(char *cmdline);
 static void cliMixer(char *cmdline);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
+static void cliStatus(char *cmdline);
 static void cliVersion(char *cmdline);
+
+// from sensors.c
+extern uint8_t batteryCellCount;
 
 // buffer
 static char cliBuffer[32];
@@ -46,6 +50,7 @@ const clicmd_t cmdTable[] = {
     { "mixer", "mixer name or list", cliMixer },
     { "save", "save and reboot", cliSave },
     { "set", "name=value or blank for list", cliSet },
+    { "status", "show system status", cliStatus },
     { "version", "", cliVersion },
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(cmdTable[0]))
@@ -74,6 +79,8 @@ const clivalue_t valueTable[] = {
     { "mincheck", VAR_UINT16, &cfg.mincheck, 0, 2000 },
     { "maxcheck", VAR_UINT16, &cfg.maxcheck, 0, 2000 },
     { "vbatscale", VAR_UINT8, &cfg.vbatscale, 10, 200 },
+    { "vbatmaxcellvoltage", VAR_UINT8, &cfg.vbatmaxcellvoltage, 10, 50 },
+    { "vbatmincellvoltage", VAR_UINT8, &cfg.vbatmincellvoltage, 10, 50 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
     { "wing_left_mid", VAR_UINT16, &cfg.wing_left_mid, 0, 2000 },
     { "wing_right_mid", VAR_UINT16, &cfg.wing_right_mid, 0, 2000 },
@@ -82,6 +89,18 @@ const clivalue_t valueTable[] = {
     { "tri_yaw_max", VAR_UINT16, &cfg.tri_yaw_max, 0, 2000 },
     { "tilt_pitch_prop", VAR_INT8, &cfg.tilt_pitch_prop, -100, 100 },
     { "tilt_roll_prop", VAR_INT8, &cfg.tilt_roll_prop, -100, 100 },
+    { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200},
+    { "i_pitch", VAR_UINT8, &cfg.I8[PITCH], 0, 200},
+    { "d_pitch", VAR_UINT8, &cfg.D8[PITCH], 0, 200},
+    { "p_roll", VAR_UINT8, &cfg.P8[ROLL], 0, 200},
+    { "i_roll", VAR_UINT8, &cfg.I8[ROLL], 0, 200},
+    { "d_roll", VAR_UINT8, &cfg.D8[ROLL], 0, 200},
+    { "p_yaw", VAR_UINT8, &cfg.P8[YAW], 0, 200},
+    { "i_yaw", VAR_UINT8, &cfg.I8[YAW], 0, 200},
+    { "d_yaw", VAR_UINT8, &cfg.D8[YAW], 0, 200},
+    { "p_level", VAR_UINT8, &cfg.P8[PIDLEVEL], 0, 200},
+    { "i_level", VAR_UINT8, &cfg.I8[PIDLEVEL], 0, 200},
+    { "d_level", VAR_UINT8, &cfg.D8[PIDLEVEL], 0, 200},
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(valueTable[0]))
@@ -365,9 +384,31 @@ static void cliSet(char *cmdline)
     }
 }
 
+static void cliStatus(char *cmdline)
+{
+    char buf[16];
+    uartPrint("System Uptime: ");
+    itoa(millis() / 1000, buf, 10);
+    uartPrint(buf);
+    uartPrint(" seconds, Voltage: ");
+    itoa(vbat, buf, 10);
+    uartPrint(buf);
+    uartPrint(" * 0.1V (");
+    itoa(batteryCellCount, buf, 10);
+    uartPrint(buf);
+    uartPrint("S battery)\r\n");
+    uartPrint("Cycle Time: ");
+    itoa(cycleTime, buf, 10);
+    uartPrint(buf);
+    uartPrint(", I2C Errors: ");
+    itoa(i2cGetErrorCounter(), buf, 10);
+    uartPrint(buf);
+    uartPrint("\r\n");
+}
+
 static void cliVersion(char *cmdline)
 {
-    uartPrint("Afro32 CLI version 2.0-pre3");
+    uartPrint("Afro32 CLI version 2.0-pre3 " __DATE__ " / " __TIME__);
 }
 
 void cliProcess(void)
@@ -380,8 +421,8 @@ void cliProcess(void)
 
     while (uartAvailable()) {
         uint8_t c = uartRead();
-
         if (c == '\t' || c == '?') {
+            // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
             int i = bufferIndex;
             for (cmd = cmdTable; cmd < cmdTable + CMD_COUNT; cmd++) {
@@ -406,7 +447,7 @@ void cliProcess(void)
             if (!bufferIndex || pstart != pend) {
                 /* Print list of ambiguous matches */
                 uartPrint("\r\033[K");
-                for (cmd = pstart;cmd <= pend;cmd++) {
+                for (cmd = pstart; cmd <= pend; cmd++) {
                     uartPrint(cmd->name);
                     uartWrite('\t');
                 }

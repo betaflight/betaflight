@@ -496,11 +496,6 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_mpu6050.c</FilePath>
             </File>
-            <File>
-              <FileName>drv_mpu6050.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\src\drv_mpu6050.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -1118,11 +1113,6 @@
               <FileName>drv_mpu6050.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_mpu6050.c</FilePath>
-            </File>
-            <File>
-              <FileName>drv_mpu6050.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\src\drv_mpu6050.h</FilePath>
             </File>
           </Files>
         </Group>

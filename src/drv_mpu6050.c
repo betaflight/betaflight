@@ -28,15 +28,15 @@ bool mpu6050Detect(sensor_t *acc, sensor_t *gyro)
     if (!ack)
         return false;
     
-    if (sig != 0x68)
+    if (sig != MPU6050_ADDRESS)
         return false;
 
     acc->init = mpu6050AccInit;
     acc->read = mpu6050AccRead;
-    acc->orient = mpu6050AccAlign;
+    acc->align = mpu6050AccAlign;
     gyro->init = mpu6050GyroInit;
     gyro->read = mpu6050GyroRead;
-    gyro->orient = mpu6050GyroAlign;
+    gyro->align = mpu6050GyroAlign;
 
     return true;
 }
