@@ -105,7 +105,8 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 
         if (channel.tim == tim && (TIM_GetITStatus(tim, channel.cc) == SET)) {
             TIM_ClearITPendingBit(channel.tim, channel.cc);
-            rcActive = true;
+            if (i == 0)
+                rcActive = true;
 
             switch (channel.channel) {
                 case TIM_Channel_1:
