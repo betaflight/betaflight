@@ -3,6 +3,26 @@
 
 extern uint8_t useServo;
 
+void throttleCalibration(void)
+{
+    uint8_t offset = useServo ? 2 : 0;
+    uint8_t len = pwmGetNumOutputChannels() -  offset;
+    uint8_t i;
+    
+    LED1_ON;
+
+    for (i = offset; i < len; i++)
+        pwmWrite(i, cfg.maxthrottle);
+
+    delay(3000); // 3s delay on high
+
+    for (i = offset; i < len; i++)
+        pwmWrite(i, cfg.minthrottle);
+
+    // blink leds to show we're calibrated and time to remove bind plug
+    failureMode(4);
+}
+
 int main(void)
 {
     uint8_t i;
@@ -25,7 +45,9 @@ int main(void)
     sensorsSet(SENSOR_ACC | SENSOR_BARO | SENSOR_MAG);
 
     mixerInit(); // this will set useServo var depending on mixer type
-    pwmInit(feature(FEATURE_PPM), useServo, feature(FEATURE_DIGITAL_SERVO));
+    // pwmInit returns true if throttle calibration is requested. if so, do it here. throttleCalibration() does NOT return - for safety.
+    if (pwmInit(feature(FEATURE_PPM), useServo, feature(FEATURE_DIGITAL_SERVO)))
+        throttleCalibration(); // noreturn
 
     LED1_ON;
     LED0_OFF;

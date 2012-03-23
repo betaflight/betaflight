@@ -294,9 +294,9 @@ void Mag_init(void)
     Mag_getRawADC();
     delay(10);
 
-    magCal[ROLL] = 1000.0 / abs(magADC[ROLL]);
-    magCal[PITCH] = 1000.0 / abs(magADC[PITCH]);
-    magCal[YAW] = 1000.0 / abs(magADC[YAW]);
+    magCal[ROLL] = 1160.0f / abs(magADC[ROLL]);
+    magCal[PITCH] = 1160.0f / abs(magADC[PITCH]);
+    magCal[YAW] = 1080.0f / abs(magADC[YAW]);
 
     hmc5883lFinishCal();
     magInit = 1;

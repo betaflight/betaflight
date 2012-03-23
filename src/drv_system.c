@@ -147,7 +147,7 @@ void failureMode(uint8_t mode)
     while (1) {
         LED1_TOGGLE;
         LED0_TOGGLE;
-        delay(475);
+        delay(475 * mode - 2);
         BEEP_ON
         delay(25);
         BEEP_OFF;

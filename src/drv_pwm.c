@@ -32,6 +32,10 @@ static volatile uint16_t *OutputChannels[] = {
     &(TIM4->CCR2),
     &(TIM4->CCR3),
     &(TIM4->CCR4),
+    &(TIM3->CCR1),
+    &(TIM3->CCR2),
+    &(TIM3->CCR3),
+    &(TIM3->CCR4),
 };
 
 static struct PWM_State {
@@ -43,6 +47,7 @@ static struct PWM_State {
 
 static TIM_ICInitTypeDef  TIM_ICInitStructure = { 0, };
 static bool usePPMFlag = false;
+static uint8_t numOutputChannels = 0;
 
 void TIM2_IRQHandler(void)
 {
@@ -95,7 +100,7 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
     for (i = 0; i < 8; i++) {
         struct TIM_Channel channel = Channels[i];
         struct PWM_State *state = &Inputs[i];
-        
+
         if (channel.tim == tim && (TIM_GetITStatus(tim, channel.cc) == SET)) {
             TIM_ClearITPendingBit(channel.tim, channel.cc);
 
@@ -113,16 +118,16 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
                     val = TIM_GetCapture4(channel.tim);
                     break;
             }
-            
+
             if (state->state == 0)
                 state->rise = val;
             else
                 state->fall = val;
-                
+
             if (state->state == 0) {
                 // switch states
                 state->state = 1;
-                
+
                 TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;
                 TIM_ICInitStructure.TIM_Channel = channel.channel;
                 TIM_ICInit(channel.tim, &TIM_ICInitStructure);
@@ -132,10 +137,10 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
                     state->capture = (state->fall - state->rise);
                 else
                     state->capture = ((0xffff - state->rise) + state->fall);
-                    
+
                 // switch state
                 state->state = 0;
-                
+
                 TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
                 TIM_ICInitStructure.TIM_Channel = channel.channel;
                 TIM_ICInit(channel.tim, &TIM_ICInitStructure);
@@ -144,32 +149,49 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
     }
 }
 
-void pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
+bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
 {
-    uint8_t i;
-    GPIO_InitTypeDef GPIO_InitStructure = { 0, };
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
-    TIM_OCInitTypeDef TIM_OCInitStructure = { 0, };
-    NVIC_InitTypeDef NVIC_InitStructure = { 0, };
+    uint8_t i, val;
+    uint16_t c;
+    bool throttleCal = true;
+    GPIO_InitTypeDef GPIO_InitStructure;
+    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
 
     // Inputs
 
-    // RX1  TIM2_CH1 PA0 [also PPM]
+    // RX1  TIM2_CH1 PA0 [also PPM] [also used for throttle calibration]
     // RX2  TIM2_CH2 PA1
-    // RX3  TIM2_CH3 PA2
-    // RX4  TIM2_CH4 PA3
-    // RX5  TIM3_CH1 PA6
-    // RX6  TIM3_CH2 PA7
-    // RX7  TIM3_CH3 PB0
-    // RX8  TIM3_CH4 PB1
-    
+    // RX3  TIM2_CH3 PA2 [also UART2_TX]
+    // RX4  TIM2_CH4 PA3 [also UART2_RX]
+    // RX5  TIM3_CH1 PA6 [also ADC_IN6]
+    // RX6  TIM3_CH2 PA7 [also ADC_IN7]
+    // RX7  TIM3_CH3 PB0 [also ADC_IN8]
+    // RX8  TIM3_CH4 PB1 [also ADC_IN9]
+
     // Outputs
     // PWM1 TIM1_CH1 PA8
     // PWM2 TIM1_CH4 PA11
-    // PWM3 TIM4_CH1 PB6
-    // PWM4 TIM4_CH2 PB7
+    // PWM3 TIM4_CH1 PB6 [also I2C1_SCL]
+    // PWM4 TIM4_CH2 PB7 [also I2C1_SDA]
     // PWM5 TIM4_CH3 PB8
     // PWM6 TIM4_CH4 PB9
+    
+    // automatic throttle calibration detection: PA0 to ground via bindplug
+    // Configure TIM2_CH1 for input
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    for (c = 0; c < 10000; c++) {
+        val = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0);
+        if (val) {
+            throttleCal = false;
+            break;
+        }
+    }    
 
     // use PPM or PWM input
     usePPMFlag = usePPM;
@@ -185,7 +207,7 @@ void pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
     if (usePPM) {
         // Configure TIM2_CH1 for PPM input
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
         GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
         GPIO_Init(GPIOA, &GPIO_InitStructure);
 
@@ -215,6 +237,8 @@ void pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
         TIM_ITConfig(TIM2, TIM_IT_CC1, ENABLE);
         TIM_Cmd(TIM2, ENABLE);
 
+        // configure number of PWM outputs, in PPM mode, we use bottom 4 channels more more motors
+        numOutputChannels = 10;
     } else {
         // Configure TIM2, TIM3 all 4 channels
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_6 | GPIO_Pin_7;
@@ -256,6 +280,9 @@ void pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
         TIM_ITConfig(TIM3, TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4, ENABLE);
         TIM_Cmd(TIM2, ENABLE);
         TIM_Cmd(TIM3, ENABLE);
+
+        // In PWM input mode, all 8 channels are wasted
+        numOutputChannels = 6;
     }
 
     // Output pins
@@ -302,14 +329,43 @@ void pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
     TIM_Cmd(TIM4, ENABLE);
     TIM_CtrlPWMOutputs(TIM1, ENABLE);
     TIM_CtrlPWMOutputs(TIM4, ENABLE);
+
+    if (usePPM) {
+        // PWM 7,8,9,10
+        TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD - 1;
+        TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
+
+        TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+        TIM_OCInitStructure.TIM_Pulse = PULSE_1MS;
+        TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
+
+        TIM_OC1Init(TIM3, &TIM_OCInitStructure);
+        TIM_OC2Init(TIM3, &TIM_OCInitStructure);
+        TIM_OC3Init(TIM3, &TIM_OCInitStructure);
+        TIM_OC4Init(TIM3, &TIM_OCInitStructure);
+
+        TIM_Cmd(TIM3, ENABLE);
+        TIM_CtrlPWMOutputs(TIM3, ENABLE);
+    }
+
+    return throttleCal;
 }
 
 void pwmWrite(uint8_t channel, uint16_t value)
 {
-    *OutputChannels[channel] = value;
+    if (channel < numOutputChannels)
+        *OutputChannels[channel] = value;
 }
 
 uint16_t pwmRead(uint8_t channel)
 {
     return Inputs[channel].capture;
+}
+
+uint8_t pwmGetNumOutputChannels(void)
+{
+    return numOutputChannels;
 }
