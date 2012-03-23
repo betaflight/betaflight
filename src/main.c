@@ -11,13 +11,15 @@ void throttleCalibration(void)
     
     LED1_ON;
 
+    // write maxthrottle (high)
     for (i = offset; i < len; i++)
         pwmWrite(i, cfg.maxthrottle);
 
     delay(3000); // 3s delay on high
 
+    // write 1000us (low)
     for (i = offset; i < len; i++)
-        pwmWrite(i, cfg.minthrottle);
+        pwmWrite(i, 1000);
 
     // blink leds to show we're calibrated and time to remove bind plug
     failureMode(4);
