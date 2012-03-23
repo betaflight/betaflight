@@ -48,6 +48,7 @@ static struct PWM_State {
 static TIM_ICInitTypeDef  TIM_ICInitStructure = { 0, };
 static bool usePPMFlag = false;
 static uint8_t numOutputChannels = 0;
+static volatile bool rcActive = false;
 
 void TIM2_IRQHandler(void)
 {
@@ -72,6 +73,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     if (TIM_GetITStatus(TIM2, TIM_IT_CC1) == SET) {
         last = now;
         now = TIM_GetCapture1(TIM2);
+        rcActive = true;
     }
 
     TIM_ClearITPendingBit(TIM2, TIM_IT_CC1);
@@ -103,6 +105,7 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 
         if (channel.tim == tim && (TIM_GetITStatus(tim, channel.cc) == SET)) {
             TIM_ClearITPendingBit(channel.tim, channel.cc);
+            rcActive = true;
 
             switch (channel.channel) {
                 case TIM_Channel_1:
@@ -151,13 +154,14 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 
 bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
 {
-    uint8_t i, val;
-    uint16_t c;
-    bool throttleCal = true;
     GPIO_InitTypeDef GPIO_InitStructure;
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
     TIM_OCInitTypeDef TIM_OCInitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
+
+    uint8_t i, val;
+    uint16_t c;
+    bool throttleCal = true;
 
     // Inputs
 
@@ -177,7 +181,7 @@ bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
     // PWM4 TIM4_CH2 PB7 [also I2C1_SDA]
     // PWM5 TIM4_CH3 PB8
     // PWM6 TIM4_CH4 PB9
-    
+
     // automatic throttle calibration detection: PA0 to ground via bindplug
     // Configure TIM2_CH1 for input
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
@@ -350,6 +354,12 @@ bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
         TIM_Cmd(TIM3, ENABLE);
         TIM_CtrlPWMOutputs(TIM3, ENABLE);
     }
+    
+    // throttleCal check part 2: delay 50ms, check if any RC pulses have been received
+    delay(50);
+    // if rc is on, it was set, check if rc is alive. if it is, cancel.
+    if (rcActive)
+        throttleCal = false;
 
     return throttleCal;
 }
