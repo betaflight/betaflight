@@ -39,6 +39,11 @@ const char *featureNames[] = {
     NULL
 };
 
+// sync this with AvailableSensors enum from board.h
+const char *sensorNames[] = {
+    "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
+};
+
 typedef struct {
     char *name;
     char *param;
@@ -186,7 +191,7 @@ static void cliFeature(char *cmdline)
     uint8_t i;
     uint8_t len;
     uint32_t mask;
-    
+
     len = strlen(cmdline);
     mask = featureMask();
 
@@ -424,6 +429,9 @@ static void cliSet(char *cmdline)
 static void cliStatus(char *cmdline)
 {
     char buf[16];
+    uint8_t i;
+    uint32_t mask;
+
     uartPrint("System Uptime: ");
     itoa(millis() / 1000, buf, 10);
     uartPrint(buf);
@@ -434,6 +442,19 @@ static void cliStatus(char *cmdline)
     itoa(batteryCellCount, buf, 10);
     uartPrint(buf);
     uartPrint("S battery)\r\n");
+
+    mask = sensorsMask();
+
+    uartPrint("Detected sensors: ");
+    for (i = 0; ; i++) {
+        if (sensorNames[i] == NULL)
+            break;
+        if (mask & (1 << i))
+            uartPrint((char *)sensorNames[i]);
+        uartWrite(' ');
+    }
+    uartPrint("\r\n");
+
     uartPrint("Cycle Time: ");
     itoa(cycleTime, buf, 10);
     uartPrint(buf);

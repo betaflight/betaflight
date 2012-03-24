@@ -583,6 +583,8 @@ void loop(void)
     currentTime = micros();
     cycleTime = currentTime - previousTime;
     previousTime = currentTime;
+    
+    mpu6050DmpLoop();
 
     if (sensors(SENSOR_MAG)) {
         if (abs(rcCommand[YAW]) < 70 && magMode) {

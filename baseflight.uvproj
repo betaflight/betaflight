@@ -436,6 +436,11 @@
               <FileType>5</FileType>
               <FilePath>.\src\mw.h</FilePath>
             </File>
+            <File>
+              <FileName>gps.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\gps.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1053,6 +1058,11 @@
               <FileName>mw.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\src\mw.h</FilePath>
+            </File>
+            <File>
+              <FileName>gps.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\gps.c</FilePath>
             </File>
           </Files>
         </Group>

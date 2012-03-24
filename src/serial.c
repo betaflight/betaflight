@@ -224,21 +224,6 @@ void serialCom(void)
         case 'R':               // reboot to bootloader (oops, apparently this w as used for other trash, fix later)
             systemReset(true);
             break;
-
-        case 'X':               // dynamic mixer
-            i = uartReadPoll();
-            if (i > 64 && i < 64 + MULTITYPE_LAST) {
-                serialize8('O');
-                serialize8('K');
-                cfg.mixerConfiguration = i - '@'; // A..B..C.. index
-                writeParams();
-                systemReset(false);
-                break;
-            }
-            serialize8('N');
-            serialize8('G');
-            break;
-
         case 'W':              //GUI write params to eeprom @ arduino
             // while (uartAvailable() < (7 + 3 * PIDITEMS + 2 * CHECKBOXITEMS)) { }
             for (i = 0; i < PIDITEMS; i++) {

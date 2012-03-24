@@ -159,6 +159,11 @@ void sensorsClear(uint32_t mask)
     enabledSensors &= ~(mask);
 }
 
+uint32_t sensorsMask(void)
+{
+    return enabledSensors;
+}
+
 bool feature(uint32_t mask)
 {
     return cfg.enabledFeatures & mask;
