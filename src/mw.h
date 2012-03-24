@@ -216,10 +216,11 @@ extern uint8_t baroMode;
 extern uint16_t intPowerMeterSum, intPowerTrigger1;
 extern int32_t GPS_latitude, GPS_longitude;
 extern int32_t GPS_latitude_home, GPS_longitude_home;
+extern int32_t GPS_latitude_hold, GPS_longitude_hold;
 extern uint8_t GPS_fix, GPS_fix_home;
 extern uint8_t GPS_numSat;
-extern uint16_t GPS_distanceToHome;
-extern int16_t GPS_directionToHome;
+extern uint16_t GPS_distanceToHome, GPS_distanceToHold;
+extern int16_t GPS_directionToHome, GPS_directionToHold;
 extern uint8_t GPS_update;
 extern uint8_t GPSModeHome;
 extern uint8_t GPSModeHold;
@@ -278,3 +279,6 @@ uint32_t featureMask(void);
 
 // cli
 void cliProcess(void);
+
+// gps
+void gpsInit(void);

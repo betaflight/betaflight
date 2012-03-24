@@ -152,7 +152,7 @@ void serialCom(void)
             for (i = 0; i < 8; i++)
                 serialize16(rcData[i]);
             serialize8(sensors(SENSOR_ACC) << 1 | sensors(SENSOR_BARO) << 2 | sensors(SENSOR_MAG) << 3 | sensors(SENSOR_GPS) << 4);
-            serialize8(accMode | baroMode << 1 | magMode << 2 | (GPSModeHome | GPSModeHold) << 3);
+            serialize8(accMode | baroMode << 1 | magMode << 2 | GPSModeHome << 3 | GPSModeHold << 4);
 #if defined(LOG_VALUES)
             serialize16(cycleTimeMax);
             cycleTimeMax = 0;

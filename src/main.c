@@ -8,7 +8,7 @@ void throttleCalibration(void)
     uint8_t offset = useServo ? 2 : 0;
     uint8_t len = pwmGetNumOutputChannels() -  offset;
     uint8_t i;
-    
+
     LED1_ON;
 
     // write maxthrottle (high)
@@ -28,7 +28,7 @@ void throttleCalibration(void)
 int main(void)
 {
     uint8_t i;
-    
+
 #if 0
     // using this to write asm for bootloader :)
     RCC->APB2ENR |= RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO; // GPIOB + AFIO
@@ -36,7 +36,7 @@ int main(void)
     AFIO->MAPR = 0x02000000;
     GPIOB->BRR = 0x18; // set low 4 & 3
     GPIOB->CRL = 0x44433444; // PIN 4 & 3 Output 50MHz
-#endif    
+#endif
 
     systemInit();
 
@@ -72,6 +72,10 @@ int main(void)
     if (feature(FEATURE_VBAT))
         batteryInit();
 
+    // Optional GPS - available only when using PPM, otherwise required pins won't be usable
+    if (feature(FEATURE_PPM) && feature(FEATURE_GPS))
+       gpsInit();
+
     previousTime = micros();
     calibratingG = 400;
 #if defined(POWERMETER)
@@ -79,7 +83,7 @@ int main(void)
         pMeter[i] = 0;
 #endif
 
-    // loopy    
+    // loopy
     while (1) {
         loop();
     }

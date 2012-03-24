@@ -29,6 +29,7 @@ typedef enum {
     FEATURE_CAMTRIG = 1 << 6,
     FEATURE_GYRO_SMOOTHING = 1 << 7,
     FEATURE_LED_RING = 1 << 8,
+    FEATURE_GPS = 1 << 9,
 } AvailableFeatures;
 
 typedef void (* sensorInitFuncPtr)(void);

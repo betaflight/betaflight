@@ -35,7 +35,7 @@ const char *mixerNames[] = {
 // sync this with AvailableFeatures enum from board.h
 const char *featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "DIGITAL_SERVO", "MOTOR_STOP",
-    "SERVO_TILT", "CAMTRIG", "GYRO_SMOOTHING", "LED_RING",
+    "SERVO_TILT", "CAMTRIG", "GYRO_SMOOTHING", "LED_RING", "GPS",
     NULL
 };
 
@@ -51,7 +51,7 @@ const clicmd_t cmdTable[] = {
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
     { "help", "", cliHelp },
-    { "map", "mapping of first 4 channels", cliMap },
+    { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
     { "save", "save and reboot", cliSave },
     { "set", "name=value or blank for list", cliSet },
@@ -113,6 +113,8 @@ const clivalue_t valueTable[] = {
 static void cliSetVar(const clivalue_t *var, const int32_t value);
 static void cliPrintVar(const clivalue_t *var);
 
+#ifndef HAVE_ITOA_FUNCTION
+
 /*
 ** The following two functions together make up an itoa()
 ** implementation. Function i2a() is a 'private' function
@@ -146,6 +148,8 @@ char *itoa(int i, char *a, int r)
         *i2a(i, a, r) = 0;
     return a;
 } 
+
+#endif
 
 static void cliPrompt(void)
 {
@@ -255,35 +259,27 @@ static void cliMap(char *cmdline)
     uint8_t len;
     uint8_t i;
     char out[9];
-    
+
     len = strlen(cmdline);
 
-    if (len == 0 || len != 8) {
-        uartPrint("Current assignment: ");
-        for (i = 0; i < 8; i++)
-            out[cfg.rcmap[i]] = rcChannelLetters[i];
-        out[i] = '\0'; 
-        uartPrint(out);
-        uartPrint("\r\n");
-        return;
-    } else {
-        bool fail = false;
+    if (len == 8) {
         // uppercase it
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < 8; i++)
             cmdline[i] = toupper(cmdline[i]);
-            if (!strchr(rcChannelLetters, cmdline[i])) {
-                fail = true;
-                break;
-            }
-        }
-
-        if (fail)
+        for (i = 0; i < 8; i++) {
+            if (strchr(rcChannelLetters, cmdline[i]) && !strchr(cmdline + i + 1, cmdline[i]))
+                continue;
             uartPrint("Must be any order of AETR1234\r\n");
-        else {
-            parseRcChannels(cmdline);
-            cliMap("");
+            return;
         }
+        parseRcChannels(cmdline);
     }
+    uartPrint("Current assignment: ");
+    for (i = 0; i < 8; i++)
+        out[cfg.rcmap[i]] = rcChannelLetters[i];
+    out[i] = '\0';
+    uartPrint(out);
+    uartPrint("\r\n");
 }
 
 static void cliMixer(char *cmdline)
