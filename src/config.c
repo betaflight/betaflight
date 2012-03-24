@@ -6,9 +6,21 @@
 #define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * 63)    // use the last KB for storage
 
 config_t cfg;
+const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
 static uint8_t checkNewConf = 6;
+
+void parseRcChannels(const char *input)
+{
+    const char *c, *s;
+ 
+    for (c = input; *c; c++) {
+        s = strchr(rcChannelLetters, *c);
+        if (s)                          
+            cfg.rcmap[s - rcChannelLetters] = c - input;
+    }
+}
 
 void readEEPROM(void)
 {
@@ -107,6 +119,8 @@ void checkFirstTime(bool reset)
     cfg.vbatmincellvoltage = 33;
 
     // Radio/ESC
+    parseRcChannels("AETR1234");
+    // parseRcChannels("ATER1234");
     cfg.deadband = 0;
     cfg.midrc = 1500;
     cfg.mincheck = 1100;

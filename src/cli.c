@@ -7,6 +7,7 @@ static void cliDefaults(char *cmdline);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
 static void cliHelp(char *cmdline);
+static void cliMap(char *cmdline);
 static void cliMixer(char *cmdline);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
@@ -15,6 +16,9 @@ static void cliVersion(char *cmdline);
 
 // from sensors.c
 extern uint8_t batteryCellCount;
+
+// from config.c RC Channel mapping
+extern const char rcChannelLetters[];
 
 // buffer
 static char cliBuffer[32];
@@ -47,6 +51,7 @@ const clicmd_t cmdTable[] = {
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
     { "help", "", cliHelp },
+    { "map", "mapping of first 4 channels", cliMap },
     { "mixer", "mixer name or list", cliMixer },
     { "save", "save and reboot", cliSave },
     { "set", "name=value or blank for list", cliSet },
@@ -242,6 +247,42 @@ static void cliHelp(char *cmdline)
     	uartWrite(' ');
     	uartPrint(cmdTable[i].param);
     	uartPrint("\r\n");
+    }
+}
+
+static void cliMap(char *cmdline)
+{
+    uint8_t len;
+    uint8_t i;
+    char out[9];
+    
+    len = strlen(cmdline);
+
+    if (len == 0 || len != 8) {
+        uartPrint("Current assignment: ");
+        for (i = 0; i < 8; i++)
+            out[cfg.rcmap[i]] = rcChannelLetters[i];
+        out[i] = '\0'; 
+        uartPrint(out);
+        uartPrint("\r\n");
+        return;
+    } else {
+        bool fail = false;
+        // uppercase it
+        for (i = 0; i < 8; i++) {
+            cmdline[i] = toupper(cmdline[i]);
+            if (!strchr(rcChannelLetters, cmdline[i])) {
+                fail = true;
+                break;
+            }
+        }
+
+        if (fail)
+            uartPrint("Must be any order of AETR1234\r\n");
+        else {
+            parseRcChannels(cmdline);
+            cliMap("");
+        }
     }
 }
 

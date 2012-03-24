@@ -152,6 +152,7 @@ typedef struct config_t {
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery out alarms, in 0.1V units, default is 33 (3.3V)
     
     // Radio/ESC-related configuration
+    uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
     uint8_t deadband;                       // introduce a deadband around the stick center. Must be greater than zero
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
@@ -262,6 +263,7 @@ void mixTable(void);
 void serialCom(void);
 
 // Config
+void parseRcChannels(const char *input);
 void readEEPROM(void);
 void writeParams(void);
 void checkFirstTime(bool reset);

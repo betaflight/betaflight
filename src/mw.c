@@ -43,7 +43,6 @@ uint8_t baroMode = 0;    // if altitude hold is activated
 
 int16_t axisPID[3];
 volatile uint16_t rcValue[18] = { 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502 }; // interval [1000;2000]
-uint8_t rcChannel[8] = { ROLL, PITCH, THROTTLE, YAW, AUX1, AUX2, AUX3, AUX4 };
 
 // **********************
 // GPS
@@ -281,7 +280,7 @@ uint16_t readRawRC(uint8_t chan)
     uint16_t data;
 
     failsafeCnt = 0;
-    data = pwmRead(rcChannel[chan]);
+    data = pwmRead(cfg.rcmap[chan]);
     if (data < 750 || data > 2250)
         data = 1500;
 
@@ -293,7 +292,7 @@ void computeRC(void)
     static int16_t rcData4Values[8][4], rcDataMean[8];
     static uint8_t rc4ValuesIndex = 0;
     uint8_t chan, a;
-
+    
 #if defined(SBUS)
     readSBus();
 #endif

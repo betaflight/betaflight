@@ -32,6 +32,7 @@ static volatile uint16_t *OutputChannels[] = {
     &(TIM4->CCR2),
     &(TIM4->CCR3),
     &(TIM4->CCR4),
+    // Extended use during CPPM input
     &(TIM3->CCR1),
     &(TIM3->CCR2),
     &(TIM3->CCR3),
@@ -162,7 +163,7 @@ bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
 
     uint8_t i, val;
     uint16_t c;
-    bool throttleCal = true;
+    bool throttleCal = false;
 
     // Inputs
 
@@ -189,14 +190,19 @@ bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+#if 0
+    // wait a while
+    delay(100);
 
-    for (c = 0; c < 10000; c++) {
+    for (c = 0; c < 50000; c++) {
         val = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0);
         if (val) {
             throttleCal = false;
             break;
         }
-    }    
+    }
+#endif
 
     // use PPM or PWM input
     usePPMFlag = usePPM;
@@ -355,12 +361,14 @@ bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
         TIM_Cmd(TIM3, ENABLE);
         TIM_CtrlPWMOutputs(TIM3, ENABLE);
     }
-    
+
+#if 0    
     // throttleCal check part 2: delay 50ms, check if any RC pulses have been received
     delay(50);
     // if rc is on, it was set, check if rc is alive. if it is, cancel.
     if (rcActive)
         throttleCal = false;
+#endif
 
     return throttleCal;
 }
