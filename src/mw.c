@@ -120,19 +120,27 @@ void annexCode(void)
 
     for (axis = 0; axis < 3; axis++) {
         uint16_t tmp = min(abs(rcData[axis] - cfg.midrc), 500);
-        if (cfg.deadband > 0) {
-            if (tmp > cfg.deadband) {
-                tmp -= cfg.deadband;
-            } else {
-                tmp = 0;
+        if (axis != 2) {        // ROLL & PITCH
+            uint16_t tmp2;
+            if (cfg.deadband) {
+                if (tmp > cfg.deadband) {
+                    tmp -= cfg.deadband;
+                } else {
+                    tmp = 0;
+                }
             }
-        }
-        if (axis != 2) {        //ROLL & PITCH
-            uint16_t tmp2 = tmp / 100;
+            tmp2 = tmp / 100;
             rcCommand[axis] = lookupRX[tmp2] + (tmp - tmp2 * 100) * (lookupRX[tmp2 + 1] - lookupRX[tmp2]) / 100;
             prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
-        } else {                //YAW
+        } else {                // YAW
+            if (cfg.yawdeadband) {
+                if (tmp > cfg.yawdeadband) {
+                    tmp -= cfg.yawdeadband;
+                } else {
+                    tmp = 0;
+                }
+            }
             rcCommand[axis] = tmp;
             prop1 = 100 - (uint16_t)cfg.yawRate * tmp / 500;
         }

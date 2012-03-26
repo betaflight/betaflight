@@ -157,7 +157,8 @@ typedef struct config_t {
     
     // Radio/ESC-related configuration
     uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
-    uint8_t deadband;                       // introduce a deadband around the stick center. Must be greater than zero
+    uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
+    uint8_t yawdeadband;                    // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
     uint8_t spektrum_hires;                 // spektrum high-resolution y/n (1024/2048bit)
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end

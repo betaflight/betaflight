@@ -9,7 +9,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 7;
+static uint8_t checkNewConf = 8;
 
 void parseRcChannels(const char *input)
 {
@@ -123,6 +123,7 @@ void checkFirstTime(bool reset)
     // Radio/ESC
     parseRcChannels("AETR1234");
     cfg.deadband = 0;
+    cfg.yawdeadband = 0;
     cfg.spektrum_hires = 0;
     cfg.midrc = 1500;
     cfg.mincheck = 1100;

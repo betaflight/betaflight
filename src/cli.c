@@ -83,6 +83,7 @@ typedef struct {
 
 const clivalue_t valueTable[] = {
     { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
+    { "yawdeadband", VAR_UINT8, &cfg.yawdeadband, 0, 100 },
     { "midrc", VAR_UINT16, &cfg.midrc, 1200, 1700 },
     { "minthrottle", VAR_UINT16, &cfg.minthrottle, 0, 2000 },
     { "maxthrottle", VAR_UINT16, &cfg.maxthrottle, 0, 2000 },
