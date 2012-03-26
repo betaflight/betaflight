@@ -156,9 +156,9 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 
 static void pwmInitializeInput(bool usePPM)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    NVIC_InitTypeDef NVIC_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStructure = { 0, };
+    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
+    NVIC_InitTypeDef NVIC_InitStructure = { 0, };
     uint8_t i;
 
    // Input pins
@@ -246,9 +246,9 @@ static void pwmInitializeInput(bool usePPM)
 
 bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServos)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    TIM_OCInitTypeDef TIM_OCInitStructure;
+    GPIO_InitTypeDef GPIO_InitStructure = { 0, };
+    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
+    TIM_OCInitTypeDef TIM_OCInitStructure = { 0, };
 
     uint8_t i, val;
     uint16_t c;
@@ -279,7 +279,7 @@ bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServo
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-    
+
 #if 0
     // wait a while
     delay(100);
@@ -304,7 +304,7 @@ bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServo
     // TODO: clean this shit up. Make it all dynamic etc.
     if (pwmppmInput)
         pwmInitializeInput(usePPMFlag);
- 
+
     // Output pins
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_11;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
@@ -314,6 +314,9 @@ bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServo
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
     // Output timers
+    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+    TIM_TimeBaseStructure.TIM_Prescaler = (72 - 1);
+
     if (useServos) {
         // 50Hz/200Hz period on ch1, 2 for servo
         if (useDigitalServos)
