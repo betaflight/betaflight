@@ -60,7 +60,7 @@
 //#define MMSERVOGIMBAL                  // Active Output Moving Average Function for Servos Gimbal
 //#define MMSERVOGIMBALVECTORLENGHT 32   // Lenght of Moving Average Vector
 
-#define   VERSION  203
+#define  VERSION  20
 
 // Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
 typedef enum MultiType
@@ -142,6 +142,10 @@ typedef struct config_t {
     int16_t accZero[3];
     int16_t magZero[3];
     int16_t accTrim[2];
+    
+    // sensor-related stuff
+    uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
+    uint16_t gyro_lpf;                      // mpuX050 LPF setting
     uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
 
     uint8_t activate1[CHECKBOXITEMS];
@@ -154,6 +158,7 @@ typedef struct config_t {
     // Radio/ESC-related configuration
     uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
     uint8_t deadband;                       // introduce a deadband around the stick center. Must be greater than zero
+    uint8_t spektrum_hires;                 // spektrum high-resolution y/n (1024/2048bit)
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
@@ -277,6 +282,10 @@ void featureSet(uint32_t mask);
 void featureClear(uint32_t mask);
 void featureClearAll(void);
 uint32_t featureMask(void);
+
+// spektrum
+void spektrumInit(void);
+bool spektrumFrameComplete(void);
 
 // cli
 void cliProcess(void);

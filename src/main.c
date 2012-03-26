@@ -2,6 +2,11 @@
 #include "mw.h"
 
 extern uint8_t useServo;
+extern rcReadRawDataPtr rcReadRawFunc;
+
+// two receiver read functions
+extern uint16_t pwmReadRawRC(uint8_t chan);
+extern uint16_t spektrumReadRawRC(uint8_t chan);
 
 void throttleCalibration(void)
 {
@@ -48,8 +53,11 @@ int main(void)
 
     mixerInit(); // this will set useServo var depending on mixer type
     // pwmInit returns true if throttle calibration is requested. if so, do it here. throttleCalibration() does NOT return - for safety.
-    if (pwmInit(feature(FEATURE_PPM), useServo, feature(FEATURE_DIGITAL_SERVO)))
+    if (pwmInit(feature(FEATURE_PPM), !feature(FEATURE_SPEKTRUM), useServo, feature(FEATURE_DIGITAL_SERVO)))
         throttleCalibration(); // noreturn
+
+    // configure PWM/CPPM read function. spektrum will override that
+    rcReadRawFunc = pwmReadRawRC;
 
     LED1_ON;
     LED0_OFF;
@@ -72,9 +80,15 @@ int main(void)
     if (feature(FEATURE_VBAT))
         batteryInit();
 
-    // Optional GPS - available only when using PPM, otherwise required pins won't be usable
-    if (feature(FEATURE_PPM) && feature(FEATURE_GPS))
-       gpsInit();
+    if (feature(FEATURE_SPEKTRUM)) {
+        spektrumInit();
+        rcReadRawFunc = spektrumReadRawRC;
+    } else {
+        // spektrum and GPS are mutually exclusive
+        // Optional GPS - available only when using PPM, otherwise required pins won't be usable
+        if (feature(FEATURE_PPM) && feature(FEATURE_GPS))
+           gpsInit();
+    }
 
     previousTime = micros();
     calibratingG = 400;

@@ -1,7 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-// March  2012     V2.0_pre_version_3
+// March  2012     V2.0
 
 #define CHECKBOXITEMS 11
 #define PIDITEMS 8
@@ -22,19 +22,12 @@ uint8_t vbat;                   // battery voltage in 0.1V steps
 
 volatile int16_t failsafeCnt = 0;
 int16_t failsafeEvents = 0;
-int16_t rcData[8];              // interval [1000;2000]
+int16_t rcData[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };              // interval [1000;2000]
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
-//uint8_t rcRate8;
-//uint8_t rcExpo8;
-int16_t lookupRX[7];            //  lookup table for expo & RC rate
+int16_t lookupRX[7];            // lookup table for expo & RC rate
+rcReadRawDataPtr rcReadRawFunc = NULL; // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
-// uint8_t P8[8], I8[8], D8[8];     //8 bits is much faster and the code is much shorter
 uint8_t dynP8[3], dynI8[3], dynD8[3];
-// uint8_t rollPitchRate;
-// uint8_t yawRate;
-// uint8_t dynThrPID;
-// uint8_t activate1[CHECKBOXITEMS];
-// uint8_t activate2[CHECKBOXITEMS];
 uint8_t rcOptions[CHECKBOXITEMS];
 uint8_t okToArm = 0;
 uint8_t accMode = 0;            // if level mode is a activated
@@ -42,7 +35,6 @@ uint8_t magMode = 0;            // if compass heading hold is a activated
 uint8_t baroMode = 0;           // if altitude hold is activated
 
 int16_t axisPID[3];
-volatile uint16_t rcValue[18] = { 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502 }; // interval [1000;2000]
 
 // **********************
 // GPS
@@ -60,7 +52,6 @@ uint16_t GPS_altitude, GPS_speed;       // altitude in 0.1m and speed in 0.1m/s 
 uint8_t GPS_update = 0;         // it's a binary toogle to distinct a GPS position update
 int16_t GPS_angle[2];           // it's the angles that must be applied for GPS correction
 
-
 //Automatic ACC Offset Calibration
 // **********************
 uint16_t InflightcalibratingA = 0;
@@ -76,7 +67,6 @@ uint16_t AccInflightCalibrationActive = 0;
 uint32_t pMeter[PMOTOR_SUM + 1];        // we use [0:7] for eight motors,one extra for sum
 uint8_t pMeterV;                // dummy to satisfy the paramStruct logic in ConfigurationLoop()
 uint32_t pAlarm;                // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
-// uint8_t powerTrigger1 = 0;       
 uint16_t powerValue = 0;        // last known current
 uint16_t intPowerMeterSum, intPowerTrigger1;
 uint8_t batteryCellCount = 3;   // cell count
@@ -119,7 +109,7 @@ void annexCode(void)
     static uint16_t vbatRawArray[8];
     uint8_t i;
 
-    //PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
+    // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
     if (rcData[THROTTLE] < 1500) {
         prop2 = 100;
     } else if (rcData[THROTTLE] < 2000) {
@@ -141,20 +131,20 @@ void annexCode(void)
             uint16_t tmp2 = tmp / 100;
             rcCommand[axis] = lookupRX[tmp2] + (tmp - tmp2 * 100) * (lookupRX[tmp2 + 1] - lookupRX[tmp2]) / 100;
             prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
-            prop1 = (uint16_t) prop1 *prop2 / 100;
+            prop1 = (uint16_t)prop1 * prop2 / 100;
         } else {                //YAW
             rcCommand[axis] = tmp;
-            prop1 = 100 - (uint16_t) cfg.yawRate * tmp / 500;
+            prop1 = 100 - (uint16_t)cfg.yawRate * tmp / 500;
         }
-        dynP8[axis] = (uint16_t) cfg.P8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t) cfg.D8[axis] * prop1 / 100;
+        dynP8[axis] = (uint16_t)cfg.P8[axis] * prop1 / 100;
+        dynD8[axis] = (uint16_t)cfg.D8[axis] * prop1 / 100;
         if (rcData[axis] < cfg.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
-    rcCommand[THROTTLE] = cfg.minthrottle + (int32_t) (cfg.maxthrottle - cfg.minthrottle) * (rcData[THROTTLE] - cfg.mincheck) / (2000 - cfg.mincheck);
+    rcCommand[THROTTLE] = cfg.minthrottle + (int32_t)(cfg.maxthrottle - cfg.minthrottle) * (rcData[THROTTLE] - cfg.mincheck) / (2000 - cfg.mincheck);
 
     if (headFreeMode) {
-        float radDiff = (heading - headFreeModeHold) * 0.0174533f;      // where PI/180 ~= 0.0174533
+        float radDiff = (heading - headFreeModeHold) * M_PI / 180.0f;
         float cosDiff = cosf(radDiff);
         float sinDiff = sinf(radDiff);
         int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
@@ -274,7 +264,7 @@ void annexCode(void)
     }
 }
 
-uint16_t readRawRC(uint8_t chan)
+uint16_t pwmReadRawRC(uint8_t chan)
 {
     uint16_t data;
 
@@ -292,12 +282,9 @@ void computeRC(void)
     static uint8_t rc4ValuesIndex = 0;
     uint8_t chan, a;
 
-#if defined(SBUS)
-    readSBus();
-#endif
     rc4ValuesIndex++;
     for (chan = 0; chan < 8; chan++) {
-        rcData4Values[chan][rc4ValuesIndex % 4] = readRawRC(chan);
+        rcData4Values[chan][rc4ValuesIndex % 4] = rcReadRawFunc(chan);
         rcDataMean[chan] = 0;
         for (a = 0; a < 4; a++)
             rcDataMean[chan] += rcData4Values[chan][a];
@@ -324,16 +311,15 @@ void loop(void)
     static uint32_t rcTime = 0;
     static int16_t initialThrottleHold;
 
-#if defined(SPEKTRUM)
-    if (rcFrameComplete)
+    // this will return false if spektrum is disabled. shrug.
+    if (spektrumFrameComplete())
         computeRC();
-#endif
 
     if (currentTime > rcTime) { // 50Hz
         rcTime = currentTime + 20000;
-#if !(defined(SPEKTRUM) ||defined(BTSERIAL))
-        computeRC();
-#endif
+        // TODO clean this up. computeRC should handle this check
+        if (!feature(FEATURE_SPEKTRUM))
+            computeRC();
         // Failsafe routine - added by MIS
 #if defined(FAILSAFE)
         if (failsafeCnt > (5 * FAILSAVE_DELAY) && armed == 1) { // Stabilize, and set Throttle to specified level
@@ -376,7 +362,7 @@ void loop(void)
                 }
             } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (armed == 0 && rcData[YAW] < cfg.mincheck && rcData[PITCH] > cfg.maxcheck && rcData[ROLL] > cfg.maxcheck)) {
                 if (rcDelayCommand == 20) {
-                    if (AccInflightCalibrationMeasurementDone) {        //trigger saving into eeprom after landing
+                    if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
                         AccInflightCalibrationMeasurementDone = 0;
                         AccInflightCalibrationSavetoEEProm = 1;
                     } else {
@@ -395,12 +381,10 @@ void loop(void)
                 } else if (armed)
                     armed = 0;
                 rcDelayCommand = 0;
-            } else if ((rcData[YAW] < cfg.mincheck || rcData[ROLL] < cfg.mincheck)
-                       && armed == 1) {
+            } else if ((rcData[YAW] < cfg.mincheck || rcData[ROLL] < cfg.mincheck) && armed == 1) {
                 if (rcDelayCommand == 20)
                     armed = 0;  // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
-            } else if ((rcData[YAW] > cfg.maxcheck || rcData[ROLL] > cfg.maxcheck)
-                       && rcData[PITCH] < cfg.maxcheck && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
+            } else if ((rcData[YAW] > cfg.maxcheck || rcData[ROLL] > cfg.maxcheck) && rcData[PITCH] < cfg.maxcheck && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
                 if (rcDelayCommand == 20) {
                     armed = 1;
                     headFreeModeHold = heading;
@@ -418,11 +402,11 @@ void loop(void)
             } else
                 rcDelayCommand = 0;
         } else if (rcData[THROTTLE] > cfg.maxcheck && armed == 0) {
-            if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck) {   //throttle=max, yaw=left, pitch=min
+            if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck) {   // throttle=max, yaw=left, pitch=min
                 if (rcDelayCommand == 20)
                     calibratingA = 400;
                 rcDelayCommand++;
-            } else if (rcData[YAW] > cfg.maxcheck && rcData[PITCH] < cfg.mincheck) {    //throttle=max, yaw=right, pitch=min  
+            } else if (rcData[YAW] > cfg.maxcheck && rcData[PITCH] < cfg.mincheck) {    // throttle=max, yaw=right, pitch=min
                 if (rcDelayCommand == 20)
                     calibratingM = 1;   // MAG calibration request
                 rcDelayCommand++;
@@ -462,7 +446,7 @@ void loop(void)
                 InflightcalibratingA = 50;
                 AccInflightCalibrationArmed = 0;
             }
-            if (rcOptions[BOXPASSTHRU]) {       //Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
+            if (rcOptions[BOXPASSTHRU]) {       // Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
                 if (!AccInflightCalibrationArmed) {
                     AccInflightCalibrationArmed = 1;
                     InflightcalibratingA = 50;
@@ -479,7 +463,7 @@ void loop(void)
                 || (((rcData[AUX3] < 1300) | (1300 < rcData[AUX3] && rcData[AUX3] < 1700) << 1 | (rcData[AUX3] > 1700) << 2 | (rcData[AUX4] < 1300) << 3 | (1300 < rcData[AUX4] && rcData[AUX4] < 1700) << 4 | (rcData[AUX4] > 1700) << 5) & cfg.activate2[i]);
         }
 
-        //note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
+        // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
         if ((rcOptions[BOXACC] || (failsafeCnt > 5 * FAILSAVE_DELAY)) && (sensors(SENSOR_ACC))) {
             // bumpless transfer to Level mode
             if (!accMode) {
@@ -547,7 +531,7 @@ void loop(void)
         } else
             passThruMode = 0;
     } else {                    // not in rc loop
-        static int8_t taskOrder = 0;    //never call all function in the same loop, to avoid high delay spikes
+        static int8_t taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
         switch (taskOrder) {
         case 0:
             taskOrder++;
@@ -570,7 +554,6 @@ void loop(void)
             GPS_NewData();
 #endif
             break;
-
         default:
             taskOrder = 0;
             break;
@@ -578,12 +561,11 @@ void loop(void)
     }
 
     computeIMU();
-
     // Measure loop rate just afer reading the sensors
     currentTime = micros();
     cycleTime = currentTime - previousTime;
     previousTime = currentTime;
-    
+
     mpu6050DmpLoop();
 
     if (sensors(SENSOR_MAG)) {
@@ -625,37 +607,38 @@ void loop(void)
                 GPS_dist = GPS_distanceToHold;
                 GPS_dir = GPS_directionToHold;
             }
-            radDiff = (GPS_dir - heading) * 0.0174533f;
-            GPS_angle[ROLL] = constrain(cfg.P8[PIDGPS] * sin(radDiff) * GPS_dist / 10, -cfg.D8[PIDGPS] * 10, +cfg.D8[PIDGPS] * 10);     // with P=5.0, a distance of 1 meter = 0.5deg inclination
-            GPS_angle[PITCH] = constrain(cfg.P8[PIDGPS] * cos(radDiff) * GPS_dist / 10, -cfg.D8[PIDGPS] * 10, +cfg.D8[PIDGPS] * 10);    // max inclination = D deg
+            radDiff = (GPS_dir - heading) * M_PI / 180.0f;
+            GPS_angle[ROLL] = constrain(cfg.P8[PIDGPS] * sinf(radDiff) * GPS_dist / 10, -cfg.D8[PIDGPS] * 10, +cfg.D8[PIDGPS] * 10);     // with P=5.0, a distance of 1 meter = 0.5deg inclination
+            GPS_angle[PITCH] = constrain(cfg.P8[PIDGPS] * cosf(radDiff) * GPS_dist / 10, -cfg.D8[PIDGPS] * 10, +cfg.D8[PIDGPS] * 10);    // max inclination = D deg
         }
     }
-    //**** PITCH & ROLL & YAW PID ****    
+
+    // **** PITCH & ROLL & YAW PID ****    
     for (axis = 0; axis < 3; axis++) {
-        if (accMode == 1 && axis < 2) { //LEVEL MODE
+        if (accMode == 1 && axis < 2) { // LEVEL MODE
             // 50 degrees max inclination
             errorAngle = constrain(2 * rcCommand[axis] - GPS_angle[axis], -500, +500) - angle[axis] + cfg.accTrim[axis];        //16 bits is ok here
 #ifdef LEVEL_PDF
-            PTerm = -(int32_t) angle[axis] * cfg.P8[PIDLEVEL] / 100;
+            PTerm = -(int32_t)angle[axis] * cfg.P8[PIDLEVEL] / 100;
 #else
-            PTerm = (int32_t) errorAngle * cfg.P8[PIDLEVEL] / 100;       //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+            PTerm = (int32_t)errorAngle * cfg.P8[PIDLEVEL] / 100;       //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
 #endif
             PTerm = constrain(PTerm, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
 
-            errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);      //WindUp     //16 bits is ok here
-            ITerm = ((int32_t) errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;     //32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
-        } else {                //ACRO MODE or YAW axis
-            error = (int32_t) rcCommand[axis] * 10 * 8 / cfg.P8[axis];  //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
+            errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);      // WindUp     // 16 bits is ok here
+            ITerm = ((int32_t)errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;     // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
+        } else {                // ACRO MODE or YAW axis
+            error = (int32_t)rcCommand[axis] * 10 * 8 / cfg.P8[axis];  //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
             error -= gyroData[axis];
 
             PTerm = rcCommand[axis];
 
-            errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000);     //WindUp //16 bits is ok here
+            errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000);     // WindUp // 16 bits is ok here
             if (abs(gyroData[axis]) > 640)
                 errorGyroI[axis] = 0;
             ITerm = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;       // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
         }
-        PTerm -= (int32_t) gyroData[axis] * dynP8[axis] / 10 / 8;       // 32 bits is needed for calculation
+        PTerm -= (int32_t)gyroData[axis] * dynP8[axis] / 10 / 8;       // 32 bits is needed for calculation
 
         delta = gyroData[axis] - lastGyro[axis];        //16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
         lastGyro[axis] = gyroData[axis];
@@ -663,7 +646,7 @@ void loop(void)
         delta2[axis] = delta1[axis];
         delta1[axis] = delta;
 
-        DTerm = ((int32_t) deltaSum * dynD8[axis]) >> 5;        //32 bits is needed for calculation
+        DTerm = ((int32_t)deltaSum * dynD8[axis]) >> 5;        //32 bits is needed for calculation
 
         axisPID[axis] = PTerm + ITerm - DTerm;
     }

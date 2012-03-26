@@ -35,7 +35,6 @@ typedef struct  {
 	uint8_t sensortype;
 
 	int32_t param_b5;
-	int32_t number_of_samples;
 	int16_t oversampling_setting;
 	int16_t smd500_t_resolution, smd500_masterclock;
 
@@ -129,7 +128,6 @@ bool bmp085Init(void)
     p_bmp085->dev_addr = BMP085_I2C_ADDR;                   /* preset BMP085 I2C_addr */
     i2cRead(p_bmp085->dev_addr, BMP085_CHIP_ID__REG, 1, &data);  /* read Chip Id */
     p_bmp085->chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
-    p_bmp085->number_of_samples = 1;
     p_bmp085->oversampling_setting = 2;
     
     if (p_bmp085->chip_id == BMP085_CHIP_ID) {            /* get bitslice */
@@ -162,11 +160,15 @@ int32_t bmp085_read_pressure(void)
     return bmp085_get_pressure(bmp085_get_up());
 }
 
+// #define BMP_TEMP_OSS 4
 
 int16_t bmp085_get_temperature(uint32_t ut)
 {
     int16_t temperature;
     int32_t x1, x2;
+#ifdef BMP_TEMP_OSS    
+    static uint32_t temp;
+#endif
 
     if (p_bmp085->sensortype == BOSCH_PRESSURE_BMP085) {
         x1 = (((int32_t) ut - (int32_t) p_bmp085->cal_param.ac6) * (int32_t) p_bmp085->cal_param.ac5) >> 15;
@@ -175,7 +177,14 @@ int16_t bmp085_get_temperature(uint32_t ut)
     }
     temperature = ((p_bmp085->param_b5 + 8) >> 4);  // temperature in 0.1°C
 
+#ifdef BMP_TEMP_OSS    
+    temp *= (1 << BMP_TEMP_OSS) - 1;        // multiply the temperature variable by 3 - we have tau == 1/4
+    temp += ((uint32_t)temperature) << 8;   // add on the buffer
+    temp >>= BMP_TEMP_OSS;                  // divide by 4
+    return (int16_t)temp;
+#else
     return temperature;
+#endif
 }
 
 int32_t bmp085_get_pressure(uint32_t up)
@@ -266,7 +275,6 @@ uint32_t bmp085_get_up(void)
     
    	i2cRead(p_bmp085->dev_addr, BMP085_ADC_OUT_MSB_REG, 3, data);
 	up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2]) >> (8 - p_bmp085->oversampling_setting);
-    p_bmp085->number_of_samples = 1;
 
     return up;
 }

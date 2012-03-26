@@ -18,11 +18,11 @@ static void uartTxDMA(void)
 {
     DMA1_Channel4->CMAR = (uint32_t)&txBuffer[txBufferTail];
     if (txBufferHead > txBufferTail) {
-	    DMA1_Channel4->CNDTR = txBufferHead - txBufferTail;
-	    txBufferTail = txBufferHead;
+        DMA1_Channel4->CNDTR = txBufferHead - txBufferTail;
+        txBufferTail = txBufferHead;
     } else {
-	    DMA1_Channel4->CNDTR = UART_BUFFER_SIZE - txBufferTail;
-	    txBufferTail = 0;
+        DMA1_Channel4->CNDTR = UART_BUFFER_SIZE - txBufferTail;
+        txBufferTail = 0;
     }
 
     DMA_Cmd(DMA1_Channel4, ENABLE);
@@ -34,7 +34,7 @@ void DMA1_Channel4_IRQHandler(void)
     DMA_Cmd(DMA1_Channel4, DISABLE);
 
     if (txBufferHead != txBufferTail)
-	    uartTxDMA();
+        uartTxDMA();
 }
 
 void uartInit(void)
@@ -47,7 +47,7 @@ void uartInit(void)
     // UART
     // USART1_TX    PA9
     // USART1_RX    PA10
-    
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
@@ -119,7 +119,7 @@ uint8_t uartRead(void)
     ch = rxBuffer[UART_BUFFER_SIZE - rxDMAPos];
     // go back around the buffer
     if (--rxDMAPos == 0)
-	    rxDMAPos = UART_BUFFER_SIZE;
+        rxDMAPos = UART_BUFFER_SIZE;
 
     return ch;
 }
@@ -137,11 +137,53 @@ void uartWrite(uint8_t ch)
 
     // if DMA wasn't enabled, fire it up
     if (!(DMA1_Channel4->CCR & 1))
-	    uartTxDMA();
+        uartTxDMA();
 }
 
 void uartPrint(char *str)
 {
     while (*str)
-	    uartWrite(*(str++));
+        uartWrite(*(str++));
+}
+
+/* -------------------------- UART2 (Spektrum, GPS) ----------------------------- */
+uartReceiveCallbackPtr uart2Callback = NULL;
+
+void uart2Init(uint32_t speed, uartReceiveCallbackPtr func)
+{
+    NVIC_InitTypeDef NVIC_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStructure;
+    USART_InitTypeDef USART_InitStructure;
+
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+
+    NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    USART_InitStructure.USART_BaudRate = speed;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx;
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_Init(USART2, &USART_InitStructure);
+
+    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+    USART_Cmd(USART2, ENABLE);
+    uart2Callback = func;
+}
+
+void USART2_IRQHandler(void)
+{
+    if (USART_GetITStatus(USART2, USART_IT_RXNE) == SET) {
+        if (uart2Callback)
+            uart2Callback(USART_ReceiveData(USART2));
+    }
 }

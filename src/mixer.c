@@ -101,7 +101,7 @@ void mixTable(void)
     static uint8_t camCycle = 0;
     static uint8_t camState = 0;
     static uint32_t camTime = 0;
-    
+
     if (numberMotor > 3) {
         //prevent "yaw jump" during yaw correction
         axisPID[YAW] = constrain(axisPID[YAW], -100 - abs(rcCommand[YAW]), +100 + abs(rcCommand[YAW]));
@@ -115,7 +115,7 @@ void mixTable(void)
             servo[4] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) + axisPID[PITCH], 1020, 2000);   //LEFT
             servo[5] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) - axisPID[PITCH], 1020, 2000);   //RIGHT
             break;
-    
+
         case MULTITYPE_TRI:
             motor[0] = PIDMIX(0, +4 / 3, 0);    //REAR
             motor[1] = PIDMIX(-1, -2 / 3, 0);   //RIGHT
@@ -143,7 +143,7 @@ void mixTable(void)
             motor[2] = PIDMIX(+0, +1, +1);      //REAR_2 CCW
             motor[3] = PIDMIX(+1, -1, 0);       //FRONT_L CW
             break;
-            
+
         case MULTITYPE_Y6:
             motor[0] = PIDMIX(+0, +4 / 3, +1);  //REAR
             motor[1] = PIDMIX(-1, -2 / 3, -1);  //RIGHT
@@ -229,7 +229,7 @@ void mixTable(void)
             servo[1]  = constrain(servo[1] + cfg.wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX);
             break;
     }
-        
+
     // do camstab
     if (feature(FEATURE_SERVO_TILT)) {
         servo[0] = TILT_PITCH_MIDDLE + rcData[AUX3] - 1500;

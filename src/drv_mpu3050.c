@@ -14,6 +14,7 @@
 
 // Bits
 #define MPU3050_FS_SEL_2000DPS  0x18
+#define MPU3050_DLPF_10HZ       0x05
 #define MPU3050_DLPF_20HZ       0x04
 #define MPU3050_DLPF_42HZ       0x03
 #define MPU3050_DLPF_98HZ       0x02
@@ -23,7 +24,7 @@
 #define MPU3050_USER_RESET      0x01
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
-static uint8_t mpuLowPassFliter = MPU3050_DLPF_42HZ;
+static uint8_t mpuLowPassFilter = MPU3050_DLPF_42HZ;
 
 static void mpu3050Init(void);
 static void mpu3050Read(int16_t *gyroData);
@@ -46,6 +47,32 @@ bool mpu3050Detect(sensor_t *gyro)
     return true;
 }
 
+void mpu3050Config(uint16_t lpf)
+{
+    switch (lpf) {
+        case 256:
+            mpuLowPassFilter = MPU3050_DLPF_256HZ;
+            break;
+        case 188:
+            mpuLowPassFilter = MPU3050_DLPF_188HZ;
+            break;
+        case 98:
+            mpuLowPassFilter = MPU3050_DLPF_98HZ;
+            break;
+        case 42:
+            mpuLowPassFilter = MPU3050_DLPF_42HZ;
+            break;
+        case 20:
+            mpuLowPassFilter = MPU3050_DLPF_20HZ;
+            break;
+        case 10:
+            mpuLowPassFilter = MPU3050_DLPF_10HZ;
+            break;
+    }
+
+    i2cWrite(MPU3050_ADDRESS, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | mpuLowPassFilter);
+}
+
 static void mpu3050Init(void)
 {
     bool ack;
@@ -56,7 +83,7 @@ static void mpu3050Init(void)
     if (!ack)
         failureMode(3);
 
-    i2cWrite(MPU3050_ADDRESS, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | mpuLowPassFliter);
+    i2cWrite(MPU3050_ADDRESS, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | mpuLowPassFilter);
     i2cWrite(MPU3050_ADDRESS, MPU3050_INT_CFG, 0);
     i2cWrite(MPU3050_ADDRESS, MPU3050_USER_CTRL, MPU3050_USER_RESET);
     i2cWrite(MPU3050_ADDRESS, MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);

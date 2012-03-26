@@ -154,67 +154,14 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
     }
 }
 
-bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
+static void pwmInitializeInput(bool usePPM)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    TIM_OCInitTypeDef TIM_OCInitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
+    uint8_t i;
 
-    uint8_t i, val;
-    uint16_t c;
-    bool throttleCal = false;
-
-    // Inputs
-
-    // RX1  TIM2_CH1 PA0 [also PPM] [also used for throttle calibration]
-    // RX2  TIM2_CH2 PA1
-    // RX3  TIM2_CH3 PA2 [also UART2_TX]
-    // RX4  TIM2_CH4 PA3 [also UART2_RX]
-    // RX5  TIM3_CH1 PA6 [also ADC_IN6]
-    // RX6  TIM3_CH2 PA7 [also ADC_IN7]
-    // RX7  TIM3_CH3 PB0 [also ADC_IN8]
-    // RX8  TIM3_CH4 PB1 [also ADC_IN9]
-
-    // Outputs
-    // PWM1 TIM1_CH1 PA8
-    // PWM2 TIM1_CH4 PA11
-    // PWM3 TIM4_CH1 PB6 [also I2C1_SCL]
-    // PWM4 TIM4_CH2 PB7 [also I2C1_SDA]
-    // PWM5 TIM4_CH3 PB8
-    // PWM6 TIM4_CH4 PB9
-
-    // automatic throttle calibration detection: PA0 to ground via bindplug
-    // Configure TIM2_CH1 for input
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    
-#if 0
-    // wait a while
-    delay(100);
-
-    for (c = 0; c < 50000; c++) {
-        val = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0);
-        if (val) {
-            throttleCal = false;
-            break;
-        }
-    }
-#endif
-
-    // use PPM or PWM input
-    usePPMFlag = usePPM;
-
-    // preset channels to center    
-    for (i = 0; i < 8; i++)
-        Inputs[i].capture = 1500;
-        
-    // Timers run at 1mhz.
-    // TODO: clean this shit up. Make it all dynamic etc.
-
-    // Input pins
+   // Input pins
     if (usePPM) {
         // Configure TIM2_CH1 for PPM input
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
@@ -295,7 +242,69 @@ bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
         // In PWM input mode, all 8 channels are wasted
         numOutputChannels = 6;
     }
+}
 
+bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServos)
+{
+    GPIO_InitTypeDef GPIO_InitStructure;
+    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
+
+    uint8_t i, val;
+    uint16_t c;
+    bool throttleCal = false;
+
+    // Inputs
+
+    // RX1  TIM2_CH1 PA0 [also PPM] [also used for throttle calibration]
+    // RX2  TIM2_CH2 PA1
+    // RX3  TIM2_CH3 PA2 [also UART2_TX]
+    // RX4  TIM2_CH4 PA3 [also UART2_RX]
+    // RX5  TIM3_CH1 PA6 [also ADC_IN6]
+    // RX6  TIM3_CH2 PA7 [also ADC_IN7]
+    // RX7  TIM3_CH3 PB0 [also ADC_IN8]
+    // RX8  TIM3_CH4 PB1 [also ADC_IN9]
+
+    // Outputs
+    // PWM1 TIM1_CH1 PA8
+    // PWM2 TIM1_CH4 PA11
+    // PWM3 TIM4_CH1 PB6 [also I2C1_SCL]
+    // PWM4 TIM4_CH2 PB7 [also I2C1_SDA]
+    // PWM5 TIM4_CH3 PB8
+    // PWM6 TIM4_CH4 PB9
+
+    // automatic throttle calibration detection: PA0 to ground via bindplug
+    // Configure TIM2_CH1 for input
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+#if 0
+    // wait a while
+    delay(100);
+
+    for (c = 0; c < 50000; c++) {
+        val = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0);
+        if (val) {
+            throttleCal = false;
+            break;
+        }
+    }
+#endif
+
+    // use PPM or PWM input
+    usePPMFlag = usePPM;
+
+    // preset channels to center    
+    for (i = 0; i < 8; i++)
+        Inputs[i].capture = 1500;
+        
+    // Timers run at 1mhz.
+    // TODO: clean this shit up. Make it all dynamic etc.
+    if (pwmppmInput)
+        pwmInitializeInput(usePPMFlag);
+ 
     // Output pins
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_11;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
@@ -327,7 +336,7 @@ bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
     TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
-    // PWM1,2    
+    // PWM1,2
     TIM_OC1Init(TIM1, &TIM_OCInitStructure);
     TIM_OC4Init(TIM1, &TIM_OCInitStructure);
     // PWM3,4,5,6
@@ -341,7 +350,8 @@ bool pwmInit(bool usePPM, bool useServos, bool useDigitalServos)
     TIM_CtrlPWMOutputs(TIM1, ENABLE);
     TIM_CtrlPWMOutputs(TIM4, ENABLE);
 
-    if (usePPM) {
+    // turn on more motor outputs if we're using ppm / not using pwm input
+    if (!pwmppmInput || usePPM) {
         // PWM 7,8,9,10
         TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD - 1;
         TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);

@@ -1,10 +1,6 @@
 #include "board.h"
 #include "mw.h"
 
-#ifndef PI
-#define PI 3.14159265358979323846
-#endif
-
 #ifndef sq
 #define sq(x) ((x)*(x))
 #endif
@@ -13,52 +9,9 @@ static void GPS_NewData(uint16_t c);
 static bool GPS_newFrame(char c);
 static void GPS_distance(int32_t lat1, int32_t lon1, int32_t lat2, int32_t lon2, uint16_t * dist, int16_t * bearing);
 
-/*-----------------------------------------------------------
- *
- * GPS low level routines
- *
- *-----------------------------------------------------------*/
-
-void USART2_IRQHandler(void)
-{
-    if (USART_GetITStatus(USART2, USART_IT_RXNE) == SET) {
-        GPS_NewData(USART_ReceiveData(USART2));
-    }
-}
-
-static void uart2Init(void)
-{
-    NVIC_InitTypeDef NVIC_InitStructure;
-    GPIO_InitTypeDef GPIO_InitStructure;
-    USART_InitTypeDef USART_InitStructure;
-    
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
-
-    NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    USART_InitStructure.USART_BaudRate = 9600;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_Init(USART2, &USART_InitStructure);
-
-    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
-    USART_Cmd(USART2, ENABLE);
-}
-
 void gpsInit(void)
 {
-    uart2Init();
+    uart2Init(9600, GPS_NewData);
     sensorsSet(SENSOR_GPS);
 }
 
@@ -98,9 +51,9 @@ static void GPS_NewData(uint16_t c)
 static void GPS_distance(int32_t lat1, int32_t lon1, int32_t lat2, int32_t lon2, uint16_t * dist, int16_t * bearing)
 {
     float dLat = (lat2 - lat1); // difference of latitude in 1/100000 degrees
-    float dLon = (lon2 - lon1) * cos(lat1 * (PI / 180 / 100000.0));     // difference of longitude in 1/100000 degrees
-    *dist = 6372795 / 100000.0 * PI / 180 * (sqrt(sq(dLat) + sq(dLon)));
-    *bearing = 180 / PI * (atan2(dLon, dLat));
+    float dLon = (lon2 - lon1) * cosf(lat1 * (M_PI / 180 / 100000.0));     // difference of longitude in 1/100000 degrees
+    *dist = 6372795.0 / 100000.0 * M_PI / 180.0 * (sqrtf(sq(dLat) + sq(dLon)));
+    *bearing = 180.0 / M_PI * (atan2f(dLon, dLat));
 }
 
 /* The latitude or longitude is coded this way in NMEA frames
@@ -231,7 +184,7 @@ static bool GPS_newFrame(char c)
         else
             parity ^= c;
     } else if (c == '\r' || c == '\n') {
-        if (checksum_param) {   //parity checksum
+        if (checksum_param) {   // parity checksum
             uint8_t checksum = hex_c(string[0]);
             checksum <<= 4;
             checksum += hex_c(string[1]);

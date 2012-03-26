@@ -9,7 +9,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 6;
+static uint8_t checkNewConf = 7;
 
 void parseRcChannels(const char *input)
 {
@@ -112,6 +112,8 @@ void checkFirstTime(bool reset)
     }
     cfg.accTrim[0] = 0;
     cfg.accTrim[1] = 0;
+    cfg.acc_lpf_factor = 4;
+    cfg.gyro_lpf = 42;
     cfg.gyro_smoothing_factor = 0x00141403; // default factors of 20, 20, 3 for R/P/Y
     cfg.powerTrigger1 = 0;
     cfg.vbatscale = 110;
@@ -120,8 +122,8 @@ void checkFirstTime(bool reset)
 
     // Radio/ESC
     parseRcChannels("AETR1234");
-    // parseRcChannels("ATER1234");
     cfg.deadband = 0;
+    cfg.spektrum_hires = 0;
     cfg.midrc = 1500;
     cfg.mincheck = 1100;
     cfg.maxcheck = 1900;

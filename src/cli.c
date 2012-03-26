@@ -36,6 +36,7 @@ const char *mixerNames[] = {
 const char *featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "DIGITAL_SERVO", "MOTOR_STOP",
     "SERVO_TILT", "CAMTRIG", "GYRO_SMOOTHING", "LED_RING", "GPS",
+    "SPEKTRUM",
     NULL
 };
 
@@ -88,6 +89,7 @@ const clivalue_t valueTable[] = {
     { "mincommand", VAR_UINT16, &cfg.mincommand, 0, 2000 },
     { "mincheck", VAR_UINT16, &cfg.mincheck, 0, 2000 },
     { "maxcheck", VAR_UINT16, &cfg.maxcheck, 0, 2000 },
+    { "spektrum_hires", VAR_UINT8, &cfg.spektrum_hires, 0, 1 },
     { "vbatscale", VAR_UINT8, &cfg.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &cfg.vbatmaxcellvoltage, 10, 50 },
     { "vbatmincellvoltage", VAR_UINT8, &cfg.vbatmincellvoltage, 10, 50 },
@@ -99,6 +101,8 @@ const clivalue_t valueTable[] = {
     { "tri_yaw_max", VAR_UINT16, &cfg.tri_yaw_max, 0, 2000 },
     { "tilt_pitch_prop", VAR_INT8, &cfg.tilt_pitch_prop, -100, 100 },
     { "tilt_roll_prop", VAR_INT8, &cfg.tilt_roll_prop, -100, 100 },
+    { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 32 },
+    { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
     { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200},
     { "i_pitch", VAR_UINT8, &cfg.I8[PITCH], 0, 200},
     { "d_pitch", VAR_UINT8, &cfg.D8[PITCH], 0, 200},
@@ -252,10 +256,10 @@ static void cliHelp(char *cmdline)
     uartPrint("Available commands:\r\n");    
 
     for (i = 0; i < CMD_COUNT; i++) {
-    	uartPrint(cmdTable[i].name);
-    	uartWrite(' ');
-    	uartPrint(cmdTable[i].param);
-    	uartPrint("\r\n");
+        uartPrint(cmdTable[i].name);
+        uartWrite(' ');
+        uartPrint(cmdTable[i].param);
+        uartPrint("\r\n");
     }
 }
 
@@ -344,15 +348,15 @@ static void cliPrintVar(const clivalue_t *var)
         case VAR_UINT8:
             value = *(uint8_t *)var->ptr;
             break;
-            
+
         case VAR_INT8:
             value = *(int8_t *)var->ptr;
             break;
-            
+
         case VAR_UINT16:
             value = *(uint16_t *)var->ptr;
             break;
-            
+
         case VAR_INT16:
             value = *(int16_t *)var->ptr;
             break;
@@ -389,7 +393,7 @@ static void cliSet(char *cmdline)
     const clivalue_t *val;
     char *eqptr = NULL;
     int32_t value = 0;
-    
+
     len = strlen(cmdline);
 
     if (len == 0) {
@@ -525,7 +529,7 @@ void cliProcess(void)
             // enter pressed
             clicmd_t *cmd = NULL;
             clicmd_t target;
-    		uartPrint("\r\n");
+            uartPrint("\r\n");
             cliBuffer[bufferIndex] = 0; // null terminate
             
             target.name = cliBuffer;
@@ -542,7 +546,7 @@ void cliProcess(void)
 
             // 'exit' will reset this flag, so we don't need to print prompt again
             if (!cliMode)
-    	        return;
+                return;
             cliPrompt();
         } else if (c == 127) {
             // backspace

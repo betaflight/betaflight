@@ -45,6 +45,8 @@ void sensorsAutodetect(void)
     }
     // this is safe because either mpu6050 or mpu3050 sets it, and in case of fail, none do.
     gyro.init();
+    // todo: this is driver specific :(
+    mpu3050Config(cfg.gyro_lpf);
 }
 
 uint16_t batteryAdcToVoltage(uint16_t src)
@@ -59,6 +61,7 @@ void batteryInit(void)
     uint8_t i;
     uint32_t voltage = 0;
 
+    // average up some voltage readings
     for (i = 0; i < 32; i++) {
         voltage += adcGetBattery();
         delay(10);
@@ -68,8 +71,8 @@ void batteryInit(void)
 
     // autodetect cell count, going from 2S..6S
     for (i = 2; i < 6; i++) {
-    	if (voltage < i * cfg.vbatmaxcellvoltage)
-    	    break;
+        if (voltage < i * cfg.vbatmaxcellvoltage)
+            break;
     }
     batteryCellCount = i;
     batteryWarningVoltage = i * cfg.vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
@@ -102,12 +105,12 @@ static void ACC_Common(void)
         }
         calibratingA--;
     }
-    
+
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         static int32_t b[3];
         static int16_t accZero_saved[3] = { 0, 0, 0 };
         static int16_t accTrim_saved[2] = { 0, 0 };
-        //Saving old zeropoints before measurement
+        // Saving old zeropoints before measurement
         if (InflightcalibratingA == 50) {
             accZero_saved[ROLL] = cfg.accZero[ROLL];
             accZero_saved[PITCH] = cfg.accZero[PITCH];
@@ -127,7 +130,7 @@ static void ACC_Common(void)
                 accADC[axis] = 0;
                 cfg.accZero[axis] = 0;
             }
-            //all values are measured
+            // all values are measured
             if (InflightcalibratingA == 1) {
                 AccInflightCalibrationActive = 0;
                 AccInflightCalibrationMeasurementDone = 1;
@@ -142,7 +145,7 @@ static void ACC_Common(void)
             InflightcalibratingA--;
         }
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-        if (AccInflightCalibrationSavetoEEProm == 1) {      //the copter is landed, disarmed and the combo has been done again
+        if (AccInflightCalibrationSavetoEEProm == 1) {      // the copter is landed, disarmed and the combo has been done again
             AccInflightCalibrationSavetoEEProm = 0;
             cfg.accZero[ROLL] = b[ROLL] / 50;
             cfg.accZero[PITCH] = b[PITCH] / 50;
@@ -158,7 +161,6 @@ static void ACC_Common(void)
     accADC[YAW] -= cfg.accZero[YAW];
 }
 
-
 void ACC_getADC(void)
 {
     acc.read(accADC);
@@ -171,12 +173,11 @@ static uint32_t baroDeadline = 0;
 static uint8_t baroState = 0;
 static uint16_t baroUT = 0;
 static uint32_t baroUP = 0;
-static int16_t baroTemp = 0;
 
 void Baro_update(void)
 {
     int32_t pressure;
-    
+
     if (currentTime < baroDeadline)
         return;
 
@@ -199,9 +200,8 @@ void Baro_update(void)
             break;
         case 3:
             baroUP = bmp085_get_up();
-            baroTemp = bmp085_get_temperature(baroUT);
+            bmp085_get_temperature(baroUT);
             pressure = bmp085_get_pressure(baroUP);
-
             BaroAlt = (1.0f - pow(pressure / 101325.0f, 0.190295f)) * 4433000.0f; // centimeter
             baroState = 0;
             baroDeadline += 5000;
@@ -214,7 +214,7 @@ static void GYRO_Common(void)
     static int16_t previousGyroADC[3] = { 0, 0, 0 };
     static int32_t g[3];
     uint8_t axis;
-    
+
 #if defined MMGYRO       
     // Moving Average Gyros by Magnetron1
     //---------------------------------------------------
@@ -242,7 +242,7 @@ static void GYRO_Common(void)
         calibratingG--;
     }
 
-#ifdef MMGYRO       
+#ifdef MMGYRO
     mediaMobileGyroIDX = ++mediaMobileGyroIDX % MMGYROVECTORLENGTH;
     for (axis = 0; axis < 3; axis++) {
         gyroADC[axis]  -= gyroZero[axis];
@@ -329,9 +329,7 @@ void Mag_getADC(void)
         }
         calibratingM = 0;
     }
-    magADC[ROLL] = magADC[ROLL] * magCal[ROLL];
-    magADC[PITCH] = magADC[PITCH] * magCal[PITCH];
-    magADC[YAW] = magADC[YAW] * magCal[YAW];
+
     if (magInit) {              // we apply offset only once mag calibration is done
         magADC[ROLL] -= cfg.magZero[ROLL];
         magADC[PITCH] -= cfg.magZero[PITCH];

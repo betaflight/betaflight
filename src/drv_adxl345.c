@@ -57,14 +57,8 @@ static void adxl345Init(void)
 #else
     // MWC defaults
     i2cWrite(ADXL345_ADDRESS, ADXL345_POWER_CTL, 1 << 3);        //  register: Power CTRL  -- value: Set measure bit 3 on
-#if 1
     i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, 0x0B);  //  register: DATA_FORMAT -- value: Set bits 3(full range) and 1 0 on (+/- 16g-range)
     i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, 0x09);  //  register: BW_RATE     -- value: rate=50hz, bw=20hz
-#else
-    // testing    
-    i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, (ADXL_RANGE_8G & 0x03) | ADXL_FULL_RES);  //  register: DATA_FORMAT -- value: Set bits 3(full range) and 1 0 on (+/- 16g-range)
-    i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL_RATE_800);  //  register: BW_RATE     -- value: rate=50hz, bw=20hz
-#endif   
 #endif /* FreeFlight */
 }
 

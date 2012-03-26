@@ -11,6 +11,10 @@
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
 
+#ifndef M_PI
+#define M_PI       3.14159265358979323846
+#endif /* M_PI */
+
 typedef enum {
     SENSOR_ACC = 1 << 0,
     SENSOR_BARO = 1 << 1,
@@ -30,10 +34,13 @@ typedef enum {
     FEATURE_GYRO_SMOOTHING = 1 << 7,
     FEATURE_LED_RING = 1 << 8,
     FEATURE_GPS = 1 << 9,
+    FEATURE_SPEKTRUM = 1 << 10,
 } AvailableFeatures;
 
-typedef void (* sensorInitFuncPtr)(void);
-typedef void (* sensorReadFuncPtr)(int16_t *data);
+typedef void (* sensorInitFuncPtr)(void);                   // sensor init prototype
+typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
+typedef void (* uartReceiveCallbackPtr)(uint16_t data);     // used by uart2 driver to return frames to app
+typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
 
 typedef struct sensor_t
 {

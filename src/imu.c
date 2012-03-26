@@ -1,8 +1,6 @@
 #include "board.h"
 #include "mw.h"
 
-#define M_PI       3.14159265358979323846
-
 int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
 int16_t acc_25deg = 0;
 int32_t  BaroAlt;
@@ -23,7 +21,7 @@ static void getEstimatedAttitude(void);
 
 void imuInit(void)
 {
-    acc_25deg = acc_1G * 0.423;
+    acc_25deg = acc_1G * 0.423f;
 
     // if mag sensor is enabled, use it
     if (sensors(SENSOR_MAG))
@@ -53,7 +51,7 @@ void computeIMU(void)
     if ((micros() - timeInterleave) > 650) {
         annex650_overrun_count++;
     } else {
-        while ((micros() - timeInterleave) < 650);  //empirical, interleaving delay between 2 consecutive reads
+        while ((micros() - timeInterleave) < 650);  // empirical, interleaving delay between 2 consecutive reads
     }
 
     Gyro_getADC();
@@ -108,11 +106,6 @@ void computeIMU(void)
 // **************************************************
 
 //******  advanced users settings *******************
-/* Set the Low Pass Filter factor for ACC */
-/* Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time*/
-/* Comment this if  you do not want filter at all.*/
-/* Default WMC value: 8*/
-#define ACC_LPF_FACTOR 4
 
 /* Set the Low Pass Filter factor for Magnetometer */
 /* Increasing this value would reduce Magnetometer noise (not visible in GUI), but would increase Magnetometer lag time*/
@@ -176,9 +169,7 @@ static void getEstimatedAttitude(void)
 #if defined(MG_LPF_FACTOR)
     static int16_t mgSmooth[3];
 #endif
-#if defined(ACC_LPF_FACTOR)
     static int16_t accTemp[3];  //projection of smoothed and normalized magnetic vector on x/y/z axis, as measured by magnetometer
-#endif
     static uint32_t previousT;
     uint32_t currentT = micros();
     float scale, deltaGyroAngle[3];
@@ -189,16 +180,15 @@ static void getEstimatedAttitude(void)
     // Initialization
     for (axis = 0; axis < 3; axis++) {
         deltaGyroAngle[axis] = gyroADC[axis] * scale;
-#if defined(ACC_LPF_FACTOR)
-        accTemp[axis] = (accTemp[axis] - (accTemp[axis] >> ACC_LPF_FACTOR)) + accADC[axis];
-        accSmooth[axis] = accTemp[axis] >> ACC_LPF_FACTOR;
-#define ACC_VALUE accSmooth[axis]
-#else
-        accSmooth[axis] = accADC[axis];
-#define ACC_VALUE accADC[axis]
-#endif
-        accMag += (int32_t) ACC_VALUE * ACC_VALUE;
         
+        if (cfg.acc_lpf_factor > 0) {
+            accTemp[axis] = (accTemp[axis] - (accTemp[axis] >> cfg.acc_lpf_factor)) + accADC[axis];
+            accSmooth[axis] = accTemp[axis] >> cfg.acc_lpf_factor;
+        } else {
+            accSmooth[axis] = accADC[axis];
+        }
+        accMag += (int32_t)accSmooth[axis] * accSmooth[axis];
+
         if (sensors(SENSOR_MAG)) {
 #if defined(MG_LPF_FACTOR)
             mgSmooth[axis] = (mgSmooth[axis] * (MG_LPF_FACTOR - 1) + magADC[axis]) / MG_LPF_FACTOR; // LPF for Magnetometer values
@@ -208,7 +198,7 @@ static void getEstimatedAttitude(void)
 #endif
         }
     }
-    accMag = accMag * 100 / ((int32_t) acc_1G * acc_1G);
+    accMag = accMag * 100 / ((int32_t)acc_1G * acc_1G);
 
     rotateV(&EstG.V, deltaGyroAngle);
     if (sensors(SENSOR_MAG)) {
@@ -223,18 +213,12 @@ static void getEstimatedAttitude(void)
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.4G or <0.6G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
     // To do that, we just skip filter, as EstV already rotated by Gyro
-    if ((36 < accMag && accMag < 196) || smallAngle25)
+    if ((36 < accMag && accMag < 196) || smallAngle25) {
         for (axis = 0; axis < 3; axis++) {
-            int16_t acc = ACC_VALUE;
-#if !defined(TRUSTED_ACCZ)
-            if (smallAngle25 && axis == YAW)
-                //We consider ACCZ = acc_1G when the acc on other axis is small.
-                //It's a tweak to deal with some configs where ACC_Z tends to a value < acc_1G when high throttle is applied.
-                //This tweak applies only when the multi is not in inverted position
-                acc = acc_1G;
-#endif
+            int16_t acc = accSmooth[axis];
             EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + acc) * INV_GYR_CMPF_FACTOR;
         }
+    }
 
     if (sensors(SENSOR_MAG)) {
         for (axis = 0; axis < 3; axis++)
@@ -246,53 +230,8 @@ static void getEstimatedAttitude(void)
     angle[PITCH] = _atan2f(EstG.V.Y, EstG.V.Z);
 
     if (sensors(SENSOR_MAG)) {
-#define GHETTO    
-    
-#ifdef GHETTO
         // Attitude of the cross product vector GxM
         heading = _atan2f(EstG.V.X * EstM.V.Z - EstG.V.Z * EstM.V.X, EstG.V.Z * EstM.V.Y - EstG.V.Y * EstM.V.Z) / 10;
-#else
-        static float Cos_Roll, Sin_Roll, Cos_Pitch, Sin_Pitch;
-    	static float Mx1, My1, Mz1, xh, yh;
-    	static float rollRadians;
-      	static float pitchRadians;
-
-        // proper tilt compensation
-		// Get pitch and roll in radians
-		rollRadians	= angle[ROLL] / 1800.0 * M_PI;
-		pitchRadians = angle[PITCH] /1800.0 * M_PI;
-
-		//rollRadians	= _atan2f(accADC[ROLL], accADC[YAW])/1800.0*M_PI;
-		//pitchRadians = _atan2f(accADC[PITCH], accADC[YAW])/1800.0*M_PI;
-
-		// Mx2 and My2 are the corrected values
-		// Mx1, My1 and Mz1 are the floating point values from the mag sensor
-		//Mx1 = magADC[ROLL];
-		//My1 = magADC[PITCH];
-		//Mz1 = magADC[YAW];
-
-		Mx1 = EstM.V.X;
-		My1 = EstM.V.Y;
-		Mz1 = EstM.V.Z;
-
-		// These are used more than once, so pre-calculate for efficiency
-		Cos_Roll = cosf(rollRadians);
-		Cos_Pitch = cosf(pitchRadians);
-		Sin_Roll = sinf(rollRadians);
-		Sin_Pitch = sinf(pitchRadians);
-
-		// The tilt-compensation equations are as follows
-		//X_h=X*cos(pitch)+Y*sin(roll)sin(pitch)-Z*cos(roll)*sin(pitch) 
-		//Y_h=Y*cos(roll)+Z*sin(roll)
-		xh = (Mx1 * Cos_Pitch) + (My1 * Sin_Roll * Sin_Pitch) - (Mz1 * Sin_Pitch * Cos_Roll); // Correct x axis
-		yh = (My1 * Cos_Roll) + (Mz1 * Sin_Roll);	// Correct y axis
-
-		// Tilt-adjusted heading in degrees
-	    heading = _atan2f(yh, xh) / 10; 
-
-
-
-#endif        
     }
 }
 
@@ -332,7 +271,7 @@ void getEstimatedAltitude(void)
     //D
     temp32 = cfg.D8[PIDALT] * (BaroHigh - BaroLow) / 40;
     BaroPID -= temp32;
-    
+
     EstAlt = BaroHigh * 10 / (BARO_TAB_SIZE / 2);
 
     temp32 = AltHold - EstAlt;
@@ -341,7 +280,7 @@ void getEstimatedAltitude(void)
     // P
     BaroPID += cfg.P8[PIDALT] * constrain(temp32, (-2) * cfg.P8[PIDALT], 2 * cfg.P8[PIDALT]) / 100;
     BaroPID = constrain(BaroPID, -150, +150); // sum of P and D should be in range 150
-    
+
     // I
     errorAltitudeI += temp32 * cfg.I8[PIDALT] / 50;
     errorAltitudeI = constrain(errorAltitudeI, -30000, 30000);
