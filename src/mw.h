@@ -178,7 +178,10 @@ typedef struct config_t {
     // gimbal-related configuration
     int8_t tilt_pitch_prop;                 // servo proportional (tied to angle) ; can be negative to invert movement
     int8_t tilt_roll_prop;                  // servo proportional (tied to angle) ; can be negative to invert movement
-    
+
+    // gps baud-rate
+    uint16_t gps_baudrate;    
+
 } config_t;
 
 extern int16_t gyroZero[3];
@@ -292,4 +295,4 @@ bool spektrumFrameComplete(void);
 void cliProcess(void);
 
 // gps
-void gpsInit(void);
+void gpsInit(uint32_t baudrate);

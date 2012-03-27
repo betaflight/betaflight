@@ -2,14 +2,18 @@
 #include "mw.h"
 #include <string.h>
 
+#ifndef FLASH_PAGE_COUNT
+#define FLASH_PAGE_COUNT 64
+#endif
+
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * 63)    // use the last KB for storage
+#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 1))    // use the last KB for storage
 
 config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 8;
+static uint8_t checkNewConf = 9;
 
 void parseRcChannels(const char *input)
 {
@@ -143,6 +147,9 @@ void checkFirstTime(bool reset)
     // gimbal
     cfg.tilt_pitch_prop = 10;
     cfg.tilt_roll_prop = 10;
+
+    // gps baud-rate
+    cfg.gps_baudrate = 9600;    
 
     writeParams();
 }

@@ -9,7 +9,7 @@ static void GPS_NewData(uint16_t c);
 static bool GPS_newFrame(char c);
 static void GPS_distance(int32_t lat1, int32_t lon1, int32_t lat2, int32_t lon2, uint16_t * dist, int16_t * bearing);
 
-void gpsInit(void)
+void gpsInit(uint32_t baudrate)
 {
     uart2Init(9600, GPS_NewData);
     sensorsSet(SENSOR_GPS);

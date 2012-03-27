@@ -104,6 +104,7 @@ const clivalue_t valueTable[] = {
     { "tilt_roll_prop", VAR_INT8, &cfg.tilt_roll_prop, -100, 100 },
     { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 32 },
     { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
+    { "gps_baudrate", VAR_UINT16, &cfg.gps_baudrate, 1200, 57600 },
     { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200},
     { "i_pitch", VAR_UINT8, &cfg.I8[PITCH], 0, 200},
     { "d_pitch", VAR_UINT8, &cfg.D8[PITCH], 0, 200},

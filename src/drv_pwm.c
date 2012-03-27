@@ -71,13 +71,13 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     static uint16_t last = 0;
     static uint8_t chan = 0;
 
-    if (TIM_GetITStatus(TIM2, TIM_IT_CC1) == SET) {
+    if (TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
         last = now;
-        now = TIM_GetCapture1(TIM2);
+        now = TIM_GetCapture1(tim);
         rcActive = true;
     }
 
-    TIM_ClearITPendingBit(TIM2, TIM_IT_CC1);
+    TIM_ClearITPendingBit(tim, TIM_IT_CC1);
 
     if (now > last) {
         diff = (now - last);

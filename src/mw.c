@@ -279,7 +279,7 @@ uint16_t pwmReadRawRC(uint8_t chan)
     failsafeCnt = 0;
     data = pwmRead(cfg.rcmap[chan]);
     if (data < 750 || data > 2250)
-        data = 1500;
+        data = cfg.midrc;
 
     return data;
 }
