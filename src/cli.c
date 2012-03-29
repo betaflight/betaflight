@@ -70,7 +70,8 @@ typedef enum {
     VAR_UINT8,
     VAR_INT8,
     VAR_UINT16,
-    VAR_INT16
+    VAR_INT16,
+    VAR_UINT32
 } vartype_e;
 
 typedef struct {
@@ -104,7 +105,8 @@ const clivalue_t valueTable[] = {
     { "tilt_roll_prop", VAR_INT8, &cfg.tilt_roll_prop, -100, 100 },
     { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 32 },
     { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
-    { "gps_baudrate", VAR_UINT16, &cfg.gps_baudrate, 1200, 57600 },
+    { "gps_baudrate", VAR_UINT32, &cfg.gps_baudrate, 1200, 115200 },
+    { "serial_baudrate", VAR_UINT32, &cfg.serial_baudrate, 1200, 115200 },
     { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200},
     { "i_pitch", VAR_UINT8, &cfg.I8[PITCH], 0, 200},
     { "d_pitch", VAR_UINT8, &cfg.D8[PITCH], 0, 200},
@@ -350,7 +352,7 @@ static void cliPrintVar(const clivalue_t *var)
         case VAR_UINT8:
             value = *(uint8_t *)var->ptr;
             break;
-
+        
         case VAR_INT8:
             value = *(int8_t *)var->ptr;
             break;
@@ -362,6 +364,10 @@ static void cliPrintVar(const clivalue_t *var)
         case VAR_INT16:
             value = *(int16_t *)var->ptr;
             break;
+
+        case VAR_UINT32:
+            value = *(uint32_t *)var->ptr;
+            break;
     }
     itoa(value, buf, 10);
     uartPrint(buf);
@@ -371,19 +377,17 @@ static void cliSetVar(const clivalue_t *var, const int32_t value)
 {
     switch (var->type) {
         case VAR_UINT8:
-            *(uint8_t *)var->ptr = (uint8_t)value;
-            break;
-            
         case VAR_INT8:
-            *(int8_t *)var->ptr = (int8_t)value;
+            *(char *)var->ptr = (char)value;
             break;
             
         case VAR_UINT16:
-            *(uint16_t *)var->ptr = (uint16_t)value;
+        case VAR_INT16:
+            *(short *)var->ptr = (short)value;
             break;
             
-        case VAR_INT16:
-            *(int16_t *)var->ptr = (int16_t)value;
+        case VAR_UINT32:
+            *(int *)var->ptr = (int)value;
             break;
     }
 }

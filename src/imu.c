@@ -173,14 +173,13 @@ static void getEstimatedAttitude(void)
     static uint32_t previousT;
     uint32_t currentT = micros();
     float scale, deltaGyroAngle[3];
-    
+
     scale = (currentT - previousT) * GYRO_SCALE;
     previousT = currentT;
 
     // Initialization
     for (axis = 0; axis < 3; axis++) {
         deltaGyroAngle[axis] = gyroADC[axis] * scale;
-        
         if (cfg.acc_lpf_factor > 0) {
             accTemp[axis] = (accTemp[axis] - (accTemp[axis] >> cfg.acc_lpf_factor)) + accADC[axis];
             accSmooth[axis] = accTemp[axis] >> cfg.acc_lpf_factor;

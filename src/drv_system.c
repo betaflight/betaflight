@@ -102,7 +102,6 @@ void systemInit(void)
     // Configure the rest of the stuff
     adcInit();
     i2cInit(I2C2);
-    uartInit();
     
     // sleep for 100ms
     delay(100);

@@ -48,6 +48,8 @@ int main(void)
     readEEPROM();
     checkFirstTime(false);
 
+    serialInit(cfg.serial_baudrate);
+
     // We have these sensors
     sensorsSet(SENSOR_ACC | SENSOR_BARO | SENSOR_MAG);
 

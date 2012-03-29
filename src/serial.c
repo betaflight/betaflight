@@ -15,6 +15,11 @@ void serialize8(uint8_t a)
     uartWrite(a);
 }
 
+void serialInit(uint32_t baudrate)
+{
+    uartInit(baudrate);
+}
+
 void serialCom(void)
 {
     uint8_t i;

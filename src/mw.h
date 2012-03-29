@@ -180,8 +180,10 @@ typedef struct config_t {
     int8_t tilt_roll_prop;                  // servo proportional (tied to angle) ; can be negative to invert movement
 
     // gps baud-rate
-    uint16_t gps_baudrate;    
+    uint32_t gps_baudrate;    
 
+   // serial(uart1) baudrate
+    uint32_t serial_baudrate;
 } config_t;
 
 extern int16_t gyroZero[3];
@@ -270,6 +272,7 @@ void writeAllMotors(int16_t mc);
 void mixTable(void);
 
 // Serial
+void serialInit(uint32_t baudrate);
 void serialCom(void);
 
 // Config

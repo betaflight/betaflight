@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 9;
+static uint8_t checkNewConf = 10;
 
 void parseRcChannels(const char *input)
 {
@@ -150,6 +150,9 @@ void checkFirstTime(bool reset)
 
     // gps baud-rate
     cfg.gps_baudrate = 9600;    
+
+    // serial(uart1) baudrate
+    cfg.serial_baudrate = 115200;
 
     writeParams();
 }
