@@ -112,6 +112,11 @@ uint16_t uartAvailable(void)
     return (DMA_GetCurrDataCounter(DMA1_Channel5) != rxDMAPos) ? true : false;
 }
 
+bool uartTransmitEmpty(void)
+{
+    return (txBufferTail == txBufferHead);
+}
+
 uint8_t uartRead(void)
 {
     uint8_t ch;

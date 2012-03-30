@@ -33,6 +33,7 @@ void throttleCalibration(void)
 int main(void)
 {
     uint8_t i;
+    drv_pwm_config_t pwm_params;
 
 #if 0
     // using this to write asm for bootloader :)
@@ -55,7 +56,13 @@ int main(void)
 
     mixerInit(); // this will set useServo var depending on mixer type
     // pwmInit returns true if throttle calibration is requested. if so, do it here. throttleCalibration() does NOT return - for safety.
-    if (pwmInit(feature(FEATURE_PPM), !feature(FEATURE_SPEKTRUM), useServo, feature(FEATURE_DIGITAL_SERVO)))
+    pwm_params.usePPM = feature(FEATURE_PPM);
+    pwm_params.enableInput = !feature(FEATURE_SPEKTRUM); // disable inputs if using spektrum
+    pwm_params.useServos = useServo;
+    pwm_params.motorPwmRate = cfg.motor_pwm_rate;
+    pwm_params.servoPwmRate = cfg.servo_pwm_rate;
+
+    if (pwmInit(&pwm_params))
         throttleCalibration(); // noreturn
 
     // configure PWM/CPPM read function. spektrum will override that

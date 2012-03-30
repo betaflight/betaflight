@@ -6,7 +6,7 @@ void adcInit(void)
 {
     ADC_InitTypeDef ADC_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
-    
+
     // ADC assumes all the GPIO was already placed in 'AIN' mode
 
     DMA_DeInit(DMA1_Channel1);
@@ -37,7 +37,7 @@ void adcInit(void)
     ADC_DMACmd(ADC1, ENABLE);
 
     ADC_Cmd(ADC1, ENABLE);
-    
+
     // Calibrate ADC
     ADC_ResetCalibration(ADC1);
     while(ADC_GetResetCalibrationStatus(ADC1));
@@ -52,4 +52,3 @@ uint16_t adcGetBattery(void)
 {
     return adc1Ch4Value;
 }
-

@@ -163,9 +163,13 @@ typedef struct config_t {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+
+    // motor/esc/servo related stuff
     uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
     uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
+    uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
+    uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
 
     // mixer-related configuration
     int8_t yaw_direction;

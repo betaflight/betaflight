@@ -13,12 +13,12 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 10;
+static uint8_t checkNewConf = 11;
 
 void parseRcChannels(const char *input)
 {
     const char *c, *s;
- 
+
     for (c = input; *c; c++) {
         s = strchr(rcChannelLetters, *c);
         if (s)                          
@@ -39,7 +39,7 @@ void readEEPROM(void)
 
     for (i = 0; i < 7; i++)
         lookupRX[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t) cfg.rcRate8 / 1250;
-        
+
     cfg.wing_left_mid = constrain(cfg.wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
     cfg.wing_right_mid = constrain(cfg.wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
     cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
@@ -49,7 +49,7 @@ void writeParams(void)
 {
     FLASH_Status status;
     uint32_t i;
-    
+
     FLASH_Unlock();
 
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
@@ -124,7 +124,7 @@ void checkFirstTime(bool reset)
     cfg.vbatmaxcellvoltage = 43;
     cfg.vbatmincellvoltage = 33;
 
-    // Radio/ESC
+    // Radio
     parseRcChannels("AETR1234");
     cfg.deadband = 0;
     cfg.yawdeadband = 0;
@@ -132,9 +132,13 @@ void checkFirstTime(bool reset)
     cfg.midrc = 1500;
     cfg.mincheck = 1100;
     cfg.maxcheck = 1900;
+
+    // Motor/ESC/Servo
     cfg.minthrottle = 1150;
     cfg.maxthrottle = 1850;
     cfg.mincommand = 1000;
+    cfg.motor_pwm_rate = 400;
+    cfg.servo_pwm_rate = 50;
 
     // servos
     cfg.yaw_direction = 1;

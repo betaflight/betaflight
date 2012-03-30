@@ -1,9 +1,9 @@
 #include "board.h"
 
 #define PULSE_1MS       (1000) // 1ms pulse width
-#define PULSE_PERIOD    (2500) // pulse period (400Hz)
-#define PULSE_PERIOD_SERVO_DIGITAL  (5000) // pulse period for digital servo (200Hz)
-#define PULSE_PERIOD_SERVO_ANALOG  (20000) // pulse period for analog servo (50Hz)
+// #define PULSE_PERIOD    (2500) // pulse period (400Hz)
+// #define PULSE_PERIOD_SERVO_DIGITAL  (5000) // pulse period for digital servo (200Hz)
+// #define PULSE_PERIOD_SERVO_ANALOG  (20000) // pulse period for analog servo (50Hz)
 
 // Forward declaration
 static void pwmIRQHandler(TIM_TypeDef *tim);
@@ -244,7 +244,7 @@ static void pwmInitializeInput(bool usePPM)
     }
 }
 
-bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServos)
+bool pwmInit(drv_pwm_config_t *init)
 {
     GPIO_InitTypeDef GPIO_InitStructure = { 0, };
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
@@ -294,7 +294,7 @@ bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServo
 #endif
 
     // use PPM or PWM input
-    usePPMFlag = usePPM;
+    usePPMFlag = init->usePPM;
 
     // preset channels to center    
     for (i = 0; i < 8; i++)
@@ -302,7 +302,7 @@ bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServo
         
     // Timers run at 1mhz.
     // TODO: clean this shit up. Make it all dynamic etc.
-    if (pwmppmInput)
+    if (init->enableInput)
         pwmInitializeInput(usePPMFlag);
 
     // Output pins
@@ -317,17 +317,14 @@ bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServo
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
     TIM_TimeBaseStructure.TIM_Prescaler = (72 - 1);
 
-    if (useServos) {
-        // 50Hz/200Hz period on ch1, 2 for servo
-        if (useDigitalServos)
-            TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD_SERVO_DIGITAL - 1;
-        else
-            TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD_SERVO_ANALOG - 1;
+    if (init->useServos) {
+        // ch1, 2 for servo
+        TIM_TimeBaseStructure.TIM_Period = (1000000 / init->servoPwmRate) - 1;
         TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
-        TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD - 1;
+        TIM_TimeBaseStructure.TIM_Period = (1000000 / init->motorPwmRate) - 1;
         TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
     } else {
-        TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD - 1;
+        TIM_TimeBaseStructure.TIM_Period = (1000000 / init->motorPwmRate) - 1;
         TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
         TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
     }
@@ -354,9 +351,9 @@ bool pwmInit(bool usePPM, bool pwmppmInput, bool useServos, bool useDigitalServo
     TIM_CtrlPWMOutputs(TIM4, ENABLE);
 
     // turn on more motor outputs if we're using ppm / not using pwm input
-    if (!pwmppmInput || usePPM) {
+    if (!init->enableInput || init->usePPM) {
         // PWM 7,8,9,10
-        TIM_TimeBaseStructure.TIM_Period = PULSE_PERIOD - 1;
+        TIM_TimeBaseStructure.TIM_Period = (1000000 / init->motorPwmRate) - 1;
         TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
 
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;

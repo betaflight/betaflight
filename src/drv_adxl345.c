@@ -23,11 +23,11 @@ bool adxl345Detect(sensor_t *acc)
 {
     bool ack = false;
     uint8_t sig = 0;
-    
+
     ack = i2cRead(ADXL345_ADDRESS, 0x00, 1, &sig);
     if (!ack || sig != 0xE5)
         return false;
-        
+
     acc->init = adxl345Init;
     acc->read = adxl345Read;
     acc->align = adxl345Align;

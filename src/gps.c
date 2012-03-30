@@ -11,7 +11,7 @@ static void GPS_distance(int32_t lat1, int32_t lon1, int32_t lat2, int32_t lon2,
 
 void gpsInit(uint32_t baudrate)
 {
-    uart2Init(cfg.gps_baudrate, GPS_NewData);
+    uart2Init(baudrate, GPS_NewData);
     sensorsSet(SENSOR_GPS);
 }
 

@@ -24,55 +24,49 @@ typedef struct {
     int16_t b2;
     int16_t mb;
     int16_t mc;
-    int16_t md;      		   
+    int16_t md;
 } bmp085_smd500_calibration_param_t;
 
-typedef struct  {	
-	bmp085_smd500_calibration_param_t cal_param;	
-	uint8_t mode;
-	uint8_t chip_id, ml_version, al_version;
-	uint8_t dev_addr;	
-	uint8_t sensortype;
-
-	int32_t param_b5;
-	int16_t oversampling_setting;
-	int16_t smd500_t_resolution, smd500_masterclock;
-
-	// BMP085_BUS_WR_RETURN_TYPE (*bus_write)( BMP085_BUS_WR_PARAM_TYPES );
-	// BMP085_BUS_RD_RETURN_TYPE (*bus_read)( BMP085_BUS_RD_PARAM_TYPES );
-	// BMP085_MDELAY_RETURN_TYPE (*delay_msec)( BMP085_MDELAY_DATA_TYPE );
-
+typedef struct  {
+    bmp085_smd500_calibration_param_t cal_param;
+    uint8_t mode;
+    uint8_t chip_id, ml_version, al_version;
+    uint8_t dev_addr;
+    uint8_t sensortype;
+    int32_t param_b5;
+    int16_t oversampling_setting;
+    int16_t smd500_t_resolution, smd500_masterclock;
 } bmp085_t;
 
-#define BMP085_I2C_ADDR		    0x77
-#define BMP085_CHIP_ID			0x55
-#define BOSCH_PRESSURE_BMP085	85
-#define BMP085_CHIP_ID_REG		0xD0
-#define BMP085_VERSION_REG		0xD1
+#define BMP085_I2C_ADDR         0x77
+#define BMP085_CHIP_ID          0x55
+#define BOSCH_PRESSURE_BMP085   85
+#define BMP085_CHIP_ID_REG      0xD0
+#define BMP085_VERSION_REG      0xD1
 #define E_SENSOR_NOT_DETECTED   (char) 0
-#define BMP085_PROM_START__ADDR	0xaa
-#define BMP085_PROM_DATA__LEN	22
-#define BMP085_T_MEASURE        0x2E				// temperature measurent 
-#define BMP085_P_MEASURE        0x34				// pressure measurement
-#define BMP085_CTRL_MEAS_REG	0xF4
-#define BMP085_ADC_OUT_MSB_REG	0xF6
-#define BMP085_ADC_OUT_LSB_REG	0xF7
-#define BMP085_CHIP_ID__POS		0
-#define BMP085_CHIP_ID__MSK		0xFF
-#define BMP085_CHIP_ID__LEN		8
-#define BMP085_CHIP_ID__REG		BMP085_CHIP_ID_REG
+#define BMP085_PROM_START__ADDR 0xaa
+#define BMP085_PROM_DATA__LEN   22
+#define BMP085_T_MEASURE        0x2E                // temperature measurent 
+#define BMP085_P_MEASURE        0x34                // pressure measurement
+#define BMP085_CTRL_MEAS_REG    0xF4
+#define BMP085_ADC_OUT_MSB_REG  0xF6
+#define BMP085_ADC_OUT_LSB_REG  0xF7
+#define BMP085_CHIP_ID__POS     0
+#define BMP085_CHIP_ID__MSK     0xFF
+#define BMP085_CHIP_ID__LEN     8
+#define BMP085_CHIP_ID__REG     BMP085_CHIP_ID_REG
 
-#define BMP085_ML_VERSION__POS		0
-#define BMP085_ML_VERSION__LEN		4
-#define BMP085_ML_VERSION__MSK		0x0F
-#define BMP085_ML_VERSION__REG		BMP085_VERSION_REG
+#define BMP085_ML_VERSION__POS      0
+#define BMP085_ML_VERSION__LEN      4
+#define BMP085_ML_VERSION__MSK      0x0F
+#define BMP085_ML_VERSION__REG      BMP085_VERSION_REG
 
 
 
-#define BMP085_AL_VERSION__POS  	4
-#define BMP085_AL_VERSION__LEN  	4
-#define BMP085_AL_VERSION__MSK		0xF0
-#define BMP085_AL_VERSION__REG		BMP085_VERSION_REG
+#define BMP085_AL_VERSION__POS      4
+#define BMP085_AL_VERSION__LEN      4
+#define BMP085_AL_VERSION__MSK      0xF0
+#define BMP085_AL_VERSION__REG      BMP085_VERSION_REG
 
 #define BMP085_GET_BITSLICE(regvar, bitname) (regvar & bitname##__MSK) >> bitname##__POS
 #define BMP085_SET_BITSLICE(regvar, bitname, val) (regvar & ~bitname##__MSK) | ((val<<bitname##__POS)&bitname##__MSK)
@@ -93,7 +87,7 @@ bool bmp085Init(void)
     EXTI_InitTypeDef   EXTI_InitStructure;
     NVIC_InitTypeDef   NVIC_InitStructure;
     uint8_t data;
-    
+
     if (bmp085InitDone)
         return true;
 
@@ -106,7 +100,7 @@ bool bmp085Init(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
     BARO_ON;
-    
+
     // EXTI interrupt for barometer EOC
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource14);
     EXTI_InitStructure.EXTI_Line = EXTI_Line14;
@@ -123,16 +117,16 @@ bool bmp085Init(void)
     NVIC_Init(&NVIC_InitStructure);
 
     delay(12); // datasheet says 10ms, we'll be careful and do 12.
-    
+
     p_bmp085->sensortype = E_SENSOR_NOT_DETECTED;
     p_bmp085->dev_addr = BMP085_I2C_ADDR;                   /* preset BMP085 I2C_addr */
     i2cRead(p_bmp085->dev_addr, BMP085_CHIP_ID__REG, 1, &data);  /* read Chip Id */
     p_bmp085->chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
     p_bmp085->oversampling_setting = 2;
-    
+
     if (p_bmp085->chip_id == BMP085_CHIP_ID) {            /* get bitslice */
         p_bmp085->sensortype = BOSCH_PRESSURE_BMP085;
-    
+
         i2cRead(p_bmp085->dev_addr, BMP085_VERSION_REG, 1, &data); /* read Version reg */
         p_bmp085->ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION);        /* get ML Version */
         p_bmp085->al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION);        /* get AL Version */
@@ -140,7 +134,7 @@ bool bmp085Init(void)
         bmp085InitDone = true;
         return true;
     }
-    
+
     return false;
 }
 
@@ -191,20 +185,20 @@ int32_t bmp085_get_pressure(uint32_t up)
 {
     int32_t pressure, x1, x2, x3, b3, b6;
     uint32_t b4, b7;
-    
+
     b6 = p_bmp085->param_b5 - 4000;
     // *****calculate B3************
-    x1 = (b6 * b6) >> 12;	 	 
+    x1 = (b6 * b6) >> 12;
     x1 *= p_bmp085->cal_param.b2;
     x1 >>= 11;
-    
+
     x2 = (p_bmp085->cal_param.ac2 * b6);
     x2 >>= 11;
-    
+
     x3 = x1 + x2;
-    
+
     b3 = (((((int32_t)p_bmp085->cal_param.ac1) * 4 + x3) << p_bmp085->oversampling_setting) + 2) >> 2;
-    
+
     // *****calculate B4************
     x1 = (p_bmp085->cal_param.ac3 * b6) >> 13;
     x2 = (p_bmp085->cal_param.b1 * ((b6 * b6) >> 12) ) >> 16;
@@ -217,13 +211,13 @@ int32_t bmp085_get_pressure(uint32_t up)
     } else { 
         pressure = (b7 / b4) << 1;
     }
-    
+
     x1 = pressure >> 8;
     x1 *= x1;
     x1 = (x1 * SMD500_PARAM_MG) >> 16;
     x2 = (pressure * SMD500_PARAM_MH) >> 16;
-    pressure += (x1 + x2 + SMD500_PARAM_MI) >> 4;	// pressure in Pa  
-    
+    pressure += (x1 + x2 + SMD500_PARAM_MI) >> 4;   // pressure in Pa
+
     return pressure;
 }
 
@@ -272,9 +266,9 @@ uint32_t bmp085_get_up(void)
     while (!convDone && timeout-- > 0) {
         __NOP();
     }
-    
-   	i2cRead(p_bmp085->dev_addr, BMP085_ADC_OUT_MSB_REG, 3, data);
-	up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2]) >> (8 - p_bmp085->oversampling_setting);
+
+    i2cRead(p_bmp085->dev_addr, BMP085_ADC_OUT_MSB_REG, 3, data);
+    up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2]) >> (8 - p_bmp085->oversampling_setting);
 
     return up;
 }
@@ -283,7 +277,7 @@ static void bmp085_get_cal_param(void)
 {
     uint8_t data[22];
     i2cRead(p_bmp085->dev_addr, BMP085_PROM_START__ADDR, BMP085_PROM_DATA__LEN, data);
-    
+
     /*parameters AC1-AC6*/
     p_bmp085->cal_param.ac1 =  (data[0] <<8) | data[1];
     p_bmp085->cal_param.ac2 =  (data[2] <<8) | data[3];
@@ -291,11 +285,11 @@ static void bmp085_get_cal_param(void)
     p_bmp085->cal_param.ac4 =  (data[6] <<8) | data[7];
     p_bmp085->cal_param.ac5 =  (data[8] <<8) | data[9];
     p_bmp085->cal_param.ac6 = (data[10] <<8) | data[11];
-    
+
     /*parameters B1,B2*/
     p_bmp085->cal_param.b1 =  (data[12] <<8) | data[13];
     p_bmp085->cal_param.b2 =  (data[14] <<8) | data[15];
-    
+
     /*parameters MB,MC,MD*/
     p_bmp085->cal_param.mb =  (data[16] <<8) | data[17];
     p_bmp085->cal_param.mc =  (data[18] <<8) | data[19];

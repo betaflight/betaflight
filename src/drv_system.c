@@ -1,9 +1,9 @@
 #include "board.h"
 
 // Cycle counter stuff - these should be defined by CMSIS, but they aren't
-#define DWT_CTRL	(*(volatile uint32_t *)0xE0001000)
-#define DWT_CYCCNT	((volatile uint32_t *)0xE0001004)
-#define CYCCNTENA	(1 << 0)
+#define DWT_CTRL    (*(volatile uint32_t *)0xE0001000)
+#define DWT_CYCCNT  ((volatile uint32_t *)0xE0001004)
+#define CYCCNTENA   (1 << 0)
 
 // cycles per microsecond
 static volatile uint32_t usTicks = 0;
@@ -13,14 +13,14 @@ static volatile uint32_t sysTickCycleCounter = 0;
 
 static void cycleCounterInit(void)
 {
-	RCC_ClocksTypeDef clocks;
-	RCC_GetClocksFreq(&clocks);
-	usTicks = clocks.SYSCLK_Frequency / 1000000;
+    RCC_ClocksTypeDef clocks;
+    RCC_GetClocksFreq(&clocks);
+    usTicks = clocks.SYSCLK_Frequency / 1000000;
 
     // enable DWT access
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-	// enable the CPU cycle counter
-	DWT_CTRL |= CYCCNTENA;
+    // enable the CPU cycle counter
+    DWT_CTRL |= CYCCNTENA;
 }
 
 
@@ -75,9 +75,9 @@ void systemInit(void)
     
     // Turn off JTAG port 'cause we're using the GPIO for leds
     GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
-    
+
     // Configure gpio
-    
+
     // PB3, PB4 (LEDs)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -95,48 +95,48 @@ void systemInit(void)
 
     // Init cycle counter
     cycleCounterInit();
-    
+
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
 
     // Configure the rest of the stuff
     adcInit();
     i2cInit(I2C2);
-    
+
     // sleep for 100ms
     delay(100);
 }
 
 void delayMicroseconds(uint32_t us)
 {
-	uint32_t elapsed = 0;
-	uint32_t lastCount = *DWT_CYCCNT;
+    uint32_t elapsed = 0;
+    uint32_t lastCount = *DWT_CYCCNT;
 
-	for (;;) {
-		register uint32_t current_count = *DWT_CYCCNT;
-		uint32_t elapsed_us;
+    for (;;) {
+        register uint32_t current_count = *DWT_CYCCNT;
+        uint32_t elapsed_us;
 
-		// measure the time elapsed since the last time we checked
-		elapsed += current_count - lastCount;
-		lastCount = current_count;
+        // measure the time elapsed since the last time we checked
+        elapsed += current_count - lastCount;
+        lastCount = current_count;
 
-		// convert to microseconds
-		elapsed_us = elapsed / usTicks;
-		if (elapsed_us >= us)
-			break;
+        // convert to microseconds
+        elapsed_us = elapsed / usTicks;
+        if (elapsed_us >= us)
+            break;
 
-		// reduce the delay by the elapsed time
-		us -= elapsed_us;
+        // reduce the delay by the elapsed time
+        us -= elapsed_us;
 
-		// keep fractional microseconds for the next iteration
-		elapsed %= usTicks;
-	}
+        // keep fractional microseconds for the next iteration
+        elapsed %= usTicks;
+    }
 }
 
 void delay(uint32_t ms)
 {
-	while (ms--)
-		delayMicroseconds(1000);
+    while (ms--)
+        delayMicroseconds(1000);
 }
 
 void failureMode(uint8_t mode)

@@ -34,9 +34,8 @@ const char *mixerNames[] = {
 
 // sync this with AvailableFeatures enum from board.h
 const char *featureNames[] = {
-    "PPM", "VBAT", "INFLIGHT_ACC_CAL", "DIGITAL_SERVO", "MOTOR_STOP",
+    "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "CAMTRIG", "GYRO_SMOOTHING", "LED_RING", "GPS",
-    "SPEKTRUM",
     NULL
 };
 
@@ -91,6 +90,8 @@ const clivalue_t valueTable[] = {
     { "mincommand", VAR_UINT16, &cfg.mincommand, 0, 2000 },
     { "mincheck", VAR_UINT16, &cfg.mincheck, 0, 2000 },
     { "maxcheck", VAR_UINT16, &cfg.maxcheck, 0, 2000 },
+    { "motor_pwm_rate", VAR_UINT16, &cfg.motor_pwm_rate, 50, 498 },
+    { "servo_pwm_rate", VAR_UINT16, &cfg.servo_pwm_rate, 50, 498 },
     { "spektrum_hires", VAR_UINT8, &cfg.spektrum_hires, 0, 1 },
     { "vbatscale", VAR_UINT8, &cfg.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &cfg.vbatmaxcellvoltage, 10, 50 },
@@ -261,9 +262,10 @@ static void cliHelp(char *cmdline)
 
     for (i = 0; i < CMD_COUNT; i++) {
         uartPrint(cmdTable[i].name);
-        uartWrite(' ');
+        uartWrite('\t');
         uartPrint(cmdTable[i].param);
         uartPrint("\r\n");
+        while (!uartTransmitEmpty());
     }
 }
 
@@ -410,7 +412,7 @@ static void cliSet(char *cmdline)
             uartPrint(" = ");
             cliPrintVar(val);
             uartPrint("\r\n");
-            delay(10);
+            while (!uartTransmitEmpty());
         }
     } else if ((eqptr = strstr(cmdline, "="))) {
         // has equal, set var
