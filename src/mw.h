@@ -33,16 +33,6 @@
 #define WING_RIGHT_MIN 1020 // limit servo travel range must be inside [1020;2000]
 #define WING_RIGHT_MAX 2000 // limit servo travel range must be inside [1020;2000]
 
-/* The following lines apply only for a pitch/roll tilt stabilization system
-   On promini board, it is not compatible with config with 6 motors or more
-   Uncomment the first line to activate it */
-#define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
-#define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
-#define TILT_PITCH_MIDDLE 1500    //servo neutral value
-#define TILT_ROLL_MIN     1020
-#define TILT_ROLL_MAX     2000
-#define TILT_ROLL_MIDDLE  1500
-
 /* experimental
    camera trigger function : activated via Rc Options in the GUI, servo output=A2 on promini */
 #define CAM_SERVO_HIGH 2000  // the position of HIGH state servo
@@ -65,23 +55,23 @@
 // Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
 typedef enum MultiType
 {
-    MULTITYPE_TRI = 1,              // XA
-    MULTITYPE_QUADP = 2,            // XB
-    MULTITYPE_QUADX = 3,            // XC
-    MULTITYPE_BI = 4,               // XD
-    MULTITYPE_GIMBAL = 5,           // XE
-    MULTITYPE_Y6 = 6,               // XF
-    MULTITYPE_HEX6 = 7,             // XG
-    MULTITYPE_FLYING_WING = 8,      // XH
-    MULTITYPE_Y4 = 9,               // XI
-    MULTITYPE_HEX6X = 10,           // XJ
-    MULTITYPE_OCTOX8 = 11,          // XK
-    MULTITYPE_OCTOFLATP = 12,	    // XL the GUI is the same for all 8 motor configs
-    MULTITYPE_OCTOFLATX = 13,       // XM the GUI is the same for all 8 motor configs
-    MULTITYPE_AIRPLANE = 14,        // XN
-    MULTITYPE_HELI_120_CCPM = 15,   // XO simple model
-    MULTITYPE_HELI_90_DEG = 16,     // XP simple model
-    MULTITYPE_VTAIL4 = 17,          // XO
+    MULTITYPE_TRI = 1,
+    MULTITYPE_QUADP = 2,
+    MULTITYPE_QUADX = 3,
+    MULTITYPE_BI = 4,
+    MULTITYPE_GIMBAL = 5,
+    MULTITYPE_Y6 = 6,
+    MULTITYPE_HEX6 = 7,
+    MULTITYPE_FLYING_WING = 8,
+    MULTITYPE_Y4 = 9,
+    MULTITYPE_HEX6X = 10,
+    MULTITYPE_OCTOX8 = 11,
+    MULTITYPE_OCTOFLATP = 12,       // the GUI is the same for all 8 motor configs
+    MULTITYPE_OCTOFLATX = 13,       // the GUI is the same for all 8 motor configs
+    MULTITYPE_AIRPLANE = 14,
+    MULTITYPE_HELI_120_CCPM = 15,   // simple model
+    MULTITYPE_HELI_90_DEG = 16,     // simple model
+    MULTITYPE_VTAIL4 = 17,
     MULTITYPE_LAST = 18
 } MultiType;
 
@@ -142,7 +132,7 @@ typedef struct config_t {
     int16_t accZero[3];
     int16_t magZero[3];
     int16_t accTrim[2];
-    
+
     // sensor-related stuff
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
     uint16_t gyro_lpf;                      // mpuX050 LPF setting
@@ -154,7 +144,7 @@ typedef struct config_t {
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
     uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery out alarms, in 0.1V units, default is 33 (3.3V)
-    
+
     // Radio/ESC-related configuration
     uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
@@ -178,10 +168,16 @@ typedef struct config_t {
     uint16_t tri_yaw_middle;                // tail servo center pos. - use this for initial trim
     uint16_t tri_yaw_min;                   // tail servo min
     uint16_t tri_yaw_max;                   // tail servo max
-    
+
     // gimbal-related configuration
-    int8_t tilt_pitch_prop;                 // servo proportional (tied to angle) ; can be negative to invert movement
-    int8_t tilt_roll_prop;                  // servo proportional (tied to angle) ; can be negative to invert movement
+    int8_t gimbal_pitch_gain;               // gimbal pitch servo gain (tied to angle) can be negative to invert movement
+    int8_t gimbal_roll_gain;                // gimbal roll servo gain (tied to angle) can be negative to invert movement
+    uint16_t gimbal_pitch_min;              // gimbal pitch servo min travel
+    uint16_t gimbal_pitch_max;              // gimbal pitch servo max travel
+    uint16_t gimbal_pitch_mid;              // gimbal pitch servo neutral value
+    uint16_t gimbal_roll_min;               // gimbal roll servo min travel
+    uint16_t gimbal_roll_max;               // gimbal roll servo max travel
+    uint16_t gimbal_roll_mid;               // gimbal roll servo neutral value
 
     // gps baud-rate
     uint32_t gps_baudrate;    

@@ -212,8 +212,8 @@ void mixTable(void)
             break;
 
         case MULTITYPE_GIMBAL:
-            servo[0] = constrain(TILT_PITCH_MIDDLE + cfg.tilt_pitch_prop * angle[PITCH] / 16 + rcCommand[PITCH], TILT_PITCH_MIN, TILT_PITCH_MAX);
-            servo[1] = constrain(TILT_ROLL_MIDDLE + cfg.tilt_roll_prop * angle[ROLL] / 16 + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
+            servo[0] = constrain(cfg.gimbal_pitch_mid + cfg.gimbal_pitch_gain * angle[PITCH] / 16 + rcCommand[PITCH], cfg.gimbal_pitch_min, cfg.gimbal_pitch_max);
+            servo[1] = constrain(cfg.gimbal_roll_mid + cfg.gimbal_roll_gain * angle[ROLL] / 16 + rcCommand[ROLL], cfg.gimbal_roll_min, cfg.gimbal_roll_max);
             break;
 
         case MULTITYPE_FLYING_WING:
@@ -232,16 +232,16 @@ void mixTable(void)
 
     // do camstab
     if (feature(FEATURE_SERVO_TILT)) {
-        servo[0] = TILT_PITCH_MIDDLE + rcData[AUX3] - 1500;
-        servo[1] = TILT_ROLL_MIDDLE + rcData[AUX4] - 1500;
+        servo[0] = cfg.gimbal_pitch_mid + rcData[AUX3] - cfg.midrc;
+        servo[1] = cfg.gimbal_roll_mid + rcData[AUX4] - cfg.midrc;
 
         if (rcOptions[BOXCAMSTAB]) {
-            servo[0] += cfg.tilt_pitch_prop * angle[PITCH] / 16;
-            servo[1] += cfg.tilt_roll_prop * angle[ROLL]  / 16;
+            servo[0] += cfg.gimbal_pitch_gain * angle[PITCH] / 16;
+            servo[1] += cfg.gimbal_roll_gain * angle[ROLL]  / 16;
         }
 
-        servo[0] = constrain(servo[0], TILT_PITCH_MIN, TILT_PITCH_MAX);
-        servo[1] = constrain(servo[1], TILT_ROLL_MIN, TILT_ROLL_MAX);
+        servo[0] = constrain(servo[0], cfg.gimbal_pitch_min, cfg.gimbal_pitch_max);
+        servo[1] = constrain(servo[1], cfg.gimbal_roll_min, cfg.gimbal_roll_max);
     }
 
     // do camtrig (this doesn't actually work)        

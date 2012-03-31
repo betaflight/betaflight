@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 11;
+static uint8_t checkNewConf = 12;
 
 void parseRcChannels(const char *input)
 {
@@ -149,8 +149,14 @@ void checkFirstTime(bool reset)
     cfg.tri_yaw_max = 2000;
 
     // gimbal
-    cfg.tilt_pitch_prop = 10;
-    cfg.tilt_roll_prop = 10;
+    cfg.gimbal_pitch_gain = 10;
+    cfg.gimbal_roll_gain = 10;
+    cfg.gimbal_pitch_min = 1020;
+    cfg.gimbal_pitch_max = 2000;
+    cfg.gimbal_pitch_mid = 1500;
+    cfg.gimbal_roll_min = 1020;
+    cfg.gimbal_roll_max = 2000;
+    cfg.gimbal_roll_mid = 1500;
 
     // gps baud-rate
     cfg.gps_baudrate = 9600;    
