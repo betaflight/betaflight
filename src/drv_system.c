@@ -72,7 +72,7 @@ void systemInit(void)
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     GPIO_Init(GPIOC, &GPIO_InitStructure);
-    
+
     // Turn off JTAG port 'cause we're using the GPIO for leds
     GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 

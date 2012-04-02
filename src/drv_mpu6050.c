@@ -122,6 +122,8 @@ static void mpu6050GyroAlign(int16_t * gyroData);
 
 #ifdef MPU6050_DMP
 static void mpu6050DmpInit(void);
+float dmpdata[2];
+int16_t dmpGyroData[3];
 #endif
 
 extern uint16_t acc_1G;
@@ -171,10 +173,12 @@ static void mpu6050AccRead(int16_t * accData)
 
 #ifndef MPU6050_DMP
     i2cRead(MPU6050_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf);
-#endif
     accData[0] = (buf[0] << 8) | buf[1];
     accData[1] = (buf[2] << 8) | buf[3];
     accData[2] = (buf[4] << 8) | buf[5];
+#else
+    accData[0] = accData[1] = accData[2] = 0;
+#endif
 }
 
 static void mpu6050AccAlign(int16_t * accData)
@@ -206,10 +210,14 @@ static void mpu6050GyroRead(int16_t * gyroData)
     uint8_t buf[6];
 #ifndef MPU6050_DMP
     i2cRead(MPU6050_ADDRESS, MPU_RA_GYRO_XOUT_H, 6, buf);
-#endif
     gyroData[0] = (buf[0] << 8) | buf[1];
     gyroData[1] = (buf[2] << 8) | buf[3];
     gyroData[2] = (buf[4] << 8) | buf[5];
+#else
+    gyroData[0] = dmpGyroData[0];
+    gyroData[1] = dmpGyroData[1];
+    gyroData[2] = dmpGyroData[2];
+#endif
 }
 
 static void mpu6050GyroAlign(int16_t * gyroData)
@@ -404,9 +412,8 @@ const uint8_t dmp_updates[29][9] = {
     {0x07, 0x46, 0x01, 0x9A},   //CFG_GYRO_SOURCE inv_send_gyro
     {0x07, 0x47, 0x04, 0xF1, 0x28, 0x30, 0x38}, //CFG_9 inv_send_gyro -> inv_construct3_fifo
     {0x07, 0x6C, 0x04, 0xF1, 0x28, 0x30, 0x38}, //CFG_12 inv_send_accel -> inv_construct3_fifo
-    {0x02, 0x16, 0x02, 0x00, 0x0A},     //D_0_22 inv_set_fifo_rate
+    {0x02, 0x16, 0x02, 0x00, 0x00},     //D_0_22 inv_set_fifo_rate
 };
-
 
 static long dmp_lastRead = 0;
 static uint8_t dmp_processed_packet[8];
@@ -423,7 +430,7 @@ static void mpu6050DmpBankSelect(uint8_t bank);
 static bool mpu6050DmpFifoReady(void);
 static void mpu6050DmpGetPacket(void);
 static void mpu6050DmpProcessQuat(void);
-static void mpu6050DmpResetFifo(void);
+void mpu6050DmpResetFifo(void);
 
 static void mpu6050DmpInit(void)
 {
@@ -451,7 +458,6 @@ static void mpu6050DmpInit(void)
     delay(5);
 
     mpu6050DmpMemInit();
-    delay(20);
 }
 
 void mpu6050DmpLoop(void)
@@ -460,8 +466,9 @@ void mpu6050DmpLoop(void)
     uint8_t buf[2];
 
     if (mpu6050DmpFifoReady()) {
+        LED1_ON;
         mpu6050DmpGetPacket();
-        
+
         i2cRead(MPU6050_ADDRESS, MPU_RA_INT_STATUS, 1, &temp);
         if (dmp_firstPacket) {
             delay(1);
@@ -482,37 +489,48 @@ void mpu6050DmpLoop(void)
         if (dmp_fifoCountL == 42) {
             mpu6050DmpProcessQuat();
         }
+        LED1_OFF;
     }
 }
 
-double dmpdata[3];
+#define dmp_quatTake32(a, b) (((a)[4*(b)+0]<<8) | ((a)[4*(b)+1]<<0))
+extern int16_t angle[2];
 
 static void mpu6050DmpProcessQuat(void)
 {
+    float quat0, quat1, quat2, quat3;
     int32_t quatl0, quatl1, quatl2, quatl3;
-    double quat0, quat1, quat2, quat3;
-    double rot6, rot7, rot8;
 
-#define dmp_quatTake32(a, b) (((a)[4*(b)+3]<<24) | ((a)[4*(b)+2]<<16) | ((a)[4*(b)+1]<<8) | ((a)[4*(b)+0]))
     quatl0 = dmp_quatTake32(dmp_received_packet, 0);
     quatl1 = dmp_quatTake32(dmp_received_packet, 1);
     quatl2 = dmp_quatTake32(dmp_received_packet, 2);
     quatl3 = dmp_quatTake32(dmp_received_packet, 3);
-    quat0 = (double) quatl0 / 32768.0;
-    quat1 = (double) quatl1 / 32768.0;
-    quat2 = (double) quatl2 / 32768.0;
-    quat3 = (double) quatl3 / 32768.0;
 
-    rot6 = (quat1 * quat3) - (quat2 * quat0);
-    rot7 = (quat2 * quat3) + (quat1 * quat0);
-    rot8 = (quat3 * quat3) + (quat0 * quat0) - 1.0;
+    if (quatl0 > 32767) 
+        quatl0 -= 65536;
+    if (quatl1 > 32767) 
+        quatl1 -= 65536;
+    if (quatl2 > 32767) 
+        quatl2 -= 65536;
+    if (quatl3 > 32767) 
+        quatl3 -= 65536;
 
-    dmpdata[0] = atan2(rot7, rot8);
-    dmpdata[1] = atan2(rot8, rot6);
-    dmpdata[2] = ((dmp_received_packet[4 * 6 + 0] << 8) | (dmp_received_packet[4 * 6 + 1] << 0));
+    quat0 = ((float) quatl0) / 16384.0f;
+    quat1 = ((float) quatl1) / 16384.0f;
+    quat2 = ((float) quatl2) / 16384.0f;
+    quat3 = ((float) quatl3) / 16384.0f;
+    
+    dmpdata[0] = atan2f(2 * ((quat0 * quat1) + (quat2 * quat3)), 1.0 - (2 * ((quat1 * quat1) + (quat2 * quat2)))) * (180.0f / M_PI);
+    dmpdata[1] = asinf(2 * ((quat0 * quat2) - (quat3 * quat1))) * (180.0f / M_PI);
+    angle[0] = dmpdata[0] * 10;
+    angle[1] = dmpdata[1] * 10;
+
+    dmpGyroData[0] = ((dmp_received_packet[4 * 4 + 0] << 8) | (dmp_received_packet[4 * 4 + 1] << 0));
+    dmpGyroData[1] = ((dmp_received_packet[4 * 5 + 0] << 8) | (dmp_received_packet[4 * 5 + 1] << 0));
+    dmpGyroData[2] = ((dmp_received_packet[4 * 6 + 0] << 8) | (dmp_received_packet[4 * 6 + 1] << 0));
 }
 
-static void mpu6050DmpResetFifo(void)
+void mpu6050DmpResetFifo(void)
 {
     uint8_t ctrl;
     
@@ -520,7 +538,6 @@ static void mpu6050DmpResetFifo(void)
     ctrl |= 0x04;
     i2cWrite(MPU6050_ADDRESS, MPU_RA_USER_CTRL, ctrl);
 }
-
 
 static void mpu6050DmpGetPacket(void)
 {
@@ -538,6 +555,8 @@ static void mpu6050DmpGetPacket(void)
     }
 }
 
+uint16_t dmpFifoLevel = 0;
+
 static bool mpu6050DmpFifoReady(void)
 {
     uint8_t buf[2];
@@ -545,11 +564,24 @@ static bool mpu6050DmpFifoReady(void)
     i2cRead(MPU6050_ADDRESS, MPU_RA_FIFO_COUNTH, 2, buf);
     
     dmp_fifoCountL = buf[1];
+    dmpFifoLevel = buf[0] << 8 | buf[1];
     
     if (dmp_fifoCountL == 42 || dmp_fifoCountL == 44)
         return true;
-    else
-        return false;
+    else {
+        // lame hack to empty out fifo, as dmpResetFifo doesn't actually seem to do it...
+        if (dmpFifoLevel > 100) {
+            // clear out fifo
+            uint8_t crap[16];
+            do {
+                i2cRead(MPU6050_ADDRESS, MPU_RA_FIFO_R_W, dmpFifoLevel > 16 ? 16 : dmpFifoLevel, crap);
+                i2cRead(MPU6050_ADDRESS, MPU_RA_FIFO_COUNTH, 2, buf);
+                dmpFifoLevel = buf[0] << 8 | buf[1];
+            } while (dmpFifoLevel);
+        }
+    }
+
+    return false;
 }
 
 static void mpu6050DmpBankSelect(uint8_t bank)
@@ -680,6 +712,11 @@ static void mpu6050DmpMemInit(void)
 
 #else                          /* MPU6050_DMP */
 void mpu6050DmpLoop(void)
+{
+
+}
+
+void mpu6050DmpResetFifo(void)
 {
 
 }

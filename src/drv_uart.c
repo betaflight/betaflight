@@ -59,7 +59,7 @@ void uartInit(uint32_t speed)
     // DMA TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
@@ -70,7 +70,7 @@ void uartInit(uint32_t speed)
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(USART1, &USART_InitStructure);
-    
+
     // Receive DMA into a circular buffer
     DMA_DeInit(DMA1_Channel5);
     DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
@@ -163,8 +163,8 @@ void uart2Init(uint32_t speed, uartReceiveCallbackPtr func)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 

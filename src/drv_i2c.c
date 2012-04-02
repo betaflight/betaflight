@@ -76,7 +76,7 @@ static void i2c_er_handler(void)
 bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
     uint8_t i;
-    uint8_t my_data[8];
+    uint8_t my_data[16];
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     addr = addr_ << 1;
@@ -89,7 +89,7 @@ bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
     busy = 1;
     
     // too long
-    if (len_ > 7)
+    if (len_ > 16)
         return false;
 
     for (i = 0; i < len_; i++)
@@ -268,7 +268,7 @@ void i2cInit(I2C_TypeDef *I2C)
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
     I2Cx = I2C;
-    
+
     // clock out stuff to make sure slaves arent stuck
     i2cUnstick();
 
@@ -281,7 +281,7 @@ void i2cInit(I2C_TypeDef *I2C)
     I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;
     I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
     I2C_InitStructure.I2C_ClockSpeed = 400000;
-	I2C_Cmd(I2Cx, ENABLE);
+    I2C_Cmd(I2Cx, ENABLE);
     I2C_Init(I2Cx, &I2C_InitStructure);
 
     NVIC_PriorityGroupConfig(0x500);
@@ -292,6 +292,7 @@ void i2cInit(I2C_TypeDef *I2C)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+
     // I2C EV Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = I2C2_EV_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
@@ -327,7 +328,7 @@ static void i2cUnstick(void)
         GPIO_SetBits(GPIOB, GPIO_Pin_10); //Set bus high
         delayMicroseconds(10);
     }
-    
+
     // Generate a start then stop condition
     // SCL  PB10
     // SDA  PB11
