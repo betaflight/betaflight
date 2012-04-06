@@ -169,7 +169,7 @@ static void getEstimatedAttitude(void)
 #if defined(MG_LPF_FACTOR)
     static int16_t mgSmooth[3];
 #endif
-    static int16_t accTemp[3];  //projection of smoothed and normalized magnetic vector on x/y/z axis, as measured by magnetometer
+    static float accTemp[3];  // projection of smoothed and normalized magnetic vector on x/y/z axis, as measured by magnetometer
     static uint32_t previousT;
     uint32_t currentT = micros();
     float scale, deltaGyroAngle[3];
@@ -181,8 +181,10 @@ static void getEstimatedAttitude(void)
     for (axis = 0; axis < 3; axis++) {
         deltaGyroAngle[axis] = gyroADC[axis] * scale;
         if (cfg.acc_lpf_factor > 0) {
-            accTemp[axis] = (accTemp[axis] - (accTemp[axis] >> cfg.acc_lpf_factor)) + accADC[axis];
-            accSmooth[axis] = accTemp[axis] >> cfg.acc_lpf_factor;
+            accTemp[axis] = accTemp[axis] * (1.0f - (1.0f / cfg.acc_lpf_factor)) + accADC[axis] * (1.0f / cfg.acc_lpf_factor);
+            accSmooth[axis] = roundf(accTemp[axis]);
+            // accTemp[axis] = (accTemp[axis] - (accTemp[axis] >> cfg.acc_lpf_factor)) + accADC[axis];
+            // accSmooth[axis] = accTemp[axis] >> cfg.acc_lpf_factor;
         } else {
             accSmooth[axis] = accADC[axis];
         }
@@ -214,8 +216,8 @@ static void getEstimatedAttitude(void)
     // To do that, we just skip filter, as EstV already rotated by Gyro
     if ((36 < accMag && accMag < 196) || smallAngle25) {
         for (axis = 0; axis < 3; axis++) {
-            int16_t acc = accSmooth[axis];
-            EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + acc) * INV_GYR_CMPF_FACTOR;
+            // int16_t acc = accSmooth[axis];
+            EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + accTemp[axis]) * INV_GYR_CMPF_FACTOR;
         }
     }
 

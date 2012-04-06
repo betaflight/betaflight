@@ -106,8 +106,8 @@ typedef enum MultiType
 #define CHECKBOXITEMS 11
 #define PIDITEMS 8
 
-#define ACC_ORIENTATION(X, Y, Z)  { accADC[ROLL]  =  Y; accADC[PITCH]  = -X; accADC[YAW]  = Z; }
-#define GYRO_ORIENTATION(X, Y, Z) { gyroADC[ROLL] = -Y; gyroADC[PITCH] =  X; gyroADC[YAW] = Z; }
+// #define ACC_ORIENTATION(X, Y, Z)  { accADC[ROLL]  =  Y; accADC[PITCH]  = -X; accADC[YAW]  = Z; }
+// #define GYRO_ORIENTATION(X, Y, Z) { gyroADC[ROLL] = -Y; gyroADC[PITCH] =  X; gyroADC[YAW] = Z; }
 
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))

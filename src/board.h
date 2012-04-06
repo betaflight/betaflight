@@ -1,5 +1,8 @@
 #pragma once
 
+// for roundf()
+#define __USE_C99_MATH
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>

@@ -164,7 +164,7 @@ static void mpu6050AccInit(void)
     // note: something seems to be wrong in the spec here. With AFS=2 1G = 4096 but according to my measurement: 1G=2048 (and 2048/8 = 256)
     // confirmed here: http://www.multiwii.com/forum/viewtopic.php?f=8&t=1080&start=10#p7480
     // seems to be not a problem on MPU6000 lol
-    acc_1G = 1023;
+    acc_1G = 512; // 1023;
 }
 
 static void mpu6050AccRead(int16_t * accData)

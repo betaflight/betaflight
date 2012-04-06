@@ -148,7 +148,7 @@ void serialCom(void)
                 serialize16(gyroData[i]);
             for (i = 0; i < 3; i++)
                 serialize16(magADC[i]);
-            serialize16(EstAlt);
+            serialize16(EstAlt / 10);
             serialize16(heading);       // compass
             for (i = 0; i < 8; i++)
                 serialize16(servo[i]);
@@ -157,7 +157,7 @@ void serialCom(void)
             for (i = 0; i < 8; i++)
                 serialize16(rcData[i]);
             serialize8(sensors(SENSOR_ACC) << 1 | sensors(SENSOR_BARO) << 2 | sensors(SENSOR_MAG) << 3 | sensors(SENSOR_GPS) << 4);
-            serialize8(accMode | baroMode << 1 | magMode << 2 | GPSModeHome << 3 | GPSModeHold << 4);
+            serialize8(accMode | baroMode << 1 | magMode << 2 | GPSModeHome << 3 | GPSModeHold << 4 | armed << 5);
 #if defined(LOG_VALUES)
             serialize16(cycleTimeMax);
             cycleTimeMax = 0;

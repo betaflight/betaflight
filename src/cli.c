@@ -110,7 +110,7 @@ const clivalue_t valueTable[] = {
     { "gimbal_roll_min", VAR_UINT16, &cfg.gimbal_roll_min, 100, 3000 },
     { "gimbal_roll_max", VAR_UINT16, &cfg.gimbal_roll_max, 100, 3000 },
     { "gimbal_roll_mid", VAR_UINT16, &cfg.gimbal_roll_mid, 100, 3000 },
-    { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 32 },
+    { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 250 },
     { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
     { "gps_baudrate", VAR_UINT32, &cfg.gps_baudrate, 1200, 115200 },
     { "serial_baudrate", VAR_UINT32, &cfg.serial_baudrate, 1200, 115200 },
