@@ -23,7 +23,7 @@ void serialInit(uint32_t baudrate)
 void serialCom(void)
 {
     uint8_t i;
-    
+
     // in cli mode, all uart stuff goes to here. enter cli mode by sending #
     if (cliMode) {
         cliProcess();
@@ -35,108 +35,13 @@ void serialCom(void)
         case '#':
             cliProcess();
             break;
-
 #ifdef BTSERIAL
-        case 'K':              //receive RC data from Bluetooth Serial adapter as a remote
+        case 'K':              // receive RC data from Bluetooth Serial adapter as a remote
             rcData[THROTTLE] = (SerialRead(0) * 4) + 1000;
             rcData[ROLL] = (SerialRead(0) * 4) + 1000;
             rcData[PITCH] = (SerialRead(0) * 4) + 1000;
             rcData[YAW] = (SerialRead(0) * 4) + 1000;
             rcData[AUX1] = (SerialRead(0) * 4) + 1000;
-            break;
-#endif
-#ifdef LCD_TELEMETRY
-        case 'A':              // button A press
-        case '1':
-            if (telemetry == 1)
-                telemetry = 0;
-            else {
-                telemetry = 1;
-                LCDclear();
-            }
-            break;
-        case 'B':              // button B press
-        case '2':
-            if (telemetry == 2)
-                telemetry = 0;
-            else {
-                telemetry = 2;
-                LCDclear();
-            }
-            break;
-        case 'C':              // button C press
-        case '3':
-            if (telemetry == 3)
-                telemetry = 0;
-            else {
-                telemetry = 3;
-                LCDclear();
-#if defined(LOG_VALUES) && defined(DEBUG)
-                cycleTimeMax = 0;       // reset min/max on transition on->off
-                cycleTimeMin = 65535;
-#endif
-            }
-            break;
-        case 'D':              // button D press
-        case '4':
-            if (telemetry == 4)
-                telemetry = 0;
-            else {
-                telemetry = 4;
-                LCDclear();
-            }
-            break;
-        case '5':
-            if (telemetry == 5)
-                telemetry = 0;
-            else {
-                telemetry = 5;
-                LCDclear();
-            }
-            break;
-        case '6':
-            if (telemetry == 6)
-                telemetry = 0;
-            else {
-                telemetry = 6;
-                LCDclear();
-            }
-            break;
-        case '7':
-            if (telemetry == 7)
-                telemetry = 0;
-            else {
-                telemetry = 7;
-                LCDclear();
-            }
-            break;
-#if defined(LOG_VALUES) && defined(DEBUG)
-        case 'R':
-            //Reset logvalues
-            if (telemetry == 'R')
-                telemetry = 0;
-            else {
-                telemetry = 'R';
-                LCDclear();
-            }
-            break;
-#endif
-#ifdef DEBUG
-        case 'F':
-            {
-                if (telemetry == 'F')
-                    telemetry = 0;
-                else {
-                    telemetry = 'F';
-                    LCDclear();
-                }
-                break;
-            }
-#endif
-        case 'a':              // button A release
-        case 'b':              // button B release
-        case 'c':              // button C release
-        case 'd':              // button D release
             break;
 #endif
         case 'M':              // Multiwii @ arduino to GUI all data
@@ -181,15 +86,14 @@ void serialCom(void)
             for (i = 0; i < CHECKBOXITEMS; i++) {
                 serialize8(cfg.activate1[i]);
                 serialize8(cfg.activate2[i] | (rcOptions[i] << 7)); // use highest bit to transport state in mwc
-
             }
             serialize16(GPS_distanceToHome);
             serialize16(GPS_directionToHome + 180);
             serialize8(GPS_numSat);
             serialize8(GPS_fix);
             serialize8(GPS_update);
-            serialize16(intPowerMeterSum);
-            serialize16(intPowerTrigger1);
+            serialize16(0);                 // power meter, removed
+            serialize16(0);                 // power meter, removed
             serialize8(vbat);
             serialize16(BaroAlt / 10);      // 4 variables are here for general monitoring purpose
             serialize16(debug2);            // debug2
@@ -245,18 +149,14 @@ void serialCom(void)
                 cfg.activate1[i] = uartReadPoll();
                 cfg.activate2[i] = uartReadPoll();
             }
-#if defined(POWERMETER)
-            cfg.powerTrigger1 = (uartReadPoll() + 256 * uartReadPoll()) / PLEVELSCALE;        // we rely on writeParams() to compute corresponding pAlarm value
-#else
-            uartReadPoll();
-            uartReadPoll();      //7 so we unload the two bytes
-#endif
+            uartReadPoll();     // power meter crap, removed
+            uartReadPoll();     // power meter crap, removed
             writeParams();
             break;
-        case 'S':              //GUI to arduino ACC calibration request
+        case 'S':              // GUI to arduino ACC calibration request
             calibratingA = 400;
             break;
-        case 'E':              //GUI to arduino MAG calibration request
+        case 'E':              // GUI to arduino MAG calibration request
             calibratingM = 1;
             break;
         }

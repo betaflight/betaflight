@@ -285,24 +285,4 @@ void mixTable(void)
         if (armed == 0)
             motor[i] = cfg.mincommand;
     }
-
-#if (LOG_VALUES == 2) || defined(POWERMETER_SOFT)
-    uint32_t amp;
-    /* true cubic function; when divided by vbat_max=126 (12.6V) for 3 cell battery this gives maximum value of ~ 500 */
-    /* Lookup table moved to PROGMEM 11/21/2001 by Danal */
-    static uint16_t amperes[64] = {
-    0, 2, 6, 15, 30, 52, 82, 123, 175, 240, 320, 415, 528, 659, 811, 984, 1181, 1402, 1648, 1923, 2226, 2559, 2924, 3322, 3755, 4224, 4730, 5276, 5861, 6489, 7160, 7875, 8637, 9446, 10304, 11213, 12173, 13187, 14256, 15381, 16564, 17805, 19108, 20472, 21900, 23392, 24951, 26578, 28274, 30041, 31879, 33792, 35779, 37843, 39984, 42205, 44507, 46890, 49358, 51910, 54549, 57276, 60093, 63000};
-
-    if (vbat) {                 // by all means - must avoid division by zero 
-        for (i = 0; i < NUMBER_MOTOR; i++) {
-            amp = amperes[((motor[i] - 1000) >> 4)] / vbat;     // range mapped from [1000:2000] => [0:1000]; then break that up into 64 ranges; lookup amp
-#if (LOG_VALUES == 2)
-            pMeter[i] += amp;   // sum up over time the mapped ESC input 
-#endif
-#if defined(POWERMETER_SOFT)
-            pMeter[PMOTOR_SUM] += amp;  // total sum over all motors
-#endif
-        }
-    }
-#endif
 }

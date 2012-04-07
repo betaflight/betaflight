@@ -21,8 +21,14 @@ sensor_t gyro;                  // gyro access functions
 
 void sensorsAutodetect(void)
 {
+    drv_adxl345_config_t acc_params;
+
+    // configure parameters for ADXL345 driver
+    acc_params.useFifo = false;
+    acc_params.dataRate = 800; // unused currently
+
     // Detect what's available
-    if (!adxl345Detect(&acc))
+    if (!adxl345Detect(&acc_params, &acc))
         sensorsClear(SENSOR_ACC);
     if (!bmp085Init())
         sensorsClear(SENSOR_BARO);

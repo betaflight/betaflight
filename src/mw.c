@@ -60,15 +60,7 @@ uint16_t AccInflightCalibrationMeasurementDone = 0;
 uint16_t AccInflightCalibrationSavetoEEProm = 0;
 uint16_t AccInflightCalibrationActive = 0;
 
-// **********************
-// power meter
-// **********************
-#define PMOTOR_SUM 8            // index into pMeter[] for sum
-uint32_t pMeter[PMOTOR_SUM + 1];        // we use [0:7] for eight motors,one extra for sum
-uint8_t pMeterV;                // dummy to satisfy the paramStruct logic in ConfigurationLoop()
-uint32_t pAlarm;                // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
-uint16_t powerValue = 0;        // last known current
-uint16_t intPowerMeterSum, intPowerTrigger1;
+// Battery monitoring stuff
 uint8_t batteryCellCount = 3;   // cell count
 uint16_t batteryWarningVoltage; // annoying buzzer after this one, battery ready to be dead
 
@@ -91,19 +83,9 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 void annexCode(void)
 {
     static uint32_t buzzerTime, calibratedAccTime;
-#if defined(LCD_TELEMETRY)
-    static uint16_t telemetryTimer = 0, telemetryAutoTimer = 0, psensorTimer = 0;
-#endif
-#if defined(LCD_TELEMETRY)
-    static uint8_t telemetryAutoIndex = 0;
-    static char telemetryAutoSequence[] = LCD_TELEMETRY_AUTO;
-#endif
     static uint8_t vbatTimer = 0;
     static uint8_t buzzerFreq;  //delay between buzzer ring
     uint8_t axis, prop1, prop2;
-#if defined(POWERMETER_HARD)
-    uint16_t pMeterRaw;         //used for current reading
-#endif
     static uint8_t ind = 0;
     uint16_t vbatRaw = 0;
     static uint16_t vbatRawArray[8];
@@ -159,21 +141,6 @@ void annexCode(void)
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;
     }
-#if defined(POWERMETER_HARD)
-    if (!(++psensorTimer % PSENSORFREQ)) {
-        pMeterRaw = analogRead(PSENSORPIN);
-        powerValue = (PSENSORNULL > pMeterRaw ? PSENSORNULL - pMeterRaw : pMeterRaw - PSENSORNULL);     // do not use abs(), it would induce implicit cast to uint and overrun
-        if (powerValue < 333) { // only accept reasonable values. 333 is empirical
-#ifdef LOG_VALUES
-            if (powerValue > powerMax)
-                powerMax = powerValue;
-#endif
-        } else {
-            powerValue = 333;
-        }
-        pMeter[PMOTOR_SUM] += (uint32_t) powerValue;
-    }
-#endif
 
     if (feature(FEATURE_VBAT)) {
         if (!(++vbatTimer % VBATFREQ)) {
@@ -184,18 +151,10 @@ void annexCode(void)
         }
         if (rcOptions[BOXBEEPERON]) {   // unconditional beeper on via AUXn switch 
             buzzerFreq = 7;
-        } else if (((vbat > batteryWarningVoltage)
-#if defined(POWERMETER)
-                    && ((pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0))
-#endif
-                   ) || (vbat < cfg.vbatmincellvoltage)) {      //VBAT ok AND powermeter ok, buzzer off
+        } else if ((vbat > batteryWarningVoltage) || (vbat < cfg.vbatmincellvoltage)) {      //VBAT ok, buzzer off
             buzzerFreq = 0;
             buzzerState = 0;
             BEEP_OFF;
-#if defined(POWERMETER)
-        } else if (pMeter[PMOTOR_SUM] > pAlarm) {       // sound alarm for powermeter
-            buzzerFreq = 4;
-#endif
         } else
             buzzerFreq = 4;     // low battery
         if (buzzerFreq) {
@@ -240,28 +199,6 @@ void annexCode(void)
     }
 
     serialCom();
-
-#if defined(POWERMETER)
-    intPowerMeterSum = (pMeter[PMOTOR_SUM] / PLEVELDIV);
-    intPowerTrigger1 = cfg.powerTrigger1 * PLEVELSCALE;
-#endif
-
-#ifdef LCD_TELEMETRY_AUTO
-    if ((telemetry_auto)
-        && (!(++telemetryAutoTimer % LCD_TELEMETRY_AUTO_FREQ))) {
-        telemetry = telemetryAutoSequence[++telemetryAutoIndex % strlen(telemetryAutoSequence)];
-        LCDclear();             // make sure to clear away remnants
-    }
-#endif
-#ifdef LCD_TELEMETRY
-    if (!(++telemetryTimer % LCD_TELEMETRY_FREQ)) {
-#if (LCD_TELEMETRY_DEBUG+0 > 0)
-        telemetry = LCD_TELEMETRY_DEBUG;
-#endif
-        if (telemetry)
-            lcd_telemetry();
-    }
-#endif
 
     if (sensors(SENSOR_GPS)) {
         static uint32_t GPSLEDTime;
@@ -353,21 +290,6 @@ void loop(void)
             if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck && armed == 0) {
                 if (rcDelayCommand == 20)
                     calibratingG = 400;
-            } else if (rcData[YAW] > cfg.maxcheck && rcData[PITCH] > cfg.maxcheck && armed == 0) {
-                if (rcDelayCommand == 20) {
-                    if (cfg.mixerConfiguration == MULTITYPE_TRI) {
-                        servo[5] = 1500;        // we center the yaw servo in conf mode
-                        writeServos();
-                    } else if (cfg.mixerConfiguration == MULTITYPE_FLYING_WING) {
-                        servo[0] = cfg.wing_left_mid;
-                        servo[1] = cfg.wing_right_mid;
-                        writeServos();
-                    }
-#if defined(LCD_CONF)
-                    configurationLoop();        //beginning LCD configuration
-#endif
-                    previousTime = micros();
-                }
             } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (armed == 0 && rcData[YAW] < cfg.mincheck && rcData[PITCH] > cfg.maxcheck && rcData[ROLL] > cfg.maxcheck)) {
                 if (rcDelayCommand == 20) {
                     if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
@@ -397,16 +319,6 @@ void loop(void)
                     armed = 1;
                     headFreeModeHold = heading;
                 }
-#ifdef LCD_TELEMETRY_AUTO
-            } else if (rcData[ROLL] < cfg.mincheck && rcData[PITCH] > cfg.maxcheck && armed == 0) {
-                if (rcDelayCommand == 20) {
-                    if (telemetry_auto) {
-                        telemetry_auto = 0;
-                        telemetry = 0;
-                    } else
-                        telemetry_auto = 1;
-                }
-#endif
             } else
                 rcDelayCommand = 0;
         } else if (rcData[THROTTLE] > cfg.maxcheck && armed == 0) {
@@ -502,6 +414,7 @@ void loop(void)
             } else
                 baroMode = 0;
         }
+
         if (sensors(SENSOR_MAG)) {
             if (rcOptions[BOXMAG]) {
                 if (magMode == 0) {

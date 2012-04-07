@@ -101,10 +101,6 @@ int main(void)
 
     previousTime = micros();
     calibratingG = 400;
-#if defined(POWERMETER)
-    for (i = 0; i <= PMOTOR_SUM; i++)
-        pMeter[i] = 0;
-#endif
 
     // loopy
     while (1) {

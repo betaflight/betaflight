@@ -353,6 +353,13 @@ bool pwmInit(drv_pwm_config_t *init)
     // turn on more motor outputs if we're using ppm / not using pwm input
     if (!init->enableInput || init->usePPM) {
         // PWM 7,8,9,10
+        GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_Init(GPIOA, &GPIO_InitStructure);
+        GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
+        GPIO_Init(GPIOB, &GPIO_InitStructure);
+
         TIM_TimeBaseStructure.TIM_Period = (1000000 / init->motorPwmRate) - 1;
         TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
 

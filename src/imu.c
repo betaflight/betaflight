@@ -246,8 +246,8 @@ void getEstimatedAltitude(void)
     static uint32_t deadLine = INIT_DELAY;
     static int16_t BaroHistTab[BARO_TAB_SIZE];
     static int8_t BaroHistIdx;
-    int32_t BaroHigh = 0;
-    int32_t BaroLow = 0;
+    static int32_t BaroHigh = 0;
+    static int32_t BaroLow = 0;
     int32_t temp32;
     int16_t last;
 

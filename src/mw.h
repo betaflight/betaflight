@@ -106,13 +106,10 @@ typedef enum MultiType
 #define CHECKBOXITEMS 11
 #define PIDITEMS 8
 
-// #define ACC_ORIENTATION(X, Y, Z)  { accADC[ROLL]  =  Y; accADC[PITCH]  = -X; accADC[YAW]  = Z; }
-// #define GYRO_ORIENTATION(X, Y, Z) { gyroADC[ROLL] = -Y; gyroADC[PITCH] =  X; gyroADC[YAW] = Z; }
-
-#define min(a,b) ((a)<(b)?(a):(b))
-#define max(a,b) ((a)>(b)?(a):(b))
-#define abs(x) ((x)>0?(x):-(x))
-#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define abs(x) ((x) > 0 ? (x) : -(x))
+#define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
 typedef struct config_t {
     uint8_t version;
@@ -140,7 +137,6 @@ typedef struct config_t {
 
     uint8_t activate1[CHECKBOXITEMS];
     uint8_t activate2[CHECKBOXITEMS];
-    uint8_t powerTrigger1;                  // trigger for alarm based on power consumption
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
     uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery out alarms, in 0.1V units, default is 33 (3.3V)
@@ -224,7 +220,6 @@ extern int16_t rcData[8];
 extern uint8_t accMode;
 extern uint8_t magMode;
 extern uint8_t baroMode;
-extern uint16_t intPowerMeterSum, intPowerTrigger1;
 extern int32_t GPS_latitude, GPS_longitude;
 extern int32_t GPS_latitude_home, GPS_longitude_home;
 extern int32_t GPS_latitude_hold, GPS_longitude_hold;
