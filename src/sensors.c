@@ -19,6 +19,14 @@ extern uint8_t batteryCellCount;
 sensor_t acc;                   // acc access functions
 sensor_t gyro;                  // gyro access functions
 
+#ifdef FY90Q
+// FY90Q analog gyro/acc
+void sensorsAutodetect(void)
+{
+    adcSensorInit(&acc, &gyro);
+}
+#else
+// AfroFlight32 i2c sensors
 void sensorsAutodetect(void)
 {
     drv_adxl345_config_t acc_params;
@@ -54,6 +62,7 @@ void sensorsAutodetect(void)
     // todo: this is driver specific :(
     mpu3050Config(cfg.gyro_lpf);
 }
+#endif
 
 uint16_t batteryAdcToVoltage(uint16_t src)
 {
@@ -175,6 +184,7 @@ void ACC_getADC(void)
     ACC_Common();
 }
 
+#ifdef BARO
 static uint32_t baroDeadline = 0;
 static uint8_t baroState = 0;
 static uint16_t baroUT = 0;
@@ -214,6 +224,7 @@ void Baro_update(void)
             break;
     }
 }
+#endif /* BARO */
 
 static void GYRO_Common(void)
 {
@@ -278,6 +289,7 @@ void Gyro_getADC(void)
     GYRO_Common();
 }
 
+#ifdef MAG
 static float magCal[3] = { 1.0, 1.0, 1.0 };     // gain for each axis, populated at sensor init
 static uint8_t magInit = 0;
 
@@ -359,3 +371,4 @@ void Mag_getADC(void)
         }
     }
 }
+#endif

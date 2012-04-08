@@ -1,8 +1,10 @@
 #include "board.h"
 
 // BMP085, Standard address 0x77
-
 static bool convDone = false;
+
+#define BARO_OFF                 digitalLo(BARO_GPIO, BARO_PIN);
+#define BARO_ON                  digitalHi(BARO_GPIO, BARO_PIN);
 
 // EXTI14 for BMP085 End of Conversion Interrupt
 void EXTI15_10_IRQHandler(void)

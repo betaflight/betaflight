@@ -5,6 +5,13 @@
 #define DWT_CYCCNT  ((volatile uint32_t *)0xE0001004)
 #define CYCCNTENA   (1 << 0)
 
+typedef struct gpio_config_t
+{
+    GPIO_TypeDef *gpio;
+    uint16_t pin;
+    GPIOMode_TypeDef mode;
+} gpio_config_t;
+
 // cycles per microsecond
 static volatile uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
@@ -52,6 +59,16 @@ uint32_t millis(void)
 void systemInit(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
+    uint8_t i;
+
+    gpio_config_t gpio_cfg[] = {
+        { LED0_GPIO, LED0_PIN, GPIO_Mode_Out_PP }, // PB3 (LED)
+        { LED1_GPIO, LED1_PIN, GPIO_Mode_Out_PP }, // PB4 (LED)
+#ifndef FY90Q
+        { BEEP_GPIO, BEEP_PIN, GPIO_Mode_Out_OD }, // PA12 (Buzzer)
+#endif
+    };
+    uint8_t gpio_count = sizeof(gpio_cfg) / sizeof(gpio_cfg[0]);
 
     // Turn on clocks for stuff we use
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO, ENABLE);
@@ -77,20 +94,15 @@ void systemInit(void)
     GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
     // Configure gpio
+    for (i = 0; i < gpio_count; i++) {
+        GPIO_InitStructure.GPIO_Pin = gpio_cfg[i].pin;
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_InitStructure.GPIO_Mode = gpio_cfg[i].mode;
+        GPIO_Init(gpio_cfg[i].gpio, &GPIO_InitStructure);
+    }
 
-    // PB3, PB4 (LEDs)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
     LED0_OFF;
     LED1_OFF;
-
-    // PA12 (Buzzer)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
     BEEP_OFF;
 
     // Init cycle counter
@@ -101,7 +113,9 @@ void systemInit(void)
 
     // Configure the rest of the stuff
     adcInit();
+#ifndef FY90Q
     i2cInit(I2C2);
+#endif
 
     // sleep for 100ms
     delay(100);

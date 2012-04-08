@@ -181,6 +181,7 @@ void annexCode(void)
         }
     }
 
+#ifdef LEDRING
     if (feature(FEATURE_LED_RING)) {
         static uint32_t LEDTime;
         if (currentTime > LEDTime) {
@@ -188,6 +189,7 @@ void annexCode(void)
             ledringState();
         }
     }
+#endif
 
     if (currentTime > calibratedAccTime) {
         if (smallAngle25 == 0) {
@@ -333,23 +335,31 @@ void loop(void)
             } else if (rcData[PITCH] > cfg.maxcheck) {
                 cfg.accTrim[PITCH] += 2;
                 writeParams();
+#ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
+#endif
             } else if (rcData[PITCH] < cfg.mincheck) {
                 cfg.accTrim[PITCH] -= 2;
                 writeParams();
+#ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
+#endif
             } else if (rcData[ROLL] > cfg.maxcheck) {
                 cfg.accTrim[ROLL] += 2;
                 writeParams();
+#ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
+#endif
             } else if (rcData[ROLL] < cfg.mincheck) {
                 cfg.accTrim[ROLL] -= 2;
                 writeParams();
+#ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
+#endif
             } else {
                 rcDelayCommand = 0;
             }
@@ -402,6 +412,7 @@ void loop(void)
             LED1_OFF;
         }
 
+#ifdef BARO
         if (sensors(SENSOR_BARO)) {
             if (rcOptions[BOXBARO]) {
                 if (baroMode == 0) {
@@ -414,7 +425,9 @@ void loop(void)
             } else
                 baroMode = 0;
         }
+#endif
 
+#ifdef  MAG
         if (sensors(SENSOR_MAG)) {
             if (rcOptions[BOXMAG]) {
                 if (magMode == 0) {
@@ -430,6 +443,7 @@ void loop(void)
             } else
                 headFreeMode = 0;
         }
+#endif
 
         if (sensors(SENSOR_GPS)) {
             if (rcOptions[BOXGPSHOME]) {
@@ -456,18 +470,24 @@ void loop(void)
         switch (taskOrder) {
         case 0:
             taskOrder++;
+#ifdef MAG
             if (sensors(SENSOR_MAG))
                 Mag_getADC();
+#endif
             break;
         case 1:
             taskOrder++;
+#ifdef BARO
             if (sensors(SENSOR_BARO))
                 Baro_update();
+#endif
             break;
         case 2:
             taskOrder++;
+#ifdef BARO
             if (sensors(SENSOR_BARO))
                 getEstimatedAltitude();
+#endif
             break;
         case 3:
             taskOrder++;
@@ -487,8 +507,11 @@ void loop(void)
     cycleTime = currentTime - previousTime;
     previousTime = currentTime;
 
+#ifdef MPU6050_DMP
     mpu6050DmpLoop();
+#endif
 
+#ifdef MAG
     if (sensors(SENSOR_MAG)) {
         if (abs(rcCommand[YAW]) < 70 && magMode) {
             int16_t dif = heading - magHold;
@@ -501,7 +524,9 @@ void loop(void)
         } else
             magHold = heading;
     }
+#endif
 
+#ifdef BARO
     if (sensors(SENSOR_BARO)) {
         if (baroMode) {
             if (abs(rcCommand[THROTTLE] - initialThrottleHold) > 20) {
@@ -510,6 +535,7 @@ void loop(void)
             rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
         }
     }
+#endif
 
     if (sensors(SENSOR_GPS)) {
         uint16_t GPS_dist = 0;

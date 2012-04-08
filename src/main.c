@@ -36,6 +36,20 @@ int main(void)
     drv_pwm_config_t pwm_params;
 
 #if 0
+    // PC12, PA15
+    // using this to write asm for bootloader :)
+    RCC->APB2ENR |= RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO; // GPIOA/C+AFIO only
+    AFIO->MAPR &= 0xF0FFFFFF;
+    AFIO->MAPR = 0x02000000;
+    GPIOA->CRH = 0x34444444; // PIN 15 Output 50MHz
+    GPIOA->BRR = 0x8000; // set low 15
+    GPIOC->CRH = 0x44434444; // PIN 12 Output 50MHz
+    GPIOC->BRR = 0x1000; // set low 12
+    
+#endif
+
+
+#if 0
     // using this to write asm for bootloader :)
     RCC->APB2ENR |= RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO; // GPIOB + AFIO
     AFIO->MAPR &= 0xF0FFFFFF;
@@ -52,7 +66,13 @@ int main(void)
     serialInit(cfg.serial_baudrate);
 
     // We have these sensors
+#ifndef FY90Q
+    // AfroFlight32
     sensorsSet(SENSOR_ACC | SENSOR_BARO | SENSOR_MAG);
+#else
+    // FY90Q
+    sensorsSet(SENSOR_ACC);
+#endif
 
     mixerInit(); // this will set useServo var depending on mixer type
     // pwmInit returns true if throttle calibration is requested. if so, do it here. throttleCalibration() does NOT return - for safety.

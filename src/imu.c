@@ -23,9 +23,11 @@ void imuInit(void)
 {
     acc_25deg = acc_1G * 0.423f;
 
+#ifdef MAG
     // if mag sensor is enabled, use it
     if (sensors(SENSOR_MAG))
         Mag_init();
+#endif
 }
 
 void computeIMU(void)
@@ -230,12 +232,15 @@ static void getEstimatedAttitude(void)
     angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
     angle[PITCH] = _atan2f(EstG.V.Y, EstG.V.Z);
 
+#ifdef MAG
     if (sensors(SENSOR_MAG)) {
         // Attitude of the cross product vector GxM
         heading = _atan2f(EstG.V.X * EstM.V.Z - EstG.V.Z * EstM.V.X, EstG.V.Z * EstM.V.Y - EstG.V.Y * EstM.V.Z) / 10;
     }
+#endif
 }
 
+#ifdef BARO
 #define UPDATE_INTERVAL 25000   // 40hz update rate (20hz LPF on acc)
 #define INIT_DELAY      4000000 // 4 sec initialization delay
 #define BARO_TAB_SIZE   40
@@ -288,3 +293,4 @@ void getEstimatedAltitude(void)
     temp32 = errorAltitudeI / 500; // I in range +/-60
     BaroPID += temp32;
 }
+#endif /* BARO */
