@@ -60,7 +60,7 @@ bool spektrumFrameComplete(void)
     return rcFrameComplete;
 }
 
-static const uint8_t spekRcChannelMap[SPEK_MAX_CHANNEL] = {1, 2, 3, 0, 4, 5, 6};
+// static const uint8_t spekRcChannelMap[SPEK_MAX_CHANNEL] = {1, 2, 3, 0, 4, 5, 6};
 
 uint16_t spektrumReadRawRC(uint8_t chan)
 {
@@ -78,12 +78,12 @@ uint16_t spektrumReadRawRC(uint8_t chan)
     }
 
     if (chan >= SPEK_MAX_CHANNEL || !spekDataIncoming) {
-        data = 1500;
+        data = cfg.midrc;
     } else {
         if (cfg.spektrum_hires)
-            data = 988 + (spekChannelData[spekRcChannelMap[chan]] >> 1);   // 2048 mode
+            data = 988 + (spekChannelData[cfg.rcmap[chan]] >> 1);   // 2048 mode
         else
-            data = 988 + spekChannelData[spekRcChannelMap[chan]];          // 1024 mode
+            data = 988 + spekChannelData[cfg.rcmap[chan]];          // 1024 mode
     }
     
     return data;

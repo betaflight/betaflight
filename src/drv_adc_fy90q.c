@@ -1,6 +1,6 @@
 #include "board.h"
 
-#define ADC_CHANNELS 10
+#define ADC_CHANNELS 9
 
 volatile uint16_t adcData[ADC_CHANNELS] = { 0, };
 extern uint16_t acc_1G;
@@ -82,8 +82,6 @@ void adcInit(void)
     ADC_RegularChannelConfig(ADC1, ADC_Channel_6, 8, ADC_SampleTime_28Cycles5); // POT_AIL
     ADC_RegularChannelConfig(ADC1, ADC_Channel_7, 9, ADC_SampleTime_28Cycles5); // POT_RUD
 
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_5, 10, ADC_SampleTime_28Cycles5); // Power Monitor??
-
     ADC_DMACmd(ADC1, ENABLE);
 
     ADC_Cmd(ADC1, ENABLE);
@@ -97,6 +95,9 @@ void adcInit(void)
 
 static void adcAccRead(int16_t *accelData)
 {
+    // ADXL335
+    // 300mV/g
+    // Vcc 3.0V
     accelData[0] = adcData[3];
     accelData[1] = adcData[4];
     accelData[2] = adcData[5];
@@ -109,6 +110,17 @@ static void adcAccAlign(int16_t *accelData)
 
 static void adcGyroRead(int16_t *gyroData)
 {
+    // Vcc: 3.0V
+    // Pitch/Roll: LPR550AL, 2000dps mode.
+    // 0.5mV/dps
+    // Zero-rate: 1.23V
+    // Yaw: LPY550AL, 2000dps mode.
+    // 0.5mV/dps
+    // Zero-rate: 1.23V
+
+    // Need to match with: 14.375lsb per dps
+    // 12-bit ADC
+
     gyroData[0] = adcData[0] * 2;
     gyroData[1] = adcData[1] * 2;
     gyroData[2] = adcData[2] * 2;
@@ -126,5 +138,5 @@ static void adcDummyInit(void)
 
 uint16_t adcGetBattery(void)
 {
-    return adcData[9];
+    return 0;
 }
