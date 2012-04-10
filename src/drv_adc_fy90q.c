@@ -1,3 +1,4 @@
+#ifdef FY90Q
 #include "board.h"
 
 #define ADC_CHANNELS 9
@@ -140,3 +141,4 @@ uint16_t adcGetBattery(void)
 {
     return 0;
 }
+#endif

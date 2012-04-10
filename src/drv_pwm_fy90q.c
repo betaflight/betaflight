@@ -1,3 +1,4 @@
+#ifdef FY90Q
 #include "board.h"
 
 #define PULSE_1MS       (1000) // 1ms pulse width
@@ -326,3 +327,4 @@ uint8_t pwmGetNumOutputChannels(void)
 {
     return numOutputChannels;
 }
+#endif
