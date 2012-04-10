@@ -75,6 +75,12 @@ typedef enum MultiType
     MULTITYPE_LAST = 18
 } MultiType;
 
+typedef enum GimbalFlags {
+    GIMBAL_NORMAL = 1 << 0,
+    GIMBAL_TILTONLY = 1 << 1,
+    GIMBAL_DISABLEAUX34 = 1 << 2,
+} GimbalFlags;
+
 /*********** RC alias *****************/
 #define ROLL       0
 #define PITCH      1
@@ -168,6 +174,7 @@ typedef struct config_t {
     // gimbal-related configuration
     int8_t gimbal_pitch_gain;               // gimbal pitch servo gain (tied to angle) can be negative to invert movement
     int8_t gimbal_roll_gain;                // gimbal roll servo gain (tied to angle) can be negative to invert movement
+    uint8_t gimbal_flags;                   // in servotilt mode, various things that affect stuff
     uint16_t gimbal_pitch_min;              // gimbal pitch servo min travel
     uint16_t gimbal_pitch_max;              // gimbal pitch servo max travel
     uint16_t gimbal_pitch_mid;              // gimbal pitch servo neutral value

@@ -300,9 +300,14 @@ bool pwmInit(drv_pwm_config_t *init)
     TIM_OC2Init(TIM4, &TIM_OCInitStructure);
     TIM_OC3Init(TIM4, &TIM_OCInitStructure);
     TIM_OC4Init(TIM4, &TIM_OCInitStructure);
+    TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
     TIM_Cmd(TIM4, ENABLE);
     TIM_CtrlPWMOutputs(TIM4, ENABLE);
+    TIM_OC1PreloadConfig (TIM4, TIM_OCPreload_Enable);
 
     // turn on more motor outputs if we're using ppm / not using pwm input
     if (!init->enableInput || init->usePPM) {

@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-static uint8_t checkNewConf = 12;
+static uint8_t checkNewConf = 13;
 
 void parseRcChannels(const char *input)
 {
@@ -149,6 +149,7 @@ void checkFirstTime(bool reset)
     // gimbal
     cfg.gimbal_pitch_gain = 10;
     cfg.gimbal_roll_gain = 10;
+    cfg.gimbal_flags = GIMBAL_NORMAL;
     cfg.gimbal_pitch_min = 1020;
     cfg.gimbal_pitch_max = 2000;
     cfg.gimbal_pitch_mid = 1500;

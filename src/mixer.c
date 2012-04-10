@@ -232,8 +232,15 @@ void mixTable(void)
 
     // do camstab
     if (feature(FEATURE_SERVO_TILT)) {
-        servo[0] = cfg.gimbal_pitch_mid + rcData[AUX3] - cfg.midrc;
-        servo[1] = cfg.gimbal_roll_mid + rcData[AUX4] - cfg.midrc;
+        uint16_t aux[2] = { 0, 0 };
+
+        if ((cfg.gimbal_flags & GIMBAL_NORMAL) || (cfg.gimbal_flags & GIMBAL_TILTONLY))
+            aux[0] = rcData[AUX3];
+        if (!(cfg.gimbal_flags & GIMBAL_DISABLEAUX34))
+            aux[1] = rcData[AUX4];
+
+        servo[0] = cfg.gimbal_pitch_mid + aux[0] - cfg.midrc;
+        servo[1] = cfg.gimbal_roll_mid + aux[1] - cfg.midrc;
 
         if (rcOptions[BOXCAMSTAB]) {
             servo[0] += cfg.gimbal_pitch_gain * angle[PITCH] / 16;

@@ -339,11 +339,18 @@ bool pwmInit(drv_pwm_config_t *init)
     // PWM1,2
     TIM_OC1Init(TIM1, &TIM_OCInitStructure);
     TIM_OC4Init(TIM1, &TIM_OCInitStructure);
+    TIM_OC1PreloadConfig(TIM1, TIM_OCPreload_Enable);
+    TIM_OC4PreloadConfig(TIM1, TIM_OCPreload_Enable);
+
     // PWM3,4,5,6
     TIM_OC1Init(TIM4, &TIM_OCInitStructure);
     TIM_OC2Init(TIM4, &TIM_OCInitStructure);
     TIM_OC3Init(TIM4, &TIM_OCInitStructure);
     TIM_OC4Init(TIM4, &TIM_OCInitStructure);
+    TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
+    TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
     TIM_Cmd(TIM1, ENABLE);
     TIM_Cmd(TIM4, ENABLE);
@@ -374,6 +381,10 @@ bool pwmInit(drv_pwm_config_t *init)
         TIM_OC2Init(TIM3, &TIM_OCInitStructure);
         TIM_OC3Init(TIM3, &TIM_OCInitStructure);
         TIM_OC4Init(TIM3, &TIM_OCInitStructure);
+        TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
+        TIM_OC2PreloadConfig(TIM3, TIM_OCPreload_Enable);
+        TIM_OC3PreloadConfig(TIM3, TIM_OCPreload_Enable);
+        TIM_OC4PreloadConfig(TIM3, TIM_OCPreload_Enable);
 
         TIM_Cmd(TIM3, ENABLE);
         TIM_CtrlPWMOutputs(TIM3, ENABLE);

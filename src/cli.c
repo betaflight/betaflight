@@ -102,6 +102,7 @@ const clivalue_t valueTable[] = {
     { "tri_yaw_middle", VAR_UINT16, &cfg.tri_yaw_middle, 0, 2000 },
     { "tri_yaw_min", VAR_UINT16, &cfg.tri_yaw_min, 0, 2000 },
     { "tri_yaw_max", VAR_UINT16, &cfg.tri_yaw_max, 0, 2000 },
+    { "gimbal_flags", VAR_UINT8, &cfg.gimbal_flags, 0, 255},
     { "gimbal_pitch_gain", VAR_INT8, &cfg.gimbal_pitch_gain, -100, 100 },
     { "gimbal_roll_gain", VAR_INT8, &cfg.gimbal_roll_gain, -100, 100 },
     { "gimbal_pitch_min", VAR_UINT16, &cfg.gimbal_pitch_min, 100, 3000 },
