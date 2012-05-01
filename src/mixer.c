@@ -235,12 +235,12 @@ void mixTable(void)
         uint16_t aux[2] = { 0, 0 };
 
         if ((cfg.gimbal_flags & GIMBAL_NORMAL) || (cfg.gimbal_flags & GIMBAL_TILTONLY))
-            aux[0] = rcData[AUX3];
+            aux[0] = rcData[AUX3] - cfg.midrc;
         if (!(cfg.gimbal_flags & GIMBAL_DISABLEAUX34))
-            aux[1] = rcData[AUX4];
+            aux[1] = rcData[AUX4] - cfg.midrc;
 
-        servo[0] = cfg.gimbal_pitch_mid + aux[0] - cfg.midrc;
-        servo[1] = cfg.gimbal_roll_mid + aux[1] - cfg.midrc;
+        servo[0] = cfg.gimbal_pitch_mid + aux[0];
+        servo[1] = cfg.gimbal_roll_mid + aux[1];
 
         if (rcOptions[BOXCAMSTAB]) {
             servo[0] += cfg.gimbal_pitch_gain * angle[PITCH] / 16;

@@ -485,7 +485,7 @@ static void cliStatus(char *cmdline)
 
 static void cliVersion(char *cmdline)
 {
-    uartPrint("Afro32 CLI version 2.0-pre3 " __DATE__ " / " __TIME__);
+    uartPrint("Afro32 CLI version 2.0 " __DATE__ " / " __TIME__);
 }
 
 void cliProcess(void)
