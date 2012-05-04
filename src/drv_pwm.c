@@ -388,6 +388,8 @@ bool pwmInit(drv_pwm_config_t *init)
 
         TIM_Cmd(TIM3, ENABLE);
         TIM_CtrlPWMOutputs(TIM3, ENABLE);
+        // configure number of PWM outputs, in PPM/spektrum mode, we use bottom 4 channels more more motors
+        numOutputChannels = 10;
     }
 
 #if 0    
