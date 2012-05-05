@@ -29,6 +29,7 @@
 #define ADXL345_RANGE_16G   0x03
 #define ADXL345_FIFO_STREAM 0x80
 
+extern uint16_t acc_1G;
 
 static void adxl345Init(void);
 static void adxl345Read(int16_t *accelData);
@@ -67,6 +68,7 @@ static void adxl345Init(void)
         i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, ADXL345_FULL_RANGE | ADXL345_RANGE_8G);
         i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_RATE_100);
     }
+    acc_1G = 265; // 3.3V operation
 }
 
 uint8_t acc_samples = 0;

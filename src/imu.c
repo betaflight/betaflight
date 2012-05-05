@@ -4,6 +4,7 @@
 int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
 int16_t acc_25deg = 0;
 int32_t  BaroAlt;
+int16_t  sonarAlt;           //to think about the unit
 int32_t  EstAlt;             // in cm
 int16_t  BaroPID = 0;
 int32_t  AltHold;
@@ -175,7 +176,7 @@ static void getEstimatedAttitude(void)
 #if defined(MG_LPF_FACTOR)
     static int16_t mgSmooth[3];
 #endif
-    static float accTemp[3];  // projection of smoothed and normalized magnetic vector on x/y/z axis, as measured by magnetometer
+    static float accLPF[3];
     static uint32_t previousT;
     uint32_t currentT = micros();
     float scale, deltaGyroAngle[3];
@@ -187,10 +188,8 @@ static void getEstimatedAttitude(void)
     for (axis = 0; axis < 3; axis++) {
         deltaGyroAngle[axis] = gyroADC[axis] * scale;
         if (cfg.acc_lpf_factor > 0) {
-            accTemp[axis] = accTemp[axis] * (1.0f - (1.0f / cfg.acc_lpf_factor)) + accADC[axis] * (1.0f / cfg.acc_lpf_factor);
-            accSmooth[axis] = roundf(accTemp[axis]);
-            // accTemp[axis] = (accTemp[axis] - (accTemp[axis] >> cfg.acc_lpf_factor)) + accADC[axis];
-            // accSmooth[axis] = accTemp[axis] >> cfg.acc_lpf_factor;
+            accLPF[axis] = accLPF[axis] * (1.0f - (1.0f / cfg.acc_lpf_factor)) + accADC[axis] * (1.0f / cfg.acc_lpf_factor);
+            accSmooth[axis] = accLPF[axis];
         } else {
             accSmooth[axis] = accADC[axis];
         }
@@ -221,10 +220,8 @@ static void getEstimatedAttitude(void)
     // If accel magnitude >1.4G or <0.6G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
     // To do that, we just skip filter, as EstV already rotated by Gyro
     if ((36 < accMag && accMag < 196) || smallAngle25) {
-        for (axis = 0; axis < 3; axis++) {
-            // int16_t acc = accSmooth[axis];
-            EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + accTemp[axis]) * INV_GYR_CMPF_FACTOR;
-        }
+        for (axis = 0; axis < 3; axis++)
+            EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
     }
 
     if (sensors(SENSOR_MAG)) {

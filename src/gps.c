@@ -42,6 +42,12 @@ static void GPS_NewData(uint16_t c)
     }
 }
 
+void GPS_reset_home_position(void)
+{
+    GPS_latitude_home  = GPS_latitude;
+    GPS_longitude_home = GPS_longitude;
+}
+
 /* this is an equirectangular approximation to calculate distance and bearing between 2 GPS points (lat/long)
    it's much more faster than an exact calculation
    the error is neglectible for few kilometers assuming a constant R for earth

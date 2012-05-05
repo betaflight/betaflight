@@ -5,7 +5,7 @@ uint8_t calibratedACC = 0;
 uint16_t calibratingA = 0;       // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 uint16_t calibratingG = 0;
 uint8_t calibratingM = 0;
-uint16_t acc_1G = 256;         // this is the 1G measured acceleration
+uint16_t acc_1G = 256;         // this is the 1G measured acceleration.
 int16_t heading, magHold;
 
 extern uint16_t InflightcalibratingA;
@@ -116,7 +116,7 @@ static void ACC_Common(void)
             cfg.accZero[YAW] = a[YAW] / 400 - acc_1G;       // for nunchuk 200=1G
             cfg.accTrim[ROLL] = 0;
             cfg.accTrim[PITCH] = 0;
-            writeParams();      // write accZero in EEPROM
+            writeParams(1);      // write accZero in EEPROM
         }
         calibratingA--;
     }
@@ -149,7 +149,7 @@ static void ACC_Common(void)
             if (InflightcalibratingA == 1) {
                 AccInflightCalibrationActive = 0;
                 AccInflightCalibrationMeasurementDone = 1;
-                blinkLED(10, 10, 2);        //buzzer for indicatiing the start inflight
+                toggleBeep = 2;      //buzzer for indicatiing the end of calibration
                 // recover saved values to maintain current flight behavior until new values are transferred
                 cfg.accZero[ROLL] = accZero_saved[ROLL];
                 cfg.accZero[PITCH] = accZero_saved[PITCH];
@@ -167,7 +167,7 @@ static void ACC_Common(void)
             cfg.accZero[YAW] = b[YAW] / 50 - acc_1G;    // for nunchuk 200=1G
             cfg.accTrim[ROLL] = 0;
             cfg.accTrim[PITCH] = 0;
-            writeParams();          // write accZero in EEPROM
+            writeParams(1);          // write accZero in EEPROM
         }
     }
 
@@ -367,7 +367,7 @@ void Mag_getADC(void)
             tCal = 0;
             for (axis = 0; axis < 3; axis++)
                 cfg.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2;
-            writeParams();
+            writeParams(1);
         }
     }
 }

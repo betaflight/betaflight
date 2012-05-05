@@ -205,10 +205,10 @@ void mixTable(void)
             break;
 
         case MULTITYPE_VTAIL4:
-            motor[0] = PIDMIX(+0, +1, -1 / 2);      //REAR_R 
-            motor[1] = PIDMIX(-1, -1, +2 / 10); //FRONT_R 
-            motor[2] = PIDMIX(+0, +1, +1 / 2);      //REAR_L 
-            motor[3] = PIDMIX(+1, -1, -2 / 10); //FRONT_L
+            motor[0] = PIDMIX(+0, +1, -1 / 2);  //REAR_R 
+            motor[1] = PIDMIX(-1, -1, +0);      //FRONT_R 
+            motor[2] = PIDMIX(+0, +1, +1 / 2);  //REAR_L 
+            motor[3] = PIDMIX(+1, -1, -0);      //FRONT_L
             break;
 
         case MULTITYPE_GIMBAL:

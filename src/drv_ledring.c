@@ -21,25 +21,25 @@ void ledringState(void)
     static uint8_t state;
 
     if (state == 0) {
-    	b[0] = 'z';
-    	b[1] = (180 - heading) / 2;	// 1 unit = 2 degrees;
+        b[0] = 'z';
+        b[1] = (180 - heading) / 2;	// 1 unit = 2 degrees;
         i2cWriteBuffer(LED_RING_ADDRESS, 0xFF, 2, b);
-    	state = 1;
+        state = 1;
     } else if (state == 1) {
-    	b[0] = 'y';
-    	b[1] = constrain(angle[ROLL] / 10 + 90, 0, 180);
-    	b[2] = constrain(angle[PITCH] / 10 + 90, 0, 180);
+        b[0] = 'y';
+        b[1] = constrain(angle[ROLL] / 10 + 90, 0, 180);
+        b[2] = constrain(angle[PITCH] / 10 + 90, 0, 180);
         i2cWriteBuffer(LED_RING_ADDRESS, 0xFF, 3, b);
-    	state = 2;
+        state = 2;
     } else if (state == 2) {
-    	b[0] = 'd';		// all unicolor GREEN 
-    	b[1] = 1;
-    	if (armed)
-    	    b[2] = 1;
-    	else
-    	    b[2] = 0;
+        b[0] = 'd';		// all unicolor GREEN 
+        b[1] = 1;
+        if (armed)
+            b[2] = 1;
+        else
+            b[2] = 0;
         i2cWriteBuffer(LED_RING_ADDRESS, 0xFF, 3, b);
-    	state = 0;
+        state = 0;
     }
 }
 

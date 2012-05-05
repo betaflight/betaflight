@@ -346,7 +346,7 @@ static void cliMixer(char *cmdline)
 static void cliSave(char *cmdline)
 {
     uartPrint("Saving...");
-    writeParams();
+    writeParams(0);
     uartPrint("\r\nRebooting...");
     delay(10);
     systemReset(false);

@@ -8,6 +8,7 @@
 
 int16_t debug1, debug2, debug3, debug4;
 uint8_t buzzerState = 0;
+uint8_t  toggleBeep = 0;
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
@@ -16,6 +17,7 @@ uint8_t GPSModeHold = 0;        // if GPS PH is activated
 uint8_t headFreeMode = 0;       // if head free mode is a activated
 uint8_t passThruMode = 0;       // if passthrough mode is activated
 int16_t headFreeModeHold;
+
 int16_t annex650_overrun_count = 0;
 uint8_t armed = 0;
 uint8_t vbat;                   // battery voltage in 0.1V steps
@@ -24,7 +26,8 @@ volatile int16_t failsafeCnt = 0;
 int16_t failsafeEvents = 0;
 int16_t rcData[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };              // interval [1000;2000]
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
-int16_t lookupRX[7];            // lookup table for expo & RC rate
+int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
+int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
 rcReadRawDataPtr rcReadRawFunc = NULL; // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
@@ -50,7 +53,8 @@ uint16_t GPS_distanceToHome, GPS_distanceToHold;        // distance to home or h
 int16_t GPS_directionToHome, GPS_directionToHold;       // direction to home or hol point in degrees
 uint16_t GPS_altitude, GPS_speed;       // altitude in 0.1m and speed in 0.1m/s - Added by Mis
 uint8_t GPS_update = 0;         // it's a binary toogle to distinct a GPS position update
-int16_t GPS_angle[2];           // it's the angles that must be applied for GPS correction
+int16_t GPS_angle[2] = { 0, 0 };      // it's the angles that must be applied for GPS correction
+uint16_t GPS_ground_course = 0;                       // degrees*10
 
 //Automatic ACC Offset Calibration
 // **********************
@@ -79,10 +83,13 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
     }
 }
 
+#define BREAKPOINT 1500
+
 // this code is executed at each loop and won't interfere with control loop if it lasts less than 650 microseconds
 void annexCode(void)
 {
     static uint32_t buzzerTime, calibratedAccTime;
+    uint16_t tmp,tmp2;
     static uint8_t vbatTimer = 0;
     static uint8_t buzzerFreq;  //delay between buzzer ring
     uint8_t axis, prop1, prop2;
@@ -92,18 +99,19 @@ void annexCode(void)
     uint8_t i;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-    if (rcData[THROTTLE] < 1500) {
+    if (rcData[THROTTLE] < BREAKPOINT) {
         prop2 = 100;
-    } else if (rcData[THROTTLE] < 2000) {
-        prop2 = 100 - (uint16_t) cfg.dynThrPID * (rcData[THROTTLE] - 1500) / 500;
     } else {
-        prop2 = 100 - cfg.dynThrPID;
+        if (rcData[THROTTLE] < 2000) {
+            prop2 = 100 - (uint16_t)cfg.dynThrPID * (rcData[THROTTLE] - BREAKPOINT) / (2000 - BREAKPOINT);
+        } else {
+            prop2 = 100 - cfg.dynThrPID;
+        }
     }
 
     for (axis = 0; axis < 3; axis++) {
-        uint16_t tmp = min(abs(rcData[axis] - cfg.midrc), 500);
+        tmp = min(abs(rcData[axis] - cfg.midrc), 500);
         if (axis != 2) {        // ROLL & PITCH
-            uint16_t tmp2;
             if (cfg.deadband) {
                 if (tmp > cfg.deadband) {
                     tmp -= cfg.deadband;
@@ -111,8 +119,9 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
+            
             tmp2 = tmp / 100;
-            rcCommand[axis] = lookupRX[tmp2] + (tmp - tmp2 * 100) * (lookupRX[tmp2 + 1] - lookupRX[tmp2]) / 100;
+            rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
             prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         } else {                // YAW
@@ -131,7 +140,12 @@ void annexCode(void)
         if (rcData[axis] < cfg.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
-    rcCommand[THROTTLE] = cfg.minthrottle + (int32_t)(cfg.maxthrottle - cfg.minthrottle) * (rcData[THROTTLE] - cfg.mincheck) / (2000 - cfg.mincheck);
+
+    tmp = constrain(rcData[THROTTLE], cfg.mincheck, 2000);
+    tmp = (uint32_t)(tmp - cfg.mincheck) * 1000 / (2000 - cfg.mincheck); // [MINCHECK;2000] -> [0;1000]
+    tmp2 = tmp / 100;
+    rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100; // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    // rcCommand[THROTTLE] = cfg.minthrottle + (int32_t)(cfg.maxthrottle - cfg.minthrottle) * (rcData[THROTTLE] - cfg.mincheck) / (2000 - cfg.mincheck);
 
     if (headFreeMode) {
         float radDiff = (heading - headFreeModeHold) * M_PI / 180.0f;
@@ -157,6 +171,8 @@ void annexCode(void)
             BEEP_OFF;
         } else
             buzzerFreq = 4;     // low battery
+
+#if 0
         if (buzzerFreq) {
             if (buzzerState && (currentTime > buzzerTime + 250000)) {
                 buzzerState = 0;
@@ -168,7 +184,10 @@ void annexCode(void)
                 buzzerTime = currentTime;
             }
         }
+#endif
     }
+
+    buzzer(buzzerFreq); // external buzzer routine that handles buzzer events globally now
 
     if ((calibratingA > 0 && sensors(SENSOR_ACC)) || (calibratingG > 0)) {      // Calibration phasis
         LED0_TOGGLE;
@@ -290,8 +309,11 @@ void loop(void)
             errorAngleI[PITCH] = 0;
             rcDelayCommand++;
             if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck && armed == 0) {
-                if (rcDelayCommand == 20)
+                if (rcDelayCommand == 20) {
                     calibratingG = 400;
+                    if (feature(FEATURE_GPS))
+                        GPS_reset_home_position();
+                }
             } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (armed == 0 && rcData[YAW] < cfg.mincheck && rcData[PITCH] > cfg.maxcheck && rcData[ROLL] > cfg.maxcheck)) {
                 if (rcDelayCommand == 20) {
                     if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
@@ -300,13 +322,13 @@ void loop(void)
                     } else {
                         AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
                         if (AccInflightCalibrationArmed) {
-                            blinkLED(10, 1, 2);
+                            toggleBeep = 2;
                         } else {
-                            blinkLED(10, 10, 3);
+                            toggleBeep = 3;
                         }
                     }
                 }
-            } else if ((cfg.activate1[BOXARM] > 0) || (cfg.activate2[BOXARM] > 0)) {
+            } else if (cfg.activate[BOXARM] > 0) {
                 if (rcOptions[BOXARM] && okToArm) {
                     armed = 1;
                     headFreeModeHold = heading;
@@ -334,28 +356,28 @@ void loop(void)
                 rcDelayCommand++;
             } else if (rcData[PITCH] > cfg.maxcheck) {
                 cfg.accTrim[PITCH] += 2;
-                writeParams();
+                writeParams(1);
 #ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
 #endif
             } else if (rcData[PITCH] < cfg.mincheck) {
                 cfg.accTrim[PITCH] -= 2;
-                writeParams();
+                writeParams(1);
 #ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
 #endif
             } else if (rcData[ROLL] > cfg.maxcheck) {
                 cfg.accTrim[ROLL] += 2;
-                writeParams();
+                writeParams(1);
 #ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
 #endif
             } else if (rcData[ROLL] < cfg.mincheck) {
                 cfg.accTrim[ROLL] -= 2;
-                writeParams();
+                writeParams(1);
 #ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
@@ -364,12 +386,6 @@ void loop(void)
                 rcDelayCommand = 0;
             }
         }
-#ifdef LOG_VALUES
-        if (cycleTime > cycleTimeMax)
-            cycleTimeMax = cycleTime;   // remember highscore
-        if (cycleTime < cycleTimeMin)
-            cycleTimeMin = cycleTime;   // remember lowscore
-#endif
 
         if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
             if (AccInflightCalibrationArmed && armed == 1 && rcData[THROTTLE] > cfg.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
@@ -389,8 +405,11 @@ void loop(void)
         }
 
         for (i = 0; i < CHECKBOXITEMS; i++) {
-            rcOptions[i] = (((rcData[AUX1] < 1300) | (1300 < rcData[AUX1] && rcData[AUX1] < 1700) << 1 | (rcData[AUX1] > 1700) << 2 | (rcData[AUX2] < 1300) << 3 | (1300 < rcData[AUX2] && rcData[AUX2] < 1700) << 4 | (rcData[AUX2] > 1700) << 5) & cfg.activate1[i])
-                || (((rcData[AUX3] < 1300) | (1300 < rcData[AUX3] && rcData[AUX3] < 1700) << 1 | (rcData[AUX3] > 1700) << 2 | (rcData[AUX4] < 1300) << 3 | (1300 < rcData[AUX4] && rcData[AUX4] < 1700) << 4 | (rcData[AUX4] > 1700) << 5) & cfg.activate2[i]);
+            rcOptions[i] = (
+                ((rcData[AUX1] < 1300)    | (1300 < rcData[AUX1] && rcData[AUX1] < 1700) <<1 | (rcData[AUX1] > 1700) << 2
+                | (rcData[AUX2] < 1300) << 3 | (1300 < rcData[AUX2] && rcData[AUX2] < 1700) << 4 | (rcData[AUX2] > 1700) << 5
+                | (rcData[AUX3] < 1300) << 6 | (1300 < rcData[AUX3] && rcData[AUX3] < 1700) << 7 | (rcData[AUX3] > 1700) << 8
+                | (rcData[AUX4] < 1300) << 9 | (1300 < rcData[AUX4] && rcData[AUX4] < 1700) << 10| (rcData[AUX4] > 1700) << 11) & cfg.activate[i]) > 0;
         }
 
         // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
@@ -402,7 +421,7 @@ void loop(void)
                 accMode = 1;
             }
         } else
-            accMode = 0;        // modified by MIS for failsave support
+            accMode = 0;        // failsave support
 
         if ((rcOptions[BOXARM]) == 0)
             okToArm = 1;
@@ -467,32 +486,29 @@ void loop(void)
             passThruMode = 0;
     } else {                    // not in rc loop
         static int8_t taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
-        switch (taskOrder) {
+        switch (taskOrder++ % 4) {
         case 0:
-            taskOrder++;
 #ifdef MAG
             if (sensors(SENSOR_MAG))
                 Mag_getADC();
 #endif
             break;
         case 1:
-            taskOrder++;
 #ifdef BARO
             if (sensors(SENSOR_BARO))
                 Baro_update();
 #endif
             break;
         case 2:
-            taskOrder++;
 #ifdef BARO
             if (sensors(SENSOR_BARO))
                 getEstimatedAltitude();
 #endif
             break;
         case 3:
-            taskOrder++;
-#if 0                           // GPS - not used as we read gps data in interrupt mode
-            GPS_NewData();
+#ifdef SONAR
+            Sonar_update();
+            debug3 = sonarAlt;
 #endif
             break;
         default:
