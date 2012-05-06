@@ -15,6 +15,7 @@ extern uint16_t AccInflightCalibrationSavetoEEProm;
 extern uint16_t AccInflightCalibrationActive;
 extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
+extern float magneticDeclination;
 
 sensor_t acc;                   // acc access functions
 sensor_t gyro;                  // gyro access functions
@@ -29,6 +30,8 @@ void sensorsAutodetect(void)
 // AfroFlight32 i2c sensors
 void sensorsAutodetect(void)
 {
+    int16_t deg, min;
+
     drv_adxl345_config_t acc_params;
 
     // configure parameters for ADXL345 driver
@@ -61,6 +64,11 @@ void sensorsAutodetect(void)
     gyro.init();
     // todo: this is driver specific :(
     mpu3050Config(cfg.gyro_lpf);
+
+    // calculate magnetic declination
+    deg = cfg.magDeclination / 100;
+    min = cfg.magDeclination % 100;
+    magneticDeclination = deg + ((float)min * (1.0f / 60.0f));
 }
 #endif
 
@@ -306,15 +314,59 @@ static void Mag_getRawADC(void)
 
 void Mag_init(void)
 {
+    uint8_t numAttempts = 0, good_count = 0;
+    bool success = false;
+    uint8_t calibration_gain = 0x60; // HMC5883
+    uint16_t expected_x = 766;       // default values for HMC5883
+    uint16_t expected_yz = 713;
+    float gain_multiple = 660.0f / 1090.0f; // adjustment for runtime vs calibration gain
+    float cal[3];
+
     // initial calibration
     hmc5883lInit();
-    delay(100);
-    Mag_getRawADC();
-    delay(10);
 
+    magCal[0] = 0;
+    magCal[1] = 0;
+    magCal[2] = 0;
+
+    while (success == false && numAttempts < 20 && good_count < 5) {
+        // record number of attempts at initialisation
+        numAttempts++;
+        // enter calibration mode
+        hmc5883lCal(calibration_gain);
+        delay(100);
+        Mag_getRawADC();
+        delay(10);
+
+        cal[0] = fabsf(expected_x / (float)magADC[ROLL]);
+        cal[1] = fabsf(expected_yz / (float)magADC[PITCH]);
+        cal[2] = fabsf(expected_yz / (float)magADC[ROLL]);
+
+        if (cal[0] > 0.7f && cal[0] < 1.3f && cal[1] > 0.7f && cal[1] < 1.3f && cal[2] > 0.7f && cal[2] < 1.3f) {
+            good_count++;
+            magCal[0] += cal[0];
+            magCal[1] += cal[1];
+            magCal[2] += cal[2];
+        }
+    }
+
+    if (good_count >= 5) {
+        magCal[0] = magCal[0] * gain_multiple / (float)good_count;
+        magCal[1] = magCal[1] * gain_multiple / (float)good_count;
+        magCal[2] = magCal[2] * gain_multiple / (float)good_count;
+        success = true;
+    } else {
+        /* best guess */
+        magCal[0] = 1.0f;
+        magCal[1] = 1.0f;
+        magCal[2] = 1.0f;
+    }
+
+#if 0
     magCal[ROLL] = 1160.0f / abs(magADC[ROLL]);
     magCal[PITCH] = 1160.0f / abs(magADC[PITCH]);
     magCal[YAW] = 1080.0f / abs(magADC[YAW]);
+#endif
 
     hmc5883lFinishCal();
     magInit = 1;
@@ -366,7 +418,7 @@ void Mag_getADC(void)
         } else {
             tCal = 0;
             for (axis = 0; axis < 3; axis++)
-                cfg.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2;
+                cfg.magZero[axis] = ((magZeroTempMax[axis] - magZeroTempMin[axis]) / 2 - magZeroTempMax[axis]); // Calculate offsets
             writeParams(1);
         }
     }

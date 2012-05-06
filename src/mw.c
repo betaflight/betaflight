@@ -88,7 +88,7 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 // this code is executed at each loop and won't interfere with control loop if it lasts less than 650 microseconds
 void annexCode(void)
 {
-    static uint32_t buzzerTime, calibratedAccTime;
+    static uint32_t calibratedAccTime;
     uint16_t tmp,tmp2;
     static uint8_t vbatTimer = 0;
     static uint8_t buzzerFreq;  //delay between buzzer ring

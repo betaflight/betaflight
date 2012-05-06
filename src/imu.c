@@ -9,6 +9,7 @@ int32_t  EstAlt;             // in cm
 int16_t  BaroPID = 0;
 int32_t  AltHold;
 int16_t  errorAltitudeI = 0;
+float magneticDeclination = 0.0f; // calculated at startup from config
 
 // **************
 // gyro+acc IMU
@@ -207,9 +208,8 @@ static void getEstimatedAttitude(void)
     accMag = accMag * 100 / ((int32_t)acc_1G * acc_1G);
 
     rotateV(&EstG.V, deltaGyroAngle);
-    if (sensors(SENSOR_MAG)) {
+    if (sensors(SENSOR_MAG))
         rotateV(&EstM.V, deltaGyroAngle);
-    }
 
     if (abs(accSmooth[ROLL]) < acc_25deg && abs(accSmooth[PITCH]) < acc_25deg && accSmooth[YAW] > 0)
         smallAngle25 = 1;
@@ -237,6 +237,11 @@ static void getEstimatedAttitude(void)
     if (sensors(SENSOR_MAG)) {
         // Attitude of the cross product vector GxM
         heading = _atan2f(EstG.V.X * EstM.V.Z - EstG.V.Z * EstM.V.X, EstG.V.Z * EstM.V.Y - EstG.V.Y * EstM.V.Z) / 10;
+        heading = heading + magneticDeclination;
+        if (heading > 180)
+            heading = heading - 360;
+        else if (heading < -180)
+            heading = heading + 360;
     }
 #endif
 }

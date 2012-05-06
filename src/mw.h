@@ -126,6 +126,7 @@ typedef struct config_t {
     uint8_t dynThrPID;
     int16_t accZero[3];
     int16_t magZero[3];
+    int16_t magDeclination;                   // Get your magnetic decliniation from here : http://magnetic-declination.com/
     int16_t accTrim[2];
 
     // sensor-related stuff
@@ -289,6 +290,9 @@ uint32_t featureMask(void);
 // spektrum
 void spektrumInit(void);
 bool spektrumFrameComplete(void);
+
+// buzzer
+void buzzer(uint8_t warn_vbat);
 
 // cli
 void cliProcess(void);

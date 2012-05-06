@@ -4,6 +4,30 @@
 
 #define MAG_ADDRESS 0x1E
 #define MAG_DATA_REGISTER 0x03
+#define ConfigRegA           0x00
+#define ConfigRegB           0x01
+#define magGain              0x20
+#define PositiveBiasConfig   0x11
+#define NegativeBiasConfig   0x12
+#define NormalOperation      0x10
+#define ModeRegister         0x02
+#define ContinuousConversion 0x00
+#define SingleConversion     0x01
+
+// ConfigRegA valid sample averaging for 5883L
+#define SampleAveraging_1    0x00
+#define SampleAveraging_2    0x01
+#define SampleAveraging_4    0x02
+#define SampleAveraging_8    0x03
+
+// ConfigRegA valid data output rates for 5883L
+#define DataOutputRate_0_75HZ 0x00
+#define DataOutputRate_1_5HZ  0x01
+#define DataOutputRate_3HZ    0x02
+#define DataOutputRate_7_5HZ  0x03
+#define DataOutputRate_15HZ   0x04
+#define DataOutputRate_30HZ   0x05
+#define DataOutputRate_75HZ   0x06
 
 bool hmc5883lDetect(void)
 {
@@ -20,21 +44,26 @@ bool hmc5883lDetect(void)
 void hmc5883lInit(void)
 {
     delay(100);
-    // force positiveBias
-    i2cWrite(MAG_ADDRESS, 0x00, 0x71);      // Configuration Register A  -- 0 11 100 01  num samples: 8 ; output rate: 15Hz ; positive bias
+    i2cWrite(MAG_ADDRESS, ConfigRegA, SampleAveraging_8 << 5 | DataOutputRate_75HZ << 2 | NormalOperation);
+    delay(50);
+}
+
+void hmc5883lCal(uint8_t calibration_gain)
+{
+    // force positiveBias (compass should return 715 for all channels)
+    i2cWrite(MAG_ADDRESS, ConfigRegA, PositiveBiasConfig);
     delay(50);
     // set gains for calibration
-    i2cWrite(MAG_ADDRESS, 0x01, 0x60);      // Configuration Register B  -- 011 00000    configuration gain 2.5Ga
-    i2cWrite(MAG_ADDRESS, 0x02, 0x01);      // Mode register             -- 000000 01    single Conversion Mode
-    // this enters test mode
+    i2cWrite(MAG_ADDRESS, ConfigRegB, calibration_gain);
+    i2cWrite(MAG_ADDRESS, ModeRegister, SingleConversion);
 }
 
 void hmc5883lFinishCal(void)
 {
     // leave test mode
-    i2cWrite(MAG_ADDRESS, 0x00, 0x70);      // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
-    i2cWrite(MAG_ADDRESS, 0x01, 0x20);      // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
-    i2cWrite(MAG_ADDRESS, 0x02, 0x00);      // Mode register             -- 000000 00    continuous Conversion Mode
+    i2cWrite(MAG_ADDRESS, ConfigRegA, SampleAveraging_8 << 5 | DataOutputRate_75HZ << 2 | NormalOperation);
+    i2cWrite(MAG_ADDRESS, ConfigRegB, magGain);
+    i2cWrite(MAG_ADDRESS, ModeRegister, ContinuousConversion);
 }
 
 void hmc5883lRead(int16_t *magData)

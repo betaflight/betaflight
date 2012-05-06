@@ -446,6 +446,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\spektrum.c</FilePath>
             </File>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\buzzer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1201,6 +1206,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\spektrum.c</FilePath>
             </File>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\buzzer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1901,6 +1911,11 @@
               <FileName>spektrum.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\spektrum.c</FilePath>
+            </File>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\buzzer.c</FilePath>
             </File>
           </Files>
         </Group>

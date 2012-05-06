@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 14;
+uint8_t checkNewConf = 15;
 
 void parseRcChannels(const char *input)
 {
@@ -127,6 +127,7 @@ void checkFirstTime(bool reset)
     cfg.accZero[0] = 0;
     cfg.accZero[1] = 0;
     cfg.accZero[2] = 0;
+    cfg.magDeclination = 0; // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     cfg.acc_lpf_factor = 100;
     cfg.gyro_lpf = 42;
     cfg.gyro_smoothing_factor = 0x00141403; // default factors of 20, 20, 3 for R/P/Y
