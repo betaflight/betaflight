@@ -350,6 +350,8 @@ void serialCom(void)
             // enable CLI
             if (c == '#')
                 cliProcess();
+            else if (c == 'R')
+                systemReset(true); // reboot to bootloader
         }
     }
 }
