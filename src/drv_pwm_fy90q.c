@@ -10,6 +10,9 @@
 static void pwmIRQHandler(TIM_TypeDef *tim);
 static void ppmIRQHandler(TIM_TypeDef *tim);
 
+// external vars (ugh)
+extern int16_t failsafeCnt;
+
 // local vars
 static struct TIM_Channel {
     TIM_TypeDef *tim;
@@ -86,6 +89,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
             Inputs[chan].capture = diff;
         }
         chan++;
+        failsafeCnt = 0;
     }
 }
 
@@ -139,6 +143,9 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 
                 // switch state
                 state->state = 0;
+
+                // ping failsafe
+                failsafeCnt = 0;
 
                 TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
                 TIM_ICInitStructure.TIM_Channel = channel.channel;

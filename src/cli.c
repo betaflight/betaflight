@@ -36,6 +36,7 @@ const char *mixerNames[] = {
 const char *featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "CAMTRIG", "GYRO_SMOOTHING", "LED_RING", "GPS",
+    "FAILSAFE",
     NULL
 };
 
@@ -90,6 +91,9 @@ const clivalue_t valueTable[] = {
     { "mincommand", VAR_UINT16, &cfg.mincommand, 0, 2000 },
     { "mincheck", VAR_UINT16, &cfg.mincheck, 0, 2000 },
     { "maxcheck", VAR_UINT16, &cfg.maxcheck, 0, 2000 },
+    { "failsafe_delay", VAR_UINT8, &cfg.failsafe_delay, 0, 200 },
+    { "failsafe_off_delay", VAR_UINT8, &cfg.failsafe_off_delay, 0, 200 },
+    { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, 1000, 2000 },
     { "motor_pwm_rate", VAR_UINT16, &cfg.motor_pwm_rate, 50, 498 },
     { "servo_pwm_rate", VAR_UINT16, &cfg.servo_pwm_rate, 50, 498 },
     { "spektrum_hires", VAR_UINT8, &cfg.spektrum_hires, 0, 1 },

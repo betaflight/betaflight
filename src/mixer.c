@@ -120,7 +120,7 @@ void mixTable(void)
             motor[0] = PIDMIX(0, +4 / 3, 0);    //REAR
             motor[1] = PIDMIX(-1, -2 / 3, 0);   //RIGHT
             motor[2] = PIDMIX(+1, -2 / 3, 0);   //LEFT
-            servo[4] = constrain(cfg.tri_yaw_middle + cfg.yaw_direction * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+            servo[4] = constrain(cfg.tri_yaw_middle + cfg.yaw_direction * axisPID[YAW], cfg.tri_yaw_min, cfg.tri_yaw_max); //REAR
             break;
 
         case MULTITYPE_QUADP:

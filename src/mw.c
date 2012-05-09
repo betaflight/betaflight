@@ -22,7 +22,7 @@ int16_t annex650_overrun_count = 0;
 uint8_t armed = 0;
 uint8_t vbat;                   // battery voltage in 0.1V steps
 
-volatile int16_t failsafeCnt = 0;
+int16_t failsafeCnt = 0;
 int16_t failsafeEvents = 0;
 int16_t rcData[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };              // interval [1000;2000]
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
@@ -171,20 +171,6 @@ void annexCode(void)
             BEEP_OFF;
         } else
             buzzerFreq = 4;     // low battery
-
-#if 0
-        if (buzzerFreq) {
-            if (buzzerState && (currentTime > buzzerTime + 250000)) {
-                buzzerState = 0;
-                BEEP_OFF;
-                buzzerTime = currentTime;
-            } else if (!buzzerState && (currentTime > (buzzerTime + (2000000 >> buzzerFreq)))) {
-                buzzerState = 1;
-                BEEP_ON;
-                buzzerTime = currentTime;
-            }
-        }
-#endif
     }
 
     buzzer(buzzerFreq); // external buzzer routine that handles buzzer events globally now
@@ -234,7 +220,6 @@ uint16_t pwmReadRawRC(uint8_t chan)
 {
     uint16_t data;
 
-    failsafeCnt = 0;
     data = pwmRead(cfg.rcmap[chan]);
     if (data < 750 || data > 2250)
         data = cfg.midrc;
@@ -286,21 +271,22 @@ void loop(void)
         // TODO clean this up. computeRC should handle this check
         if (!feature(FEATURE_SPEKTRUM))
             computeRC();
-        // Failsafe routine - added by MIS
-#if defined(FAILSAFE)
-        if (failsafeCnt > (5 * FAILSAVE_DELAY) && armed == 1) { // Stabilize, and set Throttle to specified level
-            for (i = 0; i < 3; i++)
-                rcData[i] = MIDRC;      // after specified guard time after RC signal is lost (in 0.1sec)
-            rcData[THROTTLE] = FAILSAVE_THR0TTLE;
-            if (failsafeCnt > 5 * (FAILSAVE_DELAY + FAILSAVE_OFF_DELAY)) {      // Turn OFF motors after specified Time (in 0.1sec)
-                armed = 0;      //This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
-                okToArm = 0;    //to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
+        
+        // Failsafe routine
+        if (feature(FEATURE_FAILSAFE)) {
+            if (failsafeCnt > (5 * cfg.failsafe_delay) && armed == 1) { // Stabilize, and set Throttle to specified level
+                for (i = 0; i < 3; i++)
+                    rcData[i] = cfg.midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
+                rcData[THROTTLE] = cfg.failsafe_throttle;
+                if (failsafeCnt > 5 * (cfg.failsafe_delay + cfg.failsafe_off_delay)) {      // Turn OFF motors after specified Time (in 0.1sec)
+                    armed = 0;      // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
+                    okToArm = 0;    // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
+                }
+                failsafeEvents++;
             }
-            failsafeEvents++;
+            failsafeCnt++;
         }
-        failsafeCnt++;
-#endif
-        // end of failsave routine - next change is made with RcOptions setting
+
         if (rcData[THROTTLE] < cfg.mincheck) {
             errorGyroI[ROLL] = 0;
             errorGyroI[PITCH] = 0;
@@ -413,7 +399,7 @@ void loop(void)
         }
 
         // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
-        if ((rcOptions[BOXACC] || (failsafeCnt > 5 * FAILSAVE_DELAY)) && (sensors(SENSOR_ACC))) {
+        if ((rcOptions[BOXACC] || (failsafeCnt > 5 * cfg.failsafe_delay)) && (sensors(SENSOR_ACC))) {
             // bumpless transfer to Level mode
             if (!accMode) {
                 errorAngleI[ROLL] = 0;

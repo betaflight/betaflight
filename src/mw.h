@@ -1,22 +1,5 @@
 #pragma once
 
-/* Failsave settings - added by MIS
-   Failsafe check pulse on THROTTLE channel. If the pulse is OFF (on only THROTTLE or on all channels) the failsafe procedure is initiated.
-   After FAILSAVE_DELAY time of pulse absence, the level mode is on (if ACC or nunchuk is avaliable), PITCH, ROLL and YAW is centered
-   and THROTTLE is set to FAILSAVE_THR0TTLE value. You must set this value to descending about 1m/s or so for best results. 
-   This value is depended from your configuration, AUW and some other params. 
-   Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
-   If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
-   If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
-// #define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
-#define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
-#define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
-#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
-
-/* you can change the tricopter servo travel here */
-#define TRI_YAW_CONSTRAINT_MIN 1020
-#define TRI_YAW_CONSTRAINT_MAX 2000
-
 /* Flying Wing: you can change change servo orientation and servo min/max values here */
 /* valid for all flight modes, even passThrough mode */
 /* need to setup servo directions here; no need to swap servos amongst channels at rx */ 
@@ -37,7 +20,7 @@
 #define CAM_TIME_LOW 1000    // the duration of LOW state servo expressed in ms
 
 /* for VBAT monitoring frequency */
-#define VBATFREQ 6        // to read battery voltage - keep equal to PSENSORFREQ (6) unless you know what you are doing
+#define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 
 #define  VERSION  200
 
@@ -147,6 +130,11 @@ typedef struct config_t {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+    
+    // Failsafe related configuration
+    uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
+    uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
+    uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
 
     // motor/esc/servo related stuff
     uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
@@ -187,6 +175,7 @@ extern int16_t angle[2];
 extern int16_t axisPID[3];
 extern int16_t rcCommand[4];
 extern uint8_t rcOptions[CHECKBOXITEMS];
+extern int16_t failsafeCnt;
 
 extern int16_t debug1, debug2, debug3, debug4;
 extern uint8_t armed;

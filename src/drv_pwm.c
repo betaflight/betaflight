@@ -1,13 +1,13 @@
 #include "board.h"
 
 #define PULSE_1MS       (1000) // 1ms pulse width
-// #define PULSE_PERIOD    (2500) // pulse period (400Hz)
-// #define PULSE_PERIOD_SERVO_DIGITAL  (5000) // pulse period for digital servo (200Hz)
-// #define PULSE_PERIOD_SERVO_ANALOG  (20000) // pulse period for analog servo (50Hz)
 
 // Forward declaration
 static void pwmIRQHandler(TIM_TypeDef *tim);
 static void ppmIRQHandler(TIM_TypeDef *tim);
+
+// external vars (ugh)
+extern int16_t failsafeCnt;
 
 // local vars
 static struct TIM_Channel {
@@ -92,6 +92,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
             Inputs[chan].capture = diff;
         }
         chan++;
+        failsafeCnt = 0;
     }
 }
 
@@ -145,6 +146,8 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 
                 // switch state
                 state->state = 0;
+                // reset failsafe
+                failsafeCnt = 0;
 
                 TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
                 TIM_ICInitStructure.TIM_Channel = channel.channel;

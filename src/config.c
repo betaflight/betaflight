@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 15;
+uint8_t checkNewConf = 16;
 
 void parseRcChannels(const char *input)
 {
@@ -49,7 +49,7 @@ void readEEPROM(void)
 
     cfg.wing_left_mid = constrain(cfg.wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
     cfg.wing_right_mid = constrain(cfg.wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
-    cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+    cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max); //REAR
 }
 
 void writeParams(uint8_t b)
@@ -111,7 +111,7 @@ void checkFirstTime(bool reset)
     cfg.D8[PIDVEL] = 0;
     cfg.P8[PIDLEVEL] = 70;
     cfg.I8[PIDLEVEL] = 10;
-    cfg.D8[PIDLEVEL] = 100;
+    cfg.D8[PIDLEVEL] = 20;
     cfg.P8[PIDMAG] = 40;
     cfg.rcRate8 = 90;
     cfg.rcExpo8 = 65;
@@ -143,6 +143,11 @@ void checkFirstTime(bool reset)
     cfg.midrc = 1500;
     cfg.mincheck = 1100;
     cfg.maxcheck = 1900;
+
+    // Failsafe Variables
+    cfg.failsafe_delay = 10; // 1sec
+    cfg.failsafe_off_delay = 200; // 20sec
+    cfg.failsafe_throttle = 1200; // decent default which should always be below hover throttle for people.
 
     // Motor/ESC/Servo
     cfg.minthrottle = 1150;

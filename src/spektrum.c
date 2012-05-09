@@ -10,8 +10,10 @@ static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
 static bool spekDataIncoming = false;
 volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
-
 static void spektrumDataReceive(uint16_t c);
+
+// external vars (ugh)
+extern int16_t failsafeCnt;
 
 void spektrumInit(void)
 {
@@ -44,12 +46,7 @@ static void spektrumDataReceive(uint16_t c)
     spekFrame[spekFramePosition] = (uint8_t)c;
     if (spekFramePosition == SPEK_FRAME_SIZE - 1) {
         rcFrameComplete = true;
-#if defined(FAILSAFE)
-        if(failsafeCnt > 20) 
-            failsafeCnt -= 20; 
-        else 
-            failsafeCnt = 0;   // clear FailSafe counter
-#endif
+        failsafeCnt = 0;   // clear FailSafe counter
     } else {
         spekFramePosition++;
     }
