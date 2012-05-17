@@ -248,6 +248,11 @@ void computeRC(void)
     }
 }
 
+#if 0
+uint32_t trollTime = 0;
+uint16_t cn = 0xffff, cx = 0x0;
+#endif
+
 void loop(void)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
@@ -603,4 +608,15 @@ void loop(void)
     mixTable();
     writeServos();
     writeMotors();
+
+#if 0
+    while (micros() < trollTime + 2000);
+    LED0_TOGGLE;
+    {
+        if (cycleTime < cn)
+            cn = cycleTime;
+        if (cycleTime > cx)
+            cx = cycleTime;
+    }
+#endif
 }

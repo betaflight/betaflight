@@ -111,7 +111,8 @@
 #define MPU_RA_WHO_AM_I         0x75
 
 #define MPU6050_SMPLRT_DIV      0       //8000Hz
-#define MPU6050_DLPF_CFG        0
+// #define MPU6050_DLPF_CFG        0   // 256Hz
+#define MPU6050_DLPF_CFG   3        // 42Hz
 
 static void mpu6050AccInit(void);
 static void mpu6050AccRead(int16_t * accData);
@@ -164,7 +165,7 @@ static void mpu6050AccInit(void)
     // note: something seems to be wrong in the spec here. With AFS=2 1G = 4096 but according to my measurement: 1G=2048 (and 2048/8 = 256)
     // confirmed here: http://www.multiwii.com/forum/viewtopic.php?f=8&t=1080&start=10#p7480
     // seems to be not a problem on MPU6000 lol
-    acc_1G = 512; // 1023;
+    acc_1G = 1023;
 }
 
 static void mpu6050AccRead(int16_t * accData)
@@ -199,8 +200,8 @@ static void mpu6050GyroInit(void)
     i2cWrite(MPU6050_ADDRESS, 0x6B, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(5);
     i2cWrite(MPU6050_ADDRESS, 0x19, 0x00);      //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
-    i2cWrite(MPU6050_ADDRESS, 0x1A, MPU6050_DLPF_CFG);  //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
     i2cWrite(MPU6050_ADDRESS, 0x6B, 0x03);      //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
+    i2cWrite(MPU6050_ADDRESS, 0x1A, MPU6050_DLPF_CFG);  //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
     i2cWrite(MPU6050_ADDRESS, 0x1B, 0x18);      //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
 #endif
 }
