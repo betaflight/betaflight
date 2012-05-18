@@ -53,6 +53,13 @@ typedef enum GimbalFlags {
     GIMBAL_DISABLEAUX34 = 1 << 2,
 } GimbalFlags;
 
+// Type of accelerometer used
+typedef enum AccelSensors {
+    ADXL345,
+    MPU6050,
+    MMA845x
+} AccelSensors;
+
 /*********** RC alias *****************/
 #define ROLL       0
 #define PITCH      1
@@ -109,7 +116,7 @@ typedef struct config_t {
     uint8_t dynThrPID;
     int16_t accZero[3];
     int16_t magZero[3];
-    int16_t magDeclination;                   // Get your magnetic decliniation from here : http://magnetic-declination.com/
+    int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
     int16_t accTrim[2];
 
     // sensor-related stuff

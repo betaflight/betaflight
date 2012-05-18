@@ -599,6 +599,11 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>drv_mma845x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_mma845x.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1358,6 +1363,11 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>drv_mma845x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_mma845x.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2298,6 +2308,11 @@
               <FileName>drv_pwm_fy90q.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_pwm_fy90q.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_mma845x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_mma845x.c</FilePath>
             </File>
           </Files>
         </Group>

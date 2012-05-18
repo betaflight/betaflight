@@ -19,6 +19,7 @@ extern float magneticDeclination;
 
 sensor_t acc;                   // acc access functions
 sensor_t gyro;                  // gyro access functions
+uint8_t accHardware = 0;        // which accel chip is used.
 
 #ifdef FY90Q
 // FY90Q analog gyro/acc
@@ -47,8 +48,10 @@ void sensorsAutodetect(void)
         sensorsClear(SENSOR_MAG);
 
     // Init sensors
-    if (sensors(SENSOR_ACC))
+    if (sensors(SENSOR_ACC)) {
         acc.init();
+        accHardware = ADXL345;
+    }
     if (sensors(SENSOR_BARO))
         bmp085Init();
 
@@ -56,18 +59,27 @@ void sensorsAutodetect(void)
     if (mpu6050Detect(&acc, &gyro)) { // first, try MPU6050, and re-enable acc (if ADXL345 is missing) since this chip has it built in
         sensorsSet(SENSOR_ACC);
         acc.init();
+        accHardware = MPU6050;
     } else if (!mpu3050Detect(&gyro)) {
         // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
         failureMode(3);
     }
+
+    // Try to init MMA8452
+    if (mma8452Detect(&acc)) {
+        sensorsSet(SENSOR_ACC);
+        acc.init();
+        accHardware = MMA845x;
+    }
+
     // this is safe because either mpu6050 or mpu3050 sets it, and in case of fail, none do.
     gyro.init();
     // todo: this is driver specific :(
     mpu3050Config(cfg.gyro_lpf);
 
     // calculate magnetic declination
-    deg = cfg.magDeclination / 100;
-    min = cfg.magDeclination % 100;
+    deg = cfg.mag_declination / 100;
+    min = cfg.mag_declination % 100;
     magneticDeclination = deg + ((float)min * (1.0f / 60.0f));
 }
 #endif

@@ -123,6 +123,7 @@ typedef struct sensor_t
 #include "drv_hmc5883l.h"
 #include "drv_i2c.h"
 #include "drv_ledring.h"
+#include "drv_mma845x.h"
 #include "drv_mpu3050.h"
 #include "drv_mpu6050.h"
 #include "drv_pwm.h"

@@ -16,6 +16,7 @@ static void cliVersion(char *cmdline);
 
 // from sensors.c
 extern uint8_t batteryCellCount;
+extern uint8_t accHardware;
 
 // from config.c RC Channel mapping
 extern const char rcChannelLetters[];
@@ -43,6 +44,11 @@ const char *featureNames[] = {
 // sync this with AvailableSensors enum from board.h
 const char *sensorNames[] = {
     "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
+};
+
+// 
+const char *accNames[] = {
+    "ADXL345", "MPU6050", "MMA845x", NULL
 };
 
 typedef struct {
@@ -117,6 +123,7 @@ const clivalue_t valueTable[] = {
     { "gimbal_roll_mid", VAR_UINT16, &cfg.gimbal_roll_mid, 100, 3000 },
     { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 250 },
     { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
+    { "mag_declination", VAR_INT16, &cfg.mag_declination, -18000, 18000 },
     { "gps_baudrate", VAR_UINT32, &cfg.gps_baudrate, 1200, 115200 },
     { "serial_baudrate", VAR_UINT32, &cfg.serial_baudrate, 1200, 115200 },
     { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200},
@@ -475,6 +482,10 @@ static void cliStatus(char *cmdline)
         if (mask & (1 << i))
             uartPrint((char *)sensorNames[i]);
         uartWrite(' ');
+    }
+    if (sensors(SENSOR_ACC)) {
+        uartPrint("ACCHW: ");
+        uartPrint((char *)accNames[accHardware]);
     }
     uartPrint("\r\n");
 
