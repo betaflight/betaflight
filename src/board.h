@@ -26,6 +26,14 @@ typedef enum {
     SENSOR_GPS = 1 << 4,
 } AvailableSensors;
 
+// Type of accelerometer used/detected
+typedef enum AccelSensors {
+    ACC_DEFAULT = 0,
+    ACC_ADXL345 = 1,
+    ACC_MPU6050 = 2,
+    ACC_MMA8452 = 3,
+} AccelSensors;
+
 typedef enum {
     FEATURE_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,

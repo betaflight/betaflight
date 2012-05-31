@@ -48,7 +48,7 @@ const char *sensorNames[] = {
 
 // 
 const char *accNames[] = {
-    "ADXL345", "MPU6050", "MMA845x", NULL
+    "", "ADXL345", "MPU6050", "MMA845x", NULL
 };
 
 typedef struct {
@@ -97,6 +97,7 @@ const clivalue_t valueTable[] = {
     { "mincommand", VAR_UINT16, &cfg.mincommand, 0, 2000 },
     { "mincheck", VAR_UINT16, &cfg.mincheck, 0, 2000 },
     { "maxcheck", VAR_UINT16, &cfg.maxcheck, 0, 2000 },
+    { "retarded_arm", VAR_UINT8, &cfg.retarded_arm, 0, 1 },
     { "failsafe_delay", VAR_UINT8, &cfg.failsafe_delay, 0, 200 },
     { "failsafe_off_delay", VAR_UINT8, &cfg.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, 1000, 2000 },
@@ -121,8 +122,10 @@ const clivalue_t valueTable[] = {
     { "gimbal_roll_min", VAR_UINT16, &cfg.gimbal_roll_min, 100, 3000 },
     { "gimbal_roll_max", VAR_UINT16, &cfg.gimbal_roll_max, 100, 3000 },
     { "gimbal_roll_mid", VAR_UINT16, &cfg.gimbal_roll_mid, 100, 3000 },
+    { "acc_hardware", VAR_UINT8, &cfg.acc_hardware, 0, 3 },
     { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 250 },
     { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
+    { "gyro_cmpf_factor", VAR_UINT16, &cfg.gyro_cmpf_factor, 100, 1000 },
     { "mag_declination", VAR_INT16, &cfg.mag_declination, -18000, 18000 },
     { "gps_baudrate", VAR_UINT32, &cfg.gps_baudrate, 1200, 115200 },
     { "serial_baudrate", VAR_UINT32, &cfg.serial_baudrate, 1200, 115200 },

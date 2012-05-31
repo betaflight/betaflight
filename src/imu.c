@@ -121,7 +121,7 @@ void computeIMU(void)
 /* Increasing this value would reduce and delay Acc influence on the output of the filter*/
 /* Default WMC value: 300*/
 // #define GYR_CMPF_FACTOR 310.0f
-#define GYR_CMPF_FACTOR 500.0f
+// #define GYR_CMPF_FACTOR 500.0f
 
 /* Set the Gyro Weight for Gyro/Magnetometer complementary filter */
 /* Increasing this value would reduce and delay Magnetometer influence on the output of the filter*/
@@ -130,7 +130,7 @@ void computeIMU(void)
 
 //****** end of advanced users settings *************
 
-#define INV_GYR_CMPF_FACTOR   (1.0f / (GYR_CMPF_FACTOR  + 1.0f))
+#define INV_GYR_CMPF_FACTOR   (1.0f / ((float)cfg.gyro_cmpf_factor + 1.0f))
 #define INV_GYR_CMPFM_FACTOR  (1.0f / (GYR_CMPFM_FACTOR + 1.0f))
 
 #define GYRO_SCALE ((1998 * M_PI)/((32767.0f / 4.0f ) * 180.0f * 1000000.0f))     // 32767 / 16.4lsb/dps for MPU3000
@@ -221,7 +221,7 @@ static void getEstimatedAttitude(void)
     // To do that, we just skip filter, as EstV already rotated by Gyro
     if ((36 < accMag && accMag < 196) || smallAngle25) {
         for (axis = 0; axis < 3; axis++)
-            EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
+            EstG.A[axis] = (EstG.A[axis] * (float)cfg.gyro_cmpf_factor + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
     }
 
     if (sensors(SENSOR_MAG)) {

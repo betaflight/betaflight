@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 17;
+uint8_t checkNewConf = 18;
 
 void parseRcChannels(const char *input)
 {
@@ -128,7 +128,9 @@ void checkFirstTime(bool reset)
     cfg.accZero[1] = 0;
     cfg.accZero[2] = 0;
     cfg.mag_declination = 0; // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
-    cfg.acc_lpf_factor = 100;
+    cfg.acc_hardware = ACC_DEFAULT; // default/autodetect
+    cfg.acc_lpf_factor = 4;
+    cfg.gyro_cmpf_factor = 310; // default MWC
     cfg.gyro_lpf = 42;
     cfg.gyro_smoothing_factor = 0x00141403; // default factors of 20, 20, 3 for R/P/Y
     cfg.vbatscale = 110;
@@ -143,6 +145,7 @@ void checkFirstTime(bool reset)
     cfg.midrc = 1500;
     cfg.mincheck = 1100;
     cfg.maxcheck = 1900;
+    cfg.retarded_arm = 0; // disable arm/disarm on roll left/right
 
     // Failsafe Variables
     cfg.failsafe_delay = 10; // 1sec

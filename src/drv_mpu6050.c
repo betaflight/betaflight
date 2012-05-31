@@ -34,6 +34,7 @@
 #define MPU_RA_YA_OFFS_L_TC     0x09
 #define MPU_RA_ZA_OFFS_H        0x0A    //[15:0] ZA_OFFS
 #define MPU_RA_ZA_OFFS_L_TC     0x0B
+#define MPU_RA_PRODUCT_ID       0x0C    // Product ID Register
 #define MPU_RA_XG_OFFS_USRH     0x13    //[15:0] XG_OFFS_USR
 #define MPU_RA_XG_OFFS_USRL     0x14
 #define MPU_RA_YG_OFFS_USRH     0x15    //[15:0] YG_OFFS_USR
@@ -114,6 +115,18 @@
 // #define MPU6050_DLPF_CFG        0   // 256Hz
 #define MPU6050_DLPF_CFG   3        // 42Hz
 
+#define MPU6000ES_REV_C4        0x14
+#define MPU6000ES_REV_C5        0x15
+#define MPU6000ES_REV_D6        0x16
+#define MPU6000ES_REV_D7        0x17
+#define MPU6000ES_REV_D8        0x18
+#define MPU6000_REV_C4          0x54
+#define MPU6000_REV_C5          0x55
+#define MPU6000_REV_D6          0x56
+#define MPU6000_REV_D7          0x57
+#define MPU6000_REV_D8          0x58
+#define MPU6000_REV_D9          0x59
+
 static void mpu6050AccInit(void);
 static void mpu6050AccRead(int16_t * accData);
 static void mpu6050AccAlign(int16_t * accData);
@@ -128,6 +141,7 @@ int16_t dmpGyroData[3];
 #endif
 
 extern uint16_t acc_1G;
+uint8_t mpuProductID = 0;
 
 bool mpu6050Detect(sensor_t * acc, sensor_t * gyro)
 {
@@ -142,6 +156,9 @@ bool mpu6050Detect(sensor_t * acc, sensor_t * gyro)
 
     if (sig != MPU6050_ADDRESS)
         return false;
+
+    // get chip revision
+    i2cRead(MPU6050_ADDRESS, MPU_RA_PRODUCT_ID, 1, &mpuProductID);
 
     acc->init = mpu6050AccInit;
     acc->read = mpu6050AccRead;
@@ -160,11 +177,15 @@ bool mpu6050Detect(sensor_t * acc, sensor_t * gyro)
 static void mpu6050AccInit(void)
 {
 #ifndef MPU6050_DMP
-    i2cWrite(MPU6050_ADDRESS, 0x1C, 0x10);      // ACCEL_CONFIG  -- AFS_SEL=2 (Full Scale = +/-8G)  ; ACCELL_HPF=0   //note something is wrong in the spec.
+    // Product ID detection code from eosBandi (or rather, DIYClones). This doesn't cover product ID for MPU6050 as far as I can tell
+    if ((mpuProductID == MPU6000ES_REV_C4) || (mpuProductID == MPU6000ES_REV_C5) || (mpuProductID == MPU6000_REV_C4)   || (mpuProductID == MPU6000_REV_C5)) {
+        // Accel scale 8g (4096 LSB/g)
+        // Rev C has different scaling than rev D
+        i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 1 << 3);
+    } else {
+        i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 2 << 3);
+    }
 #endif
-    // note: something seems to be wrong in the spec here. With AFS=2 1G = 4096 but according to my measurement: 1G=2048 (and 2048/8 = 256)
-    // confirmed here: http://www.multiwii.com/forum/viewtopic.php?f=8&t=1080&start=10#p7480
-    // seems to be not a problem on MPU6000 lol
     acc_1G = 1023;
 }
 
@@ -197,12 +218,12 @@ static void mpu6050AccAlign(int16_t * accData)
 static void mpu6050GyroInit(void)
 {
 #ifndef MPU6050_DMP
-    i2cWrite(MPU6050_ADDRESS, 0x6B, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(5);
-    i2cWrite(MPU6050_ADDRESS, 0x19, 0x00);      //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
-    i2cWrite(MPU6050_ADDRESS, 0x6B, 0x03);      //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
-    i2cWrite(MPU6050_ADDRESS, 0x1A, MPU6050_DLPF_CFG);  //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
-    i2cWrite(MPU6050_ADDRESS, 0x1B, 0x18);      //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_SMPLRT_DIV, 0x00);      //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x03);      //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_CONFIG, MPU6050_DLPF_CFG);  //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_GYRO_CONFIG, 0x18);      //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
 #endif
 }
 

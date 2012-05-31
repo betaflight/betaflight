@@ -53,13 +53,6 @@ typedef enum GimbalFlags {
     GIMBAL_DISABLEAUX34 = 1 << 2,
 } GimbalFlags;
 
-// Type of accelerometer used
-typedef enum AccelSensors {
-    ADXL345,
-    MPU6050,
-    MMA845x
-} AccelSensors;
-
 /*********** RC alias *****************/
 #define ROLL       0
 #define PITCH      1
@@ -120,8 +113,10 @@ typedef struct config_t {
     int16_t accTrim[2];
 
     // sensor-related stuff
+    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
     uint16_t gyro_lpf;                      // mpuX050 LPF setting
+    uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
     uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
 
     uint16_t activate[CHECKBOXITEMS];       // activate switches
@@ -137,6 +132,7 @@ typedef struct config_t {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+    uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
     
     // Failsafe related configuration
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)

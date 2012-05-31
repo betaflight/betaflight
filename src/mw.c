@@ -326,10 +326,10 @@ void loop(void)
                 } else if (armed)
                     armed = 0;
                 rcDelayCommand = 0;
-            } else if ((rcData[YAW] < cfg.mincheck || rcData[ROLL] < cfg.mincheck) && armed == 1) {
+            } else if ((rcData[YAW] < cfg.mincheck || rcData[ROLL] < cfg.mincheck) && armed == 1 && cfg.retarded_arm == 1) {
                 if (rcDelayCommand == 20)
                     armed = 0;  // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
-            } else if ((rcData[YAW] > cfg.maxcheck || rcData[ROLL] > cfg.maxcheck) && rcData[PITCH] < cfg.maxcheck && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
+            } else if ((rcData[YAW] > cfg.maxcheck || rcData[ROLL] > cfg.maxcheck) && rcData[PITCH] < cfg.maxcheck && armed == 0 && calibratingG == 0 && calibratedACC == 1  && cfg.retarded_arm == 1) {
                 if (rcDelayCommand == 20) {
                     armed = 1;
                     headFreeModeHold = heading;

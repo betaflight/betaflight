@@ -17,9 +17,9 @@ extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
 extern float magneticDeclination;
 
-sensor_t acc;                   // acc access functions
-sensor_t gyro;                  // gyro access functions
-uint8_t accHardware = 0;        // which accel chip is used.
+sensor_t acc;                       // acc access functions
+sensor_t gyro;                      // gyro access functions
+uint8_t accHardware = ACC_DEFAULT;  // which accel chip is used/detected
 
 #ifdef FY90Q
 // FY90Q analog gyro/acc
@@ -32,50 +32,74 @@ void sensorsAutodetect(void)
 void sensorsAutodetect(void)
 {
     int16_t deg, min;
-
     drv_adxl345_config_t acc_params;
+    bool haveMpu6k = false;
 
-    // configure parameters for ADXL345 driver
-    acc_params.useFifo = false;
-    acc_params.dataRate = 800; // unused currently
-
-    // Detect what's available
-    if (!adxl345Detect(&acc_params, &acc))
-        sensorsClear(SENSOR_ACC);
-    if (!bmp085Init())
-        sensorsClear(SENSOR_BARO);
-    if (!hmc5883lDetect())
-        sensorsClear(SENSOR_MAG);
-
-    // Init sensors
-    if (sensors(SENSOR_ACC)) {
-        acc.init();
-        accHardware = ADXL345;
-    }
-    if (sensors(SENSOR_BARO))
-        bmp085Init();
-
-    // special case for supported gyros - MPU3050 and MPU6050
-    if (mpu6050Detect(&acc, &gyro)) { // first, try MPU6050, and re-enable acc (if ADXL345 is missing) since this chip has it built in
-        sensorsSet(SENSOR_ACC);
-        acc.init();
-        accHardware = MPU6050;
+    // Autodetect gyro hardware. We have MPU3050 or MPU6050.
+    if (mpu6050Detect(&acc, &gyro)) {
+        // this filled up  acc.* struct with init values
+        haveMpu6k = true;
     } else if (!mpu3050Detect(&gyro)) {
         // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
         failureMode(3);
     }
 
-    // Try to init MMA8452
-    if (mma8452Detect(&acc)) {
-        sensorsSet(SENSOR_ACC);
-        acc.init();
-        accHardware = MMA845x;
+    // Accelerometer. Fuck it. Let user break shit.
+retry:
+    switch (cfg.acc_hardware) {
+        case 0: // autodetect
+        case 1: // ADXL345
+            acc_params.useFifo = false;
+            acc_params.dataRate = 800; // unused currently
+            if (adxl345Detect(&acc_params, &acc))
+                accHardware = ACC_ADXL345;
+            if (cfg.acc_hardware == ACC_ADXL345)
+                break;
+            ; // fallthrough
+       case 2: // MPU6050
+            if (haveMpu6k) {
+                mpu6050Detect(&acc, &gyro); // yes, i'm rerunning it again.  re-fill acc struct
+                accHardware = ACC_MPU6050;
+                if (cfg.acc_hardware == ACC_MPU6050)
+                    break;
+            }
+            ; // fallthrough
+        case 3: // MMA8452
+            if (mma8452Detect(&acc)) {
+                accHardware = ACC_MMA8452;
+                if (cfg.acc_hardware == ACC_MMA8452)
+                    break;
+            }
     }
 
+    // Found anything? Check if user fucked up or ACC is really missing.
+    if (accHardware == ACC_DEFAULT) {
+        if (cfg.acc_hardware > ACC_DEFAULT) {
+            // Nothing was found and we have a forced sensor type. Stupid user probably chose a sensor that isn't present.
+            cfg.acc_hardware = ACC_DEFAULT;
+            goto retry;
+        } else {
+            // We're really screwed
+            sensorsClear(SENSOR_ACC);
+        }
+    }
+
+    // Detect what else is available
+    if (!bmp085Init())
+        sensorsClear(SENSOR_BARO);
+    if (!hmc5883lDetect())
+        sensorsClear(SENSOR_MAG);
+
+    // Now time to init them, acc first
+    if (sensors(SENSOR_ACC))
+        acc.init();
+    if (sensors(SENSOR_BARO))
+        bmp085Init();
     // this is safe because either mpu6050 or mpu3050 sets it, and in case of fail, none do.
     gyro.init();
     // todo: this is driver specific :(
-    mpu3050Config(cfg.gyro_lpf);
+    if (!haveMpu6k)
+        mpu3050Config(cfg.gyro_lpf);
 
     // calculate magnetic declination
     deg = cfg.mag_declination / 100;
@@ -252,15 +276,6 @@ static void GYRO_Common(void)
     static int32_t g[3];
     uint8_t axis;
 
-#if defined MMGYRO       
-    // Moving Average Gyros by Magnetron1
-    //---------------------------------------------------
-    static int16_t mediaMobileGyroADC[3][MMGYROVECTORLENGTH];
-    static int32_t mediaMobileGyroADCSum[3];
-    static uint8_t mediaMobileGyroIDX;
-    //---------------------------------------------------
-#endif
-
     if (calibratingG > 0) {
         for (axis = 0; axis < 3; axis++) {
             // Reset g[axis] at start of calibration
@@ -279,25 +294,12 @@ static void GYRO_Common(void)
         calibratingG--;
     }
 
-#ifdef MMGYRO
-    mediaMobileGyroIDX = ++mediaMobileGyroIDX % MMGYROVECTORLENGTH;
-    for (axis = 0; axis < 3; axis++) {
-        gyroADC[axis]  -= gyroZero[axis];
-        mediaMobileGyroADCSum[axis] -= mediaMobileGyroADC[axis][mediaMobileGyroIDX];
-        //anti gyro glitch, limit the variation between two consecutive readings
-        mediaMobileGyroADC[axis][mediaMobileGyroIDX] = constrain(gyroADC[axis], previousGyroADC[axis] - 800, previousGyroADC[axis] + 800);
-        mediaMobileGyroADCSum[axis] += mediaMobileGyroADC[axis][mediaMobileGyroIDX];
-        gyroADC[axis] = mediaMobileGyroADCSum[axis] / MMGYROVECTORLENGTH;
-        previousGyroADC[axis] = gyroADC[axis];
-    }
-#else
     for (axis = 0; axis < 3; axis++) {
         gyroADC[axis] -= gyroZero[axis];
         //anti gyro glitch, limit the variation between two consecutive readings
         gyroADC[axis] = constrain(gyroADC[axis], previousGyroADC[axis] - 800, previousGyroADC[axis] + 800);
         previousGyroADC[axis] = gyroADC[axis];
     }
-#endif
 }
 
 void Gyro_getADC(void)
