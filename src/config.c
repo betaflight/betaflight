@@ -7,13 +7,13 @@
 #endif
 
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 1))    // use the last KB for storage
+#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 1))       // use the last KB for storage
 
 config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 18;
+uint8_t checkNewConf = 19;
 
 void parseRcChannels(const char *input)
 {
@@ -21,7 +21,7 @@ void parseRcChannels(const char *input)
 
     for (c = input; *c; c++) {
         s = strchr(rcChannelLetters, *c);
-        if (s)                          
+        if (s)
             cfg.rcmap[s - rcChannelLetters] = c - input;
     }
 }
@@ -31,25 +31,25 @@ void readEEPROM(void)
     uint8_t i;
 
     // Read flash
-    memcpy(&cfg, (char *)FLASH_WRITE_ADDR, sizeof(config_t));
+    memcpy(&cfg, (char *) FLASH_WRITE_ADDR, sizeof(config_t));
 
-    for(i = 0; i < 6; i++)
-        lookupPitchRollRC[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t)cfg.rcRate8 / 2500;
+    for (i = 0; i < 6; i++)
+        lookupPitchRollRC[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t) cfg.rcRate8 / 2500;
 
-    for(i = 0; i < 11; i++) {
+    for (i = 0; i < 11; i++) {
         int16_t tmp = 10 * i - cfg.thrMid8;
         uint8_t y = 1;
-        if (tmp > 0) 
+        if (tmp > 0)
             y = 100 - cfg.thrMid8;
         if (tmp < 0)
             y = cfg.thrMid8;
-        lookupThrottleRC[i] = 10 * cfg.thrMid8 + tmp * (100 - cfg.thrExpo8 + (int32_t)cfg.thrExpo8 * (tmp * tmp) / (y * y) ) / 10;     // [0;1000]
-        lookupThrottleRC[i] = cfg.minthrottle + (int32_t)(cfg.maxthrottle - cfg.minthrottle)* lookupThrottleRC[i] / 1000; // [0;1000] -> [MINTHROTTLE;MAXTHROTTLE]
+        lookupThrottleRC[i] = 10 * cfg.thrMid8 + tmp * (100 - cfg.thrExpo8 + (int32_t) cfg.thrExpo8 * (tmp * tmp) / (y * y)) / 10;      // [0;1000]
+        lookupThrottleRC[i] = cfg.minthrottle + (int32_t) (cfg.maxthrottle - cfg.minthrottle) * lookupThrottleRC[i] / 1000;     // [0;1000] -> [MINTHROTTLE;MAXTHROTTLE]
     }
 
     cfg.wing_left_mid = constrain(cfg.wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
     cfg.wing_right_mid = constrain(cfg.wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
-    cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max); //REAR
+    cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max);       //REAR
 }
 
 void writeParams(uint8_t b)
@@ -60,12 +60,12 @@ void writeParams(uint8_t b)
     FLASH_Unlock();
 
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
-    
+
     if (FLASH_ErasePage(FLASH_WRITE_ADDR) == FLASH_COMPLETE) {
         for (i = 0; i < sizeof(config_t); i += 4) {
-            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *)((char *)&cfg + i));
+            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *) ((char *) &cfg + i));
             if (status != FLASH_COMPLETE)
-                break; // TODO: fail
+                break;          // TODO: fail
         }
     }
 
@@ -80,7 +80,7 @@ void checkFirstTime(bool reset)
 {
     uint8_t test_val, i;
 
-    test_val = *(uint8_t *)FLASH_WRITE_ADDR;
+    test_val = *(uint8_t *) FLASH_WRITE_ADDR;
 
     if (!reset && test_val == checkNewConf)
         return;
@@ -89,7 +89,7 @@ void checkFirstTime(bool reset)
     cfg.version = checkNewConf;
     cfg.mixerConfiguration = MULTITYPE_QUADX;
     featureClearAll();
-    featureSet(FEATURE_VBAT); // | FEATURE_PPM); // sadly, this is for hackers only
+    featureSet(FEATURE_VBAT);   // | FEATURE_PPM); // sadly, this is for hackers only
 
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;
@@ -103,9 +103,15 @@ void checkFirstTime(bool reset)
     cfg.P8[PIDALT] = 16;
     cfg.I8[PIDALT] = 15;
     cfg.D8[PIDALT] = 7;
-    cfg.P8[PIDGPS] = 50;
-    cfg.I8[PIDGPS] = 0;
-    cfg.D8[PIDGPS] = 15;
+    cfg.P8[PIDPOS] = 11; // POSHOLD_P * 100;
+    cfg.I8[PIDPOS] = 0; // POSHOLD_I * 100;
+    cfg.D8[PIDPOS] = 0;
+    cfg.P8[PIDPOSR] = 20; // POSHOLD_RATE_P * 10;
+    cfg.I8[PIDPOSR] = 8; // POSHOLD_RATE_I * 100;
+    cfg.D8[PIDPOSR] = 45; // POSHOLD_RATE_D * 1000;
+    cfg.P8[PIDNAVR] = 14; // NAV_P * 10;
+    cfg.I8[PIDNAVR] = 20; // NAV_I * 100;
+    cfg.D8[PIDNAVR] = 80; // NAV_D * 1000;
     cfg.P8[PIDVEL] = 0;
     cfg.I8[PIDVEL] = 0;
     cfg.D8[PIDVEL] = 0;
@@ -127,12 +133,12 @@ void checkFirstTime(bool reset)
     cfg.accZero[0] = 0;
     cfg.accZero[1] = 0;
     cfg.accZero[2] = 0;
-    cfg.mag_declination = 0; // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
-    cfg.acc_hardware = ACC_DEFAULT; // default/autodetect
+    cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    cfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
     cfg.acc_lpf_factor = 4;
     cfg.gyro_cmpf_factor = 310; // default MWC
     cfg.gyro_lpf = 42;
-    cfg.gyro_smoothing_factor = 0x00141403; // default factors of 20, 20, 3 for R/P/Y
+    cfg.gyro_smoothing_factor = 0x00141403;     // default factors of 20, 20, 3 for R/P/Y
     cfg.vbatscale = 110;
     cfg.vbatmaxcellvoltage = 43;
     cfg.vbatmincellvoltage = 33;
@@ -145,12 +151,12 @@ void checkFirstTime(bool reset)
     cfg.midrc = 1500;
     cfg.mincheck = 1100;
     cfg.maxcheck = 1900;
-    cfg.retarded_arm = 0; // disable arm/disarm on roll left/right
+    cfg.retarded_arm = 0;       // disable arm/disarm on roll left/right
 
     // Failsafe Variables
-    cfg.failsafe_delay = 10; // 1sec
-    cfg.failsafe_off_delay = 200; // 20sec
-    cfg.failsafe_throttle = 1200; // decent default which should always be below hover throttle for people.
+    cfg.failsafe_delay = 10;    // 1sec
+    cfg.failsafe_off_delay = 200;       // 20sec
+    cfg.failsafe_throttle = 1200;       // decent default which should always be below hover throttle for people.
 
     // Motor/ESC/Servo
     cfg.minthrottle = 1150;
@@ -178,8 +184,13 @@ void checkFirstTime(bool reset)
     cfg.gimbal_roll_max = 2000;
     cfg.gimbal_roll_mid = 1500;
 
-    // gps baud-rate
-    cfg.gps_baudrate = 9600;    
+    // gps/nav stuff
+    cfg.gps_baudrate = 9600;
+    cfg.gps_wp_radius = 200;
+    cfg.gps_lpf = 20;
+    cfg.nav_controls_heading = 1;
+    cfg.nav_speed_min = 100;
+    cfg.nav_speed_max = 300;
 
     // serial(uart1) baudrate
     cfg.serial_baudrate = 115200;

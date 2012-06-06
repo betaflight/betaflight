@@ -24,6 +24,18 @@
 
 #define  VERSION  200
 
+#define LAT  0
+#define LON  1
+
+// Serial GPS only variables
+// navigation mode
+typedef enum NavigationMode
+{
+    NAV_MODE_NONE = 1,
+    NAV_MODE_POSHOLD,
+    NAV_MODE_WP
+} NavigationMode;
+
 // Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
 typedef enum MultiType
 {
@@ -64,10 +76,12 @@ typedef enum GimbalFlags {
 #define AUX4       7
 
 #define PIDALT     3
-#define PIDVEL     4
-#define PIDGPS     5
-#define PIDLEVEL   6
-#define PIDMAG     7
+#define PIDPOS     4
+#define PIDPOSR    5
+#define PIDNAVR    6
+#define PIDLEVEL   7
+#define PIDMAG     8
+#define PIDVEL     9 // not used currently
 
 #define BOXACC       0
 #define BOXBARO      1
@@ -82,7 +96,7 @@ typedef enum GimbalFlags {
 #define BOXBEEPERON  10
 
 #define CHECKBOXITEMS 11
-#define PIDITEMS 8
+#define PIDITEMS 10
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -94,9 +108,9 @@ typedef struct config_t {
     uint8_t mixerConfiguration;
     uint32_t enabledFeatures;
 
-    uint8_t P8[8];
-    uint8_t I8[8];
-    uint8_t D8[8];
+    uint8_t P8[PIDITEMS];
+    uint8_t I8[PIDITEMS];
+    uint8_t D8[PIDITEMS];
 
     uint8_t rcRate8;
     uint8_t rcExpo8;
@@ -165,8 +179,13 @@ typedef struct config_t {
     uint16_t gimbal_roll_max;               // gimbal roll servo max travel
     uint16_t gimbal_roll_mid;               // gimbal roll servo neutral value
 
-    // gps baud-rate
-    uint32_t gps_baudrate;    
+    // gps-related stuff
+    uint32_t gps_baudrate;
+    uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
+    uint8_t gps_lpf;                        // Low pass filter cut frequency for derivative calculation (default 20Hz)
+    uint8_t nav_controls_heading;           // copter faces toward the navigation point, maghold must be enabled for it
+    uint16_t nav_speed_min;                 // cm/sec
+    uint16_t nav_speed_max;                 // cm/sec
 
    // serial(uart1) baudrate
     uint32_t serial_baudrate;
@@ -212,18 +231,23 @@ extern int16_t rcData[8];
 extern uint8_t accMode;
 extern uint8_t magMode;
 extern uint8_t baroMode;
-extern int32_t GPS_latitude, GPS_longitude;
-extern int32_t GPS_latitude_home, GPS_longitude_home;
-extern int32_t GPS_latitude_hold, GPS_longitude_hold;
-extern uint8_t GPS_fix, GPS_fix_home;
-extern uint8_t GPS_numSat;
-extern uint16_t GPS_distanceToHome, GPS_distanceToHold;
-extern int16_t GPS_directionToHome, GPS_directionToHold;
-extern uint8_t GPS_update;
-extern uint8_t GPSModeHome;
-extern uint8_t GPSModeHold;
-extern uint16_t GPS_altitude;
-extern uint16_t GPS_speed;                      // altitude in 0.1m and speed in 0.1m/s - Added by Mis
+extern uint8_t  GPSModeHome;
+extern uint8_t  GPSModeHold;
+extern int32_t  GPS_coord[2];
+extern int32_t  GPS_home[2];
+extern int32_t  GPS_hold[2];
+extern uint8_t  GPS_fix , GPS_fix_home;
+extern uint8_t  GPS_numSat;
+extern uint16_t GPS_distanceToHome,GPS_distanceToHold;       // distance to home or hold point in meters
+extern int16_t  GPS_directionToHome,GPS_directionToHold;     // direction to home or hol point in degrees
+extern uint16_t GPS_altitude,GPS_speed;                      // altitude in 0.1m and speed in 0.1m/s
+extern uint8_t  GPS_update;                                  // it's a binary toogle to distinct a GPS position update
+extern int16_t  GPS_angle[2];                                // it's the angles that must be applied for GPS correction
+extern uint16_t GPS_ground_course;                           // degrees*10
+extern uint8_t  GPS_Present;                                 // Checksum from Gps serial
+extern uint8_t  GPS_Enable;
+extern int16_t	nav[2];
+extern int8_t   nav_mode;                                    // Navigation mode
 extern uint8_t vbat;
 extern int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
 extern int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
@@ -292,3 +316,5 @@ void cliProcess(void);
 // gps
 void gpsInit(uint32_t baudrate);
 void GPS_reset_home_position(void);
+void GPS_reset_nav(void);
+void GPS_set_next_wp(int32_t* lat, int32_t* lon);
