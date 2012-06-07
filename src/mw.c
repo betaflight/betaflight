@@ -144,7 +144,6 @@ void annexCode(void)
     tmp = (uint32_t) (tmp - cfg.mincheck) * 1000 / (2000 - cfg.mincheck);       // [MINCHECK;2000] -> [0;1000]
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
-    // rcCommand[THROTTLE] = cfg.minthrottle + (int32_t)(cfg.maxthrottle - cfg.minthrottle) * (rcData[THROTTLE] - cfg.mincheck) / (2000 - cfg.mincheck);
 
     if (headFreeMode) {
         float radDiff = (heading - headFreeModeHold) * M_PI / 180.0f;
@@ -247,7 +246,9 @@ void computeRC(void)
     }
 }
 
-#if 0
+// #define TIMINGDEBUG
+
+#ifdef TIMINGDEBUG
 uint32_t trollTime = 0;
 uint16_t cn = 0xffff, cx = 0x0;
 #endif
@@ -265,6 +266,10 @@ void loop(void)
     static int16_t errorAngleI[2] = { 0, 0 };
     static uint32_t rcTime = 0;
     static int16_t initialThrottleHold;
+
+#ifdef TIMINGDEBUG
+    trollTime = micros();
+#endif
 
     // this will return false if spektrum is disabled. shrug.
     if (spektrumFrameComplete())
@@ -600,14 +605,17 @@ void loop(void)
     writeServos();
     writeMotors();
 
-#if 0
-    while (micros() < trollTime + 2000);
-    LED0_TOGGLE;
+#ifdef TIMINGDEBUG
+    while (micros() < trollTime + 1750);
+    // LED0_TOGGLE;
     {
         if (cycleTime < cn)
             cn = cycleTime;
         if (cycleTime > cx)
             cx = cycleTime;
+            
+        debug1 = cn;
+        debug2 = cx;
     }
 #endif
 }

@@ -32,6 +32,7 @@ void imuInit(void)
 #endif
 }
 
+
 void computeIMU(void)
 {
     uint8_t axis;
@@ -41,6 +42,8 @@ void computeIMU(void)
     static uint32_t timeInterleave = 0;
     static int16_t gyroYawSmooth = 0;
 
+#define GYRO_INTERLEAVE
+
     if (sensors(SENSOR_ACC)) {
         ACC_getADC();
         getEstimatedAttitude();
@@ -49,9 +52,16 @@ void computeIMU(void)
     Gyro_getADC();
 
     for (axis = 0; axis < 3; axis++)
+#ifdef GYRO_INTERLEAVE
         gyroADCp[axis] = gyroADC[axis];
+#else
+        gyroData[axis] = gyroADC[axis];
+        if (!sensors(SENSOR_ACC))
+            accADC[axis] = 0;
+#endif
     timeInterleave = micros();
     annexCode();
+#ifdef GYRO_INTERLEAVE
     if ((micros() - timeInterleave) > 650) {
         annex650_overrun_count++;
     } else {
@@ -59,7 +69,6 @@ void computeIMU(void)
     }
 
     Gyro_getADC();
-
     for (axis = 0; axis < 3; axis++) {
         gyroADCinter[axis] = gyroADC[axis] + gyroADCp[axis];
         // empirical, we take a weighted value of the current and the previous values
@@ -68,6 +77,7 @@ void computeIMU(void)
         if (!sensors(SENSOR_ACC))
             accADC[axis] = 0;
     }
+#endif
 
     if (feature(FEATURE_GYRO_SMOOTHING)) {
         static uint8_t Smoothing[3] = { 0, 0, 0 };

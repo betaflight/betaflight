@@ -2,6 +2,7 @@
 
 // BMP085, Standard address 0x77
 static bool convDone = false;
+static uint16_t convOverrun = 0;
 
 #define BARO_OFF                 digitalLo(BARO_GPIO, BARO_PIN);
 #define BARO_ON                  digitalHi(BARO_GPIO, BARO_PIN);
@@ -144,7 +145,8 @@ int16_t bmp085_read_temperature(void)
 {
     convDone = false;
     bmp085_start_ut();
-    while (!convDone);
+    if (!convDone)
+        convOverrun++;
     return bmp085_get_temperature(bmp085_get_ut());
 }
 
@@ -152,7 +154,8 @@ int32_t bmp085_read_pressure(void)
 {
     convDone = false;
     bmp085_start_up();
-    while (!convDone);
+    if (!convDone)
+        convOverrun++;
     return bmp085_get_pressure(bmp085_get_up());
 }
 
@@ -236,10 +239,13 @@ uint16_t bmp085_get_ut(void)
     uint16_t timeout = 10000;
 
     // wait in case of cockup
+    if (!convDone)
+        convOverrun++;
+#if 0
     while (!convDone && timeout-- > 0) {
         __NOP();
     }
-
+#endif
     i2cRead(p_bmp085->dev_addr, BMP085_ADC_OUT_MSB_REG, 2, data);
     ut = (data[0] << 8) | data[1];
     return ut;
@@ -265,10 +271,13 @@ uint32_t bmp085_get_up(void)
     uint16_t timeout = 10000;
     
     // wait in case of cockup
+    if (!convDone)
+        convOverrun++;
+#if 0
     while (!convDone && timeout-- > 0) {
         __NOP();
     }
-
+#endif
     i2cRead(p_bmp085->dev_addr, BMP085_ADC_OUT_MSB_REG, 3, data);
     up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2]) >> (8 - p_bmp085->oversampling_setting);
 
