@@ -120,7 +120,7 @@ int main(void)
     }
 
     previousTime = micros();
-    calibratingG = 400;
+    calibratingG = 1000;
 
     // loopy
     while (1) {

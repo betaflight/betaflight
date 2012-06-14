@@ -104,7 +104,7 @@ retry:
     // calculate magnetic declination
     deg = cfg.mag_declination / 100;
     min = cfg.mag_declination % 100;
-    magneticDeclination = deg + ((float)min * (1.0f / 60.0f));
+    magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
 }
 #endif
 
@@ -278,15 +278,16 @@ static void GYRO_Common(void)
     if (calibratingG > 0) {
         for (axis = 0; axis < 3; axis++) {
             // Reset g[axis] at start of calibration
-            if (calibratingG == 400)
+            if (calibratingG == 1000)
                 g[axis] = 0;
-            // Sum up 400 readings
+            // Sum up 1000 readings
             g[axis] += gyroADC[axis];
+            // g[axis] += (1000 - calibratingG) >> 1;
             // Clear global variables for next reading
             gyroADC[axis] = 0;
             gyroZero[axis] = 0;
             if (calibratingG == 1) {
-                gyroZero[axis] = g[axis] / 400;
+                gyroZero[axis] = g[axis] / 1000;
                 blinkLED(10, 15, 1);
             }
         }
@@ -320,9 +321,10 @@ static void Mag_getRawADC(void)
 
 void Mag_init(void)
 {
+    uint8_t calibration_gain = 0x60; // HMC5883
+#if 1
     uint8_t numAttempts = 0, good_count = 0;
     bool success = false;
-    uint8_t calibration_gain = 0x60; // HMC5883
     uint16_t expected_x = 766;       // default values for HMC5883
     uint16_t expected_yz = 713;
     float gain_multiple = 660.0f / 1090.0f; // adjustment for runtime vs calibration gain
@@ -368,13 +370,28 @@ void Mag_init(void)
         magCal[2] = 1.0f;
     }
 
-#if 0
+    hmc5883lFinishCal();
+#else
+    // initial calibration
+    hmc5883lInit();
+
+    magCal[0] = 0;
+    magCal[1] = 0;
+    magCal[2] = 0;
+
+    // enter calibration mode
+    hmc5883lCal(calibration_gain);
+    delay(100);
+    Mag_getRawADC();
+    delay(10);
+
     magCal[ROLL] = 1160.0f / abs(magADC[ROLL]);
     magCal[PITCH] = 1160.0f / abs(magADC[PITCH]);
     magCal[YAW] = 1080.0f / abs(magADC[YAW]);
-#endif
 
     hmc5883lFinishCal();
+#endif
+
     magInit = 1;
 }
 
@@ -424,7 +441,7 @@ void Mag_getADC(void)
         } else {
             tCal = 0;
             for (axis = 0; axis < 3; axis++)
-                cfg.magZero[axis] = ((magZeroTempMax[axis] - magZeroTempMin[axis]) / 2 - magZeroTempMax[axis]); // Calculate offsets
+                cfg.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2; // Calculate offsets
             writeParams(1);
         }
     }

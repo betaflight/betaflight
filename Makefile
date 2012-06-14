@@ -10,6 +10,8 @@ TCHAIN=
 CC = $(TCHAIN)arm-none-eabi-gcc
 OPT = -Os
 OBJCOPY = $(TCHAIN)arm-none-eabi-objcopy
+# enable for FYxxQ builds
+EXTRA= #-DFY90Q
 
 #Atollic TrueStudio
 #CC = "C:\Program Files (x86)\Atollic\TrueSTUDIO for STMicroelectronics STM32 Lite 2.3.0\ARMTools\bin\arm-atollic-eabi-gcc"
@@ -32,7 +34,7 @@ LINK_SCRIPT=stm32_flash.ld
 # Assembler, Compiler and Linker flags and linker script settings
 LINKER_FLAGS=-lm -mthumb -mcpu=cortex-m3 -Wl,--gc-sections -T$(LINK_SCRIPT) -static -Wl,-cref "-Wl,-Map=$(BIN_DIR)/baseflight.map" -Wl,--defsym=malloc_getpagesize_P=0x1000
 ASSEMBLER_FLAGS=-c $(OPT) -mcpu=cortex-m3 -mthumb -x assembler-with-cpp -Isrc -Ilib/STM32F10x_StdPeriph_Driver/inc -Ilib/CMSIS/CM3/CoreSupport -Ilib/CMSIS/CM3/DeviceSupport/ST/STM32F10x
-COMPILER_FLAGS=-c -mcpu=cortex-m3 $(OPT) -Wall -ffunction-sections -fdata-sections -mthumb -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER -Isrc -Ilib/STM32F10x_StdPeriph_Driver/inc -Ilib/CMSIS/CM3/CoreSupport -Ilib/CMSIS/CM3/DeviceSupport/ST/STM32F10x
+COMPILER_FLAGS=-c -mcpu=cortex-m3 $(OPT) -Wall -ffunction-sections -fdata-sections -mthumb $(EXTRA) -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER -Isrc -Ilib/STM32F10x_StdPeriph_Driver/inc -Ilib/CMSIS/CM3/CoreSupport -Ilib/CMSIS/CM3/DeviceSupport/ST/STM32F10x
 
 # Define sources and objects
 #

@@ -51,7 +51,7 @@ void hmc5883lInit(void)
 void hmc5883lCal(uint8_t calibration_gain)
 {
     // force positiveBias (compass should return 715 for all channels)
-    i2cWrite(MAG_ADDRESS, ConfigRegA, PositiveBiasConfig);
+    i2cWrite(MAG_ADDRESS, ConfigRegA, SampleAveraging_8 << 5 | DataOutputRate_75HZ << 2 | PositiveBiasConfig);
     delay(50);
     // set gains for calibration
     i2cWrite(MAG_ADDRESS, ConfigRegB, calibration_gain);

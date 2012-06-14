@@ -305,7 +305,7 @@ void loop(void)
             rcDelayCommand++;
             if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck && armed == 0) {
                 if (rcDelayCommand == 20) {
-                    calibratingG = 400;
+                    calibratingG = 1000;
                     if (feature(FEATURE_GPS))
                         GPS_reset_home_position();
                 }
