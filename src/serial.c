@@ -318,6 +318,7 @@ void serialCom(void)
                         break;
                     case MSP_ACC_CALIBRATION:
                         calibratingA = 400;
+                        calibratingG = 1000; // hit gyro too
                         break;
                     case MSP_MAG_CALIBRATION:
                         calibratingM = 1;

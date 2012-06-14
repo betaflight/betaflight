@@ -272,6 +272,7 @@ void Baro_update(void)
 
 static void GYRO_Common(void)
 {
+    static int16_t previousGyroADC[3] = { 0, 0, 0 };
     static int32_t g[3];
     uint8_t axis;
 
@@ -292,6 +293,12 @@ static void GYRO_Common(void)
             }
         }
         calibratingG--;
+    }
+    for (axis = 0; axis < 3; axis++) {
+        gyroADC[axis] -= gyroZero[axis];
+        //anti gyro glitch, limit the variation between two consecutive readings
+        gyroADC[axis] = constrain(gyroADC[axis], previousGyroADC[axis] - 800, previousGyroADC[axis] + 800);
+        previousGyroADC[axis] = gyroADC[axis];
     }
 }
 

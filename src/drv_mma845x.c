@@ -5,6 +5,7 @@
 #define MMA8452_ADDRESS     0x1C
 
 #define MMA8452_DEVICE_SIGNATURE    0x2A
+#define MMA8451_DEVICE_SIGNATURE    0x1A
 
 #define MMA8452_STATUS              0x00
 #define MMA8452_OUT_X_MSB           0x01
@@ -46,6 +47,7 @@
 #define MMA8452_CTRL_REG1_ACTIVE        0x01
 
 extern uint16_t acc_1G;
+static uint8_t device_id;
 
 static void mma8452Init(void);
 static void mma8452Read(int16_t *accelData);
@@ -57,12 +59,13 @@ bool mma8452Detect(sensor_t *acc)
     uint8_t sig = 0;
 
     ack = i2cRead(MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
-    if (!ack || sig != MMA8452_DEVICE_SIGNATURE)
+    if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
         return false;
 
     acc->init = mma8452Init;
     acc->read = mma8452Read;
     acc->align = mma8452Align;
+    device_id = sig;
     return true;
 }
 

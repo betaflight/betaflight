@@ -56,9 +56,9 @@ void computeIMU(void)
         gyroADCp[axis] = gyroADC[axis];
 #else
         gyroData[axis] = gyroADC[axis];
+#endif
         if (!sensors(SENSOR_ACC))
             accADC[axis] = 0;
-#endif
     timeInterleave = micros();
     annexCode();
 #ifdef GYRO_INTERLEAVE
