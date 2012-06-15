@@ -505,8 +505,10 @@ void loop(void)
             break;
         case 3:
 #ifdef SONAR
-            Sonar_update();
-            debug3 = sonarAlt;
+            if (sensors(SENSOR_SONAR)) {
+                Sonar_update();
+                debug3 = sonarAlt;
+            }
 #endif
             break;
         default:

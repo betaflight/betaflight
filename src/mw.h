@@ -276,6 +276,8 @@ void Baro_update(void);
 void Gyro_getADC(void);
 void Mag_init(void);
 void Mag_getADC(void);
+void Sonar_init(void);
+void Sonar_update(void);
 
 // Output
 void mixerInit(void);

@@ -45,7 +45,8 @@ typedef enum {
     FEATURE_GYRO_SMOOTHING = 1 << 7,
     FEATURE_LED_RING = 1 << 8,
     FEATURE_GPS = 1 << 9,
-    FEATURE_FAILSAFE = 1 << 10
+    FEATURE_FAILSAFE = 1 << 10,
+    FEATURE_SONAR = 1 << 11,
 } AvailableFeatures;
 
 typedef void (* sensorInitFuncPtr)(void);                   // sensor init prototype
@@ -92,6 +93,7 @@ typedef struct sensor_t
 #define MAG
 #define BARO
 #define LEDRING
+// #define SONAR
 
 #endif
 
@@ -136,5 +138,6 @@ typedef struct sensor_t
 #include "drv_mpu6050.h"
 #include "drv_pwm.h"
 #include "drv_uart.h"
+#include "drv_hcsr04.h"
 
 #endif

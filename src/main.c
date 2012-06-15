@@ -115,8 +115,15 @@ int main(void)
     } else {
         // spektrum and GPS are mutually exclusive
         // Optional GPS - available only when using PPM, otherwise required pins won't be usable
-        if (feature(FEATURE_PPM) && feature(FEATURE_GPS))
-           gpsInit(cfg.gps_baudrate);
+        if (feature(FEATURE_PPM))
+        {
+            if (feature(FEATURE_GPS))
+                gpsInit(cfg.gps_baudrate);
+#ifdef SONAR
+            if (feature(FEATURE_SONAR))
+                Sonar_init();
+#endif
+        }
     }
 
     previousTime = micros();
