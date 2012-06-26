@@ -604,6 +604,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_mma845x.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_hcsr04.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_hcsr04.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1368,6 +1373,11 @@
               <FileName>drv_mma845x.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_mma845x.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_hcsr04.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_hcsr04.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2313,6 +2323,11 @@
               <FileName>drv_mma845x.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_mma845x.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_hcsr04.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_hcsr04.c</FilePath>
             </File>
           </Files>
         </Group>

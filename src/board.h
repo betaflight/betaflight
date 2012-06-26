@@ -93,7 +93,7 @@ typedef struct sensor_t
 #define MAG
 #define BARO
 #define LEDRING
-// #define SONAR
+#define SONAR
 
 #endif
 

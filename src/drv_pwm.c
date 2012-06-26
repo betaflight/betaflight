@@ -85,7 +85,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
         diff = ((0xFFFF - last) + now);
     }
 
-    if (diff > 4000) {
+    if (diff > 2700) { // Per http://www.rcgroups.com/forums/showpost.php?p=21996147&postcount=3960 "So, if you use 2.5ms or higher as being the reset for the PPM stream start, you will be fine. I use 2.7ms just to be safe."
         chan = 0;
     } else {
         if (diff > 750 && diff < 2250 && chan < 8) {   // 750 to 2250 ms is our 'valid' channel range
