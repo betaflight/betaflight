@@ -212,12 +212,12 @@ void GPS_NewData(uint16_t c)
             GPS_update = 0;
         else
             GPS_update = 1;
-        if (GPS_fix == 1 && GPS_numSat >= 5) {
-            if (armed == 0) {
-                GPS_fix_home = 0;
+        if (f.GPS_FIX && GPS_numSat >= 5) {
+            if (!f.ARMED) {
+                f.GPS_FIX_HOME = 0;
             }
-            if (GPS_fix_home == 0 && armed) {
-                GPS_fix_home = 1;
+            if (!f.GPS_FIX_HOME && f.ARMED) {
+                f.GPS_FIX_HOME = 1;
                 GPS_home[LAT] = GPS_coord[LAT];
                 GPS_home[LON] = GPS_coord[LON];
                 GPS_calc_longitude_scaling(GPS_coord[LAT]); // need an initial value for distance and bearing calc
@@ -259,7 +259,7 @@ void GPS_NewData(uint16_t c)
             //calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
             GPS_calc_velocity();
 
-            if (GPSModeHold == 1 || GPSModeHome == 1) { // ok we are navigating
+            if (f.GPS_HOLD_MODE || f.GPS_HOME_MODE) { // ok we are navigating
                 // do gps nav calculations here, these are common for nav and poshold
                 GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_WP[LAT], &GPS_WP[LON], &wp_distance, &target_bearing);
                 GPS_calc_location_error(&GPS_WP[LAT], &GPS_WP[LON], &GPS_coord[LAT], &GPS_coord[LON]);
@@ -691,7 +691,7 @@ static bool GPS_newFrame(char c)
             } else if (param == 5 && string[0] == 'W')
                 GPS_coord[LON] = -GPS_coord[LON];
             else if (param == 6) {
-                GPS_fix = string[0] > '0';
+                f.GPS_FIX = string[0] > '0';
             } else if (param == 7) {
                 GPS_numSat = grab_fields(string, 0);
             } else if (param == 9) {

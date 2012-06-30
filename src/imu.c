@@ -17,7 +17,6 @@ float magneticDeclination = 0.0f; // calculated at startup from config
 int16_t gyroData[3] = { 0, 0, 0 };
 int16_t gyroZero[3] = { 0, 0, 0 };
 int16_t angle[2] = { 0, 0 };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-int8_t smallAngle25 = 1;
 
 static void getEstimatedAttitude(void);
 
@@ -222,14 +221,14 @@ static void getEstimatedAttitude(void)
         rotateV(&EstM.V, deltaGyroAngle);
 
     if (abs(accSmooth[ROLL]) < acc_25deg && abs(accSmooth[PITCH]) < acc_25deg && accSmooth[YAW] > 0)
-        smallAngle25 = 1;
+        f.SMALL_ANGLES_25 = 1;
     else
-        smallAngle25 = 0;
+        f.SMALL_ANGLES_25 = 0;
 
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.4G or <0.6G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
     // To do that, we just skip filter, as EstV already rotated by Gyro
-    if ((36 < accMag && accMag < 196) || smallAngle25) {
+    if ((36 < accMag && accMag < 196) || f.SMALL_ANGLES_25) {
         for (axis = 0; axis < 3; axis++)
             EstG.A[axis] = (EstG.A[axis] * (float)cfg.gyro_cmpf_factor + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
     }

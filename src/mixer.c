@@ -218,7 +218,7 @@ void mixTable(void)
 
         case MULTITYPE_FLYING_WING:
             motor[0] = rcCommand[THROTTLE];
-            if (passThruMode) { // do not use sensors for correction, simple 2 channel mixing
+            if (f.PASSTHRU_MODE) { // do not use sensors for correction, simple 2 channel mixing
                 servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH] - cfg.midrc) + ROLL_DIRECTION_L * (rcData[ROLL] - cfg.midrc);
                 servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH] - cfg.midrc) + ROLL_DIRECTION_R * (rcData[ROLL] - cfg.midrc);
             } else {                    // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
@@ -289,7 +289,7 @@ void mixTable(void)
             else
                 motor[i] = cfg.mincommand;
         }
-        if (armed == 0)
+        if (!f.ARMED)
             motor[i] = cfg.mincommand;
     }
 }

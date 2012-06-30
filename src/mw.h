@@ -94,9 +94,15 @@ typedef enum GimbalFlags {
 #define BOXPASSTHRU  8
 #define BOXHEADFREE  9
 #define BOXBEEPERON  10
+/* we want maximum illumination */
+#define BOXLEDMAX    11
+/* enable landing lights at any altitude */
+#define BOXLLIGHTS   12
+/* acquire heading for HEADFREE mode */
+#define BOXHEADADJ   13
 
-#define CHECKBOXITEMS 11
 #define PIDITEMS 10
+#define CHECKBOXITEMS 14
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -191,6 +197,24 @@ typedef struct config_t {
     uint32_t serial_baudrate;
 } config_t;
 
+typedef struct flags_t {
+    uint8_t OK_TO_ARM :1;
+    uint8_t ARMED :1;
+    uint8_t I2C_INIT_DONE :1; // For i2c gps we have to now when i2c init is done, so we can update parameters to the i2cgps from eeprom (at startup it is done in setup())
+    uint8_t ACC_CALIBRATED :1;
+    uint8_t ACC_MODE :1;
+    uint8_t MAG_MODE :1;
+    uint8_t BARO_MODE :1;
+    uint8_t GPS_HOME_MODE :1;
+    uint8_t GPS_HOLD_MODE :1;
+    uint8_t HEADFREE_MODE :1;
+    uint8_t PASSTHRU_MODE :1;
+    uint8_t GPS_FIX :1;
+    uint8_t GPS_FIX_HOME :1;
+    uint8_t SMALL_ANGLES_25 :1;
+    uint8_t CALIBRATE_MAG :1;
+} flags_t;
+
 extern int16_t gyroZero[3];
 extern int16_t gyroData[3];
 extern int16_t angle[2];
@@ -199,16 +223,13 @@ extern int16_t rcCommand[4];
 extern uint8_t rcOptions[CHECKBOXITEMS];
 extern int16_t failsafeCnt;
 
-extern int16_t debug1, debug2, debug3, debug4;
-extern uint8_t armed;
+extern int16_t debug[4];
 extern int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
 extern uint16_t acc_1G;
 extern uint32_t currentTime;
 extern uint32_t previousTime;
 extern uint16_t cycleTime;
-extern uint8_t calibratedACC;
 extern uint16_t calibratingA;
-extern uint8_t calibratingM;
 extern uint16_t calibratingG;
 extern int16_t heading;
 extern int16_t annex650_overrun_count;
@@ -219,24 +240,21 @@ extern int32_t EstAlt;
 extern int32_t  AltHold;
 extern int16_t  errorAltitudeI;
 extern int16_t  BaroPID;
-extern uint8_t headFreeMode;
 extern int16_t headFreeModeHold;
-extern uint8_t passThruMode;
-extern int8_t smallAngle25;
 extern int16_t zVelocity;
 extern int16_t heading, magHold;
 extern int16_t motor[8];
 extern int16_t servo[8];
 extern int16_t rcData[8];
-extern uint8_t accMode;
-extern uint8_t magMode;
-extern uint8_t baroMode;
-extern uint8_t  GPSModeHome;
-extern uint8_t  GPSModeHold;
+extern uint8_t vbat;
+extern int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
+extern int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
+extern uint8_t toggleBeep;
+
+// GPS stuff
 extern int32_t  GPS_coord[2];
 extern int32_t  GPS_home[2];
 extern int32_t  GPS_hold[2];
-extern uint8_t  GPS_fix , GPS_fix_home;
 extern uint8_t  GPS_numSat;
 extern uint16_t GPS_distanceToHome,GPS_distanceToHold;       // distance to home or hold point in meters
 extern int16_t  GPS_directionToHome,GPS_directionToHold;     // direction to home or hol point in degrees
@@ -246,14 +264,11 @@ extern int16_t  GPS_angle[2];                                // it's the angles 
 extern uint16_t GPS_ground_course;                           // degrees*10
 extern uint8_t  GPS_Present;                                 // Checksum from Gps serial
 extern uint8_t  GPS_Enable;
-extern int16_t	nav[2];
+extern int16_t  nav[2];
 extern int8_t   nav_mode;                                    // Navigation mode
-extern uint8_t vbat;
-extern int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
-extern int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
-extern uint8_t toggleBeep;
 
 extern config_t cfg;
+extern flags_t f;
 extern sensor_t acc;
 extern sensor_t gyro;
 

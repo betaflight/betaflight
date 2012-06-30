@@ -25,12 +25,12 @@ void buzzer(uint8_t warn_vbat)
     }
     //===================== Beeps for failsafe =====================
     if (feature(FEATURE_FAILSAFE)) {
-        if (failsafeCnt > (5 * cfg.failsafe_delay) && armed == 1) {
+        if (failsafeCnt > (5 * cfg.failsafe_delay) && f.ARMED) {
             warn_failsafe = 1;      //set failsafe warning level to 1 while landing
             if (failsafeCnt > 5 * (cfg.failsafe_delay + cfg.failsafe_off_delay))
                 warn_failsafe = 2;  //start "find me" signal after landing   
         }
-        if (failsafeCnt > (5 * cfg.failsafe_delay) && armed == 0)
+        if (failsafeCnt > (5 * cfg.failsafe_delay) && !f.ARMED)
             warn_failsafe = 2;      // tx turned off while motors are off: start "find me" signal
         if (failsafeCnt == 0)
             warn_failsafe = 0;      // turn off alarm if TX is okay
@@ -38,7 +38,7 @@ void buzzer(uint8_t warn_vbat)
 
     //===================== GPS fix notification handling =====================
     if (sensors(SENSOR_GPS)) {
-        if ((GPSModeHome || GPSModeHold) && !GPS_fix) {     //if no fix and gps funtion is activated: do warning beeps.
+        if ((f.GPS_HOME_MODE || f.GPS_HOLD_MODE) && !f.GPS_FIX) {     //if no fix and gps funtion is activated: do warning beeps.
             warn_noGPSfix = 1;
         } else {
             warn_noGPSfix = 0;

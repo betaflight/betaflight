@@ -1,10 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
-uint8_t calibratedACC = 0;
 uint16_t calibratingA = 0;       // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 uint16_t calibratingG = 0;
-uint8_t calibratingM = 0;
 uint16_t acc_1G = 256;         // this is the 1G measured acceleration.
 int16_t heading, magHold;
 
@@ -420,14 +418,14 @@ void Mag_getADC(void)
     magADC[PITCH] = magADC[PITCH] * magCal[PITCH];
     magADC[YAW]   = magADC[YAW]   * magCal[YAW];
 
-    if (calibratingM == 1) {
+    if (f.CALIBRATE_MAG) {
         tCal = t;
         for (axis = 0; axis < 3; axis++) {
             cfg.magZero[axis] = 0;
             magZeroTempMin[axis] = magADC[axis];
             magZeroTempMax[axis] = magADC[axis];
         }
-        calibratingM = 0;
+        f.CALIBRATE_MAG = 0;
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done

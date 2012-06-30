@@ -1,22 +1,18 @@
 #include "board.h"
 #include "mw.h"
 
-// March  2012     V2.0
+// June  2012     V2-dev
 
-int16_t debug1, debug2, debug3, debug4;
+flags_t f;
+int16_t debug[4];
 uint8_t buzzerState = 0;
 uint8_t toggleBeep = 0;
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
-uint8_t GPSModeHome = 0;        // if GPS RTH is activated
-uint8_t GPSModeHold = 0;        // if GPS PH is activated
-uint8_t headFreeMode = 0;       // if head free mode is a activated
-uint8_t passThruMode = 0;       // if passthrough mode is activated
 int16_t headFreeModeHold;
 
 int16_t annex650_overrun_count = 0;
-uint8_t armed = 0;
 uint8_t vbat;                   // battery voltage in 0.1V steps
 
 int16_t failsafeCnt = 0;
@@ -29,10 +25,6 @@ rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) o
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
 uint8_t rcOptions[CHECKBOXITEMS];
-uint8_t okToArm = 0;
-uint8_t accMode = 0;            // if level mode is a activated
-uint8_t magMode = 0;            // if compass heading hold is a activated
-uint8_t baroMode = 0;           // if altitude hold is activated
 
 int16_t axisPID[3];
 
@@ -42,7 +34,6 @@ int16_t axisPID[3];
 int32_t GPS_coord[2];
 int32_t GPS_home[2];
 int32_t GPS_hold[2];
-uint8_t GPS_fix, GPS_fix_home = 0;
 uint8_t GPS_numSat;
 uint16_t GPS_distanceToHome, GPS_distanceToHold;        // distance to home or hold point in meters
 int16_t GPS_directionToHome, GPS_directionToHold;       // direction to home or hol point in degrees
@@ -145,7 +136,7 @@ void annexCode(void)
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
-    if (headFreeMode) {
+    if(f.HEADFREE_MODE) {
         float radDiff = (heading - headFreeModeHold) * M_PI / 180.0f;
         float cosDiff = cosf(radDiff);
         float sinDiff = sinf(radDiff);
@@ -176,10 +167,10 @@ void annexCode(void)
     if ((calibratingA > 0 && sensors(SENSOR_ACC)) || (calibratingG > 0)) {      // Calibration phasis
         LED0_TOGGLE;
     } else {
-        if (calibratedACC == 1) {
+        if (f.ACC_CALIBRATED) {
             LED0_OFF;
         }
-        if (armed) {
+        if (f.ARMED) {
             LED0_ON;
         }
     }
@@ -195,12 +186,13 @@ void annexCode(void)
 #endif
 
     if (currentTime > calibratedAccTime) {
-        if (smallAngle25 == 0) {
-            calibratedACC = 0;  //the multi uses ACC and is not calibrated or is too much inclinated
+        if (!f.SMALL_ANGLES_25) {
+            f.ACC_CALIBRATED = 0; // the multi uses ACC and is not calibrated or is too much inclinated
             LED0_TOGGLE;
             calibratedAccTime = currentTime + 500000;
-        } else
-            calibratedACC = 1;
+        } else {
+            f.ACC_CALIBRATED = 1;
+        }
     }
 
     serialCom();
@@ -283,15 +275,19 @@ void loop(void)
 
         // Failsafe routine
         if (feature(FEATURE_FAILSAFE)) {
-            if (failsafeCnt > (5 * cfg.failsafe_delay) && armed == 1) { // Stabilize, and set Throttle to specified level
+            if (failsafeCnt > (5 * cfg.failsafe_delay) && f.ARMED) { // Stabilize, and set Throttle to specified level
                 for (i = 0; i < 3; i++)
                     rcData[i] = cfg.midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
                 rcData[THROTTLE] = cfg.failsafe_throttle;
                 if (failsafeCnt > 5 * (cfg.failsafe_delay + cfg.failsafe_off_delay)) {  // Turn OFF motors after specified Time (in 0.1sec)
-                    armed = 0;  // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
-                    okToArm = 0;        // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
+                    f.ARMED = 0;  // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
+                    f.OK_TO_ARM = 0;        // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
                 }
                 failsafeEvents++;
+            }
+            if (failsafeCnt > (5 * cfg.failsafe_delay) && !f.ARMED) {  // Turn off "Ok To arm to prevent the motors from spinning after repowering the RX with low throttle and aux to arm
+                f.ARMED = 0;        // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
+                f.OK_TO_ARM = 0;    // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
             }
             failsafeCnt++;
         }
@@ -303,13 +299,13 @@ void loop(void)
             errorAngleI[ROLL] = 0;
             errorAngleI[PITCH] = 0;
             rcDelayCommand++;
-            if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck && armed == 0) {
+            if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck && !f.ARMED) {
                 if (rcDelayCommand == 20) {
                     calibratingG = 1000;
                     if (feature(FEATURE_GPS))
                         GPS_reset_home_position();
                 }
-            } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (armed == 0 && rcData[YAW] < cfg.mincheck && rcData[PITCH] > cfg.maxcheck && rcData[ROLL] > cfg.maxcheck)) {
+            } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (!f.ARMED && rcData[YAW] < cfg.mincheck && rcData[PITCH] > cfg.maxcheck && rcData[ROLL] > cfg.maxcheck)) {
                 if (rcDelayCommand == 20) {
                     if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
                         AccInflightCalibrationMeasurementDone = 0;
@@ -324,30 +320,31 @@ void loop(void)
                     }
                 }
             } else if (cfg.activate[BOXARM] > 0) {
-                if (rcOptions[BOXARM] && okToArm) {
-                    armed = 1;
+                if (rcOptions[BOXARM] && f.OK_TO_ARM) {
+                    // TODO: feature(FEATURE_FAILSAFE) && failsafeCnt == 0
+                    f.ARMED = 1;
                     headFreeModeHold = heading;
-                } else if (armed)
-                    armed = 0;
+                } else if (f.ARMED)
+                    f.ARMED = 0;
                 rcDelayCommand = 0;
-            } else if ((rcData[YAW] < cfg.mincheck || (cfg.retarded_arm == 1 && rcData[ROLL] < cfg.mincheck)) && armed == 1) {
+            } else if ((rcData[YAW] < cfg.mincheck || (cfg.retarded_arm == 1 && rcData[ROLL] < cfg.mincheck)) && f.ARMED) {
                 if (rcDelayCommand == 20)
-                    armed = 0;  // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
-            } else if ((rcData[YAW] > cfg.maxcheck || (rcData[ROLL] > cfg.maxcheck && cfg.retarded_arm == 1)) && rcData[PITCH] < cfg.maxcheck && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
+                    f.ARMED = 0;  // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
+            } else if ((rcData[YAW] > cfg.maxcheck || (rcData[ROLL] > cfg.maxcheck && cfg.retarded_arm == 1)) && rcData[PITCH] < cfg.maxcheck && !f.ARMED && calibratingG == 0 && f.ACC_CALIBRATED) {
                 if (rcDelayCommand == 20) {
-                    armed = 1;
+                    f.ARMED = 1;
                     headFreeModeHold = heading;
                 }
             } else
                 rcDelayCommand = 0;
-        } else if (rcData[THROTTLE] > cfg.maxcheck && armed == 0) {
+        } else if (rcData[THROTTLE] > cfg.maxcheck && !f.ARMED) {
             if (rcData[YAW] < cfg.mincheck && rcData[PITCH] < cfg.mincheck) {   // throttle=max, yaw=left, pitch=min
                 if (rcDelayCommand == 20)
                     calibratingA = 400;
                 rcDelayCommand++;
             } else if (rcData[YAW] > cfg.maxcheck && rcData[PITCH] < cfg.mincheck) {    // throttle=max, yaw=right, pitch=min
                 if (rcDelayCommand == 20)
-                    calibratingM = 1;   // MAG calibration request
+                    f.CALIBRATE_MAG = 1;   // MAG calibration request
                 rcDelayCommand++;
             } else if (rcData[PITCH] > cfg.maxcheck) {
                 cfg.accTrim[PITCH] += 2;
@@ -383,7 +380,7 @@ void loop(void)
         }
 
         if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-            if (AccInflightCalibrationArmed && armed == 1 && rcData[THROTTLE] > cfg.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+            if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > cfg.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
                 InflightcalibratingA = 50;
                 AccInflightCalibrationArmed = 0;
             }
@@ -392,7 +389,7 @@ void loop(void)
                     AccInflightCalibrationArmed = 1;
                     InflightcalibratingA = 50;
                 }
-            } else if (AccInflightCalibrationMeasurementDone && armed == 0) {
+            } else if (AccInflightCalibrationMeasurementDone && !f.ARMED) {
                 AccInflightCalibrationArmed = 0;
                 AccInflightCalibrationMeasurementDone = 0;
                 AccInflightCalibrationSavetoEEProm = 1;
@@ -407,17 +404,17 @@ void loop(void)
         // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
         if ((rcOptions[BOXACC] || (failsafeCnt > 5 * cfg.failsafe_delay)) && (sensors(SENSOR_ACC))) {
             // bumpless transfer to Level mode
-            if (!accMode) {
+            if (!f.ACC_MODE) {
                 errorAngleI[ROLL] = 0;
                 errorAngleI[PITCH] = 0;
-                accMode = 1;
+                f.ACC_MODE = 1;
             }
         } else
-            accMode = 0;        // failsave support
+            f.ACC_MODE = 0;        // failsave support
 
         if ((rcOptions[BOXARM]) == 0)
-            okToArm = 1;
-        if (accMode == 1) {
+            f.OK_TO_ARM = 1;
+        if (f.ACC_MODE) {
             LED1_ON;
         } else {
             LED1_OFF;
@@ -426,62 +423,63 @@ void loop(void)
 #ifdef BARO
         if (sensors(SENSOR_BARO)) {
             if (rcOptions[BOXBARO]) {
-                if (baroMode == 0) {
-                    baroMode = 1;
+                if (!f.BARO_MODE) {
+                    f.BARO_MODE = 1;
                     AltHold = EstAlt;
                     initialThrottleHold = rcCommand[THROTTLE];
                     errorAltitudeI = 0;
                     BaroPID = 0;
                 }
             } else
-                baroMode = 0;
+                f.BARO_MODE = 0;
         }
 #endif
 
 #ifdef  MAG
         if (sensors(SENSOR_MAG)) {
             if (rcOptions[BOXMAG]) {
-                if (magMode == 0) {
-                    magMode = 1;
+                if (!f.MAG_MODE) {
+                    f.MAG_MODE = 1;
                     magHold = heading;
                 }
             } else
-                magMode = 0;
+                f.MAG_MODE = 0;
             if (rcOptions[BOXHEADFREE]) {
-                if (headFreeMode == 0) {
-                    headFreeMode = 1;
+                if (!f.HEADFREE_MODE) {
+                    f.HEADFREE_MODE = 1;
                 }
             } else
-                headFreeMode = 0;
+                f.HEADFREE_MODE = 0;
         }
 #endif
 
         if (sensors(SENSOR_GPS)) {
             if (rcOptions[BOXGPSHOME]) {
-                if (GPSModeHome == 0) {
-                    GPSModeHome = 1;
+                if (!f.GPS_HOME_MODE) {
+                    f.GPS_HOME_MODE = 1;
                     GPS_set_next_wp(&GPS_home[LAT], &GPS_home[LON]);
                     nav_mode = NAV_MODE_WP;
                 }
-            } else
-                GPSModeHome = 0;
+            } else {
+                f.GPS_HOME_MODE = 0;
+            }
             if (rcOptions[BOXGPSHOLD]) {
-                if (GPSModeHold == 0) {
-                    GPSModeHold = 1;
+                if (!f.GPS_HOLD_MODE) {
+                    f.GPS_HOLD_MODE = 1;
                     GPS_hold[LAT] = GPS_coord[LAT];
                     GPS_hold[LON] = GPS_coord[LON];
                     GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
                     nav_mode = NAV_MODE_POSHOLD;
                 }
             } else {
-                GPSModeHold = 0;
+                f.GPS_HOLD_MODE = 0;
             }
         }
 
         if (rcOptions[BOXPASSTHRU]) {
-            passThruMode = 1;
+            f.PASSTHRU_MODE = 1;
         } else
-            passThruMode = 0;
+            f.PASSTHRU_MODE = 0;
     } else {                    // not in rc loop
         static int8_t taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
         switch (taskOrder++ % 4) {
@@ -507,7 +505,7 @@ void loop(void)
 #ifdef SONAR
             if (sensors(SENSOR_SONAR)) {
                 Sonar_update();
-                debug3 = sonarAlt;
+                debug[2] = sonarAlt;
             }
 #endif
             break;
@@ -529,13 +527,13 @@ void loop(void)
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-        if (abs(rcCommand[YAW]) < 70 && magMode) {
+        if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
             int16_t dif = heading - magHold;
             if (dif <= -180)
                 dif += 360;
             if (dif >= +180)
                 dif -= 360;
-            if (smallAngle25)
+            if (f.SMALL_ANGLES_25)
                 rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;    // 18 deg
         } else
             magHold = heading;
@@ -544,9 +542,9 @@ void loop(void)
 
 #ifdef BARO
     if (sensors(SENSOR_BARO)) {
-        if (baroMode) {
+        if (f.BARO_MODE) {
             if (abs(rcCommand[THROTTLE] - initialThrottleHold) > 20) {
-                baroMode = 0;   // so that a new althold reference is defined
+                f.BARO_MODE = 0;   // so that a new althold reference is defined
             }
             rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
         }
@@ -555,7 +553,7 @@ void loop(void)
 
     if (sensors(SENSOR_GPS)) {
         // Check that we really need to navigate ?
-        if ((GPSModeHome == 0 && GPSModeHold == 0) || (GPS_fix_home == 0)) {
+        if ((!f.GPS_HOME_MODE && !f.GPS_HOLD_MODE) || (!f.GPS_FIX_HOME)) {
             // If not. Reset nav loops and all nav related parameters
             GPS_reset_nav();
         } else {
@@ -567,7 +565,7 @@ void loop(void)
     }
     // **** PITCH & ROLL & YAW PID ****    
     for (axis = 0; axis < 3; axis++) {
-        if (accMode == 1 && axis < 2) { // LEVEL MODE
+        if (f.ACC_MODE == 1 && axis < 2) { // LEVEL MODE
             // 50 degrees max inclination
             errorAngle = constrain(2 * rcCommand[axis] - GPS_angle[axis], -500, +500) - angle[axis] + cfg.accTrim[axis];        //16 bits is ok here
 #ifdef LEVEL_PDF
