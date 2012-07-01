@@ -47,6 +47,7 @@ typedef enum {
     FEATURE_GPS = 1 << 9,
     FEATURE_FAILSAFE = 1 << 10,
     FEATURE_SONAR = 1 << 11,
+    FEATURE_TELEMETRY = 1 << 12,
 } AvailableFeatures;
 
 typedef void (* sensorInitFuncPtr)(void);                   // sensor init prototype
@@ -59,6 +60,7 @@ typedef struct sensor_t
     sensorInitFuncPtr init;
     sensorReadFuncPtr read;
     sensorReadFuncPtr align;
+    sensorReadFuncPtr temperature;
 } sensor_t;
 
 #define digitalHi(p, i)     { p->BSRR = i; }

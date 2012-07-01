@@ -29,6 +29,7 @@ static uint8_t mpuLowPassFilter = MPU3050_DLPF_42HZ;
 static void mpu3050Init(void);
 static void mpu3050Read(int16_t *gyroData);
 static void mpu3050Align(int16_t *gyroData);
+static void mpu3050ReadTemp(int16_t *tempData);
 
 bool mpu3050Detect(sensor_t *gyro)
 {
@@ -43,6 +44,7 @@ bool mpu3050Detect(sensor_t *gyro)
     gyro->init = mpu3050Init;
     gyro->read = mpu3050Read;
     gyro->align = mpu3050Align;
+    gyro->temperature = mpu3050ReadTemp;
 
     return true;
 }
@@ -107,10 +109,10 @@ static void mpu3050Read(int16_t *gyroData)
     gyroData[2] = (buf[4] << 8) | buf[5];
 }
 
-static int16_t mpu3050ReadTemp(void)
+static void mpu3050ReadTemp(int16_t *tempData)
 {
     uint8_t buf[2];
     i2cRead(MPU3050_ADDRESS, MPU3050_TEMP_OUT, 2, buf);
-    
-    return 35 + ((int32_t)(buf[0] << 8 | buf[1]) + 13200) / 280;
+
+    *tempData = 35 + ((int32_t)(buf[0] << 8 | buf[1]) + 13200) / 280;
 }

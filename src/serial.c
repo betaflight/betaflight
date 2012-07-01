@@ -70,6 +70,7 @@ static const char pidnames[] =
 
 static uint8_t checksum, indRX, inBuf[INBUF_SIZE];
 static uint8_t cmdMSP;
+static bool guiConnected = false;
 
 void serialize32(uint32_t a)
 {
@@ -396,6 +397,7 @@ void serialCom(void)
             indRX = 0;
             checksum ^= c;
             c_state = HEADER_SIZE;      // the command is to follow
+            guiConnected = true;
         } else if (c_state == HEADER_SIZE) {
             cmdMSP = c;
             checksum ^= c;
@@ -409,5 +411,9 @@ void serialCom(void)
             }
             c_state = IDLE;
         }
+    }
+    if (!cliMode && !uartAvailable() && feature(FEATURE_TELEMETRY) && f.ARMED) { //The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
+        sendTelemetry();
+        return;
     }
 }

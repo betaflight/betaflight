@@ -247,6 +247,7 @@ extern int16_t motor[8];
 extern int16_t servo[8];
 extern int16_t rcData[8];
 extern uint8_t vbat;
+extern int16_t telemTemperature1;      // gyro sensor temperature
 extern int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
 extern int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
 extern uint8_t toggleBeep;
@@ -335,3 +336,7 @@ void gpsInit(uint32_t baudrate);
 void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
+
+// telemetry
+void initTelemetry(bool State);
+void sendTelemetry(void);

@@ -14,6 +14,7 @@ int16_t headFreeModeHold;
 
 int16_t annex650_overrun_count = 0;
 uint8_t vbat;                   // battery voltage in 0.1V steps
+int16_t telemTemperature1;      // gyro sensor temperature
 
 int16_t failsafeCnt = 0;
 int16_t failsafeEvents = 0;
@@ -170,9 +171,11 @@ void annexCode(void)
         if (f.ACC_CALIBRATED) {
             LED0_OFF;
         }
-        if (f.ARMED) {
+        if (f.ARMED)
             LED0_ON;
-        }
+        // This will switch to/from 9600 or 115200 baud depending on state. Of course, it should only do it on changes.
+        if (feature(FEATURE_TELEMETRY))
+            initTelemetry(f.ARMED);
     }
 
 #ifdef LEDRING
@@ -203,6 +206,13 @@ void annexCode(void)
             GPSLEDTime = currentTime + 150000;
             LED1_TOGGLE;
         }
+    }
+
+    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
+    if (gyro.temperature)
+        gyro.temperature(&telemTemperature1);
+    else {
+        // TODO MCU temp
     }
 }
 

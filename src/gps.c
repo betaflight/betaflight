@@ -619,10 +619,10 @@ static uint32_t GPS_coord_to_degrees(char *s)
 }
 
 // helper functions
-static uint16_t grab_fields(char *src, uint8_t mult)
-{                               // convert string to uint16
+static uint32_t grab_fields(char *src, uint8_t mult)
+{                               // convert string to uint32
     uint8_t i;
-    uint16_t tmp = 0;
+    uint32_t tmp = 0;
     for (i = 0; src[i] != 0; i++) {
         if (src[i] == '.') {
             i++;

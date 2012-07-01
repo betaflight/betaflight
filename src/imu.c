@@ -50,7 +50,7 @@ void computeIMU(void)
 
     Gyro_getADC();
 
-    for (axis = 0; axis < 3; axis++)
+    for (axis = 0; axis < 3; axis++) {
 #ifdef GYRO_INTERLEAVE
         gyroADCp[axis] = gyroADC[axis];
 #else
@@ -58,6 +58,7 @@ void computeIMU(void)
 #endif
         if (!sensors(SENSOR_ACC))
             accADC[axis] = 0;
+    }
     timeInterleave = micros();
     annexCode();
 #ifdef GYRO_INTERLEAVE
