@@ -45,7 +45,7 @@ uint32_t millis(void)
 void systemInit(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
-    uint8_t i;
+    uint32_t i;
 
     gpio_config_t gpio_cfg[] = {
         { LED0_GPIO, LED0_PIN, GPIO_Mode_Out_PP }, // PB3 (LED)

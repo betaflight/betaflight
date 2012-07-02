@@ -198,21 +198,21 @@ typedef struct config_t {
 } config_t;
 
 typedef struct flags_t {
-    uint8_t OK_TO_ARM :1;
-    uint8_t ARMED :1;
-    uint8_t I2C_INIT_DONE :1; // For i2c gps we have to now when i2c init is done, so we can update parameters to the i2cgps from eeprom (at startup it is done in setup())
-    uint8_t ACC_CALIBRATED :1;
-    uint8_t ACC_MODE :1;
-    uint8_t MAG_MODE :1;
-    uint8_t BARO_MODE :1;
-    uint8_t GPS_HOME_MODE :1;
-    uint8_t GPS_HOLD_MODE :1;
-    uint8_t HEADFREE_MODE :1;
-    uint8_t PASSTHRU_MODE :1;
-    uint8_t GPS_FIX :1;
-    uint8_t GPS_FIX_HOME :1;
-    uint8_t SMALL_ANGLES_25 :1;
-    uint8_t CALIBRATE_MAG :1;
+    uint8_t OK_TO_ARM;
+    uint8_t ARMED;
+    uint8_t I2C_INIT_DONE; // For i2c gps we have to now when i2c init is done, so we can update parameters to the i2cgps from eeprom (at startup it is done in setup())
+    uint8_t ACC_CALIBRATED;
+    uint8_t ACC_MODE;
+    uint8_t MAG_MODE;
+    uint8_t BARO_MODE;
+    uint8_t GPS_HOME_MODE;
+    uint8_t GPS_HOLD_MODE;
+    uint8_t HEADFREE_MODE;
+    uint8_t PASSTHRU_MODE;
+    uint8_t GPS_FIX;
+    uint8_t GPS_FIX_HOME;
+    uint8_t SMALL_ANGLES_25;
+    uint8_t CALIBRATE_MAG;
 } flags_t;
 
 extern int16_t gyroZero[3];
@@ -264,7 +264,6 @@ extern uint8_t  GPS_update;                                  // it's a binary to
 extern int16_t  GPS_angle[2];                                // it's the angles that must be applied for GPS correction
 extern uint16_t GPS_ground_course;                           // degrees*10
 extern uint8_t  GPS_Present;                                 // Checksum from Gps serial
-extern uint8_t  GPS_Enable;
 extern int16_t  nav[2];
 extern int8_t   nav_mode;                                    // Navigation mode
 

@@ -79,11 +79,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
 
     TIM_ClearITPendingBit(tim, TIM_IT_CC1);
 
-    if (now > last) {
-        diff = (now - last);
-    } else {
-        diff = ((0xFFFF - last) + now);
-    }
+    diff = now - last;
 
     if (diff > 2700) { // Per http://www.rcgroups.com/forums/showpost.php?p=21996147&postcount=3960 "So, if you use 2.5ms or higher as being the reset for the PPM stream start, you will be fine. I use 2.7ms just to be safe."
         chan = 0;
@@ -98,7 +94,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
 
 static void pwmIRQHandler(TIM_TypeDef *tim)
 {
-    uint8_t i;
+    uint32_t i;
     uint16_t val = 0;
 
     for (i = 0; i < 8; i++) {
@@ -162,7 +158,7 @@ static void pwmInitializeInput(bool usePPM)
     GPIO_InitTypeDef GPIO_InitStructure = { 0, };
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
     NVIC_InitTypeDef NVIC_InitStructure = { 0, };
-    uint8_t i;
+    uint32_t i;
 
    // Input pins
     if (usePPM) {

@@ -43,7 +43,6 @@ uint8_t GPS_update = 0;         // it's a binary toogle to distinct a GPS positi
 int16_t GPS_angle[2] = { 0, 0 };        // it's the angles that must be applied for GPS correction
 uint16_t GPS_ground_course = 0; // degrees*10
 uint8_t GPS_Present = 0;        // Checksum from Gps serial
-uint8_t GPS_Enable = 0;
 int16_t nav[2];
 int8_t nav_mode = NAV_MODE_NONE;        // Navigation mode
 

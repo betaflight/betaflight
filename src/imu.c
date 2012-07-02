@@ -34,7 +34,7 @@ void imuInit(void)
 
 void computeIMU(void)
 {
-    uint8_t axis;
+    uint32_t axis;
     static int16_t gyroADCprevious[3] = { 0, 0, 0 };
     int16_t gyroADCp[3];
     int16_t gyroADCinter[3];
@@ -180,7 +180,7 @@ static int16_t _atan2f(float y, float x)
 
 static void getEstimatedAttitude(void)
 {
-    uint8_t axis;
+    uint32_t axis;
     int32_t accMag = 0;
     static t_fp_vector EstG;
     static t_fp_vector EstM;
@@ -265,10 +265,10 @@ static void getEstimatedAttitude(void)
 
 void getEstimatedAltitude(void)
 {
-    uint8_t index;
+    uint32_t index;
     static uint32_t deadLine = INIT_DELAY;
     static int16_t BaroHistTab[BARO_TAB_SIZE];
-    static int8_t BaroHistIdx;
+    static uint32_t BaroHistIdx;
     static int32_t BaroHigh = 0;
     static int32_t BaroLow = 0;
     int32_t temp32;

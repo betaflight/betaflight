@@ -23,7 +23,7 @@ extern const char rcChannelLetters[];
 
 // buffer
 static char cliBuffer[32];
-static uint8_t bufferIndex = 0;
+static uint32_t bufferIndex = 0;
 
 // sync this with MultiType enum from mw.h
 const char *mixerNames[] = {
@@ -151,6 +151,9 @@ const clivalue_t valueTable[] = {
     { "p_yaw", VAR_UINT8, &cfg.P8[YAW], 0, 200 },
     { "i_yaw", VAR_UINT8, &cfg.I8[YAW], 0, 200 },
     { "d_yaw", VAR_UINT8, &cfg.D8[YAW], 0, 200 },
+    { "p_alt", VAR_UINT8, &cfg.P8[PIDALT], 0, 200 },
+    { "i_alt", VAR_UINT8, &cfg.I8[PIDALT], 0, 200 },
+    { "d_alt", VAR_UINT8, &cfg.D8[PIDALT], 0, 200 },
     { "p_level", VAR_UINT8, &cfg.P8[PIDLEVEL], 0, 200 },
     { "i_level", VAR_UINT8, &cfg.I8[PIDLEVEL], 0, 200 },
     { "d_level", VAR_UINT8, &cfg.D8[PIDLEVEL], 0, 200 },
@@ -159,7 +162,7 @@ const clivalue_t valueTable[] = {
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(valueTable[0]))
 
 static void cliSetVar(const clivalue_t *var, const int32_t value);
-static void cliPrintVar(const clivalue_t *var);
+static void cliPrintVar(const clivalue_t *var, uint32_t full);
 
 #ifndef HAVE_ITOA_FUNCTION
 
@@ -231,8 +234,8 @@ static void cliExit(char *cmdline)
 
 static void cliFeature(char *cmdline)
 {
-    uint8_t i;
-    uint8_t len;
+    uint32_t i;
+    uint32_t len;
     uint32_t mask;
 
     len = strlen(cmdline);
@@ -290,7 +293,7 @@ static void cliFeature(char *cmdline)
 
 static void cliHelp(char *cmdline)
 {
-    uint8_t i = 0;
+    uint32_t i = 0;
 
     uartPrint("Available commands:\r\n");    
 
@@ -305,8 +308,8 @@ static void cliHelp(char *cmdline)
 
 static void cliMap(char *cmdline)
 {
-    uint8_t len;
-    uint8_t i;
+    uint32_t len;
+    uint32_t i;
     char out[9];
 
     len = strlen(cmdline);
@@ -379,7 +382,7 @@ static void cliSave(char *cmdline)
     systemReset(false);
 }
 
-static void cliPrintVar(const clivalue_t *var)
+static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
     int32_t value = 0;
     char buf[16];
@@ -407,6 +410,14 @@ static void cliPrintVar(const clivalue_t *var)
     }
     itoa(value, buf, 10);
     uartPrint(buf);
+    if (full) {
+        uartPrint(" ");
+        itoa(var->min, buf, 10);
+        uartPrint(buf);
+        uartPrint(" ");
+        itoa(var->max, buf, 10);
+        uartPrint(buf);
+    }
 }
 
 static void cliSetVar(const clivalue_t *var, const int32_t value)
@@ -430,21 +441,21 @@ static void cliSetVar(const clivalue_t *var, const int32_t value)
 
 static void cliSet(char *cmdline)
 {
-    uint8_t i;
-    uint8_t len;
+    uint32_t i;
+    uint32_t len;
     const clivalue_t *val;
     char *eqptr = NULL;
     int32_t value = 0;
 
     len = strlen(cmdline);
 
-    if (len == 0) {
+    if (len == 0 || (len == 1 && cmdline[0] == '*')) {
         uartPrint("Current settings: \r\n");
         for (i = 0; i < VALUE_COUNT; i++) {
             val = &valueTable[i];
             uartPrint((char *)valueTable[i].name);
             uartPrint(" = ");
-            cliPrintVar(val);
+            cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             uartPrint("\r\n");
             while (!uartTransmitEmpty());
         }
@@ -461,7 +472,7 @@ static void cliSet(char *cmdline)
                     cliSetVar(val, value);
                     uartPrint((char *)valueTable[i].name);
                     uartPrint(" set to ");
-                    cliPrintVar(val);
+                    cliPrintVar(val, 0);
                 } else {
                     uartPrint("ERR: Value assignment out of range\r\n");
                 }

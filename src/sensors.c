@@ -115,7 +115,7 @@ uint16_t batteryAdcToVoltage(uint16_t src)
 
 void batteryInit(void)
 {
-    uint8_t i;
+    uint32_t i;
     uint32_t voltage = 0;
 
     // average up some voltage readings
@@ -138,7 +138,7 @@ void batteryInit(void)
 static void ACC_Common(void)
 {
     static int32_t a[3];
-    uint8_t axis;
+    uint32_t axis;
 
     if (calibratingA > 0) {
         for (axis = 0; axis < 3; axis++) {
@@ -272,7 +272,7 @@ static void GYRO_Common(void)
 {
     static int16_t previousGyroADC[3] = { 0, 0, 0 };
     static int32_t g[3];
-    uint8_t axis;
+    uint32_t axis;
 
     if (calibratingG > 0) {
         for (axis = 0; axis < 3; axis++) {
@@ -328,7 +328,7 @@ void Mag_init(void)
 {
     uint8_t calibration_gain = 0x60; // HMC5883
 #if 1
-    uint8_t numAttempts = 0, good_count = 0;
+    uint32_t numAttempts = 0, good_count = 0;
     bool success = false;
     uint16_t expected_x = 766;       // default values for HMC5883
     uint16_t expected_yz = 713;
@@ -405,7 +405,7 @@ void Mag_getADC(void)
     static uint32_t t, tCal = 0;
     static int16_t magZeroTempMin[3];
     static int16_t magZeroTempMax[3];
-    uint8_t axis;
+    uint32_t axis;
     
     if (currentTime < t)
         return;                 //each read is spaced by 100ms

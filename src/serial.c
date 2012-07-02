@@ -169,7 +169,7 @@ void serialInit(uint32_t baudrate)
 
 static void evaluateCommand(void)
 {
-    uint8_t i;
+    uint32_t i;
     
     switch (cmdMSP) {
     case MSP_SET_RAW_RC:
