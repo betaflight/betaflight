@@ -165,7 +165,7 @@ static void pwmInitializeInput(bool usePPM)
         // Configure TIM2_CH1 for PPM input
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
         GPIO_Init(GPIOA, &GPIO_InitStructure);
 
         // Input timer on TIM2 only for PPM
@@ -200,7 +200,7 @@ static void pwmInitializeInput(bool usePPM)
         // Configure TIM2, TIM3 all 4 channels
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_6 | GPIO_Pin_7;
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
         GPIO_Init(GPIOA, &GPIO_InitStructure);
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
         GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -276,7 +276,7 @@ bool pwmInit(drv_pwm_config_t *init)
     // Configure TIM2_CH1 for input
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 #if 0
@@ -307,7 +307,7 @@ bool pwmInit(drv_pwm_config_t *init)
     // Output pins
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_11;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -361,7 +361,7 @@ bool pwmInit(drv_pwm_config_t *init)
         // PWM 7,8,9,10
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
         GPIO_Init(GPIOA, &GPIO_InitStructure);
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
         GPIO_Init(GPIOB, &GPIO_InitStructure);

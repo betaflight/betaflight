@@ -49,6 +49,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   spektrum.c \
 		   telemetry.c \
 		   drv_i2c.c \
+		   drv_i2c_soft.c \
 		   drv_system.c \
 		   drv_uart.c \
 		   $(CMSIS_SRC) \

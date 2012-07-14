@@ -75,7 +75,7 @@ void systemInit(void)
     // Configure gpio
     for (i = 0; i < gpio_count; i++) {
         GPIO_InitStructure.GPIO_Pin = gpio_cfg[i].pin;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
         GPIO_InitStructure.GPIO_Mode = gpio_cfg[i].mode;
         GPIO_Init(gpio_cfg[i].gpio, &GPIO_InitStructure);
     }
