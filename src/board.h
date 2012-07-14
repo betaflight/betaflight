@@ -118,6 +118,8 @@ typedef struct sensor_t
 #define BEEP_ON                  ;
 #endif
 
+#undef SOFT_I2C                 // enable to test software i2c
+
 #ifdef FY90Q
  // FY90Q
 #include "drv_system.h"         // timers, delays, etc

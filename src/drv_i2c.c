@@ -1,5 +1,7 @@
 #include "board.h"
 
+#ifndef SOFT_I2C
+
 // I2C2
 // SCL  PB10
 // SDA  PB11
@@ -347,3 +349,5 @@ static void i2cUnstick(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
+
+#endif

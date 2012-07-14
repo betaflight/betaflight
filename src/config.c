@@ -3,7 +3,7 @@
 #include <string.h>
 
 #ifndef FLASH_PAGE_COUNT
-#define FLASH_PAGE_COUNT 64
+#define FLASH_PAGE_COUNT 128
 #endif
 
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)

@@ -163,12 +163,21 @@ void mixTable(void)
             break;
 
         case MULTITYPE_HEX6X:
+#if 0
             motor[0] = PIDMIX(-1 / 2, +1 / 2, +1);      //REAR_R
             motor[1] = PIDMIX(-1 / 2, -1 / 2, +1);      //FRONT_R
             motor[2] = PIDMIX(+1 / 2, +1 / 2, -1);      //REAR_L
             motor[3] = PIDMIX(+1 / 2, -1 / 2, -1);      //FRONT_L
             motor[4] = PIDMIX(-1, +0, -1);      //RIGHT
             motor[5] = PIDMIX(+1, +0, +1);      //LEFT
+#else
+            motor[0] = PIDMIX(-4/5,+9/10,+1); //REAR_R 
+            motor[1] = PIDMIX(-4/5,-9/10,+1); //FRONT_R 
+            motor[2] = PIDMIX(+4/5,+9/10,-1); //REAR_L 
+            motor[3] = PIDMIX(+4/5,-9/10,-1); //FRONT_L 
+            motor[4] = PIDMIX(-4/5 ,+0 ,-1); //RIGHT 
+            motor[5] = PIDMIX(+4/5 ,+0 ,+1); //LEFT
+#endif
             break;
 
         case MULTITYPE_OCTOX8:
