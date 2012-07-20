@@ -1,11 +1,10 @@
 #include "board.h"
 #include "mw.h"
 
-// June  2012     V2-dev
+// July 2012     V2.1
 
 flags_t f;
 int16_t debug[4];
-uint8_t buzzerState = 0;
 uint8_t toggleBeep = 0;
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -36,15 +35,17 @@ int32_t GPS_coord[2];
 int32_t GPS_home[2];
 int32_t GPS_hold[2];
 uint8_t GPS_numSat;
-uint16_t GPS_distanceToHome, GPS_distanceToHold;        // distance to home or hold point in meters
-int16_t GPS_directionToHome, GPS_directionToHold;       // direction to home or hol point in degrees
+uint16_t GPS_distanceToHome;                            // distance to home point in meters
+int16_t GPS_directionToHome;                            // direction to home or hol point in degrees
 uint16_t GPS_altitude, GPS_speed;       // altitude in 0.1m and speed in 0.1m/s
-uint8_t GPS_update = 0;         // it's a binary toogle to distinct a GPS position update
-int16_t GPS_angle[2] = { 0, 0 };        // it's the angles that must be applied for GPS correction
-uint16_t GPS_ground_course = 0; // degrees*10
-uint8_t GPS_Present = 0;        // Checksum from Gps serial
+uint8_t GPS_update = 0;             // it's a binary toogle to distinct a GPS position update
+int16_t GPS_angle[2] = { 0, 0 };    // it's the angles that must be applied for GPS correction
+uint16_t GPS_ground_course = 0;     // degrees*10
+uint8_t GPS_Present = 0;            // Checksum from Gps serial
+uint8_t GPS_Enable = 0;
 int16_t nav[2];
-int8_t nav_mode = NAV_MODE_NONE;        // Navigation mode
+int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
+int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
 
 //Automatic ACC Offset Calibration
 // **********************
@@ -80,8 +81,8 @@ void annexCode(void)
 {
     static uint32_t calibratedAccTime;
     uint16_t tmp, tmp2;
-    static uint8_t vbatTimer = 0;
     static uint8_t buzzerFreq;  //delay between buzzer ring
+    static uint8_t vbatTimer = 0;
     uint8_t axis, prop1, prop2;
     static uint8_t ind = 0;
     uint16_t vbatRaw = 0;
@@ -152,12 +153,8 @@ void annexCode(void)
                 vbatRaw += vbatRawArray[i];
             vbat = batteryAdcToVoltage(vbatRaw / 8);
         }
-        if (rcOptions[BOXBEEPERON]) {   // unconditional beeper on via AUXn switch 
-            buzzerFreq = 7;
-        } else if ((vbat > batteryWarningVoltage) || (vbat < cfg.vbatmincellvoltage)) { //VBAT ok, buzzer off
+        if ((vbat > batteryWarningVoltage) || (vbat < cfg.vbatmincellvoltage)) { // VBAT ok, buzzer off
             buzzerFreq = 0;
-            buzzerState = 0;
-            BEEP_OFF;
         } else
             buzzerFreq = 4;     // low battery
     }
@@ -167,9 +164,8 @@ void annexCode(void)
     if ((calibratingA > 0 && sensors(SENSOR_ACC)) || (calibratingG > 0)) {      // Calibration phasis
         LED0_TOGGLE;
     } else {
-        if (f.ACC_CALIBRATED) {
+        if (f.ACC_CALIBRATED)
             LED0_OFF;
-        }
         if (f.ARMED)
             LED0_ON;
         // This will switch to/from 9600 or 115200 baud depending on state. Of course, it should only do it on changes.
@@ -267,10 +263,8 @@ void loop(void)
     static int16_t errorAngleI[2] = { 0, 0 };
     static uint32_t rcTime = 0;
     static int16_t initialThrottleHold;
-
-#ifdef TIMINGDEBUG
-    trollTime = micros();
-#endif
+    static uint32_t loopTime;
+    uint16_t auxState = 0;
 
     // this will return false if spektrum is disabled. shrug.
     if (spektrumFrameComplete())
@@ -356,28 +350,28 @@ void loop(void)
                     f.CALIBRATE_MAG = 1;   // MAG calibration request
                 rcDelayCommand++;
             } else if (rcData[PITCH] > cfg.maxcheck) {
-                cfg.accTrim[PITCH] += 2;
+                cfg.angleTrim[PITCH] += 2;
                 writeParams(1);
 #ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
 #endif
             } else if (rcData[PITCH] < cfg.mincheck) {
-                cfg.accTrim[PITCH] -= 2;
+                cfg.angleTrim[PITCH] -= 2;
                 writeParams(1);
 #ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
 #endif
             } else if (rcData[ROLL] > cfg.maxcheck) {
-                cfg.accTrim[ROLL] += 2;
+                cfg.angleTrim[ROLL] += 2;
                 writeParams(1);
 #ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
                     ledringBlink();
 #endif
             } else if (rcData[ROLL] < cfg.mincheck) {
-                cfg.accTrim[ROLL] -= 2;
+                cfg.angleTrim[ROLL] -= 2;
                 writeParams(1);
 #ifdef LEDRING
                 if (feature(FEATURE_LED_RING))
@@ -393,22 +387,19 @@ void loop(void)
                 InflightcalibratingA = 50;
                 AccInflightCalibrationArmed = 0;
             }
-            if (rcOptions[BOXPASSTHRU]) {       // Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
-                if (!AccInflightCalibrationArmed) {
-                    AccInflightCalibrationArmed = 1;
+            if (rcOptions[BOXPASSTHRU]) {      // Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
+                if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
                     InflightcalibratingA = 50;
-                }
             } else if (AccInflightCalibrationMeasurementDone && !f.ARMED) {
-                AccInflightCalibrationArmed = 0;
                 AccInflightCalibrationMeasurementDone = 0;
                 AccInflightCalibrationSavetoEEProm = 1;
             }
         }
 
-        for (i = 0; i < CHECKBOXITEMS; i++) {
-            rcOptions[i] = (((rcData[AUX1] < 1300) | (1300 < rcData[AUX1] && rcData[AUX1] < 1700) << 1 | (rcData[AUX1] > 1700) << 2
-                             | (rcData[AUX2] < 1300) << 3 | (1300 < rcData[AUX2] && rcData[AUX2] < 1700) << 4 | (rcData[AUX2] > 1700) << 5 | (rcData[AUX3] < 1300) << 6 | (1300 < rcData[AUX3] && rcData[AUX3] < 1700) << 7 | (rcData[AUX3] > 1700) << 8 | (rcData[AUX4] < 1300) << 9 | (1300 < rcData[AUX4] && rcData[AUX4] < 1700) << 10 | (rcData[AUX4] > 1700) << 11) & cfg.activate[i]) > 0;
-        }
+        for(i = 0; i < 4; i++)
+            auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) | (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) | (rcData[AUX1 + i] > 1700) << (3 * i + 2);
+        for(i = 0; i < CHECKBOXITEMS; i++)
+            rcOptions[i] = (auxState & cfg.activate[i]) > 0;
 
         // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
         if ((rcOptions[BOXACC] || (failsafeCnt > 5 * cfg.failsafe_delay)) && (sensors(SENSOR_ACC))) {
@@ -457,38 +448,45 @@ void loop(void)
                 if (!f.HEADFREE_MODE) {
                     f.HEADFREE_MODE = 1;
                 }
-            } else
+            } else {
                 f.HEADFREE_MODE = 0;
+            }
+            if (rcOptions[BOXHEADADJ]) {
+                headFreeModeHold = heading; // acquire new heading
+            }
         }
 #endif
 
         if (sensors(SENSOR_GPS)) {
-            if (rcOptions[BOXGPSHOME]) {
-                if (!f.GPS_HOME_MODE) {
-                    f.GPS_HOME_MODE = 1;
-                    GPS_set_next_wp(&GPS_home[LAT], &GPS_home[LON]);
-                    nav_mode = NAV_MODE_WP;
+            if (f.GPS_FIX && GPS_numSat >= 5) {
+                if (rcOptions[BOXGPSHOME]) {
+                    if (!f.GPS_HOME_MODE) {
+                        f.GPS_HOME_MODE = 1;
+                        GPS_set_next_wp(&GPS_home[LAT], &GPS_home[LON]);
+                        nav_mode = NAV_MODE_WP;
+                    }
+                } else {
+                    f.GPS_HOME_MODE = 0;
                 }
-            } else {
-                f.GPS_HOME_MODE = 0;
-            }
-            if (rcOptions[BOXGPSHOLD]) {
-                if (!f.GPS_HOLD_MODE) {
-                    f.GPS_HOLD_MODE = 1;
-                    GPS_hold[LAT] = GPS_coord[LAT];
-                    GPS_hold[LON] = GPS_coord[LON];
-                    GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
-                    nav_mode = NAV_MODE_POSHOLD;
+                if (rcOptions[BOXGPSHOLD]) {
+                    if (!f.GPS_HOLD_MODE) {
+                        f.GPS_HOLD_MODE = 1;
+                        GPS_hold[LAT] = GPS_coord[LAT];
+                        GPS_hold[LON] = GPS_coord[LON];
+                        GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
+                        nav_mode = NAV_MODE_POSHOLD;
+                    }
+                } else {
+                    f.GPS_HOLD_MODE = 0;
                 }
-            } else {
-                f.GPS_HOLD_MODE = 0;
             }
         }
 
         if (rcOptions[BOXPASSTHRU]) {
             f.PASSTHRU_MODE = 1;
-        } else
+        } else {
             f.PASSTHRU_MODE = 0;
+        }
     } else {                    // not in rc loop
         static int8_t taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
         switch (taskOrder++ % 4) {
@@ -524,107 +522,105 @@ void loop(void)
         }
     }
 
-    computeIMU();
-    // Measure loop rate just afer reading the sensors
     currentTime = micros();
-    cycleTime = currentTime - previousTime;
-    previousTime = currentTime;
+    if (currentTime > loopTime) {
+        loopTime = currentTime + cfg.looptime;
 
-#ifdef MPU6050_DMP
-    mpu6050DmpLoop();
-#endif
-
-#ifdef MAG
-    if (sensors(SENSOR_MAG)) {
-        if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
-            int16_t dif = heading - magHold;
-            if (dif <= -180)
-                dif += 360;
-            if (dif >= +180)
-                dif -= 360;
-            if (f.SMALL_ANGLES_25)
-                rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;    // 18 deg
-        } else
-            magHold = heading;
-    }
-#endif
-
-#ifdef BARO
-    if (sensors(SENSOR_BARO)) {
-        if (f.BARO_MODE) {
-            if (abs(rcCommand[THROTTLE] - initialThrottleHold) > 20) {
-                f.BARO_MODE = 0;   // so that a new althold reference is defined
+        computeIMU();
+        // Measure loop rate just afer reading the sensors
+        currentTime = micros();
+        cycleTime = currentTime - previousTime;
+        previousTime = currentTime;
+    
+    #ifdef MPU6050_DMP
+        mpu6050DmpLoop();
+    #endif
+    
+    #ifdef MAG
+        if (sensors(SENSOR_MAG)) {
+            if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
+                int16_t dif = heading - magHold;
+                if (dif <= -180)
+                    dif += 360;
+                if (dif >= +180)
+                    dif -= 360;
+                if (f.SMALL_ANGLES_25)
+                    rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;    // 18 deg
+            } else
+                magHold = heading;
+        }
+    #endif
+    
+    #ifdef BARO
+        if (sensors(SENSOR_BARO)) {
+            if (f.BARO_MODE) {
+                if (abs(rcCommand[THROTTLE] - initialThrottleHold) > 20) {
+                    f.BARO_MODE = 0;   // so that a new althold reference is defined
+                }
+                rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
             }
-            rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
         }
-    }
-#endif
-
-    if (sensors(SENSOR_GPS)) {
-        // Check that we really need to navigate ?
-        if ((!f.GPS_HOME_MODE && !f.GPS_HOLD_MODE) || (!f.GPS_FIX_HOME)) {
-            // If not. Reset nav loops and all nav related parameters
-            GPS_reset_nav();
-        } else {
-            float sin_yaw_y = sinf(heading * 0.0174532925f);
-            float cos_yaw_x = cosf(heading * 0.0174532925f);
-            GPS_angle[ROLL] = (nav[LON] * cos_yaw_x - nav[LAT] * sin_yaw_y) / 10;
-            GPS_angle[PITCH] = (nav[LON] * sin_yaw_y + nav[LAT] * cos_yaw_x) / 10;
+    #endif
+    
+        if (sensors(SENSOR_GPS)) {
+            // Check that we really need to navigate ?
+            if ((!f.GPS_HOME_MODE && !f.GPS_HOLD_MODE) || (!f.GPS_FIX_HOME)) {
+                // If not. Reset nav loops and all nav related parameters
+                GPS_reset_nav();
+            } else {
+                float sin_yaw_y = sinf(heading * 0.0174532925f);
+                float cos_yaw_x = cosf(heading * 0.0174532925f);
+                if (cfg.nav_slew_rate) {
+                    nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -cfg.nav_slew_rate, cfg.nav_slew_rate); // TODO check this on uint8
+                    nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]),-cfg.nav_slew_rate, cfg.nav_slew_rate);
+                    GPS_angle[ROLL] = (nav_rated[LON] * cos_yaw_x - nav_rated[LAT] * sin_yaw_y) / 10;
+                    GPS_angle[PITCH] = (nav_rated[LON] * sin_yaw_y + nav_rated[LAT] * cos_yaw_x) / 10;
+                } else {
+                    GPS_angle[ROLL] = (nav[LON] * cos_yaw_x - nav[LAT] * sin_yaw_y) / 10;
+                    GPS_angle[PITCH] = (nav[LON] * sin_yaw_y + nav[LAT] * cos_yaw_x) / 10;
+                }
+            }
         }
-    }
-    // **** PITCH & ROLL & YAW PID ****    
-    for (axis = 0; axis < 3; axis++) {
-        if (f.ACC_MODE == 1 && axis < 2) { // LEVEL MODE
-            // 50 degrees max inclination
-            errorAngle = constrain(2 * rcCommand[axis] - GPS_angle[axis], -500, +500) - angle[axis] + cfg.accTrim[axis];        //16 bits is ok here
-#ifdef LEVEL_PDF
-            PTerm = -(int32_t) angle[axis] * cfg.P8[PIDLEVEL] / 100;
-#else
-            PTerm = (int32_t) errorAngle *cfg.P8[PIDLEVEL] / 100;       //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
-#endif
-            PTerm = constrain(PTerm, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
-
-            errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);      // WindUp     // 16 bits is ok here
-            ITerm = ((int32_t) errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;     // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
-        } else {                // ACRO MODE or YAW axis
-            error = (int32_t) rcCommand[axis] * 10 * 8 / cfg.P8[axis];  //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
-            error -= gyroData[axis];
-
-            PTerm = rcCommand[axis];
-
-            errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000);     // WindUp // 16 bits is ok here
-            if (abs(gyroData[axis]) > 640)
-                errorGyroI[axis] = 0;
-            ITerm = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;       // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
+        // **** PITCH & ROLL & YAW PID ****    
+        for (axis = 0; axis < 3; axis++) {
+            if (f.ACC_MODE && axis < 2) { // LEVEL MODE
+                // 50 degrees max inclination
+                errorAngle = constrain(2 * rcCommand[axis] - GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
+    #ifdef LEVEL_PDF
+                PTerm = -(int32_t) angle[axis] * cfg.P8[PIDLEVEL] / 100;
+    #else
+                PTerm = (int32_t) errorAngle *cfg.P8[PIDLEVEL] / 100;       //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+    #endif
+                PTerm = constrain(PTerm, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
+    
+                errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);      // WindUp     // 16 bits is ok here
+                ITerm = ((int32_t) errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;     // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
+            } else {                // ACRO MODE or YAW axis
+                error = (int32_t) rcCommand[axis] * 10 * 8 / cfg.P8[axis];  //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
+                error -= gyroData[axis];
+    
+                PTerm = rcCommand[axis];
+    
+                errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000);     // WindUp // 16 bits is ok here
+                if (abs(gyroData[axis]) > 640)
+                    errorGyroI[axis] = 0;
+                ITerm = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;       // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
+            }
+            PTerm -= (int32_t) gyroData[axis] * dynP8[axis] / 10 / 8;       // 32 bits is needed for calculation
+    
+            delta = gyroData[axis] - lastGyro[axis];        //16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastGyro[axis] = gyroData[axis];
+            deltaSum = delta1[axis] + delta2[axis] + delta;
+            delta2[axis] = delta1[axis];
+            delta1[axis] = delta;
+    
+            DTerm = ((int32_t) deltaSum * dynD8[axis]) >> 5;        //32 bits is needed for calculation
+    
+            axisPID[axis] = PTerm + ITerm - DTerm;
         }
-        PTerm -= (int32_t) gyroData[axis] * dynP8[axis] / 10 / 8;       // 32 bits is needed for calculation
-
-        delta = gyroData[axis] - lastGyro[axis];        //16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-        lastGyro[axis] = gyroData[axis];
-        deltaSum = delta1[axis] + delta2[axis] + delta;
-        delta2[axis] = delta1[axis];
-        delta1[axis] = delta;
-
-        DTerm = ((int32_t) deltaSum * dynD8[axis]) >> 5;        //32 bits is needed for calculation
-
-        axisPID[axis] = PTerm + ITerm - DTerm;
+    
+        mixTable();
+        writeServos();
+        writeMotors();
     }
-
-    mixTable();
-    writeServos();
-    writeMotors();
-
-#ifdef TIMINGDEBUG
-    while (micros() < trollTime + 1750);
-    // LED0_TOGGLE;
-    {
-        if (cycleTime < cn)
-            cn = cycleTime;
-        if (cycleTime > cx)
-            cx = cycleTime;
-            
-        debug1 = cn;
-        debug2 = cx;
-    }
-#endif
 }

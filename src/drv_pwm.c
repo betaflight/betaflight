@@ -366,7 +366,8 @@ bool pwmInit(drv_pwm_config_t *init)
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
         GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-        TIM_TimeBaseStructure.TIM_Period = (1000000 / init->motorPwmRate) - 1;
+        // when in extra servos mode, init lower 4 channels as 50Hz outputs
+        TIM_TimeBaseStructure.TIM_Period = (1000000 / (init->extraServos ? 50 : init->motorPwmRate)) - 1;
         TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
 
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
@@ -388,7 +389,7 @@ bool pwmInit(drv_pwm_config_t *init)
         TIM_Cmd(TIM3, ENABLE);
         TIM_CtrlPWMOutputs(TIM3, ENABLE);
         // configure number of PWM outputs, in PPM/spektrum mode, we use bottom 4 channels more more motors
-        numOutputChannels = 10;
+        numOutputChannels = init->extraServos ? 6 : 10;
     }
 
 #if 0    

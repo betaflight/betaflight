@@ -4,6 +4,7 @@ typedef struct drv_pwm_config_t {
     bool enableInput;
     bool usePPM;
     bool useServos;
+    bool extraServos;    // configure additional 4 channels in PPM mode as servos, not motors
     uint16_t motorPwmRate;
     uint16_t servoPwmRate;
 } drv_pwm_config_t;

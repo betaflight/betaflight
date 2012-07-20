@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 22;
+uint8_t checkNewConf = 24;
 
 void parseRcChannels(const char *input)
 {
@@ -47,8 +47,6 @@ void readEEPROM(void)
         lookupThrottleRC[i] = cfg.minthrottle + (int32_t) (cfg.maxthrottle - cfg.minthrottle) * lookupThrottleRC[i] / 1000;     // [0;1000] -> [MINTHROTTLE;MAXTHROTTLE]
     }
 
-    cfg.wing_left_mid = constrain(cfg.wing_left_mid, WING_LEFT_MIN, WING_LEFT_MAX);     //LEFT 
-    cfg.wing_right_mid = constrain(cfg.wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
     cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max);       //REAR
 }
 
@@ -89,8 +87,9 @@ void checkFirstTime(bool reset)
     cfg.version = checkNewConf;
     cfg.mixerConfiguration = MULTITYPE_QUADX;
     featureClearAll();
-    featureSet(FEATURE_VBAT);   // | FEATURE_PPM); // sadly, this is for hackers only
+    featureSet(FEATURE_VBAT);
 
+    cfg.looptime = 3000;
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;
     cfg.D8[ROLL] = 23;
@@ -112,13 +111,13 @@ void checkFirstTime(bool reset)
     cfg.P8[PIDNAVR] = 14; // NAV_P * 10;
     cfg.I8[PIDNAVR] = 20; // NAV_I * 100;
     cfg.D8[PIDNAVR] = 80; // NAV_D * 1000;
-    cfg.P8[PIDVEL] = 0;
-    cfg.I8[PIDVEL] = 0;
-    cfg.D8[PIDVEL] = 0;
     cfg.P8[PIDLEVEL] = 70;
     cfg.I8[PIDLEVEL] = 10;
     cfg.D8[PIDLEVEL] = 20;
     cfg.P8[PIDMAG] = 40;
+    cfg.P8[PIDVEL] = 0;
+    cfg.I8[PIDVEL] = 0;
+    cfg.D8[PIDVEL] = 0;
     cfg.rcRate8 = 90;
     cfg.rcExpo8 = 65;
     cfg.rollPitchRate = 0;
@@ -128,15 +127,15 @@ void checkFirstTime(bool reset)
     cfg.thrExpo8 = 0;
     for (i = 0; i < CHECKBOXITEMS; i++)
         cfg.activate[i] = 0;
-    cfg.accTrim[0] = 0;
-    cfg.accTrim[1] = 0;
+    cfg.angleTrim[0] = 0;
+    cfg.angleTrim[1] = 0;
     cfg.accZero[0] = 0;
     cfg.accZero[1] = 0;
     cfg.accZero[2] = 0;
     cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     cfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
     cfg.acc_lpf_factor = 4;
-    cfg.gyro_cmpf_factor = 310; // default MWC
+    cfg.gyro_cmpf_factor = 400; // default MWC
     cfg.gyro_lpf = 42;
     cfg.gyro_smoothing_factor = 0x00141403;     // default factors of 20, 20, 3 for R/P/Y
     cfg.vbatscale = 110;
@@ -147,6 +146,7 @@ void checkFirstTime(bool reset)
     parseRcChannels("AETR1234");
     cfg.deadband = 0;
     cfg.yawdeadband = 0;
+    cfg.alt_hold_throttle_neutral = 20;
     cfg.spektrum_hires = 0;
     cfg.midrc = 1500;
     cfg.mincheck = 1100;
@@ -167,8 +167,6 @@ void checkFirstTime(bool reset)
 
     // servos
     cfg.yaw_direction = 1;
-    cfg.wing_left_mid = 1500;
-    cfg.wing_right_mid = 1500;
     cfg.tri_yaw_middle = 1500;
     cfg.tri_yaw_min = 1020;
     cfg.tri_yaw_max = 2000;
@@ -188,6 +186,7 @@ void checkFirstTime(bool reset)
     cfg.gps_baudrate = 9600;
     cfg.gps_wp_radius = 200;
     cfg.gps_lpf = 20;
+    cfg.nav_slew_rate = 30;
     cfg.nav_controls_heading = 1;
     cfg.nav_speed_min = 100;
     cfg.nav_speed_max = 300;

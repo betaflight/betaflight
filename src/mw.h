@@ -1,28 +1,9 @@
 #pragma once
 
-/* Flying Wing: you can change change servo orientation and servo min/max values here */
-/* valid for all flight modes, even passThrough mode */
-/* need to setup servo directions here; no need to swap servos amongst channels at rx */ 
-#define PITCH_DIRECTION_L 1 // left servo - pitch orientation
-#define PITCH_DIRECTION_R -1  // right servo - pitch orientation (opposite sign to PITCH_DIRECTION_L, if servos are mounted in mirrored orientation)
-#define ROLL_DIRECTION_L 1 // left servo - roll orientation
-#define ROLL_DIRECTION_R 1  // right servo - roll orientation  (same sign as ROLL_DIRECTION_L, if servos are mounted in mirrored orientation)
-#define WING_LEFT_MIN  1020 // limit servo travel range must be inside [1020;2000]
-#define WING_LEFT_MAX  2000 // limit servo travel range must be inside [1020;2000]
-#define WING_RIGHT_MIN 1020 // limit servo travel range must be inside [1020;2000]
-#define WING_RIGHT_MAX 2000 // limit servo travel range must be inside [1020;2000]
-
-/* experimental
-   camera trigger function : activated via Rc Options in the GUI, servo output=A2 on promini */
-#define CAM_SERVO_HIGH 2000  // the position of HIGH state servo
-#define CAM_SERVO_LOW 1020   // the position of LOW state servo
-#define CAM_TIME_HIGH 1000   // the duration of HIGH state servo expressed in ms
-#define CAM_TIME_LOW 1000    // the duration of LOW state servo expressed in ms
-
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 
-#define  VERSION  200
+#define  VERSION  210
 
 #define LAT  0
 #define LON  1
@@ -31,7 +12,7 @@
 // navigation mode
 typedef enum NavigationMode
 {
-    NAV_MODE_NONE = 1,
+    NAV_MODE_NONE = 0,
     NAV_MODE_POSHOLD,
     NAV_MODE_WP
 } NavigationMode;
@@ -46,7 +27,7 @@ typedef enum MultiType
     MULTITYPE_GIMBAL = 5,
     MULTITYPE_Y6 = 6,
     MULTITYPE_HEX6 = 7,
-    MULTITYPE_FLYING_WING = 8,
+    MULTITYPE_FLYING_WING = 8,      // UNSUPPORTED, do not select!
     MULTITYPE_Y4 = 9,
     MULTITYPE_HEX6X = 10,
     MULTITYPE_OCTOX8 = 11,
@@ -63,6 +44,7 @@ typedef enum GimbalFlags {
     GIMBAL_NORMAL = 1 << 0,
     GIMBAL_TILTONLY = 1 << 1,
     GIMBAL_DISABLEAUX34 = 1 << 2,
+    GIMBAL_FORWARDAUX = 1 << 3,
 } GimbalFlags;
 
 /*********** RC alias *****************/
@@ -94,12 +76,9 @@ typedef enum GimbalFlags {
 #define BOXPASSTHRU  8
 #define BOXHEADFREE  9
 #define BOXBEEPERON  10
-/* we want maximum illumination */
-#define BOXLEDMAX    11
-/* enable landing lights at any altitude */
-#define BOXLLIGHTS   12
-/* acquire heading for HEADFREE mode */
-#define BOXHEADADJ   13
+#define BOXLEDMAX    11 // we want maximum illumination
+#define BOXLLIGHTS   12 // enable landing lights at any altitude
+#define BOXHEADADJ   13 // acquire heading for HEADFREE mode
 
 #define PIDITEMS 10
 #define CHECKBOXITEMS 14
@@ -113,6 +92,8 @@ typedef struct config_t {
     uint8_t version;
     uint8_t mixerConfiguration;
     uint32_t enabledFeatures;
+
+    uint16_t looptime;                      // imu loop time in us
 
     uint8_t P8[PIDITEMS];
     uint8_t I8[PIDITEMS];
@@ -130,7 +111,7 @@ typedef struct config_t {
     int16_t accZero[3];
     int16_t magZero[3];
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
-    int16_t accTrim[2];
+    int16_t angleTrim[2];                   // accelerometer trim
 
     // sensor-related stuff
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
@@ -148,6 +129,7 @@ typedef struct config_t {
     uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
     uint8_t yawdeadband;                    // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
+    uint8_t alt_hold_throttle_neutral;      // defines the neutral zone of throttle stick during altitude hold, default setting is +/-20
     uint8_t spektrum_hires;                 // spektrum high-resolution y/n (1024/2048bit)
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
@@ -168,8 +150,6 @@ typedef struct config_t {
 
     // mixer-related configuration
     int8_t yaw_direction;
-    uint16_t wing_left_mid;                 // left servo center pos. - use this for initial trim
-    uint16_t wing_right_mid;                // right servo center pos. - use this for initial trim
     uint16_t tri_yaw_middle;                // tail servo center pos. - use this for initial trim
     uint16_t tri_yaw_min;                   // tail servo min
     uint16_t tri_yaw_max;                   // tail servo max
@@ -189,6 +169,7 @@ typedef struct config_t {
     uint32_t gps_baudrate;
     uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
     uint8_t gps_lpf;                        // Low pass filter cut frequency for derivative calculation (default 20Hz)
+    uint8_t nav_slew_rate;                  // Adds a rate control to nav output, will smoothen out nav angle spikes
     uint8_t nav_controls_heading;           // copter faces toward the navigation point, maghold must be enabled for it
     uint16_t nav_speed_min;                 // cm/sec
     uint16_t nav_speed_max;                 // cm/sec
@@ -257,15 +238,17 @@ extern int32_t  GPS_coord[2];
 extern int32_t  GPS_home[2];
 extern int32_t  GPS_hold[2];
 extern uint8_t  GPS_numSat;
-extern uint16_t GPS_distanceToHome,GPS_distanceToHold;       // distance to home or hold point in meters
-extern int16_t  GPS_directionToHome,GPS_directionToHold;     // direction to home or hol point in degrees
+extern uint16_t GPS_distanceToHome;                          // distance to home or hold point in meters
+extern int16_t  GPS_directionToHome;                         // direction to home or hol point in degrees
 extern uint16_t GPS_altitude,GPS_speed;                      // altitude in 0.1m and speed in 0.1m/s
 extern uint8_t  GPS_update;                                  // it's a binary toogle to distinct a GPS position update
 extern int16_t  GPS_angle[2];                                // it's the angles that must be applied for GPS correction
 extern uint16_t GPS_ground_course;                           // degrees*10
 extern uint8_t  GPS_Present;                                 // Checksum from Gps serial
+extern uint8_t  GPS_Enable;
 extern int16_t  nav[2];
 extern int8_t   nav_mode;                                    // Navigation mode
+extern int16_t  nav_rated[2];                                // Adding a rate controller to the navigation to make it smoother
 
 extern config_t cfg;
 extern flags_t f;
@@ -335,6 +318,7 @@ void gpsInit(uint32_t baudrate);
 void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
+int32_t wrap_18000(int32_t error);
 
 // telemetry
 void initTelemetry(bool State);

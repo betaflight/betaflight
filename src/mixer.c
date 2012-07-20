@@ -12,7 +12,7 @@ void mixerInit(void)
     if (cfg.mixerConfiguration == MULTITYPE_BI || cfg.mixerConfiguration == MULTITYPE_TRI || cfg.mixerConfiguration == MULTITYPE_GIMBAL || cfg.mixerConfiguration == MULTITYPE_FLYING_WING)
         useServo = 1;
     // if we want camstab/trig, that also enabled servos. this is kinda lame. maybe rework feature bits later.
-    if (feature(FEATURE_SERVO_TILT) || feature(FEATURE_CAMTRIG))
+    if (feature(FEATURE_SERVO_TILT))
         useServo = 1;
 
     switch (cfg.mixerConfiguration) {
@@ -98,12 +98,9 @@ void mixTable(void)
 {
     int16_t maxMotor;
     uint32_t i;
-    static uint8_t camCycle = 0;
-    static uint8_t camState = 0;
-    static uint32_t camTime = 0;
 
     if (numberMotor > 3) {
-        //prevent "yaw jump" during yaw correction
+        // prevent "yaw jump" during yaw correction
         axisPID[YAW] = constrain(axisPID[YAW], -100 - abs(rcCommand[YAW]), +100 + abs(rcCommand[YAW]));
     }
 
@@ -214,28 +211,15 @@ void mixTable(void)
             break;
 
         case MULTITYPE_VTAIL4:
-            motor[0] = PIDMIX(+0, +1, -1 / 2);  //REAR_R 
+            motor[0] = PIDMIX(+0, +1, +1);      //REAR_R 
             motor[1] = PIDMIX(-1, -1, +0);      //FRONT_R 
-            motor[2] = PIDMIX(+0, +1, +1 / 2);  //REAR_L 
+            motor[2] = PIDMIX(+0, +1, -1);      //REAR_L 
             motor[3] = PIDMIX(+1, -1, -0);      //FRONT_L
             break;
 
         case MULTITYPE_GIMBAL:
             servo[0] = constrain(cfg.gimbal_pitch_mid + cfg.gimbal_pitch_gain * angle[PITCH] / 16 + rcCommand[PITCH], cfg.gimbal_pitch_min, cfg.gimbal_pitch_max);
             servo[1] = constrain(cfg.gimbal_roll_mid + cfg.gimbal_roll_gain * angle[ROLL] / 16 + rcCommand[ROLL], cfg.gimbal_roll_min, cfg.gimbal_roll_max);
-            break;
-
-        case MULTITYPE_FLYING_WING:
-            motor[0] = rcCommand[THROTTLE];
-            if (f.PASSTHRU_MODE) { // do not use sensors for correction, simple 2 channel mixing
-                servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH] - cfg.midrc) + ROLL_DIRECTION_L * (rcData[ROLL] - cfg.midrc);
-                servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH] - cfg.midrc) + ROLL_DIRECTION_R * (rcData[ROLL] - cfg.midrc);
-            } else {                    // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
-                servo[0]  = PITCH_DIRECTION_L * axisPID[PITCH] + ROLL_DIRECTION_L * axisPID[ROLL];
-                servo[1]  = PITCH_DIRECTION_R * axisPID[PITCH] + ROLL_DIRECTION_R * axisPID[ROLL];
-            }
-            servo[0]  = constrain(servo[0] + cfg.wing_left_mid , WING_LEFT_MIN, WING_LEFT_MAX);
-            servo[1]  = constrain(servo[1] + cfg.wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX);
             break;
     }
 
@@ -260,29 +244,10 @@ void mixTable(void)
         servo[1] = constrain(servo[1], cfg.gimbal_roll_min, cfg.gimbal_roll_max);
     }
 
-    // do camtrig (this doesn't actually work)        
-    if (feature(FEATURE_CAMTRIG)) {
-        if (camCycle == 1) {
-            if (camState == 0) {
-                servo[2] = CAM_SERVO_HIGH;
-                camState = 1;
-                camTime = millis();
-            } else if (camState == 1) {
-                if ((millis() - camTime) > CAM_TIME_HIGH) {
-                    servo[2] = CAM_SERVO_LOW;
-                    camState = 2;
-                    camTime = millis();
-                }
-            } else {                //camState ==2
-                if ((millis() - camTime) > CAM_TIME_LOW) {
-                    camState = 0;
-                    camCycle = 0;
-                }
-            }
-        }
-        if (rcOptions[BOXCAMTRIG])
-            camCycle = 1;
-    }                
+    if (cfg.gimbal_flags & GIMBAL_FORWARDAUX) {
+        for (i = 0; i < 4; i++)
+            pwmWrite(6 + i, rcData[AUX1 + i]);
+    }
 
     maxMotor = motor[0];
     for (i = 1; i < numberMotor; i++)

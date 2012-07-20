@@ -23,6 +23,7 @@
 #define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
 #define MSP_BOXNAMES             116    //out message         the aux switch names
 #define MSP_PIDNAMES             117    //out message         the PID names
+#define MSP_WP                   118    //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -33,6 +34,7 @@
 #define MSP_MAG_CALIBRATION      206    //in message          no param
 #define MSP_SET_MISC             207    //in message          powermeter trig + 8 free for future use
 #define MSP_RESET_CONF           208    //in message          no param
+#define MSP_WP_SET               209    //in message          sets a given WP (WP#,lat, lon, alt, flags)
 
 #define MSP_EEPROM_WRITE         250    //in message          no param
 
@@ -71,6 +73,8 @@ static const char pidnames[] =
 static uint8_t checksum, indRX, inBuf[INBUF_SIZE];
 static uint8_t cmdMSP;
 static bool guiConnected = false;
+// signal that we're in cli mode
+uint8_t cliMode = 0;
 
 void serialize32(uint32_t a)
 {
@@ -148,8 +152,6 @@ void headSerialError(uint8_t s)
 void tailSerialReply(void)
 {
     serialize8(checksum);
-    // no need to send
-    // UartSendData();
 }
 
 void serializeNames(const char *s)
@@ -159,9 +161,6 @@ void serializeNames(const char *s)
         serialize8(*c);
 }
 
-// signal that we're in cli mode
-uint8_t cliMode = 0;
-
 void serialInit(uint32_t baudrate)
 {
     uartInit(baudrate);
@@ -170,7 +169,8 @@ void serialInit(uint32_t baudrate)
 static void evaluateCommand(void)
 {
     uint32_t i;
-    
+    uint8_t wp_no;
+
     switch (cmdMSP) {
     case MSP_SET_RAW_RC:
         for (i = 0; i < 8; i++)
@@ -225,7 +225,9 @@ static void evaluateCommand(void)
         serialize16(cycleTime);
         serialize16(i2cGetErrorCounter());
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-        serialize32(f.ACC_MODE << BOXACC | f.BARO_MODE << BOXBARO | f.MAG_MODE << BOXMAG | f.ARMED << BOXARM | rcOptions[BOXCAMSTAB] << BOXCAMSTAB | rcOptions[BOXCAMTRIG] << BOXCAMTRIG | f.GPS_HOME_MODE << BOXGPSHOME | f.GPS_HOLD_MODE << BOXGPSHOLD | f.HEADFREE_MODE << BOXHEADFREE | f.PASSTHRU_MODE << BOXPASSTHRU | rcOptions[BOXBEEPERON] << BOXBEEPERON | rcOptions[BOXLEDMAX] << BOXLEDMAX | rcOptions[BOXLLIGHTS] << BOXLLIGHTS | rcOptions[BOXHEADADJ] << BOXHEADADJ);
+        serialize32(f.ACC_MODE << BOXACC | f.BARO_MODE << BOXBARO | f.MAG_MODE << BOXMAG | f.ARMED << BOXARM | rcOptions[BOXCAMSTAB] << BOXCAMSTAB | rcOptions[BOXCAMTRIG] << BOXCAMTRIG | 
+                    f.GPS_HOME_MODE << BOXGPSHOME | f.GPS_HOLD_MODE << BOXGPSHOLD | f.HEADFREE_MODE << BOXHEADFREE | f.PASSTHRU_MODE << BOXPASSTHRU | 
+                    rcOptions[BOXBEEPERON] << BOXBEEPERON | rcOptions[BOXLEDMAX] << BOXLEDMAX | rcOptions[BOXLLIGHTS] << BOXLLIGHTS | rcOptions[BOXHEADADJ] << BOXHEADADJ);
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
@@ -322,6 +324,23 @@ static void evaluateCommand(void)
         for (i = 0; i < 8; i++)
             serialize8(i + 1);
         break;
+    case MSP_WP:
+        wp_no = read8();    // get the wp number
+        headSerialReply(12);
+        if (wp_no == 0) {
+            serialize8(0);                   // wp0
+            serialize32(GPS_home[LAT]);
+            serialize32(GPS_home[LON]);
+            serialize16(0);                  // altitude will come here
+            serialize8(0);                   // nav flag will come here
+        } else if (wp_no == 16) {
+            serialize8(16);                  // wp16
+            serialize32(GPS_hold[LAT]);
+            serialize32(GPS_hold[LON]);
+            serialize16(0);                  // altitude will come here
+            serialize8(0);                   // nav flag will come here
+        }
+        break;
     case MSP_RESET_CONF:
         checkFirstTime(true);
         headSerialReply(0);
@@ -350,6 +369,18 @@ static void evaluateCommand(void)
     tailSerialReply();
 }
 
+// evaluate all other incoming serial data
+static void evaluateOtherData(uint8_t sr)
+{
+    switch (sr) {
+        case '#':
+            cliProcess();
+            break;
+        case 'R':
+            systemReset(true);      // reboot to bootloader
+            break;
+    }
+}
 
 void serialCom(void)
 {
@@ -375,13 +406,9 @@ void serialCom(void)
         c = uartRead();
 
         if (c_state == IDLE) {
-            // still compliant with older single octet command
-            // enable CLI
-            if (c == '#')
-                cliProcess();
-            else if (c == 'R')
-                systemReset(true);      // reboot to bootloader
             c_state = (c == '$') ? HEADER_START : IDLE;
+            if (c_state == IDLE)
+                evaluateOtherData(c); // evaluate all other incoming serial data
         } else if (c_state == HEADER_START) {
             c_state = (c == 'M') ? HEADER_M : IDLE;
         } else if (c_state == HEADER_M) {
@@ -412,7 +439,7 @@ void serialCom(void)
             c_state = IDLE;
         }
     }
-    if (!cliMode && !uartAvailable() && feature(FEATURE_TELEMETRY) && f.ARMED) { //The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
+    if (!cliMode && !uartAvailable() && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
         sendTelemetry();
         return;
     }

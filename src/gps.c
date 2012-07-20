@@ -12,7 +12,11 @@ void gpsInit(uint32_t baudrate)
 {
     GPS_set_pids();
     uart2Init(baudrate, GPS_NewData);
-    sensorsSet(SENSOR_GPS);
+
+    // catch some GPS frames. TODO check this
+    delay(500);
+    if (GPS_Present)
+        sensorsSet(SENSOR_GPS);
 }
 
 /*-----------------------------------------------------------
@@ -42,7 +46,7 @@ static void GPS_calc_nav_rate(int max_speed);
 static void GPS_update_crosstrack(void);
 static bool GPS_newFrame(char c);
 static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow);
-static int32_t wrap_18000(int32_t error);
+int32_t wrap_18000(int32_t error);
 static int32_t wrap_36000(int32_t angle);
 
 typedef struct {
@@ -140,7 +144,6 @@ static AC_PID pid_nav[2];
 
 #define RADX100                    0.000174532925f
 #define CROSSTRACK_GAIN            1
-#define NAV_SPEED_MAX              300  // cm/sec
 #define NAV_SLOW_NAV               true
 #define NAV_BANK_MAX               3000 // 30deg max banking when navigating (just for security and testing)
 
@@ -201,7 +204,7 @@ static int16_t nav_takeoff_bearing;
 
 void GPS_NewData(uint16_t c)
 {
-    uint8_t axis;
+    int axis;
     static uint32_t nav_loopTimer;
     uint32_t dist;
     int32_t dir;
@@ -225,7 +228,7 @@ void GPS_NewData(uint16_t c)
             }
             // Apply moving average filter to GPS data
 #if defined(GPS_FILTERING)
-            GPS_filter_index = ++GPS_filter_index % GPS_FILTER_VECTOR_LENGTH;
+            GPS_filter_index = (GPS_filter_index+1) % GPS_FILTER_VECTOR_LENGTH;
             for (axis = 0; axis < 2; axis++) {
                 GPS_read[axis] = GPS_coord[axis];       // latest unfiltered data is in GPS_latitude and GPS_longitude
                 GPS_degree[axis] = GPS_read[axis] / 10000000;   // get the degree to assure the sum fits to the int32_t
@@ -300,14 +303,19 @@ void GPS_NewData(uint16_t c)
 
 void GPS_reset_home_position(void)
 {
-    GPS_home[LAT] = GPS_coord[LAT];
-    GPS_home[LON] = GPS_coord[LON];
+    if (f.GPS_FIX && GPS_numSat >= 5) {
+        GPS_home[LAT] = GPS_coord[LAT];
+        GPS_home[LON] = GPS_coord[LON];
+        nav_takeoff_bearing = heading;             //save takeoff heading
+        //Set ground altitude
+        f.GPS_FIX_HOME = 1;
+    }
 }
 
 //reset navigation (stop the navigation processor, and clear nav)
 void GPS_reset_nav(void)
 {
-    uint8_t i;
+    int i;
 
     for (i = 0; i < 2; i++) {
         GPS_angle[i] = 0;
@@ -454,12 +462,12 @@ static void GPS_calc_location_error(int32_t * target_lat, int32_t * target_lng, 
 ////////////////////////////////////////////////////////////////////////////////////
 // Calculate nav_lat and nav_lon from the x and y error and the speed
 //
-static void GPS_calc_poshold()
+static void GPS_calc_poshold(void)
 {
     int32_t p, i, d;
     int32_t output;
     int32_t target_speed;
-    uint8_t axis;
+    int axis;
 
     for (axis = 0; axis < 2; axis++) {
         target_speed = AC_PID_get_p(&pi_poshold[axis], error[axis], &posholdPID);       // calculate desired speed from lon error
@@ -488,7 +496,7 @@ static void GPS_calc_nav_rate(int max_speed)
 {
     float trig[2];
     float temp;
-    uint8_t axis;
+    int axis;
 
     // push us towards the original track
     GPS_update_crosstrack();
@@ -518,7 +526,7 @@ static void GPS_update_crosstrack(void)
 {
     if (abs(wrap_18000(target_bearing - original_target_bearing)) < 4500) {     // If we are too far off or too close we don't do track following
         float temp = (target_bearing - original_target_bearing) * RADX100;
-        crosstrack_error = sin(temp) * (wp_distance * CROSSTRACK_GAIN); // Meters we are off track line
+        crosstrack_error = sinf(temp) * (wp_distance * CROSSTRACK_GAIN); // Meters we are off track line
         nav_bearing = target_bearing + constrain(crosstrack_error, -3000, 3000);
         nav_bearing = wrap_36000(nav_bearing);
     } else {
@@ -560,7 +568,7 @@ static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow)
 ////////////////////////////////////////////////////////////////////////////////////
 // Utilities
 //
-static int32_t wrap_18000(int32_t error)
+int32_t wrap_18000(int32_t error)
 {
     if (error > 18000)
         error -= 36000;
@@ -592,7 +600,6 @@ static int32_t wrap_36000(int32_t angle)
   EOS increased the precision here, even if we think that the gps is not precise enough, with 10e5 precision it has 76cm resolution
   with 10e7 it's around 1 cm now. Increasing it further is irrelevant, since even 1cm resolution is unrealistic, however increased
   resolution also increased precision of nav calculations
-*/
 static uint32_t GPS_coord_to_degrees(char *s)
 {
     char *p = s, *d = s;
@@ -616,6 +623,46 @@ static uint32_t GPS_coord_to_degrees(char *s)
     }
     min = *(d - 1) - '0' + (*(d - 2) - '0') * 10;       // convert minutes : 2 previous char before '.'
     return deg * 10000000UL + (min * 100000UL + frac) * 10UL / 6;
+}
+*/
+
+#define DIGIT_TO_VAL(_x)    (_x - '0')
+uint32_t GPS_coord_to_degrees(char* s)
+{
+    char *p, *q;
+    uint8_t deg = 0, min = 0;
+    unsigned int frac_min = 0;
+    int i;
+
+    // scan for decimal point or end of field
+    for (p = s; isdigit(*p); p++)
+        ;
+    q = s;
+
+    // convert degrees
+    while ((p - q) > 2) {
+        if (deg)
+            deg *= 10;
+        deg += DIGIT_TO_VAL(*q++);
+    }
+    // convert minutes
+    while (p > q) {
+        if (min)
+            min *= 10;
+        min += DIGIT_TO_VAL(*q++);
+    }
+    // convert fractional minutes
+    // expect up to four digits, result is in
+    // ten-thousandths of a minute
+    if (*p == '.') {
+        q = p + 1;
+        for (i = 0; i < 4; i++) {
+            frac_min *= 10;
+            if (isdigit(*q))
+                frac_min += *q++ - '0';
+        }
+    }
+    return deg * 10000000UL + (min * 1000000UL + frac_min * 100UL) / 6;
 }
 
 // helper functions
@@ -699,7 +746,7 @@ static bool GPS_newFrame(char c)
             }
         } else if (frame == FRAME_RMC) {
             if (param == 7) {
-                GPS_speed = ((uint32_t) grab_fields(string, 1) * 514444L) / 100000L;    // speed in cm/s added by Mis
+                GPS_speed = ((uint32_t) grab_fields(string, 1) * 5144L) / 1000L;    // speed in cm/s added by Mis
             }
         }
         param++;

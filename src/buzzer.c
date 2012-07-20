@@ -1,22 +1,18 @@
 #include "board.h"
 #include "mw.h"
 
+static uint8_t buzzerIsOn = 0, beepDone = 0;
+static uint32_t buzzerLastToggleTime;
+static void beep(uint16_t pulse);
+static void beep_code(char first, char second, char third, char pause);
+
 void buzzer(uint8_t warn_vbat)
 {
-    static uint16_t ontime, offtime, beepcount, repeat, repeatcounter;
-    static uint32_t buzzerLastToggleTime;
-    static uint8_t buzzerIsOn = 0, activateBuzzer, beeperOnBox, i, last_rcOptions[CHECKBOXITEMS], warn_noGPSfix = 0, warn_failsafe = 0;
+    static uint8_t beeperOnBox;
+    static uint8_t warn_noGPSfix = 0;
+    static uint8_t warn_failsafe = 0;
+    static uint8_t warn_runtime = 0;
 
-    //===================== Beeps for changing rcOptions =====================
-#if defined(RCOPTIONSBEEP)
-    if (last_rcOptions[i] != rcOptions[i]) {
-        toggleBeep = 1;
-    }
-    last_rcOptions[i] = rcOptions[i];
-    i++;
-    if (i >= CHECKBOXITEMS)
-        i = 0;
-#endif
     //=====================  BeeperOn via rcOptions =====================
     if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch 
         beeperOnBox = 1;
@@ -38,79 +34,95 @@ void buzzer(uint8_t warn_vbat)
 
     //===================== GPS fix notification handling =====================
     if (sensors(SENSOR_GPS)) {
-        if ((f.GPS_HOME_MODE || f.GPS_HOLD_MODE) && !f.GPS_FIX) {     //if no fix and gps funtion is activated: do warning beeps.
+        if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && !f.GPS_FIX) {     // if no fix and gps funtion is activated: do warning beeps
             warn_noGPSfix = 1;
         } else {
             warn_noGPSfix = 0;
         }
     }
-    //===================== Main Handling Block =====================
-    repeat = 1;                 // set repeat to default
-    ontime = 100;               // set offtime to default
 
-    //the order of the below is the priority from high to low, the last entry has the lowest priority, only one option can be active at the same time
-    if (warn_failsafe == 2) {
-        activateBuzzer = 1;
-        offtime = 2000;
-        ontime = 300;
-        repeat = 1;
-    }                           //failsafe "find me" signal
-    else if (warn_failsafe == 1) {
-        activateBuzzer = 1;
-        offtime = 50;
-    }                           //failsafe landing active         
-    else if (warn_noGPSfix == 1) {
-        activateBuzzer = 1;
-        offtime = 10;
-    } else if (beeperOnBox == 1) {
-        activateBuzzer = 1;
-        offtime = 50;
-    }                           //beeperon
-    else if (warn_vbat == 4) {
-        activateBuzzer = 1;
-        offtime = 500;
-        repeat = 3;
-    } else if (warn_vbat == 2) {
-        activateBuzzer = 1;
-        offtime = 1000;
-        repeat = 2;
-    } else if (warn_vbat == 1) {
-        activateBuzzer = 1;
-        offtime = 2000;
-    } else if (toggleBeep > 0) {
-        activateBuzzer = 1;
-        ontime = 50;
-        offtime = 50;
-    }                           //fast confirmation beep
-    else {
-        activateBuzzer = 0;
-    }
-
-    if (activateBuzzer) {
-        if (repeatcounter > 1 && !buzzerIsOn && (millis() >= (buzzerLastToggleTime + 80))) {    // if the buzzer is off and there is a short pause neccessary (multipe buzzes)
-            buzzerIsOn = 1;
-            BEEP_ON;
-            buzzerLastToggleTime = millis();    // save the time the buzer turned on
-            repeatcounter--;
-        } else if (!buzzerIsOn && (millis() >= (buzzerLastToggleTime + offtime))) {     // Buzzer is off and long pause time is up -> turn it on
-            buzzerIsOn = 1;
-            BEEP_ON;
-            buzzerLastToggleTime = millis();    // save the time the buzer turned on
-            repeatcounter = repeat;     //set the amount of repeats
-        } else if (buzzerIsOn && (millis() >= buzzerLastToggleTime + ontime)) { //Buzzer is on and time is up -> turn it off
-            buzzerIsOn = 0;
-            BEEP_OFF;
-            buzzerLastToggleTime = millis();    // save the time the buzer turned on
-            if (toggleBeep > 0)
-                beepcount++;    // only increment if confirmation beep, the rest is endless while the condition is given
-        }
-        if (beepcount >= toggleBeep) {  //confirmation flag is 0,1 or 2 
-            beepcount = 0;      //reset the counter for the next time
-            toggleBeep = 0;     //reset the flag after all beeping is done
-        }
-    } else {                    //no beeping neccessary:reset everything (just in case)
-        beepcount = 0;          //reset the counter for the next time 
-        BEEP_OFF;
+    //===================== Priority driven Handling =====================
+    // beepcode(length1,length2,length3,pause)
+    // D: Double, L: Long, M: Middle, S: Short, N: None
+    if (warn_failsafe == 2)
+        beep_code('L','N','N','D');                 // failsafe "find me" signal
+    else if (warn_failsafe == 1)
+        beep_code('S','M','L','M');                 // failsafe landing active
+    else if (warn_noGPSfix == 1)
+        beep_code('S','S','N','M');
+    else if (beeperOnBox == 1)
+        beep_code('S','S','S','M');                 // beeperon
+    else if (warn_vbat == 4)
+        beep_code('S','M','M','D');
+    else if (warn_vbat == 2)
+        beep_code('S','S','M','D');
+    else if (warn_vbat == 1)
+        beep_code('S','M','N','D');
+    else if (warn_runtime == 1 && f.ARMED)
+        beep_code('S','S','M','N');                 // Runtime warning
+    else if (toggleBeep > 0)
+        beep(50);                                   // fast confirmation beep
+    else { 
         buzzerIsOn = 0;
+        BEEP_OFF;
+    }
+}
+
+void beep_code(char first, char second, char third, char pause)
+{
+    char patternChar[4];
+    uint16_t Duration;
+    static uint8_t icnt = 0;
+    
+    patternChar[0] = first;
+    patternChar[1] = second;
+    patternChar[2] = third;
+    patternChar[3] = pause;
+    switch(patternChar[icnt]) {
+        case 'M': 
+            Duration = 100; 
+            break;
+        case 'L': 
+            Duration = 200; 
+            break;
+        case 'D': 
+            Duration = 2000; 
+            break;
+        case 'N': 
+            Duration = 0; 
+            break;
+        default:
+            Duration = 50; 
+            break;
+    }
+    
+    if (icnt < 3 && Duration != 0)
+        beep(Duration);
+    if (icnt >= 3 && (buzzerLastToggleTime < millis() - Duration)) {
+        icnt = 0;
+        toggleBeep = 0;
+    }
+    if (beepDone == 1 || Duration == 0) {
+        if (icnt < 3)
+            icnt++;
+        beepDone = 0;
+        buzzerIsOn = 0;
+        BEEP_OFF;
+    }
+}
+
+static void beep(uint16_t pulse)
+{
+    if (!buzzerIsOn && (millis() >= (buzzerLastToggleTime + 50))) {         // Buzzer is off and long pause time is up -> turn it on
+        buzzerIsOn = 1;
+        BEEP_ON;
+        buzzerLastToggleTime = millis();      // save the time the buzer turned on
+    } else if (buzzerIsOn && (millis() >= buzzerLastToggleTime + pulse)) {         // Buzzer is on and time is up -> turn it off
+        buzzerIsOn = 0;
+        BEEP_OFF;
+        buzzerLastToggleTime = millis();
+        if (toggleBeep >0)
+            toggleBeep--;
+        beepDone = 1;
     }
 }

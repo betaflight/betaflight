@@ -15,7 +15,7 @@
 #include "core_cm3.h"
 
 #ifndef M_PI
-#define M_PI       3.14159265358979323846
+#define M_PI       3.14159265358979323846f
 #endif /* M_PI */
 
 typedef enum {
@@ -41,13 +41,12 @@ typedef enum {
     FEATURE_SPEKTRUM = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,
     FEATURE_SERVO_TILT = 1 << 5,
-    FEATURE_CAMTRIG = 1 << 6,
-    FEATURE_GYRO_SMOOTHING = 1 << 7,
-    FEATURE_LED_RING = 1 << 8,
-    FEATURE_GPS = 1 << 9,
-    FEATURE_FAILSAFE = 1 << 10,
-    FEATURE_SONAR = 1 << 11,
-    FEATURE_TELEMETRY = 1 << 12,
+    FEATURE_GYRO_SMOOTHING = 1 << 6,
+    FEATURE_LED_RING = 1 << 7,
+    FEATURE_GPS = 1 << 8,
+    FEATURE_FAILSAFE = 1 << 9,
+    FEATURE_SONAR = 1 << 10,
+    FEATURE_TELEMETRY = 1 << 11,
 } AvailableFeatures;
 
 typedef void (* sensorInitFuncPtr)(void);                   // sensor init prototype

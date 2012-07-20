@@ -138,7 +138,7 @@ void batteryInit(void)
 static void ACC_Common(void)
 {
     static int32_t a[3];
-    uint32_t axis;
+    int axis;
 
     if (calibratingA > 0) {
         for (axis = 0; axis < 3; axis++) {
@@ -156,8 +156,8 @@ static void ACC_Common(void)
             cfg.accZero[ROLL] = a[ROLL] / 400;
             cfg.accZero[PITCH] = a[PITCH] / 400;
             cfg.accZero[YAW] = a[YAW] / 400 - acc_1G;       // for nunchuk 200=1G
-            cfg.accTrim[ROLL] = 0;
-            cfg.accTrim[PITCH] = 0;
+            cfg.angleTrim[ROLL] = 0;
+            cfg.angleTrim[PITCH] = 0;
             writeParams(1);      // write accZero in EEPROM
         }
         calibratingA--;
@@ -166,17 +166,16 @@ static void ACC_Common(void)
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         static int32_t b[3];
         static int16_t accZero_saved[3] = { 0, 0, 0 };
-        static int16_t accTrim_saved[2] = { 0, 0 };
+        static int16_t angleTrim_saved[2] = { 0, 0 };
         // Saving old zeropoints before measurement
         if (InflightcalibratingA == 50) {
             accZero_saved[ROLL] = cfg.accZero[ROLL];
             accZero_saved[PITCH] = cfg.accZero[PITCH];
             accZero_saved[YAW] = cfg.accZero[YAW];
-            accTrim_saved[ROLL] = cfg.accTrim[ROLL];
-            accTrim_saved[PITCH] = cfg.accTrim[PITCH];
+            angleTrim_saved[ROLL] = cfg.angleTrim[ROLL];
+            angleTrim_saved[PITCH] = cfg.angleTrim[PITCH];
         }
         if (InflightcalibratingA > 0) {
-            uint8_t axis;
             for (axis = 0; axis < 3; axis++) {
                 // Reset a[axis] at start of calibration
                 if (InflightcalibratingA == 50)
@@ -191,13 +190,13 @@ static void ACC_Common(void)
             if (InflightcalibratingA == 1) {
                 AccInflightCalibrationActive = 0;
                 AccInflightCalibrationMeasurementDone = 1;
-                toggleBeep = 2;      //buzzer for indicatiing the end of calibration
+                toggleBeep = 2;      // buzzer for indicatiing the end of calibration
                 // recover saved values to maintain current flight behavior until new values are transferred
                 cfg.accZero[ROLL] = accZero_saved[ROLL];
                 cfg.accZero[PITCH] = accZero_saved[PITCH];
                 cfg.accZero[YAW] = accZero_saved[YAW];
-                cfg.accTrim[ROLL] = accTrim_saved[ROLL];
-                cfg.accTrim[PITCH] = accTrim_saved[PITCH];
+                cfg.angleTrim[ROLL] = angleTrim_saved[ROLL];
+                cfg.angleTrim[PITCH] = angleTrim_saved[PITCH];
             }
             InflightcalibratingA--;
         }
@@ -207,8 +206,8 @@ static void ACC_Common(void)
             cfg.accZero[ROLL] = b[ROLL] / 50;
             cfg.accZero[PITCH] = b[PITCH] / 50;
             cfg.accZero[YAW] = b[YAW] / 50 - acc_1G;    // for nunchuk 200=1G
-            cfg.accTrim[ROLL] = 0;
-            cfg.accTrim[PITCH] = 0;
+            cfg.angleTrim[ROLL] = 0;
+            cfg.angleTrim[PITCH] = 0;
             writeParams(1);          // write accZero in EEPROM
         }
     }
@@ -254,7 +253,7 @@ void Baro_update(void)
         case 2:
             bmp085_start_up();
             baroState++;
-            baroDeadline += 14000;
+            baroDeadline += 26000;
             break;
         case 3:
             baroUP = bmp085_get_up();
@@ -272,7 +271,7 @@ static void GYRO_Common(void)
 {
     static int16_t previousGyroADC[3] = { 0, 0, 0 };
     static int32_t g[3];
-    uint32_t axis;
+    int axis;
 
     if (calibratingG > 0) {
         for (axis = 0; axis < 3; axis++) {

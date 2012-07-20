@@ -79,6 +79,7 @@ int main(void)
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SPEKTRUM); // disable inputs if using spektrum
     pwm_params.useServos = useServo;
+    pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = cfg.motor_pwm_rate;
     pwm_params.servoPwmRate = cfg.servo_pwm_rate;
 
@@ -127,7 +128,10 @@ int main(void)
     }
 
     previousTime = micros();
+    if (cfg.mixerConfiguration == MULTITYPE_GIMBAL)
+        calibratingA = 400;
     calibratingG = 1000;
+    f.SMALL_ANGLES_25 = 1;
 
     // loopy
     while (1) {

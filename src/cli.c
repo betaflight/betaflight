@@ -36,7 +36,7 @@ const char *mixerNames[] = {
 // sync this with AvailableFeatures enum from board.h
 const char *featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
-    "SERVO_TILT", "CAMTRIG", "GYRO_SMOOTHING", "LED_RING", "GPS",
+    "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
     "FAILSAFE", "SONAR", "TELEMETRY",
     NULL
 };
@@ -91,6 +91,7 @@ typedef struct {
 const clivalue_t valueTable[] = {
     { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
     { "yawdeadband", VAR_UINT8, &cfg.yawdeadband, 0, 100 },
+    { "alt_hold_throttle_neutral", VAR_UINT8, &cfg.alt_hold_throttle_neutral, 1, 250 },
     { "midrc", VAR_UINT16, &cfg.midrc, 1200, 1700 },
     { "minthrottle", VAR_UINT16, &cfg.minthrottle, 0, 2000 },
     { "maxthrottle", VAR_UINT16, &cfg.maxthrottle, 0, 2000 },
@@ -110,8 +111,6 @@ const clivalue_t valueTable[] = {
     { "vbatmaxcellvoltage", VAR_UINT8, &cfg.vbatmaxcellvoltage, 10, 50 },
     { "vbatmincellvoltage", VAR_UINT8, &cfg.vbatmincellvoltage, 10, 50 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
-    { "wing_left_mid", VAR_UINT16, &cfg.wing_left_mid, 0, 2000 },
-    { "wing_right_mid", VAR_UINT16, &cfg.wing_right_mid, 0, 2000 },
     { "tri_yaw_middle", VAR_UINT16, &cfg.tri_yaw_middle, 0, 2000 },
     { "tri_yaw_min", VAR_UINT16, &cfg.tri_yaw_min, 0, 2000 },
     { "tri_yaw_max", VAR_UINT16, &cfg.tri_yaw_max, 0, 2000 },
@@ -142,6 +141,8 @@ const clivalue_t valueTable[] = {
     { "nav_controls_heading", VAR_UINT8, &cfg.nav_controls_heading, 0, 1 },
     { "nav_speed_min", VAR_UINT16, &cfg.nav_speed_min, 10, 2000 },
     { "nav_speed_max", VAR_UINT16, &cfg.nav_speed_max, 10, 2000 },
+    { "nav_slew_rate", VAR_UINT8, &cfg.nav_slew_rate, 0, 100 },
+    { "looptime", VAR_UINT16, &cfg.looptime, 1500, 9000 },
     { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200 },
     { "i_pitch", VAR_UINT8, &cfg.I8[PITCH], 0, 200 },
     { "d_pitch", VAR_UINT8, &cfg.D8[PITCH], 0, 200 },

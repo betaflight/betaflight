@@ -72,7 +72,7 @@ void computeIMU(void)
     for (axis = 0; axis < 3; axis++) {
         gyroADCinter[axis] = gyroADC[axis] + gyroADCp[axis];
         // empirical, we take a weighted value of the current and the previous values
-        gyroData[axis] = (gyroADCinter[axis] + gyroADCprevious[axis] + 1) / 3;
+        gyroData[axis] = (gyroADCinter[axis] + gyroADCprevious[axis]) / 3;
         gyroADCprevious[axis] = gyroADCinter[axis] / 2;
         if (!sensors(SENSOR_ACC))
             accADC[axis] = 0;
@@ -89,11 +89,11 @@ void computeIMU(void)
             Smoothing[YAW] = (cfg.gyro_smoothing_factor) & 0xff;
         }
         for (axis = 0; axis < 3; axis++) {
-            gyroData[axis] = (gyroSmooth[axis] * (Smoothing[axis] - 1) + gyroData[axis] + 1) / Smoothing[axis];
+            gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroData[axis] + 1 ) / Smoothing[axis]);
             gyroSmooth[axis] = gyroData[axis];
         }
     } else if (cfg.mixerConfiguration == MULTITYPE_TRI) {
-        gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW] + 1) / 3;
+        gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW]) / 3;
         gyroYawSmooth = gyroData[YAW];
     }
 }
@@ -126,12 +126,6 @@ void computeIMU(void)
 /* Comment this if  you do not want filter at all.*/
 /* Default WMC value: n/a*/
 //#define MG_LPF_FACTOR 4
-
-/* Set the Gyro Weight for Gyro/Acc complementary filter */
-/* Increasing this value would reduce and delay Acc influence on the output of the filter*/
-/* Default WMC value: 300*/
-// #define GYR_CMPF_FACTOR 310.0f
-// #define GYR_CMPF_FACTOR 500.0f
 
 /* Set the Gyro Weight for Gyro/Magnetometer complementary filter */
 /* Increasing this value would reduce and delay Magnetometer influence on the output of the filter*/
