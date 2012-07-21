@@ -142,7 +142,7 @@ const clivalue_t valueTable[] = {
     { "nav_speed_min", VAR_UINT16, &cfg.nav_speed_min, 10, 2000 },
     { "nav_speed_max", VAR_UINT16, &cfg.nav_speed_max, 10, 2000 },
     { "nav_slew_rate", VAR_UINT8, &cfg.nav_slew_rate, 0, 100 },
-    { "looptime", VAR_UINT16, &cfg.looptime, 1500, 9000 },
+    { "looptime", VAR_UINT16, &cfg.looptime, 0, 9000 },
     { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200 },
     { "i_pitch", VAR_UINT8, &cfg.I8[PITCH], 0, 200 },
     { "d_pitch", VAR_UINT8, &cfg.D8[PITCH], 0, 200 },

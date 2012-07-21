@@ -523,7 +523,7 @@ void loop(void)
     }
 
     currentTime = micros();
-    if (currentTime > loopTime) {
+    if (cfg.looptime == 0 || currentTime > loopTime) {
         loopTime = currentTime + cfg.looptime;
 
         computeIMU();

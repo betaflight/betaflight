@@ -89,7 +89,7 @@ void checkFirstTime(bool reset)
     featureClearAll();
     featureSet(FEATURE_VBAT);
 
-    cfg.looptime = 3000;
+    cfg.looptime = 0;
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;
     cfg.D8[ROLL] = 23;
