@@ -32,11 +32,14 @@ void sensorsAutodetect(void)
     int16_t deg, min;
     drv_adxl345_config_t acc_params;
     bool haveMpu6k = false;
+    bool havel3g4200d = false;
 
     // Autodetect gyro hardware. We have MPU3050 or MPU6050.
     if (mpu6050Detect(&acc, &gyro)) {
         // this filled up  acc.* struct with init values
         haveMpu6k = true;
+    } else if (l3g4200dDetect(&gyro)) {
+        havel3g4200d = true;
     } else if (!mpu3050Detect(&gyro)) {
         // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
         failureMode(3);
@@ -93,11 +96,16 @@ retry:
         acc.init();
     if (sensors(SENSOR_BARO))
         bmp085Init();
-    // this is safe because either mpu6050 or mpu3050 sets it, and in case of fail, none do.
+    // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init();
+
     // todo: this is driver specific :(
-    if (!haveMpu6k)
-        mpu3050Config(cfg.gyro_lpf);
+    if (havel3g4200d) {
+        l3g4200dConfig(cfg.gyro_lpf);
+    } else {
+        if (!haveMpu6k)
+            mpu3050Config(cfg.gyro_lpf);
+    }
 
     // calculate magnetic declination
     deg = cfg.mag_declination / 100;

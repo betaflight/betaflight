@@ -139,6 +139,7 @@ typedef struct sensor_t
 #include "drv_mma845x.h"
 #include "drv_mpu3050.h"
 #include "drv_mpu6050.h"
+#include "drv_l3g4200d.h"
 #include "drv_pwm.h"
 #include "drv_uart.h"
 #include "drv_hcsr04.h"

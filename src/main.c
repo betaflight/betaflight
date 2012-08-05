@@ -138,3 +138,10 @@ int main(void)
         loop();
     }
 }
+
+void HardFault_Handler(void)
+{
+    // fall out of the sky
+    writeAllMotors(cfg.mincommand);
+    while (1);
+}
