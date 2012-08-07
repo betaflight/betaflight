@@ -143,7 +143,7 @@ int16_t dmpGyroData[3];
 extern uint16_t acc_1G;
 uint8_t mpuProductID = 0;
 
-bool mpu6050Detect(sensor_t * acc, sensor_t * gyro)
+bool mpu6050Detect(sensor_t * acc, sensor_t * gyro, uint8_t scale)
 {
     bool ack;
     uint8_t sig;
@@ -157,8 +157,11 @@ bool mpu6050Detect(sensor_t * acc, sensor_t * gyro)
     if (sig != MPU6050_ADDRESS)
         return false;
 
-    // get chip revision
-    i2cRead(MPU6050_ADDRESS, MPU_RA_PRODUCT_ID, 1, &mpuProductID);
+    // get chip revision + fake it if needed
+    if (scale)
+        mpuProductID = MPU6000_REV_C5; // no, seriously? why don't you make the chip ID list public.
+    else
+        i2cRead(MPU6050_ADDRESS, MPU_RA_PRODUCT_ID, 1, &mpuProductID);
 
     acc->init = mpu6050AccInit;
     acc->read = mpu6050AccRead;
@@ -176,16 +179,6 @@ bool mpu6050Detect(sensor_t * acc, sensor_t * gyro)
 
 static void mpu6050AccInit(void)
 {
-#ifndef MPU6050_DMP
-    // Product ID detection code from eosBandi (or rather, DIYClones). This doesn't cover product ID for MPU6050 as far as I can tell
-    if ((mpuProductID == MPU6000ES_REV_C4) || (mpuProductID == MPU6000ES_REV_C5) || (mpuProductID == MPU6000_REV_C4)   || (mpuProductID == MPU6000_REV_C5)) {
-        // Accel scale 8g (4096 LSB/g)
-        // Rev C has different scaling than rev D
-        i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 1 << 3);
-    } else {
-        i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 2 << 3);
-    }
-#endif
     acc_1G = 1023;
 }
 
@@ -224,6 +217,16 @@ static void mpu6050GyroInit(void)
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x03);      //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
     i2cWrite(MPU6050_ADDRESS, MPU_RA_CONFIG, MPU6050_DLPF_CFG);  //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
     i2cWrite(MPU6050_ADDRESS, MPU_RA_GYRO_CONFIG, 0x18);      //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
+
+    // ACC Init stuff. Moved into gyro init because the reset above would screw up accel config. Oops.
+    // Product ID detection code from eosBandi (or rather, DIYClones). This doesn't cover product ID for MPU6050 as far as I can tell
+    if ((mpuProductID == MPU6000ES_REV_C4) || (mpuProductID == MPU6000ES_REV_C5) || (mpuProductID == MPU6000_REV_C4) || (mpuProductID == MPU6000_REV_C5)) {
+        // Accel scale 8g (4096 LSB/g)
+        // Rev C has different scaling than rev D
+        i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 1 << 3);
+    } else {
+        i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 2 << 3);
+    }
 #endif
 }
 

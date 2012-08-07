@@ -119,6 +119,7 @@ typedef struct config_t {
     uint16_t gyro_lpf;                      // mpuX050 LPF setting
     uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
     uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
+    uint8_t mpu6050_scale;                  // seems es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. fucking invenshit won't release chip IDs so I can't autodetect it.
 
     uint16_t activate[CHECKBOXITEMS];       // activate switches
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
