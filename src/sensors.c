@@ -243,7 +243,7 @@ void Baro_update(void)
 {
     int32_t pressure;
 
-    if (currentTime < baroDeadline)
+    if ((int32_t)(currentTime - baroDeadline) < 0)
         return;
 
     baroDeadline = currentTime;
@@ -414,7 +414,7 @@ void Mag_getADC(void)
     static int16_t magZeroTempMax[3];
     uint32_t axis;
     
-    if (currentTime < t)
+    if ((int32_t)(currentTime - t) < 0)
         return;                 //each read is spaced by 100ms
     t = currentTime + 100000;
 

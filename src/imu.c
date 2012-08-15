@@ -268,7 +268,7 @@ void getEstimatedAltitude(void)
     int32_t temp32;
     int16_t last;
 
-    if (currentTime < deadLine)
+    if ((int32_t)(currentTime - deadLine) < 0)
         return;
     deadLine = currentTime + UPDATE_INTERVAL;
 

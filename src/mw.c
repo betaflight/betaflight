@@ -176,14 +176,14 @@ void annexCode(void)
 #ifdef LEDRING
     if (feature(FEATURE_LED_RING)) {
         static uint32_t LEDTime;
-        if (currentTime > LEDTime) {
+        if ((int32_t)(currentTime - LEDTime) >= 0) {
             LEDTime = currentTime + 50000;
             ledringState();
         }
     }
 #endif
 
-    if (currentTime > calibratedAccTime) {
+    if ((int32_t)(currentTime - calibratedAccTime) >= 0) {
         if (!f.SMALL_ANGLES_25) {
             f.ACC_CALIBRATED = 0; // the multi uses ACC and is not calibrated or is too much inclinated
             LED0_TOGGLE;
@@ -197,7 +197,7 @@ void annexCode(void)
 
     if (sensors(SENSOR_GPS)) {
         static uint32_t GPSLEDTime;
-        if (currentTime > GPSLEDTime && (GPS_numSat >= 5)) {
+        if ((int32_t)(currentTime - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
             GPSLEDTime = currentTime + 150000;
             LED1_TOGGLE;
         }
@@ -270,7 +270,7 @@ void loop(void)
     if (spektrumFrameComplete())
         computeRC();
 
-    if (currentTime > rcTime) { // 50Hz
+    if ((int32_t)(currentTime - rcTime) >= 0) { // 50Hz
         rcTime = currentTime + 20000;
         // TODO clean this up. computeRC should handle this check
         if (!feature(FEATURE_SPEKTRUM))
@@ -523,13 +523,13 @@ void loop(void)
     }
 
     currentTime = micros();
-    if (cfg.looptime == 0 || currentTime > loopTime) {
+    if (cfg.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
         loopTime = currentTime + cfg.looptime;
 
         computeIMU();
         // Measure loop rate just afer reading the sensors
         currentTime = micros();
-        cycleTime = currentTime - previousTime;
+        cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
     
     #ifdef MPU6050_DMP
