@@ -65,6 +65,7 @@ NAZE_SRC	 = drv_adc.c \
 		   drv_mma845x.c \
 		   drv_mpu3050.c \
 		   drv_mpu6050.c \
+		   drv_l3g4200d.c \
 		   drv_pwm.c \
 		   $(COMMON_SRC)
 
