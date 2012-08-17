@@ -8,28 +8,6 @@ extern rcReadRawDataPtr rcReadRawFunc;
 extern uint16_t pwmReadRawRC(uint8_t chan);
 extern uint16_t spektrumReadRawRC(uint8_t chan);
 
-void throttleCalibration(void)
-{
-    uint8_t offset = useServo ? 2 : 0;
-    uint8_t len = pwmGetNumOutputChannels() -  offset;
-    uint8_t i;
-
-    LED1_ON;
-
-    // write maxthrottle (high)
-    for (i = offset; i < len; i++)
-        pwmWrite(i, cfg.maxthrottle);
-
-    delay(3000); // 3s delay on high
-
-    // write 1000us (low)
-    for (i = offset; i < len; i++)
-        pwmWrite(i, 1000);
-
-    // blink leds to show we're calibrated and time to remove bind plug
-    failureMode(4);
-}
-
 int main(void)
 {
     uint8_t i;
@@ -83,8 +61,7 @@ int main(void)
     pwm_params.motorPwmRate = cfg.motor_pwm_rate;
     pwm_params.servoPwmRate = cfg.servo_pwm_rate;
 
-    if (pwmInit(&pwm_params))
-        throttleCalibration(); // noreturn
+    pwmInit(&pwm_params);
 
     // configure PWM/CPPM read function. spektrum will override that
     rcReadRawFunc = pwmReadRawRC;

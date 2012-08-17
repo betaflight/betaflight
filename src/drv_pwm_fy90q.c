@@ -51,7 +51,6 @@ static struct PWM_State {
 static TIM_ICInitTypeDef  TIM_ICInitStructure = { 0, };
 static bool usePPMFlag = false;
 static uint8_t numOutputChannels = 0;
-static volatile bool rcActive = false;
 
 void TIM2_IRQHandler(void)
 {
@@ -104,8 +103,6 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 
         if (channel.tim == tim && (TIM_GetITStatus(tim, channel.cc) == SET)) {
             TIM_ClearITPendingBit(channel.tim, channel.cc);
-            if (i == 0)
-                rcActive = true;
 
             switch (channel.channel) {
                 case TIM_Channel_1:
@@ -333,10 +330,5 @@ void pwmWrite(uint8_t channel, uint16_t value)
 uint16_t pwmRead(uint8_t channel)
 {
     return Inputs[channel].capture;
-}
-
-uint8_t pwmGetNumOutputChannels(void)
-{
-    return numOutputChannels;
 }
 #endif

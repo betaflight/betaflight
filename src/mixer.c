@@ -57,13 +57,13 @@ void writeServos(void)
 
     if (cfg.mixerConfiguration == MULTITYPE_TRI || cfg.mixerConfiguration == MULTITYPE_BI) {
         /* One servo on Motor #4 */
-        pwmWrite(0, servo[4]);
+        pwmWriteServo(0, servo[4]);
         if (cfg.mixerConfiguration == MULTITYPE_BI)
-            pwmWrite(1, servo[5]);
+            pwmWriteServo(1, servo[5]);
     } else {
         /* Two servos for camstab or FLYING_WING */
-        pwmWrite(0, servo[0]);
-        pwmWrite(1, servo[1]);
+        pwmWriteServo(0, servo[0]);
+        pwmWriteServo(1, servo[1]);
     }
 }
 
@@ -72,14 +72,9 @@ extern uint8_t cliMode;
 void writeMotors(void)
 {
     uint8_t i;
-    uint8_t offset = 0;
-
-    // when servos are enabled, motor outputs 1..2 are for servos only
-    if (useServo)
-        offset = 2;
 
     for (i = 0; i < numberMotor; i++)
-        pwmWrite(i + offset, motor[i]);
+        pwmWriteMotor(i, motor[i]);
 }
 
 void writeAllMotors(int16_t mc)
@@ -245,8 +240,11 @@ void mixTable(void)
     }
 
     if (cfg.gimbal_flags & GIMBAL_FORWARDAUX) {
+        int offset = 0;
+        if (feature(FEATURE_SERVO_TILT))
+            offset = 2;
         for (i = 0; i < 4; i++)
-            pwmWrite(6 + i, rcData[AUX1 + i]);
+            pwmWriteServo(i + offset, rcData[AUX1 + i]);
     }
 
     maxMotor = motor[0];
