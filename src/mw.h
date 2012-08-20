@@ -30,14 +30,15 @@ typedef enum MultiType
     MULTITYPE_FLYING_WING = 8,      // UNSUPPORTED, do not select!
     MULTITYPE_Y4 = 9,
     MULTITYPE_HEX6X = 10,
-    MULTITYPE_OCTOX8 = 11,
-    MULTITYPE_OCTOFLATP = 12,       // the GUI is the same for all 8 motor configs
-    MULTITYPE_OCTOFLATX = 13,       // the GUI is the same for all 8 motor configs
-    MULTITYPE_AIRPLANE = 14,
-    MULTITYPE_HELI_120_CCPM = 15,   // simple model
-    MULTITYPE_HELI_90_DEG = 16,     // simple model
+    MULTITYPE_OCTOX8 = 11,          // Java GUI is same for the next 3 configs
+    MULTITYPE_OCTOFLATP = 12,       // MultiWinGui shows this differently
+    MULTITYPE_OCTOFLATX = 13,       // MultiWinGui shows this differently
+    MULTITYPE_AIRPLANE = 14,        // airplane / singlecopter / dualcopter
+    MULTITYPE_HELI_120_CCPM = 15,
+    MULTITYPE_HELI_90_DEG = 16,
     MULTITYPE_VTAIL4 = 17,
-    MULTITYPE_LAST = 18
+    MULTITYPE_CUSTOM = 18,          // no current GUI displays this
+    MULTITYPE_LAST = 19
 } MultiType;
 
 typedef enum GimbalFlags {
@@ -148,6 +149,8 @@ typedef struct config_t {
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
+    int16_t servotrim[8];                   // Adjust Servo MID Offset & Swash angles
+    int8_t servoreverse[8];                 // Invert servos by setting -1
 
     // mixer-related configuration
     int8_t yaw_direction;
@@ -215,17 +218,16 @@ extern uint16_t calibratingA;
 extern uint16_t calibratingG;
 extern int16_t heading;
 extern int16_t annex650_overrun_count;
-extern int32_t pressure;
 extern int32_t BaroAlt;
 extern int16_t sonarAlt;
 extern int32_t EstAlt;
-extern int32_t  AltHold;
-extern int16_t  errorAltitudeI;
-extern int16_t  BaroPID;
+extern int32_t AltHold;
+extern int16_t errorAltitudeI;
+extern int16_t BaroPID;
 extern int16_t headFreeModeHold;
 extern int16_t zVelocity;
 extern int16_t heading, magHold;
-extern int16_t motor[8];
+extern int16_t motor[MAX_MOTORS];
 extern int16_t servo[8];
 extern int16_t rcData[8];
 extern uint8_t vbat;
@@ -255,6 +257,7 @@ extern config_t cfg;
 extern flags_t f;
 extern sensor_t acc;
 extern sensor_t gyro;
+extern baro_t baro;
 
 // main
 void loop(void);

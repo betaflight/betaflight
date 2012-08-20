@@ -630,6 +630,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_l3g4200d.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_ms5611.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_ms5611.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1423,6 +1428,11 @@
               <FileName>drv_l3g4200d.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_l3g4200d.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_ms5611.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_ms5611.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2401,6 +2411,11 @@
               <FileName>drv_l3g4200d.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_l3g4200d.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_ms5611.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_ms5611.c</FilePath>
             </File>
           </Files>
         </Group>

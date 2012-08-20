@@ -139,15 +139,6 @@ enum {
     TYPE_S = 0x80,
 };
 
-typedef struct {
-    uint8_t port;
-    uint8_t type;
-} pwmPortConfig_t;
-
-#define MAX_MOTORS  12
-#define MAX_SERVOS  8
-#define MAX_INPUTS  8
-
 static pwmPortData_t pwmPorts[MAX_PORTS];
 static uint16_t captures[MAX_INPUTS];
 static pwmPortData_t *motors[MAX_MOTORS];
@@ -159,68 +150,68 @@ static uint8_t  numInputs = 0;
 extern int16_t failsafeCnt;
 
 static const uint8_t multiPPM[] = {
-    PWM1 | TYPE_IP,
-    PWM9 | TYPE_M,  // Swap to servo if needed
-    PWM10 | TYPE_M, // Swap to servo if needed
+    PWM1 | TYPE_IP,     // PPM input
+    PWM9 | TYPE_M,      // Swap to servo if needed
+    PWM10 | TYPE_M,     // Swap to servo if needed
     PWM11 | TYPE_M,
     PWM12 | TYPE_M,
     PWM13 | TYPE_M,
     PWM14 | TYPE_M,
-    PWM5 | TYPE_M,  // Swap to servo if needed
-    PWM6 | TYPE_M,  // Swap to servo if needed
-    PWM7 | TYPE_M,  // Swap to servo if needed
-    PWM8 | TYPE_M,  // Swap to servo if needed
+    PWM5 | TYPE_M,      // Swap to servo if needed
+    PWM6 | TYPE_M,      // Swap to servo if needed
+    PWM7 | TYPE_M,      // Swap to servo if needed
+    PWM8 | TYPE_M,      // Swap to servo if needed
     0xFF
 };
 
 static const uint8_t multiPWM[] = {
-    PWM1 | TYPE_IW,
+    PWM1 | TYPE_IW,     // input #1
     PWM2 | TYPE_IW,
     PWM3 | TYPE_IW,
     PWM4 | TYPE_IW,
     PWM5 | TYPE_IW,
     PWM6 | TYPE_IW,
     PWM7 | TYPE_IW,
-    PWM8 | TYPE_IW,
-    PWM9 | TYPE_M,  // Swap to servo if needed
-    PWM10 | TYPE_M, // Swap to servo if needed
-    PWM11 | TYPE_M,
+    PWM8 | TYPE_IW,     // input #8
+    PWM9 | TYPE_M,      // motor #1 or servo #1 (swap to servo if needed)
+    PWM10 | TYPE_M,     // motor #2 or servo #2 (swap to servo if needed)
+    PWM11 | TYPE_M,     // motor #1 or #3
     PWM12 | TYPE_M,
     PWM13 | TYPE_M,
-    PWM14 | TYPE_M,
+    PWM14 | TYPE_M,     // motor #4 or #6
     0xFF
 };
 
 static const uint8_t airPPM[] = {
-    PWM1 | TYPE_IP,
-    PWM5 | TYPE_S,
-    PWM6 | TYPE_S,
-    PWM7 | TYPE_S,
-    PWM8 | TYPE_S,
-    PWM9 | TYPE_M,
-    PWM10 | TYPE_M,
-    PWM11 | TYPE_S,
+    PWM1 | TYPE_IP,     // PPM input
+    PWM9 | TYPE_M,      // motor #1
+    PWM10 | TYPE_M,     // motor #2
+    PWM11 | TYPE_S,     // servo #1
     PWM12 | TYPE_S,
     PWM13 | TYPE_S,
-    PWM14 | TYPE_S,
+    PWM14 | TYPE_S,     // servo #4
+    PWM5 | TYPE_S,      // servo #5
+    PWM6 | TYPE_S,
+    PWM7 | TYPE_S,
+    PWM8 | TYPE_S,      // servo #8
     0xFF
 };
 
 static const uint8_t airPWM[] = {
-    PWM1 | TYPE_IW,
+    PWM1 | TYPE_IW,     // input #1
     PWM2 | TYPE_IW,
     PWM3 | TYPE_IW,
     PWM4 | TYPE_IW,
     PWM5 | TYPE_IW,
     PWM6 | TYPE_IW,
     PWM7 | TYPE_IW,
-    PWM8 | TYPE_IW,
-    PWM9 | TYPE_M,
-    PWM10 | TYPE_M,
-    PWM11 | TYPE_S,
+    PWM8 | TYPE_IW,     // input #8
+    PWM9 | TYPE_M,      // motor #1
+    PWM10 | TYPE_M,     // motor #2
+    PWM11 | TYPE_S,     // servo #1
     PWM12 | TYPE_S,
     PWM13 | TYPE_S,
-    PWM14 | TYPE_S,
+    PWM14 | TYPE_S,     // servo #4
     0xFF
 };
 

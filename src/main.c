@@ -26,7 +26,6 @@ int main(void)
     
 #endif
 
-
 #if 0
     // using this to write asm for bootloader :)
     RCC->APB2ENR |= RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO; // GPIOB + AFIO

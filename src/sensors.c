@@ -17,6 +17,7 @@ extern float magneticDeclination;
 
 sensor_t acc;                       // acc access functions
 sensor_t gyro;                      // gyro access functions
+baro_t baro;                        // barometer access functions
 uint8_t accHardware = ACC_DEFAULT;  // which accel chip is used/detected
 
 #ifdef FY90Q
@@ -85,17 +86,25 @@ retry:
         }
     }
 
-    // Detect what else is available
-    if (!bmp085Init())
-        sensorsClear(SENSOR_BARO);
+#ifdef BARO
+    // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
+    if (!ms5611Detect(&baro)) {
+        // ms5611 disables BMP085, and tries to initialize + check PROM crc. if this works, we have a baro
+        if (!bmp085Detect(&baro)) {
+            // if both failed, we don't have anything
+            sensorsClear(SENSOR_BARO);
+        }
+    }
+#endif
+
+#ifdef MAG
     if (!hmc5883lDetect())
         sensorsClear(SENSOR_MAG);
+#endif
 
-    // Now time to init them, acc first
+    // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
         acc.init();
-    if (sensors(SENSOR_BARO))
-        bmp085Init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init();
 
@@ -234,13 +243,10 @@ void ACC_getADC(void)
 }
 
 #ifdef BARO
-static uint32_t baroDeadline = 0;
-static uint8_t baroState = 0;
-static uint16_t baroUT = 0;
-static uint32_t baroUP = 0;
-
 void Baro_update(void)
 {
+    static uint32_t baroDeadline = 0;
+    static uint8_t state = 0;
     int32_t pressure;
 
     if ((int32_t)(currentTime - baroDeadline) < 0)
@@ -248,28 +254,27 @@ void Baro_update(void)
 
     baroDeadline = currentTime;
 
-    switch (baroState) {
+    switch (state) {
         case 0:
-            bmp085_start_ut();
-            baroState++;
-            baroDeadline += 4600;
+            baro.start_ut();
+            state++;
+            baroDeadline += baro.ut_delay;
             break;
         case 1:
-            baroUT = bmp085_get_ut();
-            baroState++;
+            baro.get_ut();
+            state++;
             break;
         case 2:
-            bmp085_start_up();
-            baroState++;
-            baroDeadline += 26000;
+            baro.start_up();
+            state++;
+            baroDeadline += baro.up_delay;
             break;
         case 3:
-            baroUP = bmp085_get_up();
-            bmp085_get_temperature(baroUT);
-            pressure = bmp085_get_pressure(baroUP);
+            baro.get_up();
+            pressure = baro.calculate();
             BaroAlt = (1.0f - pow(pressure / 101325.0f, 0.190295f)) * 4433000.0f; // centimeter
-            baroState = 0;
-            baroDeadline += 5000;
+            state = 0;
+            baroDeadline += baro.repeat_delay;
             break;
     }
 }

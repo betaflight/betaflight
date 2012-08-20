@@ -1,5 +1,9 @@
 #pragma once
 
+#define MAX_MOTORS  12
+#define MAX_SERVOS  8
+#define MAX_INPUTS  8
+
 typedef struct drv_pwm_config_t {
     bool enableInput;
     bool usePPM;
