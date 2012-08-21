@@ -52,6 +52,7 @@ static void i2c_er_handler(void)
     /* Read the I2C1 status register */
     SR1Register = I2Cx->SR1;
     if (SR1Register & 0x0F00) { //an error
+        error = true;
         // I2C1error.error = ((SR1Register & 0x0F00) >> 8);        //save error
         // I2C1error.job = job;    //the task
     }
@@ -89,7 +90,8 @@ bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
     read_p = my_data;
     bytes = len_;
     busy = 1;
-    
+    error = false;
+
     // too long
     if (len_ > 16)
         return false;
@@ -113,7 +115,7 @@ bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
         return false;
     }
 
-    return true;
+    return !error;
 }
 
 bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
@@ -133,7 +135,8 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
     write_p = buf;
     bytes = len;
     busy = 1;
-    
+    error = false;
+
     if (!(I2Cx->CR2 & I2C_IT_EVT)) {        //if we are restarting the driver
         if (!(I2Cx->CR1 & 0x0100)) {        // ensure sending a start
             while (I2Cx->CR1 & 0x0200) { ; }               //wait for any stop to finish sending
@@ -150,7 +153,7 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
         return false;
     }
 
-    return true;
+    return !error;
 }
 
 void i2c_ev_handler(void)
@@ -158,7 +161,7 @@ void i2c_ev_handler(void)
     static uint8_t subaddress_sent, final_stop; //flag to indicate if subaddess sent, flag to indicate final bus condition
     static int8_t index;        //index is signed -1==send the subaddress
     uint8_t SReg_1 = I2Cx->SR1; //read the status register here
-    
+
     if (SReg_1 & 0x0001) {      //we just sent a start - EV5 in ref manual
         I2Cx->CR1 &= ~0x0800;  //reset the POS bit so ACK/NACK applied to the current byte
         I2C_AcknowledgeConfig(I2Cx, ENABLE);    //make sure ACK is on
@@ -263,7 +266,7 @@ void i2cInit(I2C_TypeDef *I2C)
     GPIO_InitTypeDef GPIO_InitStructure;
     I2C_InitTypeDef I2C_InitStructure;
 
-    // Init pins    
+    // Init pins
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
@@ -343,7 +346,7 @@ static void i2cUnstick(void)
     delayMicroseconds(10);
     GPIO_SetBits(GPIOB, GPIO_Pin_11); // Set bus sda high
 
-    // Init pins    
+    // Init pins
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;

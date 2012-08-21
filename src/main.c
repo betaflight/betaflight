@@ -23,7 +23,6 @@ int main(void)
     GPIOA->BRR = 0x8000; // set low 15
     GPIOC->CRH = 0x44434444; // PIN 12 Output 50MHz
     GPIOC->BRR = 0x1000; // set low 12
-    
 #endif
 
 #if 0
@@ -52,7 +51,9 @@ int main(void)
 #endif
 
     mixerInit(); // this will set useServo var depending on mixer type
-    // pwmInit returns true if throttle calibration is requested. if so, do it here. throttleCalibration() does NOT return - for safety.
+    // when using airplane/wing mixer, servo/motor outputs are remapped
+    if (cfg.mixerConfiguration == MULTITYPE_AIRPLANE || cfg.mixerConfiguration == MULTITYPE_FLYING_WING)
+        pwm_params.airplane = true;
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SPEKTRUM); // disable inputs if using spektrum
     pwm_params.useServos = useServo;
@@ -92,8 +93,7 @@ int main(void)
     } else {
         // spektrum and GPS are mutually exclusive
         // Optional GPS - available only when using PPM, otherwise required pins won't be usable
-        if (feature(FEATURE_PPM))
-        {
+        if (feature(FEATURE_PPM)) {
             if (feature(FEATURE_GPS))
                 gpsInit(cfg.gps_baudrate);
 #ifdef SONAR

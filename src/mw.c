@@ -532,11 +532,11 @@ void loop(void)
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
     
-    #ifdef MPU6050_DMP
+#ifdef MPU6050_DMP
         mpu6050DmpLoop();
-    #endif
+#endif
     
-    #ifdef MAG
+#ifdef MAG
         if (sensors(SENSOR_MAG)) {
             if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
                 int16_t dif = heading - magHold;
@@ -549,9 +549,9 @@ void loop(void)
             } else
                 magHold = heading;
         }
-    #endif
-    
-    #ifdef BARO
+#endif
+
+#ifdef BARO
         if (sensors(SENSOR_BARO)) {
             if (f.BARO_MODE) {
                 if (abs(rcCommand[THROTTLE] - initialThrottleHold) > 20) {
@@ -560,8 +560,8 @@ void loop(void)
                 rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
             }
         }
-    #endif
-    
+#endif
+
         if (sensors(SENSOR_GPS)) {
             // Check that we really need to navigate ?
             if ((!f.GPS_HOME_MODE && !f.GPS_HOLD_MODE) || (!f.GPS_FIX_HOME)) {
@@ -586,11 +586,11 @@ void loop(void)
             if (f.ACC_MODE && axis < 2) { // LEVEL MODE
                 // 50 degrees max inclination
                 errorAngle = constrain(2 * rcCommand[axis] - GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
-    #ifdef LEVEL_PDF
+#ifdef LEVEL_PDF
                 PTerm = -(int32_t) angle[axis] * cfg.P8[PIDLEVEL] / 100;
-    #else
+#else
                 PTerm = (int32_t) errorAngle *cfg.P8[PIDLEVEL] / 100;       //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
-    #endif
+#endif
                 PTerm = constrain(PTerm, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
     
                 errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);      // WindUp     // 16 bits is ok here

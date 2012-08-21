@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 25;
+uint8_t checkNewConf = 26;
 
 void parseRcChannels(const char *input)
 {
