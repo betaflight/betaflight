@@ -97,11 +97,6 @@ retry:
     }
 #endif
 
-#ifdef MAG
-    if (!hmc5883lDetect())
-        sensorsClear(SENSOR_MAG);
-#endif
-
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
         acc.init();
@@ -115,6 +110,11 @@ retry:
         if (!haveMpu6k)
             mpu3050Config(cfg.gyro_lpf);
     }
+
+#ifdef MAG
+    if (!hmc5883lDetect())
+        sensorsClear(SENSOR_MAG);
+#endif
 
     // calculate magnetic declination
     deg = cfg.mag_declination / 100;
