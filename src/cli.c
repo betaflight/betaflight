@@ -129,6 +129,7 @@ const clivalue_t valueTable[] = {
     { "gyro_cmpf_factor", VAR_UINT16, &cfg.gyro_cmpf_factor, 100, 1000 },
     { "mpu6050_scale", VAR_UINT8, &cfg.mpu6050_scale, 0, 1 },
     { "mag_declination", VAR_INT16, &cfg.mag_declination, -18000, 18000 },
+    { "gps_type", VAR_UINT8, &cfg.gps_type, 0, 3 },
     { "gps_pos_p", VAR_UINT8, &cfg.P8[PIDPOS], 0, 200 },
     { "gps_pos_i", VAR_UINT8, &cfg.I8[PIDPOS], 0, 200 },
     { "gps_pos_d", VAR_UINT8, &cfg.D8[PIDPOS], 0, 200 },

@@ -9,7 +9,6 @@
 // Receive buffer, circular DMA
 volatile uint8_t rxBuffer[UART_BUFFER_SIZE];
 uint32_t rxDMAPos = 0;
-
 volatile uint8_t txBuffer[UART_BUFFER_SIZE];
 uint32_t txBufferTail = 0;
 uint32_t txBufferHead = 0;
@@ -44,10 +43,8 @@ void uartInit(uint32_t speed)
     DMA_InitTypeDef DMA_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
 
-    // UART
     // USART1_TX    PA9
     // USART1_RX    PA10
-
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
@@ -153,8 +150,14 @@ void uartPrint(char *str)
 
 /* -------------------------- UART2 (Spektrum, GPS) ----------------------------- */
 uartReceiveCallbackPtr uart2Callback = NULL;
+#define UART2_BUFFER_SIZE    64
 
-void uart2Init(uint32_t speed, uartReceiveCallbackPtr func)
+volatile uint8_t tx2Buffer[UART2_BUFFER_SIZE];
+uint32_t tx2BufferTail = 0;
+uint32_t tx2BufferHead = 0;
+bool uart2RxOnly = false;
+
+void uart2Init(uint32_t speed, uartReceiveCallbackPtr func, bool rxOnly)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -162,33 +165,65 @@ void uart2Init(uint32_t speed, uartReceiveCallbackPtr func)
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
+    uart2RxOnly = rxOnly;
+
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
+    // USART2_TX    PA2
+    // USART2_RX    PA3
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    if (!rxOnly)
+        GPIO_Init(GPIOA, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     USART_InitStructure.USART_BaudRate = speed;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | (rxOnly ? 0 : USART_Mode_Tx);
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_Init(USART2, &USART_InitStructure);
 
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+    if (!rxOnly)
+        USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
     USART_Cmd(USART2, ENABLE);
     uart2Callback = func;
 }
 
+void uart2Write(uint8_t ch)
+{
+    if (uart2RxOnly)
+        return;
+
+    tx2Buffer[tx2BufferHead] = ch;
+    tx2BufferHead = (tx2BufferHead + 1) % UART2_BUFFER_SIZE;
+
+    USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
+}
+
 void USART2_IRQHandler(void)
 {
-    if (USART_GetITStatus(USART2, USART_IT_RXNE) == SET) {
+    uint16_t SR = USART2->SR;
+
+    if (SR & USART_IT_RXNE) {
         if (uart2Callback)
             uart2Callback(USART_ReceiveData(USART2));
+    }
+    if (SR & USART_FLAG_TXE) {
+        if (tx2BufferTail != tx2BufferHead) {
+            USART2->DR = tx2Buffer[tx2BufferTail];
+            tx2BufferTail = (tx2BufferTail + 1) % UART2_BUFFER_SIZE;
+        } else {
+            USART_ITConfig(USART2, USART_IT_TXE, DISABLE);
+        }
     }
 }

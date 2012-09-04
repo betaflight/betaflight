@@ -17,7 +17,7 @@ int16_t telemTemperature1;      // gyro sensor temperature
 
 int16_t failsafeCnt = 0;
 int16_t failsafeEvents = 0;
-int16_t rcData[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 }; // interval [1000;2000]
+int16_t rcData[8] = { 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502 }; // interval [1000;2000]
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
 int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
 int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
@@ -487,6 +487,10 @@ void loop(void)
         } else {
             f.PASSTHRU_MODE = 0;
         }
+        
+        if (cfg.mixerConfiguration == MULTITYPE_FLYING_WING || cfg.mixerConfiguration == MULTITYPE_AIRPLANE) {
+            f.HEADFREE_MODE = 0;
+        }
     } else {                    // not in rc loop
         static int8_t taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
         switch (taskOrder++ % 4) {
@@ -531,11 +535,10 @@ void loop(void)
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
-    
 #ifdef MPU6050_DMP
         mpu6050DmpLoop();
 #endif
-    
+
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {
             if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
@@ -554,7 +557,7 @@ void loop(void)
 #ifdef BARO
         if (sensors(SENSOR_BARO)) {
             if (f.BARO_MODE) {
-                if (abs(rcCommand[THROTTLE] - initialThrottleHold) > 20) {
+                if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
                     f.BARO_MODE = 0;   // so that a new althold reference is defined
                 }
                 rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
@@ -564,7 +567,7 @@ void loop(void)
 
         if (sensors(SENSOR_GPS)) {
             // Check that we really need to navigate ?
-            if ((!f.GPS_HOME_MODE && !f.GPS_HOLD_MODE) || (!f.GPS_FIX_HOME)) {
+            if ((!f.GPS_HOME_MODE && !f.GPS_HOLD_MODE) || !f.GPS_FIX_HOME) {
                 // If not. Reset nav loops and all nav related parameters
                 GPS_reset_nav();
             } else {
@@ -572,7 +575,7 @@ void loop(void)
                 float cos_yaw_x = cosf(heading * 0.0174532925f);
                 if (cfg.nav_slew_rate) {
                     nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -cfg.nav_slew_rate, cfg.nav_slew_rate); // TODO check this on uint8
-                    nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]),-cfg.nav_slew_rate, cfg.nav_slew_rate);
+                    nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -cfg.nav_slew_rate, cfg.nav_slew_rate);
                     GPS_angle[ROLL] = (nav_rated[LON] * cos_yaw_x - nav_rated[LAT] * sin_yaw_y) / 10;
                     GPS_angle[PITCH] = (nav_rated[LON] * sin_yaw_y + nav_rated[LAT] * cos_yaw_x) / 10;
                 } else {
@@ -592,13 +595,13 @@ void loop(void)
                 PTerm = (int32_t) errorAngle *cfg.P8[PIDLEVEL] / 100;       //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
 #endif
                 PTerm = constrain(PTerm, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
-    
+
                 errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);      // WindUp     // 16 bits is ok here
                 ITerm = ((int32_t) errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;     // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
             } else {                // ACRO MODE or YAW axis
                 error = (int32_t) rcCommand[axis] * 10 * 8 / cfg.P8[axis];  //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
                 error -= gyroData[axis];
-    
+
                 PTerm = rcCommand[axis];
     
                 errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000);     // WindUp // 16 bits is ok here
@@ -607,18 +610,18 @@ void loop(void)
                 ITerm = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;       // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
             }
             PTerm -= (int32_t) gyroData[axis] * dynP8[axis] / 10 / 8;       // 32 bits is needed for calculation
-    
+
             delta = gyroData[axis] - lastGyro[axis];        //16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
             lastGyro[axis] = gyroData[axis];
             deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
-    
+
             DTerm = ((int32_t) deltaSum * dynD8[axis]) >> 5;        //32 bits is needed for calculation
     
             axisPID[axis] = PTerm + ITerm - DTerm;
         }
-    
+
         mixTable();
         writeServos();
         writeMotors();

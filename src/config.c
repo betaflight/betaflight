@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 26;
+uint8_t checkNewConf = 27;
 
 void parseRcChannels(const char *input)
 {
@@ -184,6 +184,7 @@ void checkFirstTime(bool reset)
     cfg.gimbal_roll_mid = 1500;
 
     // gps/nav stuff
+    cfg.gps_type = 0; // NMEA
     cfg.gps_baudrate = 9600;
     cfg.gps_wp_radius = 200;
     cfg.gps_lpf = 20;
@@ -192,7 +193,7 @@ void checkFirstTime(bool reset)
     cfg.nav_speed_min = 100;
     cfg.nav_speed_max = 300;
 
-    // serial(uart1) baudrate
+    // serial (USART1) baudrate
     cfg.serial_baudrate = 115200;
 
     writeParams(0);

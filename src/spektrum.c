@@ -27,7 +27,7 @@ void spektrumInit(void)
         spek_chan_mask = 0x03;
     }
 
-    uart2Init(115200, spektrumDataReceive);
+    uart2Init(115200, spektrumDataReceive, true);
 }
 
 // UART2 Receive ISR callback

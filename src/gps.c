@@ -11,7 +11,7 @@ static void GPS_set_pids(void);
 void gpsInit(uint32_t baudrate)
 {
     GPS_set_pids();
-    uart2Init(baudrate, GPS_NewData);
+    uart2Init(baudrate, GPS_NewData, false);
 
     // catch some GPS frames. TODO check this
     delay(500);
@@ -21,7 +21,7 @@ void gpsInit(uint32_t baudrate)
 
 /*-----------------------------------------------------------
  *
- * Multiwii GPS code - revision: 851
+ * Multiwii GPS code - revision: 1097
  *
  *-----------------------------------------------------------*/
 #define POSHOLD_IMAX           20       // degrees
@@ -45,6 +45,7 @@ static void GPS_calc_poshold(void);
 static void GPS_calc_nav_rate(int max_speed);
 static void GPS_update_crosstrack(void);
 static bool GPS_newFrame(char c);
+static bool GPS_NMEA_newFrame(char c);
 static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow);
 int32_t wrap_18000(int32_t error);
 static int32_t wrap_36000(int32_t angle);
@@ -56,91 +57,62 @@ typedef struct {
     float Imax;
 } PID_PARAM;
 
-static PID_PARAM posholdPID;
-static PID_PARAM poshold_ratePID;
-static PID_PARAM navPID;
+static PID_PARAM posholdPID_PARAM;
+static PID_PARAM poshold_ratePID_PARAM;
+static PID_PARAM navPID_PARAM;
 
-// AC_PID.h & AC_PID.cpp
 typedef struct {
-    float _integrator;          ///< integrator value
-    int32_t _last_input;        ///< last input for derivative
-    float _last_derivative;     ///< last derivative for low-pass filter
-    float _output;
-    float _derivative;
-} AC_PID;
+    float integrator;          // integrator value
+    int32_t last_input;        // last input for derivative
+    float last_derivative;     // last derivative for low-pass filter
+    float output;
+    float derivative;
+} PID;
 
-static float AC_PID_get_integrator(AC_PID * ac_pid)
+static PID posholdPID[2];
+static PID poshold_ratePID[2];
+static PID navPID[2];
+
+static int32_t get_P(int32_t error, PID_PARAM *pid)
 {
-    return ac_pid->_integrator;
+    return (float)error * pid->kP;
 }
 
-static void AC_PID_set_integrator(AC_PID * ac_pid, float i)
+static int32_t get_I(int32_t error, float *dt, PID *pid, PID_PARAM *pid_param)
 {
-    ac_pid->_integrator = i;
+    pid->integrator += ((float)error * pid_param->kI) * *dt;
+    pid->integrator = constrain(pid->integrator, -pid_param->Imax, pid_param->Imax);
+    return pid->integrator;
 }
 
-/// Low pass filter cut frequency for derivative calculation.
-// static const float ac_pid_filter = 1.0f / (2.0f * M_PI * (float)cfg.gps_lpf); // Set to  "1 / ( 2 * PI * f_cut )"
-#define AC_PID_FILTER       (1.0f / (2.0f * M_PI * (float)cfg.gps_lpf))
-
-/// Iterate the PID, return the new control value
-///
-/// Positive error produces positive output.
-///
-/// @param error        The measured error value
-/// @param dt           The time delta in milliseconds (note
-///                                     that update interval cannot be more
-///                                     than 65.535 seconds due to limited range
-///                                     of the data type).
-/// @param scaler       An arbitrary scale factor
-///
-/// @returns            The updated control output.
-///
-static int32_t AC_PID_get_p(AC_PID * ac_pid, int32_t error, PID_PARAM * pid)
+static int32_t get_D(int32_t input, float *dt, PID *pid, PID_PARAM *pid_param)
 {
-    return (float) error *pid->kP;
-}
+    pid->derivative = (input - pid->last_input) / *dt;
 
-static int32_t AC_PID_get_i(AC_PID * ac_pid, int32_t error, float *dt, PID_PARAM * pid)
-{
-    ac_pid->_integrator += ((float) error * pid->kI) * *dt;
-    if (ac_pid->_integrator < -pid->Imax) {
-        ac_pid->_integrator = -pid->Imax;
-    } else if (ac_pid->_integrator > pid->Imax) {
-        ac_pid->_integrator = pid->Imax;
-    }
-    return ac_pid->_integrator;
-}
-
-static int32_t AC_PID_get_d(AC_PID * ac_pid, int32_t input, float *dt, PID_PARAM * pid)
-{
-    ac_pid->_derivative = (input - ac_pid->_last_input) / *dt;
+    // Low pass filter cut frequency for derivative calculation
+    // Set to  "1 / ( 2 * PI * gps_lpf )"
+#define PID_FILTER       (1.0f / (2.0f * M_PI * (float)cfg.gps_lpf))
     // discrete low pass filter, cuts out the
     // high frequency noise that can drive the controller crazy
-    ac_pid->_derivative = ac_pid->_last_derivative + (*dt / (AC_PID_FILTER + *dt)) * (ac_pid->_derivative - ac_pid->_last_derivative);
+    pid->derivative = pid->last_derivative + (*dt / (PID_FILTER + *dt)) * (pid->derivative - pid->last_derivative);
     // update state
-    ac_pid->_last_input = input;
-    ac_pid->_last_derivative = ac_pid->_derivative;
+    pid->last_input = input;
+    pid->last_derivative = pid->derivative;
     // add in derivative component
-    return pid->kD * ac_pid->_derivative;
+    return pid_param->kD * pid->derivative;
 }
 
-/// Reset the PID integrator
-///
-static void AC_PID_reset(AC_PID * ac_pid)
+static void reset_PID(PID *pid)
 {
-    ac_pid->_integrator = 0;
-    ac_pid->_last_input = 0;
-    ac_pid->_last_derivative = 0;
+    pid->integrator = 0;
+    pid->last_input = 0;
+    pid->last_derivative = 0;
 }
 
 #define _X 1
 #define _Y 0
 
 /****************** PI and PID controllers for GPS ********************///32938 -> 33160
-static AC_PID pi_poshold[2];
-static AC_PID pid_poshold_rate[2];
-static AC_PID pid_nav[2];
 
 #define RADX100                    0.000174532925f
 #define CROSSTRACK_GAIN            1
@@ -216,21 +188,15 @@ void GPS_NewData(uint16_t c)
         else
             GPS_update = 1;
         if (f.GPS_FIX && GPS_numSat >= 5) {
-            if (!f.ARMED) {
+            if (!f.ARMED)
                 f.GPS_FIX_HOME = 0;
-            }
-            if (!f.GPS_FIX_HOME && f.ARMED) {
-                f.GPS_FIX_HOME = 1;
-                GPS_home[LAT] = GPS_coord[LAT];
-                GPS_home[LON] = GPS_coord[LON];
-                GPS_calc_longitude_scaling(GPS_coord[LAT]); // need an initial value for distance and bearing calc
-                nav_takeoff_bearing = heading; // save takeoff heading
-            }
+            if (!f.GPS_FIX_HOME && f.ARMED)
+                GPS_reset_home_position();
             // Apply moving average filter to GPS data
 #if defined(GPS_FILTERING)
-            GPS_filter_index = (GPS_filter_index+1) % GPS_FILTER_VECTOR_LENGTH;
+            GPS_filter_index = (GPS_filter_index + 1) % GPS_FILTER_VECTOR_LENGTH;
             for (axis = 0; axis < 2; axis++) {
-                GPS_read[axis] = GPS_coord[axis];       // latest unfiltered data is in GPS_latitude and GPS_longitude
+                GPS_read[axis] = GPS_coord[axis];               // latest unfiltered data is in GPS_latitude and GPS_longitude
                 GPS_degree[axis] = GPS_read[axis] / 10000000;   // get the degree to assure the sum fits to the int32_t
 
                 // How close we are to a degree line ? its the first three digits from the fractions of degree
@@ -241,7 +207,7 @@ void GPS_NewData(uint16_t c)
                 GPS_filter[axis][GPS_filter_index] = GPS_read[axis] - (GPS_degree[axis] * 10000000);
                 GPS_filter_sum[axis] += GPS_filter[axis][GPS_filter_index];
                 GPS_filtered[axis] = GPS_filter_sum[axis] / GPS_FILTER_VECTOR_LENGTH + (GPS_degree[axis] * 10000000);
-                if (nav_mode == NAV_MODE_POSHOLD) {     //we use gps averaging only in poshold mode...
+                if (nav_mode == NAV_MODE_POSHOLD) {             // we use gps averaging only in poshold mode...
                     if (fraction3[axis] > 1 && fraction3[axis] < 999)
                         GPS_coord[axis] = GPS_filtered[axis];
                 }
@@ -258,8 +224,13 @@ void GPS_NewData(uint16_t c)
             GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_home[LAT], &GPS_home[LON], &dist, &dir);
             GPS_distanceToHome = dist / 100;
             GPS_directionToHome = dir / 100;
+            
+            if (!f.GPS_FIX_HOME) {      // If we don't have home set, do not display anything
+                GPS_distanceToHome = 0;
+                GPS_directionToHome = 0;
+            }
 
-            //calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
+            // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
             GPS_calc_velocity();
 
             if (f.GPS_HOLD_MODE || f.GPS_HOME_MODE) { // ok we are navigating
@@ -274,7 +245,7 @@ void GPS_NewData(uint16_t c)
                     break;
 
                 case NAV_MODE_WP:
-                    speed = GPS_calc_desired_speed(cfg.nav_speed_max, NAV_SLOW_NAV);    //slow navigation
+                    speed = GPS_calc_desired_speed(cfg.nav_speed_max, NAV_SLOW_NAV);    // slow navigation
                     // use error as the desired rate towards the target
                     // Desired output is in nav_lat and nav_lon where 1deg inclination is 100
                     GPS_calc_nav_rate(speed);
@@ -306,8 +277,9 @@ void GPS_reset_home_position(void)
     if (f.GPS_FIX && GPS_numSat >= 5) {
         GPS_home[LAT] = GPS_coord[LAT];
         GPS_home[LON] = GPS_coord[LON];
-        nav_takeoff_bearing = heading;             //save takeoff heading
-        //Set ground altitude
+        GPS_calc_longitude_scaling(GPS_coord[LAT]); // need an initial value for distance and bearing calc
+        nav_takeoff_bearing = heading;              // save takeoff heading
+        // Set ground altitude
         f.GPS_FIX_HOME = 1;
     }
 }
@@ -319,30 +291,30 @@ void GPS_reset_nav(void)
 
     for (i = 0; i < 2; i++) {
         GPS_angle[i] = 0;
+        nav_rated[i] = 0;
         nav[i] = 0;
-        AC_PID_reset(&pi_poshold[i]);
-        AC_PID_reset(&pid_poshold_rate[i]);
-        AC_PID_reset(&pid_nav[i]);
+        reset_PID(&posholdPID[i]);
+        reset_PID(&poshold_ratePID[i]);
+        reset_PID(&navPID[i]);
     }
 }
 
 //Get the relevant P I D values and set the PID controllers
 static void GPS_set_pids(void)
 {
-    posholdPID.kP = (float) cfg.P8[PIDPOS] / 100.0f;
-    posholdPID.kI = (float) cfg.I8[PIDPOS] / 100.0f;
-    posholdPID.Imax = POSHOLD_RATE_IMAX * 100;
+    posholdPID_PARAM.kP = (float)cfg.P8[PIDPOS] / 100.0f;
+    posholdPID_PARAM.kI = (float)cfg.I8[PIDPOS] / 100.0f;
+    posholdPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 
-    poshold_ratePID.kP = (float) cfg.P8[PIDPOSR] / 10.0f;
-    poshold_ratePID.kI = (float) cfg.I8[PIDPOSR] / 100.0f;
-    poshold_ratePID.kD = (float) cfg.D8[PIDPOSR] / 1000.0f;
-    poshold_ratePID.Imax = POSHOLD_RATE_IMAX * 100;
+    poshold_ratePID_PARAM.kP = (float)cfg.P8[PIDPOSR] / 10.0f;
+    poshold_ratePID_PARAM.kI = (float)cfg.I8[PIDPOSR] / 100.0f;
+    poshold_ratePID_PARAM.kD = (float)cfg.D8[PIDPOSR] / 1000.0f;
+    poshold_ratePID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 
-    navPID.kP = (float) cfg.P8[PIDNAVR] / 10.0f;
-    navPID.kI = (float) cfg.I8[PIDNAVR] / 100.0f;
-    navPID.kD = (float) cfg.D8[PIDNAVR] / 1000.0f;
-    navPID.Imax = POSHOLD_RATE_IMAX * 100;
-
+    navPID_PARAM.kP = (float)cfg.P8[PIDNAVR] / 10.0f;
+    navPID_PARAM.kI = (float)cfg.I8[PIDNAVR] / 100.0f;
+    navPID_PARAM.kD = (float)cfg.D8[PIDNAVR] / 1000.0f;
+    navPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 }
 
 // OK here is the onboard GPS code
@@ -359,14 +331,14 @@ static void GPS_set_pids(void)
 //
 static void GPS_calc_longitude_scaling(int32_t lat)
 {
-    float rads = (abs((float)lat)) * (0.0174532925f / 10000000.0f);
+    float rads = (abs((float)lat) / 10000000.0f) * 0.0174532925f;
     GPS_scaleLonDown = cosf(rads);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Sets the waypoint to navigate, reset neccessary variables and calculate initial values
 //
-void GPS_set_next_wp(int32_t * lat, int32_t * lon)
+void GPS_set_next_wp(int32_t *lat, int32_t *lon)
 {
     GPS_WP[LAT] = *lat;
     GPS_WP[LON] = *lon;
@@ -453,7 +425,7 @@ static void GPS_calc_velocity(void)
 //      3000    = 33m
 //      10000   = 111m
 //
-static void GPS_calc_location_error(int32_t * target_lat, int32_t * target_lng, int32_t * gps_lat, int32_t * gps_lng)
+static void GPS_calc_location_error(int32_t *target_lat, int32_t *target_lng, int32_t *gps_lat, int32_t *gps_lng)
 {
     error[LON] = (float) (*target_lng - *gps_lng) * GPS_scaleLonDown;   // X Error
     error[LAT] = *target_lat - *gps_lat;        // Y Error
@@ -464,28 +436,28 @@ static void GPS_calc_location_error(int32_t * target_lat, int32_t * target_lng, 
 //
 static void GPS_calc_poshold(void)
 {
-    int32_t p, i, d;
-    int32_t output;
+    int32_t d;
     int32_t target_speed;
     int axis;
 
     for (axis = 0; axis < 2; axis++) {
-        target_speed = AC_PID_get_p(&pi_poshold[axis], error[axis], &posholdPID);       // calculate desired speed from lon error
-        rate_error[axis] = target_speed - actual_speed[axis];   // calc the speed error
+        target_speed = get_P(error[axis], &posholdPID_PARAM);       // calculate desired speed from lon error
+        rate_error[axis] = target_speed - actual_speed[axis];       // calc the speed error
 
-        p = AC_PID_get_p(&pid_poshold_rate[axis], rate_error[axis], &poshold_ratePID);
-        i = AC_PID_get_i(&pid_poshold_rate[axis], rate_error[axis] + error[axis], &dTnav, &poshold_ratePID);
-        d = AC_PID_get_d(&pid_poshold_rate[axis], error[axis], &dTnav, &poshold_ratePID);
+        nav[axis] = get_P(rate_error[axis], &poshold_ratePID_PARAM) +
+                    get_I(rate_error[axis] + error[axis], &dTnav, &poshold_ratePID[axis], &poshold_ratePID_PARAM);
+        d = get_D(error[axis], &dTnav, &poshold_ratePID[axis], &poshold_ratePID_PARAM);
         d = constrain(d, -2000, 2000);
+
         // get rid of noise
 #if defined(GPS_LOW_SPEED_D_FILTER)
         if (abs(actual_speed[axis]) < 50)
             d = 0;
 #endif
-        output = p + i + d;
 
-        nav[axis] = constrain(output, -NAV_BANK_MAX, NAV_BANK_MAX);
-        AC_PID_set_integrator(&pid_nav[axis], AC_PID_get_integrator(&pid_poshold_rate[axis]));
+        nav[axis] +=d;
+        nav[axis] = constrain(nav[axis], -NAV_BANK_MAX, NAV_BANK_MAX);
+        navPID[axis].integrator = poshold_ratePID[axis].integrator;
     }
 }
 
@@ -510,11 +482,12 @@ static void GPS_calc_nav_rate(int max_speed)
         rate_error[axis] = (trig[axis] * max_speed) - actual_speed[axis];
         rate_error[axis] = constrain(rate_error[axis], -1000, 1000);
         // P + I + D
-        nav[axis] = AC_PID_get_p(&pid_nav[axis], rate_error[axis], &navPID)
-            + AC_PID_get_i(&pid_nav[axis], rate_error[axis], &dTnav, &navPID)
-            + AC_PID_get_d(&pid_nav[axis], rate_error[axis], &dTnav, &navPID);
+        nav[axis] = get_P(rate_error[axis], &navPID_PARAM) +
+                    get_I(rate_error[axis], &dTnav, &navPID[axis], &navPID_PARAM) +
+                    get_D(rate_error[axis], &dTnav, &navPID[axis], &navPID_PARAM);
+
         nav[axis] = constrain(nav[axis], -NAV_BANK_MAX, NAV_BANK_MAX);
-        AC_PID_set_integrator(&pid_poshold_rate[axis], AC_PID_get_integrator(&pid_nav[axis]));
+        poshold_ratePID[axis].integrator = navPID[axis].integrator;
     }
 }
 
@@ -550,7 +523,6 @@ static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow)
     // max_speed is default 400 or 4m/s
     if (_slow) {
         max_speed = min(max_speed, wp_distance / 2);
-        max_speed = max(max_speed, 0);
     } else {
         max_speed = min(max_speed, wp_distance);
         max_speed = max(max_speed, cfg.nav_speed_min);      // go at least 100cm/s
@@ -694,6 +666,19 @@ static uint8_t hex_c(uint8_t n)
     return n;
 }
 
+static bool GPS_newFrame(char c)
+{
+    switch (cfg.gps_type) {
+        case 0: // NMEA
+            return GPS_NMEA_newFrame(c);
+        
+        case 1: // UBX
+            return false; // GPS_UBLOX_newFrame(c);
+    }
+
+    return false;
+}
+
 /* This is a light implementation of a GPS frame decoding
    This should work with most of modern GPS devices configured to output NMEA frames.
    It assumes there are some NMEA GGA frames to decode on the serial bus
@@ -709,7 +694,7 @@ static uint8_t hex_c(uint8_t n)
 #define FRAME_GGA  1
 #define FRAME_RMC  2
 
-static bool GPS_newFrame(char c)
+static bool GPS_NMEA_newFrame(char c)
 {
     uint8_t frameOK = 0;
     static uint8_t param = 0, offset = 0, parity = 0;
@@ -746,7 +731,9 @@ static bool GPS_newFrame(char c)
             }
         } else if (frame == FRAME_RMC) {
             if (param == 7) {
-                GPS_speed = ((uint32_t) grab_fields(string, 1) * 5144L) / 1000L;    // speed in cm/s added by Mis
+                GPS_speed = (grab_fields(string, 1) * 5144L) / 1000L;   // speed in cm/s added by Mis
+            } else if (param == 8) {
+                GPS_ground_course = grab_fields(string, 1);             // ground course deg * 10
             }
         }
         param++;

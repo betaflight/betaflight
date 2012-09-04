@@ -1,7 +1,9 @@
 #include "board.h"
 
 // MPU6050, Standard address 0x68
+// MPU_INT on PB13 on rev4 hardware
 #define MPU6050_ADDRESS         0x68
+
 // Experimental DMP support
 // #define MPU6050_DMP
 
@@ -210,6 +212,14 @@ static void mpu6050AccAlign(int16_t * accData)
 
 static void mpu6050GyroInit(void)
 {
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    // PB13 - MPU_INT output on rev4 hardware
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
 #ifndef MPU6050_DMP
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(5);

@@ -170,7 +170,8 @@ typedef struct config_t {
     uint16_t gimbal_roll_mid;               // gimbal roll servo neutral value
 
     // gps-related stuff
-    uint32_t gps_baudrate;
+    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2+ ??
+    uint32_t gps_baudrate;                  // GPS baudrate
     uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
     uint8_t gps_lpf;                        // Low pass filter cut frequency for derivative calculation (default 20Hz)
     uint8_t nav_slew_rate;                  // Adds a rate control to nav output, will smoothen out nav angle spikes

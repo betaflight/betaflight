@@ -1,6 +1,7 @@
 #include "board.h"
 
 // HMC5883L, default address 0x1E
+// PB12 connected to MAG_DRDY on rev4 hardware
 
 #define MAG_ADDRESS 0x1E
 #define MAG_DATA_REGISTER 0x03
@@ -43,6 +44,14 @@ bool hmc5883lDetect(void)
 
 void hmc5883lInit(void)
 {
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    // PB12 - MAG_DRDY output on rev4 hardware
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
     delay(100);
     i2cWrite(MAG_ADDRESS, ConfigRegA, SampleAveraging_8 << 5 | DataOutputRate_75HZ << 2 | NormalOperation);
     delay(50);

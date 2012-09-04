@@ -1,6 +1,7 @@
 #include "board.h"
 
 // MMA8452QT, Standard address 0x1C
+// ACC_INT2 routed to PA5
 
 #define MMA8452_ADDRESS     0x1C
 
@@ -71,6 +72,14 @@ bool mma8452Detect(sensor_t *acc)
 
 static void mma8452Init(void)
 {
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    // PA5 - ACC_INT2 output on rev3/4 hardware
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
     i2cWrite(MMA8452_ADDRESS, MMA8452_CTRL_REG1, 0); // Put device in standby to configure stuff
     i2cWrite(MMA8452_ADDRESS, MMA8452_XYZ_DATA_CFG, MMA8452_FS_RANGE_8G);
     i2cWrite(MMA8452_ADDRESS, MMA8452_HP_FILTER_CUTOFF, MMA8452_HPF_CUTOFF_LV4);
