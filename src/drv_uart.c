@@ -157,11 +157,25 @@ uint32_t tx2BufferTail = 0;
 uint32_t tx2BufferHead = 0;
 bool uart2RxOnly = false;
 
+static void uart2Open(uint32_t speed)
+{
+    USART_InitTypeDef USART_InitStructure;
+
+    USART_StructInit(&USART_InitStructure);
+    USART_InitStructure.USART_BaudRate = speed;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | (uart2RxOnly ? 0 : USART_Mode_Tx);
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_Init(USART2, &USART_InitStructure);
+    USART_Cmd(USART2, ENABLE);
+}
+
 void uart2Init(uint32_t speed, uartReceiveCallbackPtr func, bool rxOnly)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
     GPIO_InitTypeDef GPIO_InitStructure;
-    USART_InitTypeDef USART_InitStructure;
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
@@ -184,19 +198,16 @@ void uart2Init(uint32_t speed, uartReceiveCallbackPtr func, bool rxOnly)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    USART_InitStructure.USART_BaudRate = speed;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx | (rxOnly ? 0 : USART_Mode_Tx);
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_Init(USART2, &USART_InitStructure);
-
+    uart2Open(speed);
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
     if (!rxOnly)
         USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
-    USART_Cmd(USART2, ENABLE);
     uart2Callback = func;
+}
+
+void uart2ChangeBaud(uint32_t speed)
+{
+    uart2Open(speed);
 }
 
 void uart2Write(uint8_t ch)

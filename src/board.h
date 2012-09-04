@@ -49,6 +49,12 @@ typedef enum {
     FEATURE_TELEMETRY = 1 << 11,
 } AvailableFeatures;
 
+typedef enum {
+    GPS_NMEA = 0,
+    GPS_UBLOX,
+    GPS_MTK,
+} GPSHardware;
+
 typedef void (* sensorInitFuncPtr)(void);                   // sensor init prototype
 typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
 typedef int32_t (* baroCalculateFuncPtr)(void);             // baro calculation (returns altitude in cm based on static data collected)

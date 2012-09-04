@@ -184,8 +184,8 @@ void checkFirstTime(bool reset)
     cfg.gimbal_roll_mid = 1500;
 
     // gps/nav stuff
-    cfg.gps_type = 0; // NMEA
-    cfg.gps_baudrate = 9600;
+    cfg.gps_type = GPS_NMEA;
+    cfg.gps_baudrate = 115200;
     cfg.gps_wp_radius = 200;
     cfg.gps_lpf = 20;
     cfg.nav_slew_rate = 30;
