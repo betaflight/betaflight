@@ -1,78 +1,162 @@
 #include "board.h"
 #include "mw.h"
 
-static uint8_t numberMotor = 4;
+static uint8_t numberMotor = 0;
 uint8_t useServo = 0;
-
 int16_t motor[MAX_MOTORS];
 int16_t servo[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
-typedef struct {
-    uint8_t enabled;        // is this mix channel enabled
-    float throttle;         // proportion of throttle affect
-    float pitch;
-    float roll;
-    float yaw;
-} mixerPower_t;
+static motorMixer_t currentMixer[MAX_MOTORS];
 
-static mixerPower_t customMixer[12];
+static const motorMixer_t mixerTri[] = {
+    { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
+    { 1.0f, -1.0f, -0.666667f,  0.0f },     // RIGHT
+    { 1.0f,  1.0f, -0.666667f,  0.0f },     // LEFT
+};
+
+static const motorMixer_t mixerQuadP[] = {
+    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR
+    { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
+    { 1.0f,  1.0f,  0.0f,  1.0f },          // LEFT
+    { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
+};
+
+static const motorMixer_t mixerQuadX[] = {
+    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+};
+
+static const motorMixer_t mixerBi[] = {
+    { 1.0f,  1.0f,  0.0f,  0.0f },          // LEFT
+    { 1.0f, -1.0f,  0.0f,  0.0f },          // RIGHT
+};
+
+static const motorMixer_t mixerY6[] = {
+    { 1.0f,  0.0f,  1.333333f,  1.0f },     // REAR
+    { 1.0f, -1.0f, -0.666667f, -1.0f },     // RIGHT
+    { 1.0f,  1.0f, -0.666667f, -1.0f },     // LEFT
+    { 1.0f,  0.0f,  1.333333f, -1.0f },     // UNDER_REAR
+    { 1.0f, -1.0f, -0.666667f,  1.0f },     // UNDER_RIGHT
+    { 1.0f,  1.0f, -0.666667f,  1.0f },     // UNDER_LEFT
+};
+
+static const motorMixer_t mixerHex6P[] = {
+    { 1.0f, -1.0f,  0.866025f,  1.0f },     // REAR_R
+    { 1.0f, -1.0f, -0.866025f, -1.0f },     // FRONT_R
+    { 1.0f,  1.0f,  0.866025f,  1.0f },     // REAR_L
+    { 1.0f,  1.0f, -0.866025f, -1.0f },     // FRONT_L
+    { 1.0f,  0.0f,  0.866025f,  1.0f },     // FRONT
+    { 1.0f,  0.0f, -0.866025f, -1.0f },     // REAR
+};
+
+static const motorMixer_t mixerY4[] = {
+    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_TOP CW
+    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R CCW
+    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_BOTTOM CCW
+    { 1.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
+};
+
+static const motorMixer_t mixerHex6X[] = {
+    { 1.0f, -0.866025f,  1.0f,  1.0f },     // REAR_R
+    { 1.0f, -0.866025f, -1.0f,  1.0f },     // FRONT_R
+    { 1.0f,  0.866025f,  1.0f, -1.0f },     // REAR_L
+    { 1.0f,  0.866025f, -1.0f, -1.0f },     // FRONT_L
+    { 1.0f, -0.866025f,  0.0f, -1.0f },     // RIGHT
+    { 1.0f,  0.866025f,  0.0f,  1.0f },     // LEFT
+};
+
+static const motorMixer_t mixerOctoX8[] = {
+    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+    { 1.0f, -1.0f,  1.0f,  1.0f },          // UNDER_REAR_R
+    { 1.0f, -1.0f, -1.0f, -1.0f },          // UNDER_FRONT_R
+    { 1.0f,  1.0f,  1.0f, -1.0f },          // UNDER_REAR_L
+    { 1.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
+};
+
+static const motorMixer_t mixerOctoFlatP[] = {
+    { 1.0f,  0.707107f, -0.707107f,  1.0f },    // FRONT_L
+    { 1.0f, -0.707107f, -0.707107f,  1.0f },    // FRONT_R
+    { 1.0f, -0.707107f,  0.707107f,  1.0f },    // REAR_R
+    { 1.0f,  0.707107f,  0.707107f,  1.0f },    // REAR_L
+    { 1.0f,  0.0f, -1.0f, -1.0f },              // FRONT
+    { 1.0f, -1.0f,  0.0f, -1.0f },              // RIGHT
+    { 1.0f,  0.0f,  1.0f, -1.0f },              // REAR
+    { 1.0f,  1.0f,  0.0f, -1.0f },              // LEFT
+};
+
+static const motorMixer_t mixerOctoFlatX[] = {
+    { 1.0f,  1.0f, -0.5f,  1.0f },          // MIDFRONT_L
+    { 1.0f, -0.5f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f, -1.0f,  0.5f,  1.0f },          // MIDREAR_R
+    { 1.0f,  0.5f,  1.0f,  1.0f },          // REAR_L
+    { 1.0f,  0.5f, -1.0f, -1.0f },          // FRONT_L
+    { 1.0f, -1.0f, -0.5f, -1.0f },          // MIDFRONT_R
+    { 1.0f, -0.5f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f,  1.0f,  0.5f, -1.0f },          // MIDREAR_L
+};
+
+static const motorMixer_t mixerVtail4[] = {
+    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_R
+    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R
+    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_L
+    { 1.0f,  1.0f, -1.0f, -0.0f },          // FRONT_L
+};
+
+// Keep this synced with MultiType struct in mw.h!
+static const mixer_t mixers[] = {
+//    Mo Se Mixtable
+    { 0, 0, NULL },                // entry 0
+    { 3, 1, mixerTri },            // MULTITYPE_TRI
+    { 4, 0, mixerQuadP },          // MULTITYPE_QUADP
+    { 4, 0, mixerQuadX },          // MULTITYPE_QUADX
+    { 2, 1, mixerBi },             // MULTITYPE_BI
+    { 0, 1, NULL },                // * MULTITYPE_GIMBAL
+    { 6, 0, mixerY6 },             // MULTITYPE_Y6
+    { 6, 0, mixerHex6P },          // MULTITYPE_HEX6
+    { 1, 1, NULL },                // * MULTITYPE_FLYING_WING
+    { 4, 0, mixerY4 },             // MULTITYPE_Y4
+    { 6, 0, mixerHex6X },          // MULTITYPE_HEX6X
+    { 8, 0, mixerOctoX8 },         // MULTITYPE_OCTOX8
+    { 8, 0, mixerOctoFlatP },      // MULTITYPE_OCTOFLATP
+    { 8, 0, mixerOctoFlatX },      // MULTITYPE_OCTOFLATX
+    { 1, 1, NULL },                // * MULTITYPE_AIRPLANE
+    { 0, 1, NULL },                // * MULTITYPE_HELI_120_CCPM
+    { 0, 1, NULL },                // * MULTITYPE_HELI_90_DEG
+    { 4, 0, mixerVtail4 },         // MULTITYPE_VTAIL4
+    { 0, 0, NULL },                // MULTITYPE_CUSTOM
+};
 
 void mixerInit(void)
 {
     int i;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    if (cfg.mixerConfiguration == MULTITYPE_BI || cfg.mixerConfiguration == MULTITYPE_TRI || cfg.mixerConfiguration == MULTITYPE_FLYING_WING || 
-        cfg.mixerConfiguration == MULTITYPE_AIRPLANE || cfg.mixerConfiguration == MULTITYPE_GIMBAL)
-        useServo = 1;
-    // if we want camstab/trig, that also enabled servos. this is kinda lame. maybe rework feature bits later.
+    useServo = mixers[cfg.mixerConfiguration].useServo;
+    // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (feature(FEATURE_SERVO_TILT))
         useServo = 1;
 
-    switch (cfg.mixerConfiguration) {
-        case MULTITYPE_GIMBAL:
-            numberMotor = 0;
-            break;
-
-        case MULTITYPE_AIRPLANE:
-        case MULTITYPE_FLYING_WING:
-            numberMotor = 1;
-            break;
-
-        case MULTITYPE_BI:
-            numberMotor = 2;
-            break;
-
-        case MULTITYPE_TRI:
-            numberMotor = 3;
-            break;
-
-        case MULTITYPE_QUADP:
-        case MULTITYPE_QUADX:
-        case MULTITYPE_Y4:
-        case MULTITYPE_VTAIL4:
-            numberMotor = 4;
-            break;
-
-        case MULTITYPE_Y6:
-        case MULTITYPE_HEX6:
-        case MULTITYPE_HEX6X:
-            numberMotor = 6;
-            break;
-
-        case MULTITYPE_OCTOX8:
-        case MULTITYPE_OCTOFLATP:
-        case MULTITYPE_OCTOFLATX:
-            numberMotor = 8;
-            break;
-
-        case MULTITYPE_CUSTOM:
-            numberMotor = 0;
-            for (i = 0; i < MAX_MOTORS; i++) {
-                if (customMixer[i].enabled)
-                    numberMotor++;
-            }
-            break;
+    if (cfg.mixerConfiguration == MULTITYPE_CUSTOM) {
+        // load custom mixer into currentMixer
+        for (i = 0; i < MAX_MOTORS; i++) {
+            // check if done
+            if (cfg.customMixer[i].throttle == 0.0f)
+                break;
+            currentMixer[i] = cfg.customMixer[i];
+            numberMotor++;
+        }
+    } else {
+        numberMotor = mixers[cfg.mixerConfiguration].numberMotor;
+        // copy motor-based mixers
+        if (mixers[cfg.mixerConfiguration].motor) {
+            for (i = 0; i < numberMotor; i++)
+                currentMixer[i] = mixers[cfg.mixerConfiguration].motor[i];
+        }
     }
 }
 
@@ -97,6 +181,11 @@ void writeServos(void)
 
         case MULTITYPE_FLYING_WING:
 
+            break;
+
+        case MULTITYPE_GIMBAL:
+            pwmWriteServo(0, servo[0]);
+            pwmWriteServo(1, servo[1]);
             break;
 
         default:
@@ -128,8 +217,6 @@ void writeAllMotors(int16_t mc)
         motor[i] = mc;
     writeMotors();
 }
-
-#define PIDMIX(R, P, Y) rcCommand[THROTTLE] + axisPID[ROLL] * R + axisPID[PITCH] * P + cfg.yaw_direction * axisPID[YAW] * Y
 
 static void airplaneMixer(void)
 {
@@ -191,115 +278,27 @@ void mixTable(void)
         axisPID[YAW] = constrain(axisPID[YAW], -100 - abs(rcCommand[YAW]), +100 + abs(rcCommand[YAW]));
     }
 
-    switch (cfg.mixerConfiguration) {
+    // motors for non-servo mixes
+    if (numberMotor > 1)
+        for (i = 0; i < numberMotor; i++)
+            motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + cfg.yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
 
+    // airplane / servo mixes
+    switch (cfg.mixerConfiguration) {
         case MULTITYPE_BI:
-            motor[0] = PIDMIX(+1, 0, 0);        //LEFT
-            motor[1] = PIDMIX(-1, 0, 0);        //RIGHT        
             servo[4] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) + axisPID[PITCH], 1020, 2000);   //LEFT
             servo[5] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) - axisPID[PITCH], 1020, 2000);   //RIGHT
             break;
 
         case MULTITYPE_TRI:
-            motor[0] = PIDMIX(0, +4 / 3, 0);    //REAR
-            motor[1] = PIDMIX(-1, -2 / 3, 0);   //RIGHT
-            motor[2] = PIDMIX(+1, -2 / 3, 0);   //LEFT
             servo[5] = constrain(cfg.tri_yaw_middle + cfg.yaw_direction * axisPID[YAW], cfg.tri_yaw_min, cfg.tri_yaw_max); //REAR
-            break;
-
-        case MULTITYPE_QUADP:
-            motor[0] = PIDMIX(0, +1, -1);       //REAR
-            motor[1] = PIDMIX(-1, 0, +1);       //RIGHT
-            motor[2] = PIDMIX(+1, 0, +1);       //LEFT
-            motor[3] = PIDMIX(0, -1, -1);       //FRONT
-            break;
-
-        case MULTITYPE_QUADX:
-            motor[0] = PIDMIX(-1, +1, -1);      //REAR_R
-            motor[1] = PIDMIX(-1, -1, +1);      //FRONT_R
-            motor[2] = PIDMIX(+1, +1, +1);      //REAR_L
-            motor[3] = PIDMIX(+1, -1, -1);      //FRONT_L
-            break;
-
-        case MULTITYPE_Y4:
-            motor[0] = PIDMIX(+0, +1, -1);      //REAR_1 CW
-            motor[1] = PIDMIX(-1, -1, 0);       //FRONT_R CCW
-            motor[2] = PIDMIX(+0, +1, +1);      //REAR_2 CCW
-            motor[3] = PIDMIX(+1, -1, 0);       //FRONT_L CW
-            break;
-
-        case MULTITYPE_Y6:
-            motor[0] = PIDMIX(+0, +4 / 3, +1);  //REAR
-            motor[1] = PIDMIX(-1, -2 / 3, -1);  //RIGHT
-            motor[2] = PIDMIX(+1, -2 / 3, -1);  //LEFT
-            motor[3] = PIDMIX(+0, +4 / 3, -1);  //UNDER_REAR
-            motor[4] = PIDMIX(-1, -2 / 3, +1);  //UNDER_RIGHT
-            motor[5] = PIDMIX(+1, -2 / 3, +1);  //UNDER_LEFT    
-            break;
-
-        case MULTITYPE_HEX6:
-            motor[0] = PIDMIX(-1 / 2, +1 / 2, +1);      //REAR_R
-            motor[1] = PIDMIX(-1 / 2, -1 / 2, -1);      //FRONT_R
-            motor[2] = PIDMIX(+1 / 2, +1 / 2, +1);      //REAR_L
-            motor[3] = PIDMIX(+1 / 2, -1 / 2, -1);      //FRONT_L
-            motor[4] = PIDMIX(+0, -1, +1);      //FRONT
-            motor[5] = PIDMIX(+0, +1, -1);      //REAR
-            break;
-
-        case MULTITYPE_HEX6X:
-            motor[0] = PIDMIX(-4/5,+9/10,+1); //REAR_R 
-            motor[1] = PIDMIX(-4/5,-9/10,+1); //FRONT_R 
-            motor[2] = PIDMIX(+4/5,+9/10,-1); //REAR_L 
-            motor[3] = PIDMIX(+4/5,-9/10,-1); //FRONT_L 
-            motor[4] = PIDMIX(-4/5 ,+0 ,-1); //RIGHT 
-            motor[5] = PIDMIX(+4/5 ,+0 ,+1); //LEFT
-            break;
-
-        case MULTITYPE_OCTOX8:
-            motor[0] = PIDMIX(-1, +1, -1);      //REAR_R
-            motor[1] = PIDMIX(-1, -1, +1);      //FRONT_R
-            motor[2] = PIDMIX(+1, +1, +1);      //REAR_L
-            motor[3] = PIDMIX(+1, -1, -1);      //FRONT_L
-            motor[4] = PIDMIX(-1, +1, +1);      //UNDER_REAR_R
-            motor[5] = PIDMIX(-1, -1, -1);      //UNDER_FRONT_R
-            motor[6] = PIDMIX(+1, +1, -1);      //UNDER_REAR_L
-            motor[7] = PIDMIX(+1, -1, +1);      //UNDER_FRONT_L
-            break;
-
-        case MULTITYPE_OCTOFLATP:
-            motor[0] = PIDMIX(+7 / 10, -7 / 10, +1);    //FRONT_L
-            motor[1] = PIDMIX(-7 / 10, -7 / 10, +1);    //FRONT_R
-            motor[2] = PIDMIX(-7 / 10, +7 / 10, +1);    //REAR_R
-            motor[3] = PIDMIX(+7 / 10, +7 / 10, +1);    //REAR_L
-            motor[4] = PIDMIX(+0, -1, -1);      //FRONT
-            motor[5] = PIDMIX(-1, +0, -1);      //RIGHT
-            motor[6] = PIDMIX(+0, +1, -1);      //REAR
-            motor[7] = PIDMIX(+1, +0, -1);      //LEFT 
-            break;
-
-        case MULTITYPE_OCTOFLATX:
-            motor[0] = PIDMIX(+1, -1 / 2, +1);  //MIDFRONT_L
-            motor[1] = PIDMIX(-1 / 2, -1, +1);  //FRONT_R
-            motor[2] = PIDMIX(-1, +1 / 2, +1);  //MIDREAR_R
-            motor[3] = PIDMIX(+1 / 2, +1, +1);  //REAR_L
-            motor[4] = PIDMIX(+1 / 2, -1, -1);  //FRONT_L
-            motor[5] = PIDMIX(-1, -1 / 2, -1);  //MIDFRONT_R
-            motor[6] = PIDMIX(-1 / 2, +1, -1);  //REAR_R
-            motor[7] = PIDMIX(+1, +1 / 2, -1);  //MIDREAR_L 
-            break;
-
-        case MULTITYPE_VTAIL4:
-            motor[0] = PIDMIX(+0, +1, +1);      //REAR_R 
-            motor[1] = PIDMIX(-1, -1, +0);      //FRONT_R 
-            motor[2] = PIDMIX(+0, +1, -1);      //REAR_L 
-            motor[3] = PIDMIX(+1, -1, -0);      //FRONT_L
             break;
 
         case MULTITYPE_GIMBAL:
             servo[0] = constrain(cfg.gimbal_pitch_mid + cfg.gimbal_pitch_gain * angle[PITCH] / 16 + rcCommand[PITCH], cfg.gimbal_pitch_min, cfg.gimbal_pitch_max);
             servo[1] = constrain(cfg.gimbal_roll_mid + cfg.gimbal_roll_gain * angle[ROLL] / 16 + rcCommand[ROLL], cfg.gimbal_roll_min, cfg.gimbal_roll_max);
             break;
-        
+
         case MULTITYPE_AIRPLANE:
             airplaneMixer();
             break;

@@ -89,6 +89,19 @@ typedef enum GimbalFlags {
 #define abs(x) ((x) > 0 ? (x) : -(x))
 #define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
+typedef struct motorMixer_t {
+    float throttle;
+    float roll;
+    float pitch;
+    float yaw;
+} motorMixer_t;
+
+typedef struct mixer_t {
+    uint8_t numberMotor;
+    uint8_t useServo;
+    const motorMixer_t *motor;
+} mixer_t;
+
 typedef struct config_t {
     uint8_t version;
     uint8_t mixerConfiguration;
@@ -179,8 +192,10 @@ typedef struct config_t {
     uint16_t nav_speed_min;                 // cm/sec
     uint16_t nav_speed_max;                 // cm/sec
 
-   // serial(uart1) baudrate
+    // serial(uart1) baudrate
     uint32_t serial_baudrate;
+
+    motorMixer_t customMixer[MAX_MOTORS];   // custom mixtable
 } config_t;
 
 typedef struct flags_t {

@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 27;
+uint8_t checkNewConf = 28;
 
 void parseRcChannels(const char *input)
 {
@@ -195,6 +195,10 @@ void checkFirstTime(bool reset)
 
     // serial (USART1) baudrate
     cfg.serial_baudrate = 115200;
+
+    // custom mixer
+    for (i = 0; i < MAX_MOTORS; i++)
+        cfg.customMixer[i].throttle = 0.0f;
 
     writeParams(0);
 }
