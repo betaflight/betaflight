@@ -22,7 +22,7 @@ extern uint8_t accHardware;
 extern const char rcChannelLetters[];
 
 // buffer
-static char cliBuffer[32];
+static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
 
 // sync this with MultiType enum from mw.h
