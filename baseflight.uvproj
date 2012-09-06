@@ -801,6 +801,11 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>printf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\printf.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -1543,6 +1548,11 @@
                   </Aads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>printf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\printf.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2582,6 +2592,11 @@
               <FileName>startup_stm32f10x_md_fy90q.s</FileName>
               <FileType>2</FileType>
               <FilePath>.\src\baseflight_startups\startup_stm32f10x_md_fy90q.s</FilePath>
+            </File>
+            <File>
+              <FileName>printf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\printf.c</FilePath>
             </File>
           </Files>
         </Group>
