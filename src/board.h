@@ -13,6 +13,7 @@
 
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
+#include "printf.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846f

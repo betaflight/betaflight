@@ -299,6 +299,7 @@ void Sonar_update(void);
 
 // Output
 void mixerInit(void);
+void mixerLoadMix(int index);
 void writeServos(void);
 void writeMotors(void);
 void writeAllMotors(int16_t mc);

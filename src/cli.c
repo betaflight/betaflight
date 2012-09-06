@@ -3,6 +3,7 @@
 
 // we unset this on 'exit'
 extern uint8_t cliMode;
+static void cliCMix(char *cmdline);
 static void cliDefaults(char *cmdline);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
@@ -24,6 +25,9 @@ extern const char rcChannelLetters[];
 // buffer
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
+
+static float _atof(const char *p);
+static char *ftoa(float x, char *floatString);
 
 // sync this with MultiType enum from mw.h
 const char *mixerNames[] = {
@@ -59,6 +63,7 @@ typedef struct {
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
+    { "cmix", "design custom mixer", cliCMix },
     { "defaults", "reset to defaults and reboot", cliDefaults },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
@@ -66,7 +71,7 @@ const clicmd_t cmdTable[] = {
     { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
     { "save", "save and reboot", cliSave },
-    { "set", "name=value or blank for list", cliSet },
+    { "set", "name=value or blank or * for list", cliSet },
     { "status", "show system status", cliStatus },
     { "version", "", cliVersion },
 };
@@ -205,6 +210,145 @@ char *itoa(int i, char *a, int r)
 
 #endif
 
+////////////////////////////////////////////////////////////////////////////////
+// String to Float Conversion
+///////////////////////////////////////////////////////////////////////////////
+// Simple and fast atof (ascii to float) function.
+//
+// - Executes about 5x faster than standard MSCRT library atof().
+// - An attractive alternative if the number of calls is in the millions.
+// - Assumes input is a proper integer, fraction, or scientific format.
+// - Matches library atof() to 15 digits (except at extreme exponents).
+// - Follows atof() precedent of essentially no error checking.
+//
+// 09-May-2009 Tom Van Baak (tvb) www.LeapSecond.com
+//
+#define white_space(c) ((c) == ' ' || (c) == '\t')
+#define valid_digit(c) ((c) >= '0' && (c) <= '9')
+static float _atof(const char *p)
+{
+    int frac = 0;
+    double sign, value, scale;
+
+    // Skip leading white space, if any.
+    while (white_space(*p) ) {
+        p += 1;
+    }
+
+    // Get sign, if any.
+    sign = 1.0;
+    if (*p == '-') {
+        sign = -1.0;
+        p += 1;
+
+    } else if (*p == '+') {
+        p += 1;
+    }
+
+    // Get digits before decimal point or exponent, if any.
+    value = 0.0;
+    while (valid_digit(*p)) {
+        value = value * 10.0 + (*p - '0');
+        p += 1;
+    }
+
+    // Get digits after decimal point, if any.
+    if (*p == '.') {
+        double pow10 = 10.0;
+        p += 1;
+
+        while (valid_digit(*p)) {
+            value += (*p - '0') / pow10;
+            pow10 *= 10.0;
+            p += 1;
+        }
+    }
+
+    // Handle exponent, if any.
+    scale = 1.0;
+    if ((*p == 'e') || (*p == 'E')) {
+        unsigned int expon;
+        p += 1;
+
+        // Get sign of exponent, if any.
+        frac = 0;
+        if (*p == '-') {
+            frac = 1;
+            p += 1;
+
+        } else if (*p == '+') {
+            p += 1;
+        }
+
+        // Get digits of exponent, if any.
+        expon = 0;
+        while (valid_digit(*p)) {
+            expon = expon * 10 + (*p - '0');
+            p += 1;
+        }
+        if (expon > 308) expon = 308;
+
+        // Calculate scaling factor.
+        while (expon >= 50) { scale *= 1E50; expon -= 50; }
+        while (expon >=  8) { scale *= 1E8;  expon -=  8; }
+        while (expon >   0) { scale *= 10.0; expon -=  1; }
+    }
+
+    // Return signed and scaled floating point result.
+    return sign * (frac ? (value / scale) : (value * scale));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// FTOA
+///////////////////////////////////////////////////////////////////////////////
+static char *ftoa(float x, char *floatString)
+{
+    int32_t value;
+    char intString1[12];
+    char intString2[12] = { 0, };
+    char *decimalPoint = ".";
+    uint8_t dpLocation;
+
+    if (x > 0)                  // Rounding for x.xxx display format
+        x += 0.0005f;
+    else
+        x -= 0.0005f;
+
+    value = (int32_t) (x * 1000.0f);    // Convert float * 1000 to an integer
+
+    itoa(abs(value), intString1, 10);   // Create string from abs of integer value
+
+    if (value >= 0)
+        intString2[0] = ' ';    // Positive number, add a pad space
+    else
+        intString2[0] = '-';    // Negative number, add a negative sign
+
+    if (strlen(intString1) == 1) {
+        intString2[1] = '0';
+        intString2[2] = '0';
+        intString2[3] = '0';
+        strcat(intString2, intString1);
+    } else if (strlen(intString1) == 2) {
+        intString2[1] = '0';
+        intString2[2] = '0';
+        strcat(intString2, intString1);
+    } else if (strlen(intString1) == 3) {
+        intString2[1] = '0';
+        strcat(intString2, intString1);
+    } else {
+        strcat(intString2, intString1);
+    }
+
+    dpLocation = strlen(intString2) - 3;
+
+    strncpy(floatString, intString2, dpLocation);
+    floatString[dpLocation] = '\0';
+    strcat(floatString, decimalPoint);
+    strcat(floatString, intString2 + dpLocation);
+
+    return floatString;
+}
+
 static void cliPrompt(void)
 {
     uartPrint("\r\n# ");
@@ -214,6 +358,92 @@ static int cliCompare(const void *a, const void *b)
 {
     const clicmd_t *ca = a, *cb = b;
     return strncasecmp(ca->name, cb->name, strlen(cb->name));
+}
+
+static void cliCMix(char *cmdline)
+{
+    int i, check = 0;
+    int num_motors = 0;
+    uint8_t len;
+    char buf[16];
+    float mixsum[3];
+    char *ptr;
+
+    len = strlen(cmdline);
+
+    if (len == 0) {
+        uartPrint("Custom mixer: \r\nMotor\tThr\tRoll\tPitch\tYaw\r\n");
+        for (i = 0; i < MAX_MOTORS; i++) {
+            if (cfg.customMixer[i].throttle == 0.0f)
+                break;
+            mixsum[i] = 0.0f;
+            num_motors++;
+            printf("#%d:\t", i + 1);
+            printf("%s\t", ftoa(cfg.customMixer[i].throttle, buf));
+            printf("%s\t", ftoa(cfg.customMixer[i].roll, buf));
+            printf("%s\t", ftoa(cfg.customMixer[i].pitch, buf));
+            printf("%s\r\n", ftoa(cfg.customMixer[i].yaw, buf));
+        }
+        for (i = 0; i < num_motors; i++) {
+            mixsum[0] += cfg.customMixer[i].roll;
+            mixsum[1] += cfg.customMixer[i].pitch;
+            mixsum[2] += cfg.customMixer[i].yaw;
+        }
+        uartPrint("Sanity check:\t");
+        for (i = 0; i < 3; i++)
+            uartPrint(fabs(mixsum[i]) > 0.01f ? "NG\t" : "OK\t");
+        uartPrint("\r\n");
+        return;
+    } else if (strncasecmp(cmdline, "load", 4) == 0) {
+        ptr = strchr(cmdline, ' ');
+        if (ptr) {
+            len = strlen(++ptr);
+            for (i = 0; ; i++) {
+                if (mixerNames[i] == NULL) {
+                    uartPrint("Invalid mixer type...\r\n");
+                    break;
+                }
+                if (strncasecmp(ptr, mixerNames[i], len) == 0) {
+                    mixerLoadMix(i);
+                    printf("Loaded %s mix...\r\n", mixerNames[i]);
+                    cliCMix("");
+                    break;
+                }
+            }
+        }
+    } else {
+        ptr = cmdline;
+        i = atoi(ptr); // get motor number
+        if (--i < MAX_MOTORS) {
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                cfg.customMixer[i].throttle = _atof(++ptr); 
+                check++;
+            }
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                cfg.customMixer[i].roll = _atof(++ptr);
+                check++;
+            }
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                cfg.customMixer[i].pitch = _atof(++ptr);
+                check++;
+            }
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                cfg.customMixer[i].yaw = _atof(++ptr);
+                check++;
+            }
+            if (check != 4) {
+                uartPrint("Wrong number of arguments, needs idx thr roll pitch yaw\r\n");
+            } else {
+                cliCMix("");
+            }
+        } else {
+            printf("Motor number must be between 1 and %d\r\n", MAX_MOTORS);
+        }
+    }
 }
 
 static void cliDefaults(char *cmdline)
@@ -250,8 +480,7 @@ static void cliFeature(char *cmdline)
             if (featureNames[i] == NULL)
                 break;
             if (mask & (1 << i))
-                uartPrint((char *)featureNames[i]);
-            uartWrite(' ');
+                printf("%s ", featureNames[i]);
         }
         uartPrint("\r\n");
     } else if (strncasecmp(cmdline, "list", len) == 0) {
@@ -259,8 +488,7 @@ static void cliFeature(char *cmdline)
         for (i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
-            uartPrint((char *)featureNames[i]);
-            uartWrite(' ');
+            printf("%s ", featureNames[i]);
         }
         uartPrint("\r\n");
         return;
@@ -286,8 +514,7 @@ static void cliFeature(char *cmdline)
                     featureSet(1 << i);
                     uartPrint("Enabled ");
                 }
-                uartPrint((char *)featureNames[i]);
-                uartPrint("\r\n");
+                printf("%s\r\n", featureNames[i]);
                 break;
             }
         }
@@ -299,14 +526,8 @@ static void cliHelp(char *cmdline)
     uint32_t i = 0;
 
     uartPrint("Available commands:\r\n");    
-
-    for (i = 0; i < CMD_COUNT; i++) {
-        uartPrint(cmdTable[i].name);
-        uartWrite('\t');
-        uartPrint(cmdTable[i].param);
-        uartPrint("\r\n");
-        while (!uartTransmitEmpty());
-    }
+    for (i = 0; i < CMD_COUNT; i++)
+        printf("%s\t%s\r\n", cmdTable[i].name, cmdTable[i].param);
 }
 
 static void cliMap(char *cmdline)
@@ -333,8 +554,7 @@ static void cliMap(char *cmdline)
     for (i = 0; i < 8; i++)
         out[cfg.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
-    uartPrint(out);
-    uartPrint("\r\n");
+    printf("%s\r\n", out);
 }
 
 static void cliMixer(char *cmdline)
@@ -345,17 +565,14 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        uartPrint("Current mixer: ");
-        uartPrint((char *)mixerNames[cfg.mixerConfiguration - 1]);
-        uartPrint("\r\n");
+        printf("Current mixer: %s\r\n", mixerNames[cfg.mixerConfiguration - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         uartPrint("Available mixers: ");
         for (i = 0; ; i++) {
             if (mixerNames[i] == NULL)
                 break;
-            uartPrint((char *)mixerNames[i]);
-            uartWrite(' ');
+            printf("%s ", mixerNames[i]);
         }
         uartPrint("\r\n");
         return;
@@ -368,9 +585,7 @@ static void cliMixer(char *cmdline)
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
             cfg.mixerConfiguration = i + 1;
-            uartPrint("Mixer set to ");
-            uartPrint((char *)mixerNames[i]);
-            uartPrint("\r\n");
+            printf("Mixer set to %s\r\n", mixerNames[i]);
             break;
         }
     }
@@ -388,7 +603,6 @@ static void cliSave(char *cmdline)
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
     int32_t value = 0;
-    char buf[16];
 
     switch (var->type) {
         case VAR_UINT8:
@@ -411,16 +625,9 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             value = *(uint32_t *)var->ptr;
             break;
     }
-    itoa(value, buf, 10);
-    uartPrint(buf);
-    if (full) {
-        uartPrint(" ");
-        itoa(var->min, buf, 10);
-        uartPrint(buf);
-        uartPrint(" ");
-        itoa(var->max, buf, 10);
-        uartPrint(buf);
-    }
+    printf("%d", value);
+    if (full)
+        printf(" %d %d", var->min, var->max);
 }
 
 static void cliSetVar(const clivalue_t *var, const int32_t value)
@@ -456,11 +663,9 @@ static void cliSet(char *cmdline)
         uartPrint("Current settings: \r\n");
         for (i = 0; i < VALUE_COUNT; i++) {
             val = &valueTable[i];
-            uartPrint((char *)valueTable[i].name);
-            uartPrint(" = ");
+            printf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             uartPrint("\r\n");
-            while (!uartTransmitEmpty());
         }
     } else if ((eqptr = strstr(cmdline, "="))) {
         // has equal, set var
@@ -473,8 +678,7 @@ static void cliSet(char *cmdline)
                 // found
                 if (value >= valueTable[i].min && value <= valueTable[i].max) {
                     cliSetVar(val, value);
-                    uartPrint((char *)valueTable[i].name);
-                    uartPrint(" set to ");
+                    printf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
                 } else {
                     uartPrint("ERR: Value assignment out of range\r\n");
@@ -488,21 +692,11 @@ static void cliSet(char *cmdline)
 
 static void cliStatus(char *cmdline)
 {
-    char buf[16];
     uint8_t i;
     uint32_t mask;
 
-    uartPrint("System Uptime: ");
-    itoa(millis() / 1000, buf, 10);
-    uartPrint(buf);
-    uartPrint(" seconds, Voltage: ");
-    itoa(vbat, buf, 10);
-    uartPrint(buf);
-    uartPrint(" * 0.1V (");
-    itoa(batteryCellCount, buf, 10);
-    uartPrint(buf);
-    uartPrint("S battery)\r\n");
-
+    printf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery)\r\n",
+        millis() / 1000, vbat, batteryCellCount);
     mask = sensorsMask();
 
     uartPrint("Detected sensors: ");
@@ -510,22 +704,13 @@ static void cliStatus(char *cmdline)
         if (sensorNames[i] == NULL)
             break;
         if (mask & (1 << i))
-            uartPrint((char *)sensorNames[i]);
-        uartWrite(' ');
+            printf("%s ", sensorNames[i]);
     }
-    if (sensors(SENSOR_ACC)) {
-        uartPrint("ACCHW: ");
-        uartPrint((char *)accNames[accHardware]);
-    }
+    if (sensors(SENSOR_ACC))
+        printf("ACCHW: %s", accNames[accHardware]);
     uartPrint("\r\n");
 
-    uartPrint("Cycle Time: ");
-    itoa(cycleTime, buf, 10);
-    uartPrint(buf);
-    uartPrint(", I2C Errors: ");
-    itoa(i2cGetErrorCounter(), buf, 10);
-    uartPrint(buf);
-    uartPrint("\r\n");
+    printf("Cycle Time: %d, I2C Errors: %d\r\n", cycleTime, i2cGetErrorCounter());
 }
 
 static void cliVersion(char *cmdline)

@@ -108,7 +108,7 @@ static const motorMixer_t mixerVtail4[] = {
 };
 
 // Keep this synced with MultiType struct in mw.h!
-static const mixer_t mixers[] = {
+const mixer_t mixers[] = {
 //    Mo Se Mixtable
     { 0, 0, NULL },                // entry 0
     { 3, 1, mixerTri },            // MULTITYPE_TRI
@@ -157,6 +157,23 @@ void mixerInit(void)
             for (i = 0; i < numberMotor; i++)
                 currentMixer[i] = mixers[cfg.mixerConfiguration].motor[i];
         }
+    }
+}
+
+void mixerLoadMix(int index)
+{
+    int i;
+
+    // we're 1-based
+    index++;
+    // clear existing
+    for (i = 0; i < MAX_MOTORS; i++)
+        cfg.customMixer[i].throttle = 0.0f;
+
+    // do we have anything here to begin with?
+    if (mixers[index].motor != NULL) {
+        for (i = 0; i < mixers[index].numberMotor; i++)
+            cfg.customMixer[i] = mixers[index].motor[i];
     }
 }
 

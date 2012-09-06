@@ -8,6 +8,12 @@ extern rcReadRawDataPtr rcReadRawFunc;
 extern uint16_t pwmReadRawRC(uint8_t chan);
 extern uint16_t spektrumReadRawRC(uint8_t chan);
 
+static void _putc(void *p, char c)
+{
+    uartWrite(c);
+}
+
+
 int main(void)
 {
     uint8_t i;
@@ -35,6 +41,7 @@ int main(void)
 #endif
 
     systemInit();
+    init_printf(NULL, _putc);
 
     readEEPROM();
     checkFirstTime(false);

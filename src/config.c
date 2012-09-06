@@ -196,7 +196,7 @@ void checkFirstTime(bool reset)
     // serial (USART1) baudrate
     cfg.serial_baudrate = 115200;
 
-    // custom mixer
+    // custom mixer. clear by defaults.
     for (i = 0; i < MAX_MOTORS; i++)
         cfg.customMixer[i].throttle = 0.0f;
 
