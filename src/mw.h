@@ -3,7 +3,7 @@
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 
-#define  VERSION  210
+#define  VERSION  211
 
 #define LAT  0
 #define LON  1
@@ -49,40 +49,49 @@ typedef enum GimbalFlags {
 } GimbalFlags;
 
 /*********** RC alias *****************/
-#define ROLL       0
-#define PITCH      1
-#define YAW        2
-#define THROTTLE   3
-#define AUX1       4
-#define AUX2       5
-#define AUX3       6
-#define AUX4       7
+enum {
+    ROLL = 0,
+    PITCH,
+    YAW,
+    THROTTLE,
+    AUX1,
+    AUX2,
+    AUX3,
+    AUX4
+};
 
-#define PIDALT     3
-#define PIDPOS     4
-#define PIDPOSR    5
-#define PIDNAVR    6
-#define PIDLEVEL   7
-#define PIDMAG     8
-#define PIDVEL     9 // not used currently
+enum {
+    PIDROLL,
+    PIDPITCH,
+    PIDYAW,
+    PIDALT,
+    PIDPOS,
+    PIDPOSR,
+    PIDNAVR,
+    PIDLEVEL,
+    PIDMAG,
+    PIDVEL,
+    PIDITEMS
+};
 
-#define BOXACC       0
-#define BOXBARO      1
-#define BOXMAG       2
-#define BOXCAMSTAB   3
-#define BOXCAMTRIG   4
-#define BOXARM       5
-#define BOXGPSHOME   6
-#define BOXGPSHOLD   7
-#define BOXPASSTHRU  8
-#define BOXHEADFREE  9
-#define BOXBEEPERON  10
-#define BOXLEDMAX    11 // we want maximum illumination
-#define BOXLLIGHTS   12 // enable landing lights at any altitude
-#define BOXHEADADJ   13 // acquire heading for HEADFREE mode
-
-#define PIDITEMS 10
-#define CHECKBOXITEMS 14
+enum {
+    BOXANGLE = 0,
+    BOXHORIZON,
+    BOXBARO,
+    BOXMAG,
+    BOXCAMSTAB,
+    BOXCAMTRIG,
+    BOXARM,
+    BOXGPSHOME,
+    BOXGPSHOLD,
+    BOXPASSTHRU,
+    BOXHEADFREE,
+    BOXBEEPERON,
+    BOXLEDMAX,
+    BOXLLIGHTS,
+    BOXHEADADJ,
+    CHECKBOXITEMS
+};
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -201,9 +210,9 @@ typedef struct config_t {
 typedef struct flags_t {
     uint8_t OK_TO_ARM;
     uint8_t ARMED;
-    uint8_t I2C_INIT_DONE; // For i2c gps we have to now when i2c init is done, so we can update parameters to the i2cgps from eeprom (at startup it is done in setup())
     uint8_t ACC_CALIBRATED;
-    uint8_t ACC_MODE;
+    uint8_t ANGLE_MODE;
+    uint8_t HORIZON_MODE;
     uint8_t MAG_MODE;
     uint8_t BARO_MODE;
     uint8_t GPS_HOME_MODE;

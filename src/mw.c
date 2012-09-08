@@ -243,20 +243,13 @@ void computeRC(void)
     }
 }
 
-// #define TIMINGDEBUG
-
-#ifdef TIMINGDEBUG
-uint32_t trollTime = 0;
-uint16_t cn = 0xffff, cx = 0x0;
-#endif
-
 void loop(void)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     uint8_t axis, i;
     int16_t error, errorAngle;
     int16_t delta, deltaSum;
-    int16_t PTerm, ITerm, DTerm;
+    int16_t PTerm, ITerm, PTermACC, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
     static int16_t lastGyro[3] = { 0, 0, 0 };
     static int16_t delta1[3], delta2[3];
     static int16_t errorGyroI[3] = { 0, 0, 0 };
@@ -265,6 +258,7 @@ void loop(void)
     static int16_t initialThrottleHold;
     static uint32_t loopTime;
     uint16_t auxState = 0;
+    int16_t prop;
 
     // this will return false if spektrum is disabled. shrug.
     if (spektrumFrameComplete())
@@ -402,19 +396,30 @@ void loop(void)
             rcOptions[i] = (auxState & cfg.activate[i]) > 0;
 
         // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
-        if ((rcOptions[BOXACC] || (failsafeCnt > 5 * cfg.failsafe_delay)) && (sensors(SENSOR_ACC))) {
+        if ((rcOptions[BOXANGLE] || (failsafeCnt > 5 * cfg.failsafe_delay)) && (sensors(SENSOR_ACC))) {
             // bumpless transfer to Level mode
-            if (!f.ACC_MODE) {
+            if (!f.ANGLE_MODE) {
                 errorAngleI[ROLL] = 0;
                 errorAngleI[PITCH] = 0;
-                f.ACC_MODE = 1;
+                f.ANGLE_MODE = 1;
             }
-        } else
-            f.ACC_MODE = 0;        // failsave support
+        } else {
+            f.ANGLE_MODE = 0;        // failsave support
+        }
+
+        if (rcOptions[BOXHORIZON]) {
+            if (!f.HORIZON_MODE) {
+                errorAngleI[ROLL] = 0; 
+                errorAngleI[PITCH] = 0;
+                f.HORIZON_MODE = 1;
+            }
+        } else {
+            f.HORIZON_MODE = 0;
+        }
 
         if ((rcOptions[BOXARM]) == 0)
             f.OK_TO_ARM = 1;
-        if (f.ACC_MODE) {
+        if (f.ANGLE_MODE || f.HORIZON_MODE) {
             LED1_ON;
         } else {
             LED1_OFF;
@@ -584,42 +589,57 @@ void loop(void)
                 }
             }
         }
-        // **** PITCH & ROLL & YAW PID ****    
-        for (axis = 0; axis < 3; axis++) {
-            if (f.ACC_MODE && axis < 2) { // LEVEL MODE
-                // 50 degrees max inclination
-                errorAngle = constrain(2 * rcCommand[axis] - GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
-#ifdef LEVEL_PDF
-                PTerm = -(int32_t) angle[axis] * cfg.P8[PIDLEVEL] / 100;
-#else
-                PTerm = (int32_t) errorAngle *cfg.P8[PIDLEVEL] / 100;       //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
-#endif
-                PTerm = constrain(PTerm, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
 
-                errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);      // WindUp     // 16 bits is ok here
-                ITerm = ((int32_t) errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;     // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
-            } else {                // ACRO MODE or YAW axis
-                error = (int32_t) rcCommand[axis] * 10 * 8 / cfg.P8[axis];  //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
+        // **** PITCH & ROLL & YAW PID ****    
+        prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]
+        for (axis = 0; axis < 3; axis++) {
+            if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
+                // 50 degrees max inclination
+                errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
+#ifdef LEVEL_PDF
+                PTermACC = -(int32_t)angle[axis] * cfg.P8[PIDLEVEL] / 100;
+#else
+                PTermACC = (int32_t)errorAngle * cfg.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+#endif
+                PTermACC = constrain(PTermACC, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
+
+                errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000); // WindUp
+                ITermACC = ((int32_t)errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;
+            }
+            if (!f.ANGLE_MODE || axis == 2) { // MODE relying on GYRO or YAW axis
+                error = (int32_t)rcCommand[axis] * 10 * 8 / cfg.P8[axis];
                 error -= gyroData[axis];
 
-                PTerm = rcCommand[axis];
-    
-                errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000);     // WindUp // 16 bits is ok here
-                if (abs(gyroData[axis]) > 640)
-                    errorGyroI[axis] = 0;
-                ITerm = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;       // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
-            }
-            PTerm -= (int32_t) gyroData[axis] * dynP8[axis] / 10 / 8;       // 32 bits is needed for calculation
+                PTermGYRO = rcCommand[axis];
 
-            delta = gyroData[axis] - lastGyro[axis];        //16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+                errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
+                if (abs(gyroData[axis]) > 640) 
+                    errorGyroI[axis] = 0;
+                ITermGYRO = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;
+            }
+            if (f.HORIZON_MODE && axis < 2) {
+                PTerm = ((int32_t)PTermACC * (500 - prop) + (int32_t)PTermGYRO * prop) / 500;
+                ITerm = ((int32_t)ITermACC * (500 - prop) + (int32_t)ITermGYRO * prop) / 500;
+            } else {
+                if (f.ANGLE_MODE && axis < 2) {
+                    PTerm = PTermACC;
+                    ITerm = ITermACC;
+                } else {
+                    PTerm = PTermGYRO;
+                    ITerm = ITermGYRO;
+                }
+            }
+
+            PTerm -= (int32_t)gyroData[axis] * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
+
+            delta = gyroData[axis] - lastGyro[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
             lastGyro[axis] = gyroData[axis];
             deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
 
-            DTerm = ((int32_t) deltaSum * dynD8[axis]) >> 5;        //32 bits is needed for calculation
-    
-            axisPID[axis] = PTerm + ITerm - DTerm;
+            DTerm = ((int32_t)deltaSum * dynD8[axis]) >> 5; // 32 bits is needed for calculation
+            axisPID[axis] =  PTerm + ITerm - DTerm;
         }
 
         mixTable();
