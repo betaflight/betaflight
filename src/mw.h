@@ -180,6 +180,18 @@ typedef struct config_t {
     uint16_t tri_yaw_min;                   // tail servo min
     uint16_t tri_yaw_max;                   // tail servo max
 
+    // flying wing related configuration
+    uint16_t wing_left_min;                 // min/mid/max servo travel
+    uint16_t wing_left_mid;
+    uint16_t wing_left_max;
+    uint16_t wing_right_min;
+    uint16_t wing_right_mid;
+    uint16_t wing_right_max;
+    int8_t pitch_direction_l;               // left servo - pitch orientation
+    int8_t pitch_direction_r;               // right servo - pitch orientation (opposite sign to pitch_direction_l if servos are mounted mirrored)
+    int8_t roll_direction_l;                // left servo - roll orientation
+    int8_t roll_direction_r;                // right servo - roll orientation  (same sign as ROLL_DIRECTION_L, if servos are mounted in mirrored orientation)
+
     // gimbal-related configuration
     int8_t gimbal_pitch_gain;               // gimbal pitch servo gain (tied to angle) can be negative to invert movement
     int8_t gimbal_roll_gain;                // gimbal roll servo gain (tied to angle) can be negative to invert movement

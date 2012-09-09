@@ -322,15 +322,17 @@ void mixTable(void)
 
         case MULTITYPE_FLYING_WING:
             motor[0] = rcCommand[THROTTLE];
-            if (f.PASSTHRU_MODE) { // do not use sensors for correction, simple 2 channel mixing
-                int p = 0, r = 0;
-                servo[0] = p * (rcData[PITCH] - cfg.midrc) + r * (rcData[ROLL] - cfg.midrc);
-                servo[1] = p * (rcData[PITCH] - cfg.midrc) + r * (rcData[ROLL] - cfg.midrc);
-            } else { // use sensors to correct (gyro only or gyro+acc)
-                int p = 0, r = 0;
-                servo[0] = p * axisPID[PITCH] + r * axisPID[ROLL];
-                servo[1] = p * axisPID[PITCH] + r * axisPID[ROLL];
+            if (f.PASSTHRU_MODE) {
+                // do not use sensors for correction, simple 2 channel mixing
+                servo[0]  = cfg.pitch_direction_l * (rcData[PITCH] - cfg.midrc) + cfg.roll_direction_l * (rcData[ROLL] - cfg.midrc);
+                servo[1]  = cfg.pitch_direction_r * (rcData[PITCH] - cfg.midrc) + cfg.roll_direction_r * (rcData[ROLL] - cfg.midrc);
+            } else {
+                // use sensors to correct (gyro only or gyro + acc)
+                servo[0]  = cfg.pitch_direction_l * axisPID[PITCH] + cfg.roll_direction_l * axisPID[ROLL];
+                servo[1]  = cfg.pitch_direction_r * axisPID[PITCH] + cfg.roll_direction_r * axisPID[ROLL];
             }
+            servo[0] = constrain(servo[0] + cfg.wing_left_mid, cfg.wing_left_min, cfg.wing_left_max);
+            servo[1] = constrain(servo[1] + cfg.wing_right_mid, cfg.wing_right_min, cfg.wing_right_max);
             break;
     }
 

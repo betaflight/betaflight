@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 28;
+uint8_t checkNewConf = 29;
 
 void parseRcChannels(const char *input)
 {
@@ -155,7 +155,7 @@ void checkFirstTime(bool reset)
     cfg.retarded_arm = 0;       // disable arm/disarm on roll left/right
 
     // Failsafe Variables
-    cfg.failsafe_delay = 10;    // 1sec
+    cfg.failsafe_delay = 10;            // 1sec
     cfg.failsafe_off_delay = 200;       // 20sec
     cfg.failsafe_throttle = 1200;       // decent default which should always be below hover throttle for people.
 
@@ -171,6 +171,18 @@ void checkFirstTime(bool reset)
     cfg.tri_yaw_middle = 1500;
     cfg.tri_yaw_min = 1020;
     cfg.tri_yaw_max = 2000;
+
+    // flying wing
+    cfg.wing_left_min = 1020;
+    cfg.wing_left_mid = 1500;
+    cfg.wing_left_max = 2000;
+    cfg.wing_right_min = 1020;
+    cfg.wing_right_mid = 1500;
+    cfg.wing_right_max = 2000;
+    cfg.pitch_direction_l = 1;
+    cfg.pitch_direction_r = -1;
+    cfg.roll_direction_l = 1;
+    cfg.roll_direction_r = 1;
 
     // gimbal
     cfg.gimbal_pitch_gain = 10;
