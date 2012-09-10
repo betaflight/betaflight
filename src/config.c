@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 29;
+uint8_t checkNewConf = 30;
 
 void parseRcChannels(const char *input)
 {
@@ -135,6 +135,7 @@ void checkFirstTime(bool reset)
     cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     cfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
     cfg.acc_lpf_factor = 4;
+    cfg.acc_lpf_for_velocity = 10;
     cfg.gyro_cmpf_factor = 400; // default MWC
     cfg.gyro_lpf = 42;
     cfg.mpu6050_scale = 1; // fuck invensense
