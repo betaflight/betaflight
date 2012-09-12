@@ -197,9 +197,6 @@ void writeServos(void)
             break;
 
         case MULTITYPE_FLYING_WING:
-
-            break;
-
         case MULTITYPE_GIMBAL:
             pwmWriteServo(0, servo[0]);
             pwmWriteServo(1, servo[1]);
