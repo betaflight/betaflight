@@ -221,6 +221,11 @@ void uart2Write(uint8_t ch)
     USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
 }
 
+bool uart2TransmitEmpty(void)
+{
+    return tx2BufferTail == tx2BufferHead;
+}
+
 void USART2_IRQHandler(void)
 {
     uint16_t SR = USART2->SR;

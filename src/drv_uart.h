@@ -12,4 +12,5 @@ void uartPrint(char *str);
 // USART2 (GPS, Spektrum)
 void uart2Init(uint32_t speed, uartReceiveCallbackPtr func, bool rxOnly);
 void uart2ChangeBaud(uint32_t speed);
+bool uart2TransmitEmpty(void);
 void uart2Write(uint8_t ch);

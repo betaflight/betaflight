@@ -289,7 +289,7 @@ float applyDeadbandFloat(float value, int16_t deadband)
     return value;
 }
 
-float InvSqrt (float x)
+float InvSqrt(float x)
 {
     union {
         int32_t i;
