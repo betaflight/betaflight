@@ -13,7 +13,7 @@ config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 30;
+uint8_t checkNewConf = 31;
 
 void parseRcChannels(const char *input)
 {
@@ -136,9 +136,13 @@ void checkFirstTime(bool reset)
     cfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
     cfg.acc_lpf_factor = 4;
     cfg.acc_lpf_for_velocity = 10;
+    cfg.accz_deadband = 50;
     cfg.gyro_cmpf_factor = 400; // default MWC
     cfg.gyro_lpf = 42;
     cfg.mpu6050_scale = 1; // fuck invensense
+    cfg.baro_tab_size = 21;
+    cfg.baro_noise_lpf = 0.6f;
+    cfg.baro_cf = 0.985f;
     cfg.gyro_smoothing_factor = 0x00141403;     // default factors of 20, 20, 3 for R/P/Y
     cfg.vbatscale = 110;
     cfg.vbatmaxcellvoltage = 43;

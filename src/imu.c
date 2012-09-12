@@ -262,6 +262,7 @@ static void getEstimatedAttitude(void)
 #define UPDATE_INTERVAL 25000   // 40hz update rate (20hz LPF on acc)
 #define INIT_DELAY      4000000 // 4 sec initialization delay
 #define BARO_TAB_SIZE   40
+#define BARO_TAB_SIZE_MAX   48
 #define ACC_Z_DEADBAND (acc_1G / 50)
 
 #ifdef NEW_ACCZ_HOLD
@@ -307,12 +308,11 @@ int32_t isq(int32_t x)
 
 void getEstimatedAltitude(void)
 {
-    uint8_t index;
     static uint32_t deadLine = INIT_DELAY;
-    static int16_t BaroHistTab[BARO_TAB_SIZE];
-    static int8_t BaroHistIdx;
-    static int32_t BaroHigh;
-    uint16_t dTime;
+    static int16_t baroHistTab[BARO_TAB_SIZE_MAX];
+    static int8_t baroHistIdx;
+    static int32_t baroHigh;
+    uint32_t dTime;
     int16_t error;
     float invG;
     int16_t accZ;
@@ -326,21 +326,21 @@ void getEstimatedAltitude(void)
     deadLine = currentTime;
 
     //**** Alt. Set Point stabilization PID ****
-    BaroHistTab[BaroHistIdx] = BaroAlt / 10;
-    BaroHigh += BaroHistTab[BaroHistIdx];
-    index = (BaroHistIdx + (BARO_TAB_SIZE / 2)) % BARO_TAB_SIZE;
-    BaroHigh -= BaroHistTab[index];
+    baroHistTab[baroHistIdx] = BaroAlt / 10;
+    baroHigh += baroHistTab[baroHistIdx];
+    baroHigh -= baroHistTab[(baroHistIdx + 1) % cfg.baro_tab_size];
 
-    BaroHistIdx++;
-    if (BaroHistIdx == BARO_TAB_SIZE) 
-        BaroHistIdx = 0;
+    baroHistIdx++;
+    if (baroHistIdx == cfg.baro_tab_size) 
+        baroHistIdx = 0;
 
     // EstAlt = BaroHigh*10/(BARO_TAB_SIZE/2);
-    EstAlt = EstAlt * 0.6f + (BaroHigh * 10.0f / (BARO_TAB_SIZE / 2)) * 0.4f; // additional LPF to reduce baro noise
+    EstAlt = EstAlt * cfg.baro_noise_lpf + (baroHigh * 10.0f / (cfg.baro_tab_size - 1)) * (1.0f - cfg.baro_noise_lpf); // additional LPF to reduce baro noise
 
     // P
-    error = applyDeadband16(AltHold - EstAlt, 10); // remove small P parametr to reduce noise near zero position
-    BaroPID = constrain((cfg.P8[PIDALT] * error / 100), -100, +100);
+    error = constrain(AltHold - EstAlt, -300, 300);
+    error = applyDeadband16(error, 10); // remove small P parametr to reduce noise near zero position
+    BaroPID = constrain((cfg.P8[PIDALT] * error / 100), -150, +150);
 
     // I
     errorAltitudeI += error * cfg.I8[PIDALT] / 50;
@@ -352,14 +352,13 @@ void getEstimatedAltitude(void)
     invG = InvSqrt(isq(EstG.V.X) + isq(EstG.V.Y) + isq(EstG.V.Z));
     // int16_t accZ = (accADC[ROLL] * EstG.V.X + accADC[PITCH] * EstG.V.Y + accADC[YAW] * EstG.V.Z) * invG - acc_1G;
     // int16_t accZ = (accADC[ROLL] * EstG.V.X + accADC[PITCH] * EstG.V.Y + accADC[YAW] * EstG.V.Z) * invG - 1/invG;
-    accZ = (accLPFVel[ROLL] * EstG.V.X + accLPFVel[PITCH] * EstG.V.Y + accLPFVel[YAW] * EstG.V.Z) * invG - acc_1G;
-    accZ = applyDeadband16(accZ, ACC_Z_DEADBAND);
+    accZ = (accLPFVel[ROLL] * EstG.V.X + accLPFVel[PITCH] * EstG.V.Y + accLPFVel[YAW] * EstG.V.Z) * invG - acc_1G; 
+    accZ = applyDeadband16(accZ, acc_1G / cfg.accz_deadband);
     debug[0] = accZ;
 
     // Integrator - velocity, cm/sec
     vel += accZ * accVelScale * dTime;
     
-    lastBaroAlt = EstAlt;
     baroVel = (EstAlt - lastBaroAlt) / (dTime / 1000000.0f);
     baroVel = constrain(baroVel, -300, 300); // constrain baro velocity +/- 300cm/s
     baroVel = applyDeadbandFloat(baroVel, 10); // to reduce noise near zero
@@ -367,7 +366,7 @@ void getEstimatedAltitude(void)
     debug[1] = baroVel;
 
     // apply Complimentary Filter to keep near zero caluculated velocity based on baro velocity
-    vel = vel * 0.985f + baroVel * 0.015f;
+    vel = vel * cfg.baro_cf + baroVel * (1.0f - cfg.baro_cf);
     // vel = constrain(vel, -300, 300); // constrain velocity +/- 300cm/s 
     debug[2] = vel;
     // debug[3] = applyDeadbandFloat(vel, 5);
