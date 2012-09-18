@@ -82,7 +82,8 @@ typedef enum {
     VAR_INT8,
     VAR_UINT16,
     VAR_INT16,
-    VAR_UINT32
+    VAR_UINT32,
+    VAR_FLOAT
 } vartype_e;
 
 typedef struct {
@@ -143,6 +144,9 @@ const clivalue_t valueTable[] = {
     { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
     { "gyro_cmpf_factor", VAR_UINT16, &cfg.gyro_cmpf_factor, 100, 1000 },
     { "mpu6050_scale", VAR_UINT8, &cfg.mpu6050_scale, 0, 1 },
+    { "baro_tab_size", VAR_UINT8, &cfg.baro_tab_size, 0, BARO_TAB_SIZE_MAX },
+    { "baro_noise_lpf", VAR_FLOAT, &cfg.baro_noise_lpf, 0, 1 },
+    { "baro_cf", VAR_FLOAT, &cfg.baro_cf, 0, 1 },
     { "mag_declination", VAR_INT16, &cfg.mag_declination, -18000, 18000 },
     { "gps_type", VAR_UINT8, &cfg.gps_type, 0, 3 },
     { "gps_pos_p", VAR_UINT8, &cfg.P8[PIDPOS], 0, 200 },
@@ -613,12 +617,13 @@ static void cliSave(char *cmdline)
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
     int32_t value = 0;
+    char buf[8];
 
     switch (var->type) {
         case VAR_UINT8:
             value = *(uint8_t *)var->ptr;
             break;
-        
+
         case VAR_INT8:
             value = *(int8_t *)var->ptr;
             break;
@@ -634,6 +639,14 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
         case VAR_UINT32:
             value = *(uint32_t *)var->ptr;
             break;
+
+        case VAR_FLOAT:
+            printf("%s", ftoa(*(float *)var->ptr, buf));
+            if (full) {
+                printf(" %s", ftoa((float)var->min, buf));
+                printf(" %s", ftoa((float)var->max, buf));
+            }
+            return; // return from case for float only
     }
     printf("%d", value);
     if (full)
@@ -647,14 +660,18 @@ static void cliSetVar(const clivalue_t *var, const int32_t value)
         case VAR_INT8:
             *(char *)var->ptr = (char)value;
             break;
-            
+
         case VAR_UINT16:
         case VAR_INT16:
             *(short *)var->ptr = (short)value;
             break;
-            
+
         case VAR_UINT32:
             *(int *)var->ptr = (int)value;
+            break;
+
+        case VAR_FLOAT:
+            *(float *)var->ptr = *(float *)&value;
             break;
     }
 }
@@ -666,6 +683,7 @@ static void cliSet(char *cmdline)
     const clivalue_t *val;
     char *eqptr = NULL;
     int32_t value = 0;
+    float valuef = 0;
 
     len = strlen(cmdline);
 
@@ -682,12 +700,12 @@ static void cliSet(char *cmdline)
         eqptr++;
         len--;
         value = atoi(eqptr);
+        valuef = _atof(eqptr);
         for (i = 0; i < VALUE_COUNT; i++) {
             val = &valueTable[i];
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0) {
-                // found
-                if (value >= valueTable[i].min && value <= valueTable[i].max) {
-                    cliSetVar(val, value);
+                if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
+                    cliSetVar(val, valueTable[i].type == VAR_FLOAT ? *(uint32_t *)&valuef : value); // this is a silly dirty hack. please fix me later.
                     printf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
                 } else {

@@ -3,6 +3,8 @@
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 
+#define BARO_TAB_SIZE_MAX   48
+
 #define  VERSION  211
 
 #define LAT  0

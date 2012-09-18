@@ -262,7 +262,6 @@ static void getEstimatedAttitude(void)
 #define UPDATE_INTERVAL 25000   // 40hz update rate (20hz LPF on acc)
 #define INIT_DELAY      4000000 // 4 sec initialization delay
 #define BARO_TAB_SIZE   40
-#define BARO_TAB_SIZE_MAX   48
 #define ACC_Z_DEADBAND (acc_1G / 50)
 
 #ifdef NEW_ACCZ_HOLD
