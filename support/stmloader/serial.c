@@ -85,7 +85,7 @@ serialStruct_t *initSerial(const char *port, unsigned int baud, char ctsRts) {
 	cfsetospeed(&options, baud);
 #endif
 
-	options.c_cflag = CRTSCTS | CS8 | CLOCAL | CREAD;
+	options.c_cflag |= CRTSCTS | CS8 | CLOCAL | CREAD;
 	options.c_iflag = IGNPAR;
 	options.c_iflag &= (~(IXON|IXOFF|IXANY));	// turn off software flow control
 	options.c_oflag = 0;
