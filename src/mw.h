@@ -115,6 +115,8 @@ typedef struct mixer_t {
 
 typedef struct config_t {
     uint8_t version;
+    uint16_t size;
+    uint8_t magic_be;                       // magic number, should be 0xBE
     uint8_t mixerConfiguration;
     uint32_t enabledFeatures;
 
@@ -224,6 +226,8 @@ typedef struct config_t {
     uint32_t serial_baudrate;
 
     motorMixer_t customMixer[MAX_MOTORS];   // custom mixtable
+    uint8_t magic_ef;                       // magic number, should be 0xEF
+    uint8_t chk;                            // XOR checksum
 } config_t;
 
 typedef struct flags_t {

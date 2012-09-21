@@ -485,13 +485,13 @@ bool pwmInit(drv_pwm_config_t *init)
         if (mask & (TYPE_IP | TYPE_IW) && !init->enableInput)
             mask = 0;
 
-        if (init->useServos) {
-            // remap PWM9+10 as servos
+        if (init->useServos && !init->airplane) {
+            // remap PWM9+10 as servos (but not in airplane mode LOL)
             if (port == PWM9 || port == PWM10)
                 mask = TYPE_S;
         }
 
-        if (init->extraServos) {
+        if (init->extraServos && !init->airplane) {
             // remap PWM5..8 as servos when used in extended servo mode
             if (port >= PWM5 && port <= PWM8)
                 mask = TYPE_S;

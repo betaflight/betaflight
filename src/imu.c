@@ -319,7 +319,6 @@ void getEstimatedAltitude(void)
         return;
     dTime = currentTime - deadLine;
     deadLine = currentTime;
-    LED0_TOGGLE;
 
     // **** Alt. Set Point stabilization PID ****
     baroHistTab[baroHistIdx] = BaroAlt / 10;

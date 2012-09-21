@@ -43,8 +43,8 @@ int main(void)
     systemInit();
     init_printf(NULL, _putc);
 
-    readEEPROM();
     checkFirstTime(false);
+    readEEPROM();
 
     serialInit(cfg.serial_baudrate);
 

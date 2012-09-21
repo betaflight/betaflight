@@ -12,8 +12,9 @@
 config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
+static uint8_t EEPROM_CONF_VERSION = 32;
 static uint32_t enabledSensors = 0;
-uint8_t checkNewConf = 31;
+static void resetConf(void);
 
 void parseRcChannels(const char *input)
 {
@@ -24,6 +25,32 @@ void parseRcChannels(const char *input)
         if (s)
             cfg.rcmap[s - rcChannelLetters] = c - input;
     }
+}
+
+static uint8_t validEEPROM(void)
+{
+    const config_t *temp = (const config_t *)FLASH_WRITE_ADDR;
+    const uint8_t *p;
+    uint8_t chk = 0;
+
+    // check version number
+    if (EEPROM_CONF_VERSION != temp->version)
+        return 0;
+
+    // check size and magic numbers
+    if (temp->size != sizeof(config_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
+        return 0;
+
+    // verify integrity of temporary copy
+    for (p = (const uint8_t *)temp; p < ((const uint8_t *)temp + sizeof(config_t)); p++)
+        chk ^= *p;
+
+    // checksum failed
+    if (chk != 0)
+        return 0;
+
+    // looks good, let's roll!
+    return 1;
 }
 
 void readEEPROM(void)
@@ -54,9 +81,21 @@ void writeParams(uint8_t b)
 {
     FLASH_Status status;
     uint32_t i;
+    uint8_t chk = 0;
+    const uint8_t *p;
 
+    cfg.version = EEPROM_CONF_VERSION;
+    cfg.size = sizeof(config_t);
+    cfg.magic_be = 0xBE;
+    cfg.magic_ef = 0xEF;
+    cfg.chk = 0;
+    // recalculate checksum before writing
+    for (p = (const uint8_t *)&cfg; p < ((const uint8_t *)&cfg + sizeof(config_t)); p++)
+        chk ^= *p;
+    cfg.chk = chk;
+
+    // write it
     FLASH_Unlock();
-
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 
     if (FLASH_ErasePage(FLASH_WRITE_ADDR) == FLASH_COMPLETE) {
@@ -66,7 +105,6 @@ void writeParams(uint8_t b)
                 break;          // TODO: fail
         }
     }
-
     FLASH_Lock();
 
     readEEPROM();
@@ -76,15 +114,18 @@ void writeParams(uint8_t b)
 
 void checkFirstTime(bool reset)
 {
-    uint8_t test_val, i;
+    // check the EEPROM integrity before resetting values
+    if (!validEEPROM() || reset)
+        resetConf();
+}
 
-    test_val = *(uint8_t *) FLASH_WRITE_ADDR;
+// Default settings
+static void resetConf(void)
+{
+    int i;
+    memset(&cfg, 0, sizeof(config_t));
 
-    if (!reset && test_val == checkNewConf)
-        return;
-
-    // Default settings
-    cfg.version = checkNewConf;
+    cfg.version = EEPROM_CONF_VERSION;
     cfg.mixerConfiguration = MULTITYPE_QUADX;
     featureClearAll();
     featureSet(FEATURE_VBAT);
