@@ -47,8 +47,8 @@ static const motorMixer_t mixerHex6P[] = {
     { 1.0f, -1.0f, -0.866025f, -1.0f },     // FRONT_R
     { 1.0f,  1.0f,  0.866025f,  1.0f },     // REAR_L
     { 1.0f,  1.0f, -0.866025f, -1.0f },     // FRONT_L
-    { 1.0f,  0.0f,  0.866025f,  1.0f },     // FRONT
-    { 1.0f,  0.0f, -0.866025f, -1.0f },     // REAR
+    { 1.0f,  0.0f, -0.866025f,  1.0f },     // FRONT
+    { 1.0f,  0.0f,  0.866025f, -1.0f },     // REAR
 };
 
 static const motorMixer_t mixerY4[] = {

@@ -58,7 +58,7 @@ void readEEPROM(void)
     uint8_t i;
 
     // Read flash
-    memcpy(&cfg, (char *) FLASH_WRITE_ADDR, sizeof(config_t));
+    memcpy(&cfg, (char *)FLASH_WRITE_ADDR, sizeof(config_t));
 
     for (i = 0; i < 6; i++)
         lookupPitchRollRC[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t) cfg.rcRate8 / 2500;
