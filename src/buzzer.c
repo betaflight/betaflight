@@ -73,7 +73,7 @@ void beep_code(char first, char second, char third, char pause)
     char patternChar[4];
     uint16_t Duration;
     static uint8_t icnt = 0;
-    
+
     patternChar[0] = first;
     patternChar[1] = second;
     patternChar[2] = third;
@@ -95,7 +95,7 @@ void beep_code(char first, char second, char third, char pause)
             Duration = 50; 
             break;
     }
-    
+
     if (icnt < 3 && Duration != 0)
         beep(Duration);
     if (icnt >= 3 && (buzzerLastToggleTime < millis() - Duration)) {

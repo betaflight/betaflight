@@ -150,7 +150,7 @@ void uartPrint(char *str)
 
 /* -------------------------- UART2 (Spektrum, GPS) ----------------------------- */
 uartReceiveCallbackPtr uart2Callback = NULL;
-#define UART2_BUFFER_SIZE    64
+#define UART2_BUFFER_SIZE    128
 
 volatile uint8_t tx2Buffer[UART2_BUFFER_SIZE];
 uint32_t tx2BufferTail = 0;

@@ -166,9 +166,44 @@ t_fp_vector EstG;
 void rotateV(struct fp_vector *v, float *delta)
 {
     struct fp_vector v_tmp = *v;
+
+#if INACCURATE
     v->Z -= delta[ROLL] * v_tmp.X + delta[PITCH] * v_tmp.Y;
     v->X += delta[ROLL] * v_tmp.Z - delta[YAW] * v_tmp.Y;
     v->Y += delta[PITCH] * v_tmp.Z + delta[YAW] * v_tmp.X;
+#else
+    // This does a  "proper" matrix rotation using gyro deltas without small-angle approximation
+    float mat[3][3];
+    float cosx, sinx, cosy, siny, cosz, sinz;
+    float coszcosx, coszcosy, sinzcosx, coszsinx, sinzsinx;
+
+    cosx = cosf(-delta[PITCH]);
+    sinx = sinf(-delta[PITCH]);
+    cosy = cosf(delta[ROLL]);
+    siny = sinf(delta[ROLL]);
+    cosz = cosf(delta[YAW]);
+    sinz = sinf(delta[YAW]);
+
+    coszcosx = cosz * cosx;
+    coszcosy = cosz * cosy;
+    sinzcosx = sinz * cosx;
+    coszsinx = sinx * cosz;
+    sinzsinx = sinx * sinz;
+
+    mat[0][0] = coszcosy;
+    mat[0][1] = sinz * cosy;
+    mat[0][2] = -siny;
+    mat[1][0] = (coszsinx * siny) - sinzcosx;
+    mat[1][1] = (sinzsinx * siny) + (coszcosx);
+    mat[1][2] = cosy * sinx;
+    mat[2][0] = (coszcosx * siny) + (sinzsinx);
+    mat[2][1] = (sinzcosx * siny) - (coszsinx);
+    mat[2][2] = cosy * cosx;
+
+    v->X = v_tmp.X * mat[0][0] + v_tmp.Y * mat[1][0] + v_tmp.Z * mat[2][0];
+    v->Y = v_tmp.X * mat[0][1] + v_tmp.Y * mat[1][1] + v_tmp.Z * mat[2][1];
+    v->Z = v_tmp.X * mat[0][2] + v_tmp.Y * mat[1][2] + v_tmp.Z * mat[2][2];
+#endif
 }
 
 static int16_t _atan2f(float y, float x)
@@ -239,9 +274,15 @@ static void getEstimatedAttitude(void)
     }
 
     // Attitude of the estimated vector
+#if INACCURATE
     angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
     angle[PITCH] = _atan2f(EstG.V.Y, EstG.V.Z);
-
+#else
+    // This hack removes gimbal lock (sorta) on pitch, so rolling around doesn't make pitch jump when roll reaches 90deg
+    angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
+    angle[PITCH] = -asinf(EstG.V.Y / -sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z)) * (180.0f / M_PI * 10.0f);
+#endif
+    
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
         // Attitude of the cross product vector GxM

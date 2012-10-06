@@ -728,7 +728,7 @@ static void cliStatus(char *cmdline)
         millis() / 1000, vbat, batteryCellCount);
     mask = sensorsMask();
 
-    uartPrint("Detected sensors: ");
+    printf("CPU %dMHz, detected sensors: ", (SystemCoreClock / 1000000));
     for (i = 0; ; i++) {
         if (sensorNames[i] == NULL)
             break;
@@ -744,7 +744,7 @@ static void cliStatus(char *cmdline)
 
 static void cliVersion(char *cmdline)
 {
-    uartPrint("Afro32 CLI version 2.0 " __DATE__ " / " __TIME__);
+    uartPrint("Afro32 CLI version 2.1 " __DATE__ " / " __TIME__);
 }
 
 void cliProcess(void)

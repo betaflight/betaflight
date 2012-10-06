@@ -228,7 +228,7 @@ static void pwmTimeBase(TIM_TypeDef *tim, uint32_t period)
 
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
     TIM_TimeBaseStructure.TIM_Period = period - 1;
-    TIM_TimeBaseStructure.TIM_Prescaler = 72 - 1; // all TIM on F1 runs at 72MHz
+    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 1000000) - 1; // all timers run at 1MHz
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
