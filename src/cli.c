@@ -30,7 +30,7 @@ static float _atof(const char *p);
 static char *ftoa(float x, char *floatString);
 
 // sync this with MultiType enum from mw.h
-const char *mixerNames[] = {
+const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
     "FLYING_WING", "Y4", "HEX6X", "OCTOX8", "OCTOFLATP", "OCTOFLATX",
@@ -38,7 +38,7 @@ const char *mixerNames[] = {
 };
 
 // sync this with AvailableFeatures enum from board.h
-const char *featureNames[] = {
+const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
     "FAILSAFE", "SONAR", "TELEMETRY",
@@ -46,12 +46,12 @@ const char *featureNames[] = {
 };
 
 // sync this with AvailableSensors enum from board.h
-const char *sensorNames[] = {
+const char * const sensorNames[] = {
     "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
 };
 
 // 
-const char *accNames[] = {
+const char * const accNames[] = {
     "", "ADXL345", "MPU6050", "MMA845x", NULL
 };
 

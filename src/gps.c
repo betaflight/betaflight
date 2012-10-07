@@ -5,13 +5,13 @@
 #define sq(x) ((x)*(x))
 #endif
 
-uint32_t init_speed[5] = { 9600, 19200, 38400, 57600, 115200 };
+const uint32_t init_speed[5] = { 9600, 19200, 38400, 57600, 115200 };
 
 static void GPS_NewData(uint16_t c);
 static void GPS_set_pids(void);
 static void gpsPrint(const char *str);
 
-static const char *gpsInitStrings[] = {
+static const char * const gpsInitStrings[] = {
     "$PUBX,41,1,0003,0001,19200,0*23\r\n",      // UBX0..3
     "$PUBX,41,1,0003,0001,38400,0*26\r\n",
     "$PUBX,41,1,0003,0001,57600,0*2D\r\n",
