@@ -113,6 +113,12 @@ typedef struct mixer_t {
     const motorMixer_t *motor;
 } mixer_t;
 
+enum {
+    ALIGN_GYRO = 0,
+    ALIGN_ACCEL = 1,
+    ALIGN_MAG = 2
+};
+
 typedef struct config_t {
     uint8_t version;
     uint16_t size;
@@ -141,11 +147,12 @@ typedef struct config_t {
     int16_t angleTrim[2];                   // accelerometer trim
 
     // sensor-related stuff
+    int8_t align[3][3];                     // acc, gyro, mag alignment (ex: with sensor output of X, Y, Z, align of 1 -3 2 would return X, -Z, Y)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
     uint8_t acc_lpf_for_velocity;           // ACC lowpass for AccZ height hold
     uint8_t accz_deadband;                  // ??
-    uint16_t gyro_lpf;                      // mpuX050 LPF setting
+    uint16_t gyro_lpf;                      // mpuX050 LPF setting (TODO make it work on L3GD as well)
     uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
     uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
     uint8_t mpu6050_scale;                  // seems es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. fucking invenshit won't release chip IDs so I can't autodetect it.

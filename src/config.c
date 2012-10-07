@@ -12,7 +12,7 @@
 config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
-static uint8_t EEPROM_CONF_VERSION = 32;
+static uint8_t EEPROM_CONF_VERSION = 33;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -123,6 +123,8 @@ void checkFirstTime(bool reset)
 static void resetConf(void)
 {
     int i;
+    const int8_t default_align[3][3] = { /* GYRO */ { 0, 0, 0 }, /* ACC */ { 0, 0, 0 }, /* MAG */ { -2, -3, 1 } };
+
     memset(&cfg, 0, sizeof(config_t));
 
     cfg.version = EEPROM_CONF_VERSION;
@@ -130,7 +132,7 @@ static void resetConf(void)
     featureClearAll();
     featureSet(FEATURE_VBAT);
 
-    cfg.looptime = 0;
+    // cfg.looptime = 0;
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;
     cfg.D8[ROLL] = 23;
@@ -139,13 +141,13 @@ static void resetConf(void)
     cfg.D8[PITCH] = 23;
     cfg.P8[YAW] = 85;
     cfg.I8[YAW] = 45;
-    cfg.D8[YAW] = 0;
+    // cfg.D8[YAW] = 0;
     cfg.P8[PIDALT] = 16;
     cfg.I8[PIDALT] = 15;
     cfg.D8[PIDALT] = 7;
     cfg.P8[PIDPOS] = 11; // POSHOLD_P * 100;
-    cfg.I8[PIDPOS] = 0; // POSHOLD_I * 100;
-    cfg.D8[PIDPOS] = 0;
+    // cfg.I8[PIDPOS] = 0; // POSHOLD_I * 100;
+    // cfg.D8[PIDPOS] = 0;
     cfg.P8[PIDPOSR] = 20; // POSHOLD_RATE_P * 10;
     cfg.I8[PIDPOSR] = 8; // POSHOLD_RATE_I * 100;
     cfg.D8[PIDPOSR] = 45; // POSHOLD_RATE_D * 1000;
@@ -156,24 +158,25 @@ static void resetConf(void)
     cfg.I8[PIDLEVEL] = 10;
     cfg.D8[PIDLEVEL] = 20;
     cfg.P8[PIDMAG] = 40;
-    cfg.P8[PIDVEL] = 0;
-    cfg.I8[PIDVEL] = 0;
-    cfg.D8[PIDVEL] = 0;
+    // cfg.P8[PIDVEL] = 0;
+    // cfg.I8[PIDVEL] = 0;
+    // cfg.D8[PIDVEL] = 0;
     cfg.rcRate8 = 90;
     cfg.rcExpo8 = 65;
-    cfg.rollPitchRate = 0;
-    cfg.yawRate = 0;
-    cfg.dynThrPID = 0;
+    // cfg.rollPitchRate = 0;
+    // cfg.yawRate = 0;
+    // cfg.dynThrPID = 0;
     cfg.thrMid8 = 50;
-    cfg.thrExpo8 = 0;
-    for (i = 0; i < CHECKBOXITEMS; i++)
-        cfg.activate[i] = 0;
-    cfg.angleTrim[0] = 0;
-    cfg.angleTrim[1] = 0;
-    cfg.accZero[0] = 0;
-    cfg.accZero[1] = 0;
-    cfg.accZero[2] = 0;
-    cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    // cfg.thrExpo8 = 0;
+    // for (i = 0; i < CHECKBOXITEMS; i++)
+    //     cfg.activate[i] = 0;
+    // cfg.angleTrim[0] = 0;
+    // cfg.angleTrim[1] = 0;
+    // cfg.accZero[0] = 0;
+    // cfg.accZero[1] = 0;
+    // cfg.accZero[2] = 0;
+    // cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    memcpy(&cfg.align, default_align, sizeof(cfg.align));
     cfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
     cfg.acc_lpf_factor = 4;
     cfg.acc_lpf_for_velocity = 10;
@@ -191,14 +194,14 @@ static void resetConf(void)
 
     // Radio
     parseRcChannels("AETR1234");
-    cfg.deadband = 0;
-    cfg.yawdeadband = 0;
+    // cfg.deadband = 0;
+    // cfg.yawdeadband = 0;
     cfg.alt_hold_throttle_neutral = 20;
-    cfg.spektrum_hires = 0;
+    // cfg.spektrum_hires = 0;
     cfg.midrc = 1500;
     cfg.mincheck = 1100;
     cfg.maxcheck = 1900;
-    cfg.retarded_arm = 0;       // disable arm/disarm on roll left/right
+    // cfg.retarded_arm = 0;       // disable arm/disarm on roll left/right
 
     // Failsafe Variables
     cfg.failsafe_delay = 10;            // 1sec

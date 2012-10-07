@@ -82,9 +82,9 @@ static void l3g4200dInit(void)
 
 static void l3g4200dAlign(int16_t *gyroData)
 {
-    gyroData[0] = -gyroData[0] / 4;
-    gyroData[1] = gyroData[1] / 4;
-    gyroData[2] = -gyroData[2] / 4;
+    gyroData[0] = -gyroData[0];
+    gyroData[1] = gyroData[1];
+    gyroData[2] = -gyroData[2];
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
@@ -92,7 +92,7 @@ static void l3g4200dRead(int16_t *gyroData)
 {
     uint8_t buf[6];
     i2cRead(L3G4200D_ADDRESS, L3G4200D_GYRO_OUT, 6, buf);
-    gyroData[1] = (buf[0] << 8) | buf[1];
-    gyroData[0] = (buf[2] << 8) | buf[3];
-    gyroData[2] = (buf[4] << 8) | buf[5];
+    gyroData[1] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
+    gyroData[0] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
+    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
 }

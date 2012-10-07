@@ -189,30 +189,30 @@ static void mpu6050AccInit(void)
     acc_1G = 1023;
 }
 
-static void mpu6050AccRead(int16_t * accData)
+static void mpu6050AccRead(int16_t *accData)
 {
     uint8_t buf[6];
 
 #ifndef MPU6050_DMP
     i2cRead(MPU6050_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf);
-    accData[0] = (buf[0] << 8) | buf[1];
-    accData[1] = (buf[2] << 8) | buf[3];
-    accData[2] = (buf[4] << 8) | buf[5];
+    accData[0] = (int16_t)((buf[0] << 8) | buf[1]) / 8;
+    accData[1] = (int16_t)((buf[2] << 8) | buf[3]) / 8;
+    accData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 8;
 #else
     accData[0] = accData[1] = accData[2] = 0;
 #endif
 }
 
-static void mpu6050AccAlign(int16_t * accData)
+static void mpu6050AccAlign(int16_t *accData)
 {
     int16_t temp[2];
     temp[0] = accData[0];
     temp[1] = accData[1];
 
     // official direction is RPY
-    accData[0] = temp[1] / 8;
-    accData[1] = -temp[0] / 8;
-    accData[2] = accData[2] / 8;
+    accData[0] = temp[1];
+    accData[1] = -temp[0];
+    accData[2] = accData[2];
 }
 
 static void mpu6050GyroInit(void)
@@ -251,22 +251,22 @@ static void mpu6050GyroRead(int16_t * gyroData)
     uint8_t buf[6];
 #ifndef MPU6050_DMP
     i2cRead(MPU6050_ADDRESS, MPU_RA_GYRO_XOUT_H, 6, buf);
-    gyroData[0] = (buf[0] << 8) | buf[1];
-    gyroData[1] = (buf[2] << 8) | buf[3];
-    gyroData[2] = (buf[4] << 8) | buf[5];
+    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
+    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
+    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
 #else
-    gyroData[0] = dmpGyroData[0];
-    gyroData[1] = dmpGyroData[1];
-    gyroData[2] = dmpGyroData[2];
+    gyroData[0] = dmpGyroData[0] / 4 ;
+    gyroData[1] = dmpGyroData[1] / 4;
+    gyroData[2] = dmpGyroData[2] / 4;
 #endif
 }
 
 static void mpu6050GyroAlign(int16_t * gyroData)
 {
     // official direction is RPY
-    gyroData[0] = gyroData[0] / 4;
-    gyroData[1] = gyroData[1] / 4;
-    gyroData[2] = -gyroData[2] / 4;
+    gyroData[0] = gyroData[0];
+    gyroData[1] = gyroData[1];
+    gyroData[2] = -gyroData[2];
 }
 
 #ifdef MPU6050_DMP

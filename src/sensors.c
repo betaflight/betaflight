@@ -152,6 +152,28 @@ void batteryInit(void)
     batteryWarningVoltage = i * cfg.vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
 }
 
+// ALIGN_GYRO = 0,
+// ALIGN_ACCEL = 1,
+// ALIGN_MAG = 2
+static void alignSensors(uint8_t type, int16_t *data)
+{
+    int i;
+    int16_t tmp[3];
+
+    // make a copy :(
+    tmp[0] = data[0];
+    tmp[1] = data[1];
+    tmp[2] = data[2];
+
+    for (i = 0; i < 3; i++) {
+        int8_t axis = cfg.align[type][i];
+        if (axis > 0)
+            data[axis - 1] = tmp[i];
+        else
+            data[-axis - 1] = -tmp[i];
+    }
+}
+
 static void ACC_Common(void)
 {
     static int32_t a[3];
@@ -237,7 +259,11 @@ static void ACC_Common(void)
 void ACC_getADC(void)
 {
     acc.read(accADC);
-    acc.align(accADC);
+    // if we have CUSTOM alignment configured, user is "assumed" to know what they're doing
+    if (cfg.align[ALIGN_ACCEL][0])
+        alignSensors(ALIGN_ACCEL, accADC);
+    else
+        acc.align(accADC);
 
     ACC_Common();
 }
@@ -316,7 +342,11 @@ void Gyro_getADC(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
     gyro.read(gyroADC);
-    gyro.align(gyroADC);
+    // if we have CUSTOM alignment configured, user is "assumed" to know what they're doing
+    if (cfg.align[ALIGN_GYRO][0])
+        alignSensors(ALIGN_GYRO, gyroADC);
+    else
+        gyro.align(gyroADC);
 
     GYRO_Common();
 }
@@ -327,13 +357,14 @@ static uint8_t magInit = 0;
 
 static void Mag_getRawADC(void)
 {
-    static int16_t rawADC[3];
-    hmc5883lRead(rawADC);
+    hmc5883lRead(magADC);
 
+    // Default mag orientation is -2, -3, 1 or
     // no way? is THIS finally the proper orientation?? (by GrootWitBaas)
-    magADC[ROLL] = rawADC[2]; // X
-    magADC[PITCH] = -rawADC[0]; // Y
-    magADC[YAW] = -rawADC[1]; // Z
+    // magADC[ROLL] = rawADC[2]; // X
+    // magADC[PITCH] = -rawADC[0]; // Y
+    // magADC[YAW] = -rawADC[1]; // Z
+    alignSensors(ALIGN_MAG, magADC);
 }
 
 void Mag_init(void)
