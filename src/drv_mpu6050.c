@@ -160,8 +160,7 @@ bool mpu6050Detect(sensor_t * acc, sensor_t * gyro, uint8_t scale)
     // The contents of WHO_AM_I are the upper 6 bits of the MPU-60X0’s 7-bit I2C address.
     // The least significant bit of the MPU-60X0’s I2C address is determined by the value of the AD0 pin. (we know that already).
     // But here's the best part: The value of the AD0 pin is not reflected in this register.
-    sig &= 0x7e;
-    if (sig != MPU6050_ADDRESS)
+    if (sig != (MPU6050_ADDRESS & 0x7e))
         return false;
 
     // get chip revision + fake it if needed
