@@ -308,9 +308,11 @@ void Baro_update(void)
 
 static void GYRO_Common(void)
 {
+    int axis;
     static int16_t previousGyroADC[3] = { 0, 0, 0 };
     static int32_t g[3];
-    int axis;
+    static int16_t gyroMin[3];
+    static int16_t gyroMax[3];
 
     if (calibratingG > 0) {
         for (axis = 0; axis < 3; axis++) {
@@ -319,11 +321,23 @@ static void GYRO_Common(void)
                 g[axis] = 0;
             // Sum up 1000 readings
             g[axis] += gyroADC[axis];
-            // g[axis] += (1000 - calibratingG) >> 1;
+            if (gyroMin[axis] > gyroADC[axis])
+                gyroMin[axis] = gyroADC[axis];
+            if (gyroMax[axis] < gyroADC[axis])
+                gyroMax[axis] = gyroADC[axis];
             // Clear global variables for next reading
             gyroADC[axis] = 0;
             gyroZero[axis] = 0;
             if (calibratingG == 1) {
+                int16_t gyroDiff = gyroMax[axis] - gyroMin[axis];
+                // check variance and startover if idiot was moving the model
+                if (gyroDiff > 10) {
+                    calibratingG = 1000;
+                    gyroMin[0] = gyroMin[1] = gyroMin[2] = 0;
+                    gyroMax[0] = gyroMax[1] = gyroMax[2] = 0;
+                    g[0] = g[1] = g[2] = 0;
+                    continue;
+                }
                 gyroZero[axis] = g[axis] / 1000;
                 blinkLED(10, 15, 1);
             }

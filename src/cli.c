@@ -151,6 +151,8 @@ const clivalue_t valueTable[] = {
     { "acc_hardware", VAR_UINT8, &cfg.acc_hardware, 0, 3 },
     { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 250 },
     { "acc_lpf_for_velocity", VAR_UINT8, &cfg.acc_lpf_for_velocity, 1, 250 },
+    { "acc_trim_pitch", VAR_INT16, &cfg.angleTrim[PITCH], -300, 300 },
+    { "acc_trim_roll", VAR_INT16, &cfg.angleTrim[ROLL], -300, 300 },
     { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
     { "gyro_cmpf_factor", VAR_UINT16, &cfg.gyro_cmpf_factor, 100, 1000 },
     { "mpu6050_scale", VAR_UINT8, &cfg.mpu6050_scale, 0, 1 },

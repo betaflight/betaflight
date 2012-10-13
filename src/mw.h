@@ -2,7 +2,6 @@
 
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
-
 #define BARO_TAB_SIZE_MAX   48
 
 #define  VERSION  211
@@ -29,13 +28,13 @@ typedef enum MultiType
     MULTITYPE_GIMBAL = 5,
     MULTITYPE_Y6 = 6,
     MULTITYPE_HEX6 = 7,
-    MULTITYPE_FLYING_WING = 8,      // UNSUPPORTED, do not select!
+    MULTITYPE_FLYING_WING = 8,
     MULTITYPE_Y4 = 9,
     MULTITYPE_HEX6X = 10,
     MULTITYPE_OCTOX8 = 11,          // Java GUI is same for the next 3 configs
     MULTITYPE_OCTOFLATP = 12,       // MultiWinGui shows this differently
     MULTITYPE_OCTOFLATX = 13,       // MultiWinGui shows this differently
-    MULTITYPE_AIRPLANE = 14,        // airplane / singlecopter / dualcopter
+    MULTITYPE_AIRPLANE = 14,        // airplane / singlecopter / dualcopter (not yet properly supported)
     MULTITYPE_HELI_120_CCPM = 15,
     MULTITYPE_HELI_90_DEG = 16,
     MULTITYPE_VTAIL4 = 17,

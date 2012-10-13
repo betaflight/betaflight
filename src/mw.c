@@ -1,7 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-// July 2012     V2.1
+// October 2012     V2.1-dev
 
 flags_t f;
 int16_t debug[4];
@@ -35,20 +35,19 @@ int32_t GPS_coord[2];
 int32_t GPS_home[2];
 int32_t GPS_hold[2];
 uint8_t GPS_numSat;
-uint16_t GPS_distanceToHome;                            // distance to home point in meters
-int16_t GPS_directionToHome;                            // direction to home or hol point in degrees
-uint16_t GPS_altitude, GPS_speed;       // altitude in 0.1m and speed in 0.1m/s
+uint16_t GPS_distanceToHome;        // distance to home point in meters
+int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint16_t GPS_altitude, GPS_speed;   // altitude in 0.1m and speed in 0.1m/s
 uint8_t GPS_update = 0;             // it's a binary toogle to distinct a GPS position update
 int16_t GPS_angle[2] = { 0, 0 };    // it's the angles that must be applied for GPS correction
-uint16_t GPS_ground_course = 0;     // degrees*10
+uint16_t GPS_ground_course = 0;     // degrees * 10
 uint8_t GPS_Present = 0;            // Checksum from Gps serial
 uint8_t GPS_Enable = 0;
 int16_t nav[2];
 int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
 int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
 
-//Automatic ACC Offset Calibration
-// **********************
+// Automatic ACC Offset Calibration
 uint16_t InflightcalibratingA = 0;
 int16_t AccInflightCalibrationArmed;
 uint16_t AccInflightCalibrationMeasurementDone = 0;
@@ -56,8 +55,8 @@ uint16_t AccInflightCalibrationSavetoEEProm = 0;
 uint16_t AccInflightCalibrationActive = 0;
 
 // Battery monitoring stuff
-uint8_t batteryCellCount = 3;   // cell count
-uint16_t batteryWarningVoltage; // annoying buzzer after this one, battery ready to be dead
+uint8_t batteryCellCount = 3;       // cell count
+uint16_t batteryWarningVoltage;     // annoying buzzer after this one, battery ready to be dead
 
 void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 {
@@ -65,7 +64,7 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 
     for (r = 0; r < repeat; r++) {
         for (i = 0; i < num; i++) {
-            LED0_TOGGLE;        // switch LEDPIN state
+            LED0_TOGGLE;            // switch LEDPIN state
             BEEP_ON;
             delay(wait);
             BEEP_OFF;
@@ -390,9 +389,9 @@ void loop(void)
             }
         }
 
-        for(i = 0; i < 4; i++)
+        for (i = 0; i < 4; i++)
             auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) | (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) | (rcData[AUX1 + i] > 1700) << (3 * i + 2);
-        for(i = 0; i < CHECKBOXITEMS; i++)
+        for (i = 0; i < CHECKBOXITEMS; i++)
             rcOptions[i] = (auxState & cfg.activate[i]) > 0;
 
         // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
@@ -492,7 +491,7 @@ void loop(void)
         } else {
             f.PASSTHRU_MODE = 0;
         }
-        
+
         if (cfg.mixerConfiguration == MULTITYPE_FLYING_WING || cfg.mixerConfiguration == MULTITYPE_AIRPLANE) {
             f.HEADFREE_MODE = 0;
         }
