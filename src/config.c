@@ -12,7 +12,7 @@
 config_t cfg;
 const char rcChannelLetters[] = "AERT1234";
 
-static uint8_t EEPROM_CONF_VERSION = 33;
+static uint8_t EEPROM_CONF_VERSION = 34;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -187,6 +187,7 @@ static void resetConf(void)
     cfg.baro_tab_size = 21;
     cfg.baro_noise_lpf = 0.6f;
     cfg.baro_cf = 0.985f;
+    cfg.moron_threshold = 32;
     cfg.gyro_smoothing_factor = 0x00141403;     // default factors of 20, 20, 3 for R/P/Y
     cfg.vbatscale = 110;
     cfg.vbatmaxcellvoltage = 43;

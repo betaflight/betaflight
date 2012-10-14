@@ -331,7 +331,7 @@ static void GYRO_Common(void)
             if (calibratingG == 1) {
                 int16_t gyroDiff = gyroMax[axis] - gyroMin[axis];
                 // check variance and startover if idiot was moving the model
-                if (gyroDiff > 10) {
+                if (cfg.moron_threshold && gyroDiff > cfg.moron_threshold) {
                     calibratingG = 1000;
                     gyroMin[0] = gyroMin[1] = gyroMin[2] = 0;
                     gyroMax[0] = gyroMax[1] = gyroMax[2] = 0;
