@@ -192,6 +192,7 @@ static void resetConf(void)
     cfg.vbatscale = 110;
     cfg.vbatmaxcellvoltage = 43;
     cfg.vbatmincellvoltage = 33;
+    // cfg.power_adc_channel = 0;
 
     // Radio
     parseRcChannels("AETR1234");

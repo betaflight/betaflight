@@ -41,6 +41,9 @@
 #define MSP_DEBUGMSG             253    //out message         debug string buffer
 #define MSP_DEBUG                254    //out message         debug1,debug2,debug3,debug4
 
+#define MSP_ACC_TRIM             240    //out message         get acc angle trim values
+#define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
+
 #define INBUF_SIZE 64
 
 static const char boxnames[] =
@@ -177,6 +180,11 @@ static void evaluateCommand(void)
     case MSP_SET_RAW_RC:
         for (i = 0; i < 8; i++)
             rcData[i] = read16();
+        headSerialReply(0);
+        break;
+    case MSP_SET_ACC_TRIM:
+        cfg.angleTrim[PITCH] = read16();
+        cfg.angleTrim[ROLL]  = read16();
         headSerialReply(0);
         break;
     case MSP_SET_RAW_GPS:
@@ -359,6 +367,11 @@ static void evaluateCommand(void)
     case MSP_EEPROM_WRITE:
         writeParams(0);
         headSerialReply(0);
+        break;
+    case MSP_ACC_TRIM:
+        headSerialReply(4);
+        serialize16(cfg.angleTrim[PITCH]);
+        serialize16(cfg.angleTrim[ROLL]);
         break;
     case MSP_DEBUG:
         headSerialReply(8);

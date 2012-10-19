@@ -18,6 +18,7 @@ int main(void)
 {
     uint8_t i;
     drv_pwm_config_t pwm_params;
+    drv_adc_config_t adc_params;
 
 #if 0
     // PC12, PA15
@@ -45,6 +46,16 @@ int main(void)
 
     checkFirstTime(false);
     readEEPROM();
+
+    // configure power ADC
+    if (cfg.power_adc_channel > 0 && (cfg.power_adc_channel == 1 || cfg.power_adc_channel == 9))
+        adc_params.powerAdcChannel = cfg.power_adc_channel;
+    else {
+        adc_params.powerAdcChannel = 0;
+        cfg.power_adc_channel = 0;
+    }
+
+    adcInit(&adc_params);
 
     serialInit(cfg.serial_baudrate);
 
@@ -87,6 +98,17 @@ int main(void)
     pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = cfg.motor_pwm_rate;
     pwm_params.servoPwmRate = cfg.servo_pwm_rate;
+    switch (cfg.power_adc_channel) {
+        case 1:
+            pwm_params.adcChannel = PWM2;
+            break;
+        case 9:
+            pwm_params.adcChannel = PWM8;
+            break;
+        default:
+            pwm_params.adcChannel = 0;
+        break;
+    }
 
     pwmInit(&pwm_params);
 

@@ -137,7 +137,7 @@ void batteryInit(void)
 
     // average up some voltage readings
     for (i = 0; i < 32; i++) {
-        voltage += adcGetBattery();
+        voltage += adcGetChannel(ADC_BATTERY);
         delay(10);
     }
 

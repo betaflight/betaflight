@@ -116,6 +116,7 @@ const clivalue_t valueTable[] = {
     { "vbatscale", VAR_UINT8, &cfg.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &cfg.vbatmaxcellvoltage, 10, 50 },
     { "vbatmincellvoltage", VAR_UINT8, &cfg.vbatmincellvoltage, 10, 50 },
+    { "power_adc_channel", VAR_UINT8, &cfg.power_adc_channel, 0, 9 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
     { "tri_yaw_middle", VAR_UINT16, &cfg.tri_yaw_middle, 0, 2000 },
     { "tri_yaw_min", VAR_UINT16, &cfg.tri_yaw_min, 0, 2000 },

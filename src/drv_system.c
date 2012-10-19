@@ -94,7 +94,6 @@ void systemInit(void)
     SysTick_Config(SystemCoreClock / 1000);
 
     // Configure the rest of the stuff
-    adcInit();
 #ifndef FY90Q
     i2cInit(I2C2);
 #endif

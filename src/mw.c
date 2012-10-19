@@ -147,7 +147,7 @@ void annexCode(void)
 
     if (feature(FEATURE_VBAT)) {
         if (!(++vbatTimer % VBATFREQ)) {
-            vbatRawArray[(ind++) % 8] = adcGetBattery();
+            vbatRawArray[(ind++) % 8] = adcGetChannel(ADC_BATTERY);
             for (i = 0; i < 8; i++)
                 vbatRaw += vbatRawArray[i];
             vbat = batteryAdcToVoltage(vbatRaw / 8);

@@ -74,34 +74,6 @@
 
 typedef void pwmCallbackPtr(uint8_t port, uint16_t capture);
 
-// This indexes into the read-only hardware definition structure below, as well as into pwmPorts[] structure with dynamic data.
-enum {
-    PWM1 = 0,
-    PWM2,
-    PWM3,
-    PWM4,
-    PWM5,
-    PWM6,
-    PWM7,
-    PWM8,
-    PWM9,
-    PWM10,
-    PWM11,
-    PWM12,
-    PWM13,
-    PWM14,
-    MAX_PORTS
-};
-
-typedef struct {
-    TIM_TypeDef *tim;
-    GPIO_TypeDef *gpio;
-    uint32_t pin;
-    uint8_t channel;
-    uint8_t irq;
-    uint8_t outputEnable;
-} pwmHardware_t;
-
 static pwmHardware_t timerHardware[] = {
     { TIM2, GPIOA, GPIO_Pin_0, TIM_Channel_1, TIM2_IRQn, 0, },          // PWM1
     { TIM2, GPIOA, GPIO_Pin_1, TIM_Channel_2, TIM2_IRQn, 0, },          // PWM2
@@ -479,6 +451,10 @@ bool pwmInit(drv_pwm_config_t *init)
 
         // skip UART ports for GPS
         if (init->useUART && (port == PWM3 || port == PWM4))
+            continue;
+
+        // skip ADC for powerMeter if configured
+        if (init->adcChannel && (init->adcChannel == PWM2 || init->adcChannel == PWM8))
             continue;
 
         // hacks to allow current functionality
