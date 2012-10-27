@@ -306,35 +306,69 @@ void Baro_update(void)
 }
 #endif /* BARO */
 
+typedef struct stdev_t
+{
+    float m_oldM, m_newM, m_oldS, m_newS;
+    int m_n;
+} stdev_t;
+
+static void devClear(stdev_t *dev)
+{
+    dev->m_n = 0;
+}
+
+static void devPush(stdev_t *dev, float x)
+{
+    dev->m_n++;
+    if (dev->m_n == 1) {
+        dev->m_oldM = dev->m_newM = x;
+        dev->m_oldS = 0.0f;
+    } else {
+        dev->m_newM = dev->m_oldM + (x - dev->m_oldM) / dev->m_n;
+        dev->m_newS = dev->m_oldS + (x - dev->m_oldM) * (x - dev->m_newM);
+        dev->m_oldM = dev->m_newM;
+        dev->m_oldS = dev->m_newS;
+    }
+}
+
+static float devVariance(stdev_t *dev)
+{
+    return ((dev->m_n > 1) ? dev->m_newS / (dev->m_n - 1) : 0.0f);
+}
+
+static float devStandardDeviation(stdev_t *dev)
+{
+    return sqrtf(devVariance(dev));
+}
+
 static void GYRO_Common(void)
 {
     int axis;
     static int16_t previousGyroADC[3] = { 0, 0, 0 };
     static int32_t g[3];
-    static int16_t gyroMin[3];
-    static int16_t gyroMax[3];
+    static stdev_t var[3];
 
     if (calibratingG > 0) {
         for (axis = 0; axis < 3; axis++) {
             // Reset g[axis] at start of calibration
-            if (calibratingG == 1000)
+            if (calibratingG == 1000) {
                 g[axis] = 0;
+                devClear(&var[axis]);
+            }
             // Sum up 1000 readings
             g[axis] += gyroADC[axis];
-            if (gyroMin[axis] > gyroADC[axis])
-                gyroMin[axis] = gyroADC[axis];
-            if (gyroMax[axis] < gyroADC[axis])
-                gyroMax[axis] = gyroADC[axis];
+            devPush(&var[axis], gyroADC[axis]);
             // Clear global variables for next reading
             gyroADC[axis] = 0;
             gyroZero[axis] = 0;
             if (calibratingG == 1) {
-                int16_t gyroDiff = gyroMax[axis] - gyroMin[axis];
-                // check variance and startover if idiot was moving the model
-                if (cfg.moron_threshold && gyroDiff > cfg.moron_threshold) {
+                float dev = devStandardDeviation(&var[axis]);
+                // check deviation and startover if idiot was moving the model
+                if (cfg.moron_threshold && dev > cfg.moron_threshold) {
                     calibratingG = 1000;
-                    gyroMin[0] = gyroMin[1] = gyroMin[2] = 0;
-                    gyroMax[0] = gyroMax[1] = gyroMax[2] = 0;
+                    devClear(&var[0]);
+                    devClear(&var[1]);
+                    devClear(&var[2]);
                     g[0] = g[1] = g[2] = 0;
                     continue;
                 }
