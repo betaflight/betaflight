@@ -454,7 +454,7 @@ bool pwmInit(drv_pwm_config_t *init)
             continue;
 
         // skip ADC for powerMeter if configured
-        if (init->adcChannel && (init->adcChannel == PWM2 || init->adcChannel == PWM8))
+        if (init->adcChannel && (init->adcChannel == port))
             continue;
 
         // hacks to allow current functionality

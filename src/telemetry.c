@@ -119,7 +119,7 @@ static void sendGPS(void)
     sendDataHead(ID_LATITUDE_BP);
     serialize16(abs(GPS_coord[LAT]) / 100000);
     sendDataHead(ID_LATITUDE_AP);
-    serialize16((abs(GPS_coord[LAT]) / 100000) % 10000);
+    serialize16((abs(GPS_coord[LAT]) / 10) % 10000);
 
     sendDataHead(ID_N_S);
     serialize16(GPS_coord[LAT] < 0 ? 'S' : 'N');
@@ -127,7 +127,7 @@ static void sendGPS(void)
     sendDataHead(ID_LONGITUDE_BP);
     serialize16(abs(GPS_coord[LON]) / 100000);
     sendDataHead(ID_LONGITUDE_AP);
-    serialize16((abs(GPS_coord[LON]) / 100000) % 10000);
+    serialize16((abs(GPS_coord[LON]) / 10) % 10000);
     sendDataHead(ID_E_W);
     serialize16(GPS_coord[LON] < 0 ? 'W' : 'E');
 }
