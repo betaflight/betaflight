@@ -47,6 +47,7 @@ typedef enum GimbalFlags {
     GIMBAL_TILTONLY = 1 << 1,
     GIMBAL_DISABLEAUX34 = 1 << 2,
     GIMBAL_FORWARDAUX = 1 << 3,
+    GIMBAL_MIXTILT = 1 << 4,
 } GimbalFlags;
 
 /*********** RC alias *****************/

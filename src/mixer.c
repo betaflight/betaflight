@@ -346,8 +346,13 @@ void mixTable(void)
         servo[1] = cfg.gimbal_roll_mid + aux[1];
 
         if (rcOptions[BOXCAMSTAB]) {
-            servo[0] += cfg.gimbal_pitch_gain * angle[PITCH] / 16;
-            servo[1] += cfg.gimbal_roll_gain * angle[ROLL]  / 16;
+            if (cfg.gimbal_flags & GIMBAL_MIXTILT) {
+                servo[0] = (-cfg.gimbal_roll_gain) * angle[PITCH] / 16 - cfg.gimbal_roll_gain * angle[ROLL] / 16;
+                servo[1] = (-cfg.gimbal_roll_gain) * angle[PITCH] / 16 - cfg.gimbal_roll_gain * angle[ROLL] / 16;
+            } else {
+                servo[0] += cfg.gimbal_pitch_gain * angle[PITCH] / 16;
+                servo[1] += cfg.gimbal_roll_gain * angle[ROLL]  / 16;
+            }
         }
 
         servo[0] = constrain(servo[0], cfg.gimbal_pitch_min, cfg.gimbal_pitch_max);
