@@ -68,23 +68,6 @@ int main(void)
     sensorsSet(SENSOR_ACC);
 #endif
 
-    if (feature(FEATURE_SPEKTRUM)) {
-        spektrumInit();
-        rcReadRawFunc = spektrumReadRawRC;
-    } else {
-        // spektrum and GPS are mutually exclusive
-        // Optional GPS - available in both PPM and PWM input mode, in PWM input, reduces number of available channels by 2.
-        if (feature(FEATURE_GPS))
-            gpsInit(cfg.gps_baudrate);
-    }
-#ifdef SONAR
-    // sonar stuff only works with PPM
-    if (feature(FEATURE_PPM)) {
-        if (feature(FEATURE_SONAR))
-            Sonar_init();
-    }
-#endif
-
     mixerInit(); // this will set useServo var depending on mixer type
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (cfg.mixerConfiguration == MULTITYPE_AIRPLANE || cfg.mixerConfiguration == MULTITYPE_FLYING_WING)
@@ -112,8 +95,25 @@ int main(void)
 
     pwmInit(&pwm_params);
 
-    // configure PWM/CPPM read function. spektrum will override that
+    // configure PWM/CPPM read function. spektrum below will override that
     rcReadRawFunc = pwmReadRawRC;
+
+    if (feature(FEATURE_SPEKTRUM)) {
+        spektrumInit();
+        rcReadRawFunc = spektrumReadRawRC;
+    } else {
+        // spektrum and GPS are mutually exclusive
+        // Optional GPS - available in both PPM and PWM input mode, in PWM input, reduces number of available channels by 2.
+        if (feature(FEATURE_GPS))
+            gpsInit(cfg.gps_baudrate);
+    }
+#ifdef SONAR
+    // sonar stuff only works with PPM
+    if (feature(FEATURE_PPM)) {
+        if (feature(FEATURE_SONAR))
+            Sonar_init();
+    }
+#endif
 
     LED1_ON;
     LED0_OFF;
