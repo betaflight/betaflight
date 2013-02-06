@@ -285,8 +285,22 @@ static void getEstimatedAttitude(void)
     
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-        // Attitude of the cross product vector GxM
+#if INACCURATE
         heading = _atan2f(EstG.V.X * EstM.V.Z - EstG.V.Z * EstM.V.X, EstG.V.Z * EstM.V.Y - EstG.V.Y * EstM.V.Z);
+#else
+        float rollRAD = (float)angle[ROLL] * RADX10;
+        float pitchRAD = -(float)angle[PITCH] * RADX10;
+        float magX = EstM.A[1];                         // Swap X/Y
+        float magY = EstM.A[0];                         // Swap X/Y
+        float magZ = EstM.A[2];
+        float cr = cosf(rollRAD);
+        float sr = sinf(rollRAD);
+        float cp = cosf(pitchRAD);
+        float sp = sinf(pitchRAD);
+        float Xh = magX * cp + magY * sr * sp + magZ * cr * sp;
+        float Yh = magY * cr - magZ * sr;
+        heading = _atan2f(-Yh, Xh);                      // magnetic heading * 10
+#endif
         heading = heading + magneticDeclination;
         heading = heading / 10;
 

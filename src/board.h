@@ -19,6 +19,8 @@
 #define M_PI       3.14159265358979323846f
 #endif /* M_PI */
 
+#define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
+
 typedef enum {
     SENSOR_ACC = 1 << 0,
     SENSOR_BARO = 1 << 1,
