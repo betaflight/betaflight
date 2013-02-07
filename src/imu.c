@@ -287,6 +287,8 @@ static void getEstimatedAttitude(void)
     if (sensors(SENSOR_MAG)) {
 #if INACCURATE
         heading = _atan2f(EstG.V.X * EstM.V.Z - EstG.V.Z * EstM.V.X, EstG.V.Z * EstM.V.Y - EstG.V.Y * EstM.V.Z);
+        heading = heading + magneticDeclination;
+        heading = heading / 10;
 #else
         float rollRAD = (float)angle[ROLL] * RADX10;
         float pitchRAD = -(float)angle[PITCH] * RADX10;
@@ -299,11 +301,9 @@ static void getEstimatedAttitude(void)
         float sp = sinf(pitchRAD);
         float Xh = magX * cp + magY * sr * sp + magZ * cr * sp;
         float Yh = magY * cr - magZ * sr;
-        heading = _atan2f(-Yh, Xh);                      // magnetic heading * 10
+        float hd = (atan2f(-Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
+        heading = hd;
 #endif
-        heading = heading + magneticDeclination;
-        heading = heading / 10;
-
         if (heading > 180)
             heading = heading - 360;
         else if (heading < -180)
