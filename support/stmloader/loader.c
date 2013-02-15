@@ -35,10 +35,11 @@ serialStruct_t *s;
 char port[256];
 unsigned int baud;
 unsigned char overrideParity;
+unsigned char noSendR;
 char firmFile[256];
 
 void loaderUsage(void) {
-	fprintf(stderr, "usage: loader <-h> <-p device_file> <-b baud_rate> <-f firmware_file> <-o>\n");
+	fprintf(stderr, "usage: loader <-h> <-p device_file> <-b baud_rate> <-f firmware_file> <-o> <-n>\n");
 }
 
 unsigned int loaderOptions(int argc, char **argv) {
@@ -47,16 +48,18 @@ unsigned int loaderOptions(int argc, char **argv) {
 	strncpy(port, DEFAULT_PORT, sizeof(port));
 	baud = DEFAULT_BAUD;
 	overrideParity = 0;
+	noSendR = 0;
 	strncpy(firmFile, FIRMWARE_FILENAME, sizeof(firmFile));
 
 	/* options descriptor */
 	static struct option longopts[] = {
-		{ "help",	required_argument,	NULL,           'h' },
-		{ "port",	required_argument,	NULL,           'p' },
-		{ "baud",	required_argument,      NULL,           's' },
-		{ "firm_file",	required_argument,	NULL,           'f' },
-		{ "overide_party",no_argument,		NULL,           'o' },
-		{ NULL,         0,                      NULL,           0 }
+		{ "help",					required_argument,	NULL,		'h' },
+		{ "port",					required_argument,	NULL,		'p' },
+		{ "baud",					required_argument,	NULL,		's' },
+		{ "firm_file",				required_argument,	NULL,		'f' },
+		{ "override_parity",		no_argument,			NULL,		'o' },
+		{ "no_send_r",				no_argument,			NULL,		'n' },
+		{ NULL,						0,							NULL,		0 }
 	};
 
 	while ((ch = getopt_long(argc, argv, "hp:b:f:o", longopts, NULL)) != -1)
@@ -76,6 +79,9 @@ unsigned int loaderOptions(int argc, char **argv) {
 			break;
 		case 'o':
 			overrideParity = 1;
+			break;
+		case 'n':
+			noSendR = 1;
 			break;
 		default:
 			loaderUsage();
@@ -109,7 +115,7 @@ int main(int argc, char **argv) {
 	}
 	else {
 		printf("Upgrading STM on port %s from %s...\n", port, firmFile);
-		stmLoader(s, fw, overrideParity);
+		stmLoader(s, fw, overrideParity, noSendR);
 	}
 
 	return 0;

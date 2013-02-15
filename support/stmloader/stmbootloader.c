@@ -175,7 +175,7 @@ char *stmHexLoader(serialStruct_t *s, FILE *fp) {
 	return 0;
 }
 
-void stmLoader(serialStruct_t *s, FILE *fp, unsigned char overrideParity) {
+void stmLoader(serialStruct_t *s, FILE *fp, unsigned char overrideParity, unsigned char noSendR) {
 	char c;
 	unsigned char b1, b2, b3;
 	unsigned char i, n;
@@ -185,13 +185,15 @@ void stmLoader(serialStruct_t *s, FILE *fp, unsigned char overrideParity) {
 	if (!overrideParity)
 		serialEvenParity(s);
 
-	top:
-	printf("Sending R to place Baseflight in bootloader, press a key to continue");
-	serialFlush(s);
-	c = 'R';
-	serialWrite(s, &c, 1);
-	getchar();
-	printf("\n");
+	if(!noSendR) {
+		top:
+		printf("Sending R to place Baseflight in bootloader, press a key to continue");
+		serialFlush(s);
+		c = 'R';
+		serialWrite(s, &c, 1);
+		getchar();
+		printf("\n");
+	}
 
 	serialFlush(s);
 	

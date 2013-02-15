@@ -11,4 +11,4 @@ all:
 				-Wall
 
 clean:
-		rm -f stmloader
+		rm -f stmloader; rm -rf stmloader.dSYM

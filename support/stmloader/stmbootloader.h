@@ -22,6 +22,6 @@
 #include <stdio.h>
 #include "serial.h"
 
-extern void stmLoader(serialStruct_t *s, FILE *fp, unsigned char overrideParity);
+extern void stmLoader(serialStruct_t *s, FILE *fp, unsigned char overrideParity, unsigned char noSendR);
 
 #endif
