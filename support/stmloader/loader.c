@@ -62,7 +62,7 @@ unsigned int loaderOptions(int argc, char **argv) {
 		{ NULL,						0,							NULL,		0 }
 	};
 
-	while ((ch = getopt_long(argc, argv, "hp:b:f:o", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, "hp:b:f:o:n", longopts, NULL)) != -1)
 		switch (ch) {
 		case 'h':
 			loaderUsage();
