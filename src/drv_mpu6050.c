@@ -145,7 +145,7 @@ int16_t dmpGyroData[3];
 extern uint16_t acc_1G;
 static uint8_t mpuAccelHalf = 0;
 
-bool mpu6050Detect(sensor_t * acc, sensor_t * gyro, uint8_t scale)
+bool mpu6050Detect(sensor_t * acc, sensor_t * gyro, uint8_t *scale)
 {
     bool ack;
     uint8_t sig, rev;
@@ -194,6 +194,10 @@ bool mpu6050Detect(sensor_t * acc, sensor_t * gyro, uint8_t scale)
     gyro->init = mpu6050GyroInit;
     gyro->read = mpu6050GyroRead;
     gyro->align = mpu6050GyroAlign;
+
+    // give halfacc (old revision) back to system
+    if (scale)
+        *scale = mpuAccelHalf;
 
 #ifdef MPU6050_DMP
     mpu6050DmpInit();

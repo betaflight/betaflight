@@ -156,7 +156,6 @@ const clivalue_t valueTable[] = {
     { "acc_trim_roll", VAR_INT16, &cfg.angleTrim[ROLL], -300, 300 },
     { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
     { "gyro_cmpf_factor", VAR_UINT16, &cfg.gyro_cmpf_factor, 100, 1000 },
-    { "mpu6050_scale", VAR_UINT8, &cfg.mpu6050_scale, 0, 1 },
     { "baro_tab_size", VAR_UINT8, &cfg.baro_tab_size, 0, BARO_TAB_SIZE_MAX },
     { "baro_noise_lpf", VAR_FLOAT, &cfg.baro_noise_lpf, 0, 1 },
     { "baro_cf", VAR_FLOAT, &cfg.baro_cf, 0, 1 },
@@ -748,8 +747,11 @@ static void cliStatus(char *cmdline)
         if (mask & (1 << i))
             printf("%s ", sensorNames[i]);
     }
-    if (sensors(SENSOR_ACC))
+    if (sensors(SENSOR_ACC)) {
         printf("ACCHW: %s", accNames[accHardware]);
+        if (accHardware == ACC_MPU6050)
+            printf(".%c", cfg.mpu6050_scale ? 'n' : 'o');
+    }
     uartPrint("\r\n");
 
     printf("Cycle Time: %d, I2C Errors: %d\r\n", cycleTime, i2cGetErrorCounter());
