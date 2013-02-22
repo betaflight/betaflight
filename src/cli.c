@@ -750,7 +750,7 @@ static void cliStatus(char *cmdline)
     if (sensors(SENSOR_ACC)) {
         printf("ACCHW: %s", accNames[accHardware]);
         if (accHardware == ACC_MPU6050)
-            printf(".%c", cfg.mpu6050_scale ? 'n' : 'o');
+            printf(".%c", cfg.mpu6050_scale ? 'o' : 'n');
     }
     uartPrint("\r\n");
 
