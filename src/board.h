@@ -21,6 +21,11 @@
 
 #define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
 
+// Chip Unique ID on F103
+#define U_ID_0 (*(uint32_t*)0x1FFFF7E8)
+#define U_ID_1 (*(uint32_t*)0x1FFFF7EC)
+#define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
+
 typedef enum {
     SENSOR_ACC = 1 << 0,
     SENSOR_BARO = 1 << 1,

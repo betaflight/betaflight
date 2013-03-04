@@ -3,8 +3,10 @@
 
 // we unset this on 'exit'
 extern uint8_t cliMode;
+static void cliAux(char *cmdline);
 static void cliCMix(char *cmdline);
 static void cliDefaults(char *cmdline);
+static void cliDump(char *cmdLine);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
 static void cliHelp(char *cmdline);
@@ -63,8 +65,10 @@ typedef struct {
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
+    { "aux", "feature_name auxflag or blank for list", cliAux },
     { "cmix", "design custom mixer", cliCMix },
     { "defaults", "reset to defaults and reboot", cliDefaults },
+    { "dump", "print configurable settings in a pastable form", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
     { "help", "", cliHelp },
@@ -387,6 +391,30 @@ static int cliCompare(const void *a, const void *b)
     return strncasecmp(ca->name, cb->name, strlen(cb->name));
 }
 
+static void cliAux(char *cmdline)
+{
+    int i, val = 0;
+    uint8_t len;
+    char *ptr;
+
+    len = strlen(cmdline);
+    if (len == 0) {
+        // print out aux channel settings
+        for (i = 0; i < CHECKBOXITEMS; i++)
+            printf("aux %u %u\r\n", i, cfg.activate[i]);
+    } else {
+        ptr = cmdline;
+        i = atoi(ptr);
+        if (i < CHECKBOXITEMS) {
+            ptr = strchr(cmdline, ' ');
+            val = atoi(ptr);
+            cfg.activate[i] = val;
+        } else {
+            printf("Invalid Feature index: must be < %u\r\n", CHECKBOXITEMS);
+        }
+    }
+}
+
 static void cliCMix(char *cmdline)
 {
     int i, check = 0;
@@ -480,6 +508,78 @@ static void cliDefaults(char *cmdline)
     uartPrint("Rebooting...");
     delay(10);
     systemReset(false);
+}
+
+static void cliDump(char *cmdline)
+{
+    
+    int i, val = 0;
+    char buf[16];
+    float thr, roll, pitch, yaw;
+    uint32_t mask;
+    const clivalue_t *setval;
+
+    printf("Current Config: Copy everything below here...\r\n");
+
+    // print out aux switches
+    cliAux("");
+
+    // print out current motor mix
+    printf("mixer %s\r\n", mixerNames[cfg.mixerConfiguration - 1]);
+
+    // print custom mix if exists
+    if (cfg.customMixer[0].throttle != 0.0f) {
+        for (i = 0; i < MAX_MOTORS; i++) {
+            if (cfg.customMixer[i].throttle == 0.0f)
+                break;
+            thr = cfg.customMixer[i].throttle;
+            roll = cfg.customMixer[i].roll;
+            pitch = cfg.customMixer[i].pitch;
+            yaw = cfg.customMixer[i].yaw;
+            printf("cmix %d", i + 1);
+            if (thr < 0) 
+                printf(" ");
+            printf("%s", ftoa(thr, buf));
+            if (roll < 0) 
+                printf(" ");
+            printf("%s", ftoa(roll, buf));
+            if (pitch < 0) 
+                printf(" ");
+            printf("%s", ftoa(pitch, buf));
+            if (yaw < 0) 
+                printf(" ");
+            printf("%s\r\n", ftoa(yaw, buf));
+        }   
+        printf("cmix %d 0 0 0 0\r\n", i + 1);
+    }
+
+    // print enabled features
+    mask = featureMask();
+    for (i = 0; ; i++) { // disable all feature first
+        if (featureNames[i] == NULL)
+            break;
+        printf("feature -%s\r\n", featureNames[i]);
+    }
+    for (i = 0; ; i++) {  // reenable what we want.
+        if (featureNames[i] == NULL)
+            break;
+        if (mask & (1 << i))
+            printf("feature %s\r\n", featureNames[i]);
+    }
+
+    // print RC MAPPING
+    for (i = 0; i < 8; i++)
+        buf[cfg.rcmap[i]] = rcChannelLetters[i];
+    buf[i] = '\0';
+    printf("map %s\r\n", buf);
+
+    // print settings
+    for (i = 0; i < VALUE_COUNT; i++) {
+        setval = &valueTable[i];
+        printf("set %s = ", valueTable[i].name);
+        cliPrintVar(setval, 0);
+        uartPrint("\r\n");
+    }
 }
 
 static void cliExit(char *cmdline)

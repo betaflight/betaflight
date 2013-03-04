@@ -44,6 +44,9 @@
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 
+// Additional commands that are not compatible with MultiWii
+#define MSP_UID                  160    //out message         Unique device ID
+
 #define INBUF_SIZE 64
 
 static const char boxnames[] =
@@ -377,6 +380,13 @@ static void evaluateCommand(void)
         headSerialReply(8);
         for (i = 0; i < 4; i++)
             serialize16(debug[i]);      // 4 variables are here for general monitoring purpose
+        break;
+        // Additional commands that are not compatible with MultiWii
+    case MSP_UID:
+        headSerialReply(12);
+        serialize32(U_ID_0);
+        serialize32(U_ID_1);
+        serialize32(U_ID_2);
         break;
     default:                   // we do not know how to handle the (valid) message, indicate error MSP $M!
         headSerialError(0);

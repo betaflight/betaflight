@@ -45,6 +45,10 @@
 #define ID_GYRO_Y             0x41
 #define ID_GYRO_Z             0x42
 
+// from sensors.c
+extern uint8_t batteryCellCount;
+
+ 
 static void sendDataHead(uint8_t id)
 {
     uartWrite(PROTOCOL_HEADER);
@@ -132,11 +136,56 @@ static void sendGPS(void)
     serialize16(GPS_coord[LON] < 0 ? 'W' : 'E');
 }
 
+/*
+ * Send voltage via ID_VOLT
+ *
+ * NOTE: This sends voltage divided by batteryCellCount. To get the real
+ * battery voltage, you need to multiply the value by batteryCellCount.
+ */
 static void sendVoltage(void)
 {
-    uint16_t voltage;
+    static uint16_t currentCell = 0;
+    uint16_t cellNumber;
+    uint32_t cellVoltage;
+    uint16_t payload;
 
-    voltage = (vbat * 110) / 21;
+    /*
+     * Note: Fuck the pdf. Format for Voltage Data for single cells is like this:
+     *
+     *  llll llll cccc hhhh
+     *  l: Low voltage bits
+     *  h: High voltage bits
+     *  c: Cell number (starting at 0)
+     */
+    cellVoltage = vbat / batteryCellCount;
+
+    // Map to 12 bit range
+    cellVoltage = (cellVoltage * 2100) / 42;
+
+    cellNumber = currentCell % batteryCellCount;
+
+    // Cell number is at bit 9-12
+    payload = (cellNumber << 4);
+
+    // Lower voltage bits are at bit 0-8
+    payload |= ((cellVoltage & 0x0ff) << 8);
+
+    // Higher voltage bits are at bits 13-15
+    payload |= ((cellVoltage & 0xf00) >> 8);
+
+    sendDataHead(ID_VOLT);
+    serialize16(payload);
+
+    currentCell++;
+    currentCell %= batteryCellCount;
+}
+
+/*
+ * Send voltage with ID_VOLTAGE_AMP
+ */
+static void sendVoltageAmp()
+{
+    uint16_t voltage = (vbat * 110) / 21;
 
     sendDataHead(ID_VOLTAGE_AMP_BP);
     serialize16(voltage / 100);
@@ -186,10 +235,15 @@ void sendTelemetry(void)
 
         if ((cycleNum % 8) == 0) {      // Sent every 1s
             sendTemperature1();
-            if (feature(FEATURE_VBAT))
+
+            if (feature(FEATURE_VBAT)) {
                 sendVoltage();
+                sendVoltageAmp();
+            }
+
             if (sensors(SENSOR_GPS))
                 sendGPS();
+
             sendTelemetryTail();
         }
 
