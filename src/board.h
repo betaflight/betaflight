@@ -56,6 +56,7 @@ typedef enum {
     FEATURE_SONAR = 1 << 10,
     FEATURE_TELEMETRY = 1 << 11,
     FEATURE_POWERMETER = 1 << 12,
+    FEATURE_VARIO = 1 << 13,
 } AvailableFeatures;
 
 typedef enum {
@@ -72,10 +73,11 @@ typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver 
 
 typedef struct sensor_t
 {
-    sensorInitFuncPtr init;
-    sensorReadFuncPtr read;
-    sensorReadFuncPtr align;
-    sensorReadFuncPtr temperature;
+    sensorInitFuncPtr init;                                 // initialize function
+    sensorReadFuncPtr read;                                 // read 3 axis data function
+    sensorReadFuncPtr align;                                // sensor align
+    sensorReadFuncPtr temperature;                          // read temperature if available
+    float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
 } sensor_t;
 
 typedef struct baro_t

@@ -17,7 +17,7 @@ extern int16_t failsafeCnt;
 
 void spektrumInit(void)
 {
-    if (cfg.spektrum_hires) {
+    if (mcfg.spektrum_hires) {
         // 11 bit frames
         spek_chan_shift = 3;
         spek_chan_mask = 0x07;
@@ -75,12 +75,12 @@ uint16_t spektrumReadRawRC(uint8_t chan)
     }
 
     if (chan >= SPEK_MAX_CHANNEL || !spekDataIncoming) {
-        data = cfg.midrc;
+        data = mcfg.midrc;
     } else {
-        if (cfg.spektrum_hires)
-            data = 988 + (spekChannelData[cfg.rcmap[chan]] >> 1);   // 2048 mode
+        if (mcfg.spektrum_hires)
+            data = 988 + (spekChannelData[mcfg.rcmap[chan]] >> 1);   // 2048 mode
         else
-            data = 988 + spekChannelData[cfg.rcmap[chan]];          // 1024 mode
+            data = 988 + spekChannelData[mcfg.rcmap[chan]];          // 1024 mode
     }
     
     return data;

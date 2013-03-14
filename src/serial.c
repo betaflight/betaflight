@@ -3,68 +3,133 @@
 
 // Multiwii Serial Protocol 0 
 #define MSP_VERSION              0
-#define PLATFORM_32BIT           0x80000000
+#define PLATFORM_32BIT           ((uint32_t)1 << 31)
 
-#define MSP_IDENT                100    //out message         multitype + version
-#define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation
+#define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
+#define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
 #define MSP_RAW_IMU              102    //out message         9 DOF
 #define MSP_SERVO                103    //out message         8 servos
 #define MSP_MOTOR                104    //out message         8 motors
-#define MSP_RC                   105    //out message         8 rc chan
-#define MSP_RAW_GPS              106    //out message         fix, numsat, lat, lon, alt, speed
+#define MSP_RC                   105    //out message         8 rc chan and more
+#define MSP_RAW_GPS              106    //out message         fix, numsat, lat, lon, alt, speed, ground course
 #define MSP_COMP_GPS             107    //out message         distance home, direction home
 #define MSP_ATTITUDE             108    //out message         2 angles 1 heading
-#define MSP_ALTITUDE             109    //out message         1 altitude
-#define MSP_BAT                  110    //out message         vbat, powermetersum
+#define MSP_ALTITUDE             109    //out message         altitude, variometer
+#define MSP_ANALOG               110    //out message         vbat, powermetersum, rssi if available on RX
 #define MSP_RC_TUNING            111    //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
-#define MSP_PID                  112    //out message         up to 16 P I D (8 are used)
-#define MSP_BOX                  113    //out message         up to 16 checkbox (11 are used)
-#define MSP_MISC                 114    //out message         powermeter trig + 8 free for future use
+#define MSP_PID                  112    //out message         P I D coeff (9 are used currently)
+#define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)
+#define MSP_MISC                 114    //out message         powermeter trig
 #define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
 #define MSP_BOXNAMES             116    //out message         the aux switch names
 #define MSP_PIDNAMES             117    //out message         the PID names
 #define MSP_WP                   118    //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold
+#define MSP_BOXIDS               119    //out message         get the permanent IDs associated to BOXes
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
-#define MSP_SET_PID              202    //in message          up to 16 P I D (8 are used)
-#define MSP_SET_BOX              203    //in message          up to 16 checkbox (11 are used)
+#define MSP_SET_PID              202    //in message          P I D coeff (9 are used currently)
+#define MSP_SET_BOX              203    //in message          BOX setup (number is dependant of your setup)
 #define MSP_SET_RC_TUNING        204    //in message          rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
 #define MSP_ACC_CALIBRATION      205    //in message          no param
 #define MSP_MAG_CALIBRATION      206    //in message          no param
 #define MSP_SET_MISC             207    //in message          powermeter trig + 8 free for future use
 #define MSP_RESET_CONF           208    //in message          no param
-#define MSP_WP_SET               209    //in message          sets a given WP (WP#,lat, lon, alt, flags)
+#define MSP_SET_WP               209    //in message          sets a given WP (WP#,lat, lon, alt, flags)
+#define MSP_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
+#define MSP_SET_HEAD             211    //in message          define a new heading hold direction
+
+// #define MSP_BIND                 240    //in message          no param
 
 #define MSP_EEPROM_WRITE         250    //in message          no param
 
 #define MSP_DEBUGMSG             253    //out message         debug string buffer
 #define MSP_DEBUG                254    //out message         debug1,debug2,debug3,debug4
 
+// Additional commands that are not compatible with MultiWii
+#define MSP_UID                  160    //out message         Unique device ID
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 
-// Additional commands that are not compatible with MultiWii
-#define MSP_UID                  160    //out message         Unique device ID
-
 #define INBUF_SIZE 64
 
+struct box_t {
+    const uint8_t boxIndex;         // this is from boxnames enum
+    const char *boxName;            // GUI-readable box name
+    const uint8_t permanentId;      // 
+} boxes[] = {
+    { BOXARM, "ARM;", 0 },
+    { BOXANGLE, "ANGLE;", 1 },
+    { BOXHORIZON, "HORIZON;", 2 },
+    { BOXBARO, "BARO;", 3 },
+    { BOXVARIO, "VARIO;", 4 },
+    { BOXMAG, "MAG;", 5 },
+    { BOXHEADFREE, "HEADFREE;", 6 },
+    { BOXHEADADJ, "HEADADJ;", 7 },
+    { BOXCAMSTAB, "CAMSTAB;", 8 },
+    { BOXCAMTRIG, "CAMTRIG;", 9 },
+    { BOXGPSHOME, "GPS HOME;", 10 },
+    { BOXGPSHOLD, "GPS HOLD;", 11 },
+    { BOXPASSTHRU, "PASSTHRU;", 12 },
+    { BOXBEEPERON, "BEEPER;", 13 },
+    { BOXLEDMAX, "LEDMAX;", 14 },
+    { BOXLEDLOW, "LEDLOW;", 15 },
+    { BOXLLIGHTS, "LLIGHTS;", 16 },
+    { BOXCALIB, "CALIB;", 17 },
+    { BOXGOV, "GOVERNOR;", 18 },
+    { BOXOSD, "OSD SW;", 19 },
+    { CHECKBOXITEMS, NULL, 0xFF }
+};
+
+// this is calculated at startup based on enabled features.
+static uint8_t availableBoxes[CHECKBOXITEMS];
+// this is the number of filled indexes in above array
+static uint8_t numberBoxItems = 0;
+
 static const char boxnames[] =
+    "ARM;"
     "ANGLE;"
     "HORIZON;"
     "BARO;"
+    "VARIO;"
     "MAG;"
+    "HEADFREE;"
+    "HEADADJ;"
     "CAMSTAB;"
     "CAMTRIG;"
-    "ARM;"
     "GPS HOME;"
     "GPS HOLD;"
     "PASSTHRU;"
-    "HEADFREE;"
     "BEEPER;"
     "LEDMAX;"
+    "LEDLOW;"
     "LLIGHTS;"
-    "HEADADJ;";
+    "CALIB;"
+    "GOVERNOR;"
+    "OSD SW;";
+
+const uint8_t boxids[] = {      // permanent IDs associated to boxes. This way, you can rely on an ID number to identify a BOX function.
+    0,                          // "ARM;"
+    1,                          // "ANGLE;"
+    2,                          // "HORIZON;"
+    3,                          // "BARO;"
+    4,                          // "VARIO;"
+    5,                          // "MAG;"
+    6,                          // "HEADFREE;"
+    7,                          // "HEADADJ;"  
+    8,                          // "CAMSTAB;"
+    9,                          // "CAMTRIG;"
+    10,                         // "GPS HOME;"
+    11,                         // "GPS HOLD;"
+    12,                         // "PASSTHRU;"
+    13,                         // "BEEPER;"
+    14,                         // "LEDMAX;"
+    15,                         // "LEDLOW;"
+    16,                         // "LLIGHTS;"
+    17,                         // "CALIB;"
+    18,                         // "GOVERNOR;"
+    19,                         // "OSD_SWITCH;"
+};
 
 static const char pidnames[] =
     "ROLL;"
@@ -169,15 +234,68 @@ void serializeNames(const char *s)
         serialize8(*c);
 }
 
+void serializeBoxNamesReply(void)
+{
+    char buf[256]; // no fucking idea
+    char *c;
+    int i, j;
+
+    memset(buf, 0, sizeof(buf));
+    for (i = 0; i < CHECKBOXITEMS; i++) {
+        for (j = 0; j < numberBoxItems; j++) {
+            if (boxes[i].boxIndex == availableBoxes[j])
+                strcat(buf, boxes[i].boxName);
+        }
+    }
+    
+    headSerialReply(strlen(buf));
+    for (c = buf; *c; c++)
+        serialize8(*c);
+}
+
 void serialInit(uint32_t baudrate)
 {
+    int idx;
+
     uartInit(baudrate);
+    // calculate used boxes based on features and fill availableBoxes[] array
+    memset(availableBoxes, 0xFF, sizeof(availableBoxes));
+
+    idx = 0;
+    availableBoxes[idx++] = BOXARM;
+    if (sensors(SENSOR_ACC)) {
+        availableBoxes[idx++] = BOXANGLE;
+        availableBoxes[idx++] = BOXHORIZON;
+    }
+    if (sensors(SENSOR_BARO)) {
+        availableBoxes[idx++] = BOXBARO;
+        if (feature(FEATURE_VARIO))
+            availableBoxes[idx++] = BOXVARIO;
+    }
+    if (sensors(SENSOR_MAG)) {
+        availableBoxes[idx++] = BOXMAG;
+        availableBoxes[idx++] = BOXHEADFREE;
+        availableBoxes[idx++] = BOXHEADADJ;
+    }
+    if (feature(FEATURE_SERVO_TILT))
+        availableBoxes[idx++] = BOXCAMSTAB;
+    if (feature(FEATURE_GPS) && sensors(SENSOR_GPS)) {
+        availableBoxes[idx++] = BOXGPSHOME;
+        availableBoxes[idx++] = BOXGPSHOLD;
+    }
+    if (mcfg.mixerConfiguration ==  MULTITYPE_FLYING_WING || mcfg.mixerConfiguration ==  MULTITYPE_AIRPLANE)
+        availableBoxes[idx++] = BOXPASSTHRU;
+    availableBoxes[idx++] = BOXBEEPERON;
+    if (feature(FEATURE_INFLIGHT_ACC_CAL))
+        availableBoxes[idx++] = BOXCALIB;
+    numberBoxItems = idx;
 }
 
 static void evaluateCommand(void)
 {
     uint32_t i;
     uint8_t wp_no;
+    int32_t lat = 0, lon = 0, alt = 0;
 
     switch (cmdMSP) {
     case MSP_SET_RAW_RC:
@@ -209,8 +327,8 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_BOX:
-        for (i = 0; i < CHECKBOXITEMS; i++)
-            cfg.activate[i] = read16();
+        for (i = 0; i < numberBoxItems; i++)
+            cfg.activate[availableBoxes[i]] = read16();
         headSerialReply(0);
         break;
     case MSP_SET_RC_TUNING:
@@ -226,22 +344,46 @@ static void evaluateCommand(void)
     case MSP_SET_MISC:
         headSerialReply(0);
         break;
+    case MSP_SELECT_SETTING:
+        if (!f.ARMED) {
+            mcfg.current_profile = read8();
+            if (mcfg.current_profile > 2)
+                mcfg.current_profile = 0;
+            // this writes new profile index and re-reads it
+            writeEEPROM(0, false);
+        }
+        headSerialReply(0);
+        break;
+    case MSP_SET_HEAD:
+        magHold = read16();
+        headSerialReply(0);
+        break;
     case MSP_IDENT:
         headSerialReply(7);
         serialize8(VERSION);                // multiwii version
-        serialize8(cfg.mixerConfiguration); // type of multicopter
+        serialize8(mcfg.mixerConfiguration); // type of multicopter
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
         serialize32(PLATFORM_32BIT);        // "capability"
         break;
     case MSP_STATUS:
-        headSerialReply(10);
+        headSerialReply(11);
         serialize16(cycleTime);
         serialize16(i2cGetErrorCounter());
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-        serialize32(f.ANGLE_MODE << BOXANGLE | f.HORIZON_MODE << BOXHORIZON | f.BARO_MODE << BOXBARO | f.MAG_MODE << BOXMAG | f.ARMED << BOXARM | 
-                    rcOptions[BOXCAMSTAB] << BOXCAMSTAB | rcOptions[BOXCAMTRIG] << BOXCAMTRIG | 
-                    f.GPS_HOME_MODE << BOXGPSHOME | f.GPS_HOLD_MODE << BOXGPSHOLD | f.HEADFREE_MODE << BOXHEADFREE | f.PASSTHRU_MODE << BOXPASSTHRU | 
-                    rcOptions[BOXBEEPERON] << BOXBEEPERON | rcOptions[BOXLEDMAX] << BOXLEDMAX | rcOptions[BOXLLIGHTS] << BOXLLIGHTS | rcOptions[BOXHEADADJ] << BOXHEADADJ);
+        serialize32(f.ANGLE_MODE << BOXANGLE | f.HORIZON_MODE << BOXHORIZON |
+                    f.BARO_MODE << BOXBARO | f.MAG_MODE << BOXMAG | f.HEADFREE_MODE << BOXHEADFREE | rcOptions[BOXHEADADJ] << BOXHEADADJ |
+                    rcOptions[BOXCAMSTAB] << BOXCAMSTAB | rcOptions[BOXCAMTRIG] << BOXCAMTRIG |
+                    f.GPS_HOME_MODE << BOXGPSHOME | f.GPS_HOLD_MODE << BOXGPSHOLD |
+                    f.PASSTHRU_MODE << BOXPASSTHRU |
+                    rcOptions[BOXBEEPERON] << BOXBEEPERON |
+                    rcOptions[BOXLEDMAX] << BOXLEDMAX |
+                    rcOptions[BOXLLIGHTS] << BOXLLIGHTS |
+                    rcOptions[BOXVARIO] << BOXVARIO |
+                    rcOptions[BOXCALIB] << BOXCALIB |
+                    rcOptions[BOXGOV] << BOXGOV |
+                    rcOptions[BOXOSD] << BOXOSD |
+                    f.ARMED << BOXARM);
+        serialize8(mcfg.current_profile);
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
@@ -268,13 +410,14 @@ static void evaluateCommand(void)
             serialize16(rcData[i]);
         break;
     case MSP_RAW_GPS:
-        headSerialReply(14);
+        headSerialReply(16);
         serialize8(f.GPS_FIX);
         serialize8(GPS_numSat);
         serialize32(GPS_coord[LAT]);
         serialize32(GPS_coord[LON]);
         serialize16(GPS_altitude);
         serialize16(GPS_speed);
+        serialize16(GPS_ground_course);
         break;
     case MSP_COMP_GPS:
         headSerialReply(5);
@@ -290,13 +433,15 @@ static void evaluateCommand(void)
         serialize16(headFreeModeHold);
         break;
     case MSP_ALTITUDE:
-        headSerialReply(4);
+        headSerialReply(6);
         serialize32(EstAlt);
+        serialize16(vario);
         break;
-    case MSP_BAT:
-        headSerialReply(3);
+    case MSP_ANALOG:
+        headSerialReply(5);
         serialize8(vbat);
         serialize16(0); // power meter trash
+        serialize16(rssi);
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
@@ -316,18 +461,23 @@ static void evaluateCommand(void)
             serialize8(cfg.D8[i]);
         }
         break;
-    case MSP_BOX:
-        headSerialReply(2 * CHECKBOXITEMS);
-        for (i = 0; i < CHECKBOXITEMS; i++)
-            serialize16(cfg.activate[i]);
-        break;
-    case MSP_BOXNAMES:
-        headSerialReply(sizeof(boxnames) - 1);
-        serializeNames(boxnames);
-        break;
     case MSP_PIDNAMES:
         headSerialReply(sizeof(pidnames) - 1);
         serializeNames(pidnames);
+        break;
+    case MSP_BOX:
+        headSerialReply(2 * numberBoxItems);
+        for (i = 0; i < numberBoxItems; i++)
+            serialize16(cfg.activate[availableBoxes[i]]);
+        break;
+    case MSP_BOXNAMES:
+        // headSerialReply(sizeof(boxnames) - 1);
+        serializeBoxNamesReply();
+        break;
+    case MSP_BOXIDS:
+        headSerialReply(numberBoxItems);
+        for (i = 0; i < numberBoxItems; i++)
+            serialize8(availableBoxes[i]);
         break;
     case MSP_MISC:
         headSerialReply(2);
@@ -340,54 +490,85 @@ static void evaluateCommand(void)
         break;
     case MSP_WP:
         wp_no = read8();    // get the wp number
-        headSerialReply(12);
+        headSerialReply(18);
         if (wp_no == 0) {
-            serialize8(0);                   // wp0
-            serialize32(GPS_home[LAT]);
-            serialize32(GPS_home[LON]);
-            serialize16(0);                  // altitude will come here
-            serialize8(0);                   // nav flag will come here
+            lat = GPS_home[LAT];
+            lon = GPS_home[LON];
         } else if (wp_no == 16) {
-            serialize8(16);                  // wp16
-            serialize32(GPS_hold[LAT]);
-            serialize32(GPS_hold[LON]);
-            serialize16(0);                  // altitude will come here
-            serialize8(0);                   // nav flag will come here
+            lat = GPS_hold[LAT];
+            lon = GPS_hold[LON];
         }
+        serialize8(wp_no);
+        serialize32(lat);
+        serialize32(lon);
+        serialize32(AltHold);           // altitude (cm) will come here -- temporary implementation to test feature with apps
+        serialize16(0);                 // heading  will come here (deg)
+        serialize16(0);                 // time to stay (ms) will come here 
+        serialize8(0);                  // nav flag will come here
+        break;
+    case MSP_SET_WP:
+        wp_no = read8();    //get the wp number
+        lat = read32();
+        lon = read32();
+        alt = read32();     // to set altitude (cm)
+        read16();           // future: to set heading (deg)
+        read16();           // future: to set time to stay (ms)
+        read8();            // future: to set nav flag
+        if (wp_no == 0) {
+            GPS_home[LAT] = lat;
+            GPS_home[LON] = lon;
+            f.GPS_HOME_MODE = 0;        // with this flag, GPS_set_next_wp will be called in the next loop -- OK with SERIAL GPS / OK with I2C GPS
+            f.GPS_FIX_HOME = 1;
+            if (alt != 0)
+                AltHold = alt;          // temporary implementation to test feature with apps
+        } else if (wp_no == 16) {       // OK with SERIAL GPS  --  NOK for I2C GPS / needs more code dev in order to inject GPS coord inside I2C GPS
+            GPS_hold[LAT] = lat;
+            GPS_hold[LON] = lon;
+            if (alt != 0)
+                AltHold = alt;          // temporary implementation to test feature with apps
+            nav_mode = NAV_MODE_WP;
+            GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
+        }
+        headSerialReply(0);
         break;
     case MSP_RESET_CONF:
-        checkFirstTime(true);
+        if (!f.ARMED)
+            checkFirstTime(true);
         headSerialReply(0);
         break;
     case MSP_ACC_CALIBRATION:
-        calibratingA = 400;
+        if (!f.ARMED)
+            calibratingA = 400;
         headSerialReply(0);
         break;
     case MSP_MAG_CALIBRATION:
-        f.CALIBRATE_MAG = 1;
+        if (!f.ARMED)
+            f.CALIBRATE_MAG = 1;
         headSerialReply(0);
         break;
     case MSP_EEPROM_WRITE:
-        writeParams(0);
+        writeEEPROM(0, true);
         headSerialReply(0);
-        break;
-    case MSP_ACC_TRIM:
-        headSerialReply(4);
-        serialize16(cfg.angleTrim[PITCH]);
-        serialize16(cfg.angleTrim[ROLL]);
         break;
     case MSP_DEBUG:
         headSerialReply(8);
         for (i = 0; i < 4; i++)
             serialize16(debug[i]);      // 4 variables are here for general monitoring purpose
         break;
-        // Additional commands that are not compatible with MultiWii
+
+    // Additional commands that are not compatible with MultiWii
+    case MSP_ACC_TRIM:
+        headSerialReply(4);
+        serialize16(cfg.angleTrim[PITCH]);
+        serialize16(cfg.angleTrim[ROLL]);
+        break;
     case MSP_UID:
         headSerialReply(12);
         serialize32(U_ID_0);
         serialize32(U_ID_1);
         serialize32(U_ID_2);
         break;
+
     default:                   // we do not know how to handle the (valid) message, indicate error MSP $M!
         headSerialError(0);
         break;

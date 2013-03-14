@@ -48,16 +48,14 @@ int main(void)
     readEEPROM();
 
     // configure power ADC
-    if (cfg.power_adc_channel > 0 && (cfg.power_adc_channel == 1 || cfg.power_adc_channel == 9))
-        adc_params.powerAdcChannel = cfg.power_adc_channel;
+    if (mcfg.power_adc_channel > 0 && (mcfg.power_adc_channel == 1 || mcfg.power_adc_channel == 9))
+        adc_params.powerAdcChannel = mcfg.power_adc_channel;
     else {
         adc_params.powerAdcChannel = 0;
-        cfg.power_adc_channel = 0;
+        mcfg.power_adc_channel = 0;
     }
 
     adcInit(&adc_params);
-
-    serialInit(cfg.serial_baudrate);
 
     // We have these sensors
 #ifndef FY90Q
@@ -70,7 +68,7 @@ int main(void)
 
     mixerInit(); // this will set useServo var depending on mixer type
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (cfg.mixerConfiguration == MULTITYPE_AIRPLANE || cfg.mixerConfiguration == MULTITYPE_FLYING_WING)
+    if (mcfg.mixerConfiguration == MULTITYPE_AIRPLANE || mcfg.mixerConfiguration == MULTITYPE_FLYING_WING)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
@@ -79,9 +77,9 @@ int main(void)
     pwm_params.enableInput = !feature(FEATURE_SPEKTRUM); // disable inputs if using spektrum
     pwm_params.useServos = useServo;
     pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
-    pwm_params.motorPwmRate = cfg.motor_pwm_rate;
-    pwm_params.servoPwmRate = cfg.servo_pwm_rate;
-    switch (cfg.power_adc_channel) {
+    pwm_params.motorPwmRate = mcfg.motor_pwm_rate;
+    pwm_params.servoPwmRate = mcfg.servo_pwm_rate;
+    switch (mcfg.power_adc_channel) {
         case 1:
             pwm_params.adcChannel = PWM2;
             break;
@@ -105,7 +103,7 @@ int main(void)
         // spektrum and GPS are mutually exclusive
         // Optional GPS - available in both PPM and PWM input mode, in PWM input, reduces number of available channels by 2.
         if (feature(FEATURE_GPS))
-            gpsInit(cfg.gps_baudrate);
+            gpsInit(mcfg.gps_baudrate);
     }
 #ifdef SONAR
     // sonar stuff only works with PPM
@@ -136,10 +134,13 @@ int main(void)
     if (feature(FEATURE_VBAT))
         batteryInit();
 
+    serialInit(mcfg.serial_baudrate);
+
     previousTime = micros();
-    if (cfg.mixerConfiguration == MULTITYPE_GIMBAL)
+    if (mcfg.mixerConfiguration == MULTITYPE_GIMBAL)
         calibratingA = 400;
     calibratingG = 1000;
+    calibratingB = 200;             // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
     f.SMALL_ANGLES_25 = 1;
 
     // loopy
@@ -151,6 +152,6 @@ int main(void)
 void HardFault_Handler(void)
 {
     // fall out of the sky
-    writeAllMotors(cfg.mincommand);
+    writeAllMotors(mcfg.mincommand);
     while (1);
 }

@@ -21,6 +21,7 @@ void adcSensorInit(sensor_t *acc, sensor_t *gyro)
     gyro->init = adcDummyInit;
     gyro->read = adcGyroRead;
     gyro->align = adcGyroAlign;
+    gyro->scale = 1.0f;
 
     acc_1G = 376;
 }

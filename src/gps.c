@@ -45,12 +45,12 @@ void gpsInit(uint32_t baudrate)
     GPS_set_pids();
     uart2Init(baudrate, GPS_NewData, false);
 
-    if (cfg.gps_type == GPS_UBLOX)
+    if (mcfg.gps_type == GPS_UBLOX)
         offset = 0;
-    else if (cfg.gps_type == GPS_MTK)
+    else if (mcfg.gps_type == GPS_MTK)
         offset = 4;
 
-    if (cfg.gps_type != GPS_NMEA) {
+    if (mcfg.gps_type != GPS_NMEA) {
         for (i = 0; i < 5; i++) {
             uart2ChangeBaud(init_speed[i]);
             switch (baudrate) {
@@ -72,12 +72,12 @@ void gpsInit(uint32_t baudrate)
     }
 
     uart2ChangeBaud(baudrate);
-    if (cfg.gps_type == GPS_UBLOX) {
+    if (mcfg.gps_type == GPS_UBLOX) {
         for (i = 0; i < sizeof(ubloxInit); i++) {
             uart2Write(ubloxInit[i]); // send ubx init binary
             delay(4);
         }
-    } else if (cfg.gps_type == GPS_MTK) {
+    } else if (mcfg.gps_type == GPS_MTK) {
         gpsPrint("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n");  // only GGA and RMC sentence
         gpsPrint("$PMTK220,200*2C\r\n");                                    // 5 Hz update rate
     }
@@ -92,7 +92,7 @@ static void gpsPrint(const char *str)
 {
     while (*str) {
         uart2Write(*str);
-        if (cfg.gps_type == GPS_UBLOX)
+        if (mcfg.gps_type == GPS_UBLOX)
             delay(4);
         str++;
     }
@@ -133,6 +133,29 @@ static bool UBLOX_parse_gps(void);
 static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow);
 int32_t wrap_18000(int32_t error);
 static int32_t wrap_36000(int32_t angle);
+
+typedef struct {
+    int16_t last_velocity;
+} LeadFilter_PARAM;
+
+void leadFilter_clear(LeadFilter_PARAM *param)
+{
+    param->last_velocity = 0;
+}
+
+int32_t leadFilter_getPosition(LeadFilter_PARAM *param, int32_t pos, int16_t vel, float lag_in_seconds)
+{
+    int16_t accel_contribution = (vel - param->last_velocity) * lag_in_seconds * lag_in_seconds;
+    int16_t vel_contribution = vel * lag_in_seconds;
+
+    // store velocity for next iteration
+    param->last_velocity = vel;
+
+    return pos + vel_contribution + accel_contribution;
+}
+
+LeadFilter_PARAM xLeadFilter;
+LeadFilter_PARAM yLeadFilter;
 
 typedef struct {
     float kP;
@@ -752,7 +775,7 @@ static uint8_t hex_c(uint8_t n)
 
 static bool GPS_newFrame(char c)
 {
-    switch (cfg.gps_type) {
+    switch (mcfg.gps_type) {
         case GPS_NMEA: // NMEA
         case GPS_MTK: // MTK outputs NMEA too
             return GPS_NMEA_newFrame(c);

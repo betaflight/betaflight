@@ -4,7 +4,7 @@
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 #define BARO_TAB_SIZE_MAX   48
 
-#define  VERSION  211
+#define  VERSION  220
 
 #define LAT  0
 #define LON  1
@@ -77,29 +77,51 @@ enum {
 };
 
 enum {
-    BOXANGLE = 0,
+    BOXARM = 0,
+    BOXANGLE,
     BOXHORIZON,
     BOXBARO,
+    BOXVARIO,
     BOXMAG,
+    BOXHEADFREE,
+    BOXHEADADJ,
     BOXCAMSTAB,
     BOXCAMTRIG,
-    BOXARM,
     BOXGPSHOME,
     BOXGPSHOLD,
     BOXPASSTHRU,
-    BOXHEADFREE,
     BOXBEEPERON,
     BOXLEDMAX,
+    BOXLEDLOW,
     BOXLLIGHTS,
-    BOXHEADADJ,
+    BOXCALIB,
+    BOXGOV,
+    BOXOSD,
     CHECKBOXITEMS
 };
+
+#define ROL_LO (1 << (2 * ROLL))
+#define ROL_CE (3 << (2 * ROLL))
+#define ROL_HI (2 << (2 * ROLL))
+#define PIT_LO (1 << (2 * PITCH))
+#define PIT_CE (3 << (2 * PITCH))
+#define PIT_HI (2 << (2 * PITCH))
+#define YAW_LO (1 << (2 * YAW))
+#define YAW_CE (3 << (2 * YAW))
+#define YAW_HI (2 << (2 * YAW))
+#define THR_LO (1 << (2 * THROTTLE))
+#define THR_CE (3 << (2 * THROTTLE))
+#define THR_HI (2 << (2 * THROTTLE))
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define abs(x) ((x) > 0 ? (x) : -(x))
 #define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
+#define SERVO_NORMAL    (1)
+#define SERVO_REVERSE   (-1)
+
+// Custom mixer data per motor
 typedef struct motorMixer_t {
     float throttle;
     float roll;
@@ -107,11 +129,19 @@ typedef struct motorMixer_t {
     float yaw;
 } motorMixer_t;
 
+// Custom mixer configuration
 typedef struct mixer_t {
     uint8_t numberMotor;
     uint8_t useServo;
     const motorMixer_t *motor;
 } mixer_t;
+
+typedef struct servoParam_t {
+    int8_t direction;                   // servo direction
+    uint16_t middle;                    // servo middle
+    uint16_t min;                       // servo min
+    uint16_t max;                       // servo max
+} servoParam_t;
 
 enum {
     ALIGN_GYRO = 0,
@@ -120,14 +150,6 @@ enum {
 };
 
 typedef struct config_t {
-    uint8_t version;
-    uint16_t size;
-    uint8_t magic_be;                       // magic number, should be 0xBE
-    uint8_t mixerConfiguration;
-    uint32_t enabledFeatures;
-
-    uint16_t looptime;                      // imu loop time in us
-
     uint8_t P8[PIDITEMS];
     uint8_t I8[PIDITEMS];
     uint8_t D8[PIDITEMS];
@@ -141,56 +163,29 @@ typedef struct config_t {
     uint8_t yawRate;
 
     uint8_t dynThrPID;
-    int16_t accZero[3];
-    int16_t magZero[3];
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
     int16_t angleTrim[2];                   // accelerometer trim
 
     // sensor-related stuff
-    int8_t align[3][3];                     // acc, gyro, mag alignment (ex: with sensor output of X, Y, Z, align of 1 -3 2 would return X, -Z, Y)
-    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
     uint8_t acc_lpf_for_velocity;           // ACC lowpass for AccZ height hold
     uint8_t accz_deadband;                  // ??
-    uint16_t gyro_lpf;                      // mpuX050 LPF setting (TODO make it work on L3GD as well)
-    uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
-    uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
-    uint8_t mpu6050_scale;                  // seems es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. fucking invenshit won't release chip IDs so I can't autodetect it.
     uint8_t baro_tab_size;                  // size of baro filter array
     float baro_noise_lpf;                   // additional LPF to reduce baro noise
     float baro_cf;                          // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
-    uint8_t moron_threshold;                // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
 
     uint16_t activate[CHECKBOXITEMS];       // activate switches
-    uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
-    uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
-    uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery out alarms, in 0.1V units, default is 33 (3.3V)
-    uint8_t power_adc_channel;              // which channel is used for current sensor. Right now, only 2 places are supported: RC_CH2 (unused when in CPPM mode, = 1), RC_CH8 (last channel in PWM mode, = 9)
 
     // Radio/ESC-related configuration
-    uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
     uint8_t yawdeadband;                    // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
-    uint8_t alt_hold_throttle_neutral;      // defines the neutral zone of throttle stick during altitude hold, default setting is +/-20
-    uint8_t spektrum_hires;                 // spektrum high-resolution y/n (1024/2048bit)
-    uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
-    uint16_t mincheck;                      // minimum rc end
-    uint16_t maxcheck;                      // maximum rc end
-    uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
+    uint8_t alt_hold_throttle_neutral;      // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
+    uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_throttle_neutral; when enabled, altitude changes slowly proportional to stick movement
 
     // Failsafe related configuration
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
     uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
-
-    // motor/esc/servo related stuff
-    uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
-    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
-    uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
-    uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
-    uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
-    int16_t servotrim[8];                   // Adjust Servo MID Offset & Swash angles
-    int8_t servoreverse[8];                 // Invert servos by setting -1
 
     // mixer-related configuration
     int8_t yaw_direction;
@@ -205,6 +200,7 @@ typedef struct config_t {
     uint16_t wing_right_min;
     uint16_t wing_right_mid;
     uint16_t wing_right_max;
+
     int8_t pitch_direction_l;               // left servo - pitch orientation
     int8_t pitch_direction_r;               // right servo - pitch orientation (opposite sign to pitch_direction_l if servos are mounted mirrored)
     int8_t roll_direction_l;                // left servo - roll orientation
@@ -222,22 +218,71 @@ typedef struct config_t {
     uint16_t gimbal_roll_mid;               // gimbal roll servo neutral value
 
     // gps-related stuff
-    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2+ ??
-    uint32_t gps_baudrate;                  // GPS baudrate
     uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
     uint8_t gps_lpf;                        // Low pass filter cut frequency for derivative calculation (default 20Hz)
     uint8_t nav_slew_rate;                  // Adds a rate control to nav output, will smoothen out nav angle spikes
     uint8_t nav_controls_heading;           // copter faces toward the navigation point, maghold must be enabled for it
     uint16_t nav_speed_min;                 // cm/sec
     uint16_t nav_speed_max;                 // cm/sec
+    uint16_t ap_mode;                       // Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks, creating a deadspan for GPS
+} config_t;
+
+// System-wide 
+typedef struct master_t {
+    uint8_t version;
+    uint16_t size;
+    uint8_t magic_be;                       // magic number, should be 0xBE
+
+    uint8_t mixerConfiguration;
+    uint32_t enabledFeatures;
+    uint16_t looptime;                      // imu loop time in us
+    motorMixer_t customMixer[MAX_MOTORS];   // custom mixtable
+
+    // motor/esc/servo related stuff
+    uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
+    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
+    uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
+    uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
+    uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
+
+    // global sensor-related stuff
+    int8_t align[3][3];                     // acc, gyro, mag alignment (ex: with sensor output of X, Y, Z, align of 1 -3 2 would return X, -Z, Y)
+    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
+    uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
+    uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
+    uint8_t moron_threshold;                // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+    uint8_t mpu6050_scale;                  // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. automatically set by mpu6050 driver.
+    int16_t accZero[3];
+    int16_t magZero[3];
+
+    // Battery/ADC stuff
+    uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
+    uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
+    uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery out alarms, in 0.1V units, default is 33 (3.3V)
+    uint8_t power_adc_channel;              // which channel is used for current sensor. Right now, only 2 places are supported: RC_CH2 (unused when in CPPM mode, = 1), RC_CH8 (last channel in PWM mode, = 9)
+
+    // Radio/ESC-related configuration
+    uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
+    uint8_t spektrum_hires;                 // spektrum high-resolution y/n (1024/2048bit)
+    uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
+    uint16_t mincheck;                      // minimum rc end
+    uint16_t maxcheck;                      // maximum rc end
+    uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
+
+    // gps-related stuff
+    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2+ ??
+    uint32_t gps_baudrate;                  // GPS baudrate
 
     // serial(uart1) baudrate
     uint32_t serial_baudrate;
 
-    motorMixer_t customMixer[MAX_MOTORS];   // custom mixtable
+    config_t profile[3];                    // 3 separate profiles
+    uint8_t current_profile;                // currently loaded profile
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
-} config_t;
+} master_t;
 
 typedef struct flags_t {
     uint8_t OK_TO_ARM;
@@ -255,6 +300,7 @@ typedef struct flags_t {
     uint8_t GPS_FIX_HOME;
     uint8_t SMALL_ANGLES_25;
     uint8_t CALIBRATE_MAG;
+    uint8_t VARIO_MODE;
 } flags_t;
 
 extern int16_t gyroZero[3];
@@ -272,6 +318,7 @@ extern uint32_t currentTime;
 extern uint32_t previousTime;
 extern uint16_t cycleTime;
 extern uint16_t calibratingA;
+extern uint16_t calibratingB;
 extern uint16_t calibratingG;
 extern int16_t heading;
 extern int16_t annex650_overrun_count;
@@ -281,12 +328,14 @@ extern int32_t EstAlt;
 extern int32_t AltHold;
 extern int16_t errorAltitudeI;
 extern int16_t BaroPID;
+extern int16_t vario;
 extern int16_t headFreeModeHold;
 extern int16_t zVelocity;
 extern int16_t heading, magHold;
 extern int16_t motor[MAX_MOTORS];
 extern int16_t servo[8];
 extern int16_t rcData[8];
+extern uint16_t rssi;                  // range: [0;1023]
 extern uint8_t vbat;
 extern int16_t telemTemperature1;      // gyro sensor temperature
 extern int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
@@ -310,6 +359,7 @@ extern int16_t  nav[2];
 extern int8_t   nav_mode;                                    // Navigation mode
 extern int16_t  nav_rated[2];                                // Adding a rate controller to the navigation to make it smoother
 
+extern master_t mcfg;
 extern config_t cfg;
 extern flags_t f;
 extern sensor_t acc;
@@ -324,17 +374,17 @@ void imuInit(void);
 void annexCode(void);
 void computeIMU(void);
 void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat);
-void getEstimatedAltitude(void);
+int getEstimatedAltitude(void);
 
 // Sensors
 void sensorsAutodetect(void);
 void batteryInit(void);
 uint16_t batteryAdcToVoltage(uint16_t src);
 void ACC_getADC(void);
-void Baro_update(void);
+int Baro_update(void);
 void Gyro_getADC(void);
 void Mag_init(void);
-void Mag_getADC(void);
+int Mag_getADC(void);
 void Sonar_init(void);
 void Sonar_update(void);
 
@@ -353,7 +403,7 @@ void serialCom(void);
 // Config
 void parseRcChannels(const char *input);
 void readEEPROM(void);
-void writeParams(uint8_t b);
+void writeEEPROM(uint8_t b, uint8_t updateProfile);
 void checkFirstTime(bool reset);
 bool sensors(uint32_t mask);
 void sensorsSet(uint32_t mask);

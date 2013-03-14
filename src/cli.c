@@ -12,6 +12,7 @@ static void cliFeature(char *cmdline);
 static void cliHelp(char *cmdline);
 static void cliMap(char *cmdline);
 static void cliMixer(char *cmdline);
+static void cliProfile(char *cmdline);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
 static void cliStatus(char *cmdline);
@@ -43,7 +44,7 @@ const char * const mixerNames[] = {
 const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
-    "FAILSAFE", "SONAR", "TELEMETRY",
+    "FAILSAFE", "SONAR", "TELEMETRY", "VARIO",
     NULL
 };
 
@@ -74,6 +75,7 @@ const clicmd_t cmdTable[] = {
     { "help", "", cliHelp },
     { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
+    { "profile", "index (0 to 2)", cliProfile },
     { "save", "save and reboot", cliSave },
     { "set", "name=value or blank or * for list", cliSet },
     { "status", "show system status", cliStatus },
@@ -99,34 +101,50 @@ typedef struct {
 } clivalue_t;
 
 const clivalue_t valueTable[] = {
+    { "looptime", VAR_UINT16, &mcfg.looptime, 0, 9000 },
+    { "midrc", VAR_UINT16, &mcfg.midrc, 1200, 1700 },
+    { "minthrottle", VAR_UINT16, &mcfg.minthrottle, 0, 2000 },
+    { "maxthrottle", VAR_UINT16, &mcfg.maxthrottle, 0, 2000 },
+    { "mincommand", VAR_UINT16, &mcfg.mincommand, 0, 2000 },
+    { "mincheck", VAR_UINT16, &mcfg.mincheck, 0, 2000 },
+    { "maxcheck", VAR_UINT16, &mcfg.maxcheck, 0, 2000 },
+    { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
+    { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 498 },
+    { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
+    { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
+    { "gps_baudrate", VAR_UINT32, &mcfg.gps_baudrate, 1200, 115200 },
+    { "spektrum_hires", VAR_UINT8, &mcfg.spektrum_hires, 0, 1 },
+    { "vbatscale", VAR_UINT8, &mcfg.vbatscale, 10, 200 },
+    { "vbatmaxcellvoltage", VAR_UINT8, &mcfg.vbatmaxcellvoltage, 10, 50 },
+    { "vbatmincellvoltage", VAR_UINT8, &mcfg.vbatmincellvoltage, 10, 50 },
+    { "power_adc_channel", VAR_UINT8, &mcfg.power_adc_channel, 0, 9 },
+    { "align_gyro_x", VAR_INT8, &mcfg.align[ALIGN_GYRO][0], -3, 3 },
+    { "align_gyro_y", VAR_INT8, &mcfg.align[ALIGN_GYRO][1], -3, 3 },
+    { "align_gyro_z", VAR_INT8, &mcfg.align[ALIGN_GYRO][2], -3, 3 },
+    { "align_acc_x", VAR_INT8, &mcfg.align[ALIGN_ACCEL][0], -3, 3 },
+    { "align_acc_y", VAR_INT8, &mcfg.align[ALIGN_ACCEL][1], -3, 3 },
+    { "align_acc_z", VAR_INT8, &mcfg.align[ALIGN_ACCEL][2], -3, 3 },
+    { "align_mag_x", VAR_INT8, &mcfg.align[ALIGN_MAG][0], -3, 3 },
+    { "align_mag_y", VAR_INT8, &mcfg.align[ALIGN_MAG][1], -3, 3 },
+    { "align_mag_z", VAR_INT8, &mcfg.align[ALIGN_MAG][2], -3, 3 },
+    { "acc_hardware", VAR_UINT8, &mcfg.acc_hardware, 0, 3 },
+    { "moron_threshold", VAR_UINT8, &mcfg.moron_threshold, 0, 128 },
+    { "gyro_lpf", VAR_UINT16, &mcfg.gyro_lpf, 0, 256 },
+    { "gyro_cmpf_factor", VAR_UINT16, &mcfg.gyro_cmpf_factor, 100, 1000 },
+    { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, 3 },
+
     { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
     { "yawdeadband", VAR_UINT8, &cfg.yawdeadband, 0, 100 },
     { "alt_hold_throttle_neutral", VAR_UINT8, &cfg.alt_hold_throttle_neutral, 1, 250 },
-    { "midrc", VAR_UINT16, &cfg.midrc, 1200, 1700 },
     { "rc_rate", VAR_UINT8, &cfg.rcRate8, 0, 250 },
     { "rc_expo", VAR_UINT8, &cfg.rcExpo8, 0, 100 },
     { "thr_mid", VAR_UINT8, &cfg.thrMid8, 0, 100 },
     { "thr_expo", VAR_UINT8, &cfg.thrExpo8, 0, 250 },
     { "roll_pitch_rate", VAR_UINT8, &cfg.rollPitchRate, 0, 100 },
     { "yawrate", VAR_UINT8, &cfg.yawRate, 0, 100 },
-    { "minthrottle", VAR_UINT16, &cfg.minthrottle, 0, 2000 },
-    { "maxthrottle", VAR_UINT16, &cfg.maxthrottle, 0, 2000 },
-    { "mincommand", VAR_UINT16, &cfg.mincommand, 0, 2000 },
-    { "mincheck", VAR_UINT16, &cfg.mincheck, 0, 2000 },
-    { "maxcheck", VAR_UINT16, &cfg.maxcheck, 0, 2000 },
-    { "retarded_arm", VAR_UINT8, &cfg.retarded_arm, 0, 1 },
     { "failsafe_delay", VAR_UINT8, &cfg.failsafe_delay, 0, 200 },
     { "failsafe_off_delay", VAR_UINT8, &cfg.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, 1000, 2000 },
-    { "motor_pwm_rate", VAR_UINT16, &cfg.motor_pwm_rate, 50, 498 },
-    { "servo_pwm_rate", VAR_UINT16, &cfg.servo_pwm_rate, 50, 498 },
-    { "serial_baudrate", VAR_UINT32, &cfg.serial_baudrate, 1200, 115200 },
-    { "gps_baudrate", VAR_UINT32, &cfg.gps_baudrate, 1200, 115200 },
-    { "spektrum_hires", VAR_UINT8, &cfg.spektrum_hires, 0, 1 },
-    { "vbatscale", VAR_UINT8, &cfg.vbatscale, 10, 200 },
-    { "vbatmaxcellvoltage", VAR_UINT8, &cfg.vbatmaxcellvoltage, 10, 50 },
-    { "vbatmincellvoltage", VAR_UINT8, &cfg.vbatmincellvoltage, 10, 50 },
-    { "power_adc_channel", VAR_UINT8, &cfg.power_adc_channel, 0, 9 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
     { "tri_yaw_middle", VAR_UINT16, &cfg.tri_yaw_middle, 0, 2000 },
     { "tri_yaw_min", VAR_UINT16, &cfg.tri_yaw_min, 0, 2000 },
@@ -150,28 +168,14 @@ const clivalue_t valueTable[] = {
     { "gimbal_roll_min", VAR_UINT16, &cfg.gimbal_roll_min, 100, 3000 },
     { "gimbal_roll_max", VAR_UINT16, &cfg.gimbal_roll_max, 100, 3000 },
     { "gimbal_roll_mid", VAR_UINT16, &cfg.gimbal_roll_mid, 100, 3000 },
-    { "align_gyro_x", VAR_INT8, &cfg.align[ALIGN_GYRO][0], -3, 3 },
-    { "align_gyro_y", VAR_INT8, &cfg.align[ALIGN_GYRO][1], -3, 3 },
-    { "align_gyro_z", VAR_INT8, &cfg.align[ALIGN_GYRO][2], -3, 3 },
-    { "align_acc_x", VAR_INT8, &cfg.align[ALIGN_ACCEL][0], -3, 3 },
-    { "align_acc_y", VAR_INT8, &cfg.align[ALIGN_ACCEL][1], -3, 3 },
-    { "align_acc_z", VAR_INT8, &cfg.align[ALIGN_ACCEL][2], -3, 3 },
-    { "align_mag_x", VAR_INT8, &cfg.align[ALIGN_MAG][0], -3, 3 },
-    { "align_mag_y", VAR_INT8, &cfg.align[ALIGN_MAG][1], -3, 3 },
-    { "align_mag_z", VAR_INT8, &cfg.align[ALIGN_MAG][2], -3, 3 },
-    { "acc_hardware", VAR_UINT8, &cfg.acc_hardware, 0, 3 },
     { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 250 },
     { "acc_lpf_for_velocity", VAR_UINT8, &cfg.acc_lpf_for_velocity, 1, 250 },
     { "acc_trim_pitch", VAR_INT16, &cfg.angleTrim[PITCH], -300, 300 },
     { "acc_trim_roll", VAR_INT16, &cfg.angleTrim[ROLL], -300, 300 },
-    { "gyro_lpf", VAR_UINT16, &cfg.gyro_lpf, 0, 256 },
-    { "gyro_cmpf_factor", VAR_UINT16, &cfg.gyro_cmpf_factor, 100, 1000 },
     { "baro_tab_size", VAR_UINT8, &cfg.baro_tab_size, 0, BARO_TAB_SIZE_MAX },
     { "baro_noise_lpf", VAR_FLOAT, &cfg.baro_noise_lpf, 0, 1 },
     { "baro_cf", VAR_FLOAT, &cfg.baro_cf, 0, 1 },
-    { "moron_threshold", VAR_UINT8, &cfg.moron_threshold, 0, 128 },
     { "mag_declination", VAR_INT16, &cfg.mag_declination, -18000, 18000 },
-    { "gps_type", VAR_UINT8, &cfg.gps_type, 0, 3 },
     { "gps_pos_p", VAR_UINT8, &cfg.P8[PIDPOS], 0, 200 },
     { "gps_pos_i", VAR_UINT8, &cfg.I8[PIDPOS], 0, 200 },
     { "gps_pos_d", VAR_UINT8, &cfg.D8[PIDPOS], 0, 200 },
@@ -186,7 +190,6 @@ const clivalue_t valueTable[] = {
     { "nav_speed_min", VAR_UINT16, &cfg.nav_speed_min, 10, 2000 },
     { "nav_speed_max", VAR_UINT16, &cfg.nav_speed_max, 10, 2000 },
     { "nav_slew_rate", VAR_UINT8, &cfg.nav_slew_rate, 0, 100 },
-    { "looptime", VAR_UINT16, &cfg.looptime, 0, 9000 },
     { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200 },
     { "i_pitch", VAR_UINT8, &cfg.I8[PITCH], 0, 200 },
     { "d_pitch", VAR_UINT8, &cfg.D8[PITCH], 0, 200 },
@@ -435,26 +438,30 @@ static void cliCMix(char *cmdline)
     if (len == 0) {
         uartPrint("Custom mixer: \r\nMotor\tThr\tRoll\tPitch\tYaw\r\n");
         for (i = 0; i < MAX_MOTORS; i++) {
-            if (cfg.customMixer[i].throttle == 0.0f)
+            if (mcfg.customMixer[i].throttle == 0.0f)
                 break;
-            mixsum[i] = 0.0f;
             num_motors++;
             printf("#%d:\t", i + 1);
-            printf("%s\t", ftoa(cfg.customMixer[i].throttle, buf));
-            printf("%s\t", ftoa(cfg.customMixer[i].roll, buf));
-            printf("%s\t", ftoa(cfg.customMixer[i].pitch, buf));
-            printf("%s\r\n", ftoa(cfg.customMixer[i].yaw, buf));
+            printf("%s\t", ftoa(mcfg.customMixer[i].throttle, buf));
+            printf("%s\t", ftoa(mcfg.customMixer[i].roll, buf));
+            printf("%s\t", ftoa(mcfg.customMixer[i].pitch, buf));
+            printf("%s\r\n", ftoa(mcfg.customMixer[i].yaw, buf));
         }
+        mixsum[0] = mixsum[1] = mixsum[2] = 0.0f;
         for (i = 0; i < num_motors; i++) {
-            mixsum[0] += cfg.customMixer[i].roll;
-            mixsum[1] += cfg.customMixer[i].pitch;
-            mixsum[2] += cfg.customMixer[i].yaw;
+            mixsum[0] += mcfg.customMixer[i].roll;
+            mixsum[1] += mcfg.customMixer[i].pitch;
+            mixsum[2] += mcfg.customMixer[i].yaw;
         }
         uartPrint("Sanity check:\t");
         for (i = 0; i < 3; i++)
             uartPrint(fabs(mixsum[i]) > 0.01f ? "NG\t" : "OK\t");
         uartPrint("\r\n");
         return;
+    } else if (strncasecmp(cmdline, "reset", 5) == 0) {
+        // erase custom mixer
+        for (i = 0; i < MAX_MOTORS; i++)
+            mcfg.customMixer[i].throttle = 0.0f;
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = strchr(cmdline, ' ');
         if (ptr) {
@@ -478,22 +485,22 @@ static void cliCMix(char *cmdline)
         if (--i < MAX_MOTORS) {
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                cfg.customMixer[i].throttle = _atof(++ptr); 
+                mcfg.customMixer[i].throttle = _atof(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                cfg.customMixer[i].roll = _atof(++ptr);
+                mcfg.customMixer[i].roll = _atof(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                cfg.customMixer[i].pitch = _atof(++ptr);
+                mcfg.customMixer[i].pitch = _atof(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                cfg.customMixer[i].yaw = _atof(++ptr);
+                mcfg.customMixer[i].yaw = _atof(++ptr);
                 check++;
             }
             if (check != 4) {
@@ -519,7 +526,7 @@ static void cliDefaults(char *cmdline)
 static void cliDump(char *cmdline)
 {
     
-    int i, val = 0;
+    int i;
     char buf[16];
     float thr, roll, pitch, yaw;
     uint32_t mask;
@@ -531,17 +538,17 @@ static void cliDump(char *cmdline)
     cliAux("");
 
     // print out current motor mix
-    printf("mixer %s\r\n", mixerNames[cfg.mixerConfiguration - 1]);
+    printf("mixer %s\r\n", mixerNames[mcfg.mixerConfiguration - 1]);
 
     // print custom mix if exists
-    if (cfg.customMixer[0].throttle != 0.0f) {
+    if (mcfg.customMixer[0].throttle != 0.0f) {
         for (i = 0; i < MAX_MOTORS; i++) {
-            if (cfg.customMixer[i].throttle == 0.0f)
+            if (mcfg.customMixer[i].throttle == 0.0f)
                 break;
-            thr = cfg.customMixer[i].throttle;
-            roll = cfg.customMixer[i].roll;
-            pitch = cfg.customMixer[i].pitch;
-            yaw = cfg.customMixer[i].yaw;
+            thr = mcfg.customMixer[i].throttle;
+            roll = mcfg.customMixer[i].roll;
+            pitch = mcfg.customMixer[i].pitch;
+            yaw = mcfg.customMixer[i].yaw;
             printf("cmix %d", i + 1);
             if (thr < 0) 
                 printf(" ");
@@ -575,7 +582,7 @@ static void cliDump(char *cmdline)
 
     // print RC MAPPING
     for (i = 0; i < 8; i++)
-        buf[cfg.rcmap[i]] = rcChannelLetters[i];
+        buf[mcfg.rcmap[i]] = rcChannelLetters[i];
     buf[i] = '\0';
     printf("map %s\r\n", buf);
 
@@ -685,20 +692,20 @@ static void cliMap(char *cmdline)
     }
     uartPrint("Current assignment: ");
     for (i = 0; i < 8; i++)
-        out[cfg.rcmap[i]] = rcChannelLetters[i];
+        out[mcfg.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
     printf("%s\r\n", out);
 }
 
 static void cliMixer(char *cmdline)
 {
-    uint8_t i;
-    uint8_t len;
-    
+    int i;
+    int len;
+
     len = strlen(cmdline);
 
     if (len == 0) {
-        printf("Current mixer: %s\r\n", mixerNames[cfg.mixerConfiguration - 1]);
+        printf("Current mixer: %s\r\n", mixerNames[mcfg.mixerConfiguration - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         uartPrint("Available mixers: ");
@@ -717,9 +724,28 @@ static void cliMixer(char *cmdline)
             break;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
-            cfg.mixerConfiguration = i + 1;
+            mcfg.mixerConfiguration = i + 1;
             printf("Mixer set to %s\r\n", mixerNames[i]);
             break;
+        }
+    }
+}
+
+static void cliProfile(char *cmdline)
+{
+    uint8_t len;
+    int i;
+
+    len = strlen(cmdline);
+    if (len == 0) {
+        printf("Current profile: %d\r\n", mcfg.current_profile);
+        return;
+    } else {
+        i = atoi(cmdline);
+        if (i >= 0 && i <= 2) {
+            mcfg.current_profile = i;
+            writeEEPROM(0, false);
+            cliProfile("");
         }
     }
 }
@@ -727,7 +753,7 @@ static void cliMixer(char *cmdline)
 static void cliSave(char *cmdline)
 {
     uartPrint("Saving...");
-    writeParams(0);
+    writeEEPROM(0, true);
     uartPrint("\r\nRebooting...");
     delay(10);
     systemReset(false);
@@ -856,11 +882,11 @@ static void cliStatus(char *cmdline)
     if (sensors(SENSOR_ACC)) {
         printf("ACCHW: %s", accNames[accHardware]);
         if (accHardware == ACC_MPU6050)
-            printf(".%c", cfg.mpu6050_scale ? 'o' : 'n');
+            printf(".%c", mcfg.mpu6050_scale ? 'o' : 'n');
     }
     uartPrint("\r\n");
 
-    printf("Cycle Time: %d, I2C Errors: %d\r\n", cycleTime, i2cGetErrorCounter());
+    printf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cGetErrorCounter(), sizeof(master_t));
 }
 
 static void cliVersion(char *cmdline)

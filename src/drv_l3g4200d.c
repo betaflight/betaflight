@@ -29,7 +29,7 @@ static void l3g4200dInit(void);
 static void l3g4200dRead(int16_t *gyroData);
 static void l3g4200dAlign(int16_t *gyroData);
 
-bool l3g4200dDetect(sensor_t *gyro)
+bool l3g4200dDetect(sensor_t *gyro, uint16_t lpf)
 {
     uint8_t deviceid;
 
@@ -42,28 +42,27 @@ bool l3g4200dDetect(sensor_t *gyro)
     gyro->init = l3g4200dInit;
     gyro->read = l3g4200dRead;
     gyro->align = l3g4200dAlign;
+    // 14.2857dps/lsb scalefactor
+    gyro->scale = (((32767.0f / 14.2857f) * M_PI) / ((32767.0f / 4.0f) * 180.0f * 1000000.0f));
 
-    return true;
-}
-
-void l3g4200dConfig(uint16_t lpf)
-{
+    // default LPF is set to 32Hz
     switch (lpf) {
-    case 32:
-        mpuLowPassFilter = L3G4200D_DLPF_32HZ;
-        break;
-    case 54:
-        mpuLowPassFilter = L3G4200D_DLPF_54HZ;
-        break;
-    case 78:
-        mpuLowPassFilter = L3G4200D_DLPF_78HZ;
-        break;
-    case 93:
-        mpuLowPassFilter = L3G4200D_DLPF_93HZ;
-        break;
+        default:
+        case 32:
+            mpuLowPassFilter = L3G4200D_DLPF_32HZ;
+            break;
+        case 54:
+            mpuLowPassFilter = L3G4200D_DLPF_54HZ;
+            break;
+        case 78:
+            mpuLowPassFilter = L3G4200D_DLPF_78HZ;
+            break;
+        case 93:
+            mpuLowPassFilter = L3G4200D_DLPF_93HZ;
+            break;
     }
 
-    i2cWrite(L3G4200D_ADDRESS, L3G4200D_CTRL_REG1, L3G4200D_POWER_ON | mpuLowPassFilter);
+    return true;
 }
 
 static void l3g4200dInit(void)

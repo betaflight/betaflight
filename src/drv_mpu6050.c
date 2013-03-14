@@ -114,27 +114,23 @@
 #define MPU_RA_WHO_AM_I         0x75
 
 #define MPU6050_SMPLRT_DIV      0       //8000Hz
-// #define MPU6050_DLPF_CFG        0   // 256Hz
-#define MPU6050_DLPF_CFG   3        // 42Hz
 
-#define MPU6000ES_REV_C4        0x14
-#define MPU6000ES_REV_C5        0x15
-#define MPU6000ES_REV_D6        0x16
-#define MPU6000ES_REV_D7        0x17
-#define MPU6000ES_REV_D8        0x18
-#define MPU6000_REV_C4          0x54
-#define MPU6000_REV_C5          0x55
-#define MPU6000_REV_D6          0x56
-#define MPU6000_REV_D7          0x57
-#define MPU6000_REV_D8          0x58
-#define MPU6000_REV_D9          0x59
+#define MPU6050_LPF_256HZ       0
+#define MPU6050_LPF_188HZ       1
+#define MPU6050_LPF_98HZ        2
+#define MPU6050_LPF_42HZ        3
+#define MPU6050_LPF_20HZ        4
+#define MPU6050_LPF_10HZ        5
+#define MPU6050_LPF_5HZ         6
+
+static uint8_t mpuLowPassFilter = MPU6050_LPF_42HZ;
 
 static void mpu6050AccInit(void);
-static void mpu6050AccRead(int16_t * accData);
-static void mpu6050AccAlign(int16_t * accData);
+static void mpu6050AccRead(int16_t *accData);
+static void mpu6050AccAlign(int16_t *accData);
 static void mpu6050GyroInit(void);
-static void mpu6050GyroRead(int16_t * gyroData);
-static void mpu6050GyroAlign(int16_t * gyroData);
+static void mpu6050GyroRead(int16_t *gyroData);
+static void mpu6050GyroAlign(int16_t *gyroData);
 
 #ifdef MPU6050_DMP
 static void mpu6050DmpInit(void);
@@ -145,7 +141,7 @@ int16_t dmpGyroData[3];
 extern uint16_t acc_1G;
 static uint8_t mpuAccelHalf = 0;
 
-bool mpu6050Detect(sensor_t * acc, sensor_t * gyro, uint8_t *scale)
+bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)
 {
     bool ack;
     uint8_t sig, rev;
@@ -194,10 +190,38 @@ bool mpu6050Detect(sensor_t * acc, sensor_t * gyro, uint8_t *scale)
     gyro->init = mpu6050GyroInit;
     gyro->read = mpu6050GyroRead;
     gyro->align = mpu6050GyroAlign;
+    // 16.4 dps/lsb scalefactor
+    gyro->scale = (((32767.0f / 16.4f) * M_PI) / ((32767.0f / 4.0f) * 180.0f * 1000000.0f));
 
     // give halfacc (old revision) back to system
     if (scale)
         *scale = mpuAccelHalf;
+
+    // default lpf is 42Hz
+    switch (lpf) {
+        case 256:
+            mpuLowPassFilter = MPU6050_LPF_256HZ;
+            break;
+        case 188:
+            mpuLowPassFilter = MPU6050_LPF_188HZ;
+            break;
+        case 98:
+            mpuLowPassFilter = MPU6050_LPF_98HZ;
+            break;
+        default:
+        case 42:
+            mpuLowPassFilter = MPU6050_LPF_42HZ;
+            break;
+        case 20:
+            mpuLowPassFilter = MPU6050_LPF_20HZ;
+            break;
+        case 10:
+            mpuLowPassFilter = MPU6050_LPF_10HZ;
+            break;
+        case 5:
+            mpuLowPassFilter = MPU6050_LPF_5HZ;
+            break;
+    }
 
 #ifdef MPU6050_DMP
     mpu6050DmpInit();
@@ -256,7 +280,7 @@ static void mpu6050GyroInit(void)
     i2cWrite(MPU6050_ADDRESS, MPU_RA_SMPLRT_DIV, 0x00);      //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x03);      //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
     i2cWrite(MPU6050_ADDRESS, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
-    i2cWrite(MPU6050_ADDRESS, MPU_RA_CONFIG, MPU6050_DLPF_CFG);  //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_CONFIG, mpuLowPassFilter);  //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
     i2cWrite(MPU6050_ADDRESS, MPU_RA_GYRO_CONFIG, 0x18);      //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
 
     // ACC Init stuff. Moved into gyro init because the reset above would screw up accel config. Oops.

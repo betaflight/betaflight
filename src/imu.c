@@ -4,12 +4,13 @@
 int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
 float accLPFVel[3];
 int16_t acc_25deg = 0;
-int32_t  BaroAlt;
-int16_t  sonarAlt;           //to think about the unit
-int32_t  EstAlt;             // in cm
-int16_t  BaroPID = 0;
-int32_t  AltHold;
-int16_t  errorAltitudeI = 0;
+int32_t BaroAlt;
+int16_t sonarAlt;              // to think about the unit
+int32_t EstAlt;                // in cm
+int16_t BaroPID = 0;
+int32_t AltHold;
+int16_t errorAltitudeI = 0;
+int16_t vario = 0;              // variometer in cm/s
 float magneticDeclination = 0.0f; // calculated at startup from config
 float accVelScale;
 
@@ -87,15 +88,15 @@ void computeIMU(void)
         static int16_t gyroSmooth[3] = { 0, 0, 0 };
         if (Smoothing[0] == 0) {
             // initialize
-            Smoothing[ROLL] = (cfg.gyro_smoothing_factor >> 16) & 0xff;
-            Smoothing[PITCH] = (cfg.gyro_smoothing_factor >> 8) & 0xff;
-            Smoothing[YAW] = (cfg.gyro_smoothing_factor) & 0xff;
+            Smoothing[ROLL] = (mcfg.gyro_smoothing_factor >> 16) & 0xff;
+            Smoothing[PITCH] = (mcfg.gyro_smoothing_factor >> 8) & 0xff;
+            Smoothing[YAW] = (mcfg.gyro_smoothing_factor) & 0xff;
         }
         for (axis = 0; axis < 3; axis++) {
             gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroData[axis] + 1 ) / Smoothing[axis]);
             gyroSmooth[axis] = gyroData[axis];
         }
-    } else if (cfg.mixerConfiguration == MULTITYPE_TRI) {
+    } else if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
         gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW]) / 3;
         gyroYawSmooth = gyroData[YAW];
     }
@@ -137,17 +138,10 @@ void computeIMU(void)
 
 //****** end of advanced users settings *************
 
-#define INV_GYR_CMPF_FACTOR   (1.0f / ((float)cfg.gyro_cmpf_factor + 1.0f))
+#define INV_GYR_CMPF_FACTOR   (1.0f / ((float)mcfg.gyro_cmpf_factor + 1.0f))
 #define INV_GYR_CMPFM_FACTOR  (1.0f / (GYR_CMPFM_FACTOR + 1.0f))
 
-#define GYRO_SCALE ((1998 * M_PI)/((32767.0f / 4.0f ) * 180.0f * 1000000.0f))     // 32767 / 16.4lsb/dps for MPU3000
-
-// #define GYRO_SCALE ((2380 * M_PI)/((32767.0f / 4.0f ) * 180.0f * 1000000.0f))     //should be 2279.44 but 2380 gives better result (ITG-3200)
-  // +-2000/sec deg scale
-  //#define GYRO_SCALE ((200.0f * PI)/((32768.0f / 5.0f / 4.0f ) * 180.0f * 1000000.0f) * 1.5f)     
-  // +- 200/sec deg scale
-  // 1.5 is emperical, not sure what it means
-  // should be in rad/sec
+// #define GYRO_SCALE ((1998 * M_PI)/((32767.0f / 4.0f ) * 180.0f * 1000000.0f))     // 32767 / 16.4lsb/dps for MPU3000
 
 typedef struct fp_vector {
     float X;
@@ -225,7 +219,7 @@ static void getEstimatedAttitude(void)
     uint32_t currentT = micros();
     float scale, deltaGyroAngle[3];
 
-    scale = (currentT - previousT) * GYRO_SCALE;
+    scale = (currentT - previousT) * gyro.scale;
     previousT = currentT;
 
     // Initialization
@@ -265,7 +259,7 @@ static void getEstimatedAttitude(void)
     // To do that, we just skip filter, as EstV already rotated by Gyro
     if ((36 < accMag && accMag < 196) || f.SMALL_ANGLES_25) {
         for (axis = 0; axis < 3; axis++)
-            EstG.A[axis] = (EstG.A[axis] * (float)cfg.gyro_cmpf_factor + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
+            EstG.A[axis] = (EstG.A[axis] * (float)mcfg.gyro_cmpf_factor + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
     }
 
     if (sensors(SENSOR_MAG)) {
@@ -282,7 +276,7 @@ static void getEstimatedAttitude(void)
     angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
     angle[PITCH] = -asinf(EstG.V.Y / -sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z)) * (180.0f / M_PI * 10.0f);
 #endif
-    
+
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
 #if INACCURATE
@@ -356,7 +350,7 @@ int32_t isq(int32_t x)
     return x * x;
 }
 
-void getEstimatedAltitude(void)
+int getEstimatedAltitude(void)
 {
     static uint32_t deadLine = INIT_DELAY;
     static int16_t baroHistTab[BARO_TAB_SIZE_MAX];
@@ -371,7 +365,7 @@ void getEstimatedAltitude(void)
     float baroVel;
 
     if ((int32_t)(currentTime - deadLine) < UPDATE_INTERVAL)
-        return;
+        return 0;
     dTime = currentTime - deadLine;
     deadLine = currentTime;
 
@@ -421,5 +415,7 @@ void getEstimatedAltitude(void)
     // D
     BaroPID -= constrain(cfg.D8[PIDALT] * applyDeadbandFloat(vel, 5) / 20, -150, 150);
     debug[3] = BaroPID;
+    
+    return 1;
 }
 #endif /* BARO */

@@ -31,7 +31,7 @@ static void mpu3050Read(int16_t *gyroData);
 static void mpu3050Align(int16_t *gyroData);
 static void mpu3050ReadTemp(int16_t *tempData);
 
-bool mpu3050Detect(sensor_t *gyro)
+bool mpu3050Detect(sensor_t *gyro, uint16_t lpf)
 {
     bool ack;
 
@@ -45,12 +45,10 @@ bool mpu3050Detect(sensor_t *gyro)
     gyro->read = mpu3050Read;
     gyro->align = mpu3050Align;
     gyro->temperature = mpu3050ReadTemp;
+    // 16.4 dps/lsb scalefactor
+    gyro->scale = (((32767.0f / 16.4f) * M_PI) / ((32767.0f / 4.0f) * 180.0f * 1000000.0f));
 
-    return true;
-}
-
-void mpu3050Config(uint16_t lpf)
-{
+    // default lpf is 42Hz
     switch (lpf) {
         case 256:
             mpuLowPassFilter = MPU3050_DLPF_256HZ;
@@ -61,6 +59,7 @@ void mpu3050Config(uint16_t lpf)
         case 98:
             mpuLowPassFilter = MPU3050_DLPF_98HZ;
             break;
+        default:
         case 42:
             mpuLowPassFilter = MPU3050_DLPF_42HZ;
             break;
@@ -72,7 +71,7 @@ void mpu3050Config(uint16_t lpf)
             break;
     }
 
-    i2cWrite(MPU3050_ADDRESS, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | mpuLowPassFilter);
+    return true;
 }
 
 static void mpu3050Init(void)

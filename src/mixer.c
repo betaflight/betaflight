@@ -7,6 +7,7 @@ int16_t motor[MAX_MOTORS];
 int16_t servo[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
 static motorMixer_t currentMixer[MAX_MOTORS];
+static servoParam_t currentServo[MAX_SERVOS];
 
 static const motorMixer_t mixerTri[] = {
     { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
@@ -131,31 +132,38 @@ const mixer_t mixers[] = {
     { 0, 0, NULL },                // MULTITYPE_CUSTOM
 };
 
+static const servoParam_t servoInit = {
+    SERVO_NORMAL,           // direction
+    1500,                   // middle
+    1020,                   // min
+    2000,                   // max
+};
+
 void mixerInit(void)
 {
     int i;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    useServo = mixers[cfg.mixerConfiguration].useServo;
+    useServo = mixers[mcfg.mixerConfiguration].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (feature(FEATURE_SERVO_TILT))
         useServo = 1;
 
-    if (cfg.mixerConfiguration == MULTITYPE_CUSTOM) {
+    if (mcfg.mixerConfiguration == MULTITYPE_CUSTOM) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_MOTORS; i++) {
             // check if done
-            if (cfg.customMixer[i].throttle == 0.0f)
+            if (mcfg.customMixer[i].throttle == 0.0f)
                 break;
-            currentMixer[i] = cfg.customMixer[i];
+            currentMixer[i] = mcfg.customMixer[i];
             numberMotor++;
         }
     } else {
-        numberMotor = mixers[cfg.mixerConfiguration].numberMotor;
+        numberMotor = mixers[mcfg.mixerConfiguration].numberMotor;
         // copy motor-based mixers
-        if (mixers[cfg.mixerConfiguration].motor) {
+        if (mixers[mcfg.mixerConfiguration].motor) {
             for (i = 0; i < numberMotor; i++)
-                currentMixer[i] = mixers[cfg.mixerConfiguration].motor[i];
+                currentMixer[i] = mixers[mcfg.mixerConfiguration].motor[i];
         }
     }
 }
@@ -168,12 +176,12 @@ void mixerLoadMix(int index)
     index++;
     // clear existing
     for (i = 0; i < MAX_MOTORS; i++)
-        cfg.customMixer[i].throttle = 0.0f;
+        mcfg.customMixer[i].throttle = 0.0f;
 
     // do we have anything here to begin with?
     if (mixers[index].motor != NULL) {
         for (i = 0; i < mixers[index].numberMotor; i++)
-            cfg.customMixer[i] = mixers[index].motor[i];
+            mcfg.customMixer[i] = mixers[index].motor[i];
     }
 }
 
@@ -182,7 +190,7 @@ void writeServos(void)
     if (!useServo)
         return;
 
-    switch (cfg.mixerConfiguration) {
+    switch (mcfg.mixerConfiguration) {
         case MULTITYPE_BI:
             pwmWriteServo(0, servo[4]);
             pwmWriteServo(1, servo[5]);
@@ -298,7 +306,7 @@ void mixTable(void)
             motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + cfg.yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
 
     // airplane / servo mixes
-    switch (cfg.mixerConfiguration) {
+    switch (mcfg.mixerConfiguration) {
         case MULTITYPE_BI:
             servo[4] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) + axisPID[PITCH], 1020, 2000);   //LEFT
             servo[5] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) - axisPID[PITCH], 1020, 2000);   //RIGHT
@@ -321,8 +329,8 @@ void mixTable(void)
             motor[0] = rcCommand[THROTTLE];
             if (f.PASSTHRU_MODE) {
                 // do not use sensors for correction, simple 2 channel mixing
-                servo[0]  = cfg.pitch_direction_l * (rcData[PITCH] - cfg.midrc) + cfg.roll_direction_l * (rcData[ROLL] - cfg.midrc);
-                servo[1]  = cfg.pitch_direction_r * (rcData[PITCH] - cfg.midrc) + cfg.roll_direction_r * (rcData[ROLL] - cfg.midrc);
+                servo[0]  = cfg.pitch_direction_l * (rcData[PITCH] - mcfg.midrc) + cfg.roll_direction_l * (rcData[ROLL] - mcfg.midrc);
+                servo[1]  = cfg.pitch_direction_r * (rcData[PITCH] - mcfg.midrc) + cfg.roll_direction_r * (rcData[ROLL] - mcfg.midrc);
             } else {
                 // use sensors to correct (gyro only or gyro + acc)
                 servo[0]  = cfg.pitch_direction_l * axisPID[PITCH] + cfg.roll_direction_l * axisPID[ROLL];
@@ -338,9 +346,9 @@ void mixTable(void)
         uint16_t aux[2] = { 0, 0 };
 
         if ((cfg.gimbal_flags & GIMBAL_NORMAL) || (cfg.gimbal_flags & GIMBAL_TILTONLY))
-            aux[0] = rcData[AUX3] - cfg.midrc;
+            aux[0] = rcData[AUX3] - mcfg.midrc;
         if (!(cfg.gimbal_flags & GIMBAL_DISABLEAUX34))
-            aux[1] = rcData[AUX4] - cfg.midrc;
+            aux[1] = rcData[AUX4] - mcfg.midrc;
 
         servo[0] = cfg.gimbal_pitch_mid + aux[0];
         servo[1] = cfg.gimbal_roll_mid + aux[1];
@@ -372,16 +380,16 @@ void mixTable(void)
         if (motor[i] > maxMotor)
             maxMotor = motor[i];
     for (i = 0; i < numberMotor; i++) {
-        if (maxMotor > cfg.maxthrottle)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
-            motor[i] -= maxMotor - cfg.maxthrottle;
-        motor[i] = constrain(motor[i], cfg.minthrottle, cfg.maxthrottle);
-        if ((rcData[THROTTLE]) < cfg.mincheck) {
+        if (maxMotor > mcfg.maxthrottle)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
+            motor[i] -= maxMotor - mcfg.maxthrottle;
+        motor[i] = constrain(motor[i], mcfg.minthrottle, mcfg.maxthrottle);
+        if ((rcData[THROTTLE]) < mcfg.mincheck) {
             if (!feature(FEATURE_MOTOR_STOP))
-                motor[i] = cfg.minthrottle;
+                motor[i] = mcfg.minthrottle;
             else
-                motor[i] = cfg.mincommand;
+                motor[i] = mcfg.mincommand;
         }
         if (!f.ARMED)
-            motor[i] = cfg.mincommand;
+            motor[i] = mcfg.mincommand;
     }
 }

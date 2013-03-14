@@ -1,9 +1,10 @@
 #include "board.h"
 #include "mw.h"
 
-uint16_t calibratingA = 0;       // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
+uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
+uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 uint16_t calibratingG = 0;
-uint16_t acc_1G = 256;         // this is the 1G measured acceleration.
+uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
 int16_t heading, magHold;
 
 extern uint16_t InflightcalibratingA;
@@ -33,52 +34,52 @@ void sensorsAutodetect(void)
     int16_t deg, min;
     drv_adxl345_config_t acc_params;
     bool haveMpu6k = false;
-    bool havel3g4200d = false;
 
     // Autodetect gyro hardware. We have MPU3050 or MPU6050.
-    if (mpu6050Detect(&acc, &gyro, &cfg.mpu6050_scale)) {
+    if (mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &mcfg.mpu6050_scale)) {
         // this filled up  acc.* struct with init values
         haveMpu6k = true;
-    } else if (l3g4200dDetect(&gyro)) {
-        havel3g4200d = true;
-    } else if (!mpu3050Detect(&gyro)) {
+    } else if (l3g4200dDetect(&gyro, mcfg.gyro_lpf)) {
+        // well, we found our gyro
+        ;
+    } else if (!mpu3050Detect(&gyro, mcfg.gyro_lpf)) {
         // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
         failureMode(3);
     }
 
     // Accelerometer. Fuck it. Let user break shit.
 retry:
-    switch (cfg.acc_hardware) {
+    switch (mcfg.acc_hardware) {
         case 0: // autodetect
         case 1: // ADXL345
             acc_params.useFifo = false;
             acc_params.dataRate = 800; // unused currently
             if (adxl345Detect(&acc_params, &acc))
                 accHardware = ACC_ADXL345;
-            if (cfg.acc_hardware == ACC_ADXL345)
+            if (mcfg.acc_hardware == ACC_ADXL345)
                 break;
             ; // fallthrough
        case 2: // MPU6050
             if (haveMpu6k) {
-                mpu6050Detect(&acc, &gyro, &cfg.mpu6050_scale); // yes, i'm rerunning it again.  re-fill acc struct
+                mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &mcfg.mpu6050_scale); // yes, i'm rerunning it again.  re-fill acc struct
                 accHardware = ACC_MPU6050;
-                if (cfg.acc_hardware == ACC_MPU6050)
+                if (mcfg.acc_hardware == ACC_MPU6050)
                     break;
             }
             ; // fallthrough
         case 3: // MMA8452
             if (mma8452Detect(&acc)) {
                 accHardware = ACC_MMA8452;
-                if (cfg.acc_hardware == ACC_MMA8452)
+                if (mcfg.acc_hardware == ACC_MMA8452)
                     break;
             }
     }
 
     // Found anything? Check if user fucked up or ACC is really missing.
     if (accHardware == ACC_DEFAULT) {
-        if (cfg.acc_hardware > ACC_DEFAULT) {
+        if (mcfg.acc_hardware > ACC_DEFAULT) {
             // Nothing was found and we have a forced sensor type. Stupid user probably chose a sensor that isn't present.
-            cfg.acc_hardware = ACC_DEFAULT;
+            mcfg.acc_hardware = ACC_DEFAULT;
             goto retry;
         } else {
             // We're really screwed
@@ -103,14 +104,6 @@ retry:
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init();
 
-    // todo: this is driver specific :(
-    if (havel3g4200d) {
-        l3g4200dConfig(cfg.gyro_lpf);
-    } else {
-        if (!haveMpu6k)
-            mpu3050Config(cfg.gyro_lpf);
-    }
-
 #ifdef MAG
     if (!hmc5883lDetect())
         sensorsClear(SENSOR_MAG);
@@ -127,7 +120,7 @@ uint16_t batteryAdcToVoltage(uint16_t src)
 {
     // calculate battery voltage based on ADC reading
     // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 4095 = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
-    return (((src) * 3.3f) / 4095) * cfg.vbatscale;
+    return (((src) * 3.3f) / 4095) * mcfg.vbatscale;
 }
 
 void batteryInit(void)
@@ -145,11 +138,11 @@ void batteryInit(void)
 
     // autodetect cell count, going from 2S..6S
     for (i = 2; i < 6; i++) {
-        if (voltage < i * cfg.vbatmaxcellvoltage)
+        if (voltage < i * mcfg.vbatmaxcellvoltage)
             break;
     }
     batteryCellCount = i;
-    batteryWarningVoltage = i * cfg.vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
+    batteryWarningVoltage = i * mcfg.vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
 }
 
 // ALIGN_GYRO = 0,
@@ -166,7 +159,7 @@ static void alignSensors(uint8_t type, int16_t *data)
     tmp[2] = data[2];
 
     for (i = 0; i < 3; i++) {
-        int8_t axis = cfg.align[type][i];
+        int8_t axis = mcfg.align[type][i];
         if (axis > 0)
             data[axis - 1] = tmp[i];
         else
@@ -188,16 +181,16 @@ static void ACC_Common(void)
             a[axis] += accADC[axis];
             // Clear global variables for next reading
             accADC[axis] = 0;
-            cfg.accZero[axis] = 0;
+            mcfg.accZero[axis] = 0;
         }
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
         if (calibratingA == 1) {
-            cfg.accZero[ROLL] = a[ROLL] / 400;
-            cfg.accZero[PITCH] = a[PITCH] / 400;
-            cfg.accZero[YAW] = a[YAW] / 400 - acc_1G;       // for nunchuk 200=1G
+            mcfg.accZero[ROLL] = a[ROLL] / 400;
+            mcfg.accZero[PITCH] = a[PITCH] / 400;
+            mcfg.accZero[YAW] = a[YAW] / 400 - acc_1G;       // for nunchuk 200=1G
             cfg.angleTrim[ROLL] = 0;
             cfg.angleTrim[PITCH] = 0;
-            writeParams(1);      // write accZero in EEPROM
+            writeEEPROM(1, true);      // write accZero in EEPROM
         }
         calibratingA--;
     }
@@ -208,9 +201,9 @@ static void ACC_Common(void)
         static int16_t angleTrim_saved[2] = { 0, 0 };
         // Saving old zeropoints before measurement
         if (InflightcalibratingA == 50) {
-            accZero_saved[ROLL] = cfg.accZero[ROLL];
-            accZero_saved[PITCH] = cfg.accZero[PITCH];
-            accZero_saved[YAW] = cfg.accZero[YAW];
+            accZero_saved[ROLL] = mcfg.accZero[ROLL];
+            accZero_saved[PITCH] = mcfg.accZero[PITCH];
+            accZero_saved[YAW] = mcfg.accZero[YAW];
             angleTrim_saved[ROLL] = cfg.angleTrim[ROLL];
             angleTrim_saved[PITCH] = cfg.angleTrim[PITCH];
         }
@@ -223,7 +216,7 @@ static void ACC_Common(void)
                 b[axis] += accADC[axis];
                 // Clear global variables for next reading
                 accADC[axis] = 0;
-                cfg.accZero[axis] = 0;
+                mcfg.accZero[axis] = 0;
             }
             // all values are measured
             if (InflightcalibratingA == 1) {
@@ -231,9 +224,9 @@ static void ACC_Common(void)
                 AccInflightCalibrationMeasurementDone = 1;
                 toggleBeep = 2;      // buzzer for indicatiing the end of calibration
                 // recover saved values to maintain current flight behavior until new values are transferred
-                cfg.accZero[ROLL] = accZero_saved[ROLL];
-                cfg.accZero[PITCH] = accZero_saved[PITCH];
-                cfg.accZero[YAW] = accZero_saved[YAW];
+                mcfg.accZero[ROLL] = accZero_saved[ROLL];
+                mcfg.accZero[PITCH] = accZero_saved[PITCH];
+                mcfg.accZero[YAW] = accZero_saved[YAW];
                 cfg.angleTrim[ROLL] = angleTrim_saved[ROLL];
                 cfg.angleTrim[PITCH] = angleTrim_saved[PITCH];
             }
@@ -242,25 +235,25 @@ static void ACC_Common(void)
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
         if (AccInflightCalibrationSavetoEEProm == 1) {      // the copter is landed, disarmed and the combo has been done again
             AccInflightCalibrationSavetoEEProm = 0;
-            cfg.accZero[ROLL] = b[ROLL] / 50;
-            cfg.accZero[PITCH] = b[PITCH] / 50;
-            cfg.accZero[YAW] = b[YAW] / 50 - acc_1G;    // for nunchuk 200=1G
+            mcfg.accZero[ROLL] = b[ROLL] / 50;
+            mcfg.accZero[PITCH] = b[PITCH] / 50;
+            mcfg.accZero[YAW] = b[YAW] / 50 - acc_1G;    // for nunchuk 200=1G
             cfg.angleTrim[ROLL] = 0;
             cfg.angleTrim[PITCH] = 0;
-            writeParams(1);          // write accZero in EEPROM
+            writeEEPROM(1, true);          // write accZero in EEPROM
         }
     }
 
-    accADC[ROLL] -= cfg.accZero[ROLL];
-    accADC[PITCH] -= cfg.accZero[PITCH];
-    accADC[YAW] -= cfg.accZero[YAW];
+    accADC[ROLL] -= mcfg.accZero[ROLL];
+    accADC[PITCH] -= mcfg.accZero[PITCH];
+    accADC[YAW] -= mcfg.accZero[YAW];
 }
 
 void ACC_getADC(void)
 {
     acc.read(accADC);
     // if we have CUSTOM alignment configured, user is "assumed" to know what they're doing
-    if (cfg.align[ALIGN_ACCEL][0])
+    if (mcfg.align[ALIGN_ACCEL][0])
         alignSensors(ALIGN_ACCEL, accADC);
     else
         acc.align(accADC);
@@ -269,14 +262,14 @@ void ACC_getADC(void)
 }
 
 #ifdef BARO
-void Baro_update(void)
+int Baro_update(void)
 {
     static uint32_t baroDeadline = 0;
     static uint8_t state = 0;
     int32_t pressure;
 
     if ((int32_t)(currentTime - baroDeadline) < 0)
-        return;
+        return 0;
 
     baroDeadline = currentTime;
 
@@ -303,6 +296,8 @@ void Baro_update(void)
             baroDeadline += baro.repeat_delay;
             break;
     }
+    
+    return 1;
 }
 #endif /* BARO */
 
@@ -364,7 +359,7 @@ static void GYRO_Common(void)
             if (calibratingG == 1) {
                 float dev = devStandardDeviation(&var[axis]);
                 // check deviation and startover if idiot was moving the model
-                if (cfg.moron_threshold && dev > cfg.moron_threshold) {
+                if (mcfg.moron_threshold && dev > mcfg.moron_threshold) {
                     calibratingG = 1000;
                     devClear(&var[0]);
                     devClear(&var[1]);
@@ -391,7 +386,7 @@ void Gyro_getADC(void)
     // range: +/- 8192; +/- 2000 deg/sec
     gyro.read(gyroADC);
     // if we have CUSTOM alignment configured, user is "assumed" to know what they're doing
-    if (cfg.align[ALIGN_GYRO][0])
+    if (mcfg.align[ALIGN_GYRO][0])
         alignSensors(ALIGN_GYRO, gyroADC);
     else
         gyro.align(gyroADC);
@@ -491,15 +486,15 @@ void Mag_init(void)
     magInit = 1;
 }
 
-void Mag_getADC(void)
+int Mag_getADC(void)
 {
     static uint32_t t, tCal = 0;
     static int16_t magZeroTempMin[3];
     static int16_t magZeroTempMax[3];
     uint32_t axis;
-    
+
     if ((int32_t)(currentTime - t) < 0)
-        return;                 //each read is spaced by 100ms
+        return 0;                 //each read is spaced by 100ms
     t = currentTime + 100000;
 
     // Read mag sensor
@@ -512,7 +507,7 @@ void Mag_getADC(void)
     if (f.CALIBRATE_MAG) {
         tCal = t;
         for (axis = 0; axis < 3; axis++) {
-            cfg.magZero[axis] = 0;
+            mcfg.magZero[axis] = 0;
             magZeroTempMin[axis] = magADC[axis];
             magZeroTempMax[axis] = magADC[axis];
         }
@@ -520,9 +515,9 @@ void Mag_getADC(void)
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done
-        magADC[ROLL] -= cfg.magZero[ROLL];
-        magADC[PITCH] -= cfg.magZero[PITCH];
-        magADC[YAW] -= cfg.magZero[YAW];
+        magADC[ROLL] -= mcfg.magZero[ROLL];
+        magADC[PITCH] -= mcfg.magZero[PITCH];
+        magADC[YAW] -= mcfg.magZero[YAW];
     }
 
     if (tCal != 0) {
@@ -537,10 +532,12 @@ void Mag_getADC(void)
         } else {
             tCal = 0;
             for (axis = 0; axis < 3; axis++)
-                cfg.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2; // Calculate offsets
-            writeParams(1);
+                mcfg.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2; // Calculate offsets
+            writeEEPROM(1, true);
         }
     }
+    
+    return 1;
 }
 #endif
 

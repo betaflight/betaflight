@@ -209,7 +209,7 @@ void initTelemetry(bool State)
         if (State)
             serialInit(9600);
         else
-            serialInit(cfg.serial_baudrate);
+            serialInit(mcfg.serial_baudrate);
         telemetryEnabled = State;
     }
 }
