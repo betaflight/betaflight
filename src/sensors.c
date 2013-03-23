@@ -262,42 +262,47 @@ void ACC_getADC(void)
 }
 
 #ifdef BARO
+void Baro_Common(void)
+{
+    static int32_t baroHistTab[BARO_TAB_SIZE_MAX];
+    static int baroHistIdx;
+    int indexplus1;
+
+    indexplus1 = (baroHistIdx + 1);
+    if (indexplus1 == cfg.baro_tab_size)
+        indexplus1 = 0;
+    baroHistTab[baroHistIdx] = baroPressure;
+    baroPressureSum += baroHistTab[baroHistIdx];
+    baroPressureSum -= baroHistTab[indexplus1];
+    baroHistIdx = indexplus1;
+}
+
+
 int Baro_update(void)
 {
     static uint32_t baroDeadline = 0;
-    static uint8_t state = 0;
-    int32_t pressure;
+    static int state = 0;
 
     if ((int32_t)(currentTime - baroDeadline) < 0)
         return 0;
 
     baroDeadline = currentTime;
-
-    switch (state) {
-        case 0:
-            baro.start_ut();
-            state++;
-            baroDeadline += baro.ut_delay;
-            break;
-        case 1:
-            baro.get_ut();
-            state++;
-            break;
-        case 2:
-            baro.start_up();
-            state++;
-            baroDeadline += baro.up_delay;
-            break;
-        case 3:
-            baro.get_up();
-            pressure = baro.calculate();
-            BaroAlt = (1.0f - pow(pressure / 101325.0f, 0.190295f)) * 4433000.0f; // centimeter
-            state = 0;
-            baroDeadline += baro.repeat_delay;
-            break;
-    }
     
-    return 1;
+    if (state) {
+        baro.get_up();
+        baro.start_ut();
+        baroDeadline += baro.ut_delay;
+        baro.calculate(&baroPressure, &baroTemperature);
+        state = 0;
+        return 2;
+    } else {
+        baro.get_ut();
+        baro.start_up();
+        Baro_Common();
+        state = 1;
+        baroDeadline += baro.up_delay;
+        return 1;
+    }
 }
 #endif /* BARO */
 
@@ -412,77 +417,10 @@ static void Mag_getRawADC(void)
 
 void Mag_init(void)
 {
-    uint8_t calibration_gain = 0x60; // HMC5883
-#if 1
-    uint32_t numAttempts = 0, good_count = 0;
-    bool success = false;
-    uint16_t expected_x = 766;       // default values for HMC5883
-    uint16_t expected_yz = 713;
-    float gain_multiple = 660.0f / 1090.0f; // adjustment for runtime vs calibration gain
-    float cal[3];
-
-    // initial calibration
-    hmc5883lInit();
-
-    magCal[0] = 0;
-    magCal[1] = 0;
-    magCal[2] = 0;
-
-    while (success == false && numAttempts < 20 && good_count < 5) {
-        // record number of attempts at initialisation
-        numAttempts++;
-        // enter calibration mode
-        hmc5883lCal(calibration_gain);
-        delay(100);
-        Mag_getRawADC();
-        delay(10);
-
-        cal[0] = fabsf(expected_x / (float)magADC[ROLL]);
-        cal[1] = fabsf(expected_yz / (float)magADC[PITCH]);
-        cal[2] = fabsf(expected_yz / (float)magADC[ROLL]);
-
-        if (cal[0] > 0.7f && cal[0] < 1.3f && cal[1] > 0.7f && cal[1] < 1.3f && cal[2] > 0.7f && cal[2] < 1.3f) {
-            good_count++;
-            magCal[0] += cal[0];
-            magCal[1] += cal[1];
-            magCal[2] += cal[2];
-        }
-    }
-
-    if (good_count >= 5) {
-        magCal[0] = magCal[0] * gain_multiple / (float)good_count;
-        magCal[1] = magCal[1] * gain_multiple / (float)good_count;
-        magCal[2] = magCal[2] * gain_multiple / (float)good_count;
-        success = true;
-    } else {
-        /* best guess */
-        magCal[0] = 1.0f;
-        magCal[1] = 1.0f;
-        magCal[2] = 1.0f;
-    }
-
-    hmc5883lFinishCal();
-#else
-    // initial calibration
-    hmc5883lInit();
-
-    magCal[0] = 0;
-    magCal[1] = 0;
-    magCal[2] = 0;
-
-    // enter calibration mode
-    hmc5883lCal(calibration_gain);
-    delay(100);
-    Mag_getRawADC();
-    delay(10);
-
-    magCal[ROLL] = 1160.0f / abs(magADC[ROLL]);
-    magCal[PITCH] = 1160.0f / abs(magADC[PITCH]);
-    magCal[YAW] = 1080.0f / abs(magADC[YAW]);
-
-    hmc5883lFinishCal();
-#endif
-
+    // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
+    LED1_ON;
+    hmc5883lInit(magCal);
+    LED1_OFF;
     magInit = 1;
 }
 

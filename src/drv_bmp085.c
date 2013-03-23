@@ -84,9 +84,9 @@ static void bmp085_start_ut(void);
 static void bmp085_get_ut(void);
 static void bmp085_start_up(void);
 static void bmp085_get_up(void);
-static int16_t bmp085_get_temperature(uint32_t ut);
+static int32_t bmp085_get_temperature(uint32_t ut);
 static int32_t bmp085_get_pressure(uint32_t up);
-static int32_t bmp085_calculate(void);
+static void bmp085_calculate(int32_t *pressure, int32_t *temperature);
 
 bool bmp085Detect(baro_t *baro)
 {
@@ -135,9 +135,8 @@ bool bmp085Detect(baro_t *baro)
         bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION);        /* get AL Version */
         bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
         bmp085InitDone = true;
-        baro->ut_delay = 4600;
-        baro->up_delay = 26000;
-        baro->repeat_delay = 5000;
+        baro->ut_delay = 6000;
+        baro->up_delay = 27000;
         baro->start_ut = bmp085_start_ut;
         baro->get_ut = bmp085_get_ut;
         baro->start_up = bmp085_start_up;
@@ -149,28 +148,17 @@ bool bmp085Detect(baro_t *baro)
     return false;
 }
 
-// #define BMP_TEMP_OSS 4
-static int16_t bmp085_get_temperature(uint32_t ut)
+static int32_t bmp085_get_temperature(uint32_t ut)
 {
-    int16_t temperature;
+    int32_t temperature;
     int32_t x1, x2;
-#ifdef BMP_TEMP_OSS    
-    static uint32_t temp;
-#endif
 
-    x1 = (((int32_t) ut - (int32_t) bmp085.cal_param.ac6) * (int32_t) bmp085.cal_param.ac5) >> 15;
-    x2 = ((int32_t) bmp085.cal_param.mc << 11) / (x1 + bmp085.cal_param.md);
+    x1 = (((int32_t)ut - (int32_t)bmp085.cal_param.ac6) * (int32_t)bmp085.cal_param.ac5) >> 15;
+    x2 = ((int32_t)bmp085.cal_param.mc << 11) / (x1 + bmp085.cal_param.md);
     bmp085.param_b5 = x1 + x2;
-    temperature = ((bmp085.param_b5 + 8) >> 4);  // temperature in 0.1°C
+    temperature = ((bmp085.param_b5 * 10 + 8) >> 4);  // temperature in 0.01°C (make same as MS5611)
 
-#ifdef BMP_TEMP_OSS    
-    temp *= (1 << BMP_TEMP_OSS) - 1;        // multiply the temperature variable by 3 - we have tau == 1/4
-    temp += ((uint32_t)temperature) << 8;   // add on the buffer
-    temp >>= BMP_TEMP_OSS;                  // divide by 4
-    return (int16_t)temp;
-#else
     return temperature;
-#endif
 }
 
 static int32_t bmp085_get_pressure(uint32_t up)
@@ -266,10 +254,15 @@ static void bmp085_get_up(void)
     bmp085_up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2]) >> (8 - bmp085.oversampling_setting);
 }
 
-static int32_t bmp085_calculate(void)
+static void bmp085_calculate(int32_t *pressure, int32_t *temperature)
 {
-    bmp085_get_temperature(bmp085_ut);
-    return bmp085_get_pressure(bmp085_up);
+    int32_t temp, press;
+    temp = bmp085_get_temperature(bmp085_ut);
+    press = bmp085_get_pressure(bmp085_up);
+    if (pressure)
+        *pressure = press;
+    if (temperature)
+        *temperature = temp;
 }
 
 static void bmp085_get_cal_param(void)

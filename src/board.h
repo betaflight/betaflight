@@ -21,6 +21,11 @@
 
 #define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define abs(x) ((x) > 0 ? (x) : -(x))
+#define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
+
 // Chip Unique ID on F103
 #define U_ID_0 (*(uint32_t*)0x1FFFF7E8)
 #define U_ID_1 (*(uint32_t*)0x1FFFF7EC)
@@ -67,7 +72,7 @@ typedef enum {
 
 typedef void (* sensorInitFuncPtr)(void);                   // sensor init prototype
 typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
-typedef int32_t (* baroCalculateFuncPtr)(void);             // baro calculation (returns altitude in cm based on static data collected)
+typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
 typedef void (* uartReceiveCallbackPtr)(uint16_t data);     // used by uart2 driver to return frames to app
 typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
 
@@ -84,7 +89,6 @@ typedef struct baro_t
 {
     uint16_t ut_delay;
     uint16_t up_delay;
-    uint16_t repeat_delay;
     sensorInitFuncPtr start_ut;
     sensorInitFuncPtr get_ut;
     sensorInitFuncPtr start_up;

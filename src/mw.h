@@ -113,11 +113,6 @@ enum {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define abs(x) ((x) > 0 ? (x) : -(x))
-#define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
-
 #define SERVO_NORMAL    (1)
 #define SERVO_REVERSE   (-1)
 
@@ -322,6 +317,9 @@ extern uint16_t calibratingB;
 extern uint16_t calibratingG;
 extern int16_t heading;
 extern int16_t annex650_overrun_count;
+extern int32_t baroPressure;
+extern int32_t baroTemperature;
+extern int32_t baroPressureSum;
 extern int32_t BaroAlt;
 extern int16_t sonarAlt;
 extern int32_t EstAlt;

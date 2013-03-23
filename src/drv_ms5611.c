@@ -27,7 +27,7 @@ static void ms5611_start_ut(void);
 static void ms5611_get_ut(void);
 static void ms5611_start_up(void);
 static void ms5611_get_up(void);
-static int32_t ms5611_calculate(void);
+static void ms5611_calculate(int32_t *pressure, int32_t *temperature);
 
 static uint32_t ms5611_ut;  // static result of temperature measurement
 static uint32_t ms5611_up;  // static result of pressure measurement
@@ -67,7 +67,6 @@ bool ms5611Detect(baro_t *baro)
     // TODO prom + CRC
     baro->ut_delay = 10000;
     baro->up_delay = 10000;
-    baro->repeat_delay = 4000;
     baro->start_ut = ms5611_start_ut;
     baro->get_ut = ms5611_get_ut;
     baro->start_up = ms5611_start_up;
@@ -151,30 +150,34 @@ static void ms5611_get_up(void)
     ms5611_up = ms5611_read_adc();
 }
 
-static int32_t ms5611_calculate(void)
+static void ms5611_calculate(int32_t *pressure, int32_t *temperature)
 {
-    int32_t temperature, off2 = 0, sens2 = 0, delt;
-    int32_t pressure;
+    int32_t temp, off2 = 0, sens2 = 0, delt;
+    int32_t press;
 
-    int32_t dT = ms5611_ut - ((uint32_t)ms5611_c[5] << 8);
-    int64_t off = ((uint32_t)ms5611_c[2] << 16) + (((int64_t)dT * ms5611_c[4]) >> 7);
-    int64_t sens = ((uint32_t)ms5611_c[1] << 15) + (((int64_t)dT * ms5611_c[3]) >> 8);
-    temperature = 2000 + (((int64_t)dT * ms5611_c[6]) >> 23);
+    int64_t dT = ms5611_ut - ((int32_t)ms5611_c[5] << 8);
+    int64_t off = ((uint32_t)ms5611_c[2] << 16) + ((dT * ms5611_c[4]) >> 7);
+    int64_t sens = ((uint32_t)ms5611_c[1] << 15) + ((dT * ms5611_c[3]) >> 8);
+    temp = 2000 + ((dT * ms5611_c[6]) >> 23);
 
-    if (temperature < 2000) { // temperature lower than 20degC 
-        delt = temperature - 2000;
-        delt = delt * delt;
-        off2 = (5 * delt) >> 1;
-        sens2 = (5 * delt) >> 2;
-        if (temperature < -1500) { // temperature lower than -15degC
-            delt = temperature + 1500;
+    if (temp < 2000) { // temperature lower than 20degC 
+        delt = temp - 2000;
+        delt = 5 * delt * delt;
+        off2 = delt >> 1;
+        sens2 = delt >> 2;
+        if (temp < -1500) { // temperature lower than -15degC
+            delt = temp + 1500;
             delt = delt * delt;
             off2  += 7 * delt;
             sens2 += (11 * delt) >> 1;
         }
     }
-    off  -= off2; 
+    off  -= off2;
     sens -= sens2;
-    pressure = (((ms5611_up * sens ) >> 21) - off) >> 15;
-    return pressure;
+    press = (((ms5611_up * sens ) >> 21) - off) >> 15;
+    
+    if (pressure)
+        *pressure = press;
+    if (temperature)
+        *temperature = temp;
 }

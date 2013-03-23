@@ -199,8 +199,8 @@ static void resetConf(void)
     mcfg.gps_baudrate = 115200;
     // serial (USART1) baudrate
     mcfg.serial_baudrate = 115200;
+    mcfg.looptime = 3500;
 
-    // cfg.looptime = 0;
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;
     cfg.D8[ROLL] = 23;
