@@ -48,7 +48,7 @@
     PWM5..8 used for motors
     PWM9..10 used for servo or else motors
     PWM11..14 used for motors
-    
+
     2) multirotor PPM input with more servos
     PWM1 used for PPM
     PWM5..8 used for motors
@@ -352,7 +352,7 @@ void TIM1_CC_IRQHandler(void)
 static void pwmTIMxHandler(TIM_TypeDef *tim, uint8_t portBase)
 {
     int8_t port;
-    
+
     // Generic CC handler for TIM2,3,4
     if (TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
         port = portBase + 0;
@@ -448,6 +448,12 @@ bool pwmInit(drv_pwm_config_t *init)
 
         if (setup[i] == 0xFF) // terminator
             break;
+
+#ifdef OLIMEXINO
+        // PWM2 is connected to LED2 on the board and cannot be connected.
+        if (port == PWM2)
+            continue;
+#endif
 
         // skip UART ports for GPS
         if (init->useUART && (port == PWM3 || port == PWM4))

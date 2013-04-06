@@ -67,12 +67,14 @@ retry:
                     break;
             }
             ; // fallthrough
+#ifndef OLIMEXINO
         case 3: // MMA8452
             if (mma8452Detect(&acc)) {
                 accHardware = ACC_MMA8452;
                 if (mcfg.acc_hardware == ACC_MMA8452)
                     break;
             }
+#endif
     }
 
     // Found anything? Check if user fucked up or ACC is really missing.
@@ -481,14 +483,14 @@ int Mag_getADC(void)
 
 #ifdef SONAR
 
-void Sonar_init(void) 
+void Sonar_init(void)
 {
     hcsr04_init(sonar_rc78);
     sensorsSet(SENSOR_SONAR);
     sonarAlt = 0;
 }
 
-void Sonar_update(void) 
+void Sonar_update(void)
 {
     hcsr04_get_distance(&sonarAlt);
 }

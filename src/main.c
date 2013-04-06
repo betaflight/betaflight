@@ -58,13 +58,7 @@ int main(void)
     adcInit(&adc_params);
 
     // We have these sensors
-#ifndef FY90Q
-    // AfroFlight32
-    sensorsSet(SENSOR_ACC | SENSOR_BARO | SENSOR_MAG);
-#else
-    // FY90Q
-    sensorsSet(SENSOR_ACC);
-#endif
+    sensorsSet(SENSORS_SET);
 
     mixerInit(); // this will set useServo var depending on mixer type
     // when using airplane/wing mixer, servo/motor outputs are remapped

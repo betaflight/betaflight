@@ -48,10 +48,10 @@ void systemInit(void)
     uint32_t i;
 
     gpio_config_t gpio_cfg[] = {
-        { LED0_GPIO, LED0_PIN, GPIO_Mode_Out_PP }, // PB3 (LED)
-        { LED1_GPIO, LED1_PIN, GPIO_Mode_Out_PP }, // PB4 (LED)
-#ifndef FY90Q
-        { BEEP_GPIO, BEEP_PIN, GPIO_Mode_Out_OD }, // PA12 (Buzzer)
+        { LED0_GPIO, LED0_PIN, GPIO_Mode_Out_PP },
+        { LED1_GPIO, LED1_PIN, GPIO_Mode_Out_PP },
+#ifdef BUZZER
+        { BEEP_GPIO, BEEP_PIN, GPIO_Mode_Out_OD },
 #endif
     };
     uint8_t gpio_count = sizeof(gpio_cfg) / sizeof(gpio_cfg[0]);
@@ -164,7 +164,7 @@ void systemReset(bool toBootloader)
         // 1FFFF000 -> 20000200 -> SP
         // 1FFFF004 -> 1FFFF021 -> PC
         *((uint32_t *)0x20004FF0) = 0xDEADBEEF; // 20KB STM32F103
-    }        
+    }
 
     // Generate system reset
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
