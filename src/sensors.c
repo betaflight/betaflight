@@ -59,7 +59,7 @@ retry:
             if (mcfg.acc_hardware == ACC_ADXL345)
                 break;
             ; // fallthrough
-       case 2: // MPU6050
+        case 2: // MPU6050
             if (haveMpu6k) {
                 mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &mcfg.mpu6050_scale); // yes, i'm rerunning it again.  re-fill acc struct
                 accHardware = ACC_MPU6050;
@@ -67,8 +67,8 @@ retry:
                     break;
             }
             ; // fallthrough
-#ifndef OLIMEXINO
         case 3: // MMA8452
+#ifndef OLIMEXINO
             if (mma8452Detect(&acc)) {
                 accHardware = ACC_MMA8452;
                 if (mcfg.acc_hardware == ACC_MMA8452)
@@ -289,7 +289,7 @@ int Baro_update(void)
         return 0;
 
     baroDeadline = currentTime;
-    
+
     if (state) {
         baro.get_up();
         baro.start_ut();
@@ -476,7 +476,7 @@ int Mag_getADC(void)
             writeEEPROM(1, true);
         }
     }
-    
+
     return 1;
 }
 #endif

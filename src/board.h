@@ -130,10 +130,8 @@ typedef struct baro_t
 
 #define SENSORS_SET (SENSOR_ACC)
 
-#endif
-
-#ifdef NAZE
- // Afroflight32
+#else
+// Afroflight32
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    GPIO_Pin_3 // PB3 (LED)
 #define LED1_GPIO   GPIOB
@@ -196,9 +194,7 @@ typedef struct baro_t
 #include "drv_l3g4200d.h"
 #include "drv_pwm.h"
 #include "drv_uart.h"
-#endif
-
-#ifdef NAZE
+#else
  // AfroFlight32
 #include "drv_system.h"         // timers, delays, etc
 #include "drv_adc.h"
