@@ -275,12 +275,13 @@ void loop(void)
     uint8_t stTmp = 0;
     uint8_t axis, i;
     int16_t error, errorAngle;
-    int16_t delta, deltaSum;
     int16_t PTerm, ITerm, PTermACC, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
-    static int16_t lastGyro[3] = { 0, 0, 0 };
-    static int16_t delta1[3], delta2[3];
     static int16_t errorGyroI[3] = { 0, 0, 0 };
     static int16_t errorAngleI[2] = { 0, 0 };
+    int16_t delta;
+    static int16_t lastGyro[3] = { 0, 0, 0 };
+    static int16_t delta1[3], delta2[3];
+    int16_t deltaSum;
     static uint32_t rcTime = 0;
     static int16_t initialThrottleHold;
     static uint32_t loopTime;
@@ -697,7 +698,7 @@ void loop(void)
             }
         }
 
-        // **** PITCH & ROLL & YAW PID ****    
+        // **** PITCH & ROLL & YAW PID ****
         prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]
         for (axis = 0; axis < 3; axis++) {
             if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
@@ -734,13 +735,11 @@ void loop(void)
             }
 
             PTerm -= (int32_t)gyroData[axis] * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
-
             delta = gyroData[axis] - lastGyro[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
             lastGyro[axis] = gyroData[axis];
             deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
-
             DTerm = ((int32_t)deltaSum * dynD8[axis]) >> 5; // 32 bits is needed for calculation
             axisPID[axis] =  PTerm + ITerm - DTerm;
         }

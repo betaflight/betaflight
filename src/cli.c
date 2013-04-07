@@ -44,7 +44,7 @@ const char * const mixerNames[] = {
 const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
-    "FAILSAFE", "SONAR", "TELEMETRY", "VARIO",
+    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO",
     NULL
 };
 
