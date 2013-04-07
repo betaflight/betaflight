@@ -14,7 +14,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, must be one of NAZE or FY90Q
+# The target to build, must be one of NAZE, FY90Q OR OLIMEXINO
 TARGET		?= NAZE
 
 # Compile-time options
@@ -24,7 +24,7 @@ OPTIONS		?=
 # Things that need to be maintained as the source changes
 #
 
-VALID_TARGETS	 = NAZE FY90Q
+VALID_TARGETS	 = NAZE FY90Q OLIMEXINO
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
@@ -74,6 +74,15 @@ NAZE_SRC	 = drv_adc.c \
 # Source files for the FY90Q target
 FY90Q_SRC	 = drv_adc_fy90q.c \
 		   drv_pwm_fy90q.c \
+		   $(COMMON_SRC)
+
+# Source files for the OLIMEXINO target
+OLIMEXINO_SRC	 = drv_adc.c \
+		   drv_adxl345.c \
+		   drv_mpu3050.c \
+		   drv_mpu6050.c \
+		   drv_l3g4200d.c \
+		   drv_pwm.c \
 		   $(COMMON_SRC)
 
 # Search path for baseflight sources

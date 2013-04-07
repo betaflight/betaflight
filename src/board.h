@@ -112,14 +112,32 @@ typedef struct baro_t
 #define GYRO
 #define ACC
 
+#define SENSORS_SET (SENSOR_ACC)
+
+#endif
+
+#ifdef OLIMEXINO
+// OLIMEXINO
+
+// LED2 is using one of the pwm pins (PWM2), so we must not use PWM2.  @See pwmInit()
+#define LED0_GPIO   GPIOA
+#define LED0_PIN    GPIO_Pin_1 // D3, PA1/USART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
+#define LED1_GPIO   GPIOA
+#define LED1_PIN    GPIO_Pin_5 // D13, PA5/SPI1_SCK/ADC5 - "LED1" on silkscreen, Green
+
+#define GYRO
+#define ACC
+
+#define SENSORS_SET (SENSOR_ACC)
+
 #else
- // Afroflight32
+// Afroflight32
 #define LED0_GPIO   GPIOB
-#define LED0_PIN    GPIO_Pin_3
+#define LED0_PIN    GPIO_Pin_3 // PB3 (LED)
 #define LED1_GPIO   GPIOB
-#define LED1_PIN    GPIO_Pin_4
+#define LED1_PIN    GPIO_Pin_4 // PB4 (LED)
 #define BEEP_GPIO   GPIOA
-#define BEEP_PIN    GPIO_Pin_12
+#define BEEP_PIN    GPIO_Pin_12 // PA12 (Buzzer)
 #define BARO_GPIO   GPIOC
 #define BARO_PIN    GPIO_Pin_13
 
@@ -129,6 +147,9 @@ typedef struct baro_t
 #define BARO
 #define LEDRING
 #define SONAR
+#define BUZZER
+
+#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 #endif
 
@@ -160,8 +181,21 @@ typedef struct baro_t
 #include "drv_i2c.h"
 #include "drv_pwm.h"
 #include "drv_uart.h"
+#endif
 
+#ifdef OLIMEXINO
+// OLIMEXINO
+#include "drv_system.h"         // timers, delays, etc
+#include "drv_adc.h"
+#include "drv_i2c.h"
+#include "drv_adxl345.h"
+#include "drv_mpu3050.h"
+#include "drv_mpu6050.h"
+#include "drv_l3g4200d.h"
+#include "drv_pwm.h"
+#include "drv_uart.h"
 #else
+
  // AfroFlight32
 #include "drv_system.h"         // timers, delays, etc
 #include "drv_adc.h"
