@@ -108,7 +108,7 @@ a:hover {
         float: left;
         
         margin-left: 10px;
-        padding: 0 10px 0 10px;
+        padding: 0 12px 0 12px;
         
         height: 18px;
         line-height: 18px;
@@ -117,6 +117,7 @@ a:hover {
         text-align: center;
         
         border: 1px solid #c0c0c0;
+        border-radius: 8px;
         background-color: #be2222;
     }
     #sensor-status .on {
