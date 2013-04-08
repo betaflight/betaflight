@@ -240,3 +240,29 @@ table.pid_tuning {
         text-decoration: none;
         background-color: #13b723;
     }
+    .tab-pid_tuning .update {
+        display: block;
+        float: right;
+        
+        width: 120px;
+        height: 60px;
+        line-height: 60px;
+        
+        font-size: 14px;
+        color: white;
+        text-align: center;
+        
+        border: 1px solid silver;
+        
+        background-color: #6f1515;
+    }
+    .tab-pid_tuning .update:hover {
+        cursor: default;
+    }
+    .tab-pid_tuning .update.active {
+        background-color: #0fab16;
+    }
+    .tab-pid_tuning .update.active:hover {
+        cursor: pointer;
+        background-color: #13d81d;
+    }
