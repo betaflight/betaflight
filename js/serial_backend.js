@@ -53,6 +53,22 @@ var CONFIG = {
     altitude:      0
 };
 
+var RC = {
+    roll:     0,
+    pitch:    0,
+    yaw:      0,
+    throttle: 0,
+    AUX1:     0,
+    AUX2:     0,
+    AUX3:     0,
+    AUX4:     0
+};
+
+var PIDs = new Array(10);
+for (var i = 0; i < 10; i++) {
+    PIDs[i] = new Array(3);
+}
+
 $(document).ready(function() { 
     port_picker = $('div#port-picker .port select');
     baud_picker = $('div#port-picker #baud');
@@ -131,6 +147,7 @@ function onOpen(openInfo) {
             // should request some sort of configuration data
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
             send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+            send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
             
         }, connection_delay * 1000);
     }
@@ -282,9 +299,10 @@ function process_message(code, data) {
     
     switch (code) {
         case MSP_codes.MSP_IDENT:
-            CONFIG.version = view.getUint8(0);
+            CONFIG.version = parseFloat((view.getUint8(0) / 100).toFixed(2));
             CONFIG.multiType = view.getUint8(1);
             
+            // IDENT received, show the tab content
             $('#tabs li a:first').click();
             break;
         case MSP_codes.MSP_STATUS:
@@ -315,7 +333,15 @@ function process_message(code, data) {
             console.log(data);        
             break; 
         case MSP_codes.MSP_RC:
-            console.log(data);
+            RC.roll = view.getUint16(0, 1);
+            RC.pitch = view.getUint16(2, 1);
+            RC.yaw = view.getUint16(4, 1);
+            RC.throttle = view.getUint16(6, 1);
+            
+            RC.AUX1 = view.getUint16(8, 1);
+            RC.AUX2 = view.getUint16(10, 1);
+            RC.AUX3 = view.getUint16(12, 1);
+            RC.AUX4 = view.getUint16(14, 1);
             break; 
         case MSP_codes.MSP_RAW_GPS:
             console.log(data);
@@ -336,7 +362,36 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_PID:
-            console.log(data);
+            // PID data arrived, we need to scale it and save to appropriate bank / array
+            var needle = 0;
+            for (var i = 0; i < 10; i++) {
+                // main for loop selecting the pid section 
+                switch (i) {
+                    case 0: 
+                    case 1: 
+                    case 2: 
+                    case 3: 
+                    case 7: 
+                    case 8:
+                    case 9:
+                        PIDs[i][0] = view.getUint8(needle) / 10;
+                        PIDs[i][1] = view.getUint8(needle + 1) / 1000;
+                        PIDs[i][2] = view.getUint8(needle + 2);
+                        break;
+                    case 4:
+                        PIDs[i][0] = view.getUint8(needle) / 100;
+                        PIDs[i][1] = view.getUint8(needle + 1) / 100;
+                        PIDs[i][2] = view.getUint8(needle + 2) / 1000;
+                        break;
+                    case 5: 
+                    case 6:
+                        PIDs[i][0] = view.getUint8(needle) / 10;
+                        PIDs[i][1] = view.getUint8(needle + 1) / 100;
+                        PIDs[i][2] = view.getUint8(needle + 2) / 1000;
+                        break;                     
+                }
+                needle += 3;
+            }
             break; 
         case MSP_codes.MSP_BOX:
             console.log(data);
