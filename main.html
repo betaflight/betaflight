@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>baseflight configurator</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="author" content="cTn" />
+        <link type="text/css" rel="stylesheet" href="./css/style.css" media="all" /> 
+        <script type="text/javascript" src="./js/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="./js/serial_backend.js"></script> 
+        <script type="text/javascript" src="./js/main.js"></script> 
+    </head>
+    <body>
+        <div id="main-wrapper">
+            <div id="port-picker">
+                <ul>
+                    <li class="port">
+                        <select id="port">
+                            <!-- port list gets generated here -->
+                        </select>
+                    </li>
+                    <li>
+                        <select id="baud">
+                            <option value="115200" selected="selected">115200</option>
+                            <option value="57600">57600</option>
+                            <option value="38400">38400</option>
+                            <option value="28800">28800</option>
+                            <option value="19200">19200</option>
+                            <option value="14400">14400</option>
+                            <option value="9600">9600</option>
+                            <option value="4800">4800</option>
+                            <option value="2400">2400</option>
+                            <option value="1200">1200</option>
+                            <option value="300">300</option>
+                        </select>
+                    </li>
+                    <li>
+                        <select id="delay">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
+                    </li>
+                    <li>
+                        <a class="connect" href="#" title="">Connect</a>
+                        <a class="refresh" href="#" title="">Refresh</a>                        
+                    </li>
+                </ul>  
+            </div>
+        </div>
+    </body>
+</html>                     

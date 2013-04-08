@@ -1,0 +1,100 @@
+* {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    list-style: none;
+}
+body {
+    font-family: sans-serif;
+    font-size: 12px;
+    color: #303030;
+    -webkit-text-size-adjust: 100%;
+    background-color: #dfddd0;
+}
+a {
+    color: #303030;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+.clear-both {
+    clear: both;
+}
+.left {
+    float: left;
+}
+.right {
+    float: right;
+}
+#main-wrapper {
+    width: 940px;
+    margin: 10px auto 0 auto;
+    
+    padding: 0 10px 0 10px;
+}
+#port-picker {
+    float: left;
+    
+    height: 22px;
+    margin-bottom: 10px;
+}
+    #port-picker li {
+        float: left;
+    }
+    #port-picker select {
+        height: 20px;
+        line-height: 20px;
+        
+        float: left;
+        margin-right: 10px;
+        
+        border: 1px solid silver;
+    }
+    #port-picker #port {
+        width: 120px;
+    }
+    #port-picker #baud {
+        width: 80px;
+    }
+    #port-picker #delay {
+        width: 60px;
+    }
+    #port-picker a {
+        float: left;
+        
+        display: block;
+        
+        width: 80px;
+        height: 18px;
+        border: 1px solid silver;
+        
+        line-height: 18px;
+        text-align: center;
+    }
+    #port-picker a.refresh {
+        margin-right: 10px;
+        
+        background-color: #5569d0;
+        color: white;
+    }
+        #port-picker a.refresh:hover {
+            text-decoration: none;
+            background-color: #424d84;
+        }
+    #port-picker a.connect {
+        margin-right: 10px;
+        
+        background-color: #be2222;
+        color: white;
+    }
+        #port-picker a.connect:hover {
+            text-decoration: none;
+            background-color: #ea3131;
+        }
+    #port-picker a.connect.active {
+        background-color: #0fab16;
+    }
+        #port-picker a.connect.active:hover {
+            background-color: #13d81d;
+        }  
