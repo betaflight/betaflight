@@ -129,10 +129,8 @@ function onOpen(openInfo) {
             serial_poll = setInterval(readPoll, 10);
             
             // should request some sort of configuration data
-            //send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION);
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
-            //send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             
         }, connection_delay * 1000);
     }
@@ -371,10 +369,10 @@ function process_message(code, data) {
             console.log(data);
             break;  
         case MSP_codes.MSP_ACC_CALIBRATION:
-            console.log('Accel calibration finished');
+            console.log('Accel calibration executed');
             break;  
         case MSP_codes.MSP_MAG_CALIBRATION:
-            console.log('Mag calibration finished');
+            console.log('Mag calibration executed');
             break;  
         case MSP_codes.MSP_SET_MISC:
             console.log(data);
@@ -421,7 +419,19 @@ function sensor_status(sensors_detected) {
         $('.mag', e_sensor_status).addClass('on');
     } else {
         $('.mag', e_sensor_status).removeClass('on');
-    }      
+    } 
+
+    if (bit_check(sensors_detected, 3)) { // GPS detected
+        $('.gps', e_sensor_status).addClass('on');
+    } else {
+        $('.gps', e_sensor_status).removeClass('on');
+    } 
+
+    if (bit_check(sensors_detected, 4)) { // Sonar detected
+        $('.sonar', e_sensor_status).addClass('on');
+    } else {
+        $('.sonar', e_sensor_status).removeClass('on');
+    }     
 }
 
 function highByte(num) {

@@ -16,7 +16,7 @@ a {
     text-decoration: none;
 }
 a:hover {
-    text-decoration: underline;
+    text-decoration: none;
 }
 .clear-both {
     clear: both;
@@ -170,4 +170,35 @@ a:hover {
     height: 400px;
     
     border: 1px solid #848484;
-}         
+} 
+
+/* tab specific sections */
+.tab-initial_setup .section {
+    clear: both;
+    padding-bottom: 10px;
+}
+.tab-initial_setup .section a {
+    display: block;
+    
+    float: left;
+    
+    width: 160px;
+    height: 24px;
+    line-height: 24px;
+    
+    text-align: center;
+    color: white;
+    
+    border: 1px solid #c0c0c0;
+    background-color: #5569d0;
+}
+.tab-initial_setup .section a:hover {
+    background-color: #424d84;
+}
+.tab-initial_setup .section p {
+    margin-left: 180px;
+    
+    padding: 5px;
+    
+    border: 1px dotted silver;
+}
