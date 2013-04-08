@@ -108,7 +108,7 @@ a:hover {
         float: left;
         
         margin-left: 10px;
-        padding: 0 6px 0 6px;
+        padding: 0 10px 0 10px;
         
         height: 18px;
         line-height: 18px;
@@ -121,4 +121,53 @@ a:hover {
     }
     #sensor-status .on {
         background-color: #0d8b13;
-    }        
+    }  
+#tabs {
+    position: absolute;
+    margin-top: 1px;
+}
+    #tabs li {
+        float: left;
+        margin-right: 5px;
+        
+        border: 1px solid #848484;
+    }
+        #tabs li.first {
+        }
+        #tabs li.last {
+        }
+        #tabs li.active {
+            border-bottom: 1px solid white;
+        }
+            #tabs li.active a {
+                background-color: white;            
+            }
+            #tabs li.active a:hover {
+                background-color: white;
+                cursor: default;
+            }
+        #tabs li a {
+            display: block;
+            
+            height: 15px;
+            
+            padding: 5px;
+            padding-left: 12px;
+            padding-right: 12px;
+            
+            background-color: #d0d0d0;
+        }
+        #tabs li a:hover {
+            text-decoration: none;
+            background-color: #acacac;
+        } 
+#content {
+    margin-top: 27px;
+    
+    padding: 10px;
+    
+    background-color: white;
+    height: 400px;
+    
+    border: 1px solid #848484;
+}         

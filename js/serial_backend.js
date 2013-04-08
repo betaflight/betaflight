@@ -49,7 +49,8 @@ var CONFIG = {
     mode:          0,
     gyroscope:     [0, 0, 0],
     accelerometer: [0, 0, 0],
-    magnetometer:  [0, 0, 0]
+    magnetometer:  [0, 0, 0],
+    altitude:      0
 };
 
 $(document).ready(function() { 
@@ -140,7 +141,11 @@ function onOpen(openInfo) {
 function onClosed(result) {
     if (result) { // All went as expected
         connectionId = -1; // reset connection id
+        
         sensor_status(sensors_detected = 0); // reset active sensor indicators
+        $('#content').empty(); // empty content
+        $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
+        
         console.log('Connection closed successfully.');
     } else { // Something went wrong
         if (connectionId > 0) {
@@ -281,6 +286,8 @@ function process_message(code, data) {
         case MSP_codes.MSP_IDENT:
             CONFIG.version = view.getUint8(0);
             CONFIG.multiType = view.getUint8(1);
+            
+            $('#tabs li a:first').click();
             break;
         case MSP_codes.MSP_STATUS:
             CONFIG.cycleTime = view.getUint16(0, 1);
@@ -322,7 +329,7 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_ALTITUDE:
-            console.log(data);
+            CONFIG.altitude = view.getUint32(0, 1);
             break; 
         case MSP_codes.MSP_BAT:
             console.log(data);

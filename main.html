@@ -7,7 +7,11 @@
         <link type="text/css" rel="stylesheet" href="./css/style.css" media="all" /> 
         <script type="text/javascript" src="./js/jquery-1.9.1.min.js"></script>
         <script type="text/javascript" src="./js/serial_backend.js"></script> 
-        <script type="text/javascript" src="./js/main.js"></script> 
+        <script type="text/javascript" src="./js/main.js"></script>
+
+        <!-- Various tabs are divided into separate files (for clarity) --> 
+        <script type="text/javascript" src="./tabs/initial_setup.js"></script>
+        <script type="text/javascript" src="./tabs/pid_tuning.js"></script>        
     </head>
     <body>
         <div id="main-wrapper">
@@ -56,11 +60,24 @@
             </div>
             <div id="sensor-status">
                 <ul>
-                    <li class="gyro">Gyroscope</li>
-                    <li class="accel">Accelerometer</li>
-                    <li class="mag">Magnetometer</li>
-                    <li class="baro">Barometer</li>
+                    <li class="gyro">Gyro</li>
+                    <li class="accel">Accel</li>
+                    <li class="mag">Mag</li>
+                    <li class="baro">Baro</li>
+                    <li class="gps">GPS</li>
+                    <li class="sonar">Sonar</li>
+                    <li class="optic">Optic</li>
                 </ul>
+            </div>
+            <div class="clear-both"></div>
+            <div id="tabs">
+                <ul>
+                    <li class="first tab_initial_setup"><a href="#">Initial Setup</a></li>
+                    <li class="tab_pid_tuning"><a href="#">PID Tuning</a></li>
+                </ul>
+                <div class="clear-both"></div>
+            </div>            
+            <div id="content">
             </div>
         </div>
     </body>
