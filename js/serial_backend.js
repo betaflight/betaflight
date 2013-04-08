@@ -41,8 +41,15 @@ var MSP_codes = {
 };
 
 var CONFIG = {
-    version:   0,
-    multiType: 0    
+    version:       0,
+    multiType:     0,
+    cycleTime:     0,
+    i2cError:      0,
+    activeSensors: 0,
+    mode:          0,
+    gyroscope:     [0, 0, 0],
+    accelerometer: [0, 0, 0],
+    magnetometer:  [0, 0, 0]
 };
 
 $(document).ready(function() { 
@@ -122,6 +129,7 @@ function onOpen(openInfo) {
             
             // should request some sort of configuration data
             //send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION);
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
             //send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
             
@@ -132,6 +140,7 @@ function onOpen(openInfo) {
 function onClosed(result) {
     if (result) { // All went as expected
         connectionId = -1; // reset connection id
+        sensor_status(sensors_detected = 0); // reset active sensor indicators
         console.log('Connection closed successfully.');
     } else { // Something went wrong
         if (connectionId > 0) {
@@ -213,7 +222,7 @@ function onCharRead(readInfo) {
                 case 6: // CRC
                     if (message_checksum == data[i]) {
                         // process data
-                        process_message(message_code, message_buffer_uint8_view);
+                        process_message(message_code, message_buffer);
                     }
                     
                     // Reset variables
@@ -266,16 +275,33 @@ function send_message(code, data, bytes_n) {
 }
 
 function process_message(code, data) {
+    var view = new DataView(data, 0);
+    
     switch (code) {
         case MSP_codes.MSP_IDENT:
-            CONFIG.version = data[0];
-            CONFIG.multiType = data[1];
+            CONFIG.version = view.getUint8(0);
+            CONFIG.multiType = view.getUint8(1);
             break;
         case MSP_codes.MSP_STATUS:
-            console.log(data);
+            CONFIG.cycleTime = view.getUint16(0, 1);
+            CONFIG.i2cError = view.getUint16(2, 1);
+            CONFIG.activeSensors = view.getUint16(4, 1);
+            CONFIG.mode = view.getUint32(6, 1);
+            
+            sensor_status(CONFIG.activeSensors);
             break;
         case MSP_codes.MSP_RAW_IMU:
-            console.log(data);
+            CONFIG.accelerometer[0] = view.getInt16(0, 1);
+            CONFIG.accelerometer[1] = view.getInt16(2, 1);
+            CONFIG.accelerometer[2] = view.getInt16(4, 1);
+            
+            CONFIG.gyroscope[0] = view.getInt16(6, 1) / 8;
+            CONFIG.gyroscope[1] = view.getInt16(8, 1) / 8;
+            CONFIG.gyroscope[2] = view.getInt16(10, 1) / 8;
+
+            CONFIG.magnetometer[0] = view.getInt16(12, 1) / 3;
+            CONFIG.magnetometer[1] = view.getInt16(14, 1) / 3;
+            CONFIG.magnetometer[2] = view.getInt16(16, 1) / 3;
             break;
         case MSP_codes.MSP_SERVO:
             console.log(data);
@@ -365,4 +391,40 @@ function process_message(code, data) {
             console.log(data);
             break;               
     }
+}
+
+function sensor_status(sensors_detected) {
+    var e_sensor_status = $('div#sensor-status');
+    
+    if (bit_check(sensors_detected, 0)) { // Gyroscope & accel detected
+        $('.gyro', e_sensor_status).addClass('on');
+        $('.accel', e_sensor_status).addClass('on');
+    } else {
+        $('.gyro', e_sensor_status).removeClass('on');
+        $('.accel', e_sensor_status).removeClass('on');
+    }
+
+    if (bit_check(sensors_detected, 1)) { // Barometer detected
+        $('.baro', e_sensor_status).addClass('on');
+    } else {
+        $('.baro', e_sensor_status).removeClass('on');
+    } 
+
+    if (bit_check(sensors_detected, 2)) { // Magnetometer detected
+        $('.mag', e_sensor_status).addClass('on');
+    } else {
+        $('.mag', e_sensor_status).removeClass('on');
+    }      
+}
+
+function highByte(num) {
+    return num >> 8;
+}
+
+function lowByte(num) {
+    return 0x00FF & num;
+}
+
+function bit_check(num, bit) {
+    return ((num >> bit) % 2 != 0)
 }

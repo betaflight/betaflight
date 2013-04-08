@@ -97,4 +97,28 @@ a:hover {
     }
         #port-picker a.connect.active:hover {
             background-color: #13d81d;
-        }  
+        } 
+#sensor-status {
+    float: right;
+    
+    height: 22px;
+    line-height: 22px;
+}
+    #sensor-status li {
+        float: left;
+        
+        margin-left: 10px;
+        padding: 0 6px 0 6px;
+        
+        height: 18px;
+        line-height: 18px;
+        
+        color: white;
+        text-align: center;
+        
+        border: 1px solid #c0c0c0;
+        background-color: #be2222;
+    }
+    #sensor-status .on {
+        background-color: #0d8b13;
+    }        
