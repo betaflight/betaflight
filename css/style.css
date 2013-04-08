@@ -203,3 +203,40 @@ a:hover {
     
     border: 1px dotted silver;
 }
+table.pid_tuning {
+    width: 100%;
+    border-collapse:collapse;    
+}
+    table.pid_tuning, table.pid_tuning th, table.pid_tuning td {
+        padding: 5px;
+        border: 1px solid #8b8b8b;
+    }
+    table.pid_tuning tr:nth-child(odd) {
+        background-color: #ececec;
+    }    
+    table.pid_tuning input {
+        width: 130px;
+        height: 18px;
+        line-height: 18px;
+        
+        padding: 0 5px 0 5px;
+        border: 1px solid silver;
+        text-align: right;
+    }
+    table.pid_tuning a.update {
+        display: block;
+        
+        width: 60px;
+        height: 18px;
+        line-height: 18px;
+        
+        color: white;
+        text-align: center;
+        
+        border: 1px solid silver;
+        background-color: #078814;
+    }
+    table.pid_tuning a.update:hover {
+        text-decoration: none;
+        background-color: #13b723;
+    }
