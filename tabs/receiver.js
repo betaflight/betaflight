@@ -1,3 +1,4 @@
+var samples_i;
 function tab_initialize_receiver() {
     // fill in data from RC_tuning
     $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
@@ -7,6 +8,8 @@ function tab_initialize_receiver() {
     $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
     
     // Setup plot variables and plot it self
+    samples_i = 300;
+    
     RX_plot_data = new Array(8);
     for (var i = 0; i < 8; i++) {
         RX_plot_data[i] = new Array();
@@ -79,7 +82,6 @@ function tab_initialize_receiver() {
     });
 }
 
-var samples_i = 300;
 function receiverPoll() {
     send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
     
