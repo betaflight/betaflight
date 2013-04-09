@@ -92,8 +92,46 @@ function tab_initialize_pid_tuning() {
                 }
             });
             
-            // Send over the changes
+            var PID_buffer_out = new Array();
+            var PID_buffer_needle = 0;
+            for (var i = 0; i < PIDs.length; i++) {
+                switch (i) {
+                    case 0: 
+                    case 1: 
+                    case 2: 
+                    case 3: 
+                    case 7: 
+                    case 8:
+                    case 9:
+                        PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 10);
+                        PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 1000);
+                        PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2]);
+                        break;
+                    case 4:
+                        PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 100);
+                        PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 100);
+                        PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2]);
+                        break;
+                    case 5: 
+                    case 6:
+                        PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 10);
+                        PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 100);
+                        PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2] * 1000);
+                        break;                     
+                }
+                PID_buffer_needle += 3;
+                
+                /*
+                for (var ii = 0; ii < PIDs[i].length; ii++) {
+                    PID_buffer_out[PID_buffer_needle] = PIDs[i][ii];
+                    PID_buffer_needle++;
+                }
+                */
+            }
             
+            //console.log(PID_buffer_out);
+            // Send over the changes
+            send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, PID_buffer_out.length);
             
             // remove the active status
             $(this).removeClass('active');

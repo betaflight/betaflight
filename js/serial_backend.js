@@ -46,12 +46,13 @@ var CONFIG = {
     cycleTime:     0,
     i2cError:      0,
     activeSensors: 0,
-    mode:          0,
-    gyroscope:     [0, 0, 0],
-    accelerometer: [0, 0, 0],
-    magnetometer:  [0, 0, 0],
-    altitude:      0
+    mode:          0
 };
+
+var PIDs = new Array(10);
+for (var i = 0; i < 10; i++) {
+    PIDs[i] = new Array(3);
+}
 
 var RC = {
     roll:     0,
@@ -64,10 +65,12 @@ var RC = {
     AUX4:     0
 };
 
-var PIDs = new Array(10);
-for (var i = 0; i < 10; i++) {
-    PIDs[i] = new Array(3);
-}
+var SENSOR_DATA = {
+    gyroscope:     [0, 0, 0],
+    accelerometer: [0, 0, 0],
+    magnetometer:  [0, 0, 0],
+    altitude:      0
+};
 
 $(document).ready(function() { 
     port_picker = $('div#port-picker .port select');
@@ -257,9 +260,9 @@ function onCharRead(readInfo) {
     }
 }
 
-function send_message(code, data, bytes_n) {    
-    if (typeof data === 'array') { // array portion of this code is untested TODO: test ?
-        var size = 6 + data.length;
+function send_message(code, data, bytes_n) {        
+    if (typeof data === 'object') {
+        var size = 6 + bytes_n;
         var checksum = 0;
         
         var bufferOut = new ArrayBuffer(size);
@@ -294,7 +297,7 @@ function send_message(code, data, bytes_n) {
 
     chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
         // used for debugging purposes (should be disabled in "stable" buildsS
-        // console.log("Wrote: " + writeInfo.bytesWritten + " bytes");
+        //console.log("Wrote: " + writeInfo.bytesWritten + " bytes");
     });    
 }
 
@@ -318,17 +321,17 @@ function process_message(code, data) {
             sensor_status(CONFIG.activeSensors);
             break;
         case MSP_codes.MSP_RAW_IMU:
-            CONFIG.accelerometer[0] = view.getInt16(0, 1);
-            CONFIG.accelerometer[1] = view.getInt16(2, 1);
-            CONFIG.accelerometer[2] = view.getInt16(4, 1);
+            SENSOR_DATA.accelerometer[0] = view.getInt16(0, 1);
+            SENSOR_DATA.accelerometer[1] = view.getInt16(2, 1);
+            SENSOR_DATA.accelerometer[2] = view.getInt16(4, 1);
             
-            CONFIG.gyroscope[0] = view.getInt16(6, 1) / 8;
-            CONFIG.gyroscope[1] = view.getInt16(8, 1) / 8;
-            CONFIG.gyroscope[2] = view.getInt16(10, 1) / 8;
+            SENSOR_DATA.gyroscope[0] = view.getInt16(6, 1) / 8;
+            SENSOR_DATA.gyroscope[1] = view.getInt16(8, 1) / 8;
+            SENSOR_DATA.gyroscope[2] = view.getInt16(10, 1) / 8;
 
-            CONFIG.magnetometer[0] = view.getInt16(12, 1) / 3;
-            CONFIG.magnetometer[1] = view.getInt16(14, 1) / 3;
-            CONFIG.magnetometer[2] = view.getInt16(16, 1) / 3;
+            SENSOR_DATA.magnetometer[0] = view.getInt16(12, 1) / 3;
+            SENSOR_DATA.magnetometer[1] = view.getInt16(14, 1) / 3;
+            SENSOR_DATA.magnetometer[2] = view.getInt16(16, 1) / 3;
             break;
         case MSP_codes.MSP_SERVO:
             console.log(data);
@@ -357,7 +360,7 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_ALTITUDE:
-            CONFIG.altitude = view.getUint32(0, 1);
+            SENSOR_DATA.altitude = view.getUint32(0, 1);
             break; 
         case MSP_codes.MSP_BAT:
             console.log(data);
@@ -419,7 +422,7 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_SET_PID:
-            console.log(data);
+            console.log('PID settings saved');
             break; 
         case MSP_codes.MSP_SET_BOX:
             console.log(data);
