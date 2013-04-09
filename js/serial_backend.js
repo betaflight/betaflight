@@ -258,7 +258,7 @@ function onCharRead(readInfo) {
 }
 
 function send_message(code, data, bytes_n) {    
-    if (typeof data === 'array') { // array portion of this code is untested
+    if (typeof data === 'array') { // array portion of this code is untested TODO: test ?
         var size = 6 + data.length;
         var checksum = 0;
         
@@ -293,7 +293,8 @@ function send_message(code, data, bytes_n) {
     }
 
     chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-        console.log("Wrote: " + writeInfo.bytesWritten + " bytes");
+        // used for debugging purposes (should be disabled in "stable" buildsS
+        // console.log("Wrote: " + writeInfo.bytesWritten + " bytes");
     });    
 }
 
