@@ -111,6 +111,9 @@ $(document).ready(function() {
         
         if (selected_port != '0') {
             if (clicks) { // odd number of clicks
+                // Disable any active "data pulling" timer
+                disable_timers();            
+            
                 chrome.serial.close(connectionId, onClosed);
                 
                 clearTimeout(connection_delay);
@@ -144,7 +147,7 @@ function onOpen(openInfo) {
             // start polling
             serial_poll = setInterval(readPoll, 10);
             
-            // should request some sort of configuration data
+            // request configuration data
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
             send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
