@@ -20,6 +20,9 @@ TARGET		?= NAZE
 # Compile-time options
 OPTIONS		?=
 
+# Debugger optons, must be empty or GDB
+DEBUG ?=
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -114,10 +117,9 @@ INCLUDE_DIRS	 = $(SRC_DIR) \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
-CFLAGS		 = $(ARCH_FLAGS) \
+BASE_CFLAGS		 = $(ARCH_FLAGS) \
 		   $(addprefix -D,$(OPTIONS)) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
-		   -Os \
 		   -Wall \
 		   -ffunction-sections \
 		   -fdata-sections \
@@ -147,6 +149,16 @@ LDFLAGS		 = -lm \
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
 endif
+
+ifeq ($(DEBUG),GDB)
+CFLAGS = $(BASE_CFLAGS) \
+	-ggdb \
+	-O0
+else
+CFLAGS = $(BASE_CFLAGS) \
+	-Os
+endif
+
 
 TARGET_HEX	 = $(BIN_DIR)/baseflight_$(TARGET).hex
 TARGET_ELF	 = $(BIN_DIR)/baseflight_$(TARGET).elf
