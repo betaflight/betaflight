@@ -26,6 +26,9 @@ $(document).ready(function() {
             }
         }
     });
+    
+    // temporary
+    //$('#content').load("./tabs/pid_tuning.html", tab_initialize_pid_tuning);
 });
 
 function disable_timers() {

@@ -56,9 +56,13 @@ function tab_initialize_pid_tuning() {
     });
     needle++;  
 
-    // UI Hooks
+    // Fill in data from RC_tuning object
+    $('.rate-tpa input[name="roll-pitch"]').val(RC_tuning.roll_pitch_rate.toFixed(2));
+    $('.rate-tpa input[name="yaw"]').val(RC_tuning.yaw_rate.toFixed(2));
+    $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
     
-    $('.pid_tuning input').change(function() {
+    // UI Hooks
+    $('.pid_tuning input, .rate-tpa input').change(function() {
         // if any of the fields changed, unlock update button
         $('a.update').addClass('active');
     });
@@ -120,18 +124,27 @@ function tab_initialize_pid_tuning() {
                         break;                     
                 }
                 PID_buffer_needle += 3;
-                
-                /*
-                for (var ii = 0; ii < PIDs[i].length; ii++) {
-                    PID_buffer_out[PID_buffer_needle] = PIDs[i][ii];
-                    PID_buffer_needle++;
-                }
-                */
             }
             
-            //console.log(PID_buffer_out);
-            // Send over the changes
-            send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, PID_buffer_out.length);
+            // Send over the PID changes
+            send_message(MSP_codes.MSP_SET_PID, PID_buffer_out);
+            
+            // catch RC_tuning changes
+            RC_tuning.roll_pitch_rate = parseFloat($('.rate-tpa input[name="roll-pitch"]').val());
+            RC_tuning.yaw_rate = parseFloat($('.rate-tpa input[name="yaw"]').val());
+            RC_tuning.dynamic_THR_PID = parseFloat($('.rate-tpa input[name="tpa"]').val());            
+            
+            var RC_tuning_buffer_out = new Array();
+            RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
+            RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100);
+            RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100);
+            RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100);
+            RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100);
+            RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100);
+            RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
+            
+            // Send over the RC_tuning changes
+            send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out);
             
             // remove the active status
             $(this).removeClass('active');

@@ -203,18 +203,18 @@ a:hover {
     
     border: 1px dotted silver;
 }
-table.pid_tuning {
+.tab-pid_tuning table {
     width: 100%;
     border-collapse:collapse;    
 }
-    table.pid_tuning, table.pid_tuning th, table.pid_tuning td {
+    .tab-pid_tuning table, .tab-pid_tuning table th, .tab-pid_tuning table td {
         padding: 5px;
         border: 1px solid #8b8b8b;
     }
-    table.pid_tuning tr:nth-child(odd) {
+    .tab-pid_tuning table tr:nth-child(odd) {
         background-color: #ececec;
     }    
-    table.pid_tuning input {
+    .tab-pid_tuning table input {
         width: 130px;
         height: 18px;
         line-height: 18px;
@@ -223,26 +223,11 @@ table.pid_tuning {
         border: 1px solid silver;
         text-align: right;
     }
-    table.pid_tuning a.update {
-        display: block;
-        
-        width: 60px;
-        height: 18px;
-        line-height: 18px;
-        
-        color: white;
-        text-align: center;
-        
-        border: 1px solid silver;
-        background-color: #078814;
-    }
-    table.pid_tuning a.update:hover {
-        text-decoration: none;
-        background-color: #13b723;
-    }
     .tab-pid_tuning .update {
         display: block;
         float: right;
+        
+        margin-top: 20px;
         
         width: 120px;
         height: 60px;
@@ -265,6 +250,11 @@ table.pid_tuning {
     .tab-pid_tuning .update.active:hover {
         cursor: pointer;
         background-color: #13d81d;
+    }
+    .tab-pid_tuning .rate-tpa {
+        float: left;
+        width: 400px;
+        margin-top: 20px;
     }
 .tab-receiver {
 }

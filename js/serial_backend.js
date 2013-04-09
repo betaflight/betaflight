@@ -65,6 +65,16 @@ var RC = {
     AUX4:     0
 };
 
+var RC_tuning = {
+    RC_RATE:         0,
+    RC_EXPO:         0,
+    roll_pitch_rate: 0,
+    yaw_rate:        0,
+    dynamic_THR_PID: 0,
+    throttle_MID:    0,
+    throttle_EXPO:   0,
+};
+
 var SENSOR_DATA = {
     gyroscope:     [0, 0, 0],
     accelerometer: [0, 0, 0],
@@ -154,6 +164,7 @@ function onOpen(openInfo) {
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
             send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
+            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
             
         }, connection_delay * 1000);
     }
@@ -260,9 +271,9 @@ function onCharRead(readInfo) {
     }
 }
 
-function send_message(code, data, bytes_n) {        
+function send_message(code, data) {        
     if (typeof data === 'object') {
-        var size = 6 + bytes_n;
+        var size = 6 + data.length; // 6 bytes for protocol overhead
         var checksum = 0;
         
         var bufferOut = new ArrayBuffer(size);
@@ -275,10 +286,11 @@ function send_message(code, data, bytes_n) {
         bufView[4] = code; // code
         
         checksum = bufView[3] ^ bufView[4];
-        for (var i = 5; i < data.length; i++) {
-            bufView[i] = data[i - 5];
+        
+        for (var i = 0; i < data.length; i++) {
+            bufView[i + 5] = data[i];
             
-            checksum ^= bufView[i];
+            checksum ^= bufView[i + 5];
         }
 
         bufView[5 + data.length] = checksum;
@@ -289,7 +301,7 @@ function send_message(code, data, bytes_n) {
         bufView[0] = 36; // $
         bufView[1] = 77; // M
         bufView[2] = 60; // <
-        bufView[3] = bytes_n; // data length
+        bufView[3] = 0; // data length
         bufView[4] = code; // code
         bufView[5] = data; // data
         bufView[6] = bufView[3] ^ bufView[4] ^ bufView[5]; // checksum
@@ -366,7 +378,13 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_RC_TUNING:
-            console.log(data);
+            RC_tuning.RC_RATE = parseFloat((view.getUint8(0) / 100).toFixed(2));
+            RC_tuning.RC_EXPO = parseFloat((view.getUint8(1) / 100).toFixed(2));
+            RC_tuning.roll_pitch_rate = parseFloat((view.getUint8(2) / 100).toFixed(2));
+            RC_tuning.yaw_rate = parseFloat((view.getUint8(3) / 100).toFixed(2));
+            RC_tuning.dynamic_THR_PID = parseFloat((view.getUint8(4) / 100).toFixed(2));
+            RC_tuning.throttle_MID = parseFloat((view.getUint8(5) / 100).toFixed(2));
+            RC_tuning.throttle_EXPO = parseFloat((view.getUint8(6) / 100).toFixed(2));
             break; 
         case MSP_codes.MSP_PID:
             // PID data arrived, we need to scale it and save to appropriate bank / array
@@ -428,7 +446,7 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_SET_RC_TUNING:
-            console.log(data);
+            console.log('RC Tuning saved');
             break;  
         case MSP_codes.MSP_ACC_CALIBRATION:
             console.log('Accel calibration executed');
