@@ -168,7 +168,7 @@ a:hover {
     padding: 10px;
     
     background-color: white;
-    height: 400px;
+    height: 480px;
     
     border: 1px solid #848484;
 } 
@@ -265,4 +265,25 @@ table.pid_tuning {
     .tab-pid_tuning .update.active:hover {
         cursor: pointer;
         background-color: #13d81d;
+    }
+.tab-receiver {
+}
+    .tab-receiver .bars ul {
+        height: 20px;
+        line-height: 20px;
+        
+        margin-bottom: 5px;
+    }
+    .tab-receiver .bars li {
+        float: left;
+    }
+    .tab-receiver .bars .name {
+        width: 80px;
+    }
+        .tab-receiver .bars .meter meter {
+            width: 200px;
+            height: 20px;
+        }
+    .tab-receiver .bars .value {
+        padding-left: 20px;
     }
