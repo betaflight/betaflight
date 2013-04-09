@@ -28,7 +28,7 @@ $(document).ready(function() {
     });
     
     // temporary
-    //$('#content').load("./tabs/pid_tuning.html", tab_initialize_pid_tuning);
+    //$('#content').load("./tabs/receiver.html", tab_initialize_receiver);
 });
 
 function disable_timers() {

@@ -308,7 +308,7 @@ function send_message(code, data) {
     }
 
     chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-        // used for debugging purposes (should be disabled in "stable" buildsS
+        // used for debugging purposes (should be disabled in "stable" builds
         //console.log("Wrote: " + writeInfo.bytesWritten + " bytes");
     });    
 }
