@@ -23,14 +23,14 @@ $(document).ready(function() {
                 $('#content').load("./tabs/pid_tuning.html", tab_initialize_pid_tuning);
             } else if ($(this).parent().hasClass('tab_receiver')) {
                 $('#content').load("./tabs/receiver.html", tab_initialize_receiver);
-            } else if ($(this).parent().hasClass('tab_auxillary_configuration')) {
-                $('#content').load("./tabs/auxillary_configuration.html", tab_initialize_auxillary_configuration);
+            } else if ($(this).parent().hasClass('tab_auxiliary_configuration')) {
+                $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
             }
         }
     });
     
     // temporary
-    //$('#content').load("./tabs/receiver.html", tab_initialize_receiver);
+    $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
 });
 
 function disable_timers() {

@@ -172,6 +172,20 @@ a:hover {
     
     border: 1px solid #848484;
 } 
+#status-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    
+    width: 940px;
+    height: 20px;
+    line-height: 20px;
+    
+    padding: 0 10px 0 10px;
+    
+    border-top: 1px solid #7d7d79;
+    background-color: #bfbeb5;
+}
 
 /* tab specific sections */
 .tab-initial_setup .section {
@@ -353,20 +367,50 @@ a:hover {
         width: 880px; 
         height: 250px;
     }
-#status-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    
-    width: 940px;
-    height: 20px;
-    line-height: 20px;
-    
-    padding: 0 10px 0 10px;
-    
-    border-top: 1px solid #7d7d79;
-    background-color: #bfbeb5;
+.tab-auxiliary_configuration {
+
 }
+    .tab-auxiliary_configuration .heads {
+    }
+        .tab-auxiliary_configuration .heads li {
+            float: left;
+            
+            width: 182px;
+            height: 25px;
+            line-height: 25px;
+            
+            text-align: center;
+            font-weight: bold;
+            
+            border: 1px solid #8b8b8b;
+            border-bottom: 0;
+            border-left: 0;
+        }
+            .tab-auxiliary_configuration .heads li:first-child {
+                margin-left: 181px;
+                border-left: 1px solid #8b8b8b;
+            }
+            .tab-auxiliary_configuration .heads li:nth-child(3) {
+                width: 183px;
+            }
+            .tab-auxiliary_configuration .heads li:nth-child(4) {
+                width: 185px;
+            }
+    .tab-auxiliary_configuration .boxes {
+        width: 100%;
+        border-collapse: collapse;            
+    }
+        .tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {
+            padding: 5px;
+            padding-right: 0px;
+            padding-left: 0px;
+            
+            border: 1px solid #8b8b8b;
+        }
+    .tab-auxiliary_configuration .boxes tr:nth-child(odd) {
+        background-color: #ececec;
+    }   
+    
     
 /* Flotr related styles */
 .flotr-legend {

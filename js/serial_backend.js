@@ -75,6 +75,9 @@ var RC_tuning = {
     throttle_EXPO:   0,
 };
 
+var AUX_CONFIG = new Array();
+var AUX_CONFIG_values = new Array();
+
 var SENSOR_DATA = {
     gyroscope:     [0, 0, 0],
     accelerometer: [0, 0, 0],
@@ -419,7 +422,9 @@ function process_message(code, data) {
             }
             break; 
         case MSP_codes.MSP_BOX:
-            console.log(data);
+            for (var i = 0; i < data.byteLength; i += 2) { // + 2 because uint16_t = 2 bytes
+                AUX_CONFIG_values.push(view.getUint16(i, 1));
+            }
             break; 
         case MSP_codes.MSP_MISC:
             console.log(data);
@@ -428,7 +433,18 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_BOXNAMES:
-            console.log(data);
+            var buff = new Array();
+            for (var i = 0; i < data.byteLength; i++) {
+                if (view.getUint8(i) == 0x3B) { // ; (delimeter char)
+                    AUX_CONFIG.push(String.fromCharCode.apply(null, buff)); // convert bytes into ASCII and save as strings
+                    
+                    // empty buffer
+                    buff = [];
+                } else {
+                    buff.push(view.getUint8(i));
+                }
+                
+            }
             break; 
         case MSP_codes.MSP_PIDNAMES:
             console.log(data);
@@ -443,7 +459,7 @@ function process_message(code, data) {
             console.log('PID settings saved');
             break; 
         case MSP_codes.MSP_SET_BOX:
-            console.log(data);
+            console.log('AUX Configuration saved');
             break; 
         case MSP_codes.MSP_SET_RC_TUNING:
             console.log('RC Tuning saved');
