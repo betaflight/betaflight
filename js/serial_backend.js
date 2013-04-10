@@ -168,6 +168,8 @@ function onOpen(openInfo) {
             send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
             send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
+            send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
+            send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX);
             
         }, connection_delay * 1000);
     }
@@ -433,6 +435,8 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_BOXNAMES:
+            AUX_CONFIG = []; // empty the array as new data is coming in
+            
             var buff = new Array();
             for (var i = 0; i < data.byteLength; i++) {
                 if (view.getUint8(i) == 0x3B) { // ; (delimeter char)
@@ -540,4 +544,12 @@ function lowByte(num) {
 
 function bit_check(num, bit) {
     return ((num >> bit) % 2 != 0)
+}
+
+function bit_set(num, bit) {
+    return num | 1 << bit;
+}
+
+function bit_clear(num, bit) {
+    return num & ~(1 << bit);
 }

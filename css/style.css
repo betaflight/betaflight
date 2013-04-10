@@ -376,8 +376,8 @@ a:hover {
             float: left;
             
             width: 182px;
-            height: 25px;
-            line-height: 25px;
+            height: 22px;
+            line-height: 22px;
             
             text-align: center;
             font-weight: bold;
@@ -385,6 +385,8 @@ a:hover {
             border: 1px solid #8b8b8b;
             border-bottom: 0;
             border-left: 0;
+            
+            background-color: #ececec;
         }
             .tab-auxiliary_configuration .heads li:first-child {
                 margin-left: 181px;
@@ -400,17 +402,53 @@ a:hover {
         width: 100%;
         border-collapse: collapse;            
     }
-        .tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {
-            padding: 5px;
-            padding-right: 0px;
-            padding-left: 0px;
+        .tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {            
+            line-height: 22px;
+            text-align: center;
             
             border: 1px solid #8b8b8b;
         }
+        .tab-auxiliary_configuration .boxes .name {
+            /* padding-left: 5px; */
+            text-align: center;
+        }
+        .tab-auxiliary_configuration .boxes td input {
+            position: absolute;
+            
+            margin-top: -6px;
+            margin-left: -6px;
+        }        
     .tab-auxiliary_configuration .boxes tr:nth-child(odd) {
         background-color: #ececec;
-    }   
-    
+    } 
+    .tab-auxiliary_configuration .update {
+        display: block;
+        float: right;
+        
+        margin-top: 10px;
+        
+        width: 120px;
+        height: 30px;
+        line-height: 30px;
+        
+        font-size: 14px;
+        color: white;
+        text-align: center;
+        
+        border: 1px solid silver;
+        
+        background-color: #6f1515;
+    }
+    .tab-auxiliary_configuration .update:hover {
+        cursor: default;
+    }
+    .tab-auxiliary_configuration .update.active {
+        background-color: #0fab16;
+    }
+    .tab-auxiliary_configuration .update.active:hover {
+        cursor: pointer;
+        background-color: #13d81d;
+    }    
     
 /* Flotr related styles */
 .flotr-legend {

@@ -30,7 +30,7 @@ $(document).ready(function() {
     });
     
     // temporary
-    $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
+    //$('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
 });
 
 function disable_timers() {
