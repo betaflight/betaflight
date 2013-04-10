@@ -353,6 +353,20 @@ a:hover {
         width: 880px; 
         height: 250px;
     }
+#status-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    
+    width: 940px;
+    height: 20px;
+    line-height: 20px;
+    
+    padding: 0 10px 0 10px;
+    
+    border-top: 1px solid #7d7d79;
+    background-color: #bfbeb5;
+}
     
 /* Flotr related styles */
 .flotr-legend {
