@@ -412,6 +412,9 @@ a:hover {
             /* padding-left: 5px; */
             text-align: center;
         }
+        .tab-auxiliary_configuration .boxes .on {
+            background-color: #0d8b13;
+        }
         .tab-auxiliary_configuration .boxes td input {
             position: absolute;
             

@@ -25,6 +25,12 @@ function tab_initialize_auxiliary_configuration() {
     
     // UI Hooks
     $('.tab-auxiliary_configuration .boxes input').change(function() {
+        if($(this).is(':checked')) {
+            $(this).parent().addClass('on');
+        } else {
+            $(this).parent().removeClass('on');
+        }
+        
         // if any of the fields changed, unlock update button
         $('a.update').addClass('active');
     });
@@ -70,7 +76,7 @@ function tab_initialize_auxiliary_configuration() {
 
 function box_check(num, pos) {
     if (bit_check(num, pos)) { // 1
-        return '<td><input type="checkbox" checked="checked" /></td>';
+        return '<td class="on"><input type="checkbox" checked="checked" /></td>';
     } else { // 0
         return '<td><input type="checkbox" /></td>';
     }
