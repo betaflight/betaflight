@@ -85,6 +85,9 @@ var SENSOR_DATA = {
     altitude:      0
 };
 
+var MOTOR_DATA = new Array(8);
+var SERVO_DATA = new Array(8);
+
 $(document).ready(function() { 
     port_picker = $('div#port-picker .port select');
     baud_picker = $('div#port-picker #baud');
@@ -134,6 +137,11 @@ $(document).ready(function() {
                 
                 clearTimeout(connection_delay);
                 clearInterval(serial_poll);
+                clearInterval(port_usage_poll);
+                
+                // Change port utilization to 0
+                $('span.port-usage').html('0%');
+                
                 
                 $(this).text('Connect');
                 $(this).removeClass('active');            
@@ -162,6 +170,7 @@ function onOpen(openInfo) {
         connection_delay = setTimeout(function() {
             // start polling
             serial_poll = setInterval(readPoll, 10);
+            port_usage_poll = setInterval(port_usage, 1000);
             
             // request configuration data
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
@@ -203,6 +212,7 @@ var message_length_received = 0;
 var message_buffer;
 var message_buffer_uint8_view;
 var message_checksum = 0;
+var char_counter = 0;
 
 function onCharRead(readInfo) {
     if (readInfo && readInfo.bytesRead > 0 && readInfo.data) {
@@ -272,6 +282,8 @@ function onCharRead(readInfo) {
                     message_state = 0;                   
                     break;
             }
+            
+            char_counter++;
         }
     }
 }
@@ -326,6 +338,46 @@ function process_message(code, data) {
             CONFIG.version = parseFloat((view.getUint8(0) / 100).toFixed(2));
             CONFIG.multiType = view.getUint8(1);
             
+            $('.software-version').html(CONFIG.version);
+            
+            // TODO: utilize this info
+            switch (CONFIG.multiType) {
+                case 1: // TRI
+                    break;
+                case 2: // QUAD+
+                    break;
+                case 3: // QUAD X
+                    break;
+                case 4: // BI
+                    break;
+                case 5: // GIMBAL
+                    break;
+                case 6: // Y6
+                    break;
+                case 7: // HEX 6
+                    break;
+                case 8: // FLYING_WING
+                    break;
+                case 9: // Y4
+                    break;
+                case 10: // HEX6 X
+                    break;
+                case 11: // OCTO X8
+                case 12:
+                case 13:
+                    break;
+                case 14: // AIRPLANE
+                    break;
+                case 15: // Heli 120 
+                    break;
+                case 16: // Heli 90 
+                    break;
+                case 17: // Vtail 
+                    break;
+                case 18: // HEX6 H
+                    break;
+            }
+            
             // IDENT received, show the tab content
             $('#tabs li a:first').click();
             break;
@@ -351,10 +403,20 @@ function process_message(code, data) {
             SENSOR_DATA.magnetometer[2] = view.getInt16(16, 1) / 3;
             break;
         case MSP_codes.MSP_SERVO:
-            console.log(data);
+            var needle = 0;
+            for (var i = 0; i < SERVO_DATA.length; i++) {
+                SERVO_DATA[i] = view.getUint16(needle, 1);
+                
+                needle += 2;
+            } 
             break; 
         case MSP_codes.MSP_MOTOR:
-            console.log(data);        
+            var needle = 0;
+            for (var i = 0; i < MOTOR_DATA.length; i++) {
+                MOTOR_DATA[i] = view.getUint16(needle, 1);
+                
+                needle += 2;
+            }            
             break; 
         case MSP_codes.MSP_RC:
             RC.roll = view.getUint16(0, 1);
@@ -496,6 +558,14 @@ function process_message(code, data) {
             console.log(data);
             break;               
     }
+}
+
+function port_usage() {
+    var port_usage = (char_counter * 10 / selected_baud) * 100;    
+    $('span.port-usage').html(parseInt(port_usage) + '%');
+
+    // reset counter
+    char_counter = 0;
 }
 
 function sensor_status(sensors_detected) {

@@ -25,12 +25,14 @@ $(document).ready(function() {
                 $('#content').load("./tabs/receiver.html", tab_initialize_receiver);
             } else if ($(this).parent().hasClass('tab_auxiliary_configuration')) {
                 $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
+            } else if ($(this).parent().hasClass('tab_motor_outputs')) {
+                $('#content').load("./tabs/motor_outputs.html", tab_initialize_motor_outputs);
             }
         }
     });
     
     // temporary
-    //$('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
+    //$('#content').load("./tabs/motor_outputs.html", tab_initialize_motor_outputs);
 });
 
 function disable_timers() {

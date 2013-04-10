@@ -75,7 +75,10 @@ function tab_initialize_receiver() {
             
             // Send over the RC_tuning changes
             send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out);        
-        
+
+            // Save changes to EEPROM
+            send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+            
             // remove the active status
             $(this).removeClass('active');        
         }
