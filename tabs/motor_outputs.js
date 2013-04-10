@@ -1,7 +1,6 @@
 function tab_initialize_motor_outputs() {
     // enable Motor data pulling
-    motor_poll = setInterval(motorPoll, 50);
-    timers.push(motor_poll);
+    timers.push(setInterval(motorPoll, 50));
 }
 
 function motorPoll() {

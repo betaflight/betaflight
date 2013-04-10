@@ -46,8 +46,7 @@ function tab_initialize_receiver() {
     }; 
     
     // enable RC data pulling
-    receiver_poll = setInterval(receiverPoll, 50);
-    timers.push(receiver_poll);
+    timers.push(setInterval(receiverPoll, 50));
     
     // UI Hooks
     $('.tunings input').change(function() {
