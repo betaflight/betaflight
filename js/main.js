@@ -23,6 +23,8 @@ $(document).ready(function() {
                 $('#content').load("./tabs/pid_tuning.html", tab_initialize_pid_tuning);
             } else if ($(this).parent().hasClass('tab_receiver')) {
                 $('#content').load("./tabs/receiver.html", tab_initialize_receiver);
+            } else if ($(this).parent().hasClass('tab_auxillary_configuration')) {
+                $('#content').load("./tabs/auxillary_configuration.html", tab_initialize_auxillary_configuration);
             }
         }
     });
