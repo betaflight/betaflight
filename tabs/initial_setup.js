@@ -20,11 +20,11 @@ function tab_initialize_initial_setup() {
         console.log("YAW reset to 0");
     });  
     
-    // enable kinematics data pulling
-    timers.push(setInterval(kinematics_poll, 50));    
+    // enable data pulling
+    timers.push(setInterval(data_poll, 50));    
 }
 
-function kinematics_poll() {
+function data_poll() {
     // Update cube
     var cube = $('div#cube');
     
@@ -32,6 +32,16 @@ function kinematics_poll() {
     $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematicsY + 'deg)');
     $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematicsX + 'deg)'); 
     
+    // Update GPS data
+    $('td.alt').html(GPS_DATA.alt);
+    $('td.lat').html(GPS_DATA.lat);
+    $('td.long').html(GPS_DATA.lon);
+    $('td.speed').html(GPS_DATA.speed);
+    $('td.sats').html(GPS_DATA.numSat);
+    $('td.distToHome').html(GPS_DATA.distanceToHome);
+
     // Request new data
     send_message(MSP_codes.MSP_ATTITUDE, MSP_codes.MSP_ATTITUDE); 
+    send_message(MSP_codes.MSP_RAW_GPS, MSP_codes.MSP_RAW_GPS);
+    send_message(MSP_codes.MSP_COMP_GPS, MSP_codes.MSP_COMP_GPS);
 }

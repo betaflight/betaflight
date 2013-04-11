@@ -188,37 +188,39 @@ a:hover {
 }
 
 /* tab specific sections */
-.tab-initial_setup .section {
-    clear: both;
-    padding-bottom: 10px;
+.tab-initial_setup {
 }
-.tab-initial_setup .section a {
-    display: block;
-    
-    float: left;
-    
-    width: 160px;
-    height: 24px;
-    line-height: 24px;
-    
-    text-align: center;
-    color: white;
-    
-    border: 1px solid #c0c0c0;
-    background-color: #5569d0;
-}
-.tab-initial_setup .section a:hover {
-    background-color: #424d84;
-}
-.tab-initial_setup .section p {
-    margin-left: 180px;
-    
-    padding: 5px;
-    
-    border: 1px dotted silver;
-}
+    .tab-initial_setup .section {
+        clear: both;
+        padding-bottom: 10px;
+    }
+        .tab-initial_setup .section a {
+            display: block;
+            
+            float: left;
+            
+            width: 160px;
+            height: 24px;
+            line-height: 24px;
+            
+            text-align: center;
+            color: white;
+            
+            border: 1px solid #c0c0c0;
+            background-color: #5569d0;
+        }
+        .tab-initial_setup .section a:hover {
+            background-color: #424d84;
+        }
+        .tab-initial_setup .section p {
+            margin-left: 180px;
+            
+            padding: 5px;
+            
+            border: 1px dotted silver;
+        }
 #interactive_block {
-    float: right;
+    float: left;
     
     margin-top: 10px;
     
@@ -323,6 +325,31 @@ a:hover {
                 -webkit-transform: rotateX(90deg) translateZ(100px);
                 background-color: silver;
             }
+    .tab-initial_setup .GPS_info {
+        float: left;
+        display: block;
+        
+        margin-top: 10px;
+        margin-left: 20px;
+        
+        width: 145px;
+        
+        border: 1px solid silver;
+    }
+        .tab-initial_setup .GPS_info .head {
+            display: block;
+            
+            text-align: center;
+            line-height: 20px;
+            font-weight: bold;
+            
+            border-bottom: 1px solid silver;
+            background-color: #ececec;
+        }
+        .tab-initial_setup .GPS_info table {
+            padding: 5px;
+            line-height: 18px;
+        }
 .tab-pid_tuning table {
     width: 100%;
     border-collapse: collapse;    

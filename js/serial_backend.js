@@ -91,6 +91,18 @@ var SENSOR_DATA = {
 var MOTOR_DATA = new Array(8);
 var SERVO_DATA = new Array(8);
 
+var GPS_DATA = {
+    fix:             0,
+    numSat:          0,
+    lat:             0,
+    lon:             0,
+    alt:             0,
+    speed:           0,
+    distanceToHome:  0,
+    ditectionToHome: 0,
+    update:          0
+};
+
 $(document).ready(function() { 
     port_picker = $('div#port-picker .port select');
     baud_picker = $('div#port-picker #baud');
@@ -433,10 +445,17 @@ function process_message(code, data) {
             RC.AUX4 = view.getUint16(14, 1);
             break; 
         case MSP_codes.MSP_RAW_GPS:
-            console.log(data);
+            GPS_DATA.fix = view.getUint8(0);
+            GPS_DATA.numSat = view.getUint8(1);
+            GPS_DATA.lat = view.getUint32(2, 1);
+            GPS_DATA.lon = view.getUint32(6, 1);
+            GPS_DATA.alt = view.getUint16(10, 1);
+            GPS_DATA.speed = view.getUint16(12, 1);
             break; 
         case MSP_codes.MSP_COMP_GPS:
-            console.log(data);
+            GPS_DATA.distanceToHome = view.getUint16(0, 1);
+            GPS_DATA.directionToHome = view.getUint16(2, 1);
+            GPS_DATA.update = view.getUint8(4);
             break; 
         case MSP_codes.MSP_ATTITUDE:
             SENSOR_DATA.kinematicsX = view.getInt16(0, 1) / 10.0;
