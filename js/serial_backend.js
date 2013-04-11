@@ -555,7 +555,6 @@ function process_message(code, data) {
             send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
             send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
             send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX);
-            
             break;  
         case MSP_codes.MSP_SELECT_SETTING:
             console.log(data);

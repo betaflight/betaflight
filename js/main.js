@@ -27,12 +27,14 @@ $(document).ready(function() {
                 $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
             } else if ($(this).parent().hasClass('tab_motor_outputs')) {
                 $('#content').load("./tabs/motor_outputs.html", tab_initialize_motor_outputs);
+            } else if ($(this).parent().hasClass('tab_sensors')) {
+                $('#content').load("./tabs/sensors.html", tab_initialize_sensors);
             }
         }
     });
     
     // temporary
-    //$('#content').load("./tabs/initial_setup.html", tab_initialize_initial_setup);
+    //$('#content').load("./tabs/sensors.html", tab_initialize_sensors);
 });
 
 function disable_timers() {
