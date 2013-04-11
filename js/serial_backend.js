@@ -82,7 +82,10 @@ var SENSOR_DATA = {
     gyroscope:     [0, 0, 0],
     accelerometer: [0, 0, 0],
     magnetometer:  [0, 0, 0],
-    altitude:      0
+    altitude:      0,
+    kinematicsX:   0.0,
+    kinematicsY:   0.0,
+    kinematicsZ:   0.0
 };
 
 var MOTOR_DATA = new Array(8);
@@ -436,7 +439,9 @@ function process_message(code, data) {
             console.log(data);
             break; 
         case MSP_codes.MSP_ATTITUDE:
-            console.log(data);
+            SENSOR_DATA.kinematicsX = view.getInt16(0, 1) / 10.0;
+            SENSOR_DATA.kinematicsY = view.getInt16(2, 1) / 10.0;
+            SENSOR_DATA.kinematicsZ = view.getInt16(4, 1);
             break; 
         case MSP_codes.MSP_ALTITUDE:
             SENSOR_DATA.altitude = view.getUint32(0, 1);
@@ -540,7 +545,17 @@ function process_message(code, data) {
             console.log(data);
             break;  
         case MSP_codes.MSP_RESET_CONF:
-            console.log(data);
+            console.log('Settings Reset');
+            
+            // With new flight software settings in place, we have to re-pull
+            // latest values
+            send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+            send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
+            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
+            send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
+            send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX);
+            
             break;  
         case MSP_codes.MSP_SELECT_SETTING:
             console.log(data);
@@ -549,7 +564,7 @@ function process_message(code, data) {
             console.log(data);
             break;  
         case MSP_codes.MSP_EEPROM_WRITE:
-            console.log(data);
+            console.log('Settings Saved in EEPROM');
             break;  
         case MSP_codes.MSP_DEBUGMSG:
             console.log(data);

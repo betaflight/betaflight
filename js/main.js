@@ -32,7 +32,7 @@ $(document).ready(function() {
     });
     
     // temporary
-    //$('#content').load("./tabs/motor_outputs.html", tab_initialize_motor_outputs);
+    //$('#content').load("./tabs/initial_setup.html", tab_initialize_initial_setup);
 });
 
 function disable_timers() {

@@ -217,6 +217,112 @@ a:hover {
     
     border: 1px dotted silver;
 }
+#interactive_block {
+    float: right;
+    
+    margin-top: 10px;
+    
+    height: 320px;
+    width: 400px;
+    
+    border: 1px solid silver;
+    background-color: white;
+}
+    #interactive_block a.reset {
+        position: relative;
+        display: block;
+        
+        top: 285px;
+        left: 10px;
+        
+        width: 100px;
+        height: 23px;
+        line-height: 23px;
+        
+        color: white;
+        text-align: center;
+        
+        border: 1px solid silver;
+        background-color: blue;
+    } 
+    #interactive_block a.reset:hover {
+        text-decoration: none;
+    }
+    #perspective {
+        -webkit-perspective: 800;
+        -webkit-perspective-origin: 50% 150px; /* 150px = (350px / 2) - 25px */
+    }  
+        #cube {
+            position: relative;
+            top: 110px;
+            left: 150px; /* (916px / 2) - 50px */
+            
+            height: 100px;
+            width: 100px;
+            
+            -webkit-transform-style: preserve-3d;
+        }
+            #cubePITCH {
+                -webkit-transform-style: preserve-3d;
+            }
+            #cubeROLL {
+                -webkit-transform-style: preserve-3d;
+            }
+            #cube .face {
+                position: absolute;
+                
+                color: white;
+                font-size: 25px;
+                text-align: center;
+            }
+            #cube .face.one  {
+                width: 100px;
+                height: 200px;
+                line-height: 200px;
+
+                -webkit-transform: rotateX(-90deg) translateZ(-50px);
+                background-color: purple;
+            }
+            #cube .face.two {
+                width: 100px;
+                height: 50px;
+                line-height: 50px;
+                
+                -webkit-transform: translateZ(100px);
+                background-color: blue;
+            }
+            #cube .face.three {
+                width: 200px;
+                height: 50px;
+                line-height: 50px;
+                
+                -webkit-transform: rotateY(90deg);
+                background-color: green;
+            }
+            #cube .face.four {
+                width: 100px;
+                height: 50px;
+                line-height: 50px;
+                
+                -webkit-transform: rotateY(180deg) translateZ(100px);
+                background-color: black;
+            }
+            #cube .face.five {
+                width: 200px;
+                height: 50px;
+                line-height: 50px;
+                
+                -webkit-transform: rotateY(-90deg) translateZ(100px);
+                background-color: red;
+            }
+            #cube .face.six {
+                width: 100px;
+                height: 200px;
+                line-height: 200px;
+                
+                -webkit-transform: rotateX(90deg) translateZ(100px);
+                background-color: silver;
+            }
 .tab-pid_tuning table {
     width: 100%;
     border-collapse: collapse;    
