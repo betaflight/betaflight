@@ -40,6 +40,10 @@ function data_poll() {
     $('td.sats').html(GPS_DATA.numSat);
     $('td.distToHome').html(GPS_DATA.distanceToHome);
 
+    // Update Compass
+    $('div#compass .pointer').css('-webkit-transform', 'rotate(' + (SENSOR_DATA.kinematicsZ) + 'deg)'); 
+    $('div#compass .value').html(SENSOR_DATA.kinematicsZ + '&deg;');
+    
     // Request new data
     send_message(MSP_codes.MSP_ATTITUDE, MSP_codes.MSP_ATTITUDE); 
     send_message(MSP_codes.MSP_RAW_GPS, MSP_codes.MSP_RAW_GPS);

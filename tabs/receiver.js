@@ -33,7 +33,8 @@ function tab_initialize_receiver() {
         shadowSize: 0,
         yaxis : {
             max: 2200,
-            min: 800
+            min: 800,
+            noTicks: 10
         },
         xaxis : {
             //noTicks = 0
