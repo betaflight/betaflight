@@ -45,9 +45,6 @@ function tab_initialize_receiver() {
         }        
     }; 
     
-    // enable RC data pulling
-    timers.push(setInterval(receiverPoll, 50));
-    
     // UI Hooks
     $('.tunings input').change(function() {
         // if any of the fields changed, unlock update button
@@ -82,11 +79,12 @@ function tab_initialize_receiver() {
             $(this).removeClass('active');        
         }
     });
+    
+    // enable RC data pulling
+    timers.push(setInterval(receiverPoll, 50));    
 }
 
-function receiverPoll() {
-    send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
-    
+function receiverPoll() {    
     // Update UI with latest data
     $('.tab-receiver meter:eq(0)').val(RC.throttle);
     $('.tab-receiver .value:eq(0)').html(RC.throttle);
@@ -113,8 +111,6 @@ function receiverPoll() {
     $('.tab-receiver meter:eq(7)').val(RC.AUX4);
     $('.tab-receiver .value:eq(7)').html(RC.AUX4);
     
-    // update plot with latest data
-    
     // push latest data to the main array
     RX_plot_data[0].push([samples_i, RC.throttle]);
     RX_plot_data[1].push([samples_i, RC.pitch]);
@@ -138,7 +134,7 @@ function receiverPoll() {
     }; 
     
     // redraw plot
-    plot_RX = Flotr.draw(e_RX_plot, [ 
+    Flotr.draw(e_RX_plot, [ 
         {data: RX_plot_data[0], label: "THROTTLE"}, 
         {data: RX_plot_data[1], label: "PITCH"},
         {data: RX_plot_data[2], label: "ROLL"},
@@ -149,4 +145,7 @@ function receiverPoll() {
         {data: RX_plot_data[7], label: "AUX4"} ], RX_plot_options);   
         
     samples_i++;
+    
+    // Request new data
+    send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
 }
