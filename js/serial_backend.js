@@ -405,15 +405,15 @@ function process_message(code, data) {
             sensor_status(CONFIG.activeSensors);
             break;
         case MSP_codes.MSP_RAW_IMU:
-            SENSOR_DATA.accelerometer[0] = view.getInt16(0, 1);
-            SENSOR_DATA.accelerometer[1] = view.getInt16(2, 1);
-            SENSOR_DATA.accelerometer[2] = view.getInt16(4, 1);
+            SENSOR_DATA.accelerometer[0] = view.getInt16(0, 1) / 1000; // properly scaled
+            SENSOR_DATA.accelerometer[1] = view.getInt16(2, 1) / 1000;
+            SENSOR_DATA.accelerometer[2] = view.getInt16(4, 1) / 1000;
             
-            SENSOR_DATA.gyroscope[0] = view.getInt16(6, 1) / 8;
+            SENSOR_DATA.gyroscope[0] = view.getInt16(6, 1) / 8; // no clue about scaling factor
             SENSOR_DATA.gyroscope[1] = view.getInt16(8, 1) / 8;
             SENSOR_DATA.gyroscope[2] = view.getInt16(10, 1) / 8;
 
-            SENSOR_DATA.magnetometer[0] = view.getInt16(12, 1) / 3;
+            SENSOR_DATA.magnetometer[0] = view.getInt16(12, 1) / 3; // no clue about scaling factor
             SENSOR_DATA.magnetometer[1] = view.getInt16(14, 1) / 3;
             SENSOR_DATA.magnetometer[2] = view.getInt16(16, 1) / 3;
             break;
@@ -463,7 +463,7 @@ function process_message(code, data) {
             SENSOR_DATA.kinematicsZ = view.getInt16(4, 1);
             break; 
         case MSP_codes.MSP_ALTITUDE:
-            SENSOR_DATA.altitude = view.getUint32(0, 1);
+            SENSOR_DATA.altitude = view.getUint32(0, 1) / 100.0; // correct scale factor
             break; 
         case MSP_codes.MSP_BAT:
             console.log(data);

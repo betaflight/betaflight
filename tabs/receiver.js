@@ -29,6 +29,7 @@ function tab_initialize_receiver() {
     e_RX_plot = document.getElementById("RX_plot");
     
     RX_plot_options = {
+        title: "Channel width (us)",
         shadowSize: 0,
         yaxis : {
             max: 2200,
@@ -41,6 +42,7 @@ function tab_initialize_receiver() {
             backgroundColor: "#FFFFFF"
         },
         legend : {
+            position: "we",
             backgroundOpacity: 0
         }        
     }; 

@@ -45,4 +45,6 @@ function disable_timers() {
     
     // kill all the refferences
     timers = [];
+    
+    return true;
 }    

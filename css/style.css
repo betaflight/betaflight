@@ -627,13 +627,28 @@ a:hover {
         
         border: 1px dotted silver;
     }
+.tab-sensors {
+}
+    .tab-sensors #gyro {
+        height: 120px;
+    }
+    .tab-sensors #accel {
+        height: 120px;
+    }
+    .tab-sensors #mag {
+        height: 120px;
+    }
+    .tab-sensors #baro {
+        height: 120px;
+    }    
     
 /* Flotr related styles */
-.flotr-legend {
+.flotr-legend {    
     padding: 2px;
-    left: 31px;
+    margin-left: 31px;
     top: 20px;
     border: 0;
     
     background-color: white;
+    opacity: 0.5;
 }    
