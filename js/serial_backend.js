@@ -103,6 +103,8 @@ var GPS_DATA = {
     update:          0
 };
 
+var CLI_active = false;
+
 $(document).ready(function() { 
     port_picker = $('div#port-picker .port select');
     baud_picker = $('div#port-picker #baud');
@@ -146,20 +148,30 @@ $(document).ready(function() {
         if (selected_port != '0') {
             if (clicks) { // odd number of clicks
                 // Disable any active "data pulling" timer
-                disable_timers();            
-            
-                chrome.serial.close(connectionId, onClosed);
-                
-                clearTimeout(connection_delay);
-                clearInterval(serial_poll);
-                clearInterval(port_usage_poll);
+                disable_timers();
+
+                // Disable CLI (there is no "nicer way of doing so right now)
+                if (CLI_active == true) {
+                    leave_CLI(function() {
+                        chrome.serial.close(connectionId, onClosed);
+                        
+                        clearTimeout(connection_delay);
+                        clearInterval(serial_poll);
+                        clearInterval(port_usage_poll);
+                    });
+                } else {               
+                    chrome.serial.close(connectionId, onClosed);
+                    
+                    clearTimeout(connection_delay);
+                    clearInterval(serial_poll);
+                    clearInterval(port_usage_poll);
+                }
                 
                 // Change port utilization to 0
                 $('span.port-usage').html('0%');
-                
-                
+
                 $(this).text('Connect');
-                $(this).removeClass('active');            
+                $(this).removeClass('active');                
             } else { // even number of clicks        
                 console.log('Connecting to: ' + selected_port);
                 
@@ -234,68 +246,74 @@ function onCharRead(readInfo) {
         var data = new Uint8Array(readInfo.data);
         
         for (var i = 0; i < data.length; i++) {
-            switch (message_state) {
-                case 0: // sync char 1
-                    if (data[i] == 36) { // $
+            if (CLI_active != true) {
+                // Standard "GUI" MSP handling
+                switch (message_state) {
+                    case 0: // sync char 1
+                        if (data[i] == 36) { // $
+                            message_state++;
+                        }
+                        break;
+                    case 1: // sync char 2
+                        if (data[i] == 77) { // M
+                            message_state++;
+                        } else { // restart and try again
+                            message_state = 0;
+                        }
+                        break;
+                    case 2: // direction (should be >)
+                        if (data[i] == 62) { // >
+                            message_status = 1;
+                        } else { // unknown
+                            message_status = 0;
+                        }
+                        
                         message_state++;
-                    }
-                    break;
-                case 1: // sync char 2
-                    if (data[i] == 77) { // M
+                        break;
+                    case 3:
+                        message_length_expected = data[i]; // data length
+                       
+                        message_checksum = data[i];
+                       
+                        // setup arraybuffer
+                        message_buffer = new ArrayBuffer(message_length_expected);
+                        message_buffer_uint8_view = new Uint8Array(message_buffer);
+                        
                         message_state++;
-                    } else { // restart and try again
-                        message_state = 0;
-                    }
-                    break;
-                case 2: // direction (should be >)
-                    if (data[i] == 62) { // >
-                        message_status = 1;
-                    } else { // unknown
-                        message_status = 0;
-                    }
-                    
-                    message_state++;
-                    break;
-                case 3:
-                    message_length_expected = data[i]; // data length
-                   
-                    message_checksum = data[i];
-                   
-                    // setup arraybuffer
-                    message_buffer = new ArrayBuffer(message_length_expected);
-                    message_buffer_uint8_view = new Uint8Array(message_buffer);
-                    
-                    message_state++;
-                    break;
-                case 4:
-                    message_code = data[i]; // code
-                    message_checksum ^= data[i];
-                    
-                    if (message_length_expected != 0) { // standard message
-                        message_state++;
-                    } else { // MSP_ACC_CALIBRATION, etc...
-                        message_state += 2;
-                    }
-                    break;
-                case 5: // data / payload
-                    message_buffer_uint8_view[message_length_received] = data[i];
-                    message_checksum ^= data[i];
-                    message_length_received++;
-                    
-                    if (message_length_received >= message_length_expected) {
-                        message_state++;
-                    }
-                    break;
-                case 6: // CRC
-                    if (message_checksum == data[i]) {
-                        // process data
-                        process_message(message_code, message_buffer);
-                    }
-                    
-                    // Reset variables
-                    message_length_received = 0;
-                    message_state = 0;                   
-                    break;
+                        break;
+                    case 4:
+                        message_code = data[i]; // code
+                        message_checksum ^= data[i];
+                        
+                        if (message_length_expected != 0) { // standard message
+                            message_state++;
+                        } else { // MSP_ACC_CALIBRATION, etc...
+                            message_state += 2;
+                        }
+                        break;
+                    case 5: // data / payload
+                        message_buffer_uint8_view[message_length_received] = data[i];
+                        message_checksum ^= data[i];
+                        message_length_received++;
+                        
+                        if (message_length_received >= message_length_expected) {
+                            message_state++;
+                        }
+                        break;
+                    case 6: // CRC
+                        if (message_checksum == data[i]) {
+                            // process data
+                            process_message(message_code, message_buffer);
+                        }
+                        
+                        // Reset variables
+                        message_length_received = 0;
+                        message_state = 0;                   
+                        break;
+                }
+            } else {
+                // CLI Enabled (Terminal "style" handling)
+                handle_CLI(data[i]);
             }
             
             char_counter++;

@@ -730,7 +730,36 @@ a:hover {
     }
     .tab-sensors #baro {
         height: 120px;
-    }    
+    }
+.tab-cli {
+}
+    .tab-cli p {
+        padding: 5px;
+        border: 1px dotted silver;
+    }
+    .tab-cli .window {
+        margin-top: 10px;
+        height: 400px;
+        
+        padding: 5px;
+        
+        overflow-y: scroll;
+        overflow-x: hidden;
+        
+        color: white;
+        
+        border: 1px solid silver;
+        background-color: black;
+    }
+    .tab-cli input {
+        margin-top: 10px;
+        display: block;
+        
+        width: 911px;
+        padding-left: 5px;
+        
+        border: 1px solid silver;
+    }
     
 /* Flotr related styles */
 .flotr-legend {    
