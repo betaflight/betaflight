@@ -171,6 +171,7 @@ a:hover {
     height: 480px;
     
     border: 1px solid #848484;
+    -webkit-transform: rotateX(0deg);
 } 
 #status-bar {
     position: absolute;
