@@ -17,7 +17,7 @@ Installation
 5. - Note: Don't go "inside" configurators directory (just point to the folder)
 6. - You are done
 
-Hows to use
+How to use
 -----------
 You can find the baseflight configurator icon in your application tab "Apps"
 
