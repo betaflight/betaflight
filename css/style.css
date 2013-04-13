@@ -124,29 +124,14 @@ a:hover {
         background-color: #0d8b13;
     }  
 #tabs {
-    position: absolute;
-    margin-top: 1px;
 }
     #tabs li {
         float: left;
         margin-right: 5px;
         
         border: 1px solid #848484;
+        border-bottom: 0;
     }
-        #tabs li.first {
-        }
-        #tabs li.last {
-        }
-        #tabs li.active {
-            border-bottom: 1px solid white;
-        }
-            #tabs li.active a {
-                background-color: white;            
-            }
-            #tabs li.active a:hover {
-                background-color: white;
-                cursor: default;
-            }
         #tabs li a {
             display: block;
             
@@ -161,17 +146,23 @@ a:hover {
         #tabs li a:hover {
             text-decoration: none;
             background-color: #acacac;
-        } 
-#content {
-    margin-top: 27px;
-    
+        }
+        #tabs li.active a {
+            background-color: white;        
+        }
+        #tabs li.active a:hover {            
+            cursor: default;
+            background-color: white; 
+        }        
+#content {    
     padding: 10px;
     
     background-color: white;
     height: 480px;
     
     border: 1px solid #848484;
-    -webkit-transform: rotateX(0deg);
+    
+    -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
 } 
 #status-bar {
     position: absolute;

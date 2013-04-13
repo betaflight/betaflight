@@ -4,7 +4,7 @@ $(document).ready(function() {
     tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
         if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active
-            if (connectionId < 1) { // if there is no active connection, return
+            if (connectionId < 1 || configuration_received == false) { // if there is no active connection, return
                 return;
             }
             

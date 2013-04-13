@@ -1,5 +1,6 @@
 var connectionId = -1;
 var connection_delay = 0; // delay which defines "when" will the configurator request configurator data after connection was established
+var configuration_received = false;
 
 var MSP_codes = {
     MSP_IDENT:              100,
@@ -170,6 +171,9 @@ $(document).ready(function() {
                 // Change port utilization to 0
                 $('span.port-usage').html('0%');
 
+                // reset valid config received variable (used to block tabs while not connected properly)
+                configuration_received = false;
+                
                 $(this).text('Connect');
                 $(this).removeClass('active');                
             } else { // even number of clicks        
@@ -412,6 +416,7 @@ function process_message(code, data) {
             }
             
             // IDENT received, show the tab content
+            configuration_received = true;
             $('#tabs li a:first').click();
             break;
         case MSP_codes.MSP_STATUS:
