@@ -8,8 +8,6 @@ function tab_initialize_cli() {
     bufView[0] = 0x23; // #
 
     chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-        // used for debugging purposes (should be disabled in "stable" builds
-        console.log("Wrote: " + writeInfo.bytesWritten + " bytes");
     });
 
     $('.tab-cli input').keypress(function(event) {
