@@ -43,13 +43,14 @@ $(document).ready(function() {
                 $('#content').load("./tabs/sensors.html", tab_initialize_sensors);
             } else if ($(this).parent().hasClass('tab_cli')) {
                 $('#content').load("./tabs/cli.html", tab_initialize_cli);
+            } else if ($(this).parent().hasClass('tab_about')) {
+                $('#content').load("./tabs/about.html");
             }
-            
         }
     });
     
     // temporary
-    //$('#content').load("./tabs/cli.html", tab_initialize_cli);
+    //$('#content').load("./tabs/about.html");
 });
 
 function disable_timers() {

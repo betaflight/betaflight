@@ -753,6 +753,22 @@ a:hover {
         
         border: 1px solid silver;
     }
+.tab-about {
+}
+    .tab-about p {
+        padding: 5px;
+        margin-bottom: 10px;
+        
+        border: 1px dotted silver;
+    }
+    .tab-about .created {
+        position: absolute;
+        
+        width: 905px;
+        bottom: 0px;
+        
+        text-align: center;
+    }
     
 /* Flotr related styles */
 .flotr-legend {    
