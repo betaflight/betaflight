@@ -738,6 +738,7 @@ a:hover {
         overflow-y: scroll;
         overflow-x: hidden;
         
+        font-family: monospace;
         color: white;
         
         border: 1px solid silver;
