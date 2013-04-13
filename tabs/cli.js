@@ -54,15 +54,30 @@ function leave_CLI(callback) {
     CLI_active = false;    
 }
 
+
+/*  Some info about handling line feeds and carriage return
+
+    line feed = LF = \n = 0x0A = 10
+    carriage return = CR = \r = 0x0D = 13
+    
+    MAC only understands CR
+    Linux and Unix only understand LF
+    Windows understands (both) CRLF
+*/
 function handle_CLI(data) {
     switch (data) {
         case 10: // line feed
+            if (OS == "Windows" || OS == "Linux" || OS == "UNIX") {
+                $('.tab-cli .window .wrapper').append("<br />");
+            }
             break;
         case 13: // carriage return
-            $('.tab-cli .window').append("<br />");
+            if (OS == "MacOS") {
+                $('.tab-cli .window .wrapper').append("<br />");
+            }
             break;
         default:
-            $('.tab-cli .window').append(String.fromCharCode(data));
-            $('.tab-cli .window').scrollTop($('.tab-cli .window').height());
+            $('.tab-cli .window .wrapper').append(String.fromCharCode(data));
+            $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height());
     }
 }
