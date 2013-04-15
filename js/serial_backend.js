@@ -503,7 +503,7 @@ function process_message(code, data) {
             SENSOR_DATA.kinematicsZ = view.getInt16(4, 1);
             break; 
         case MSP_codes.MSP_ALTITUDE:
-            SENSOR_DATA.altitude = view.getUint32(0, 1) / 100.0; // correct scale factor
+            SENSOR_DATA.altitude = parseFloat((view.getInt32(0, 1) / 100.0).toFixed(2)); // correct scale factor
             break; 
         case MSP_codes.MSP_BAT:
             BATTERY.voltage = view.getUint8(0) / 10.0;

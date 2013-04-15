@@ -104,7 +104,7 @@ function tab_initialize_sensors() {
     }
     
     baro_options = {
-        title: "Barometer (meters above sea level)",
+        title: "Barometer (meters)",
         shadowSize: 0,
         yaxis : {
             tickDecimals: 1,
