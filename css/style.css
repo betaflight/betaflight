@@ -317,7 +317,9 @@ a:hover {
                 -webkit-transform: rotateX(90deg) translateZ(100px);
                 background-color: silver;
             }
-    .tab-initial_setup .GPS_info {
+    .tab-initial_setup .GPS_info, 
+    .tab-initial_setup .battery, 
+    .tab-initial_setup .acc-trim {
         float: left;
         display: block;
         
@@ -328,7 +330,9 @@ a:hover {
         
         border: 1px solid silver;
     }
-        .tab-initial_setup .GPS_info .head {
+        .tab-initial_setup .GPS_info .head, 
+        .tab-initial_setup .battery .head, 
+        .tab-initial_setup .acc-trim .head {
             display: block;
             
             text-align: center;
@@ -342,37 +346,62 @@ a:hover {
             padding: 5px;
             line-height: 18px;
         }
-    .tab-initial_setup .battery {
-        float: left;
-        display: block;
-        
-        margin-top: 10px;
-        margin-left: 20px;
-        
-        width: 145px;
-        
-        border: 1px solid silver;  
-    }
-        .tab-initial_setup .battery .head {
-            display: block;
-            
-            text-align: center;
-            line-height: 20px;
-            font-weight: bold;
-            
-            border-bottom: 1px solid silver;
-            background-color: #ececec;
-        }
         .tab-initial_setup .battery .fields {
             padding: 5px;
         }
         .tab-initial_setup .battery .bat-voltage {
             padding-left: 20px;
         }
+        .tab-initial_setup .acc-trim dl {
+            padding: 5px;
+        }
+        .tab-initial_setup .acc-trim dt {
+            float: left;
+            width: 50px;
+            
+            margin-bottom: 4px;
+        }
+        .tab-initial_setup .acc-trim dd {
+            margin-left: 50px;
+            margin-bottom: 4px;
+        }
+        .tab-initial_setup .acc-trim input {
+            width: 80px;
+            
+            border: 1px solid silver;
+            text-align: center;
+        }
+        .tab-initial_setup .acc-trim a.update {
+            display: block;
+            
+            margin-right: 5px;
+            margin-bottom: 5px;
+            margin-left: 55px;
+            
+            width: 80px;
+            height: 18px;
+            line-height: 18px;
+            
+            color: white;
+            text-align: center;
+            
+            border: 1px solid silver;
+            background-color: #6f1515;
+        }
+        .tab-initial_setup .acc-trim a.update:hover {
+            cursor: default;
+        }
+        .tab-initial_setup .acc-trim a.update.active {
+            background-color: #0fab16;
+        }
+        .tab-initial_setup .acc-trim a.update.active:hover {
+            cursor: pointer;
+            background-color: #13d81d;
+        }
     .tab-initial_setup .compass-wrapper {
         float: left;
         
-        margin-top: 100px;
+        margin-top: 60px;
         margin-left: 80px;
 
         border: 1px solid silver;

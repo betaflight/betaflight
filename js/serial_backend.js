@@ -38,7 +38,12 @@ var MSP_codes = {
     MSP_EEPROM_WRITE:       250,
     
     MSP_DEBUGMSG:           253,
-    MSP_DEBUG:              254
+    MSP_DEBUG:              254,
+    
+    // Additional baseflight commands that are not compatible with MultiWii
+    MSP_UID:                160,
+    MSP_ACC_TRIM:           240,
+    MSP_SET_ACC_TRIM:       239
 }
 
 var CONFIG = {
@@ -47,7 +52,10 @@ var CONFIG = {
     cycleTime:     0,
     i2cError:      0,
     activeSensors: 0,
-    mode:          0
+    mode:          0,
+    
+    uid:           [0, 0, 0],
+    accelerometerTrims: [0, 0]
 }
 
 var PIDs = new Array(10);
@@ -207,7 +215,11 @@ function onOpen(openInfo) {
             // start polling
             serial_poll = setInterval(readPoll, 10);
             port_usage_poll = setInterval(port_usage, 1000);
-            
+ 
+            // baseflight specific
+            send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
+            send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM);
+ 
             // request configuration data
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
             send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
@@ -603,13 +615,19 @@ function process_message(code, data) {
             send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
             send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
             send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX);
+            
+            // baseflight specific
+            send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
+            send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM);
             break;  
         case MSP_codes.MSP_SELECT_SETTING:
             console.log(data);
-            break;  
+            break;
+        /* disabled (find out why ???)
         case MSP_codes.MSP_BIND:
             console.log(data);
-            break;  
+            break;
+        */    
         case MSP_codes.MSP_EEPROM_WRITE:
             console.log('Settings Saved in EEPROM');
             break;  
@@ -618,7 +636,24 @@ function process_message(code, data) {
             break;  
         case MSP_codes.MSP_DEBUG:
             console.log(data);
-            break;               
+            break;
+        // Additional baseflight commands that are not compatible with MultiWii
+        case MSP_codes.MSP_UID:
+            if (data.byteLength > 0) {
+                CONFIG.uid[0] = view.getUint32(0, 1);
+                CONFIG.uid[1] = view.getUint32(4, 1);
+                CONFIG.uid[2] = view.getUint32(8, 1);
+            }
+            break;
+        case MSP_codes.MSP_ACC_TRIM:
+            if (data.byteLength > 0) {
+                CONFIG.accelerometerTrims[0] = view.getInt16(0, 1); // pitch
+                CONFIG.accelerometerTrims[1] = view.getInt16(2, 1); // roll
+            }
+            break;
+        case MSP_codes.MSP_SET_ACC_TRIM:
+            console.log('Accelerometer trimms saved.');
+            break;
     }
 }
 
