@@ -44,8 +44,12 @@ function data_poll() {
     $('div#compass .pointer').css('-webkit-transform', 'rotate(' + (SENSOR_DATA.kinematicsZ) + 'deg)'); 
     $('div#compass .value').html(SENSOR_DATA.kinematicsZ + '&deg;');
     
+    // Update voltage indicator
+    $('span.bat-voltage').html(BATTERY.voltage + ' V');
+    
     // Request new data
     send_message(MSP_codes.MSP_ATTITUDE, MSP_codes.MSP_ATTITUDE); 
     send_message(MSP_codes.MSP_RAW_GPS, MSP_codes.MSP_RAW_GPS);
     send_message(MSP_codes.MSP_COMP_GPS, MSP_codes.MSP_COMP_GPS);
+    send_message(MSP_codes.MSP_BAT, MSP_codes.MSP_BAT);
 }

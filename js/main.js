@@ -50,7 +50,7 @@ $(document).ready(function() {
     });
     
     // temporary
-    //$('#content').load("./tabs/about.html");
+    //$('#content').load("./tabs/initial_setup.html", tab_initialize_initial_setup);
 });
 
 function disable_timers() {

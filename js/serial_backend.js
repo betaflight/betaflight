@@ -39,7 +39,7 @@ var MSP_codes = {
     
     MSP_DEBUGMSG:           253,
     MSP_DEBUG:              254
-};
+}
 
 var CONFIG = {
     version:       0,
@@ -48,7 +48,7 @@ var CONFIG = {
     i2cError:      0,
     activeSensors: 0,
     mode:          0
-};
+}
 
 var PIDs = new Array(10);
 for (var i = 0; i < 10; i++) {
@@ -64,7 +64,7 @@ var RC = {
     AUX2:     0,
     AUX3:     0,
     AUX4:     0
-};
+}
 
 var RC_tuning = {
     RC_RATE:         0,
@@ -74,7 +74,7 @@ var RC_tuning = {
     dynamic_THR_PID: 0,
     throttle_MID:    0,
     throttle_EXPO:   0,
-};
+}
 
 var AUX_CONFIG = new Array();
 var AUX_CONFIG_values = new Array();
@@ -87,7 +87,7 @@ var SENSOR_DATA = {
     kinematicsX:   0.0,
     kinematicsY:   0.0,
     kinematicsZ:   0.0
-};
+}
 
 var MOTOR_DATA = new Array(8);
 var SERVO_DATA = new Array(8);
@@ -102,7 +102,12 @@ var GPS_DATA = {
     distanceToHome:  0,
     ditectionToHome: 0,
     update:          0
-};
+}
+
+var BATTERY = {
+    voltage:   0,
+    pMeterSum: 0,
+}
 
 var CLI_active = false;
 
@@ -489,7 +494,8 @@ function process_message(code, data) {
             SENSOR_DATA.altitude = view.getUint32(0, 1) / 100.0; // correct scale factor
             break; 
         case MSP_codes.MSP_BAT:
-            console.log(data);
+            BATTERY.voltage = view.getUint8(0) / 10.0;
+            BATTERY.power = view.getUint16(1, 1);
             break; 
         case MSP_codes.MSP_RC_TUNING:
             RC_tuning.RC_RATE = parseFloat((view.getUint8(0) / 100).toFixed(2));
