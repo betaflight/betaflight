@@ -48,8 +48,6 @@ void computeIMU(void)
     static uint32_t timeInterleave = 0;
     static int16_t gyroYawSmooth = 0;
 
-#define GYRO_INTERLEAVE
-
     if (sensors(SENSOR_ACC)) {
         ACC_getADC();
         getEstimatedAttitude();
@@ -57,18 +55,11 @@ void computeIMU(void)
 
     Gyro_getADC();
 
-    for (axis = 0; axis < 3; axis++) {
-#ifdef GYRO_INTERLEAVE
+    for (axis = 0; axis < 3; axis++)
         gyroADCp[axis] = gyroADC[axis];
-#else
-        gyroData[axis] = gyroADC[axis];
-#endif
-        if (!sensors(SENSOR_ACC))
-            accADC[axis] = 0;
-    }
     timeInterleave = micros();
     annexCode();
-#ifdef GYRO_INTERLEAVE
+
     if ((micros() - timeInterleave) > 650) {
         annex650_overrun_count++;
     } else {
@@ -84,7 +75,6 @@ void computeIMU(void)
         if (!sensors(SENSOR_ACC))
             accADC[axis] = 0;
     }
-#endif
 
     if (feature(FEATURE_GYRO_SMOOTHING)) {
         static uint8_t Smoothing[3] = { 0, 0, 0 };
@@ -128,12 +118,6 @@ void computeIMU(void)
 
 //******  advanced users settings *******************
 
-/* Set the Low Pass Filter factor for Magnetometer */
-/* Increasing this value would reduce Magnetometer noise (not visible in GUI), but would increase Magnetometer lag time*/
-/* Comment this if  you do not want filter at all.*/
-/* Default WMC value: n/a*/
-//#define MG_LPF_FACTOR 4
-
 /* Set the Gyro Weight for Gyro/Magnetometer complementary filter */
 /* Increasing this value would reduce and delay Magnetometer influence on the output of the filter*/
 /* Default WMC value: n/a*/
@@ -142,7 +126,7 @@ void computeIMU(void)
 //****** end of advanced users settings *************
 
 #define INV_GYR_CMPF_FACTOR   (1.0f / ((float)mcfg.gyro_cmpf_factor + 1.0f))
-#define INV_GYR_CMPFM_FACTOR  (1.0f / (GYR_CMPFM_FACTOR + 1.0f))
+#define INV_GYR_CMPFM_FACTOR  (1.0f / ((float)mcfg.gyro_cmpfm_factor + 1.0f))
 
 // #define GYRO_SCALE ((1998 * M_PI)/((32767.0f / 4.0f ) * 180.0f * 1000000.0f))     // 32767 / 16.4lsb/dps for MPU3000
 
@@ -164,11 +148,6 @@ void rotateV(struct fp_vector *v, float *delta)
 {
     struct fp_vector v_tmp = *v;
 
-#if INACCURATE
-    v->Z -= delta[ROLL] * v_tmp.X + delta[PITCH] * v_tmp.Y;
-    v->X += delta[ROLL] * v_tmp.Z - delta[YAW] * v_tmp.Y;
-    v->Y += delta[PITCH] * v_tmp.Z + delta[YAW] * v_tmp.X;
-#else
     // This does a  "proper" matrix rotation using gyro deltas without small-angle approximation
     float mat[3][3];
     float cosx, sinx, cosy, siny, cosz, sinz;
@@ -200,7 +179,6 @@ void rotateV(struct fp_vector *v, float *delta)
     v->X = v_tmp.X * mat[0][0] + v_tmp.Y * mat[1][0] + v_tmp.Z * mat[2][0];
     v->Y = v_tmp.X * mat[0][1] + v_tmp.Y * mat[1][1] + v_tmp.Z * mat[2][1];
     v->Z = v_tmp.X * mat[0][2] + v_tmp.Y * mat[1][2] + v_tmp.Z * mat[2][2];
-#endif
 }
 
 static int16_t _atan2f(float y, float x)
@@ -209,18 +187,26 @@ static int16_t _atan2f(float y, float x)
     return (int16_t)(atan2f(y, x) * (180.0f / M_PI * 10.0f));
 }
 
+// Use original baseflight angle calculation
+// #define BASEFLIGHT_CALC
+static float invG;
+
 static void getEstimatedAttitude(void)
 {
     uint32_t axis;
     int32_t accMag = 0;
     static t_fp_vector EstM;
-#if defined(MG_LPF_FACTOR)
-    static int16_t mgSmooth[3];
-#endif
     static float accLPF[3];
     static uint32_t previousT;
     uint32_t currentT = micros();
     float scale, deltaGyroAngle[3];
+#ifndef BASEFLIGHT_CALC
+    float sqGZ;
+    float sqGX;
+    float sqGY;
+    float sqGX_sqGZ;
+    float invmagXZ;
+#endif
 
     scale = (currentT - previousT) * gyro.scale;
     previousT = currentT;
@@ -236,15 +222,6 @@ static void getEstimatedAttitude(void)
         }
         accLPFVel[axis] = accLPFVel[axis] * (1.0f - (1.0f / cfg.acc_lpf_for_velocity)) + accADC[axis] * (1.0f / cfg.acc_lpf_for_velocity);
         accMag += (int32_t)accSmooth[axis] * accSmooth[axis];
-
-        if (sensors(SENSOR_MAG)) {
-#if defined(MG_LPF_FACTOR)
-            mgSmooth[axis] = (mgSmooth[axis] * (MG_LPF_FACTOR - 1) + magADC[axis]) / MG_LPF_FACTOR; // LPF for Magnetometer values
-#define MAG_VALUE mgSmooth[axis]
-#else
-#define MAG_VALUE magADC[axis]
-#endif
-        }
     }
     accMag = accMag * 100 / ((int32_t)acc_1G * acc_1G);
 
@@ -258,35 +235,39 @@ static void getEstimatedAttitude(void)
         f.SMALL_ANGLES_25 = 0;
 
     // Apply complimentary filter (Gyro drift correction)
-    // If accel magnitude >1.4G or <0.6G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
+    // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
     // To do that, we just skip filter, as EstV already rotated by Gyro
-    if ((36 < accMag && accMag < 196) || f.SMALL_ANGLES_25) {
+    if (72 < accMag && accMag < 133) {
         for (axis = 0; axis < 3; axis++)
             EstG.A[axis] = (EstG.A[axis] * (float)mcfg.gyro_cmpf_factor + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
     }
 
     if (sensors(SENSOR_MAG)) {
         for (axis = 0; axis < 3; axis++)
-            EstM.A[axis] = (EstM.A[axis] * GYR_CMPFM_FACTOR + MAG_VALUE) * INV_GYR_CMPFM_FACTOR;
+            EstM.A[axis] = (EstM.A[axis] * (float)mcfg.gyro_cmpfm_factor + magADC[axis]) * INV_GYR_CMPFM_FACTOR;
     }
 
     // Attitude of the estimated vector
-#if INACCURATE
-    angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
-    angle[PITCH] = _atan2f(EstG.V.Y, EstG.V.Z);
-#else
+#ifdef BASEFLIGHT_CALC
     // This hack removes gimbal lock (sorta) on pitch, so rolling around doesn't make pitch jump when roll reaches 90deg
     angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
     angle[PITCH] = -asinf(EstG.V.Y / -sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z)) * (180.0f / M_PI * 10.0f);
+#else
+    // MW2.2 version
+    sqGZ = EstG.V.Z * EstG.V.Z;
+    sqGX = EstG.V.X * EstG.V.X;
+    sqGY = EstG.V.Y * EstG.V.Y;
+    sqGX_sqGZ = sqGX + sqGZ;
+    invmagXZ = 1.0f / sqrtf(sqGX_sqGZ);
+    invG = 1.0f / sqrtf(sqGX_sqGZ + sqGY);
+    angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
+    angle[PITCH] = _atan2f(EstG.V.Y, invmagXZ * sqGX_sqGZ);
 #endif
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-#if INACCURATE
-        heading = _atan2f(EstG.V.X * EstM.V.Z - EstG.V.Z * EstM.V.X, EstG.V.Z * EstM.V.Y - EstG.V.Y * EstM.V.Z);
-        heading = heading + magneticDeclination;
-        heading = heading / 10;
-#else
+#ifdef BASEFLIGHT_CALC
+        // baseflight calculation
         float rollRAD = (float)angle[ROLL] * RADX10;
         float pitchRAD = -(float)angle[PITCH] * RADX10;
         float magX = EstM.A[1];                         // Swap X/Y
@@ -300,6 +281,11 @@ static void getEstimatedAttitude(void)
         float Yh = magY * cr - magZ * sr;
         float hd = (atan2f(-Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
         heading = hd;
+#else
+        // MW 2.2 calculation
+        heading = _atan2f(EstM.V.Z * EstG.V.X - EstM.V.X * EstG.V.Z, EstM.V.Y * invG * sqGX_sqGZ - (EstM.V.X * EstG.V.X + EstM.V.Z * EstG.V.Z) * invG * EstG.V.Y);
+        heading = heading + magneticDeclination;
+        heading = heading / 10;
 #endif
         if (heading > 180)
             heading = heading - 360;
@@ -313,7 +299,7 @@ static void getEstimatedAttitude(void)
 #define UPDATE_INTERVAL 25000   // 40hz update rate (20hz LPF on acc)
 #define INIT_DELAY      4000000 // 4 sec initialization delay
 
-int16_t applyDeadband16(int16_t value, int16_t deadband)
+int16_t applyDeadband(int16_t value, int16_t deadband)
 {
     if (abs(value) < deadband) {
         value = 0;
@@ -324,55 +310,17 @@ int16_t applyDeadband16(int16_t value, int16_t deadband)
     }
     return value;
 }
-
-float applyDeadbandFloat(float value, int16_t deadband)
-{
-    if (abs(value) < deadband) {
-        value = 0;
-    } else if (value > 0) {
-        value -= deadband;
-    } else if (value < 0) {
-        value += deadband;
-    }
-    return value;
-}
-
-float InvSqrt(float x)
-{
-    union {
-        int32_t i;
-        float f;
-    } conv;
-    conv.f = x;
-    conv.i = 0x5f3759df - (conv.i >> 1);
-    return 0.5f * conv.f * (3.0f - x * conv.f * conv.f);
-}
-
-int32_t isq(int32_t x)
-{
-    return x * x;
-}
-
-#define applyDeadband(value, deadband)  \
-  if(abs(value) < deadband) {           \
-    value = 0;                          \
-  } else if(value > 0){                 \
-    value -= deadband;                  \
-  } else if(value < 0){                 \
-    value += deadband;                  \
-  }
 
 int getEstimatedAltitude(void)
 {
     static int32_t baroGroundPressure;
-    static uint16_t previousT;
-    uint16_t currentT = micros();
-    uint16_t dTime;
-    float invG;
+    static uint32_t previousT;
+    uint32_t currentT = micros();
+    uint32_t dTime;
     int16_t error16;
     int16_t baroVel;
     int16_t accZ;
-    static int16_t accZoffset = 0;      // = acc_1G*6; //58 bytes saved and convergence is fast enough to omit init
+    static int16_t accZoffset = 0;
     static float vel = 0.0f;
     static int32_t lastBaroAlt;
     int16_t vel_tmp;
@@ -390,12 +338,12 @@ int getEstimatedAltitude(void)
     // pressure relative to ground pressure with temperature compensation (fast!)
     // baroGroundPressure is not supposed to be 0 here
     // see: https://code.google.com/p/ardupilot-mega/source/browse/libraries/AP_Baro/AP_Baro.cpp
-    BaroAlt = log(baroGroundPressure * (cfg.baro_tab_size - 1) / (float)baroPressureSum) * (baroTemperature + 27315) * 29.271267f; // in cemtimeter 
+    BaroAlt = logf(baroGroundPressure * (cfg.baro_tab_size - 1) / (float)baroPressureSum) * (baroTemperature + 27315) * 29.271267f; // in cemtimeter 
     EstAlt = (EstAlt * 6 + BaroAlt * 2) >> 3;   // additional LPF to reduce baro noise
 
     //P
     error16 = constrain(AltHold - EstAlt, -300, 300);
-    applyDeadband(error16, 10); // remove small P parametr to reduce noise near zero position
+    error16 = applyDeadband(error16, 10); // remove small P parametr to reduce noise near zero position
     BaroPID = constrain((cfg.P8[PIDALT] * error16 >> 7), -150, +150);
 
     //I
@@ -404,8 +352,7 @@ int getEstimatedAltitude(void)
     BaroPID += errorAltitudeI >> 9;     // I in range +/-60
 
     // projection of ACC vector to global Z, with 1G subtructed
-    // Math: accZ = A * G / |G| - 1G
-    invG = InvSqrt(isq(EstG.V.X) + isq(EstG.V.Y) + isq(EstG.V.Z));
+    // Math: accZ = A * G / |G| - 1G (invG is calculated in getEstimatedAttitude)
     accZ = (accSmooth[ROLL] * EstG.V.X + accSmooth[PITCH] * EstG.V.Y + accSmooth[YAW] * EstG.V.Z) * invG;
 
     if (!f.ARMED) {
@@ -413,7 +360,7 @@ int getEstimatedAltitude(void)
         accZoffset += accZ;
     }
     accZ -= accZoffset >> 3;
-    applyDeadband(accZ, cfg.accz_deadband);
+    accZ = applyDeadband(accZ, cfg.accz_deadband);
 
     // Integrator - velocity, cm/sec
     vel += accZ * accVelScale * dTime;
@@ -422,7 +369,7 @@ int getEstimatedAltitude(void)
     lastBaroAlt = EstAlt;
 
     baroVel = constrain(baroVel, -300, 300);    // constrain baro velocity +/- 300cm/s
-    applyDeadband(baroVel, 10); // to reduce noise near zero
+    baroVel = applyDeadband(baroVel, 10); // to reduce noise near zero
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity). 
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
@@ -430,7 +377,7 @@ int getEstimatedAltitude(void)
 
     // D
     vel_tmp = vel;
-    applyDeadband(vel_tmp, 5);
+    vel_tmp = applyDeadband(vel_tmp, 5);
     vario = vel_tmp;
     BaroPID -= constrain(cfg.D8[PIDALT] * vel_tmp >> 4, -150, 150);
 

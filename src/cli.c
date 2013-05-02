@@ -131,6 +131,7 @@ const clivalue_t valueTable[] = {
     { "moron_threshold", VAR_UINT8, &mcfg.moron_threshold, 0, 128 },
     { "gyro_lpf", VAR_UINT16, &mcfg.gyro_lpf, 0, 256 },
     { "gyro_cmpf_factor", VAR_UINT16, &mcfg.gyro_cmpf_factor, 100, 1000 },
+    { "gyro_cmpfm_factor", VAR_UINT16, &mcfg.gyro_cmpfm_factor, 100, 1000 },
     { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, 3 },
 
     { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
