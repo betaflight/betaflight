@@ -243,7 +243,6 @@ static void resetConf(void)
     cfg.angleTrim[1] = 0;
     cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     cfg.acc_lpf_factor = 4;
-    cfg.acc_lpf_for_velocity = 10;
     cfg.accz_deadband = 50;
     cfg.baro_tab_size = 21;
     cfg.baro_noise_lpf = 0.6f;
@@ -257,9 +256,10 @@ static void resetConf(void)
     cfg.alt_hold_fast_change = 1;
 
     // Failsafe Variables
-    cfg.failsafe_delay = 10;            // 1sec
-    cfg.failsafe_off_delay = 200;       // 20sec
-    cfg.failsafe_throttle = 1200;       // decent default which should always be below hover throttle for people.
+    cfg.failsafe_delay = 10;                // 1sec
+    cfg.failsafe_off_delay = 200;           // 20sec
+    cfg.failsafe_throttle = 1200;           // decent default which should always be below hover throttle for people.
+    cfg.failsafe_detect_threshold = 985;    // any of first 4 channels below this value will trigger failsafe
 
     // servos
     cfg.yaw_direction = 1;

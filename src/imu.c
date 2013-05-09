@@ -2,7 +2,6 @@
 #include "mw.h"
 
 int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
-float accLPFVel[3];
 int16_t acc_25deg = 0;
 int32_t baroPressure = 0;
 int32_t baroTemperature = 0;
@@ -220,7 +219,6 @@ static void getEstimatedAttitude(void)
         } else {
             accSmooth[axis] = accADC[axis];
         }
-        accLPFVel[axis] = accLPFVel[axis] * (1.0f - (1.0f / cfg.acc_lpf_for_velocity)) + accADC[axis] * (1.0f / cfg.acc_lpf_for_velocity);
         accMag += (int32_t)accSmooth[axis] * accSmooth[axis];
     }
     accMag = accMag * 100 / ((int32_t)acc_1G * acc_1G);
