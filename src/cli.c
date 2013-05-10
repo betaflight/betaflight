@@ -948,9 +948,10 @@ void cliProcess(void)
                 for (; ; bufferIndex++) {
                     if (pstart->name[bufferIndex] != pend->name[bufferIndex])
                         break;
-                    if (!pstart->name[bufferIndex]) {
+                    if (!pstart->name[bufferIndex] && bufferIndex < sizeof(cliBuffer) - 2) {
                         /* Unambiguous -- append a space */
                         cliBuffer[bufferIndex++] = ' ';
+                        cliBuffer[bufferIndex] = '\0';
                         break;
                     }
                     cliBuffer[bufferIndex] = pstart->name[bufferIndex];
@@ -971,6 +972,11 @@ void cliProcess(void)
         } else if (!bufferIndex && c == 4) {
             cliExit(cliBuffer);
             return;
+        } else if (c == 0x15) {
+            // ctrl+u == delete line
+            uartPrint("\033[G\033[K# ");
+            bufferIndex = 0;
+            *cliBuffer = '\0';
         } else if (c == 0x0b) {
             //uartPrint("up unimplemented");
         } else if (c == 0x0a) {
