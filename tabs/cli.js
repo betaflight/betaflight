@@ -62,20 +62,40 @@ function leave_CLI(callback) {
     Linux and Unix only understand LF
     Windows understands (both) CRLF
 */
+
+var sequence_elements = 0;
+
 function handle_CLI(data) {
-    switch (data) {
-        case 10: // line feed
-            if (OS == "Windows" || OS == "Linux" || OS == "UNIX") {
-                $('.tab-cli .window .wrapper').append("<br />");
-            }
-            break;
-        case 13: // carriage return
-            if (OS == "MacOS") {
-                $('.tab-cli .window .wrapper').append("<br />");
-            }
-            break;
-        default:
-            $('.tab-cli .window .wrapper').append(String.fromCharCode(data));
-            $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height());
+    if (data == 27 || sequence_elements > 0) { // ESC + other
+        sequence_elements++;
+        
+        // delete previous space
+        if (sequence_elements == 1) {
+            var content_string = $('.tab-cli .window .wrapper').html();
+            var new_string = content_string.substring(0, content_string.length -1);
+            $('.tab-cli .window .wrapper').html(new_string);
+        }
+        
+        // Reset
+        if (sequence_elements >= 5) {
+            sequence_elements = 0;
+        }
+    }
+    if (sequence_elements == 0) {
+        switch (data) {
+            case 10: // line feed
+                if (OS == "Windows" || OS == "Linux" || OS == "UNIX") {
+                    $('.tab-cli .window .wrapper').append("<br />");
+                }
+                break;
+            case 13: // carriage return
+                if (OS == "MacOS") {
+                    $('.tab-cli .window .wrapper').append("<br />");
+                }
+                break;
+            default:
+                $('.tab-cli .window .wrapper').append(String.fromCharCode(data));
+                $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height());
+        }
     }
 }
