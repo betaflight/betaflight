@@ -47,9 +47,7 @@ function tab_initialize_sensors() {
         title: "Gyroscope (deg/s)",
         shadowSize: 0,
         yaxis : {
-            tickDecimals: 0,
-            max: 150,
-            min: -150
+            tickDecimals: 0
         },
         xaxis : {
             //noTicks = 0
@@ -87,9 +85,7 @@ function tab_initialize_sensors() {
         title: "Magnetometer (Ga)",
         shadowSize: 0,
         yaxis : {
-            tickDecimals: 0,
-            max : 120,
-            min : -120
+            tickDecimals: 0
         },
         xaxis : {
             //noTicks = 0
