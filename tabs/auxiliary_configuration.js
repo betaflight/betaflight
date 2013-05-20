@@ -61,8 +61,8 @@ function tab_initialize_auxiliary_configuration() {
             
             var needle = 0;
             for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
                 AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
+                AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
             }
             
             send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out); 
