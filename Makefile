@@ -202,6 +202,13 @@ flash_$(TARGET): $(TARGET_HEX)
 
 flash: flash_$(TARGET)
 
+
+unbrick_$(TARGET): $(TARGET_HEX)
+	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+
+unbrick: unbrick_$(TARGET)
+
 help:
 	@echo ""
 	@echo "Makefile for the baseflight firmware"
