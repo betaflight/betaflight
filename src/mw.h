@@ -357,6 +357,11 @@ extern uint8_t  GPS_Enable;
 extern int16_t  nav[2];
 extern int8_t   nav_mode;                                    // Navigation mode
 extern int16_t  nav_rated[2];                                // Adding a rate controller to the navigation to make it smoother
+extern uint8_t  GPS_numCh;                                   // Number of channels
+extern uint8_t  GPS_svinfo_chn[16];                          // Channel number
+extern uint8_t  GPS_svinfo_svid[16];                         // Satellite ID
+extern uint8_t  GPS_svinfo_quality[16];                      // Bitfield Qualtity
+extern uint8_t  GPS_svinfo_cno[16];                          // Carrier to Noise Ratio (Signal Strength)
 
 extern master_t mcfg;
 extern config_t cfg;

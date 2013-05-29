@@ -50,6 +50,7 @@
 #define MSP_UID                  160    //out message         Unique device ID
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
+#define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 
 #define INBUF_SIZE 64
 
@@ -568,7 +569,16 @@ static void evaluateCommand(void)
         serialize32(U_ID_1);
         serialize32(U_ID_2);
         break;
-
+    case MSP_GPSSVINFO:
+        headSerialReply(1 + (GPS_numCh * 4));
+        serialize8(GPS_numCh);
+           for (i = 0; i < GPS_numCh; i++){
+               serialize8(GPS_svinfo_chn[i]);
+               serialize8(GPS_svinfo_svid[i]);
+               serialize8(GPS_svinfo_quality[i]);
+               serialize8(GPS_svinfo_cno[i]);
+            }
+        break;
     default:                   // we do not know how to handle the (valid) message, indicate error MSP $M!
         headSerialError(0);
         break;

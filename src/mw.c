@@ -47,6 +47,11 @@ uint8_t GPS_Enable = 0;
 int16_t nav[2];
 int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
 int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
+uint8_t  GPS_numCh;                 // Number of channels
+uint8_t  GPS_svinfo_chn[16];        // Channel number
+uint8_t  GPS_svinfo_svid[16];       // Satellite ID
+uint8_t  GPS_svinfo_quality[16];    // Bitfield Qualtity
+uint8_t  GPS_svinfo_cno[16];        // Carrier to Noise Ratio (Signal Strength)
 
 // Automatic ACC Offset Calibration
 uint16_t InflightcalibratingA = 0;
