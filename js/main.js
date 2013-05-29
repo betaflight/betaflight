@@ -37,6 +37,8 @@ $(document).ready(function() {
                 $('#content').load("./tabs/receiver.html", tab_initialize_receiver);
             } else if ($(this).parent().hasClass('tab_auxiliary_configuration')) {
                 $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
+            } else if ($(this).parent().hasClass('tab_gps')) {
+                $('#content').load("./tabs/gps.html", tab_initialize_gps);
             } else if ($(this).parent().hasClass('tab_motor_outputs')) {
                 $('#content').load("./tabs/motor_outputs.html", tab_initialize_motor_outputs);
             } else if ($(this).parent().hasClass('tab_sensors')) {
@@ -50,7 +52,7 @@ $(document).ready(function() {
     });
     
     // temporary
-    //$('#content').load("./tabs/initial_setup.html", tab_initialize_initial_setup);
+    //$('#content').load("./tabs/gps.html", tab_initialize_gps);
 });
 
 function disable_timers() {

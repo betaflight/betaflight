@@ -317,7 +317,6 @@ a:hover {
                 -webkit-transform: rotateX(90deg) translateZ(100px);
                 background-color: silver;
             }
-    .tab-initial_setup .GPS_info, 
     .tab-initial_setup .battery, 
     .tab-initial_setup .acc-trim {
         float: left;
@@ -330,7 +329,6 @@ a:hover {
         
         border: 1px solid silver;
     }
-        .tab-initial_setup .GPS_info .head, 
         .tab-initial_setup .battery .head, 
         .tab-initial_setup .acc-trim .head {
             display: block;
@@ -341,10 +339,6 @@ a:hover {
             
             border-bottom: 1px solid silver;
             background-color: #ececec;
-        }
-        .tab-initial_setup .GPS_info table {
-            padding: 5px;
-            line-height: 18px;
         }
         .tab-initial_setup .battery .fields {
             padding: 5px;
@@ -401,8 +395,8 @@ a:hover {
     .tab-initial_setup .compass-wrapper {
         float: left;
         
-        margin-top: 60px;
-        margin-left: 80px;
+        margin-top: 50px;
+        margin-left: 180px;
 
         border: 1px solid silver;
         
@@ -723,6 +717,45 @@ a:hover {
         cursor: pointer;
         background-color: #13d81d;
     } 
+.tab-gps {
+}
+    .tab-gps .GPS_info {
+        float: left;
+        display: block;
+        
+        
+        width: 155px;
+        
+        border: 1px solid silver;
+    }
+        .tab-gps .GPS_info table {
+            padding: 5px;
+            line-height: 18px;
+        }
+    .tab-gps .GPS_signal_strength {
+        float: left;
+        
+        margin-left: 10px;
+        
+        width: 200px;
+        
+        border: 1px solid silver;
+    }
+        .tab-gps .GPS_signal_strength table {
+            padding: 5px;
+            line-height: 18px;
+        }
+    .tab-gps .GPS_info .head,
+    .tab-gps .GPS_signal_strength .head {
+        display: block;
+        
+        text-align: center;
+        line-height: 20px;
+        font-weight: bold;
+        
+        border-bottom: 1px solid silver;
+        background-color: #ececec;
+    }
 .tab-motor_outputs {
 }    
     .tab-motor_outputs .right.servos {

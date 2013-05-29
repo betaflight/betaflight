@@ -43,7 +43,8 @@ var MSP_codes = {
     // Additional baseflight commands that are not compatible with MultiWii
     MSP_UID:                160,
     MSP_ACC_TRIM:           240,
-    MSP_SET_ACC_TRIM:       239
+    MSP_SET_ACC_TRIM:       239,
+    MSP_GPSSVINFO:          164 // get Signal Strength (only U-Blox)
 }
 
 var CONFIG = {
@@ -109,7 +110,13 @@ var GPS_DATA = {
     speed:           0,
     distanceToHome:  0,
     ditectionToHome: 0,
-    update:          0
+    update:          0,
+    
+    // baseflight specific gps stuff
+    chn:     new Array(),
+    svid:    new Array(),
+    quality: new Array(),
+    cno:     new Array()
 }
 
 var BATTERY = {
@@ -654,6 +661,23 @@ function process_message(code, data) {
         case MSP_codes.MSP_SET_ACC_TRIM:
             console.log('Accelerometer trimms saved.');
             break;
+        case MSP_codes.MSP_GPSSVINFO:
+            if (data.byteLength > 0) {
+                var numCh = view.getUint8(0);
+            
+                var needle = 1;
+                for (var i = 0; i < numCh; i++) {
+                    GPS_DATA.chn[i] = view.getUint8(needle);
+                    GPS_DATA.svid[i] = view.getUint8(needle + 1);
+                    GPS_DATA.quality[i] = view.getUint8(needle + 2);
+                    GPS_DATA.cno[i] = view.getUint8(needle + 3);
+                    
+                    needle += 4;
+                }
+            }
+            break;
+        default:
+            console.log('Unknown code detected: ' + code);
     }
 }
 
