@@ -5,12 +5,12 @@ function tab_initialize_gps () {
 
 function gps_pull() {
     // Update GPS data
-    $('.GPS_info td.alt').html(GPS_DATA.alt);
-    $('.GPS_info td.lat').html(GPS_DATA.lat / 10000000);
-    $('.GPS_info td.lon').html(GPS_DATA.lon / 10000000);
-    $('.GPS_info td.speed').html(GPS_DATA.speed);
+    $('.GPS_info td.alt').html(GPS_DATA.alt + ' m');
+    $('.GPS_info td.lat').html((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
+    $('.GPS_info td.lon').html((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
+    $('.GPS_info td.speed').html(GPS_DATA.speed + ' cm/s');
     $('.GPS_info td.sats').html(GPS_DATA.numSat);
-    $('.GPS_info td.distToHome').html(GPS_DATA.distanceToHome);
+    $('.GPS_info td.distToHome').html(GPS_DATA.distanceToHome + ' m');
     
     // Update GPS Signal Strengths
     
