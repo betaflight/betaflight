@@ -10,6 +10,12 @@ Using "webkit" as application wrapper assures full compatibility across operatin
 
 Installation
 ------------
+1. - Visit https://chrome.google.com/webstore/detail/baseflight-multiwii-confi/mppkgnedeapfejgfimkdoninnofofigk
+2. - Click add to Chrome
+3. - You are done
+
+Alternative way
+
 1. - Clone the repo to any local directory or download it as zip
 2. - Start chromium or google chrome and go to tools -> extension
 3. - Check the "Developer mode" checkbox
@@ -20,12 +26,3 @@ Installation
 How to use
 -----------
 You can find the baseflight configurator icon in your application tab "Apps"
-
-Application should work "out of the box" on both Windows and Mac OSX
-
-On Linux the situation is a little tricky.
-There is an outstanding bug in chromium/google chrome which is preventing setting the correct baud rate via the UI
-this bug will be fixed in version 27, but till then you might need to use an 3rd party utility like stty
-
-example command to change the baud rate via stty
-stty -F /dev/ttyUSB0 115200
