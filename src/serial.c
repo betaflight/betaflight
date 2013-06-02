@@ -294,7 +294,7 @@ void serialInit(uint32_t baudrate)
 
 static void evaluateCommand(void)
 {
-    uint32_t i;
+    uint32_t i, tmp;
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 
@@ -371,6 +371,9 @@ static void evaluateCommand(void)
         serialize16(cycleTime);
         serialize16(i2cGetErrorCounter());
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+#if FUCK_MULTIWII
+        // OK, so you waste all the fucking time to have BOXNAMES and BOXINDEXES etc, and then you go ahead and serialize enabled shit simply by stuffing all
+        // the bits in order, instead of setting the enabled bits based on BOXINDEX. WHERE IS THE FUCKING LOGIC IN THIS, FUCKWADS.
         serialize32(f.ANGLE_MODE << BOXANGLE | f.HORIZON_MODE << BOXHORIZON |
                     f.BARO_MODE << BOXBARO | f.MAG_MODE << BOXMAG | f.HEADFREE_MODE << BOXHEADFREE | rcOptions[BOXHEADADJ] << BOXHEADADJ |
                     rcOptions[BOXCAMSTAB] << BOXCAMSTAB | rcOptions[BOXCAMTRIG] << BOXCAMTRIG |
@@ -384,6 +387,49 @@ static void evaluateCommand(void)
                     rcOptions[BOXGOV] << BOXGOV |
                     rcOptions[BOXOSD] << BOXOSD |
                     f.ARMED << BOXARM);
+#else
+        // Serialize the boxes in the order we delivered them
+        tmp = 0;
+        for (i = 0; i < numberBoxItems; i++) {
+            uint8_t val, box = availableBoxes[i];
+            switch (box) {
+                // Handle the special cases
+                case BOXANGLE:
+                    val = f.ANGLE_MODE;
+                    break;
+                case BOXHORIZON:
+                    val = f.HORIZON_MODE;
+                    break;
+                case BOXMAG:
+                    val = f.MAG_MODE;
+                    break;
+                case BOXBARO:
+                    val = f.BARO_MODE;
+                    break;
+                case BOXHEADFREE:
+                    val = f.HEADFREE_MODE;
+                    break;
+                case BOXGPSHOME:
+                    val = f.GPS_HOME_MODE;
+                    break;
+                case BOXGPSHOLD:
+                    val = f.GPS_HOLD_MODE;
+                    break;
+                case BOXPASSTHRU:
+                    val = f.PASSTHRU_MODE;
+                    break;
+                case BOXARM:
+                    val = f.ARMED;
+                    break;
+                default:
+                    // These just directly rely on their RC inputs
+                    val = rcOptions[ box ];
+                    break;
+            }
+            tmp |= (val << i);
+        }
+        serialize32(tmp);
+#endif
         serialize8(mcfg.current_profile);
         break;
     case MSP_RAW_IMU:
