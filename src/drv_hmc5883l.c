@@ -125,10 +125,9 @@ void hmc5883lRead(int16_t *magData)
     int i;
 
     i2cRead(MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
-
-    mag[0] = ((int16_t)((uint16_t) buf[0] << 8) + buf[1]);
-    mag[1] = ((int16_t)((uint16_t) buf[2] << 8) + buf[3]);
-    mag[2] = ((int16_t)((uint16_t) buf[4] << 8) + buf[5]);
+    mag[0] = buf[0] << 8 | buf[1];
+    mag[1] = buf[2] << 8 | buf[3];
+    mag[2] = buf[4] << 8 | buf[5];
 
     for (i = 0; i < 3; i++) {
         int8_t axis = sensor_align[i];
