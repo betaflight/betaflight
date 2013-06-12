@@ -107,7 +107,7 @@ retry:
     gyro.init();
 
 #ifdef MAG
-    if (!hmc5883lDetect())
+    if (!hmc5883lDetect(mcfg.align[ALIGN_MAG]))
         sensorsClear(SENSOR_MAG);
 #endif
 
@@ -402,19 +402,13 @@ void Gyro_getADC(void)
 }
 
 #ifdef MAG
-static float magCal[3] = { 1.0, 1.0, 1.0 };     // gain for each axis, populated at sensor init
+static float magCal[3] = { 1.0f, 1.0f, 1.0f };     // gain for each axis, populated at sensor init
 static uint8_t magInit = 0;
 
 static void Mag_getRawADC(void)
 {
+    // MAG driver will align itself, so no need to alignSensors()
     hmc5883lRead(magADC);
-
-    // Default mag orientation is -2, -3, 1 or
-    // no way? is THIS finally the proper orientation?? (by GrootWitBaas)
-    // magADC[ROLL] = rawADC[2]; // X
-    // magADC[PITCH] = -rawADC[0]; // Y
-    // magADC[YAW] = -rawADC[1]; // Z
-    alignSensors(ALIGN_MAG, magADC);
 }
 
 void Mag_init(void)
