@@ -153,5 +153,11 @@ function tab_initialize_pid_tuning() {
             $(this).removeClass('active');
         }
     });
-    
+
+    // enable data pulling
+    timers.push(setInterval(pid_data_poll, 50));       
+}
+
+function pid_data_poll() {
+    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
 }

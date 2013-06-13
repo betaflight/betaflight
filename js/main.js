@@ -7,6 +7,17 @@ if (navigator.appVersion.indexOf("Linux") != -1) OS = "Linux";
 
 var timers = new Array();
 
+function disable_timers() {
+    for (var i = 0; i < timers.length; i++) {
+        clearInterval(timers[i]);
+    }
+    
+    // kill all the refferences
+    timers = [];
+    
+    return true;
+}    
+
 $(document).ready(function() { 
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
@@ -46,7 +57,7 @@ $(document).ready(function() {
             } else if ($(this).parent().hasClass('tab_cli')) {
                 $('#content').load("./tabs/cli.html", tab_initialize_cli);
             } else if ($(this).parent().hasClass('tab_about')) {
-                $('#content').load("./tabs/about.html");
+                $('#content').load("./tabs/about.html", tab_initialize_about);
             }
         }
     });
@@ -54,14 +65,3 @@ $(document).ready(function() {
     // temporary
     //$('#content').load("./tabs/gps.html", tab_initialize_gps);
 });
-
-function disable_timers() {
-    for (var i = 0; i < timers.length; i++) {
-        clearInterval(timers[i]);
-    }
-    
-    // kill all the refferences
-    timers = [];
-    
-    return true;
-}    

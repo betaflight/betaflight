@@ -70,6 +70,7 @@ function data_poll() {
     $('span.bat-voltage').html(BATTERY.voltage + ' V');
     
     // Request new data
+    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
     send_message(MSP_codes.MSP_ATTITUDE, MSP_codes.MSP_ATTITUDE); 
     send_message(MSP_codes.MSP_COMP_GPS, MSP_codes.MSP_COMP_GPS);
     send_message(MSP_codes.MSP_BAT, MSP_codes.MSP_BAT);

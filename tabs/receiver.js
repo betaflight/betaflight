@@ -150,5 +150,6 @@ function receiverPoll() {
     samples_i++;
     
     // Request new data
+    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
     send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
 }

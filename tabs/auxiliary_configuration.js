@@ -74,7 +74,13 @@ function tab_initialize_auxiliary_configuration() {
             $(this).removeClass('active');
         }
     });
-    
+
+    // enable data pulling
+    timers.push(setInterval(aux_data_poll, 50));       
+}
+
+function aux_data_poll() {
+    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
 }
 
 function box_check(num, pos) {

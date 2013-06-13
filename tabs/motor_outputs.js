@@ -5,6 +5,7 @@ function tab_initialize_motor_outputs() {
 
 function motorPoll() {
     // Request New Motor data
+    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
     send_message(MSP_codes.MSP_MOTOR, MSP_codes.MSP_MOTOR);
     
     // Update UI
