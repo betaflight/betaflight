@@ -361,6 +361,8 @@ a:hover {
         }
         .tab-initial_setup .acc-trim input {
             width: 80px;
+            height: 20px;
+            line-height: 20px;
             
             border: 1px solid silver;
             text-align: center;
@@ -373,8 +375,8 @@ a:hover {
             margin-left: 55px;
             
             width: 80px;
-            height: 18px;
-            line-height: 18px;
+            height: 20px;
+            line-height: 20px;
             
             color: white;
             text-align: center;
@@ -495,8 +497,8 @@ a:hover {
     }    
     .tab-pid_tuning table input {
         width: 130px;
-        height: 18px;
-        line-height: 18px;
+        height: 20px;
+        line-height: 20px;
         
         padding: 0 5px 0 5px;
         border: 1px solid silver;
@@ -580,8 +582,8 @@ a:hover {
     }    
     .tab-receiver .tunings table input {
         width: 130px;
-        height: 18px;
-        line-height: 18px;
+        height: 20px;
+        line-height: 20px;
         
         padding: 0 5px 0 5px;
         border: 1px solid silver;

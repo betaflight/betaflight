@@ -4,55 +4,125 @@ function tab_initialize_pid_tuning() {
 
     var i = 0;
     $('.pid_tuning .ROLL input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(3));       
+        switch (i) {
+            case 0:
+                $(this).val(PIDs[needle][i++].toFixed(1));  
+                break;
+            case 1:
+                $(this).val(PIDs[needle][i++].toFixed(3));  
+                break;
+            case 2:
+                $(this).val(PIDs[needle][i++].toFixed(0));  
+                break;
+        }     
     });
     needle++;
     
     i = 0;
     $('.pid_tuning .PITCH input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(3));       
+        switch (i) {
+            case 0:
+                $(this).val(PIDs[needle][i++].toFixed(1));  
+                break;
+            case 1:
+                $(this).val(PIDs[needle][i++].toFixed(3));  
+                break;
+            case 2:
+                $(this).val(PIDs[needle][i++].toFixed(0));  
+                break;
+        }     
     });
     needle++;
     
     i = 0;
     $('.pid_tuning .YAW input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(3));       
+        switch (i) {
+            case 0:
+                $(this).val(PIDs[needle][i++].toFixed(1));  
+                break;
+            case 1:
+                $(this).val(PIDs[needle][i++].toFixed(3));  
+                break;
+            case 2:
+                $(this).val(PIDs[needle][i++].toFixed(0));  
+                break;
+        }      
     });
     needle++;
 
     i = 0;
     $('.pid_tuning .ALT input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(3));       
+        switch (i) {
+            case 0:
+                $(this).val(PIDs[needle][i++].toFixed(1));  
+                break;
+            case 1:
+                $(this).val(PIDs[needle][i++].toFixed(3));  
+                break;
+            case 2:
+                $(this).val(PIDs[needle][i++].toFixed(0));  
+                break;
+        }     
     });
     needle++;
 
     i = 0;
     $('.pid_tuning .Pos input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(3));       
+        $(this).val(PIDs[needle][i++].toFixed(2));       
     });
     needle++;
     
     i = 0;
     $('.pid_tuning .PosR input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(3));       
+        switch (i) {
+            case 0:
+                $(this).val(PIDs[needle][i++].toFixed(1));  
+                break;
+            case 1:
+                $(this).val(PIDs[needle][i++].toFixed(2));  
+                break;
+            case 2:
+                $(this).val(PIDs[needle][i++].toFixed(3));  
+                break;
+        }       
     });
     needle++;  
 
     i = 0;
     $('.pid_tuning .NavR input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(2));       
+        switch (i) {
+            case 0:
+                $(this).val(PIDs[needle][i++].toFixed(1));  
+                break;
+            case 1:
+                $(this).val(PIDs[needle][i++].toFixed(2));  
+                break;
+            case 2:
+                $(this).val(PIDs[needle][i++].toFixed(3));  
+                break;
+        }      
     });
     needle++; 
 
     i = 0;
     $('.pid_tuning .LEVEL input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(2));       
+        switch (i) {
+            case 0:
+                $(this).val(PIDs[needle][i++].toFixed(1));  
+                break;
+            case 1:
+                $(this).val(PIDs[needle][i++].toFixed(2));  
+                break;
+            case 2:
+                $(this).val(PIDs[needle][i++].toFixed(0));  
+                break;
+        }      
     });
     needle++; 
 
     i = 0;
     $('.pid_tuning .MAG input').each(function() {
-        $(this).val(PIDs[needle][i++].toFixed(2));       
+        $(this).val(PIDs[needle][i++].toFixed(1));       
     });
     needle++;  
 
