@@ -133,6 +133,7 @@ const clivalue_t valueTable[] = {
     { "gyro_cmpf_factor", VAR_UINT16, &mcfg.gyro_cmpf_factor, 100, 1000 },
     { "gyro_cmpfm_factor", VAR_UINT16, &mcfg.gyro_cmpfm_factor, 100, 1000 },
     { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, 3 },
+    { "pid_controller", VAR_UINT8, &cfg.pidController, 0, 1 },
     { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
     { "yawdeadband", VAR_UINT8, &cfg.yawdeadband, 0, 100 },
     { "alt_hold_throttle_neutral", VAR_UINT8, &cfg.alt_hold_throttle_neutral, 1, 250 },
@@ -1013,7 +1014,7 @@ void cliProcess(void)
             else
                 uartPrint("ERR: Unknown command, try 'help'");
 
-            *cliBuffer = '\0';
+            memset(cliBuffer, 0, sizeof(cliBuffer));
             bufferIndex = 0;
 
             // 'exit' will reset this flag, so we don't need to print prompt again

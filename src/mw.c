@@ -1,7 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-// October 2012     V2.1-dev
+// June 2013     V2.2-dev
 
 flags_t f;
 int16_t debug[4];
@@ -23,6 +23,10 @@ int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
 int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
 uint16_t rssi;                  // range: [0;1023]
 rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
+
+static void pidMultiWii(void);
+static void pidRewrite(void);
+pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
 uint8_t rcOptions[CHECKBOXITEMS];
@@ -132,6 +136,7 @@ void annexCode(void)
             prop1 = 100 - (uint16_t) cfg.yawRate * tmp / 500;
         }
         dynP8[axis] = (uint16_t) cfg.P8[axis] * prop1 / 100;
+        dynI8[axis] = (uint16_t) cfg.I8[axis] * prop1 / 100;
         dynD8[axis] = (uint16_t) cfg.D8[axis] * prop1 / 100;
         if (rcData[axis] < mcfg.midrc)
             rcCommand[axis] = -rcCommand[axis];
@@ -273,25 +278,160 @@ static void mwVario(void)
     
 }
 
+static int32_t errorGyroI[3] = { 0, 0, 0 };
+static int32_t errorAngleI[2] = { 0, 0 };
+
+static void pidMultiWii(void)
+{
+    int axis, prop;
+    int16_t error, errorAngle;
+    int16_t PTerm, ITerm, PTermACC, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
+    static int16_t lastGyro[3] = { 0, 0, 0 };
+    static int16_t delta1[3], delta2[3];
+    int16_t deltaSum;
+    int16_t delta;
+
+    // **** PITCH & ROLL & YAW PID ****
+    prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]
+    for (axis = 0; axis < 3; axis++) {
+        if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
+            // 50 degrees max inclination
+            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
+            PTermACC = (int32_t)errorAngle * cfg.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+            PTermACC = constrain(PTermACC, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
+
+            errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000); // WindUp
+            ITermACC = ((int32_t)errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;
+        }
+        if (!f.ANGLE_MODE || f.HORIZON_MODE || axis == 2) { // MODE relying on GYRO or YAW axis
+            error = (int32_t)rcCommand[axis] * 10 * 8 / cfg.P8[axis];
+            error -= gyroData[axis];
+
+            PTermGYRO = rcCommand[axis];
+
+            errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
+            if (abs(gyroData[axis]) > 640) 
+                errorGyroI[axis] = 0;
+            ITermGYRO = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;
+        }
+        if (f.HORIZON_MODE && axis < 2) {
+            PTerm = ((int32_t)PTermACC * (500 - prop) + (int32_t)PTermGYRO * prop) / 500;
+            ITerm = ((int32_t)ITermACC * (500 - prop) + (int32_t)ITermGYRO * prop) / 500;
+        } else {
+            if (f.ANGLE_MODE && axis < 2) {
+                PTerm = PTermACC;
+                ITerm = ITermACC;
+            } else {
+                PTerm = PTermGYRO;
+                ITerm = ITermGYRO;
+            }
+        }
+
+        PTerm -= (int32_t)gyroData[axis] * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
+        delta = gyroData[axis] - lastGyro[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+        lastGyro[axis] = gyroData[axis];
+        deltaSum = delta1[axis] + delta2[axis] + delta;
+        delta2[axis] = delta1[axis];
+        delta1[axis] = delta;
+        DTerm = ((int32_t)deltaSum * dynD8[axis]) >> 5; // 32 bits is needed for calculation
+        axisPID[axis] =  PTerm + ITerm - DTerm;
+    }
+}
+
+#define GYRO_I_MAX 256
+
+static void pidRewrite(void)
+{
+    int16_t errorAngle;
+    int axis;
+    int16_t delta, deltaSum;
+    static int16_t delta1[3], delta2[3];
+    int16_t PTerm, ITerm, DTerm;
+    static int16_t lastError[3] = { 0, 0, 0 };
+    int16_t AngleRateTmp, RateError;
+
+    // ----------PID controller----------
+    for (axis = 0; axis < 3; axis++) {
+        // -----Get the desired angle rate depending on flight mode
+        if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2 ) { // MODE relying on ACC
+            // calculate error and limit the angle to 50 degrees max inclination
+            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis]; // 16 bits is ok here
+        }
+        if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
+            AngleRateTmp = (((int32_t) (cfg.yawRate + 27) * rcCommand[2]) >> 5);
+         } else {
+            if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
+                AngleRateTmp = ((int32_t) (cfg.rollPitchRate + 27) * rcCommand[axis]) >> 4;
+                if (f.HORIZON_MODE) {
+                    // mix up angle error to desired AngleRateTmp to add a little auto-level feel
+                    AngleRateTmp += ((int32_t) errorAngle * cfg.I8[PIDLEVEL]) >> 8;
+                }
+            } else { // it's the ANGLE mode - control is angle based, so control loop is needed
+                AngleRateTmp = ((int32_t) errorAngle * cfg.P8[PIDLEVEL]) >> 4;
+            }
+        }
+
+        // --------low-level gyro-based PID. ----------
+        // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
+        // -----calculate scaled error.AngleRates
+        // multiplication of rcCommand corresponds to changing the sticks scaling here
+        RateError = AngleRateTmp - gyroData[axis];
+
+        // -----calculate P component
+        PTerm = ((int32_t)RateError * cfg.P8[axis]) >> 7;
+        // -----calculate I component
+        // there should be no division before accumulating the error to integrator, because the precision would be reduced.
+        // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
+        // Time correction (to avoid different I scaling for different builds based on average cycle time)
+        // is normalized to cycle time = 2048.
+        errorGyroI[axis] = errorGyroI[axis] + (((int32_t)RateError * cycleTime) >> 11) * cfg.I8[axis];
+
+        // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
+        // I coefficient (I8) moved before integration to make limiting independent from PID settings
+        errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t)-GYRO_I_MAX << 13, (int32_t)+GYRO_I_MAX << 13);
+        ITerm = errorGyroI[axis] >> 13;
+
+        //-----calculate D-term
+        delta = RateError - lastError[axis];  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+        lastError[axis] = RateError;
+
+        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+        // would be scaled by different dt each time. Division by dT fixes that.
+        delta = ((int32_t) delta * ((uint16_t)0xFFFF / (cycleTime >> 4))) >> 6;
+        // add moving average here to reduce noise
+        deltaSum = delta1[axis] + delta2[axis] + delta;
+        delta2[axis] = delta1[axis];
+        delta1[axis] = delta;
+        DTerm = (deltaSum * cfg.D8[axis]) >> 8;
+
+        // -----calculate total PID output     
+        axisPID[axis] = PTerm + ITerm + DTerm;
+    }
+}
+
+void setPIDController(int type)
+{
+    switch (type) {
+        case 0:
+        default:
+            pid_controller = pidMultiWii;
+            break;
+        case 1:
+            pid_controller = pidRewrite;
+            break;
+    }
+}
+
 void loop(void)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
     uint8_t stTmp = 0;
-    uint8_t axis, i;
-    int16_t error, errorAngle;
-    int16_t PTerm, ITerm, PTermACC, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
-    static int16_t errorGyroI[3] = { 0, 0, 0 };
-    static int16_t errorAngleI[2] = { 0, 0 };
-    int16_t delta;
-    static int16_t lastGyro[3] = { 0, 0, 0 };
-    static int16_t delta1[3], delta2[3];
-    int16_t deltaSum;
+    int i;
     static uint32_t rcTime = 0;
     static int16_t initialThrottleHold;
     static uint32_t loopTime;
     uint16_t auxState = 0;
-    int16_t prop;
     static uint8_t GPSNavReset = 1;
 
     // this will return false if spektrum is disabled. shrug.
@@ -703,51 +843,8 @@ void loop(void)
             }
         }
 
-        // **** PITCH & ROLL & YAW PID ****
-        prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]
-        for (axis = 0; axis < 3; axis++) {
-            if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
-                // 50 degrees max inclination
-                errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
-                PTermACC = (int32_t)errorAngle * cfg.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
-                PTermACC = constrain(PTermACC, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
-
-                errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000); // WindUp
-                ITermACC = ((int32_t)errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;
-            }
-            if (!f.ANGLE_MODE || f.HORIZON_MODE || axis == 2) { // MODE relying on GYRO or YAW axis
-                error = (int32_t)rcCommand[axis] * 10 * 8 / cfg.P8[axis];
-                error -= gyroData[axis];
-
-                PTermGYRO = rcCommand[axis];
-
-                errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
-                if (abs(gyroData[axis]) > 640) 
-                    errorGyroI[axis] = 0;
-                ITermGYRO = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;
-            }
-            if (f.HORIZON_MODE && axis < 2) {
-                PTerm = ((int32_t)PTermACC * (500 - prop) + (int32_t)PTermGYRO * prop) / 500;
-                ITerm = ((int32_t)ITermACC * (500 - prop) + (int32_t)ITermGYRO * prop) / 500;
-            } else {
-                if (f.ANGLE_MODE && axis < 2) {
-                    PTerm = PTermACC;
-                    ITerm = ITermACC;
-                } else {
-                    PTerm = PTermGYRO;
-                    ITerm = ITermGYRO;
-                }
-            }
-
-            PTerm -= (int32_t)gyroData[axis] * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
-            delta = gyroData[axis] - lastGyro[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastGyro[axis] = gyroData[axis];
-            deltaSum = delta1[axis] + delta2[axis] + delta;
-            delta2[axis] = delta1[axis];
-            delta1[axis] = delta;
-            DTerm = ((int32_t)deltaSum * dynD8[axis]) >> 5; // 32 bits is needed for calculation
-            axisPID[axis] =  PTerm + ITerm - DTerm;
-        }
+        // PID - note this is function pointer set by setPIDController()
+        pid_controller();
 
         mixTable();
         writeServos();

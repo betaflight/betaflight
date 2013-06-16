@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static uint8_t EEPROM_CONF_VERSION = 47;
+static uint8_t EEPROM_CONF_VERSION = 48;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -84,6 +84,7 @@ void readEEPROM(void)
     }
 
     cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max);       //REAR
+    setPIDController(cfg.pidController);
 }
 
 void writeEEPROM(uint8_t b, uint8_t updateProfile)
@@ -202,6 +203,7 @@ static void resetConf(void)
     mcfg.serial_baudrate = 115200;
     mcfg.looptime = 3500;
 
+    cfg.pidController = 0;
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;
     cfg.D8[ROLL] = 23;

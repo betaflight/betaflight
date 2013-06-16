@@ -145,6 +145,7 @@ enum {
 };
 
 typedef struct config_t {
+    uint8_t pidController;                  // 0 = multiwii original, 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671
     uint8_t P8[PIDITEMS];
     uint8_t I8[PIDITEMS];
     uint8_t D8[PIDITEMS];
@@ -371,6 +372,7 @@ extern sensor_t gyro;
 extern baro_t baro;
 
 // main
+void setPIDController(int type);
 void loop(void);
 
 // IMU
