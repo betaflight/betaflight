@@ -49,6 +49,10 @@ function tab_initialize_initial_setup() {
         yaw_fix = SENSOR_DATA.kinematicsZ * - 1.0;
         console.log("YAW reset to 0");
     });  
+
+    $('#content .backup').click(configuration_backup);
+    
+    $('#content .restore').click(configuration_restore);
     
     // enable data pulling
     timers.push(setInterval(data_poll, 50));    

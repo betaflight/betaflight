@@ -204,6 +204,13 @@ a:hover {
         .tab-initial_setup .section a:hover {
             background-color: #424d84;
         }
+            .tab-initial_setup .section a.backup {
+                width: 75px;
+                margin-right: 10px;
+            }
+            .tab-initial_setup .section a.restore {
+                width: 75px;
+            }
         .tab-initial_setup .section p {
             margin-left: 180px;
             
@@ -216,7 +223,7 @@ a:hover {
     
     margin-top: 10px;
     
-    height: 320px;
+    height: 300px;
     width: 400px;
     
     border: 1px solid silver;
@@ -226,7 +233,7 @@ a:hover {
         position: relative;
         display: block;
         
-        top: 285px;
+        top: 265px;
         left: 10px;
         
         width: 100px;
@@ -397,7 +404,7 @@ a:hover {
     .tab-initial_setup .compass-wrapper {
         float: left;
         
-        margin-top: 50px;
+        margin-top: 20px;
         margin-left: 180px;
 
         border: 1px solid silver;
