@@ -240,6 +240,12 @@ function onOpen(openInfo) {
                         // console.log('Last selected port was saved in chrome.storage.');
                     });
                 }
+            } else {
+                // variable isn't stored yet, saving
+                chrome.storage.local.set({'last_used_port': selected_port}, function() {
+                    // Debug message is currently disabled (we dont need to spam the console log with that)
+                    // console.log('Last selected port was saved in chrome.storage.');
+                });
             }
         });
 
