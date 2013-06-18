@@ -13,6 +13,7 @@
     
     "permissions": [
         "serial",
+        "storage",
         "fileSystem",
         "fileSystem.write"
     ],
