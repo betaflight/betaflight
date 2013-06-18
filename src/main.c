@@ -8,11 +8,20 @@ extern rcReadRawDataPtr rcReadRawFunc;
 extern uint16_t pwmReadRawRC(uint8_t chan);
 extern uint16_t spektrumReadRawRC(uint8_t chan);
 
+#ifdef USE_LAME_PRINTF
+// gcc/GNU version
 static void _putc(void *p, char c)
 {
     uartWrite(c);
 }
-
+#else
+// keil/armcc version
+int fputc(int c, FILE *f)
+{
+    uartWrite(c);
+    return c;
+}
+#endif
 
 int main(void)
 {
@@ -42,7 +51,9 @@ int main(void)
 #endif
 
     systemInit();
+#ifdef USE_LAME_PRINTF
     init_printf(NULL, _putc);
+#endif
 
     checkFirstTime(false);
     readEEPROM();

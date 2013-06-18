@@ -13,7 +13,12 @@
 
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
+
+#ifndef __CC_ARM
+// only need this garbage on gcc
+#define USE_LAME_PRINTF
 #include "printf.h"
+#endif
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846f

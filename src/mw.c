@@ -284,12 +284,12 @@ static int32_t errorAngleI[2] = { 0, 0 };
 static void pidMultiWii(void)
 {
     int axis, prop;
-    int16_t error, errorAngle;
-    int16_t PTerm, ITerm, PTermACC, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
+    int32_t error, errorAngle;
+    int32_t PTerm, ITerm, PTermACC, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
     static int16_t lastGyro[3] = { 0, 0, 0 };
-    static int16_t delta1[3], delta2[3];
-    int16_t deltaSum;
-    int16_t delta;
+    static int32_t delta1[3], delta2[3];
+    int32_t deltaSum;
+    int32_t delta;
 
     // **** PITCH & ROLL & YAW PID ****
     prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]
@@ -297,11 +297,11 @@ static void pidMultiWii(void)
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
             // 50 degrees max inclination
             errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
-            PTermACC = (int32_t)errorAngle * cfg.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+            PTermACC = errorAngle * cfg.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
             PTermACC = constrain(PTermACC, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
 
             errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000); // WindUp
-            ITermACC = ((int32_t)errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;
+            ITermACC = (errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;
         }
         if (!f.ANGLE_MODE || f.HORIZON_MODE || axis == 2) { // MODE relying on GYRO or YAW axis
             error = (int32_t)rcCommand[axis] * 10 * 8 / cfg.P8[axis];
@@ -315,8 +315,8 @@ static void pidMultiWii(void)
             ITermGYRO = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;
         }
         if (f.HORIZON_MODE && axis < 2) {
-            PTerm = ((int32_t)PTermACC * (500 - prop) + (int32_t)PTermGYRO * prop) / 500;
-            ITerm = ((int32_t)ITermACC * (500 - prop) + (int32_t)ITermGYRO * prop) / 500;
+            PTerm = (PTermACC * (500 - prop) + PTermGYRO * prop) / 500;
+            ITerm = (ITermACC * (500 - prop) + ITermGYRO * prop) / 500;
         } else {
             if (f.ANGLE_MODE && axis < 2) {
                 PTerm = PTermACC;
@@ -328,13 +328,13 @@ static void pidMultiWii(void)
         }
 
         PTerm -= (int32_t)gyroData[axis] * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
-        delta = gyroData[axis] - lastGyro[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+        delta = gyroData[axis] - lastGyro[axis];
         lastGyro[axis] = gyroData[axis];
         deltaSum = delta1[axis] + delta2[axis] + delta;
         delta2[axis] = delta1[axis];
         delta1[axis] = delta;
-        DTerm = ((int32_t)deltaSum * dynD8[axis]) >> 5; // 32 bits is needed for calculation
-        axisPID[axis] =  PTerm + ITerm - DTerm;
+        DTerm = (deltaSum * dynD8[axis]) / 32;
+        axisPID[axis] = PTerm + ITerm - DTerm;
     }
 }
 
