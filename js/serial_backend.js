@@ -560,6 +560,10 @@ function process_message(code, data) {
             }
             break; 
         case MSP_codes.MSP_BOX:
+            // dump previous data (if there was any)
+            AUX_CONFIG_values = new Array();
+            
+            // fill in current data
             for (var i = 0; i < data.byteLength; i += 2) { // + 2 because uint16_t = 2 bytes
                 AUX_CONFIG_values.push(view.getUint16(i, 1));
             }
