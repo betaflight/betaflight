@@ -1,3 +1,15 @@
+// Main window handlers
+var chrome_window = chrome.app.window.current();
+
+// This "automatic BUS close" feature is highly EXPERIMENTAL and could cause problems
+chrome_window.onClosed.addListener(function() {
+    if (connectionId != -1) {
+        // connection still appears to be active
+        // we will try to "automatically" disconnect if possible to free the port
+        $('div#port-picker a.connect').click();
+    }
+});
+
 // OS detection
 var OS = "Unknown";
 if (navigator.appVersion.indexOf("Win") != -1)   OS = "Windows";
