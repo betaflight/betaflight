@@ -10,10 +10,10 @@ chrome.runtime.getBackgroundPage(function(result) {
 
 // OS detection
 var OS = "Unknown";
-if (navigator.appVersion.indexOf("Win") != -1)   OS = "Windows";
-if (navigator.appVersion.indexOf("Mac") != -1)   OS = "MacOS";
-if (navigator.appVersion.indexOf("X11") != -1)   OS = "UNIX";
-if (navigator.appVersion.indexOf("Linux") != -1) OS = "Linux";
+if (navigator.appVersion.indexOf("Win") != -1) OS = "Windows";
+else if (navigator.appVersion.indexOf("Mac") != -1) OS = "MacOS";
+else if (navigator.appVersion.indexOf("X11") != -1) OS = "UNIX";
+else if (navigator.appVersion.indexOf("Linux") != -1) OS = "Linux";
 
 var timers = new Array();
 
