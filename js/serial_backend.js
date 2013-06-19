@@ -226,6 +226,7 @@ $(document).ready(function() {
 
 function onOpen(openInfo) {
     connectionId = openInfo.connectionId;
+    backgroundPage.connectionId = openInfo.connectionId; // also pass connectionId to the background page
     
     if (connectionId != -1) {
         console.log('Connection was opened with ID: ' + connectionId);
@@ -273,6 +274,7 @@ function onOpen(openInfo) {
 function onClosed(result) {
     if (result) { // All went as expected
         connectionId = -1; // reset connection id
+        backgroundPage.connectionId = connectionId; // also pass latest connectionId to the background page
         
         sensor_status(sensors_detected = 0); // reset active sensor indicators
         $('#content').empty(); // empty content
