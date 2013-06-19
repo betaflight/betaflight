@@ -342,13 +342,13 @@ static void pidMultiWii(void)
 
 static void pidRewrite(void)
 {
-    int16_t errorAngle;
+    int32_t errorAngle;
     int axis;
-    int16_t delta, deltaSum;
-    static int16_t delta1[3], delta2[3];
-    int16_t PTerm, ITerm, DTerm;
-    static int16_t lastError[3] = { 0, 0, 0 };
-    int16_t AngleRateTmp, RateError;
+    int32_t delta, deltaSum;
+    static int32_t delta1[3], delta2[3];
+    int32_t PTerm, ITerm, DTerm;
+    static int32_t lastError[3] = { 0, 0, 0 };
+    int32_t AngleRateTmp, RateError;
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
@@ -358,16 +358,16 @@ static void pidRewrite(void)
             errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis]; // 16 bits is ok here
         }
         if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = (((int32_t) (cfg.yawRate + 27) * rcCommand[2]) >> 5);
+            AngleRateTmp = (((int32_t)(cfg.yawRate + 27) * rcCommand[2]) >> 5);
          } else {
             if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
                 AngleRateTmp = ((int32_t) (cfg.rollPitchRate + 27) * rcCommand[axis]) >> 4;
                 if (f.HORIZON_MODE) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel
-                    AngleRateTmp += ((int32_t) errorAngle * cfg.I8[PIDLEVEL]) >> 8;
+                    AngleRateTmp += (errorAngle * cfg.I8[PIDLEVEL]) >> 8;
                 }
             } else { // it's the ANGLE mode - control is angle based, so control loop is needed
-                AngleRateTmp = ((int32_t) errorAngle * cfg.P8[PIDLEVEL]) >> 4;
+                AngleRateTmp = (errorAngle * cfg.P8[PIDLEVEL]) >> 4;
             }
         }
 
@@ -378,13 +378,13 @@ static void pidRewrite(void)
         RateError = AngleRateTmp - gyroData[axis];
 
         // -----calculate P component
-        PTerm = ((int32_t)RateError * cfg.P8[axis]) >> 7;
+        PTerm = (RateError * cfg.P8[axis]) >> 7;
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + (((int32_t)RateError * cycleTime) >> 11) * cfg.I8[axis];
+        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * cfg.I8[axis];
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -397,7 +397,7 @@ static void pidRewrite(void)
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
-        delta = ((int32_t) delta * ((uint16_t)0xFFFF / (cycleTime >> 4))) >> 6;
+        delta = (delta * ((uint16_t)0xFFFF / (cycleTime >> 4))) >> 6;
         // add moving average here to reduce noise
         deltaSum = delta1[axis] + delta2[axis] + delta;
         delta2[axis] = delta1[axis];

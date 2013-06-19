@@ -18,6 +18,8 @@ static void _putc(void *p, char c)
 // keil/armcc version
 int fputc(int c, FILE *f)
 {
+    // let DMA catch up a bit when using set or dump, we're too fast.
+    while (!uartTransmitDMAEmpty());
     uartWrite(c);
     return c;
 }
