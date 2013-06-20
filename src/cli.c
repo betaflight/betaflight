@@ -861,6 +861,16 @@ static void cliSet(char *cmdline)
             }
         }
         uartPrint("ERR: Unknown variable name\r\n");
+    } else {
+        // no equals, check for matching variables.
+        for (i = 0; i < VALUE_COUNT; i++) {
+            if (strstr(valueTable[i].name, cmdline)) {
+                val = &valueTable[i];
+                printf("%s = ", valueTable[i].name);
+                cliPrintVar(val, 0);
+                printf("\r\n");
+            }
+        }
     }
 }
 

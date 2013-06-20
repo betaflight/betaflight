@@ -25,6 +25,7 @@
 #define MSP_PIDNAMES             117    //out message         the PID names
 #define MSP_WP                   118    //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold
 #define MSP_BOXIDS               119    //out message         get the permanent IDs associated to BOXes
+#define MSP_SERVO_CONF           120    //out message         Servo settings
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -38,6 +39,8 @@
 #define MSP_SET_WP               209    //in message          sets a given WP (WP#,lat, lon, alt, flags)
 #define MSP_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
 #define MSP_SET_HEAD             211    //in message          define a new heading hold direction
+#define MSP_SET_SERVO_CONF       212    //in message          Servo settings
+#define MSP_SET_MOTOR            214    //in message          PropBalance function
 
 // #define MSP_BIND                 240    //in message          no param
 
