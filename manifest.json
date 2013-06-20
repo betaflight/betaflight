@@ -1,7 +1,7 @@
 {
-    "name": "baseflight / multiwii configurator",
+    "name": "baseflight configurator",
     "description": "Cool crossplatform configurator",
-    "version": "0.3",
+    "version": "0.4",
     "manifest_version": 2,
     "minimum_chrome_version": "23", 
     
