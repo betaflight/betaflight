@@ -54,6 +54,7 @@ var CONFIG = {
     i2cError:      0,
     activeSensors: 0,
     mode:          0,
+    profile:       0,
     
     uid:           [0, 0, 0],
     accelerometerTrims: [0, 0]
@@ -481,6 +482,7 @@ function process_message(code, data) {
             CONFIG.i2cError = view.getUint16(2, 1);
             CONFIG.activeSensors = view.getUint16(4, 1);
             CONFIG.mode = view.getUint32(6, 1);
+            CONFIG.profile = view.getUint8(10);
             
             $('span.cycle-time').html(CONFIG.cycleTime);
             
