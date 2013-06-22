@@ -569,7 +569,7 @@ void loop(void)
                     i = 1;
                 }
                 if (i) {
-                    writeEEPROM(1, false);
+                    writeEEPROM(1, true);
                     rcDelayCommand = 0; // allow autorepetition
                 }
             }
