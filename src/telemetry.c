@@ -95,9 +95,9 @@ static void sendAccel(void)
 static void sendBaro(void)
 {
     sendDataHead(ID_ALTITUDE_BP);
-    serialize16(EstAlt / 100);
+    serialize16(BaroAlt / 100);
     sendDataHead(ID_ALTITUDE_AP);
-    serialize16(EstAlt % 100);
+    serialize16(BaroAlt % 100);
 }
 
 static void sendTemperature1(void)

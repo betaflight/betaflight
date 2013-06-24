@@ -14,6 +14,7 @@ typedef struct drv_pwm_config_t {
     uint8_t adcChannel;  // steal one RC input for current sensor
     uint16_t motorPwmRate;
     uint16_t servoPwmRate;
+    uint16_t failsafeThreshold;
 } drv_pwm_config_t;
 
 // This indexes into the read-only hardware definition structure in drv_pwm.c, as well as into pwmPorts[] structure with dynamic data.

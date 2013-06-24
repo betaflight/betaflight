@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static uint8_t EEPROM_CONF_VERSION = 47;
+static uint8_t EEPROM_CONF_VERSION = 48;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -84,6 +84,7 @@ void readEEPROM(void)
     }
 
     cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max);       //REAR
+    setPIDController(cfg.pidController);
 }
 
 void writeEEPROM(uint8_t b, uint8_t updateProfile)
@@ -170,7 +171,8 @@ static void resetConf(void)
 
     // global settings
     mcfg.current_profile = 0;       // default profile
-    mcfg.gyro_cmpf_factor = 400;    // default MWC
+    mcfg.gyro_cmpf_factor = 600;    // default MWC
+    mcfg.gyro_cmpfm_factor = 250;   // default MWC
     mcfg.gyro_lpf = 42;             // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
     mcfg.accZero[0] = 0;
     mcfg.accZero[1] = 0;
@@ -201,6 +203,7 @@ static void resetConf(void)
     mcfg.serial_baudrate = 115200;
     mcfg.looptime = 3500;
 
+    cfg.pidController = 0;
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;
     cfg.D8[ROLL] = 23;
@@ -242,7 +245,6 @@ static void resetConf(void)
     cfg.angleTrim[1] = 0;
     cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     cfg.acc_lpf_factor = 4;
-    cfg.acc_lpf_for_velocity = 10;
     cfg.accz_deadband = 50;
     cfg.baro_tab_size = 21;
     cfg.baro_noise_lpf = 0.6f;
@@ -256,9 +258,10 @@ static void resetConf(void)
     cfg.alt_hold_fast_change = 1;
 
     // Failsafe Variables
-    cfg.failsafe_delay = 10;            // 1sec
-    cfg.failsafe_off_delay = 200;       // 20sec
-    cfg.failsafe_throttle = 1200;       // decent default which should always be below hover throttle for people.
+    cfg.failsafe_delay = 10;                // 1sec
+    cfg.failsafe_off_delay = 200;           // 20sec
+    cfg.failsafe_throttle = 1200;           // decent default which should always be below hover throttle for people.
+    cfg.failsafe_detect_threshold = 985;    // any of first 4 channels below this value will trigger failsafe
 
     // servos
     cfg.yaw_direction = 1;

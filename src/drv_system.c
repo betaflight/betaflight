@@ -33,7 +33,7 @@ uint32_t micros(void)
         ms = sysTickUptime;
         cycle_cnt = SysTick->VAL;
     } while (ms != sysTickUptime);
-    return (ms * 1000) + (72000 - cycle_cnt) / 72;
+    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)

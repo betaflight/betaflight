@@ -145,6 +145,7 @@ enum {
 };
 
 typedef struct config_t {
+    uint8_t pidController;                  // 0 = multiwii original, 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671
     uint8_t P8[PIDITEMS];
     uint8_t I8[PIDITEMS];
     uint8_t D8[PIDITEMS];
@@ -163,7 +164,6 @@ typedef struct config_t {
 
     // sensor-related stuff
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
-    uint8_t acc_lpf_for_velocity;           // ACC lowpass for AccZ height hold
     uint8_t accz_deadband;                  // ??
     uint8_t baro_tab_size;                  // size of baro filter array
     float baro_noise_lpf;                   // additional LPF to reduce baro noise
@@ -181,6 +181,7 @@ typedef struct config_t {
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
     uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
+    uint16_t failsafe_detect_threshold;     // Update controls channel only if pulse is above failsafe_detect_threshold. below this trigger failsafe.
 
     // mixer-related configuration
     int8_t yaw_direction;
@@ -245,6 +246,7 @@ typedef struct master_t {
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
+    uint16_t gyro_cmpfm_factor;             // Set the Gyro Weight for Gyro/Magnetometer complementary filter. Increasing this value would reduce and delay Magnetometer influence on the output of the filter
     uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
     uint8_t moron_threshold;                // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t mpu6050_scale;                  // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. automatically set by mpu6050 driver.
@@ -356,6 +358,11 @@ extern uint8_t  GPS_Enable;
 extern int16_t  nav[2];
 extern int8_t   nav_mode;                                    // Navigation mode
 extern int16_t  nav_rated[2];                                // Adding a rate controller to the navigation to make it smoother
+extern uint8_t  GPS_numCh;                                   // Number of channels
+extern uint8_t  GPS_svinfo_chn[16];                          // Channel number
+extern uint8_t  GPS_svinfo_svid[16];                         // Satellite ID
+extern uint8_t  GPS_svinfo_quality[16];                      // Bitfield Qualtity
+extern uint8_t  GPS_svinfo_cno[16];                          // Carrier to Noise Ratio (Signal Strength)
 
 extern master_t mcfg;
 extern config_t cfg;
@@ -365,6 +372,7 @@ extern sensor_t gyro;
 extern baro_t baro;
 
 // main
+void setPIDController(int type);
 void loop(void);
 
 // IMU

@@ -66,6 +66,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     static uint16_t now;
     static uint16_t last = 0;
     static uint8_t chan = 0;
+    static uint8_t GoodPulses;
 
     if (TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
         last = now;
@@ -86,6 +87,15 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     } else {
         if (diff > 750 && diff < 2250 && chan < 8) {   // 750 to 2250 ms is our 'valid' channel range
             Inputs[chan].capture = diff;
+            if (chan < 4 && diff > FAILSAFE_DETECT_TRESHOLD)
+                GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK
+            if (GoodPulses == 0x0F) {   // If first four chanells have good pulses, clear FailSafe counter
+                GoodPulses = 0;
+                if (failsafeCnt > 20)
+                    failsafeCnt -= 20;
+                else
+                    failsafeCnt = 0;
+            }
         }
         chan++;
         failsafeCnt = 0;

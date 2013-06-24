@@ -13,7 +13,12 @@
 
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
+
+#ifndef __CC_ARM
+// only need this garbage on gcc
+#define USE_LAME_PRINTF
 #include "printf.h"
+#endif
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846f
@@ -75,6 +80,7 @@ typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and a
 typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
 typedef void (* uartReceiveCallbackPtr)(uint16_t data);     // used by uart2 driver to return frames to app
 typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
+typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
 
 typedef struct sensor_t
 {
@@ -195,6 +201,7 @@ typedef struct baro_t
 #include "drv_pwm.h"
 #include "drv_uart.h"
 #else
+
  // AfroFlight32
 #include "drv_system.h"         // timers, delays, etc
 #include "drv_adc.h"

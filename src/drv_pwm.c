@@ -118,6 +118,7 @@ static pwmPortData_t *servos[MAX_SERVOS];
 static uint8_t numMotors = 0;
 static uint8_t numServos = 0;
 static uint8_t  numInputs = 0;
+static uint16_t failsafeThreshold = 985;
 // external vars (ugh)
 extern int16_t failsafeCnt;
 
@@ -394,6 +395,7 @@ static void ppmCallback(uint8_t port, uint16_t capture)
     static uint16_t now;
     static uint16_t last = 0;
     static uint8_t chan = 0;
+    static uint8_t GoodPulses;
 
     last = now;
     now = capture;
@@ -404,6 +406,15 @@ static void ppmCallback(uint8_t port, uint16_t capture)
     } else {
         if (diff > 750 && diff < 2250 && chan < 8) {   // 750 to 2250 ms is our 'valid' channel range
             captures[chan] = diff;
+            if (chan < 4 && diff > failsafeThreshold)
+                GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK
+            if (GoodPulses == 0x0F) {           // If first four chanells have good pulses, clear FailSafe counter
+                GoodPulses = 0;
+                if (failsafeCnt > 20)
+                    failsafeCnt -= 20;
+                else
+                    failsafeCnt = 0;
+            }
         }
         chan++;
         failsafeCnt = 0;
@@ -433,6 +444,9 @@ bool pwmInit(drv_pwm_config_t *init)
 {
     int i = 0;
     const uint8_t *setup;
+
+    // to avoid importing cfg/mcfg
+    failsafeThreshold = init->failsafeThreshold;
 
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
     if (init->airplane)

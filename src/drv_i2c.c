@@ -31,7 +31,6 @@ void I2C2_EV_IRQHandler(void)
     i2c_ev_handler();
 }
 
-
 #define I2C_DEFAULT_TIMEOUT 30000
 static volatile uint16_t i2cErrorCount = 0;
 
@@ -79,25 +78,17 @@ static void i2c_er_handler(void)
 bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
     uint8_t i;
-    uint8_t my_data[16];
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     addr = addr_ << 1;
     reg = reg_;
     writing = 1;
     reading = 0;
-    write_p = my_data;
-    read_p = my_data;
+    write_p = data;
+    read_p = data;
     bytes = len_;
     busy = 1;
     error = false;
-
-    // too long
-    if (len_ > 16)
-        return false;
-
-    for (i = 0; i < len_; i++)
-        my_data[i] = data[i];
 
     if (!(I2Cx->CR2 & I2C_IT_EVT)) {        //if we are restarting the driver
         if (!(I2Cx->CR1 & 0x0100)) {        // ensure sending a start

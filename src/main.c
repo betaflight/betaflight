@@ -8,11 +8,22 @@ extern rcReadRawDataPtr rcReadRawFunc;
 extern uint16_t pwmReadRawRC(uint8_t chan);
 extern uint16_t spektrumReadRawRC(uint8_t chan);
 
+#ifdef USE_LAME_PRINTF
+// gcc/GNU version
 static void _putc(void *p, char c)
 {
     uartWrite(c);
 }
-
+#else
+// keil/armcc version
+int fputc(int c, FILE *f)
+{
+    // let DMA catch up a bit when using set or dump, we're too fast.
+    while (!uartTransmitDMAEmpty());
+    uartWrite(c);
+    return c;
+}
+#endif
 
 int main(void)
 {
@@ -42,7 +53,9 @@ int main(void)
 #endif
 
     systemInit();
+#ifdef USE_LAME_PRINTF
     init_printf(NULL, _putc);
+#endif
 
     checkFirstTime(false);
     readEEPROM();
@@ -73,6 +86,7 @@ int main(void)
     pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = mcfg.motor_pwm_rate;
     pwm_params.servoPwmRate = mcfg.servo_pwm_rate;
+    pwm_params.failsafeThreshold = cfg.failsafe_detect_threshold;
     switch (mcfg.power_adc_channel) {
         case 1:
             pwm_params.adcChannel = PWM2;

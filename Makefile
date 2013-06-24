@@ -23,6 +23,9 @@ OPTIONS		?=
 # Debugger optons, must be empty or GDB
 DEBUG ?=
 
+# Serial port/Device for flashing
+SERIAL_DEVICE	?= /dev/ttyUSB0
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -191,6 +194,20 @@ $(OBJECT_DIR)/$(TARGET)/%.o): %.S
 
 clean:
 	rm -f $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS)
+
+flash_$(TARGET): $(TARGET_HEX)
+	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	echo -n 'R' >$(SERIAL_DEVICE)
+	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+
+flash: flash_$(TARGET)
+
+
+unbrick_$(TARGET): $(TARGET_HEX)
+	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+
+unbrick: unbrick_$(TARGET)
 
 help:
 	@echo ""

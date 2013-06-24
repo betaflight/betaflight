@@ -44,7 +44,7 @@ const char * const mixerNames[] = {
 const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
-    "FAILSAFE", "SONAR", "TELEMETRY", "VARIO",
+    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO",
     NULL
 };
 
@@ -131,8 +131,9 @@ const clivalue_t valueTable[] = {
     { "moron_threshold", VAR_UINT8, &mcfg.moron_threshold, 0, 128 },
     { "gyro_lpf", VAR_UINT16, &mcfg.gyro_lpf, 0, 256 },
     { "gyro_cmpf_factor", VAR_UINT16, &mcfg.gyro_cmpf_factor, 100, 1000 },
+    { "gyro_cmpfm_factor", VAR_UINT16, &mcfg.gyro_cmpfm_factor, 100, 1000 },
     { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, 3 },
-
+    { "pid_controller", VAR_UINT8, &cfg.pidController, 0, 1 },
     { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
     { "yawdeadband", VAR_UINT8, &cfg.yawdeadband, 0, 100 },
     { "alt_hold_throttle_neutral", VAR_UINT8, &cfg.alt_hold_throttle_neutral, 1, 250 },
@@ -145,6 +146,7 @@ const clivalue_t valueTable[] = {
     { "failsafe_delay", VAR_UINT8, &cfg.failsafe_delay, 0, 200 },
     { "failsafe_off_delay", VAR_UINT8, &cfg.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, 1000, 2000 },
+    { "failsafe_detect_threshold", VAR_UINT16, &cfg.failsafe_detect_threshold, 100, 2000 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
     { "tri_yaw_middle", VAR_UINT16, &cfg.tri_yaw_middle, 0, 2000 },
     { "tri_yaw_min", VAR_UINT16, &cfg.tri_yaw_min, 0, 2000 },
@@ -169,7 +171,6 @@ const clivalue_t valueTable[] = {
     { "gimbal_roll_max", VAR_UINT16, &cfg.gimbal_roll_max, 100, 3000 },
     { "gimbal_roll_mid", VAR_UINT16, &cfg.gimbal_roll_mid, 100, 3000 },
     { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 250 },
-    { "acc_lpf_for_velocity", VAR_UINT8, &cfg.acc_lpf_for_velocity, 1, 250 },
     { "acc_trim_pitch", VAR_INT16, &cfg.angleTrim[PITCH], -300, 300 },
     { "acc_trim_roll", VAR_INT16, &cfg.angleTrim[ROLL], -300, 300 },
     { "baro_tab_size", VAR_UINT8, &cfg.baro_tab_size, 0, BARO_TAB_SIZE_MAX },
@@ -598,7 +599,7 @@ static void cliDump(char *cmdline)
 static void cliExit(char *cmdline)
 {
     uartPrint("\r\nLeaving CLI mode...\r\n");
-    memset(cliBuffer, 0, sizeof(cliBuffer));
+    *cliBuffer = '\0';
     bufferIndex = 0;
     cliMode = 0;
     // save and reboot... I think this makes the most sense
@@ -860,6 +861,16 @@ static void cliSet(char *cmdline)
             }
         }
         uartPrint("ERR: Unknown variable name\r\n");
+    } else {
+        // no equals, check for matching variables.
+        for (i = 0; i < VALUE_COUNT; i++) {
+            if (strstr(valueTable[i].name, cmdline)) {
+                val = &valueTable[i];
+                printf("%s = ", valueTable[i].name);
+                cliPrintVar(val, 0);
+                printf("\r\n");
+            }
+        }
     }
 }
 
@@ -904,6 +915,35 @@ void cliProcess(void)
 
     while (uartAvailable()) {
         uint8_t c = uartRead();
+
+        /* first step: translate "ESC[" -> "CSI" */
+        if (c == '\033') {
+            c = uartReadPoll();
+            if (c == '[')
+                c = 0x9b;
+            else
+                /* ignore unknown sequences */
+                c = 0;
+        }
+
+        /* second step: translate known CSI sequence into singlebyte control sequences */
+        if (c == 0x9b) {
+            c = uartReadPoll();
+            if (c == 'A')       //up
+                c = 0x0b;
+            else if (c == 'B')  //down
+                c = 0x0a;
+            else if (c == 'C')  //right
+                c = 0x0c;
+            else if (c == 'D')  //left
+                c = 0x08;
+            else if (c == 0x33 && uartReadPoll() == 0x7e)       //delete
+                c = 0xff;       // nonstandard, borrowing 0xff for the delete key
+            else
+                c = 0;
+        }
+
+        /* from here on everything is a single byte */
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
@@ -919,9 +959,10 @@ void cliProcess(void)
                 for (; ; bufferIndex++) {
                     if (pstart->name[bufferIndex] != pend->name[bufferIndex])
                         break;
-                    if (!pstart->name[bufferIndex]) {
+                    if (!pstart->name[bufferIndex] && bufferIndex < sizeof(cliBuffer) - 2) {
                         /* Unambiguous -- append a space */
                         cliBuffer[bufferIndex++] = ' ';
+                        cliBuffer[bufferIndex] = '\0';
                         break;
                     }
                     cliBuffer[bufferIndex] = pstart->name[bufferIndex];
@@ -942,20 +983,41 @@ void cliProcess(void)
         } else if (!bufferIndex && c == 4) {
             cliExit(cliBuffer);
             return;
+        } else if (c == 0x15) {
+            // ctrl+u == delete line
+            uartPrint("\033[G\033[K# ");
+            bufferIndex = 0;
+            *cliBuffer = '\0';
+        } else if (c == 0x0b) {
+            //uartPrint("up unimplemented");
+        } else if (c == 0x0a) {
+            //uartPrint("down unimplemend");
+        } else if (c == 0x08) {
+            if (bufferIndex > 0) {
+                bufferIndex--;
+                uartPrint("\033[D");
+            }
         } else if (c == 12) {
-            // clear screen
-            uartPrint("\033[2J\033[1;1H");
-            cliPrompt();
-        } else if (bufferIndex && (c == '\n' || c == '\r')) {
+            if (cliBuffer[bufferIndex]) {
+                bufferIndex++;
+                uartPrint("\033[C");
+            }
+        } else if (c == 0xff) {
+            // delete key
+            if (cliBuffer[bufferIndex]) {
+                int len = strlen(cliBuffer + bufferIndex);
+                memmove(cliBuffer + bufferIndex, cliBuffer + bufferIndex + 1, len + 1);
+                printf("%s \033[%dD", cliBuffer + bufferIndex, len);
+            }
+        } else if (*cliBuffer && (c == '\n' || c == '\r')) {
             // enter pressed
             clicmd_t *cmd = NULL;
             clicmd_t target;
             uartPrint("\r\n");
-            cliBuffer[bufferIndex] = 0; // null terminate
-            
+
             target.name = cliBuffer;
             target.param = NULL;
-            
+
             cmd = bsearch(&target, cmdTable, CMD_COUNT, sizeof cmdTable[0], cliCompare);
             if (cmd)
                 cmd->func(cliBuffer + strlen(cmd->name) + 1);
@@ -971,15 +1033,25 @@ void cliProcess(void)
             cliPrompt();
         } else if (c == 127) {
             // backspace
-            if (bufferIndex) {
-                cliBuffer[--bufferIndex] = 0;
-                uartPrint("\010 \010");
+            if (bufferIndex && *cliBuffer) {
+                int len = strlen(cliBuffer + bufferIndex);
+
+                --bufferIndex;
+                memmove(cliBuffer + bufferIndex, cliBuffer + bufferIndex + 1, len + 1);
+                printf("\033[D%s \033[%dD", cliBuffer + bufferIndex, len + 1);
             }
-        } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
+        } else if (strlen(cliBuffer) + 1 < sizeof(cliBuffer) && c >= 32 && c <= 126) {
+            int len;
+
             if (!bufferIndex && c == 32)
                 continue;
-            cliBuffer[bufferIndex++] = c;
-            uartWrite(c);
+
+            len = strlen(cliBuffer + bufferIndex);
+
+            memmove(cliBuffer + bufferIndex + 1, cliBuffer + bufferIndex, len + 1);
+            cliBuffer[bufferIndex] = c;
+            printf("%s \033[%dD", cliBuffer + bufferIndex, len + 1);
+            ++bufferIndex;
         }
     }
 }
