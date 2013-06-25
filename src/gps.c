@@ -97,7 +97,7 @@ static void gpsPrint(const char *str)
         str++;
     }
     // wait to send all
-    while (!uart2TransmitEmpty());
+    while (!isUart2TransmitEmpty());
     delay(30);
 }
 

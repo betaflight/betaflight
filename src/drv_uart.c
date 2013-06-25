@@ -107,17 +107,17 @@ void uartInit(uint32_t speed)
     USART_Cmd(USART1, ENABLE);
 }
 
-uint16_t uartAvailable(void)
+bool isUartAvailable(void)
 {
     return (DMA_GetCurrDataCounter(DMA1_Channel5) != rxDMAPos) ? true : false;
 }
 
-bool uartTransmitDMAEmpty(void)
+bool isUartTransmitDMAEmpty(void)
 {
     return txDMAEmpty;
 }
 
-bool uartTransmitEmpty(void)
+bool isUartTransmitEmpty(void)
 {
     return (txBufferTail == txBufferHead);
 }
@@ -136,7 +136,7 @@ uint8_t uartRead(void)
 
 uint8_t uartReadPoll(void)
 {
-    while (!uartAvailable()); // wait for some bytes
+    while (!isUartAvailable()); // wait for some bytes
     return uartRead();
 }
 
@@ -229,7 +229,7 @@ void uart2Write(uint8_t ch)
     USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
 }
 
-bool uart2TransmitEmpty(void)
+bool isUart2TransmitEmpty(void)
 {
     return tx2BufferTail == tx2BufferHead;
 }

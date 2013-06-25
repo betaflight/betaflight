@@ -913,7 +913,7 @@ void cliProcess(void)
         cliPrompt();
     }
 
-    while (uartAvailable()) {
+    while (isUartAvailable()) {
         uint8_t c = uartRead();
 
         /* first step: translate "ESC[" -> "CSI" */
