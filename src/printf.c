@@ -227,7 +227,7 @@ void tfp_printf(char *fmt, ...)
     va_start(va, fmt);
     tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
-    while (!uartTransmitEmpty());
+    while (!isUartTransmitEmpty());
 }
 
 static void putcp(void *p, char c)
