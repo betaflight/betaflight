@@ -915,35 +915,6 @@ void cliProcess(void)
 
     while (isUartAvailable()) {
         uint8_t c = uartRead();
-
-        /* first step: translate "ESC[" -> "CSI" */
-        if (c == '\033') {
-            c = uartReadPoll();
-            if (c == '[')
-                c = 0x9b;
-            else
-                /* ignore unknown sequences */
-                c = 0;
-        }
-
-        /* second step: translate known CSI sequence into singlebyte control sequences */
-        if (c == 0x9b) {
-            c = uartReadPoll();
-            if (c == 'A')       //up
-                c = 0x0b;
-            else if (c == 'B')  //down
-                c = 0x0a;
-            else if (c == 'C')  //right
-                c = 0x0c;
-            else if (c == 'D')  //left
-                c = 0x08;
-            else if (c == 0x33 && uartReadPoll() == 0x7e)       //delete
-                c = 0xff;       // nonstandard, borrowing 0xff for the delete key
-            else
-                c = 0;
-        }
-
-        /* from here on everything is a single byte */
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
@@ -983,37 +954,16 @@ void cliProcess(void)
         } else if (!bufferIndex && c == 4) {
             cliExit(cliBuffer);
             return;
-        } else if (c == 0x15) {
-            // ctrl+u == delete line
-            uartPrint("\033[G\033[K# ");
-            bufferIndex = 0;
-            *cliBuffer = '\0';
-        } else if (c == 0x0b) {
-            //uartPrint("up unimplemented");
-        } else if (c == 0x0a) {
-            //uartPrint("down unimplemend");
-        } else if (c == 0x08) {
-            if (bufferIndex > 0) {
-                bufferIndex--;
-                uartPrint("\033[D");
-            }
         } else if (c == 12) {
-            if (cliBuffer[bufferIndex]) {
-                bufferIndex++;
-                uartPrint("\033[C");
-            }
-        } else if (c == 0xff) {
-            // delete key
-            if (cliBuffer[bufferIndex]) {
-                int len = strlen(cliBuffer + bufferIndex);
-                memmove(cliBuffer + bufferIndex, cliBuffer + bufferIndex + 1, len + 1);
-                printf("%s \033[%dD", cliBuffer + bufferIndex, len);
-            }
-        } else if (*cliBuffer && (c == '\n' || c == '\r')) {
+            // clear screen
+            uartPrint("\033[2J\033[1;1H");
+            cliPrompt();
+        } else if (bufferIndex && (c == '\n' || c == '\r')) {
             // enter pressed
             clicmd_t *cmd = NULL;
             clicmd_t target;
             uartPrint("\r\n");
+            cliBuffer[bufferIndex] = 0; // null terminate
 
             target.name = cliBuffer;
             target.param = NULL;
@@ -1033,25 +983,15 @@ void cliProcess(void)
             cliPrompt();
         } else if (c == 127) {
             // backspace
-            if (bufferIndex && *cliBuffer) {
-                int len = strlen(cliBuffer + bufferIndex);
-
-                --bufferIndex;
-                memmove(cliBuffer + bufferIndex, cliBuffer + bufferIndex + 1, len + 1);
-                printf("\033[D%s \033[%dD", cliBuffer + bufferIndex, len + 1);
+            if (bufferIndex) {
+                cliBuffer[--bufferIndex] = 0;
+                uartPrint("\010 \010");
             }
-        } else if (strlen(cliBuffer) + 1 < sizeof(cliBuffer) && c >= 32 && c <= 126) {
-            int len;
-
+        } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
             if (!bufferIndex && c == 32)
                 continue;
-
-            len = strlen(cliBuffer + bufferIndex);
-
-            memmove(cliBuffer + bufferIndex + 1, cliBuffer + bufferIndex, len + 1);
-            cliBuffer[bufferIndex] = c;
-            printf("%s \033[%dD", cliBuffer + bufferIndex, len + 1);
-            ++bufferIndex;
+            cliBuffer[bufferIndex++] = c;
+            uartWrite(c);
         }
     }
 }
