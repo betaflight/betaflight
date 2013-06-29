@@ -72,14 +72,14 @@ bool mma8452Detect(sensor_t *acc)
 
 static void mma8452Init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
 
     // PA5 - ACC_INT2 output on rev3/4 hardware
     // OLIMEXINO - The PA5 pin is wired up to LED1, if you need to use an mma8452 on an Olimexino use a different pin and provide support in code.
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    gpio.pin = Pin_5;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_IN_FLOATING;
+    gpioInit(GPIOA, &gpio);
 
     i2cWrite(MMA8452_ADDRESS, MMA8452_CTRL_REG1, 0); // Put device in standby to configure stuff
     i2cWrite(MMA8452_ADDRESS, MMA8452_XYZ_DATA_CFG, MMA8452_FS_RANGE_8G);

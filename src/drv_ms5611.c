@@ -36,16 +36,16 @@ static uint8_t ms5611_osr = CMD_ADC_4096;
 
 bool ms5611Detect(baro_t *baro)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
     bool ack = false;
     uint8_t sig;
     int i;
 
     // PC13 (BMP085's XCLR reset input, which we use to disable it)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    gpio.pin = Pin_13;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_Out_PP;
+    gpioInit(GPIOC, &gpio);
     BMP085_OFF;
 
     delay(10); // No idea how long the chip takes to power-up, but let's make it 10ms

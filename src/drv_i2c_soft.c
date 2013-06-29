@@ -131,12 +131,12 @@ static uint8_t I2C_ReceiveByte(void)
 
 void i2cInit(I2C_TypeDef * I2C)
 {
-    GPIO_InitTypeDef gpio;
+    GPIO_Config gpio;
 
-    gpio.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
-    gpio.GPIO_Speed = GPIO_Speed_2MHz;
-    gpio.GPIO_Mode = GPIO_Mode_Out_OD;
-    GPIO_Init(GPIOB, &gpio);
+    gpio.pin = Pin_10 | Pin_11;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_Out_OD;
+    gpioInit(GPIOB, &gpio);
 }
 
 bool i2cWriteBuffer(uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)

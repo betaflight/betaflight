@@ -1,12 +1,5 @@
 #include "board.h"
 
-typedef struct gpio_config_t
-{
-    GPIO_TypeDef *gpio;
-    uint16_t pin;
-    GPIOMode_TypeDef mode;
-} gpio_config_t;
-
 // cycles per microsecond
 static volatile uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
@@ -44,17 +37,28 @@ uint32_t millis(void)
 
 void systemInit(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
-    uint32_t i;
-
-    gpio_config_t gpio_cfg[] = {
-        { LED0_GPIO, LED0_PIN, GPIO_Mode_Out_PP },
-        { LED1_GPIO, LED1_PIN, GPIO_Mode_Out_PP },
+    struct {
+        GPIO_TypeDef *gpio;
+        gpio_config_t cfg;
+    } gpio_setup[] = {
+        { 
+            .gpio = LED0_GPIO, 
+            .cfg = { LED0_PIN, Mode_Out_PP, Speed_2MHz } 
+        },
+        { 
+            .gpio = LED1_GPIO, 
+            .cfg = { LED1_PIN, Mode_Out_PP, Speed_2MHz } 
+        },
 #ifdef BUZZER
-        { BEEP_GPIO, BEEP_PIN, GPIO_Mode_Out_OD },
+        { 
+            .gpio = BEEP_GPIO, 
+            .cfg = { BEEP_PIN, Mode_Out_OD, Speed_2MHz } 
+        },
 #endif
     };
-    uint8_t gpio_count = sizeof(gpio_cfg) / sizeof(gpio_cfg[0]);
+    gpio_config_t gpio;
+    uint32_t i;
+    uint8_t gpio_count = sizeof(gpio_setup) / sizeof(gpio_setup[0]);
 
     // This is needed because some shit inside Keil startup fucks with SystemCoreClock, setting it back to 72MHz even on HSI.
     SystemCoreClockUpdate();
@@ -66,22 +70,19 @@ void systemInit(void)
     RCC_ClearFlag();
 
     // Make all GPIO in by default to save power and reduce noise
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_All;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    gpio.pin = Pin_All;
+    gpio.mode = Mode_AIN;
+    gpioInit(GPIOA, &gpio);
+    gpioInit(GPIOB, &gpio);
+    gpioInit(GPIOC, &gpio);
 
     // Turn off JTAG port 'cause we're using the GPIO for leds
-    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+#define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
+    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
 
     // Configure gpio
-    for (i = 0; i < gpio_count; i++) {
-        GPIO_InitStructure.GPIO_Pin = gpio_cfg[i].pin;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-        GPIO_InitStructure.GPIO_Mode = gpio_cfg[i].mode;
-        GPIO_Init(gpio_cfg[i].gpio, &GPIO_InitStructure);
-    }
+    for (i = 0; i < gpio_count; i++)
+        gpioInit(gpio_setup[i].gpio, &gpio_setup[i].cfg);
 
     LED0_OFF;
     LED1_OFF;

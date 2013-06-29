@@ -41,20 +41,20 @@ void DMA1_Channel4_IRQHandler(void)
 
 void uartInit(uint32_t speed)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
     USART_InitTypeDef USART_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
 
     // USART1_TX    PA9
     // USART1_RX    PA10
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    gpio.pin = Pin_9;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_AF_PP;
+    gpioInit(GPIOA, &gpio);
+    gpio.pin = Pin_10;
+    gpio.mode = Mode_IPU;
+    gpioInit(GPIOA, &gpio);
 
     // DMA TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
@@ -183,7 +183,7 @@ static void uart2Open(uint32_t speed)
 void uart2Init(uint32_t speed, uartReceiveCallbackPtr func, bool rxOnly)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
@@ -197,14 +197,14 @@ void uart2Init(uint32_t speed, uartReceiveCallbackPtr func, bool rxOnly)
 
     // USART2_TX    PA2
     // USART2_RX    PA3
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    gpio.pin = GPIO_Pin_2;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_AF_PP;
     if (!rxOnly)
-        GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+        gpioInit(GPIOA, &gpio);
+    gpio.pin = Pin_3;
+    gpio.mode = Mode_IPU;
+    gpioInit(GPIOA, &gpio);
 
     uart2Open(speed);
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);

@@ -254,14 +254,14 @@ void i2c_ev_handler(void)
 void i2cInit(I2C_TypeDef *I2C)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
-    GPIO_InitTypeDef GPIO_InitStructure;
     I2C_InitTypeDef I2C_InitStructure;
+    gpio_config_t gpio;
 
     // Init pins
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    gpio.pin = Pin_10 | Pin_11;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_AF_OD;
+    gpioInit(GPIOB, &gpio);
 
     I2Cx = I2C;
 
@@ -303,45 +303,44 @@ uint16_t i2cGetErrorCounter(void)
 
 static void i2cUnstick(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
     uint8_t i;
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    gpio.pin = Pin_10 | Pin_11;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_Out_OD;
+    gpioInit(GPIOB, &gpio);
 
-    GPIO_SetBits(GPIOB, GPIO_Pin_10 | GPIO_Pin_11);
+    digitalHi(GPIOB, Pin_10 | Pin_11);
     for (i = 0; i < 8; i++) {
         // Wait for any clock stretching to finish
-        while (!GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_10))
+        while (!digitalIn(GPIOB, Pin_10))
             delayMicroseconds(10);
 
         // Pull low
-        GPIO_ResetBits(GPIOB, GPIO_Pin_10); //Set bus low
+        digitalLo(GPIOB, Pin_10); // Set bus low
         delayMicroseconds(10);
         // Release high again
-        GPIO_SetBits(GPIOB, GPIO_Pin_10); //Set bus high
+        digitalHi(GPIOB, Pin_10); // Set bus high
         delayMicroseconds(10);
     }
 
     // Generate a start then stop condition
     // SCL  PB10
     // SDA  PB11
-
-    GPIO_ResetBits(GPIOB, GPIO_Pin_11); // Set bus data low
+    digitalLo(GPIOB, Pin_11); // Set bus data low
     delayMicroseconds(10);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_10); // Set bus scl low
+    digitalLo(GPIOB, Pin_10); // Set bus scl low
     delayMicroseconds(10);
-    GPIO_SetBits(GPIOB, GPIO_Pin_10); // Set bus scl high
+    digitalHi(GPIOB, Pin_10); // Set bus scl high
     delayMicroseconds(10);
-    GPIO_SetBits(GPIOB, GPIO_Pin_11); // Set bus sda high
+    digitalHi(GPIOB, Pin_11); // Set bus sda high
 
     // Init pins
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    gpio.pin = Pin_10 | Pin_11;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_AF_OD;
+    gpioInit(GPIOB, &gpio);
 }
 
 #endif

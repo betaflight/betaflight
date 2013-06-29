@@ -266,13 +266,13 @@ static void mpu6050AccAlign(int16_t *accData)
 
 static void mpu6050GyroInit(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
 
     // PB13 - MPU_INT output on rev4 hardware
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    gpio.pin = Pin_13;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_IN_FLOATING;
+    gpioInit(GPIOB, &gpio);
 
 #ifndef MPU6050_DMP
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1

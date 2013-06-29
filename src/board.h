@@ -20,6 +20,9 @@
 #include "printf.h"
 #endif
 
+#include "drv_system.h"         // timers, delays, etc
+#include "drv_gpio.h"
+
 #ifndef M_PI
 #define M_PI       3.14159265358979323846f
 #endif /* M_PI */
@@ -102,12 +105,7 @@ typedef struct baro_t
     baroCalculateFuncPtr calculate;
 } baro_t;
 
-#define digitalHi(p, i)     { p->BSRR = i; }
-#define digitalLo(p, i)     { p->BRR = i; }
-#define digitalToggle(p, i) { p->ODR ^= i; }
-
 // Hardware definitions and GPIO
-
 #ifdef FY90Q
  // FY90Q
 #define LED0_GPIO   GPIOC
@@ -182,7 +180,6 @@ typedef struct baro_t
 
 #ifdef FY90Q
  // FY90Q
-#include "drv_system.h"         // timers, delays, etc
 #include "drv_adc.h"
 #include "drv_i2c.h"
 #include "drv_pwm.h"
@@ -191,7 +188,6 @@ typedef struct baro_t
 
 #ifdef OLIMEXINO
 // OLIMEXINO
-#include "drv_system.h"         // timers, delays, etc
 #include "drv_adc.h"
 #include "drv_i2c.h"
 #include "drv_adxl345.h"
@@ -203,7 +199,6 @@ typedef struct baro_t
 #else
 
  // AfroFlight32
-#include "drv_system.h"         // timers, delays, etc
 #include "drv_adc.h"
 #include "drv_adxl345.h"
 #include "drv_bmp085.h"

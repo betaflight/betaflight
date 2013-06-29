@@ -19,30 +19,28 @@ static uint8_t exti_pin_source;
 static IRQn_Type exti_irqn;
 
 static uint32_t last_measurement;
-static volatile int16_t* distance_ptr;
+static volatile int16_t *distance_ptr;
 
 void ECHO_EXTI_IRQHandler(void)
 {
     static uint32_t timing_start;
     uint32_t timing_stop;
-    if(GPIO_ReadInputDataBit(GPIOB, echo_pin) != 0)
+    if (digitalIn(GPIOB, echo_pin) != 0) {
         timing_start = micros();
-    else 
-    {
+    } else {
         timing_stop = micros();
-        if(timing_stop > timing_start) 
-        {
+        if (timing_stop > timing_start) {
             // The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
             // The ping travels out and back, so to find the distance of the
             // object we take half of the distance traveled.
             //
             // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
-            int32_t pulse_duration = timing_stop - timing_start;          
-            *distance_ptr = pulse_duration / 59 ;
+            int32_t pulse_duration = timing_stop - timing_start;
+            *distance_ptr = pulse_duration / 59;
         }
     }
 
-    EXTI_ClearITPendingBit(exti_line);   
+    EXTI_ClearITPendingBit(exti_line);
 }
 
 void EXTI1_IRQHandler(void)
@@ -57,40 +55,39 @@ void EXTI9_5_IRQHandler(void)
 
 void hcsr04_init(sonar_config_t config)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
     EXTI_InitTypeDef EXTIInit;
 
-    //enable AFIO for EXTI support - already done is drv_system.c
-    //RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph, ENABLE); 
+    // enable AFIO for EXTI support - already done is drv_system.c
+    // RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph, ENABLE); 
 
-    switch(config)
-    {
-    case sonar_pwm56:
-        trigger_pin = GPIO_Pin_8;   // PWM5 (PB8) - 5v tolerant
-        echo_pin = GPIO_Pin_9;      // PWM6 (PB9) - 5v tolerant
-        exti_line = EXTI_Line9;
-        exti_pin_source = GPIO_PinSource9;
-        exti_irqn = EXTI9_5_IRQn;
-        break;
-    case sonar_rc78:    
-        trigger_pin = GPIO_Pin_0;   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        echo_pin = GPIO_Pin_1;      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        exti_line = EXTI_Line1;
-        exti_pin_source = GPIO_PinSource1;
-        exti_irqn = EXTI1_IRQn;
-        break;
+    switch(config) {
+        case sonar_pwm56:
+            trigger_pin = Pin_8;   // PWM5 (PB8) - 5v tolerant
+            echo_pin = Pin_9;      // PWM6 (PB9) - 5v tolerant
+            exti_line = EXTI_Line9;
+            exti_pin_source = GPIO_PinSource9;
+            exti_irqn = EXTI9_5_IRQn;
+            break;
+        case sonar_rc78:    
+            trigger_pin = Pin_0;   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+            echo_pin = Pin_1;      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+            exti_line = EXTI_Line1;
+            exti_pin_source = GPIO_PinSource1;
+            exti_irqn = EXTI1_IRQn;
+            break;
     }
-    
+
     // tp - trigger pin 
-    GPIO_InitStructure.GPIO_Pin = trigger_pin;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    gpio.pin = trigger_pin;
+    gpio.mode = Mode_Out_PP;
+    gpio.speed = Speed_2MHz;
+    gpioInit(GPIOB, &gpio);
 
     // ep - echo pin
-    GPIO_InitStructure.GPIO_Pin = echo_pin;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    gpio.pin = echo_pin;
+    gpio.mode = Mode_IN_FLOATING;
+    gpioInit(GPIOB, &gpio);
 
     // setup external interrupt on echo pin
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, exti_pin_source);
@@ -109,24 +106,22 @@ void hcsr04_init(sonar_config_t config)
 }
 
 // distance calculation is done asynchronously, using interrupt
-void hcsr04_get_distance(volatile int16_t* distance)
-{   
+void hcsr04_get_distance(volatile int16_t *distance)
+{
     uint32_t current_time = millis();
 
-    if( current_time < (last_measurement + 60) )
-    {
+    if (current_time < (last_measurement + 60)) {
         // the repeat interval of trig signal should be greater than 60ms
         // to avoid interference between connective measurements.
         return;
     }
-        
+
     last_measurement = current_time;
     distance_ptr = distance;
 
-    GPIO_SetBits(GPIOB, trigger_pin);
+    digitalHi(GPIOB, trigger_pin);
     //  The width of trig signal must be greater than 10us
     delayMicroseconds(11);
-    GPIO_ResetBits(GPIOB, trigger_pin);
+    digitalLo(GPIOB, trigger_pin);
 }
-
 #endif
