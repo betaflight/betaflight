@@ -44,7 +44,7 @@ const char * const mixerNames[] = {
 const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
-    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO",
+    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
     NULL
 };
 
@@ -53,7 +53,6 @@ const char * const sensorNames[] = {
     "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
 };
 
-// 
 const char * const accNames[] = {
     "", "ADXL345", "MPU6050", "MMA845x", NULL
 };
@@ -108,9 +107,13 @@ const clivalue_t valueTable[] = {
     { "mincommand", VAR_UINT16, &mcfg.mincommand, 0, 2000 },
     { "mincheck", VAR_UINT16, &mcfg.mincheck, 0, 2000 },
     { "maxcheck", VAR_UINT16, &mcfg.maxcheck, 0, 2000 },
-    { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
+    { "deadband3d_low", VAR_UINT16, &mcfg.deadband3d_low, 0, 2000 },
+    { "deadband3d_high", VAR_UINT16, &mcfg.deadband3d_high, 0, 2000 },
+    { "neutral3d", VAR_UINT16, &mcfg.neutral3d, 0, 2000 },
+    { "deadband3d_throttle", VAR_UINT16, &mcfg.deadband3d_throttle, 0, 2000 },
     { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 498 },
     { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
+    { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
     { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
     { "gps_baudrate", VAR_UINT32, &mcfg.gps_baudrate, 1200, 115200 },
     { "spektrum_hires", VAR_UINT8, &mcfg.spektrum_hires, 0, 1 },
