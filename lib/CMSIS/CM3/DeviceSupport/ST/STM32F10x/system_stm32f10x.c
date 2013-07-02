@@ -6,7 +6,7 @@ uint32_t SystemCoreClock = SYSCLK_FREQ_72MHz;   /*!< System Clock Frequency (Cor
 
 __I uint8_t AHBPrescTable[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9 };
 
-static int SetSysClock(void);
+uint32_t hse_value = 8000000;
 
 void SystemInit(void)
 {
@@ -29,10 +29,6 @@ void SystemInit(void)
     /* Disable all interrupts and clear pending bits  */
     RCC->CIR = 0x009F0000;
 
-    /* Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers */
-    /* Configure the Flash Latency cycles and enable prefetch buffer */
-    SetSysClock();
-
     SCB->VTOR = FLASH_BASE;     /* Vector Table Relocation in Internal FLASH. */
 }
 
@@ -48,7 +44,7 @@ void SystemCoreClockUpdate(void)
             SystemCoreClock = HSI_VALUE;
             break;
         case 0x04:                 /* HSE used as system clock */
-            SystemCoreClock = HSE_VALUE;
+            SystemCoreClock = hse_value;
             break;
         case 0x08:                 /* PLL used as system clock */
 
@@ -64,9 +60,9 @@ void SystemCoreClockUpdate(void)
             } else {
                 /* HSE selected as PLL clock entry */
                 if ((RCC->CFGR & RCC_CFGR_PLLXTPRE) != (uint32_t) RESET) {  /* HSE oscillator clock divided by 2 */
-                    SystemCoreClock = (HSE_VALUE >> 1) * pllmull;
+                    SystemCoreClock = (hse_value >> 1) * pllmull;
                 } else {
-                    SystemCoreClock = HSE_VALUE * pllmull;
+                    SystemCoreClock = hse_value * pllmull;
                 }
             }
             break;
@@ -90,7 +86,7 @@ enum {
 };
 
 // Set system clock to 72 (HSE) or 64 (HSI) MHz
-static int SetSysClock(void)
+void SetSysClock(void)
 {
     __IO uint32_t StartUpCounter = 0, status = 0, clocksrc = SRC_NONE;
     __IO uint32_t *RCC_CRH = &GPIOC->CRH;
@@ -140,10 +136,11 @@ static int SetSysClock(void)
     *RCC_CRH &= (uint32_t)~((uint32_t)0xF << (RCC_CFGR_PLLMULL9 >> 16));
 
     // Configure PLL
+    hse_value = 8000000;
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
     *RCC_CRH |= (uint32_t)0x8 << (RCC_CFGR_PLLMULL9 >> 16);
     GPIOC->ODR &= (uint32_t)~(CAN_MCR_RESET);
-    RCC_CFGR_PLLMUL = GPIOC->IDR & CAN_MCR_RESET ? StartUpCounter = 42, RCC_CFGR_PLLMULL6 : RCC_CFGR_PLLMULL9;
+    RCC_CFGR_PLLMUL = GPIOC->IDR & CAN_MCR_RESET ? hse_value = 12000000, RCC_CFGR_PLLMULL6 : RCC_CFGR_PLLMULL9;
     switch (clocksrc) {
         case SRC_HSE:
             // PLL configuration: PLLCLK = HSE * 9 = 72 MHz
@@ -164,5 +161,6 @@ static int SetSysClock(void)
     RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;
     // Wait till PLL is used as system clock source
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x08);
-    return StartUpCounter;
+
+    SystemCoreClockUpdate();
 }

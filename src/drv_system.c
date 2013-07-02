@@ -4,6 +4,8 @@
 static volatile uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
+// from system_stm32f10x.c
+void SetSysClock(void);
 
 static void cycleCounterInit(void)
 {
@@ -60,8 +62,9 @@ void systemInit(void)
     uint32_t i;
     uint8_t gpio_count = sizeof(gpio_setup) / sizeof(gpio_setup[0]);
 
-    // This is needed because some shit inside Keil startup fucks with SystemCoreClock, setting it back to 72MHz even on HSI.
-    SystemCoreClockUpdate();
+    // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
+    // Configure the Flash Latency cycles and enable prefetch buffer
+    SetSysClock();
 
     // Turn on clocks for stuff we use
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
@@ -81,12 +84,12 @@ void systemInit(void)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
 
     // Configure gpio
-    for (i = 0; i < gpio_count; i++)
-        gpioInit(gpio_setup[i].gpio, &gpio_setup[i].cfg);
-
     LED0_OFF;
     LED1_OFF;
     BEEP_OFF;
+
+    for (i = 0; i < gpio_count; i++)
+        gpioInit(gpio_setup[i].gpio, &gpio_setup[i].cfg);
 
     // Init cycle counter
     cycleCounterInit();

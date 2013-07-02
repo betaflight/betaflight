@@ -95,6 +95,10 @@ bool bmp085Detect(baro_t *baro)
     NVIC_InitTypeDef NVIC_InitStructure;
     uint8_t data;
 
+    // Not supported with this frequency
+    if (hse_value == 12000000)
+        return false;
+
     if (bmp085InitDone)
         return true;
 

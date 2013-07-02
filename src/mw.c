@@ -342,7 +342,7 @@ static void pidMultiWii(void)
 
 static void pidRewrite(void)
 {
-    int32_t errorAngle;
+    int32_t errorAngle = 0;
     int axis;
     int32_t delta, deltaSum;
     static int32_t delta1[3], delta2[3];

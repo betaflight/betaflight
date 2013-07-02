@@ -77,7 +77,6 @@ static void i2c_er_handler(void)
 
 bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-    uint8_t i;
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     addr = addr_ << 1;
