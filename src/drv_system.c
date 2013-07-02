@@ -101,6 +101,7 @@ void systemInit(void)
 #ifndef FY90Q
     i2cInit(I2C2);
 #endif
+    spiInit();
 
     // sleep for 100ms
     delay(100);

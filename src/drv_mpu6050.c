@@ -268,11 +268,14 @@ static void mpu6050GyroInit(void)
 {
     gpio_config_t gpio;
 
-    // PB13 - MPU_INT output on rev4 hardware
+    // MPU_INT output on rev4/5 hardware (PB13, PC13)
     gpio.pin = Pin_13;
     gpio.speed = Speed_2MHz;
     gpio.mode = Mode_IN_FLOATING;
-    gpioInit(GPIOB, &gpio);
+    if (hse_value == 8000000)
+        gpioInit(GPIOB, &gpio);
+    else if (hse_value == 12000000)
+        gpioInit(GPIOC, &gpio);
 
 #ifndef MPU6050_DMP
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1

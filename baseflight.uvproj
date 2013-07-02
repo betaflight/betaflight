@@ -642,6 +642,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_gpio.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_spi.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -812,6 +817,11 @@
               <FileName>printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f10x_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lib\STM32F10x_StdPeriph_Driver\src\stm32f10x_spi.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1453,6 +1463,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_gpio.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_spi.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1567,6 +1582,11 @@
               <FileName>printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f10x_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lib\STM32F10x_StdPeriph_Driver\src\stm32f10x_spi.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2448,6 +2468,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_gpio.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_spi.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2618,6 +2643,11 @@
               <FileName>printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f10x_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lib\STM32F10x_StdPeriph_Driver\src\stm32f10x_spi.c</FilePath>
             </File>
           </Files>
         </Group>

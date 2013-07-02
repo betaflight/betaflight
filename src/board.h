@@ -206,6 +206,7 @@ typedef struct baro_t
 #include "drv_ms5611.h"
 #include "drv_hmc5883l.h"
 #include "drv_i2c.h"
+#include "drv_spi.h"
 #include "drv_ledring.h"
 #include "drv_mma845x.h"
 #include "drv_mpu3050.h"
