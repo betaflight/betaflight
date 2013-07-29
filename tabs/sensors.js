@@ -1,6 +1,9 @@
 function tab_initialize_sensors() {
     // Setup variables
-    samples_i = 300;
+    samples_gyro_i = 300;
+    samples_accel_i = 300;
+    samples_mag_i = 300;
+    samples_baro_i = 300;
     
     gyro_data = new Array(3);
     accel_data = new Array(3);
@@ -117,66 +120,151 @@ function tab_initialize_sensors() {
         }
     }     
     
-    // start polling data
-    timers.push(setInterval(sensor_array_pull, 50));  
+    // set refresh speeds according to configuration saved in storage
+    chrome.storage.local.get('sensor_refresh_rates', function(result) {
+        if (typeof result.sensor_refresh_rates != 'undefined') {
+            $('.tab-sensors select').eq(0).val(result.sensor_refresh_rates.gyro); // gyro 
+            $('.tab-sensors select').eq(1).val(result.sensor_refresh_rates.accel); // accel
+            $('.tab-sensors select').eq(2).val(result.sensor_refresh_rates.mag); // mag
+            $('.tab-sensors select').eq(3).val(result.sensor_refresh_rates.baro); // baro
+            
+            $('.tab-sensors select').change(); // start polling data by triggering refresh rate change event
+        } else {
+            // start polling immediatly (as there is no configuration saved in the storage)
+            $('.tab-sensors select').change(); // start polling data by triggering refresh rate change event
+        }
+    });
+    
+    $('.tab-sensors select').change(function() {
+        // if any of the select fields change value, all of the select values are grabbed
+        // and timers are re-initialized with the new settings
+        
+        var rates = {
+            'gyro':  parseInt($('.tab-sensors select').eq(0).val()), 
+            'accel': parseInt($('.tab-sensors select').eq(1).val()), 
+            'mag':   parseInt($('.tab-sensors select').eq(2).val()), 
+            'baro':  parseInt($('.tab-sensors select').eq(3).val())
+        };
+        
+        
+        // handling of "data pulling" is a little bit funky here, as MSP_RAW_IMU contains values for gyro/accel/mag but not baro
+        // this means that setting a slower refresh rate on any of the attributes would have no effect
+        // what we will do instead is = determinate the fastest refresh rate for those 3 attributes, use that as a "polling rate"
+        // and use the "slower" refresh rates only for re-drawing the graphs (to save resources/computing power)
+        var fastest = rates.gyro;
+        
+        if (rates.accel < fastest) {
+            fastest = rates.accel;
+        }
+        
+        if (rates.mag < fastest) {
+            fastest = rates.mag;
+        }
+        
+        // timer initialization
+        disable_timers();
+        
+        // data pulling timers
+        timers.push(setInterval(sensor_status_pull, 50));
+        timers.push(setInterval(sensor_IMU_pull, fastest));
+        timers.push(setInterval(sensor_altitude_pull, rates.baro));
+        
+        // processing timers
+        timers.push(setInterval(sensor_process_gyro, rates.gyro));
+        timers.push(setInterval(sensor_process_accel, rates.accel));
+        timers.push(setInterval(sensor_process_mag, rates.mag));
+        
+        // store current/latest refresh rates in the storage
+        chrome.storage.local.set({'sensor_refresh_rates': rates}, function() {
+        });
+    });
 }
 
-function sensor_array_pull() {
-    // push data to the main array
-    gyro_data[0].push([samples_i, SENSOR_DATA.gyroscope[0]]);
-    gyro_data[1].push([samples_i, SENSOR_DATA.gyroscope[1]]);
-    gyro_data[2].push([samples_i, SENSOR_DATA.gyroscope[2]]);
+function sensor_status_pull() {
+    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+}
+
+function sensor_IMU_pull() {
+    send_message(MSP_codes.MSP_RAW_IMU, MSP_codes.MSP_RAW_IMU);
+}
+
+function sensor_altitude_pull() {
+    send_message(MSP_codes.MSP_ALTITUDE, MSP_codes.MSP_ALTITUDE);
     
-    accel_data[0].push([samples_i, SENSOR_DATA.accelerometer[0]]);
-    accel_data[1].push([samples_i, SENSOR_DATA.accelerometer[1]]);
-    accel_data[2].push([samples_i, SENSOR_DATA.accelerometer[2]]);
+    // we can process this one right here
+    sensor_process_baro();
+}
 
-    mag_data[0].push([samples_i, SENSOR_DATA.magnetometer[0]]);
-    mag_data[1].push([samples_i, SENSOR_DATA.magnetometer[1]]);
-    mag_data[2].push([samples_i, SENSOR_DATA.magnetometer[2]]);
-
-    baro_data[0].push([samples_i, SENSOR_DATA.altitude]);
+function sensor_process_gyro() {
+    gyro_data[0].push([samples_gyro_i, SENSOR_DATA.gyroscope[0]]);
+    gyro_data[1].push([samples_gyro_i, SENSOR_DATA.gyroscope[1]]);
+    gyro_data[2].push([samples_gyro_i, SENSOR_DATA.gyroscope[2]]);
     
     // Remove old data from array
     while (gyro_data[0].length > 300) {
         gyro_data[0].shift();
         gyro_data[1].shift();
         gyro_data[2].shift();
-        
-        accel_data[0].shift();
-        accel_data[1].shift();
-        accel_data[2].shift(); 
+    } 
 
-        mag_data[0].shift();
-        mag_data[1].shift();
-        mag_data[2].shift();
-
-        baro_data[0].shift();
-    }    
-
-    // Update graphs
     Flotr.draw(e_graph_gyro, [ 
         {data: gyro_data[0], label: "X - rate [" + SENSOR_DATA.gyroscope[0].toFixed(2) + "]"}, 
         {data: gyro_data[1], label: "Y - rate [" + SENSOR_DATA.gyroscope[1].toFixed(2) + "]"}, 
-        {data: gyro_data[2], label: "Z - rate [" + SENSOR_DATA.gyroscope[2].toFixed(2) + "]"} ], gyro_options);  
+        {data: gyro_data[2], label: "Z - rate [" + SENSOR_DATA.gyroscope[2].toFixed(2) + "]"} ], gyro_options); 
+    
+    samples_gyro_i++;
+}
+
+function sensor_process_accel() {
+    accel_data[0].push([samples_accel_i, SENSOR_DATA.accelerometer[0]]);
+    accel_data[1].push([samples_accel_i, SENSOR_DATA.accelerometer[1]]);
+    accel_data[2].push([samples_accel_i, SENSOR_DATA.accelerometer[2]]);
+    
+    // Remove old data from array
+    while (accel_data[0].length > 300) {        
+        accel_data[0].shift();
+        accel_data[1].shift();
+        accel_data[2].shift(); 
+    } 
 
     Flotr.draw(e_graph_accel, [ 
         {data: accel_data[1], label: "X - acceleration [" + SENSOR_DATA.accelerometer[0].toFixed(2) + "]"}, 
         {data: accel_data[0], label: "Y - acceleration [" + SENSOR_DATA.accelerometer[1].toFixed(2) + "]"}, 
         {data: accel_data[2], label: "Z - acceleration [" + SENSOR_DATA.accelerometer[2].toFixed(2) + "]"} ], accel_options);
-        
+
+    samples_accel_i++;
+}
+
+function sensor_process_mag() {
+    mag_data[0].push([samples_mag_i, SENSOR_DATA.magnetometer[0]]);
+    mag_data[1].push([samples_mag_i, SENSOR_DATA.magnetometer[1]]);
+    mag_data[2].push([samples_mag_i, SENSOR_DATA.magnetometer[2]]);
+    
+    // Remove old data from array
+    while (mag_data[0].length > 300) {
+        mag_data[0].shift();
+        mag_data[1].shift();
+        mag_data[2].shift();
+    }  
+
     Flotr.draw(e_graph_mag, [ 
         {data: mag_data[1], label: "X - Ga [" + SENSOR_DATA.magnetometer[0].toFixed(2) + "]"}, 
         {data: mag_data[0], label: "Y - Ga [" + SENSOR_DATA.magnetometer[1].toFixed(2) + "]"}, 
-        {data: mag_data[2], label: "Z - Ga [" + SENSOR_DATA.magnetometer[2].toFixed(2) + "]"} ], mag_options);    
+        {data: mag_data[2], label: "Z - Ga [" + SENSOR_DATA.magnetometer[2].toFixed(2) + "]"} ], mag_options); 
+
+    samples_mag_i++;
+}
+
+function sensor_process_baro() {
+    baro_data[0].push([samples_baro_i, SENSOR_DATA.altitude]);
+    
+    // Remove old data from array
+    while (baro_data[0].length > 300) {
+        baro_data[0].shift();
+    } 
 
     Flotr.draw(e_graph_baro, [ 
-        {data: baro_data[0], label: "X - meters [" + SENSOR_DATA.altitude.toFixed(2) + "]"} ], baro_options);          
-    
-    samples_i++;
-    
-    // Request new data
-    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-    send_message(MSP_codes.MSP_RAW_IMU, MSP_codes.MSP_RAW_IMU);
-    send_message(MSP_codes.MSP_ALTITUDE, MSP_codes.MSP_ALTITUDE);
+        {data: baro_data[0], label: "X - meters [" + SENSOR_DATA.altitude.toFixed(2) + "]"} ], baro_options);
+
+    samples_baro_i++;
 }

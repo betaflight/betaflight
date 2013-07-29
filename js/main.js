@@ -73,5 +73,5 @@ $(document).ready(function() {
     });
     
     // temporary
-    //$('#content').load("./tabs/initial_setup.html", tab_initialize_initial_setup);
+    //$('#content').load("./tabs/sensors.html", tab_initialize_sensors);
 });

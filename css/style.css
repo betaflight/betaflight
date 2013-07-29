@@ -160,6 +160,9 @@ a:hover {
     background-color: white;
     height: 480px;
     
+    overflow-x: hidden;
+    overflow-y: auto;
+    
     border: 1px solid #848484;
     
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
@@ -820,6 +823,11 @@ a:hover {
     }
     .tab-sensors #baro {
         height: 120px;
+    }
+    .tab-sensors select {
+        float: right;
+        
+        border: 1px solid silver;
     }
 .tab-cli {
 }
