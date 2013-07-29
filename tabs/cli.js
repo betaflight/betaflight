@@ -31,6 +31,11 @@ function tab_initialize_cli() {
     
     // give input element user focus
     $('.tab-cli input').focus();
+    
+    // if user clicks inside the console window, input element gets re-focused
+    $('.tab-cli .window').click(function() {
+        $('.tab-cli input').focus();
+    });
 }
 
 function leave_CLI(callback) {
