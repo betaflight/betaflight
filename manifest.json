@@ -1,7 +1,7 @@
 {
     "name": "baseflight configurator",
     "description": "Cool crossplatform configurator",
-    "version": "0.4",
+    "version": "0.5",
     "manifest_version": 2,
     "minimum_chrome_version": "23", 
     
