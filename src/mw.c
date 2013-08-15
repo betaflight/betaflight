@@ -342,7 +342,7 @@ static void pidMultiWii(void)
 
 static void pidRewrite(void)
 {
-    int32_t errorAngle;
+    int32_t errorAngle = 0;
     int axis;
     int32_t delta, deltaSum;
     static int32_t delta1[3], delta2[3];
@@ -433,6 +433,7 @@ void loop(void)
     static uint32_t loopTime;
     uint16_t auxState = 0;
     static uint8_t GPSNavReset = 1;
+    bool isThrottleLow = false;
 
     // this will return false if spektrum is disabled. shrug.
     if (spektrumFrameComplete())
@@ -443,6 +444,12 @@ void loop(void)
         // TODO clean this up. computeRC should handle this check
         if (!feature(FEATURE_SPEKTRUM))
             computeRC();
+
+        // in 3D mode, we need to be able to disarm by switch at any time
+        if (feature(FEATURE_3D)) {
+            if (!rcOptions[BOXARM])
+                mwDisarm();
+        }
 
         // Failsafe routine
         if (feature(FEATURE_FAILSAFE)) {
@@ -481,7 +488,11 @@ void loop(void)
         rcSticks = stTmp;
 
         // perform actions
-        if (rcData[THROTTLE] < mcfg.mincheck) {
+        if (feature(FEATURE_3D) && (rcData[THROTTLE] > (mcfg.midrc - mcfg.deadband3d_throttle) && rcData[THROTTLE] < (mcfg.midrc + mcfg.deadband3d_throttle)))
+            isThrottleLow = true;
+        else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < mcfg.mincheck))
+            isThrottleLow = true;
+        if (isThrottleLow) {
             errorGyroI[ROLL] = 0;
             errorGyroI[PITCH] = 0;
             errorGyroI[YAW] = 0;

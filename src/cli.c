@@ -44,7 +44,7 @@ const char * const mixerNames[] = {
 const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
-    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO",
+    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
     NULL
 };
 
@@ -53,7 +53,6 @@ const char * const sensorNames[] = {
     "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
 };
 
-// 
 const char * const accNames[] = {
     "", "ADXL345", "MPU6050", "MMA845x", NULL
 };
@@ -108,9 +107,13 @@ const clivalue_t valueTable[] = {
     { "mincommand", VAR_UINT16, &mcfg.mincommand, 0, 2000 },
     { "mincheck", VAR_UINT16, &mcfg.mincheck, 0, 2000 },
     { "maxcheck", VAR_UINT16, &mcfg.maxcheck, 0, 2000 },
-    { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
+    { "deadband3d_low", VAR_UINT16, &mcfg.deadband3d_low, 0, 2000 },
+    { "deadband3d_high", VAR_UINT16, &mcfg.deadband3d_high, 0, 2000 },
+    { "neutral3d", VAR_UINT16, &mcfg.neutral3d, 0, 2000 },
+    { "deadband3d_throttle", VAR_UINT16, &mcfg.deadband3d_throttle, 0, 2000 },
     { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 498 },
     { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
+    { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
     { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
     { "gps_baudrate", VAR_UINT32, &mcfg.gps_baudrate, 1200, 115200 },
     { "spektrum_hires", VAR_UINT8, &mcfg.spektrum_hires, 0, 1 },
@@ -913,37 +916,8 @@ void cliProcess(void)
         cliPrompt();
     }
 
-    while (uartAvailable()) {
+    while (isUartAvailable()) {
         uint8_t c = uartRead();
-
-        /* first step: translate "ESC[" -> "CSI" */
-        if (c == '\033') {
-            c = uartReadPoll();
-            if (c == '[')
-                c = 0x9b;
-            else
-                /* ignore unknown sequences */
-                c = 0;
-        }
-
-        /* second step: translate known CSI sequence into singlebyte control sequences */
-        if (c == 0x9b) {
-            c = uartReadPoll();
-            if (c == 'A')       //up
-                c = 0x0b;
-            else if (c == 'B')  //down
-                c = 0x0a;
-            else if (c == 'C')  //right
-                c = 0x0c;
-            else if (c == 'D')  //left
-                c = 0x08;
-            else if (c == 0x33 && uartReadPoll() == 0x7e)       //delete
-                c = 0xff;       // nonstandard, borrowing 0xff for the delete key
-            else
-                c = 0;
-        }
-
-        /* from here on everything is a single byte */
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
@@ -983,37 +957,16 @@ void cliProcess(void)
         } else if (!bufferIndex && c == 4) {
             cliExit(cliBuffer);
             return;
-        } else if (c == 0x15) {
-            // ctrl+u == delete line
-            uartPrint("\033[G\033[K# ");
-            bufferIndex = 0;
-            *cliBuffer = '\0';
-        } else if (c == 0x0b) {
-            //uartPrint("up unimplemented");
-        } else if (c == 0x0a) {
-            //uartPrint("down unimplemend");
-        } else if (c == 0x08) {
-            if (bufferIndex > 0) {
-                bufferIndex--;
-                uartPrint("\033[D");
-            }
         } else if (c == 12) {
-            if (cliBuffer[bufferIndex]) {
-                bufferIndex++;
-                uartPrint("\033[C");
-            }
-        } else if (c == 0xff) {
-            // delete key
-            if (cliBuffer[bufferIndex]) {
-                int len = strlen(cliBuffer + bufferIndex);
-                memmove(cliBuffer + bufferIndex, cliBuffer + bufferIndex + 1, len + 1);
-                printf("%s \033[%dD", cliBuffer + bufferIndex, len);
-            }
-        } else if (*cliBuffer && (c == '\n' || c == '\r')) {
+            // clear screen
+            uartPrint("\033[2J\033[1;1H");
+            cliPrompt();
+        } else if (bufferIndex && (c == '\n' || c == '\r')) {
             // enter pressed
             clicmd_t *cmd = NULL;
             clicmd_t target;
             uartPrint("\r\n");
+            cliBuffer[bufferIndex] = 0; // null terminate
 
             target.name = cliBuffer;
             target.param = NULL;
@@ -1033,25 +986,15 @@ void cliProcess(void)
             cliPrompt();
         } else if (c == 127) {
             // backspace
-            if (bufferIndex && *cliBuffer) {
-                int len = strlen(cliBuffer + bufferIndex);
-
-                --bufferIndex;
-                memmove(cliBuffer + bufferIndex, cliBuffer + bufferIndex + 1, len + 1);
-                printf("\033[D%s \033[%dD", cliBuffer + bufferIndex, len + 1);
+            if (bufferIndex) {
+                cliBuffer[--bufferIndex] = 0;
+                uartPrint("\010 \010");
             }
-        } else if (strlen(cliBuffer) + 1 < sizeof(cliBuffer) && c >= 32 && c <= 126) {
-            int len;
-
+        } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
             if (!bufferIndex && c == 32)
                 continue;
-
-            len = strlen(cliBuffer + bufferIndex);
-
-            memmove(cliBuffer + bufferIndex + 1, cliBuffer + bufferIndex, len + 1);
-            cliBuffer[bufferIndex] = c;
-            printf("%s \033[%dD", cliBuffer + bufferIndex, len + 1);
-            ++bufferIndex;
+            cliBuffer[bufferIndex++] = c;
+            uartWrite(c);
         }
     }
 }

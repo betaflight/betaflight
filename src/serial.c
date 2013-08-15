@@ -668,7 +668,7 @@ void serialCom(void)
         return;
     }
 
-    while (uartAvailable()) {
+    while (isUartAvailable()) {
         c = uartRead();
 
         if (c_state == IDLE) {
@@ -705,7 +705,7 @@ void serialCom(void)
             c_state = IDLE;
         }
     }
-    if (!cliMode && !uartAvailable() && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
+    if (!cliMode && !isUartAvailable() && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
         sendTelemetry();
         return;
     }

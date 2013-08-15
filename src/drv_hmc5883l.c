@@ -35,18 +35,24 @@ bool hmc5883lDetect(int8_t *align)
 
 void hmc5883lInit(float *calibrationGain)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
     float magGain[3];
     int16_t magADC[3];
     int i;
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
 
-    // PB12 - MAG_DRDY output on rev4 hardware
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    if (hse_value == 8000000) {
+        // PB12 - MAG_DRDY output on rev4 hardware
+        gpio.pin = Pin_12;
+        gpio.speed = Speed_2MHz;
+        gpio.mode = Mode_IN_FLOATING;
+        gpioInit(GPIOB, &gpio);
+    } else if (hse_value == 12000000) {
+        // PC14 - MAG_DRDY output on rev5 hardware
+        gpio.pin = Pin_14;
+        gpioInit(GPIOC, &gpio);
+    }
 
     delay(50);
     i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias

@@ -266,16 +266,15 @@ static void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 
 static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, uint8_t input)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t cfg;
 
-    GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = pin;
+    cfg.pin = pin;
     if (input)
-        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+        cfg.mode = Mode_IPD;
     else
-        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_Init(gpio, &GPIO_InitStructure);
+        cfg.mode = Mode_AF_PP;
+    cfg.speed = Speed_2MHz;
+    gpioInit(gpio, &cfg);
 }
 
 static pwmPortData_t *pwmOutConfig(uint8_t port, uint16_t period, uint16_t value)

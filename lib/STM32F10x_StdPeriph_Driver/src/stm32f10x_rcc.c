@@ -192,6 +192,7 @@
 
 static __I uint8_t APBAHBPrescTable[16] = {0, 0, 0, 0, 1, 2, 3, 4, 1, 2, 3, 4, 6, 7, 8, 9};
 static __I uint8_t ADCPrescTable[4] = {2, 4, 6, 8};
+extern uint32_t hse_value;
 
 /**
   * @}
@@ -926,7 +927,7 @@ void RCC_GetClocksFreq(RCC_ClocksTypeDef* RCC_Clocks)
       RCC_Clocks->SYSCLK_Frequency = HSI_VALUE;
       break;
     case 0x04:  /* HSE used as system clock */
-      RCC_Clocks->SYSCLK_Frequency = HSE_VALUE;
+      RCC_Clocks->SYSCLK_Frequency = hse_value;
       break;
     case 0x08:  /* PLL used as system clock */
 
@@ -951,11 +952,11 @@ void RCC_GetClocksFreq(RCC_ClocksTypeDef* RCC_Clocks)
         /* HSE selected as PLL clock entry */
         if ((RCC->CFGR & CFGR_PLLXTPRE_Mask) != (uint32_t)RESET)
         {/* HSE oscillator clock divided by 2 */
-          RCC_Clocks->SYSCLK_Frequency = (HSE_VALUE >> 1) * pllmull;
+          RCC_Clocks->SYSCLK_Frequency = (hse_value >> 1) * pllmull;
         }
         else
         {
-          RCC_Clocks->SYSCLK_Frequency = HSE_VALUE * pllmull;
+          RCC_Clocks->SYSCLK_Frequency = hse_value * pllmull;
         }
  #endif
       }
@@ -973,7 +974,7 @@ void RCC_GetClocksFreq(RCC_ClocksTypeDef* RCC_Clocks)
             
       if (pllsource == 0x00)
       {/* HSI oscillator clock divided by 2 selected as PLL clock entry */
-        RCC_Clocks->SYSCLK_Frequency = (HSI_VALUE >> 1) * pllmull;
+        RCC_Clocks->SYSCLK_Frequency = (hse_value >> 1) * pllmull;
       }
       else
       {/* PREDIV1 selected as PLL clock entry */
@@ -984,7 +985,7 @@ void RCC_GetClocksFreq(RCC_ClocksTypeDef* RCC_Clocks)
         
         if (prediv1source == 0)
         { /* HSE oscillator clock selected as PREDIV1 clock entry */
-          RCC_Clocks->SYSCLK_Frequency = (HSE_VALUE / prediv1factor) * pllmull;          
+          RCC_Clocks->SYSCLK_Frequency = (hse_value / prediv1factor) * pllmull;          
         }
         else
         {/* PLL2 clock selected as PREDIV1 clock entry */
@@ -992,7 +993,7 @@ void RCC_GetClocksFreq(RCC_ClocksTypeDef* RCC_Clocks)
           /* Get PREDIV2 division factor and PLL2 multiplication factor */
           prediv2factor = ((RCC->CFGR2 & CFGR2_PREDIV2) >> 4) + 1;
           pll2mull = ((RCC->CFGR2 & CFGR2_PLL2MUL) >> 8 ) + 2; 
-          RCC_Clocks->SYSCLK_Frequency = (((HSE_VALUE / prediv2factor) * pll2mull) / prediv1factor) * pllmull;                         
+          RCC_Clocks->SYSCLK_Frequency = (((hse_value / prediv2factor) * pll2mull) / prediv1factor) * pllmull;                         
         }
       }
 #endif /* STM32F10X_CL */ 

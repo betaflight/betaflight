@@ -90,22 +90,26 @@ static void bmp085_calculate(int32_t *pressure, int32_t *temperature);
 
 bool bmp085Detect(baro_t *baro)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    gpio_config_t gpio;
     EXTI_InitTypeDef EXTI_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
     uint8_t data;
+
+    // Not supported with this frequency
+    if (hse_value == 12000000)
+        return false;
 
     if (bmp085InitDone)
         return true;
 
     // PC13, PC14 (Barometer XCLR reset output, EOC input)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    gpio.pin = Pin_13;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_Out_PP;
+    gpioInit(GPIOC, &gpio);
+    gpio.pin = Pin_14;
+    gpio.mode = Mode_IN_FLOATING;
+    gpioInit(GPIOC, &gpio);
     BARO_ON;
 
     // EXTI interrupt for barometer EOC
