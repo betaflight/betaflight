@@ -1112,7 +1112,6 @@ static bool UBLOX_parse_gps(void)
             f.GPS_FIX = false;
         GPS_numSat = _buffer.solution.satellites;
         // GPS_hdop                        = _buffer.solution.position_DOP;
-        // debug[3] = GPS_hdop;
         break;
     case MSG_VELNED:
         // speed_3d                        = _buffer.velned.speed_3d;  // cm/s

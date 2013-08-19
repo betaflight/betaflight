@@ -19,7 +19,7 @@ static uint8_t exti_pin_source;
 static IRQn_Type exti_irqn;
 
 static uint32_t last_measurement;
-static volatile int16_t *distance_ptr;
+static volatile int32_t *distance_ptr;
 
 void ECHO_EXTI_IRQHandler(void)
 {
@@ -106,7 +106,7 @@ void hcsr04_init(sonar_config_t config)
 }
 
 // distance calculation is done asynchronously, using interrupt
-void hcsr04_get_distance(volatile int16_t *distance)
+void hcsr04_get_distance(volatile int32_t *distance)
 {
     uint32_t current_time = millis();
 

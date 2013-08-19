@@ -260,6 +260,7 @@ static void resetConf(void)
     cfg.yawdeadband = 0;
     cfg.alt_hold_throttle_neutral = 40;
     cfg.alt_hold_fast_change = 1;
+    cfg.throttle_angle_correction = 0;      // could be 40
 
     // Failsafe Variables
     cfg.failsafe_delay = 10;                // 1sec

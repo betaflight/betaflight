@@ -54,6 +54,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   serial.c \
 		   spektrum.c \
 		   telemetry.c \
+		   drv_gpio.c \
 		   drv_i2c.c \
 		   drv_i2c_soft.c \
 		   drv_system.c \
@@ -63,7 +64,8 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(STDPERIPH_SRC)
 
 # Source files for the NAZE target
-NAZE_SRC	 = drv_adc.c \
+NAZE_SRC	 = drv_spi.c \
+		   drv_adc.c \
 		   drv_adxl345.c \
 		   drv_bmp085.c \
 		   drv_ms5611.c \
@@ -83,7 +85,8 @@ FY90Q_SRC	 = drv_adc_fy90q.c \
 		   $(COMMON_SRC)
 
 # Source files for the OLIMEXINO target
-OLIMEXINO_SRC	 = drv_adc.c \
+OLIMEXINO_SRC	 = drv_spi.c \
+		   drv_adc.c \
 		   drv_adxl345.c \
 		   drv_mpu3050.c \
 		   drv_mpu6050.c \

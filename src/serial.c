@@ -602,6 +602,8 @@ static void evaluateCommand(void)
         break;
     case MSP_DEBUG:
         headSerialReply(8);
+        // make use of this crap, output some useful QA statistics
+        debug[3] = ((hse_value / 1000000) * 1000) + (SystemCoreClock / 1000000);         // XX0YY [crystal clock : core clock]
         for (i = 0; i < 4; i++)
             serialize16(debug[i]);      // 4 variables are here for general monitoring purpose
         break;

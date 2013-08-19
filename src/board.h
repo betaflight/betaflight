@@ -119,7 +119,7 @@ typedef struct baro_t
 
 #define SENSORS_SET (SENSOR_ACC)
 
-#endif
+#else
 
 #ifdef OLIMEXINO
 // OLIMEXINO
@@ -157,6 +157,7 @@ typedef struct baro_t
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 #endif
+#endif
 
 // Helpful macros
 #define LED0_TOGGLE              digitalToggle(LED0_GPIO, LED0_PIN);
@@ -185,7 +186,7 @@ typedef struct baro_t
 #include "drv_i2c.h"
 #include "drv_pwm.h"
 #include "drv_uart.h"
-#endif
+#else
 
 #ifdef OLIMEXINO
 // OLIMEXINO
@@ -216,4 +217,5 @@ typedef struct baro_t
 #include "drv_uart.h"
 #include "drv_hcsr04.h"
 
+#endif
 #endif

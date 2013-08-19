@@ -88,8 +88,11 @@ void systemInit(void)
     LED1_OFF;
     BEEP_OFF;
 
-    for (i = 0; i < gpio_count; i++)
+    for (i = 0; i < gpio_count; i++) {
+        if (hse_value == 12000000 && gpio_setup[i].cfg.mode == Mode_Out_OD)
+            gpio_setup[i].cfg.mode = Mode_Out_PP;
         gpioInit(gpio_setup[i].gpio, &gpio_setup[i].cfg);
+    }
 
     // Init cycle counter
     cycleCounterInit();
