@@ -264,15 +264,12 @@ static void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }
 
-static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, uint8_t input)
+static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, GPIO_Mode mode)
 {
     gpio_config_t cfg;
 
     cfg.pin = pin;
-    if (input)
-        cfg.mode = Mode_IPD;
-    else
-        cfg.mode = Mode_AF_PP;
+    cfg.mode = mode;
     cfg.speed = Speed_2MHz;
     gpioInit(gpio, &cfg);
 }
@@ -281,7 +278,7 @@ static pwmPortData_t *pwmOutConfig(uint8_t port, uint16_t period, uint16_t value
 {
     pwmPortData_t *p = &pwmPorts[port];
     pwmTimeBase(timerHardware[port].tim, period);
-    pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, 0);
+    pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, Mode_AF_PP);
     pwmOCConfig(timerHardware[port].tim, timerHardware[port].channel, value);
     // Needed only on TIM1
     if (timerHardware[port].outputEnable)
@@ -309,7 +306,7 @@ static pwmPortData_t *pwmInConfig(uint8_t port, pwmCallbackPtr callback, uint8_t
 {
     pwmPortData_t *p = &pwmPorts[port];
     pwmTimeBase(timerHardware[port].tim, 0xFFFF);
-    pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, 1);
+    pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, Mode_IPD);
     pwmICConfig(timerHardware[port].tim, timerHardware[port].channel, TIM_ICPolarity_Rising);
     TIM_Cmd(timerHardware[port].tim, ENABLE);
     pwmNVICConfig(timerHardware[port].irq);
