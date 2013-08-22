@@ -286,6 +286,16 @@ typedef struct master_t {
     uint8_t chk;                            // XOR checksum
 } master_t;
 
+// Core runtime settings
+typedef struct core_t {
+    serialPort_t *mainport;
+    serialPort_t *gpsport;
+    serialPort_t *telemport;
+    serialPort_t *rcvrport;
+    bool useServo;
+
+} core_t;
+
 typedef struct flags_t {
     uint8_t OK_TO_ARM;
     uint8_t ARMED;
@@ -369,6 +379,7 @@ extern uint8_t  GPS_svinfo_svid[16];                         // Satellite ID
 extern uint8_t  GPS_svinfo_quality[16];                      // Bitfield Qualtity
 extern uint8_t  GPS_svinfo_cno[16];                          // Carrier to Noise Ratio (Signal Strength)
 
+extern core_t core;
 extern master_t mcfg;
 extern config_t cfg;
 extern flags_t f;

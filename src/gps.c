@@ -43,7 +43,7 @@ void gpsInit(uint32_t baudrate)
     int offset = 0;
 
     GPS_set_pids();
-    uart2Init(baudrate, GPS_NewData, false);
+    core.gpsport = uartOpen(USART2, GPS_NewData, baudrate, MODE_RXTX);
 
     if (mcfg.gps_type == GPS_UBLOX)
         offset = 0;
@@ -52,7 +52,7 @@ void gpsInit(uint32_t baudrate)
 
     if (mcfg.gps_type != GPS_NMEA) {
         for (i = 0; i < 5; i++) {
-            uart2ChangeBaud(init_speed[i]);
+            uartChangeBaud(core.gpsport, init_speed[i]);
             switch (baudrate) {
                 case 19200:
                     gpsPrint(gpsInitStrings[offset]);
@@ -71,10 +71,10 @@ void gpsInit(uint32_t baudrate)
         }
     }
 
-    uart2ChangeBaud(baudrate);
+    uartChangeBaud(core.gpsport, baudrate);
     if (mcfg.gps_type == GPS_UBLOX) {
         for (i = 0; i < sizeof(ubloxInit); i++) {
-            uart2Write(ubloxInit[i]); // send ubx init binary
+            uartWrite(core.gpsport, ubloxInit[i]); // send ubx init binary
             delay(4);
         }
     } else if (mcfg.gps_type == GPS_MTK) {
@@ -91,13 +91,13 @@ void gpsInit(uint32_t baudrate)
 static void gpsPrint(const char *str)
 {
     while (*str) {
-        uart2Write(*str);
+        uartWrite(core.gpsport, *str);
         if (mcfg.gps_type == GPS_UBLOX)
             delay(4);
         str++;
     }
     // wait to send all
-    while (!isUart2TransmitEmpty());
+    while (!isUartTransmitEmpty(core.gpsport));
     delay(30);
 }
 

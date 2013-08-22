@@ -1,7 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
-extern uint8_t useServo;
+core_t core;
+
 extern rcReadRawDataPtr rcReadRawFunc;
 
 // two receiver read functions
@@ -19,8 +20,8 @@ static void _putc(void *p, char c)
 int fputc(int c, FILE *f)
 {
     // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isUartTransmitDMAEmpty());
-    uartWrite(c);
+    while (!isUartTransmitEmpty(core.mainport));
+    uartWrite(core.mainport, c);
     return c;
 }
 #endif
@@ -30,27 +31,6 @@ int main(void)
     uint8_t i;
     drv_pwm_config_t pwm_params;
     drv_adc_config_t adc_params;
-
-#if 0
-    // PC12, PA15
-    // using this to write asm for bootloader :)
-    RCC->APB2ENR |= RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO; // GPIOA/C+AFIO only
-    AFIO->MAPR &= 0xF0FFFFFF;
-    AFIO->MAPR = 0x02000000;
-    GPIOA->CRH = 0x34444444; // PIN 15 Output 50MHz
-    GPIOA->BRR = 0x8000; // set low 15
-    GPIOC->CRH = 0x44434444; // PIN 12 Output 50MHz
-    GPIOC->BRR = 0x1000; // set low 12
-#endif
-
-#if 0
-    // using this to write asm for bootloader :)
-    RCC->APB2ENR |= RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO; // GPIOB + AFIO
-    AFIO->MAPR &= 0xF0FFFFFF;
-    AFIO->MAPR = 0x02000000;
-    GPIOB->BRR = 0x18; // set low 4 & 3
-    GPIOB->CRL = 0x44433444; // PIN 4 & 3 Output 50MHz
-#endif
 
     systemInit();
 #ifdef USE_LAME_PRINTF
@@ -73,7 +53,7 @@ int main(void)
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
 
-    mixerInit(); // this will set useServo var depending on mixer type
+    mixerInit(); // this will set core.useServo var depending on mixer type
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (mcfg.mixerConfiguration == MULTITYPE_AIRPLANE || mcfg.mixerConfiguration == MULTITYPE_FLYING_WING)
         pwm_params.airplane = true;
@@ -82,7 +62,7 @@ int main(void)
     pwm_params.useUART = feature(FEATURE_GPS) || feature(FEATURE_SPEKTRUM); // spektrum support uses UART too
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SPEKTRUM); // disable inputs if using spektrum
-    pwm_params.useServos = useServo;
+    pwm_params.useServos = core.useServo;
     pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = mcfg.motor_pwm_rate;
     pwm_params.servoPwmRate = mcfg.servo_pwm_rate;

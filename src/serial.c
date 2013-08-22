@@ -157,16 +157,16 @@ void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
-    uartWrite(t);
+    uartWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 8;
-    uartWrite(t);
+    uartWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 16;
-    uartWrite(t);
+    uartWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 24;
-    uartWrite(t);
+    uartWrite(core.mainport, t);
     checksum ^= t;
 }
 
@@ -174,16 +174,16 @@ void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
-    uartWrite(t);
+    uartWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 8 & 0xff;
-    uartWrite(t);
+    uartWrite(core.mainport, t);
     checksum ^= t;
 }
 
 void serialize8(uint8_t a)
 {
-    uartWrite(a);
+    uartWrite(core.mainport, a);
     checksum ^= a;
 }
 
@@ -261,7 +261,9 @@ void serialInit(uint32_t baudrate)
 {
     int idx;
 
-    uartInit(baudrate);
+    core.mainport = uartOpen(USART1, NULL, baudrate, MODE_RXTX);
+    // TODO fix/hax
+    core.telemport = core.mainport;
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(availableBoxes, 0xFF, sizeof(availableBoxes));
 
@@ -670,8 +672,8 @@ void serialCom(void)
         return;
     }
 
-    while (isUartAvailable()) {
-        c = uartRead();
+    while (isUartAvailable(core.mainport)) {
+        c = uartRead(core.mainport);
 
         if (c_state == IDLE) {
             c_state = (c == '$') ? HEADER_START : IDLE;
@@ -707,7 +709,7 @@ void serialCom(void)
             c_state = IDLE;
         }
     }
-    if (!cliMode && !isUartAvailable() && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
+    if (!cliMode && !isUartAvailable(core.telemport) && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
         sendTelemetry();
         return;
     }
