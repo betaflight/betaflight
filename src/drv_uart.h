@@ -38,9 +38,6 @@ typedef struct {
     portmode_t mode;
 } serialPort_t;
 
-extern serialPort_t serialPort1;
-extern serialPort_t serialPort2;
-
 serialPort_t *uartOpen(USART_TypeDef *USARTx, uartReceiveCallbackPtr callback, uint32_t baudRate, portmode_t mode);
 void uartChangeBaud(serialPort_t *s, uint32_t baudRate);
 bool isUartAvailable(serialPort_t *s);

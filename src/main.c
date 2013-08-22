@@ -13,7 +13,7 @@ extern uint16_t spektrumReadRawRC(uint8_t chan);
 // gcc/GNU version
 static void _putc(void *p, char c)
 {
-    uartWrite(c);
+    uartWrite(core.mainport, c);
 }
 #else
 // keil/armcc version

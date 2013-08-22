@@ -30,6 +30,7 @@
  */
 
 #include "board.h"
+#include "mw.h"
 #ifdef USE_LAME_PRINTF
 #define PRINTF_LONG_SUPPORT
 
@@ -227,15 +228,13 @@ void tfp_printf(char *fmt, ...)
     va_start(va, fmt);
     tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
-    while (!isUartTransmitEmpty());
+    while (!isUartTransmitEmpty(core.mainport));
 }
 
 static void putcp(void *p, char c)
 {
     *(*((char **) p))++ = c;
 }
-
-
 
 void tfp_sprintf(char *s, char *fmt, ...)
 {
