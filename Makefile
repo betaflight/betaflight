@@ -142,7 +142,7 @@ LD_SCRIPT	 = $(ROOT)/stm32_flash.ld
 LDFLAGS		 = -lm \
 		   $(ARCH_FLAGS) \
 		   -static \
-		   -Wl,-gc-sections \
+		   -Wl,-gc-sections,-Map,$(TARGET_MAP) \
 		   -T$(LD_SCRIPT)
 
 ###############################################################################
@@ -169,6 +169,7 @@ endif
 TARGET_HEX	 = $(BIN_DIR)/baseflight_$(TARGET).hex
 TARGET_ELF	 = $(BIN_DIR)/baseflight_$(TARGET).elf
 TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
+TARGET_MAP   = $(OBJECT_DIR)/baseflight_$(TARGET).map
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
@@ -196,7 +197,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o): %.S
 	@$(CC) -c -o $@ $(ASFLAGS) $< 
 
 clean:
-	rm -f $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS)
+	rm -f $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 
 flash_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
