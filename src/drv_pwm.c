@@ -74,7 +74,7 @@
 
 typedef void pwmCallbackPtr(uint8_t port, uint16_t capture);
 
-static pwmHardware_t timerHardware[] = {
+static const pwmHardware_t timerHardware[] = {
     { TIM2, GPIOA, GPIO_Pin_0, TIM_Channel_1, TIM2_IRQn, 0, },          // PWM1
     { TIM2, GPIOA, GPIO_Pin_1, TIM_Channel_2, TIM2_IRQn, 0, },          // PWM2
     { TIM2, GPIOA, GPIO_Pin_2, TIM_Channel_3, TIM2_IRQn, 0, },          // PWM3
@@ -188,7 +188,7 @@ static const uint8_t airPWM[] = {
     0xFF
 };
 
-static const uint8_t *hardwareMaps[] = {
+static const uint8_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
     airPWM,
