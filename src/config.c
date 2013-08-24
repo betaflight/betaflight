@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 48;
+static const uint8_t EEPROM_CONF_VERSION = 49;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -217,9 +217,9 @@ static void resetConf(void)
     cfg.P8[YAW] = 85;
     cfg.I8[YAW] = 45;
     cfg.D8[YAW] = 0;
-    cfg.P8[PIDALT] = 64;
+    cfg.P8[PIDALT] = 50;
     cfg.I8[PIDALT] = 25;
-    cfg.D8[PIDALT] = 24;
+    cfg.D8[PIDALT] = 80;
     cfg.P8[PIDPOS] = 11; // POSHOLD_P * 100;
     cfg.I8[PIDPOS] = 0; // POSHOLD_I * 100;
     cfg.D8[PIDPOS] = 0;
@@ -249,10 +249,13 @@ static void resetConf(void)
     cfg.angleTrim[1] = 0;
     cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     cfg.acc_lpf_factor = 4;
-    cfg.accz_deadband = 50;
+    cfg.accz_deadband = 40;
+    cfg.accxy_deadband = 40;
     cfg.baro_tab_size = 21;
     cfg.baro_noise_lpf = 0.6f;
-    cfg.baro_cf = 0.985f;
+    cfg.baro_cf_vel = 0.995f;
+    cfg.baro_cf_alt = 0.900f;
+    cfg.acc_unarmedcal = 1;
 
     // Radio
     parseRcChannels("AETR1234");

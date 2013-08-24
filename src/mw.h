@@ -164,10 +164,13 @@ typedef struct config_t {
 
     // sensor-related stuff
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
-    uint8_t accz_deadband;                  // ??
+    uint8_t accz_deadband;                  // set the acc deadband for z-Axis, this ignores small accelerations
+    uint8_t accxy_deadband;                 // set the acc deadband for xy-Axis
     uint8_t baro_tab_size;                  // size of baro filter array
     float baro_noise_lpf;                   // additional LPF to reduce baro noise
-    float baro_cf;                          // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
+    float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
+    float baro_cf_alt;                      // apply CF to use ACC for height estimation
+    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
 
     uint16_t activate[CHECKBOXITEMS];       // activate switches
 
@@ -325,7 +328,10 @@ extern int16_t failsafeCnt;
 
 extern int16_t debug[4];
 extern int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
+extern int32_t accSum[3];
 extern uint16_t acc_1G;
+extern uint32_t accTimeSum; 
+extern int accSumCount;
 extern uint32_t currentTime;
 extern uint32_t previousTime;
 extern uint16_t cycleTime;
