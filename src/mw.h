@@ -176,6 +176,7 @@ typedef struct config_t {
     uint8_t yawdeadband;                    // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
     uint8_t alt_hold_throttle_neutral;      // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
     uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_throttle_neutral; when enabled, altitude changes slowly proportional to stick movement
+    uint8_t throttle_angle_correction;      // 
 
     // Failsafe related configuration
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
@@ -285,6 +286,16 @@ typedef struct master_t {
     uint8_t chk;                            // XOR checksum
 } master_t;
 
+// Core runtime settings
+typedef struct core_t {
+    serialPort_t *mainport;
+    serialPort_t *gpsport;
+    serialPort_t *telemport;
+    serialPort_t *rcvrport;
+    bool useServo;
+
+} core_t;
+
 typedef struct flags_t {
     uint8_t OK_TO_ARM;
     uint8_t ARMED;
@@ -327,14 +338,14 @@ extern int32_t baroPressure;
 extern int32_t baroTemperature;
 extern int32_t baroPressureSum;
 extern int32_t BaroAlt;
-extern int16_t sonarAlt;
+extern int32_t sonarAlt;
 extern int32_t EstAlt;
 extern int32_t AltHold;
-extern int16_t errorAltitudeI;
-extern int16_t BaroPID;
-extern int16_t vario;
+extern int32_t errorAltitudeI;
+extern int32_t BaroPID;
+extern int32_t vario;
+extern int16_t throttleAngleCorrection;
 extern int16_t headFreeModeHold;
-extern int16_t zVelocity;
 extern int16_t heading, magHold;
 extern int16_t motor[MAX_MOTORS];
 extern int16_t servo[8];
@@ -368,6 +379,7 @@ extern uint8_t  GPS_svinfo_svid[16];                         // Satellite ID
 extern uint8_t  GPS_svinfo_quality[16];                      // Bitfield Qualtity
 extern uint8_t  GPS_svinfo_cno[16];                          // Carrier to Noise Ratio (Signal Strength)
 
+extern core_t core;
 extern master_t mcfg;
 extern config_t cfg;
 extern flags_t f;

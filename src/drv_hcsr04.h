@@ -6,4 +6,4 @@ typedef enum {
 } sonar_config_t;
 
 void hcsr04_init(sonar_config_t config);
-void hcsr04_get_distance(volatile int16_t* distance);
+void hcsr04_get_distance(volatile int32_t *distance);

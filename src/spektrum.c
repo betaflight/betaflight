@@ -27,10 +27,10 @@ void spektrumInit(void)
         spek_chan_mask = 0x03;
     }
 
-    uart2Init(115200, spektrumDataReceive, true);
+    core.rcvrport = uartOpen(USART2, spektrumDataReceive, 115200, MODE_RX);
 }
 
-// UART2 Receive ISR callback
+// Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
 {
     uint32_t spekTime;

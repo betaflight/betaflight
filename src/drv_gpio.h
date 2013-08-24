@@ -21,8 +21,8 @@ typedef enum
 
 typedef enum
 {
-    Pin_0 = 0x0000,
-    Pin_1 = 0x0001,
+    Pin_0 = 0x0001,
+    Pin_1 = 0x0002,
     Pin_2 = 0x0004,
     Pin_3 = 0x0008,
     Pin_4 = 0x0010,

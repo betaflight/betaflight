@@ -762,7 +762,6 @@ void loop(void)
 #ifdef SONAR
             if (sensors(SENSOR_SONAR)) {
                 Sonar_update();
-                debug[2] = sonarAlt;
             }
 #endif
             if (feature(FEATURE_VARIO) && f.VARIO_MODE)
@@ -837,6 +836,10 @@ void loop(void)
             }
         }
 #endif
+
+        if (cfg.throttle_angle_correction && (f.ANGLE_MODE || f.HORIZON_MODE)) {
+            rcCommand[THROTTLE]+= throttleAngleCorrection;
+        }
 
         if (sensors(SENSOR_GPS)) {
             if ((f.GPS_HOME_MODE || f.GPS_HOLD_MODE) && f.GPS_FIX_HOME) {

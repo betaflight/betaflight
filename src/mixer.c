@@ -2,7 +2,6 @@
 #include "mw.h"
 
 static uint8_t numberMotor = 0;
-uint8_t useServo = 0;
 int16_t motor[MAX_MOTORS];
 int16_t servo[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
@@ -144,10 +143,10 @@ void mixerInit(void)
     int i;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    useServo = mixers[mcfg.mixerConfiguration].useServo;
+    core.useServo = mixers[mcfg.mixerConfiguration].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (feature(FEATURE_SERVO_TILT))
-        useServo = 1;
+        core.useServo = 1;
 
     if (mcfg.mixerConfiguration == MULTITYPE_CUSTOM) {
         // load custom mixer into currentMixer
@@ -198,7 +197,7 @@ void mixerLoadMix(int index)
 
 void writeServos(void)
 {
-    if (!useServo)
+    if (!core.useServo)
         return;
 
     switch (mcfg.mixerConfiguration) {

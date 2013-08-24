@@ -7,13 +7,14 @@ int32_t baroPressure = 0;
 int32_t baroTemperature = 0;
 int32_t baroPressureSum = 0;
 int32_t BaroAlt = 0;
-int16_t sonarAlt;              // to think about the unit
+int32_t sonarAlt;              // to think about the unit
 int32_t EstAlt;                // in cm
-int16_t BaroPID = 0;
+int32_t BaroPID = 0;
 int32_t AltHold;
-int16_t errorAltitudeI = 0;
-int16_t vario = 0;              // variometer in cm/s
-float magneticDeclination = 0.0f; // calculated at startup from config
+int32_t errorAltitudeI = 0;
+int32_t vario = 0;                      // variometer in cm/s
+int16_t throttleAngleCorrection = 0;    // correction of throttle in lateral wind,
+float magneticDeclination = 0.0f;       // calculated at startup from config
 float accVelScale;
 
 // **************
@@ -85,7 +86,7 @@ void computeIMU(void)
             Smoothing[YAW] = (mcfg.gyro_smoothing_factor) & 0xff;
         }
         for (axis = 0; axis < 3; axis++) {
-            gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroData[axis] + 1 ) / Smoothing[axis]);
+            gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroData[axis] + 1) / Smoothing[axis]);
             gyroSmooth[axis] = gyroData[axis];
         }
     } else if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
@@ -114,15 +115,6 @@ void computeIMU(void)
 //
 // code size deduction and tmp vector intermediate step for vector rotation computation: October 2011 by Alex
 // **************************************************
-
-//******  advanced users settings *******************
-
-/* Set the Gyro Weight for Gyro/Magnetometer complementary filter */
-/* Increasing this value would reduce and delay Magnetometer influence on the output of the filter*/
-/* Default WMC value: n/a*/
-#define GYR_CMPFM_FACTOR 200.0f
-
-//****** end of advanced users settings *************
 
 #define INV_GYR_CMPF_FACTOR   (1.0f / ((float)mcfg.gyro_cmpf_factor + 1.0f))
 #define INV_GYR_CMPFM_FACTOR  (1.0f / ((float)mcfg.gyro_cmpfm_factor + 1.0f))
@@ -235,7 +227,7 @@ static void getEstimatedAttitude(void)
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
     // To do that, we just skip filter, as EstV already rotated by Gyro
-    if (72 < accMag && accMag < 133) {
+    if (72 < (uint16_t)accMag && (uint16_t)accMag < 133) {
         for (axis = 0; axis < 3; axis++)
             EstG.A[axis] = (EstG.A[axis] * (float)mcfg.gyro_cmpf_factor + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
     }
@@ -291,13 +283,19 @@ static void getEstimatedAttitude(void)
             heading = heading + 360;
     }
 #endif
+
+    if (cfg.throttle_angle_correction) {
+        int cosZ = EstG.V.Z / acc_1G * 100.0f;
+        throttleAngleCorrection = cfg.throttle_angle_correction * constrain(100 - cosZ, 0, 100) / 8;
+        
+    }
 }
 
 #ifdef BARO
 #define UPDATE_INTERVAL 25000   // 40hz update rate (20hz LPF on acc)
 #define INIT_DELAY      4000000 // 4 sec initialization delay
 
-int16_t applyDeadband(int16_t value, int16_t deadband)
+int16_t applyDeadband(int32_t value, int32_t deadband)
 {
     if (abs(value) < deadband) {
         value = 0;
@@ -315,13 +313,13 @@ int getEstimatedAltitude(void)
     static uint32_t previousT;
     uint32_t currentT = micros();
     uint32_t dTime;
-    int16_t error16;
-    int16_t baroVel;
-    int16_t accZ;
-    static int16_t accZoffset = 0;
+    int32_t error;
+    int32_t baroVel;
+    int32_t accZ;
+    int32_t vel_tmp;
+    static int32_t accZoffset = 0;
     static float vel = 0.0f;
     static int32_t lastBaroAlt;
-    int16_t vel_tmp;
 
     dTime = currentT - previousT;
     if (dTime < UPDATE_INTERVAL)
@@ -337,27 +335,27 @@ int getEstimatedAltitude(void)
     // baroGroundPressure is not supposed to be 0 here
     // see: https://code.google.com/p/ardupilot-mega/source/browse/libraries/AP_Baro/AP_Baro.cpp
     BaroAlt = logf(baroGroundPressure * (cfg.baro_tab_size - 1) / (float)baroPressureSum) * (baroTemperature + 27315) * 29.271267f; // in cemtimeter 
-    EstAlt = (EstAlt * 6 + BaroAlt * 2) >> 3;   // additional LPF to reduce baro noise
+    EstAlt = (EstAlt * 6 + BaroAlt * 2) / 8;   // additional LPF to reduce baro noise
 
     //P
-    error16 = constrain(AltHold - EstAlt, -300, 300);
-    error16 = applyDeadband(error16, 10); // remove small P parametr to reduce noise near zero position
-    BaroPID = constrain((cfg.P8[PIDALT] * error16 >> 7), -150, +150);
+    error = constrain(AltHold - EstAlt, -300, 300);
+    error = applyDeadband(error, 10); // remove small P parametr to reduce noise near zero position
+    BaroPID = constrain(((cfg.P8[PIDALT] * error) / 128), -150, +150);
 
     //I
-    errorAltitudeI += cfg.I8[PIDALT] * error16 >> 6;
+    errorAltitudeI += (cfg.I8[PIDALT] * error) / 64;
     errorAltitudeI = constrain(errorAltitudeI, -30000, 30000);
-    BaroPID += errorAltitudeI >> 9;     // I in range +/-60
+    BaroPID += errorAltitudeI / 512;     // I in range +/-60
 
     // projection of ACC vector to global Z, with 1G subtructed
     // Math: accZ = A * G / |G| - 1G (invG is calculated in getEstimatedAttitude)
     accZ = (accSmooth[ROLL] * EstG.V.X + accSmooth[PITCH] * EstG.V.Y + accSmooth[YAW] * EstG.V.Z) * invG;
 
     if (!f.ARMED) {
-        accZoffset -= accZoffset >> 3;
+        accZoffset -= accZoffset / 8;
         accZoffset += accZ;
     }
-    accZ -= accZoffset >> 3;
+    accZ -= accZoffset / 8;
     accZ = applyDeadband(accZ, cfg.accz_deadband);
 
     // Integrator - velocity, cm/sec
@@ -377,7 +375,7 @@ int getEstimatedAltitude(void)
     vel_tmp = vel;
     vel_tmp = applyDeadband(vel_tmp, 5);
     vario = vel_tmp;
-    BaroPID -= constrain(cfg.D8[PIDALT] * vel_tmp >> 4, -150, 150);
+    BaroPID -= constrain((cfg.D8[PIDALT] * vel_tmp) / 16, -150, 150);
 
     return 1;
 }
