@@ -62,11 +62,11 @@ const timerHardware_t timerHardware[] = {
 #define MAX_TIMERS 4 // TIM1..TIM4
 #define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
 
-static TIM_TypeDef *timers[MAX_TIMERS] = {
+static const TIM_TypeDef *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4
 };
 
-static uint8_t channels[CC_CHANNELS_PER_TIMER] = {
+static const uint8_t channels[CC_CHANNELS_PER_TIMER] = {
     TIM_Channel_1, TIM_Channel_2, TIM_Channel_3, TIM_Channel_4
 };
 
