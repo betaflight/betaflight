@@ -68,7 +68,7 @@ serialPort_t *serialUSART2(uint32_t baudRate, portmode_t mode)
     // USART2_TX    PA2
     // USART2_RX    PA3
     gpio.speed = Speed_2MHz;
-    gpio.pin = GPIO_Pin_2;
+    gpio.pin = Pin_2;
     gpio.mode = Mode_AF_PP;
     if (mode & MODE_TX)
         gpioInit(GPIOA, &gpio);

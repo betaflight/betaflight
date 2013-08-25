@@ -77,6 +77,7 @@ NAZE_SRC	 = drv_spi.c \
 		   drv_mpu6050.c \
 		   drv_l3g4200d.c \
 		   drv_pwm.c \
+		   drv_timer.c \
 		   $(COMMON_SRC)
 
 # Source files for the FY90Q target
@@ -92,6 +93,7 @@ OLIMEXINO_SRC	 = drv_spi.c \
 		   drv_mpu6050.c \
 		   drv_l3g4200d.c \
 		   drv_pwm.c \
+		   drv_timer.c \
 		   $(COMMON_SRC)
 
 # Search path for baseflight sources

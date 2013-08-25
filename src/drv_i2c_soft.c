@@ -7,14 +7,14 @@
 
 #ifdef SOFT_I2C
 
-#define SCL_H         GPIOB->BSRR = GPIO_Pin_10 /* GPIO_SetBits(GPIOB , GPIO_Pin_10)   */
-#define SCL_L         GPIOB->BRR  = GPIO_Pin_10 /* GPIO_ResetBits(GPIOB , GPIO_Pin_10) */
+#define SCL_H         GPIOB->BSRR = Pin_10 /* GPIO_SetBits(GPIOB , GPIO_Pin_10)   */
+#define SCL_L         GPIOB->BRR  = Pin_10 /* GPIO_ResetBits(GPIOB , GPIO_Pin_10) */
 
-#define SDA_H         GPIOB->BSRR = GPIO_Pin_11 /* GPIO_SetBits(GPIOB , GPIO_Pin_11)   */
-#define SDA_L         GPIOB->BRR  = GPIO_Pin_11 /* GPIO_ResetBits(GPIOB , GPIO_Pin_11) */
+#define SDA_H         GPIOB->BSRR = Pin_11 /* GPIO_SetBits(GPIOB , GPIO_Pin_11)   */
+#define SDA_L         GPIOB->BRR  = Pin_11 /* GPIO_ResetBits(GPIOB , GPIO_Pin_11) */
 
-#define SCL_read      (GPIOB->IDR & GPIO_Pin_10) /* GPIO_ReadInputDataBit(GPIOB , GPIO_Pin_10) */
-#define SDA_read      (GPIOB->IDR & GPIO_Pin_11) /* GPIO_ReadInputDataBit(GPIOB , GPIO_Pin_11) */
+#define SCL_read      (GPIOB->IDR & Pin_10) /* GPIO_ReadInputDataBit(GPIOB , GPIO_Pin_10) */
+#define SDA_read      (GPIOB->IDR & Pin_11) /* GPIO_ReadInputDataBit(GPIOB , GPIO_Pin_11) */
 
 static void I2C_delay(void)
 {

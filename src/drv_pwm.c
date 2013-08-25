@@ -2,45 +2,7 @@
 
 #define PULSE_1MS       (1000) // 1ms pulse width
 
-/* FreeFlight/Naze32 timer layout
-    TIM2_CH1    RC1             PWM1
-    TIM2_CH2    RC2             PWM2
-    TIM2_CH3    RC3/UA2_TX      PWM3
-    TIM2_CH4    RC4/UA2_RX      PWM4
-    TIM3_CH1    RC5             PWM5
-    TIM3_CH2    RC6             PWM6
-    TIM3_CH3    RC7             PWM7
-    TIM3_CH4    RC8             PWM8
-    TIM1_CH1    PWM1            PWM9
-    TIM1_CH4    PWM2            PWM10
-    TIM4_CH1    PWM3            PWM11
-    TIM4_CH2    PWM4            PWM12
-    TIM4_CH3    PWM5            PWM13
-    TIM4_CH4    PWM6            PWM14
-
-    // RX1  TIM2_CH1 PA0 [also PPM] [also used for throttle calibration]
-    // RX2  TIM2_CH2 PA1
-    // RX3  TIM2_CH3 PA2 [also UART2_TX]
-    // RX4  TIM2_CH4 PA3 [also UART2_RX]
-    // RX5  TIM3_CH1 PA6 [also ADC_IN6]
-    // RX6  TIM3_CH2 PA7 [also ADC_IN7]
-    // RX7  TIM3_CH3 PB0 [also ADC_IN8]
-    // RX8  TIM3_CH4 PB1 [also ADC_IN9]
-
-    // Outputs
-    // PWM1 TIM1_CH1 PA8
-    // PWM2 TIM1_CH4 PA11
-    // PWM3 TIM4_CH1 PB6? [also I2C1_SCL]
-    // PWM4 TIM4_CH2 PB7 [also I2C1_SDA]
-    // PWM5 TIM4_CH3 PB8
-    // PWM6 TIM4_CH4 PB9
-
-    Groups that allow running different period (ex 50Hz servos + 400Hz throttle + etc):
-    TIM2 4 channels
-    TIM3 4 channels
-    TIM1 2 channels
-    TIM4 4 channels
-
+/*
     Configuration maps:
 
     1) multirotor PPM input
@@ -72,27 +34,7 @@
     PWM11.14 used for servos
 */
 
-typedef void pwmCallbackPtr(uint8_t port, uint16_t capture);
-
-static const pwmHardware_t timerHardware[] = {
-    { TIM2, GPIOA, GPIO_Pin_0, TIM_Channel_1, TIM2_IRQn, 0, },          // PWM1
-    { TIM2, GPIOA, GPIO_Pin_1, TIM_Channel_2, TIM2_IRQn, 0, },          // PWM2
-    { TIM2, GPIOA, GPIO_Pin_2, TIM_Channel_3, TIM2_IRQn, 0, },          // PWM3
-    { TIM2, GPIOA, GPIO_Pin_3, TIM_Channel_4, TIM2_IRQn, 0, },          // PWM4
-    { TIM3, GPIOA, GPIO_Pin_6, TIM_Channel_1, TIM3_IRQn, 0, },          // PWM5
-    { TIM3, GPIOA, GPIO_Pin_7, TIM_Channel_2, TIM3_IRQn, 0, },          // PWM6
-    { TIM3, GPIOB, GPIO_Pin_0, TIM_Channel_3, TIM3_IRQn, 0, },          // PWM7
-    { TIM3, GPIOB, GPIO_Pin_1, TIM_Channel_4, TIM3_IRQn, 0, },          // PWM8
-    { TIM1, GPIOA, GPIO_Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, },       // PWM9
-    { TIM1, GPIOA, GPIO_Pin_11, TIM_Channel_4, TIM1_CC_IRQn, 1, },      // PWM10
-    { TIM4, GPIOB, GPIO_Pin_6, TIM_Channel_1, TIM4_IRQn, 0, },          // PWM11
-    { TIM4, GPIOB, GPIO_Pin_7, TIM_Channel_2, TIM4_IRQn, 0, },          // PWM12
-    { TIM4, GPIOB, GPIO_Pin_8, TIM_Channel_3, TIM4_IRQn, 0, },          // PWM13
-    { TIM4, GPIOB, GPIO_Pin_9, TIM_Channel_4, TIM4_IRQn, 0, },          // PWM14
-};
-
 typedef struct {
-    pwmCallbackPtr *callback;
     volatile uint16_t *ccr;
     uint16_t period;
 
@@ -207,17 +149,6 @@ static void pwmTimeBase(TIM_TypeDef *tim, uint32_t period)
     TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
 }
 
-static void pwmNVICConfig(uint8_t irq)
-{
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = irq;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-}
-
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
 {
     TIM_OCInitTypeDef  TIM_OCInitStructure;
@@ -302,87 +233,20 @@ static pwmPortData_t *pwmOutConfig(uint8_t port, uint16_t period, uint16_t value
     return p;
 }
 
-static pwmPortData_t *pwmInConfig(uint8_t port, pwmCallbackPtr callback, uint8_t channel)
+static pwmPortData_t *pwmInConfig(uint8_t port, timerCCCallbackPtr callback, uint8_t channel)
 {
     pwmPortData_t *p = &pwmPorts[port];
     pwmTimeBase(timerHardware[port].tim, 0xFFFF);
     pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, Mode_IPD);
     pwmICConfig(timerHardware[port].tim, timerHardware[port].channel, TIM_ICPolarity_Rising);
     TIM_Cmd(timerHardware[port].tim, ENABLE);
-    pwmNVICConfig(timerHardware[port].irq);
-    // set callback before configuring interrupts
-    p->callback = callback;
+    timerNVICConfig(timerHardware[port].irq);
+
     p->channel = channel;
 
-    switch (timerHardware[port].channel) {
-        case TIM_Channel_1:
-            TIM_ITConfig(timerHardware[port].tim, TIM_IT_CC1, ENABLE);
-            break;
-        case TIM_Channel_2:
-            TIM_ITConfig(timerHardware[port].tim, TIM_IT_CC2, ENABLE);
-            break;
-        case TIM_Channel_3:
-            TIM_ITConfig(timerHardware[port].tim, TIM_IT_CC3, ENABLE);
-            break;
-        case TIM_Channel_4:
-            TIM_ITConfig(timerHardware[port].tim, TIM_IT_CC4, ENABLE);
-            break;
-    }
+    configureTimerCaptureCompareInterrupt(&(timerHardware[port]), port, callback);
+
     return p;
-}
-
-void TIM1_CC_IRQHandler(void)
-{
-    uint8_t port;
-
-    if (TIM_GetITStatus(TIM1, TIM_IT_CC1) == SET) {
-        port = PWM9;
-        TIM_ClearITPendingBit(TIM1, TIM_IT_CC1);
-        pwmPorts[port].callback(port, TIM_GetCapture1(TIM1));
-    } else if (TIM_GetITStatus(TIM1, TIM_IT_CC4) == SET) {
-        port = PWM10;
-        TIM_ClearITPendingBit(TIM1, TIM_IT_CC4);
-        pwmPorts[port].callback(port, TIM_GetCapture4(TIM1));
-    }
-}
-
-static void pwmTIMxHandler(TIM_TypeDef *tim, uint8_t portBase)
-{
-    int8_t port;
-
-    // Generic CC handler for TIM2,3,4
-    if (TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
-        port = portBase + 0;
-        TIM_ClearITPendingBit(tim, TIM_IT_CC1);
-        pwmPorts[port].callback(port, TIM_GetCapture1(tim));
-    } else if (TIM_GetITStatus(tim, TIM_IT_CC2) == SET) {
-        port = portBase + 1;
-        TIM_ClearITPendingBit(tim, TIM_IT_CC2);
-        pwmPorts[port].callback(port, TIM_GetCapture2(tim));
-    } else if (TIM_GetITStatus(tim, TIM_IT_CC3) == SET) {
-        port = portBase + 2;
-        TIM_ClearITPendingBit(tim, TIM_IT_CC3);
-        pwmPorts[port].callback(port, TIM_GetCapture3(tim));
-    } else if (TIM_GetITStatus(tim, TIM_IT_CC4) == SET) {
-        port = portBase + 3;
-        TIM_ClearITPendingBit(tim, TIM_IT_CC4);
-        pwmPorts[port].callback(port, TIM_GetCapture4(tim));
-    }
-}
-
-void TIM2_IRQHandler(void)
-{
-    pwmTIMxHandler(TIM2, PWM1); // PWM1..4
-}
-
-void TIM3_IRQHandler(void)
-{
-    pwmTIMxHandler(TIM3, PWM5); // PWM5..8
-}
-
-void TIM4_IRQHandler(void)
-{
-    pwmTIMxHandler(TIM4, PWM11); // PWM11..14
 }
 
 static void ppmCallback(uint8_t port, uint16_t capture)
@@ -459,8 +323,8 @@ bool pwmInit(drv_pwm_config_t *init)
         if (setup[i] == 0xFF) // terminator
             break;
 
-#ifdef OLIMEXINO
-        // PWM2 is connected to LED2 on the board and cannot be connected.
+#ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
+        // PWM2 is connected to LED2 on the board and cannot be connected unless you cut LED2_E
         if (port == PWM2)
             continue;
 #endif
