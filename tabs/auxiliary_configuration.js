@@ -1,4 +1,6 @@
 function tab_initialize_auxiliary_configuration() {
+    ga_tracker.sendAppView('Auxiliary Configuration');
+    
     // generate table from the supplied AUX names and AUX data
     for (var i = 0; i < AUX_CONFIG.length; i++) {
         $('.tab-auxiliary_configuration .boxes > tbody:last').append(

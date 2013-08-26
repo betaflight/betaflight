@@ -1,4 +1,6 @@
 function tab_initialize_cli() {
+    ga_tracker.sendAppView('CLI Page');
+    
     CLI_active = true;
     
     // Enter CLI mode

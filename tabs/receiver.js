@@ -1,5 +1,7 @@
 var samples_i;
 function tab_initialize_receiver() {
+    ga_tracker.sendAppView('Receiver Page');
+    
     // fill in data from RC_tuning
     $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
     $('.tunings .throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
