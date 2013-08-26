@@ -26,7 +26,14 @@ function disable_timers() {
     timers = [];
     
     return true;
-}    
+}
+
+// Google Analytics stuff begin
+var service = analytics.getService('ice_cream_app');
+var ga_tracker = service.getTracker('UA-32728876-6');
+
+ga_tracker.sendAppView('Application Started');
+// Google Analytics stuff end    
 
 $(document).ready(function() { 
     var tabs = $('#tabs > ul');
