@@ -8,7 +8,6 @@
 const uint32_t init_speed[5] = { 9600, 19200, 38400, 57600, 115200 };
 
 static void GPS_NewData(uint16_t c);
-static void GPS_set_pids(void);
 static void gpsPrint(const char *str);
 
 static const char * const gpsInitStrings[] = {
@@ -391,7 +390,7 @@ void GPS_reset_home_position(void)
     }
 }
 
-//reset navigation (stop the navigation processor, and clear nav)
+// reset navigation (stop the navigation processor, and clear nav)
 void GPS_reset_nav(void)
 {
     int i;
@@ -406,8 +405,8 @@ void GPS_reset_nav(void)
     }
 }
 
-//Get the relevant P I D values and set the PID controllers
-static void GPS_set_pids(void)
+// Get the relevant P I D values and set the PID controllers
+void GPS_set_pids(void)
 {
     posholdPID_PARAM.kP = (float)cfg.P8[PIDPOS] / 100.0f;
     posholdPID_PARAM.kI = (float)cfg.I8[PIDPOS] / 100.0f;

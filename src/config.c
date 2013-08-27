@@ -85,6 +85,7 @@ void readEEPROM(void)
 
     cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max);       //REAR
     setPIDController(cfg.pidController);
+    GPS_set_pids();
 }
 
 void writeEEPROM(uint8_t b, uint8_t updateProfile)
