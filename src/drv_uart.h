@@ -15,27 +15,34 @@ typedef enum portmode_t {
     MODE_RXTX = 3
 } portmode_t;
 
+// FIXME this is a uart_t really.  Move the generic properties into a separate structure (serialPort_t) and update the code to use it
 typedef struct {
+    portmode_t mode;
     uint32_t baudRate;
+
     uint32_t rxBufferSize;
     uint32_t txBufferSize;
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
-    uint32_t rxDMAPos;
     uint32_t rxBufferHead;
     uint32_t rxBufferTail;
     uint32_t txBufferHead;
     uint32_t txBufferTail;
 
+    // FIXME rename callback type so something more generic
+    uartReceiveCallbackPtr callback;
+
+    // FIXME these are uart specific and do not belong in here
     DMA_Channel_TypeDef *rxDMAChannel;
     DMA_Channel_TypeDef *txDMAChannel;
+
     uint32_t rxDMAIrq;
     uint32_t txDMAIrq;
-    bool txDMAEmpty;
-    USART_TypeDef *USARTx;
 
-    uartReceiveCallbackPtr callback;
-    portmode_t mode;
+    uint32_t rxDMAPos;
+    bool txDMAEmpty;
+
+    USART_TypeDef *USARTx;
 } serialPort_t;
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, uartReceiveCallbackPtr callback, uint32_t baudRate, portmode_t mode);

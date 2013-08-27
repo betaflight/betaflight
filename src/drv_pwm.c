@@ -137,17 +137,7 @@ static const uint8_t * const hardwareMaps[] = {
     airPPM,
 };
 
-static void pwmTimeBase(TIM_TypeDef *tim, uint32_t period)
-{
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-
-    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = period - 1;
-    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 1000000) - 1; // all timers run at 1MHz
-    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
-    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
-}
+#define PWM_TIMER_MHZ 1
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
 {
@@ -181,7 +171,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
     }
 }
 
-static void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
+void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_ICInitTypeDef  TIM_ICInitStructure;
 
@@ -208,7 +198,7 @@ static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, GPIO_Mode mode)
 static pwmPortData_t *pwmOutConfig(uint8_t port, uint16_t period, uint16_t value)
 {
     pwmPortData_t *p = &pwmPorts[port];
-    pwmTimeBase(timerHardware[port].tim, period);
+    configTimeBase(timerHardware[port].tim, period, PWM_TIMER_MHZ);
     pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, Mode_AF_PP);
     pwmOCConfig(timerHardware[port].tim, timerHardware[port].channel, value);
     // Needed only on TIM1
@@ -236,15 +226,15 @@ static pwmPortData_t *pwmOutConfig(uint8_t port, uint16_t period, uint16_t value
 static pwmPortData_t *pwmInConfig(uint8_t port, timerCCCallbackPtr callback, uint8_t channel)
 {
     pwmPortData_t *p = &pwmPorts[port];
-    pwmTimeBase(timerHardware[port].tim, 0xFFFF);
-    pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, Mode_IPD);
-    pwmICConfig(timerHardware[port].tim, timerHardware[port].channel, TIM_ICPolarity_Rising);
-    TIM_Cmd(timerHardware[port].tim, ENABLE);
-    timerNVICConfig(timerHardware[port].irq);
+    const timerHardware_t *timerHardwarePtr = &(timerHardware[port]);
 
     p->channel = channel;
 
-    configureTimerCaptureCompareInterrupt(&(timerHardware[port]), port, callback);
+    pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_IPD);
+    pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
+
+    timerInConfig(timerHardwarePtr, 0xFFFF, PWM_TIMER_MHZ);
+    configureTimerCaptureCompareInterrupt(timerHardwarePtr, port, callback);
 
     return p;
 }
@@ -332,6 +322,12 @@ bool pwmInit(drv_pwm_config_t *init)
         // skip UART ports for GPS
         if (init->useUART && (port == PWM3 || port == PWM4))
             continue;
+
+#ifdef SOFTSERIAL_19200_LOOPBACK
+        // skip softSerial ports
+        if ((port == PWM5 || port == PWM6))
+            continue;
+#endif
 
         // skip ADC for powerMeter if configured
         if (init->adcChannel && (init->adcChannel == port))
