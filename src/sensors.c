@@ -67,8 +67,8 @@ retry:
                     break;
             }
             ; // fallthrough
-        case 3: // MMA8452
 #ifndef OLIMEXINO
+        case 3: // MMA8452
             if (mma8452Detect(&acc)) {
                 accHardware = ACC_MMA8452;
                 if (mcfg.acc_hardware == ACC_MMA8452)

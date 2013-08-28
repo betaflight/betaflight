@@ -71,9 +71,9 @@ static const uint8_t channels[CC_CHANNELS_PER_TIMER] = {
 };
 
 typedef struct timerConfig_s {
-    timerCCCallbackPtr *callback;
-    uint8_t channel;
     TIM_TypeDef *tim;
+    uint8_t channel;
+    timerCCCallbackPtr *callback;
     uint8_t reference;
 } timerConfig_t;
 
@@ -97,7 +97,77 @@ static uint8_t lookupChannelIndex(const uint8_t channel)
     return channelIndex;
 }
 
-static timerConfig_t *findTimerConfig(TIM_TypeDef *tim, uint8_t channel)
+void configureTimerChannelCallback(TIM_TypeDef *tim, uint8_t channel, uint8_t reference, timerCCCallbackPtr *callback)
+{
+    assert_param(IS_TIM_CHANNEL(channel));
+
+    uint8_t timerConfigIndex = (lookupTimerIndex(tim) * MAX_TIMERS) + lookupChannelIndex(channel);
+
+    if (timerConfigIndex >= MAX_TIMERS * CC_CHANNELS_PER_TIMER) {
+        return;
+    }
+
+    timerConfig[timerConfigIndex].callback = callback;
+    timerConfig[timerConfigIndex].channel = channel;
+    timerConfig[timerConfigIndex].reference = reference;
+}
+
+void configureTimerInputCaptureCompareChannel(TIM_TypeDef *tim, const uint8_t channel)
+{
+    switch (channel) {
+        case TIM_Channel_1:
+            TIM_ITConfig(tim, TIM_IT_CC1, ENABLE);
+            break;
+        case TIM_Channel_2:
+            TIM_ITConfig(tim, TIM_IT_CC2, ENABLE);
+            break;
+        case TIM_Channel_3:
+            TIM_ITConfig(tim, TIM_IT_CC3, ENABLE);
+            break;
+        case TIM_Channel_4:
+            TIM_ITConfig(tim, TIM_IT_CC4, ENABLE);
+            break;
+    }
+}
+
+void configureTimerCaptureCompareInterrupt(const timerHardware_t *timerHardwarePtr, uint8_t reference, timerCCCallbackPtr *callback)
+{
+    configureTimerChannelCallback(timerHardwarePtr->tim, timerHardwarePtr->channel, reference, callback);
+    configureTimerInputCaptureCompareChannel(timerHardwarePtr->tim, timerHardwarePtr->channel);
+}
+
+void timerNVICConfig(uint8_t irq)
+{
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    NVIC_InitStructure.NVIC_IRQChannel = irq;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+}
+
+void configTimeBase(TIM_TypeDef *tim, uint32_t period, uint8_t mhz)
+{
+    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+
+    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+    TIM_TimeBaseStructure.TIM_Period = period - 1;
+    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
+    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
+}
+
+void timerInConfig(const timerHardware_t *timerHardwarePtr, uint32_t period, uint8_t mhz)
+{
+    configTimeBase(timerHardwarePtr->tim, period, mhz);
+    TIM_Cmd(timerHardwarePtr->tim, ENABLE);
+    timerNVICConfig(timerHardwarePtr->irq);
+}
+
+
+timerConfig_t *findTimerConfig(TIM_TypeDef *tim, uint8_t channel)
 {
     uint8_t timerConfigIndex = (lookupTimerIndex(tim) * MAX_TIMERS) + lookupChannelIndex(channel);
     return &(timerConfig[timerConfigIndex]);
@@ -128,6 +198,8 @@ static void timCCxHandler(TIM_TypeDef *tim)
 
         timerConfig = findTimerConfig(tim, TIM_Channel_4);
         capture = TIM_GetCapture4(tim);
+    } else {
+        return; // avoid uninitialised variable dereference
     }
 
     if (!timerConfig->callback) {
@@ -154,47 +226,4 @@ void TIM3_IRQHandler(void)
 void TIM4_IRQHandler(void)
 {
     timCCxHandler(TIM4);
-}
-
-void timerNVICConfig(uint8_t irq)
-{
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = irq;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-}
-
-void configureTimerInputCaptureCompareChannel(TIM_TypeDef *tim, const uint8_t channel)
-{
-    switch (channel) {
-        case TIM_Channel_1:
-            TIM_ITConfig(tim, TIM_IT_CC1, ENABLE);
-            break;
-        case TIM_Channel_2:
-            TIM_ITConfig(tim, TIM_IT_CC2, ENABLE);
-            break;
-        case TIM_Channel_3:
-            TIM_ITConfig(tim, TIM_IT_CC3, ENABLE);
-            break;
-        case TIM_Channel_4:
-            TIM_ITConfig(tim, TIM_IT_CC4, ENABLE);
-            break;
-    }
-}
-
-void configureTimerChannelCallback(TIM_TypeDef *tim, uint8_t channel, uint8_t reference, timerCCCallbackPtr *callback)
-{
-    uint8_t timerConfigIndex = (lookupTimerIndex(tim) * MAX_TIMERS) + lookupChannelIndex(channel);
-    timerConfig[timerConfigIndex].callback = callback;
-    timerConfig[timerConfigIndex].channel = channel;
-    timerConfig[timerConfigIndex].reference = reference;
-}
-
-void configureTimerCaptureCompareInterrupt(const timerHardware_t *timerHardwarePtr, uint8_t reference, timerCCCallbackPtr *callback)
-{
-    configureTimerChannelCallback(timerHardwarePtr->tim, timerHardwarePtr->channel, reference, callback);
-    configureTimerInputCaptureCompareChannel(timerHardwarePtr->tim, timerHardwarePtr->channel);
 }

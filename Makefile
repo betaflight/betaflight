@@ -94,6 +94,7 @@ OLIMEXINO_SRC	 = drv_spi.c \
 		   drv_l3g4200d.c \
 		   drv_pwm.c \
 		   drv_timer.c \
+		   drv_softserial.c \
 		   $(COMMON_SRC)
 
 # Search path for baseflight sources
