@@ -647,6 +647,16 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_spi.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_softserial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_softserial.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1467,6 +1477,16 @@
               <FileName>drv_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_softserial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_softserial.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2472,6 +2492,16 @@
               <FileName>drv_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_softserial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_softserial.c</FilePath>
             </File>
           </Files>
         </Group>

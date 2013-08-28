@@ -68,7 +68,7 @@ serialPort_t *serialUSART2(uint32_t baudRate, portmode_t mode)
     // USART2_TX    PA2
     // USART2_RX    PA3
     gpio.speed = Speed_2MHz;
-    gpio.pin = GPIO_Pin_2;
+    gpio.pin = Pin_2;
     gpio.mode = Mode_AF_PP;
     if (mode & MODE_TX)
         gpioInit(GPIOA, &gpio);
@@ -238,6 +238,14 @@ void uartWrite(serialPort_t *s, uint8_t ch)
             uartStartTxDMA(s);
     } else {
         USART_ITConfig(s->USARTx, USART_IT_TXE, ENABLE);
+    }
+}
+
+void uartPrint(serialPort_t *s, const char *str)
+{
+    uint8_t ch;
+    while ((ch = *(str++))) {
+        uartWrite(s, ch);
     }
 }
 

@@ -233,9 +233,9 @@ bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)
 static void mpu6050AccInit(void)
 {
     if (mpuAccelHalf)
-        acc_1G = 255;
+        acc_1G = 255 * 8;
     else
-        acc_1G = 512;
+        acc_1G = 512 * 8;
 }
 
 static void mpu6050AccRead(int16_t *accData)
@@ -244,9 +244,9 @@ static void mpu6050AccRead(int16_t *accData)
 
 #ifndef MPU6050_DMP
     i2cRead(MPU6050_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf);
-    accData[0] = (int16_t)((buf[0] << 8) | buf[1]) / 8;
-    accData[1] = (int16_t)((buf[2] << 8) | buf[3]) / 8;
-    accData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 8;
+    accData[0] = (int16_t)((buf[0] << 8) | buf[1]);
+    accData[1] = (int16_t)((buf[2] << 8) | buf[3]);
+    accData[2] = (int16_t)((buf[4] << 8) | buf[5]);
 #else
     accData[0] = accData[1] = accData[2] = 0;
 #endif

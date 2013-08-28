@@ -439,8 +439,14 @@ static void evaluateCommand(void)
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
-        for (i = 0; i < 3; i++)
-            serialize16(accSmooth[i]);
+        // Retarded hack until multiwiidorks start using real units for sensor data
+        if (acc_1G > 1024) {
+            for (i = 0; i < 3; i++)
+                serialize16(accSmooth[i] / 8);
+        } else {
+            for (i = 0; i < 3; i++)
+                serialize16(accSmooth[i]);
+        }
         for (i = 0; i < 3; i++)
             serialize16(gyroData[i]);
         for (i = 0; i < 3; i++)

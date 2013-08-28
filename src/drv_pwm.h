@@ -36,14 +36,7 @@ enum {
     MAX_PORTS
 };
 
-typedef struct {
-    TIM_TypeDef *tim;
-    GPIO_TypeDef *gpio;
-    uint32_t pin;
-    uint8_t channel;
-    uint8_t irq;
-    uint8_t outputEnable;
-} pwmHardware_t;
+void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
 
 bool pwmInit(drv_pwm_config_t *init); // returns whether driver is asking to calibrate throttle or not
 void pwmWriteMotor(uint8_t index, uint16_t value);
