@@ -304,7 +304,7 @@ var message_checksum = 0;
 var char_counter = 0;
 
 function onCharRead(readInfo) {
-    if (readInfo && readInfo.bytesRead > 0 && readInfo.data) {
+    if (readInfo && readInfo.bytesRead > 0) {
         var data = new Uint8Array(readInfo.data);
         
         for (var i = 0; i < data.length; i++) {
