@@ -255,7 +255,7 @@ static void resetConf(void)
     cfg.baro_tab_size = 21;
     cfg.baro_noise_lpf = 0.6f;
     cfg.baro_cf_vel = 0.995f;
-    cfg.baro_cf_alt = 0.900f;
+    cfg.baro_cf_alt = 0.950f;
     cfg.acc_unarmedcal = 1;
 
     // Radio

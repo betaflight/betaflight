@@ -18,7 +18,7 @@ int16_t telemTemperature1;      // gyro sensor temperature
 int16_t failsafeCnt = 0;
 int16_t failsafeEvents = 0;
 int16_t rcData[8] = { 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502 }; // interval [1000;2000]
-int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
+int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
 int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
 uint16_t rssi;                  // range: [0;1023]
@@ -275,7 +275,7 @@ static void mwDisarm(void)
 
 static void mwVario(void)
 {
-    
+
 }
 
 static int32_t errorGyroI[3] = { 0, 0, 0 };
@@ -285,7 +285,7 @@ static void pidMultiWii(void)
 {
     int axis, prop;
     int32_t error, errorAngle;
-    int32_t PTerm, ITerm, PTermACC, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
+    int32_t PTerm, ITerm, PTermACC = 0, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
     static int16_t lastGyro[3] = { 0, 0, 0 };
     static int32_t delta1[3], delta2[3];
     int32_t deltaSum;
@@ -310,7 +310,7 @@ static void pidMultiWii(void)
             PTermGYRO = rcCommand[axis];
 
             errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
-            if (abs(gyroData[axis]) > 640) 
+            if (abs(gyroData[axis]) > 640)
                 errorGyroI[axis] = 0;
             ITermGYRO = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;
         }
@@ -404,7 +404,7 @@ static void pidRewrite(void)
         delta1[axis] = delta;
         DTerm = (deltaSum * cfg.D8[axis]) >> 8;
 
-        // -----calculate total PID output     
+        // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
     }
 }
@@ -429,7 +429,9 @@ void loop(void)
     uint8_t stTmp = 0;
     int i;
     static uint32_t rcTime = 0;
+#ifdef BARO
     static int16_t initialThrottleHold;
+#endif
     static uint32_t loopTime;
     uint16_t auxState = 0;
     static uint8_t GPSNavReset = 1;
@@ -621,7 +623,7 @@ void loop(void)
         if (rcOptions[BOXHORIZON]) {
             f.ANGLE_MODE = 0;
             if (!f.HORIZON_MODE) {
-                errorAngleI[ROLL] = 0; 
+                errorAngleI[ROLL] = 0;
                 errorAngleI[PITCH] = 0;
                 f.HORIZON_MODE = 1;
             }

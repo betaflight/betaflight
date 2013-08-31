@@ -192,6 +192,7 @@ typedef struct baro_t
 // OLIMEXINO
 #include "drv_adc.h"
 #include "drv_i2c.h"
+#include "drv_spi.h"
 #include "drv_adxl345.h"
 #include "drv_mpu3050.h"
 #include "drv_mpu6050.h"

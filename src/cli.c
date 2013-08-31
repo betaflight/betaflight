@@ -33,7 +33,7 @@ static float _atof(const char *p);
 static char *ftoa(float x, char *floatString);
 
 // sync this with MultiType enum from mw.h
-const char * const mixerNames[] = {
+static const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
     "FLYING_WING", "Y4", "HEX6X", "OCTOX8", "OCTOFLATP", "OCTOFLATX",
@@ -41,7 +41,7 @@ const char * const mixerNames[] = {
 };
 
 // sync this with AvailableFeatures enum from board.h
-const char * const featureNames[] = {
+static const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
     "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
@@ -49,17 +49,17 @@ const char * const featureNames[] = {
 };
 
 // sync this with AvailableSensors enum from board.h
-const char * const sensorNames[] = {
+static const char * const sensorNames[] = {
     "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
 };
 
-const char * const accNames[] = {
+static const char * const accNames[] = {
     "", "ADXL345", "MPU6050", "MMA845x", NULL
 };
 
 typedef struct {
-    char *name;
-    char *param;
+    const char *name;
+    const char *param;
     void (*func)(char *cmdline);
 } clicmd_t;
 
@@ -80,7 +80,7 @@ const clicmd_t cmdTable[] = {
     { "status", "show system status", cliStatus },
     { "version", "", cliVersion },
 };
-#define CMD_COUNT (sizeof(cmdTable) / sizeof(cmdTable[0]))
+#define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
 
 typedef enum {
     VAR_UINT8,
@@ -140,6 +140,7 @@ const clivalue_t valueTable[] = {
     { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
     { "yawdeadband", VAR_UINT8, &cfg.yawdeadband, 0, 100 },
     { "alt_hold_throttle_neutral", VAR_UINT8, &cfg.alt_hold_throttle_neutral, 1, 250 },
+    { "alt_hold_fast_change", VAR_UINT8, &cfg.alt_hold_fast_change, 0, 1 },
     { "throttle_angle_correction", VAR_UINT8, &cfg.throttle_angle_correction, 0, 100 },
     { "rc_rate", VAR_UINT8, &cfg.rcRate8, 0, 250 },
     { "rc_expo", VAR_UINT8, &cfg.rcExpo8, 0, 100 },
@@ -216,7 +217,7 @@ const clivalue_t valueTable[] = {
     { "d_level", VAR_UINT8, &cfg.D8[PIDLEVEL], 0, 200 },
 };
 
-#define VALUE_COUNT (sizeof(valueTable) / sizeof(valueTable[0]))
+#define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
 
 static void cliSetVar(const clivalue_t *var, const int32_t value);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
@@ -241,7 +242,7 @@ static void cliWrite(uint8_t ch);
 
 static char *i2a(unsigned i, char *a, unsigned r)
 {
-    if (i / r > 0) 
+    if (i / r > 0)
         a = i2a(i / r, a, r);
     *a = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i % r];
     return a + 1;
@@ -254,10 +255,10 @@ char *itoa(int i, char *a, int r)
     if (i < 0) {
         *a = '-';
         *i2a(-(unsigned)i, a + 1, r) = 0;
-    } else 
+    } else
         *i2a(i, a, r) = 0;
     return a;
-} 
+}
 
 #endif
 
@@ -536,7 +537,6 @@ static void cliDefaults(char *cmdline)
 
 static void cliDump(char *cmdline)
 {
-    
     int i;
     char buf[16];
     float thr, roll, pitch, yaw;
@@ -561,16 +561,16 @@ static void cliDump(char *cmdline)
             pitch = mcfg.customMixer[i].pitch;
             yaw = mcfg.customMixer[i].yaw;
             printf("cmix %d", i + 1);
-            if (thr < 0) 
+            if (thr < 0)
                 printf(" ");
             printf("%s", ftoa(thr, buf));
-            if (roll < 0) 
+            if (roll < 0)
                 printf(" ");
             printf("%s", ftoa(roll, buf));
-            if (pitch < 0) 
+            if (pitch < 0)
                 printf(" ");
             printf("%s", ftoa(pitch, buf));
-            if (yaw < 0) 
+            if (yaw < 0)
                 printf(" ");
             printf("%s\r\n", ftoa(yaw, buf));
         }   
@@ -692,7 +692,7 @@ static void cliMap(char *cmdline)
     if (len == 8) {
         // uppercase it
         for (i = 0; i < 8; i++)
-            cmdline[i] = toupper(cmdline[i]);
+            cmdline[i] = toupper((unsigned char)cmdline[i]);
         for (i = 0; i < 8; i++) {
             if (strchr(rcChannelLetters, cmdline[i]) && !strchr(cmdline + i + 1, cmdline[i]))
                 continue;
@@ -862,7 +862,7 @@ static void cliSet(char *cmdline)
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
         }
-    } else if ((eqptr = strstr(cmdline, "="))) {
+    } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equal, set var
         eqptr++;
         len--;

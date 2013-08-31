@@ -6,7 +6,6 @@ int16_t motor[MAX_MOTORS];
 int16_t servo[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
 static motorMixer_t currentMixer[MAX_MOTORS];
-static servoParam_t currentServo[MAX_SERVOS];
 
 static const motorMixer_t mixerTri[] = {
     { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR

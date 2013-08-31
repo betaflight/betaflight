@@ -372,7 +372,6 @@ int getEstimatedAltitude(void)
     int32_t baroVel;
     int32_t vel_tmp;
     int32_t BaroAlt_tmp;
-    float vel_calc;
     static float vel = 0.0f;
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
@@ -396,8 +395,7 @@ int getEstimatedAltitude(void)
     BaroAlt = BaroAlt * cfg.baro_noise_lpf + BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf); // additional LPF to reduce baro noise
     
     // Integrator - velocity, cm/sec
-    vel_calc = (float) accSum[2] * accVelScale * (float) accTimeSum / (float) accSumCount;
-    vel += vel_calc;
+    vel += (float)accSum[2] * accVelScale * (float)accTimeSum / (float)accSumCount;
 
     // Integrator - Altitude in cm
     accAlt += vel * ((float) accTimeSum * 0.0000005f);                                  // integrate velocity to get distance (x= a/2 * t^2)
