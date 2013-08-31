@@ -490,7 +490,7 @@ const uint8_t dmp_updates[29][9] = {
     {0x01, 0xEC, 0x04, 0x00, 0x00, 0x40, 0x00}, //D_1_236 inv_apply_endian_accel
     {0x03, 0x7F, 0x06, 0x0C, 0xC9, 0x2C, 0x97, 0x97, 0x97},     //FCFG_2 inv_set_mpu_sensors
     {0x04, 0x02, 0x03, 0x0D, 0x35, 0x5D},       //CFG_MOTION_BIAS inv_turn_on_bias_from_no_motion
-    {0x04, 0x09, 0x04, 0x87, 0x2D, 0x35, 0x3D}, //FCFG_5 inv_set_bias_update 
+    {0x04, 0x09, 0x04, 0x87, 0x2D, 0x35, 0x3D}, //FCFG_5 inv_set_bias_update
     {0x00, 0xA3, 0x01, 0x00},   //D_0_163 inv_set_dead_zone
     //SET INT_ENABLE at i=22
     {0x07, 0x86, 0x01, 0xFE},   //CFG_6 inv_set_fifo_interupt
@@ -560,13 +560,13 @@ void mpu6050DmpLoop(void)
         if (dmp_firstPacket) {
             delay(1);
             mpu6050DmpBankSelect(0x00);
-            
+
             mpu6050DmpBankSelect(0x00); // bank
             i2cWrite(MPU6050_ADDRESS, MPU_RA_MEM_START_ADDR, 0x60);
             i2cWriteBuffer(MPU6050_ADDRESS, MPU_RA_MEM_R_W, 4, "\x04\x00\x00\x00"); // data
 
             mpu6050DmpBankSelect(0x01);
-            
+
             i2cWrite(MPU6050_ADDRESS, MPU_RA_MEM_START_ADDR, 0x62);
             i2cRead(MPU6050_ADDRESS, DMP_MEM_R_W, 2, buf);
             dmp_firstPacket = false;
@@ -593,20 +593,20 @@ static void mpu6050DmpProcessQuat(void)
     quatl2 = dmp_quatTake32(dmp_received_packet, 2);
     quatl3 = dmp_quatTake32(dmp_received_packet, 3);
 
-    if (quatl0 > 32767) 
+    if (quatl0 > 32767)
         quatl0 -= 65536;
-    if (quatl1 > 32767) 
+    if (quatl1 > 32767)
         quatl1 -= 65536;
-    if (quatl2 > 32767) 
+    if (quatl2 > 32767)
         quatl2 -= 65536;
-    if (quatl3 > 32767) 
+    if (quatl3 > 32767)
         quatl3 -= 65536;
 
     quat0 = ((float) quatl0) / 16384.0f;
     quat1 = ((float) quatl1) / 16384.0f;
     quat2 = ((float) quatl2) / 16384.0f;
     quat3 = ((float) quatl3) / 16384.0f;
-    
+
     dmpdata[0] = atan2f(2 * ((quat0 * quat1) + (quat2 * quat3)), 1.0 - (2 * ((quat1 * quat1) + (quat2 * quat2)))) * (180.0f / M_PI);
     dmpdata[1] = asinf(2 * ((quat0 * quat2) - (quat3 * quat1))) * (180.0f / M_PI);
     angle[0] = dmpdata[0] * 10;
@@ -620,7 +620,7 @@ static void mpu6050DmpProcessQuat(void)
 void mpu6050DmpResetFifo(void)
 {
     uint8_t ctrl;
-    
+
     i2cRead(MPU6050_ADDRESS, MPU_RA_USER_CTRL, 1, &ctrl);
     ctrl |= 0x04;
     i2cWrite(MPU6050_ADDRESS, MPU_RA_USER_CTRL, ctrl);
@@ -632,7 +632,7 @@ static void mpu6050DmpGetPacket(void)
         dmp_fifoCountL2 = dmp_fifoCountL - 32;
         dmp_longPacket = true;
     }
-    
+
     if (dmp_longPacket) {
         i2cRead(MPU6050_ADDRESS, MPU_RA_FIFO_R_W, 32, dmp_received_packet);
         i2cRead(MPU6050_ADDRESS, MPU_RA_FIFO_R_W, dmp_fifoCountL, dmp_received_packet + 32);
@@ -652,7 +652,7 @@ static bool mpu6050DmpFifoReady(void)
     
     dmp_fifoCountL = buf[1];
     dmpFifoLevel = buf[0] << 8 | buf[1];
-    
+
     if (dmp_fifoCountL == 42 || dmp_fifoCountL == 44)
         return true;
     else {
@@ -769,7 +769,7 @@ static void mpu6050DmpMemInit(void)
     delay(2);
 
     i2cRead(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_2, 1, &temp);
-    i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_2, 0x00); 
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_2, 0x00);
     i2cRead(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 1, &temp);
 
     i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 0x00); // full scale range +/- 2g

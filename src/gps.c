@@ -330,7 +330,7 @@ void GPS_NewData(uint16_t c)
             GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_home[LAT], &GPS_home[LON], &dist, &dir);
             GPS_distanceToHome = dist / 100;
             GPS_directionToHome = dir / 100;
-            
+
             if (!f.GPS_FIX_HOME) {      // If we don't have home set, do not display anything
                 GPS_distanceToHome = 0;
                 GPS_directionToHome = 0;
@@ -713,7 +713,7 @@ uint32_t GPS_coord_to_degrees(char* s)
     int i;
 
     // scan for decimal point or end of field
-    for (p = s; isdigit(*p); p++)
+    for (p = s; isdigit((unsigned char)*p); p++)
         ;
     q = s;
 
@@ -736,7 +736,7 @@ uint32_t GPS_coord_to_degrees(char* s)
         q = p + 1;
         for (i = 0; i < 4; i++) {
             frac_min *= 10;
-            if (isdigit(*q))
+            if (isdigit((unsigned char)*q))
                 frac_min += *q++ - '0';
         }
     }
@@ -1001,8 +1001,6 @@ static bool _new_position;
 
 // do we have new speed information?
 static bool _new_speed;
-
-static uint8_t _disable_counter;
 
 // Receive buffer
 static union {

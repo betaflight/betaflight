@@ -47,31 +47,31 @@ static volatile uint8_t* read_p;
 
 static void i2c_er_handler(void)
 {
-    volatile uint32_t SR1Register, SR2Register;
-    /* Read the I2C1 status register */
+    volatile uint32_t SR1Register;
+    // Read the I2C1 status register
     SR1Register = I2Cx->SR1;
     if (SR1Register & 0x0F00) { //an error
         error = true;
         // I2C1error.error = ((SR1Register & 0x0F00) >> 8);        //save error
         // I2C1error.job = job;    //the task
     }
-    /* If AF, BERR or ARLO, abandon the current job and commence new if there are jobs */
+    // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
     if (SR1Register & 0x0700) {
-        SR2Register = I2Cx->SR2;        //read second status register to clear ADDR if it is set (note that BTF will not be set after a NACK)
-        I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);        //disable the RXNE/TXE interrupt - prevent the ISR tailchaining onto the ER (hopefully)
-        if (!(SR1Register & 0x0200) && !(I2Cx->CR1 & 0x0200)) {  //if we dont have an ARLO error, ensure sending of a stop
-            if (I2Cx->CR1 & 0x0100) {   //We are currently trying to send a start, this is very bad as start,stop will hang the peripheral
-                while (I2Cx->CR1 & 0x0100);     //wait for any start to finish sending
-                I2C_GenerateSTOP(I2Cx, ENABLE); //send stop to finalise bus transaction
-                while (I2Cx->CR1 & 0x0200);     //wait for stop to finish sending
-                i2cInit(I2Cx);   //reset and configure the hardware
+        (void)I2Cx->SR2;                                // read second status register to clear ADDR if it is set (note that BTF will not be set after a NACK)
+        I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);        // disable the RXNE/TXE interrupt - prevent the ISR tailchaining onto the ER (hopefully)
+        if (!(SR1Register & 0x0200) && !(I2Cx->CR1 & 0x0200)) {  // if we dont have an ARLO error, ensure sending of a stop
+            if (I2Cx->CR1 & 0x0100) {                   // We are currently trying to send a start, this is very bad as start,stop will hang the peripheral
+                while (I2Cx->CR1 & 0x0100);             // wait for any start to finish sending
+                I2C_GenerateSTOP(I2Cx, ENABLE);         // send stop to finalise bus transaction
+                while (I2Cx->CR1 & 0x0200);             // wait for stop to finish sending
+                i2cInit(I2Cx);                          // reset and configure the hardware
             } else {
-                I2C_GenerateSTOP(I2Cx, ENABLE); //stop to free up the bus
-                I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);   //Disable EVT and ERR interrupts while bus inactive
+                I2C_GenerateSTOP(I2Cx, ENABLE);         // stop to free up the bus
+                I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);   // Disable EVT and ERR interrupts while bus inactive
             }
         }
     }
-    I2Cx->SR1 &= ~0x0F00;       //reset all the error bits to clear the interrupt
+    I2Cx->SR1 &= ~0x0F00;                               // reset all the error bits to clear the interrupt
     busy = 0;
 }
 
@@ -167,18 +167,17 @@ void i2c_ev_handler(void)
                 index = -1;     //send a subaddress
         }
     } else if (SReg_1 & 0x0002) {       //we just sent the address - EV6 in ref manual
-        //Read SR1,2 to clear ADDR
-        volatile uint8_t a;
+        // Read SR1,2 to clear ADDR
         __DMB(); // memory fence to control hardware
-        if (bytes == 1 && reading && subaddress_sent) { //we are receiving 1 byte - EV6_3
-            I2C_AcknowledgeConfig(I2Cx, DISABLE);       //turn off ACK
+        if (bytes == 1 && reading && subaddress_sent) {     // we are receiving 1 byte - EV6_3
+            I2C_AcknowledgeConfig(I2Cx, DISABLE);           // turn off ACK
             __DMB();
-            a = I2Cx->SR2;      //clear ADDR after ACK is turned off
-            I2C_GenerateSTOP(I2Cx, ENABLE);     //program the stop
+            (void)I2Cx->SR2;                                // clear ADDR after ACK is turned off
+            I2C_GenerateSTOP(I2Cx, ENABLE);                 // program the stop
             final_stop = 1;
-            I2C_ITConfig(I2Cx, I2C_IT_BUF, ENABLE);     //allow us to have an EV7
-        } else {                //EV6 and EV6_1
-            a = I2Cx->SR2;      //clear the ADDR here
+            I2C_ITConfig(I2Cx, I2C_IT_BUF, ENABLE);         // allow us to have an EV7
+        } else {                    // EV6 and EV6_1
+            (void)I2Cx->SR2;        // clear the ADDR here
             __DMB();
             if (bytes == 2 && reading && subaddress_sent) {     //rx 2 bytes - EV6_1
                 I2C_AcknowledgeConfig(I2Cx, DISABLE);   //turn off ACK
@@ -220,7 +219,7 @@ void i2c_ev_handler(void)
             }
         }
         //we must wait for the start to clear, otherwise we get constant BTF
-        while (I2Cx->CR1 & 0x0100) { ; }                       
+        while (I2Cx->CR1 & 0x0100) { ; }
     } else if (SReg_1 & 0x0040) {       //Byte received - EV7
         read_p[index++] = I2C_ReceiveData(I2Cx);
         if (bytes == (index + 3))
