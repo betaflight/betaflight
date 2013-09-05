@@ -850,14 +850,40 @@ a:hover {
         border: 1px solid silver;
         background-color: black;
     }
-    .tab-cli input {
-        margin-top: 10px;
+    .tab-cli textarea {
+        margin-top: 8px;
         display: block;
         
         width: 911px;
+        height: 20px;
+        line-height: 20px;
+        
         padding-left: 5px;
         
         border: 1px solid silver;
+        
+        resize: none;
+    }
+    .tab-cli .copy {
+        display: block;
+        position: absolute;
+        
+        bottom: 55px;
+        right: 40px;
+        
+        height: 28px;
+        line-height: 28px;
+        
+        padding: 0 15px 0 15px;
+        
+        text-align: center;
+        font-weight: bold;
+        
+        border: 1px solid silver;
+        background-color: #ececec;
+    }
+    .tab-cli .copy:hover {
+        background-color: #dedcdc;
     }
 .tab-about {
 }

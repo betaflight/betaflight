@@ -16,7 +16,8 @@
         "serial",
         "storage",
         "fileSystem",
-        "fileSystem.write"
+        "fileSystem.write",
+        "clipboardWrite"
     ],
     
     "icons": {

@@ -12,32 +12,55 @@ function tab_initialize_cli() {
     chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
     });
 
-    $('.tab-cli input').keypress(function(event) {
+    $('.tab-cli textarea').keypress(function(event) {
         if (event.which == 13) { // enter
-            var out_string = $('.tab-cli input').val();
+            var out_string = $('.tab-cli textarea').val();
+            var out_arr = out_string.split("\n");
+            var timeout_needle = 0;
             
-            var bufferOut = new ArrayBuffer(out_string.length + 1); // +1 for enter character
-            var bufView = new Uint8Array(bufferOut);
-            
-            for (var i = 0; i < out_string.length; i++) {
-                bufView[i] = out_string.charCodeAt(i);
+            for (var i = 0; i < out_arr.length; i++) {
+                send_slowly(out_arr, i, timeout_needle++);
             }
             
-            bufView[out_string.length] = 0x0D; // enter
-            
-            chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-                $('.tab-cli input').val('');
-            });
+            $('.tab-cli textarea').val('');
         }
     });
     
     // give input element user focus
-    $('.tab-cli input').focus();
+    $('.tab-cli textarea').focus();
     
     // if user clicks inside the console window, input element gets re-focused
     $('.tab-cli .window').click(function() {
-        $('.tab-cli input').focus();
+        $('.tab-cli textarea').focus();
     });
+    
+    $('.tab-cli .copy').click(function() {
+        var text = $('.tab-cli .window .wrapper').html();
+        text = text.replace(/<br\s*\/?>/mg,"\n"); // replacing br tags with \n to keep some of the formating
+        
+        var copyFrom = $('<textarea/>');
+        
+        copyFrom.text(text);
+        $('body').append(copyFrom);
+        copyFrom.select();
+        document.execCommand('copy');
+        copyFrom.remove();
+    });
+}
+
+function send_slowly(out_arr, i, timeout_needle) {
+    setTimeout(function() {
+        var bufferOut = new ArrayBuffer(out_arr[i].length + 1); 
+        var bufView = new Uint8Array(bufferOut);
+
+        for (var c_key = 0; c_key < out_arr[i].length; c_key++) {
+            bufView[c_key] = out_arr[i].charCodeAt(c_key);
+        }
+
+        bufView[out_arr[i].length] = 0x0D; // enter (\n)
+
+        chrome.serial.write(connectionId, bufferOut, function(writeInfo) {});
+    }, timeout_needle * 5);
 }
 
 function leave_CLI(callback) {
