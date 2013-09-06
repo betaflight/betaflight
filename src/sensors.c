@@ -289,7 +289,7 @@ int Baro_update(void)
         return 0;
 
     baroDeadline = currentTime;
-    
+
     if (state) {
         baro.get_up();
         baro.start_ut();
@@ -470,21 +470,21 @@ int Mag_getADC(void)
             writeEEPROM(1, true);
         }
     }
-    
+
     return 1;
 }
 #endif
 
 #ifdef SONAR
 
-void Sonar_init(void) 
+void Sonar_init(void)
 {
     hcsr04_init(sonar_rc78);
     sensorsSet(SENSOR_SONAR);
     sonarAlt = 0;
 }
 
-void Sonar_update(void) 
+void Sonar_update(void)
 {
     hcsr04_get_distance(&sonarAlt);
 }

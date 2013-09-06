@@ -108,18 +108,18 @@ static int8_t ms5611_crc(uint16_t *prom)
         return -1;
 
     for (i = 0; i < 16; i++) {
-        if (i & 1) 
+        if (i & 1)
             res ^= ((prom[i >> 1]) & 0x00FF);
-        else 
+        else
             res ^= (prom[i >> 1] >> 8);
         for (j = 8; j > 0; j--) {
-            if (res & 0x8000) 
+            if (res & 0x8000)
                 res ^= 0x1800;
             res <<= 1;
         }
     }
     prom[7] |= crc;
-    if (crc == ((res >> 12) & 0xF)) 
+    if (crc == ((res >> 12) & 0xF))
         return 0;
 
     return -1;
@@ -162,7 +162,7 @@ static void ms5611_calculate(int32_t *pressure, int32_t *temperature)
     int64_t sens = ((uint32_t)ms5611_c[1] << 15) + ((dT * ms5611_c[3]) >> 8);
     temp = 2000 + ((dT * ms5611_c[6]) >> 23);
 
-    if (temp < 2000) { // temperature lower than 20degC 
+    if (temp < 2000) { // temperature lower than 20degC
         delt = temp - 2000;
         delt = 5 * delt * delt;
         off2 = delt >> 1;
@@ -177,7 +177,7 @@ static void ms5611_calculate(int32_t *pressure, int32_t *temperature)
     off  -= off2;
     sens -= sens2;
     press = (((ms5611_up * sens ) >> 21) - off) >> 15;
-    
+
     if (pressure)
         *pressure = press;
     if (temperature)

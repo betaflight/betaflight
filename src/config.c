@@ -133,7 +133,7 @@ retry:
         }
     }
     FLASH_Lock();
-    
+
     // Flash write failed - just die now
     if (tries == 3 || !validEEPROM()) {
         failureMode(10);

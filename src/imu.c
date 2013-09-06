@@ -355,7 +355,7 @@ static void getEstimatedAttitude(void)
     if (cfg.throttle_angle_correction) {
         int cosZ = EstG.V.Z / acc_1G * 100.0f;
         throttleAngleCorrection = cfg.throttle_angle_correction * constrain(100 - cosZ, 0, 100) / 8;
-        
+
     }
 }
 
@@ -391,9 +391,9 @@ int getEstimatedAltitude(void)
     // pressure relative to ground pressure with temperature compensation (fast!)
     // baroGroundPressure is not supposed to be 0 here
     // see: https://code.google.com/p/ardupilot-mega/source/browse/libraries/AP_Baro/AP_Baro.cpp
-    BaroAlt_tmp = logf(baroGroundPressure * (cfg.baro_tab_size - 1) / (float)baroPressureSum) * (baroTemperature + 27315) * 29.271267f; // in cemtimeter 
+    BaroAlt_tmp = logf(baroGroundPressure * (cfg.baro_tab_size - 1) / (float)baroPressureSum) * (baroTemperature + 27315) * 29.271267f; // in cemtimeter
     BaroAlt = BaroAlt * cfg.baro_noise_lpf + BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf); // additional LPF to reduce baro noise
-    
+
     // Integrator - velocity, cm/sec
     vel += (float)accSum[2] * accVelScale * (float)accTimeSum / (float)accSumCount;
 
@@ -420,14 +420,14 @@ int getEstimatedAltitude(void)
     errorAltitudeI = constrain(errorAltitudeI, -30000, 30000);
     BaroPID += errorAltitudeI / 512;     // I in range +/-60
 
-    
+
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = BaroAlt;
 
     baroVel = constrain(baroVel, -300, 300);    // constrain baro velocity +/- 300cm/s
     baroVel = applyDeadband(baroVel, 10);       // to reduce noise near zero
 
-    // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity). 
+    // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
     vel = vel * cfg.baro_cf_vel + baroVel * (1 - cfg.baro_cf_vel);
 

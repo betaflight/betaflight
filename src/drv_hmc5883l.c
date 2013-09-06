@@ -56,7 +56,7 @@ void hmc5883lInit(float *calibrationGain)
 
     delay(50);
     i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
-    // Note that the  very first measurement after a gain change maintains the same gain as the previous setting. 
+    // Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
     // The new gain setting is effective from the second measurement and on.
     i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFB, 2 << 5); // Set the Gain
     delay(100);

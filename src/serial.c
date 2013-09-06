@@ -1,7 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-// Multiwii Serial Protocol 0 
+// Multiwii Serial Protocol 0
 #define MSP_VERSION              0
 #define PLATFORM_32BIT           ((uint32_t)1 << 31)
 
@@ -60,7 +60,7 @@
 struct box_t {
     const uint8_t boxIndex;         // this is from boxnames enum
     const char *boxName;            // GUI-readable box name
-    const uint8_t permanentId;      // 
+    const uint8_t permanentId;      //
 } boxes[] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
@@ -120,7 +120,7 @@ const uint8_t boxids[] = {      // permanent IDs associated to boxes. This way, 
     4,                          // "VARIO;"
     5,                          // "MAG;"
     6,                          // "HEADFREE;"
-    7,                          // "HEADADJ;"  
+    7,                          // "HEADADJ;"
     8,                          // "CAMSTAB;"
     9,                          // "CAMTRIG;"
     10,                         // "GPS HOME;"
@@ -251,7 +251,7 @@ void serializeBoxNamesReply(void)
                 strcat(buf, boxes[i].boxName);
         }
     }
-    
+
     headSerialReply(strlen(buf));
     for (c = buf; *c; c++)
         serialize8(*c);
@@ -561,7 +561,7 @@ static void evaluateCommand(void)
         serialize32(lon);
         serialize32(AltHold);           // altitude (cm) will come here -- temporary implementation to test feature with apps
         serialize16(0);                 // heading  will come here (deg)
-        serialize16(0);                 // time to stay (ms) will come here 
+        serialize16(0);                 // time to stay (ms) will come here
         serialize8(0);                  // nav flag will come here
         break;
     case MSP_SET_WP:

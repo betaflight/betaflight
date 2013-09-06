@@ -15,7 +15,7 @@ typedef enum
 typedef enum
 {
     Speed_10MHz = 1,
-    Speed_2MHz, 
+    Speed_2MHz,
     Speed_50MHz
 } GPIO_Speed;
 

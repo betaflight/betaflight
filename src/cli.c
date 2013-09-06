@@ -574,7 +574,7 @@ static void cliDump(char *cmdline)
             if (yaw < 0)
                 printf(" ");
             printf("%s\r\n", ftoa(yaw, buf));
-        }   
+        }
         printf("cmix %d 0 0 0 0\r\n", i + 1);
     }
 
@@ -677,7 +677,7 @@ static void cliHelp(char *cmdline)
 {
     uint32_t i = 0;
 
-    cliPrint("Available commands:\r\n");    
+    cliPrint("Available commands:\r\n");
     for (i = 0; i < CMD_COUNT; i++)
         printf("%s\t%s\r\n", cmdTable[i].name, cmdTable[i].param);
 }

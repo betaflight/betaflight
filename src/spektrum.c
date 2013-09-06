@@ -41,7 +41,7 @@ static void spektrumDataReceive(uint16_t c)
     spekTime = micros();
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime;
-    if (spekTimeInterval > 5000) 
+    if (spekTimeInterval > 5000)
         spekFramePosition = 0;
     spekFrame[spekFramePosition] = (uint8_t)c;
     if (spekFramePosition == SPEK_FRAME_SIZE - 1) {
@@ -68,7 +68,7 @@ uint16_t spektrumReadRawRC(uint8_t chan)
     if (rcFrameComplete) {
         for (b = 3; b < SPEK_FRAME_SIZE; b += 2) {
             uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
-            if (spekChannel < SPEK_MAX_CHANNEL) 
+            if (spekChannel < SPEK_MAX_CHANNEL)
                 spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
         }
         rcFrameComplete = false;
@@ -82,6 +82,6 @@ uint16_t spektrumReadRawRC(uint8_t chan)
         else
             data = 988 + spekChannelData[mcfg.rcmap[chan]];          // 1024 mode
     }
-    
+
     return data;
 }

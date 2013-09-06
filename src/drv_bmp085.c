@@ -217,7 +217,7 @@ static void bmp085_start_ut(void)
 
 static void bmp085_get_ut(void)
 {
-    uint8_t data[2];    
+    uint8_t data[2];
 
     // wait in case of cockup
     if (!convDone)
@@ -243,7 +243,7 @@ static void bmp085_start_up(void)
 static void bmp085_get_up(void)
 {
     uint8_t data[3];
-    
+
     // wait in case of cockup
     if (!convDone)
         convOverrun++;

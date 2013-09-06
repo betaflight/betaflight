@@ -1,4 +1,4 @@
-/* 
+/*
  * FrSky Telemetry implementation by silpstream @ rcgroups
  */
 #include "board.h"

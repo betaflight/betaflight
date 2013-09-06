@@ -8,7 +8,7 @@ bool ledringDetect(void)
 {
     bool ack = false;
     uint8_t sig = 'e';
-    
+
     ack = i2cWrite(LED_RING_ADDRESS, 0xFF, sig);
     if (!ack)
         return false;
@@ -32,7 +32,7 @@ void ledringState(void)
         i2cWriteBuffer(LED_RING_ADDRESS, 0xFF, 3, b);
         state = 2;
     } else if (state == 2) {
-        b[0] = 'd';		// all unicolor GREEN 
+        b[0] = 'd';		// all unicolor GREEN
         b[1] = 1;
         if (f.ARMED)
             b[2] = 1;

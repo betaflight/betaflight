@@ -211,7 +211,7 @@ static void pwmInitializeInput(bool usePPM)
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
         GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
         GPIO_Init(GPIOA, &GPIO_InitStructure);
-        
+
         // TODO Configure EXTI4 1 channel
 
         // Input timers on TIM2 for PWM
@@ -233,12 +233,12 @@ static void pwmInitializeInput(bool usePPM)
         TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
         TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
         TIM_ICInitStructure.TIM_ICFilter = 0x0;
-        
+
         for (i = 0; i < 4; i++) {
             TIM_ICInitStructure.TIM_Channel = Channels[i].channel;
             TIM_ICInit(Channels[i].tim, &TIM_ICInitStructure);
         }
-        
+
         // TODO EXTI4
 
         TIM_ITConfig(TIM2, TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4, ENABLE);
@@ -280,7 +280,7 @@ bool pwmInit(drv_pwm_config_t *init)
     // use PPM or PWM input
     usePPMFlag = init->usePPM;
 
-    // preset channels to center    
+    // preset channels to center
     for (i = 0; i < 8; i++)
         Inputs[i].capture = 1500;
 

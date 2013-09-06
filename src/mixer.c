@@ -274,8 +274,8 @@ static void airplaneMixer(void)
         motor[0] = rcData[THROTTLE];
 
     if (cfg.flaperons) {
-        
-        
+
+
     }
 
     if (cfg.flaps) {

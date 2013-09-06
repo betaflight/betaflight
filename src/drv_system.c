@@ -43,18 +43,18 @@ void systemInit(void)
         GPIO_TypeDef *gpio;
         gpio_config_t cfg;
     } gpio_setup[] = {
-        { 
-            .gpio = LED0_GPIO, 
-            .cfg = { LED0_PIN, Mode_Out_PP, Speed_2MHz } 
+        {
+            .gpio = LED0_GPIO,
+            .cfg = { LED0_PIN, Mode_Out_PP, Speed_2MHz }
         },
-        { 
-            .gpio = LED1_GPIO, 
-            .cfg = { LED1_PIN, Mode_Out_PP, Speed_2MHz } 
+        {
+            .gpio = LED1_GPIO,
+            .cfg = { LED1_PIN, Mode_Out_PP, Speed_2MHz }
         },
 #ifdef BUZZER
-        { 
-            .gpio = BEEP_GPIO, 
-            .cfg = { BEEP_PIN, Mode_Out_OD, Speed_2MHz } 
+        {
+            .gpio = BEEP_GPIO,
+            .cfg = { BEEP_PIN, Mode_Out_OD, Speed_2MHz }
         },
 #endif
     };

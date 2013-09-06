@@ -96,6 +96,6 @@ static bool spiTest(void)
     spiSelect(false);
     if (in[1] == 0xEF)
         return true;
-    
+
     return false;
 }

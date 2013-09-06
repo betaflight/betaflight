@@ -14,7 +14,7 @@ void buzzer(uint8_t warn_vbat)
     static uint8_t warn_runtime = 0;
 
     //=====================  BeeperOn via rcOptions =====================
-    if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch 
+    if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch
         beeperOnBox = 1;
     } else {
         beeperOnBox = 0;
@@ -24,7 +24,7 @@ void buzzer(uint8_t warn_vbat)
         if (failsafeCnt > (5 * cfg.failsafe_delay) && f.ARMED) {
             warn_failsafe = 1;      //set failsafe warning level to 1 while landing
             if (failsafeCnt > 5 * (cfg.failsafe_delay + cfg.failsafe_off_delay))
-                warn_failsafe = 2;  //start "find me" signal after landing   
+                warn_failsafe = 2;  //start "find me" signal after landing
         }
         if (failsafeCnt > (5 * cfg.failsafe_delay) && !f.ARMED)
             warn_failsafe = 2;      // tx turned off while motors are off: start "find me" signal
@@ -62,7 +62,7 @@ void buzzer(uint8_t warn_vbat)
         beep_code('S','S','M','N');                 // Runtime warning
     else if (toggleBeep > 0)
         beep(50);                                   // fast confirmation beep
-    else { 
+    else {
         buzzerIsOn = 0;
         BEEP_OFF;
     }
@@ -79,20 +79,20 @@ void beep_code(char first, char second, char third, char pause)
     patternChar[2] = third;
     patternChar[3] = pause;
     switch(patternChar[icnt]) {
-        case 'M': 
-            Duration = 100; 
+        case 'M':
+            Duration = 100;
             break;
-        case 'L': 
-            Duration = 200; 
+        case 'L':
+            Duration = 200;
             break;
-        case 'D': 
-            Duration = 2000; 
+        case 'D':
+            Duration = 2000;
             break;
-        case 'N': 
-            Duration = 0; 
+        case 'N':
+            Duration = 0;
             break;
         default:
-            Duration = 50; 
+            Duration = 50;
             break;
     }
 

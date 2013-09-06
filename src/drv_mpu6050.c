@@ -649,7 +649,7 @@ static bool mpu6050DmpFifoReady(void)
     uint8_t buf[2];
 
     i2cRead(MPU6050_ADDRESS, MPU_RA_FIFO_COUNTH, 2, buf);
-    
+
     dmp_fifoCountL = buf[1];
     dmpFifoLevel = buf[0] << 8 | buf[1];
 
