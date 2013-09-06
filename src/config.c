@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 49;
+static const uint8_t EEPROM_CONF_VERSION = 50;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -274,6 +274,7 @@ static void resetConf(void)
 
     // servos
     cfg.yaw_direction = 1;
+    cfg.tri_unarmed_servo = 1;
     cfg.tri_yaw_middle = 1500;
     cfg.tri_yaw_min = 1020;
     cfg.tri_yaw_max = 2000;

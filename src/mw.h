@@ -189,6 +189,7 @@ typedef struct config_t {
 
     // mixer-related configuration
     int8_t yaw_direction;
+    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
     uint16_t tri_yaw_middle;                // tail servo center pos. - use this for initial trim
     uint16_t tri_yaw_min;                   // tail servo min
     uint16_t tri_yaw_max;                   // tail servo max

@@ -206,7 +206,16 @@ void writeServos(void)
             break;
 
         case MULTITYPE_TRI:
-            pwmWriteServo(0, servo[5]);
+            if (cfg.tri_unarmed_servo) {
+                // if unarmed flag set, we always move servo
+                pwmWriteServo(0, servo[5]);
+            } else {
+                // otherwise, only move servo when copter is armed
+                if (f.ARMED)
+                    pwmWriteServo(0, servo[5]);
+                else
+                    pwmWriteServo(0, 0); // kill servo signal completely.
+            }
             break;
 
         case MULTITYPE_AIRPLANE:
