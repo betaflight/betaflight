@@ -129,13 +129,10 @@ int main(void)
     if (feature(FEATURE_VBAT))
         batteryInit();
 
-#ifdef SOFTSERIAL_19200_LOOPBACK
-
-    serialInit(19200);
-    setupSoftSerial1(19200);
-    uartPrint(core.mainport, "LOOPBACK 19200 ENABLED");
-#else
     serialInit(mcfg.serial_baudrate);
+#ifdef SOFTSERIAL_19200_LOOPBACK
+    setupSoftSerial1(19200);
+    serialPrint(&(softSerialPorts[0]), "LOOPBACK 19200 ENABLED\r\n");
 #endif
 
     previousTime = micros();
@@ -152,7 +149,8 @@ int main(void)
         while (serialAvailable(&softSerialPorts[0])) {
 
             uint8_t b = serialReadByte(&softSerialPorts[0]);
-            uartWrite(core.mainport, b);
+            serialWriteByte(&softSerialPorts[0], b);
+            //uartWrite(core.mainport, b);
         };
 #endif
     }
