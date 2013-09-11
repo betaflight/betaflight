@@ -849,6 +849,8 @@ a:hover {
         
         border: 1px solid silver;
         background-color: black;
+        
+        -webkit-user-select: text;
     }
     .tab-cli textarea {
         margin-top: 8px;
