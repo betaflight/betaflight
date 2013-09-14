@@ -251,7 +251,9 @@ typedef struct master_t {
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
 
     // global sensor-related stuff
-    int8_t align[3][3];                     // acc, gyro, mag alignment (ex: with sensor output of X, Y, Z, align of 1 -3 2 would return X, -Z, Y)
+    sensor_align_e gyro_align;              // gyro alignment
+    sensor_align_e acc_align;               // acc alignment
+    sensor_align_e mag_align;               // mag alignment
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.

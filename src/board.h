@@ -53,6 +53,7 @@ typedef enum AccelSensors {
     ACC_ADXL345 = 1,
     ACC_MPU6050 = 2,
     ACC_MMA8452 = 3,
+    ACC_NONE = 4
 } AccelSensors;
 
 typedef enum {
@@ -79,8 +80,35 @@ typedef enum {
     GPS_MTK,
 } GPSHardware;
 
-typedef void (* sensorInitFuncPtr)(void);                   // sensor init prototype
+typedef enum {
+    X = 0,
+    Y,
+    Z
+} sensor_axis_e;
+
+typedef enum {
+    ALIGN_DEFAULT = 0,                                      // driver-provided alignment
+    CW0_DEG = 1,
+    CW90_DEG = 2,
+    CW180_DEG = 3,
+    CW270_DEG = 4,
+    CW0_DEG_FLIP = 5,
+    CW90_DEG_FLIP = 6,
+    CW180_DEG_FLIP = 7,
+    CW270_DEG_FLIP = 8
+} sensor_align_e;
+
+typedef struct sensor_data_t
+{
+    int16_t x;
+    int16_t y;
+    int16_t z;
+    float temperature;
+} sensor_data_t;
+
+typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
 typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
+typedef void (* baroOpFuncPtr)(void);                       // baro start operation
 typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
 typedef void (* uartReceiveCallbackPtr)(uint16_t data);     // used by uart2 driver to return frames to app
 typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
@@ -90,7 +118,6 @@ typedef struct sensor_t
 {
     sensorInitFuncPtr init;                                 // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
-    sensorReadFuncPtr align;                                // sensor align
     sensorReadFuncPtr temperature;                          // read temperature if available
     float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
 } sensor_t;
@@ -99,10 +126,10 @@ typedef struct baro_t
 {
     uint16_t ut_delay;
     uint16_t up_delay;
-    sensorInitFuncPtr start_ut;
-    sensorInitFuncPtr get_ut;
-    sensorInitFuncPtr start_up;
-    sensorInitFuncPtr get_up;
+    baroOpFuncPtr start_ut;
+    baroOpFuncPtr get_ut;
+    baroOpFuncPtr start_up;
+    baroOpFuncPtr get_up;
     baroCalculateFuncPtr calculate;
 } baro_t;
 

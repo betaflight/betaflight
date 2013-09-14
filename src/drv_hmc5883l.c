@@ -73,9 +73,9 @@
 #define HMC_POS_BIAS 1
 #define HMC_NEG_BIAS 2
 
-static int8_t sensor_align[3];
+static sensor_align_e magAlign = CW180_DEG;
 
-bool hmc5883lDetect(int8_t *align)
+bool hmc5883lDetect(sensor_align_e align)
 {
     bool ack = false;
     uint8_t sig = 0;
@@ -84,7 +84,8 @@ bool hmc5883lDetect(int8_t *align)
     if (!ack || sig != 'H')
         return false;
 
-    memcpy(sensor_align, align, 3);
+    if (align > 0)
+        magAlign = align;
 
     return true;
 }
@@ -184,18 +185,11 @@ void hmc5883lRead(int16_t *magData)
 {
     uint8_t buf[6];
     int16_t mag[3];
-    int i;
 
     i2cRead(MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
-    mag[0] = buf[0] << 8 | buf[1];
-    mag[1] = buf[2] << 8 | buf[3];
-    mag[2] = buf[4] << 8 | buf[5];
+    mag[X] = buf[0] << 8 | buf[1];
+    mag[Z] = buf[2] << 8 | buf[3];
+    mag[Y] = buf[4] << 8 | buf[5];
 
-    for (i = 0; i < 3; i++) {
-        int8_t axis = sensor_align[i];
-        if (axis > 0)
-            magData[axis - 1] = mag[i];
-        else
-            magData[-axis - 1] = -mag[i];
-    }
+    alignSensors(mag, magData, magAlign);
 }

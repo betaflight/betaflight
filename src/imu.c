@@ -147,10 +147,10 @@ void rotateV(struct fp_vector *v, float *delta)
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, coszcosy, sinzcosx, coszsinx, sinzsinx;
 
-    cosx = cosf(-delta[PITCH]);
-    sinx = sinf(-delta[PITCH]);
-    cosy = cosf(delta[ROLL]);
-    siny = sinf(delta[ROLL]);
+    cosx = cosf(delta[ROLL]);
+    sinx = sinf(delta[ROLL]);
+    cosy = cosf(delta[PITCH]);
+    siny = sinf(delta[PITCH]);
     cosz = cosf(delta[YAW]);
     sinz = sinf(delta[YAW]);
 
@@ -161,13 +161,13 @@ void rotateV(struct fp_vector *v, float *delta)
     sinzsinx = sinx * sinz;
 
     mat[0][0] = coszcosy;
-    mat[0][1] = sinz * cosy;
-    mat[0][2] = -siny;
-    mat[1][0] = (coszsinx * siny) - sinzcosx;
-    mat[1][1] = (sinzsinx * siny) + (coszcosx);
-    mat[1][2] = cosy * sinx;
-    mat[2][0] = (coszcosx * siny) + (sinzsinx);
-    mat[2][1] = (sinzcosx * siny) - (coszsinx);
+    mat[0][1] = -cosy * sinz;
+    mat[0][2] = siny;
+    mat[1][0] = sinzcosx + (coszsinx * siny);
+    mat[1][1] = coszcosx - (sinzsinx * siny);
+    mat[1][2] = -sinx * cosy;
+    mat[2][0] = (sinzsinx) - (coszcosx * siny);
+    mat[2][1] = (coszsinx) + (sinzcosx * siny);
     mat[2][2] = cosy * cosx;
 
     v->X = v_tmp.X * mat[0][0] + v_tmp.Y * mat[1][0] + v_tmp.Z * mat[2][0];
@@ -257,13 +257,6 @@ static void getEstimatedAttitude(void)
     uint32_t currentT = micros();
     uint32_t deltaT;
     float scale, deltaGyroAngle[3];
-#ifndef BASEFLIGHT_CALC
-    float sqGZ;
-    float sqGX;
-    float sqGY;
-    float sqGX_sqGZ;
-    float invmagXZ;
-#endif
     deltaT = currentT - previousT;
     scale = deltaT * gyro.scale;
     previousT = currentT;
@@ -304,21 +297,8 @@ static void getEstimatedAttitude(void)
     }
 
     // Attitude of the estimated vector
-#ifdef BASEFLIGHT_CALC
-    // This hack removes gimbal lock (sorta) on pitch, so rolling around doesn't make pitch jump when roll reaches 90deg
-    angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
-    angle[PITCH] = -asinf(EstG.V.Y / -sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z)) * (180.0f / M_PI * 10.0f);
-#else
-    // MW2.2 version
-    sqGZ = EstG.V.Z * EstG.V.Z;
-    sqGX = EstG.V.X * EstG.V.X;
-    sqGY = EstG.V.Y * EstG.V.Y;
-    sqGX_sqGZ = sqGX + sqGZ;
-    invmagXZ = 1.0f / sqrtf(sqGX_sqGZ);
-    invG = 1.0f / sqrtf(sqGX_sqGZ + sqGY);
-    angle[ROLL] = _atan2f(EstG.V.X, EstG.V.Z);
-    angle[PITCH] = _atan2f(EstG.V.Y, invmagXZ * sqGX_sqGZ);
-#endif
+    angle[ROLL] = _atan2f(EstG.V.Y, EstG.V.Z);
+    angle[PITCH] = _atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
@@ -339,7 +319,7 @@ static void getEstimatedAttitude(void)
         heading = hd;
 #else
         // MW 2.2 calculation
-        heading = _atan2f(EstM.V.Z * EstG.V.X - EstM.V.X * EstG.V.Z, EstM.V.Y * invG * sqGX_sqGZ - (EstM.V.X * EstG.V.X + EstM.V.Z * EstG.V.Z) * invG * EstG.V.Y);
+        heading = _atan2f(EstM.V.Z * EstG.V.X - EstM.V.X * EstG.V.Z, EstM.V.Y * invG * (EstG.V.X * EstG.V.X + EstG.V.Z * EstG.V.Z) - (EstM.V.X * EstG.V.X + EstM.V.Z * EstG.V.Z) * invG * EstG.V.Y);
         heading = heading + magneticDeclination;
         heading = heading / 10;
 #endif

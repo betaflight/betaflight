@@ -50,8 +50,11 @@ void sensorsAutodetect(void)
     // Accelerometer. Fuck it. Let user break shit.
 retry:
     switch (mcfg.acc_hardware) {
-        case 0: // autodetect
-        case 1: // ADXL345
+        case ACC_NONE: // disable ACC
+            sensorsClear(SENSOR_ACC);
+            break;
+        case ACC_DEFAULT: // autodetect
+        case ACC_ADXL345: // ADXL345
             acc_params.useFifo = false;
             acc_params.dataRate = 800; // unused currently
             if (adxl345Detect(&acc_params, &acc))
@@ -59,7 +62,7 @@ retry:
             if (mcfg.acc_hardware == ACC_ADXL345)
                 break;
             ; // fallthrough
-        case 2: // MPU6050
+        case ACC_MPU6050: // MPU6050
             if (haveMpu6k) {
                 mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &mcfg.mpu6050_scale); // yes, i'm rerunning it again.  re-fill acc struct
                 accHardware = ACC_MPU6050;
@@ -68,7 +71,7 @@ retry:
             }
             ; // fallthrough
 #ifndef OLIMEXINO
-        case 3: // MMA8452
+        case ACC_MMA8452: // MMA8452
             if (mma8452Detect(&acc)) {
                 accHardware = ACC_MMA8452;
                 if (mcfg.acc_hardware == ACC_MMA8452)
@@ -102,12 +105,12 @@ retry:
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
-        acc.init();
+        acc.init(mcfg.acc_align);
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.init();
+    gyro.init(mcfg.gyro_align);
 
 #ifdef MAG
-    if (!hmc5883lDetect(mcfg.align[ALIGN_MAG]))
+    if (!hmc5883lDetect(mcfg.mag_align))
         sensorsClear(SENSOR_MAG);
 #endif
 
@@ -145,28 +148,6 @@ void batteryInit(void)
     }
     batteryCellCount = i;
     batteryWarningVoltage = i * mcfg.vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
-}
-
-// ALIGN_GYRO = 0,
-// ALIGN_ACCEL = 1,
-// ALIGN_MAG = 2
-static void alignSensors(uint8_t type, int16_t *data)
-{
-    int i;
-    int16_t tmp[3];
-
-    // make a copy :(
-    tmp[0] = data[0];
-    tmp[1] = data[1];
-    tmp[2] = data[2];
-
-    for (i = 0; i < 3; i++) {
-        int8_t axis = mcfg.align[type][i];
-        if (axis > 0)
-            data[axis - 1] = tmp[i];
-        else
-            data[-axis - 1] = -tmp[i];
-    }
 }
 
 static void ACC_Common(void)
@@ -254,12 +235,6 @@ static void ACC_Common(void)
 void ACC_getADC(void)
 {
     acc.read(accADC);
-    // if we have CUSTOM alignment configured, user is "assumed" to know what they're doing
-    if (mcfg.align[ALIGN_ACCEL][0])
-        alignSensors(ALIGN_ACCEL, accADC);
-    else
-        acc.align(accADC);
-
     ACC_Common();
 }
 
@@ -392,24 +367,12 @@ void Gyro_getADC(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
     gyro.read(gyroADC);
-    // if we have CUSTOM alignment configured, user is "assumed" to know what they're doing
-    if (mcfg.align[ALIGN_GYRO][0])
-        alignSensors(ALIGN_GYRO, gyroADC);
-    else
-        gyro.align(gyroADC);
-
     GYRO_Common();
 }
 
 #ifdef MAG
 static float magCal[3] = { 1.0f, 1.0f, 1.0f };     // gain for each axis, populated at sensor init
 static uint8_t magInit = 0;
-
-static void Mag_getRawADC(void)
-{
-    // MAG driver will align itself, so no need to alignSensors()
-    hmc5883lRead(magADC);
-}
 
 void Mag_init(void)
 {
@@ -432,11 +395,11 @@ int Mag_getADC(void)
     t = currentTime + 100000;
 
     // Read mag sensor
-    Mag_getRawADC();
+    hmc5883lRead(magADC);
 
-    magADC[ROLL]  = magADC[ROLL]  * magCal[ROLL];
-    magADC[PITCH] = magADC[PITCH] * magCal[PITCH];
-    magADC[YAW]   = magADC[YAW]   * magCal[YAW];
+    magADC[X] = magADC[X] * magCal[X];
+    magADC[Y] = magADC[Y] * magCal[Y];
+    magADC[Z] = magADC[Z] * magCal[Z];
 
     if (f.CALIBRATE_MAG) {
         tCal = t;
@@ -449,9 +412,9 @@ int Mag_getADC(void)
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done
-        magADC[ROLL] -= mcfg.magZero[ROLL];
-        magADC[PITCH] -= mcfg.magZero[PITCH];
-        magADC[YAW] -= mcfg.magZero[YAW];
+        magADC[X] -= mcfg.magZero[X];
+        magADC[Y] -= mcfg.magZero[Y];
+        magADC[Z] -= mcfg.magZero[Z];
     }
 
     if (tCal != 0) {

@@ -159,7 +159,6 @@ void checkFirstTime(bool reset)
 static void resetConf(void)
 {
     int i;
-    const int8_t default_align[3][3] = { /* GYRO */ { 0, 0, 0 }, /* ACC */ { 0, 0, 0 }, /* MAG */ { -2, -3, 1 } };
 
     // Clear all configuration
     memset(&mcfg, 0, sizeof(master_t));
@@ -178,7 +177,9 @@ static void resetConf(void)
     mcfg.accZero[0] = 0;
     mcfg.accZero[1] = 0;
     mcfg.accZero[2] = 0;
-    memcpy(&mcfg.align, default_align, sizeof(mcfg.align));
+    mcfg.gyro_align = ALIGN_DEFAULT;
+    mcfg.acc_align = ALIGN_DEFAULT;
+    mcfg.mag_align = ALIGN_DEFAULT;
     mcfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
     mcfg.moron_threshold = 32;
     mcfg.gyro_smoothing_factor = 0x00141403;     // default factors of 20, 20, 3 for R/P/Y
