@@ -41,7 +41,6 @@ void imuInit(void)
 #endif
 }
 
-
 void computeIMU(void)
 {
     uint32_t axis;
@@ -113,10 +112,6 @@ void computeIMU(void)
 // Currently Magnetometer uses separate CF which is used only
 // for heading approximation.
 //
-// Modified: 19/04/2011  by ziss_dm
-// Version: V1.1
-//
-// code size deduction and tmp vector intermediate step for vector rotation computation: October 2011 by Alex
 // **************************************************
 
 #define INV_GYR_CMPF_FACTOR   (1.0f / ((float)mcfg.gyro_cmpf_factor + 1.0f))
@@ -136,6 +131,19 @@ typedef union {
 } t_fp_vector;
 
 t_fp_vector EstG;
+
+// Normalize a vector
+void normalizeV(struct fp_vector *src, struct fp_vector *dest)
+{
+    float length;
+
+    length = sqrtf(src->X * src->X + src->Y * src->Y + src->Z * src->Z);
+    if (length != 0) {
+        dest->X = src->X / length;
+        dest->Y = src->Y / length;
+        dest->Z = src->Z / length;
+    }
+}
 
 // Rotate Estimated vector(s) with small angle approximation, according to the gyro data
 void rotateV(struct fp_vector *v, float *delta)
@@ -243,10 +251,6 @@ void accSum_reset(void)
     accTimeSum = 0;
 }
 
-// Use original baseflight angle calculation
-// #define BASEFLIGHT_CALC
-static float invG;
-
 static void getEstimatedAttitude(void)
 {
     uint32_t axis;
@@ -302,13 +306,12 @@ static void getEstimatedAttitude(void)
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-#ifdef BASEFLIGHT_CALC
-        // baseflight calculation
+        // baseflight calculation (no, sorry, tarducopter calculation)
         float rollRAD = (float)angle[ROLL] * RADX10;
-        float pitchRAD = -(float)angle[PITCH] * RADX10;
-        float magX = EstM.A[1];                         // Swap X/Y
-        float magY = EstM.A[0];                         // Swap X/Y
-        float magZ = EstM.A[2];
+        float pitchRAD = (float)angle[PITCH] * RADX10;
+        float magX = EstM.A[X];
+        float magY = EstM.A[Y];
+        float magZ = EstM.A[Z];
         float cr = cosf(rollRAD);
         float sr = sinf(rollRAD);
         float cp = cosf(pitchRAD);
@@ -317,12 +320,6 @@ static void getEstimatedAttitude(void)
         float Yh = magY * cr - magZ * sr;
         float hd = (atan2f(-Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
         heading = hd;
-#else
-        // MW 2.2 calculation
-        heading = _atan2f(EstM.V.Z * EstG.V.X - EstM.V.X * EstG.V.Z, EstM.V.Y * invG * (EstG.V.X * EstG.V.X + EstG.V.Z * EstG.V.Z) - (EstM.V.X * EstG.V.X + EstM.V.Z * EstG.V.Z) * invG * EstG.V.Y);
-        heading = heading + magneticDeclination;
-        heading = heading / 10;
-#endif
         if (heading > 180)
             heading = heading - 360;
         else if (heading < -180)

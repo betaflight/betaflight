@@ -49,7 +49,7 @@
 
 extern uint16_t acc_1G;
 static uint8_t device_id;
-static sensor_align_e accAlign = CW180_DEG;
+static sensor_align_e accAlign = CW90_DEG;
 
 static void mma8452Init(sensor_align_e align);
 static void mma8452Read(int16_t *accelData);
