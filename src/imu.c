@@ -319,7 +319,7 @@ static void getEstimatedAttitude(void)
         float Xh = magX * cp + magY * sr * sp + magZ * cr * sp;
         float Yh = magY * cr - magZ * sr;
         float hd = (atan2f(-Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
-        heading = hd;
+        heading = -hd;
         if (heading > 180)
             heading = heading - 360;
         else if (heading < -180)
