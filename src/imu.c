@@ -349,6 +349,9 @@ int getEstimatedAltitude(void)
     int32_t baroVel;
     int32_t vel_tmp;
     int32_t BaroAlt_tmp;
+    float dt;
+    float PressureScaling;
+    float vel_acc;
     static float vel = 0.0f;
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
@@ -365,19 +368,22 @@ int getEstimatedAltitude(void)
         accAlt = 0;
     }
 
-    // pressure relative to ground pressure with temperature compensation (fast!)
-    // baroGroundPressure is not supposed to be 0 here
-    // see: https://code.google.com/p/ardupilot-mega/source/browse/libraries/AP_Baro/AP_Baro.cpp
-    BaroAlt_tmp = logf(baroGroundPressure * (cfg.baro_tab_size - 1) / (float)baroPressureSum) * (baroTemperature + 27315) * 29.271267f; // in cemtimeter
-    BaroAlt = BaroAlt * cfg.baro_noise_lpf + BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf); // additional LPF to reduce baro noise
+    // calculates height from ground via baro readings
+    // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
+    PressureScaling = (float)baroPressureSum / ((float)baroGroundPressure * (float)(cfg.baro_tab_size - 1));
+    BaroAlt_tmp = 153.8462f * (baroTemperature + 27315) * (1.0f - expf(0.190259f * logf(PressureScaling))); // in cm
+    BaroAlt = (float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf); // additional LPF to reduce baro noise
+
+    dt = accTimeSum * 1e-6; // delta acc reading time in seconds
 
     // Integrator - velocity, cm/sec
-    vel += (float)accSum[2] * accVelScale * (float)accTimeSum / (float)accSumCount;
+    vel_acc = (float)accSum[2] * accVelScale * (float)accTimeSum / (float)accSumCount;
 
     // Integrator - Altitude in cm
-    accAlt += vel * ((float) accTimeSum * 0.0000005f);                                  // integrate velocity to get distance (x= a/2 * t^2)
+    accAlt += (vel_acc * 0.5f) * dt  + vel * dt;                                        // integrate velocity to get distance (x= a/2 * t^2)
     accAlt = accAlt * cfg.baro_cf_alt + (float) BaroAlt *(1.0f - cfg.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
     EstAlt = accAlt;
+    vel += vel_acc;
 
 #if 0
     debug[0] = accSum[2] / accSumCount; // acceleration
