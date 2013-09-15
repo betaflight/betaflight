@@ -26,6 +26,7 @@ float accVelScale;
 int16_t gyroData[3] = { 0, 0, 0 };
 int16_t gyroZero[3] = { 0, 0, 0 };
 int16_t angle[2] = { 0, 0 };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+float anglerad[2] = { 0, 0 };    // absolute angle inclination in radians
 
 static void getEstimatedAttitude(void);
 
@@ -183,12 +184,6 @@ void rotateV(struct fp_vector *v, float *delta)
     v->Z = v_tmp.X * mat[0][2] + v_tmp.Y * mat[1][2] + v_tmp.Z * mat[2][2];
 }
 
-static int16_t _atan2f(float y, float x)
-{
-    // no need for aidsy inaccurate shortcuts on a proper platform
-    return (int16_t)(atan2f(y, x) * (180.0f / M_PI * 10.0f));
-}
-
 int32_t applyDeadband(int32_t value, int32_t deadband)
 {
     if (abs(value) < deadband) {
@@ -209,9 +204,9 @@ void acc_calc(uint32_t deltaT)
     t_fp_vector accel_ned;
 
     // the accel values have to be rotated into the earth frame
-    rpy[0] = -(float) angle[ROLL] * RADX10;
-    rpy[1] = -(float) angle[PITCH] * RADX10;
-    rpy[2] = -(float) heading * RADX10 * 10;
+    rpy[0] = -(float)anglerad[ROLL];
+    rpy[1] = -(float)anglerad[PITCH];
+    rpy[2] = -(float)heading * RADX10 * 10.0f;
 
     accel_ned.V.X = accSmooth[0];
     accel_ned.V.Y = accSmooth[1];
@@ -301,21 +296,21 @@ static void getEstimatedAttitude(void)
     }
 
     // Attitude of the estimated vector
-    angle[ROLL] = _atan2f(EstG.V.Y, EstG.V.Z);
-    angle[PITCH] = _atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
+    anglerad[ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
+    anglerad[PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
+    angle[ROLL] = anglerad[ROLL] * (1800.0f / M_PI);   // roll angle in 0.1 deg steps
+    angle[PITCH] = anglerad[PITCH] * (1800.0f / M_PI); // pitch angle in 0.1 deg steps
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
         // baseflight calculation (no, sorry, tarducopter calculation)
-        float rollRAD = (float)angle[ROLL] * RADX10;
-        float pitchRAD = (float)angle[PITCH] * RADX10;
         float magX = EstM.A[X];
         float magY = EstM.A[Y];
         float magZ = EstM.A[Z];
-        float cr = cosf(rollRAD);
-        float sr = sinf(rollRAD);
-        float cp = cosf(pitchRAD);
-        float sp = sinf(pitchRAD);
+        float cr = cosf(anglerad[ROLL]);
+        float sr = sinf(anglerad[ROLL]);
+        float cp = cosf(anglerad[PITCH]);
+        float sp = sinf(anglerad[PITCH]);
         float Xh = magX * cp + magY * sr * sp + magZ * cr * sp;
         float Yh = magY * cr - magZ * sr;
         float hd = (atan2f(-Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
