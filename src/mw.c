@@ -125,6 +125,7 @@ void annexCode(void)
             prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
             prop1 = (uint16_t) prop1 *prop2 / 100;
         } else {                // YAW
+            tmp *= -mcfg.yaw_control_direction; //change control direction for yaw needed with new gyro orientation
             if (cfg.yawdeadband) {
                 if (tmp > cfg.yawdeadband) {
                     tmp -= cfg.yawdeadband;
