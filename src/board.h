@@ -99,10 +99,10 @@ typedef enum {
 } sensor_align_e;
 
 enum {
-    GYRO_UPDATED = 0,
-    ACC_UPDATED,
-    MAG_UPDATED,
-    TEMP_UPDATED
+    GYRO_UPDATED = 1 << 0,
+    ACC_UPDATED = 1 << 1,
+    MAG_UPDATED = 1 << 2,
+    TEMP_UPDATED = 1 << 3
 };
 
 typedef struct sensor_data_t
