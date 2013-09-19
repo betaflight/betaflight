@@ -56,7 +56,6 @@ void computeIMU(void)
         accADC[Y] = 0;
         accADC[Z] = 0;
     }
-    annexCode();
 
     if (feature(FEATURE_GYRO_SMOOTHING)) {
         static uint8_t Smoothing[3] = { 0, 0, 0 };

@@ -84,7 +84,6 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 
 #define BREAKPOINT 1500
 
-// this code is executed at each loop and won't interfere with control loop if it lasts less than 650 microseconds
 void annexCode(void)
 {
     static uint32_t calibratedAccTime;
@@ -147,7 +146,7 @@ void annexCode(void)
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
-    if(f.HEADFREE_MODE) {
+    if (f.HEADFREE_MODE) {
         float radDiff = (heading - headFreeModeHold) * M_PI / 180.0f;
         float cosDiff = cosf(radDiff);
         float sinDiff = sinf(radDiff);
@@ -777,6 +776,7 @@ void loop(void)
         loopTime = currentTime + mcfg.looptime;
 
         computeIMU();
+        annexCode();
         // Measure loop rate just afer reading the sensors
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);

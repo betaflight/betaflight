@@ -366,14 +366,13 @@ void Gyro_getADC(void)
 }
 
 #ifdef MAG
-static float magCal[3] = { 1.0f, 1.0f, 1.0f };     // gain for each axis, populated at sensor init
 static uint8_t magInit = 0;
 
 void Mag_init(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
-    hmc5883lInit(magCal);
+    hmc5883lInit();
     LED1_OFF;
     magInit = 1;
 }
@@ -391,10 +390,6 @@ int Mag_getADC(void)
 
     // Read mag sensor
     hmc5883lRead(magADC);
-
-    magADC[X] = magADC[X] * magCal[X];
-    magADC[Y] = magADC[Y] * magCal[Y];
-    magADC[Z] = magADC[Z] * magCal[Z];
 
     if (f.CALIBRATE_MAG) {
         tCal = t;
