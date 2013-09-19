@@ -32,7 +32,6 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define abs(x) ((x) > 0 ? (x) : -(x))
-#define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
 // Chip Unique ID on F103
 #define U_ID_0 (*(uint32_t*)0x1FFFF7E8)
@@ -40,11 +39,12 @@
 #define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
 
 typedef enum {
-    SENSOR_ACC = 1 << 0,
-    SENSOR_BARO = 1 << 1,
-    SENSOR_MAG = 1 << 2,
-    SENSOR_SONAR = 1 << 3,
-    SENSOR_GPS = 1 << 4,
+    SENSOR_GYRO = 1 << 0, // always present
+    SENSOR_ACC = 1 << 1,
+    SENSOR_BARO = 1 << 2,
+    SENSOR_MAG = 1 << 3,
+    SENSOR_SONAR = 1 << 4,
+    SENSOR_GPS = 1 << 5,
 } AvailableSensors;
 
 // Type of accelerometer used/detected
@@ -98,12 +98,20 @@ typedef enum {
     CW270_DEG_FLIP = 8
 } sensor_align_e;
 
+enum {
+    GYRO_UPDATED = 0,
+    ACC_UPDATED,
+    MAG_UPDATED,
+    TEMP_UPDATED
+};
+
 typedef struct sensor_data_t
 {
-    int16_t x;
-    int16_t y;
-    int16_t z;
+    int16_t gyro[3];
+    int16_t acc[3];
+    int16_t mag[3];
     float temperature;
+    int updated;
 } sensor_data_t;
 
 typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
@@ -206,6 +214,8 @@ typedef struct baro_t
 #endif
 
 #undef SOFT_I2C                 // enable to test software i2c
+
+#include "utils.h"
 
 #ifdef FY90Q
  // FY90Q

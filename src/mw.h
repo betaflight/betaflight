@@ -343,7 +343,6 @@ extern uint16_t calibratingA;
 extern uint16_t calibratingB;
 extern uint16_t calibratingG;
 extern int16_t heading;
-extern int16_t annex650_overrun_count;
 extern int32_t baroPressure;
 extern int32_t baroTemperature;
 extern int32_t baroPressureSum;

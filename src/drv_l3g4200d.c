@@ -3,6 +3,7 @@
 // L3G4200D, Standard address 0x68
 #define L3G4200D_ADDRESS         0x68
 #define L3G4200D_ID              0xD3
+#define L3G4200D_AUTOINCR        0x80
 
 // Registers
 #define L3G4200D_WHO_AM_I        0x0F
@@ -13,7 +14,7 @@
 #define L3G4200D_CTRL_REG5       0x24
 #define L3G4200D_REFERENCE       0x25
 #define L3G4200D_STATUS_REG      0x27
-#define L3G4200D_GYRO_OUT        0xA8
+#define L3G4200D_GYRO_OUT        0x28
 
 // Bits
 #define L3G4200D_POWER_ON        0x0F
@@ -87,10 +88,10 @@ static void l3g4200dRead(int16_t *gyroData)
     uint8_t buf[6];
     int16_t data[3];
 
-    i2cRead(L3G4200D_ADDRESS, L3G4200D_GYRO_OUT, 6, buf);
-    data[1] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
-    data[0] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
-    data[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
+    i2cRead(L3G4200D_ADDRESS, L3G4200D_AUTOINCR | L3G4200D_GYRO_OUT, 6, buf);
+    data[X] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
+    data[Y] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
+    data[Z] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
 
     alignSensors(data, gyroData, gyroAlign);
 }

@@ -462,6 +462,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\telemetry.c</FilePath>
             </File>
+            <File>
+              <FileName>utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\utils.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1293,6 +1298,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\telemetry.c</FilePath>
             </File>
+            <File>
+              <FileName>utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\utils.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2067,6 +2077,11 @@
               <FileName>telemetry.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\telemetry.c</FilePath>
+            </File>
+            <File>
+              <FileName>utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\utils.c</FilePath>
             </File>
           </Files>
         </Group>

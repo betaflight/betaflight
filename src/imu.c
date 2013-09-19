@@ -45,39 +45,18 @@ void imuInit(void)
 void computeIMU(void)
 {
     uint32_t axis;
-    static int16_t gyroADCprevious[3] = { 0, 0, 0 };
-    int16_t gyroADCp[3];
-    int16_t gyroADCinter[3];
-    static uint32_t timeInterleave = 0;
     static int16_t gyroYawSmooth = 0;
 
+    Gyro_getADC();
     if (sensors(SENSOR_ACC)) {
         ACC_getADC();
         getEstimatedAttitude();
-    }
-
-    Gyro_getADC();
-
-    for (axis = 0; axis < 3; axis++)
-        gyroADCp[axis] = gyroADC[axis];
-    timeInterleave = micros();
-    annexCode();
-
-    if ((micros() - timeInterleave) > 650) {
-        annex650_overrun_count++;
     } else {
-        while ((micros() - timeInterleave) < 650);  // empirical, interleaving delay between 2 consecutive reads
+        accADC[X] = 0;
+        accADC[Y] = 0;
+        accADC[Z] = 0;
     }
-
-    Gyro_getADC();
-    for (axis = 0; axis < 3; axis++) {
-        gyroADCinter[axis] = gyroADC[axis] + gyroADCp[axis];
-        // empirical, we take a weighted value of the current and the previous values
-        gyroData[axis] = (gyroADCinter[axis] + gyroADCprevious[axis]) / 3;
-        gyroADCprevious[axis] = gyroADCinter[axis] / 2;
-        if (!sensors(SENSOR_ACC))
-            accADC[axis] = 0;
-    }
+    annexCode();
 
     if (feature(FEATURE_GYRO_SMOOTHING)) {
         static uint8_t Smoothing[3] = { 0, 0, 0 };
@@ -95,6 +74,9 @@ void computeIMU(void)
     } else if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
         gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW]) / 3;
         gyroYawSmooth = gyroData[YAW];
+    } else {
+        for (axis = 0; axis < 3; axis++)
+            gyroData[axis] = gyroADC[axis];
     }
 }
 
@@ -117,8 +99,6 @@ void computeIMU(void)
 
 #define INV_GYR_CMPF_FACTOR   (1.0f / ((float)mcfg.gyro_cmpf_factor + 1.0f))
 #define INV_GYR_CMPFM_FACTOR  (1.0f / ((float)mcfg.gyro_cmpfm_factor + 1.0f))
-
-// #define GYRO_SCALE ((1998 * M_PI)/((32767.0f / 4.0f ) * 180.0f * 1000000.0f))     // 32767 / 16.4lsb/dps for MPU3000
 
 typedef struct fp_vector {
     float X;
@@ -303,18 +283,15 @@ static void getEstimatedAttitude(void)
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-        // baseflight calculation (no, sorry, tarducopter calculation)
-        float magX = EstM.A[X];
-        float magY = EstM.A[Y];
-        float magZ = EstM.A[Z];
-        float cr = cosf(anglerad[ROLL]);
-        float sr = sinf(anglerad[ROLL]);
-        float cp = cosf(anglerad[PITCH]);
-        float sp = sinf(anglerad[PITCH]);
-        float Xh = magX * cp + magY * sr * sp + magZ * cr * sp;
-        float Yh = magY * cr - magZ * sr;
-        float hd = (atan2f(-Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
-        heading = -hd;
+        // baseflight calculation by Luggi09
+        float cosineRoll = cosf(anglerad[ROLL]);
+        float sineRoll = sinf(anglerad[ROLL]);
+        float cosinePitch = cosf(anglerad[PITCH]);
+        float sinePitch = sinf(anglerad[PITCH]);
+        float Xh = EstM.A[X] * cosinePitch + EstM.A[Z] * sinePitch;
+        float Yh = EstM.A[X] * sinePitch * sineRoll + EstM.A[Y] * cosineRoll - EstM.A[Z] * sineRoll * cosinePitch;
+        float hd = (atan2f(Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
+        heading = hd;
         if (heading > 180)
             heading = heading - 360;
         else if (heading < -180)

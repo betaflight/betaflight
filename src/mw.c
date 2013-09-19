@@ -11,7 +11,6 @@ uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 int16_t headFreeModeHold;
 
-int16_t annex650_overrun_count = 0;
 uint8_t vbat;                   // battery voltage in 0.1V steps
 int16_t telemTemperature1;      // gyro sensor temperature
 
@@ -841,7 +840,7 @@ void loop(void)
 #endif
 
         if (cfg.throttle_angle_correction && (f.ANGLE_MODE || f.HORIZON_MODE)) {
-            rcCommand[THROTTLE]+= throttleAngleCorrection;
+            rcCommand[THROTTLE] += throttleAngleCorrection;
         }
 
         if (sensors(SENSOR_GPS)) {
