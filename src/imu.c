@@ -50,12 +50,12 @@ void computeIMU(void)
     Gyro_getADC();
     if (sensors(SENSOR_ACC)) {
         ACC_getADC();
-        getEstimatedAttitude();
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;
         accADC[Z] = 0;
     }
+    getEstimatedAttitude();
 
     if (feature(FEATURE_GYRO_SMOOTHING)) {
         static uint8_t Smoothing[3] = { 0, 0, 0 };
