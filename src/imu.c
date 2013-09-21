@@ -8,7 +8,7 @@ int accSumCount = 0;
 int16_t acc_25deg = 0;
 int32_t baroPressure = 0;
 int32_t baroTemperature = 0;
-int32_t baroPressureSum = 0;
+uint32_t baroPressureSum = 0;
 int32_t BaroAlt = 0;
 int32_t sonarAlt;              // to think about the unit
 int32_t EstAlt;                // in cm
@@ -50,12 +50,12 @@ void computeIMU(void)
     Gyro_getADC();
     if (sensors(SENSOR_ACC)) {
         ACC_getADC();
+        getEstimatedAttitude();
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;
         accADC[Z] = 0;
     }
-    getEstimatedAttitude();
 
     if (feature(FEATURE_GYRO_SMOOTHING)) {
         static uint8_t Smoothing[3] = { 0, 0, 0 };
@@ -367,13 +367,12 @@ int getEstimatedAltitude(void)
     //P
     error = constrain(AltHold - EstAlt, -300, 300);
     error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
-    BaroPID = constrain((cfg.P8[PIDALT] * error / 128), -150, +150);
+    BaroPID = constrain((cfg.P8[PIDALT] * error / 128), -200, +200);
 
     //I
     errorAltitudeI += cfg.I8[PIDALT] * error / 64;
-    errorAltitudeI = constrain(errorAltitudeI, -30000, 30000);
-    BaroPID += errorAltitudeI / 512;     // I in range +/-60
-
+    errorAltitudeI = constrain(errorAltitudeI, -50000, 50000);
+    BaroPID += errorAltitudeI / 512;     // I in range +/-100
 
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = BaroAlt;
@@ -384,6 +383,7 @@ int getEstimatedAltitude(void)
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
     vel = vel * cfg.baro_cf_vel + baroVel * (1 - cfg.baro_cf_vel);
+    constrain(vel, -1000, 1000);                // limit max velocity to +/- 10m/s (36km/h)
 
     // D
     vel_tmp = vel;

@@ -823,17 +823,16 @@ void loop(void)
                     if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
                         // Slowly increase/decrease AltHold proportional to stick movement ( +100 throttle gives ~ +50 cm in 1 second with cycle time about 3-4ms)
                         AltHoldCorr += rcCommand[THROTTLE] - initialThrottleHold;
-                        if (abs(AltHoldCorr) > 500) {
-                            AltHold += AltHoldCorr / 500;
-                            AltHoldCorr %= 500;
-                        }
-                        errorAltitudeI = 0;
+                        AltHold += AltHoldCorr / 2000;
+                        AltHoldCorr %= 2000;
                         isAltHoldChanged = 1;
                     } else if (isAltHoldChanged) {
                         AltHold = EstAlt;
+                        AltHoldCorr = 0;
                         isAltHoldChanged = 0;
                     }
                     rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
+                    rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], mcfg.minthrottle + 150, mcfg.maxthrottle);
                 }
             }
         }

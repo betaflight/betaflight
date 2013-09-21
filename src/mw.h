@@ -345,7 +345,7 @@ extern uint16_t calibratingG;
 extern int16_t heading;
 extern int32_t baroPressure;
 extern int32_t baroTemperature;
-extern int32_t baroPressureSum;
+extern uint32_t baroPressureSum;
 extern int32_t BaroAlt;
 extern int32_t sonarAlt;
 extern int32_t EstAlt;

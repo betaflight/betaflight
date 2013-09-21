@@ -154,29 +154,27 @@ static void ms5611_get_up(void)
 
 static void ms5611_calculate(int32_t *pressure, int32_t *temperature)
 {
-    int32_t temp, off2 = 0, sens2 = 0, delt;
-    int32_t press;
-
-    int64_t dT = ms5611_ut - ((int32_t)ms5611_c[5] << 8);
-    int64_t off = ((uint32_t)ms5611_c[2] << 16) + ((dT * ms5611_c[4]) >> 7);
-    int64_t sens = ((uint32_t)ms5611_c[1] << 15) + ((dT * ms5611_c[3]) >> 8);
-    temp = 2000 + ((dT * ms5611_c[6]) >> 23);
+    uint32_t press;
+    int64_t temp;
+    int64_t delt;    
+    int32_t dT = (int64_t)ms5611_ut - ((uint64_t)ms5611_c[5] * 256);
+    int64_t off = ((int64_t)ms5611_c[2] << 16) + (((int64_t)ms5611_c[4] * dT) >> 7);
+    int64_t sens = ((int64_t)ms5611_c[1] << 15) + (((int64_t)ms5611_c[3] * dT) >> 8);
+    temp = 2000 + ((dT * (int64_t)ms5611_c[6]) >> 23);    
 
     if (temp < 2000) { // temperature lower than 20degC
         delt = temp - 2000;
         delt = 5 * delt * delt;
-        off2 = delt >> 1;
-        sens2 = delt >> 2;
+        off -= delt >> 1;
+        sens -= delt >> 2;
         if (temp < -1500) { // temperature lower than -15degC
             delt = temp + 1500;
             delt = delt * delt;
-            off2  += 7 * delt;
-            sens2 += (11 * delt) >> 1;
+            off  -= 7 * delt;
+            sens -= (11 * delt) >> 1;
         }
     }
-    off  -= off2;
-    sens -= sens2;
-    press = (((ms5611_up * sens ) >> 21) - off) >> 15;
+    press = ((((int64_t)ms5611_up * sens ) >> 21) - off) >> 15;
 
     if (pressure)
         *pressure = press;
