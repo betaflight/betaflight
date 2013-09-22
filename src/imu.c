@@ -87,9 +87,6 @@ void computeIMU(void)
 //
 // The following ideas was used in this project:
 // 1) Rotation matrix: http://en.wikipedia.org/wiki/Rotation_matrix
-// 2) Small-angle approximation: http://en.wikipedia.org/wiki/Small-angle_approximation
-// 3) C. Hastings approximation for atan2()
-// 4) Optimization tricks: http://www.hackersdelight.org/
 //
 // Currently Magnetometer uses separate CF which is used only
 // for heading approximation.
@@ -277,24 +274,22 @@ static void getEstimatedAttitude(void)
     // Attitude of the estimated vector
     anglerad[ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
     anglerad[PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
-    angle[ROLL] = anglerad[ROLL] * (1800.0f / M_PI);   // roll angle in 0.1 deg steps
-    angle[PITCH] = anglerad[PITCH] * (1800.0f / M_PI); // pitch angle in 0.1 deg steps
+    angle[ROLL] = lrintf(anglerad[ROLL] * (1800.0f / M_PI));
+    angle[PITCH] = lrintf(anglerad[PITCH] * (1800.0f / M_PI));
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-        // baseflight calculation by Luggi09
+        // baseflight calculation by Luggi09 originates from arducopter
         float cosineRoll = cosf(anglerad[ROLL]);
         float sineRoll = sinf(anglerad[ROLL]);
         float cosinePitch = cosf(anglerad[PITCH]);
         float sinePitch = sinf(anglerad[PITCH]);
-        float Xh = EstM.A[X] * cosinePitch + EstM.A[Z] * sinePitch;
-        float Yh = EstM.A[X] * sinePitch * sineRoll + EstM.A[Y] * cosineRoll - EstM.A[Z] * sineRoll * cosinePitch;
+        float Xh = EstM.A[X] * cosinePitch + EstM.A[Y] * sineRoll * sinePitch + EstM.A[Z] * sinePitch * cosineRoll;
+        float Yh = EstM.A[Y] * cosineRoll - EstM.A[Z] * sineRoll;
         float hd = (atan2f(Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
-        heading = hd;
-        if (heading > 180)
-            heading = heading - 360;
-        else if (heading < -180)
-            heading = heading + 360;
+        heading = lrintf(hd);
+        if (heading < 0)
+            heading += 360;
     }
 #endif
 
