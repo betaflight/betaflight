@@ -599,18 +599,6 @@ a:hover {
         border: 1px solid silver;
         text-align: right;
     } 
-    .tab-receiver .info {
-        display: block;
-        float: right;
-        
-        width: 220px;
-        
-        margin-bottom: 20px;
-        
-        padding: 5px;
-        
-        border: 1px dotted silver;
-    }
     .tab-receiver .update {
         display: block;
         float: right;
@@ -644,6 +632,28 @@ a:hover {
         width: 880px; 
         height: 250px;
     }
+    .tab-receiver .throttle_curve {
+        float: right;
+        
+        margin-bottom: 20px;
+        margin-right: 10px;
+        
+        width: 220px;
+        height: 58px;
+        
+        border: 1px solid silver;
+    }
+    .tab-receiver .pitch_roll_curve {
+        float: right;
+        
+        margin-right: 10px;
+        
+        width: 220px;
+        height: 58px;
+        
+        border: 1px solid silver;
+    }
+    
 .tab-auxiliary_configuration {
 
 }

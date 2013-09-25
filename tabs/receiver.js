@@ -56,6 +56,53 @@ function tab_initialize_receiver() {
         $('a.update').addClass('active');
     });
     
+    // curves    
+    $('.tunings .throttle input').change(function() {
+        var mid = parseFloat($('.tunings .throttle input[name="mid"]').val());
+        var expo = parseFloat($('.tunings .throttle input[name="expo"]').val());
+        
+        var throttle_curve = document.getElementById("throttle_curve_c");
+        var context = throttle_curve.getContext("2d");
+        context.clearRect(0, 0, 220, 58);
+        
+        // math magic by englishman
+        var midx = 220 * mid;
+        var midxl = midx * .5;
+        var midxr = (((220 - midx) * .5) + midx);
+        var midy = 58 - (midx * (58 / 220));
+        var midyl = 58 - ((58 - midy) * .5 *(expo + 1));
+        var midyr = (midy / 2) * (expo + 1);        
+        
+        context.beginPath();
+        context.moveTo(0, 58);
+        context.quadraticCurveTo(midxl, midyl, midx, midy);
+        context.moveTo(midx, midy);
+        context.quadraticCurveTo(midxr, midyr, 220, 0);     
+        
+        context.lineWidth = 2;
+        context.stroke();
+    });
+    $('.tunings .throttle input').trigger('change'); // initial software trigger
+    
+    $('.tunings .rate input').change(function() {
+        var rate = parseFloat($('.tunings .rate input[name="rate"]').val());
+        var expo = parseFloat($('.tunings .rate input[name="expo"]').val());  
+        
+        var pitch_roll_curve = document.getElementById("pitch_roll_curve_c");
+        var context = pitch_roll_curve.getContext("2d");
+        context.clearRect(0, 0, 220, 58);
+        
+        // math magic by englishman
+        var ratey = 58 * rate;
+        
+        context.beginPath();
+        context.moveTo(0, 58);
+        context.quadraticCurveTo(110, 58 - ((ratey / 2) * (1 - expo)), 220, 58 - ratey);
+        context.lineWidth = 2;
+        context.stroke();
+    });
+    $('.tunings .rate input').trigger('change'); // initial software trigger
+    
     $('a.update').click(function() {
         if ($(this).hasClass('active')) {
             // catch RC_tuning changes

@@ -80,5 +80,4 @@ $(document).ready(function() {
     });
     
     // temporary
-    //$('#content').load("./tabs/sensors.html", tab_initialize_sensors);
 });
