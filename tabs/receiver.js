@@ -61,7 +61,7 @@ function tab_initialize_receiver() {
         var mid = parseFloat($('.tunings .throttle input[name="mid"]').val());
         var expo = parseFloat($('.tunings .throttle input[name="expo"]').val());
         
-        var throttle_curve = document.getElementById("throttle_curve_c");
+        var throttle_curve = $('.throttle_curve canvas').get(0);
         var context = throttle_curve.getContext("2d");
         context.clearRect(0, 0, 220, 58);
         
@@ -88,7 +88,7 @@ function tab_initialize_receiver() {
         var rate = parseFloat($('.tunings .rate input[name="rate"]').val());
         var expo = parseFloat($('.tunings .rate input[name="expo"]').val());  
         
-        var pitch_roll_curve = document.getElementById("pitch_roll_curve_c");
+        var pitch_roll_curve = $('.pitch_roll_curve canvas').get(0);
         var context = pitch_roll_curve.getContext("2d");
         context.clearRect(0, 0, 220, 58);
         
