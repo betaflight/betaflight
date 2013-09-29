@@ -68,6 +68,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 NAZE_SRC	 = drv_spi.c \
 		   drv_adc.c \
 		   drv_adxl345.c \
+		   drv_bma280.c \
 		   drv_bmp085.c \
 		   drv_ms5611.c \
 		   drv_hcsr04.c \

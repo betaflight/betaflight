@@ -53,7 +53,8 @@ typedef enum AccelSensors {
     ACC_ADXL345 = 1,
     ACC_MPU6050 = 2,
     ACC_MMA8452 = 3,
-    ACC_NONE = 4
+    ACC_BMA280 = 4,
+    ACC_NONE = 5
 } AccelSensors;
 
 typedef enum {
@@ -243,6 +244,7 @@ typedef struct baro_t
  // AfroFlight32
 #include "drv_adc.h"
 #include "drv_adxl345.h"
+#include "drv_bma280.h"
 #include "drv_bmp085.h"
 #include "drv_ms5611.h"
 #include "drv_hmc5883l.h"

@@ -77,6 +77,13 @@ retry:
                 if (mcfg.acc_hardware == ACC_MMA8452)
                     break;
             }
+            ; // fallthrough
+        case ACC_BMA280: // BMA280
+            if (bma280Detect(&acc)) {
+                accHardware = ACC_BMA280;
+                if (mcfg.acc_hardware == ACC_BMA280)
+                    break;
+            }
 #endif
     }
 
