@@ -452,6 +452,14 @@ void loop(void)
                 mwDisarm();
         }
 
+        // Read value of AUX channel as rssi
+        // 0 is disable, 1-4 is AUX{1..4}
+        if (mcfg.rssi_aux_channel > 0) {
+            const int16_t rssiChannelData = rcData[AUX1 + mcfg.rssi_aux_channel - 1];
+            // Range of rssiChannelData is [1000;2000]. rssi should be in [0;1023];
+            rssi = (uint16_t)((constrain(rssiChannelData - 1000, 0, 1000) / 1000.0f) * 1023.0f);
+        }
+
         // Failsafe routine
         if (feature(FEATURE_FAILSAFE)) {
             if (failsafeCnt > (5 * cfg.failsafe_delay) && f.ARMED) { // Stabilize, and set Throttle to specified level

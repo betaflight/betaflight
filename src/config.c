@@ -209,6 +209,7 @@ static void resetConf(void)
     // serial (USART1) baudrate
     mcfg.serial_baudrate = 115200;
     mcfg.looptime = 3500;
+    mcfg.rssi_aux_channel = 0;
 
     cfg.pidController = 0;
     cfg.P8[ROLL] = 40;

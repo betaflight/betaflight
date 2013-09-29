@@ -279,10 +279,11 @@ typedef struct master_t {
     uint16_t maxcheck;                      // maximum rc end
     uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
 
+    uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
+
     // gps-related stuff
     uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2+ ??
     uint32_t gps_baudrate;                  // GPS baudrate
-
     // serial(uart1) baudrate
     uint32_t serial_baudrate;
 
