@@ -436,14 +436,26 @@ void loop(void)
     static uint8_t GPSNavReset = 1;
     bool isThrottleLow = false;
 
-    // this will return false if spektrum is disabled. shrug.
-    if (spektrumFrameComplete())
-        computeRC();
+    // calculate rc stuff from serial-based receivers (spek/sbus)
+    if (feature(FEATURE_SERIALRX)) {
+        bool ready = false;
+        switch (mcfg.serialrx_type) {
+            case SERIALRX_SPEKTRUM1024:
+            case SERIALRX_SPEKTRUM2048:
+                ready = spektrumFrameComplete();
+                break;
+            case SERIALRX_SBUS:
+                ready = sbusFrameComplete();
+                break;
+        }
+        if (ready)
+            computeRC();
+    }
 
     if ((int32_t)(currentTime - rcTime) >= 0) { // 50Hz
         rcTime = currentTime + 20000;
         // TODO clean this up. computeRC should handle this check
-        if (!feature(FEATURE_SPEKTRUM))
+        if (!feature(FEATURE_SERIALRX))
             computeRC();
 
         // in 3D mode, we need to be able to disarm by switch at any time

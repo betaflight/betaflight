@@ -42,7 +42,7 @@ static const char * const mixerNames[] = {
 
 // sync this with AvailableFeatures enum from board.h
 static const char * const featureNames[] = {
-    "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
+    "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SERIALRX", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
     "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
     NULL
@@ -116,7 +116,7 @@ const clivalue_t valueTable[] = {
     { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
     { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
     { "gps_baudrate", VAR_UINT32, &mcfg.gps_baudrate, 1200, 115200 },
-    { "spektrum_hires", VAR_UINT8, &mcfg.spektrum_hires, 0, 1 },
+    { "serialrx_type", VAR_UINT8, &mcfg.serialrx_type, 0, 2 },
     { "vbatscale", VAR_UINT8, &mcfg.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &mcfg.vbatmaxcellvoltage, 10, 50 },
     { "vbatmincellvoltage", VAR_UINT8, &mcfg.vbatmincellvoltage, 10, 50 },

@@ -273,7 +273,7 @@ typedef struct master_t {
 
     // Radio/ESC-related configuration
     uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
-    uint8_t spektrum_hires;                 // spektrum high-resolution y/n (1024/2048bit)
+    uint8_t serialrx_type;                  // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_SERIALRX first.
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
@@ -448,8 +448,12 @@ void featureClearAll(void);
 uint32_t featureMask(void);
 
 // spektrum
-void spektrumInit(void);
+void spektrumInit(rcReadRawDataPtr *callback);
 bool spektrumFrameComplete(void);
+
+// sbus
+void sbusInit(rcReadRawDataPtr *callback);
+bool sbusFrameComplete(void);
 
 // buzzer
 void buzzer(uint8_t warn_vbat);

@@ -52,6 +52,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   mw.c \
 		   sensors.c \
 		   serial.c \
+		   sbus.c \
 		   spektrum.c \
 		   telemetry.c \
 		   drv_gpio.c \

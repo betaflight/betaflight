@@ -467,6 +467,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\utils.c</FilePath>
             </File>
+            <File>
+              <FileName>sbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sbus.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1308,6 +1313,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\utils.c</FilePath>
             </File>
+            <File>
+              <FileName>sbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sbus.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2092,6 +2102,11 @@
               <FileName>utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>sbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sbus.c</FilePath>
             </File>
           </Files>
         </Group>
