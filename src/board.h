@@ -28,6 +28,7 @@
 #endif /* M_PI */
 
 #define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
+#define RAD    (M_PI / 180.0f)
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))

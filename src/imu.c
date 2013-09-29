@@ -5,7 +5,7 @@ int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
 int32_t accSum[3];
 uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
-int16_t acc_25deg = 0;
+int16_t accZ_25deg = 0;
 int32_t baroPressure = 0;
 int32_t baroTemperature = 0;
 uint32_t baroPressureSum = 0;
@@ -32,7 +32,7 @@ static void getEstimatedAttitude(void);
 
 void imuInit(void)
 {
-    acc_25deg = acc_1G * 0.423f;
+    accZ_25deg = acc_1G * cosf(RAD * 25.0f);
     accVelScale = 9.80665f / acc_1G / 10000.0f;
 
 #ifdef MAG
@@ -253,11 +253,6 @@ static void getEstimatedAttitude(void)
     if (sensors(SENSOR_MAG))
         rotateV(&EstM.V, deltaGyroAngle);
 
-    if (abs(accSmooth[ROLL]) < acc_25deg && abs(accSmooth[PITCH]) < acc_25deg && accSmooth[YAW] > 0)
-        f.SMALL_ANGLES_25 = 1;
-    else
-        f.SMALL_ANGLES_25 = 0;
-
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
     // To do that, we just skip filter, as EstV already rotated by Gyro
@@ -270,6 +265,11 @@ static void getEstimatedAttitude(void)
         for (axis = 0; axis < 3; axis++)
             EstM.A[axis] = (EstM.A[axis] * (float)mcfg.gyro_cmpfm_factor + magADC[axis]) * INV_GYR_CMPFM_FACTOR;
     }
+
+   if (abs(EstG.A[Z]) > accZ_25deg)
+        f.SMALL_ANGLES_25 = 1;
+    else
+        f.SMALL_ANGLES_25 = 0;
 
     // Attitude of the estimated vector
     anglerad[ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
