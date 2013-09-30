@@ -103,10 +103,6 @@ void setupSoftSerial1(uint32_t baud)
     softSerial->port.txBufferTail = 0;
     softSerial->port.txBufferHead = 0;
 
-    // FIXME this uart specific initialisation doesn't belong really here
-    softSerial->port.txDMAChannel = 0;
-    softSerial->port.txDMAChannel = 0;
-
     softSerial->isTransmittingData = false;
     softSerial->isSearchingForStartBit = true;
     softSerial->isSearchingForStopBit = false;

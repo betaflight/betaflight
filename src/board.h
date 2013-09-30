@@ -126,7 +126,7 @@ typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init proto
 typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
 typedef void (* baroOpFuncPtr)(void);                       // baro start operation
 typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
-typedef void (* uartReceiveCallbackPtr)(uint16_t data);     // used by uart2 driver to return frames to app
+typedef void (* serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
 typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
 typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
 
@@ -244,6 +244,7 @@ typedef struct baro_t
 #include "drv_l3g4200d.h"
 #include "drv_pwm.h"
 #include "drv_timer.h"
+#include "drv_serial.h"
 #include "drv_uart.h"
 #include "drv_softserial.h"
 #else
@@ -264,6 +265,7 @@ typedef struct baro_t
 #include "drv_l3g4200d.h"
 #include "drv_pwm.h"
 #include "drv_timer.h"
+#include "drv_serial.h"
 #include "drv_uart.h"
 #include "drv_softserial.h"
 #include "drv_hcsr04.h"

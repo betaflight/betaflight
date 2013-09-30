@@ -183,7 +183,7 @@ void serialize16(int16_t a)
 
 void serialize8(uint8_t a)
 {
-    uartWrite(core.mainport, a);
+    serialWrite(core.mainport, a);
     checksum ^= a;
 }
 
@@ -678,8 +678,8 @@ void serialCom(void)
         return;
     }
 
-    while (isUartAvailable(core.mainport)) {
-        c = uartRead(core.mainport);
+    while (isUartAvailable((uartPort_t *)core.mainport)) {
+        c = uartRead((uartPort_t *)core.mainport);
 
         if (c_state == IDLE) {
             c_state = (c == '$') ? HEADER_START : IDLE;
@@ -715,7 +715,7 @@ void serialCom(void)
             c_state = IDLE;
         }
     }
-    if (!cliMode && !isUartAvailable(core.telemport) && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
+    if (!cliMode && !isUartAvailable((uartPort_t *)core.telemport) && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
         sendTelemetry();
         return;
     }

@@ -931,8 +931,8 @@ void cliProcess(void)
         cliPrompt();
     }
 
-    while (isUartAvailable(core.mainport)) {
-        uint8_t c = uartRead(core.mainport);
+    while (isUartAvailable((uartPort_t *)core.mainport)) {
+        uint8_t c = uartRead((uartPort_t *)core.mainport);
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
