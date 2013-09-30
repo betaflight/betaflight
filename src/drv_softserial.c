@@ -280,19 +280,19 @@ static void moveHeadToNextByte(softSerial_t *softSerial)
     }
 }
 
-uint8_t serialReadByte(softSerial_t *softSerial)
+uint8_t softSerialReadByte(serialPort_t *instance)
 {
-    if (softSerialTotalBytesWaiting((serialPort_t*)softSerial) == 0) {
+    if (softSerialTotalBytesWaiting(instance) == 0) {
         return 0;
     }
 
-    char b = softSerial->port.rxBuffer[softSerial->port.rxBufferHead];
+    char b = instance->rxBuffer[instance->rxBufferHead];
 
-    moveHeadToNextByte(softSerial);
+    moveHeadToNextByte((softSerial_t *)instance);
     return b;
 }
 
-void serialWriteByte(serialPort_t *s, uint8_t ch)
+void softSerialWriteByte(serialPort_t *s, uint8_t ch)
 {
     s->txBuffer[s->txBufferHead] = ch;
     s->txBufferHead = (s->txBufferHead + 1) % s->txBufferSize;
@@ -300,13 +300,9 @@ void serialWriteByte(serialPort_t *s, uint8_t ch)
 }
 
 const struct serialPortVTable softSerialVTable[] = {
-    { serialWriteByte, softSerialTotalBytesWaiting }
-};
-
-void serialPrint(softSerial_t *softSerial, const char *str)
-{
-    uint8_t ch;
-    while ((ch = *(str++))) {
-        serialWrite((serialPort_t *)softSerial, ch);
+    { 
+        softSerialWriteByte, 
+        softSerialTotalBytesWaiting,
+        softSerialReadByte
     }
-}
+};

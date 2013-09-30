@@ -32,6 +32,5 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 void uartChangeBaud(uartPort_t *s, uint32_t baudRate);
 uint8_t uartTotalBytesWaiting(serialPort_t *instance);
 bool isUartTransmitEmpty(uartPort_t *s);
-uint8_t uartRead(uartPort_t *s);
+uint8_t uartRead(serialPort_t *instance);
 void uartWrite(serialPort_t *instance, uint8_t ch);
-void uartPrint(uartPort_t *s, const char *str);

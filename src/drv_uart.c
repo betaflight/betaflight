@@ -229,9 +229,10 @@ bool isUartTransmitEmpty(uartPort_t *s)
         return s->port.txBufferTail == s->port.txBufferHead;
 }
 
-uint8_t uartRead(uartPort_t *s)
+uint8_t uartRead(serialPort_t *instance)
 {
     uint8_t ch;
+    uartPort_t *s = (uartPort_t *)instance;
 
     if (s->rxDMAChannel) {
         ch = s->port.rxBuffer[s->port.rxBufferSize - s->rxDMAPos];
@@ -260,16 +261,12 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
 }
 
 const struct serialPortVTable uartVTable[] = {
-    { uartWrite, uartTotalBytesWaiting }
-};
-
-void uartPrint(uartPort_t *s, const char *str)
-{
-    uint8_t ch;
-    while ((ch = *(str++))) {
-        uartWrite((serialPort_t *)s, ch);
+    { 
+        uartWrite, 
+        uartTotalBytesWaiting,
+        uartRead
     }
-}
+};
 
 // Handlers
 

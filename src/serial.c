@@ -679,7 +679,7 @@ void serialCom(void)
     }
 
     while (serialTotalBytesWaiting(core.mainport)) {
-        c = uartRead((uartPort_t *)core.mainport);
+        c = serialRead(core.mainport);
 
         if (c_state == IDLE) {
             c_state = (c == '$') ? HEADER_START : IDLE;

@@ -132,7 +132,8 @@ int main(void)
     serialInit(mcfg.serial_baudrate);
 #ifdef SOFTSERIAL_19200_LOOPBACK
     setupSoftSerial1(19200);
-    serialPrint(&(softSerialPorts[0]), "LOOPBACK 19200 ENABLED\r\n");
+    serialPort_t* loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+    serialPrint(loopbackPort, "LOOPBACK 19200 ENABLED\r\n");
 #endif
 
     previousTime = micros();
@@ -146,10 +147,10 @@ int main(void)
     while (1) {
         loop();
 #ifdef SOFTSERIAL_19200_LOOPBACK
-        while (serialTotalBytesWaiting((serialPort_t *)&softSerialPorts[0])) {
+        while (serialTotalBytesWaiting(loopbackPort)) {
 
-            uint8_t b = serialReadByte(&softSerialPorts[0]);
-            serialWrite((serialPort_t*)&softSerialPorts[0], b);
+            uint8_t b = serialRead(loopbackPort);
+            serialWrite(loopbackPort, b);
             //uartWrite(core.mainport, b);
         };
 #endif

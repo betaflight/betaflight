@@ -29,7 +29,7 @@ typedef struct serialPort {
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);
     uint8_t (*serialTotalBytesWaiting)(serialPort_t *instance);
-
+    uint8_t (*serialRead)(serialPort_t *instance);
 };
 
 static inline void serialWrite(serialPort_t *instance, uint8_t ch)
@@ -41,3 +41,10 @@ static inline uint8_t serialTotalBytesWaiting(serialPort_t *instance)
 {
     return instance->vTable->serialTotalBytesWaiting(instance);
 }
+
+static inline uint8_t serialRead(serialPort_t *instance)
+{
+    return instance->vTable->serialRead(instance);
+}
+
+void serialPrint(serialPort_t *instance, const char *str);

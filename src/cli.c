@@ -932,7 +932,7 @@ void cliProcess(void)
     }
 
     while (serialTotalBytesWaiting(core.mainport)) {
-        uint8_t c = uartRead((uartPort_t *)core.mainport);
+        uint8_t c = serialRead(core.mainport);
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;

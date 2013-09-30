@@ -59,6 +59,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drv_i2c.c \
 		   drv_i2c_soft.c \
 		   drv_system.c \
+		   drv_serial.c \
 		   drv_uart.c \
 		   printf.c \
 		   utils.c \
