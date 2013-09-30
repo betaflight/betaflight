@@ -212,7 +212,7 @@ void processTxState(softSerial_t *softSerial)
 
     if (!softSerial->isTransmittingData) {
 
-        if (softSerial->port.txBufferHead == softSerial->port.txBufferTail) {
+        if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
             return;
         }
 
@@ -299,10 +299,24 @@ void softSerialWriteByte(serialPort_t *s, uint8_t ch)
 
 }
 
+void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
+{
+    // not implemented.
+}
+
+bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
+{
+    return instance->txBufferHead == instance->txBufferTail;
+}
+
+
 const struct serialPortVTable softSerialVTable[] = {
     { 
         softSerialWriteByte, 
         softSerialTotalBytesWaiting,
-        softSerialReadByte
+        softSerialReadByte,
+        softSerialSetBaudRate,
+        isSoftSerialTransmitBufferEmpty
     }
 };
+

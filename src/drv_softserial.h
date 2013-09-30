@@ -31,14 +31,17 @@ typedef struct softSerial_s {
 
 } softSerial_t;
 
+extern timerHardware_t* serialTimerHardware;
+extern softSerial_t softSerialPorts[];
+
 extern const struct serialPortVTable softSerialVTable[];
 
 void setupSoftSerial1(uint32_t baud);
 
-uint8_t softSerialReadByte(serialPort_t *instance);
-uint8_t softSerialTotalBytesWaiting(serialPort_t *instance);
-
+// serialPort API
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
+uint8_t softSerialTotalBytesWaiting(serialPort_t *instance);
+uint8_t softSerialReadByte(serialPort_t *instance);
+void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
+bool isSoftSerialTransmitBufferEmpty(serialPort_t *s);
 
-extern timerHardware_t* serialTimerHardware;
-extern softSerial_t softSerialPorts[];

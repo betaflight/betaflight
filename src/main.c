@@ -12,7 +12,7 @@ extern uint16_t pwmReadRawRC(uint8_t chan);
 // gcc/GNU version
 static void _putc(void *p, char c)
 {
-    uartWrite(core.mainport, c);
+    serialWrite(core.mainport, c);
 }
 #else
 // keil/armcc version
@@ -20,7 +20,7 @@ int fputc(int c, FILE *f)
 {
     // let DMA catch up a bit when using set or dump, we're too fast.
     while (!isUartTransmitEmpty(core.mainport));
-    uartWrite(core.mainport, c);
+    serialWrite(core.mainport, c);
     return c;
 }
 #endif
@@ -151,7 +151,7 @@ int main(void)
 
             uint8_t b = serialRead(loopbackPort);
             serialWrite(loopbackPort, b);
-            //uartWrite(core.mainport, b);
+            //serialWrite(core.mainport, b);
         };
 #endif
     }

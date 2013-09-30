@@ -177,9 +177,10 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     return (serialPort_t *)s;
 }
 
-void uartChangeBaud(uartPort_t *s, uint32_t baudRate)
+void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     USART_InitTypeDef USART_InitStructure;
+    uartPort_t *s = (uartPort_t *)instance; 
 
     USART_InitStructure.USART_BaudRate = baudRate;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -220,9 +221,10 @@ uint8_t uartTotalBytesWaiting(serialPort_t *instance)
         return s->port.rxBufferTail != s->port.rxBufferHead;
 }
 
-// BUGBUG TODO TODO FIXME
-bool isUartTransmitEmpty(uartPort_t *s)
+// BUGBUG TODO TODO FIXME - What is the bug?
+bool isUartTransmitBufferEmpty(serialPort_t *instance)
 {
+    uartPort_t *s = (uartPort_t *)instance;
     if (s->txDMAChannel)
         return s->txDMAEmpty;
     else
@@ -264,7 +266,9 @@ const struct serialPortVTable uartVTable[] = {
     { 
         uartWrite, 
         uartTotalBytesWaiting,
-        uartRead
+        uartRead,
+        uartSetBaudRate,
+        isUartTransmitBufferEmpty
     }
 };
 

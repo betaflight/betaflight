@@ -284,7 +284,7 @@ typedef struct master_t {
     // gps-related stuff
     uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2+ ??
     uint32_t gps_baudrate;                  // GPS baudrate
-    // serial(uart1) baudrate
+
     uint32_t serial_baudrate;
 
     config_t profile[3];                    // 3 separate profiles

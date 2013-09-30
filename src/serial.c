@@ -157,16 +157,16 @@ void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 8;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 16;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 24;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
 }
 
@@ -174,10 +174,10 @@ void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 8 & 0xff;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
 }
 
@@ -672,7 +672,7 @@ void serialCom(void)
         HEADER_CMD,
     } c_state = IDLE;
 
-    // in cli mode, all uart stuff goes to here. enter cli mode by sending #
+    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
         cliProcess();
         return;
