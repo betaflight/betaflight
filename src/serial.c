@@ -231,6 +231,13 @@ void tailSerialReply(void)
     serialize8(checksum);
 }
 
+void s_struct(uint8_t *cb, uint8_t siz)
+{
+    headSerialReply(siz);
+    while (siz--)
+        serialize8(*cb++);
+}
+
 void serializeNames(const char *s)
 {
     const char *c;
@@ -456,6 +463,9 @@ static void evaluateCommand(void)
         headSerialReply(16);
         for (i = 0; i < 8; i++)
             serialize16(servo[i]);
+        break;
+    case MSP_SERVO_CONF:
+        s_struct((uint8_t *)&cfg.servoConf, 56);      // struct servoConf is 7 bytes length: min:2 / max:2 / middle:2 / rate:1    ----     8 servo =>  8x7 = 56
         break;
     case MSP_MOTOR:
         headSerialReply(16);

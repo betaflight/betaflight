@@ -130,13 +130,6 @@ const mixer_t mixers[] = {
     { 0, 0, NULL },                // MULTITYPE_CUSTOM
 };
 
-static const servoParam_t servoInit = {
-    SERVO_NORMAL,           // direction
-    1500,                   // middle
-    1020,                   // min
-    2000,                   // max
-};
-
 void mixerInit(void)
 {
     int i;
