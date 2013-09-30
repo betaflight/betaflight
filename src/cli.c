@@ -931,7 +931,7 @@ void cliProcess(void)
         cliPrompt();
     }
 
-    while (isUartAvailable((uartPort_t *)core.mainport)) {
+    while (serialTotalBytesWaiting(core.mainport)) {
         uint8_t c = uartRead((uartPort_t *)core.mainport);
         if (c == '\t' || c == '?') {
             // do tab completion

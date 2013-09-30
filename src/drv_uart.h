@@ -30,7 +30,7 @@ extern const struct serialPortVTable uartVTable[];
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode);
 void uartChangeBaud(uartPort_t *s, uint32_t baudRate);
-bool isUartAvailable(uartPort_t *s);
+uint8_t uartTotalBytesWaiting(serialPort_t *instance);
 bool isUartTransmitEmpty(uartPort_t *s);
 uint8_t uartRead(uartPort_t *s);
 void uartWrite(serialPort_t *instance, uint8_t ch);

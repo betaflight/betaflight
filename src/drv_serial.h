@@ -28,9 +28,16 @@ typedef struct serialPort {
 
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);
+    uint8_t (*serialTotalBytesWaiting)(serialPort_t *instance);
+
 };
 
 static inline void serialWrite(serialPort_t *instance, uint8_t ch)
 {
     instance->vTable->serialWrite(instance, ch);
+}
+
+static inline uint8_t serialTotalBytesWaiting(serialPort_t *instance)
+{
+    return instance->vTable->serialTotalBytesWaiting(instance);
 }

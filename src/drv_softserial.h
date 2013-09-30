@@ -36,7 +36,7 @@ extern const struct serialPortVTable softSerialVTable[];
 void setupSoftSerial1(uint32_t baud);
 
 uint8_t serialReadByte(softSerial_t *softSerial);
-uint8_t serialAvailable(softSerial_t *softSerial);
+uint8_t softSerialTotalBytesWaiting(serialPort_t *instance);
 
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
 void serialPrint(softSerial_t *softSerial, const char *str);

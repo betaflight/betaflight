@@ -255,8 +255,9 @@ void onSerialTimer(uint8_t portIndex, uint16_t capture)
 }
 
 
-uint8_t serialAvailable(softSerial_t *softSerial)
+uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
 {
+    softSerial_t *softSerial = (softSerial_t *)instance;
     if (softSerial->port.rxBufferTail == softSerial->port.rxBufferHead) {
         return 0;
     }
@@ -281,7 +282,7 @@ static void moveHeadToNextByte(softSerial_t *softSerial)
 
 uint8_t serialReadByte(softSerial_t *softSerial)
 {
-    if (serialAvailable(softSerial) == 0) {
+    if (softSerialTotalBytesWaiting((serialPort_t*)softSerial) == 0) {
         return 0;
     }
 
@@ -299,7 +300,7 @@ void serialWriteByte(serialPort_t *s, uint8_t ch)
 }
 
 const struct serialPortVTable softSerialVTable[] = {
-    { serialWriteByte }
+    { serialWriteByte, softSerialTotalBytesWaiting }
 };
 
 void serialPrint(softSerial_t *softSerial, const char *str)

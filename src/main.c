@@ -146,7 +146,7 @@ int main(void)
     while (1) {
         loop();
 #ifdef SOFTSERIAL_19200_LOOPBACK
-        while (serialAvailable(&softSerialPorts[0])) {
+        while (serialTotalBytesWaiting((serialPort_t *)&softSerialPorts[0])) {
 
             uint8_t b = serialReadByte(&softSerialPorts[0]);
             serialWrite((serialPort_t*)&softSerialPorts[0], b);
