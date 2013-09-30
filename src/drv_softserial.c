@@ -87,6 +87,7 @@ void setupSoftSerial1(uint32_t baud)
     int portIndex = 0;
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
+    softSerial->port.vTable = softSerialVTable;
     softSerial->port.mode = MODE_RXTX;
     softSerial->port.baudRate = baud;
 
@@ -289,19 +290,22 @@ uint8_t serialReadByte(softSerial_t *softSerial)
     moveHeadToNextByte(softSerial);
     return b;
 }
-void serialWriteByte(softSerial_t *softSerial, uint8_t ch)
-{
-    serialPort_t *s = &(softSerial->port);
 
+void serialWriteByte(serialPort_t *s, uint8_t ch)
+{
     s->txBuffer[s->txBufferHead] = ch;
     s->txBufferHead = (s->txBufferHead + 1) % s->txBufferSize;
 
 }
 
+const struct serialPortVTable softSerialVTable[] = {
+    { serialWriteByte }
+};
+
 void serialPrint(softSerial_t *softSerial, const char *str)
 {
     uint8_t ch;
     while ((ch = *(str++))) {
-        serialWriteByte(softSerial, ch);
+        serialWrite((serialPort_t *)softSerial, ch);
     }
 }

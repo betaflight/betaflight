@@ -30,12 +30,15 @@ typedef struct softSerial_s {
     uint16_t         internalTxBuffer;  // includes start and stop bits
 
 } softSerial_t;
+
+extern const struct serialPortVTable softSerialVTable[];
+
 void setupSoftSerial1(uint32_t baud);
 
 uint8_t serialReadByte(softSerial_t *softSerial);
 uint8_t serialAvailable(softSerial_t *softSerial);
 
-void serialWriteByte(softSerial_t *softSerial, uint8_t ch);
+void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
 void serialPrint(softSerial_t *softSerial, const char *str);
 
 extern timerHardware_t* serialTimerHardware;

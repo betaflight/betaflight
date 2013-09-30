@@ -17,7 +17,7 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     NVIC_InitTypeDef NVIC_InitStructure;
 
     s = &uartPort1;
-    s->port.vTable = UART;
+    s->port.vTable = uartVTable;
     
     s->port.baudRate = baudRate;
     
@@ -62,7 +62,7 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     NVIC_InitTypeDef NVIC_InitStructure;
 
     s = &uartPort2;
-    s->port.vTable = UART;
+    s->port.vTable = uartVTable;
     
     s->port.baudRate = baudRate;
     
@@ -257,7 +257,7 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
     }
 }
 
-const struct serialPortVTable UART[] = {
+const struct serialPortVTable uartVTable[] = {
     { uartWrite }
 };
 

@@ -26,7 +26,7 @@ typedef struct {
     USART_TypeDef *USARTx;
 } uartPort_t;
 
-extern const struct serialPortVTable UART[];
+extern const struct serialPortVTable uartVTable[];
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode);
 void uartChangeBaud(uartPort_t *s, uint32_t baudRate);

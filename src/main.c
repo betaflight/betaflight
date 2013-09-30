@@ -149,7 +149,7 @@ int main(void)
         while (serialAvailable(&softSerialPorts[0])) {
 
             uint8_t b = serialReadByte(&softSerialPorts[0]);
-            serialWriteByte(&softSerialPorts[0], b);
+            serialWrite((serialPort_t*)&softSerialPorts[0], b);
             //uartWrite(core.mainport, b);
         };
 #endif
