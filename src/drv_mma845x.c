@@ -49,10 +49,10 @@
 
 extern uint16_t acc_1G;
 static uint8_t device_id;
+static sensor_align_e accAlign = CW90_DEG;
 
-static void mma8452Init(void);
+static void mma8452Init(sensor_align_e align);
 static void mma8452Read(int16_t *accelData);
-static void mma8452Align(int16_t *accelData);
 
 bool mma8452Detect(sensor_t *acc)
 {
@@ -69,12 +69,11 @@ bool mma8452Detect(sensor_t *acc)
 
     acc->init = mma8452Init;
     acc->read = mma8452Read;
-    acc->align = mma8452Align;
     device_id = sig;
     return true;
 }
 
-static void mma8452Init(void)
+static void mma8452Init(sensor_align_e align)
 {
     gpio_config_t gpio;
 
@@ -95,21 +94,20 @@ static void mma8452Init(void)
     i2cWrite(MMA8452_ADDRESS, MMA8452_CTRL_REG1, MMA8452_CTRL_REG1_LNOISE | MMA8452_CTRL_REG1_ACTIVE); // Turn on measurements, low noise at max scale mode, Data Rate 800Hz. LNoise mode makes range +-4G.
 
     acc_1G = 256;
+
+    if (align > 0)
+        accAlign = align;
 }
 
 static void mma8452Read(int16_t *accelData)
 {
     uint8_t buf[6];
+    int16_t data[3];
 
     i2cRead(MMA8452_ADDRESS, MMA8452_OUT_X_MSB, 6, buf);
-    accelData[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
-    accelData[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
-    accelData[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
-}
+    data[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
+    data[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
+    data[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
 
-static void mma8452Align(int16_t *accelData)
-{
-    accelData[0] = -accelData[0];
-    accelData[1] = -accelData[1];
-    accelData[2] = accelData[2];
+    alignSensors(data, accelData, accAlign);
 }

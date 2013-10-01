@@ -42,7 +42,7 @@ static const char * const mixerNames[] = {
 
 // sync this with AvailableFeatures enum from board.h
 static const char * const featureNames[] = {
-    "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SPEKTRUM", "MOTOR_STOP",
+    "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SERIALRX", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
     "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
     NULL
@@ -54,7 +54,7 @@ static const char * const sensorNames[] = {
 };
 
 static const char * const accNames[] = {
-    "", "ADXL345", "MPU6050", "MMA845x", NULL
+    "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "None", NULL
 };
 
 typedef struct {
@@ -116,21 +116,16 @@ const clivalue_t valueTable[] = {
     { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
     { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
     { "gps_baudrate", VAR_UINT32, &mcfg.gps_baudrate, 1200, 115200 },
-    { "spektrum_hires", VAR_UINT8, &mcfg.spektrum_hires, 0, 1 },
+    { "serialrx_type", VAR_UINT8, &mcfg.serialrx_type, 0, 2 },
     { "vbatscale", VAR_UINT8, &mcfg.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &mcfg.vbatmaxcellvoltage, 10, 50 },
     { "vbatmincellvoltage", VAR_UINT8, &mcfg.vbatmincellvoltage, 10, 50 },
     { "power_adc_channel", VAR_UINT8, &mcfg.power_adc_channel, 0, 9 },
-    { "align_gyro_x", VAR_INT8, &mcfg.align[ALIGN_GYRO][0], -3, 3 },
-    { "align_gyro_y", VAR_INT8, &mcfg.align[ALIGN_GYRO][1], -3, 3 },
-    { "align_gyro_z", VAR_INT8, &mcfg.align[ALIGN_GYRO][2], -3, 3 },
-    { "align_acc_x", VAR_INT8, &mcfg.align[ALIGN_ACCEL][0], -3, 3 },
-    { "align_acc_y", VAR_INT8, &mcfg.align[ALIGN_ACCEL][1], -3, 3 },
-    { "align_acc_z", VAR_INT8, &mcfg.align[ALIGN_ACCEL][2], -3, 3 },
-    { "align_mag_x", VAR_INT8, &mcfg.align[ALIGN_MAG][0], -3, 3 },
-    { "align_mag_y", VAR_INT8, &mcfg.align[ALIGN_MAG][1], -3, 3 },
-    { "align_mag_z", VAR_INT8, &mcfg.align[ALIGN_MAG][2], -3, 3 },
-    { "acc_hardware", VAR_UINT8, &mcfg.acc_hardware, 0, 3 },
+    { "align_gyro", VAR_UINT8, &mcfg.gyro_align, 0, 8 },
+    { "align_acc", VAR_UINT8, &mcfg.acc_align, 0, 8 },
+    { "align_mag", VAR_UINT8, &mcfg.mag_align, 0, 8 },
+    { "yaw_control_direction", VAR_INT8, &mcfg.yaw_control_direction, -1, 1 },
+    { "acc_hardware", VAR_UINT8, &mcfg.acc_hardware, 0, 5 },
     { "moron_threshold", VAR_UINT8, &mcfg.moron_threshold, 0, 128 },
     { "gyro_lpf", VAR_UINT16, &mcfg.gyro_lpf, 0, 256 },
     { "gyro_cmpf_factor", VAR_UINT16, &mcfg.gyro_cmpf_factor, 100, 1000 },
@@ -152,7 +147,9 @@ const clivalue_t valueTable[] = {
     { "failsafe_off_delay", VAR_UINT8, &cfg.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, 1000, 2000 },
     { "failsafe_detect_threshold", VAR_UINT16, &cfg.failsafe_detect_threshold, 100, 2000 },
+    { "rssi_aux_channel", VAR_INT8, &mcfg.rssi_aux_channel, 0, 4 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
+    { "tri_unarmed_servo", VAR_INT8, &cfg.tri_unarmed_servo, 0, 1 },
     { "tri_yaw_middle", VAR_UINT16, &cfg.tri_yaw_middle, 0, 2000 },
     { "tri_yaw_min", VAR_UINT16, &cfg.tri_yaw_min, 0, 2000 },
     { "tri_yaw_max", VAR_UINT16, &cfg.tri_yaw_max, 0, 2000 },
@@ -573,7 +570,7 @@ static void cliDump(char *cmdline)
             if (yaw < 0)
                 printf(" ");
             printf("%s\r\n", ftoa(yaw, buf));
-        }   
+        }
         printf("cmix %d 0 0 0 0\r\n", i + 1);
     }
 
@@ -676,7 +673,7 @@ static void cliHelp(char *cmdline)
 {
     uint32_t i = 0;
 
-    cliPrint("Available commands:\r\n");    
+    cliPrint("Available commands:\r\n");
     for (i = 0; i < CMD_COUNT; i++)
         printf("%s\t%s\r\n", cmdTable[i].name, cmdTable[i].param);
 }
@@ -934,8 +931,8 @@ void cliProcess(void)
         cliPrompt();
     }
 
-    while (isUartAvailable(core.mainport)) {
-        uint8_t c = uartRead(core.mainport);
+    while (serialTotalBytesWaiting(core.mainport)) {
+        uint8_t c = serialRead(core.mainport);
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;

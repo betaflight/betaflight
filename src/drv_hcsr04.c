@@ -59,7 +59,7 @@ void hcsr04_init(sonar_config_t config)
     EXTI_InitTypeDef EXTIInit;
 
     // enable AFIO for EXTI support - already done is drv_system.c
-    // RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph, ENABLE); 
+    // RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph, ENABLE);
 
     switch(config) {
         case sonar_pwm56:
@@ -69,7 +69,7 @@ void hcsr04_init(sonar_config_t config)
             exti_pin_source = GPIO_PinSource9;
             exti_irqn = EXTI9_5_IRQn;
             break;
-        case sonar_rc78:    
+        case sonar_rc78:
             trigger_pin = Pin_0;   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
             echo_pin = Pin_1;      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
             exti_line = EXTI_Line1;
@@ -78,7 +78,7 @@ void hcsr04_init(sonar_config_t config)
             break;
     }
 
-    // tp - trigger pin 
+    // tp - trigger pin
     gpio.pin = trigger_pin;
     gpio.mode = Mode_Out_PP;
     gpio.speed = Speed_2MHz;
@@ -93,12 +93,12 @@ void hcsr04_init(sonar_config_t config)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, exti_pin_source);
 
     EXTI_ClearITPendingBit(exti_line);
-       
+
     EXTIInit.EXTI_Line = exti_line;
     EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTIInit.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
-    EXTIInit.EXTI_LineCmd = ENABLE;    
-    EXTI_Init(&EXTIInit);    
+    EXTIInit.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTIInit);
 
     NVIC_EnableIRQ(exti_irqn);
 

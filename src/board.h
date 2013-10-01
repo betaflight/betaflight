@@ -28,11 +28,11 @@
 #endif /* M_PI */
 
 #define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
+#define RAD    (M_PI / 180.0f)
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define abs(x) ((x) > 0 ? (x) : -(x))
-#define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
 // Chip Unique ID on F103
 #define U_ID_0 (*(uint32_t*)0x1FFFF7E8)
@@ -40,11 +40,12 @@
 #define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
 
 typedef enum {
-    SENSOR_ACC = 1 << 0,
-    SENSOR_BARO = 1 << 1,
-    SENSOR_MAG = 1 << 2,
-    SENSOR_SONAR = 1 << 3,
-    SENSOR_GPS = 1 << 4,
+    SENSOR_GYRO = 1 << 0, // always present
+    SENSOR_ACC = 1 << 1,
+    SENSOR_BARO = 1 << 2,
+    SENSOR_MAG = 1 << 3,
+    SENSOR_SONAR = 1 << 4,
+    SENSOR_GPS = 1 << 5,
 } AvailableSensors;
 
 // Type of accelerometer used/detected
@@ -53,13 +54,15 @@ typedef enum AccelSensors {
     ACC_ADXL345 = 1,
     ACC_MPU6050 = 2,
     ACC_MMA8452 = 3,
+    ACC_BMA280 = 4,
+    ACC_NONE = 5
 } AccelSensors;
 
 typedef enum {
     FEATURE_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,
     FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
-    FEATURE_SPEKTRUM = 1 << 3,
+    FEATURE_SERIALRX = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,
     FEATURE_SERVO_TILT = 1 << 5,
     FEATURE_GYRO_SMOOTHING = 1 << 6,
@@ -74,15 +77,56 @@ typedef enum {
 } AvailableFeatures;
 
 typedef enum {
+    SERIALRX_SPEKTRUM1024 = 0,
+    SERIALRX_SPEKTRUM2048 = 1,
+    SERIALRX_SBUS = 2,
+} SerialRXType;
+
+typedef enum {
     GPS_NMEA = 0,
     GPS_UBLOX,
     GPS_MTK,
 } GPSHardware;
 
-typedef void (* sensorInitFuncPtr)(void);                   // sensor init prototype
+typedef enum {
+    X = 0,
+    Y,
+    Z
+} sensor_axis_e;
+
+typedef enum {
+    ALIGN_DEFAULT = 0,                                      // driver-provided alignment
+    CW0_DEG = 1,
+    CW90_DEG = 2,
+    CW180_DEG = 3,
+    CW270_DEG = 4,
+    CW0_DEG_FLIP = 5,
+    CW90_DEG_FLIP = 6,
+    CW180_DEG_FLIP = 7,
+    CW270_DEG_FLIP = 8
+} sensor_align_e;
+
+enum {
+    GYRO_UPDATED = 1 << 0,
+    ACC_UPDATED = 1 << 1,
+    MAG_UPDATED = 1 << 2,
+    TEMP_UPDATED = 1 << 3
+};
+
+typedef struct sensor_data_t
+{
+    int16_t gyro[3];
+    int16_t acc[3];
+    int16_t mag[3];
+    float temperature;
+    int updated;
+} sensor_data_t;
+
+typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
 typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
+typedef void (* baroOpFuncPtr)(void);                       // baro start operation
 typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
-typedef void (* uartReceiveCallbackPtr)(uint16_t data);     // used by uart2 driver to return frames to app
+typedef void (* serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
 typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
 typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
 
@@ -90,7 +134,6 @@ typedef struct sensor_t
 {
     sensorInitFuncPtr init;                                 // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
-    sensorReadFuncPtr align;                                // sensor align
     sensorReadFuncPtr temperature;                          // read temperature if available
     float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
 } sensor_t;
@@ -99,10 +142,10 @@ typedef struct baro_t
 {
     uint16_t ut_delay;
     uint16_t up_delay;
-    sensorInitFuncPtr start_ut;
-    sensorInitFuncPtr get_ut;
-    sensorInitFuncPtr start_up;
-    sensorInitFuncPtr get_up;
+    baroOpFuncPtr start_ut;
+    baroOpFuncPtr get_ut;
+    baroOpFuncPtr start_up;
+    baroOpFuncPtr get_up;
     baroCalculateFuncPtr calculate;
 } baro_t;
 
@@ -204,6 +247,8 @@ typedef struct baro_t
 
 #undef SOFT_I2C                 // enable to test software i2c
 
+#include "utils.h"
+
 #ifdef FY90Q
  // FY90Q
 #include "drv_adc.h"
@@ -223,6 +268,7 @@ typedef struct baro_t
 #include "drv_l3g4200d.h"
 #include "drv_pwm.h"
 #include "drv_timer.h"
+#include "drv_serial.h"
 #include "drv_uart.h"
 #include "drv_softserial.h"
 #else
@@ -230,6 +276,7 @@ typedef struct baro_t
  // AfroFlight32
 #include "drv_adc.h"
 #include "drv_adxl345.h"
+#include "drv_bma280.h"
 #include "drv_bmp085.h"
 #include "drv_ms5611.h"
 #include "drv_hmc5883l.h"
@@ -242,6 +289,7 @@ typedef struct baro_t
 #include "drv_l3g4200d.h"
 #include "drv_pwm.h"
 #include "drv_timer.h"
+#include "drv_serial.h"
 #include "drv_uart.h"
 #include "drv_softserial.h"
 #include "drv_hcsr04.h"

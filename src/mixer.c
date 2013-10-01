@@ -206,7 +206,16 @@ void writeServos(void)
             break;
 
         case MULTITYPE_TRI:
-            pwmWriteServo(0, servo[5]);
+            if (cfg.tri_unarmed_servo) {
+                // if unarmed flag set, we always move servo
+                pwmWriteServo(0, servo[5]);
+            } else {
+                // otherwise, only move servo when copter is armed
+                if (f.ARMED)
+                    pwmWriteServo(0, servo[5]);
+                else
+                    pwmWriteServo(0, 0); // kill servo signal completely.
+            }
             break;
 
         case MULTITYPE_AIRPLANE:
@@ -265,8 +274,8 @@ static void airplaneMixer(void)
         motor[0] = rcData[THROTTLE];
 
     if (cfg.flaperons) {
-        
-        
+
+
     }
 
     if (cfg.flaps) {
@@ -312,17 +321,17 @@ void mixTable(void)
     // motors for non-servo mixes
     if (numberMotor > 1)
         for (i = 0; i < numberMotor; i++)
-            motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + cfg.yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
+            motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + -cfg.yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
 
     // airplane / servo mixes
     switch (mcfg.mixerConfiguration) {
         case MULTITYPE_BI:
-            servo[4] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) + axisPID[PITCH], 1020, 2000);   //LEFT
-            servo[5] = constrain(1500 + (cfg.yaw_direction * axisPID[YAW]) - axisPID[PITCH], 1020, 2000);   //RIGHT
+            servo[4] = constrain(1500 + (-cfg.yaw_direction * axisPID[YAW]) + axisPID[PITCH], 1020, 2000);   //LEFT
+            servo[5] = constrain(1500 + (-cfg.yaw_direction * axisPID[YAW]) - axisPID[PITCH], 1020, 2000);   //RIGHT
             break;
 
         case MULTITYPE_TRI:
-            servo[5] = constrain(cfg.tri_yaw_middle + cfg.yaw_direction * axisPID[YAW], cfg.tri_yaw_min, cfg.tri_yaw_max); //REAR
+            servo[5] = constrain(cfg.tri_yaw_middle + -cfg.yaw_direction * axisPID[YAW], cfg.tri_yaw_min, cfg.tri_yaw_max); //REAR
             break;
 
         case MULTITYPE_GIMBAL:

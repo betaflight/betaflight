@@ -11,7 +11,6 @@ uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 int16_t headFreeModeHold;
 
-int16_t annex650_overrun_count = 0;
 uint8_t vbat;                   // battery voltage in 0.1V steps
 int16_t telemTemperature1;      // gyro sensor temperature
 
@@ -85,7 +84,6 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 
 #define BREAKPOINT 1500
 
-// this code is executed at each loop and won't interfere with control loop if it lasts less than 650 microseconds
 void annexCode(void)
 {
     static uint32_t calibratedAccTime;
@@ -125,6 +123,7 @@ void annexCode(void)
             prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
             prop1 = (uint16_t) prop1 *prop2 / 100;
         } else {                // YAW
+            tmp *= -mcfg.yaw_control_direction; //change control direction for yaw needed with new gyro orientation
             if (cfg.yawdeadband) {
                 if (tmp > cfg.yawdeadband) {
                     tmp -= cfg.yawdeadband;
@@ -147,7 +146,7 @@ void annexCode(void)
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
-    if(f.HEADFREE_MODE) {
+    if (f.HEADFREE_MODE) {
         float radDiff = (heading - headFreeModeHold) * M_PI / 180.0f;
         float cosDiff = cosf(radDiff);
         float sinDiff = sinf(radDiff);
@@ -437,20 +436,40 @@ void loop(void)
     static uint8_t GPSNavReset = 1;
     bool isThrottleLow = false;
 
-    // this will return false if spektrum is disabled. shrug.
-    if (spektrumFrameComplete())
-        computeRC();
+    // calculate rc stuff from serial-based receivers (spek/sbus)
+    if (feature(FEATURE_SERIALRX)) {
+        bool ready = false;
+        switch (mcfg.serialrx_type) {
+            case SERIALRX_SPEKTRUM1024:
+            case SERIALRX_SPEKTRUM2048:
+                ready = spektrumFrameComplete();
+                break;
+            case SERIALRX_SBUS:
+                ready = sbusFrameComplete();
+                break;
+        }
+        if (ready)
+            computeRC();
+    }
 
     if ((int32_t)(currentTime - rcTime) >= 0) { // 50Hz
         rcTime = currentTime + 20000;
         // TODO clean this up. computeRC should handle this check
-        if (!feature(FEATURE_SPEKTRUM))
+        if (!feature(FEATURE_SERIALRX))
             computeRC();
 
         // in 3D mode, we need to be able to disarm by switch at any time
         if (feature(FEATURE_3D)) {
             if (!rcOptions[BOXARM])
                 mwDisarm();
+        }
+
+        // Read value of AUX channel as rssi
+        // 0 is disable, 1-4 is AUX{1..4}
+        if (mcfg.rssi_aux_channel > 0) {
+            const int16_t rssiChannelData = rcData[AUX1 + mcfg.rssi_aux_channel - 1];
+            // Range of rssiChannelData is [1000;2000]. rssi should be in [0;1023];
+            rssi = (uint16_t)((constrain(rssiChannelData - 1000, 0, 1000) / 1000.0f) * 1023.0f);
         }
 
         // Failsafe routine
@@ -777,6 +796,7 @@ void loop(void)
         loopTime = currentTime + mcfg.looptime;
 
         computeIMU();
+        annexCode();
         // Measure loop rate just afer reading the sensors
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
@@ -823,24 +843,23 @@ void loop(void)
                     if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
                         // Slowly increase/decrease AltHold proportional to stick movement ( +100 throttle gives ~ +50 cm in 1 second with cycle time about 3-4ms)
                         AltHoldCorr += rcCommand[THROTTLE] - initialThrottleHold;
-                        if (abs(AltHoldCorr) > 500) {
-                            AltHold += AltHoldCorr / 500;
-                            AltHoldCorr %= 500;
-                        }
-                        errorAltitudeI = 0;
+                        AltHold += AltHoldCorr / 2000;
+                        AltHoldCorr %= 2000;
                         isAltHoldChanged = 1;
                     } else if (isAltHoldChanged) {
                         AltHold = EstAlt;
+                        AltHoldCorr = 0;
                         isAltHoldChanged = 0;
                     }
                     rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
+                    rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], mcfg.minthrottle + 150, mcfg.maxthrottle);
                 }
             }
         }
 #endif
 
         if (cfg.throttle_angle_correction && (f.ANGLE_MODE || f.HORIZON_MODE)) {
-            rcCommand[THROTTLE]+= throttleAngleCorrection;
+            rcCommand[THROTTLE] += throttleAngleCorrection;
         }
 
         if (sensors(SENSOR_GPS)) {

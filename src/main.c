@@ -5,23 +5,22 @@ core_t core;
 
 extern rcReadRawDataPtr rcReadRawFunc;
 
-// two receiver read functions
+// receiver read function
 extern uint16_t pwmReadRawRC(uint8_t chan);
-extern uint16_t spektrumReadRawRC(uint8_t chan);
 
 #ifdef USE_LAME_PRINTF
 // gcc/GNU version
 static void _putc(void *p, char c)
 {
-    uartWrite(core.mainport, c);
+    serialWrite(core.mainport, c);
 }
 #else
 // keil/armcc version
 int fputc(int c, FILE *f)
 {
     // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isUartTransmitEmpty(core.mainport));
-    uartWrite(core.mainport, c);
+    while (!isSerialTransmitBufferEmpty(core.mainport));
+    serialWrite(core.mainport, c);
     return c;
 }
 #endif
@@ -59,9 +58,9 @@ int main(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-    pwm_params.useUART = feature(FEATURE_GPS) || feature(FEATURE_SPEKTRUM); // spektrum support uses UART too
+    pwm_params.useUART = feature(FEATURE_GPS) || feature(FEATURE_SERIALRX); // spektrum/sbus support uses UART too
     pwm_params.usePPM = feature(FEATURE_PPM);
-    pwm_params.enableInput = !feature(FEATURE_SPEKTRUM); // disable inputs if using spektrum
+    pwm_params.enableInput = !feature(FEATURE_SERIALRX); // disable inputs if using spektrum
     pwm_params.useServos = core.useServo;
     pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = mcfg.motor_pwm_rate;
@@ -81,12 +80,20 @@ int main(void)
 
     pwmInit(&pwm_params);
 
-    // configure PWM/CPPM read function. spektrum below will override that
+    // configure PWM/CPPM read function. spektrum or sbus below will override that
     rcReadRawFunc = pwmReadRawRC;
 
-    if (feature(FEATURE_SPEKTRUM)) {
-        spektrumInit();
-        rcReadRawFunc = spektrumReadRawRC;
+    if (feature(FEATURE_SERIALRX)) {
+        switch (mcfg.serialrx_type) {
+            case SERIALRX_SPEKTRUM1024:
+            case SERIALRX_SPEKTRUM2048:
+                spektrumInit(&rcReadRawFunc);
+                break;
+
+            case SERIALRX_SBUS:
+                sbusInit(&rcReadRawFunc);
+                break;
+        }
     } else {
         // spektrum and GPS are mutually exclusive
         // Optional GPS - available in both PPM and PWM input mode, in PWM input, reduces number of available channels by 2.
@@ -122,13 +129,11 @@ int main(void)
     if (feature(FEATURE_VBAT))
         batteryInit();
 
-#ifdef SOFTSERIAL_19200_LOOPBACK
-
-    serialInit(19200);
-    setupSoftSerial1(19200);
-    uartPrint(core.mainport, "LOOPBACK 19200 ENABLED");
-#else
     serialInit(mcfg.serial_baudrate);
+#ifdef SOFTSERIAL_19200_LOOPBACK
+    setupSoftSerial1(19200);
+    serialPort_t* loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+    serialPrint(loopbackPort, "LOOPBACK 19200 ENABLED\r\n");
 #endif
 
     previousTime = micros();
@@ -142,10 +147,11 @@ int main(void)
     while (1) {
         loop();
 #ifdef SOFTSERIAL_19200_LOOPBACK
-        while (serialAvailable(&softSerialPorts[0])) {
+        while (serialTotalBytesWaiting(loopbackPort)) {
 
-            uint8_t b = serialReadByte(&softSerialPorts[0]);
-            uartWrite(core.mainport, b);
+            uint8_t b = serialRead(loopbackPort);
+            serialWrite(loopbackPort, b);
+            //serialWrite(core.mainport, b);
         };
 #endif
     }

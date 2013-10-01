@@ -34,7 +34,7 @@ unsigned char getResults[11];
 unsigned char stmHexToChar(const char *hex) {
 	char hex1, hex2;
 	unsigned char nibble1, nibble2;
-	
+
 	// force data to upper case
 	hex1 = toupper(hex[0]);
 	hex2 = toupper(hex[1]);
@@ -196,7 +196,7 @@ void stmLoader(serialStruct_t *s, FILE *fp, unsigned char overrideParity, unsign
 	}
 
 	serialFlush(s);
-	
+
 	printf("Poking the MCU to check whether bootloader is alive...");
 
 	// poke the MCU
@@ -317,7 +317,7 @@ void stmLoader(serialStruct_t *s, FILE *fp, unsigned char overrideParity, unsign
 	}
 
 	printf("Done.\n");
-	
+
 	// upload hex file
 	printf("Flashing device...\n");
 	jumpAddress = stmHexLoader(s, fp);

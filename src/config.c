@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 49;
+static const uint8_t EEPROM_CONF_VERSION = 51;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -133,7 +133,7 @@ retry:
         }
     }
     FLASH_Lock();
-    
+
     // Flash write failed - just die now
     if (tries == 3 || !validEEPROM()) {
         failureMode(10);
@@ -159,7 +159,6 @@ void checkFirstTime(bool reset)
 static void resetConf(void)
 {
     int i;
-    const int8_t default_align[3][3] = { /* GYRO */ { 0, 0, 0 }, /* ACC */ { 0, 0, 0 }, /* MAG */ { -2, -3, 1 } };
 
     // Clear all configuration
     memset(&mcfg, 0, sizeof(master_t));
@@ -178,15 +177,18 @@ static void resetConf(void)
     mcfg.accZero[0] = 0;
     mcfg.accZero[1] = 0;
     mcfg.accZero[2] = 0;
-    memcpy(&mcfg.align, default_align, sizeof(mcfg.align));
+    mcfg.gyro_align = ALIGN_DEFAULT;
+    mcfg.acc_align = ALIGN_DEFAULT;
+    mcfg.mag_align = ALIGN_DEFAULT;
     mcfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    mcfg.yaw_control_direction = 1;
     mcfg.moron_threshold = 32;
     mcfg.gyro_smoothing_factor = 0x00141403;     // default factors of 20, 20, 3 for R/P/Y
     mcfg.vbatscale = 110;
     mcfg.vbatmaxcellvoltage = 43;
     mcfg.vbatmincellvoltage = 33;
     mcfg.power_adc_channel = 0;
-    mcfg.spektrum_hires = 0;
+    mcfg.serialrx_type = 0;
     mcfg.midrc = 1500;
     mcfg.mincheck = 1100;
     mcfg.maxcheck = 1900;
@@ -207,6 +209,7 @@ static void resetConf(void)
     // serial (USART1) baudrate
     mcfg.serial_baudrate = 115200;
     mcfg.looptime = 3500;
+    mcfg.rssi_aux_channel = 0;
 
     cfg.pidController = 0;
     cfg.P8[ROLL] = 40;
@@ -274,6 +277,7 @@ static void resetConf(void)
 
     // servos
     cfg.yaw_direction = 1;
+    cfg.tri_unarmed_servo = 1;
     cfg.tri_yaw_middle = 1500;
     cfg.tri_yaw_min = 1020;
     cfg.tri_yaw_max = 2000;

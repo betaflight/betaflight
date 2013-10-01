@@ -179,7 +179,7 @@ typedef struct config_t {
     uint8_t yawdeadband;                    // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
     uint8_t alt_hold_throttle_neutral;      // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
     uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_throttle_neutral; when enabled, altitude changes slowly proportional to stick movement
-    uint8_t throttle_angle_correction;      // 
+    uint8_t throttle_angle_correction;      //
 
     // Failsafe related configuration
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
@@ -189,6 +189,7 @@ typedef struct config_t {
 
     // mixer-related configuration
     int8_t yaw_direction;
+    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
     uint16_t tri_yaw_middle;                // tail servo center pos. - use this for initial trim
     uint16_t tri_yaw_min;                   // tail servo min
     uint16_t tri_yaw_max;                   // tail servo max
@@ -227,7 +228,7 @@ typedef struct config_t {
     uint16_t ap_mode;                       // Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks, creating a deadspan for GPS
 } config_t;
 
-// System-wide 
+// System-wide
 typedef struct master_t {
     uint8_t version;
     uint16_t size;
@@ -250,7 +251,10 @@ typedef struct master_t {
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
 
     // global sensor-related stuff
-    int8_t align[3][3];                     // acc, gyro, mag alignment (ex: with sensor output of X, Y, Z, align of 1 -3 2 would return X, -Z, Y)
+    sensor_align_e gyro_align;              // gyro alignment
+    sensor_align_e acc_align;               // acc alignment
+    sensor_align_e mag_align;               // mag alignment
+    int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
@@ -269,17 +273,18 @@ typedef struct master_t {
 
     // Radio/ESC-related configuration
     uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
-    uint8_t spektrum_hires;                 // spektrum high-resolution y/n (1024/2048bit)
+    uint8_t serialrx_type;                  // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_SERIALRX first.
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
     uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
 
+    uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
+
     // gps-related stuff
     uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2+ ??
     uint32_t gps_baudrate;                  // GPS baudrate
 
-    // serial(uart1) baudrate
     uint32_t serial_baudrate;
 
     config_t profile[3];                    // 3 separate profiles
@@ -330,7 +335,7 @@ extern int16_t debug[4];
 extern int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
 extern int32_t accSum[3];
 extern uint16_t acc_1G;
-extern uint32_t accTimeSum; 
+extern uint32_t accTimeSum;
 extern int accSumCount;
 extern uint32_t currentTime;
 extern uint32_t previousTime;
@@ -339,10 +344,9 @@ extern uint16_t calibratingA;
 extern uint16_t calibratingB;
 extern uint16_t calibratingG;
 extern int16_t heading;
-extern int16_t annex650_overrun_count;
 extern int32_t baroPressure;
 extern int32_t baroTemperature;
-extern int32_t baroPressureSum;
+extern uint32_t baroPressureSum;
 extern int32_t BaroAlt;
 extern int32_t sonarAlt;
 extern int32_t EstAlt;
@@ -444,8 +448,12 @@ void featureClearAll(void);
 uint32_t featureMask(void);
 
 // spektrum
-void spektrumInit(void);
+void spektrumInit(rcReadRawDataPtr *callback);
 bool spektrumFrameComplete(void);
+
+// sbus
+void sbusInit(rcReadRawDataPtr *callback);
+bool sbusFrameComplete(void);
 
 // buzzer
 void buzzer(uint8_t warn_vbat);

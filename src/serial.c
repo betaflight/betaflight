@@ -1,7 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-// Multiwii Serial Protocol 0 
+// Multiwii Serial Protocol 0
 #define MSP_VERSION              0
 #define PLATFORM_32BIT           ((uint32_t)1 << 31)
 
@@ -60,7 +60,7 @@
 struct box_t {
     const uint8_t boxIndex;         // this is from boxnames enum
     const char *boxName;            // GUI-readable box name
-    const uint8_t permanentId;      // 
+    const uint8_t permanentId;      //
 } boxes[] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
@@ -120,7 +120,7 @@ const uint8_t boxids[] = {      // permanent IDs associated to boxes. This way, 
     4,                          // "VARIO;"
     5,                          // "MAG;"
     6,                          // "HEADFREE;"
-    7,                          // "HEADADJ;"  
+    7,                          // "HEADADJ;"
     8,                          // "CAMSTAB;"
     9,                          // "CAMTRIG;"
     10,                         // "GPS HOME;"
@@ -157,16 +157,16 @@ void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 8;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 16;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 24;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
 }
 
@@ -174,16 +174,16 @@ void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 8 & 0xff;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
 }
 
 void serialize8(uint8_t a)
 {
-    uartWrite(core.mainport, a);
+    serialWrite(core.mainport, a);
     checksum ^= a;
 }
 
@@ -251,7 +251,7 @@ void serializeBoxNamesReply(void)
                 strcat(buf, boxes[i].boxName);
         }
     }
-    
+
     headSerialReply(strlen(buf));
     for (c = buf; *c; c++)
         serialize8(*c);
@@ -561,7 +561,7 @@ static void evaluateCommand(void)
         serialize32(lon);
         serialize32(AltHold);           // altitude (cm) will come here -- temporary implementation to test feature with apps
         serialize16(0);                 // heading  will come here (deg)
-        serialize16(0);                 // time to stay (ms) will come here 
+        serialize16(0);                 // time to stay (ms) will come here
         serialize8(0);                  // nav flag will come here
         break;
     case MSP_SET_WP:
@@ -672,14 +672,14 @@ void serialCom(void)
         HEADER_CMD,
     } c_state = IDLE;
 
-    // in cli mode, all uart stuff goes to here. enter cli mode by sending #
+    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
         cliProcess();
         return;
     }
 
-    while (isUartAvailable(core.mainport)) {
-        c = uartRead(core.mainport);
+    while (serialTotalBytesWaiting(core.mainport)) {
+        c = serialRead(core.mainport);
 
         if (c_state == IDLE) {
             c_state = (c == '$') ? HEADER_START : IDLE;
@@ -715,7 +715,7 @@ void serialCom(void)
             c_state = IDLE;
         }
     }
-    if (!cliMode && !isUartAvailable(core.telemport) && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
+    if (!cliMode && !serialTotalBytesWaiting(core.telemport) && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
         sendTelemetry();
         return;
     }

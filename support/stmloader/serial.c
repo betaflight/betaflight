@@ -40,14 +40,14 @@ serialStruct_t *initSerial(const char *port, unsigned int baud, char ctsRts) {
 
 	if (s->fd == -1) {
 		free(s);
-		return 0;   
+		return 0;
 	}
 
 	fcntl(s->fd, F_SETFL, 0);    // clear all flags on descriptor, enable direct I/O
 
 //	bzero(&options, sizeof(options));
 //	memset(&options, 0, sizeof(options));
-	tcgetattr(s->fd, &options);      
+	tcgetattr(s->fd, &options);
 
 #ifdef B921600
 	switch (baud) {
@@ -103,8 +103,8 @@ serialStruct_t *initSerial(const char *port, unsigned int baud, char ctsRts) {
 	if (!ctsRts)
 		options.c_cflag &= ~(CRTSCTS);	// turn off hardware flow control
 
-	// set the new port options   
-	tcsetattr(s->fd, TCSANOW, &options);      
+	// set the new port options
+	tcsetattr(s->fd, TCSANOW, &options);
 
 	return s;
 }
@@ -120,22 +120,22 @@ void serialFree(serialStruct_t *s) {
 void serialNoParity(serialStruct_t *s) {
 	struct termios options;
 
-	tcgetattr(s->fd, &options);   // read serial port options   
+	tcgetattr(s->fd, &options);   // read serial port options
 
-	options.c_cflag &= ~(PARENB | CSTOPB);  
+	options.c_cflag &= ~(PARENB | CSTOPB);
 
-	tcsetattr(s->fd, TCSANOW, &options);      
+	tcsetattr(s->fd, TCSANOW, &options);
 }
 
 void serialEvenParity(serialStruct_t *s) {
 	struct termios options;
 
-	tcgetattr(s->fd, &options);   // read serial port options   
+	tcgetattr(s->fd, &options);   // read serial port options
 
 	options.c_cflag |= (PARENB);
-	options.c_cflag &= ~(PARODD | CSTOPB);  
+	options.c_cflag &= ~(PARODD | CSTOPB);
 
-	tcsetattr(s->fd, TCSANOW, &options);      
+	tcsetattr(s->fd, TCSANOW, &options);
 }
 
 void serialWriteChar(serialStruct_t *s, unsigned char c) {

@@ -325,7 +325,7 @@ bool pwmInit(drv_pwm_config_t *init)
 
 #ifdef SOFTSERIAL_19200_LOOPBACK
         // skip softSerial ports
-        if ((port == PWM5 || port == PWM6))
+        if ((port == PWM5 || port == PWM6 || port == PWM7 || port == PWM8))
             continue;
 #endif
 
