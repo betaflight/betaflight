@@ -19,7 +19,7 @@ static void _putc(void *p, char c)
 int fputc(int c, FILE *f)
 {
     // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isUartTransmitEmpty(core.mainport));
+    while (!isSerialTransmitBufferEmpty(core.mainport));
     serialWrite(core.mainport, c);
     return c;
 }

@@ -672,6 +672,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\drv_bma280.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_serial.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1517,6 +1522,11 @@
               <FileName>drv_bma280.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_bma280.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_serial.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2547,6 +2557,11 @@
               <FileName>drv_bma280.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\drv_bma280.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\drv_serial.c</FilePath>
             </File>
           </Files>
         </Group>
