@@ -12,15 +12,15 @@ extern uint16_t pwmReadRawRC(uint8_t chan);
 // gcc/GNU version
 static void _putc(void *p, char c)
 {
-    uartWrite(core.mainport, c);
+    serialWrite(core.mainport, c);
 }
 #else
 // keil/armcc version
 int fputc(int c, FILE *f)
 {
     // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isUartTransmitEmpty(core.mainport));
-    uartWrite(core.mainport, c);
+    while (!isSerialTransmitBufferEmpty(core.mainport));
+    serialWrite(core.mainport, c);
     return c;
 }
 #endif
@@ -129,13 +129,11 @@ int main(void)
     if (feature(FEATURE_VBAT))
         batteryInit();
 
-#ifdef SOFTSERIAL_19200_LOOPBACK
-
-    serialInit(19200);
-    setupSoftSerial1(19200);
-    uartPrint(core.mainport, "LOOPBACK 19200 ENABLED");
-#else
     serialInit(mcfg.serial_baudrate);
+#ifdef SOFTSERIAL_19200_LOOPBACK
+    setupSoftSerial1(19200);
+    serialPort_t* loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+    serialPrint(loopbackPort, "LOOPBACK 19200 ENABLED\r\n");
 #endif
 
     previousTime = micros();
@@ -149,10 +147,11 @@ int main(void)
     while (1) {
         loop();
 #ifdef SOFTSERIAL_19200_LOOPBACK
-        while (serialAvailable(&softSerialPorts[0])) {
+        while (serialTotalBytesWaiting(loopbackPort)) {
 
-            uint8_t b = serialReadByte(&softSerialPorts[0]);
-            uartWrite(core.mainport, b);
+            uint8_t b = serialRead(loopbackPort);
+            serialWrite(loopbackPort, b);
+            //serialWrite(core.mainport, b);
         };
 #endif
     }

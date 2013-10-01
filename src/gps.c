@@ -10,6 +10,9 @@ const uint32_t init_speed[5] = { 9600, 19200, 38400, 57600, 115200 };
 static void GPS_NewData(uint16_t c);
 static void gpsPrint(const char *str);
 
+#define UBX_INIT_STRING_INDEX 0
+#define MTK_INIT_STRING_INDEX 4
+
 static const char * const gpsInitStrings[] = {
     "$PUBX,41,1,0003,0001,19200,0*23\r\n",      // UBX0..3
     "$PUBX,41,1,0003,0001,38400,0*26\r\n",
@@ -45,13 +48,15 @@ void gpsInit(uint32_t baudrate)
     core.gpsport = uartOpen(USART2, GPS_NewData, baudrate, MODE_RXTX);
 
     if (mcfg.gps_type == GPS_UBLOX)
-        offset = 0;
+        offset = UBX_INIT_STRING_INDEX;
     else if (mcfg.gps_type == GPS_MTK)
-        offset = 4;
+        offset = MTK_INIT_STRING_INDEX;
 
     if (mcfg.gps_type != GPS_NMEA) {
         for (i = 0; i < 5; i++) {
-            uartChangeBaud(core.gpsport, init_speed[i]);
+            serialSetBaudRate(core.gpsport, init_speed[i]);
+            // verify the requested change took effect.
+            baudrate = serialGetBaudRate(core.gpsport);
             switch (baudrate) {
                 case 19200:
                     gpsPrint(gpsInitStrings[offset]);
@@ -70,10 +75,10 @@ void gpsInit(uint32_t baudrate)
         }
     }
 
-    uartChangeBaud(core.gpsport, baudrate);
+    serialSetBaudRate(core.gpsport, baudrate);
     if (mcfg.gps_type == GPS_UBLOX) {
         for (i = 0; i < sizeof(ubloxInit); i++) {
-            uartWrite(core.gpsport, ubloxInit[i]); // send ubx init binary
+            serialWrite(core.gpsport, ubloxInit[i]); // send ubx init binary
             delay(4);
         }
     } else if (mcfg.gps_type == GPS_MTK) {
@@ -90,13 +95,13 @@ void gpsInit(uint32_t baudrate)
 static void gpsPrint(const char *str)
 {
     while (*str) {
-        uartWrite(core.gpsport, *str);
+        serialWrite(core.gpsport, *str);
         if (mcfg.gps_type == GPS_UBLOX)
             delay(4);
         str++;
     }
     // wait to send all
-    while (!isUartTransmitEmpty(core.gpsport));
+    while (!isSerialTransmitBufferEmpty(core.gpsport));
     delay(30);
 }
 

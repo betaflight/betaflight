@@ -157,16 +157,16 @@ void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 8;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 16;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 24;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
 }
 
@@ -174,16 +174,16 @@ void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
     t = a >> 8 & 0xff;
-    uartWrite(core.mainport, t);
+    serialWrite(core.mainport, t);
     checksum ^= t;
 }
 
 void serialize8(uint8_t a)
 {
-    uartWrite(core.mainport, a);
+    serialWrite(core.mainport, a);
     checksum ^= a;
 }
 
@@ -682,14 +682,14 @@ void serialCom(void)
         HEADER_CMD,
     } c_state = IDLE;
 
-    // in cli mode, all uart stuff goes to here. enter cli mode by sending #
+    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
         cliProcess();
         return;
     }
 
-    while (isUartAvailable(core.mainport)) {
-        c = uartRead(core.mainport);
+    while (serialTotalBytesWaiting(core.mainport)) {
+        c = serialRead(core.mainport);
 
         if (c_state == IDLE) {
             c_state = (c == '$') ? HEADER_START : IDLE;
@@ -725,7 +725,7 @@ void serialCom(void)
             c_state = IDLE;
         }
     }
-    if (!cliMode && !isUartAvailable(core.telemport) && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
+    if (!cliMode && !serialTotalBytesWaiting(core.telemport) && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
         sendTelemetry();
         return;
     }
