@@ -100,7 +100,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 {
     DMA_InitTypeDef DMA_InitStructure;
     USART_InitTypeDef USART_InitStructure;
-
+    
     uartPort_t *s = NULL;
 
     if (USARTx == USART1)
@@ -263,7 +263,7 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
 }
 
 const struct serialPortVTable uartVTable[] = {
-{
+    { 
         uartWrite, 
         uartTotalBytesWaiting,
         uartRead,

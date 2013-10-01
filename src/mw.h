@@ -113,9 +113,6 @@ enum {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
-#define SERVO_NORMAL    (1)
-#define SERVO_REVERSE   (-1)
-
 // Custom mixer data per motor
 typedef struct motorMixer_t {
     float throttle;
@@ -132,10 +129,10 @@ typedef struct mixer_t {
 } mixer_t;
 
 typedef struct servoParam_t {
-    int8_t direction;                   // servo direction
-    uint16_t middle;                    // servo middle
-    uint16_t min;                       // servo min
-    uint16_t max;                       // servo max
+    int16_t min;                            // servo min
+    int16_t max;                            // servo max
+    int16_t middle;                         // servo middle
+    int8_t rate;                            // range [-100;+100] ; can be used to ajust a rate 0-100% and a direction
 } servoParam_t;
 
 enum {
@@ -180,6 +177,9 @@ typedef struct config_t {
     uint8_t alt_hold_throttle_neutral;      // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
     uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_throttle_neutral; when enabled, altitude changes slowly proportional to stick movement
     uint8_t throttle_angle_correction;      //
+
+    // Servo-related stuff
+    servoParam_t servoConf[8];              // servo configuration
 
     // Failsafe related configuration
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)

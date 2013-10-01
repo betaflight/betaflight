@@ -159,6 +159,7 @@ void checkFirstTime(bool reset)
 static void resetConf(void)
 {
     int i;
+    int8_t servoRates[8] = { 30, 30, 100, 100, 100, 100, 100, 100 };
 
     // Clear all configuration
     memset(&mcfg, 0, sizeof(master_t));
@@ -276,6 +277,13 @@ static void resetConf(void)
     cfg.failsafe_detect_threshold = 985;    // any of first 4 channels below this value will trigger failsafe
 
     // servos
+    for (i = 0; i < 8; i++) {
+        cfg.servoConf[i].min = 1020;
+        cfg.servoConf[i].max = 2000;
+        cfg.servoConf[i].middle = 1500;
+        cfg.servoConf[i].rate = servoRates[i];
+    }
+
     cfg.yaw_direction = 1;
     cfg.tri_unarmed_servo = 1;
     cfg.tri_yaw_middle = 1500;
