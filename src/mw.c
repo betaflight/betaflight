@@ -541,6 +541,8 @@ void loop(void)
                         GPS_reset_home_position();
                     if (sensors(SENSOR_BARO))
                         calibratingB = 10; // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
+                    if (!sensors(SENSOR_MAG))
+                        heading = 0; // reset heading to zero after gyro calibration
                 // Inflight ACC Calibration
                 } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
                     if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
