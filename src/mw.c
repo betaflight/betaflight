@@ -435,28 +435,25 @@ void loop(void)
     uint16_t auxState = 0;
     static uint8_t GPSNavReset = 1;
     bool isThrottleLow = false;
+    bool rcReady = false;
 
     // calculate rc stuff from serial-based receivers (spek/sbus)
     if (feature(FEATURE_SERIALRX)) {
-        bool ready = false;
         switch (mcfg.serialrx_type) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
-                ready = spektrumFrameComplete();
+                rcReady = spektrumFrameComplete();
                 break;
             case SERIALRX_SBUS:
-                ready = sbusFrameComplete();
+                rcReady = sbusFrameComplete();
                 break;
         }
-        if (ready)
-            computeRC();
     }
 
-    if ((int32_t)(currentTime - rcTime) >= 0) { // 50Hz
+    if (((int32_t)(currentTime - rcTime) >= 0) || rcReady) { // 50Hz or data driven
+        rcReady = false;
         rcTime = currentTime + 20000;
-        // TODO clean this up. computeRC should handle this check
-        if (!feature(FEATURE_SERIALRX))
-            computeRC();
+        computeRC();
 
         // in 3D mode, we need to be able to disarm by switch at any time
         if (feature(FEATURE_3D)) {
