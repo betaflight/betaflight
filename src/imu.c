@@ -222,11 +222,31 @@ void accSum_reset(void)
     accTimeSum = 0;
 }
 
+// baseflight calculation by Luggi09 originates from arducopter
+static int16_t calculateHeading(t_fp_vector *vec)
+{
+    int16_t head;
+
+    float cosineRoll = cosf(anglerad[ROLL]);
+    float sineRoll = sinf(anglerad[ROLL]);
+    float cosinePitch = cosf(anglerad[PITCH]);
+    float sinePitch = sinf(anglerad[PITCH]);
+    float Xh = vec->A[X] * cosinePitch + vec->A[Y] * sineRoll * sinePitch + vec->A[Z] * sinePitch * cosineRoll;
+    float Yh = vec->A[Y] * cosineRoll - vec->A[Z] * sineRoll;
+    float hd = (atan2f(Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
+    head = lrintf(hd);
+    if (head < 0)
+        head += 360;
+
+    return head;
+}
+
 static void getEstimatedAttitude(void)
 {
     uint32_t axis;
     int32_t accMag = 0;
     static t_fp_vector EstM;
+    static t_fp_vector EstN = { .A = { 1000.0f, 0.0f, 0.0f } };
     static float accLPF[3];
     static uint32_t previousT;
     uint32_t currentT = micros();
@@ -252,6 +272,8 @@ static void getEstimatedAttitude(void)
     rotateV(&EstG.V, deltaGyroAngle);
     if (sensors(SENSOR_MAG))
         rotateV(&EstM.V, deltaGyroAngle);
+    else
+        rotateV(&EstN.V, deltaGyroAngle);
 
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
@@ -277,28 +299,16 @@ static void getEstimatedAttitude(void)
     angle[ROLL] = lrintf(anglerad[ROLL] * (1800.0f / M_PI));
     angle[PITCH] = lrintf(anglerad[PITCH] * (1800.0f / M_PI));
 
-#ifdef MAG
-    if (sensors(SENSOR_MAG)) {
-        // baseflight calculation by Luggi09 originates from arducopter
-        float cosineRoll = cosf(anglerad[ROLL]);
-        float sineRoll = sinf(anglerad[ROLL]);
-        float cosinePitch = cosf(anglerad[PITCH]);
-        float sinePitch = sinf(anglerad[PITCH]);
-        float Xh = EstM.A[X] * cosinePitch + EstM.A[Y] * sineRoll * sinePitch + EstM.A[Z] * sinePitch * cosineRoll;
-        float Yh = EstM.A[Y] * cosineRoll - EstM.A[Z] * sineRoll;
-        float hd = (atan2f(Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
-        heading = lrintf(hd);
-        if (heading < 0)
-            heading += 360;
-    }
-#endif
+    if (sensors(SENSOR_MAG))
+        heading = calculateHeading(&EstM);
+    else
+        heading = calculateHeading(&EstN);
 
     acc_calc(deltaT); // rotate acc vector into earth frame
 
     if (cfg.throttle_angle_correction) {
         int cosZ = EstG.V.Z / acc_1G * 100.0f;
         throttleAngleCorrection = cfg.throttle_angle_correction * constrain(100 - cosZ, 0, 100) / 8;
-
     }
 }
 

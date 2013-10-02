@@ -606,7 +606,7 @@ static void evaluateCommand(void)
         break;
     case MSP_ACC_CALIBRATION:
         if (!f.ARMED)
-            calibratingA = 400;
+            calibratingA = CALIBRATING_ACC_CYCLES;
         headSerialReply(0);
         break;
     case MSP_MAG_CALIBRATION:

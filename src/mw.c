@@ -536,7 +536,7 @@ void loop(void)
                 i = 0;
                 // GYRO calibration
                 if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
-                    calibratingG = 1000;
+                    calibratingG = CALIBRATING_GYRO_CYCLES;
                     if (feature(FEATURE_GPS))
                         GPS_reset_home_position();
                     if (sensors(SENSOR_BARO))
@@ -578,7 +578,7 @@ void loop(void)
                     mwArm();
                 // Calibrating Acc
                 else if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE)
-                    calibratingA = 400;
+                    calibratingA = CALIBRATING_ACC_CYCLES;
                 // Calibrating Mag
                 else if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE)
                     f.CALIBRATE_MAG = 1;

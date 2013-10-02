@@ -141,6 +141,10 @@ enum {
     ALIGN_MAG = 2
 };
 
+#define CALIBRATING_GYRO_CYCLES             1000
+#define CALIBRATING_ACC_CYCLES              400
+#define CALIBRATING_BARO_CYCLES             200
+
 typedef struct config_t {
     uint8_t pidController;                  // 0 = multiwii original, 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671
     uint8_t P8[PIDITEMS];
