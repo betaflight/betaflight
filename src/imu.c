@@ -388,7 +388,7 @@ int getEstimatedAltitude(void)
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
     vel = vel * cfg.baro_cf_vel + baroVel * (1 - cfg.baro_cf_vel);
-    constrain(vel, -1000, 1000);                // limit max velocity to +/- 10m/s (36km/h)
+    vel = constrain(vel, -1000, 1000);                // limit max velocity to +/- 10m/s (36km/h)
 
     // D
     vel_tmp = vel;

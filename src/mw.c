@@ -87,14 +87,17 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 void annexCode(void)
 {
     static uint32_t calibratedAccTime;
-    uint16_t tmp, tmp2;
-    static uint8_t buzzerFreq;  //delay between buzzer ring
+    int32_t tmp, tmp2;
+    int32_t axis, prop1, prop2;
+    static uint8_t buzzerFreq;  // delay between buzzer ring
+
+    // vbat shit
     static uint8_t vbatTimer = 0;
-    uint8_t axis, prop1, prop2;
     static uint8_t ind = 0;
     uint16_t vbatRaw = 0;
     static uint16_t vbatRawArray[8];
-    uint8_t i;
+
+    int i;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
     if (rcData[THROTTLE] < BREAKPOINT) {
@@ -123,7 +126,6 @@ void annexCode(void)
             prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
             prop1 = (uint16_t) prop1 *prop2 / 100;
         } else {                // YAW
-            tmp *= -mcfg.yaw_control_direction; //change control direction for yaw needed with new gyro orientation
             if (cfg.yawdeadband) {
                 if (tmp > cfg.yawdeadband) {
                     tmp -= cfg.yawdeadband;
@@ -131,12 +133,12 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
-            rcCommand[axis] = tmp;
-            prop1 = 100 - (uint16_t) cfg.yawRate * tmp / 500;
+            rcCommand[axis] = tmp * -mcfg.yaw_control_direction;
+            prop1 = 100 - (uint16_t)cfg.yawRate * abs(tmp) / 500;
         }
-        dynP8[axis] = (uint16_t) cfg.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t) cfg.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t) cfg.D8[axis] * prop1 / 100;
+        dynP8[axis] = (uint16_t)cfg.P8[axis] * prop1 / 100;
+        dynI8[axis] = (uint16_t)cfg.I8[axis] * prop1 / 100;
+        dynD8[axis] = (uint16_t)cfg.D8[axis] * prop1 / 100;
         if (rcData[axis] < mcfg.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
