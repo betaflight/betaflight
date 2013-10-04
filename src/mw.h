@@ -461,6 +461,7 @@ bool sbusFrameComplete(void);
 
 // buzzer
 void buzzer(uint8_t warn_vbat);
+void systemBeep(bool onoff);
 
 // cli
 void cliProcess(void);

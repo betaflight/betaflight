@@ -687,7 +687,7 @@ void loop(void)
 #endif
 
 #ifdef  MAG
-        if (sensors(SENSOR_MAG)) {
+        if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
             if (rcOptions[BOXMAG]) {
                 if (!f.MAG_MODE) {
                     f.MAG_MODE = 1;
