@@ -87,14 +87,17 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 void annexCode(void)
 {
     static uint32_t calibratedAccTime;
-    uint16_t tmp, tmp2;
-    static uint8_t buzzerFreq;  //delay between buzzer ring
+    int32_t tmp, tmp2;
+    int32_t axis, prop1, prop2;
+    static uint8_t buzzerFreq;  // delay between buzzer ring
+
+    // vbat shit
     static uint8_t vbatTimer = 0;
-    uint8_t axis, prop1, prop2;
     static uint8_t ind = 0;
     uint16_t vbatRaw = 0;
     static uint16_t vbatRawArray[8];
-    uint8_t i;
+
+    int i;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
     if (rcData[THROTTLE] < BREAKPOINT) {
@@ -123,7 +126,6 @@ void annexCode(void)
             prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
             prop1 = (uint16_t) prop1 *prop2 / 100;
         } else {                // YAW
-            tmp *= -mcfg.yaw_control_direction; //change control direction for yaw needed with new gyro orientation
             if (cfg.yawdeadband) {
                 if (tmp > cfg.yawdeadband) {
                     tmp -= cfg.yawdeadband;
@@ -131,12 +133,12 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
-            rcCommand[axis] = tmp;
-            prop1 = 100 - (uint16_t) cfg.yawRate * tmp / 500;
+            rcCommand[axis] = tmp * -mcfg.yaw_control_direction;
+            prop1 = 100 - (uint16_t)cfg.yawRate * abs(tmp) / 500;
         }
-        dynP8[axis] = (uint16_t) cfg.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t) cfg.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t) cfg.D8[axis] * prop1 / 100;
+        dynP8[axis] = (uint16_t)cfg.P8[axis] * prop1 / 100;
+        dynI8[axis] = (uint16_t)cfg.I8[axis] * prop1 / 100;
+        dynD8[axis] = (uint16_t)cfg.D8[axis] * prop1 / 100;
         if (rcData[axis] < mcfg.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
@@ -435,28 +437,25 @@ void loop(void)
     uint16_t auxState = 0;
     static uint8_t GPSNavReset = 1;
     bool isThrottleLow = false;
+    bool rcReady = false;
 
     // calculate rc stuff from serial-based receivers (spek/sbus)
     if (feature(FEATURE_SERIALRX)) {
-        bool ready = false;
         switch (mcfg.serialrx_type) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
-                ready = spektrumFrameComplete();
+                rcReady = spektrumFrameComplete();
                 break;
             case SERIALRX_SBUS:
-                ready = sbusFrameComplete();
+                rcReady = sbusFrameComplete();
                 break;
         }
-        if (ready)
-            computeRC();
     }
 
-    if ((int32_t)(currentTime - rcTime) >= 0) { // 50Hz
+    if (((int32_t)(currentTime - rcTime) >= 0) || rcReady) { // 50Hz or data driven
+        rcReady = false;
         rcTime = currentTime + 20000;
-        // TODO clean this up. computeRC should handle this check
-        if (!feature(FEATURE_SERIALRX))
-            computeRC();
+        computeRC();
 
         // in 3D mode, we need to be able to disarm by switch at any time
         if (feature(FEATURE_3D)) {
@@ -539,11 +538,13 @@ void loop(void)
                 i = 0;
                 // GYRO calibration
                 if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
-                    calibratingG = 1000;
+                    calibratingG = CALIBRATING_GYRO_CYCLES;
                     if (feature(FEATURE_GPS))
                         GPS_reset_home_position();
                     if (sensors(SENSOR_BARO))
                         calibratingB = 10; // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
+                    if (!sensors(SENSOR_MAG))
+                        heading = 0; // reset heading to zero after gyro calibration
                 // Inflight ACC Calibration
                 } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
                     if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
@@ -581,7 +582,7 @@ void loop(void)
                     mwArm();
                 // Calibrating Acc
                 else if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE)
-                    calibratingA = 400;
+                    calibratingA = CALIBRATING_ACC_CYCLES;
                 // Calibrating Mag
                 else if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE)
                     f.CALIBRATE_MAG = 1;
@@ -686,7 +687,7 @@ void loop(void)
 #endif
 
 #ifdef  MAG
-        if (sensors(SENSOR_MAG)) {
+        if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
             if (rcOptions[BOXMAG]) {
                 if (!f.MAG_MODE) {
                     f.MAG_MODE = 1;

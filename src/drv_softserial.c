@@ -17,7 +17,7 @@ void onSerialTimer(uint8_t portIndex, uint16_t capture);
 
 uint8_t readRxSignal(softSerial_t *softSerial)
 {
-    return digitalIn(softSerial->rxTimerHardware->gpio, softSerial->rxTimerHardware->pin);
+    return !(digitalIn(softSerial->rxTimerHardware->gpio, softSerial->rxTimerHardware->pin) == 0);
 }
 
 void setTxSignal(softSerial_t *softSerial, uint8_t state)
