@@ -80,8 +80,9 @@ int main(void)
 
     pwmInit(&pwm_params);
 
-    // configure PWM/CPPM read function. spektrum or sbus below will override that
+    // configure PWM/CPPM read function and max number of channels. spektrum or sbus below will override both of these, if enabled
     rcReadRawFunc = pwmReadRawRC;
+    core.numRCChannels = MAX_INPUTS;
 
     if (feature(FEATURE_SERIALRX)) {
         switch (mcfg.serialrx_type) {

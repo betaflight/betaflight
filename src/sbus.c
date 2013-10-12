@@ -26,6 +26,7 @@ void sbusInit(rcReadRawDataPtr *callback)
     core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, MODE_RX);
     if (callback)
         *callback = sbusReadRawRC;
+    core.numRCChannels = SBUS_MAX_CHANNEL;
 }
 
 struct sbus_dat
