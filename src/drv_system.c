@@ -6,10 +6,12 @@ static volatile uint32_t usTicks = 0;
 static volatile uint32_t sysTickUptime = 0;
 // from system_stm32f10x.c
 void SetSysClock(void);
+#ifdef BUZZER
 void systemBeep(bool onoff);
 static void beepRev4(bool onoff);
 static void beepRev5(bool onoff);
 void (* systemBeepPtr)(bool onoff) = NULL;
+#endif
 
 static void cycleCounterInit(void)
 {
@@ -87,16 +89,17 @@ void systemInit(void)
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
 
+#ifdef BUZZER
     // Configure gpio
     // rev5 needs inverted beeper. oops.
     if (hse_value == 12000000)
         systemBeepPtr = beepRev5;
     else
         systemBeepPtr = beepRev4;
-
+    BEEP_OFF;
+#endif
     LED0_OFF;
     LED1_OFF;
-    BEEP_OFF;
 
     for (i = 0; i < gpio_count; i++) {
         if (hse_value == 12000000 && gpio_setup[i].cfg.mode == Mode_Out_OD)
@@ -188,6 +191,7 @@ void systemReset(bool toBootloader)
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
 }
 
+#ifdef BUZZER
 static void beepRev4(bool onoff)
 {
     if (onoff) {
@@ -205,56 +209,11 @@ static void beepRev5(bool onoff)
         digitalLo(BEEP_GPIO, BEEP_PIN);
     }
 }
+#endif
 
 void systemBeep(bool onoff)
 {
+#ifdef BUZZER
     systemBeepPtr(onoff);
-}
-
-void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation)
-{
-    switch (rotation) {
-        case CW0_DEG:
-            dest[X] = src[X];
-            dest[Y] = src[Y];
-            dest[Z] = src[Z];
-            break;
-        case CW90_DEG:
-            dest[X] = src[Y];
-            dest[Y] = -src[X];
-            dest[Z] = src[Z];
-            break;
-        case CW180_DEG:
-            dest[X] = -src[X];
-            dest[Y] = -src[Y];
-            dest[Z] = src[Z];
-            break;
-        case CW270_DEG:
-            dest[X] = -src[Y];
-            dest[Y] = src[X];
-            dest[Z] = src[Z];
-            break;
-        case CW0_DEG_FLIP:
-            dest[X] = -src[X];
-            dest[Y] = src[Y];
-            dest[Z] = -src[Z];
-            break;
-        case CW90_DEG_FLIP:
-            dest[X] = src[Y];
-            dest[Y] = src[X];
-            dest[Z] = -src[Z];
-            break;
-        case CW180_DEG_FLIP:
-            dest[X] = src[X];
-            dest[Y] = -src[Y];
-            dest[Z] = -src[Z];
-            break;
-        case CW270_DEG_FLIP:
-            dest[X] = -src[Y];
-            dest[Y] = -src[X];
-            dest[Z] = -src[Z];
-            break;
-        default:
-            break;
-    }
+#endif
 }
