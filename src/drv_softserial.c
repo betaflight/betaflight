@@ -17,12 +17,16 @@ void onSerialTimer(uint8_t portIndex, uint16_t capture);
 
 uint8_t readRxSignal(softSerial_t *softSerial)
 {
-    return !(digitalIn(softSerial->rxTimerHardware->gpio, softSerial->rxTimerHardware->pin) == 0);
+    uint8_t invertedSignal = (digitalIn(softSerial->rxTimerHardware->gpio, softSerial->rxTimerHardware->pin) == 0);
+    if (softSerial->isInverted) {
+          return invertedSignal;
+    }
+    return !invertedSignal;
 }
 
 void setTxSignal(softSerial_t *softSerial, uint8_t state)
 {
-    if (state) {
+    if ((state == 1 && softSerial->isInverted == false) || (state == 0 && softSerial->isInverted == true)) {
         digitalHi(softSerial->txTimerHardware->gpio, softSerial->txTimerHardware->pin);
     } else {
         digitalLo(softSerial->txTimerHardware->gpio, softSerial->txTimerHardware->pin);
@@ -82,7 +86,7 @@ void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)
     softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_Out_PP);
 }
 
-void setupSoftSerial1(uint32_t baud)
+void setupSoftSerial1(uint32_t baud, uint8_t inverted)
 {
     int portIndex = 0;
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
@@ -90,6 +94,7 @@ void setupSoftSerial1(uint32_t baud)
     softSerial->port.vTable = softSerialVTable;
     softSerial->port.mode = MODE_RXTX;
     softSerial->port.baudRate = baud;
+    softSerial->isInverted = inverted;
 
     softSerial->rxTimerHardware = &(timerHardware[SOFT_SERIAL_1_TIMER_RX_HARDWARE]);
     softSerial->txTimerHardware = &(timerHardware[SOFT_SERIAL_1_TIMER_TX_HARDWARE]);

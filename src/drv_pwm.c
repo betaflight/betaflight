@@ -323,11 +323,9 @@ bool pwmInit(drv_pwm_config_t *init)
         if (init->useUART && (port == PWM3 || port == PWM4))
             continue;
 
-#ifdef SOFTSERIAL_19200_LOOPBACK
         // skip softSerial ports
-        if ((port == PWM5 || port == PWM6 || port == PWM7 || port == PWM8))
+        if (init->useSoftSerial && (port == PWM5 || port == PWM6 || port == PWM7 || port == PWM8))
             continue;
-#endif
 
         // skip ADC for powerMeter if configured
         if (init->adcChannel && (init->adcChannel == port))

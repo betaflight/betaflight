@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 51;
+static const uint8_t EEPROM_CONF_VERSION = 52;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -209,6 +209,8 @@ static void resetConf(void)
     mcfg.gps_baudrate = 115200;
     // serial (USART1) baudrate
     mcfg.serial_baudrate = 115200;
+    mcfg.softserial_baudrate = 19200;
+    mcfg.softserial_inverted = 0;
     mcfg.looptime = 3500;
     mcfg.rssi_aux_channel = 0;
 
