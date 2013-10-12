@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 51;
+static const uint8_t EEPROM_CONF_VERSION = 52;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -83,7 +83,6 @@ void readEEPROM(void)
         lookupThrottleRC[i] = mcfg.minthrottle + (int32_t) (mcfg.maxthrottle - mcfg.minthrottle) * lookupThrottleRC[i] / 1000;     // [0;1000] -> [MINTHROTTLE;MAXTHROTTLE]
     }
 
-    cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max);       //REAR
     setPIDController(cfg.pidController);
     GPS_set_pids();
 }
@@ -286,32 +285,9 @@ static void resetConf(void)
 
     cfg.yaw_direction = 1;
     cfg.tri_unarmed_servo = 1;
-    cfg.tri_yaw_middle = 1500;
-    cfg.tri_yaw_min = 1020;
-    cfg.tri_yaw_max = 2000;
-
-    // flying wing
-    cfg.wing_left_min = 1020;
-    cfg.wing_left_mid = 1500;
-    cfg.wing_left_max = 2000;
-    cfg.wing_right_min = 1020;
-    cfg.wing_right_mid = 1500;
-    cfg.wing_right_max = 2000;
-    cfg.pitch_direction_l = 1;
-    cfg.pitch_direction_r = -1;
-    cfg.roll_direction_l = 1;
-    cfg.roll_direction_r = 1;
 
     // gimbal
-    cfg.gimbal_pitch_gain = 10;
-    cfg.gimbal_roll_gain = 10;
     cfg.gimbal_flags = GIMBAL_NORMAL;
-    cfg.gimbal_pitch_min = 1020;
-    cfg.gimbal_pitch_max = 2000;
-    cfg.gimbal_pitch_mid = 1500;
-    cfg.gimbal_roll_min = 1020;
-    cfg.gimbal_roll_max = 2000;
-    cfg.gimbal_roll_mid = 1500;
 
     // gps/nav stuff
     cfg.gps_wp_radius = 200;

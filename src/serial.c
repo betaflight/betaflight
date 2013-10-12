@@ -149,7 +149,6 @@ static const char pidnames[] =
 
 static uint8_t checksum, indRX, inBuf[INBUF_SIZE];
 static uint8_t cmdMSP;
-static bool guiConnected = false;
 // signal that we're in cli mode
 uint8_t cliMode = 0;
 
@@ -468,17 +467,28 @@ static void evaluateCommand(void)
             serialize16(magADC[i]);
         break;
     case MSP_SERVO:
-        headSerialReply(16);
-        for (i = 0; i < 8; i++)
-            serialize16(servo[i]);
+        s_struct((uint8_t *)&servo, 16);
         break;
     case MSP_SERVO_CONF:
-        s_struct((uint8_t *)&cfg.servoConf, 56);      // struct servoConf is 7 bytes length: min:2 / max:2 / middle:2 / rate:1    ----     8 servo =>  8x7 = 56
+        headSerialReply(56);
+        for (i = 0; i < MAX_SERVOS; i++) {
+            serialize16(cfg.servoConf[i].min);
+            serialize16(cfg.servoConf[i].max);
+            serialize16(cfg.servoConf[i].middle);
+            serialize8(cfg.servoConf[i].rate);
+        }
+        break;
+    case MSP_SET_SERVO_CONF:
+        headSerialReply(0);
+        for (i = 0; i < MAX_SERVOS; i++) {
+            cfg.servoConf[i].min = read16();
+            cfg.servoConf[i].max = read16();
+            cfg.servoConf[i].middle = read16();
+            cfg.servoConf[i].rate = read8();
+        }
         break;
     case MSP_MOTOR:
-        headSerialReply(16);
-        for (i = 0; i < 8; i++)
-            serialize16(motor[i]);
+        s_struct((uint8_t *)motor, 16);
         break;
     case MSP_RC:
         headSerialReply(16);
@@ -718,7 +728,6 @@ void serialCom(void)
             indRX = 0;
             checksum ^= c;
             c_state = HEADER_SIZE;      // the command is to follow
-            guiConnected = true;
         } else if (c_state == HEADER_SIZE) {
             cmdMSP = c;
             checksum ^= c;

@@ -4,10 +4,12 @@
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 #define BARO_TAB_SIZE_MAX   48
 
-#define  VERSION  220
+#define  VERSION  230
 
 #define LAT  0
 #define LON  1
+
+#define RC_CHANS    (18)
 
 // Serial GPS only variables
 // navigation mode
@@ -44,10 +46,8 @@ typedef enum MultiType
 
 typedef enum GimbalFlags {
     GIMBAL_NORMAL = 1 << 0,
-    GIMBAL_TILTONLY = 1 << 1,
-    GIMBAL_DISABLEAUX34 = 1 << 2,
-    GIMBAL_FORWARDAUX = 1 << 3,
-    GIMBAL_MIXTILT = 1 << 4,
+    GIMBAL_MIXTILT = 1 << 1,
+    GIMBAL_FORWARDAUX = 1 << 2,
 } GimbalFlags;
 
 /*********** RC alias *****************/
@@ -194,33 +194,9 @@ typedef struct config_t {
     // mixer-related configuration
     int8_t yaw_direction;
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
-    uint16_t tri_yaw_middle;                // tail servo center pos. - use this for initial trim
-    uint16_t tri_yaw_min;                   // tail servo min
-    uint16_t tri_yaw_max;                   // tail servo max
-
-    // flying wing related configuration
-    uint16_t wing_left_min;                 // min/mid/max servo travel
-    uint16_t wing_left_mid;
-    uint16_t wing_left_max;
-    uint16_t wing_right_min;
-    uint16_t wing_right_mid;
-    uint16_t wing_right_max;
-
-    int8_t pitch_direction_l;               // left servo - pitch orientation
-    int8_t pitch_direction_r;               // right servo - pitch orientation (opposite sign to pitch_direction_l if servos are mounted mirrored)
-    int8_t roll_direction_l;                // left servo - roll orientation
-    int8_t roll_direction_r;                // right servo - roll orientation  (same sign as ROLL_DIRECTION_L, if servos are mounted in mirrored orientation)
 
     // gimbal-related configuration
-    int8_t gimbal_pitch_gain;               // gimbal pitch servo gain (tied to angle) can be negative to invert movement
-    int8_t gimbal_roll_gain;                // gimbal roll servo gain (tied to angle) can be negative to invert movement
     uint8_t gimbal_flags;                   // in servotilt mode, various things that affect stuff
-    uint16_t gimbal_pitch_min;              // gimbal pitch servo min travel
-    uint16_t gimbal_pitch_max;              // gimbal pitch servo max travel
-    uint16_t gimbal_pitch_mid;              // gimbal pitch servo neutral value
-    uint16_t gimbal_roll_min;               // gimbal roll servo min travel
-    uint16_t gimbal_roll_max;               // gimbal roll servo max travel
-    uint16_t gimbal_roll_mid;               // gimbal roll servo neutral value
 
     // gps-related stuff
     uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
@@ -305,6 +281,7 @@ typedef struct core_t {
     serialPort_t *telemport;
     serialPort_t *rcvrport;
     bool useServo;
+    uint8_t numRCChannels;
 
 } core_t;
 
@@ -362,8 +339,8 @@ extern int16_t throttleAngleCorrection;
 extern int16_t headFreeModeHold;
 extern int16_t heading, magHold;
 extern int16_t motor[MAX_MOTORS];
-extern int16_t servo[8];
-extern int16_t rcData[8];
+extern int16_t servo[MAX_SERVOS];
+extern int16_t rcData[RC_CHANS];
 extern uint16_t rssi;                  // range: [0;1023]
 extern uint8_t vbat;
 extern int16_t telemTemperature1;      // gyro sensor temperature

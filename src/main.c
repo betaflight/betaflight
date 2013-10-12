@@ -81,6 +81,8 @@ int main(void)
     pwmInit(&pwm_params);
 
     // configure PWM/CPPM read function and max number of channels. spektrum or sbus below will override both of these, if enabled
+    for (i = 0; i < RC_CHANS; i++)
+        rcData[i] = 1502;
     rcReadRawFunc = pwmReadRawRC;
     core.numRCChannels = MAX_INPUTS;
 

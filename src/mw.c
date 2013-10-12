@@ -16,7 +16,7 @@ int16_t telemTemperature1;      // gyro sensor temperature
 
 int16_t failsafeCnt = 0;
 int16_t failsafeEvents = 0;
-int16_t rcData[8] = { 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502 }; // interval [1000;2000]
+int16_t rcData[RC_CHANS];       // interval [1000;2000]
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
 int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
@@ -802,9 +802,6 @@ void loop(void)
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
-#ifdef MPU6050_DMP
-        mpu6050DmpLoop();
-#endif
 
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {
