@@ -30,6 +30,7 @@ int main(void)
     uint8_t i;
     drv_pwm_config_t pwm_params;
     drv_adc_config_t adc_params;
+    serialPort_t* loopbackPort = NULL;
 
     systemInit();
 #ifdef USE_LAME_PRINTF
@@ -59,6 +60,7 @@ int main(void)
     else
         pwm_params.airplane = false;
     pwm_params.useUART = feature(FEATURE_GPS) || feature(FEATURE_SERIALRX); // spektrum/sbus support uses UART too
+    pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SERIALRX); // disable inputs if using spektrum
     pwm_params.useServos = core.useServo;
@@ -133,11 +135,14 @@ int main(void)
         batteryInit();
 
     serialInit(mcfg.serial_baudrate);
-#ifdef SOFTSERIAL_19200_LOOPBACK
-    setupSoftSerial1(19200);
-    serialPort_t* loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
-    serialPrint(loopbackPort, "LOOPBACK 19200 ENABLED\r\n");
+    
+    if (feature(FEATURE_SOFTSERIAL)) {
+      setupSoftSerial1(mcfg.softserial_baudrate, mcfg.softserial_inverted);
+#ifdef SOFTSERIAL_LOOPBACK
+      loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+      serialPrint(loopbackPort, "LOOPBACK ENABLED\r\n");
 #endif
+    }
 
     previousTime = micros();
     if (mcfg.mixerConfiguration == MULTITYPE_GIMBAL)
@@ -149,13 +154,15 @@ int main(void)
     // loopy
     while (1) {
         loop();
-#ifdef SOFTSERIAL_19200_LOOPBACK
-        while (serialTotalBytesWaiting(loopbackPort)) {
-
-            uint8_t b = serialRead(loopbackPort);
-            serialWrite(loopbackPort, b);
-            //serialWrite(core.mainport, b);
-        };
+#ifdef SOFTSERIAL_LOOPBACK
+        if (loopbackPort) {
+            while (serialTotalBytesWaiting(loopbackPort)) {
+    
+                uint8_t b = serialRead(loopbackPort);
+                serialWrite(loopbackPort, b);
+                //serialWrite(core.mainport, b);
+            };
+        }
 #endif
     }
 }

@@ -266,6 +266,9 @@ typedef struct master_t {
     uint32_t gps_baudrate;                  // GPS baudrate
 
     uint32_t serial_baudrate;
+    
+    uint32_t softserial_baudrate;
+    uint8_t softserial_inverted;           // use inverted softserial input and output signals
 
     config_t profile[3];                    // 3 separate profiles
     uint8_t current_profile;                // currently loaded profile

@@ -44,7 +44,7 @@ static const char * const mixerNames[] = {
 static const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SERIALRX", "MOTOR_STOP",
     "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
-    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
+    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D", "SOFTSERIAL",
     NULL
 };
 
@@ -115,6 +115,8 @@ const clivalue_t valueTable[] = {
     { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
     { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
     { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
+    { "softserial_baudrate", VAR_UINT32, &mcfg.softserial_baudrate, 9600, 19200 },
+    { "softserial_inverted", VAR_UINT8, &mcfg.softserial_inverted, 0, 1 },
     { "gps_baudrate", VAR_UINT32, &mcfg.gps_baudrate, 1200, 115200 },
     { "serialrx_type", VAR_UINT8, &mcfg.serialrx_type, 0, 2 },
     { "vbatscale", VAR_UINT8, &mcfg.vbatscale, 10, 200 },

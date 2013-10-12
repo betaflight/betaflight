@@ -29,6 +29,7 @@ typedef struct softSerial_s {
     uint16_t         internalRxBuffer;  // excluding start/stop bits
     uint16_t         internalTxBuffer;  // includes start and stop bits
 
+    uint8_t          isInverted;
 } softSerial_t;
 
 extern timerHardware_t* serialTimerHardware;
@@ -36,7 +37,7 @@ extern softSerial_t softSerialPorts[];
 
 extern const struct serialPortVTable softSerialVTable[];
 
-void setupSoftSerial1(uint32_t baud);
+void setupSoftSerial1(uint32_t baud, uint8_t inverted);
 
 // serialPort API
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
