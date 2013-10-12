@@ -60,6 +60,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drv_i2c_soft.c \
 		   drv_system.c \
 		   drv_serial.c \
+		   drv_softserial.c \
 		   drv_uart.c \
 		   printf.c \
 		   utils.c \
@@ -98,7 +99,6 @@ OLIMEXINO_SRC	 = drv_spi.c \
 		   drv_l3g4200d.c \
 		   drv_pwm.c \
 		   drv_timer.c \
-		   drv_softserial.c \
 		   $(COMMON_SRC)
 
 # Search path for baseflight sources

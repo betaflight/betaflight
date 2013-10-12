@@ -26,7 +26,7 @@ float accVelScale;
 int16_t gyroData[3] = { 0, 0, 0 };
 int16_t gyroZero[3] = { 0, 0, 0 };
 int16_t angle[2] = { 0, 0 };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-float anglerad[2] = { 0, 0 };    // absolute angle inclination in radians
+float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
 static void getEstimatedAttitude(void);
 
