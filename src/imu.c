@@ -288,7 +288,7 @@ static void getEstimatedAttitude(void)
             EstM.A[axis] = (EstM.A[axis] * (float)mcfg.gyro_cmpfm_factor + magADC[axis]) * INV_GYR_CMPFM_FACTOR;
     }
 
-   if (abs(EstG.A[Z]) > accZ_25deg)
+   if (EstG.A[Z] > accZ_25deg)
         f.SMALL_ANGLES_25 = 1;
     else
         f.SMALL_ANGLES_25 = 0;
