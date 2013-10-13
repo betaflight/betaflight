@@ -258,7 +258,7 @@ char *itoa(int i, char *a, int r)
 static float _atof(const char *p)
 {
     int frac = 0;
-    double sign, value, scale;
+    float sign, value, scale;
 
     // Skip leading white space, if any.
     while (white_space(*p) ) {
@@ -266,9 +266,9 @@ static float _atof(const char *p)
     }
 
     // Get sign, if any.
-    sign = 1.0;
+    sign = 1.0f;
     if (*p == '-') {
-        sign = -1.0;
+        sign = -1.0f;
         p += 1;
 
     } else if (*p == '+') {
@@ -276,26 +276,26 @@ static float _atof(const char *p)
     }
 
     // Get digits before decimal point or exponent, if any.
-    value = 0.0;
+    value = 0.0f;
     while (valid_digit(*p)) {
-        value = value * 10.0 + (*p - '0');
+        value = value * 10.0f + (*p - '0');
         p += 1;
     }
 
     // Get digits after decimal point, if any.
     if (*p == '.') {
-        double pow10 = 10.0;
+        float pow10 = 10.0f;
         p += 1;
 
         while (valid_digit(*p)) {
             value += (*p - '0') / pow10;
-            pow10 *= 10.0;
+            pow10 *= 10.0f;
             p += 1;
         }
     }
 
     // Handle exponent, if any.
-    scale = 1.0;
+    scale = 1.0f;
     if ((*p == 'e') || (*p == 'E')) {
         unsigned int expon;
         p += 1;
@@ -316,12 +316,13 @@ static float _atof(const char *p)
             expon = expon * 10 + (*p - '0');
             p += 1;
         }
-        if (expon > 308) expon = 308;
+        if (expon > 308) 
+            expon = 308;
 
         // Calculate scaling factor.
-        while (expon >= 50) { scale *= 1E50; expon -= 50; }
-        while (expon >=  8) { scale *= 1E8;  expon -=  8; }
-        while (expon >   0) { scale *= 10.0; expon -=  1; }
+        // while (expon >= 50) { scale *= 1E50f; expon -= 50; }
+        while (expon >=  8) { scale *= 1E8f;  expon -=  8; }
+        while (expon >   0) { scale *= 10.0f; expon -=  1; }
     }
 
     // Return signed and scaled floating point result.
@@ -445,7 +446,7 @@ static void cliCMix(char *cmdline)
         }
         cliPrint("Sanity check:\t");
         for (i = 0; i < 3; i++)
-            cliPrint(fabs(mixsum[i]) > 0.01f ? "NG\t" : "OK\t");
+            cliPrint(fabsf(mixsum[i]) > 0.01f ? "NG\t" : "OK\t");
         cliPrint("\r\n");
         return;
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {

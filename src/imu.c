@@ -350,7 +350,7 @@ int getEstimatedAltitude(void)
     BaroAlt_tmp = 153.8462f * (baroTemperature + 27315) * (1.0f - expf(0.190259f * logf(PressureScaling))); // in cm
     BaroAlt = (float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf); // additional LPF to reduce baro noise
 
-    dt = accTimeSum * 1e-6; // delta acc reading time in seconds
+    dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
     // Integrator - velocity, cm/sec
     vel_acc = (float)accSum[2] * accVelScale * (float)accTimeSum / (float)accSumCount;
