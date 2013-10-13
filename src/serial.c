@@ -362,6 +362,17 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_MISC:
+        read16(); // powerfailmeter
+        mcfg.minthrottle = read16();
+        read32(); // mcfg.maxthrottle, mcfg.mincommand
+        cfg.failsafe_throttle = read16();
+        read16();
+        read32();
+        cfg.mag_declination = read16() * 10;
+        mcfg.vbatscale = read8();           // actual vbatscale as intended
+        mcfg.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
+        mcfg.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
+        read8();                            // vbatlevel_crit (unused)
         headSerialReply(0);
         break;
     case MSP_SELECT_SETTING:
@@ -566,8 +577,19 @@ static void evaluateCommand(void)
             serialize8(availableBoxes[i]);
         break;
     case MSP_MISC:
-        headSerialReply(2);
-        serialize16(0); // intPowerTrigger1
+        headSerialReply(2 * 6 + 4 + 2 + 8 * 4);
+        serialize16(0); // intPowerTrigger1 (aka useless trash)
+        serialize16(mcfg.minthrottle);
+        serialize16(mcfg.maxthrottle);
+        serialize16(mcfg.mincommand);
+        serialize16(cfg.failsafe_throttle);
+        serialize16(0); // plog useless shit
+        serialize32(0); // plog useless shit
+        serialize16(cfg.mag_declination / 10); // TODO check this shit
+        serialize8(mcfg.vbatscale);
+        serialize8(mcfg.vbatmincellvoltage);
+        serialize8(mcfg.vbatmaxcellvoltage);
+        serialize8(0);
         break;
     case MSP_MOTOR_PINS:
         headSerialReply(8);
