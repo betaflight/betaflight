@@ -45,8 +45,6 @@ uint16_t GPS_altitude, GPS_speed;   // altitude in 0.1m and speed in 0.1m/s
 uint8_t GPS_update = 0;             // it's a binary toogle to distinct a GPS position update
 int16_t GPS_angle[2] = { 0, 0 };    // it's the angles that must be applied for GPS correction
 uint16_t GPS_ground_course = 0;     // degrees * 10
-uint8_t GPS_Present = 0;            // Checksum from Gps serial
-uint8_t GPS_Enable = 0;
 int16_t nav[2];
 int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
 int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
@@ -777,9 +775,16 @@ void loop(void)
             taskOrder++;
 #ifdef BARO
             if (sensors(SENSOR_BARO) && getEstimatedAltitude())
-            break;
+                break;
 #endif
         case 3:
+            // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
+            // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
+            // change this based on available hardware
+            if (feature(FEATURE_GPS))
+                gpsThread();
+            break;
+        case 4:
             taskOrder++;
 #ifdef SONAR
             if (sensors(SENSOR_SONAR)) {

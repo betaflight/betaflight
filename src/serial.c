@@ -299,7 +299,7 @@ void serialInit(uint32_t baudrate)
     }
     if (feature(FEATURE_SERVO_TILT))
         availableBoxes[idx++] = BOXCAMSTAB;
-    if (feature(FEATURE_GPS) && sensors(SENSOR_GPS)) {
+    if (feature(FEATURE_GPS)) {
         availableBoxes[idx++] = BOXGPSHOME;
         availableBoxes[idx++] = BOXGPSHOLD;
     }

@@ -262,8 +262,8 @@ typedef struct master_t {
     uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
 
     // gps-related stuff
-    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2+ ??
-    uint32_t gps_baudrate;                  // GPS baudrate
+    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2: MTK
+    int8_t gps_baudrate;                    // GPS baudrate, -1: autodetect (NMEA only), 0: 115200, 1: 57600, 2: 38400, 3: 19200, 4: 9600
 
     uint32_t serial_baudrate;
     
@@ -362,8 +362,6 @@ extern uint16_t GPS_altitude,GPS_speed;                      // altitude in 0.1m
 extern uint8_t  GPS_update;                                  // it's a binary toogle to distinct a GPS position update
 extern int16_t  GPS_angle[2];                                // it's the angles that must be applied for GPS correction
 extern uint16_t GPS_ground_course;                           // degrees*10
-extern uint8_t  GPS_Present;                                 // Checksum from Gps serial
-extern uint8_t  GPS_Enable;
 extern int16_t  nav[2];
 extern int8_t   nav_mode;                                    // Navigation mode
 extern int16_t  nav_rated[2];                                // Adding a rate controller to the navigation to make it smoother
@@ -447,10 +445,11 @@ void systemBeep(bool onoff);
 void cliProcess(void);
 
 // gps
-void gpsInit(uint32_t baudrate);
+void gpsInit(uint8_t baudrate);
+void gpsThread(void);
+void gpsSetPIDs(void);
 void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
-void GPS_set_pids(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
 int32_t wrap_18000(int32_t error);
 
