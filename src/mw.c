@@ -781,9 +781,11 @@ void loop(void)
             // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
             // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
             // change this based on available hardware
-            if (feature(FEATURE_GPS))
+            taskOrder++;
+            if (feature(FEATURE_GPS)) {
                 gpsThread();
-            break;
+                break;
+            }
         case 4:
             taskOrder++;
 #ifdef SONAR
