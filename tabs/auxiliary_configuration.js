@@ -27,12 +27,6 @@ function tab_initialize_auxiliary_configuration() {
     
     // UI Hooks
     $('.tab-auxiliary_configuration .boxes input').change(function() {
-        if($(this).is(':checked')) {
-            $(this).parent().addClass('on');
-        } else {
-            $(this).parent().removeClass('on');
-        }
-        
         // if any of the fields changed, unlock update button
         $('a.update').addClass('active');
     });
@@ -83,11 +77,23 @@ function tab_initialize_auxiliary_configuration() {
 
 function aux_data_poll() {
     send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+    
+    for (var i = 0; i < AUX_CONFIG.length; i++) {
+        if (bit_check(CONFIG.mode, i)) {
+            $('td.name').eq(i).addClass('on').removeClass('off'); 
+        } else {
+            $('td.name').eq(i).removeClass('on').removeClass('off');
+            
+            if (AUX_CONFIG_values[i] > 0) {
+                $('td.name').eq(i).addClass('off');
+            }
+        }
+    }
 }
 
 function box_check(num, pos) {
     if (bit_check(num, pos)) { // 1
-        return '<td class="on"><input type="checkbox" checked="checked" /></td>';
+        return '<td><input type="checkbox" checked="checked" /></td>';
     } else { // 0
         return '<td><input type="checkbox" /></td>';
     }

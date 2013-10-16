@@ -485,7 +485,6 @@ function process_message(code, data) {
             CONFIG.profile = view.getUint8(10);
             
             $('span.cycle-time').html(CONFIG.cycleTime);
-            
             sensor_status(CONFIG.activeSensors);
             break;
         case MSP_codes.MSP_RAW_IMU:

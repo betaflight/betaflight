@@ -700,7 +700,12 @@ a:hover {
             text-align: center;
         }
         .tab-auxiliary_configuration .boxes .on {
+            color: white;
             background-color: #0d8b13;
+        }
+        .tab-auxiliary_configuration .boxes .off {
+            color: white;
+            background-color: #be2222;
         }
         .tab-auxiliary_configuration .boxes td input {
             position: absolute;
