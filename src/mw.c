@@ -756,8 +756,8 @@ void loop(void)
         }
     } else {                    // not in rc loop
         static int taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
-        if (taskOrder > 3)
-            taskOrder -= 4;
+        if (taskOrder > 4)
+            taskOrder -= 5;
         switch (taskOrder) {
         case 0:
             taskOrder++;
