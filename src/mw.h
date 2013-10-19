@@ -234,6 +234,9 @@ typedef struct master_t {
     sensor_align_e gyro_align;              // gyro alignment
     sensor_align_e acc_align;               // acc alignment
     sensor_align_e mag_align;               // mag alignment
+    int16_t board_align_roll;               // board alignment correction in roll (deg)
+    int16_t board_align_pitch;              // board alignment correction in pitch (deg)
+    int16_t board_align_yaw;                // board alignment correction in yaw (deg)
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
@@ -285,7 +288,6 @@ typedef struct core_t {
     serialPort_t *rcvrport;
     bool useServo;
     uint8_t numRCChannels;
-
 } core_t;
 
 typedef struct flags_t {

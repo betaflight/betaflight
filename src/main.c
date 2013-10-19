@@ -49,6 +49,7 @@ int main(void)
     }
 
     adcInit(&adc_params);
+    initBoardAlignment();
 
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
