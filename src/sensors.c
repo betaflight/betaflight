@@ -36,7 +36,7 @@ void sensorsAutodetect(void)
     bool haveMpu6k = false;
 
     // Autodetect gyro hardware. We have MPU3050 or MPU6050.
-    if (mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &mcfg.mpu6050_scale)) {
+    if (mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &core.mpu6050_scale)) {
         // this filled up  acc.* struct with init values
         haveMpu6k = true;
     } else if (l3g4200dDetect(&gyro, mcfg.gyro_lpf)) {
@@ -64,7 +64,7 @@ retry:
             ; // fallthrough
         case ACC_MPU6050: // MPU6050
             if (haveMpu6k) {
-                mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &mcfg.mpu6050_scale); // yes, i'm rerunning it again.  re-fill acc struct
+                mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &core.mpu6050_scale); // yes, i'm rerunning it again.  re-fill acc struct
                 accHardware = ACC_MPU6050;
                 if (mcfg.acc_hardware == ACC_MPU6050)
                     break;

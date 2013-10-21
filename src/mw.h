@@ -244,7 +244,6 @@ typedef struct master_t {
     uint16_t gyro_cmpfm_factor;             // Set the Gyro Weight for Gyro/Magnetometer complementary filter. Increasing this value would reduce and delay Magnetometer influence on the output of the filter
     uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
     uint8_t moron_threshold;                // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
-    uint8_t mpu6050_scale;                  // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. automatically set by mpu6050 driver.
     int16_t accZero[3];
     int16_t magZero[3];
 
@@ -265,11 +264,11 @@ typedef struct master_t {
     uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
 
     // gps-related stuff
-    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2: MTK
+    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2: MTK NMEA 3: MTK Binary
     int8_t gps_baudrate;                    // GPS baudrate, -1: autodetect (NMEA only), 0: 115200, 1: 57600, 2: 38400, 3: 19200, 4: 9600
 
     uint32_t serial_baudrate;
-    
+
     uint32_t softserial_baudrate;
     uint8_t softserial_inverted;           // use inverted softserial input and output signals
 
@@ -286,8 +285,9 @@ typedef struct core_t {
     serialPort_t *gpsport;
     serialPort_t *telemport;
     serialPort_t *rcvrport;
-    bool useServo;
-    uint8_t numRCChannels;
+    uint8_t mpu6050_scale;                  // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. automatically set by mpu6050 driver.
+    uint8_t numRCChannels;                  // number of rc channels as reported by current input driver
+    bool useServo;                          // feature SERVO_TILT or wing/airplane mixers will enable this
 } core_t;
 
 typedef struct flags_t {

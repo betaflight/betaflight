@@ -50,7 +50,7 @@ static const char * const featureNames[] = {
 
 // sync this with AvailableSensors enum from board.h
 static const char * const sensorNames[] = {
-    "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
+    "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
 };
 
 static const char * const accNames[] = {
@@ -896,7 +896,7 @@ static void cliStatus(char *cmdline)
     if (sensors(SENSOR_ACC)) {
         printf("ACCHW: %s", accNames[accHardware]);
         if (accHardware == ACC_MPU6050)
-            printf(".%c", mcfg.mpu6050_scale ? 'o' : 'n');
+            printf(".%c", core.mpu6050_scale ? 'o' : 'n');
     }
     cliPrint("\r\n");
 
