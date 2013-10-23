@@ -90,51 +90,6 @@ static uint8_t availableBoxes[CHECKBOXITEMS];
 // this is the number of filled indexes in above array
 static uint8_t numberBoxItems = 0;
 
-static const char boxnames[] =
-    "ARM;"
-    "ANGLE;"
-    "HORIZON;"
-    "BARO;"
-    "VARIO;"
-    "MAG;"
-    "HEADFREE;"
-    "HEADADJ;"
-    "CAMSTAB;"
-    "CAMTRIG;"
-    "GPS HOME;"
-    "GPS HOLD;"
-    "PASSTHRU;"
-    "BEEPER;"
-    "LEDMAX;"
-    "LEDLOW;"
-    "LLIGHTS;"
-    "CALIB;"
-    "GOVERNOR;"
-    "OSD SW;";
-
-const uint8_t boxids[] = {      // permanent IDs associated to boxes. This way, you can rely on an ID number to identify a BOX function.
-    0,                          // "ARM;"
-    1,                          // "ANGLE;"
-    2,                          // "HORIZON;"
-    3,                          // "BARO;"
-    4,                          // "VARIO;"
-    5,                          // "MAG;"
-    6,                          // "HEADFREE;"
-    7,                          // "HEADADJ;"
-    8,                          // "CAMSTAB;"
-    9,                          // "CAMTRIG;"
-    10,                         // "GPS HOME;"
-    11,                         // "GPS HOLD;"
-    12,                         // "PASSTHRU;"
-    13,                         // "BEEPER;"
-    14,                         // "LEDMAX;"
-    15,                         // "LEDLOW;"
-    16,                         // "LLIGHTS;"
-    17,                         // "CALIB;"
-    18,                         // "GOVERNOR;"
-    19,                         // "OSD_SWITCH;"
-};
-
 static const char pidnames[] =
     "ROLL;"
     "PITCH;"
@@ -305,6 +260,7 @@ void serialInit(uint32_t baudrate)
     if (mcfg.mixerConfiguration ==  MULTITYPE_FLYING_WING || mcfg.mixerConfiguration ==  MULTITYPE_AIRPLANE)
         availableBoxes[idx++] = BOXPASSTHRU;
     availableBoxes[idx++] = BOXBEEPERON;
+    availableBoxes[idx++] = BOXOSD;
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         availableBoxes[idx++] = BOXCALIB;
     numberBoxItems = idx;
@@ -400,7 +356,7 @@ static void evaluateCommand(void)
         serialize16(cycleTime);
         serialize16(i2cGetErrorCounter());
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-#if FUCK_MULTIWII
+#ifdef FUCK_MULTIWII
         // OK, so you waste all the fucking time to have BOXNAMES and BOXINDEXES etc, and then you go ahead and serialize enabled shit simply by stuffing all
         // the bits in order, instead of setting the enabled bits based on BOXINDEX. WHERE IS THE FUCKING LOGIC IN THIS, FUCKWADS.
         serialize32(f.ANGLE_MODE << BOXANGLE | f.HORIZON_MODE << BOXHORIZON |
@@ -452,7 +408,7 @@ static void evaluateCommand(void)
                     break;
                 default:
                     // These just directly rely on their RC inputs
-                    val = rcOptions[ box ];
+                    val = rcOptions[box];
                     break;
             }
             tmp |= (val << i);
