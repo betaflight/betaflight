@@ -91,6 +91,11 @@ typedef enum {
 } GPSHardware;
 
 typedef enum {
+    TELEMETRY_UART = 0,
+    TELEMETRY_SOFTSERIAL,
+} TelemetrySerial;
+
+typedef enum {
     X = 0,
     Y,
     Z

@@ -202,13 +202,29 @@ static void sendHeading(void)
 
 static bool telemetryEnabled = false;
 
-void initTelemetry(bool State)
+void initTelemetry(void)
 {
+    // Sanity check for softserial vs. telemetry port
+    if (!feature(FEATURE_SOFTSERIAL))
+        mcfg.telemetry_softserial = TELEMETRY_UART;
+
+    if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL)
+        core.telemport = &(softSerialPorts[0].port);
+    else
+        core.telemport = core.mainport;
+}
+
+void updateTelemetryState(void)
+{
+    bool State = mcfg.telemetry_softserial != TELEMETRY_UART ? true : f.ARMED;
+
     if (State != telemetryEnabled) {
-        if (State)
-            serialInit(9600);
-        else
-            serialInit(mcfg.serial_baudrate);
+        if (mcfg.telemetry_softserial == TELEMETRY_UART) {
+            if (State)
+                serialInit(9600);
+            else
+                serialInit(mcfg.serial_baudrate);
+        }
         telemetryEnabled = State;
     }
 }
@@ -218,6 +234,12 @@ static uint8_t cycleNum = 0;
 
 void sendTelemetry(void)
 {
+    if (mcfg.telemetry_softserial == TELEMETRY_UART && !f.ARMED)
+        return;
+
+    if (serialTotalBytesWaiting(core.telemport) != 0)
+        return;
+
     if (millis() - lastCycleTime >= CYCLETIME) {
         lastCycleTime = millis();
         cycleNum++;

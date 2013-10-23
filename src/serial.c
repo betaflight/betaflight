@@ -269,8 +269,7 @@ void serialInit(uint32_t baudrate)
     bool hfadded = false;
 
     core.mainport = uartOpen(USART1, NULL, baudrate, MODE_RXTX);
-    // TODO fix/hax
-    core.telemport = core.mainport;
+
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(availableBoxes, 0xFF, sizeof(availableBoxes));
 
@@ -764,8 +763,7 @@ void serialCom(void)
             c_state = IDLE;
         }
     }
-    if (!cliMode && !serialTotalBytesWaiting(core.telemport) && feature(FEATURE_TELEMETRY) && f.ARMED) { // The first 2 conditions should never evaluate to true but I'm putting it here anyway - silpstream
+    if (!cliMode && feature(FEATURE_TELEMETRY)) { // The first condition should never evaluate to true but I'm putting it here anyway - silpstream
         sendTelemetry();
-        return;
     }
 }

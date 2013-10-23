@@ -139,7 +139,7 @@ int main(void)
         batteryInit();
 
     serialInit(mcfg.serial_baudrate);
-    
+
     if (feature(FEATURE_SOFTSERIAL)) {
       setupSoftSerial1(mcfg.softserial_baudrate, mcfg.softserial_inverted);
 #ifdef SOFTSERIAL_LOOPBACK
@@ -147,6 +147,9 @@ int main(void)
       serialPrint(loopbackPort, "LOOPBACK ENABLED\r\n");
 #endif
     }
+
+    if (feature(FEATURE_TELEMETRY))
+        initTelemetry();
 
     previousTime = micros();
     if (mcfg.mixerConfiguration == MULTITYPE_GIMBAL)

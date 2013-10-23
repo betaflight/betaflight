@@ -272,6 +272,8 @@ typedef struct master_t {
     uint32_t softserial_baudrate;
     uint8_t softserial_inverted;           // use inverted softserial input and output signals
 
+    uint8_t telemetry_softserial;               // Serial to use for Telemetry. 0:USART1, 1:SoftSerial1 (Enable FEATURE_SOFTSERIAL first)
+
     config_t profile[3];                    // 3 separate profiles
     uint8_t current_profile;                // currently loaded profile
 
@@ -456,5 +458,6 @@ void GPS_set_next_wp(int32_t* lat, int32_t* lon);
 int32_t wrap_18000(int32_t error);
 
 // telemetry
-void initTelemetry(bool State);
+void initTelemetry(void);
+void updateTelemetryState(void);
 void sendTelemetry(void);
