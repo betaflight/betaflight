@@ -35,7 +35,7 @@ static void adxl345Init(sensor_align_e align);
 static void adxl345Read(int16_t *accelData);
 
 static bool useFifo = false;
-static sensor_align_e accAlign = CW0_DEG;
+static sensor_align_e accAlign = CW270_DEG;
 
 bool adxl345Detect(drv_adxl345_config_t *init, sensor_t *acc)
 {
