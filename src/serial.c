@@ -201,21 +201,28 @@ void serializeNames(const char *s)
 
 void serializeBoxNamesReply(void)
 {
-    char buf[256]; // no fucking idea
-    char *c;
-    int i, j;
+    int i, j, k, flag = 1, count = 0, len;
 
-    memset(buf, 0, sizeof(buf));
-    for (i = 0; i < CHECKBOXITEMS; i++) {
-        for (j = 0; j < numberBoxItems; j++) {
-            if (boxes[i].boxIndex == availableBoxes[j])
-                strcat(buf, boxes[i].boxName);
+reset:
+    for (i = 0; i < numberBoxItems; i++) {
+        for (j = 0; j < CHECKBOXITEMS; j++) {
+            if (boxes[j].boxIndex == availableBoxes[i]) {
+                len = strlen(boxes[j].boxName);
+                if (flag) {
+                    count += len;
+                } else {
+                    for (k = 0; k < len; k++)
+                        serialize8(boxes[j].boxName[k]);
+                }
+            }
         }
     }
 
-    headSerialReply(strlen(buf));
-    for (c = buf; *c; c++)
-        serialize8(*c);
+    if (flag) {
+        headSerialReply(count);
+        flag = 0;
+        goto reset;
+    }
 }
 
 void serialInit(uint32_t baudrate)
