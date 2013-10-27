@@ -228,7 +228,6 @@ reset:
 void serialInit(uint32_t baudrate)
 {
     int idx;
-    bool hfadded = false;
 
     core.mainport = uartOpen(USART1, NULL, baudrate, MODE_RXTX);
 
@@ -240,23 +239,16 @@ void serialInit(uint32_t baudrate)
     if (sensors(SENSOR_ACC)) {
         availableBoxes[idx++] = BOXANGLE;
         availableBoxes[idx++] = BOXHORIZON;
-        availableBoxes[idx++] = BOXMAG;
-        availableBoxes[idx++] = BOXHEADFREE;
-        availableBoxes[idx++] = BOXHEADADJ;
-        hfadded = true;
     }
     if (sensors(SENSOR_BARO)) {
         availableBoxes[idx++] = BOXBARO;
         if (feature(FEATURE_VARIO))
             availableBoxes[idx++] = BOXVARIO;
     }
-    if (sensors(SENSOR_MAG)) {
-        // this really shouldn't even needed to be tested as it wouldn't be possible without acc anyway
-        if (!hfadded) {
-            availableBoxes[idx++] = BOXMAG;
-            availableBoxes[idx++] = BOXHEADFREE;
-            availableBoxes[idx++] = BOXHEADADJ;
-        }
+    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+        availableBoxes[idx++] = BOXMAG;
+        availableBoxes[idx++] = BOXHEADFREE;
+        availableBoxes[idx++] = BOXHEADADJ;
     }
     if (feature(FEATURE_SERVO_TILT))
         availableBoxes[idx++] = BOXCAMSTAB;
