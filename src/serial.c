@@ -201,20 +201,19 @@ void serializeNames(const char *s)
 
 void serializeBoxNamesReply(void)
 {
-    int i, j, k, flag = 1, count = 0, len;
+    int i, idx, j, flag = 1, count = 0, len;
 
 reset:
+    // in first run of the loop, we grab total size of junk to be sent
+    // then come back and actually send it
     for (i = 0; i < numberBoxItems; i++) {
-        for (j = 0; j < CHECKBOXITEMS; j++) {
-            if (boxes[j].boxIndex == availableBoxes[i]) {
-                len = strlen(boxes[j].boxName);
-                if (flag) {
-                    count += len;
-                } else {
-                    for (k = 0; k < len; k++)
-                        serialize8(boxes[j].boxName[k]);
-                }
-            }
+        idx = availableBoxes[i];
+        len = strlen(boxes[idx].boxName);
+        if (flag) {
+            count += len;
+        } else {
+            for (j = 0; j < len; j++)
+                serialize8(boxes[idx].boxName[j]);
         }
     }
 
@@ -259,15 +258,15 @@ void serialInit(uint32_t baudrate)
     if (mcfg.mixerConfiguration ==  MULTITYPE_FLYING_WING || mcfg.mixerConfiguration ==  MULTITYPE_AIRPLANE)
         availableBoxes[idx++] = BOXPASSTHRU;
     availableBoxes[idx++] = BOXBEEPERON;
-    availableBoxes[idx++] = BOXOSD;
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         availableBoxes[idx++] = BOXCALIB;
+    availableBoxes[idx++] = BOXOSD;
     numberBoxItems = idx;
 }
 
 static void evaluateCommand(void)
 {
-    uint32_t i, tmp;
+    uint32_t i, tmp, junk;
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 
@@ -355,10 +354,11 @@ static void evaluateCommand(void)
         serialize16(cycleTime);
         serialize16(i2cGetErrorCounter());
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-#ifdef FUCK_MULTIWII
         // OK, so you waste all the fucking time to have BOXNAMES and BOXINDEXES etc, and then you go ahead and serialize enabled shit simply by stuffing all
         // the bits in order, instead of setting the enabled bits based on BOXINDEX. WHERE IS THE FUCKING LOGIC IN THIS, FUCKWADS.
-        serialize32(f.ANGLE_MODE << BOXANGLE | f.HORIZON_MODE << BOXHORIZON |
+        // Serialize the boxes in the order we delivered them, until multiwii retards fix their shit
+        junk = 0;
+        tmp = f.ANGLE_MODE << BOXANGLE | f.HORIZON_MODE << BOXHORIZON |
                     f.BARO_MODE << BOXBARO | f.MAG_MODE << BOXMAG | f.HEADFREE_MODE << BOXHEADFREE | rcOptions[BOXHEADADJ] << BOXHEADADJ |
                     rcOptions[BOXCAMSTAB] << BOXCAMSTAB | rcOptions[BOXCAMTRIG] << BOXCAMTRIG |
                     f.GPS_HOME_MODE << BOXGPSHOME | f.GPS_HOLD_MODE << BOXGPSHOLD |
@@ -370,50 +370,13 @@ static void evaluateCommand(void)
                     rcOptions[BOXCALIB] << BOXCALIB |
                     rcOptions[BOXGOV] << BOXGOV |
                     rcOptions[BOXOSD] << BOXOSD |
-                    f.ARMED << BOXARM);
-#else
-        // Serialize the boxes in the order we delivered them
-        tmp = 0;
+                    f.ARMED << BOXARM;
         for (i = 0; i < numberBoxItems; i++) {
-            uint8_t val, box = availableBoxes[i];
-            switch (box) {
-                // Handle the special cases
-                case BOXANGLE:
-                    val = f.ANGLE_MODE;
-                    break;
-                case BOXHORIZON:
-                    val = f.HORIZON_MODE;
-                    break;
-                case BOXMAG:
-                    val = f.MAG_MODE;
-                    break;
-                case BOXBARO:
-                    val = f.BARO_MODE;
-                    break;
-                case BOXHEADFREE:
-                    val = f.HEADFREE_MODE;
-                    break;
-                case BOXGPSHOME:
-                    val = f.GPS_HOME_MODE;
-                    break;
-                case BOXGPSHOLD:
-                    val = f.GPS_HOLD_MODE;
-                    break;
-                case BOXPASSTHRU:
-                    val = f.PASSTHRU_MODE;
-                    break;
-                case BOXARM:
-                    val = f.ARMED;
-                    break;
-                default:
-                    // These just directly rely on their RC inputs
-                    val = rcOptions[box];
-                    break;
-            }
-            tmp |= (val << i);
+            int flag = (tmp & (1 << availableBoxes[i]));
+            if (flag)
+                junk |= 1 << i;
         }
-        serialize32(tmp);
-#endif
+        serialize32(junk);
         serialize8(mcfg.current_profile);
         break;
     case MSP_RAW_IMU:
