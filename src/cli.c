@@ -9,6 +9,7 @@ static void cliDefaults(char *cmdline);
 static void cliDump(char *cmdLine);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
+static void cliGpsPassthrough(char *cmdline);
 static void cliHelp(char *cmdline);
 static void cliMap(char *cmdline);
 static void cliMixer(char *cmdline);
@@ -73,6 +74,7 @@ const clicmd_t cmdTable[] = {
     { "dump", "print configurable settings in a pastable form", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
+    { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
     { "help", "", cliHelp },
     { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
@@ -654,6 +656,15 @@ static void cliFeature(char *cmdline)
                 break;
             }
         }
+    }
+}
+
+static void cliGpsPassthrough(char *cmdline)
+{
+    cliPrint("Enabling GPS passthrough...");
+
+    if (gpsSetPassthrough() == -1) {
+        cliPrint("Error: Enable and plug in GPS first\r\n");
     }
 }
 
