@@ -124,6 +124,10 @@ a:hover {
         background-color: #0d8b13;
     }  
 #tabs {
+    position: absolute;
+    margin-top: 1px;
+    
+    z-index: 10;
 }
     #tabs li {
         float: left;
@@ -147,6 +151,9 @@ a:hover {
             text-decoration: none;
             background-color: #acacac;
         }
+        #tabs li.active {
+            border-bottom: 1px solid white;
+        }
         #tabs li.active a {
             background-color: white;        
         }
@@ -154,7 +161,9 @@ a:hover {
             cursor: default;
             background-color: white; 
         }        
-#content {    
+#content {
+    margin-top: 27px;
+    
     padding: 10px;
     
     background-color: white;
