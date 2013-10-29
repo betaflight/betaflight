@@ -77,6 +77,7 @@ function tab_initialize_auxiliary_configuration() {
 
 function aux_data_poll() {
     send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+    send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
     
     for (var i = 0; i < AUX_CONFIG.length; i++) {
         if (bit_check(CONFIG.mode, i)) {
@@ -89,6 +90,11 @@ function aux_data_poll() {
             }
         }
     }
+    
+    box_highlight(RC.AUX1, 2);
+    box_highlight(RC.AUX2, 5);
+    box_highlight(RC.AUX3, 8);
+    box_highlight(RC.AUX4, 11);
 }
 
 function box_check(num, pos) {
@@ -97,4 +103,20 @@ function box_check(num, pos) {
     } else { // 0
         return '<td><input type="checkbox" /></td>';
     }
+}
+
+// val = channel value
+// aux_num = position of corresponding aux channel in the html table
+function box_highlight(val, aux_num) {
+    var tr = $('table.boxes tr');
+    var pos = 0; // < 1300
+    
+    if (val > 1300 && val < 1700) {
+        pos = 1;
+    } else if (val > 1700) {
+        pos = 2;
+    }
+
+    $(':nth-child(' + aux_num + '), :nth-child(' + (aux_num + 1) + '), :nth-child(' + (aux_num + 2) + ')', tr).css('background-color', 'transparent');
+    $('td:nth-child(' + (aux_num + pos) + ')', tr).css('background-color', 'orange');
 }
