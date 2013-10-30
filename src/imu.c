@@ -172,17 +172,21 @@ int32_t applyDeadband(int32_t value, int32_t deadband)
     return value;
 }
 
+#define F_CUT_ACCZ 20.0f
+static const float fc_acc = 0.5f / (M_PI * F_CUT_ACCZ);
+
 // rotate acc into Earth frame and calculate acceleration in it
 void acc_calc(uint32_t deltaT)
 {
     static int32_t accZoffset = 0;
+    static float accz_smooth;
     float rpy[3];
     t_fp_vector accel_ned;
 
     // the accel values have to be rotated into the earth frame
     rpy[0] = -(float)anglerad[ROLL];
     rpy[1] = -(float)anglerad[PITCH];
-    rpy[2] = -(float)heading * RADX10 * 10.0f;
+    rpy[2] = -(float)heading * RAD;
 
     accel_ned.V.X = accSmooth[0];
     accel_ned.V.Y = accSmooth[1];
@@ -198,19 +202,21 @@ void acc_calc(uint32_t deltaT)
         accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
     } else
         accel_ned.V.Z -= acc_1G;
+    
+    accz_smooth = accz_smooth + (deltaT / (fc_acc + deltaT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
     // apply Deadband to reduce integration drift and vibration influence
-    accel_ned.V.Z = applyDeadband(accel_ned.V.Z, cfg.accz_deadband);
-    accel_ned.V.X = applyDeadband(accel_ned.V.X, cfg.accxy_deadband);
-    accel_ned.V.Y = applyDeadband(accel_ned.V.Y, cfg.accxy_deadband);
+    accel_ned.V.Z = applyDeadband(lrintf(accz_smooth), cfg.accz_deadband);
+    accel_ned.V.X = applyDeadband(lrintf(accel_ned.V.X), cfg.accxy_deadband);
+    accel_ned.V.Y = applyDeadband(lrintf(accel_ned.V.Y), cfg.accxy_deadband);
 
     // sum up Values for later integration to get velocity and distance
     accTimeSum += deltaT;
     accSumCount++;
 
-    accSum[0] += accel_ned.V.X;
-    accSum[1] += accel_ned.V.Y;
-    accSum[2] += accel_ned.V.Z;
+    accSum[X] += lrintf(accel_ned.V.X);
+    accSum[Y] += lrintf(accel_ned.V.Y);
+    accSum[Z] += lrintf(accel_ned.V.Z);
 }
 
 void accSum_reset(void)
@@ -317,7 +323,6 @@ static void getEstimatedAttitude(void)
 
 int getEstimatedAltitude(void)
 {
-    static int32_t baroGroundPressure;
     static uint32_t previousT;
     uint32_t currentT = micros();
     uint32_t dTime;
@@ -326,11 +331,12 @@ int getEstimatedAltitude(void)
     int32_t vel_tmp;
     int32_t BaroAlt_tmp;
     float dt;
-    float PressureScaling;
     float vel_acc;
     static float vel = 0.0f;
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
+    static int32_t baroGroundAltitude = 0;
+    static int32_t baroGroundPressure = 0;
 
     dTime = currentT - previousT;
     if (dTime < UPDATE_INTERVAL)
@@ -338,17 +344,20 @@ int getEstimatedAltitude(void)
     previousT = currentT;
 
     if (calibratingB > 0) {
-        baroGroundPressure = baroPressureSum / (cfg.baro_tab_size - 1);
-        calibratingB--;
+        baroGroundPressure -= baroGroundPressure / 8;
+        baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
+        baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f; 
+        
         vel = 0;
         accAlt = 0;
+        calibratingB--;
     }
 
     // calculates height from ground via baro readings
     // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-    PressureScaling = (float)baroPressureSum / ((float)baroGroundPressure * (float)(cfg.baro_tab_size - 1));
-    BaroAlt_tmp = 153.8462f * (baroTemperature + 27315) * (1.0f - expf(0.190259f * logf(PressureScaling))); // in cm
-    BaroAlt = (float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf); // additional LPF to reduce baro noise
+    BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / (cfg.baro_tab_size - 1)) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
+    BaroAlt_tmp -= baroGroundAltitude;
+    BaroAlt = lrintf((float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf)); // additional LPF to reduce baro noise
 
     dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
@@ -391,7 +400,7 @@ int getEstimatedAltitude(void)
     vel = constrain(vel, -1000, 1000);                // limit max velocity to +/- 10m/s (36km/h)
 
     // D
-    vel_tmp = vel;
+    vel_tmp = lrintf(vel);
     vel_tmp = applyDeadband(vel_tmp, 5);
     vario = vel_tmp;
     BaroPID -= constrain(cfg.D8[PIDALT] * vel_tmp / 16, -150, 150);

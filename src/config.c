@@ -227,9 +227,9 @@ static void resetConf(void)
     cfg.P8[YAW] = 85;
     cfg.I8[YAW] = 45;
     cfg.D8[YAW] = 0;
-    cfg.P8[PIDALT] = 50;
+    cfg.P8[PIDALT] = 40;
     cfg.I8[PIDALT] = 25;
-    cfg.D8[PIDALT] = 80;
+    cfg.D8[PIDALT] = 60;
     cfg.P8[PIDPOS] = 11; // POSHOLD_P * 100;
     cfg.I8[PIDPOS] = 0; // POSHOLD_I * 100;
     cfg.D8[PIDPOS] = 0;
