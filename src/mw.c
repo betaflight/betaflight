@@ -818,6 +818,7 @@ void loop(void)
                     dif += 360;
                 if (dif >= +180)
                     dif -= 360;
+                dif *= -mcfg.yaw_control_direction;
                 if (f.SMALL_ANGLES_25)
                     rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;    // 18 deg
             } else
