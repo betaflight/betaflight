@@ -196,7 +196,7 @@ a:hover {
 }
     .tab-initial_setup .section {
         clear: both;
-        padding-bottom: 10px;
+        padding-bottom: 8px;
     }
         .tab-initial_setup .section a {
             display: block;
@@ -241,12 +241,18 @@ a:hover {
     border: 1px solid silver;
     background-color: white;
 }
+    #interactive_block .model {
+        display: block;
+        margin: 10px 0 0 10px;
+        
+        font-weight: bold;
+    }
     #interactive_block a.reset {
-        position: relative;
+        position: absolute;
         display: block;
         
-        top: 265px;
-        left: 10px;
+        margin-left: 10px;
+        margin-top: 240px;
         
         width: 100px;
         height: 23px;
@@ -257,6 +263,8 @@ a:hover {
         
         border: 1px solid silver;
         background-color: blue;
+        
+        z-index: 100;
     } 
     #interactive_block a.reset:hover {
         text-decoration: none;

@@ -278,8 +278,8 @@ function onClosed(result) {
         backgroundPage.connectionId = connectionId; // also pass latest connectionId to the background page
         
         sensor_status(sensors_detected = 0); // reset active sensor indicators
-        $('#content').empty(); // empty content
         $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
+        tab_initialize_default();
         
         console.log('Connection closed successfully.');
     } else { // Something went wrong
@@ -434,44 +434,6 @@ function process_message(code, data) {
             CONFIG.multiType = view.getUint8(1);
             
             $('.software-version').html(CONFIG.version);
-            
-            // TODO: utilize this info
-            switch (CONFIG.multiType) {
-                case 1: // TRI
-                    break;
-                case 2: // QUAD+
-                    break;
-                case 3: // QUAD X
-                    break;
-                case 4: // BI
-                    break;
-                case 5: // GIMBAL
-                    break;
-                case 6: // Y6
-                    break;
-                case 7: // HEX 6
-                    break;
-                case 8: // FLYING_WING
-                    break;
-                case 9: // Y4
-                    break;
-                case 10: // HEX6 X
-                    break;
-                case 11: // OCTO X8
-                case 12:
-                case 13:
-                    break;
-                case 14: // AIRPLANE
-                    break;
-                case 15: // Heli 120 
-                    break;
-                case 16: // Heli 90 
-                    break;
-                case 17: // Vtail 
-                    break;
-                case 18: // HEX6 H
-                    break;
-            }
             
             // IDENT received, show the tab content
             configuration_received = true;

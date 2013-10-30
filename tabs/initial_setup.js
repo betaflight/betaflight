@@ -7,6 +7,63 @@ function tab_initialize_initial_setup() {
     $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
     $('input[name="roll"]').val(CONFIG.accelerometerTrims[1]);
     
+    // Display multiType
+    var str = '';
+    switch (CONFIG.multiType) {
+        case 1: // TRI
+            str = 'TRI';
+            break;
+        case 2: // QUAD +
+            str = 'Quad +';
+            break;
+        case 3: // QUAD X
+            str = 'Quad X';
+            break;
+        case 4: // BI
+            str = 'BI';
+            break;
+        case 5: // GIMBAL
+            str = 'Gimbal';
+            break;
+        case 6: // Y6
+            str = 'Y6';
+            break;
+        case 7: // HEX 6
+            str = 'HEX 6';
+            break;
+        case 8: // FLYING_WING
+            str = 'Flying Wing';
+            break;
+        case 9: // Y4
+            str = 'Y4';
+            break;
+        case 10: // HEX6 X
+            str = 'HEX6 X';
+            break;
+        case 11: // OCTO X8
+        case 12:
+        case 13:
+            str = 'OCTO X8';
+            break;
+        case 14: // AIRPLANE
+            str = 'Airplane';
+            break;
+        case 15: // Heli 120 
+            str = 'Heli 120';
+            break;
+        case 16: // Heli 90 
+            str = 'Heli 90';
+            break;
+        case 17: // Vtail 
+            str = 'Vtail';
+            break;
+        case 18: // HEX6 H
+            str = 'HEX6 H';
+            break;
+    }
+    
+    $('span.model').html('Model: ' + str);
+    
     // UI Hooks
     $('a.calibrateAccel').click(function() {
         send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION);
