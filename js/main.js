@@ -79,5 +79,5 @@ $(document).ready(function() {
         }
     });
     
-    // temporary
+    tab_initialize_default();
 });

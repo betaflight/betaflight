@@ -1,0 +1,69 @@
+<style type="text/css">
+    .welcome {
+        float: left;
+        
+        margin-right: 10px;
+        
+        width: 494px;
+        height: 171px;
+        
+        padding: 5px;
+        
+        border: 1px solid silver;
+    }
+        .welcome a {
+            font-weight: bold;
+        }
+    .changelog {
+        float: left;
+        
+        margin-bottom: 10px;
+        
+        width: 400px;
+        
+        border: 1px solid silver;
+    }
+        .changelog .title {
+            line-height: 20px;
+            
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            
+            border-bottom: 1px solid silver;
+            background-color: #3f4241;
+        }
+        .changelog .wrapper {
+            height: 150px;
+            
+            padding: 5px;
+            
+            overflow-y: scroll;
+            overflow-x: hidden;
+            
+            -webkit-user-select: text;
+        }
+            .changelog .wrapper span {
+                font-weight: bold;
+            }
+            .changelog .wrapper p {
+                margin-bottom: 5px;
+            }
+</style>
+<div class="tab-default">
+    <div class="welcome">
+        This application is a configuration utility for baseflight, a 32 bit fork of the popular open source RC flight control firmware project <a href="http://www.multiwii.org/" target="_blank">MultiWii</a>.<br />
+        <br />
+        While this app uses the same serial protocol as MultiWii there are several features that only work with baseflight so make sure to use it with compatible hardware <strong>only</strong>.<br />
+        <br />
+        Hardware running baseflight can be purchased from <a href="http://www.abusemark.com/store/" target="_blank">AbuseMark</a>.<br />
+        <br />
+        The source code can be downloaded from <a href="http://github.com/multiwii/baseflight" target="_blank">http://github.com/multiwii/baseflight</a>.<br />
+        The newest binary firmware image is available <a href="http://github.com/multiwii/baseflight/tree/upstream/obj/baseflight.hex" target="_blank">here</a>.<br />
+    </div>
+    <div class="changelog configurator">
+        <div class="title">Configurator - Changelog</div>
+        <div class="wrapper">
+        </div>
+    </div>
+</div>
