@@ -96,7 +96,8 @@ var SENSOR_DATA = {
     altitude:      0,
     kinematicsX:   0.0,
     kinematicsY:   0.0,
-    kinematicsZ:   0.0
+    kinematicsZ:   0.0,
+    debug:        [0, 0, 0, 0]
 }
 
 var MOTOR_DATA = new Array(8);
@@ -683,7 +684,8 @@ function process_message(code, data) {
             console.log(data);
             break;  
         case MSP_codes.MSP_DEBUG:
-            console.log(data);
+            for (var i = 0; i < 4; i++)
+              SENSOR_DATA.debug[i] = view.getInt16((2 * i), 1);
             break;
         // Additional baseflight commands that are not compatible with MultiWii
         case MSP_codes.MSP_UID:
