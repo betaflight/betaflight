@@ -6,11 +6,13 @@ function tab_initialize_sensors() {
     samples_accel_i = 300;
     samples_mag_i = 300;
     samples_baro_i = 300;
+    samples_debug_i = 300;
     
     gyro_data = new Array(3);
     accel_data = new Array(3);
     mag_data = new Array(3);
     baro_data = new Array(1);
+    debug_data = new Array(4);
     
     gyro_data[0] = new Array();
     gyro_data[1] = new Array();
@@ -25,6 +27,7 @@ function tab_initialize_sensors() {
     mag_data[2] = new Array();    
 
     baro_data[0] = new Array();
+    for (var i = 0; i < 4; i++) debug_data[i] = new Array();
     
     for (var i = 0; i <= 300; i++) {
         gyro_data[0].push([i, 0]);
@@ -40,6 +43,7 @@ function tab_initialize_sensors() {
         mag_data[2].push([i, 0]);   
 
         baro_data[0].push([i, 0]);
+        for (var j = 0; j < 4; j++) debug_data[j].push([i, 0]);
     }
     
     // plot specific stuff
@@ -47,6 +51,10 @@ function tab_initialize_sensors() {
     e_graph_accel = document.getElementById("accel");  
     e_graph_mag = document.getElementById("mag");
     e_graph_baro = document.getElementById("baro");  
+    e_graph_debug1 = document.getElementById("debug1");
+    e_graph_debug2 = document.getElementById("debug2");
+    e_graph_debug3 = document.getElementById("debug3");
+    e_graph_debug4 = document.getElementById("debug4");
     
     gyro_options = {
         title: "Gyroscope (deg/s)",
@@ -121,6 +129,35 @@ function tab_initialize_sensors() {
             backgroundOpacity: 0
         }
     }     
+
+    debug1_options = {
+        title: "Debug1",
+        shadowSize: 0,
+        yaxis : {
+            tickDecimals: 1,
+        },
+        xaxis : {
+            //noTicks = 0
+        },
+        grid : {
+            backgroundColor : "#FFFFFF"
+        },
+        legend : {
+            position: "we",
+            backgroundOpacity: 0
+        }
+    }
+    debug2_options = {};
+    for (var key in debug1_options) debug2_options[key] = debug1_options[key];
+    debug2_options.title = "Debug2";
+
+    debug3_options = {};
+    for (var key in debug1_options) debug3_options[key] = debug1_options[key];
+    debug3_options.title = "Debug3";
+
+    debug4_options = {};
+    for (var key in debug1_options) debug4_options[key] = debug1_options[key];
+    debug4_options.title = "Debug4";
     
     // set refresh speeds according to configuration saved in storage
     chrome.storage.local.get('sensor_refresh_rates', function(result) {
@@ -129,6 +166,7 @@ function tab_initialize_sensors() {
             $('.tab-sensors select').eq(1).val(result.sensor_refresh_rates.accel); // accel
             $('.tab-sensors select').eq(2).val(result.sensor_refresh_rates.mag); // mag
             $('.tab-sensors select').eq(3).val(result.sensor_refresh_rates.baro); // baro
+            $('.tab-sensors select').eq(4).val(result.sensor_refresh_rates.debug); // debug
             
             $('.tab-sensors select').change(); // start polling data by triggering refresh rate change event
         } else {
@@ -145,7 +183,8 @@ function tab_initialize_sensors() {
             'gyro':  parseInt($('.tab-sensors select').eq(0).val()), 
             'accel': parseInt($('.tab-sensors select').eq(1).val()), 
             'mag':   parseInt($('.tab-sensors select').eq(2).val()), 
-            'baro':  parseInt($('.tab-sensors select').eq(3).val())
+            'baro':  parseInt($('.tab-sensors select').eq(3).val()),
+            'debug':  parseInt($('.tab-sensors select').eq(4).val())
         };
         
         
@@ -170,6 +209,7 @@ function tab_initialize_sensors() {
         timers.push(setInterval(sensor_status_pull, 50));
         timers.push(setInterval(sensor_IMU_pull, fastest));
         timers.push(setInterval(sensor_altitude_pull, rates.baro));
+        timers.push(setInterval(sensor_debug_pull, rates.debug));
         
         // processing timers
         timers.push(setInterval(sensor_process_gyro, rates.gyro));
@@ -196,6 +236,14 @@ function sensor_altitude_pull() {
     // we can process this one right here
     sensor_process_baro();
 }
+
+function sensor_debug_pull() {
+    send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG);
+    
+    // we can process this one right here
+    sensor_process_debug();
+}
+
 
 function sensor_process_gyro() {
     gyro_data[0].push([samples_gyro_i, SENSOR_DATA.gyroscope[0]]);
@@ -270,3 +318,27 @@ function sensor_process_baro() {
 
     samples_baro_i++;
 }
+
+function sensor_process_debug() {
+    for (var i = 0; i < 4; i++) {
+      debug_data[i].push([samples_debug_i, SENSOR_DATA.debug[i]]);
+
+      // Remove old data from array
+      while (debug_data[i].length > 300) {
+          debug_data[i].shift();
+      }
+    }
+
+
+    Flotr.draw(e_graph_debug1, [
+        {data: debug_data[0], label: "debug1 [" + SENSOR_DATA.debug[0] + "]"} ], debug1_options);
+    Flotr.draw(e_graph_debug2, [
+        {data: debug_data[1], label: "debug2 [" + SENSOR_DATA.debug[1] + "]"} ], debug2_options);
+    Flotr.draw(e_graph_debug3, [
+        {data: debug_data[2], label: "debug3 [" + SENSOR_DATA.debug[2] + "]"} ], debug3_options);
+    Flotr.draw(e_graph_debug4, [
+        {data: debug_data[3], label: "debug4 [" + SENSOR_DATA.debug[3] + "]"} ], debug4_options);
+
+    samples_debug_i++;
+}
+

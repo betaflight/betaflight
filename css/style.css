@@ -856,6 +856,19 @@ a:hover {
     .tab-sensors #baro {
         height: 120px;
     }
+    .tab-sensors #debug1 {
+        height: 120px;
+    }
+    .tab-sensors #debug2 {
+        height: 120px;
+    }
+    .tab-sensors #debug3 {
+        height: 120px;
+    }
+    .tab-sensors #debug4 {
+        height: 120px;
+    }
+    
     .tab-sensors select {
         float: right;
         
