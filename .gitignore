@@ -3,3 +3,4 @@
 *.uvopt
 *.dep
 *.bak
+*.uvgui.*
