@@ -1,3 +1,26 @@
+var CliHistory = function () {
+  this.history = [];
+  this.index = 0;
+};
+
+CliHistory.prototype = {
+  add: function (str) {
+    this.history.push(str);
+    this.index = this.history.length;
+  },
+  prev: function () {
+    if (this.index > 0) this.index -= 1;
+    return this.history[this.index];
+  },
+  next: function () {
+    if (this.index < this.history.length) this.index += 1;
+    return this.history[this.index - 1];
+  }
+}
+
+cli_history = new CliHistory();
+
+
 function tab_initialize_cli() {
     ga_tracker.sendAppView('CLI Page');
     
@@ -12,10 +35,12 @@ function tab_initialize_cli() {
     chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
     });
 
-    $('.tab-cli textarea').keypress(function(event) {
+    var textarea = $('.tab-cli textarea');
+    textarea.keypress(function(event) {
         if (event.which == 13) { // enter
             var out_string = $('.tab-cli textarea').val();
             var out_arr = out_string.split("\n");
+            cli_history.add(out_string.trim());
             var timeout_needle = 0;
             
             for (var i = 0; i < out_arr.length; i++) {
@@ -24,6 +49,16 @@ function tab_initialize_cli() {
             
             $('.tab-cli textarea').val('');
         }
+    });
+
+    textarea.keyup(function(event) {
+        var keyUp = { 38: true }, keyDown = { 40: true };
+
+        if (event.keyCode in keyUp)
+            textarea.val(cli_history.prev());
+
+        if (event.keyCode in keyDown)
+            textarea.val(cli_history.next());
     });
     
     // give input element user focus
