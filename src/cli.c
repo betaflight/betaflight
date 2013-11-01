@@ -12,6 +12,7 @@ static void cliFeature(char *cmdline);
 static void cliHelp(char *cmdline);
 static void cliMap(char *cmdline);
 static void cliMixer(char *cmdline);
+static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
@@ -24,6 +25,9 @@ extern uint8_t accHardware;
 
 // from config.c RC Channel mapping
 extern const char rcChannelLetters[];
+
+// from mixer.c
+extern int16_t motor_disarmed[MAX_MOTORS];
 
 // buffer
 static char cliBuffer[48];
@@ -74,6 +78,7 @@ const clicmd_t cmdTable[] = {
     { "help", "", cliHelp },
     { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
+    { "motor", "get/set motor output value", cliMotor },
     { "profile", "index (0 to 2)", cliProfile },
     { "save", "save and reboot", cliSave },
     { "set", "name=value or blank or * for list", cliSet },
@@ -723,6 +728,44 @@ static void cliMixer(char *cmdline)
             break;
         }
     }
+}
+
+static void cliMotor(char *cmdline)
+{
+    int motor_index;
+    int motor_value;
+    int len;
+    char *tmp = NULL;
+    char *sep = " ";
+
+    len = strlen(cmdline);
+
+    tmp = strtok(cmdline, sep);
+    if (tmp == NULL) {
+        printf("Usage:\r\n");
+        printf("motor [index] shows the output value of one motor\r\n");
+        printf("motor [index] [value] sets the output value of one motor\r\n");
+        return;
+    }
+    motor_index = atoi(tmp);
+
+    if (motor_index < 0 || motor_index >= MAX_MOTORS) {
+        printf("No such motor, use a number [0, %d]\r\n", MAX_MOTORS);
+        return;
+    }
+
+    tmp = strtok(NULL, sep);
+    if (tmp == NULL) {
+        tmp = strtok(cmdline, sep);
+        motor_index = atoi(tmp);
+        printf("Motor %d is set at %d\r\n", motor_index,
+            motor_disarmed[motor_index]);
+        return;
+    }
+    motor_value = atoi(tmp);
+
+    printf("Setting motor %d to %d\r\n", motor_index, motor_value);
+    motor_disarmed[motor_index] = motor_value;
 }
 
 static void cliProfile(char *cmdline)

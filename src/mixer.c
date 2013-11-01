@@ -3,6 +3,7 @@
 
 static uint8_t numberMotor = 0;
 int16_t motor[MAX_MOTORS];
+int16_t motor_disarmed[MAX_MOTORS];
 int16_t servo[MAX_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
 static motorMixer_t currentMixer[MAX_MOTORS];
@@ -191,6 +192,11 @@ void mixerInit(void)
                 currentMixer[i].yaw *= 0.5f;
             }
         }
+    }
+
+    // set disarmed motor values
+    for (i = 0; i < MAX_MOTORS; i++) {
+        motor_disarmed[i] = feature(FEATURE_3D) ? mcfg.neutral3d : mcfg.mincommand;
     }
 }
 
@@ -436,7 +442,8 @@ void mixTable(void)
                     motor[i] = mcfg.mincommand;
             }
         }
-        if (!f.ARMED)
-            motor[i] = feature(FEATURE_3D) ? mcfg.neutral3d : mcfg.mincommand;
+        if (!f.ARMED) {
+            motor[i] = motor_disarmed[i];
+        }
     }
 }
