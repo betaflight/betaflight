@@ -1,2 +1,5 @@
 *.o
 *~
+*.uvopt
+*.dep
+*.bak
