@@ -22,8 +22,8 @@ function gps_pull() {
         var row = e_ss_table.eq(i);
 
         $('td', row).eq(0).html(GPS_DATA.svid[i]);
-        $('td', row).eq(1).html(GPS_DATA.quality);
-        $('td', row).eq(2).find('progress').val(GPS_DATA.cno);
+        $('td', row).eq(1).html(GPS_DATA.quality[i]);
+        $('td', row).eq(2).find('progress').val(GPS_DATA.cno[i]);
     }
     
     send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
