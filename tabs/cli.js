@@ -1,21 +1,21 @@
 var CliHistory = function () {
-  this.history = [];
-  this.index = 0;
+    this.history = [];
+    this.index = 0;
 };
 
 CliHistory.prototype = {
-  add: function (str) {
-    this.history.push(str);
-    this.index = this.history.length;
-  },
-  prev: function () {
-    if (this.index > 0) this.index -= 1;
-    return this.history[this.index];
-  },
-  next: function () {
-    if (this.index < this.history.length) this.index += 1;
-    return this.history[this.index - 1];
-  }
+    add: function (str) {
+        this.history.push(str);
+        this.index = this.history.length;
+    },
+    prev: function () {
+        if (this.index > 0) this.index -= 1;
+        return this.history[this.index];
+    },
+    next: function () {
+        if (this.index < this.history.length) this.index += 1;
+        return this.history[this.index - 1];
+    }
 }
 
 cli_history = new CliHistory();
@@ -32,8 +32,7 @@ function tab_initialize_cli() {
     
     bufView[0] = 0x23; // #
 
-    chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-    });
+    chrome.serial.write(connectionId, bufferOut, function(writeInfo) {});
 
     var textarea = $('.tab-cli textarea');
     textarea.keypress(function(event) {
@@ -109,7 +108,7 @@ function leave_CLI(callback) {
     bufView[4] = 0x0D; // enter
 
     chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-        if (typeof callback !== 'undefined') {
+        if (callback) {
             callback();
         }
     });   
@@ -146,6 +145,7 @@ function handle_CLI(data) {
             sequence_elements = 0;
         }
     }
+    
     if (sequence_elements == 0) {
         switch (data) {
             case 10: // line feed
