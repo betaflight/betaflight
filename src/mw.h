@@ -40,8 +40,12 @@ typedef enum MultiType
     MULTITYPE_HELI_120_CCPM = 15,
     MULTITYPE_HELI_90_DEG = 16,
     MULTITYPE_VTAIL4 = 17,
-    MULTITYPE_CUSTOM = 18,          // no current GUI displays this
-    MULTITYPE_LAST = 19
+    MULTITYPE_HEX6H = 18,
+    MULTITYPE_PPM_TO_SERVO = 19,    // PPM -> servo relay 
+    MULTITYPE_DUALCOPTER = 20,
+    MULTITYPE_SINGLECOPTER = 21,
+    MULTITYPE_CUSTOM = 22,          // no current GUI displays this
+    MULTITYPE_LAST = 23
 } MultiType;
 
 typedef enum GimbalFlags {

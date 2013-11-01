@@ -106,6 +106,20 @@ static const motorMixer_t mixerVtail4[] = {
     { 1.0f,  1.0f, -1.0f, -0.0f },          // FRONT_L
 };
 
+static const motorMixer_t mixerHex6H[] = {
+    { 1.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
+    { 1.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
+    { 1.0f,  1.0f,  1.0f,  1.0f },     // REAR_L
+    { 1.0f,  1.0f, -1.0f, -1.0f },     // FRONT_L
+    { 1.0f,  0.0f,  0.0f,  0.0f },     // RIGHT
+    { 1.0f,  0.0f,  0.0f,  0.0f },     // LEFT
+};
+
+static const motorMixer_t mixerDualcopter[] = {
+    { 1.0f,  0.0f,  0.0f, -1.0f },          // LEFT
+    { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
+};
+
 // Keep this synced with MultiType struct in mw.h!
 const mixer_t mixers[] = {
 //    Mo Se Mixtable
@@ -127,6 +141,10 @@ const mixer_t mixers[] = {
     { 0, 1, NULL },                // * MULTITYPE_HELI_120_CCPM
     { 0, 1, NULL },                // * MULTITYPE_HELI_90_DEG
     { 4, 0, mixerVtail4 },         // MULTITYPE_VTAIL4
+    { 6, 0, mixerHex6H },          // MULTITYPE_HEX6H
+    { 0, 1, NULL },                // * MULTITYPE_PPM_TO_SERVO
+    { 2, 1, mixerDualcopter  },    // MULTITYPE_DUALCOPTER
+    { 1, 1, NULL },                // MULTITYPE_SINGLECOPTER
     { 0, 0, NULL },                // MULTITYPE_CUSTOM
 };
 
@@ -247,6 +265,18 @@ void writeServos(void)
         case MULTITYPE_GIMBAL:
             pwmWriteServo(0, servo[0]);
             pwmWriteServo(1, servo[1]);
+            break;
+
+        case MULTITYPE_DUALCOPTER:
+            pwmWriteServo(0, servo[4]);
+            pwmWriteServo(1, servo[5]);
+            break;
+
+        case MULTITYPE_SINGLECOPTER:
+            pwmWriteServo(0, servo[3]);
+            pwmWriteServo(1, servo[4]);
+            pwmWriteServo(2, servo[5]);
+            pwmWriteServo(3, servo[6]);
             break;
 
         default:
@@ -381,6 +411,21 @@ void mixTable(void)
             }
             servo[3] += servoMiddle(3);
             servo[4] += servoMiddle(4);
+            break;
+
+        case MULTITYPE_DUALCOPTER:
+            for (i = 4; i < 6; i++ ) {
+                servo[i] = axisPID[5 - i] * servoDirection(i, 1); // mix and setup direction
+                servo[i] += servoMiddle(i);
+            }
+            break;
+
+        case MULTITYPE_SINGLECOPTER:
+            for (i = 3; i < 7; i++) {
+                servo[i] = (axisPID[YAW] * servoDirection(i, 2)) + (axisPID[(6 - i) >> 1] * servoDirection(i, 1)); // mix and setup direction
+                servo[i] += servoMiddle(i);
+            }
+            motor[0] = rcCommand[THROTTLE];
             break;
     }
 
