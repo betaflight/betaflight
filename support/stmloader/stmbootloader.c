@@ -322,7 +322,7 @@ void stmLoader(serialStruct_t *s, FILE *fp, unsigned char overrideParity, unsign
 	printf("Flashing device...\n");
 	jumpAddress = stmHexLoader(s, fp);
 	if (jumpAddress) {
-		printf("\nFlash complete, cycle power\n");
+		printf("\nFlash complete, executing.\n");
 
 		go:
 		// send GO command
