@@ -67,12 +67,14 @@ void computeIMU(void)
             Smoothing[YAW] = (mcfg.gyro_smoothing_factor) & 0xff;
         }
         for (axis = 0; axis < 3; axis++) {
-            gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroData[axis] + 1) / Smoothing[axis]);
+            gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroADC[axis] + 1) / Smoothing[axis]);
             gyroSmooth[axis] = gyroData[axis];
         }
     } else if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
-        gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW]) / 3;
+        gyroData[YAW] = (gyroYawSmooth * 2 + gyroADC[YAW]) / 3;
         gyroYawSmooth = gyroData[YAW];
+        gyroData[ROLL] = gyroADC[ROLL];
+        gyroData[PITCH] = gyroADC[PITCH];
     } else {
         for (axis = 0; axis < 3; axis++)
             gyroData[axis] = gyroADC[axis];
