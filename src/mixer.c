@@ -335,22 +335,6 @@ static void airplaneMixer(void)
 
 
     }
-
-    if (cfg.flaps) {
-        int16_t flap = 1500 - constrain(rcData[cfg.flaps], cfg.servoendpoint_low[2], cfg.servoendpoint_high[2]);
-        static int16_t slowFlaps = flap;
-
-        if (cfg.flapspeed) {
-            if (slowFlaps < flap) {
-                slowFlaps += cfg.flapspeed;
-            } else if (slowFlaps > flap) {
-                slowFlaps -= cfg.flapspeed;
-            }
-        } else {
-            slowFlaps = flap;
-        }
-        servo[2] = servomid[2] + (slowFlaps * cfg.servoreverse[2]);
-    }
 #endif
 
     if (mcfg.flaps_speed) {
