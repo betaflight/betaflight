@@ -669,11 +669,10 @@ static void cliFeature(char *cmdline)
 
 static void cliGpsPassthrough(char *cmdline)
 {
-    cliPrint("Enabling GPS passthrough...");
-
-    if (gpsSetPassthrough() == -1) {
+    if (gpsSetPassthrough() == -1)
         cliPrint("Error: Enable and plug in GPS first\r\n");
-    }
+    else
+        cliPrint("Enabling GPS passthrough...\r\n");
 }
 
 static void cliHelp(char *cmdline)

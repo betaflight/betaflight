@@ -542,7 +542,7 @@ int8_t gpsSetPassthrough(void)
     if (gpsData.state != GPS_RECEIVINGDATA)
         return -1;
 
-// get rid of callback
+    // get rid of callback
     core.gpsport->callback = NULL;
 
     LED0_OFF;
@@ -553,15 +553,14 @@ int8_t gpsSetPassthrough(void)
             LED0_ON;
             serialWrite(core.mainport, serialRead(core.gpsport));
             LED0_OFF;
-            }
+        }
         if (serialTotalBytesWaiting(core.mainport)) {
             LED1_ON;
             serialWrite(core.gpsport, serialRead(core.mainport));
             LED1_OFF;
-            }
         }
+    }
 }
-
 
 // OK here is the onboard GPS code
 
