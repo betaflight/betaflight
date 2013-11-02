@@ -4,3 +4,4 @@
 *.dep
 *.bak
 *.uvgui.*
+obj/
