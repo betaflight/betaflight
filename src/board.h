@@ -46,6 +46,7 @@ typedef enum {
     SENSOR_MAG = 1 << 3,
     SENSOR_SONAR = 1 << 4,
     SENSOR_GPS = 1 << 5,
+    SENSOR_GPSMAG = 1 << 6,
 } AvailableSensors;
 
 // Type of accelerometer used/detected
@@ -88,6 +89,7 @@ typedef enum {
     GPS_UBLOX,
     GPS_MTK_NMEA,
     GPS_MTK_BINARY,
+    GPS_MAG_BINARY,
 } GPSHardware;
 
 typedef enum {

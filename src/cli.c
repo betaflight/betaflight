@@ -52,7 +52,7 @@ static const char * const featureNames[] = {
 
 // sync this with AvailableSensors enum from board.h
 static const char * const sensorNames[] = {
-    "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
+    "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
 };
 
 static const char * const accNames[] = {
