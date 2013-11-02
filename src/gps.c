@@ -69,7 +69,7 @@ typedef struct gpsData_t {
     uint32_t lastMessage;           // last time valid GPS data was received (millis)
     uint32_t lastLastMessage;       // last-last valid GPS message. Used to calculate delta.
     
-    
+    uint32_t state_position;           // incremental variable for loops
     
 } gpsData_t;
 
@@ -78,13 +78,18 @@ gpsData_t gpsData;
 static void gpsNewData(uint16_t c);
 static bool gpsNewFrameNMEA(char c);
 static bool gpsNewFrameUBLOX(uint8_t data);
+static void gpsSetState(uint8_t state)
+{
+    gpsData.state = state;
+    gpsData.state_position = 0;
+}
 
 void gpsInit(uint8_t baudrate)
 {
     portMode_t mode = MODE_RXTX;
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
-    gpsData.state = GPS_UNKNOWN;
+    gpsSetState(GPS_UNKNOWN);
     if (!feature(FEATURE_GPS))
         return;
 
@@ -98,42 +103,52 @@ void gpsInit(uint8_t baudrate)
     gpsSetPIDs();
     core.gpsport = uartOpen(USART2, gpsNewData, gpsInitData[baudrate].baudrate, mode);
     // signal GPS "thread" to initialize when it gets to it
-    gpsData.state = GPS_INITIALIZING;
+    gpsSetState(GPS_INITIALIZING);
 }
 
 void gpsInitHardware(void)
 {
-    int i;
-
     switch (mcfg.gps_type) {
         case GPS_NMEA:
             // nothing to do, just set baud rate and try receiving some stuff and see if it parses
             serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
-            gpsData.state = GPS_RECEIVINGDATA;
+            gpsSetState(GPS_RECEIVINGDATA);
             return;
 
         case GPS_UBLOX:
             // UBX will run at mcfg.baudrate, it shouldn't be "autodetected". So here we force it to that rate
+
+                // Wait until GPS transmit buffer is empty
+                if (!isSerialTransmitBufferEmpty(core.gpsport))
+                    break;
+
             if (gpsData.state == GPS_INITIALIZING) {
-                for (i = 0; i < GPS_INIT_ENTRIES; i++) {
+                if (gpsData.state_position < GPS_INIT_ENTRIES) {
                     // try different speed to INIT
-                    serialSetBaudRate(core.gpsport, gpsInitData[i].baudrate);
+                    serialSetBaudRate(core.gpsport, gpsInitData[gpsData.state_position].baudrate);
                     // but print our FIXED init string for the baudrate we want to be at
                     serialPrint(core.gpsport, gpsInitData[mcfg.gps_baudrate].ubx);
-                    delay(200);
+
+                    gpsData.state_position++;
+                } else {
+                    // we're now (hopefully) at the correct rate, next state will switch to it
+                    gpsData.baudrateIndex = mcfg.gps_baudrate;
+                    gpsSetState(GPS_INITDONE);
                 }
-                // we're now (hopefully) at the correct rate, next state will switch to it
-                gpsData.baudrateIndex = mcfg.gps_baudrate;
-                gpsData.state = GPS_INITDONE;
             } else {
                 // GPS_INITDONE, set our real baud rate and push some ublox config strings
-                serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
-                for (i = 0; i < sizeof(ubloxInit); i++) {
-                    serialWrite(core.gpsport, ubloxInit[i]); // send ubx init binary
-                    delay(4);
+
+                if (gpsData.state_position == 0)
+                    serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
+
+                if (gpsData.state_position < sizeof(ubloxInit)) {
+                    serialWrite(core.gpsport, ubloxInit[gpsData.state_position]); // send ubx init binary
+
+                    gpsData.state_position++;
+                } else {
+                    // ublox should be init'd, time to try receiving some junk
+                    gpsSetState(GPS_RECEIVINGDATA);
                 }
-                // ublox should be init'd, time to try receiving some junk
-                gpsData.state = GPS_RECEIVINGDATA;
             }
             break;
         case GPS_MTK_NMEA:
@@ -166,7 +181,7 @@ void gpsThread(void)
             // TODO - move some / all of these into gpsData
             GPS_numSat = 0;
             f.GPS_FIX = 0;
-            gpsData.state = GPS_INITIALIZING;
+            gpsSetState(GPS_INITIALIZING);
             break;
 
         case GPS_RECEIVINGDATA:
@@ -174,7 +189,7 @@ void gpsThread(void)
             if (millis() - gpsData.lastMessage > GPS_TIMEOUT) {
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
-                gpsData.state = GPS_LOSTCOMMS;
+                gpsSetState(GPS_LOSTCOMMS);
             }
             break;
     }
