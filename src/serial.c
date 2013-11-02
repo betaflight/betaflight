@@ -494,7 +494,7 @@ static void evaluateCommand(void)
             serialize8(availableBoxes[i]);
         break;
     case MSP_MISC:
-        headSerialReply(2 * 6 + 4 + 2 + 8 * 4);
+        headSerialReply(2 * 6 + 4 + 2 + 4);
         serialize16(0); // intPowerTrigger1 (aka useless trash)
         serialize16(mcfg.minthrottle);
         serialize16(mcfg.maxthrottle);
