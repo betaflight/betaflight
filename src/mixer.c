@@ -211,11 +211,15 @@ void mixerInit(void)
             }
         }
     }
+    mixerResetMotors();
+}
 
+void mixerResetMotors(void)
+{
+    int i;
     // set disarmed motor values
-    for (i = 0; i < MAX_MOTORS; i++) {
+    for (i = 0; i < MAX_MOTORS; i++)
         motor_disarmed[i] = feature(FEATURE_3D) ? mcfg.neutral3d : mcfg.mincommand;
-    }
 }
 
 void mixerLoadMix(int index)

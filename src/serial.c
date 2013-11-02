@@ -3,7 +3,8 @@
 
 // Multiwii Serial Protocol 0
 #define MSP_VERSION              0
-#define PLATFORM_32BIT           ((uint32_t)1 << 31)
+#define CAP_PLATFORM_32BIT          ((uint32_t)1 << 31)
+#define CAP_DYNBALANCE              ((uint32_t)1 << 2)
 
 #define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
@@ -89,6 +90,8 @@ struct box_t {
 static uint8_t availableBoxes[CHECKBOXITEMS];
 // this is the number of filled indexes in above array
 static uint8_t numberBoxItems = 0;
+// from mixer.c
+extern int16_t motor_disarmed[MAX_MOTORS];
 
 static const char pidnames[] =
     "ROLL;"
@@ -328,6 +331,10 @@ static void evaluateCommand(void)
         read8();                            // vbatlevel_crit (unused)
         headSerialReply(0);
         break;
+    case MSP_SET_MOTOR:
+        for (i = 0; i < 8; i++)
+            motor_disarmed[i] = read16();
+        break;
     case MSP_SELECT_SETTING:
         if (!f.ARMED) {
             mcfg.current_profile = read8();
@@ -347,7 +354,7 @@ static void evaluateCommand(void)
         serialize8(VERSION);                // multiwii version
         serialize8(mcfg.mixerConfiguration); // type of multicopter
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
-        serialize32(PLATFORM_32BIT);        // "capability"
+        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE);        // "capability"
         break;
     case MSP_STATUS:
         headSerialReply(11);

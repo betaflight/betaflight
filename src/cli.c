@@ -602,6 +602,8 @@ static void cliExit(char *cmdline)
     *cliBuffer = '\0';
     bufferIndex = 0;
     cliMode = 0;
+    // incase some idiot leaves a motor running during motortest, clear it here
+    mixerResetMotors();
     // save and reboot... I think this makes the most sense
     cliSave(cmdline);
 }
@@ -734,37 +736,45 @@ static void cliMixer(char *cmdline)
 
 static void cliMotor(char *cmdline)
 {
-    int motor_index;
-    int motor_value;
-    int len;
-    char *tmp = NULL;
-    char *sep = " ";
+    int motor_index = 0;
+    int motor_value = 0;
+    int len, index = 0;
+    char *pch = NULL;
 
     len = strlen(cmdline);
-
-    tmp = strtok(cmdline, sep);
-    if (tmp == NULL) {
-        printf("Usage:\r\n");
-        printf("motor [index] shows the output value of one motor\r\n");
-        printf("motor [index] [value] sets the output value of one motor\r\n");
+    if (len == 0) {
+        printf("Usage:\r\nmotor index [value] - show [or set] motor value\r\n");
         return;
     }
-    motor_index = atoi(tmp);
+
+    pch = strtok(cmdline, " ");
+    while (pch != NULL) {
+        switch (index) {
+            case 0:
+                motor_index = atoi(pch);
+                break;
+            case 1:
+                motor_value = atoi(pch);
+                break;
+        }
+        index++;
+        pch = strtok(NULL, " ");
+    }
 
     if (motor_index < 0 || motor_index >= MAX_MOTORS) {
         printf("No such motor, use a number [0, %d]\r\n", MAX_MOTORS);
         return;
     }
 
-    tmp = strtok(NULL, sep);
-    if (tmp == NULL) {
-        tmp = strtok(cmdline, sep);
-        motor_index = atoi(tmp);
-        printf("Motor %d is set at %d\r\n", motor_index,
-            motor_disarmed[motor_index]);
+    if (index < 2) {
+        printf("Motor %d is set at %d\r\n", motor_index, motor_disarmed[motor_index]);
         return;
     }
-    motor_value = atoi(tmp);
+
+    if (motor_value < 1000 || motor_value > 2000) {
+        printf("Invalid motor value, 1000..2000\r\n");
+        return;
+    }
 
     printf("Setting motor %d to %d\r\n", motor_index, motor_value);
     motor_disarmed[motor_index] = motor_value;
