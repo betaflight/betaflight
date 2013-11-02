@@ -537,6 +537,32 @@ void gpsSetPIDs(void)
     navPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 }
 
+int8_t gpsSetPassthrough(void)
+{
+    if (gpsData.state != GPS_RECEIVINGDATA)
+        return -1;
+
+// get rid of callback
+    core.gpsport->callback = NULL;
+
+    LED0_OFF;
+    LED1_OFF;
+
+    while(1) {
+        if (serialTotalBytesWaiting(core.gpsport)) {
+            LED0_ON;
+            serialWrite(core.mainport, serialRead(core.gpsport));
+            LED0_OFF;
+            }
+        if (serialTotalBytesWaiting(core.mainport)) {
+            LED1_ON;
+            serialWrite(core.gpsport, serialRead(core.mainport));
+            LED1_OFF;
+            }
+        }
+}
+
+
 // OK here is the onboard GPS code
 
 ////////////////////////////////////////////////////////////////////////////////////

@@ -458,6 +458,7 @@ void cliProcess(void);
 void gpsInit(uint8_t baudrate);
 void gpsThread(void);
 void gpsSetPIDs(void);
+int8_t gpsSetPassthrough(void);
 void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
