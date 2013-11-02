@@ -1,12 +1,8 @@
-baseflight / multiwii configurator
+baseflight configurator
 ==================================
-This project was designed to work primarily with baseflight (but should work just fine with anything using the standard MSP)
-
-Configurator is based on chrome.serial API (currently found only in google chrome and chromium web browsers)
+Configurator is based on chrome.serial API (currently found only in google chrome and chromium web browsers).
 
 I am using Flotr2 as a plotting library (with a few UI tweaks).
-
-Using "webkit" as application wrapper assures full compatibility across operating systems (Windows / Linux/ Mac OS).
 
 Installation
 ------------
