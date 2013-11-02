@@ -123,12 +123,13 @@ void gpsInitHardware(void)
                     break;
 
             if (gpsData.state == GPS_INITIALIZING) {
-                gpsData.state_position++;
-                if (gpsData.state_position <= GPS_INIT_ENTRIES) {
+                if (gpsData.state_position < GPS_INIT_ENTRIES) {
                     // try different speed to INIT
-                    serialSetBaudRate(core.gpsport, gpsInitData[gpsData.state_position - 1].baudrate);
+                    serialSetBaudRate(core.gpsport, gpsInitData[gpsData.state_position].baudrate);
                     // but print our FIXED init string for the baudrate we want to be at
                     serialPrint(core.gpsport, gpsInitData[mcfg.gps_baudrate].ubx);
+
+                    gpsData.state_position++;
                 } else {
                     // we're now (hopefully) at the correct rate, next state will switch to it
                     gpsData.baudrateIndex = mcfg.gps_baudrate;
@@ -140,10 +141,10 @@ void gpsInitHardware(void)
                 if (gpsData.state_position == 0)
                     serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
 
-                gpsData.state_position++;
+                if (gpsData.state_position < sizeof(ubloxInit)) {
+                    serialWrite(core.gpsport, ubloxInit[gpsData.state_position]); // send ubx init binary
 
-                if (gpsData.state_position <= sizeof(ubloxInit)) {
-                    serialWrite(core.gpsport, ubloxInit[gpsData.state_position - 1]); // send ubx init binary
+                    gpsData.state_position++;
                 } else {
                     // ublox should be init'd, time to try receiving some junk
                     gpsSetState(GPS_RECEIVINGDATA);
