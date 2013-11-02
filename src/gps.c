@@ -78,6 +78,7 @@ gpsData_t gpsData;
 static void gpsNewData(uint16_t c);
 static bool gpsNewFrameNMEA(char c);
 static bool gpsNewFrameUBLOX(uint8_t data);
+
 static void gpsSetState(uint8_t state)
 {
     gpsData.state = state;

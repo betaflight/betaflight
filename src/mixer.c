@@ -321,19 +321,16 @@ void writeAllMotors(int16_t mc)
 
 static void airplaneMixer(void)
 {
-#if 0
-    uint16_t servomid[8];
-    int16_t flaperons[2] = { 0, 0 };
-
-    for (i = 0; i < 8; i++) {
-        servomid[i] = 1500 + cfg.servotrim[i]; // servo center is 1500?
-    }
+    int16_t flapperons[2] = { 0, 0 };
+    int i;
 
     if (!f.ARMED)
-        motor[0] = cfg.mincommand; // Kill throttle when disarmed
+        servo[7] = mcfg.mincommand; // Kill throttle when disarmed
     else
-        motor[0] = rcData[THROTTLE];
+        servo[7] = constrain(rcCommand[THROTTLE], mcfg.minthrottle, mcfg.maxthrottle);
+    motor[0] = servo[7];
 
+#if 0
     if (cfg.flaperons) {
 
 
@@ -354,19 +351,41 @@ static void airplaneMixer(void)
         }
         servo[2] = servomid[2] + (slowFlaps * cfg.servoreverse[2]);
     }
-
-    if (f.PASSTHRU_MODE) { // Direct passthru from RX
-        servo[3] = servomid[3] + ((rcCommand[ROLL] + flapperons[0]) * cfg.servoreverse[3]);     //   Wing 1
-        servo[4] = servomid[4] + ((rcCommand[ROLL] + flapperons[1]) * cfg.servoreverse[4]);     //   Wing 2
-        servo[5] = servomid[5] + (rcCommand[YAW] * cfg.servoreverse[5]);                        //   Rudder
-        servo[6] = servomid[6] + (rcCommand[PITCH] * cfg.servoreverse[6]);                      //   Elevator
-    } else { // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-        servo[3] = (servomid[3] + ((axisPID[ROLL] + flapperons[0]) * cfg.servoreverse[3]));     //   Wing 1
-        servo[4] = (servomid[4] + ((axisPID[ROLL] + flapperons[1]) * cfg.servoreverse[4]));     //   Wing 2
-        servo[5] = (servomid[5] + (axisPID[YAW] * cfg.servoreverse[5]));                        //   Rudder
-        servo[6] = (servomid[6] + (axisPID[PITCH] * cfg.servoreverse[6]));                      //   Elevator
-    }
 #endif
+
+    if (mcfg.flaps_speed) {
+        // configure SERVO3 middle point in GUI to using an AUX channel for FLAPS control
+        // use servo min, servo max and servo rate for proper endpoints adjust
+        static int16_t slow_LFlaps;
+        int16_t lFlap = servoMiddle(2);
+
+        lFlap = constrain(lFlap, cfg.servoConf[2].min, cfg.servoConf[2].max);
+        lFlap = mcfg.midrc - lFlap; // shouldn't this be servoConf[2].middle?
+        if (slow_LFlaps < lFlap)
+            slow_LFlaps += mcfg.flaps_speed;
+        else if (slow_LFlaps > lFlap)
+            slow_LFlaps -= mcfg.flaps_speed;
+
+        servo[2] = ((int32_t)cfg.servoConf[2].rate * slow_LFlaps) / 100L;
+        servo[2] += mcfg.midrc;
+    }
+
+    if (f.PASSTHRU_MODE) {   // Direct passthru from RX
+        servo[3] = rcCommand[ROLL] + flapperons[0];     // Wing 1
+        servo[4] = rcCommand[ROLL] + flapperons[1];     // Wing 2
+        servo[5] = rcCommand[YAW];                      // Rudder
+        servo[6] = rcCommand[PITCH];                    // Elevator
+    } else {
+        // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
+        servo[3] = axisPID[ROLL] + flapperons[0];       // Wing 1
+        servo[4] = axisPID[ROLL] + flapperons[1];       // Wing 2
+        servo[5] = axisPID[YAW];                        // Rudder
+        servo[6] = axisPID[PITCH];                      // Elevator
+    }
+    for (i = 3; i < 7; i++) {
+        servo[i] = ((int32_t)cfg.servoConf[i].rate * servo[i]) / 100L; // servo rates
+        servo[i] += servoMiddle(i);
+    }
 }
 
 void mixTable(void)

@@ -5,6 +5,7 @@
 #define MSP_VERSION              0
 #define CAP_PLATFORM_32BIT          ((uint32_t)1 << 31)
 #define CAP_DYNBALANCE              ((uint32_t)1 << 2)
+#define CAP_FLAPS                   ((uint32_t)1 << 3)
 
 #define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
@@ -354,7 +355,7 @@ static void evaluateCommand(void)
         serialize8(VERSION);                // multiwii version
         serialize8(mcfg.mixerConfiguration); // type of multicopter
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
-        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE);        // "capability"
+        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (mcfg.flaps_speed ? CAP_FLAPS : 0));        // "capability"
         break;
     case MSP_STATUS:
         headSerialReply(11);
