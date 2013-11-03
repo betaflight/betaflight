@@ -56,8 +56,9 @@ bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
     gyro->init = mpu3050Init;
     gyro->read = mpu3050Read;
     gyro->temperature = mpu3050ReadTemp;
+
     // 16.4 dps/lsb scalefactor
-    gyro->scale = (((32767.0f / 16.4f) * M_PI) / ((32767.0f / 4.0f) * 180.0f * 1000000.0f));
+    gyro->scale = 1.0f / 16.4f;
 
     // default lpf is 42Hz
     switch (lpf) {
@@ -107,9 +108,10 @@ static void mpu3050Read(int16_t *gyroData)
     uint8_t buf[6];
 
     i2cRead(MPU3050_ADDRESS, MPU3050_GYRO_OUT, 6, buf);
-    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
-    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
-    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
+
+    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]);
+    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]);
+    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]);
 }
 
 static void mpu3050ReadTemp(int16_t *tempData)

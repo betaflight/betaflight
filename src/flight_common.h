@@ -19,6 +19,12 @@ typedef struct pidProfile_s {
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
+
+    float P_f[3];                           // float p i and d factors for the new baseflight pid
+    float I_f[3];
+    float D_f[3];
+    float A_level;
+    float H_level;
 } pidProfile_t;
 
 enum {

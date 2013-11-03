@@ -55,7 +55,7 @@ bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
     gyro->read = l3g4200dRead;
 
     // 14.2857dps/lsb scalefactor
-    gyro->scale = (((32767.0f / 14.2857f) * M_PI) / ((32767.0f / 4.0f) * 180.0f * 1000000.0f));
+    gyro->scale = 1.0f / 14.2857f;
 
     // default LPF is set to 32Hz
     switch (lpf) {
@@ -97,7 +97,8 @@ static void l3g4200dRead(int16_t *gyroData)
     uint8_t buf[6];
 
     i2cRead(L3G4200D_ADDRESS, L3G4200D_AUTOINCR | L3G4200D_GYRO_OUT, 6, buf);
-    gyroData[X] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
-    gyroData[Y] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
-    gyroData[Z] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
+
+    gyroData[X] = (int16_t)((buf[0] << 8) | buf[1]);
+    gyroData[Y] = (int16_t)((buf[2] << 8) | buf[3]);
+    gyroData[Z] = (int16_t)((buf[4] << 8) | buf[5]);
 }

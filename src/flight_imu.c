@@ -62,7 +62,7 @@ float throttleAngleScale;
 int32_t BaroPID = 0;
 
 float magneticDeclination = 0.0f;       // calculated at startup from config
-
+float gyroScaleRad;
 
 // **************
 // gyro+acc IMU
@@ -80,6 +80,7 @@ void imuInit(void)
     smallAngle = lrintf(acc_1G * cosf(RAD * 25.0f));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
     throttleAngleScale = (1800.0f / M_PI) * (900.0f / currentProfile.throttle_correction_angle);
+    gyroScaleRad = gyro.scale * (M_PI / 180.0f) * 0.000001f;
 
 #ifdef MAG
     // if mag sensor is enabled, use it
@@ -278,7 +279,7 @@ static void getEstimatedAttitude(void)
     float scale;
     fp_angles_t deltaGyroAngle;
     deltaT = currentT - previousT;
-    scale = deltaT * gyro.scale;
+    scale = deltaT * gyroScaleRad;
     previousT = currentT;
 
     // Initialization

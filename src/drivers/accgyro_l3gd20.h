@@ -21,6 +21,4 @@
 #define L3GD20_CS_PIN       GPIO_Pin_3
 #define L3GD20_CS_GPIO_CLK  RCC_AHBPeriph_GPIOE
 
-#define L3GD20_GYRO_SCALE_FACTOR  0.00030543f  // (17.5e-3) * pi/180  (17.5 mdps/bit)
-
 bool l3gd20Detect(gyro_t *gyro, uint16_t lpf);

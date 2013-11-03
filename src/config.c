@@ -43,7 +43,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
         escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse,
         airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfig, gimbalConfig_t *gimbalConfigToUse);
 
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x400
+#define FLASH_TO_RESERVE_FOR_CONFIG 0x800
 
 #ifdef STM32F303xC
 #define FLASH_PAGE_COUNT 128
@@ -97,6 +97,18 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDVEL] = 120;
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
+
+    pidProfile->P_f[ROLL] = 2.5f;     // new PID with preliminary defaults test carefully
+    pidProfile->I_f[ROLL] = 0.3f;
+    pidProfile->D_f[ROLL] = 0.06f;
+    pidProfile->P_f[PITCH] = 2.5f;
+    pidProfile->I_f[PITCH] = 0.3f;
+    pidProfile->D_f[PITCH] = 0.06f;
+    pidProfile->P_f[YAW] = 8.0f;
+    pidProfile->I_f[YAW] = 0.5f;
+    pidProfile->D_f[YAW] = 0.05f;
+    pidProfile->A_level = 5.0f;
+    pidProfile->H_level = 3.0f;
 }
 
 void resetGpsProfile(gpsProfile_t *gpsProfile)
@@ -217,6 +229,7 @@ static void resetConf(void)
     resetFlight3DConfig(&masterConfig.flight3DConfig);
     masterConfig.motor_pwm_rate = 400;
     masterConfig.servo_pwm_rate = 50;
+
     // gps/nav stuff
     masterConfig.gps_provider = GPS_NMEA;
 

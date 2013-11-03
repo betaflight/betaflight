@@ -1,11 +1,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "build_config.h"
 
 #include "platform.h"
 
+#include "common/maths.h"
 #include "common/axis.h"
 
 #include "drivers/system_common.h"
@@ -326,34 +328,45 @@ void mspInit(serialConfig_t *serialConfig)
 
     idx = 0;
     availableBoxes[idx++] = BOXARM;
+
     if (sensors(SENSOR_ACC)) {
         availableBoxes[idx++] = BOXANGLE;
         availableBoxes[idx++] = BOXHORIZON;
     }
+
     if (sensors(SENSOR_BARO)) {
         availableBoxes[idx++] = BOXBARO;
         if (feature(FEATURE_VARIO))
             availableBoxes[idx++] = BOXVARIO;
     }
+
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         availableBoxes[idx++] = BOXMAG;
         availableBoxes[idx++] = BOXHEADFREE;
         availableBoxes[idx++] = BOXHEADADJ;
     }
+
     if (feature(FEATURE_SERVO_TILT))
         availableBoxes[idx++] = BOXCAMSTAB;
+
     if (feature(FEATURE_GPS)) {
         availableBoxes[idx++] = BOXGPSHOME;
         availableBoxes[idx++] = BOXGPSHOLD;
     }
+
     if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE)
         availableBoxes[idx++] = BOXPASSTHRU;
+
     availableBoxes[idx++] = BOXBEEPERON;
+
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         availableBoxes[idx++] = BOXCALIB;
+
     availableBoxes[idx++] = BOXOSD;
+
     if (feature(FEATURE_TELEMETRY && masterConfig.telemetryConfig.telemetry_switch))
         availableBoxes[idx++] = BOXTELEMETRY;
+
     numberBoxItems = idx;
 
     openAllMSPSerialPorts(serialConfig);
@@ -389,10 +402,29 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_PID:
-        for (i = 0; i < PID_ITEM_COUNT; i++) {
-            currentProfile.pidProfile.P8[i] = read8();
-            currentProfile.pidProfile.I8[i] = read8();
-            currentProfile.pidProfile.D8[i] = read8();
+        if (currentProfile.pidController == 2) {
+            for (i = 0; i < 3; i++) {
+                currentProfile.pidProfile.P_f[i] = (float)read8() / 10.0f;
+                currentProfile.pidProfile.I_f[i] = (float)read8() / 100.0f;
+                currentProfile.pidProfile.D_f[i] = (float)read8() / 1000.0f;
+            }
+            for (i = 3; i < PID_ITEM_COUNT; i++) {
+                if (i == PIDLEVEL) {
+                    currentProfile.pidProfile.A_level = (float)read8() / 10.0f;
+                    currentProfile.pidProfile.H_level = (float)read8() / 10.0f;
+                    read8();
+                } else {
+                    currentProfile.pidProfile.P8[i] = read8();
+                    currentProfile.pidProfile.I8[i] = read8();
+                    currentProfile.pidProfile.D8[i] = read8();
+                }
+            }
+        } else {
+            for (i = 0; i < PID_ITEM_COUNT; i++) {
+                currentProfile.pidProfile.P8[i] = read8();
+                currentProfile.pidProfile.I8[i] = read8();
+                currentProfile.pidProfile.D8[i] = read8();
+            }
         }
         headSerialReply(0);
         break;
@@ -599,10 +631,29 @@ static void evaluateCommand(void)
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
-        for (i = 0; i < PID_ITEM_COUNT; i++) {
-            serialize8(currentProfile.pidProfile.P8[i]);
-            serialize8(currentProfile.pidProfile.I8[i]);
-            serialize8(currentProfile.pidProfile.D8[i]);
+        if (currentProfile.pidController == 2) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
+            for (i = 0; i < 3; i++) {
+                serialize8(constrain(lrintf(currentProfile.pidProfile.P_f[i] * 10.0f), 0, 250));
+                serialize8(constrain(lrintf(currentProfile.pidProfile.I_f[i] * 100.0f), 0, 250));
+                serialize8(constrain(lrintf(currentProfile.pidProfile.D_f[i] * 1000.0f), 0, 100));
+            }
+            for (i = 3; i < PID_ITEM_COUNT; i++) {
+                if (i == PIDLEVEL) {
+                    serialize8(constrain(lrintf(currentProfile.pidProfile.A_level * 10.0f), 0, 250));
+                    serialize8(constrain(lrintf(currentProfile.pidProfile.H_level * 10.0f), 0, 250));
+                    serialize8(0);
+                } else {
+                    serialize8(currentProfile.pidProfile.P8[i]);
+                    serialize8(currentProfile.pidProfile.I8[i]);
+                    serialize8(currentProfile.pidProfile.D8[i]);
+                }
+            }
+        } else {
+            for (i = 0; i < PID_ITEM_COUNT; i++) {
+                serialize8(currentProfile.pidProfile.P8[i]);
+                serialize8(currentProfile.pidProfile.I8[i]);
+                serialize8(currentProfile.pidProfile.D8[i]);
+            }
         }
         break;
     case MSP_PIDNAMES:

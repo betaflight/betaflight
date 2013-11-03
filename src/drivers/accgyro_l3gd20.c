@@ -216,9 +216,9 @@ static void l3gd20GyroRead(int16_t *gyroData)
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]) / 8;
-    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]) / 8;
-    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 8;
+    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]);
+    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]);
+    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]);
 
 #if 0
     debug[0] = (int16_t)((buf[1] << 8) | buf[0]);
@@ -227,14 +227,18 @@ static void l3gd20GyroRead(int16_t *gyroData)
 #endif
 }
 
+#define L3GD20_GYRO_SCALE_FACTOR  0.00030543f  // (17.5e-3) * pi/180  (17.5 mdps/bit)
+
 bool l3gd20Detect(gyro_t *gyro, uint16_t lpf)
 {
     gyro->init = l3gd20GyroInit;
     gyro->read = l3gd20GyroRead;
 
     // 16.4 dps/lsb scalefactor
-    gyro->scale = L3GD20_GYRO_SCALE_FACTOR;
-    gyro->scale = (4.0f / 16.4f) * (M_PI / 180.0f) * 0.000001f;
+    //gyro->scale = L3GD20_GYRO_SCALE_FACTOR;
+
+    // 14.2857dps/lsb scalefactor
+    gyro->scale = 1.0f / 14.2857f;
 
     return true;  // blindly assume it's present, for now.
 }

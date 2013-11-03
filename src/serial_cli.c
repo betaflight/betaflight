@@ -270,7 +270,8 @@ const clivalue_t valueTable[] = {
     { "nav_speed_max", VAR_UINT16, &currentProfile.gpsProfile.nav_speed_max, 10, 2000 },
     { "nav_slew_rate", VAR_UINT8, &currentProfile.gpsProfile.nav_slew_rate, 0, 100 },
 
-    { "pid_controller", VAR_UINT8, &currentProfile.pidController, 0, 1 },
+    { "pid_controller", VAR_UINT8, &currentProfile.pidController, 0, 2 },
+
     { "p_pitch", VAR_UINT8, &currentProfile.pidProfile.P8[PITCH], 0, 200 },
     { "i_pitch", VAR_UINT8, &currentProfile.pidProfile.I8[PITCH], 0, 200 },
     { "d_pitch", VAR_UINT8, &currentProfile.pidProfile.D8[PITCH], 0, 200 },
@@ -280,12 +281,28 @@ const clivalue_t valueTable[] = {
     { "p_yaw", VAR_UINT8, &currentProfile.pidProfile.P8[YAW], 0, 200 },
     { "i_yaw", VAR_UINT8, &currentProfile.pidProfile.I8[YAW], 0, 200 },
     { "d_yaw", VAR_UINT8, &currentProfile.pidProfile.D8[YAW], 0, 200 },
+
+    { "Ppitchf", VAR_FLOAT, &currentProfile.pidProfile.P_f[PITCH], 0, 100 },
+    { "Ipitchf", VAR_FLOAT, &currentProfile.pidProfile.I_f[PITCH], 0, 100 },
+    { "Dpitchf", VAR_FLOAT, &currentProfile.pidProfile.D_f[PITCH], 0, 100 },
+    { "Prollf", VAR_FLOAT, &currentProfile.pidProfile.P_f[ROLL], 0, 100 },
+    { "Irollf", VAR_FLOAT, &currentProfile.pidProfile.I_f[ROLL], 0, 100 },
+    { "Drollf", VAR_FLOAT, &currentProfile.pidProfile.D_f[ROLL], 0, 100 },
+    { "Pyawf", VAR_FLOAT, &currentProfile.pidProfile.P_f[YAW], 0, 100 },
+    { "Iyawf", VAR_FLOAT, &currentProfile.pidProfile.I_f[YAW], 0, 100 },
+    { "Dyawf", VAR_FLOAT, &currentProfile.pidProfile.D_f[YAW], 0, 100 },
+
+    { "level_horizon", VAR_FLOAT, &currentProfile.pidProfile.H_level, 0, 10 },
+    { "level_angle", VAR_FLOAT, &currentProfile.pidProfile.A_level, 0, 10 },
+
     { "p_alt", VAR_UINT8, &currentProfile.pidProfile.P8[PIDALT], 0, 200 },
     { "i_alt", VAR_UINT8, &currentProfile.pidProfile.I8[PIDALT], 0, 200 },
     { "d_alt", VAR_UINT8, &currentProfile.pidProfile.D8[PIDALT], 0, 200 },
+
     { "p_level", VAR_UINT8, &currentProfile.pidProfile.P8[PIDLEVEL], 0, 200 },
     { "i_level", VAR_UINT8, &currentProfile.pidProfile.I8[PIDLEVEL], 0, 200 },
     { "d_level", VAR_UINT8, &currentProfile.pidProfile.D8[PIDLEVEL], 0, 200 },
+
     { "p_vel", VAR_UINT8, &currentProfile.pidProfile.P8[PIDVEL], 0, 200 },
     { "i_vel", VAR_UINT8, &currentProfile.pidProfile.I8[PIDVEL], 0, 200 },
     { "d_vel", VAR_UINT8, &currentProfile.pidProfile.D8[PIDVEL], 0, 200 },
