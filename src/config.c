@@ -246,7 +246,7 @@ static void resetConf(void)
     cfg.P8[PIDVEL] = 0;
     cfg.I8[PIDVEL] = 0;
     cfg.D8[PIDVEL] = 0;
-    
+
     cfg.P_f[ROLL] = 2.5f;     // new PID with preliminary defaults test carefully
     cfg.I_f[ROLL] = 0.3f;
     cfg.D_f[ROLL] = 0.06f;
@@ -258,7 +258,7 @@ static void resetConf(void)
     cfg.D_f[YAW] = 0.05f;
     cfg.A_level = 5.0f;
     cfg.H_level = 3.0f;
-    
+
     cfg.rcRate8 = 90;
     cfg.rcExpo8 = 65;
     cfg.rollPitchRate = 0;
