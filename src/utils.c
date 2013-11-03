@@ -14,6 +14,16 @@ int constrain(int amt, int low, int high)
         return amt;
 }
 
+float constrainf(float amt, float low, float high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}
+
 void initBoardAlignment(void)
 {
     float roll, pitch, yaw;

@@ -150,10 +150,16 @@ enum {
 #define CALIBRATING_BARO_CYCLES             200
 
 typedef struct config_t {
-    uint8_t pidController;                  // 0 = multiwii original, 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671
+    uint8_t pidController;                  // 0 = multiwii original, 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 2 = Luggi09s new baseflight pid
     uint8_t P8[PIDITEMS];
     uint8_t I8[PIDITEMS];
     uint8_t D8[PIDITEMS];
+    
+    float P_f[3];                           // float p i and d factors for the new baseflight pid
+    float I_f[3];
+    float D_f[3];
+    float A_level;
+    float H_level;
 
     uint8_t rcRate8;
     uint8_t rcExpo8;

@@ -25,6 +25,7 @@ rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) o
 
 static void pidMultiWii(void);
 static void pidRewrite(void);
+static void pidBaseflight(void);
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
@@ -278,7 +279,77 @@ static void mwVario(void)
 }
 
 static int32_t errorGyroI[3] = { 0, 0, 0 };
+static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 static int32_t errorAngleI[2] = { 0, 0 };
+
+static void pidBaseflight()
+{
+    float RateError, errorAngle, AngleRate, gyroRate;
+    float ITerm,PTerm,DTerm;
+    static float lastGyroRate[3];
+    static float delta1[3], delta2[3];
+    float delta, deltaSum;
+    float dT;
+    int axis;
+    
+    dT = (float)cycleTime * 0.000001f;
+
+    // ----------PID controller----------
+    for (axis = 0; axis < 3; axis++) {
+        // -----Get the desired angle rate depending on flight mode
+        if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2 ) { // MODE relying on ACC
+            // calculate error and limit the angle to 50 degrees max inclination
+            errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis]) / 10.0f; // 16 bits is ok here
+        }
+        if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
+            AngleRate = (float)((cfg.yawRate + 10) * rcCommand[YAW]) / 50.0f;
+         } else {
+            if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
+                AngleRate = (float)((cfg.rollPitchRate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max yaw rate 
+                if (f.HORIZON_MODE) {
+                    // mix up angle error to desired AngleRateTmp to add a little auto-level feel
+                    AngleRate += errorAngle * cfg.H_level;
+                }
+            } else { // it's the ANGLE mode - control is angle based, so control loop is needed
+                AngleRate = errorAngle * cfg.A_level;
+            }
+        }
+
+        gyroRate = gyroData[axis] * gyro.scale; // gyro output scaled to dps
+        
+        // --------low-level gyro-based PID. ----------
+        // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
+        // -----calculate scaled error.AngleRates
+        // multiplication of rcCommand corresponds to changing the sticks scaling here
+        RateError = AngleRate - gyroRate;
+
+        // -----calculate P component
+        PTerm = RateError * cfg.P_f[axis];
+        // -----calculate I component
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * cfg.I_f[axis], -250.0f, 250.0f);
+
+        // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
+        // I coefficient (I8) moved before integration to make limiting independent from PID settings
+        ITerm = errorGyroIf[axis];
+
+        //-----calculate D-term
+        delta = gyroRate - lastGyroRate[axis];  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+        lastGyroRate[axis] = gyroRate;
+
+        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+        // would be scaled by different dt each time. Division by dT fixes that.
+        delta *= (1.0f / dT);
+        // add moving average here to reduce noise
+        deltaSum = delta1[axis] + delta2[axis] + delta;
+        delta2[axis] = delta1[axis];
+        delta1[axis] = delta;
+        DTerm = constrainf((deltaSum / 3.0f) * cfg.D_f[axis], -300.0f, 300.0f);
+
+        // -----calculate total PID output
+        axisPID[axis] = constrain(lrintf(PTerm + ITerm - DTerm), -1000, 1000);
+    }
+    
+}
 
 static void pidMultiWii(void)
 {
@@ -304,14 +375,14 @@ static void pidMultiWii(void)
         }
         if (!f.ANGLE_MODE || f.HORIZON_MODE || axis == 2) { // MODE relying on GYRO or YAW axis
             error = (int32_t)rcCommand[axis] * 10 * 8 / cfg.P8[axis];
-            error -= gyroData[axis];
+            error -= gyroData[axis] / 4;
 
             PTermGYRO = rcCommand[axis];
 
             errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
-            if (abs(gyroData[axis]) > 640)
+            if (abs(gyroData[axis]) > 2560)
                 errorGyroI[axis] = 0;
-            ITermGYRO = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;
+            ITermGYRO = (errorGyroI[axis] / 125 * cfg.I8[axis]) / 64;
         }
         if (f.HORIZON_MODE && axis < 2) {
             PTerm = (PTermACC * (500 - prop) + PTermGYRO * prop) / 500;
@@ -326,8 +397,8 @@ static void pidMultiWii(void)
             }
         }
 
-        PTerm -= (int32_t)gyroData[axis] * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
-        delta = gyroData[axis] - lastGyro[axis];
+        PTerm -= ((int32_t)gyroData[axis] / 4) * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
+        delta = (gyroData[axis] - lastGyro[axis]) / 4;
         lastGyro[axis] = gyroData[axis];
         deltaSum = delta1[axis] + delta2[axis] + delta;
         delta2[axis] = delta1[axis];
@@ -374,7 +445,7 @@ static void pidRewrite(void)
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
-        RateError = AngleRateTmp - gyroData[axis];
+        RateError = AngleRateTmp - (gyroData[axis] / 4);
 
         // -----calculate P component
         PTerm = (RateError * cfg.P8[axis]) >> 7;
@@ -418,6 +489,8 @@ void setPIDController(int type)
         case 1:
             pid_controller = pidRewrite;
             break;
+        case 2:
+            pid_controller = pidBaseflight;
     }
 }
 
@@ -514,6 +587,9 @@ void loop(void)
             errorGyroI[ROLL] = 0;
             errorGyroI[PITCH] = 0;
             errorGyroI[YAW] = 0;
+            errorGyroIf[ROLL] = 0;
+            errorGyroIf[PITCH] = 0;
+            errorGyroIf[YAW] = 0;
             errorAngleI[ROLL] = 0;
             errorAngleI[PITCH] = 0;
             if (cfg.activate[BOXARM] > 0) { // Arming/Disarming via ARM BOX
