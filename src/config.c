@@ -7,7 +7,7 @@
 #endif
 
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 1))       // use the last KB for storage
+#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 2))       // use the last 2 KB for storage
 
 master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
@@ -118,7 +118,7 @@ retry:
     FLASH_Unlock();
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 
-    if (FLASH_ErasePage(FLASH_WRITE_ADDR) == FLASH_COMPLETE) {
+    if (FLASH_ErasePage(FLASH_WRITE_ADDR) == FLASH_COMPLETE && FLASH_ErasePage(FLASH_WRITE_ADDR + FLASH_PAGE_SIZE) == FLASH_COMPLETE) {
         for (i = 0; i < sizeof(master_t); i += 4) {
             status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *) ((char *)&mcfg + i));
             if (status != FLASH_COMPLETE) {
@@ -246,6 +246,19 @@ static void resetConf(void)
     cfg.P8[PIDVEL] = 0;
     cfg.I8[PIDVEL] = 0;
     cfg.D8[PIDVEL] = 0;
+    
+    cfg.P_f[ROLL] = 2.5f;     // new PID with preliminary defaults test carefully
+    cfg.I_f[ROLL] = 0.3f;
+    cfg.D_f[ROLL] = 0.06f;
+    cfg.P_f[PITCH] = 2.5f;
+    cfg.I_f[PITCH] = 0.3f;
+    cfg.D_f[PITCH] = 0.06f;
+    cfg.P_f[YAW] = 8.0f;
+    cfg.I_f[YAW] = 0.5f;
+    cfg.D_f[YAW] = 0.05f;
+    cfg.A_level = 5.0f;
+    cfg.H_level = 3.0f;
+    
     cfg.rcRate8 = 90;
     cfg.rcExpo8 = 65;
     cfg.rollPitchRate = 0;

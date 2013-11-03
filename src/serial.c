@@ -296,10 +296,31 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_PID:
-        for (i = 0; i < PIDITEMS; i++) {
-            cfg.P8[i] = read8();
-            cfg.I8[i] = read8();
-            cfg.D8[i] = read8();
+        if (cfg.pidController == 2) {
+            for (i = 0; i < 3; i++) {
+                cfg.P_f[i] = (float)read8() / 10.0f;
+                cfg.I_f[i] = (float)read8() / 100.0f;
+                cfg.D_f[i] = (float)read8() / 1000.0f;
+            }
+            for (i = 3; i < PIDITEMS; i++) {
+                if(i == PIDLEVEL) {
+                    cfg.A_level = (float)read8() / 10.0f;
+                    cfg.H_level = (float)read8() / 10.0f;
+                    read8();
+                }
+                else {
+                    cfg.P8[i] = read8();
+                    cfg.I8[i] = read8();
+                    cfg.D8[i] = read8();   
+                }
+            }
+        }
+        else {
+            for (i = 0; i < PIDITEMS; i++) {
+                cfg.P8[i] = read8();
+                cfg.I8[i] = read8();
+                cfg.D8[i] = read8();
+            }
         }
         headSerialReply(0);
         break;
@@ -477,10 +498,31 @@ static void evaluateCommand(void)
         break;
     case MSP_PID:
         headSerialReply(3 * PIDITEMS);
-        for (i = 0; i < PIDITEMS; i++) {
-            serialize8(cfg.P8[i]);
-            serialize8(cfg.I8[i]);
-            serialize8(cfg.D8[i]);
+        if (cfg.pidController == 2) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
+            for (i = 0; i < 3; i++) {
+                serialize8(constrain(lrintf(cfg.P_f[i] * 10.0f) ,0 ,250));
+                serialize8(constrain(lrintf(cfg.I_f[i] * 100.0f) ,0 ,250));
+                serialize8(constrain(lrintf(cfg.D_f[i] * 1000.0f) ,0 ,100));
+            }
+            for (i = 3; i < PIDITEMS; i++) {
+                if (i == PIDLEVEL) {
+                    serialize8(constrain(lrintf(cfg.A_level * 10.0f) ,0 ,250));
+                    serialize8(constrain(lrintf(cfg.H_level * 10.0f) ,0 ,250));
+                    serialize8(0);    
+                }
+                else {
+                    serialize8(cfg.P8[i]);
+                    serialize8(cfg.I8[i]);
+                    serialize8(cfg.D8[i]);
+                }
+            }
+        }
+        else {
+            for (i = 0; i < PIDITEMS; i++) {
+                serialize8(cfg.P8[i]);
+                serialize8(cfg.I8[i]);
+                serialize8(cfg.D8[i]);
+            }
         }
         break;
     case MSP_PIDNAMES:
