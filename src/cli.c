@@ -875,9 +875,6 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
         printf(" %d %d", var->min, var->max);
 }
 
-
-
-
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
     switch (var->type) {
@@ -931,12 +928,10 @@ static void cliSet(char *cmdline)
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0) {
                 if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
                     int_float_value_t tmp;
-                    
                     if (valueTable[i].type == VAR_FLOAT)
                         tmp.float_value = valuef;
                     else
                         tmp.int_value = value;
-                    
                     cliSetVar(val, tmp);
                     printf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
