@@ -222,7 +222,13 @@ const clivalue_t valueTable[] = {
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
 
-static void cliSetVar(const clivalue_t *var, const int32_t value);
+
+typedef union {
+    int32_t int_value;
+    float float_value;
+} int_float_value_t;
+
+static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrint(const char *str);
 static void cliWrite(uint8_t ch);
@@ -880,25 +886,28 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
         printf(" %d %d", var->min, var->max);
 }
 
-static void cliSetVar(const clivalue_t *var, const int32_t value)
+
+
+
+static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
     switch (var->type) {
         case VAR_UINT8:
         case VAR_INT8:
-            *(char *)var->ptr = (char)value;
+            *(char *)var->ptr = (char)value.int_value;
             break;
 
         case VAR_UINT16:
         case VAR_INT16:
-            *(short *)var->ptr = (short)value;
+            *(short *)var->ptr = (short)value.int_value;
             break;
 
         case VAR_UINT32:
-            *(int *)var->ptr = (int)value;
+            *(int *)var->ptr = (int)value.int_value;
             break;
 
         case VAR_FLOAT:
-            *(float *)var->ptr = *(float *)&value;
+            *(float *)var->ptr = (float)value.float_value;
             break;
     }
 }
@@ -932,7 +941,14 @@ static void cliSet(char *cmdline)
             val = &valueTable[i];
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0) {
                 if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
-                    cliSetVar(val, valueTable[i].type == VAR_FLOAT ? *(uint32_t *)&valuef : value); // this is a silly dirty hack. please fix me later.
+                    int_float_value_t tmp;
+                    
+                    if (valueTable[i].type == VAR_FLOAT)
+                        tmp.float_value = valuef;
+                    else
+                        tmp.int_value = value;
+                    
+                    cliSetVar(val, tmp);
                     printf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
                 } else {
