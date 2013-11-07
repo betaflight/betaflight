@@ -19,7 +19,6 @@ int32_t vario = 0;                      // variometer in cm/s
 int16_t throttleAngleCorrection = 0;    // correction of throttle in lateral wind,
 float magneticDeclination = 0.0f;       // calculated at startup from config
 float accVelScale;
-float gyroScaleRad;
 
 // **************
 // gyro+acc IMU
@@ -35,7 +34,6 @@ void imuInit(void)
 {
     accZ_25deg = acc_1G * cosf(RAD * 25.0f);
     accVelScale = 9.80665f / acc_1G / 10000.0f;
-    gyroScaleRad = gyro.scale * (M_PI / 180.0f) * 0.000001f;
 
 #ifdef MAG
     // if mag sensor is enabled, use it
@@ -263,7 +261,7 @@ static void getEstimatedAttitude(void)
     uint32_t deltaT;
     float scale, deltaGyroAngle[3];
     deltaT = currentT - previousT;
-    scale = deltaT * gyroScaleRad;
+    scale = deltaT * gyro.scale;
     previousT = currentT;
 
     // Initialization

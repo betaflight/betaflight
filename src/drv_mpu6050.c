@@ -167,7 +167,7 @@ bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)
     gyro->read = mpu6050GyroRead;
 
     // 16.4 dps/lsb scalefactor
-    gyro->scale = 1.0f / 16.4f;
+    gyro->scale = (4.0f / 16.4f) * (M_PI / 180.0f) * 0.000001f;
 
     // give halfacc (old revision) back to system
     if (scale)
@@ -261,9 +261,9 @@ static void mpu6050GyroRead(int16_t *gyroData)
     int16_t data[3];
 
     i2cRead(MPU6050_ADDRESS, MPU_RA_GYRO_XOUT_H, 6, buf);
-    data[0] = (int16_t)((buf[0] << 8) | buf[1]);
-    data[1] = (int16_t)((buf[2] << 8) | buf[3]);
-    data[2] = (int16_t)((buf[4] << 8) | buf[5]);
+    data[0] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
+    data[1] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
+    data[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
 
     alignSensors(data, gyroData, gyroAlign);
 }
