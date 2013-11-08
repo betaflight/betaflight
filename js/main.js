@@ -40,6 +40,7 @@ $(document).ready(function() {
     $('a', tabs).click(function() {
         if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active
             if (connectionId < 1 || configuration_received == false) { // if there is no active connection, return
+                notify('You need to connect before you can view any of the tabs', 'red');
                 return;
             }
             
