@@ -356,9 +356,12 @@ extern int16_t rcData[RC_CHANS];
 extern uint16_t rssi;                  // range: [0;1023]
 extern uint8_t vbat;
 extern int16_t telemTemperature1;      // gyro sensor temperature
-extern int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
-extern int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
 extern uint8_t toggleBeep;
+
+#define PITCH_LOOKUP_LENGTH 7
+#define THROTTLE_LOOKUP_LENGTH 12
+extern int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];   // lookup table for expo & RC rate PITCH+ROLL
+extern int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 
 // GPS stuff
 extern int32_t  GPS_coord[2];
