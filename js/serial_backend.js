@@ -278,6 +278,14 @@ function onOpen(openInfo) {
             send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX);
             
         }, connection_delay * 1000);
+    } else {
+        console.log('Failed to open serial port');
+        
+        $('div#port-picker a.connect').text('Connect');
+        $('div#port-picker a.connect').removeClass('active'); 
+        
+        // reset data
+        $('div#port-picker a.connect').data("clicks", false);
     }
 }
 
