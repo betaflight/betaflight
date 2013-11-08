@@ -75,6 +75,25 @@ function tab_initialize_servos() {
                 break;
         }
     }, 50);
+    
+    // UI hooks
+    $('a.update').click(function() {
+        var itter = 0;
+        $('div.tab-servos table.fields tr:not(".main")').each(function() {
+            if ($('.middle input', this).is(':disabled')) {
+                var val = $('.channel input:checked', this).index();
+                
+                SERVO_CONFIG[servos[0] + itter].middle = parseInt(val);
+            } else {
+                SERVO_CONFIG[servos[0] + itter].middle = parseInt($('.middle input', this).val());
+            }
+            
+            SERVO_CONFIG[servos[0] + itter].min = parseInt($('.min input', this).val());
+            SERVO_CONFIG[servos[0] + itter].max = parseInt($('.max input', this).val());
+            
+            itter++;
+        });
+    });
 }
 
 function process_servos(name, obj, pos) {    
@@ -106,10 +125,10 @@ function process_servos(name, obj, pos) {
     // UI hooks
     $('div.tab-servos table.fields tr:last td.channel').find('input').click(function() {
         if($(this).is(':checked')) {
-            $(this).parent().parent().parent().find('td.middle input').prop('disabled', true);
-            $('div.tab-servos table.fields tr:last td.channel').find('input').not($(this)).prop('checked', false);
+            $(this).parent().parent().find('td.middle input').prop('disabled', true);
+            $(this).parent().find('input').not($(this)).prop('checked', false);
         } else {
-            $(this).parent().parent().parent().find('td.middle input').prop('disabled', false);
+            $(this).parent().parent().find('td.middle input').prop('disabled', false);
         }
     });
 }
