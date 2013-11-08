@@ -21,6 +21,9 @@ var MSP_codes = {
     MSP_MOTOR_PINS:         115,
     MSP_BOXNAMES:           116,
     MSP_PIDNAMES:           117,
+    MSP_WP:                 118,
+    MSP_BOXIDS:             119,
+    MSP_SERVO_CONF:         120,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -32,6 +35,9 @@ var MSP_codes = {
     MSP_SET_MISC:           207,
     MSP_RESET_CONF:         208,
     MSP_SELECT_SETTING:     210,
+    MSP_SET_HEAD:           211,
+    MSP_SET_SERVO_CONF:     212,
+    MSP_SET_MOTOR:          214,
     
     MSP_BIND:               240,
     
@@ -88,6 +94,8 @@ var RC_tuning = {
 
 var AUX_CONFIG = new Array();
 var AUX_CONFIG_values = new Array();
+
+var SERVO_CONFIG = new Array();
 
 var SENSOR_DATA = {
     gyroscope:     [0, 0, 0],
@@ -366,7 +374,7 @@ function onCharRead(readInfo) {
                     case 6: // CRC
                         if (message_checksum == data[i]) {
                             // process data
-                            process_message(message_code, message_buffer);
+                            process_message(message_code, message_buffer, message_length_expected);
                         }
                         
                         // Reset variables
@@ -426,7 +434,7 @@ function send_message(code, data) {
     });    
 }
 
-function process_message(code, data) {
+function process_message(code, data, bytes) {
     var view = new DataView(data, 0);
     
     switch (code) {
@@ -590,6 +598,22 @@ function process_message(code, data) {
         case MSP_codes.MSP_PIDNAMES:
             console.log(data);
             break; 
+        case MSP_codes.MSP_WP:
+            console.log(data);
+            break;
+        case MSP_codes.MSP_BOXIDS:
+            console.log(data);
+            break;
+        case MSP_codes.MSP_SERVO_CONF:
+            // drop previous data
+            SERVO_CONFIG = [];
+            
+            for (var i = 0; i < bytes; i += 7) {
+                var arr = {'min': view.getInt16(i, 1), 'max': view.getInt16(i + 2, 1), 'middle': view.getInt16(i + 4, 1), 'rate': view.getInt8(6, 1)};
+                
+                SERVO_CONFIG.push(arr);
+            }
+            break;
         case MSP_codes.MSP_SET_RAW_RC:
             console.log(data);
             break; 
