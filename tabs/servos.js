@@ -95,6 +95,17 @@ function tab_initialize_servos() {
             SERVO_CONFIG[servos[0] + itter].min = parseInt($('.min input', this).val());
             SERVO_CONFIG[servos[0] + itter].max = parseInt($('.max input', this).val());
             
+            var rate = 0;
+            if ($('.direction input:first', this).is(':checked')) {
+                rate |= 0x02;
+            }
+            
+            if ($('.direction input:last', this).is(':checked')) {
+                rate |= 0x04;
+            }
+            
+            SERVO_CONFIG[servos[0] + itter].rate = rate;
+
             itter++;
         });
         
@@ -139,7 +150,10 @@ function process_servos(name, obj, pos) {
                 <input type="checkbox"/>\
                 <input type="checkbox"/>\
             </td>\
-            <td class="direction"></td>\
+            <td class="direction">\
+                <input type="checkbox"/>\
+                <input type="checkbox"/>\
+            </td>\
         </tr> \
     '
     );    
@@ -149,13 +163,16 @@ function process_servos(name, obj, pos) {
         $('div.tab-servos table.fields tr:last td.channel').find('input').eq(obj.middle).prop('checked', true);
     }
     
+    $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(obj.rate, 1));
+    $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(obj.rate, 2));
+    
     // UI hooks
     $('div.tab-servos table.fields tr:last td.channel').find('input').click(function() {
         if($(this).is(':checked')) {
             $(this).parent().parent().find('td.middle input').prop('disabled', true);
             $(this).parent().find('input').not($(this)).prop('checked', false);
         } else {
-            $(this).parent().parent().find('td.middle input').prop('disabled', false);
+            $(this).parent().parent().find('td.middle input').prop('disabled', false).val(1500);
         }
     });
 }
