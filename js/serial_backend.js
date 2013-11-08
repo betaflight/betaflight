@@ -611,7 +611,7 @@ function process_message(code, data, bytes) {
             SERVO_CONFIG = [];
             
             for (var i = 0; i < bytes; i += 7) {
-                var arr = {'min': view.getInt16(i, 1), 'max': view.getInt16(i + 2, 1), 'middle': view.getInt16(i + 4, 1), 'rate': view.getInt8(6, 1)};
+                var arr = {'min': view.getInt16(i, 1), 'max': view.getInt16(i + 2, 1), 'middle': view.getInt16(i + 4, 1), 'rate': view.getInt8(i + 6)};
                 
                 SERVO_CONFIG.push(arr);
             }
