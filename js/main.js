@@ -83,3 +83,11 @@ $(document).ready(function() {
     
     tab_initialize_default();
 });
+
+function notify(message, color) {
+    $('span.notify').html('<span style="color: ' + color + '">' + message + '</span>');+
+    $('span.notify span').fadeOut(5000, function() {
+        $(this).remove();
+    });
+    
+}

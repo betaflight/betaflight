@@ -280,6 +280,7 @@ function onOpen(openInfo) {
         }, connection_delay * 1000);
     } else {
         console.log('Failed to open serial port');
+        notify('Failed to open serial port', 'red');
         
         $('div#port-picker a.connect').text('Connect');
         $('div#port-picker a.connect').removeClass('active'); 
@@ -302,6 +303,7 @@ function onClosed(result) {
     } else { // Something went wrong
         if (connectionId > 0) {
             console.log('There was an error that happened during "connection-close" procedure.');
+            notify('Failed to close serial port', 'red');
         }
     } 
 }
