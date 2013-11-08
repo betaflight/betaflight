@@ -445,8 +445,10 @@ function process_message(code, data, bytes) {
             $('.software-version').html(CONFIG.version);
             
             // IDENT received, show the tab content
-            configuration_received = true;
-            $('#tabs li a:first').click();
+            if (!configuration_received) {
+                configuration_received = true;
+                $('#tabs li a:first').click();
+            }
             break;
         case MSP_codes.MSP_STATUS:
             CONFIG.cycleTime = view.getUint16(0, 1);

@@ -60,6 +60,15 @@ function tab_initialize_initial_setup() {
         case 18: // HEX6 H
             str = 'HEX6 H';
             break;
+        case 19: // PPM to SERVO
+            str = 'PPM to SERVO';
+            break;
+        case 20: // Dualcopter
+            str = 'Dualcopter';
+            break;
+        case 21: //
+            str = 'Singlecopter';
+            break;
     }
     
     $('span.model').html('Model: ' + str);

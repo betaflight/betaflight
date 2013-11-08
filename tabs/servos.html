@@ -1,3 +1,79 @@
+<style type="text/css">
+    .tab-servos table {
+        margin-top: 10px;
+        
+        width: 100%;
+        border-collapse: collapse;     
+    }
+        .tab-servos table th {
+            line-height: 20px;
+            text-align: center;
+            
+            border: 1px solid #8b8b8b;
+        }
+        .tab-servos table td {         
+            line-height: 18px;
+            
+            border: 1px solid #8b8b8b;
+        }
+        .tab-servos table .main {
+            font-weight: bold;
+            
+            text-align: center;
+            
+            background-color: #ececec;
+        }
+        .tab-servos table input[type="number"] {
+            width: 65px;
+            height: 20px;
+            
+            padding-right: 5px;
+            
+            line-height: 20px;
+            
+            text-align: right;
+        }
+        .tab-servos table input[type="checkbox"]:first-child {
+            margin-left: 24px;
+        }
+        .tab-servos table input[type="checkbox"] {
+            margin-top: 4px;
+            margin-right: 21px;
+        }
+        .tab-servos .update {
+            display: block;
+            float: right;
+            
+            margin-top: 10px;
+            
+            width: 120px;
+            height: 30px;
+            line-height: 30px;
+            
+            font-size: 14px;
+            color: white;
+            text-align: center;
+            
+            border: 1px solid silver;
+            
+            background-color: #0fab16;
+        }
+        .tab-servos .update:hover {
+            cursor: pointer;
+            background-color: #13d81d;
+        }
+</style>
 <div class="tab-servos">
-    servos
+    Model: <strong class="model"></strong>
+    <table class="fields">
+        <tr class="main">
+            <th style="width: 150px">Name</th>
+            <th style="width: 70px">MID</th>
+            <th style="width: 70px">MIN</th>
+            <th style="width: 70px">MAX</th>
+            <th style="width: 320px">Throt | Roll | Pitch | Yaw | AUX1 | AUX2 | AUX3 | AUX4</th>
+            <th>Reverse Direction</th>
+        </tr>
+    </table>
+    <a class="update" href="#" title="">Save</a>
 </div>
