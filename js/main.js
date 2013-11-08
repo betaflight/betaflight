@@ -65,6 +65,8 @@ $(document).ready(function() {
                 $('#content').load("./tabs/receiver.html", tab_initialize_receiver);
             } else if ($(this).parent().hasClass('tab_auxiliary_configuration')) {
                 $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
+            } else if ($(this).parent().hasClass('tab_servos')) {
+                $('#content').load("./tabs/servos.html", tab_initialize_servos);
             } else if ($(this).parent().hasClass('tab_gps')) {
                 $('#content').load("./tabs/gps.html", tab_initialize_gps);
             } else if ($(this).parent().hasClass('tab_motor_outputs')) {
