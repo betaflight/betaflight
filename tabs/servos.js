@@ -44,6 +44,7 @@ function tab_initialize_servos() {
             case 14: // Airplane
                 model.html('Airplane');
                 
+                // rate
                 process_servos('Wing 1', SERVO_CONFIG[3], 3);
                 process_servos('Wing 2', SERVO_CONFIG[4], 4);
                 process_servos('Rudd', SERVO_CONFIG[5], 5);
@@ -73,11 +74,14 @@ function tab_initialize_servos() {
                 
                 servos = [3, 4, 5, 6, 7];
                 break;
+            default:
+                model.html('Doesn\'t support servos');
         }
     }, 50);
     
     // UI hooks
     $('a.update').click(function() {
+        // update objects
         var itter = 0;
         $('div.tab-servos table.fields tr:not(".main")').each(function() {
             if ($('.middle input', this).is(':disabled')) {
@@ -93,6 +97,28 @@ function tab_initialize_servos() {
             
             itter++;
         });
+        
+        
+        var buffer_out = [];
+        
+        var needle = 0;
+        for (var i = 0; i < SERVO_CONFIG.length; i++) {
+            buffer_out[needle++] = lowByte(SERVO_CONFIG[i].min);
+            buffer_out[needle++] = highByte(SERVO_CONFIG[i].min);
+            
+            buffer_out[needle++] = lowByte(SERVO_CONFIG[i].max);
+            buffer_out[needle++] = highByte(SERVO_CONFIG[i].max);
+            
+            buffer_out[needle++] = lowByte(SERVO_CONFIG[i].middle);
+            buffer_out[needle++] = highByte(SERVO_CONFIG[i].middle);
+            
+            buffer_out[needle++] = lowByte(SERVO_CONFIG[i].rate);
+        }
+        
+        send_message(MSP_codes.MSP_SET_SERVO_CONF, buffer_out);
+        
+        // Save changes to EEPROM
+        send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
     });
 }
 
@@ -119,6 +145,7 @@ function process_servos(name, obj, pos) {
     );    
     
     if (obj.middle <= 7) {
+        $('div.tab-servos table.fields tr:last td.middle input').prop('disabled', true);
         $('div.tab-servos table.fields tr:last td.channel').find('input').eq(obj.middle).prop('checked', true);
     }
     

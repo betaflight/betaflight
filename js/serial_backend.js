@@ -659,6 +659,9 @@ function process_message(code, data, bytes) {
         case MSP_codes.MSP_SELECT_SETTING:
             console.log(data);
             break;
+        case MSP_codes.MSP_SET_SERVO_CONF:
+            console.log('Servo Configuration saved');
+            break;
         /* disabled (find out why ???)
         case MSP_codes.MSP_BIND:
             console.log(data);
