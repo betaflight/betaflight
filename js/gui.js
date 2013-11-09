@@ -124,6 +124,27 @@ GUI_control.prototype.timeout_kill_all = function() {
 GUI_control.prototype.tab_switch_cleanup = function(callback) {
     switch (this.active_tab) {
         case 'cli':
+            var bufferOut = new ArrayBuffer(5);
+            var bufView = new Uint8Array(bufferOut);
+            
+            bufView[0] = 0x65; // e
+            bufView[1] = 0x78; // x
+            bufView[2] = 0x69; // i
+            bufView[3] = 0x74; // t
+            bufView[4] = 0x0D; // enter
+
+            chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
+                if (callback) {
+                    // we could handle this "nicely", but this will do for now
+                    // (another approach is however much more complicated):
+                    // we can setup an interval asking for data lets say every 200ms, when data arrives, callback will be triggered and tab switched
+                    // we could probably implement this someday
+                    GUI.timeout_add('waiting_for_bootup', function() {
+                        CLI_active = false; 
+                        callback();
+                    }, 3000);
+                }
+            });
             break;
         default:
             if (callback) {

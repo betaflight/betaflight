@@ -44,41 +44,40 @@ $(document).ready(function() {
                 return;
             }
             
+            var self = this;
+            
             // Disable any active "data pulling" timer
             disable_timers();
             
-            // Disable CLI (there is no "nicer way of doing so right now)
-            if (CLI_active == true) {
-                leave_CLI();
-            }
-            
-            // Disable previous active button
-            $('li', tabs).removeClass('active');
-            
-            // Highlight selected button
-            $(this).parent().addClass('active');
-            
-            if ($(this).parent().hasClass('tab_initial_setup')) {
-                $('#content').load("./tabs/initial_setup.html", tab_initialize_initial_setup);
-            } else if ($(this).parent().hasClass('tab_pid_tuning')) {
-                $('#content').load("./tabs/pid_tuning.html", tab_initialize_pid_tuning);
-            } else if ($(this).parent().hasClass('tab_receiver')) {
-                $('#content').load("./tabs/receiver.html", tab_initialize_receiver);
-            } else if ($(this).parent().hasClass('tab_auxiliary_configuration')) {
-                $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
-            } else if ($(this).parent().hasClass('tab_servos')) {
-                $('#content').load("./tabs/servos.html", tab_initialize_servos);
-            } else if ($(this).parent().hasClass('tab_gps')) {
-                $('#content').load("./tabs/gps.html", tab_initialize_gps);
-            } else if ($(this).parent().hasClass('tab_motor_outputs')) {
-                $('#content').load("./tabs/motor_outputs.html", tab_initialize_motor_outputs);
-            } else if ($(this).parent().hasClass('tab_sensors')) {
-                $('#content').load("./tabs/sensors.html", tab_initialize_sensors);
-            } else if ($(this).parent().hasClass('tab_cli')) {
-                $('#content').load("./tabs/cli.html", tab_initialize_cli);
-            } else if ($(this).parent().hasClass('tab_about')) {
-                $('#content').load("./tabs/about.html", tab_initialize_about);
-            }
+            GUI.tab_switch_cleanup(function() {
+                // Disable previous active button
+                $('li', tabs).removeClass('active');
+                
+                // Highlight selected button
+                $(self).parent().addClass('active');
+                
+                if ($(self).parent().hasClass('tab_initial_setup')) {
+                    $('#content').load("./tabs/initial_setup.html", tab_initialize_initial_setup);
+                } else if ($(self).parent().hasClass('tab_pid_tuning')) {
+                    $('#content').load("./tabs/pid_tuning.html", tab_initialize_pid_tuning);
+                } else if ($(self).parent().hasClass('tab_receiver')) {
+                    $('#content').load("./tabs/receiver.html", tab_initialize_receiver);
+                } else if ($(self).parent().hasClass('tab_auxiliary_configuration')) {
+                    $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
+                } else if ($(self).parent().hasClass('tab_servos')) {
+                    $('#content').load("./tabs/servos.html", tab_initialize_servos);
+                } else if ($(self).parent().hasClass('tab_gps')) {
+                    $('#content').load("./tabs/gps.html", tab_initialize_gps);
+                } else if ($(self).parent().hasClass('tab_motor_outputs')) {
+                    $('#content').load("./tabs/motor_outputs.html", tab_initialize_motor_outputs);
+                } else if ($(self).parent().hasClass('tab_sensors')) {
+                    $('#content').load("./tabs/sensors.html", tab_initialize_sensors);
+                } else if ($(self).parent().hasClass('tab_cli')) {
+                    $('#content').load("./tabs/cli.html", tab_initialize_cli);
+                } else if ($(self).parent().hasClass('tab_about')) {
+                    $('#content').load("./tabs/about.html", tab_initialize_about);
+                }
+            });
         }
     });
     

@@ -98,26 +98,6 @@ function send_slowly(out_arr, i, timeout_needle) {
     }, timeout_needle * 5);
 }
 
-function leave_CLI(callback) {
-    var bufferOut = new ArrayBuffer(5);
-    var bufView = new Uint8Array(bufferOut);
-    
-    bufView[0] = 0x65; // e
-    bufView[1] = 0x78; // x
-    bufView[2] = 0x69; // i
-    bufView[3] = 0x74; // t
-    bufView[4] = 0x0D; // enter
-
-    chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-        if (callback) {
-            callback();
-        }
-    });   
-
-    CLI_active = false;    
-}
-
-
 /*  Some info about handling line feeds and carriage return
 
     line feed = LF = \n = 0x0A = 10
