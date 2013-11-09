@@ -141,34 +141,14 @@ $(document).ready(function() {
             if (clicks) { // odd number of clicks
                 // Disable any active "data pulling" timer
                 disable_timers();
-
-                // Disable CLI (there is no "nicer way of doing so right now)
-                if (CLI_active == true) {
-                    var bufferOut = new ArrayBuffer(5);
-                    var bufView = new Uint8Array(bufferOut);
-                    
-                    bufView[0] = 0x65; // e
-                    bufView[1] = 0x78; // x
-                    bufView[2] = 0x69; // i
-                    bufView[3] = 0x74; // t
-                    bufView[4] = 0x0D; // enter
-
-                    chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-                        chrome.serial.close(connectionId, onClosed);
-                        
-                        clearTimeout(connection_delay);
-                        clearInterval(serial_poll);
-                        clearInterval(port_usage_poll);
-                    });   
-
-                    CLI_active = false; 
-                } else {               
-                    chrome.serial.close(connectionId, onClosed);
-                    
-                    clearTimeout(connection_delay);
-                    clearInterval(serial_poll);
-                    clearInterval(port_usage_poll);
-                }
+                
+                GUI.tab_switch_cleanup();
+                
+                chrome.serial.close(connectionId, onClosed);
+                
+                clearTimeout(connection_delay);
+                clearInterval(serial_poll);
+                clearInterval(port_usage_poll);
                 
                 // Change port utilization to 0
                 $('span.port-usage').html('0%');
