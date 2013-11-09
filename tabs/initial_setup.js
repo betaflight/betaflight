@@ -145,5 +145,5 @@ function data_poll() {
     send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
     send_message(MSP_codes.MSP_ATTITUDE, MSP_codes.MSP_ATTITUDE); 
     send_message(MSP_codes.MSP_COMP_GPS, MSP_codes.MSP_COMP_GPS);
-    send_message(MSP_codes.MSP_BAT, MSP_codes.MSP_BAT);
+    send_message(MSP_codes.MSP_ANALOG, MSP_codes.MSP_ANALOG);
 }
