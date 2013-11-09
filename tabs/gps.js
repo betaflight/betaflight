@@ -1,5 +1,6 @@
 function tab_initialize_gps () {
     ga_tracker.sendAppView('GPS Page');
+    GUI.active_tab = 'gps';
     
     // enable data pulling
     timers.push(setInterval(gps_pull, 75));  

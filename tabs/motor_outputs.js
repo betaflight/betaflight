@@ -1,5 +1,6 @@
 function tab_initialize_motor_outputs() {
     ga_tracker.sendAppView('Motor Outputs Page');
+    GUI.active_tab = 'motor_outputs';
     
     // enable Motor data pulling
     timers.push(setInterval(motorPoll, 50));

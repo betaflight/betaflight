@@ -1,5 +1,6 @@
 function tab_initialize_pid_tuning() {
     ga_tracker.sendAppView('PID Tuning');
+    GUI.active_tab = 'pid_tuning';
     
     // Fill in the data from PIDs array
     var needle = 0;

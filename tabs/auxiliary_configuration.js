@@ -1,5 +1,6 @@
 function tab_initialize_auxiliary_configuration() {
     ga_tracker.sendAppView('Auxiliary Configuration');
+    GUI.active_tab = 'auxiliary_configuration';
     
     // generate table from the supplied AUX names and AUX data
     for (var i = 0; i < AUX_CONFIG.length; i++) {

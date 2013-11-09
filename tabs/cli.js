@@ -23,6 +23,7 @@ cli_history = new CliHistory();
 
 function tab_initialize_cli() {
     ga_tracker.sendAppView('CLI Page');
+    GUI.active_tab = 'cli';
     
     CLI_active = true;
     

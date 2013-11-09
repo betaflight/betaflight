@@ -1,5 +1,6 @@
 function tab_initialize_servos() {
     ga_tracker.sendAppView('Servos');
+    GUI.active_tab = 'servos';
 
     var model = $('div.tab-servos strong.model');
     var servos = [];

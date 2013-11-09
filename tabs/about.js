@@ -1,5 +1,6 @@
 function tab_initialize_about() {
     ga_tracker.sendAppView('About Page');
+    GUI.active_tab = 'about';
     
     // enable data pulling
     timers.push(setInterval(about_data_poll, 50));   

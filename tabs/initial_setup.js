@@ -2,6 +2,7 @@ var yaw_fix = 0.0;
 
 function tab_initialize_initial_setup() {
     ga_tracker.sendAppView('Initial Setup');
+    GUI.active_tab = 'initial_setup';
     
     // Fill in the accel trimms from CONFIG object
     $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
