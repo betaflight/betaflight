@@ -74,8 +74,6 @@ $(document).ready(function() {
                     $('#content').load("./tabs/sensors.html", tab_initialize_sensors);
                 } else if ($(self).parent().hasClass('tab_cli')) {
                     $('#content').load("./tabs/cli.html", tab_initialize_cli);
-                } else if ($(self).parent().hasClass('tab_about')) {
-                    $('#content').load("./tabs/about.html", tab_initialize_about);
                 }
             });
         }

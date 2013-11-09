@@ -937,22 +937,6 @@ a:hover {
     .tab-cli .copy:hover {
         background-color: #dedcdc;
     }
-.tab-about {
-}
-    .tab-about p {
-        padding: 5px;
-        margin-bottom: 10px;
-        
-        border: 1px dotted silver;
-    }
-    .tab-about .created {
-        position: absolute;
-        
-        width: 905px;
-        bottom: 0px;
-        
-        text-align: center;
-    }
     
 /* Flotr related styles */
 .flotr-legend {    
