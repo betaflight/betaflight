@@ -268,10 +268,11 @@ function process_data(command, message_buffer, message_length_expected) {
         case MSP_codes.MSP_RAW_GPS:
             GPS_DATA.fix = data.getUint8(0);
             GPS_DATA.numSat = data.getUint8(1);
-            GPS_DATA.lat = data.getUint32(2, 1);
-            GPS_DATA.lon = data.getUint32(6, 1);
+            GPS_DATA.lat = data.getInt32(2, 1);
+            GPS_DATA.lon = data.getInt32(6, 1);
             GPS_DATA.alt = data.getUint16(10, 1);
             GPS_DATA.speed = data.getUint16(12, 1);
+            GPS_DATA.ground_course = data.getUint16(14, 1);
             break; 
         case MSP_codes.MSP_COMP_GPS:
             GPS_DATA.distanceToHome = data.getUint16(0, 1);

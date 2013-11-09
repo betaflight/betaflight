@@ -67,6 +67,7 @@ var GPS_DATA = {
     lon:             0,
     alt:             0,
     speed:           0,
+    ground_course:   0,
     distanceToHome:  0,
     ditectionToHome: 0,
     update:          0,
