@@ -131,7 +131,7 @@ function MSP_char_read(readInfo) {
                             // message received, process
                             process_data(MSP.code, MSP.message_buffer, MSP.message_length_expected);
                         } else {
-                            console.log('crc failed');
+                            console.log('code: ' + MSP.code + ' - crc failed');
                         }
                         
                         // Reset variables
