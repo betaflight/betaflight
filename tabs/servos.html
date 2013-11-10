@@ -33,19 +33,37 @@
             
             text-align: right;
         }
-        .tab-servos table input[type="checkbox"]:first-child {
+        .tab-servos table .channel input[type="checkbox"]:first-child {
             margin-left: 24px;
         }
-        .tab-servos table input[type="checkbox"] {
+        .tab-servos table .channel input[type="checkbox"] {
             margin-top: 4px;
             margin-right: 21px;
         }
-        .tab-servos table select {
-            margin-right: 1px;
-            width: 99px;
-            
-            text-align: center;
+        .tab-servos table .direction {
         }
+            .tab-servos .direction .name {
+                float: left;
+                display: block;
+                
+                width: 60px;
+            }
+            .tab-servos .direction .alternate {
+                float: left;
+                display: block;
+                
+                width: 60px;
+            }
+            .tab-servos .direction .first {
+                float: left;
+                
+                margin: 2px 10px 0 20px;
+            }
+            .tab-servos .direction .second {
+                float: left;
+                
+                margin: 2px 10px 0 0;
+            }
         .tab-servos .update {
             display: block;
             float: right;
@@ -78,7 +96,7 @@
             <th style="width: 70px">MIN</th>
             <th style="width: 70px">MAX</th>
             <th style="width: 320px">Throt | Roll | Pitch | Yaw | AUX1 | AUX2 | AUX3 | AUX4</th>
-            <th style="width: 100px">Direction / Rate</th>
+            <th style="width: 200px">Direction</th>
         </tr>
     </table>
     <a class="update" href="#" title="">Save</a>

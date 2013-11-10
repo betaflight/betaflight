@@ -15,31 +15,31 @@ function tab_initialize_servos() {
                 case 1: // TRI
                     model.html('TRI');
                     
-                    process_servos('Rear', SERVO_CONFIG[5], 5);
+                    process_servos('Rear', '', SERVO_CONFIG[5]);
                     
                     servos = [5];
                     break;
                 case 4: // BI
                     model.html('BI');
                     
-                    process_servos('Left', SERVO_CONFIG[4], 4);
-                    process_servos('Right', SERVO_CONFIG[5], 5);
+                    process_servos('Left', '', SERVO_CONFIG[4]);
+                    process_servos('Right', '', SERVO_CONFIG[5]);
                     
                     servos = [4, 5];
                     break;
                 case 5: // Gimbal
                     model.html('Gimbal');
                     
-                    process_servos('Pitch Servo', SERVO_CONFIG[0], 0);
-                    process_servos('Roll Servo', SERVO_CONFIG[1], 1);
+                    process_servos('Pitch Servo', '', SERVO_CONFIG[0]);
+                    process_servos('Roll Servo', '', SERVO_CONFIG[1]);
                     
                     servos = [0, 1];
                     break;
                 case 8: // Flying Wing
                     model.html('Flying Wing');
                     
-                    process_servos('Left', SERVO_CONFIG[3], 3);
-                    process_servos('Right', SERVO_CONFIG[4], 4);
+                    process_servos('L ROLL', 'R ROLL', SERVO_CONFIG[3]);
+                    process_servos('L NICK', 'R NICK', SERVO_CONFIG[4]);
                     
                     servos = [3, 4];
                     break;
@@ -47,34 +47,35 @@ function tab_initialize_servos() {
                     model.html('Airplane');
                     
                     // rate
-                    process_servos('Wing 1', SERVO_CONFIG[3], 3);
-                    process_servos('Wing 2', SERVO_CONFIG[4], 4);
-                    process_servos('Rudd', SERVO_CONFIG[5], 5);
-                    process_servos('Elev', SERVO_CONFIG[6], 6);
-                    process_servos('Thro', SERVO_CONFIG[7], 7);
+                    process_servos('Wing 1', '', SERVO_CONFIG[3]);
+                    process_servos('Wing 2', '', SERVO_CONFIG[4]);
+                    process_servos('Rudd', '', SERVO_CONFIG[5]);
+                    process_servos('Elev', '', SERVO_CONFIG[6]);
+                    process_servos('Thro', '', SERVO_CONFIG[7]);
                     
                     servos = [2, 3, 4, 5, 6, 7];
                     break;
                 case 20: // Dualcopter
+                    // Broken
+                    // Gyro / Acc direction: 4
+                    // Roll: 5, Nick: 4
                     model.html('Dualcopter');
                     
-                    process_servos('Pitch', SERVO_CONFIG[4], 4);
-                    process_servos('Roll', SERVO_CONFIG[5], 5);
-                    process_servos('M 1', SERVO_CONFIG[6], 6);
-                    process_servos('M 0', SERVO_CONFIG[7], 7);
+                    process_servos('PITCH', 'ROLL', SERVO_CONFIG[4]);
+                    process_servos('Roll', '', SERVO_CONFIG[5]);
                     
-                    servos = [4, 5, 6, 7];
+                    servos = [4, 5];
                     break;
                 case 21: // Singlecopter
+                    // Verified
                     model.html('Singlecopter');
                     
-                    process_servos('Right', SERVO_CONFIG[3], 3);
-                    process_servos('Left', SERVO_CONFIG[4], 4);
-                    process_servos('Front', SERVO_CONFIG[5], 5);
-                    process_servos('Rear', SERVO_CONFIG[6], 6);
-                    process_servos('Motor', SERVO_CONFIG[7], 7);
+                    process_servos('Right', 'R YAW', SERVO_CONFIG[3]);
+                    process_servos('Left', 'L YAW', SERVO_CONFIG[4]);
+                    process_servos('Front', 'F YAW', SERVO_CONFIG[5]);
+                    process_servos('Rear', 'YAW', SERVO_CONFIG[6]);
                     
-                    servos = [3, 4, 5, 6, 7];
+                    servos = [3, 4, 5, 6];
                     break;
                 default:
                     model.html('Doesn\'t support servos');
@@ -100,11 +101,11 @@ function tab_initialize_servos() {
             
             var rate = 0;
             if ($('.direction input:first', this).is(':checked')) {
-                rate |= 0x02;
+                rate |= 0x01;
             }
             
             if ($('.direction input:last', this).is(':checked')) {
-                rate |= 0x04;
+                rate |= 0x02;
             }
             
             SERVO_CONFIG[servos[0] + itter].rate = rate;
@@ -136,7 +137,7 @@ function tab_initialize_servos() {
     });
 }
 
-function process_servos(name, obj, pos) {    
+function process_servos(name, alternate, obj) {    
     $('div.tab-servos table.fields').append('\
         <tr> \
             <td style="text-align: center;">' + name + '</td>\
@@ -154,8 +155,8 @@ function process_servos(name, obj, pos) {
                 <input type="checkbox"/>\
             </td>\
             <td class="direction">\
-                <input type="checkbox"/>\
-                <input type="checkbox"/>\
+                <input class="first" type="checkbox"/><span class="name">' + name + '</span>\
+                <input class="second" type="checkbox"/><span class="alternate">' + alternate + '</span>\
             </td>\
         </tr> \
     '
@@ -166,8 +167,8 @@ function process_servos(name, obj, pos) {
         $('div.tab-servos table.fields tr:last td.channel').find('input').eq(obj.middle).prop('checked', true);
     }
     
-    $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(obj.rate, 1));
-    $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(obj.rate, 2));
+    $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(obj.rate, 0));
+    $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(obj.rate, 1));
     
     // UI hooks
     $('div.tab-servos table.fields tr:last td.channel').find('input').click(function() {
