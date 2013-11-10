@@ -13,13 +13,15 @@ function tab_initialize_servos() {
             
             switch (CONFIG.multiType) {
                 case 1: // TRI
+                    // Broken
                     model.html('TRI');
                     
-                    process_servos('Rear', '', SERVO_CONFIG[5]);
+                    process_servos('Yaw Servo', '', SERVO_CONFIG[5]);
                     
                     servos = [5];
                     break;
                 case 4: // BI
+                    // Broken
                     model.html('BI');
                     
                     process_servos('Left', '', SERVO_CONFIG[4]);
@@ -28,6 +30,7 @@ function tab_initialize_servos() {
                     servos = [4, 5];
                     break;
                 case 5: // Gimbal
+                    // Broken
                     model.html('Gimbal');
                     
                     process_servos('Pitch Servo', '', SERVO_CONFIG[0]);
@@ -36,6 +39,7 @@ function tab_initialize_servos() {
                     servos = [0, 1];
                     break;
                 case 8: // Flying Wing
+                    // Broken
                     model.html('Flying Wing');
                     
                     process_servos('L ROLL', 'R ROLL', SERVO_CONFIG[3]);
@@ -44,6 +48,7 @@ function tab_initialize_servos() {
                     servos = [3, 4];
                     break;
                 case 14: // Airplane
+                    // Broken
                     model.html('Airplane');
                     
                     // rate
@@ -67,7 +72,7 @@ function tab_initialize_servos() {
                     servos = [4, 5];
                     break;
                 case 21: // Singlecopter
-                    // Verified
+                    // Broken
                     model.html('Singlecopter');
                     
                     process_servos('Right', 'R YAW', SERVO_CONFIG[3]);
