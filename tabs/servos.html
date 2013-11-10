@@ -1,7 +1,17 @@
 <style type="text/css">
-    .tab-servos table {
+    .tab-servos .title {
         margin-top: 10px;
         
+        line-height: 20px;
+        text-align: center;
+        font-weight: bold;
+    
+        border: 1px solid #8b8b8b;
+        border-bottom: 0;
+        
+        background-color: #ececec;
+    }
+    .tab-servos table {        
         width: 100%;
         border-collapse: collapse;     
     }
@@ -89,6 +99,14 @@
 </style>
 <div class="tab-servos">
     Model: <strong class="model"></strong>
+    <div class="title" style="width: 258px">Gyroscope / Accelerometer Direction</div>
+    <table class="directions" style="width: 260px">
+        <tr class="main">
+            <th style="width: 200px">Name</th>
+            <th>Direction</th>
+        </tr>
+    </table>
+    <div class="title">Change Direction in TX To Match</div>
     <table class="fields">
         <tr class="main">
             <th>Name</th>

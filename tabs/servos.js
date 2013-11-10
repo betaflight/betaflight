@@ -13,19 +13,26 @@ function tab_initialize_servos() {
             
             switch (CONFIG.multiType) {
                 case 1: // TRI
-                    // Broken
+                    // looking ok so far
                     model.html('TRI');
+                    
+                    process_directions('YAW', SERVO_CONFIG[5], 0);
                     
                     process_servos('Yaw Servo', '', SERVO_CONFIG[5]);
                     
                     servos = [5];
                     break;
                 case 4: // BI
-                    // Broken
+                    // looking ok so far
                     model.html('BI');
                     
-                    process_servos('Left', '', SERVO_CONFIG[4]);
-                    process_servos('Right', '', SERVO_CONFIG[5]);
+                    process_directions('L YAW', SERVO_CONFIG[4], 1);
+                    process_directions('R YAW', SERVO_CONFIG[5], 1);
+                    process_directions('L NICK', SERVO_CONFIG[4], 0);
+                    process_directions('R NICK', SERVO_CONFIG[5], 0);
+                    
+                    process_servos('Left Servo', '', SERVO_CONFIG[4]);
+                    process_servos('Right Servo', '', SERVO_CONFIG[5]);
                     
                     servos = [4, 5];
                     break;
@@ -142,10 +149,32 @@ function tab_initialize_servos() {
     });
 }
 
-function process_servos(name, alternate, obj) {    
+
+function process_directions(name, obj, bitpos) {
+    var val;
+    
+    $('div.tab-servos table.directions').append('\
+        <tr>\
+            <td class="name" style="text-align: center">' + name + '</td>\
+            <td class="direction" style="text-align: right">\
+                <select name="direction">\
+                    <option value="0">Normal</option>\
+                    <option value="1">Reverse</option>\
+                </select>\
+            </td>\
+        </tr>\
+    ');
+    
+    if (bit_check(obj.rate, bitpos)) val = 1;
+    else val = 0;
+
+    $('div.tab-servos table.directions tr:last select').val(val);
+}
+
+function process_servos(name, alternate, obj, directions) {    
     $('div.tab-servos table.fields').append('\
         <tr> \
-            <td style="text-align: center;">' + name + '</td>\
+            <td style="text-align: center">' + name + '</td>\
             <td class="middle"><input type="number" min="1000" max="2000" value="' + obj.middle +'" /></td>\
             <td class="min"><input type="number" min="1000" max="2000" value="' + obj.min +'" /></td>\
             <td class="max"><input type="number" min="1000" max="2000" value="' + obj.max +'" /></td>\
@@ -164,16 +193,19 @@ function process_servos(name, alternate, obj) {
                 <input class="second" type="checkbox"/><span class="alternate">' + alternate + '</span>\
             </td>\
         </tr> \
-    '
-    );    
+    ');    
     
     if (obj.middle <= 7) {
         $('div.tab-servos table.fields tr:last td.middle input').prop('disabled', true);
         $('div.tab-servos table.fields tr:last td.channel').find('input').eq(obj.middle).prop('checked', true);
     }
     
-    $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(obj.rate, 0));
-    $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(obj.rate, 1));
+    if (directions) {
+        $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(obj.rate, 0));
+        $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(obj.rate, 1));
+    } else {
+        $('div.tab-servos table.fields tr:last td.direction').html('');
+    }
     
     // UI hooks
     $('div.tab-servos table.fields tr:last td.channel').find('input').click(function() {
