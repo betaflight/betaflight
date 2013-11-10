@@ -142,7 +142,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                     CLI_active = false; 
                     
                     if (callback) callback();
-                }, 3000);
+                }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
             });
             break;
         default:
