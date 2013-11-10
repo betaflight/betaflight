@@ -18,7 +18,7 @@ function tab_initialize_servos() {
                     
                     process_directions('YAW', SERVO_CONFIG[5], 0);
                     
-                    process_servos('Yaw Servo', '', SERVO_CONFIG[5]);
+                    process_servos('Yaw Servo', '', SERVO_CONFIG[5], false);
                     
                     servos = [5];
                     break;
@@ -31,31 +31,42 @@ function tab_initialize_servos() {
                     process_directions('L NICK', SERVO_CONFIG[4], 0);
                     process_directions('R NICK', SERVO_CONFIG[5], 0);
                     
-                    process_servos('Left Servo', '', SERVO_CONFIG[4]);
-                    process_servos('Right Servo', '', SERVO_CONFIG[5]);
+                    process_servos('Left Servo', '', SERVO_CONFIG[4], false);
+                    process_servos('Right Servo', '', SERVO_CONFIG[5], false);
                     
                     servos = [4, 5];
                     break;
                 case 5: // Gimbal
-                    // Broken
+                    // Gimbal doesn't seem to be supported for now
+                    model.html('Doesn\'t support servos');
+                    
+                    /*
                     model.html('Gimbal');
                     
                     process_servos('Pitch Servo', '', SERVO_CONFIG[0]);
                     process_servos('Roll Servo', '', SERVO_CONFIG[1]);
                     
                     servos = [0, 1];
+                    */
                     break;
                 case 8: // Flying Wing
-                    // Broken
+                    // looking ok so far
                     model.html('Flying Wing');
                     
-                    process_servos('L ROLL', 'R ROLL', SERVO_CONFIG[3]);
-                    process_servos('L NICK', 'R NICK', SERVO_CONFIG[4]);
+                    process_directions('L ROLL', SERVO_CONFIG[3], 1);
+                    process_directions('R ROLL', SERVO_CONFIG[4], 1);
+                    process_directions('L NICK', SERVO_CONFIG[3], 0);
+                    process_directions('R NICK', SERVO_CONFIG[4], 0);
+                    
+                    process_servos('Left Wing', '', SERVO_CONFIG[3], false);
+                    process_servos('Right Wing', '', SERVO_CONFIG[4], false);
                     
                     servos = [3, 4];
                     break;
                 case 14: // Airplane
-                    // Broken
+                    // not implemented yet (rates in %)
+                    model.html('Doesn\'t support servos');
+                    /*
                     model.html('Airplane');
                     
                     // rate
@@ -63,29 +74,30 @@ function tab_initialize_servos() {
                     process_servos('Wing 2', '', SERVO_CONFIG[4]);
                     process_servos('Rudd', '', SERVO_CONFIG[5]);
                     process_servos('Elev', '', SERVO_CONFIG[6]);
-                    process_servos('Thro', '', SERVO_CONFIG[7]);
                     
-                    servos = [2, 3, 4, 5, 6, 7];
+                    servos = [2, 3, 4, 5, 6];
+                    */
                     break;
                 case 20: // Dualcopter
-                    // Broken
-                    // Gyro / Acc direction: 4
-                    // Roll: 5, Nick: 4
+                    // looking ok so far
                     model.html('Dualcopter');
                     
-                    process_servos('PITCH', 'ROLL', SERVO_CONFIG[4]);
-                    process_servos('Roll', '', SERVO_CONFIG[5]);
+                    process_directions('PITCH', SERVO_CONFIG[4], 0);
+                    process_directions('ROLL', SERVO_CONFIG[5], 0);
+                    
+                    process_servos('Roll', '', SERVO_CONFIG[5], false);
+                    process_servos('Nick', '', SERVO_CONFIG[4], false);
                     
                     servos = [4, 5];
                     break;
                 case 21: // Singlecopter
-                    // Broken
+                    // looking ok so far
                     model.html('Singlecopter');
                     
-                    process_servos('Right', 'R YAW', SERVO_CONFIG[3]);
-                    process_servos('Left', 'L YAW', SERVO_CONFIG[4]);
-                    process_servos('Front', 'F YAW', SERVO_CONFIG[5]);
-                    process_servos('Rear', 'YAW', SERVO_CONFIG[6]);
+                    process_servos('Right', 'R YAW', SERVO_CONFIG[3], true);
+                    process_servos('Left', 'L YAW', SERVO_CONFIG[4], true);
+                    process_servos('Front', 'F YAW', SERVO_CONFIG[5], true);
+                    process_servos('Rear', 'YAW', SERVO_CONFIG[6], true);
                     
                     servos = [3, 4, 5, 6];
                     break;
@@ -200,9 +212,11 @@ function process_servos(name, alternate, obj, directions) {
         $('div.tab-servos table.fields tr:last td.channel').find('input').eq(obj.middle).prop('checked', true);
     }
     
-    if (directions) {
+    if (directions == true) {
         $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(obj.rate, 0));
         $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(obj.rate, 1));
+    } else if (directions == 2) {
+        // reserved for rate
     } else {
         $('div.tab-servos table.fields tr:last td.direction').html('');
     }
