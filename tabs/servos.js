@@ -16,7 +16,7 @@ function tab_initialize_servos() {
                     // looking ok so far
                     model.html('TRI');
                     
-                    process_directions('YAW', SERVO_CONFIG[5], 0);
+                    process_directions('YAW', 5, 0);
                     
                     process_servos('Yaw Servo', '', SERVO_CONFIG[5], false);
                     
@@ -26,10 +26,10 @@ function tab_initialize_servos() {
                     // looking ok so far
                     model.html('BI');
                     
-                    process_directions('L YAW', SERVO_CONFIG[4], 1);
-                    process_directions('R YAW', SERVO_CONFIG[5], 1);
-                    process_directions('L NICK', SERVO_CONFIG[4], 0);
-                    process_directions('R NICK', SERVO_CONFIG[5], 0);
+                    process_directions('L YAW', 4, 1);
+                    process_directions('R YAW', 5, 1);
+                    process_directions('L NICK', 4, 0);
+                    process_directions('R NICK', 5, 0);
                     
                     process_servos('Left Servo', '', SERVO_CONFIG[4], false);
                     process_servos('Right Servo', '', SERVO_CONFIG[5], false);
@@ -53,10 +53,10 @@ function tab_initialize_servos() {
                     // looking ok so far
                     model.html('Flying Wing');
                     
-                    process_directions('L ROLL', SERVO_CONFIG[3], 1);
-                    process_directions('R ROLL', SERVO_CONFIG[4], 1);
-                    process_directions('L NICK', SERVO_CONFIG[3], 0);
-                    process_directions('R NICK', SERVO_CONFIG[4], 0);
+                    process_directions('L ROLL', 3, 1);
+                    process_directions('R ROLL', 4, 1);
+                    process_directions('L NICK', 3, 0);
+                    process_directions('R NICK', 4, 0);
                     
                     process_servos('Left Wing', '', SERVO_CONFIG[3], false);
                     process_servos('Right Wing', '', SERVO_CONFIG[4], false);
@@ -82,8 +82,8 @@ function tab_initialize_servos() {
                     // looking ok so far
                     model.html('Dualcopter');
                     
-                    process_directions('PITCH', SERVO_CONFIG[4], 0);
-                    process_directions('ROLL', SERVO_CONFIG[5], 0);
+                    process_directions('PITCH', 4, 0);
+                    process_directions('ROLL', 5, 0);
                     
                     process_servos('Roll', '', SERVO_CONFIG[5], false);
                     process_servos('Nick', '', SERVO_CONFIG[4], false);
@@ -109,7 +109,18 @@ function tab_initialize_servos() {
 
     // UI hooks
     $('a.update').click(function() {
-        // update objects
+        // update bitfields
+        $('div.tab-servos table.directions tr:not(".main")').each(function() {
+            var info = $('select', this).data();
+            info = info.info; // move info one level higher
+            var val = parseInt($('select', this).val());
+            
+            // in this stage we need to know which bitfield and which bitposition needs to be flipped
+            if (val) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, info.bitpos);
+            else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, info.bitpos);
+        });
+        
+        // update the rest
         var itter = 0;
         $('div.tab-servos table.fields tr:not(".main")').each(function() {
             if ($('.middle input', this).is(':disabled')) {
@@ -122,22 +133,20 @@ function tab_initialize_servos() {
             
             SERVO_CONFIG[servos[0] + itter].min = parseInt($('.min input', this).val());
             SERVO_CONFIG[servos[0] + itter].max = parseInt($('.max input', this).val());
-            
-            var rate = 0;
-            if ($('.direction input:first', this).is(':checked')) {
-                rate |= 0x01;
-            }
-            
-            if ($('.direction input:last', this).is(':checked')) {
-                rate |= 0x02;
-            }
-            
-            SERVO_CONFIG[servos[0] + itter].rate = rate;
 
+            // update rate if direction fields exist
+            if ($('.direction input', this).length) {
+                if ($('.direction input:first', this).is(':checked')) SERVO_CONFIG[servos[0] + itter].rate = bit_set(SERVO_CONFIG[servos[0] + itter].rate, 0);
+                else SERVO_CONFIG[servos[0] + itter].rate = bit_clear(SERVO_CONFIG[servos[0] + itter].rate, 0);
+                
+                if ($('.direction input:last', this).is(':checked')) SERVO_CONFIG[servos[0] + itter].rate = bit_set(SERVO_CONFIG[servos[0] + itter].rate, 1);
+                else SERVO_CONFIG[servos[0] + itter].rate = bit_clear(SERVO_CONFIG[servos[0] + itter].rate, 1);
+            }
+            
             itter++;
         });
         
-        
+        // send settings over to mcu
         var buffer_out = [];
         
         var needle = 0;
@@ -177,10 +186,11 @@ function process_directions(name, obj, bitpos) {
         </tr>\
     ');
     
-    if (bit_check(obj.rate, bitpos)) val = 1;
+    if (bit_check(SERVO_CONFIG[obj].rate, bitpos)) val = 1;
     else val = 0;
 
     $('div.tab-servos table.directions tr:last select').val(val);
+    $('div.tab-servos table.directions tr:last select').data('info', {'obj': obj, 'bitpos': bitpos});
 }
 
 function process_servos(name, alternate, obj, directions) {    
@@ -215,6 +225,9 @@ function process_servos(name, alternate, obj, directions) {
     if (directions == true) {
         $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(obj.rate, 0));
         $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(obj.rate, 1));
+        
+        // store additional data
+        //$('div.tab-servos table.fields tr:last td.direction').data('info', {});
     } else if (directions == 2) {
         // reserved for rate
     } else {
