@@ -240,7 +240,7 @@ function process_data(command, message_buffer, message_length_expected) {
             break;
         case MSP_codes.MSP_SERVO:
             var needle = 0;
-            for (var i = 0; i < SERVO_DATA.length; i++) {
+            for (var i = 0; i < 8; i++) {
                 SERVO_DATA[i] = data.getUint16(needle, 1);
                 
                 needle += 2;
@@ -248,7 +248,7 @@ function process_data(command, message_buffer, message_length_expected) {
             break; 
         case MSP_codes.MSP_MOTOR:
             var needle = 0;
-            for (var i = 0; i < MOTOR_DATA.length; i++) {
+            for (var i = 0; i < 8; i++) {
                 MOTOR_DATA[i] = data.getUint16(needle, 1);
                 
                 needle += 2;
@@ -436,7 +436,9 @@ function process_data(command, message_buffer, message_length_expected) {
             break;  
         case MSP_codes.MSP_DEBUG:
             for (var i = 0; i < 4; i++)
-              SENSOR_DATA.debug[i] = data.getInt16((2 * i), 1);
+                SENSOR_DATA.debug[i] = data.getInt16((2 * i), 1);
+            break;
+        case MSP_codes.MSP_SET_MOTOR:
             break;
         // Additional baseflight commands that are not compatible with MultiWii
         case MSP_codes.MSP_UID:

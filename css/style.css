@@ -827,7 +827,7 @@ a:hover {
         float: left;
         
         width: 40px;
-        height: 330px;
+        height: 220px;
         
         margin-right: 10px;
         
@@ -847,6 +847,24 @@ a:hover {
         
         border: 1px dotted silver;
     }
+    .tab-motor_outputs .motor_testing .sliders {
+        margin-top: 20px;
+    }
+        .tab-motor_outputs .motor_testing .sliders input {
+            -webkit-appearance: slider-vertical;
+            
+            width: 48px;
+        }
+    .tab-motor_outputs .motor_testing .values {
+        margin-top: 5px;
+    }
+        .tab-motor_outputs .motor_testing .values li {
+            float: left;
+            
+            width: 51px;
+            
+            text-align: center;
+        }
 .tab-sensors {
 }
     .tab-sensors #gyro {
