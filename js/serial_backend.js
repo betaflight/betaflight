@@ -5,6 +5,8 @@ var configuration_received = false;
 var CONFIG = {
     version:       0,
     multiType:     0,
+    msp_version:   0,
+    capability:    0,
     cycleTime:     0,
     i2cError:      0,
     activeSensors: 0,

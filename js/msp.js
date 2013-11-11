@@ -206,6 +206,8 @@ function process_data(command, message_buffer, message_length_expected) {
         case MSP_codes.MSP_IDENT:
             CONFIG.version = parseFloat((data.getUint8(0) / 100).toFixed(2));
             CONFIG.multiType = data.getUint8(1);
+            CONFIG.msp_version = data.getUint8(2);
+            CONFIG.capability = data.getUint32(3, 1);
             
             $('.software-version').html(CONFIG.version);
             
