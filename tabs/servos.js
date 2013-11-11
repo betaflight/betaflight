@@ -64,17 +64,13 @@ function tab_initialize_servos() {
                     process_servos('Right Wing', '', 4, false);
                     break;
                 case 14: // Airplane
-                    // not implemented yet (rates in %)
-                    model.html('Doesn\'t support servos');
-                    /*
                     model.html('Airplane');
                     
                     // rate
-                    process_servos('Wing 1', '', SERVO_CONFIG[3]);
-                    process_servos('Wing 2', '', SERVO_CONFIG[4]);
-                    process_servos('Rudd', '', SERVO_CONFIG[5]);
-                    process_servos('Elev', '', SERVO_CONFIG[6]);
-                    */
+                    process_servos('Wing 1', '', 3, 2);
+                    process_servos('Wing 2', '', 4, 2);
+                    process_servos('Rudd', '', 5, 2);
+                    process_servos('Elev', '', 6, 2);
                     break;
                 case 20: // Dualcopter
                     // looking ok so far
@@ -218,8 +214,24 @@ function process_servos(name, alternate, obj, directions) {
         $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(SERVO_CONFIG[obj].rate, 0));
         $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(SERVO_CONFIG[obj].rate, 1));
     } else if (directions == 2) {
-        // reserved for rate
+        // removing checkboxes
+        $('div.tab-servos table.fields tr:last td.direction').html('');
+        
+        // adding select box and generating options
+        $('div.tab-servos table.fields tr:last td.direction').append('\
+            <select class="rate" name="rate"></select>\
+        ');
+        
+        var select = $('div.tab-servos table.fields tr:last td.direction select');
+        
+        for (var i = -100; i < 101; i++) {
+            select.append('<option value="' + i + '">Rate: ' + i + '%</option>');
+        }
+        
+        // select current rate
+        select.val(SERVO_CONFIG[obj].rate);
     } else {
+        // removing checkboxes
         $('div.tab-servos table.fields tr:last td.direction').html('');
     }
     
