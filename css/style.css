@@ -847,6 +847,9 @@ a:hover {
         
         border: 1px dotted silver;
     }
+    .tab-motor_outputs .motor_testing {
+        display: none;
+    }
     .tab-motor_outputs .motor_testing .sliders {
         margin-top: 20px;
     }

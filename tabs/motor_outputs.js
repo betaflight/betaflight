@@ -2,6 +2,9 @@ function tab_initialize_motor_outputs() {
     ga_tracker.sendAppView('Motor Outputs Page');
     GUI.active_tab = 'motor_outputs';
     
+    // if CAP_DYNBALANCE is true
+    if (bit_check(CONFIG.capability, 2)) $('div.motor_testing').show();
+    
     // UI hooks
     $('div.sliders input').change(function() {
         var index = $(this).index();
