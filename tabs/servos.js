@@ -131,6 +131,9 @@ function tab_initialize_servos() {
                 
                 if ($('.direction input:last', this).is(':checked')) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, 1);
                 else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, 1);
+            } else if ($('.direction select', this).length) {
+                var val = parseInt($('.direction select', this).val());
+                SERVO_CONFIG[info.obj].rate = val;                
             }
         });
         
@@ -224,7 +227,7 @@ function process_servos(name, alternate, obj, directions) {
         
         var select = $('div.tab-servos table.fields tr:last td.direction select');
         
-        for (var i = -100; i < 101; i++) {
+        for (var i = 100; i > -101; i--) {
             select.append('<option value="' + i + '">Rate: ' + i + '%</option>');
         }
         
