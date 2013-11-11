@@ -10,7 +10,6 @@ function tab_initialize_servos() {
     GUI.active_tab = 'servos';
 
     var model = $('div.tab-servos strong.model');
-    var servos = [];
     
     // request current Servos Config
     send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
@@ -26,8 +25,6 @@ function tab_initialize_servos() {
                     process_directions('YAW', 5, 0);
                     
                     process_servos('Yaw Servo', '', 5, false);
-                    
-                    servos = [5];
                     break;
                 case 4: // BI
                     // looking ok so far
@@ -40,8 +37,6 @@ function tab_initialize_servos() {
                     
                     process_servos('Left Servo', '', 4, false);
                     process_servos('Right Servo', '', 5, false);
-                    
-                    servos = [4, 5];
                     break;
                 case 5: // Gimbal
                     // Gimbal doesn't seem to be supported for now
@@ -67,8 +62,6 @@ function tab_initialize_servos() {
                     
                     process_servos('Left Wing', '', 3, false);
                     process_servos('Right Wing', '', 4, false);
-                    
-                    servos = [3, 4];
                     break;
                 case 14: // Airplane
                     // not implemented yet (rates in %)
@@ -81,8 +74,6 @@ function tab_initialize_servos() {
                     process_servos('Wing 2', '', SERVO_CONFIG[4]);
                     process_servos('Rudd', '', SERVO_CONFIG[5]);
                     process_servos('Elev', '', SERVO_CONFIG[6]);
-                    
-                    servos = [2, 3, 4, 5, 6];
                     */
                     break;
                 case 20: // Dualcopter
@@ -94,8 +85,6 @@ function tab_initialize_servos() {
                     
                     process_servos('Roll', '', 5, false);
                     process_servos('Nick', '', 4, false);
-                    
-                    servos = [4, 5];
                     break;
                 case 21: // Singlecopter
                     // looking ok so far
@@ -105,8 +94,6 @@ function tab_initialize_servos() {
                     process_servos('Left', 'L YAW', 4, true);
                     process_servos('Front', 'F YAW', 5, true);
                     process_servos('Rear', 'YAW', 6, true);
-                    
-                    servos = [3, 4, 5, 6];
                     break;
                 default:
                     model.html('Doesn\'t support servos');
