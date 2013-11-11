@@ -1,3 +1,10 @@
+/*  Please don't take code in this file very seriously !!!
+
+    I was "kinda" forced to write this implementation "this way" because the Servo code implementation
+    from multiwii is so horrible, obstructive and non dynamic, not to mention it doesn't make any sense
+    that there was just no other way around this then hardcoding/implementing each model separately.
+*/
+
 function tab_initialize_servos() {
     ga_tracker.sendAppView('Servos');
     GUI.active_tab = 'servos';
