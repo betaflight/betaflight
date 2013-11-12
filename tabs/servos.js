@@ -94,73 +94,85 @@ function tab_initialize_servos() {
                 default:
                     model.html('Doesn\'t support servos');
             }
+            
+            // UI hooks for dynamically generated elements
+            $('table.directions select, table.directions input, table.fields select, table.fields input').change(function() {
+                if ($('div.live input').is(':checked')) {
+                    // apply small delay as there seems to be some funky update business going wrong
+                    GUI.timeout_add('servos_update', servos_update, 10);
+                }
+            });
         });
     });
-
-    // UI hooks
+    
     $('a.update').click(function() {
-        // update bitfields
-        $('div.tab-servos table.directions tr:not(".main")').each(function() {
-            var info = $('select', this).data('info');
-            var val = parseInt($('select', this).val());
-            
-            // in this stage we need to know which bitfield and which bitposition needs to be flipped
-            if (val) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, info.bitpos);
-            else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, info.bitpos);
-        });
-        
-        // update the rest
-        $('div.tab-servos table.fields tr:not(".main")').each(function() {
-            var info = $(this).data('info');
-            
-            if ($('.middle input', this).is(':disabled')) {
-                var val = $('.channel input:checked', this).index();
-                
-                SERVO_CONFIG[info.obj].middle = parseInt(val);
-            } else {
-                SERVO_CONFIG[info.obj].middle = parseInt($('.middle input', this).val());
-            }
-            
-            SERVO_CONFIG[info.obj].min = parseInt($('.min input', this).val());
-            SERVO_CONFIG[info.obj].max = parseInt($('.max input', this).val());
-
-            // update rate if direction fields exist
-            if ($('.direction input', this).length) {
-                if ($('.direction input:first', this).is(':checked')) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, 0);
-                else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, 0);
-                
-                if ($('.direction input:last', this).is(':checked')) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, 1);
-                else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, 1);
-            } else if ($('.direction select', this).length) {
-                var val = parseInt($('.direction select', this).val());
-                SERVO_CONFIG[info.obj].rate = val;                
-            }
-        });
-        
-        // send settings over to mcu
-        var buffer_out = [];
-        
-        var needle = 0;
-        for (var i = 0; i < SERVO_CONFIG.length; i++) {
-            buffer_out[needle++] = lowByte(SERVO_CONFIG[i].min);
-            buffer_out[needle++] = highByte(SERVO_CONFIG[i].min);
-            
-            buffer_out[needle++] = lowByte(SERVO_CONFIG[i].max);
-            buffer_out[needle++] = highByte(SERVO_CONFIG[i].max);
-            
-            buffer_out[needle++] = lowByte(SERVO_CONFIG[i].middle);
-            buffer_out[needle++] = highByte(SERVO_CONFIG[i].middle);
-            
-            buffer_out[needle++] = lowByte(SERVO_CONFIG[i].rate);
-        }
-        
-        send_message(MSP_codes.MSP_SET_SERVO_CONF, buffer_out);
-        
-        // Save changes to EEPROM
-        send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+        servos_update(true);
     });
 }
 
+function servos_update(save_to_eeprom) {
+    // update bitfields
+    $('div.tab-servos table.directions tr:not(".main")').each(function() {
+        var info = $('select', this).data('info');
+        var val = parseInt($('select', this).val());
+        
+        // in this stage we need to know which bitfield and which bitposition needs to be flipped
+        if (val) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, info.bitpos);
+        else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, info.bitpos);
+    });
+    
+    // update the rest
+    $('div.tab-servos table.fields tr:not(".main")').each(function() {
+        var info = $(this).data('info');
+        
+        if ($('.middle input', this).is(':disabled')) {
+            var val = $('.channel input:checked', this).index();
+            
+            SERVO_CONFIG[info.obj].middle = parseInt(val);
+        } else {
+            SERVO_CONFIG[info.obj].middle = parseInt($('.middle input', this).val());
+        }
+        
+        SERVO_CONFIG[info.obj].min = parseInt($('.min input', this).val());
+        SERVO_CONFIG[info.obj].max = parseInt($('.max input', this).val());
+
+        // update rate if direction fields exist
+        if ($('.direction input', this).length) {
+            if ($('.direction input:first', this).is(':checked')) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, 0);
+            else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, 0);
+            
+            if ($('.direction input:last', this).is(':checked')) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, 1);
+            else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, 1);
+        } else if ($('.direction select', this).length) {
+            var val = parseInt($('.direction select', this).val());
+            SERVO_CONFIG[info.obj].rate = val;                
+        }
+    });
+    
+    // send settings over to mcu
+    var buffer_out = [];
+    
+    var needle = 0;
+    for (var i = 0; i < SERVO_CONFIG.length; i++) {
+        buffer_out[needle++] = lowByte(SERVO_CONFIG[i].min);
+        buffer_out[needle++] = highByte(SERVO_CONFIG[i].min);
+        
+        buffer_out[needle++] = lowByte(SERVO_CONFIG[i].max);
+        buffer_out[needle++] = highByte(SERVO_CONFIG[i].max);
+        
+        buffer_out[needle++] = lowByte(SERVO_CONFIG[i].middle);
+        buffer_out[needle++] = highByte(SERVO_CONFIG[i].middle);
+        
+        buffer_out[needle++] = lowByte(SERVO_CONFIG[i].rate);
+    }
+    
+    send_message(MSP_codes.MSP_SET_SERVO_CONF, buffer_out);
+    
+    if (save_to_eeprom) {
+        // Save changes to EEPROM
+        send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+    }
+}
 
 function process_directions(name, obj, bitpos) {
     var val;

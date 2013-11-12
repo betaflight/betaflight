@@ -11,6 +11,10 @@
         
         background-color: #ececec;
     }
+    .tab-servos table.directions td.direction select {
+        height: 19px;
+        line-height: 19px;
+    }
     .tab-servos table {        
         width: 100%;
         border-collapse: collapse;     
@@ -80,6 +84,18 @@
                 
                 text-align: center;
             }
+        .tab-servos .live {
+            float: left;
+            
+            margin-top: 10px;
+        }
+            .tab-servos .live span {
+                float: left;
+            }
+            .tab-servos .live input {
+                float: left;
+                margin: 0 0 0 5px;
+            }
         .tab-servos .update {
             display: block;
             float: right;
@@ -123,5 +139,8 @@
             <th style="width: 200px">Direction</th>
         </tr>
     </table>
+    <div class="live">
+        <span>Enable Live mode: </span><input type="checkbox" />
+    </div>
     <a class="update" href="#" title="">Save</a>
 </div>
