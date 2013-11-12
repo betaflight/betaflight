@@ -76,11 +76,31 @@ function tab_initialize_initial_setup() {
     
     // UI Hooks
     $('a.calibrateAccel').click(function() {
-        send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION);
+        var self = $(this);
+        
+        if (!self.hasClass('calibrating')) {
+            self.addClass('calibrating');
+            
+            send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION);
+            
+            GUI.timeout_add('button_reset', function() {
+                self.removeClass('calibrating');
+            }, 1000);
+        }
     });
     
     $('a.calibrateMag').click(function() {
-        send_message(MSP_codes.MSP_MAG_CALIBRATION, MSP_codes.MSP_MAG_CALIBRATION);
+        var self = $(this);
+        
+        if (!self.hasClass('calibrating')) {
+            self.addClass('calibrating');
+        
+            send_message(MSP_codes.MSP_MAG_CALIBRATION, MSP_codes.MSP_MAG_CALIBRATION);
+            
+            GUI.timeout_add('button_reset', function() {
+                self.removeClass('calibrating');
+            }, 30000);
+        }
     });
 
     $('a.resetSettings').click(function() {

@@ -221,6 +221,14 @@ a:hover {
         .tab-initial_setup .section a:hover {
             background-color: #424d84;
         }
+        .tab-initial_setup .section  a.calibrating {
+            background-color: #4f4f4f;
+        }
+        .tab-initial_setup .section a.calibrating:hover {
+            cursor: default;
+            background-color: #4f4f4f;
+        }
+        
             .tab-initial_setup .section a.backup {
                 width: 75px;
                 margin-right: 10px;
