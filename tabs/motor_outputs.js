@@ -24,6 +24,22 @@ function tab_initialize_motor_outputs() {
         send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
     });
     
+    $('div.notice input').change(function() {
+        if ($(this).is(':checked')) {
+            $('div.sliders input').prop('disabled', false);
+        } else {
+            // disable sliders
+            $('div.sliders input').prop('disabled', true);
+            
+            // change all values to default
+            $('div.sliders input').val(1000);
+            $('div.values li').html(1000);
+            
+            // trigger change event so values are sent to mcu
+            $('div.sliders input').change();
+        }
+    });
+    
     // enable Motor data pulling
     timers.push(setInterval(motorPoll, 50));
 }
