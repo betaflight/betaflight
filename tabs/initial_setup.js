@@ -81,6 +81,9 @@ function tab_initialize_initial_setup() {
         if (!self.hasClass('calibrating')) {
             self.addClass('calibrating');
             
+            // During this period MCU won't be able to process any serial commands because its locked in a for/while loop
+            // until this operation finishes, sending more commands through data_poll() will result in serial buffer overflow
+            // which will in turn result in MSP CRC error (don't be alarmed)
             send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION);
             
             GUI.timeout_add('button_reset', function() {
