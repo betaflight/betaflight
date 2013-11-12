@@ -10,6 +10,7 @@ function tab_initialize_servos() {
     GUI.active_tab = 'servos';
 
     var model = $('div.tab-servos strong.model');
+    var supported_models = [1, 4, 8, 14, 20, 21];
     
     // request current Servos Config
     send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
@@ -106,7 +107,9 @@ function tab_initialize_servos() {
     });
     
     $('a.update').click(function() {
-        servos_update(true);
+        if (supported_models.indexOf(CONFIG.multiType) != -1) {
+            servos_update(true);
+        }
     });
 }
 
