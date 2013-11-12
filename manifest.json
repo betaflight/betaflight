@@ -18,7 +18,8 @@
         "storage",
         "fileSystem",
         "fileSystem.write",
-        "clipboardWrite"
+        "clipboardWrite",
+        "notifications"
     ],
     
     "icons": {
