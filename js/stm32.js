@@ -111,7 +111,11 @@ STM32_protocol.prototype.initialize = function() {
     this.hex_to_flash.shift();
     
     // first step
-    self.upload_procedure(1);
+    if ($('input.updating').is(':checked')) {
+        self.upload_procedure(0);
+    } else {
+        self.upload_procedure(1);
+    }
 };
 
 // no input parameters
@@ -236,6 +240,15 @@ STM32_protocol.prototype.upload_procedure = function(step) {
     self.steps_executed++;
     
     switch (step) {
+        case 0:
+            // reboot into bootloader mode
+            console.log('STM32 - Trying to jump into bootloader mode');
+            self.send([0x52]);
+            
+            GUI.timeout_add('reboot_into_bootloader', function() {
+                self.upload_procedure(1);
+            }, 100);
+            break;
         case 1:
             // initialize serial interface on the MCU side, auto baud rate settings
             self.send([0x7F], 1, function(reply) {
