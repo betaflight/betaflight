@@ -114,7 +114,7 @@ STM32_protocol.prototype.initialize = function() {
     }, 1000);
     
     // first step
-    if ($('input.updating').is(':checked')) {
+    if (!$('input.updating').is(':checked')) {
         self.upload_procedure(0);
     } else {
         self.upload_procedure(1);
