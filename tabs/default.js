@@ -4,5 +4,10 @@ function tab_initialize_default() {
         
         // load changelog content
         $('div.changelog.configurator .wrapper').load('./changelog.html');
+        
+        // UI Hooks
+        $('a.firmware_flasher').click(function() {
+            tab_initialize_firmware_flasher();
+        });
     });
 }
