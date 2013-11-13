@@ -17,6 +17,7 @@ function tab_initialize_firmware_flasher() {
                 
                 chrome.fileSystem.getDisplayPath(fileEntry, function(path) {
                     console.log('Loading file from: ' + path);
+                    $('span.path').html(path);
                     
                     fileEntry.file(function(file) {
                         var reader = new FileReader();
@@ -30,12 +31,20 @@ function tab_initialize_firmware_flasher() {
                             
                             intel_hex = e.target.result;
                             raw_hex = read_hex_file(intel_hex);
+                            
+                            $('span.size').html((raw_hex.length / 1000) + ' kB');
                         };
 
                         reader.readAsText(file);
                     });
                 });
             });
+        });
+        
+        $('a.flash_firmware').click(function() {
+            if (raw_hex != false) {
+                
+            }
         });
     });
 }

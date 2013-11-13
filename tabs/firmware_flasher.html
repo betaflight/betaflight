@@ -1,7 +1,48 @@
 <style type="text/css">
-    
+    .tab-firmware_flasher .info {
+        margin: 0 0 10px 0;
+    }
+    a.load_file {
+        display: block;
+        float: left;
+        
+        padding: 0 10px 0 10px;
+        
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        font-weight: bold;
+        
+        border: 1px solid silver;
+        background-color: #ececec;
+    }
+    a.load_file:hover {
+        background-color: #dedcdc;
+    }
+    a.flash_firmware {
+        display: block;
+        float: left;
+        
+        margin: 0 0 0 10px;
+        padding: 0 10px 0 10px;
+        
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        font-weight: bold;
+        
+        border: 1px solid silver;
+        background-color: #ececec;
+    }
+    a.flash_firmware:hover {
+        background-color: #dedcdc;
+    }
 </style>
 <div class="tab-firmware_flasher">
+    <div class="info">
+        <span>Path:</span><span class="path"></span><br />
+        <span>Size:</span><span class="size"></span>
+    </div>
     <a class="load_file" href="#">Load Firmware</a>
     <a class="flash_firmware" href="#">Flash Firmware</a>
 </div>
