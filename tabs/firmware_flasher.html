@@ -2,6 +2,23 @@
     .tab-firmware_flasher .info {
         margin: 0 0 10px 0;
     }
+        .tab-firmware_flasher .info strong {
+            margin-right: 5px;
+        }
+    .tab-firmware_flasher .note {
+        float: left;
+        
+        margin-bottom: 10px;
+        padding: 5px;
+        
+        border: 1px dotted silver;
+    }
+        .tab-firmware_flasher .note p {
+            margin-top: 5px;
+        }
+        .tab-firmware_flasher .note input {
+            margin-top: 2px;
+        }
     a.load_file {
         display: block;
         float: left;
@@ -40,9 +57,18 @@
 </style>
 <div class="tab-firmware_flasher">
     <div class="info">
-        <span>Path:</span><span class="path"></span><br />
-        <span>Size:</span><span class="size"></span>
+        <strong>Path:</strong><span class="path">empty</span><br />
+        <strong>Size:</strong><span class="size">0.000 kb</span><br />
+        <strong>Status:</strong><span class="status">Firmware not loaded</span><br />
     </div>
+    <div class="note">
+        <span style="font-weight: bold; margin-right: 10px;">Reboot sequence:</span><input class="updating" type="checkbox" checked="checked"/>
+        <p>
+            If you are flashing board with <strong>baseflight</strong> already flashed (updating), leave this checkbox checked.<br />
+            If you are flashing "<strong>bare</strong>" board with no firmware preloaded or you have bootloader pins <strong>shorted</strong>, uncheck this checkbox.<br />
+        </p>
+    </div>
+    <div class="clear-both"></div>
     <a class="load_file" href="#">Load Firmware</a>
     <a class="flash_firmware" href="#">Flash Firmware</a>
 </div>

@@ -42,6 +42,11 @@ var STM32_protocol = function() {
     // Erase (x043) and Extended Erase (0x44) are exclusive. A device may support either the Erase command or the Extended Erase command but not both.
 };
 
+// string = string .. duh
+STM32_protocol.prototype.GUI_status = function(string) {
+    $('span.status').html(string);
+};
+
 // no input parameters
 STM32_protocol.prototype.connect = function() {
     var self = this;
@@ -97,6 +102,7 @@ STM32_protocol.prototype.initialize = function() {
             self.steps_executed_last = self.steps_executed;
         } else {
             console.log('STM32 - timed out, programming failed ...');
+            STM32.GUI_status('STM32 - timed out, programming: <strong style="color: red">FAILED</strong>');
             
             // protocol got stuck, clear timer and disconnect
             GUI.interval_remove('STM32_timeout');
@@ -243,6 +249,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
         case 0:
             // reboot into bootloader mode
             console.log('STM32 - Trying to jump into bootloader mode');
+            STM32.GUI_status('Rebooting');
             self.send([0x52]);
             
             GUI.timeout_add('reboot_into_bootloader', function() {
@@ -297,6 +304,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
         case 4:
             // erase memory
             console.log('Executing global chip erase');
+            STM32.GUI_status('Erasing');
             
             self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
                 if (self.verify_response(self.status.ACK, reply)) {
@@ -304,6 +312,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         if (self.verify_response(self.status.ACK, reply)) {
                             console.log('Erasing: done');
                             console.log('Writing data ...');
+                            STM32.GUI_status('<span style="color: green">Flashing ...</span>');
                             
                             // proceed to next step
                             self.upload_procedure(5); 
@@ -359,6 +368,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             } else {
                 console.log('Writing: done');
                 console.log('Verifying data ...');
+                STM32.GUI_status('<span style="color: green">Verifying ...</span>');
                 
                 // proceed to next step
                 self.upload_procedure(6);
@@ -409,12 +419,14 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                 if (result) {
                     console.log('Verifying: done');
                     console.log('Programming: SUCCESSFUL');
+                    STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
                     
                     // proceed to next step
                     self.upload_procedure(7);   
                 } else {
                     console.log('Verifying: failed');
                     console.log('Programming: FAILED');
+                    STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
                     
                     // disconnect
                     self.upload_procedure(99); 

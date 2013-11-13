@@ -28,6 +28,7 @@ function tab_initialize_firmware_flasher() {
                         
                         reader.onloadend = function(e) {
                             console.log('File loaded');
+                            STM32.GUI_status('<span style="color: green">Firmware loaded, ready for flashing</span>');
                             
                             intel_hex = e.target.result;
                             raw_hex = read_hex_file(intel_hex);
@@ -46,6 +47,8 @@ function tab_initialize_firmware_flasher() {
                 STM32.hex_to_flash = raw_hex.slice(0);
                 
                 STM32.connect();
+            } else {
+                STM32.GUI_status('<span style="color: red">Firmware not loaded</span>');
             }
         });
     });
