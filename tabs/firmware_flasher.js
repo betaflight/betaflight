@@ -43,6 +43,12 @@ function tab_initialize_firmware_flasher() {
         });
         
         $('a.load_remote_file').click(function() {
+            /*  for future use
+                $.get('https://api.github.com/repos/multiwii/baseflight/tags', function(data) {
+                    console.log(data)
+                });
+            */
+            
             $.get('https://raw.github.com/multiwii/baseflight/master/obj/baseflight.hex', function(data) {
                 intel_hex = data;
                 raw_hex = read_hex_file(intel_hex);
