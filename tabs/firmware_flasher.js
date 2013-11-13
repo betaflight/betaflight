@@ -2,7 +2,8 @@ function tab_initialize_firmware_flasher() {
     ga_tracker.sendAppView('Firmware Flasher');
     GUI.active_tab = 'firmware_flasher';
     
-    var intel_hex = false;
+    var intel_hex = false; // standard intel hex in string format
+    var raw_hex = false; // parsed raw hex in array format
     
     $('#content').load("./tabs/firmware_flasher.html", function() {
         // UI Hooks
@@ -28,6 +29,7 @@ function tab_initialize_firmware_flasher() {
                             console.log('File loaded');
                             
                             intel_hex = e.target.result;
+                            raw_hex = read_hex_file(intel_hex);
                         };
 
                         reader.readAsText(file);
