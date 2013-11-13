@@ -19,10 +19,11 @@
         .tab-firmware_flasher .note input {
             margin-top: 2px;
         }
-    a.load_file {
+    a.load_file, a.load_remote_file {
         display: block;
         float: left;
         
+        margin: 0 10px 0 0;
         padding: 0 10px 0 10px;
         
         height: 20px;
@@ -33,14 +34,13 @@
         border: 1px solid silver;
         background-color: #ececec;
     }
-    a.load_file:hover {
+    a.load_file:hover, a.load_remote_file:hover {
         background-color: #dedcdc;
     }
     a.flash_firmware {
         display: block;
         float: left;
         
-        margin: 0 0 0 10px;
         padding: 0 10px 0 10px;
         
         height: 20px;
@@ -69,6 +69,7 @@
         </p>
     </div>
     <div class="clear-both"></div>
-    <a class="load_file" href="#">Load Firmware</a>
+    <a class="load_file" href="#">Load Firmware [Local]</a>
+    <a class="load_remote_file" href="#">Load Firmware [Online]</a>
     <a class="flash_firmware" href="#">Flash Firmware</a>
 </div>

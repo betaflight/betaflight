@@ -42,6 +42,20 @@ function tab_initialize_firmware_flasher() {
             });
         });
         
+        $('a.load_remote_file').click(function() {
+            $.get('https://raw.github.com/multiwii/baseflight/master/obj/baseflight.hex', function(data) {
+                intel_hex = data;
+                raw_hex = read_hex_file(intel_hex);
+                
+                $('span.path').html('Using remote Firmware');
+                $('span.size').html((raw_hex.length / 1000) + ' kB');
+                
+                STM32.GUI_status('<span style="color: green">Remote Firmware loaded, ready for flashing</span>');
+            }).fail(function() {
+                STM32.GUI_status('<span style="color: red">Failed to load remote firmware</span>');
+            });
+        });
+        
         $('a.flash_firmware').click(function() {
             if (raw_hex != false) {
                 STM32.hex_to_flash = raw_hex.slice(0);
