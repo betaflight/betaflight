@@ -89,3 +89,9 @@ function notify(message, color) {
     });
     
 }
+
+function microtime() {
+    var now = new Date().getTime() / 1000;
+
+    return now;
+}
