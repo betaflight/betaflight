@@ -113,10 +113,6 @@ STM32_protocol.prototype.initialize = function() {
         }
     }, 1000);
     
-    // there seems to be 2 unwanted bytes in the parsed array, we will drop them now (WHY ???)
-    this.hex_to_flash.shift();
-    this.hex_to_flash.shift();
-    
     // first step
     if ($('input.updating').is(':checked')) {
         self.upload_procedure(0);

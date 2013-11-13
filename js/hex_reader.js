@@ -19,23 +19,25 @@ function read_hex_file(data) {
         var content = data[i].substr(9, byte_count);
         var checksum = parseInt(data[i].substr(9 + byte_count, 2), 16); // also converting from hex to decimal (this is a 2's complement value)
        
-        if (byte_count > 0) {
-            var crc = (byte_count / 2) + parseInt(address.substr(0, 2), 16) + parseInt(address.substr(2, 2), 16) + record_type;
-            for (var needle = 0; needle < byte_count; needle += 2) {
-                var num = parseInt(content.substr(needle, 2), 16); // get one byte in hex and convert it to decimal
-                raw_hex.push(num);
+        if (record_type == 0x00) { // data record
+            if (byte_count > 0) {
+                var crc = (byte_count / 2) + parseInt(address.substr(0, 2), 16) + parseInt(address.substr(2, 2), 16) + record_type;
+                for (var needle = 0; needle < byte_count; needle += 2) {
+                    var num = parseInt(content.substr(needle, 2), 16); // get one byte in hex and convert it to decimal
+                    raw_hex.push(num);
+                    
+                    crc += num;
+                    bytes_total++;
+                }
                 
-                crc += num;
-                bytes_total++;
-            }
-            
-            // change crc to 2's complement (same as checksum)
-            crc = ~crc + 1;
-            crc &= 0xFF;
-            
-            // verify 
-            if (crc != checksum) {
-                hexfile_valid = false;
+                // change crc to 2's complement (same as checksum)
+                crc = ~crc + 1;
+                crc &= 0xFF;
+                
+                // verify 
+                if (crc != checksum) {
+                    hexfile_valid = false;
+                }
             }
         }
     }
