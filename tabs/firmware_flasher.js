@@ -43,7 +43,9 @@ function tab_initialize_firmware_flasher() {
         
         $('a.flash_firmware').click(function() {
             if (raw_hex != false) {
+                STM32.hex_to_flash = raw_hex.slice(0);
                 
+                STM32.connect();
             }
         });
     });

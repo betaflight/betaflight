@@ -9,5 +9,8 @@ function tab_initialize_default() {
         $('a.firmware_flasher').click(function() {
             tab_initialize_firmware_flasher();
         });
+        
+        // temporary
+        tab_initialize_firmware_flasher();
     });
 }
