@@ -70,6 +70,7 @@ STM32_protocol.prototype.connect = function() {
         });
     } else {
         console.log('Please select valid serial port');
+        STM32.GUI_status('<span style="color: red">Please select valid serial port</span>');
     }
 };
 
