@@ -4,7 +4,7 @@
     "description": "Cool crossplatform configurator",
     "version": "0.16",
     "manifest_version": 2,
-    "minimum_chrome_version": "23", 
+    "minimum_chrome_version": "31", 
     
     "app": {
         "background": {
