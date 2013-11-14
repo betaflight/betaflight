@@ -134,45 +134,47 @@ $(document).ready(function() {
     $('div#port-picker a.refresh').click();
     
     $('div#port-picker a.connect').click(function() {
-        var clicks = $(this).data('clicks');
-        
-        selected_port = String($(port_picker).val());
-        selected_baud = parseInt(baud_picker.val());
-        connection_delay = parseInt(delay_picker.val());
-        
-        if (selected_port != '0') {
-            if (clicks) { // odd number of clicks
-                // Disable any active "data pulling" timer
-                disable_timers();
-                
-                GUI.tab_switch_cleanup();
-                
-                chrome.serial.close(connectionId, onClosed);
-                
-                clearTimeout(connection_delay);
-                clearInterval(serial_poll);
-                clearInterval(port_usage_poll);
-                
-                // Change port utilization to 0
-                $('span.port-usage').html('0%');
-
-                // reset valid config received variable (used to block tabs while not connected properly)
-                configuration_received = false;
-                
-                $(this).text('Connect');
-                $(this).removeClass('active');                
-            } else { // even number of clicks        
-                console.log('Connecting to: ' + selected_port);
-                
-                chrome.serial.open(selected_port, {
-                    bitrate: selected_baud
-                }, onOpen);
-                
-                $(this).text('Disconnect');  
-                $(this).addClass('active');
-            }
+        if (GUI.connect_lock != true) { // GUI control overrides the user control
+            var clicks = $(this).data('clicks');
             
-            $(this).data("clicks", !clicks);
+            selected_port = String($(port_picker).val());
+            selected_baud = parseInt(baud_picker.val());
+            connection_delay = parseInt(delay_picker.val());
+            
+            if (selected_port != '0') {
+                if (clicks) { // odd number of clicks
+                    // Disable any active "data pulling" timer
+                    disable_timers();
+                    
+                    GUI.tab_switch_cleanup();
+                    
+                    chrome.serial.close(connectionId, onClosed);
+                    
+                    clearTimeout(connection_delay);
+                    clearInterval(serial_poll);
+                    clearInterval(port_usage_poll);
+                    
+                    // Change port utilization to 0
+                    $('span.port-usage').html('0%');
+
+                    // reset valid config received variable (used to block tabs while not connected properly)
+                    configuration_received = false;
+                    
+                    $(this).text('Connect');
+                    $(this).removeClass('active');                
+                } else { // even number of clicks        
+                    console.log('Connecting to: ' + selected_port);
+                    
+                    chrome.serial.open(selected_port, {
+                        bitrate: selected_baud
+                    }, onOpen);
+                    
+                    $(this).text('Disconnect');  
+                    $(this).addClass('active');
+                }
+                
+                $(this).data("clicks", !clicks);
+            }
         }
     });     
 }); 
