@@ -51,23 +51,46 @@ STM32_protocol.prototype.GUI_status = function(string) {
 STM32_protocol.prototype.connect = function() {
     var self = this;
     
-    selected_port = String($('div#port-picker .port select').val());
+    var selected_port = String($('div#port-picker .port select').val());
+    var baud = parseInt($('div#port-picker #baud').val());
     
     if (selected_port != '0') {
-        // parity and stopbit properties should be in chrome v30 or v31
-        chrome.serial.open(selected_port, {bitrate: 115200, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
-            connectionId = openInfo.connectionId;
-            
-            if (connectionId != -1) {       
-                console.log('Connection was opened with ID: ' + connectionId);
-
-                // we are connected, disabling connect button in the UI
-                GUI.connect_lock = true;
+        if (!$('input.updating').is(':checked')) {
+            chrome.serial.open(selected_port, {bitrate: baud}, function(openInfo) {
+                connectionId = openInfo.connectionId;
                 
-                // start the upload procedure
-                self.initialize();
-            }
-        });
+                if (connectionId != -1) { 
+                    console.log('Connection was opened with ID: ' + connectionId);
+
+                    // we are connected, disabling connect button in the UI
+                    GUI.connect_lock = true;
+                    
+                    self.send([0x52]);
+                    
+                    GUI.timeout_add('reboot_into_bootloader', function() {
+                        chrome.serial.close(connectionId, function(result) {
+                            if (result) {
+                                chrome.serial.open(selected_port, {bitrate: 115200, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
+                                    connectionId = openInfo.connectionId;
+                                    
+                                    if (connectionId != -1) {
+                                        self.initialize();
+                                    }
+                                });
+                            }
+                        });
+                    }, 100);  
+                }
+            });
+        } else {
+            chrome.serial.open(selected_port, {bitrate: 115200, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
+                connectionId = openInfo.connectionId;
+                
+                if (connectionId != -1) {
+                    self.initialize();
+                }
+            });
+        }
     } else {
         console.log('Please select valid serial port');
         STM32.GUI_status('<span style="color: red">Please select valid serial port</span>');
@@ -113,12 +136,7 @@ STM32_protocol.prototype.initialize = function() {
         }
     }, 1000);
     
-    // first step
-    if (!$('input.updating').is(':checked')) {
-        self.upload_procedure(0);
-    } else {
-        self.upload_procedure(1);
-    }
+    self.upload_procedure(1);
 };
 
 // no input parameters
@@ -243,16 +261,6 @@ STM32_protocol.prototype.upload_procedure = function(step) {
     self.steps_executed++;
     
     switch (step) {
-        case 0:
-            // reboot into bootloader mode
-            console.log('STM32 - Trying to jump into bootloader mode');
-            STM32.GUI_status('Rebooting');
-            self.send([0x52]);
-            
-            GUI.timeout_add('reboot_into_bootloader', function() {
-                self.upload_procedure(1);
-            }, 100);
-            break;
         case 1:
             // initialize serial interface on the MCU side, auto baud rate settings
             self.send([0x7F], 1, function(reply) {
