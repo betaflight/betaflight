@@ -75,6 +75,26 @@
     a.back:hover {
         background-color: #dedcdc;
     }
+    .warning {        
+        width: 610px;
+        
+        margin-top: 20px;
+        
+        border: 1px solid silver;
+    }
+        .warning .title {
+            line-height: 20px;
+            
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            
+            border-bottom: 1px solid silver;
+            background-color: #cd4c4c;
+        }
+        .warning p {
+            padding: 5px;
+        }
 </style>
 <div class="tab-firmware_flasher">
     <div class="info">
@@ -93,5 +113,15 @@
     <a class="load_file" href="#">Load Firmware [Local]</a>
     <a class="load_remote_file" href="#">Load Firmware [Online]</a>
     <a class="flash_firmware" href="#">Flash Firmware</a>
+    <div class="clear-both"></div>
+    <div class="warning">
+        <div class="title">Warning</div>
+        <p>
+            Please do not try to flash <strong>non-baseflight</strong> hardware with this firmware flasher (it wont work).<br />
+            Do not <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br />
+            <br />
+            Note: <strong>STM32</strong> bootloader is stored in <strong>ROM</strong>, it cannot be bricked.<br />
+        </p>
+    </div>
     <a class="back" href="#">Leave Firmware Flasher</a>
 </div>
