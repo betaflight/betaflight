@@ -34,6 +34,7 @@ function tab_initialize_firmware_flasher() {
                             raw_hex = read_hex_file(intel_hex);
                             
                             $('span.size').html((raw_hex.length / 1000) + ' kB');
+                            $('a.flash_firmware').removeClass('locked');
                         };
 
                         reader.readAsText(file);
@@ -55,21 +56,25 @@ function tab_initialize_firmware_flasher() {
                 
                 $('span.path').html('Using remote Firmware');
                 $('span.size').html((raw_hex.length / 1000) + ' kB');
+                $('a.flash_firmware').removeClass('locked');
                 
                 STM32.GUI_status('<span style="color: green">Remote Firmware loaded, ready for flashing</span>');
             }).fail(function() {
                 STM32.GUI_status('<span style="color: red">Failed to load remote firmware</span>');
+                $('a.flash_firmware').addClass('locked');
             });
         });
         
         $('a.flash_firmware').click(function() {
-            if (!GUI.connect_lock) { // button disabled while flashing is in progress
-                if (raw_hex != false) {
-                    STM32.hex_to_flash = raw_hex.slice(0);
-                    
-                    STM32.connect();
-                } else {
-                    STM32.GUI_status('<span style="color: red">Firmware not loaded</span>');
+            if (!$(this).hasClass('locked')) {
+                if (!GUI.connect_lock) { // button disabled while flashing is in progress
+                    if (raw_hex != false) {
+                        STM32.hex_to_flash = raw_hex.slice(0);
+                        
+                        STM32.connect();
+                    } else {
+                        STM32.GUI_status('<span style="color: red">Firmware not loaded</span>');
+                    }
                 }
             }
         });

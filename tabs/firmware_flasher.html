@@ -55,6 +55,13 @@
     a.flash_firmware:hover {
         background-color: #dedcdc;
     }
+        a.flash_firmware.locked {
+            background-color: #b8b8b8;
+        }
+        a.flash_firmware.locked:hover {
+            cursor: default;
+            background-color: #b8b8b8;
+        }
     a.back {
         display: block;
         position: absolute;
@@ -112,7 +119,7 @@
     <div class="clear-both"></div>
     <a class="load_file" href="#">Load Firmware [Local]</a>
     <a class="load_remote_file" href="#">Load Firmware [Online]</a>
-    <a class="flash_firmware" href="#">Flash Firmware</a>
+    <a class="flash_firmware locked" href="#">Flash Firmware</a>
     <div class="clear-both"></div>
     <div class="warning">
         <div class="title">Warning</div>
