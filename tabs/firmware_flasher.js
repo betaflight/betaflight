@@ -63,12 +63,14 @@ function tab_initialize_firmware_flasher() {
         });
         
         $('a.flash_firmware').click(function() {
-            if (raw_hex != false) {
-                STM32.hex_to_flash = raw_hex.slice(0);
-                
-                STM32.connect();
-            } else {
-                STM32.GUI_status('<span style="color: red">Firmware not loaded</span>');
+            if (!GUI.connect_lock) { // button disabled while flashing is in progress
+                if (raw_hex != false) {
+                    STM32.hex_to_flash = raw_hex.slice(0);
+                    
+                    STM32.connect();
+                } else {
+                    STM32.GUI_status('<span style="color: red">Firmware not loaded</span>');
+                }
             }
         });
     });
