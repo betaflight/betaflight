@@ -61,6 +61,7 @@ STM32_protocol.prototype.connect = function() {
                 
                 if (connectionId != -1) { 
                     console.log('Connection was opened with ID: ' + connectionId);
+                    console.log('Sending ascii "R" to reboot');
 
                     // we are connected, disabling connect button in the UI
                     GUI.connect_lock = true;
@@ -70,10 +71,14 @@ STM32_protocol.prototype.connect = function() {
                     GUI.timeout_add('reboot_into_bootloader', function() {
                         chrome.serial.close(connectionId, function(result) {
                             if (result) {
+                                console.log('Connection closed successfully.');
+                                
                                 chrome.serial.open(selected_port, {bitrate: 115200, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
                                     connectionId = openInfo.connectionId;
                                     
                                     if (connectionId != -1) {
+                                        console.log('Connection was opened with ID: ' + connectionId);
+                                        
                                         self.initialize();
                                     }
                                 });
@@ -87,6 +92,11 @@ STM32_protocol.prototype.connect = function() {
                 connectionId = openInfo.connectionId;
                 
                 if (connectionId != -1) {
+                    console.log('Connection was opened with ID: ' + connectionId);
+                    
+                    // we are connected, disabling connect button in the UI
+                    GUI.connect_lock = true;
+                    
                     self.initialize();
                 }
             });
