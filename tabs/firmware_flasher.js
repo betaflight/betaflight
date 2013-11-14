@@ -73,5 +73,13 @@ function tab_initialize_firmware_flasher() {
                 }
             }
         });
+        
+        $('a.back').click(function() {
+            if (!GUI.connect_lock) { // button disabled while flashing is in progress                
+                tab_initialize_default();
+            } else {
+                notify('You <span style="color: red">can\'t</span> do this right now, please wait for current operation to finish ...');
+            }
+        });
     });
 }
