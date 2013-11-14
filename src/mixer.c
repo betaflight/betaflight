@@ -263,10 +263,6 @@ void writeServos(void)
             }
             break;
 
-        case MULTITYPE_AIRPLANE:
-
-            break;
-
         case MULTITYPE_FLYING_WING:
             pwmWriteServo(0, servo[3]);
             pwmWriteServo(1, servo[4]);
@@ -282,6 +278,7 @@ void writeServos(void)
             pwmWriteServo(1, servo[5]);
             break;
 
+        case MULTITYPE_AIRPLANE:
         case MULTITYPE_SINGLECOPTER:
             pwmWriteServo(0, servo[3]);
             pwmWriteServo(1, servo[4]);
