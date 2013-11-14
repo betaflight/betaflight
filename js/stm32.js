@@ -82,6 +82,10 @@ STM32_protocol.prototype.connect = function() {
                                         self.initialize();
                                     }
                                 });
+                            } else {
+                                console.log('There was an error that happened during "connection-close" procedure');
+                                
+                                GUI.connect_lock = false;
                             }
                         });
                     }, 100);  
@@ -479,9 +483,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     
                     connectionId = -1; // reset connection id
                 } else { // Something went wrong
-                    if (connectionId > 0) {
-                        console.log('There was an error that happened during "connection-close" procedure');
-                    } 
+                    console.log('There was an error that happened during "connection-close" procedure');
                 }
                 
                 // unlocking connect button
