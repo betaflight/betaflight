@@ -3,7 +3,7 @@ function tab_initialize_firmware_flasher() {
     GUI.active_tab = 'firmware_flasher';
     
     var intel_hex = false; // standard intel hex in string format
-    var raw_hex = false; // parsed raw hex in array format
+    var parsed_hex = false; // parsed raw hex in array format
     
     $('#content').load("./tabs/firmware_flasher.html", function() {
         // UI Hooks
@@ -31,9 +31,9 @@ function tab_initialize_firmware_flasher() {
                             STM32.GUI_status('<span style="color: green">Firmware loaded, ready for flashing</span>');
                             
                             intel_hex = e.target.result;
-                            raw_hex = read_hex_file(intel_hex);
+                            parsed_hex = read_hex_file(intel_hex);
                             
-                            $('span.size').html((raw_hex.length / 1000) + ' kB');
+                            $('span.size').html((parsed_hex.bytes / 1000) + ' kB');
                             $('a.flash_firmware').removeClass('locked');
                         };
 
@@ -52,10 +52,10 @@ function tab_initialize_firmware_flasher() {
             
             $.get('https://raw.github.com/multiwii/baseflight/master/obj/baseflight.hex', function(data) {
                 intel_hex = data;
-                raw_hex = read_hex_file(intel_hex);
+                parsed_hex = read_hex_file(intel_hex);
                 
                 $('span.path').html('Using remote Firmware');
-                $('span.size').html((raw_hex.length / 1000) + ' kB');
+                $('span.size').html((parsed_hex.bytes / 1000) + ' kB');
                 $('a.flash_firmware').removeClass('locked');
                 
                 STM32.GUI_status('<span style="color: green">Remote Firmware loaded, ready for flashing</span>');
@@ -68,8 +68,8 @@ function tab_initialize_firmware_flasher() {
         $('a.flash_firmware').click(function() {
             if (!$(this).hasClass('locked')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
-                    if (raw_hex != false) {
-                        STM32.hex_to_flash = raw_hex.slice(0);
+                    if (parsed_hex != false) {
+                        STM32.parsed_hex = parsed_hex;
                         
                         STM32.connect();
                     } else {

@@ -1,5 +1,5 @@
 var STM32_protocol = function() {
-    this.hex_to_flash; // data to flash
+    this.parsed_hex; // hex object
     
     this.receive_buffer;
     
@@ -118,8 +118,8 @@ STM32_protocol.prototype.initialize = function() {
     // reset and set some variables before we start 
     self.receive_buffer = [];
     
-    self.flashing_memory_address = 0x08000000;
-    self.verify_memory_address = 0x08000000;
+    self.flashing_memory_address = self.parsed_hex.extended_linear_address;
+    self.verify_memory_address = self.parsed_hex.extended_linear_address;
     
     self.bytes_flashed = 0;
     self.bytes_verified = 0;
@@ -204,6 +204,7 @@ STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {
 STM32_protocol.prototype.verify_response = function(val, data) {
     if (val != data[0]) {
         console.log('STM32 Communication failed, wrong response, expected: ' + val + ' received: ' + data[0]);
+        STM32.GUI_status('STM32 Communication <span style="color: red">failed</span>, wrong response, expected: ' + val + ' received: ' + data[0]);
         
         // disconnect
         this.upload_procedure(99);
@@ -220,7 +221,10 @@ STM32_protocol.prototype.verify_chip_signature = function(signature) {
     switch (signature) {
         case 0x412:
             // low density
-            return false;
+            // not tested
+            console.log('Chip recognized as F1 Low-density');
+            
+            return true;
             break;
         case 0x410:
             // medium density
@@ -230,25 +234,41 @@ STM32_protocol.prototype.verify_chip_signature = function(signature) {
             break;
         case 0x414:
             // high density
-            return false
+            // not tested
+            console.log('Chip recognized as F1 High-density');
+            
+            return true;
             break;
         case 0x418:
             // connectivity line
-            return false;
+            // not tested
+            console.log('Chip recognized as F1 Connectivity line');
+            
+            return true;
             break;
         case 0x420:
             // medium density value line
-            return false;
+            // not tested
+            console.log('Chip recognized as F1 Medium-density value line');
+            
+            return true;
             break;
         case 0x428:
             // high density value line
-            return false;
+            // not tested
+            console.log('Chip recognized as F1 High-density value line');
+            
+            return true;
             break;
         case 0x430:
             // XL density
-            return false;
+            // not tested
+            console.log('Chip recognized as F1 XL-density value line');
+            
+            return true;
             break;
         default: 
+            console.log('Chip NOT recognized: ' + signature);
             return false;
     };
 };
@@ -311,8 +331,6 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                             // proceed to next step
                             self.upload_procedure(4);
                         } else {
-                            console.log('Chip not supported, sorry :-(');
-                            
                             // disconnect
                             self.upload_procedure(99);
                         }
@@ -342,11 +360,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 5:
             // upload
-            if (self.bytes_flashed < self.hex_to_flash.length) {
-                if ((self.bytes_flashed + 256) <= self.hex_to_flash.length) {
+            if (self.bytes_flashed < self.parsed_hex.data.length) {
+                if ((self.bytes_flashed + 256) <= self.parsed_hex.data.length) {
                     var data_length = 256;
                 } else {
-                    var data_length = self.hex_to_flash.length - self.bytes_flashed;
+                    var data_length = self.parsed_hex.data.length - self.bytes_flashed;
                 }
                 
                 console.log('STM32 - Writing to: 0x' + self.flashing_memory_address.toString(16) + ', ' + data_length + ' bytes');
@@ -364,8 +382,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                 
                                 var checksum = array_out[0];
                                 for (var i = 0; i < data_length; i++) {
-                                    array_out[i + 1] = self.hex_to_flash[self.bytes_flashed]; // + 1 because of the first byte offset
-                                    checksum ^= self.hex_to_flash[self.bytes_flashed];
+                                    array_out[i + 1] = self.parsed_hex.data[self.bytes_flashed]; // + 1 because of the first byte offset
+                                    checksum ^= self.parsed_hex.data[self.bytes_flashed];
                                     
                                     self.bytes_flashed++;
                                     self.flashing_memory_address++;
@@ -395,11 +413,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 6:
             // verify
-            if (self.bytes_verified < self.hex_to_flash.length) {
-                if ((self.bytes_verified + 256) <= self.hex_to_flash.length) {
+            if (self.bytes_verified < self.parsed_hex.data.length) {
+                if ((self.bytes_verified + 256) <= self.parsed_hex.data.length) {
                     var data_length = 256;
                 } else {
-                    var data_length = self.hex_to_flash.length - self.bytes_verified;
+                    var data_length = self.parsed_hex.data.length - self.bytes_verified;
                 }
                 
                 console.log('STM32 - Reading from: 0x' + self.verify_memory_address.toString(16) + ', ' + data_length + ' bytes');
@@ -433,7 +451,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     }
                 });
             } else {
-                var result = self.verify_flash(self.hex_to_flash, self.verify_hex);
+                var result = self.verify_flash(self.parsed_hex.data, self.verify_hex);
                 
                 if (result) {
                     console.log('Verifying: done');
@@ -459,7 +477,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
 
             self.send([self.command.go, 0xDE], 1, function(reply) { // 0x21 ^ 0xFF
                 if (self.verify_response(self.status.ACK, reply)) {
-                    self.send([0x08, 0x00, 0x00, 0x00, 0x08], 1, function(reply) {
+                    var gt_address = self.parsed_hex.extended_linear_address;
+                    var address = [(gt_address >> 24), (gt_address >> 16) & 0x00FF, (gt_address >> 8) & 0x00FF, (gt_address & 0x00FF)];
+                    var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
+                    
+                    self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function(reply) {
                         if (self.verify_response(self.status.ACK, reply)) {
                             // disconnect
                             self.upload_procedure(99);
