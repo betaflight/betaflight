@@ -493,7 +493,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
         case 7:
             // go
             // memory address = 4 bytes, 1st high byte, 4th low byte, 5th byte = checksum XOR(byte 1, byte 2, byte 3, byte 4)
-            console.log('Sending GO command');
+            console.log('Sending GO command: 0x' + self.parsed_hex.extended_linear_address.toString(16));
 
             self.send([self.command.go, 0xDE], 1, function(reply) { // 0x21 ^ 0xFF
                 if (self.verify_response(self.status.ACK, reply)) {
