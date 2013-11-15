@@ -219,52 +219,72 @@ STM32_protocol.prototype.verify_response = function(val, data) {
 // result = true/false
 STM32_protocol.prototype.verify_chip_signature = function(signature) {
     switch (signature) {
-        case 0x412:
-            // low density
-            // not tested
+        case 0x412: // not tested
             console.log('Chip recognized as F1 Low-density');
-            
             return true;
             break;
         case 0x410:
-            // medium density
             console.log('Chip recognized as F1 Medium-density');
-            
             return true;
             break;
-        case 0x414:
-            // high density
-            // not tested
+        case 0x414: // not tested
             console.log('Chip recognized as F1 High-density');
-            
             return true;
             break;
-        case 0x418:
-            // connectivity line
-            // not tested
+        case 0x418: // not tested
             console.log('Chip recognized as F1 Connectivity line');
-            
             return true;
             break;
-        case 0x420:
-            // medium density value line
-            // not tested
+        case 0x420:  // not tested
             console.log('Chip recognized as F1 Medium-density value line');
-            
             return true;
             break;
-        case 0x428:
-            // high density value line
-            // not tested
+        case 0x428: // not tested
             console.log('Chip recognized as F1 High-density value line');
-            
             return true;
             break;
-        case 0x430:
-            // XL density
-            // not tested
+        case 0x430: // not tested
             console.log('Chip recognized as F1 XL-density value line');
-            
+            return true;
+            break;
+        case 0x416: // not tested
+            console.log('Chip recognized as L1 Medium-density ultralow power');
+            return true;
+            break;
+        case 0x436:
+            console.log('Chip recognized as L1 High-density ultralow power');
+            return true;
+            break;
+        case 0x427:
+            console.log('Chip recognized as L1 Medium-density plus ultralow power');
+            return true;
+            break;
+        case 0x411:
+            console.log('Chip recognized as F2 STM32F2xxxx');
+            return true;
+            break;
+        case 0x440:
+            console.log('Chip recognized as F0 STM32F051xx');
+            return true;
+            break;
+        case 0x444:
+            console.log('Chip recognized as F0 STM32F050xx');
+            return true;
+            break;
+        case 0x413:
+            console.log('Chip recognized as F4 STM32F40xxx/41xxx');
+            return true;
+            break;
+        case 0x419:
+            console.log('Chip recognized as F4 STM32F427xx/437xx, STM32F429xx/439xx');
+            return true;
+            break;
+        case 0x432:
+            console.log('Chip recognized as F3 STM32F37xxx, STM32F38xxx');
+            return true;
+            break;
+        case 0x422:
+            console.log('Chip recognized as F3 STM32F30xxx, STM32F31xxx');
             return true;
             break;
         default: 
