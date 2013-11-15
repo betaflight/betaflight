@@ -55,6 +55,21 @@ STM32_protocol.prototype.connect = function() {
     var baud = parseInt($('div#port-picker #baud').val());
     
     if (selected_port != '0') {
+        // calculate fastest bitrate speed for current OS
+        switch (GUI.operating_system) {
+            case 'Windows':
+                var flashing_bitrate = 256000;
+                break;
+            case 'MacOS':
+                var flashing_bitrate = 230400;
+                break;
+            case 'ChromeOS':
+            case 'Linux':
+            case 'UNIX':
+                var flashing_bitrate = 230400;
+                break;
+        }
+        
         if (!$('input.updating').is(':checked')) {
             chrome.serial.open(selected_port, {bitrate: baud}, function(openInfo) {
                 connectionId = openInfo.connectionId;
@@ -73,7 +88,7 @@ STM32_protocol.prototype.connect = function() {
                             if (result) {
                                 console.log('Connection closed successfully.');
                                 
-                                chrome.serial.open(selected_port, {bitrate: 115200, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
+                                chrome.serial.open(selected_port, {bitrate: flashing_bitrate, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
                                     connectionId = openInfo.connectionId;
                                     
                                     if (connectionId != -1) {
@@ -92,7 +107,7 @@ STM32_protocol.prototype.connect = function() {
                 }
             });
         } else {
-            chrome.serial.open(selected_port, {bitrate: 115200, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
+            chrome.serial.open(selected_port, {bitrate: flashing_bitrate, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
                 connectionId = openInfo.connectionId;
                 
                 if (connectionId != -1) {
