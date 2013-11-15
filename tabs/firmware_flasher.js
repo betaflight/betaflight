@@ -69,7 +69,7 @@ function tab_initialize_firmware_flasher() {
             if (!$(this).hasClass('locked')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
                     if (parsed_hex != false) {
-                        STM32.parsed_hex = parsed_hex;
+                        STM32.hex = parsed_hex;
                         
                         STM32.connect();
                     } else {

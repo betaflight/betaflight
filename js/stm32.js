@@ -1,5 +1,5 @@
 var STM32_protocol = function() {
-    this.parsed_hex; // hex object
+    this.hex; // hex object
     
     this.receive_buffer;
     
@@ -118,8 +118,8 @@ STM32_protocol.prototype.initialize = function() {
     // reset and set some variables before we start 
     self.receive_buffer = [];
     
-    self.flashing_memory_address = self.parsed_hex.extended_linear_address;
-    self.verify_memory_address = self.parsed_hex.extended_linear_address;
+    self.flashing_memory_address = self.hex.extended_linear_address;
+    self.verify_memory_address = self.hex.extended_linear_address;
     
     self.bytes_flashed = 0;
     self.bytes_verified = 0;
@@ -380,11 +380,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 5:
             // upload
-            if (self.bytes_flashed < self.parsed_hex.data.length) {
-                if ((self.bytes_flashed + 256) <= self.parsed_hex.data.length) {
+            if (self.bytes_flashed < self.hex.data.length) {
+                if ((self.bytes_flashed + 256) <= self.hex.data.length) {
                     var data_length = 256;
                 } else {
-                    var data_length = self.parsed_hex.data.length - self.bytes_flashed;
+                    var data_length = self.hex.data.length - self.bytes_flashed;
                 }
                 
                 console.log('STM32 - Writing to: 0x' + self.flashing_memory_address.toString(16) + ', ' + data_length + ' bytes');
@@ -402,8 +402,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                 
                                 var checksum = array_out[0];
                                 for (var i = 0; i < data_length; i++) {
-                                    array_out[i + 1] = self.parsed_hex.data[self.bytes_flashed]; // + 1 because of the first byte offset
-                                    checksum ^= self.parsed_hex.data[self.bytes_flashed];
+                                    array_out[i + 1] = self.hex.data[self.bytes_flashed]; // + 1 because of the first byte offset
+                                    checksum ^= self.hex.data[self.bytes_flashed];
                                     
                                     self.bytes_flashed++;
                                     self.flashing_memory_address++;
@@ -433,11 +433,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 6:
             // verify
-            if (self.bytes_verified < self.parsed_hex.data.length) {
-                if ((self.bytes_verified + 256) <= self.parsed_hex.data.length) {
+            if (self.bytes_verified < self.hex.data.length) {
+                if ((self.bytes_verified + 256) <= self.hex.data.length) {
                     var data_length = 256;
                 } else {
-                    var data_length = self.parsed_hex.data.length - self.bytes_verified;
+                    var data_length = self.hex.data.length - self.bytes_verified;
                 }
                 
                 console.log('STM32 - Reading from: 0x' + self.verify_memory_address.toString(16) + ', ' + data_length + ' bytes');
@@ -471,7 +471,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     }
                 });
             } else {
-                var result = self.verify_flash(self.parsed_hex.data, self.verify_hex);
+                var result = self.verify_flash(self.hex.data, self.verify_hex);
                 
                 if (result) {
                     console.log('Verifying: done');
@@ -493,11 +493,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
         case 7:
             // go
             // memory address = 4 bytes, 1st high byte, 4th low byte, 5th byte = checksum XOR(byte 1, byte 2, byte 3, byte 4)
-            console.log('Sending GO command: 0x' + self.parsed_hex.extended_linear_address.toString(16));
+            console.log('Sending GO command: 0x' + self.hex.extended_linear_address.toString(16));
 
             self.send([self.command.go, 0xDE], 1, function(reply) { // 0x21 ^ 0xFF
                 if (self.verify_response(self.status.ACK, reply)) {
-                    var gt_address = self.parsed_hex.extended_linear_address;
+                    var gt_address = self.hex.extended_linear_address;
                     var address = [(gt_address >> 24), (gt_address >> 16) & 0x00FF, (gt_address >> 8) & 0x00FF, (gt_address & 0x00FF)];
                     var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
                     
