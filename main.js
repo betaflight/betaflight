@@ -8,13 +8,6 @@ chrome.runtime.getBackgroundPage(function(result) {
     backgroundPage.connectionId = -1;
 });
 
-// OS detection
-var OS = "Unknown";
-if (navigator.appVersion.indexOf("Win") != -1) OS = "Windows";
-else if (navigator.appVersion.indexOf("Mac") != -1) OS = "MacOS";
-else if (navigator.appVersion.indexOf("X11") != -1) OS = "UNIX";
-else if (navigator.appVersion.indexOf("Linux") != -1) OS = "Linux";
-
 var timers = new Array();
 
 function disable_timers() {

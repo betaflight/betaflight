@@ -106,6 +106,7 @@ function send_slowly(out_arr, i, timeout_needle) {
     MAC only understands CR
     Linux and Unix only understand LF
     Windows understands (both) CRLF
+    Chrome OS currenty unknown
 */
 
 var sequence_elements = 0;
@@ -130,12 +131,12 @@ function handle_CLI(data) {
     if (sequence_elements == 0) {
         switch (data) {
             case 10: // line feed
-                if (OS == "Windows" || OS == "Linux" || OS == "UNIX") {
+                if (GUI.operating_system == "Windows" || GUI.operating_system == "Linux" || GUI.operating_system == "UNIX") {
                     $('.tab-cli .window .wrapper').append("<br />");
                 }
                 break;
             case 13: // carriage return
-                if (OS == "MacOS") {
+                if (GUI.operating_system == "MacOS") {
                     $('.tab-cli .window .wrapper').append("<br />");
                 }
                 break;
