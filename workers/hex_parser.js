@@ -28,27 +28,25 @@ function read_hex_file(data) {
        
         switch (record_type) {
             case 0x00: // data record
-                if (byte_count > 0) {
-                    var crc = byte_count + parseInt(address.substr(0, 2), 16) + parseInt(address.substr(2, 2), 16) + record_type;
-                    for (var needle = 0; needle < byte_count * 2; needle += 2) {
-                        var num = parseInt(content.substr(needle, 2), 16); // get one byte in hex and convert it to decimal
-                        result.data.push(num);
-                        
-                        crc += num;
-                        result.bytes++;
-                    }
+                var crc = byte_count + parseInt(address.substr(0, 2), 16) + parseInt(address.substr(2, 2), 16) + record_type;
+                for (var needle = 0; needle < byte_count * 2; needle += 2) {
+                    var num = parseInt(content.substr(needle, 2), 16); // get one byte in hex and convert it to decimal
+                    result.data.push(num);
                     
-                    // change crc to 2's complement (same as checksum)
-                    crc = ~crc + 1;
-                    crc &= 0xFF;
+                    crc += num;
+                    result.bytes++;
+                }
+                
+                // change crc to 2's complement (same as checksum)
+                crc = ~crc + 1;
+                crc &= 0xFF;
+                
+                // verify 
+                if (crc != checksum) {
+                    hexfile_valid = false;
                     
-                    // verify 
-                    if (crc != checksum) {
-                        hexfile_valid = false;
-                        
-                        // break out of the for loop as crc is wrong anyway, we dont need to process any more data
-                        i = data.length;
-                    }
+                    // break out of the for loop as crc is wrong anyway, we dont need to process any more data
+                    i = data.length;
                 }
                 break;
             case 0x01: // end of file record
