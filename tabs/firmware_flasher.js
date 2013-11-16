@@ -28,13 +28,21 @@ function tab_initialize_firmware_flasher() {
                         
                         reader.onloadend = function(e) {
                             console.log('File loaded');
-                            STM32.GUI_status('<span style="color: green">Firmware loaded, ready for flashing</span>');
                             
                             intel_hex = e.target.result;
-                            parsed_hex = read_hex_file(intel_hex);
                             
-                            $('span.size').html((parsed_hex.bytes / 1000) + ' kB');
-                            $('a.flash_firmware').removeClass('locked');
+                            parse_hex(intel_hex, function(data) {
+                                parsed_hex = data;
+                                
+                                if (parsed_hex) {
+                                    STM32.GUI_status('<span style="color: green">Firmware loaded, ready for flashing</span>');
+                                    $('a.flash_firmware').removeClass('locked');
+                                    
+                                    $('span.size').html((parsed_hex.bytes / 1000) + ' kB');
+                                } else {
+                                    STM32.GUI_status('<span style="color: red">HEX file appears to be corrupted</span>');
+                                }
+                            });
                         };
 
                         reader.readAsText(file);
@@ -52,13 +60,20 @@ function tab_initialize_firmware_flasher() {
             
             $.get('https://raw.github.com/multiwii/baseflight/master/obj/baseflight.hex', function(data) {
                 intel_hex = data;
-                parsed_hex = read_hex_file(intel_hex);
                 
-                $('span.path').html('Using remote Firmware');
-                $('span.size').html((parsed_hex.bytes / 1000) + ' kB');
-                $('a.flash_firmware').removeClass('locked');
-                
-                STM32.GUI_status('<span style="color: green">Remote Firmware loaded, ready for flashing</span>');
+                parse_hex(intel_hex, function(data) {
+                    parsed_hex = data;
+                    
+                    if (parsed_hex) {
+                        STM32.GUI_status('<span style="color: green">Remote Firmware loaded, ready for flashing</span>');
+                        $('a.flash_firmware').removeClass('locked');
+                        
+                        $('span.path').html('Using remote Firmware');
+                        $('span.size').html((parsed_hex.bytes / 1000) + ' kB');
+                    } else {
+                        STM32.GUI_status('<span style="color: red">HEX file appears to be corrupted</span>');
+                    }
+                });
             }).fail(function() {
                 STM32.GUI_status('<span style="color: red">Failed to load remote firmware</span>');
                 $('a.flash_firmware').addClass('locked');
@@ -87,4 +102,17 @@ function tab_initialize_firmware_flasher() {
             }
         });
     });
+}
+
+function parse_hex(str, callback) {
+    // parsing hex in different thread
+    var worker = new Worker('./workers/hex_parser.js');
+    
+    // "callback"
+    worker.onmessage = function (event) {
+        callback(event.data);
+    };
+    
+    // send data/string over for processing
+    worker.postMessage(str);
 }
