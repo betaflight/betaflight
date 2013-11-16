@@ -14,7 +14,7 @@ function read_hex_file(data) {
     var result = {
         data:                       [],
         end_of_file:                false,
-        extended_linear_address:    0,
+        extended_linear_address:    [],
         start_linear_address:       0,
         bytes:                      0
     };
@@ -56,12 +56,14 @@ function read_hex_file(data) {
                 break;
             case 0x02: // extended segment address record
                 // not implemented
+                console.log('extended segment address record found - NOT IMPLEMENTED !!!');
                 break;
             case 0x03: // start segment address record
                 // not implemented
+                console.log('start segment address record found - NOT IMPLEMENTED !!!');
                 break;
             case 0x04: // extended linear address record                
-                result.extended_linear_address = (parseInt(content.substr(0, 2), 16) << 24) | parseInt(content.substr(2, 2), 16) << 16;
+                result.extended_linear_address.push((parseInt(content.substr(0, 2), 16) << 24) | parseInt(content.substr(2, 2), 16) << 16);
                 break;
             case 0x05: // start linear address record
                 result.start_linear_address = (parseInt(content.substr(0, 2), 16) << 24) | (parseInt(content.substr(2, 2), 16) << 16) | (parseInt(content.substr(4, 2), 16) << 8) | parseInt(content.substr(6, 2), 16);
