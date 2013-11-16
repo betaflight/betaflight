@@ -19,6 +19,9 @@ function read_hex_file(data) {
         bytes:                      0
     };
     
+    var previous_address = 0;
+    var previous_byte_count = 0;
+    
     for (var i = 0; i < data.length; i++) {
         var byte_count = parseInt(data[i].substr(1, 2), 16); // each byte is represnted by two chars
         var address = data[i].substr(3, 4);
@@ -28,6 +31,21 @@ function read_hex_file(data) {
        
         switch (record_type) {
             case 0x00: // data record
+                // fix "holes" if there are any
+                if (parseInt(address, 16) != previous_address + previous_byte_count) {
+                    var difference = parseInt(address, 16) - (previous_address + previous_byte_count);
+                    
+                    // fill in the difference
+                    for (var fix = 0; fix < difference; fix++) {
+                        result.data.push(0xFF);
+                        result.bytes++;
+                    }
+                }
+                
+                previous_address = parseInt(address, 16);
+                previous_byte_count = byte_count;
+                
+                // process data
                 var crc = byte_count + parseInt(address.substr(0, 2), 16) + parseInt(address.substr(2, 2), 16) + record_type;
                 for (var needle = 0; needle < byte_count * 2; needle += 2) {
                     var num = parseInt(content.substr(needle, 2), 16); // get one byte in hex and convert it to decimal
@@ -60,8 +78,25 @@ function read_hex_file(data) {
                 // not implemented
                 console.log('start segment address record found - NOT IMPLEMENTED !!!');
                 break;
-            case 0x04: // extended linear address record                
-                result.extended_linear_address.push((parseInt(content.substr(0, 2), 16) << 24) | parseInt(content.substr(2, 2), 16) << 16);
+            case 0x04: // extended linear address record
+                var extended_linear_address = (parseInt(content.substr(0, 2), 16) << 24) | parseInt(content.substr(2, 2), 16) << 16;
+                result.extended_linear_address.push(extended_linear_address);
+                
+                extended_linear_address -= 0x08000000;
+                
+                if (previous_address != 0) { // dont execute the first time
+                    var difference = extended_linear_address - (previous_address + previous_byte_count);
+                    
+                    // fix "holes" if there are any
+                    for (var fix = 0; fix < difference; fix++) {
+                        result.data.push(0xFF);
+                        result.bytes++;
+                    }
+                    
+                    // reset some variables
+                    previous_address = 0;
+                    previous_byte_count = 0;
+                }
                 break;
             case 0x05: // start linear address record
                 result.start_linear_address = (parseInt(content.substr(0, 2), 16) << 24) | (parseInt(content.substr(2, 2), 16) << 16) | (parseInt(content.substr(4, 2), 16) << 8) | parseInt(content.substr(6, 2), 16);
