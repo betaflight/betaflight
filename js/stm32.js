@@ -145,6 +145,11 @@ STM32_protocol.prototype.initialize = function() {
     
     self.steps_executed = 0;
     self.steps_executed_last = 0;
+    
+    // reset progress bar to initial state
+    self.progress_bar_e = $('.progress');
+    self.progress_bar_e.val(0);
+    self.progress_bar_e.removeClass('valid invalid');
 
     GUI.interval_add('firmware_uploader_read', function() {
         self.read();
@@ -437,6 +442,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     }
                 });
                 
+                // update progress bar
+                self.progress_bar_e.val(self.bytes_flashed / (self.hex.bytes * 2) * 100);
             } else {
                 console.log('Writing: done');
                 console.log('Verifying data ...');
@@ -485,6 +492,9 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         });
                     }
                 });
+                
+                // update progress bar
+                self.progress_bar_e.val((self.bytes_flashed + self.bytes_verified) / (self.hex.bytes * 2) * 100); 
             } else {
                 var result = self.verify_flash(self.hex.data, self.verify_hex);
                 
@@ -493,12 +503,18 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     console.log('Programming: SUCCESSFUL');
                     STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
                     
+                    // update progress bar
+                    self.progress_bar_e.addClass('valid');
+                    
                     // proceed to next step
                     self.upload_procedure(7);   
                 } else {
                     console.log('Verifying: failed');
                     console.log('Programming: FAILED');
                     STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
+                    
+                    // update progress bar
+                    self.progress_bar_e.addClass('invalid');
                     
                     // disconnect
                     self.upload_procedure(99); 
