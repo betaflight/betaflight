@@ -20,17 +20,17 @@ function read_hex_file(data) {
     };
     
     for (var i = 0; i < data.length; i++) {
-        var byte_count = parseInt(data[i].substr(1, 2), 16) * 2; // each byte is represnted by two chars (* 2 to get the hex representation)
+        var byte_count = parseInt(data[i].substr(1, 2), 16); // each byte is represnted by two chars
         var address = data[i].substr(3, 4);
         var record_type = parseInt(data[i].substr(7, 2), 16); // also converting from hex to decimal
-        var content = data[i].substr(9, byte_count);
-        var checksum = parseInt(data[i].substr(9 + byte_count, 2), 16); // also converting from hex to decimal (this is a 2's complement value)
+        var content = data[i].substr(9, byte_count * 2);
+        var checksum = parseInt(data[i].substr(9 + byte_count * 2, 2), 16); // also converting from hex to decimal (this is a 2's complement value)
        
         switch (record_type) {
             case 0x00: // data record
                 if (byte_count > 0) {
-                    var crc = (byte_count / 2) + parseInt(address.substr(0, 2), 16) + parseInt(address.substr(2, 2), 16) + record_type;
-                    for (var needle = 0; needle < byte_count; needle += 2) {
+                    var crc = byte_count + parseInt(address.substr(0, 2), 16) + parseInt(address.substr(2, 2), 16) + record_type;
+                    for (var needle = 0; needle < byte_count * 2; needle += 2) {
                         var num = parseInt(content.substr(needle, 2), 16); // get one byte in hex and convert it to decimal
                         result.data.push(num);
                         
