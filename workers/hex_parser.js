@@ -19,8 +19,7 @@ function read_hex_file(data) {
         bytes:                      0
     };
     
-    var previous_address = 0;
-    var previous_byte_count = 0;
+    var next_address_pos = 0;
     
     for (var i = 0; i < data.length; i++) {
         var byte_count = parseInt(data[i].substr(1, 2), 16); // each byte is represnted by two chars
@@ -32,18 +31,20 @@ function read_hex_file(data) {
         switch (record_type) {
             case 0x00: // data record
                 // fix "holes" if there are any
-                if (parseInt(address, 16) != previous_address + previous_byte_count) {
-                    var difference = parseInt(address, 16) - (previous_address + previous_byte_count);
+                if (parseInt(address, 16) != next_address_pos) {
+                    var difference = parseInt(address, 16) - (next_address_pos);
                     
                     // fill in the difference
-                    for (var fix = 0; fix < difference; fix++) {
+                    for (var x = 0; x < difference; x++) {
                         result.data.push(0xFF);
                         result.bytes++;
                     }
+                    
+                    console.log('HEX_PARSER - Address hole detected, expected: ' + next_address_pos + ', received: ' + parseInt(address, 16) + ', filling: ' + difference + ' bytes');
                 }
                 
-                previous_address = parseInt(address, 16);
-                previous_byte_count = byte_count;
+                // update for next comparison
+                next_address_pos = parseInt(address, 16) + byte_count;
                 
                 // process data
                 var crc = byte_count + parseInt(address.substr(0, 2), 16) + parseInt(address.substr(2, 2), 16) + record_type;
@@ -82,20 +83,20 @@ function read_hex_file(data) {
                 var extended_linear_address = (parseInt(content.substr(0, 2), 16) << 24) | parseInt(content.substr(2, 2), 16) << 16;
                 result.extended_linear_address.push(extended_linear_address);
                 
-                extended_linear_address -= 0x08000000;
-                
-                if (previous_address != 0) { // dont execute the first time
-                    var difference = extended_linear_address - (previous_address + previous_byte_count);
+                if (next_address_pos != 0) { // dont execute the first time
+                    extended_linear_address -= 0x08000000;
+                    var difference = extended_linear_address - next_address_pos;
                     
-                    // fix "holes" if there are any
-                    for (var fix = 0; fix < difference; fix++) {
+                    // fill in the difference
+                    for (var x = 0; x < difference; x++) {
                         result.data.push(0xFF);
                         result.bytes++;
                     }
                     
+                    if (difference > 0) console.log('HEX_PARSER - Address hole detected (changing linear address), expected: ' + next_address_pos + ', received: ' + extended_linear_address + ', filling: ' + difference + ' bytes');
+                    
                     // reset some variables
-                    previous_address = 0;
-                    previous_byte_count = 0;
+                    next_address_pos = 0;
                 }
                 break;
             case 0x05: // start linear address record
