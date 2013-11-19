@@ -10,7 +10,7 @@ function tab_initialize_servos() {
     GUI.active_tab = 'servos';
 
     var model = $('div.tab-servos strong.model');
-    var supported_models = [1, 4, 8, 14, 20, 21];
+    var supported_models = [1, 4, 5, 8, 14, 20, 21];
     
     // request current Servos Config
     send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
@@ -40,17 +40,12 @@ function tab_initialize_servos() {
                     process_servos('Right Servo', '', 5, false);
                     break;
                 case 5: // Gimbal
-                    // Gimbal doesn't seem to be supported for now
-                    model.html('Doesn\'t support servos');
-                    
-                    /*
+                    // needs to be verified
                     model.html('Gimbal');
                     
-                    process_servos('Pitch Servo', '', SERVO_CONFIG[0]);
-                    process_servos('Roll Servo', '', SERVO_CONFIG[1]);
-                    
-                    servos = [0, 1];
-                    */
+                    // rate
+                    process_servos('Pitch Servo', '', 0, 2);
+                    process_servos('Roll Servo', '', 1, 2);
                     break;
                 case 8: // Flying Wing
                     // looking ok so far
