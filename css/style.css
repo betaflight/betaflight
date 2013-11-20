@@ -72,16 +72,6 @@ a:hover {
         line-height: 18px;
         text-align: center;
     }
-    #port-picker a.refresh {
-        margin-right: 10px;
-        
-        background-color: #5569d0;
-        color: white;
-    }
-        #port-picker a.refresh:hover {
-            text-decoration: none;
-            background-color: #424d84;
-        }
     #port-picker a.connect {
         margin-right: 10px;
         
