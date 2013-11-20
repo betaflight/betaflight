@@ -93,45 +93,8 @@ $(document).ready(function() {
     baud_picker = $('div#port-picker #baud');
     delay_picker = $('div#port-picker #delay');
     
-    $('div#port-picker a.refresh').click(function() {
-        console.log("Available port list requested.");
-        port_picker.html('');
-
-        chrome.serial.getPorts(function(ports) {
-            if (ports.length > 0) {
-                // Port list received
-                
-                ports.forEach(function(port) {
-                    $(port_picker).append($("<option/>", {
-                        value: port,
-                        text: port
-                    }));        
-                });
-                
-                chrome.storage.local.get('last_used_port', function(result) {
-                    // if last_used_port was set, we try to select it
-                    if (typeof result.last_used_port != 'undefined') {
-                        // check if same port exists, if it does, select it
-                        ports.forEach(function(port) {
-                            if (port == result.last_used_port) {
-                                $(port_picker).val(result.last_used_port);
-                            }
-                        });
-                    }
-                });
-            } else {
-                $(port_picker).append($("<option/>", {
-                    value: 0,
-                    text: 'NOT FOUND'
-                }));
-                
-                console.log("No serial ports detected");
-            }
-        });
-    });
-    
-    // software click to refresh port picker select (during initial load)
-    $('div#port-picker a.refresh').click();
+    console.log('Scanning for new ports...');
+    update_ports();
     
     $('div#port-picker a.connect').click(function() {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
@@ -142,13 +105,25 @@ $(document).ready(function() {
             connection_delay = parseInt(delay_picker.val());
             
             if (selected_port != '0') {
-                if (clicks) { // odd number of clicks
+                if (!clicks) {
+                    console.log('Connecting to: ' + selected_port);
+                    GUI.connecting_to = selected_port;
+                    
+                    chrome.serial.open(selected_port, {
+                        bitrate: selected_baud
+                    }, onOpen);
+                    
+                    $(this).text('Disconnect');  
+                    $(this).addClass('active');
+                } else {
                     // Disable any active "data pulling" timer
                     disable_timers();
                     
                     GUI.tab_switch_cleanup();
                     
                     chrome.serial.close(connectionId, onClosed);
+                    
+                    GUI.connected_to = false;
                     
                     clearTimeout(connection_delay);
                     clearInterval(serial_poll);
@@ -161,16 +136,7 @@ $(document).ready(function() {
                     configuration_received = false;
                     
                     $(this).text('Connect');
-                    $(this).removeClass('active');                
-                } else { // even number of clicks        
-                    console.log('Connecting to: ' + selected_port);
-                    
-                    chrome.serial.open(selected_port, {
-                        bitrate: selected_baud
-                    }, onOpen);
-                    
-                    $(this).text('Disconnect');  
-                    $(this).addClass('active');
+                    $(this).removeClass('active');                 
                 }
                 
                 $(this).data("clicks", !clicks);
@@ -184,6 +150,12 @@ function onOpen(openInfo) {
     backgroundPage.connectionId = openInfo.connectionId; // also pass connectionId to the background page
     
     if (connectionId != -1) {
+        // update connected_to
+        GUI.connected_to = GUI.connecting_to;
+        
+        // reset connecting_to
+        GUI.connecting_to = false;
+        
         console.log('Connection was opened with ID: ' + connectionId);
         
         // save selected port with chrome.storage if the port differs
@@ -263,6 +235,80 @@ function port_usage() {
 
     // reset counter
     char_counter = 0;
+}
+
+function update_ports() {
+    var initial_ports = false;
+    
+    GUI.interval_add('port-update', function() {
+        chrome.serial.getPorts(function(current_ports) {
+            if (initial_ports.length > current_ports.length || !initial_ports) {
+                // port got removed or initial_ports wasn't initialized yet
+                var removed_ports = array_difference(initial_ports, current_ports);
+                
+                if (initial_ports != false) console.log('Port removed: ' + removed_ports);
+                
+                // disconnect "UI" if necessary
+                if (GUI.connected_to != false && removed_ports[0] == GUI.connected_to) {
+                    $('div#port-picker a.connect').click();
+                }
+                
+                // update COM port list
+                update_port_select_menu(current_ports);
+                
+                // auto-select last used port (only during initialization)
+                if (!initial_ports) {
+                    chrome.storage.local.get('last_used_port', function(result) {
+                        // if last_used_port was set, we try to select it
+                        if (result.last_used_port) {                            
+                            current_ports.forEach(function(port) {
+                                if (port == result.last_used_port) {
+                                    console.log('Selecting last used port: ' + result.last_used_port);
+                                    
+                                    $('div#port-picker .port select').val(result.last_used_port);
+                                }
+                            });
+                        } else {
+                            console.log('Last used port wasn\'t saved "yet", auto-select disabled.');
+                        }
+                    });
+                }
+                
+                // reset initial_ports
+                initial_ports = current_ports;
+            }
+            
+            var new_ports = array_difference(current_ports, initial_ports);
+            
+            if (new_ports.length > 0) {
+                console.log('New port found: ' + new_ports[0]);
+                
+                // generate new COM port list
+                update_port_select_menu(current_ports);
+                
+                if (!GUI.connected_to) {
+                    $('div#port-picker .port select').val(new_ports[0]);
+                } else {   
+                    $('div#port-picker .port select').val(GUI.connected_to);
+                }
+                
+                // reset initial_ports
+                initial_ports = current_ports;
+            }
+        });
+    }, 100, true);
+}
+
+function update_port_select_menu(ports) {
+    $('div#port-picker .port select').html(''); // drop previous one
+    
+    if (ports.length > 0) {
+        for (var i = 0; i < ports.length; i++) {
+            $('div#port-picker .port select').append($("<option/>", {value: ports[i], text: ports[i]}));
+        }
+    } else {
+        $('div#port-picker .port select').append($("<option/>", {value: 0, text: 'NOT FOUND'}));
+    }    
 }
 
 function sensor_status(sensors_detected) {

@@ -1,4 +1,6 @@
 var GUI_control = function() {
+    this.connecting_to = false;
+    this.connected_to = false;
     this.active_tab;
     this.operating_system;
     this.interval_array = [];
