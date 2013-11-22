@@ -119,6 +119,7 @@ $(document).ready(function() {
                     disable_timers();
                     
                     GUI.tab_switch_cleanup();
+                    GUI.timeout_remove('connecting'); // kill connecting timer
                     
                     chrome.serial.close(connectionId, onClosed);
                     
@@ -183,6 +184,15 @@ function onOpen(openInfo) {
             // start polling
             serial_poll = setInterval(readPoll, 10);
             port_usage_poll = setInterval(port_usage, 1000);
+            
+            // disconnect after 10 seconds with error if we don't get IDENT data
+            GUI.timeout_add('connecting', function() {
+                if (!configuration_received) {
+                    notify('Did not received configuration within <span style="color: red">10 seconds</span>, communication <span style="color: red">failed</span> - Disconnecting');
+                    
+                    $('div#port-picker a.connect').click(); // disconnect
+                }
+            }, 10000);
  
             // baseflight specific
             send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
