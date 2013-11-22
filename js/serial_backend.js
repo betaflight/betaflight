@@ -109,12 +109,11 @@ $(document).ready(function() {
                     console.log('Connecting to: ' + selected_port);
                     GUI.connecting_to = selected_port;
                     
-                    chrome.serial.open(selected_port, {
-                        bitrate: selected_baud
-                    }, onOpen);
+                    // lock port select & baud while we are connecting / connected
+                    $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', true);
+                    $('div#port-picker a.connect').text('Connecting'); 
                     
-                    $(this).text('Disconnect');  
-                    $(this).addClass('active');
+                    chrome.serial.open(selected_port, {bitrate: selected_baud}, onOpen);
                 } else {
                     // Disable any active "data pulling" timer
                     disable_timers();
@@ -134,6 +133,9 @@ $(document).ready(function() {
 
                     // reset valid config received variable (used to block tabs while not connected properly)
                     configuration_received = false;
+                    
+                    // unlock port select & baud
+                    $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', false);
                     
                     $(this).text('Connect');
                     $(this).removeClass('active');                 

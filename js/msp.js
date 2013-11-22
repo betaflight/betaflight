@@ -214,6 +214,8 @@ function process_data(command, message_buffer, message_length_expected) {
             // IDENT received, show the tab content
             if (!configuration_received) {
                 configuration_received = true;
+                
+                $('div#port-picker a.connect').text('Disconnect').addClass('active');
                 $('#tabs li a:first').click();
             }
             break;
