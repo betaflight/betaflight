@@ -142,9 +142,10 @@ a:hover {
             background-color: #acacac;
         }
         #tabs li.active {
-            border-bottom: 1px solid white;
         }
         #tabs li.active a {
+            height: 16px;
+            
             background-color: white;        
         }
         #tabs li.active a:hover {            
