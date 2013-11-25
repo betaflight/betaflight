@@ -45,6 +45,8 @@
 #define ID_GYRO_Y             0x41
 #define ID_GYRO_Z             0x42
 
+#define ID_VERT_SPEED         0x30 //opentx vario
+
 // from sensors.c
 extern uint8_t batteryCellCount;
 
@@ -96,7 +98,7 @@ static void sendBaro(void)
     sendDataHead(ID_ALTITUDE_BP);
     serialize16(BaroAlt / 100);
     sendDataHead(ID_ALTITUDE_AP);
-    serialize16(BaroAlt % 100);
+    serialize16(abs(BaroAlt % 100));
 }
 
 static void sendTemperature1(void)
@@ -133,6 +135,16 @@ static void sendGPS(void)
     serialize16((abs(GPS_coord[LON]) / 10) % 10000);
     sendDataHead(ID_E_W);
     serialize16(GPS_coord[LON] < 0 ? 'W' : 'E');
+}
+
+/*
+ * Send vertical speed for opentx. ID_VERT_SPEED
+ * Unit is cm/s
+ */
+static void sendVario(void)
+{
+    sendDataHead(ID_VERT_SPEED);
+    serialize16(vario);
 }
 
 /*
@@ -246,6 +258,7 @@ void sendTelemetry(void)
 
         // Sent every 125ms
         sendAccel();
+        sendVario();
         sendTelemetryTail();
 
         if ((cycleNum % 4) == 0) {      // Sent every 500ms
