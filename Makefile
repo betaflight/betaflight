@@ -100,6 +100,10 @@ OLIMEXINO_SRC	 = drv_spi.c \
 		   drv_pwm.c \
 		   drv_timer.c \
 		   $(COMMON_SRC)
+		   
+# In some cases, %.s regarded as intermediate file, which is actually not.
+# This will prevent accidental deletion of startup code.
+.PRECIOUS: %.s
 
 # Search path for baseflight sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/baseflight_startups
