@@ -337,20 +337,31 @@ STM32_protocol.prototype.upload_procedure = function(step) {
     switch (step) {
         case 1:
             // initialize serial interface on the MCU side, auto baud rate settings
-            // we could probably use interval timer here to try 2-3 times and then fail afterwards
-            self.send([0x7F], 1, function(reply) {
-                if (reply[0] == self.status.ACK || reply[0] == self.status.NACK) {
-                    console.log('STM32 - Serial interface initialized on the MCU side');
+            var send_counter = 0;
+            GUI.interval_add('stm32_initialize_mcu', function() { // 200 ms interval (just in case mcu was already initialized), we need to break the 2 bytes command requirement
+                self.send([0x7F], 1, function(reply) {
+                    if (reply[0] == self.status.ACK || reply[0] == self.status.NACK) {
+                        GUI.interval_remove('stm32_initialize_mcu');
+                        console.log('STM32 - Serial interface initialized on the MCU side');
+                        
+                        // proceed to next step
+                        self.upload_procedure(2);
+                    } else {
+                        console.log(reply);
+                        
+                        GUI.interval_remove('stm32_initialize_mcu');
+                        STM32.GUI_status('STM32 Communication with bootloader <span style="color: red">failed</span>');
                     
-                    // proceed to next step
-                    self.upload_procedure(2);
-                } else {
-                    STM32.GUI_status('STM32 Communication with bootloader <span style="color: red">failed</span>');
+                        // disconnect
+                        self.upload_procedure(99);
+                    }
+                });
                 
-                    // disconnect
-                    self.upload_procedure(99);
+                if (send_counter++ > 3) {
+                    // stop retrying, its too late to get any response from MCU
+                    GUI.interval_remove('stm32_initialize_mcu');
                 }
-            });
+            }, 200);
             break;
         case 2:
             // get version of the bootloader and supported commands
