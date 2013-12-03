@@ -347,8 +347,6 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         // proceed to next step
                         self.upload_procedure(2);
                     } else {
-                        console.log(reply);
-                        
                         GUI.interval_remove('stm32_initialize_mcu');
                         STM32.GUI_status('STM32 Communication with bootloader <span style="color: red">failed</span>');
                     
