@@ -55,16 +55,18 @@ STM32_protocol.prototype.connect = function() {
     var baud = parseInt($('div#port-picker #baud').val());
     
     if (selected_port != '0') {
-        // get fastest supported bitrate for current platform (serial API for windows support baud > 115200 from chrome v 33+)
+        // get fastest supported bitrate for current platform 
+        // (serial API for windows support baud > 256000 from chrome v 33+)
+        // recommended windows - 921600, rest - 576000, default - 115200
         switch (GUI.operating_system) {
             case 'Windows':
-                var flashing_bitrate = 921600;
+                var flashing_bitrate = 256000;
                 break;
             case 'MacOS':
             case 'ChromeOS':
             case 'Linux':
             case 'UNIX':
-                var flashing_bitrate = 576000;
+                var flashing_bitrate = 230400;
                 break;
                 
             default:
@@ -76,7 +78,7 @@ STM32_protocol.prototype.connect = function() {
                 connectionId = openInfo.connectionId;
                 
                 if (connectionId != -1) { 
-                    console.log('Connection was opened with ID: ' + connectionId);
+                    console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + baud);
                     console.log('Sending ascii "R" to reboot');
 
                     // we are connected, disabling connect button in the UI
@@ -93,7 +95,7 @@ STM32_protocol.prototype.connect = function() {
                                     connectionId = openInfo.connectionId;
                                     
                                     if (connectionId != -1) {
-                                        console.log('Connection was opened with ID: ' + connectionId);
+                                        console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + flashing_bitrate);
                                         
                                         self.initialize();
                                     }
