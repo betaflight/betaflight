@@ -55,19 +55,19 @@ STM32_protocol.prototype.connect = function() {
     var baud = parseInt($('div#port-picker #baud').val());
     
     if (selected_port != '0') {
-        // calculate fastest bitrate speed for current OS
+        // get fastest supported bitrate for current platform
         switch (GUI.operating_system) {
             case 'Windows':
                 var flashing_bitrate = 256000;
                 break;
             case 'MacOS':
-                var flashing_bitrate = 230400;
-                break;
             case 'ChromeOS':
             case 'Linux':
             case 'UNIX':
                 var flashing_bitrate = 230400;
                 break;
+            default:
+                var flashing_bitrate = 115200;
         }
         
         if (!$('input.updating').is(':checked')) {
@@ -111,7 +111,7 @@ STM32_protocol.prototype.connect = function() {
                 connectionId = openInfo.connectionId;
                 
                 if (connectionId != -1) {
-                    console.log('Connection was opened with ID: ' + connectionId);
+                    console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + flashing_bitrate);
                     
                     // we are connected, disabling connect button in the UI
                     GUI.connect_lock = true;
