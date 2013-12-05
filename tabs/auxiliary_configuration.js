@@ -1,79 +1,83 @@
 function tab_initialize_auxiliary_configuration() {
     ga_tracker.sendAppView('Auxiliary Configuration');
     GUI.active_tab = 'auxiliary_configuration';
-    
-    // generate table from the supplied AUX names and AUX data
-    for (var i = 0; i < AUX_CONFIG.length; i++) {
-        $('.tab-auxiliary_configuration .boxes > tbody:last').append(
-            '<tr>' +
-                '<td class="name">' + AUX_CONFIG[i] + '</td>' +
-                box_check(AUX_CONFIG_values[i], 0) +
-                box_check(AUX_CONFIG_values[i], 1) +
-                box_check(AUX_CONFIG_values[i], 2) +
-                
-                box_check(AUX_CONFIG_values[i], 3) +
-                box_check(AUX_CONFIG_values[i], 4) +
-                box_check(AUX_CONFIG_values[i], 5) +
 
-                box_check(AUX_CONFIG_values[i], 6) +
-                box_check(AUX_CONFIG_values[i], 7) +
-                box_check(AUX_CONFIG_values[i], 8) +
+    send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
+        send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
+            // generate table from the supplied AUX names and AUX data
+            for (var i = 0; i < AUX_CONFIG.length; i++) {
+                $('.tab-auxiliary_configuration .boxes > tbody:last').append(
+                    '<tr>' +
+                        '<td class="name">' + AUX_CONFIG[i] + '</td>' +
+                        box_check(AUX_CONFIG_values[i], 0) +
+                        box_check(AUX_CONFIG_values[i], 1) +
+                        box_check(AUX_CONFIG_values[i], 2) +
+                        
+                        box_check(AUX_CONFIG_values[i], 3) +
+                        box_check(AUX_CONFIG_values[i], 4) +
+                        box_check(AUX_CONFIG_values[i], 5) +
 
-                box_check(AUX_CONFIG_values[i], 9) +
-                box_check(AUX_CONFIG_values[i], 10) +
-                box_check(AUX_CONFIG_values[i], 11) +            
-            '</tr>'
-        );
-    }
-    
-    // UI Hooks
-    $('.tab-auxiliary_configuration .boxes input').change(function() {
-        // if any of the fields changed, unlock update button
-        $('a.update').addClass('active');
-    });
-    
-    $('.tab-auxiliary_configuration a.update').click(function() {
-        if ($(this).hasClass('active')) {
-            // catch the input changes
-            var main_needle = 0;
-            var needle = 0;
-            $('.tab-auxiliary_configuration .boxes input').each(function() {
-                if ($(this).is(':checked')) {
-                    AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], needle);
-                } else {
-                    AUX_CONFIG_values[main_needle] = bit_clear(AUX_CONFIG_values[main_needle], needle);
-                }
-                
-                needle++;
-                
-                if (needle >= 12) { // 4 aux * 3 checkboxes = 12 bits per line
-                    main_needle++;
-                    
-                    needle = 0;
-                }
-            });
-            
-            // send over the data
-            var AUX_val_buffer_out = new Array();
-            
-            var needle = 0;
-            for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
-                AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
+                        box_check(AUX_CONFIG_values[i], 6) +
+                        box_check(AUX_CONFIG_values[i], 7) +
+                        box_check(AUX_CONFIG_values[i], 8) +
+
+                        box_check(AUX_CONFIG_values[i], 9) +
+                        box_check(AUX_CONFIG_values[i], 10) +
+                        box_check(AUX_CONFIG_values[i], 11) +            
+                    '</tr>'
+                );
             }
             
-            send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out); 
-
-            // Save changes to EEPROM
-            send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+            // UI Hooks
+            $('.tab-auxiliary_configuration .boxes input').change(function() {
+                // if any of the fields changed, unlock update button
+                $('a.update').addClass('active');
+            });
             
-            // remove the active status
-            $(this).removeClass('active');
-        }
-    });
+            $('.tab-auxiliary_configuration a.update').click(function() {
+                if ($(this).hasClass('active')) {
+                    // catch the input changes
+                    var main_needle = 0;
+                    var needle = 0;
+                    $('.tab-auxiliary_configuration .boxes input').each(function() {
+                        if ($(this).is(':checked')) {
+                            AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], needle);
+                        } else {
+                            AUX_CONFIG_values[main_needle] = bit_clear(AUX_CONFIG_values[main_needle], needle);
+                        }
+                        
+                        needle++;
+                        
+                        if (needle >= 12) { // 4 aux * 3 checkboxes = 12 bits per line
+                            main_needle++;
+                            
+                            needle = 0;
+                        }
+                    });
+                    
+                    // send over the data
+                    var AUX_val_buffer_out = new Array();
+                    
+                    var needle = 0;
+                    for (var i = 0; i < AUX_CONFIG_values.length; i++) {
+                        AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
+                        AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
+                    }
+                    
+                    send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out); 
 
-    // enable data pulling
-    timers.push(setInterval(aux_data_poll, 50));       
+                    // Save changes to EEPROM
+                    send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+                    
+                    // remove the active status
+                    $(this).removeClass('active');
+                }
+            });
+
+            // enable data pulling
+            GUI.interval_add('aux_data_poll', aux_data_poll, 50, true);
+        });
+    });      
 }
 
 function aux_data_poll() {

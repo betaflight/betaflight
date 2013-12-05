@@ -202,10 +202,7 @@ function onOpen(openInfo) {
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
             send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
-            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
-            send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
-            send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX);
-            
+            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);            
         }, connection_delay * 1000);
     } else {
         console.log('Failed to open serial port');
