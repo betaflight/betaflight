@@ -64,7 +64,8 @@ var MSP = {
     message_buffer_uint8_view:  undefined,
     message_checksum:           0,
     
-    callbacks: []
+    callbacks:                  [],
+    packet_error:               0
 };
 
 function MSP_char_read(readInfo) {
@@ -132,6 +133,9 @@ function MSP_char_read(readInfo) {
                             process_data(MSP.code, MSP.message_buffer, MSP.message_length_expected);
                         } else {
                             console.log('code: ' + MSP.code + ' - crc failed');
+                            
+                            MSP.packet_error++;
+                            $('span.packet-error').html(MSP.packet_error);
                         }
                         
                         // Reset variables

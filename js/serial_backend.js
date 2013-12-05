@@ -132,8 +132,9 @@ $(document).ready(function() {
                     // Change port utilization to 0
                     $('span.port-usage').html('0%');
 
-                    // reset valid config received variable (used to block tabs while not connected properly)
-                    configuration_received = false;
+                    configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
+                    
+                    MSP.packet_error = 0; // reset CRC packet error counter for next session
                     
                     // unlock port select & baud
                     $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', false);
