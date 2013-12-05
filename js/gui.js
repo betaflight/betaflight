@@ -63,6 +63,8 @@ GUI_control.prototype.interval_pause = function(name) {
             return true;
         }
     }
+    
+    return false;
 };
 
 // name = string
@@ -82,6 +84,8 @@ GUI_control.prototype.interval_resume = function(name) {
             return true;
         }
     }
+    
+    return false;
 };
 
 // input = array of timers thats meant to be kept
