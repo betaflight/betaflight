@@ -220,6 +220,9 @@ function onOpen(openInfo) {
         $('div#port-picker a.connect').text('Connect');
         $('div#port-picker a.connect').removeClass('active'); 
         
+        // unlock port select & baud
+        $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', false);
+        
         // reset data
         $('div#port-picker a.connect').data("clicks", false);
     }
