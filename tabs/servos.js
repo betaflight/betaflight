@@ -15,88 +15,101 @@ function tab_initialize_servos() {
     // request current Servos Config
     send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
         send_message(MSP_codes.MSP_SERVO_CONF, MSP_codes.MSP_SERVO_CONF, false, function() {
-            // drop previous table
-            $('div.tab-servos table.fields tr:not(:first)').remove();
-            
-            switch (CONFIG.multiType) {
-                case 1: // TRI
-                    // looking ok so far
-                    model.html('TRI');
-                    
-                    process_directions('YAW', 5, 0);
-                    
-                    process_servos('Yaw Servo', '', 5, false);
-                    break;
-                case 4: // BI
-                    // looking ok so far
-                    model.html('BI');
-                    
-                    process_directions('L YAW', 4, 1);
-                    process_directions('R YAW', 5, 1);
-                    process_directions('L NICK', 4, 0);
-                    process_directions('R NICK', 5, 0);
-                    
-                    process_servos('Left Servo', '', 4, false);
-                    process_servos('Right Servo', '', 5, false);
-                    break;
-                case 5: // Gimbal
-                    // needs to be verified
-                    model.html('Gimbal');
-                    
-                    // rate
-                    process_servos('Pitch Servo', '', 0, 2);
-                    process_servos('Roll Servo', '', 1, 2);
-                    break;
-                case 8: // Flying Wing
-                    // looking ok so far
-                    model.html('Flying Wing');
-                    
-                    process_directions('L ROLL', 3, 1);
-                    process_directions('R ROLL', 4, 1);
-                    process_directions('L NICK', 3, 0);
-                    process_directions('R NICK', 4, 0);
-                    
-                    process_servos('Left Wing', '', 3, false);
-                    process_servos('Right Wing', '', 4, false);
-                    break;
-                case 14: // Airplane
-                    model.html('Airplane');
-                    
-                    // rate
-                    process_servos('Wing 1', '', 3, 2);
-                    process_servos('Wing 2', '', 4, 2);
-                    process_servos('Rudd', '', 5, 2);
-                    process_servos('Elev', '', 6, 2);
-                    break;
-                case 20: // Dualcopter
-                    // looking ok so far
-                    model.html('Dualcopter');
-                    
-                    process_directions('PITCH', 4, 0);
-                    process_directions('ROLL', 5, 0);
-                    
-                    process_servos('Roll', '', 5, false);
-                    process_servos('Nick', '', 4, false);
-                    break;
-                case 21: // Singlecopter
-                    // looking ok so far
-                    model.html('Singlecopter');
-                    
-                    process_servos('Right', 'R YAW', 3, true);
-                    process_servos('Left', 'L YAW', 4, true);
-                    process_servos('Front', 'F YAW', 5, true);
-                    process_servos('Rear', 'YAW', 6, true);
-                    break;
-                default:
-                    model.html('Doesn\'t support servos');
-            }
-            
-            // UI hooks for dynamically generated elements
-            $('table.directions select, table.directions input, table.fields select, table.fields input').change(function() {
-                if ($('div.live input').is(':checked')) {
-                    // apply small delay as there seems to be some funky update business going wrong
-                    GUI.timeout_add('servos_update', servos_update, 10);
+            send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
+                // drop previous table
+                $('div.tab-servos table.fields tr:not(:first)').remove();
+                
+                switch (CONFIG.multiType) {
+                    case 1: // TRI
+                        // looking ok so far
+                        model.html('TRI');
+                        
+                        process_directions('YAW', 5, 0);
+                        
+                        process_servos('Yaw Servo', '', 5, false);
+                        break;
+                    case 4: // BI
+                        // looking ok so far
+                        model.html('BI');
+                        
+                        process_directions('L YAW', 4, 1);
+                        process_directions('R YAW', 5, 1);
+                        process_directions('L NICK', 4, 0);
+                        process_directions('R NICK', 5, 0);
+                        
+                        process_servos('Left Servo', '', 4, false);
+                        process_servos('Right Servo', '', 5, false);
+                        break;
+                    case 5: // Gimbal
+                        // needs to be verified
+                        model.html('Gimbal');
+                        
+                        // rate
+                        process_servos('Pitch Servo', '', 0, 2);
+                        process_servos('Roll Servo', '', 1, 2);
+                        break;
+                    case 8: // Flying Wing
+                        // looking ok so far
+                        model.html('Flying Wing');
+                        
+                        process_directions('L ROLL', 3, 1);
+                        process_directions('R ROLL', 4, 1);
+                        process_directions('L NICK', 3, 0);
+                        process_directions('R NICK', 4, 0);
+                        
+                        process_servos('Left Wing', '', 3, false);
+                        process_servos('Right Wing', '', 4, false);
+                        break;
+                    case 14: // Airplane
+                        model.html('Airplane');
+                        
+                        // rate
+                        process_servos('Wing 1', '', 3, 2);
+                        process_servos('Wing 2', '', 4, 2);
+                        process_servos('Rudd', '', 5, 2);
+                        process_servos('Elev', '', 6, 2);
+                        break;
+                    case 20: // Dualcopter
+                        // looking ok so far
+                        model.html('Dualcopter');
+                        
+                        process_directions('PITCH', 4, 0);
+                        process_directions('ROLL', 5, 0);
+                        
+                        process_servos('Roll', '', 5, false);
+                        process_servos('Nick', '', 4, false);
+                        break;
+                    case 21: // Singlecopter
+                        // looking ok so far
+                        model.html('Singlecopter');
+                        
+                        process_servos('Right', 'R YAW', 3, true);
+                        process_servos('Left', 'L YAW', 4, true);
+                        process_servos('Front', 'F YAW', 5, true);
+                        process_servos('Rear', 'YAW', 6, true);
+                        break;
+                    default:
+                        model.html('Doesn\'t support servos');
+                        
+                        // implementation of feature servo_tilt
+                        if (AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
+                            // Gimbal on
+                            // needs to be verified
+                            model.html('Gimbal / Tilt Servos');
+                            
+                            // rate
+                            process_servos('Pitch Servo', '', 0, 2);
+                            process_servos('Roll Servo', '', 1, 2);
+                        }
                 }
+                
+                // UI hooks for dynamically generated elements
+                $('table.directions select, table.directions input, table.fields select, table.fields input').change(function() {
+                    if ($('div.live input').is(':checked')) {
+                        // apply small delay as there seems to be some funky update business going wrong
+                        GUI.timeout_add('servos_update', servos_update, 10);
+                    }
+                });
             });
         });
     });
