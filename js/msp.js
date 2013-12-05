@@ -208,17 +208,6 @@ function process_data(command, message_buffer, message_length_expected) {
             CONFIG.multiType = data.getUint8(1);
             CONFIG.msp_version = data.getUint8(2);
             CONFIG.capability = data.getUint32(3, 1);
-            
-            $('.software-version').html(CONFIG.version);
-            
-            // IDENT received, show the tab content
-            if (!configuration_received) {
-                GUI.timeout_remove('connecting'); // kill connecting timer
-                configuration_received = true;
-                
-                $('div#port-picker a.connect').text('Disconnect').addClass('active');
-                $('#tabs li a:first').click();
-            }
             break;
         case MSP_codes.MSP_STATUS:
             CONFIG.cycleTime = data.getUint16(0, 1);

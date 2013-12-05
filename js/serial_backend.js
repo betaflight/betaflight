@@ -199,10 +199,18 @@ function onOpen(openInfo) {
             send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM);
  
             // request configuration data
-            send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
             send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
-            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);            
+            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
+            send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
+                GUI.timeout_remove('connecting'); // kill connecting timer
+                
+                $('.software-version').html(CONFIG.version);
+                
+                configuration_received = true;
+                $('div#port-picker a.connect').text('Disconnect').addClass('active');
+                $('#tabs li a:first').click();
+            });
         }, connection_delay * 1000);
     } else {
         console.log('Failed to open serial port');
