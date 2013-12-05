@@ -132,6 +132,11 @@ GUI_control.prototype.timeout_kill_all = function() {
 // default switch doesn't require callback to be set
 GUI_control.prototype.tab_switch_cleanup = function(callback) {
     switch (this.active_tab) {
+        case 'initial_setup':
+            GUI.interval_remove('initial_setup_data_pull');
+            
+            if (callback) callback();
+            break;
         case 'auxiliary_configuration':
             GUI.interval_remove('aux_data_poll');
             
