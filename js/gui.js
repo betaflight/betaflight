@@ -132,6 +132,11 @@ GUI_control.prototype.timeout_kill_all = function() {
 // default switch doesn't require callback to be set
 GUI_control.prototype.tab_switch_cleanup = function(callback) {
     switch (this.active_tab) {
+        case 'auxiliary_configuration':
+            GUI.interval_remove('aux_data_poll');
+            
+            if (callback) callback();
+            break;
         case 'cli':
             var bufferOut = new ArrayBuffer(5);
             var bufView = new Uint8Array(bufferOut);
@@ -154,6 +159,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                 }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
             });
             break;
+            
         default:
             if (callback) callback();
     }
