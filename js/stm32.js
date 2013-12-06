@@ -75,9 +75,9 @@ STM32_protocol.prototype.connect = function() {
         
         if (!$('input.updating').is(':checked')) {
             chrome.serial.open(selected_port, {bitrate: baud}, function(openInfo) {
-                connectionId = openInfo.connectionId;
-                
-                if (connectionId != -1) { 
+                if (openInfo.connectionId > 0) {
+                    connectionId = openInfo.connectionId;
+                    
                     console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + baud);
                     console.log('Sending ascii "R" to reboot');
 
@@ -92,9 +92,9 @@ STM32_protocol.prototype.connect = function() {
                                 console.log('Connection closed successfully.');
                                 
                                 chrome.serial.open(selected_port, {bitrate: flashing_bitrate, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
-                                    connectionId = openInfo.connectionId;
-                                    
-                                    if (connectionId != -1) {
+                                    if (openInfo.connectionId > 0) {
+                                        connectionId = openInfo.connectionId;
+                                        
                                         console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + flashing_bitrate);
                                         
                                         self.initialize();
@@ -111,9 +111,9 @@ STM32_protocol.prototype.connect = function() {
             });
         } else {
             chrome.serial.open(selected_port, {bitrate: flashing_bitrate, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
-                connectionId = openInfo.connectionId;
-                
-                if (connectionId != -1) {
+                if (openInfo.connectionId > 0) {
+                    connectionId = openInfo.connectionId;
+                    
                     console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + flashing_bitrate);
                     
                     // we are connected, disabling connect button in the UI
@@ -569,10 +569,10 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             
             // close connection
             chrome.serial.close(connectionId, function(result) {
+                connectionId = -1; // reset connection id
+                
                 if (result) { // All went as expected
                     console.log('Connection closed successfully.');
-                    
-                    connectionId = -1; // reset connection id
                 } else { // Something went wrong
                     console.log('There was an error that happened during "connection-close" procedure');
                 }
