@@ -149,11 +149,10 @@ $(document).ready(function() {
     });     
 }); 
 
-function onOpen(openInfo) {
-    connectionId = openInfo.connectionId;
-    backgroundPage.connectionId = openInfo.connectionId; // also pass connectionId to the background page
-    
-    if (connectionId != -1) {
+function onOpen(openInfo) {    
+    if (openInfo.connectionId > 0) {
+        connectionId = openInfo.connectionId;
+        
         // update connected_to
         GUI.connected_to = GUI.connecting_to;
         
@@ -229,20 +228,17 @@ function onOpen(openInfo) {
 }
 
 function onClosed(result) {
-    if (result) { // All went as expected
-        connectionId = -1; // reset connection id
-        backgroundPage.connectionId = connectionId; // also pass latest connectionId to the background page
-        
+    connectionId = -1; // reset connection id
+
+    if (result) { // All went as expected        
         sensor_status(sensors_detected = 0); // reset active sensor indicators
         $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
         tab_initialize_default();
         
         console.log('Connection closed successfully.');
     } else { // Something went wrong
-        if (connectionId > 0) {
-            console.log('There was an error that happened during "connection-close" procedure.');
-            notify('Failed to close serial port', 'red');
-        }
+        console.log('There was an error that happened during "connection-close" procedure.');
+        notify('Failed to close serial port', 'red');
     } 
 }
 
