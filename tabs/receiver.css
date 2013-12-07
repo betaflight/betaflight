@@ -1,0 +1,106 @@
+.tab-receiver {
+}
+    .tab-receiver .bars {
+        float: left;
+    }
+    .tab-receiver .bars ul {
+        height: 20px;
+        line-height: 20px;
+        
+        margin-bottom: 5px;
+    }
+    .tab-receiver .bars li {
+        float: left;
+    }
+    .tab-receiver .bars .name {
+        width: 80px;
+    }
+        .tab-receiver .bars .meter meter {
+            width: 200px;
+            height: 20px;
+            
+            border: 1px solid silver;
+        }
+    .tab-receiver .bars .value {
+        width: 60px;
+        padding-left: 20px;
+    }
+    .tab-receiver .tunings {
+        float: left;
+        border: 1p xsolid red;
+    }
+    .tab-receiver .tunings table {
+        width: 30%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    .tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
+        padding: 5px;
+        border: 1px solid #8b8b8b;
+    }
+    .tab-receiver .tunings table tr:nth-child(odd) {
+        background-color: #ececec;
+    }    
+    .tab-receiver .tunings table input {
+        width: 130px;
+        height: 20px;
+        line-height: 20px;
+        
+        padding: 0 5px 0 5px;
+        border: 1px solid silver;
+        text-align: right;
+    } 
+    .tab-receiver .update {
+        display: block;
+        float: right;
+        
+        width: 120px;
+        height: 30px;
+        line-height: 30px;
+        
+        font-size: 14px;
+        color: white;
+        text-align: center;
+        
+        border: 1px solid silver;
+        
+        background-color: #6f1515;
+    }
+    .tab-receiver .update:hover {
+        cursor: default;
+    }
+    .tab-receiver .update.active {
+        background-color: #0fab16;
+    }
+    .tab-receiver .update.active:hover {
+        cursor: pointer;
+        background-color: #13d81d;
+    }
+    .tab-receiver #RX_plot {
+        margin: auto;
+        margin-top: 20px;
+        
+        width: 880px; 
+        height: 250px;
+    }
+    .tab-receiver .throttle_curve {
+        float: right;
+        
+        margin-bottom: 20px;
+        margin-right: 10px;
+        
+        width: 220px;
+        height: 58px;
+        
+        border: 1px solid silver;
+    }
+    .tab-receiver .pitch_roll_curve {
+        float: right;
+        
+        margin-right: 10px;
+        
+        width: 220px;
+        height: 58px;
+        
+        border: 1px solid silver;
+    }

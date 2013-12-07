@@ -1,0 +1,53 @@
+.tab-pid_tuning table {
+    width: 100%;
+    border-collapse: collapse;    
+}
+    .tab-pid_tuning table, .tab-pid_tuning table th, .tab-pid_tuning table td {
+        padding: 5px;
+        border: 1px solid #8b8b8b;
+    }
+    .tab-pid_tuning table tr:nth-child(odd) {
+        background-color: #ececec;
+    }    
+    .tab-pid_tuning table input {
+        width: 130px;
+        height: 20px;
+        line-height: 20px;
+        
+        padding: 0 5px 0 5px;
+        border: 1px solid silver;
+        text-align: right;
+    }
+    .tab-pid_tuning .update {
+        display: block;
+        float: right;
+        
+        margin-top: 20px;
+        
+        width: 120px;
+        height: 56px;
+        line-height: 56px;
+        
+        font-size: 14px;
+        color: white;
+        text-align: center;
+        
+        border: 1px solid silver;
+        
+        background-color: #6f1515;
+    }
+    .tab-pid_tuning .update:hover {
+        cursor: default;
+    }
+    .tab-pid_tuning .update.active {
+        background-color: #0fab16;
+    }
+    .tab-pid_tuning .update.active:hover {
+        cursor: pointer;
+        background-color: #13d81d;
+    }
+    .tab-pid_tuning .rate-tpa {
+        float: left;
+        width: 400px;
+        margin-top: 20px;
+    }

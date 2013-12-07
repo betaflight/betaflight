@@ -1,0 +1,90 @@
+.tab-auxiliary_configuration {
+
+}
+    .tab-auxiliary_configuration .heads {
+    }
+        .tab-auxiliary_configuration .heads li {
+            float: left;
+            
+            width: 182px;
+            height: 22px;
+            line-height: 22px;
+            
+            text-align: center;
+            font-weight: bold;
+            
+            border: 1px solid #8b8b8b;
+            border-bottom: 0;
+            border-left: 0;
+            
+            background-color: #ececec;
+        }
+            .tab-auxiliary_configuration .heads li:first-child {
+                margin-left: 181px;
+                border-left: 1px solid #8b8b8b;
+            }
+            .tab-auxiliary_configuration .heads li:nth-child(3) {
+                width: 183px;
+            }
+            .tab-auxiliary_configuration .heads li:nth-child(4) {
+                width: 185px;
+            }
+    .tab-auxiliary_configuration .boxes {
+        width: 100%;
+        border-collapse: collapse;            
+    }
+        .tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {            
+            line-height: 22px;
+            text-align: center;
+            
+            border: 1px solid #8b8b8b;
+        }
+        .tab-auxiliary_configuration .boxes .name {
+            /* padding-left: 5px; */
+            text-align: center;
+        }
+        .tab-auxiliary_configuration .boxes .on {
+            color: white;
+            background-color: #0d8b13;
+        }
+        .tab-auxiliary_configuration .boxes .off {
+            color: white;
+            background-color: #be2222;
+        }
+        .tab-auxiliary_configuration .boxes td input {
+            position: absolute;
+            
+            margin-top: -6px;
+            margin-left: -6px;
+        }        
+    .tab-auxiliary_configuration .boxes tr:nth-child(odd) {
+        background-color: #ececec;
+    } 
+    .tab-auxiliary_configuration .update {
+        display: block;
+        float: right;
+        
+        margin-top: 10px;
+        
+        width: 120px;
+        height: 30px;
+        line-height: 30px;
+        
+        font-size: 14px;
+        color: white;
+        text-align: center;
+        
+        border: 1px solid silver;
+        
+        background-color: #6f1515;
+    }
+    .tab-auxiliary_configuration .update:hover {
+        cursor: default;
+    }
+    .tab-auxiliary_configuration .update.active {
+        background-color: #0fab16;
+    }
+    .tab-auxiliary_configuration .update.active:hover {
+        cursor: pointer;
+        background-color: #13d81d;
+    }

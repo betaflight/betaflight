@@ -1,0 +1,43 @@
+.tab-sensors {
+}
+    .tab-sensors #gyro {
+        height: 120px;
+    }
+    .tab-sensors #accel {
+        height: 120px;
+    }
+    .tab-sensors #mag {
+        height: 120px;
+    }
+    .tab-sensors #baro {
+        height: 120px;
+    }
+    .tab-sensors #debug1 {
+        height: 120px;
+    }
+    .tab-sensors #debug2 {
+        height: 120px;
+    }
+    .tab-sensors #debug3 {
+        height: 120px;
+    }
+    .tab-sensors #debug4 {
+        height: 120px;
+    }
+    
+    .tab-sensors select {
+        float: right;
+        
+        border: 1px solid silver;
+    }
+
+/* Flotr related styles */
+.flotr-legend {    
+    padding: 2px;
+    margin-left: 31px;
+    top: 20px;
+    border: 0;
+    
+    background-color: white;
+    opacity: 0.75;
+}
