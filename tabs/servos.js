@@ -47,6 +47,9 @@ function tab_initialize_servos() {
                         // rate
                         process_servos('Pitch Servo', '', 0, 2);
                         process_servos('Roll Servo', '', 1, 2);
+                        
+                        // gyro / acc direction is not shown in this model
+                        $('div.direction_wrapper').hide();
                         break;
                     case 8: // Flying Wing
                         // looking ok so far
@@ -68,6 +71,9 @@ function tab_initialize_servos() {
                         process_servos('Wing 2', '', 4, 2);
                         process_servos('Rudd', '', 5, 2);
                         process_servos('Elev', '', 6, 2);
+                        
+                        // gyro / acc direction is not shown in this model
+                        $('div.direction_wrapper').hide();
                         break;
                     case 20: // Dualcopter
                         // looking ok so far
@@ -87,6 +93,9 @@ function tab_initialize_servos() {
                         process_servos('Left', 'L YAW', 4, true);
                         process_servos('Front', 'F YAW', 5, true);
                         process_servos('Rear', 'YAW', 6, true);
+                        
+                        // gyro / acc direction is not shown in this model
+                        $('div.direction_wrapper').hide();
                         break;
                     default:
                         model.html('Doesn\'t support servos');
@@ -100,6 +109,12 @@ function tab_initialize_servos() {
                             // rate
                             process_servos('Pitch Servo', '', 0, 2);
                             process_servos('Roll Servo', '', 1, 2);
+                            
+                            // gyro / acc direction is not shown in this model
+                            $('div.direction_wrapper').hide();
+                        } else {
+                            // disable UI
+                            $('div.supported_wrapper').hide();
                         }
                 }
                 
