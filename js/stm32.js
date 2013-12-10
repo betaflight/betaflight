@@ -1,5 +1,5 @@
 var STM32_protocol = function() {
-    this.hex; // hex object
+    this.hex; // ref
     
     this.receive_buffer;
     
@@ -52,8 +52,9 @@ STM32_protocol.prototype.GUI_status = function(string) {
 };
 
 // no input parameters
-STM32_protocol.prototype.connect = function() {
+STM32_protocol.prototype.connect = function(hex) {
     var self = this;
+    self.hex = hex;
     
     var selected_port = String($('div#port-picker .port select').val());
     var baud = parseInt($('div#port-picker #baud').val());

@@ -83,10 +83,8 @@ function tab_initialize_firmware_flasher() {
         $('a.flash_firmware').click(function() {
             if (!$(this).hasClass('locked')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
-                    if (parsed_hex != false) {
-                        STM32.hex = parsed_hex;
-                        
-                        STM32.connect();
+                    if (parsed_hex != false) {                        
+                        STM32.connect(parsed_hex);
                     } else {
                         STM32.GUI_status('<span style="color: red">Firmware not loaded</span>');
                     }
