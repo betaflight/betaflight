@@ -257,79 +257,76 @@ STM32_protocol.prototype.verify_response = function(val, data) {
 // input = 16 bit value
 // result = true/false
 STM32_protocol.prototype.verify_chip_signature = function(signature) {
+    var available_flash_size = 0;
+    
     switch (signature) {
         case 0x412: // not tested
             console.log('Chip recognized as F1 Low-density');
-            return true;
             break;
         case 0x410:
             console.log('Chip recognized as F1 Medium-density');
-            return true;
+            available_flash_size = 131072;
             break;
         case 0x414: // not tested
             console.log('Chip recognized as F1 High-density');
-            return true;
             break;
         case 0x418: // not tested
             console.log('Chip recognized as F1 Connectivity line');
-            return true;
             break;
         case 0x420:  // not tested
             console.log('Chip recognized as F1 Medium-density value line');
-            return true;
             break;
         case 0x428: // not tested
             console.log('Chip recognized as F1 High-density value line');
-            return true;
             break;
         case 0x430: // not tested
             console.log('Chip recognized as F1 XL-density value line');
-            return true;
             break;
         case 0x416: // not tested
             console.log('Chip recognized as L1 Medium-density ultralow power');
-            return true;
             break;
         case 0x436: // not tested
             console.log('Chip recognized as L1 High-density ultralow power');
-            return true;
             break;
         case 0x427: // not tested
             console.log('Chip recognized as L1 Medium-density plus ultralow power');
-            return true;
             break;
         case 0x411: // not tested
             console.log('Chip recognized as F2 STM32F2xxxx');
-            return true;
             break;
         case 0x440: // not tested
             console.log('Chip recognized as F0 STM32F051xx');
-            return true;
             break;
         case 0x444: // not tested
             console.log('Chip recognized as F0 STM32F050xx');
-            return true;
             break;
         case 0x413: // not tested
             console.log('Chip recognized as F4 STM32F40xxx/41xxx');
-            return true;
             break;
         case 0x419: // not tested
             console.log('Chip recognized as F4 STM32F427xx/437xx, STM32F429xx/439xx');
-            return true;
             break;
         case 0x432: // not tested
             console.log('Chip recognized as F3 STM32F37xxx, STM32F38xxx');
-            return true;
             break;
         case 0x422: // not tested
             console.log('Chip recognized as F3 STM32F30xxx, STM32F31xxx');
-            return true;
             break;
-        default: 
-            console.log('Chip NOT recognized: ' + signature);
+    }
+    
+    if (available_flash_size > 0) {
+        if (this.hex.bytes < available_flash_size) {
+            return true;
+        } else {
+            console.log('Supplied hex is bigger then flash available on the chip, HEX: ' + this.hex.bytes + ' bytes, limit = ' + available_flash_size + ' bytes');
+            
             return false;
-    };
+        }
+    }    
+    
+    console.log('Chip NOT recognized: ' + signature);
+    
+    return false;
 };
 
 // first_array = usually hex_to_flash array
