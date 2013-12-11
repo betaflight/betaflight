@@ -172,8 +172,36 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             
             if (callback) callback();
             break;
+        case 'pid_tuning':
+            GUI.interval_remove('pid_data_poll');
+        
+            if (callback) callback();
+            break;
+        case 'receiver':
+            GUI.interval_remove('receiver_poll');
+            
+            if (callback) callback();
+            break;
         case 'auxiliary_configuration':
             GUI.interval_remove('aux_data_poll');
+            
+            if (callback) callback();
+            break;
+        case 'servos':
+            if (callback) callback();
+            break;
+        case 'gps':
+            GUI.interval_remove('gps_pull');
+            
+            if (callback) callback();
+            break;
+        case 'motor_outputs':
+            GUI.interval_remove('motor_poll');
+        
+            if (callback) callback();
+            break;
+        case 'sensors':
+            GUI.interval_kill_all(['port-update', 'port_usage', 'serial_read']);
             
             if (callback) callback();
             break;

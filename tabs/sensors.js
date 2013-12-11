@@ -181,10 +181,10 @@ function tab_initialize_sensors() {
         // and timers are re-initialized with the new settings
         
         var rates = {
-            'gyro':  parseInt($('.tab-sensors select').eq(0).val()), 
-            'accel': parseInt($('.tab-sensors select').eq(1).val()), 
-            'mag':   parseInt($('.tab-sensors select').eq(2).val()), 
-            'baro':  parseInt($('.tab-sensors select').eq(3).val()),
+            'gyro':   parseInt($('.tab-sensors select').eq(0).val()), 
+            'accel':  parseInt($('.tab-sensors select').eq(1).val()), 
+            'mag':    parseInt($('.tab-sensors select').eq(2).val()), 
+            'baro':   parseInt($('.tab-sensors select').eq(3).val()),
             'debug':  parseInt($('.tab-sensors select').eq(4).val())
         };
         
@@ -204,47 +204,49 @@ function tab_initialize_sensors() {
         }
         
         // timer initialization
-        disable_timers();
+        GUI.interval_kill_all(['port-update', 'port_usage', 'serial_read']);
         
         // data pulling timers
-        timers.push(setInterval(sensor_status_pull, 50));
-        timers.push(setInterval(sensor_IMU_pull, fastest));
-        timers.push(setInterval(sensor_altitude_pull, rates.baro));
-        timers.push(setInterval(sensor_debug_pull, rates.debug));
+        GUI.interval_add('status_pull', function() {
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+        }, 50);
+        
+        GUI.interval_add('IMU_pull', function() {
+            send_message(MSP_codes.MSP_RAW_IMU, MSP_codes.MSP_RAW_IMU);
+        }, fastest);
+        
+        GUI.interval_add('altitude_pull', function() {
+            send_message(MSP_codes.MSP_ALTITUDE, MSP_codes.MSP_ALTITUDE);
+            
+            // we can process this one right here
+            sensor_process_baro();
+        }, rates.baro);
+        
+        GUI.interval_add('debug_pull', function() {
+            send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG);
+            
+            // we can process this one right here
+            sensor_process_debug();
+        }, rates.debug);
         
         // processing timers
-        timers.push(setInterval(sensor_process_gyro, rates.gyro));
-        timers.push(setInterval(sensor_process_accel, rates.accel));
-        timers.push(setInterval(sensor_process_mag, rates.mag));
+        GUI.interval_add('process_gyro', function() {
+            sensor_process_gyro();
+        }, rates.gyro);
+        
+        GUI.interval_add('process_accel', function() {
+            sensor_process_accel();
+        }, rates.accel);
+        
+        GUI.interval_add('process_mag', function() {
+            sensor_process_mag();
+        }, rates.mag);
         
         // store current/latest refresh rates in the storage
         chrome.storage.local.set({'sensor_refresh_rates': rates}, function() {
         });
     });
 }
-
-function sensor_status_pull() {
-    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-}
-
-function sensor_IMU_pull() {
-    send_message(MSP_codes.MSP_RAW_IMU, MSP_codes.MSP_RAW_IMU);
-}
-
-function sensor_altitude_pull() {
-    send_message(MSP_codes.MSP_ALTITUDE, MSP_codes.MSP_ALTITUDE);
-    
-    // we can process this one right here
-    sensor_process_baro();
-}
-
-function sensor_debug_pull() {
-    send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG);
-    
-    // we can process this one right here
-    sensor_process_debug();
-}
-
 
 function sensor_process_gyro() {
     gyro_data[0].push([samples_gyro_i, SENSOR_DATA.gyroscope[0]]);

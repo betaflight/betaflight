@@ -134,72 +134,70 @@ function tab_initialize_receiver() {
     });
     
     // enable RC data pulling
-    timers.push(setInterval(receiverPoll, 50));    
-}
-
-function receiverPoll() {    
-    // Update UI with latest data
-    $('.tab-receiver meter:eq(0)').val(RC.throttle);
-    $('.tab-receiver .value:eq(0)').html(RC.throttle);
-    
-    $('.tab-receiver meter:eq(1)').val(RC.pitch);
-    $('.tab-receiver .value:eq(1)').html(RC.pitch);
-    
-    $('.tab-receiver meter:eq(2)').val(RC.roll);
-    $('.tab-receiver .value:eq(2)').html(RC.roll);
-    
-    $('.tab-receiver meter:eq(3)').val(RC.yaw);
-    $('.tab-receiver .value:eq(3)').html(RC.yaw);
-    
-    
-    $('.tab-receiver meter:eq(4)').val(RC.AUX1);
-    $('.tab-receiver .value:eq(4)').html(RC.AUX1);
-    
-    $('.tab-receiver meter:eq(5)').val(RC.AUX2);
-    $('.tab-receiver .value:eq(5)').html(RC.AUX2);
-    
-    $('.tab-receiver meter:eq(6)').val(RC.AUX3);
-    $('.tab-receiver .value:eq(6)').html(RC.AUX3);
-    
-    $('.tab-receiver meter:eq(7)').val(RC.AUX4);
-    $('.tab-receiver .value:eq(7)').html(RC.AUX4);
-    
-    // push latest data to the main array
-    RX_plot_data[0].push([samples_i, RC.throttle]);
-    RX_plot_data[1].push([samples_i, RC.pitch]);
-    RX_plot_data[2].push([samples_i, RC.roll]);
-    RX_plot_data[3].push([samples_i, RC.yaw]);
-    RX_plot_data[4].push([samples_i, RC.AUX1]);
-    RX_plot_data[5].push([samples_i, RC.AUX2]);
-    RX_plot_data[6].push([samples_i, RC.AUX3]);
-    RX_plot_data[7].push([samples_i, RC.AUX4]);        
-
-    // Remove old data from array
-    while (RX_plot_data[0].length > 300) {
-        RX_plot_data[0].shift();
-        RX_plot_data[1].shift();
-        RX_plot_data[2].shift(); 
-        RX_plot_data[3].shift(); 
-        RX_plot_data[4].shift(); 
-        RX_plot_data[5].shift(); 
-        RX_plot_data[6].shift(); 
-        RX_plot_data[7].shift();                     
-    }; 
-    
-    // redraw plot
-    Flotr.draw(e_RX_plot, [ 
-        {data: RX_plot_data[0], label: "THROTTLE"}, 
-        {data: RX_plot_data[1], label: "PITCH"},
-        {data: RX_plot_data[2], label: "ROLL"},
-        {data: RX_plot_data[3], label: "YAW"},
-        {data: RX_plot_data[4], label: "AUX1"},
-        {data: RX_plot_data[5], label: "AUX2"},
-        {data: RX_plot_data[6], label: "AUX3"},
-        {data: RX_plot_data[7], label: "AUX4"} ], RX_plot_options);   
+    GUI.interval_add('receiver_poll', function() {
+        // Update UI with latest data
+        $('.tab-receiver meter:eq(0)').val(RC.throttle);
+        $('.tab-receiver .value:eq(0)').html(RC.throttle);
         
-    samples_i++;
-    
-    // Request new data
-    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-    send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
+        $('.tab-receiver meter:eq(1)').val(RC.pitch);
+        $('.tab-receiver .value:eq(1)').html(RC.pitch);
+        
+        $('.tab-receiver meter:eq(2)').val(RC.roll);
+        $('.tab-receiver .value:eq(2)').html(RC.roll);
+        
+        $('.tab-receiver meter:eq(3)').val(RC.yaw);
+        $('.tab-receiver .value:eq(3)').html(RC.yaw);
+        
+        
+        $('.tab-receiver meter:eq(4)').val(RC.AUX1);
+        $('.tab-receiver .value:eq(4)').html(RC.AUX1);
+        
+        $('.tab-receiver meter:eq(5)').val(RC.AUX2);
+        $('.tab-receiver .value:eq(5)').html(RC.AUX2);
+        
+        $('.tab-receiver meter:eq(6)').val(RC.AUX3);
+        $('.tab-receiver .value:eq(6)').html(RC.AUX3);
+        
+        $('.tab-receiver meter:eq(7)').val(RC.AUX4);
+        $('.tab-receiver .value:eq(7)').html(RC.AUX4);
+        
+        // push latest data to the main array
+        RX_plot_data[0].push([samples_i, RC.throttle]);
+        RX_plot_data[1].push([samples_i, RC.pitch]);
+        RX_plot_data[2].push([samples_i, RC.roll]);
+        RX_plot_data[3].push([samples_i, RC.yaw]);
+        RX_plot_data[4].push([samples_i, RC.AUX1]);
+        RX_plot_data[5].push([samples_i, RC.AUX2]);
+        RX_plot_data[6].push([samples_i, RC.AUX3]);
+        RX_plot_data[7].push([samples_i, RC.AUX4]);        
+
+        // Remove old data from array
+        while (RX_plot_data[0].length > 300) {
+            RX_plot_data[0].shift();
+            RX_plot_data[1].shift();
+            RX_plot_data[2].shift(); 
+            RX_plot_data[3].shift(); 
+            RX_plot_data[4].shift(); 
+            RX_plot_data[5].shift(); 
+            RX_plot_data[6].shift(); 
+            RX_plot_data[7].shift();                     
+        }; 
+        
+        // redraw plot
+        Flotr.draw(e_RX_plot, [ 
+            {data: RX_plot_data[0], label: "THROTTLE"}, 
+            {data: RX_plot_data[1], label: "PITCH"},
+            {data: RX_plot_data[2], label: "ROLL"},
+            {data: RX_plot_data[3], label: "YAW"},
+            {data: RX_plot_data[4], label: "AUX1"},
+            {data: RX_plot_data[5], label: "AUX2"},
+            {data: RX_plot_data[6], label: "AUX3"},
+            {data: RX_plot_data[7], label: "AUX4"} ], RX_plot_options);   
+            
+        samples_i++;
+        
+        // Request new data
+        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+        send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
+    }, 50);  
 }

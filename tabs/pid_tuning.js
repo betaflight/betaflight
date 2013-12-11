@@ -228,9 +228,7 @@ function tab_initialize_pid_tuning() {
     });
 
     // enable data pulling
-    timers.push(setInterval(pid_data_poll, 50));       
-}
-
-function pid_data_poll() {
-    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+    GUI.interval_add('pid_data_poll', function() {
+        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+    }, 50);     
 }

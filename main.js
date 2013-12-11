@@ -7,19 +7,6 @@ chrome.runtime.getBackgroundPage(function(result) {
     backgroundPage.app_window = window;
 });
 
-var timers = new Array();
-
-function disable_timers() {
-    for (var i = 0; i < timers.length; i++) {
-        clearInterval(timers[i]);
-    }
-    
-    // kill all the refferences
-    timers = [];
-    
-    return true;
-}
-
 // Google Analytics stuff begin
 var service = analytics.getService('ice_cream_app');
 var ga_tracker = service.getTracker('UA-32728876-6');
@@ -37,9 +24,6 @@ $(document).ready(function() {
             }
             
             var self = this;
-            
-            // Disable any active "data pulling" timer
-            disable_timers();
             
             GUI.tab_switch_cleanup(function() {
                 // disable previously active tab highlight

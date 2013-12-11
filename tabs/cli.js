@@ -84,7 +84,7 @@ function tab_initialize_cli() {
 }
 
 function send_slowly(out_arr, i, timeout_needle) {
-    setTimeout(function() {
+    GUI.timeout_add('CLI_send_slowly', function() {
         var bufferOut = new ArrayBuffer(out_arr[i].length + 1); 
         var bufView = new Uint8Array(bufferOut);
 

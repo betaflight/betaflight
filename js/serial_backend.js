@@ -116,25 +116,21 @@ $(document).ready(function() {
                     chrome.serial.open(selected_port, {bitrate: selected_baud}, onOpen);
                 } else {
                     // Disable any active "data pulling" timer
-                    disable_timers();
+                    GUI.interval_kill_all(['port-update']);
                     
                     GUI.tab_switch_cleanup();
-                    GUI.timeout_remove('connecting'); // kill connecting timer
+                    GUI.timeout_remove('connecting');
+                    GUI.timeout_remove('connection_delay');
                     
                     chrome.serial.close(connectionId, onClosed);
                     
                     GUI.connected_to = false;
                     
-                    clearTimeout(connection_delay);
-                    clearInterval(serial_poll);
-                    clearInterval(port_usage_poll);
-                    
                     // Change port utilization to 0
                     $('span.port-usage').html('0%');
-
-                    configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
-                    
                     MSP.packet_error = 0; // reset CRC packet error counter for next session
+                    
+                    configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
                     
                     // unlock port select & baud
                     $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', false);
@@ -180,10 +176,10 @@ function onOpen(openInfo) {
             }
         });
 
-        connection_delay = setTimeout(function() {
+        GUI.timeout_add('connection_delay', function() {
             // start polling
-            serial_poll = setInterval(readPoll, 10);
-            port_usage_poll = setInterval(port_usage, 1000);
+            GUI.interval_add('serial_read', readPoll, 10);
+            GUI.interval_add('port_usage', port_usage, 1000);
             
             // disconnect after 10 seconds with error if we don't get IDENT data
             GUI.timeout_add('connecting', function() {

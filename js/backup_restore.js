@@ -10,7 +10,7 @@ function configuration_backup() {
     
     // applying 200ms delay (should be enough to pull all the data down)
     // we might increase this in case someone would be using very slow baudrate (ergo 9600 and lower)
-    setTimeout(function() {
+    GUI.timeout_add('backup_timeout', function() {
         var chosenFileEntry = null;
         
         var accepts = [{
