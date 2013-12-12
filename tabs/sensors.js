@@ -73,7 +73,7 @@ function tab_initialize_sensors() {
             position: "we",
             backgroundOpacity: 0
         }
-    }
+    };
     
     accel_options = {
         title: "Accelerometer (g)",
@@ -93,7 +93,7 @@ function tab_initialize_sensors() {
             position: "we",
             backgroundOpacity: 0
         }
-    } 
+    };
     
     mag_options = {
         title: "Magnetometer (Ga)",
@@ -111,7 +111,7 @@ function tab_initialize_sensors() {
             position: "we",
             backgroundOpacity: 0
         }
-    }
+    };
     
     baro_options = {
         title: "Barometer (meters)",
@@ -129,7 +129,7 @@ function tab_initialize_sensors() {
             position: "we",
             backgroundOpacity: 0
         }
-    }     
+    };
 
     debug1_options = {
         title: "Debug1",
@@ -147,7 +147,8 @@ function tab_initialize_sensors() {
             position: "we",
             backgroundOpacity: 0
         }
-    }
+    };
+    
     debug2_options = {};
     for (var key in debug1_options) debug2_options[key] = debug1_options[key];
     debug2_options.title = "Debug2";

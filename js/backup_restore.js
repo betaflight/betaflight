@@ -50,7 +50,7 @@ function configuration_backup() {
                             AUX_val: AUX_CONFIG_values,
                             RC: RC_tuning,
                             AccelTrim: CONFIG.accelerometerTrims
-                        }
+                        };
                         
                         // crunch the config object
                         var serialized_config_object = JSON.stringify(configuration);

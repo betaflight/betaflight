@@ -63,19 +63,21 @@ STM32_protocol.prototype.connect = function(hex) {
         // get fastest supported bitrate for current platform 
         // (serial API for windows support baud > 256000 from chrome v 33+)
         // recommended windows - 921600, rest - 576000, default - 115200
+        var flashing_bitrate;
+        
         switch (GUI.operating_system) {
             case 'Windows':
-                var flashing_bitrate = 256000;
+                flashing_bitrate = 256000;
                 break;
             case 'MacOS':
             case 'ChromeOS':
             case 'Linux':
             case 'UNIX':
-                var flashing_bitrate = 230400;
+                flashing_bitrate = 230400;
                 break;
                 
             default:
-                var flashing_bitrate = 115200;
+                flashing_bitrate = 115200;
         }
         
         if (!$('input.updating').is(':checked')) {
@@ -432,10 +434,12 @@ STM32_protocol.prototype.upload_procedure = function(step) {
         case 5:
             // upload
             if (self.bytes_flashed < self.hex.data.length) {
+                var data_length;
+                
                 if ((self.bytes_flashed + 256) <= self.hex.data.length) {
-                    var data_length = 256;
+                    data_length = 256;
                 } else {
-                    var data_length = self.hex.data.length - self.bytes_flashed;
+                    data_length = self.hex.data.length - self.bytes_flashed;
                 }
                 
                 console.log('STM32 - Writing to: 0x' + self.flashing_memory_address.toString(16) + ', ' + data_length + ' bytes');
@@ -487,10 +491,12 @@ STM32_protocol.prototype.upload_procedure = function(step) {
         case 6:
             // verify
             if (self.bytes_verified < self.hex.data.length) {
+                var data_length;
+                
                 if ((self.bytes_verified + 256) <= self.hex.data.length) {
-                    var data_length = 256;
+                    data_length = 256;
                 } else {
-                    var data_length = self.hex.data.length - self.bytes_verified;
+                    data_length = self.hex.data.length - self.bytes_verified;
                 }
                 
                 console.log('STM32 - Reading from: 0x' + self.verify_memory_address.toString(16) + ', ' + data_length + ' bytes');

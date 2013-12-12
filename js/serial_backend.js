@@ -15,7 +15,7 @@ var CONFIG = {
     
     uid:           [0, 0, 0],
     accelerometerTrims: [0, 0]
-}
+};
 
 var PIDs = new Array(10);
 for (var i = 0; i < 10; i++) {
@@ -31,7 +31,7 @@ var RC = {
     AUX2:     0,
     AUX3:     0,
     AUX4:     0
-}
+};
 
 var RC_tuning = {
     RC_RATE:         0,
@@ -41,7 +41,7 @@ var RC_tuning = {
     dynamic_THR_PID: 0,
     throttle_MID:    0,
     throttle_EXPO:   0,
-}
+};
 
 var AUX_CONFIG = new Array();
 var AUX_CONFIG_values = new Array();
@@ -57,7 +57,7 @@ var SENSOR_DATA = {
     kinematicsY:   0.0,
     kinematicsZ:   0.0,
     debug:        [0, 0, 0, 0]
-}
+};
 
 var MOTOR_DATA = new Array(8);
 var SERVO_DATA = new Array(8);
@@ -79,12 +79,12 @@ var GPS_DATA = {
     svid:    new Array(),
     quality: new Array(),
     cno:     new Array()
-}
+};
 
 var BATTERY = {
     voltage:   0,
     pMeterSum: 0,
-}
+};
 
 var CLI_active = false;
 
@@ -369,7 +369,7 @@ function lowByte(num) {
 }
 
 function bit_check(num, bit) {
-    return ((num >> bit) % 2 != 0)
+    return ((num >> bit) % 2 != 0);
 }
 
 function bit_set(num, bit) {

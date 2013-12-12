@@ -49,7 +49,7 @@ var MSP_codes = {
     MSP_ACC_TRIM:           240, // get acc angle trim values
     MSP_SET_ACC_TRIM:       239, // set acc angle trim values
     MSP_GPSSVINFO:          164  // get Signal Strength (only U-Blox)
-}
+};
 
 
 var char_counter = 0;
@@ -154,13 +154,16 @@ function MSP_char_read(readInfo) {
 }
 
 function send_message(code, data, callback_sent, callback_msp) {
+    var bufferOut;
+    var bufView;
+    
     // always reserve 6 bytes for protocol overhead !
     if (typeof data === 'object') {
         var size = data.length + 6;
         var checksum = 0;
         
-        var bufferOut = new ArrayBuffer(size);
-        var bufView = new Uint8Array(bufferOut);        
+        bufferOut = new ArrayBuffer(size);
+        bufView = new Uint8Array(bufferOut);        
         
         bufView[0] = 36; // $
         bufView[1] = 77; // M
@@ -178,8 +181,8 @@ function send_message(code, data, callback_sent, callback_msp) {
 
         bufView[5 + data.length] = checksum;
     } else {
-        var bufferOut = new ArrayBuffer(7);
-        var bufView = new Uint8Array(bufferOut);
+        bufferOut = new ArrayBuffer(7);
+        bufView = new Uint8Array(bufferOut);
         
         bufView[0] = 36; // $
         bufView[1] = 77; // M

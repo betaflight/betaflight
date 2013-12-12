@@ -16,7 +16,7 @@ CliHistory.prototype = {
         if (this.index < this.history.length) this.index += 1;
         return this.history[this.index - 1];
     }
-}
+};
 
 cli_history = new CliHistory();
 

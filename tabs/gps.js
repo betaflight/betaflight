@@ -14,7 +14,7 @@ function tab_initialize_gps () {
         
         // Update GPS Signal Strengths
         
-        var e_ss_table = $('div.GPS_signal_strength table tr:not(.titles)')
+        var e_ss_table = $('div.GPS_signal_strength table tr:not(.titles)');
         
         for (var i = 0; i < GPS_DATA.chn.length; i++) {
             var row = e_ss_table.eq(i);
