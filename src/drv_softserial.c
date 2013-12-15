@@ -70,7 +70,7 @@ static void softSerialGPIOConfig(GPIO_TypeDef *gpio, uint16_t pin, GPIO_Mode mod
 void serialInputPortConfig(const timerHardware_t *timerHardwarePtr)
 {
     softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_IPU);
-    }
+}
 
 #define TICKS_PER_BIT 3
 
@@ -194,7 +194,7 @@ void processRxState(softSerial_t *softSerial)
 
     if (--softSerial->timerRxCounter > 0) {
         return;
-}
+    }
 
     if (softSerial->isSearchingForStartBit) {
         searchForStartBit(softSerial);
@@ -321,4 +321,3 @@ const struct serialPortVTable softSerialVTable[] = {
         isSoftSerialTransmitBufferEmpty
     }
 };
-
