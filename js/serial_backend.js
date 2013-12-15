@@ -119,10 +119,12 @@ $(document).ready(function() {
                     
                     GUI.connected_to = false;
                     
-                    // Change port utilization to 0
+                    // Reset various UI elements
                     $('span.port-usage').html('0%');
-                    MSP.packet_error = 0; // reset CRC packet error counter for next session
+                    $('.software-version').html('0.0');
+                    $('span.cycle-time').html('0');
                     
+                    MSP.packet_error = 0; // reset CRC packet error counter for next session
                     configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
                     
                     // unlock port select & baud
