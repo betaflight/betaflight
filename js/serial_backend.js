@@ -1,5 +1,4 @@
 var connectionId = -1;
-var connection_delay = 0; // delay which defines "when" will the configurator request configurator data after connection was established
 var configuration_received = false;
 
 var CONFIG = {
@@ -88,11 +87,7 @@ var BATTERY = {
 
 var CLI_active = false;
 
-$(document).ready(function() { 
-    port_picker = $('div#port-picker .port select');
-    baud_picker = $('div#port-picker #baud');
-    delay_picker = $('div#port-picker #delay');
-    
+$(document).ready(function() {    
     console.log('Scanning for new ports...');
     update_ports();
     
@@ -100,9 +95,8 @@ $(document).ready(function() {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
             var clicks = $(this).data('clicks');
             
-            selected_port = String($(port_picker).val());
-            selected_baud = parseInt(baud_picker.val());
-            connection_delay = parseInt(delay_picker.val());
+            var selected_port = String($('div#port-picker .port select').val());
+            var selected_baud = parseInt($('div#port-picker #baud').val());
             
             if (selected_port != '0') {
                 if (!clicks) {
@@ -120,7 +114,6 @@ $(document).ready(function() {
                     
                     GUI.tab_switch_cleanup();
                     GUI.timeout_remove('connecting');
-                    GUI.timeout_remove('connection_delay');
                     
                     chrome.serial.close(connectionId, onClosed);
                     
@@ -160,51 +153,49 @@ function onOpen(openInfo) {
         // save selected port with chrome.storage if the port differs
         chrome.storage.local.get('last_used_port', function(result) {
             if (typeof result.last_used_port != 'undefined') {
-                if (result.last_used_port != selected_port) {
+                if (result.last_used_port != GUI.connected_to) {
                     // last used port doesn't match the one found in local db, we will store the new one
-                    chrome.storage.local.set({'last_used_port': selected_port}, function() {
+                    chrome.storage.local.set({'last_used_port': GUI.connected_to}, function() {
                         // Debug message is currently disabled (we dont need to spam the console log with that)
                         // console.log('Last selected port was saved in chrome.storage.');
                     });
                 }
             } else {
                 // variable isn't stored yet, saving
-                chrome.storage.local.set({'last_used_port': selected_port}, function() {
+                chrome.storage.local.set({'last_used_port': GUI.connected_to}, function() {
                     // Debug message is currently disabled (we dont need to spam the console log with that)
                     // console.log('Last selected port was saved in chrome.storage.');
                 });
             }
         });
 
-        GUI.timeout_add('connection_delay', function() {
-            // start polling
-            GUI.interval_add('serial_read', readPoll, 10);
-            GUI.interval_add('port_usage', port_usage, 1000);
+        // start polling
+        GUI.interval_add('serial_read', readPoll, 10);
+        GUI.interval_add('port_usage', port_usage, 1000);
+        
+        // disconnect after 10 seconds with error if we don't get IDENT data
+        GUI.timeout_add('connecting', function() {
+            if (!configuration_received) {
+                notify('Did not received configuration within <span style="color: red">10 seconds</span>, communication <span style="color: red">failed</span> - Disconnecting');
+                
+                $('div#port-picker a.connect').click(); // disconnect
+            }
+        }, 10000);
+
+        // request configuration data
+        send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
+        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS); // in theory this could be removed (MSP_STATUS is pulled in initial tab)
+        send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
+            GUI.timeout_remove('connecting'); // kill connecting timer
             
-            // disconnect after 10 seconds with error if we don't get IDENT data
-            GUI.timeout_add('connecting', function() {
-                if (!configuration_received) {
-                    notify('Did not received configuration within <span style="color: red">10 seconds</span>, communication <span style="color: red">failed</span> - Disconnecting');
-                    
-                    $('div#port-picker a.connect').click(); // disconnect
-                }
-            }, 10000);
- 
-            // request configuration data
-            send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS); // in theory this could be removed (MSP_STATUS is pulled in initial tab)
-            send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
-                GUI.timeout_remove('connecting'); // kill connecting timer
-                
-                // Update UI elements that doesn't need consistent refreshing
-                sensor_status(CONFIG.activeSensors);
-                $('.software-version').html(CONFIG.version);
-                
-                configuration_received = true;
-                $('div#port-picker a.connect').text('Disconnect').addClass('active');
-                $('#tabs li a:first').click();
-            });
-        }, connection_delay * 1000);
+            // Update UI elements that doesn't need consistent refreshing
+            sensor_status(CONFIG.activeSensors);
+            $('.software-version').html(CONFIG.version);
+            
+            configuration_received = true;
+            $('div#port-picker a.connect').text('Disconnect').addClass('active');
+            $('#tabs li a:first').click();
+        });
     } else {
         console.log('Failed to open serial port');
         notify('Failed to open serial port', 'red');
@@ -240,7 +231,7 @@ function readPoll() {
 }
 
 function port_usage() {
-    var port_usage = (char_counter * 10 / selected_baud) * 100;    
+    var port_usage = (char_counter * 10 / parseInt($('div#port-picker #baud').val())) * 100;    
     $('span.port-usage').html(parseInt(port_usage) + '%');
 
     // reset counter
