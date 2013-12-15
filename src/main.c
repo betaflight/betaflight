@@ -109,7 +109,7 @@ int main(void)
         // Sanity check below - protocols other than NMEA do not support baud rate autodetection
         if (mcfg.gps_type > 0 && mcfg.gps_baudrate < 0)
             mcfg.gps_baudrate = 0;
-            gpsInit(mcfg.gps_baudrate);
+        gpsInit(mcfg.gps_baudrate);
     }
 #ifdef SONAR
     // sonar stuff only works with PPM
@@ -141,7 +141,7 @@ int main(void)
         batteryInit();
 
     serialInit(mcfg.serial_baudrate);
-    
+
     if (feature(FEATURE_SOFTSERIAL)) {
       setupSoftSerial1(mcfg.softserial_baudrate, mcfg.softserial_inverted);
 #ifdef SOFTSERIAL_LOOPBACK
