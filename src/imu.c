@@ -26,7 +26,7 @@ float accVelScale;
 int16_t gyroData[3] = { 0, 0, 0 };
 int16_t gyroZero[3] = { 0, 0, 0 };
 int16_t angle[2] = { 0, 0 };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-float anglerad[2] = { 0, 0 };    // absolute angle inclination in radians
+float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
 static void getEstimatedAttitude(void);
 
@@ -67,12 +67,14 @@ void computeIMU(void)
             Smoothing[YAW] = (mcfg.gyro_smoothing_factor) & 0xff;
         }
         for (axis = 0; axis < 3; axis++) {
-            gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroData[axis] + 1) / Smoothing[axis]);
+            gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroADC[axis] + 1) / Smoothing[axis]);
             gyroSmooth[axis] = gyroData[axis];
         }
     } else if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
-        gyroData[YAW] = (gyroYawSmooth * 2 + gyroData[YAW]) / 3;
+        gyroData[YAW] = (gyroYawSmooth * 2 + gyroADC[YAW]) / 3;
         gyroYawSmooth = gyroData[YAW];
+        gyroData[ROLL] = gyroADC[ROLL];
+        gyroData[PITCH] = gyroADC[PITCH];
     } else {
         for (axis = 0; axis < 3; axis++)
             gyroData[axis] = gyroADC[axis];
@@ -172,17 +174,21 @@ int32_t applyDeadband(int32_t value, int32_t deadband)
     return value;
 }
 
+#define F_CUT_ACCZ 20.0f
+static const float fc_acc = 0.5f / (M_PI * F_CUT_ACCZ);
+
 // rotate acc into Earth frame and calculate acceleration in it
 void acc_calc(uint32_t deltaT)
 {
     static int32_t accZoffset = 0;
+    static float accz_smooth;
     float rpy[3];
     t_fp_vector accel_ned;
 
     // the accel values have to be rotated into the earth frame
     rpy[0] = -(float)anglerad[ROLL];
     rpy[1] = -(float)anglerad[PITCH];
-    rpy[2] = -(float)heading * RADX10 * 10.0f;
+    rpy[2] = -(float)heading * RAD;
 
     accel_ned.V.X = accSmooth[0];
     accel_ned.V.Y = accSmooth[1];
@@ -198,19 +204,21 @@ void acc_calc(uint32_t deltaT)
         accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
     } else
         accel_ned.V.Z -= acc_1G;
+    
+    accz_smooth = accz_smooth + (deltaT / (fc_acc + deltaT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
     // apply Deadband to reduce integration drift and vibration influence
-    accel_ned.V.Z = applyDeadband(accel_ned.V.Z, cfg.accz_deadband);
-    accel_ned.V.X = applyDeadband(accel_ned.V.X, cfg.accxy_deadband);
-    accel_ned.V.Y = applyDeadband(accel_ned.V.Y, cfg.accxy_deadband);
+    accel_ned.V.Z = applyDeadband(lrintf(accz_smooth), cfg.accz_deadband);
+    accel_ned.V.X = applyDeadband(lrintf(accel_ned.V.X), cfg.accxy_deadband);
+    accel_ned.V.Y = applyDeadband(lrintf(accel_ned.V.Y), cfg.accxy_deadband);
 
     // sum up Values for later integration to get velocity and distance
     accTimeSum += deltaT;
     accSumCount++;
 
-    accSum[0] += accel_ned.V.X;
-    accSum[1] += accel_ned.V.Y;
-    accSum[2] += accel_ned.V.Z;
+    accSum[X] += lrintf(accel_ned.V.X);
+    accSum[Y] += lrintf(accel_ned.V.Y);
+    accSum[Z] += lrintf(accel_ned.V.Z);
 }
 
 void accSum_reset(void)
@@ -288,7 +296,7 @@ static void getEstimatedAttitude(void)
             EstM.A[axis] = (EstM.A[axis] * (float)mcfg.gyro_cmpfm_factor + magADC[axis]) * INV_GYR_CMPFM_FACTOR;
     }
 
-   if (abs(EstG.A[Z]) > accZ_25deg)
+   if (EstG.A[Z] > accZ_25deg)
         f.SMALL_ANGLES_25 = 1;
     else
         f.SMALL_ANGLES_25 = 0;
@@ -307,7 +315,7 @@ static void getEstimatedAttitude(void)
     acc_calc(deltaT); // rotate acc vector into earth frame
 
     if (cfg.throttle_angle_correction) {
-        int cosZ = EstG.V.Z / acc_1G * 100.0f;
+        int cosZ = EstG.V.Z / (acc_1G * 100.0f);
         throttleAngleCorrection = cfg.throttle_angle_correction * constrain(100 - cosZ, 0, 100) / 8;
     }
 }
@@ -317,7 +325,6 @@ static void getEstimatedAttitude(void)
 
 int getEstimatedAltitude(void)
 {
-    static int32_t baroGroundPressure;
     static uint32_t previousT;
     uint32_t currentT = micros();
     uint32_t dTime;
@@ -326,11 +333,12 @@ int getEstimatedAltitude(void)
     int32_t vel_tmp;
     int32_t BaroAlt_tmp;
     float dt;
-    float PressureScaling;
     float vel_acc;
     static float vel = 0.0f;
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
+    static int32_t baroGroundAltitude = 0;
+    static int32_t baroGroundPressure = 0;
 
     dTime = currentT - previousT;
     if (dTime < UPDATE_INTERVAL)
@@ -338,19 +346,22 @@ int getEstimatedAltitude(void)
     previousT = currentT;
 
     if (calibratingB > 0) {
-        baroGroundPressure = baroPressureSum / (cfg.baro_tab_size - 1);
-        calibratingB--;
+        baroGroundPressure -= baroGroundPressure / 8;
+        baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
+        baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f; 
+        
         vel = 0;
         accAlt = 0;
+        calibratingB--;
     }
 
     // calculates height from ground via baro readings
     // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-    PressureScaling = (float)baroPressureSum / ((float)baroGroundPressure * (float)(cfg.baro_tab_size - 1));
-    BaroAlt_tmp = 153.8462f * (baroTemperature + 27315) * (1.0f - expf(0.190259f * logf(PressureScaling))); // in cm
-    BaroAlt = (float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf); // additional LPF to reduce baro noise
+    BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / (cfg.baro_tab_size - 1)) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
+    BaroAlt_tmp -= baroGroundAltitude;
+    BaroAlt = lrintf((float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf)); // additional LPF to reduce baro noise
 
-    dt = accTimeSum * 1e-6; // delta acc reading time in seconds
+    dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
     // Integrator - velocity, cm/sec
     vel_acc = (float)accSum[2] * accVelScale * (float)accTimeSum / (float)accSumCount;
@@ -391,7 +402,7 @@ int getEstimatedAltitude(void)
     vel = constrain(vel, -1000, 1000);                // limit max velocity to +/- 10m/s (36km/h)
 
     // D
-    vel_tmp = vel;
+    vel_tmp = lrintf(vel);
     vel_tmp = applyDeadband(vel_tmp, 5);
     vario = vel_tmp;
     BaroPID -= constrain(cfg.D8[PIDALT] * vel_tmp / 16, -150, 150);

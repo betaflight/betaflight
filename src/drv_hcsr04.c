@@ -90,7 +90,7 @@ void hcsr04_init(sonar_config_t config)
     gpioInit(GPIOB, &gpio);
 
     // setup external interrupt on echo pin
-    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, exti_pin_source);
+    gpioExtiLineConfig(GPIO_PortSourceGPIOB, exti_pin_source);
 
     EXTI_ClearITPendingBit(exti_line);
 

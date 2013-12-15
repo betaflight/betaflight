@@ -15,6 +15,8 @@ typedef struct drv_pwm_config_t {
     uint8_t adcChannel;  // steal one RC input for current sensor
     uint16_t motorPwmRate;
     uint16_t servoPwmRate;
+    uint16_t idlePulse;  // PWM value to use when initializing the driver;
+                         // default of zero means PULSE_1MS, otherwise set to given value. Used by 3D mode.
     uint16_t failsafeThreshold;
 } drv_pwm_config_t;
 

@@ -1,2 +1,7 @@
 *.o
 *~
+*.uvopt
+*.dep
+*.bak
+*.uvgui.*
+obj/

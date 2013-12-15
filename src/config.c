@@ -7,13 +7,13 @@
 #endif
 
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 1))       // use the last KB for storage
+#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 2))       // use the last 2 KB for storage
 
 master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 52;
+static const uint8_t EEPROM_CONF_VERSION = 55;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -69,23 +69,22 @@ void readEEPROM(void)
         mcfg.current_profile = 0;
     memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t));
 
-    for (i = 0; i < 6; i++)
+    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
         lookupPitchRollRC[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t) cfg.rcRate8 / 2500;
 
-    for (i = 0; i < 11; i++) {
+    for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
         int16_t tmp = 10 * i - cfg.thrMid8;
         uint8_t y = 1;
         if (tmp > 0)
             y = 100 - cfg.thrMid8;
         if (tmp < 0)
             y = cfg.thrMid8;
-        lookupThrottleRC[i] = 10 * cfg.thrMid8 + tmp * (100 - cfg.thrExpo8 + (int32_t) cfg.thrExpo8 * (tmp * tmp) / (y * y)) / 10;      // [0;1000]
-        lookupThrottleRC[i] = mcfg.minthrottle + (int32_t) (mcfg.maxthrottle - mcfg.minthrottle) * lookupThrottleRC[i] / 1000;     // [0;1000] -> [MINTHROTTLE;MAXTHROTTLE]
+        lookupThrottleRC[i] = 10 * cfg.thrMid8 + tmp * (100 - cfg.thrExpo8 + (int32_t) cfg.thrExpo8 * (tmp * tmp) / (y * y)) / 10;
+        lookupThrottleRC[i] = mcfg.minthrottle + (int32_t) (mcfg.maxthrottle - mcfg.minthrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
 
-    cfg.tri_yaw_middle = constrain(cfg.tri_yaw_middle, cfg.tri_yaw_min, cfg.tri_yaw_max);       //REAR
     setPIDController(cfg.pidController);
-    GPS_set_pids();
+    gpsSetPIDs();
 }
 
 void writeEEPROM(uint8_t b, uint8_t updateProfile)
@@ -181,6 +180,9 @@ static void resetConf(void)
     mcfg.gyro_align = ALIGN_DEFAULT;
     mcfg.acc_align = ALIGN_DEFAULT;
     mcfg.mag_align = ALIGN_DEFAULT;
+    mcfg.board_align_roll = 0;
+    mcfg.board_align_pitch = 0;
+    mcfg.board_align_yaw = 0;
     mcfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
     mcfg.yaw_control_direction = 1;
     mcfg.moron_threshold = 32;
@@ -190,6 +192,7 @@ static void resetConf(void)
     mcfg.vbatmincellvoltage = 33;
     mcfg.power_adc_channel = 0;
     mcfg.serialrx_type = 0;
+    mcfg.telemetry_softserial = 0;
     mcfg.midrc = 1500;
     mcfg.mincheck = 1100;
     mcfg.maxcheck = 1900;
@@ -206,7 +209,7 @@ static void resetConf(void)
     mcfg.servo_pwm_rate = 50;
     // gps/nav stuff
     mcfg.gps_type = GPS_NMEA;
-    mcfg.gps_baudrate = 115200;
+    mcfg.gps_baudrate = 0;
     // serial (USART1) baudrate
     mcfg.serial_baudrate = 115200;
     mcfg.softserial_baudrate = 19200;
@@ -224,9 +227,9 @@ static void resetConf(void)
     cfg.P8[YAW] = 85;
     cfg.I8[YAW] = 45;
     cfg.D8[YAW] = 0;
-    cfg.P8[PIDALT] = 50;
+    cfg.P8[PIDALT] = 40;
     cfg.I8[PIDALT] = 25;
-    cfg.D8[PIDALT] = 80;
+    cfg.D8[PIDALT] = 60;
     cfg.P8[PIDPOS] = 11; // POSHOLD_P * 100;
     cfg.I8[PIDPOS] = 0; // POSHOLD_I * 100;
     cfg.D8[PIDPOS] = 0;
@@ -288,32 +291,9 @@ static void resetConf(void)
 
     cfg.yaw_direction = 1;
     cfg.tri_unarmed_servo = 1;
-    cfg.tri_yaw_middle = 1500;
-    cfg.tri_yaw_min = 1020;
-    cfg.tri_yaw_max = 2000;
-
-    // flying wing
-    cfg.wing_left_min = 1020;
-    cfg.wing_left_mid = 1500;
-    cfg.wing_left_max = 2000;
-    cfg.wing_right_min = 1020;
-    cfg.wing_right_mid = 1500;
-    cfg.wing_right_max = 2000;
-    cfg.pitch_direction_l = 1;
-    cfg.pitch_direction_r = -1;
-    cfg.roll_direction_l = 1;
-    cfg.roll_direction_r = 1;
 
     // gimbal
-    cfg.gimbal_pitch_gain = 10;
-    cfg.gimbal_roll_gain = 10;
     cfg.gimbal_flags = GIMBAL_NORMAL;
-    cfg.gimbal_pitch_min = 1020;
-    cfg.gimbal_pitch_max = 2000;
-    cfg.gimbal_pitch_mid = 1500;
-    cfg.gimbal_roll_min = 1020;
-    cfg.gimbal_roll_max = 2000;
-    cfg.gimbal_roll_mid = 1500;
 
     // gps/nav stuff
     cfg.gps_wp_radius = 200;

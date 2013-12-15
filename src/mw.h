@@ -4,10 +4,12 @@
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 #define BARO_TAB_SIZE_MAX   48
 
-#define  VERSION  220
+#define  VERSION  230
 
 #define LAT  0
 #define LON  1
+
+#define RC_CHANS    (18)
 
 // Serial GPS only variables
 // navigation mode
@@ -38,16 +40,18 @@ typedef enum MultiType
     MULTITYPE_HELI_120_CCPM = 15,
     MULTITYPE_HELI_90_DEG = 16,
     MULTITYPE_VTAIL4 = 17,
-    MULTITYPE_CUSTOM = 18,          // no current GUI displays this
-    MULTITYPE_LAST = 19
+    MULTITYPE_HEX6H = 18,
+    MULTITYPE_PPM_TO_SERVO = 19,    // PPM -> servo relay 
+    MULTITYPE_DUALCOPTER = 20,
+    MULTITYPE_SINGLECOPTER = 21,
+    MULTITYPE_CUSTOM = 22,          // no current GUI displays this
+    MULTITYPE_LAST = 23
 } MultiType;
 
 typedef enum GimbalFlags {
     GIMBAL_NORMAL = 1 << 0,
-    GIMBAL_TILTONLY = 1 << 1,
-    GIMBAL_DISABLEAUX34 = 1 << 2,
-    GIMBAL_FORWARDAUX = 1 << 3,
-    GIMBAL_MIXTILT = 1 << 4,
+    GIMBAL_MIXTILT = 1 << 1,
+    GIMBAL_FORWARDAUX = 1 << 2,
 } GimbalFlags;
 
 /*********** RC alias *****************/
@@ -194,33 +198,9 @@ typedef struct config_t {
     // mixer-related configuration
     int8_t yaw_direction;
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
-    uint16_t tri_yaw_middle;                // tail servo center pos. - use this for initial trim
-    uint16_t tri_yaw_min;                   // tail servo min
-    uint16_t tri_yaw_max;                   // tail servo max
-
-    // flying wing related configuration
-    uint16_t wing_left_min;                 // min/mid/max servo travel
-    uint16_t wing_left_mid;
-    uint16_t wing_left_max;
-    uint16_t wing_right_min;
-    uint16_t wing_right_mid;
-    uint16_t wing_right_max;
-
-    int8_t pitch_direction_l;               // left servo - pitch orientation
-    int8_t pitch_direction_r;               // right servo - pitch orientation (opposite sign to pitch_direction_l if servos are mounted mirrored)
-    int8_t roll_direction_l;                // left servo - roll orientation
-    int8_t roll_direction_r;                // right servo - roll orientation  (same sign as ROLL_DIRECTION_L, if servos are mounted in mirrored orientation)
 
     // gimbal-related configuration
-    int8_t gimbal_pitch_gain;               // gimbal pitch servo gain (tied to angle) can be negative to invert movement
-    int8_t gimbal_roll_gain;                // gimbal roll servo gain (tied to angle) can be negative to invert movement
     uint8_t gimbal_flags;                   // in servotilt mode, various things that affect stuff
-    uint16_t gimbal_pitch_min;              // gimbal pitch servo min travel
-    uint16_t gimbal_pitch_max;              // gimbal pitch servo max travel
-    uint16_t gimbal_pitch_mid;              // gimbal pitch servo neutral value
-    uint16_t gimbal_roll_min;               // gimbal roll servo min travel
-    uint16_t gimbal_roll_max;               // gimbal roll servo max travel
-    uint16_t gimbal_roll_mid;               // gimbal roll servo neutral value
 
     // gps-related stuff
     uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
@@ -258,6 +238,9 @@ typedef struct master_t {
     sensor_align_e gyro_align;              // gyro alignment
     sensor_align_e acc_align;               // acc alignment
     sensor_align_e mag_align;               // mag alignment
+    int16_t board_align_roll;               // board alignment correction in roll (deg)
+    int16_t board_align_pitch;              // board alignment correction in pitch (deg)
+    int16_t board_align_yaw;                // board alignment correction in yaw (deg)
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
@@ -265,7 +248,6 @@ typedef struct master_t {
     uint16_t gyro_cmpfm_factor;             // Set the Gyro Weight for Gyro/Magnetometer complementary filter. Increasing this value would reduce and delay Magnetometer influence on the output of the filter
     uint32_t gyro_smoothing_factor;         // How much to smoothen with per axis (32bit value with Roll, Pitch, Yaw in bits 24, 16, 8 respectively
     uint8_t moron_threshold;                // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
-    uint8_t mpu6050_scale;                  // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. automatically set by mpu6050 driver.
     int16_t accZero[3];
     int16_t magZero[3];
 
@@ -282,17 +264,20 @@ typedef struct master_t {
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
     uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
+    uint8_t flaps_speed;                    // airplane mode flaps, 0 = no flaps, > 0 = flap speed, larger = faster
 
     uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
 
     // gps-related stuff
-    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2+ ??
-    uint32_t gps_baudrate;                  // GPS baudrate
+    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2: MTK NMEA 3: MTK Binary
+    int8_t gps_baudrate;                    // GPS baudrate, -1: autodetect (NMEA only), 0: 115200, 1: 57600, 2: 38400, 3: 19200, 4: 9600
 
     uint32_t serial_baudrate;
     
     uint32_t softserial_baudrate;
     uint8_t softserial_inverted;           // use inverted softserial input and output signals
+
+    uint8_t telemetry_softserial;               // Serial to use for Telemetry. 0:USART1, 1:SoftSerial1 (Enable FEATURE_SOFTSERIAL first)
 
     config_t profile[3];                    // 3 separate profiles
     uint8_t current_profile;                // currently loaded profile
@@ -307,8 +292,9 @@ typedef struct core_t {
     serialPort_t *gpsport;
     serialPort_t *telemport;
     serialPort_t *rcvrport;
-    bool useServo;
-
+    uint8_t mpu6050_scale;                  // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. automatically set by mpu6050 driver.
+    uint8_t numRCChannels;                  // number of rc channels as reported by current input driver
+    bool useServo;                          // feature SERVO_TILT or wing/airplane mixers will enable this
 } core_t;
 
 typedef struct flags_t {
@@ -365,14 +351,17 @@ extern int16_t throttleAngleCorrection;
 extern int16_t headFreeModeHold;
 extern int16_t heading, magHold;
 extern int16_t motor[MAX_MOTORS];
-extern int16_t servo[8];
-extern int16_t rcData[8];
+extern int16_t servo[MAX_SERVOS];
+extern int16_t rcData[RC_CHANS];
 extern uint16_t rssi;                  // range: [0;1023]
 extern uint8_t vbat;
 extern int16_t telemTemperature1;      // gyro sensor temperature
-extern int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
-extern int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
 extern uint8_t toggleBeep;
+
+#define PITCH_LOOKUP_LENGTH 7
+#define THROTTLE_LOOKUP_LENGTH 12
+extern int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];   // lookup table for expo & RC rate PITCH+ROLL
+extern int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 
 // GPS stuff
 extern int32_t  GPS_coord[2];
@@ -385,8 +374,6 @@ extern uint16_t GPS_altitude,GPS_speed;                      // altitude in 0.1m
 extern uint8_t  GPS_update;                                  // it's a binary toogle to distinct a GPS position update
 extern int16_t  GPS_angle[2];                                // it's the angles that must be applied for GPS correction
 extern uint16_t GPS_ground_course;                           // degrees*10
-extern uint8_t  GPS_Present;                                 // Checksum from Gps serial
-extern uint8_t  GPS_Enable;
 extern int16_t  nav[2];
 extern int8_t   nav_mode;                                    // Navigation mode
 extern int16_t  nav_rated[2];                                // Adding a rate controller to the navigation to make it smoother
@@ -429,6 +416,7 @@ void Sonar_update(void);
 
 // Output
 void mixerInit(void);
+void mixerResetMotors(void);
 void mixerLoadMix(int index);
 void writeServos(void);
 void writeMotors(void);
@@ -470,13 +458,16 @@ void systemBeep(bool onoff);
 void cliProcess(void);
 
 // gps
-void gpsInit(uint32_t baudrate);
+void gpsInit(uint8_t baudrate);
+void gpsThread(void);
+void gpsSetPIDs(void);
+int8_t gpsSetPassthrough(void);
 void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
-void GPS_set_pids(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
 int32_t wrap_18000(int32_t error);
 
 // telemetry
-void initTelemetry(bool State);
+void initTelemetry(void);
+void updateTelemetryState(void);
 void sendTelemetry(void);

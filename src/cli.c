@@ -9,9 +9,11 @@ static void cliDefaults(char *cmdline);
 static void cliDump(char *cmdLine);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
+static void cliGpsPassthrough(char *cmdline);
 static void cliHelp(char *cmdline);
 static void cliMap(char *cmdline);
 static void cliMixer(char *cmdline);
+static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
@@ -25,6 +27,9 @@ extern uint8_t accHardware;
 // from config.c RC Channel mapping
 extern const char rcChannelLetters[];
 
+// from mixer.c
+extern int16_t motor_disarmed[MAX_MOTORS];
+
 // buffer
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
@@ -37,7 +42,9 @@ static const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
     "FLYING_WING", "Y4", "HEX6X", "OCTOX8", "OCTOFLATP", "OCTOFLATX",
-    "AIRPLANE", "HELI_120_CCPM", "HELI_90_DEG", "VTAIL4", "CUSTOM", NULL
+    "AIRPLANE", "HELI_120_CCPM", "HELI_90_DEG", "VTAIL4", 
+    "HEX6H", "PPM_TO_SERVO", "DUALCOPTER", "SINGLECOPTER",
+    "CUSTOM", NULL
 };
 
 // sync this with AvailableFeatures enum from board.h
@@ -50,7 +57,7 @@ static const char * const featureNames[] = {
 
 // sync this with AvailableSensors enum from board.h
 static const char * const sensorNames[] = {
-    "ACC", "BARO", "MAG", "SONAR", "GPS", NULL
+    "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
 };
 
 static const char * const accNames[] = {
@@ -71,9 +78,11 @@ const clicmd_t cmdTable[] = {
     { "dump", "print configurable settings in a pastable form", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
+    { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
     { "help", "", cliHelp },
     { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
+    { "motor", "get/set motor output value", cliMotor },
     { "profile", "index (0 to 2)", cliProfile },
     { "save", "save and reboot", cliSave },
     { "set", "name=value or blank or * for list", cliSet },
@@ -114,11 +123,14 @@ const clivalue_t valueTable[] = {
     { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 498 },
     { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
     { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
+    { "flaps_speed", VAR_UINT8, &mcfg.flaps_speed, 0, 100 },
     { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
     { "softserial_baudrate", VAR_UINT32, &mcfg.softserial_baudrate, 9600, 19200 },
     { "softserial_inverted", VAR_UINT8, &mcfg.softserial_inverted, 0, 1 },
-    { "gps_baudrate", VAR_UINT32, &mcfg.gps_baudrate, 1200, 115200 },
+    { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, 3 },
+    { "gps_baudrate", VAR_INT8, &mcfg.gps_baudrate, -1, 4 },
     { "serialrx_type", VAR_UINT8, &mcfg.serialrx_type, 0, 2 },
+    { "telemetry_softserial", VAR_UINT8, &mcfg.telemetry_softserial, 0, 1 },
     { "vbatscale", VAR_UINT8, &mcfg.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &mcfg.vbatmaxcellvoltage, 10, 50 },
     { "vbatmincellvoltage", VAR_UINT8, &mcfg.vbatmincellvoltage, 10, 50 },
@@ -126,13 +138,15 @@ const clivalue_t valueTable[] = {
     { "align_gyro", VAR_UINT8, &mcfg.gyro_align, 0, 8 },
     { "align_acc", VAR_UINT8, &mcfg.acc_align, 0, 8 },
     { "align_mag", VAR_UINT8, &mcfg.mag_align, 0, 8 },
+    { "align_board_roll", VAR_INT16, &mcfg.board_align_roll, -180, 360 },
+    { "align_board_pitch", VAR_INT16, &mcfg.board_align_pitch, -180, 360 },
+    { "align_board_yaw", VAR_INT16, &mcfg.board_align_yaw, -180, 360 },
     { "yaw_control_direction", VAR_INT8, &mcfg.yaw_control_direction, -1, 1 },
     { "acc_hardware", VAR_UINT8, &mcfg.acc_hardware, 0, 5 },
     { "moron_threshold", VAR_UINT8, &mcfg.moron_threshold, 0, 128 },
     { "gyro_lpf", VAR_UINT16, &mcfg.gyro_lpf, 0, 256 },
     { "gyro_cmpf_factor", VAR_UINT16, &mcfg.gyro_cmpf_factor, 100, 1000 },
     { "gyro_cmpfm_factor", VAR_UINT16, &mcfg.gyro_cmpfm_factor, 100, 1000 },
-    { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, 3 },
     { "pid_controller", VAR_UINT8, &cfg.pidController, 0, 1 },
     { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
     { "yawdeadband", VAR_UINT8, &cfg.yawdeadband, 0, 100 },
@@ -142,7 +156,7 @@ const clivalue_t valueTable[] = {
     { "rc_rate", VAR_UINT8, &cfg.rcRate8, 0, 250 },
     { "rc_expo", VAR_UINT8, &cfg.rcExpo8, 0, 100 },
     { "thr_mid", VAR_UINT8, &cfg.thrMid8, 0, 100 },
-    { "thr_expo", VAR_UINT8, &cfg.thrExpo8, 0, 250 },
+    { "thr_expo", VAR_UINT8, &cfg.thrExpo8, 0, 100 },
     { "roll_pitch_rate", VAR_UINT8, &cfg.rollPitchRate, 0, 100 },
     { "yawrate", VAR_UINT8, &cfg.yawRate, 0, 100 },
     { "failsafe_delay", VAR_UINT8, &cfg.failsafe_delay, 0, 200 },
@@ -152,28 +166,7 @@ const clivalue_t valueTable[] = {
     { "rssi_aux_channel", VAR_INT8, &mcfg.rssi_aux_channel, 0, 4 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
     { "tri_unarmed_servo", VAR_INT8, &cfg.tri_unarmed_servo, 0, 1 },
-    { "tri_yaw_middle", VAR_UINT16, &cfg.tri_yaw_middle, 0, 2000 },
-    { "tri_yaw_min", VAR_UINT16, &cfg.tri_yaw_min, 0, 2000 },
-    { "tri_yaw_max", VAR_UINT16, &cfg.tri_yaw_max, 0, 2000 },
-    { "wing_left_min", VAR_UINT16, &cfg.wing_left_min, 0, 2000 },
-    { "wing_left_mid", VAR_UINT16, &cfg.wing_left_mid, 0, 2000 },
-    { "wing_left_max", VAR_UINT16, &cfg.wing_left_max, 0, 2000 },
-    { "wing_right_min", VAR_UINT16, &cfg.wing_right_min, 0, 2000 },
-    { "wing_right_mid", VAR_UINT16, &cfg.wing_right_mid, 0, 2000 },
-    { "wing_right_max", VAR_UINT16, &cfg.wing_right_max, 0, 2000 },
-    { "pitch_direction_l", VAR_INT8, &cfg.pitch_direction_l, -1, 1 },
-    { "pitch_direction_r", VAR_INT8, &cfg.pitch_direction_r, -1, 1 },
-    { "roll_direction_l", VAR_INT8, &cfg.roll_direction_l, -1, 1 },
-    { "roll_direction_r", VAR_INT8, &cfg.roll_direction_r, -1, 1 },
     { "gimbal_flags", VAR_UINT8, &cfg.gimbal_flags, 0, 255},
-    { "gimbal_pitch_gain", VAR_INT8, &cfg.gimbal_pitch_gain, -100, 100 },
-    { "gimbal_roll_gain", VAR_INT8, &cfg.gimbal_roll_gain, -100, 100 },
-    { "gimbal_pitch_min", VAR_UINT16, &cfg.gimbal_pitch_min, 100, 3000 },
-    { "gimbal_pitch_max", VAR_UINT16, &cfg.gimbal_pitch_max, 100, 3000 },
-    { "gimbal_pitch_mid", VAR_UINT16, &cfg.gimbal_pitch_mid, 100, 3000 },
-    { "gimbal_roll_min", VAR_UINT16, &cfg.gimbal_roll_min, 100, 3000 },
-    { "gimbal_roll_max", VAR_UINT16, &cfg.gimbal_roll_max, 100, 3000 },
-    { "gimbal_roll_mid", VAR_UINT16, &cfg.gimbal_roll_mid, 100, 3000 },
     { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 250 },
     { "accxy_deadband", VAR_UINT8, &cfg.accxy_deadband, 0, 100 },
     { "accz_deadband", VAR_UINT8, &cfg.accz_deadband, 0, 100 },
@@ -218,7 +211,13 @@ const clivalue_t valueTable[] = {
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
 
-static void cliSetVar(const clivalue_t *var, const int32_t value);
+
+typedef union {
+    int32_t int_value;
+    float float_value;
+} int_float_value_t;
+
+static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrint(const char *str);
 static void cliWrite(uint8_t ch);
@@ -279,7 +278,7 @@ char *itoa(int i, char *a, int r)
 static float _atof(const char *p)
 {
     int frac = 0;
-    double sign, value, scale;
+    float sign, value, scale;
 
     // Skip leading white space, if any.
     while (white_space(*p) ) {
@@ -287,9 +286,9 @@ static float _atof(const char *p)
     }
 
     // Get sign, if any.
-    sign = 1.0;
+    sign = 1.0f;
     if (*p == '-') {
-        sign = -1.0;
+        sign = -1.0f;
         p += 1;
 
     } else if (*p == '+') {
@@ -297,26 +296,26 @@ static float _atof(const char *p)
     }
 
     // Get digits before decimal point or exponent, if any.
-    value = 0.0;
+    value = 0.0f;
     while (valid_digit(*p)) {
-        value = value * 10.0 + (*p - '0');
+        value = value * 10.0f + (*p - '0');
         p += 1;
     }
 
     // Get digits after decimal point, if any.
     if (*p == '.') {
-        double pow10 = 10.0;
+        float pow10 = 10.0f;
         p += 1;
 
         while (valid_digit(*p)) {
             value += (*p - '0') / pow10;
-            pow10 *= 10.0;
+            pow10 *= 10.0f;
             p += 1;
         }
     }
 
     // Handle exponent, if any.
-    scale = 1.0;
+    scale = 1.0f;
     if ((*p == 'e') || (*p == 'E')) {
         unsigned int expon;
         p += 1;
@@ -337,12 +336,13 @@ static float _atof(const char *p)
             expon = expon * 10 + (*p - '0');
             p += 1;
         }
-        if (expon > 308) expon = 308;
+        if (expon > 308) 
+            expon = 308;
 
         // Calculate scaling factor.
-        while (expon >= 50) { scale *= 1E50; expon -= 50; }
-        while (expon >=  8) { scale *= 1E8;  expon -=  8; }
-        while (expon >   0) { scale *= 10.0; expon -=  1; }
+        // while (expon >= 50) { scale *= 1E50f; expon -= 50; }
+        while (expon >=  8) { scale *= 1E8f;  expon -=  8; }
+        while (expon >   0) { scale *= 10.0f; expon -=  1; }
     }
 
     // Return signed and scaled floating point result.
@@ -466,7 +466,7 @@ static void cliCMix(char *cmdline)
         }
         cliPrint("Sanity check:\t");
         for (i = 0; i < 3; i++)
-            cliPrint(fabs(mixsum[i]) > 0.01f ? "NG\t" : "OK\t");
+            cliPrint(fabsf(mixsum[i]) > 0.01f ? "NG\t" : "OK\t");
         cliPrint("\r\n");
         return;
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
@@ -611,6 +611,8 @@ static void cliExit(char *cmdline)
     *cliBuffer = '\0';
     bufferIndex = 0;
     cliMode = 0;
+    // incase some idiot leaves a motor running during motortest, clear it here
+    mixerResetMotors();
     // save and reboot... I think this makes the most sense
     cliSave(cmdline);
 }
@@ -669,6 +671,14 @@ static void cliFeature(char *cmdline)
             }
         }
     }
+}
+
+static void cliGpsPassthrough(char *cmdline)
+{
+    if (gpsSetPassthrough() == -1)
+        cliPrint("Error: Enable and plug in GPS first\r\n");
+    else
+        cliPrint("Enabling GPS passthrough...\r\n");
 }
 
 static void cliHelp(char *cmdline)
@@ -739,6 +749,52 @@ static void cliMixer(char *cmdline)
             break;
         }
     }
+}
+
+static void cliMotor(char *cmdline)
+{
+    int motor_index = 0;
+    int motor_value = 0;
+    int len, index = 0;
+    char *pch = NULL;
+
+    len = strlen(cmdline);
+    if (len == 0) {
+        printf("Usage:\r\nmotor index [value] - show [or set] motor value\r\n");
+        return;
+    }
+
+    pch = strtok(cmdline, " ");
+    while (pch != NULL) {
+        switch (index) {
+            case 0:
+                motor_index = atoi(pch);
+                break;
+            case 1:
+                motor_value = atoi(pch);
+                break;
+        }
+        index++;
+        pch = strtok(NULL, " ");
+    }
+
+    if (motor_index < 0 || motor_index >= MAX_MOTORS) {
+        printf("No such motor, use a number [0, %d]\r\n", MAX_MOTORS);
+        return;
+    }
+
+    if (index < 2) {
+        printf("Motor %d is set at %d\r\n", motor_index, motor_disarmed[motor_index]);
+        return;
+    }
+
+    if (motor_value < 1000 || motor_value > 2000) {
+        printf("Invalid motor value, 1000..2000\r\n");
+        return;
+    }
+
+    printf("Setting motor %d to %d\r\n", motor_index, motor_value);
+    motor_disarmed[motor_index] = motor_value;
 }
 
 static void cliProfile(char *cmdline)
@@ -819,25 +875,25 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
         printf(" %d %d", var->min, var->max);
 }
 
-static void cliSetVar(const clivalue_t *var, const int32_t value)
+static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
     switch (var->type) {
         case VAR_UINT8:
         case VAR_INT8:
-            *(char *)var->ptr = (char)value;
+            *(char *)var->ptr = (char)value.int_value;
             break;
 
         case VAR_UINT16:
         case VAR_INT16:
-            *(short *)var->ptr = (short)value;
+            *(short *)var->ptr = (short)value.int_value;
             break;
 
         case VAR_UINT32:
-            *(int *)var->ptr = (int)value;
+            *(int *)var->ptr = (int)value.int_value;
             break;
 
         case VAR_FLOAT:
-            *(float *)var->ptr = *(float *)&value;
+            *(float *)var->ptr = (float)value.float_value;
             break;
     }
 }
@@ -871,7 +927,12 @@ static void cliSet(char *cmdline)
             val = &valueTable[i];
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0) {
                 if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
-                    cliSetVar(val, valueTable[i].type == VAR_FLOAT ? *(uint32_t *)&valuef : value); // this is a silly dirty hack. please fix me later.
+                    int_float_value_t tmp;
+                    if (valueTable[i].type == VAR_FLOAT)
+                        tmp.float_value = valuef;
+                    else
+                        tmp.int_value = value;
+                    cliSetVar(val, tmp);
                     printf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
                 } else {
@@ -913,7 +974,7 @@ static void cliStatus(char *cmdline)
     if (sensors(SENSOR_ACC)) {
         printf("ACCHW: %s", accNames[accHardware]);
         if (accHardware == ACC_MPU6050)
-            printf(".%c", mcfg.mpu6050_scale ? 'o' : 'n');
+            printf(".%c", core.mpu6050_scale ? 'o' : 'n');
     }
     cliPrint("\r\n");
 

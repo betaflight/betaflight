@@ -131,7 +131,7 @@ static uint8_t I2C_ReceiveByte(void)
 
 void i2cInit(I2C_TypeDef * I2C)
 {
-    GPIO_Config gpio;
+    gpio_config_t gpio;
 
     gpio.pin = Pin_10 | Pin_11;
     gpio.speed = Speed_2MHz;

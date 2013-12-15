@@ -16,10 +16,10 @@ int16_t telemTemperature1;      // gyro sensor temperature
 
 int16_t failsafeCnt = 0;
 int16_t failsafeEvents = 0;
-int16_t rcData[8] = { 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502 }; // interval [1000;2000]
+int16_t rcData[RC_CHANS];       // interval [1000;2000]
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
-int16_t lookupPitchRollRC[6];   // lookup table for expo & RC rate PITCH+ROLL
-int16_t lookupThrottleRC[11];   // lookup table for expo & mid THROTTLE
+int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
+int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 uint16_t rssi;                  // range: [0;1023]
 rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
@@ -45,8 +45,6 @@ uint16_t GPS_altitude, GPS_speed;   // altitude in 0.1m and speed in 0.1m/s
 uint8_t GPS_update = 0;             // it's a binary toogle to distinct a GPS position update
 int16_t GPS_angle[2] = { 0, 0 };    // it's the angles that must be applied for GPS correction
 uint16_t GPS_ground_course = 0;     // degrees * 10
-uint8_t GPS_Present = 0;            // Checksum from Gps serial
-uint8_t GPS_Enable = 0;
 int16_t nav[2];
 int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
 int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
@@ -179,9 +177,9 @@ void annexCode(void)
             LED0_OFF;
         if (f.ARMED)
             LED0_ON;
-        // This will switch to/from 9600 or 115200 baud depending on state. Of course, it should only do it on changes.
+        // This will switch to/from 9600 or 115200 baud depending on state. Of course, it should only do it on changes. With telemetry_softserial>0 telemetry is always enabled, also see updateTelemetryState()
         if (feature(FEATURE_TELEMETRY))
-            initTelemetry(f.ARMED);
+            updateTelemetryState();
     }
 
 #ifdef LEDRING
@@ -758,8 +756,8 @@ void loop(void)
         }
     } else {                    // not in rc loop
         static int taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
-        if (taskOrder > 3)
-            taskOrder -= 4;
+        if (taskOrder > 4)
+            taskOrder -= 5;
         switch (taskOrder) {
         case 0:
             taskOrder++;
@@ -777,9 +775,18 @@ void loop(void)
             taskOrder++;
 #ifdef BARO
             if (sensors(SENSOR_BARO) && getEstimatedAltitude())
-            break;
+                break;
 #endif
         case 3:
+            // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
+            // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
+            // change this based on available hardware
+            taskOrder++;
+            if (feature(FEATURE_GPS)) {
+                gpsThread();
+                break;
+            }
+        case 4:
             taskOrder++;
 #ifdef SONAR
             if (sensors(SENSOR_SONAR)) {
@@ -802,9 +809,6 @@ void loop(void)
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
-#ifdef MPU6050_DMP
-        mpu6050DmpLoop();
-#endif
 
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {
@@ -814,6 +818,7 @@ void loop(void)
                     dif += 360;
                 if (dif >= +180)
                     dif -= 360;
+                dif *= -mcfg.yaw_control_direction;
                 if (f.SMALL_ANGLES_25)
                     rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;    // 18 deg
             } else

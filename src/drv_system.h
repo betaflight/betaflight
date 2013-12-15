@@ -15,6 +15,3 @@ void systemReset(bool toBootloader);
 
 // current crystal frequency - 8 or 12MHz
 extern uint32_t hse_value;
-
-// sensor orientation
-void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation);

@@ -115,7 +115,7 @@ bool bmp085Detect(baro_t *baro)
 #endif
 
     // EXTI interrupt for barometer EOC
-    GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource14);
+    gpioExtiLineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource14);
     EXTI_InitStructure.EXTI_Line = EXTI_Line14;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;

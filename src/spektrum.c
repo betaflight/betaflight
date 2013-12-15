@@ -37,6 +37,7 @@ void spektrumInit(rcReadRawDataPtr *callback)
     core.rcvrport = uartOpen(USART2, spektrumDataReceive, 115200, MODE_RX);
     if (callback)
         *callback = spektrumReadRawRC;
+    core.numRCChannels = SPEK_MAX_CHANNEL;
 }
 
 // Receive ISR callback

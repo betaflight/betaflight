@@ -30,7 +30,9 @@ int main(void)
     uint8_t i;
     drv_pwm_config_t pwm_params;
     drv_adc_config_t adc_params;
+#ifdef SOFTSERIAL_LOOPBACK
     serialPort_t* loopbackPort = NULL;
+#endif
 
     systemInit();
 #ifdef USE_LAME_PRINTF
@@ -49,6 +51,7 @@ int main(void)
     }
 
     adcInit(&adc_params);
+    initBoardAlignment();
 
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
@@ -67,6 +70,7 @@ int main(void)
     pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = mcfg.motor_pwm_rate;
     pwm_params.servoPwmRate = mcfg.servo_pwm_rate;
+    pwm_params.idlePulse = feature(FEATURE_3D) ? mcfg.neutral3d : 0;
     pwm_params.failsafeThreshold = cfg.failsafe_detect_threshold;
     switch (mcfg.power_adc_channel) {
         case 1:
@@ -82,8 +86,11 @@ int main(void)
 
     pwmInit(&pwm_params);
 
-    // configure PWM/CPPM read function. spektrum or sbus below will override that
+    // configure PWM/CPPM read function and max number of channels. spektrum or sbus below will override both of these, if enabled
+    for (i = 0; i < RC_CHANS; i++)
+        rcData[i] = 1502;
     rcReadRawFunc = pwmReadRawRC;
+    core.numRCChannels = MAX_INPUTS;
 
     if (feature(FEATURE_SERIALRX)) {
         switch (mcfg.serialrx_type) {
@@ -96,10 +103,12 @@ int main(void)
                 sbusInit(&rcReadRawFunc);
                 break;
         }
-    } else {
-        // spektrum and GPS are mutually exclusive
+    } else { // spektrum and GPS are mutually exclusive
         // Optional GPS - available in both PPM and PWM input mode, in PWM input, reduces number of available channels by 2.
-        if (feature(FEATURE_GPS))
+        // gpsInit will return if FEATURE_GPS is not enabled.
+        // Sanity check below - protocols other than NMEA do not support baud rate autodetection
+        if (mcfg.gps_type > 0 && mcfg.gps_baudrate < 0)
+            mcfg.gps_baudrate = 0;
             gpsInit(mcfg.gps_baudrate);
     }
 #ifdef SONAR
@@ -140,6 +149,9 @@ int main(void)
       serialPrint(loopbackPort, "LOOPBACK ENABLED\r\n");
 #endif
     }
+
+    if (feature(FEATURE_TELEMETRY))
+        initTelemetry();
 
     previousTime = micros();
     if (mcfg.mixerConfiguration == MULTITYPE_GIMBAL)

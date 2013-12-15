@@ -60,6 +60,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drv_i2c_soft.c \
 		   drv_system.c \
 		   drv_serial.c \
+		   drv_softserial.c \
 		   drv_uart.c \
 		   printf.c \
 		   utils.c \
@@ -98,8 +99,11 @@ OLIMEXINO_SRC	 = drv_spi.c \
 		   drv_l3g4200d.c \
 		   drv_pwm.c \
 		   drv_timer.c \
-		   drv_softserial.c \
 		   $(COMMON_SRC)
+		   
+# In some cases, %.s regarded as intermediate file, which is actually not.
+# This will prevent accidental deletion of startup code.
+.PRECIOUS: %.s
 
 # Search path for baseflight sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/baseflight_startups
@@ -182,7 +186,7 @@ TARGET_MAP   = $(OBJECT_DIR)/baseflight_$(TARGET).map
 # It would be nice to compute these lists, but that seems to be just beyond make.
 
 $(TARGET_HEX): $(TARGET_ELF)
-	$(OBJCOPY) -O ihex $< $@
+	$(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
 $(TARGET_ELF):  $(TARGET_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)

@@ -254,7 +254,7 @@ static void ppmCallback(uint8_t port, uint16_t capture)
     if (diff > 2700) { // Per http://www.rcgroups.com/forums/showpost.php?p=21996147&postcount=3960 "So, if you use 2.5ms or higher as being the reset for the PPM stream start, you will be fine. I use 2.7ms just to be safe."
         chan = 0;
     } else {
-        if (diff > 750 && diff < 2250 && chan < 8) {   // 750 to 2250 ms is our 'valid' channel range
+        if (diff > 750 && diff < 2250 && chan < MAX_INPUTS) {   // 750 to 2250 ms is our 'valid' channel range
             captures[chan] = diff;
             if (chan < 4 && diff > failsafeThreshold)
                 GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK
@@ -354,7 +354,7 @@ bool pwmInit(drv_pwm_config_t *init)
             pwmInConfig(port, pwmCallback, numInputs);
             numInputs++;
         } else if (mask & TYPE_M) {
-            motors[numMotors++] = pwmOutConfig(port, 1000000 / init->motorPwmRate, PULSE_1MS);
+            motors[numMotors++] = pwmOutConfig(port, 1000000 / init->motorPwmRate, init->idlePulse > 0 ? init->idlePulse : PULSE_1MS);
         } else if (mask & TYPE_S) {
             servos[numServos++] = pwmOutConfig(port, 1000000 / init->servoPwmRate, PULSE_1MS);
         }
