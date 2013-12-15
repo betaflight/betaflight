@@ -224,7 +224,6 @@ function process_data(command, message_buffer, message_length_expected) {
             CONFIG.profile = data.getUint8(10);
             
             $('span.cycle-time').html(CONFIG.cycleTime);
-            sensor_status(CONFIG.activeSensors);
             break;
         case MSP_codes.MSP_RAW_IMU:
             SENSOR_DATA.accelerometer[0] = data.getInt16(0, 1) / 1000; // properly scaled

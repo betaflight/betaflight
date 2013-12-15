@@ -190,17 +190,14 @@ function onOpen(openInfo) {
                 }
             }, 10000);
  
-            // baseflight specific
-            send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
-            send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM);
- 
             // request configuration data
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-            send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
-            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
+            send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS); // in theory this could be removed (MSP_STATUS is pulled in initial tab)
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
                 GUI.timeout_remove('connecting'); // kill connecting timer
                 
+                // Update UI elements that doesn't need consistent refreshing
+                sensor_status(CONFIG.activeSensors);
                 $('.software-version').html(CONFIG.version);
                 
                 configuration_received = true;
