@@ -1,16 +1,22 @@
 function configuration_backup() {
-    // request configuration data
-    send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
-    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-    send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
-    send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
-    send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
-    send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX);
-    send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM);
+    // request configuration data (one by one)
+    send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
+        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, function() {
+            send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, function() {
+                send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+                    send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
+                        send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
+                            send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, function() {
+                                backup();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
     
-    // applying 200ms delay (should be enough to pull all the data down)
-    // we might increase this in case someone would be using very slow baudrate (ergo 9600 and lower)
-    GUI.timeout_add('backup_timeout', function() {
+    var backup = function() {
         var chosenFileEntry = null;
         
         var accepts = [{
@@ -76,7 +82,7 @@ function configuration_backup() {
                 });
             });
         });
-    }, 200);
+    };
 }
 
 function configuration_restore() {
@@ -221,5 +227,4 @@ function configuration_upload() {
     
     // Save changes to EEPROM
     send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);   
-    
 }
