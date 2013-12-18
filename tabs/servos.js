@@ -130,7 +130,8 @@ function tab_initialize_servos() {
     });
     
     $('a.update').click(function() {
-        if (supported_models.indexOf(CONFIG.multiType) != -1) {
+        // standard check for supported_models + custom implementation for feature servo_tilt
+        if (supported_models.indexOf(CONFIG.multiType) != -1 || AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
             servos_update(true);
         }
     });
