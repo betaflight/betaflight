@@ -14,7 +14,15 @@ var ga_tracker = service.getTracker('UA-32728876-6');
 ga_tracker.sendAppView('Application Started');
 // Google Analytics stuff end    
 
-$(document).ready(function() { 
+$(document).ready(function() {
+    // set bounds (default 960x600)
+    if (screen.height > 600) {
+        chrome.app.window.current().setBounds({width: 960, height: 600});
+    } else {
+        $('div#content').height(280);
+        chrome.app.window.current().setBounds({width: 960, height: 400});
+    }
+    
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
         if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active

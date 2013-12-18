@@ -1,0 +1,101 @@
+    .welcome {
+        float: left;
+        
+        width: 494px;
+        height: 171px;
+        
+        padding: 5px;
+        
+        border: 1px solid silver;
+    }
+        .welcome a {
+            font-weight: bold;
+        }
+    .changelog {
+        margin-left: 514px;
+        margin-bottom: 10px;
+        
+        border: 1px solid silver;
+    }
+        .changelog .title {
+            line-height: 20px;
+            
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            
+            border-bottom: 1px solid silver;
+            background-color: #3f4241;
+        }
+        .changelog .wrapper {
+            height: 150px;
+            
+            padding: 5px;
+            
+            overflow-y: scroll;
+            overflow-x: hidden;
+            
+            -webkit-user-select: text;
+        }
+            .changelog .wrapper span {
+                font-weight: bold;
+            }
+            .changelog .wrapper p {
+                margin-bottom: 5px;
+            }
+    .donate {
+        float: left;
+        
+        width: 504px;
+        
+        padding: 0 0 5px 0;
+        
+        border: 1px solid silver;
+    }
+        .donate .title {
+            line-height: 20px;
+            
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            
+            border-bottom: 1px solid silver;
+            background-color: #3f4241;
+        }
+        .donate p {
+            padding: 5px;
+        }
+        .donate a {
+            display: block;
+            
+            width: 74px;
+            height: 21px;
+            
+            margin: auto;
+        }
+    .firmware_flasher {
+        display: block;
+        float: right;
+        
+        height: 28px;
+        line-height: 28px;
+        
+        padding: 0 15px 0 15px;
+        
+        text-align: center;
+        font-weight: bold;
+        
+        border: 1px solid silver;
+        background-color: #ececec;
+    }
+    .firmware_flasher:hover {
+        background-color: #dedcdc;
+    }
+    .created {
+        position: absolute;
+        
+        width: 920px;
+        bottom: 5px;
+        
+        text-align: center;
+    }

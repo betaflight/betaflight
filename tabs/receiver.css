@@ -22,12 +22,11 @@
             border: 1px solid silver;
         }
     .tab-receiver .bars .value {
-        width: 60px;
+        width: 50px;
         padding-left: 20px;
     }
     .tab-receiver .tunings {
-        float: left;
-        border: 1p xsolid red;
+        float: right;
     }
     .tab-receiver .tunings table {
         width: 30%;
@@ -83,11 +82,11 @@
         width: 880px; 
         height: 250px;
     }
-    .tab-receiver .throttle_curve {
+    .tab-receiver .curves {
         float: right;
-        
-        margin-bottom: 20px;
-        margin-right: 10px;
+    }
+    .tab-receiver .throttle_curve {
+        margin: 0 10px 20px 10px;
         
         width: 220px;
         height: 58px;
@@ -95,10 +94,8 @@
         border: 1px solid silver;
     }
     .tab-receiver .pitch_roll_curve {
-        float: right;
-        
-        margin-right: 10px;
-        
+        margin: 0 10px 0 10px;
+
         width: 220px;
         height: 58px;
         

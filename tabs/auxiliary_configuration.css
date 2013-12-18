@@ -2,6 +2,7 @@
 
 }
     .tab-auxiliary_configuration .heads {
+        float: right;
     }
         .tab-auxiliary_configuration .heads li {
             float: left;
@@ -20,7 +21,6 @@
             background-color: #ececec;
         }
             .tab-auxiliary_configuration .heads li:first-child {
-                margin-left: 181px;
                 border-left: 1px solid #8b8b8b;
             }
             .tab-auxiliary_configuration .heads li:nth-child(3) {
