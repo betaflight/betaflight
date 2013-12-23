@@ -117,7 +117,7 @@ void gpsInitHardware(void)
             // nothing to do, just set baud rate and try receiving some stuff and see if it parses
             serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
             gpsSetState(GPS_RECEIVINGDATA);
-            return;
+            break;
 
         case GPS_UBLOX:
             // UBX will run at mcfg.baudrate, it shouldn't be "autodetected". So here we force it to that rate
