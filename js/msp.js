@@ -223,6 +223,7 @@ function process_data(command, message_buffer, message_length_expected) {
             CONFIG.mode = data.getUint32(6, 1);
             CONFIG.profile = data.getUint8(10);
             
+            sensor_status(CONFIG.activeSensors);
             $('span.cycle-time').html(CONFIG.cycleTime);
             break;
         case MSP_codes.MSP_RAW_IMU:
