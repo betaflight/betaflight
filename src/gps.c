@@ -9,6 +9,7 @@
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (5)
+#define GPS_BAUD_DELAY (100)
 
 typedef struct gpsInitData_t {
     uint32_t baudrate;
@@ -70,6 +71,7 @@ typedef struct gpsData_t {
     uint32_t lastLastMessage;       // last-last valid GPS message. Used to calculate delta.
     
     uint32_t state_position;           // incremental variable for loops
+    uint32_t state_ts;                    // timestamp for last state_position increment
     
 } gpsData_t;
 
@@ -83,6 +85,7 @@ static void gpsSetState(uint8_t state)
 {
     gpsData.state = state;
     gpsData.state_position = 0;
+    gpsData.state_ts = millis();
 }
 
 void gpsInit(uint8_t baudrate)
@@ -114,16 +117,20 @@ void gpsInitHardware(void)
             // nothing to do, just set baud rate and try receiving some stuff and see if it parses
             serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
             gpsSetState(GPS_RECEIVINGDATA);
-            return;
+            break;
 
         case GPS_UBLOX:
             // UBX will run at mcfg.baudrate, it shouldn't be "autodetected". So here we force it to that rate
 
-                // Wait until GPS transmit buffer is empty
-                if (!isSerialTransmitBufferEmpty(core.gpsport))
-                    break;
+            // Wait until GPS transmit buffer is empty
+            if (!isSerialTransmitBufferEmpty(core.gpsport))
+                break;
 
             if (gpsData.state == GPS_INITIALIZING) {
+                uint32_t m = millis();
+                if (m - gpsData.state_ts < GPS_BAUD_DELAY)
+                    return;
+
                 if (gpsData.state_position < GPS_INIT_ENTRIES) {
                     // try different speed to INIT
                     serialSetBaudRate(core.gpsport, gpsInitData[gpsData.state_position].baudrate);
@@ -131,6 +138,7 @@ void gpsInitHardware(void)
                     serialPrint(core.gpsport, gpsInitData[mcfg.gps_baudrate].ubx);
 
                     gpsData.state_position++;
+                    gpsData.state_ts = m;
                 } else {
                     // we're now (hopefully) at the correct rate, next state will switch to it
                     gpsData.baudrateIndex = mcfg.gps_baudrate;
