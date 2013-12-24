@@ -122,7 +122,7 @@ void gpsInitHardware(void)
         case GPS_UBLOX:
             // UBX will run at mcfg.baudrate, it shouldn't be "autodetected". So here we force it to that rate
 
-                // Wait until GPS transmit buffer is empty
+            // Wait until GPS transmit buffer is empty
             if (!isSerialTransmitBufferEmpty(core.gpsport))
                 break;
 
