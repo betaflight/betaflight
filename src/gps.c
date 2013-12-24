@@ -123,12 +123,13 @@ void gpsInitHardware(void)
             // UBX will run at mcfg.baudrate, it shouldn't be "autodetected". So here we force it to that rate
 
                 // Wait until GPS transmit buffer is empty
-                if (!isSerialTransmitBufferEmpty(core.gpsport))
-                    break;
+            if (!isSerialTransmitBufferEmpty(core.gpsport))
+                break;
 
             if (gpsData.state == GPS_INITIALIZING) {
                 uint32_t m = millis();
-                if (m - gpsData.state_ts < GPS_BAUD_DELAY) return;
+                if (m - gpsData.state_ts < GPS_BAUD_DELAY)
+                    return;
 
                 if (gpsData.state_position < GPS_INIT_ENTRIES) {
                     // try different speed to INIT
