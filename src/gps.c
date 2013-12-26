@@ -145,7 +145,6 @@ void gpsInitHardware(void)
                 }
             } else {
                 // GPS_INITDONE, set our real baud rate and push some ublox config strings
-
                 if (gpsData.state_position == 0)
                     serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
 
