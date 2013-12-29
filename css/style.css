@@ -88,10 +88,15 @@ a:hover {
         #port-picker a.connect.active:hover {
             background-color: #13d81d;
         }
-    #port-picker .auto_connect {
-        position: absolute;
+    #port-picker input.auto_connect {
+        float: left;
         
         margin-top: 4px;
+    }
+    #port-picker span.auto_connect {
+        float: left;
+        
+        margin: 3px 0 0 5px;
     }
 #sensor-status {
     float: right;
