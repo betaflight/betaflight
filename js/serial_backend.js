@@ -128,7 +128,8 @@ $(document).ready(function() {
                     configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
                     
                     // unlock port select & baud
-                    $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', false);
+                    $('div#port-picker #port').prop('disabled', false);
+                    if (!GUI.auto_connect) $('div#port-picker #baud').prop('disabled', false);
                     
                     $(this).text('Connect');
                     $(this).removeClass('active');                 
@@ -137,7 +138,52 @@ $(document).ready(function() {
                 $(this).data("clicks", !clicks);
             }
         }
-    });     
+    });
+
+    // auto-connect
+    chrome.storage.local.get('auto_connect', function(result) {
+        if (typeof result.auto_connect === 'undefined') {
+            // auto_connect wasn't saved yet, save and push true to the GUI
+            chrome.storage.local.set({'auto_connect': true});
+            
+            GUI.auto_connect = true;
+            $('select#baud').val(115200).prop('disabled', true);
+        } else {
+            if (result.auto_connect) { 
+                // enabled by user
+                GUI.auto_connect = true;
+                
+                $('input.auto_connect').prop('checked', true);
+                $('input.auto_connect').prop('title', 'Auto-Connect: Enabled - Configurator automatically tries to connect when new serial port is detected');
+                
+                $('select#baud').val(115200).prop('disabled', true);
+            } else { 
+                // disabled by user
+                GUI.auto_connect = false;
+                
+                $('input.auto_connect').prop('checked', false);
+                $('input.auto_connect').prop('title', 'Auto-Connect: Disabled - User needs to select the correct serial port and click "Connect" button on its own');
+            }
+        }
+        
+        // bind UI hook to auto-connect checkbos
+        $('input.auto_connect').change(function() {
+            GUI.auto_connect = $(this).is(':checked');
+            
+            // update title/tooltip
+            if (GUI.auto_connect) {
+                $('input.auto_connect').prop('title', 'Auto-Connect: Enabled - Configurator automatically tries to connect when new port is detected');
+                
+                $('select#baud').val(115200).prop('disabled', true);
+            } else {
+                $('input.auto_connect').prop('title', 'Auto-Connect: Disabled - User needs to select the correct serial port and click "Connect" button on its own');
+                
+                if (!GUI.connected_to && !GUI.connecting_to) $('select#baud').prop('disabled', false);
+            }
+            
+            chrome.storage.local.set({'auto_connect': GUI.auto_connect}, function() {});
+        });
+    });    
 }); 
 
 function onOpen(openInfo) {    
@@ -288,10 +334,21 @@ function update_ports() {
                 // generate new COM port list
                 update_port_select_menu(current_ports);
                 
+                // select / highlight new port, if connected -> select connected port
                 if (!GUI.connected_to) {
                     $('div#port-picker .port select').val(new_ports[0]);
                 } else {   
                     $('div#port-picker .port select').val(GUI.connected_to);
+                }
+                
+                // start connect procedure (if statement is valid)
+                if (GUI.auto_connect && !GUI.connecting_to && !GUI.connected_to) {
+                    // we need firmware flasher protection over here
+                    if (GUI.active_tab != 'firmware_flasher') {
+                        GUI.timeout_add('auto-connect_timeout', function() {
+                            $('div#port-picker a.connect').click();
+                        }, 50); // small timeout so we won't get any nasty connect errors due to system initializing the bus
+                    }
                 }
                 
                 // reset initial_ports
