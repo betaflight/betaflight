@@ -1,0 +1,117 @@
+.tab-firmware_flasher .info {
+    margin: 0 0 10px 0;
+}
+    .tab-firmware_flasher .info strong {
+        margin-right: 5px;
+    }
+    .tab-firmware_flasher .info .progress {
+        width: 140px;
+        
+        border: 1px solid silver;
+    }
+        .tab-firmware_flasher .info .progress::-webkit-progress-value {
+            background-color: #f4af4d;
+        }
+            .tab-firmware_flasher .info .progress.valid::-webkit-progress-value {
+                background-color: #43c232;
+            }
+            .tab-firmware_flasher .info .progress.invalid::-webkit-progress-value {
+                background-color: #cf2222;
+            }
+.tab-firmware_flasher .note {
+    float: left;
+    
+    margin-bottom: 10px;
+    padding: 5px;
+    
+    border: 1px dotted silver;
+}
+    .tab-firmware_flasher .note p {
+        margin-bottom: 5px;
+    }
+    .tab-firmware_flasher .note input {
+        float: left;
+        margin-top: 2px;
+    }
+a.load_file, a.load_remote_file {
+    display: block;
+    float: left;
+    
+    margin: 0 10px 0 0;
+    padding: 0 10px 0 10px;
+    
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    font-weight: bold;
+    
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+a.load_file:hover, a.load_remote_file:hover {
+    background-color: #dedcdc;
+}
+a.flash_firmware {
+    display: block;
+    float: left;
+    
+    padding: 0 10px 0 10px;
+    
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    font-weight: bold;
+    
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+a.flash_firmware:hover {
+    background-color: #dedcdc;
+}
+    a.flash_firmware.locked {
+        background-color: #b8b8b8;
+    }
+    a.flash_firmware.locked:hover {
+        cursor: default;
+        background-color: #b8b8b8;
+    }
+a.back {
+    display: block;
+    position: absolute;
+    
+    bottom: 10px;
+    
+    height: 28px;
+    line-height: 28px;
+    
+    padding: 0 15px 0 15px;
+    
+    text-align: center;
+    font-weight: bold;
+    
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+a.back:hover {
+    background-color: #dedcdc;
+}
+.warning {        
+    width: 610px;
+    
+    margin-top: 20px;
+    
+    border: 1px solid silver;
+}
+    .warning .title {
+        line-height: 20px;
+        
+        text-align: center;
+        font-weight: bold;
+        color: white;
+        
+        border-bottom: 1px solid silver;
+        background-color: #cd4c4c;
+    }
+    .warning p {
+        padding: 5px;
+    }
