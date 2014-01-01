@@ -52,10 +52,6 @@ function tab_initialize_receiver() {
         }; 
         
         // UI Hooks
-        $('.tunings input').change(function() {
-            // if any of the fields changed, unlock update button
-            $('a.update').addClass('active');
-        });
         
         // curves    
         $('.tunings .throttle input').change(function() {
@@ -82,8 +78,7 @@ function tab_initialize_receiver() {
             
             context.lineWidth = 2;
             context.stroke();
-        });
-        $('.tunings .throttle input').trigger('change'); // initial software trigger
+        }).change();
         
         $('.tunings .rate input').change(function() {
             var rate = parseFloat($('.tunings .rate input[name="rate"]').val());
@@ -101,8 +96,7 @@ function tab_initialize_receiver() {
             context.quadraticCurveTo(110, 58 - ((ratey / 2) * (1 - expo)), 220, 58 - ratey);
             context.lineWidth = 2;
             context.stroke();
-        });
-        $('.tunings .rate input').trigger('change'); // initial software trigger
+        }).change();
         
         $('a.update').click(function() {
             if ($(this).hasClass('active')) {
@@ -131,6 +125,11 @@ function tab_initialize_receiver() {
                 // remove the active status
                 $(this).removeClass('active');        
             }
+        });
+        
+        $('.tunings input').change(function() {
+            // if any of the fields changed, unlock update button
+            $('a.update').addClass('active');
         });
         
         // enable RC data pulling
