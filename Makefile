@@ -42,7 +42,6 @@ BIN_DIR		 = $(ROOT)/obj
 
 # Source files common to all targets
 COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
-		   newlib_stubs.c \
 		   buzzer.c \
 		   cli.c \
 		   config.c \
