@@ -40,42 +40,42 @@
 #define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
 
 typedef enum {
-    SENSOR_GYRO = 1 << 0, // always present
-    SENSOR_ACC = 1 << 1,
-    SENSOR_BARO = 1 << 2,
-    SENSOR_MAG = 1 << 3,
-    SENSOR_SONAR = 1 << 4,
-    SENSOR_GPS = 1 << 5,
-    SENSOR_GPSMAG = 1 << 6,
+	SENSOR_GYRO = 1 << 0, // always present
+	SENSOR_ACC = 1 << 1,
+	SENSOR_BARO = 1 << 2,
+	SENSOR_MAG = 1 << 3,
+	SENSOR_SONAR = 1 << 4,
+	SENSOR_GPS = 1 << 5,
+	SENSOR_GPSMAG = 1 << 6,
 } AvailableSensors;
 
 // Type of accelerometer used/detected
 typedef enum AccelSensors {
-    ACC_DEFAULT = 0,
-    ACC_ADXL345 = 1,
-    ACC_MPU6050 = 2,
-    ACC_MMA8452 = 3,
-    ACC_BMA280 = 4,
-    ACC_NONE = 5
+	ACC_DEFAULT = 0,
+	ACC_ADXL345 = 1,
+	ACC_MPU6050 = 2,
+	ACC_MMA8452 = 3,
+	ACC_BMA280 = 4,
+	ACC_NONE = 5
 } AccelSensors;
 
 typedef enum {
-    FEATURE_PPM = 1 << 0,
-    FEATURE_VBAT = 1 << 1,
-    FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
-    FEATURE_SERIALRX = 1 << 3,
-    FEATURE_MOTOR_STOP = 1 << 4,
-    FEATURE_SERVO_TILT = 1 << 5,
-    FEATURE_GYRO_SMOOTHING = 1 << 6,
-    FEATURE_LED_RING = 1 << 7,
-    FEATURE_GPS = 1 << 8,
-    FEATURE_FAILSAFE = 1 << 9,
-    FEATURE_SONAR = 1 << 10,
-    FEATURE_TELEMETRY = 1 << 11,
-    FEATURE_POWERMETER = 1 << 12,
-    FEATURE_VARIO = 1 << 13,
-    FEATURE_3D = 1 << 14,
-    FEATURE_SOFTSERIAL = 1 << 15,
+	FEATURE_PPM = 1 << 0,
+	FEATURE_VBAT = 1 << 1,
+	FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
+	FEATURE_SERIALRX = 1 << 3,
+	FEATURE_MOTOR_STOP = 1 << 4,
+	FEATURE_SERVO_TILT = 1 << 5,
+	FEATURE_GYRO_SMOOTHING = 1 << 6,
+	FEATURE_LED_RING = 1 << 7,
+	FEATURE_GPS = 1 << 8,
+	FEATURE_FAILSAFE = 1 << 9,
+	FEATURE_SONAR = 1 << 10,
+	FEATURE_TELEMETRY = 1 << 11,
+	FEATURE_POWERMETER = 1 << 12,
+	FEATURE_VARIO = 1 << 13,
+	FEATURE_3D = 1 << 14,
+	FEATURE_SOFTSERIAL = 1 << 15,
 } AvailableFeatures;
 
 typedef enum {
@@ -104,63 +104,60 @@ typedef enum {
 } sensor_axis_e;
 
 typedef enum {
-    ALIGN_DEFAULT = 0,                                      // driver-provided alignment
-    CW0_DEG = 1,
-    CW90_DEG = 2,
-    CW180_DEG = 3,
-    CW270_DEG = 4,
-    CW0_DEG_FLIP = 5,
-    CW90_DEG_FLIP = 6,
-    CW180_DEG_FLIP = 7,
-    CW270_DEG_FLIP = 8
+	ALIGN_DEFAULT = 0,                              // driver-provided alignment
+	CW0_DEG = 1,
+	CW90_DEG = 2,
+	CW180_DEG = 3,
+	CW270_DEG = 4,
+	CW0_DEG_FLIP = 5,
+	CW90_DEG_FLIP = 6,
+	CW180_DEG_FLIP = 7,
+	CW270_DEG_FLIP = 8
 } sensor_align_e;
 
 enum {
-    GYRO_UPDATED = 1 << 0,
-    ACC_UPDATED = 1 << 1,
-    MAG_UPDATED = 1 << 2,
-    TEMP_UPDATED = 1 << 3
+	GYRO_UPDATED = 1 << 0,
+	ACC_UPDATED = 1 << 1,
+	MAG_UPDATED = 1 << 2,
+	TEMP_UPDATED = 1 << 3
 };
 
-typedef struct sensor_data_t
-{
-    int16_t gyro[3];
-    int16_t acc[3];
-    int16_t mag[3];
-    float temperature;
-    int updated;
+typedef struct sensor_data_t {
+	int16_t gyro[3];
+	int16_t acc[3];
+	int16_t mag[3];
+	float temperature;
+	int updated;
 } sensor_data_t;
 
-typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
-typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
-typedef void (* baroOpFuncPtr)(void);                       // baro start operation
-typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
-typedef void (* serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
-typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
-typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
+typedef void (*sensorInitFuncPtr)(sensor_align_e align); // sensor init prototype
+typedef void (*sensorReadFuncPtr)(int16_t *data); // sensor read and align prototype
+typedef void (*baroOpFuncPtr)(void);                     // baro start operation
+typedef void (*baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature); // baro calculation (filled params are pressure and temperature)
+typedef void (*serialReceiveCallbackPtr)(uint16_t data); // used by serial drivers to return frames to app
+typedef uint16_t (*rcReadRawDataPtr)(uint8_t chan); // used by receiver driver to return channel data
+typedef void (*pidControllerFuncPtr)(void); // pid controller function prototype
 
-typedef struct sensor_t
-{
-    sensorInitFuncPtr init;                                 // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
-    sensorReadFuncPtr temperature;                          // read temperature if available
-    float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
+typedef struct sensor_t {
+	sensorInitFuncPtr init;                               // initialize function
+	sensorReadFuncPtr read;                         // read 3 axis data function
+	sensorReadFuncPtr temperature;              // read temperature if available
+	float scale;   // scalefactor (currently used for gyro only, todo for accel)
 } sensor_t;
 
-typedef struct baro_t
-{
-    uint16_t ut_delay;
-    uint16_t up_delay;
-    baroOpFuncPtr start_ut;
-    baroOpFuncPtr get_ut;
-    baroOpFuncPtr start_up;
-    baroOpFuncPtr get_up;
-    baroCalculateFuncPtr calculate;
+typedef struct baro_t {
+	uint16_t ut_delay;
+	uint16_t up_delay;
+	baroOpFuncPtr start_ut;
+	baroOpFuncPtr get_ut;
+	baroOpFuncPtr start_up;
+	baroOpFuncPtr get_up;
+	baroCalculateFuncPtr calculate;
 } baro_t;
 
 // Hardware definitions and GPIO
 #ifdef FY90Q
- // FY90Q
+// FY90Q
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_12
 #define LED1_GPIO   GPIOA
@@ -181,7 +178,6 @@ typedef struct baro_t
 #define LED0_PIN    Pin_1 // D3, PA1/USART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
 #define LED1_GPIO   GPIOA
 #define LED1_PIN    Pin_5 // D13, PA5/SPI1_SCK/ADC5 - "LED1" on silkscreen, Green
-
 #define GYRO
 #define ACC
 
@@ -231,11 +227,10 @@ typedef struct baro_t
 #endif
 
 #undef SOFT_I2C                 // enable to test software i2c
-
 #include "utils.h"
 
 #ifdef FY90Q
- // FY90Q
+// FY90Q
 #include "drv_adc.h"
 #include "drv_i2c.h"
 #include "drv_pwm.h"
@@ -258,7 +253,7 @@ typedef struct baro_t
 #include "drv_softserial.h"
 #else
 
- // AfroFlight32
+// AfroFlight32
 #include "drv_adc.h"
 #include "drv_adxl345.h"
 #include "drv_bma280.h"
