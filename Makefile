@@ -68,8 +68,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(STDPERIPH_SRC)
 
 # Source files for the NAZE target
-NAZE_SRC	 = drv_spi.c \
-		   drv_adc.c \
+NAZE_SRC	 = drv_adc.c \
 		   drv_adxl345.c \
 		   drv_bma280.c \
 		   drv_bmp085.c \
@@ -82,6 +81,7 @@ NAZE_SRC	 = drv_spi.c \
 		   drv_mpu6050.c \
 		   drv_l3g4200d.c \
 		   drv_pwm.c \
+		   drv_spi.c \
 		   drv_timer.c \
 		   $(COMMON_SRC)
 
@@ -134,7 +134,7 @@ INCLUDE_DIRS	 = $(SRC_DIR) \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
-BASE_CFLAGS		 = $(ARCH_FLAGS) \
+BASE_CFLAGS	 = $(ARCH_FLAGS) \
 		   $(addprefix -D,$(OPTIONS)) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		   -Wall \
