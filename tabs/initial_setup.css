@@ -46,8 +46,6 @@
 #interactive_block {
     float: left;
     
-    margin-top: 10px;
-    
     height: 300px;
     width: 400px;
     
@@ -162,7 +160,6 @@
         float: left;
         display: block;
         
-        margin-top: 10px;
         margin-left: 10px;
         
         width: 145px;
@@ -174,7 +171,6 @@
         
         display: block;
         
-        margin-top: 10px;
         margin-left: 10px;
         
         width: 145px;
