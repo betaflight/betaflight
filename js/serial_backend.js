@@ -355,7 +355,7 @@ function update_ports() {
                 initial_ports = current_ports;
             }
         });
-    }, 100, true);
+    }, 250, true);
 }
 
 function update_port_select_menu(ports) {
