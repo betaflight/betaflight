@@ -120,6 +120,11 @@ function tab_initialize_servos() {
             servos_update(true);
         }
     });
+    
+    // enable data pulling
+    GUI.interval_add('servos_data_poll', function() {
+        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+    }, 50);      
 }
 
 function servos_update(save_to_eeprom) {

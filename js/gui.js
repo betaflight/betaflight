@@ -189,6 +189,8 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             if (callback) callback();
             break;
         case 'servos':
+            GUI.interval_remove('servos_data_poll');
+            
             if (callback) callback();
             break;
         case 'gps':
