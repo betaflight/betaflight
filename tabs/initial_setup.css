@@ -9,33 +9,32 @@
             
             float: left;
             
-            width: 160px;
+            width: 170px;
             height: 24px;
             line-height: 24px;
             
             text-align: center;
-            color: white;
+            font-weight: bold;
             
-            border: 1px solid #c0c0c0;
-            background-color: #5569d0;
+            border: 1px solid silver;
+            background-color: #ececec;
         }
         .tab-initial_setup .section a:hover {
-            background-color: #424d84;
+            background-color: #dedcdc;
         }
         .tab-initial_setup .section  a.calibrating {
-            background-color: #4f4f4f;
+            background-color: #c1c1c1;
         }
         .tab-initial_setup .section a.calibrating:hover {
             cursor: default;
-            background-color: #4f4f4f;
+            background-color: #c1c1c1;
         }
-        
             .tab-initial_setup .section a.backup {
-                width: 75px;
+                width: 80px;
                 margin-right: 10px;
             }
             .tab-initial_setup .section a.restore {
-                width: 75px;
+                width: 80px;
             }
         .tab-initial_setup .section p {
             margin-left: 180px;

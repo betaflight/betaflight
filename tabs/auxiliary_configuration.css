@@ -66,25 +66,17 @@
         
         margin-top: 10px;
         
-        width: 120px;
-        height: 30px;
-        line-height: 30px;
+        height: 28px;
+        line-height: 28px;
         
-        font-size: 14px;
-        color: white;
+        padding: 0 15px 0 15px;
+        
         text-align: center;
+        font-weight: bold;
         
         border: 1px solid silver;
-        
-        background-color: #6f1515;
+        background-color: #ececec;
     }
     .tab-auxiliary_configuration .update:hover {
-        cursor: default;
-    }
-    .tab-auxiliary_configuration .update.active {
-        background-color: #0fab16;
-    }
-    .tab-auxiliary_configuration .update.active:hover {
-        cursor: pointer;
-        background-color: #13d81d;
+        background-color: #dedcdc;
     }
