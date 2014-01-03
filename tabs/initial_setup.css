@@ -66,22 +66,23 @@
         display: block;
         
         margin-left: 10px;
-        margin-top: 240px;
+        margin-top: 235px;
         
-        width: 100px;
-        height: 23px;
-        line-height: 23px;
+        height: 28px;
+        line-height: 28px;
         
-        color: white;
+        padding: 0 15px 0 15px;
+        
         text-align: center;
+        font-weight: bold;
         
         border: 1px solid silver;
-        background-color: blue;
+        background-color: #ececec;
         
         z-index: 100;
     } 
     #interactive_block a.reset:hover {
-        text-decoration: none;
+        background-color: #dedcdc;
     }
     #perspective {
         -webkit-perspective: 800;
@@ -157,14 +158,25 @@
                 
                 -webkit-transform: rotateX(90deg) translateZ(100px);
                 background-color: silver;
-            }
-    .tab-initial_setup .battery, 
+            } 
     .tab-initial_setup .acc-trim {
         float: left;
         display: block;
         
         margin-top: 10px;
-        margin-left: 25px;
+        margin-left: 10px;
+        
+        width: 145px;
+        
+        border: 1px solid silver;
+    }
+    .tab-initial_setup .battery {
+        float: left;
+        
+        display: block;
+        
+        margin-top: 10px;
+        margin-left: 10px;
         
         width: 145px;
         
@@ -193,6 +205,7 @@
         .tab-initial_setup .acc-trim dt {
             float: left;
             width: 50px;
+            line-height: 22px;
             
             margin-bottom: 4px;
         }
@@ -219,30 +232,22 @@
             height: 20px;
             line-height: 20px;
             
-            color: white;
             text-align: center;
+            font-weight: bold;
             
             border: 1px solid silver;
-            background-color: #6f1515;
+            background-color: #ececec;
         }
         .tab-initial_setup .acc-trim a.update:hover {
-            cursor: default;
-        }
-        .tab-initial_setup .acc-trim a.update.active {
-            background-color: #0fab16;
-        }
-        .tab-initial_setup .acc-trim a.update.active:hover {
-            cursor: pointer;
-            background-color: #13d81d;
+            background-color: #dedcdc;
         }
     .tab-initial_setup .compass-wrapper {
-        float: left;
+        position: absolute;
         
-        margin-top: 20px;
-        margin-left: 180px;
+        bottom: 60px;
+        right: 140px;
 
         border: 1px solid silver;
-        
         border-radius: 50%;
     }    
     .tab-initial_setup #compass {

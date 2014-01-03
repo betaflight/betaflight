@@ -114,11 +114,6 @@ function tab_initialize_initial_setup() {
             });
 
             
-            $('input[name="pitch"], input[name="roll"]').change(function() {
-                // if any of the fields changed, unlock update button
-                $('a.update').addClass('active');
-            });    
-            
             $('a.update').click(function() {
                 CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
                 CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
@@ -134,9 +129,6 @@ function tab_initialize_initial_setup() {
                 
                 // Save changes to EEPROM
                 send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
-                
-                // remove the active status
-                $(this).removeClass('active');
             });    
 
             // reset yaw button hook
