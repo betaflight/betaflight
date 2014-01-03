@@ -29,9 +29,9 @@
         float: right;
     }
     .tab-receiver .tunings table {
-        width: 30%;
+        width: 220px;
         border-collapse: collapse;
-        margin-bottom: 20px;
+        margin-bottom: 10px;
     }
     .tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
         padding: 5px;
@@ -53,27 +53,19 @@
         display: block;
         float: right;
         
-        width: 120px;
-        height: 30px;
-        line-height: 30px;
+        height: 28px;
+        line-height: 28px;
         
-        font-size: 14px;
-        color: white;
+        padding: 0 15px 0 15px;
+        
         text-align: center;
+        font-weight: bold;
         
         border: 1px solid silver;
-        
-        background-color: #6f1515;
+        background-color: #ececec;
     }
     .tab-receiver .update:hover {
-        cursor: default;
-    }
-    .tab-receiver .update.active {
-        background-color: #0fab16;
-    }
-    .tab-receiver .update.active:hover {
-        cursor: pointer;
-        background-color: #13d81d;
+        background-color: #dedcdc;
     }
     .tab-receiver #RX_plot {
         margin: auto;
@@ -86,7 +78,7 @@
         float: right;
     }
     .tab-receiver .throttle_curve {
-        margin: 0 10px 20px 10px;
+        margin: 0 10px 10px 0;
         
         width: 220px;
         height: 58px;
@@ -94,7 +86,7 @@
         border: 1px solid silver;
     }
     .tab-receiver .pitch_roll_curve {
-        margin: 0 10px 0 10px;
+        margin: 0 10px 0 0;
 
         width: 220px;
         height: 58px;
