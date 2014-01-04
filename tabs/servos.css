@@ -28,8 +28,8 @@
         
         border: 1px solid #8b8b8b;
     }
-    .tab-servos table td {         
-        line-height: 18px;
+    .tab-servos table td {
+        padding: 1px;
         
         border: 1px solid #8b8b8b;
     }
