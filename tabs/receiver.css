@@ -29,43 +29,31 @@
         float: right;
     }
     .tab-receiver .tunings table {
-        width: 220px;
         border-collapse: collapse;
-        margin-bottom: 10px;
+    }
+    .tab-receiver .tunings .throttle {
+        margin-bottom: 22px;
     }
     .tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
-        padding: 5px;
+        padding: 4px;
         border: 1px solid #8b8b8b;
+    }
+    .tab-receiver .tunings table th {
+        width: 118px;
+    }
+    .tab-receiver .tunings table td {
+        padding: 1px;
     }
     .tab-receiver .tunings table tr:nth-child(odd) {
         background-color: #ececec;
     }    
     .tab-receiver .tunings table input {
-        width: 130px;
+        width: 116px;
         height: 20px;
         line-height: 20px;
         
         padding: 0 5px 0 5px;
-        border: 1px solid silver;
         text-align: right;
-    } 
-    .tab-receiver .update {
-        display: block;
-        float: right;
-        
-        height: 28px;
-        line-height: 28px;
-        
-        padding: 0 15px 0 15px;
-        
-        text-align: center;
-        font-weight: bold;
-        
-        border: 1px solid silver;
-        background-color: #ececec;
-    }
-    .tab-receiver .update:hover {
-        background-color: #dedcdc;
     }
     .tab-receiver #RX_plot {
         margin: auto;
@@ -93,3 +81,23 @@
         
         border: 1px solid silver;
     }
+    .tab-receiver .update {
+        display: block;
+        float: right;
+        
+        margin-top: 22px;
+        
+        height: 28px;
+        line-height: 28px;
+        
+        padding: 0 15px 0 15px;
+        
+        text-align: center;
+        font-weight: bold;
+        
+        border: 1px solid silver;
+        background-color: #ececec;
+    }
+    .tab-receiver .update:hover {
+        background-color: #dedcdc;
+    }    
