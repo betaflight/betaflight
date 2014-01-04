@@ -1,5 +1,6 @@
 var connectionId = -1;
 var configuration_received = false;
+var CLI_active = false;
 
 var CONFIG = {
     version:       0,
@@ -85,8 +86,6 @@ var BATTERY = {
     pMeterSum: 0,
 };
 
-var CLI_active = false;
-
 $(document).ready(function() {    
     console.log('Scanning for new ports...');
     update_ports();
@@ -124,6 +123,7 @@ $(document).ready(function() {
                     $('.software-version').html('0.0');
                     $('span.cycle-time').html('0');
                     
+                    MSP.state = 0; // reset packet state for "clean" initial entry (this is only required if user hot-disconnects)
                     MSP.packet_error = 0; // reset CRC packet error counter for next session
                     configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
                     
