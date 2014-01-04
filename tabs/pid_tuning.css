@@ -1,28 +1,53 @@
 .tab-pid_tuning table {
-    width: 100%;
-    border-collapse: collapse;    
+    float: left;
+    
+    border-collapse: collapse;
 }
-    .tab-pid_tuning table, .tab-pid_tuning table th, .tab-pid_tuning table td {
+    .tab-pid_tuning table, 
+    .tab-pid_tuning table th, 
+    .tab-pid_tuning table td {
         padding: 4px;
         border: 1px solid #8b8b8b;
     }
+    .tab-pid_tuning table tr td:first-child {
+        text-align: center;
+    }
+    .tab-pid_tuning table td {
+        padding: 1px;
+    }
     .tab-pid_tuning table tr:nth-child(odd) {
         background-color: #ececec;
-    }    
+    }
+    .tab-pid_tuning .name {
+        width: 150px;
+    }
+    .tab-pid_tuning .proportional,
+    .tab-pid_tuning .integral,
+    .tab-pid_tuning .derivative {
+        width: 100px;
+    }
     .tab-pid_tuning table input {
-        width: 130px;
+        width: 96px;
         height: 20px;
         line-height: 20px;
         
         padding: 0 5px 0 5px;
-        border: 1px solid silver;
         text-align: right;
+    }
+    .tab-pid_tuning .rate-tpa {
+        margin-left: 10px;
+    }
+    .tab-pid_tuning .rate-tpa th {
+        width: 131px;
+    }
+    .tab-pid_tuning .rate-tpa input {
+        width: 127px;
     }
     .tab-pid_tuning .update {
         display: block;
         float: right;
         
-        margin-top: 20px;
+        margin-top: 10px;
         
         height: 28px;
         line-height: 28px;
@@ -37,9 +62,4 @@
     }
     .tab-pid_tuning .update:hover {
         background-color: #dedcdc;
-    }
-    .tab-pid_tuning .rate-tpa {
-        float: left;
-        width: 400px;
-        margin-top: 20px;
     }
