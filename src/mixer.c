@@ -211,6 +211,14 @@ void mixerInit(void)
             }
         }
     }
+
+    // set flag that we're on something with wings
+    if (mcfg.mixerConfiguration == MULTITYPE_FLYING_WING ||
+        mcfg.mixerConfiguration == MULTITYPE_AIRPLANE)
+        f.FIXED_WING = 1;
+    else
+        f.FIXED_WING = 0;
+
     mixerResetMotors();
 }
 

@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 55;
+static const uint8_t EEPROM_CONF_VERSION = 56;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -197,6 +197,8 @@ static void resetConf(void)
     mcfg.mincheck = 1100;
     mcfg.maxcheck = 1900;
     mcfg.retarded_arm = 0;       // disable arm/disarm on roll left/right
+    mcfg.flaps_speed = 0;
+    mcfg.fixedwing_althold_dir = 1;
     // Motor/ESC/Servo
     mcfg.minthrottle = 1150;
     mcfg.maxthrottle = 1850;

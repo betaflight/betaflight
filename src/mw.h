@@ -265,6 +265,7 @@ typedef struct master_t {
     uint16_t maxcheck;                      // maximum rc end
     uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
     uint8_t flaps_speed;                    // airplane mode flaps, 0 = no flaps, > 0 = flap speed, larger = faster
+    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
 
     uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
 
@@ -314,6 +315,7 @@ typedef struct flags_t {
     uint8_t SMALL_ANGLES_25;
     uint8_t CALIBRATE_MAG;
     uint8_t VARIO_MODE;
+    uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
 } flags_t;
 
 extern int16_t gyroZero[3];
