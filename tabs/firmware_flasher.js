@@ -22,27 +22,33 @@ function tab_initialize_firmware_flasher() {
                     fileEntry.file(function(file) {
                         var reader = new FileReader();
 
-                        reader.onerror = function (e) {
-                            console.error(e);
+                        reader.onprogress = function(e) {
+                            if (e.total > 1048576) { // 1 MB
+                                // dont allow reading files bigger then 1 MB
+                                console.log('File limit (1 MB) exceeded, aborting');
+                                reader.abort();
+                            }
                         };
                         
                         reader.onloadend = function(e) {
-                            console.log('File loaded');
-                            
-                            intel_hex = e.target.result;
-                            
-                            parse_hex(intel_hex, function(data) {
-                                parsed_hex = data;
+                            if (e.total != 0 && e.total == e.loaded) {
+                                console.log('File loaded');
                                 
-                                if (parsed_hex) {
-                                    STM32.GUI_status('<span style="color: green">Firmware loaded, ready for flashing</span>');
-                                    $('a.flash_firmware').removeClass('locked');
+                                intel_hex = e.target.result;
+                                
+                                parse_hex(intel_hex, function(data) {
+                                    parsed_hex = data;
                                     
-                                    $('span.size').html(parsed_hex.bytes + ' bytes');
-                                } else {
-                                    STM32.GUI_status('<span style="color: red">HEX file appears to be corrupted</span>');
-                                }
-                            });
+                                    if (parsed_hex) {
+                                        STM32.GUI_status('<span style="color: green">Firmware loaded, ready for flashing</span>');
+                                        $('a.flash_firmware').removeClass('locked');
+                                        
+                                        $('span.size').html(parsed_hex.bytes + ' bytes');
+                                    } else {
+                                        STM32.GUI_status('<span style="color: red">HEX file appears to be corrupted</span>');
+                                    }
+                                });
+                            }
                         };
 
                         reader.readAsText(file);
