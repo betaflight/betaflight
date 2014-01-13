@@ -7,10 +7,13 @@ function tab_initialize_initial_setup() {
             send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, function() {
                 var yaw_fix = 0.0;
                 
-                // Fill in misc battery stuff
+                // Fill in misc stuff
                 $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
                 $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
                 $('input[name="voltagescale"]').val(MISC.vbatscale);
+                
+                $('input[name="minthrottle"]').val(MISC.minthrottle);
+                $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
                 
                 // Fill in the accel trimms from CONFIG object
                 $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
@@ -136,6 +139,9 @@ function tab_initialize_initial_setup() {
                     MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
                     MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
                     MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
+                    
+                    MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
+                    MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
                     
                     // we also have to fill the unsupported bytes
                     var buffer_out = new Array();

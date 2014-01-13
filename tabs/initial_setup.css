@@ -156,6 +156,8 @@
                 -webkit-transform: rotateX(90deg) translateZ(100px);
                 background-color: silver;
             } 
+    .tab-initial_setup .battery,
+    .tab-initial_setup .throttle,
     .tab-initial_setup .acc-trim {
         float: left;
         display: block;
@@ -164,15 +166,8 @@
         
         border: 1px solid silver;
     }
-    .tab-initial_setup .battery {
-        float: left;
-        display: block;
-        
-        margin-left: 10px;
-        
-        border: 1px solid silver;
-    }
-        .tab-initial_setup .battery .head, 
+        .tab-initial_setup .battery .head,
+        .tab-initial_setup .throttle .head,
         .tab-initial_setup .acc-trim .head {
             display: block;
             
@@ -184,6 +179,7 @@
             background-color: #ececec;
         }
         .tab-initial_setup .battery .fields,
+        .tab-initial_setup .throttle .fields,
         .tab-initial_setup .acc-trim .fields {
             padding: 5px 5px 1px 5px;
         }
@@ -204,6 +200,27 @@
             margin-bottom: 4px;
         }
         .tab-initial_setup .battery input {
+            width: 70px;
+            height: 20px;
+            line-height: 20px;
+            
+            border: 1px solid silver;
+            text-align: center;
+        }
+        .tab-initial_setup .throttle dt {
+            float: left;
+            width: 65px;
+            line-height: 22px;
+            
+            margin-bottom: 3px;
+        }
+        .tab-initial_setup .throttle dd {
+            line-height: 22px;
+            
+            margin-left: 65px;
+            margin-bottom: 3px;
+        }
+        .tab-initial_setup .throttle input {
             width: 70px;
             height: 20px;
             line-height: 20px;
@@ -232,7 +249,9 @@
         }
     .tab-initial_setup .save_settings {
         display: block;
-        float: right;
+        float: left;
+        
+        margin: 10px 0 0 10px;
         
         width: 80px;
         height: 20px;
