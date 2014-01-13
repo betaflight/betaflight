@@ -86,6 +86,21 @@ var BATTERY = {
     pMeterSum: 0,
 };
 
+var MISC = {
+    PowerTrigger1:      0, // intPowerTrigger1 (aka useless trash)
+    minthrottle:        0,
+    maxthrottle:        0,
+    mincommand:         0,
+    failsafe_throttle:  0,
+    plog0:              0, // plog useless shit
+    plog1:              0, // plog useless shit
+    mag_declination:    0, // not checked
+    vbatscale:          0,
+    vbatmincellvoltage: 0,
+    vbatmaxcellvoltage: 0,
+    empty:              0 // unknown
+};
+
 $(document).ready(function() {    
     console.log('Scanning for new ports...');
     update_ports();

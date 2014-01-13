@@ -342,8 +342,19 @@ function process_data(command, message_buffer, message_length_expected) {
                 AUX_CONFIG_values.push(data.getUint16(i, 1));
             }
             break; 
-        case MSP_codes.MSP_MISC:
-            console.log(data);
+        case MSP_codes.MSP_MISC: // 22 bytes
+            MISC.PowerTrigger1 = data.getInt16(0, 1);
+            MISC.minthrottle = data.getUint16(2, 1); // 0-2000
+            MISC.maxthrottle = data.getUint16(4, 1); // 0-2000
+            MISC.mincommand = data.getUint16(6, 1); // 0-2000
+            MISC.failsafe_throttle = data.getUint16(8, 1); // 1000-2000
+            MISC.plog0 = data.getUint16(10, 1);
+            MISC.plog1 = data.getUint32(12, 1);
+            MISC.mag_declination = data.getInt16(16, 1);
+            MISC.vbatscale = data.getUint8(18, 1); // 10-200
+            MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
+            MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
+            MISC.empty = data.getUint8(21, 1);
             break; 
         case MSP_codes.MSP_MOTOR_PINS:
             console.log(data);
@@ -408,6 +419,7 @@ function process_data(command, message_buffer, message_length_expected) {
             console.log('Mag calibration executed');
             break;  
         case MSP_codes.MSP_SET_MISC:
+            console.log('MISC Configuration saved');
             break;  
         case MSP_codes.MSP_RESET_CONF:
             console.log('Settings Reset');
