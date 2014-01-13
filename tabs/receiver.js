@@ -99,37 +99,27 @@ function tab_initialize_receiver() {
         }).change();
         
         $('a.update').click(function() {
-            if ($(this).hasClass('active')) {
-                // catch RC_tuning changes
-                RC_tuning.throttle_MID = parseFloat($('.tunings .throttle input[name="mid"]').val());
-                RC_tuning.throttle_EXPO = parseFloat($('.tunings .throttle input[name="expo"]').val());
-                
-                RC_tuning.RC_RATE = parseFloat($('.tunings .rate input[name="rate"]').val());
-                RC_tuning.RC_EXPO = parseFloat($('.tunings .rate input[name="expo"]').val());              
-                
-                var RC_tuning_buffer_out = new Array();
-                RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
-                RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100);
-                RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100);
-                RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100);
-                RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100);
-                RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100);
-                RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
-                
-                // Send over the RC_tuning changes
-                send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out);        
+            // catch RC_tuning changes
+            RC_tuning.throttle_MID = parseFloat($('.tunings .throttle input[name="mid"]').val());
+            RC_tuning.throttle_EXPO = parseFloat($('.tunings .throttle input[name="expo"]').val());
+            
+            RC_tuning.RC_RATE = parseFloat($('.tunings .rate input[name="rate"]').val());
+            RC_tuning.RC_EXPO = parseFloat($('.tunings .rate input[name="expo"]').val());              
+            
+            var RC_tuning_buffer_out = new Array();
+            RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
+            RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100);
+            RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100);
+            RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100);
+            RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100);
+            RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100);
+            RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
+            
+            // Send over the RC_tuning changes
+            send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out);        
 
-                // Save changes to EEPROM
-                send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
-                
-                // remove the active status
-                $(this).removeClass('active');        
-            }
-        });
-        
-        $('.tunings input').change(function() {
-            // if any of the fields changed, unlock update button
-            $('a.update').addClass('active');
+            // Save changes to EEPROM
+            send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
         });
         
         // enable RC data pulling
