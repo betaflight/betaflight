@@ -162,18 +162,13 @@
         
         margin-left: 10px;
         
-        width: 145px;
-        
         border: 1px solid silver;
     }
     .tab-initial_setup .battery {
         float: left;
-        
         display: block;
         
         margin-left: 10px;
-        
-        width: 145px;
         
         border: 1px solid silver;
     }
@@ -188,14 +183,33 @@
             border-bottom: 1px solid silver;
             background-color: #ececec;
         }
-        .tab-initial_setup .battery .fields {
-            padding: 5px;
+        .tab-initial_setup .battery .fields,
+        .tab-initial_setup .acc-trim .fields {
+            padding: 5px 5px 1px 5px;
         }
         .tab-initial_setup .battery .bat-voltage {
             padding-left: 20px;
         }
-        .tab-initial_setup .acc-trim dl {
-            padding: 5px;
+        .tab-initial_setup .battery dt {
+            float: left;
+            width: 100px;
+            line-height: 22px;
+            
+            margin-bottom: 4px;
+        }
+        .tab-initial_setup .battery dd {
+            line-height: 22px;
+            
+            margin-left: 100px;
+            margin-bottom: 4px;
+        }
+        .tab-initial_setup .battery input {
+            width: 70px;
+            height: 20px;
+            line-height: 20px;
+            
+            border: 1px solid silver;
+            text-align: center;
         }
         .tab-initial_setup .acc-trim dt {
             float: left;
@@ -209,38 +223,35 @@
             margin-bottom: 4px;
         }
         .tab-initial_setup .acc-trim input {
-            width: 80px;
+            width: 70px;
             height: 20px;
             line-height: 20px;
             
             border: 1px solid silver;
             text-align: center;
         }
-        .tab-initial_setup .acc-trim a.update {
-            display: block;
-            
-            margin-right: 5px;
-            margin-bottom: 5px;
-            margin-left: 55px;
-            
-            width: 80px;
-            height: 20px;
-            line-height: 20px;
-            
-            text-align: center;
-            font-weight: bold;
-            
-            border: 1px solid silver;
-            background-color: #ececec;
-        }
-        .tab-initial_setup .acc-trim a.update:hover {
-            background-color: #dedcdc;
-        }
+    .tab-initial_setup .save_settings {
+        display: block;
+        float: right;
+        
+        width: 80px;
+        height: 20px;
+        line-height: 20px;
+        
+        text-align: center;
+        font-weight: bold;
+        
+        border: 1px solid silver;
+        background-color: #ececec;
+    }
+    .tab-initial_setup .save_settings:hover {
+        background-color: #dedcdc;
+    }        
     .tab-initial_setup .compass-wrapper {
         position: absolute;
         
-        bottom: 60px;
-        right: 140px;
+        bottom: 30px;
+        right: 100px;
 
         border: 1px solid silver;
         border-radius: 50%;

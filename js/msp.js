@@ -417,7 +417,7 @@ function process_data(command, message_buffer, message_length_expected) {
             break;  
         case MSP_codes.MSP_MAG_CALIBRATION:
             console.log('Mag calibration executed');
-            break;  
+            break;
         case MSP_codes.MSP_SET_MISC:
             console.log('MISC Configuration saved');
             break;  
