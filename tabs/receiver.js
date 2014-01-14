@@ -89,7 +89,7 @@ function tab_initialize_receiver() {
             context.clearRect(0, 0, 220, 58);
             
             // math magic by englishman
-            var ratey = 58 * (rate / 2.50); // scale down to 0-1 for min-max
+            var ratey = 58 * rate;
             
             context.beginPath();
             context.moveTo(0, 58);
