@@ -315,7 +315,7 @@ static void getEstimatedAttitude(void)
     acc_calc(deltaT); // rotate acc vector into earth frame
 
     if (cfg.throttle_angle_correction) {
-        int cosZ = EstG.V.Z / (acc_1G * 100.0f);
+        int cosZ = ((int32_t)(EstG.V.Z * 100.0f)) / acc_1G;
         throttleAngleCorrection = cfg.throttle_angle_correction * constrain(100 - cosZ, 0, 100) / 8;
     }
 }
