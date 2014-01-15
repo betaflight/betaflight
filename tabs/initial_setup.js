@@ -123,7 +123,9 @@ function tab_initialize_initial_setup() {
                 });
 
                 $('a.resetSettings').click(function() {
-                    send_message(MSP_codes.MSP_RESET_CONF, MSP_codes.MSP_RESET_CONF);
+                    send_message(MSP_codes.MSP_RESET_CONF, MSP_codes.MSP_RESET_CONF, false, function() {
+                        tab_initialize_initial_setup();
+                    });
                 });
 
                 
