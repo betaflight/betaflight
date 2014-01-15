@@ -60,7 +60,7 @@
                 <dt>Minimum:</dt><dd><input type="number" name="minthrottle" min="0" max="2000" value="0" /></dd>
                 <dt>Maximum:</dt><dd><input type="number" name="maxthrottle" min="0" max="2000" value="0" /></dd>
                 <dt>Failsafe:</dt><dd><input type="number" name="failsafe_throttle" min="1000" max="2000" value="0" /></dd>
-                <dt title="Minimum Command">MinComm.:</dt><dd><input type="number" name="mincommand" min="0" max="2000" value="0" /></dd>
+                <dt title="Minimum Command">MinCommand:</dt><dd><input type="number" name="mincommand" min="0" max="2000" value="0" /></dd>
             </dl>
         </div>
     </div>
@@ -74,6 +74,14 @@
         </div>
     </div>
     <a class="save_settings" href="#">Save</a>
+    <div class="magnetometer">
+        <span class="head">Magnetometer</span>
+        <div class="fields">
+            <dl>
+                <dt>Declination:</dt><dd><input type="number" name="mag_declination" min="-1800" max="1800" value="0" /></dd>
+            </dl>
+        </div>
+    </div>
     <div class="compass-wrapper">
         <div id="compass">
             <span>N</span>

@@ -158,7 +158,8 @@
             } 
     .tab-initial_setup .battery,
     .tab-initial_setup .throttle,
-    .tab-initial_setup .acc-trim {
+    .tab-initial_setup .acc-trim,
+    .tab-initial_setup .magnetometer {
         float: left;
         display: block;
         
@@ -166,9 +167,13 @@
         
         border: 1px solid silver;
     }
+    .tab-initial_setup .magnetometer {
+        margin-top: 10px;
+    }
         .tab-initial_setup .battery .head,
         .tab-initial_setup .throttle .head,
-        .tab-initial_setup .acc-trim .head {
+        .tab-initial_setup .acc-trim .head,
+        .tab-initial_setup .magnetometer .head {
             display: block;
             
             text-align: center;
@@ -180,24 +185,30 @@
         }
         .tab-initial_setup .battery .fields,
         .tab-initial_setup .throttle .fields,
-        .tab-initial_setup .acc-trim .fields {
+        .tab-initial_setup .magnetometer .fields {
             padding: 5px 5px 1px 5px;
+        }
+        .tab-initial_setup .battery .fields {
+            padding: 5px 5px 2px 5px;
+        }
+        .tab-initial_setup .acc-trim .fields {
+            padding: 5px 5px 3px 5px;
         }
         .tab-initial_setup .battery .bat-voltage {
             padding-left: 20px;
         }
         .tab-initial_setup .battery dt {
             float: left;
-            width: 100px;
-            line-height: 22px;
+            width: 100px;            
+            margin-bottom: 2px;
             
-            margin-bottom: 4px;
+            line-height: 22px;
         }
-        .tab-initial_setup .battery dd {
-            line-height: 22px;
-            
+        .tab-initial_setup .battery dd {            
             margin-left: 100px;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            
+            line-height: 22px;
         }
         .tab-initial_setup .battery input {
             width: 70px;
@@ -209,16 +220,16 @@
         }
         .tab-initial_setup .throttle dt {
             float: left;
-            width: 70px;
-            line-height: 22px;
+            width: 85px;            
+            margin-bottom: 2px;
             
-            margin-bottom: 3px;
+            line-height: 22px;
         }
-        .tab-initial_setup .throttle dd {
-            line-height: 22px;
+        .tab-initial_setup .throttle dd {            
+            margin-left: 85px;
+            margin-bottom: 2px;
             
-            margin-left: 70px;
-            margin-bottom: 4px;
+            line-height: 22px;
         }
         .tab-initial_setup .throttle input {
             width: 70px;
@@ -230,16 +241,38 @@
         }
         .tab-initial_setup .acc-trim dt {
             float: left;
-            width: 50px;
+            width: 40px;
             line-height: 22px;
             
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .tab-initial_setup .acc-trim dd {
-            margin-left: 50px;
-            margin-bottom: 4px;
+            margin-left: 40px;
+            margin-bottom: 2px;
         }
         .tab-initial_setup .acc-trim input {
+            width: 70px;
+            height: 20px;
+            line-height: 20px;
+            
+            border: 1px solid silver;
+            text-align: center;
+        }
+        .tab-initial_setup .magnetometer dt {
+            float: left;
+            width: 100px;
+            
+            line-height: 22px;
+            
+            margin-bottom: 2px;
+        }
+        .tab-initial_setup .magnetometer dd {
+            margin-left: 100px;
+            margin-bottom: 2px;
+            
+            line-height: 22px;
+        }
+        .tab-initial_setup .magnetometer input {
             width: 70px;
             height: 20px;
             line-height: 20px;
@@ -269,8 +302,8 @@
     .tab-initial_setup .compass-wrapper {
         position: absolute;
         
-        bottom: 30px;
-        right: 100px;
+        bottom: 25px;
+        right: 85px;
 
         border: 1px solid silver;
         border-radius: 50%;

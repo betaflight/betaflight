@@ -17,6 +17,8 @@ function tab_initialize_initial_setup() {
                 $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
                 $('input[name="mincommand"]').val(MISC.mincommand);
                 
+                $('input[name="mag_declination"]').val(MISC.mag_declination);
+                
                 // Fill in the accel trimms from CONFIG object
                 $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
                 $('input[name="roll"]').val(CONFIG.accelerometerTrims[1]);
@@ -146,6 +148,8 @@ function tab_initialize_initial_setup() {
                     MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
                     MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
                     MISC.mincommand = parseInt($('input[name="mincommand"]').val());
+                    
+                    MISC.mag_declination = parseInt($('input[name="mag_declination"]').val());
                     
                     // we also have to fill the unsupported bytes
                     var buffer_out = new Array();

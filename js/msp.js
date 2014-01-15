@@ -350,7 +350,7 @@ function process_data(command, message_buffer, message_length_expected) {
             MISC.failsafe_throttle = data.getUint16(8, 1); // 1000-2000
             MISC.plog0 = data.getUint16(10, 1);
             MISC.plog1 = data.getUint32(12, 1);
-            MISC.mag_declination = data.getInt16(16, 1);
+            MISC.mag_declination = data.getInt16(16, 1); // -18000-18000
             MISC.vbatscale = data.getUint8(18, 1); // 10-200
             MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
             MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
