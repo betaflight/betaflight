@@ -228,7 +228,7 @@ void initTelemetry(void)
 
 void updateTelemetryState(void)
 {
-    bool State = mcfg.telemetry_softserial != TELEMETRY_UART ? true : f.ARMED;
+    bool State = mcfg.telemetry_softserial != TELEMETRY_UART ? true : (f.ARMED || rcOptions[BOXTELEMETRY]);
 
     if (State != telemetryEnabled) {
         if (mcfg.telemetry_softserial == TELEMETRY_UART) {
@@ -246,7 +246,7 @@ static uint8_t cycleNum = 0;
 
 void sendTelemetry(void)
 {
-    if (mcfg.telemetry_softserial == TELEMETRY_UART && !f.ARMED)
+    if (mcfg.telemetry_softserial == TELEMETRY_UART && !f.ARMED && !rcOptions[BOXTELEMETRY])
         return;
 
     if (serialTotalBytesWaiting(core.telemport) != 0)
