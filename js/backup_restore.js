@@ -7,7 +7,9 @@ function configuration_backup() {
                     send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
                         send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
                             send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, function() {
-                                backup();
+                                send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, function() {
+                                    backup();
+                                });
                             });
                         });
                     });
@@ -55,7 +57,8 @@ function configuration_backup() {
                             PID: PIDs,
                             AUX_val: AUX_CONFIG_values,
                             RC: RC_tuning,
-                            AccelTrim: CONFIG.accelerometerTrims
+                            AccelTrim: CONFIG.accelerometerTrims,
+                            MISC: MISC
                         };
                         
                         // crunch the config object
@@ -136,6 +139,7 @@ function configuration_restore() {
                 AUX_CONFIG_values = configuration.AUX_val;
                 RC_tuning = configuration.RC;
                 CONFIG.accelerometerTrims = configuration.AccelTrim;
+                MISC = configuration.MISC;
                 
                 // all of the arrays/objects are set, upload changes
                 configuration_upload();
@@ -214,7 +218,7 @@ function configuration_upload() {
     send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out);     
  
  
-    // Trim section (baseflight specific)
+    // Trim section
     var buffer_out = new Array();
     buffer_out[0] = lowByte(CONFIG.accelerometerTrims[0]);
     buffer_out[1] = highByte(CONFIG.accelerometerTrims[0]);
@@ -222,7 +226,36 @@ function configuration_upload() {
     buffer_out[3] = highByte(CONFIG.accelerometerTrims[1]); 
 
     // Send over the new trims
-    send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out);    
+    send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out);
+
+    // MISC
+    // we also have to fill the unsupported bytes
+    var buffer_out = new Array();
+    buffer_out[0] = 0; // powerfailmeter
+    buffer_out[1] = 0;
+    buffer_out[2] = lowByte(MISC.minthrottle);
+    buffer_out[3] = highByte(MISC.minthrottle);
+    buffer_out[4] = lowByte(MISC.maxthrottle);
+    buffer_out[5] = highByte(MISC.maxthrottle);
+    buffer_out[6] = lowByte(MISC.mincommand);
+    buffer_out[7] = highByte(MISC.mincommand);
+    buffer_out[8] = lowByte(MISC.failsafe_throttle);
+    buffer_out[9] = highByte(MISC.failsafe_throttle);
+    buffer_out[10] = 0;
+    buffer_out[11] = 0;
+    buffer_out[12] = 0;
+    buffer_out[13] = 0;
+    buffer_out[14] = 0;
+    buffer_out[15] = 0;
+    buffer_out[16] = lowByte(MISC.mag_declination);
+    buffer_out[17] = highByte(MISC.mag_declination);
+    buffer_out[18] = MISC.vbatscale;
+    buffer_out[19] = MISC.vbatmincellvoltage;
+    buffer_out[20] = MISC.vbatmaxcellvoltage;
+    buffer_out[21] = 0; // vbatlevel_crit (unused)
+    
+    // Send ove the new MISC
+    send_message(MSP_codes.MSP_SET_MISC, buffer_out);
     
     
     // Save changes to EEPROM
