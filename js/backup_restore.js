@@ -114,35 +114,41 @@ function configuration_restore() {
         chosenFileEntry.file(function(file) {
             var reader = new FileReader();
 
-            reader.onerror = function (e) {
-                console.error(e);
+            reader.onprogress = function(e) {
+                if (e.total > 1048576) { // 1 MB
+                    // dont allow reading files bigger then 1 MB
+                    console.log('File limit (1 MB) exceeded, aborting');
+                    reader.abort();
+                }
             };
             
             reader.onloadend = function(e) {
-                console.log('Read SUCCESSFUL');
-                
-                try { // check if string provided is a valid JSON
-                    var deserialized_configuration_object = JSON.parse(e.target.result);
-                } catch (e) {
-                    // data provided != valid json object
-                    console.log('Data provided != valid JSON string, restore aborted.');
+                if (e.total != 0 && e.total == e.loaded) {
+                    console.log('Read SUCCESSFUL');
                     
-                    return;
+                    try { // check if string provided is a valid JSON
+                        var deserialized_configuration_object = JSON.parse(e.target.result);
+                    } catch (e) {
+                        // data provided != valid json object
+                        console.log('Data provided != valid JSON string, restore aborted.');
+                        
+                        return;
+                    }
+                    
+                    // replacing "old configuration" with configuration from backup file
+                    var configuration = deserialized_configuration_object;
+                    
+                    // some configuration.VERSION code goes here? will see
+                    
+                    PIDs = configuration.PID;
+                    AUX_CONFIG_values = configuration.AUX_val;
+                    RC_tuning = configuration.RC;
+                    CONFIG.accelerometerTrims = configuration.AccelTrim;
+                    MISC = configuration.MISC;
+                    
+                    // all of the arrays/objects are set, upload changes
+                    configuration_upload();
                 }
-                
-                // replacing "old configuration" with configuration from backup file
-                var configuration = deserialized_configuration_object;
-                
-                // some configuration.VERSION code goes here? will see
-                
-                PIDs = configuration.PID;
-                AUX_CONFIG_values = configuration.AUX_val;
-                RC_tuning = configuration.RC;
-                CONFIG.accelerometerTrims = configuration.AccelTrim;
-                MISC = configuration.MISC;
-                
-                // all of the arrays/objects are set, upload changes
-                configuration_upload();
             };
 
             reader.readAsText(file);
