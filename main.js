@@ -78,16 +78,18 @@ $(document).ready(function() {
     
     tab_initialize_default();
     
-    // listen to all input change events and adjust the value withing limits if necessary
+    // listen to all input change events and adjust the value within limits if necessary
     $("#content").on("change", 'input[type="number"]', function() {
         var min = parseFloat($(this).prop('min'));
         var max = parseFloat($(this).prop('max'));
         var val = parseFloat($(this).val());
         
+        // only adjust minimal end if bound is set
         if ($(this).prop('min')) {
             if (val < min) $(this).val(min);
         }
         
+        // only adjust maximal end if bound is set
         if ($(this).prop('max')) {
             if (val > max) $(this).val(max);
         }
