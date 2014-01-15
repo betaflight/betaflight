@@ -186,25 +186,29 @@
         .tab-initial_setup .battery .fields,
         .tab-initial_setup .throttle .fields,
         .tab-initial_setup .magnetometer .fields {
-            padding: 5px 5px 1px 5px;
-        }
-        .tab-initial_setup .battery .fields {
-            padding: 5px 5px 2px 5px;
+            padding: 5px 5px 3px 5px;
         }
         .tab-initial_setup .acc-trim .fields {
             padding: 5px 5px 3px 5px;
+        }
+        .tab-initial_setup .magnetometer .fields {
+            padding: 5px 5px 5px 5px;
         }
         .tab-initial_setup .battery .bat-voltage {
             padding-left: 20px;
         }
         .tab-initial_setup .battery dt {
             float: left;
-            width: 100px;            
+            width: 100px;
+            height: 22px;
+            
             margin-bottom: 2px;
             
             line-height: 22px;
         }
-        .tab-initial_setup .battery dd {            
+        .tab-initial_setup .battery dd {
+            height: 22px;
+            
             margin-left: 100px;
             margin-bottom: 2px;
             
@@ -220,12 +224,16 @@
         }
         .tab-initial_setup .throttle dt {
             float: left;
-            width: 85px;            
+            width: 85px;
+            height: 22px;
+            
             margin-bottom: 2px;
             
             line-height: 22px;
         }
-        .tab-initial_setup .throttle dd {            
+        .tab-initial_setup .throttle dd {
+            height: 22px;
+            
             margin-left: 85px;
             margin-bottom: 2px;
             
@@ -242,11 +250,14 @@
         .tab-initial_setup .acc-trim dt {
             float: left;
             width: 40px;
+            height: 22px;
             line-height: 22px;
             
             margin-bottom: 2px;
         }
         .tab-initial_setup .acc-trim dd {
+            height: 22px;
+            
             margin-left: 40px;
             margin-bottom: 2px;
         }
@@ -261,16 +272,17 @@
         .tab-initial_setup .magnetometer dt {
             float: left;
             width: 100px;
-            
+            height: 20px;
             line-height: 22px;
             
             margin-bottom: 2px;
         }
         .tab-initial_setup .magnetometer dd {
+            height: 20px;
+            line-height: 22px;
+            
             margin-left: 100px;
             margin-bottom: 2px;
-            
-            line-height: 22px;
         }
         .tab-initial_setup .magnetometer input {
             width: 70px;

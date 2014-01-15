@@ -42,38 +42,40 @@
             </div>
         </div>
     </div>
-    <div class="battery">
-        <span class="head">Battery</span>
-        <div class="fields">
-            <dl>
-                <dt>Voltage:</dt><dd class="bat-voltage">0 V</dd>
-                <dt>Min Cell Voltage:</dt><dd><input type="number" name="mincellvoltage" step="0.1" value="0" /></dd>
-                <dt>Max Cell Voltage:</dt><dd><input type="number" name="maxcellvoltage" step="0.1" value="0" /></dd>
-                <dt>Voltage Scale:</dt><dd><input type="number" name="voltagescale" min="10" max="200" value="0" /></dd>
-            </dl>
+    <div class="left" style="width: 510px">
+        <div class="battery">
+            <span class="head">Battery</span>
+            <div class="fields">
+                <dl>
+                    <dt>Voltage:</dt><dd class="bat-voltage">0 V</dd>
+                    <dt>Min Cell Voltage:</dt><dd><input type="number" name="mincellvoltage" step="0.1" value="0" /></dd>
+                    <dt>Max Cell Voltage:</dt><dd><input type="number" name="maxcellvoltage" step="0.1" value="0" /></dd>
+                    <dt>Voltage Scale:</dt><dd><input type="number" name="voltagescale" min="10" max="200" value="0" /></dd>
+                </dl>
+            </div>
         </div>
-    </div>
-    <div class="throttle">
-        <span class="head">Throttle Settings</span>
-        <div class="fields">
-            <dl>
-                <dt>Minimum:</dt><dd><input type="number" name="minthrottle" min="0" max="2000" value="0" /></dd>
-                <dt>Maximum:</dt><dd><input type="number" name="maxthrottle" min="0" max="2000" value="0" /></dd>
-                <dt>Failsafe:</dt><dd><input type="number" name="failsafe_throttle" min="1000" max="2000" value="0" /></dd>
-                <dt title="Minimum Command">MinCommand:</dt><dd><input type="number" name="mincommand" min="0" max="2000" value="0" /></dd>
-            </dl>
+        <div class="throttle">
+            <span class="head">Throttle Settings</span>
+            <div class="fields">
+                <dl>
+                    <dt>Minimum:</dt><dd><input type="number" name="minthrottle" min="0" max="2000" value="0" /></dd>
+                    <dt>Maximum:</dt><dd><input type="number" name="maxthrottle" min="0" max="2000" value="0" /></dd>
+                    <dt>Failsafe:</dt><dd><input type="number" name="failsafe_throttle" min="1000" max="2000" value="0" /></dd>
+                    <dt title="Minimum Command">MinCommand:</dt><dd><input type="number" name="mincommand" min="0" max="2000" value="0" /></dd>
+                </dl>
+            </div>
         </div>
-    </div>
-    <div class="acc-trim">
-        <span class="head">Accelerometer trims</span>
-        <div class="fields">
-            <dl>
-                <dt>Pitch:</dt><dd><input type="number" name="pitch" min="-300" max="300" value="0" /></dd>
-                <dt>Roll:</dt><dd><input type="number" name="roll" min="-300" max="300" value="0" /></dd>
-            </dl>
+        <div class="acc-trim">
+            <span class="head">Accelerometer trims</span>
+            <div class="fields">
+                <dl>
+                    <dt>Pitch:</dt><dd><input type="number" name="pitch" min="-300" max="300" value="0" /></dd>
+                    <dt>Roll:</dt><dd><input type="number" name="roll" min="-300" max="300" value="0" /></dd>
+                </dl>
+            </div>
         </div>
+        <a class="save_settings" href="#">Save</a>
     </div>
-    <a class="save_settings" href="#">Save</a>
     <div class="magnetometer">
         <span class="head">Magnetometer</span>
         <div class="fields">
