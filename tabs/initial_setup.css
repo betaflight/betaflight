@@ -209,7 +209,7 @@
         }
         .tab-initial_setup .throttle dt {
             float: left;
-            width: 65px;
+            width: 70px;
             line-height: 22px;
             
             margin-bottom: 3px;
@@ -217,8 +217,8 @@
         .tab-initial_setup .throttle dd {
             line-height: 22px;
             
-            margin-left: 65px;
-            margin-bottom: 3px;
+            margin-left: 70px;
+            margin-bottom: 4px;
         }
         .tab-initial_setup .throttle input {
             width: 70px;

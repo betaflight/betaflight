@@ -13,7 +13,9 @@ function tab_initialize_initial_setup() {
                 $('input[name="voltagescale"]').val(MISC.vbatscale);
                 
                 $('input[name="minthrottle"]').val(MISC.minthrottle);
+                $('input[name="maxthrottle"]').val(MISC.maxthrottle);
                 $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
+                $('input[name="mincommand"]').val(MISC.mincommand);
                 
                 // Fill in the accel trimms from CONFIG object
                 $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
@@ -141,7 +143,9 @@ function tab_initialize_initial_setup() {
                     MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
                     
                     MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
+                    MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
                     MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
+                    MISC.mincommand = parseInt($('input[name="mincommand"]').val());
                     
                     // we also have to fill the unsupported bytes
                     var buffer_out = new Array();
@@ -149,10 +153,10 @@ function tab_initialize_initial_setup() {
                     buffer_out[1] = 0;
                     buffer_out[2] = lowByte(MISC.minthrottle);
                     buffer_out[3] = highByte(MISC.minthrottle);
-                    buffer_out[4] = 0; // mcfg.maxthrottle, mcfg.mincommand
-                    buffer_out[5] = 0;
-                    buffer_out[6] = 0;
-                    buffer_out[7] = 0;
+                    buffer_out[4] = lowByte(MISC.maxthrottle);
+                    buffer_out[5] = highByte(MISC.maxthrottle);
+                    buffer_out[6] = lowByte(MISC.mincommand);
+                    buffer_out[7] = highByte(MISC.mincommand);
                     buffer_out[8] = lowByte(MISC.failsafe_throttle);
                     buffer_out[9] = highByte(MISC.failsafe_throttle);
                     buffer_out[10] = 0;
