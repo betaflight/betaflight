@@ -321,7 +321,8 @@ static void evaluateCommand(void)
     case MSP_SET_MISC:
         read16(); // powerfailmeter
         mcfg.minthrottle = read16();
-        read32(); // mcfg.maxthrottle, mcfg.mincommand
+        mcfg.maxthrottle = read16();
+        mcfg.mincommand = read16();
         cfg.failsafe_throttle = read16();
         read16();
         read32();
