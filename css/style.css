@@ -19,6 +19,23 @@ a {
 a:hover {
     text-decoration: none;
 }
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    
+    display: block;
+    width: 15px;
+    
+    background-image: url('../images/arrows.png');
+    background-repeat: no-repeat;
+    
+    border-left: 1px solid silver;
+}
+input[type=number]::-webkit-inner-spin-button:before {
+    content: "";
+}
+input[type=number]::-webkit-inner-spin-button:after {
+    content: "";
+}
 .clear-both {
     clear: both;
 }
