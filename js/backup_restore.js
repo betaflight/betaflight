@@ -194,76 +194,89 @@ function configuration_upload() {
     }
     
     // Send over the PID changes
-    send_message(MSP_codes.MSP_SET_PID, PID_buffer_out); 
+    send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, false, function() {
+        rc_tuning();
+    }); 
 
+    var rc_tuning = function() {
+        // RC Tuning section
+        var RC_tuning_buffer_out = new Array();
+        RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
+        RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100);
+        RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100);
+        RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100);
+        RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100);
+        RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100);
+        RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
+        
+        // Send over the RC_tuning changes
+        send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, function() {
+            aux();
+        });
+    };
     
-    // RC Tuning section
-    var RC_tuning_buffer_out = new Array();
-    RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
-    RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100);
-    RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100);
-    RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100);
-    RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100);
-    RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100);
-    RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
-    
-    // Send over the RC_tuning changes
-    send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out);
+    var aux = function() {
+        // AUX section
+        var AUX_val_buffer_out = new Array();
+        
+        var needle = 0;
+        for (var i = 0; i < AUX_CONFIG_values.length; i++) {
+            AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
+            AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
+        }
+        
+        // Send over the AUX changes
+        send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, function() {
+            trim();
+        });
+    };
 
-    
-    // AUX section
-    var AUX_val_buffer_out = new Array();
-    
-    var needle = 0;
-    for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-        AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
-        AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
-    }
-    
-    // Send over the AUX changes
-    send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out);     
- 
- 
+
     // Trim section
-    var buffer_out = new Array();
-    buffer_out[0] = lowByte(CONFIG.accelerometerTrims[0]);
-    buffer_out[1] = highByte(CONFIG.accelerometerTrims[0]);
-    buffer_out[2] = lowByte(CONFIG.accelerometerTrims[1]);
-    buffer_out[3] = highByte(CONFIG.accelerometerTrims[1]); 
+    var trim = function() {
+        var buffer_out = new Array();
+        buffer_out[0] = lowByte(CONFIG.accelerometerTrims[0]);
+        buffer_out[1] = highByte(CONFIG.accelerometerTrims[0]);
+        buffer_out[2] = lowByte(CONFIG.accelerometerTrims[1]);
+        buffer_out[3] = highByte(CONFIG.accelerometerTrims[1]); 
 
-    // Send over the new trims
-    send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out);
+        // Send over the new trims
+        send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out, false, function() {
+            misc();
+        });
+    };
 
-    // MISC
-    // we also have to fill the unsupported bytes
-    var buffer_out = new Array();
-    buffer_out[0] = 0; // powerfailmeter
-    buffer_out[1] = 0;
-    buffer_out[2] = lowByte(MISC.minthrottle);
-    buffer_out[3] = highByte(MISC.minthrottle);
-    buffer_out[4] = lowByte(MISC.maxthrottle);
-    buffer_out[5] = highByte(MISC.maxthrottle);
-    buffer_out[6] = lowByte(MISC.mincommand);
-    buffer_out[7] = highByte(MISC.mincommand);
-    buffer_out[8] = lowByte(MISC.failsafe_throttle);
-    buffer_out[9] = highByte(MISC.failsafe_throttle);
-    buffer_out[10] = 0;
-    buffer_out[11] = 0;
-    buffer_out[12] = 0;
-    buffer_out[13] = 0;
-    buffer_out[14] = 0;
-    buffer_out[15] = 0;
-    buffer_out[16] = lowByte(MISC.mag_declination);
-    buffer_out[17] = highByte(MISC.mag_declination);
-    buffer_out[18] = MISC.vbatscale;
-    buffer_out[19] = MISC.vbatmincellvoltage;
-    buffer_out[20] = MISC.vbatmaxcellvoltage;
-    buffer_out[21] = 0; // vbatlevel_crit (unused)
-    
-    // Send ove the new MISC
-    send_message(MSP_codes.MSP_SET_MISC, buffer_out);
-    
-    
-    // Save changes to EEPROM
-    send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);   
+    var misc = function() {
+        // MISC
+        // we also have to fill the unsupported bytes
+        var buffer_out = new Array();
+        buffer_out[0] = 0; // powerfailmeter
+        buffer_out[1] = 0;
+        buffer_out[2] = lowByte(MISC.minthrottle);
+        buffer_out[3] = highByte(MISC.minthrottle);
+        buffer_out[4] = lowByte(MISC.maxthrottle);
+        buffer_out[5] = highByte(MISC.maxthrottle);
+        buffer_out[6] = lowByte(MISC.mincommand);
+        buffer_out[7] = highByte(MISC.mincommand);
+        buffer_out[8] = lowByte(MISC.failsafe_throttle);
+        buffer_out[9] = highByte(MISC.failsafe_throttle);
+        buffer_out[10] = 0;
+        buffer_out[11] = 0;
+        buffer_out[12] = 0;
+        buffer_out[13] = 0;
+        buffer_out[14] = 0;
+        buffer_out[15] = 0;
+        buffer_out[16] = lowByte(MISC.mag_declination);
+        buffer_out[17] = highByte(MISC.mag_declination);
+        buffer_out[18] = MISC.vbatscale;
+        buffer_out[19] = MISC.vbatmincellvoltage;
+        buffer_out[20] = MISC.vbatmaxcellvoltage;
+        buffer_out[21] = 0; // vbatlevel_crit (unused)
+        
+        // Send ove the new MISC
+        send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, function() {
+            // Save changes to EEPROM
+            send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+        });
+    }; 
 }
