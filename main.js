@@ -77,6 +77,21 @@ $(document).ready(function() {
     });
     
     tab_initialize_default();
+    
+    // listen to all input change events and adjust the value withing limits if necessary
+    $("#content").on("change", 'input[type="number"]', function() {
+        var min = parseFloat($(this).prop('min'));
+        var max = parseFloat($(this).prop('max'));
+        var val = parseFloat($(this).val());
+        
+        if ($(this).prop('min')) {
+            if (val < min) $(this).val(min);
+        }
+        
+        if ($(this).prop('max')) {
+            if (val > max) $(this).val(max);
+        }
+    });
 });
 
 function notify(message, color) {
