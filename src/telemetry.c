@@ -246,7 +246,7 @@ static uint8_t cycleNum = 0;
 
 void sendTelemetry(void)
 {
-    if (mcfg.telemetry_softserial == TELEMETRY_UART && (!f.ARMED || !rcOptions[BOXTELEMETRY]))
+    if (mcfg.telemetry_softserial == TELEMETRY_UART && !f.ARMED && !rcOptions[BOXTELEMETRY])
         return;
 
     if (serialTotalBytesWaiting(core.telemport) != 0)
