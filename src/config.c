@@ -193,6 +193,7 @@ static void resetConf(void)
     mcfg.power_adc_channel = 0;
     mcfg.serialrx_type = 0;
     mcfg.telemetry_softserial = 0;
+	mcfg.telemetry_switch = 0;
     mcfg.midrc = 1500;
     mcfg.mincheck = 1100;
     mcfg.maxcheck = 1900;
