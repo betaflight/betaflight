@@ -79,19 +79,42 @@ $(document).ready(function() {
     tab_initialize_default();
     
     // listen to all input change events and adjust the value within limits if necessary
+    $("#content").on("focus", 'input[type="number"]', function() {
+        var element = $(this);
+        var val = element.val();
+        
+        if (!isNaN(val)) {
+            element.data('previousValue', parseFloat(val));
+        }
+    });
+    
     $("#content").on("change", 'input[type="number"]', function() {
-        var min = parseFloat($(this).prop('min'));
-        var max = parseFloat($(this).prop('max'));
-        var val = parseFloat($(this).val());
+        var element = $(this);
+        var min = parseFloat(element.prop('min'));
+        var max = parseFloat(element.prop('max'));
+        var step = parseFloat(element.prop('step'));
+        var val = parseFloat(element.val());
         
         // only adjust minimal end if bound is set
-        if ($(this).prop('min')) {
-            if (val < min) $(this).val(min);
+        if (element.prop('min')) {
+            if (val < min) element.val(min);
         }
         
         // only adjust maximal end if bound is set
-        if ($(this).prop('max')) {
-            if (val > max) $(this).val(max);
+        if (element.prop('max')) {
+            if (val > max) element.val(max);
+        }
+        
+        // if entered value is illegal use previous value instead
+        if (isNaN(val)) {
+            element.val(element.data('previousValue'));
+        }
+        
+        // if step is not set or step is int and value is float use previous value instead
+        if (isNaN(step) || step % 1 === 0) {
+            if (val % 1 !== 0) {
+                element.val(element.data('previousValue'));
+            }
         }
     });
 });
