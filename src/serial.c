@@ -266,7 +266,7 @@ void serialInit(uint32_t baudrate)
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         availableBoxes[idx++] = BOXCALIB;
     availableBoxes[idx++] = BOXOSD;
-    if (feature(FEATURE_TELEMETRY))
+    if (feature(FEATURE_TELEMETRY && mcfg.telemetry_switch))
         availableBoxes[idx++] = BOXTELEMETRY;
     numberBoxItems = idx;
 }
