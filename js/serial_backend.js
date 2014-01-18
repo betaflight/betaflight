@@ -235,7 +235,7 @@ function onOpen(openInfo) {
         });
 
         serial.onReceive.addListener(read_serial);
-        GUI.interval_add('port_usage', port_usage, 1000);
+        GUI.interval_add('port_usage', port_usage, 1000, true);
         
         // disconnect after 10 seconds with error if we don't get IDENT data
         GUI.timeout_add('connecting', function() {
@@ -247,17 +247,17 @@ function onOpen(openInfo) {
         }, 10000);
 
         // request configuration data
-        send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
-        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS); // in theory this could be removed (MSP_STATUS is pulled in initial tab)
-        send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
-            GUI.timeout_remove('connecting'); // kill connecting timer
-            
-            // Update UI elements that doesn't need consistent refreshing
-            $('.software-version').html(CONFIG.version);
-            
-            configuration_received = true;
-            $('div#port-picker a.connect').text('Disconnect').addClass('active');
-            $('#tabs li a:first').click();
+        send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID, false, function() {
+            send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
+                GUI.timeout_remove('connecting'); // kill connecting timer
+                
+                // Update UI elements that doesn't need consistent refreshing
+                $('.software-version').html(CONFIG.version);
+                
+                configuration_received = true;
+                $('div#port-picker a.connect').text('Disconnect').addClass('active');
+                $('#tabs li a:first').click();
+            });
         });
     } else {
         console.log('Failed to open serial port');
