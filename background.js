@@ -6,8 +6,8 @@ function start_app() {
         window_child.onClosed.addListener(function() {
             // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference
             // allowing us to automatically close the port when application shut down
-            if (app_window.connectionId > 0) {
-                chrome.serial.close(app_window.connectionId, function(result) {
+            if (app_window.serial.connectionId > 0) {
+                chrome.serial.disconnect(app_window.serial.connectionId, function(result) {
                     console.log('SERIAL: Connection closed - ' + result);
                 });
             }
