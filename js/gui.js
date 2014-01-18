@@ -206,6 +206,10 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
         case 'sensors':
             GUI.interval_kill_all(['port-update', 'port_usage', 'serial_read']);
             
+            // sensor data tab uses scrollbars, emptying the content before loading another tab
+            // prevents scrollbar exposure to any of the tabs while new content is loaded in
+            $('#content').empty();
+            
             if (callback) callback();
             break;
         case 'cli':
