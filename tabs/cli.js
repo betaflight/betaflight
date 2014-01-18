@@ -33,7 +33,7 @@ function tab_initialize_cli() {
     
     bufView[0] = 0x23; // #
 
-    chrome.serial.write(connectionId, bufferOut, function(writeInfo) {});
+    serial.send(bufferOut, function(writeInfo) {});
 
     var textarea = $('.tab-cli textarea');
     textarea.keypress(function(event) {
@@ -102,7 +102,7 @@ function send_slowly(out_arr, i, timeout_needle) {
 
         bufView[out_arr[i].length] = 0x0D; // enter (\n)
 
-        chrome.serial.write(connectionId, bufferOut, function(writeInfo) {});
+        serial.send(bufferOut, function(writeInfo) {});
     }, timeout_needle * 5);
 }
 
