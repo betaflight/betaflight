@@ -218,7 +218,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             bufView[3] = 0x74; // t
             bufView[4] = 0x0D; // enter
 
-            chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
+            serial.send(bufferOut, function(writeInfo) {
                 // we could handle this "nicely", but this will do for now
                 // (another approach is however much more complicated):
                 // we can setup an interval asking for data lets say every 200ms, when data arrives, callback will be triggered and tab switched
