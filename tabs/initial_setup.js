@@ -195,26 +195,27 @@ function tab_initialize_initial_setup() {
                 
                 $('#content .restore').click(configuration_restore);
                 
-                GUI.interval_add('initial_setup_data_pull', function() {
-                    // Update cube
-                    var cube = $('div#cube');
-                    
-                    cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematicsZ * -1.0) - yaw_fix) + 'deg)');
-                    $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematicsY + 'deg)');
-                    $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematicsX + 'deg)'); 
-
-                    // Update Compass
-                    $('div#compass .pointer').css('-webkit-transform', 'rotate(' + (SENSOR_DATA.kinematicsZ) + 'deg)'); 
-                    $('div#compass .value').html(SENSOR_DATA.kinematicsZ + '&deg;');
-                    
+                GUI.interval_add('initial_setup_data_pull', function() {                    
                     // Update voltage indicator
                     $('.bat-voltage').html(BATTERY.voltage + ' V');
                     
-                    // Request new data
-                    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-                    send_message(MSP_codes.MSP_ATTITUDE, MSP_codes.MSP_ATTITUDE); 
-                    send_message(MSP_codes.MSP_COMP_GPS, MSP_codes.MSP_COMP_GPS);
-                    send_message(MSP_codes.MSP_ANALOG, MSP_codes.MSP_ANALOG);
+                    // Request new data, if transmission fails it doesn't matter as new transmission will be requested after 50ms
+                    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, function() { // cycle time, active sensors, etc...
+                        send_message(MSP_codes.MSP_ANALOG, MSP_codes.MSP_ANALOG, false, function() { // battery voltage
+                            send_message(MSP_codes.MSP_ATTITUDE, MSP_codes.MSP_ATTITUDE, false, function() { // kinematics
+                                // Update cube
+                                var cube = $('div#cube');
+                                
+                                cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematicsZ * -1.0) - yaw_fix) + 'deg)');
+                                $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematicsY + 'deg)');
+                                $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematicsX + 'deg)'); 
+
+                                // Update Compass
+                                $('div#compass .pointer').css('-webkit-transform', 'rotate(' + (SENSOR_DATA.kinematicsZ) + 'deg)'); 
+                                $('div#compass .value').html(SENSOR_DATA.kinematicsZ + '&deg;');
+                            });
+                        });
+                    }); 
                 }, 50, true);
             });
         });
