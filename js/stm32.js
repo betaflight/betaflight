@@ -67,13 +67,13 @@ STM32_protocol.prototype.connect = function(hex) {
         
         switch (GUI.operating_system) {
             case 'Windows':
-                flashing_bitrate = 256000;
+                flashing_bitrate = 921600;
                 break;
             case 'MacOS':
             case 'ChromeOS':
             case 'Linux':
             case 'UNIX':
-                flashing_bitrate = 230400;
+                flashing_bitrate = 576000;
                 break;
                 
             default:
@@ -81,11 +81,9 @@ STM32_protocol.prototype.connect = function(hex) {
         }
         
         if (!$('input.updating').is(':checked')) {
-            chrome.serial.open(selected_port, {bitrate: baud}, function(openInfo) {
-                if (openInfo.connectionId > 0) {
-                    connectionId = openInfo.connectionId;
-                    
-                    console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + baud);
+            serial.connect(selected_port, {bitrate: baud}, function(openInfo) {
+                if (openInfo.connectionId > 0) {                    
+                    console.log('Connection was opened with ID: ' + openInfo.connectionId + ' Baud: ' + baud);
                     console.log('Sending ascii "R" to reboot');
 
                     // we are connected, disabling connect button in the UI
@@ -94,15 +92,13 @@ STM32_protocol.prototype.connect = function(hex) {
                     self.send([0x52]);
                     
                     GUI.timeout_add('reboot_into_bootloader', function() {
-                        chrome.serial.close(connectionId, function(result) {
+                        serial.disconnect(function(result) {
                             if (result) {
                                 console.log('Connection closed successfully.');
                                 
-                                chrome.serial.open(selected_port, {bitrate: flashing_bitrate, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
+                                serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
                                     if (openInfo.connectionId > 0) {
-                                        connectionId = openInfo.connectionId;
-                                        
-                                        console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + flashing_bitrate);
+                                        console.log('Connection was opened with ID: ' + openInfo.connectionId + ' Baud: ' + flashing_bitrate);
                                         
                                         self.initialize();
                                     }
@@ -117,11 +113,9 @@ STM32_protocol.prototype.connect = function(hex) {
                 }
             });
         } else {
-            chrome.serial.open(selected_port, {bitrate: flashing_bitrate, parityBit: 'evenparity', stopBit: 'onestopbit'}, function(openInfo) {
+            serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
                 if (openInfo.connectionId > 0) {
-                    connectionId = openInfo.connectionId;
-                    
-                    console.log('Connection was opened with ID: ' + connectionId + ' Baud: ' + flashing_bitrate);
+                    console.log('Connection was opened with ID: ' + openInfo.connectionId + ' Baud: ' + flashing_bitrate);
                     
                     // we are connected, disabling connect button in the UI
                     GUI.connect_lock = true;
@@ -164,9 +158,9 @@ STM32_protocol.prototype.initialize = function() {
     self.progress_bar_e.val(0);
     self.progress_bar_e.removeClass('valid invalid');
 
-    GUI.interval_add('firmware_uploader_read', function() {
-        self.read();
-    }, 1, true);
+    serial.onReceive.addListener(function(info) {
+        self.read(info);
+    });
     
     GUI.interval_add('STM32_timeout', function() {
         if (self.steps_executed > self.steps_executed_last) { // process is running
@@ -188,21 +182,17 @@ STM32_protocol.prototype.initialize = function() {
 
 // no input parameters
 // this method should be executed every 1 ms via interval timer
-STM32_protocol.prototype.read = function() {
+STM32_protocol.prototype.read = function(readInfo) {
     var self = this;
     
     // routine that fills the buffer
-    chrome.serial.read(connectionId, 128, function(readInfo) {
-        if (readInfo && readInfo.bytesRead > 0) { 
-            var data = new Uint8Array(readInfo.data);
-            
-            for (var i = 0; i < data.length; i++) {
-                self.receive_buffer.push(data[i]);  
-            }
-            
-            self.serial_bytes_received += data.length;
-        }
-    });
+    var data = new Uint8Array(readInfo.data);
+    
+    for (var i = 0; i < data.length; i++) {
+        self.receive_buffer.push(data[i]);  
+    }
+    
+    self.serial_bytes_received += data.length;
     
     // routine that fetches data from buffer if statement is true
     if (self.receive_buffer.length >= self.bytes_to_read && self.bytes_to_read != 0) {
@@ -213,6 +203,13 @@ STM32_protocol.prototype.read = function() {
         
         self.read_callback(data);
     }
+};
+
+STM32_protocol.prototype.retrieve = function(n_bytes, callback) {
+    var data = this.receive_buffer.slice(0, n_bytes);
+    this.receive_buffer.splice(0, n_bytes); // remove read bytes
+    
+    callback(data);
 };
 
 // Array = array of bytes that will be send over serial
@@ -232,9 +229,9 @@ STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {
     this.read_callback = callback; 
 
     // send over the actual data
-    chrome.serial.write(connectionId, bufferOut, function(writeInfo) {
-        if (writeInfo.bytesWritten > 0) {
-            self.serial_bytes_send += writeInfo.bytesWritten;
+    serial.send(bufferOut, function(writeInfo) {
+        if (writeInfo.bytesSent > 0) {
+            self.serial_bytes_send += writeInfo.bytesSent;
         }
     }); 
 };
@@ -383,7 +380,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // get version of the bootloader and supported commands
             self.send([self.command.get, 0xFF], 2, function(data) { // 0x00 ^ 0xFF               
                 if (self.verify_response(self.status.ACK, data)) {
-                    self.send([], data[1] + 2, function(data) {  // data[1] = number of bytes that will follow (should be 12 + ack)
+                    self.retrieve(data[1] + 2, function(data) {  // data[1] = number of bytes that will follow (should be 12 + ack)
                         console.log('STM32 - Bootloader version: ' + (parseInt(data[0].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
                         
                         // proceed to next step
@@ -396,7 +393,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // get ID (device signature)
             self.send([self.command.get_ID, 0xFD], 2, function(data) { // 0x01 ^ 0xFF
                 if (self.verify_response(self.status.ACK, data)) {
-                    self.send([], data[1] + 2, function(data) { // data[1] = number of bytes that will follow (should be 1 + ack), its 2 + ack, WHY ???
+                    self.retrieve(data[1] + 2, function(data) { // data[1] = number of bytes that will follow (should be 1 + ack), its 2 + ack, WHY ???
                         var signature = (data[0] << 8) | data[1];
                         console.log('STM32 - Signature: 0x' + signature.toString(16)); // signature in hex representation
                         
@@ -512,7 +509,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                 
                                 self.send([bytes_to_read_n, (~bytes_to_read_n) & 0xFF], 1, function(reply) { // bytes to be read + checksum XOR(complement of bytes_to_read_n)
                                     if (self.verify_response(self.status.ACK, reply)) {
-                                        self.send([], data_length, function(data) {
+                                        self.retrieve(data_length, function(data) {
                                             for (var i = 0; i < data.length; i++) {
                                                 self.verify_hex.push(data[i]);
                                                 self.bytes_verified++;
@@ -580,16 +577,19 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 99:
             // disconnect
-            GUI.interval_remove('firmware_uploader_read'); // stop reading serial
+            
+            // remove listeners
+            serial.onReceive.listeners_.forEach(function(listener) {
+                serial.onReceive.removeListener(listener.callback);
+            });
+            
             GUI.interval_remove('STM32_timeout'); // stop STM32 timeout timer (everything is finished now)
             
             console.log('Transfered: ' + self.serial_bytes_send + ' bytes, Received: ' + self.serial_bytes_received + ' bytes');
             console.log('Script finished after: ' + (microtime() - self.upload_time_start).toFixed(4) + ' seconds, ' + self.steps_executed + ' steps');
             
             // close connection
-            chrome.serial.close(connectionId, function(result) {
-                connectionId = -1; // reset connection id
-                
+            serial.disconnect(function(result) {
                 if (result) { // All went as expected
                     console.log('Connection closed successfully.');
                 } else { // Something went wrong
