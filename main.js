@@ -17,12 +17,25 @@ ga_tracker.sendAppView('Application Started');
 $(document).ready(function() {
     // set bounds (default 960x600)
     if (screen.height > 600) {
-        chrome.app.window.current().setBounds({width: 960, height: 600});
+        chrome.app.window.current().setBounds({width: 962, height: 627});
     } else {
         $('div#content').height(280);
-        chrome.app.window.current().setBounds({width: 960, height: 400});
+        chrome.app.window.current().setBounds({width: 960, height: 427});
     }
     
+    // bind controls  
+    $('#frame .minimize').click(function() {
+        chrome.app.window.current().minimize();
+    }); 
+
+    $('#frame .maximize').click(function() {
+    });
+    
+    $('#frame .close').click(function() {
+        chrome.app.window.current().close();
+    });    
+    
+    // Tabs
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
         if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active

@@ -45,6 +45,62 @@ input[type=number]::-webkit-inner-spin-button:after {
 .right {
     float: right;
 }
+#outter-wrapper {
+    border: 1px solid silver;
+}
+#frame {
+    height: 25px;
+    line-height: 25px;
+    
+    -webkit-app-region: drag;
+    
+    background-color: white;
+}
+    #frame .title {
+        float: left;
+        
+        margin-left: 15px;
+        
+        font-weight: bold;
+        text-shadow: 1px 1px #e4e4e4;
+    }
+    #frame .minimize {
+        float: right;
+        display: block;
+        
+        width: 26px;
+        height: 20px;
+        
+        background: url('../images/controls/minimize.png') no-repeat 0 0;
+    }
+    #frame .maximize {
+        float: right;
+        display: block;
+        
+        width: 27px;
+        height: 20px;
+        
+        background: url('../images/controls/maximize.png') no-repeat 0 0;
+    }    
+    #frame .close {
+        float: right;
+        display: block;
+        
+        width: 45px;
+        height: 20px;
+        
+        background: url('../images/controls/close.png') no-repeat 0 0;
+    }
+    #frame a {
+        cursor: default;
+        -webkit-app-region: no-drag;
+    }
+    #frame a:hover {
+        background-position: 0px -20px;
+    }
+    #frame a:active {
+        background-position: 0px -40px;
+    }
 #main-wrapper {
     width: 940px;
     margin: 10px auto 0 auto;
@@ -198,9 +254,8 @@ input[type=number]::-webkit-inner-spin-button:after {
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
 } 
 #status-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
+    margin-left: -10px;
+    margin-top: 10px;
     
     width: 940px;
     height: 20px;

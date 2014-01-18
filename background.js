@@ -1,6 +1,7 @@
 function start_app() {
     chrome.app.window.create('main.html', {
         id: 'main-window',
+        frame: 'none',
         resizable: false
     }, function(window_child) {
         window_child.onClosed.addListener(function() {
