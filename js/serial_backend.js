@@ -1,4 +1,3 @@
-var connectionId = -1;
 var configuration_received = false;
 var CLI_active = false;
 
@@ -121,7 +120,7 @@ $(document).ready(function() {
                     $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', true);
                     $('div#port-picker a.connect').text('Connecting'); 
                     
-                    chrome.serial.open(selected_port, {bitrate: selected_baud}, onOpen);
+                    serial.connect(selected_port, {bitrate: selected_baud}, onOpen);
                 } else {
                     // Disable any active "data pulling" timer
                     GUI.interval_kill_all(['port-update']);
@@ -129,7 +128,12 @@ $(document).ready(function() {
                     GUI.tab_switch_cleanup();
                     GUI.timeout_remove('connecting');
                     
-                    chrome.serial.close(connectionId, onClosed);
+                    // remove listeners
+                    serial.onReceive.listeners_.forEach(function(listener) {
+                        serial.onReceive.removeListener(listener.callback);
+                    });
+                    
+                    serial.disconnect(onClosed);
                     
                     GUI.connected_to = false;
                     
@@ -203,15 +207,13 @@ $(document).ready(function() {
 
 function onOpen(openInfo) {    
     if (openInfo.connectionId > 0) {
-        connectionId = openInfo.connectionId;
-        
         // update connected_to
         GUI.connected_to = GUI.connecting_to;
         
         // reset connecting_to
         GUI.connecting_to = false;
         
-        console.log('Connection was opened with ID: ' + connectionId);
+        console.log('Connection was opened with ID: ' + openInfo.connectionId);
         
         // save selected port with chrome.storage if the port differs
         chrome.storage.local.get('last_used_port', function(result) {
@@ -232,8 +234,7 @@ function onOpen(openInfo) {
             }
         });
 
-        // start polling
-        GUI.interval_add('serial_read', readPoll, 10);
+        serial.onReceive.addListener(read_serial);
         GUI.interval_add('port_usage', port_usage, 1000);
         
         // disconnect after 10 seconds with error if we don't get IDENT data
@@ -274,8 +275,6 @@ function onOpen(openInfo) {
 }
 
 function onClosed(result) {
-    connectionId = -1; // reset connection id
-
     if (result) { // All went as expected        
         sensor_status(sensors_detected = 0); // reset active sensor indicators
         $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
@@ -288,8 +287,8 @@ function onClosed(result) {
     } 
 }
 
-function readPoll() {
-    chrome.serial.read(connectionId, 128, MSP_char_read);
+function read_serial(info) {
+    MSP_char_read(info);
 }
 
 function port_usage() {
@@ -304,7 +303,7 @@ function update_ports() {
     var initial_ports = false;
     
     GUI.interval_add('port-update', function() {
-        chrome.serial.getPorts(function(current_ports) {
+        serial.getDevices(function(current_ports) {
             if (initial_ports.length > current_ports.length || !initial_ports) {
                 // port got removed or initial_ports wasn't initialized yet
                 var removed_ports = array_difference(initial_ports, current_ports);
