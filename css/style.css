@@ -62,7 +62,7 @@ input[type=number]::-webkit-inner-spin-button:after {
         margin-left: 15px;
         
         font-weight: bold;
-        text-shadow: 1px 1px #e4e4e4;
+        /* text-shadow: 1px 1px #e4e4e4; */
     }
     #frame .minimize {
         float: right;
@@ -96,7 +96,8 @@ input[type=number]::-webkit-inner-spin-button:after {
         -webkit-app-region: no-drag;
     }
     #frame a:hover {
-        background-position: 0px -20px;
+        /* hover is disabled untill webkit-app-region: drag; starts to fire events or chromium implements native frame */
+        /* background-position: 0px -20px; */ 
     }
     #frame a:active {
         background-position: 0px -40px;
