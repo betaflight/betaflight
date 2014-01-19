@@ -102,6 +102,21 @@ function tab_initialize_receiver() {
             }, 0); // race condition, that should always trigger after all events are processed
         }).change();
         
+        $('a.refresh').click(function() {
+            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+                // fill in data from RC_tuning
+                $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
+                $('.tunings .throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
+
+                $('.tunings .rate input[name="rate"]').val(RC_tuning.RC_RATE.toFixed(2));
+                $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
+                
+                // update visual representation
+                $('.tunings .throttle input').change();
+                $('.tunings .rate input').change();
+            });
+        });
+        
         $('a.update').click(function() {
             // catch RC_tuning changes
             RC_tuning.throttle_MID = parseFloat($('.tunings .throttle input[name="mid"]').val());

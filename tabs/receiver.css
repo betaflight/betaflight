@@ -81,7 +81,8 @@
         
         border: 1px solid silver;
     }
-    .tab-receiver .update {
+    .tab-receiver .update,
+    .tab-receiver .refresh {
         display: block;
         float: right;
         
@@ -98,6 +99,10 @@
         border: 1px solid silver;
         background-color: #ececec;
     }
-    .tab-receiver .update:hover {
+    .tab-receiver .refresh {
+        margin-right: 10px;
+    }
+    .tab-receiver .update:hover,
+    .tab-receiver .refresh:hover {
         background-color: #dedcdc;
     }    

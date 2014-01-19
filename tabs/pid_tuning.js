@@ -137,6 +137,9 @@ function tab_initialize_pid_tuning() {
             $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
             
             // UI Hooks
+            $('a.refresh').click(function() {
+                tab_initialize_pid_tuning();
+            });
             
             $('a.update').click(function() {
                 // Catch all the changes and stuff the inside PIDs array

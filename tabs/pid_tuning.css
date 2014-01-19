@@ -43,7 +43,8 @@
     .tab-pid_tuning .rate-tpa input {
         width: 127px;
     }
-    .tab-pid_tuning .update {
+    .tab-pid_tuning .update,
+    .tab-pid_tuning .refresh {
         display: block;
         float: right;
         
@@ -60,6 +61,10 @@
         border: 1px solid silver;
         background-color: #ececec;
     }
-    .tab-pid_tuning .update:hover {
+    .tab-pid_tuning .refresh {
+        margin-right: 10px;
+    }    
+    .tab-pid_tuning .update:hover,
+    .tab-pid_tuning .refresh:hover {
         background-color: #dedcdc;
     }
