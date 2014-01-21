@@ -219,28 +219,103 @@ function tab_initialize_sensors() {
         GUI.interval_add('altitude_pull', function() {
             send_message(MSP_codes.MSP_ALTITUDE, MSP_codes.MSP_ALTITUDE);
             
-            // we can process this one right here
-            sensor_process_baro();
+            baro_data[0].push([samples_baro_i, SENSOR_DATA.altitude]);
+            
+            // Remove old data from array
+            while (baro_data[0].length > 300) {
+                baro_data[0].shift();
+            } 
+
+            Flotr.draw(e_graph_baro, [ 
+                {data: baro_data[0], label: "X - meters [" + SENSOR_DATA.altitude.toFixed(2) + "]"} ], baro_options);
+
+            samples_baro_i++;
         }, rates.baro);
         
         GUI.interval_add('debug_pull', function() {
             send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG);
             
-            // we can process this one right here
-            sensor_process_debug();
+            for (var i = 0; i < 4; i++) {
+                debug_data[i].push([samples_debug_i, SENSOR_DATA.debug[i]]);
+
+                // Remove old data from array
+                while (debug_data[i].length > 300) {
+                    debug_data[i].shift();
+              }
+            }
+
+
+            Flotr.draw(e_graph_debug1, [
+                {data: debug_data[0], label: "debug1 [" + SENSOR_DATA.debug[0] + "]"} ], debug1_options);
+            Flotr.draw(e_graph_debug2, [
+                {data: debug_data[1], label: "debug2 [" + SENSOR_DATA.debug[1] + "]"} ], debug2_options);
+            Flotr.draw(e_graph_debug3, [
+                {data: debug_data[2], label: "debug3 [" + SENSOR_DATA.debug[2] + "]"} ], debug3_options);
+            Flotr.draw(e_graph_debug4, [
+                {data: debug_data[3], label: "debug4 [" + SENSOR_DATA.debug[3] + "]"} ], debug4_options);
+
+            samples_debug_i++;
         }, rates.debug);
         
         // processing timers
         GUI.interval_add('process_gyro', function() {
-            sensor_process_gyro();
+            gyro_data[0].push([samples_gyro_i, SENSOR_DATA.gyroscope[0]]);
+            gyro_data[1].push([samples_gyro_i, SENSOR_DATA.gyroscope[1]]);
+            gyro_data[2].push([samples_gyro_i, SENSOR_DATA.gyroscope[2]]);
+            
+            // Remove old data from array
+            while (gyro_data[0].length > 300) {
+                gyro_data[0].shift();
+                gyro_data[1].shift();
+                gyro_data[2].shift();
+            } 
+
+            Flotr.draw(e_graph_gyro, [ 
+                {data: gyro_data[0], label: "X - rate [" + SENSOR_DATA.gyroscope[0].toFixed(2) + "]"}, 
+                {data: gyro_data[1], label: "Y - rate [" + SENSOR_DATA.gyroscope[1].toFixed(2) + "]"}, 
+                {data: gyro_data[2], label: "Z - rate [" + SENSOR_DATA.gyroscope[2].toFixed(2) + "]"} ], gyro_options); 
+            
+            samples_gyro_i++;
         }, rates.gyro);
         
         GUI.interval_add('process_accel', function() {
-            sensor_process_accel();
+            accel_data[0].push([samples_accel_i, SENSOR_DATA.accelerometer[0]]);
+            accel_data[1].push([samples_accel_i, SENSOR_DATA.accelerometer[1]]);
+            accel_data[2].push([samples_accel_i, SENSOR_DATA.accelerometer[2]]);
+            
+            // Remove old data from array
+            while (accel_data[0].length > 300) {        
+                accel_data[0].shift();
+                accel_data[1].shift();
+                accel_data[2].shift(); 
+            } 
+
+            Flotr.draw(e_graph_accel, [ 
+                {data: accel_data[1], label: "X - acceleration [" + SENSOR_DATA.accelerometer[0].toFixed(2) + "]"}, 
+                {data: accel_data[0], label: "Y - acceleration [" + SENSOR_DATA.accelerometer[1].toFixed(2) + "]"}, 
+                {data: accel_data[2], label: "Z - acceleration [" + SENSOR_DATA.accelerometer[2].toFixed(2) + "]"} ], accel_options);
+
+            samples_accel_i++;
         }, rates.accel);
         
         GUI.interval_add('process_mag', function() {
-            sensor_process_mag();
+            mag_data[0].push([samples_mag_i, SENSOR_DATA.magnetometer[0]]);
+            mag_data[1].push([samples_mag_i, SENSOR_DATA.magnetometer[1]]);
+            mag_data[2].push([samples_mag_i, SENSOR_DATA.magnetometer[2]]);
+            
+            // Remove old data from array
+            while (mag_data[0].length > 300) {
+                mag_data[0].shift();
+                mag_data[1].shift();
+                mag_data[2].shift();
+            }  
+
+            Flotr.draw(e_graph_mag, [ 
+                {data: mag_data[1], label: "X - Ga [" + SENSOR_DATA.magnetometer[0].toFixed(2) + "]"}, 
+                {data: mag_data[0], label: "Y - Ga [" + SENSOR_DATA.magnetometer[1].toFixed(2) + "]"}, 
+                {data: mag_data[2], label: "Z - Ga [" + SENSOR_DATA.magnetometer[2].toFixed(2) + "]"} ], mag_options); 
+
+            samples_mag_i++;
         }, rates.mag);
         
         // store current/latest refresh rates in the storage
@@ -248,101 +323,3 @@ function tab_initialize_sensors() {
         });
     });
 }
-
-function sensor_process_gyro() {
-    gyro_data[0].push([samples_gyro_i, SENSOR_DATA.gyroscope[0]]);
-    gyro_data[1].push([samples_gyro_i, SENSOR_DATA.gyroscope[1]]);
-    gyro_data[2].push([samples_gyro_i, SENSOR_DATA.gyroscope[2]]);
-    
-    // Remove old data from array
-    while (gyro_data[0].length > 300) {
-        gyro_data[0].shift();
-        gyro_data[1].shift();
-        gyro_data[2].shift();
-    } 
-
-    Flotr.draw(e_graph_gyro, [ 
-        {data: gyro_data[0], label: "X - rate [" + SENSOR_DATA.gyroscope[0].toFixed(2) + "]"}, 
-        {data: gyro_data[1], label: "Y - rate [" + SENSOR_DATA.gyroscope[1].toFixed(2) + "]"}, 
-        {data: gyro_data[2], label: "Z - rate [" + SENSOR_DATA.gyroscope[2].toFixed(2) + "]"} ], gyro_options); 
-    
-    samples_gyro_i++;
-}
-
-function sensor_process_accel() {
-    accel_data[0].push([samples_accel_i, SENSOR_DATA.accelerometer[0]]);
-    accel_data[1].push([samples_accel_i, SENSOR_DATA.accelerometer[1]]);
-    accel_data[2].push([samples_accel_i, SENSOR_DATA.accelerometer[2]]);
-    
-    // Remove old data from array
-    while (accel_data[0].length > 300) {        
-        accel_data[0].shift();
-        accel_data[1].shift();
-        accel_data[2].shift(); 
-    } 
-
-    Flotr.draw(e_graph_accel, [ 
-        {data: accel_data[1], label: "X - acceleration [" + SENSOR_DATA.accelerometer[0].toFixed(2) + "]"}, 
-        {data: accel_data[0], label: "Y - acceleration [" + SENSOR_DATA.accelerometer[1].toFixed(2) + "]"}, 
-        {data: accel_data[2], label: "Z - acceleration [" + SENSOR_DATA.accelerometer[2].toFixed(2) + "]"} ], accel_options);
-
-    samples_accel_i++;
-}
-
-function sensor_process_mag() {
-    mag_data[0].push([samples_mag_i, SENSOR_DATA.magnetometer[0]]);
-    mag_data[1].push([samples_mag_i, SENSOR_DATA.magnetometer[1]]);
-    mag_data[2].push([samples_mag_i, SENSOR_DATA.magnetometer[2]]);
-    
-    // Remove old data from array
-    while (mag_data[0].length > 300) {
-        mag_data[0].shift();
-        mag_data[1].shift();
-        mag_data[2].shift();
-    }  
-
-    Flotr.draw(e_graph_mag, [ 
-        {data: mag_data[1], label: "X - Ga [" + SENSOR_DATA.magnetometer[0].toFixed(2) + "]"}, 
-        {data: mag_data[0], label: "Y - Ga [" + SENSOR_DATA.magnetometer[1].toFixed(2) + "]"}, 
-        {data: mag_data[2], label: "Z - Ga [" + SENSOR_DATA.magnetometer[2].toFixed(2) + "]"} ], mag_options); 
-
-    samples_mag_i++;
-}
-
-function sensor_process_baro() {
-    baro_data[0].push([samples_baro_i, SENSOR_DATA.altitude]);
-    
-    // Remove old data from array
-    while (baro_data[0].length > 300) {
-        baro_data[0].shift();
-    } 
-
-    Flotr.draw(e_graph_baro, [ 
-        {data: baro_data[0], label: "X - meters [" + SENSOR_DATA.altitude.toFixed(2) + "]"} ], baro_options);
-
-    samples_baro_i++;
-}
-
-function sensor_process_debug() {
-    for (var i = 0; i < 4; i++) {
-      debug_data[i].push([samples_debug_i, SENSOR_DATA.debug[i]]);
-
-      // Remove old data from array
-      while (debug_data[i].length > 300) {
-          debug_data[i].shift();
-      }
-    }
-
-
-    Flotr.draw(e_graph_debug1, [
-        {data: debug_data[0], label: "debug1 [" + SENSOR_DATA.debug[0] + "]"} ], debug1_options);
-    Flotr.draw(e_graph_debug2, [
-        {data: debug_data[1], label: "debug2 [" + SENSOR_DATA.debug[1] + "]"} ], debug2_options);
-    Flotr.draw(e_graph_debug3, [
-        {data: debug_data[2], label: "debug3 [" + SENSOR_DATA.debug[2] + "]"} ], debug3_options);
-    Flotr.draw(e_graph_debug4, [
-        {data: debug_data[3], label: "debug4 [" + SENSOR_DATA.debug[3] + "]"} ], debug4_options);
-
-    samples_debug_i++;
-}
-
