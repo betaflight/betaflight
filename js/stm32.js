@@ -70,10 +70,12 @@ STM32_protocol.prototype.connect = function(hex) {
                 flashing_bitrate = 921600;
                 break;
             case 'MacOS':
+                flashing_bitrate = 921600;
+                break;
             case 'ChromeOS':
             case 'Linux':
             case 'UNIX':
-                flashing_bitrate = 576000;
+                flashing_bitrate = 256000;
                 break;
                 
             default:
