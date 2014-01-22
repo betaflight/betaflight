@@ -192,6 +192,69 @@ function add_custom_spinners() {
         
         // bind UI hooks to spinner
         $('.up', spinner).click(function() {
+            up();
+        });
+        
+        $('.up', spinner).mousedown(function() {
+            var self = $(this);
+            self.data('mousedown', true);
+            
+            GUI.timeout_add('spinner', function() {
+                if (self.data('mousedown')) {
+                    up();
+                    
+                    GUI.interval_add('spinner', function() {
+                        up();
+                    }, 100);
+                }
+            }, 250);
+        });
+        
+        $('.up', spinner).mouseup(function() {
+            var self = $(this);
+            self.data('mousedown', false);
+            GUI.interval_remove('spinner');
+        });
+        
+        $('.up', spinner).mouseleave(function() {
+            var self = $(this);
+            self.data('mousedown', false);
+            GUI.interval_remove('spinner');
+        });
+        
+        
+        $('.down', spinner).click(function() {
+            down();
+        });
+        
+        $('.down', spinner).mousedown(function() {
+            var self = $(this);
+            self.data('mousedown', true);
+            
+            GUI.timeout_add('spinner', function() {
+                if (self.data('mousedown')) {
+                    down();
+                    
+                    GUI.interval_add('spinner', function() {
+                        down();
+                    }, 100);
+                }
+            }, 250);
+        });
+        
+        $('.down', spinner).mouseup(function() {
+            var self = $(this);
+            self.data('mousedown', false);
+            GUI.interval_remove('spinner');
+        });
+        
+        $('.down', spinner).mouseleave(function() {
+            var self = $(this);
+            self.data('mousedown', false);
+            GUI.interval_remove('spinner');
+        });
+        
+        var up = function() {
             if (isInt) {
                 var current_value = parseInt(input.val());
                 input.val(current_value + 1);
@@ -204,9 +267,9 @@ function add_custom_spinners() {
             }
             
             input.change();
-        });
+        };
         
-        $('.down', spinner).click(function() {
+        var down = function() {
             if (isInt) {
                 var current_value = parseInt(input.val());
                 input.val(current_value - 1);
@@ -219,6 +282,6 @@ function add_custom_spinners() {
             }
             
             input.change();
-        });
+        };
     });
 }
