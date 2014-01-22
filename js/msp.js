@@ -72,79 +72,73 @@ function MSP_char_read(readInfo) {
     var data = new Uint8Array(readInfo.data);
     
     for (var i = 0; i < data.length; i++) {
-        if (CLI_active != true) {
-            // Standard "GUI" MSP handling
-            switch (MSP.state) {
-                case 0: // sync char 1
-                    if (data[i] == 36) { // $
-                        MSP.state++;
-                    }
-                    break;
-                case 1: // sync char 2
-                    if (data[i] == 77) { // M
-                        MSP.state++;
-                    } else { // restart and try again
-                        MSP.state = 0;
-                    }
-                    break;
-                case 2: // direction (should be >)
-                    if (data[i] == 62) { // >
-                        message_status = 1;
-                    } else { // unknown
-                        message_status = 0;
-                    }
-                    
+        switch (MSP.state) {
+            case 0: // sync char 1
+                if (data[i] == 36) { // $
                     MSP.state++;
-                    break;
-                case 3:
-                    MSP.message_length_expected = data[i];
-                   
-                    MSP.message_checksum = data[i];
-                   
-                    // setup arraybuffer
-                    MSP.message_buffer = new ArrayBuffer(MSP.message_length_expected);
-                    MSP.message_buffer_uint8_view = new Uint8Array(MSP.message_buffer);
-                    
+                }
+                break;
+            case 1: // sync char 2
+                if (data[i] == 77) { // M
                     MSP.state++;
-                    break;
-                case 4:
-                    MSP.code = data[i];
-                    MSP.message_checksum ^= data[i];
+                } else { // restart and try again
+                    MSP.state = 0;
+                }
+                break;
+            case 2: // direction (should be >)
+                if (data[i] == 62) { // >
+                    message_status = 1;
+                } else { // unknown
+                    message_status = 0;
+                }
+                
+                MSP.state++;
+                break;
+            case 3:
+                MSP.message_length_expected = data[i];
+               
+                MSP.message_checksum = data[i];
+               
+                // setup arraybuffer
+                MSP.message_buffer = new ArrayBuffer(MSP.message_length_expected);
+                MSP.message_buffer_uint8_view = new Uint8Array(MSP.message_buffer);
+                
+                MSP.state++;
+                break;
+            case 4:
+                MSP.code = data[i];
+                MSP.message_checksum ^= data[i];
+                
+                if (MSP.message_length_expected != 0) { // standard message
+                    MSP.state++;
+                } else { // MSP_ACC_CALIBRATION, etc...
+                    MSP.state += 2;
+                }
+                break;
+            case 5: // payload
+                MSP.message_buffer_uint8_view[MSP.message_length_received] = data[i];
+                MSP.message_checksum ^= data[i];
+                MSP.message_length_received++;
+                
+                if (MSP.message_length_received >= MSP.message_length_expected) {
+                    MSP.state++;
+                }
+                break;
+            case 6:
+                if (MSP.message_checksum == data[i]) {
+                    // message received, process
+                    process_data(MSP.code, MSP.message_buffer, MSP.message_length_expected);
+                } else {
+                    console.log('code: ' + MSP.code + ' - crc failed');
                     
-                    if (MSP.message_length_expected != 0) { // standard message
-                        MSP.state++;
-                    } else { // MSP_ACC_CALIBRATION, etc...
-                        MSP.state += 2;
-                    }
-                    break;
-                case 5: // payload
-                    MSP.message_buffer_uint8_view[MSP.message_length_received] = data[i];
-                    MSP.message_checksum ^= data[i];
-                    MSP.message_length_received++;
-                    
-                    if (MSP.message_length_received >= MSP.message_length_expected) {
-                        MSP.state++;
-                    }
-                    break;
-                case 6:
-                    if (MSP.message_checksum == data[i]) {
-                        // message received, process
-                        process_data(MSP.code, MSP.message_buffer, MSP.message_length_expected);
-                    } else {
-                        console.log('code: ' + MSP.code + ' - crc failed');
-                        
-                        MSP.packet_error++;
-                        $('span.packet-error').html(MSP.packet_error);
-                    }
-                    
-                    // Reset variables
-                    MSP.message_length_received = 0;
-                    MSP.state = 0;                   
-                    break;
-            }
-        } else {
-            // CLI Enabled (Terminal "style" handling)
-            handle_CLI(data[i]);
+                    MSP.packet_error++;
+                    $('span.packet-error').html(MSP.packet_error);
+                }
+                
+                // Reset variables
+                MSP.message_length_received = 0;
+                MSP.state = 0;                   
+                break;
         }
         
         char_counter++;

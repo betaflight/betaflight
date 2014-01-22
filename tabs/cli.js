@@ -118,39 +118,45 @@ function send_slowly(out_arr, i, timeout_needle) {
 */
 
 var sequence_elements = 0;
-
-function handle_CLI(data) {
-    if (data == 27 || sequence_elements > 0) { // ESC + other
-        sequence_elements++;
-        
-        // delete previous space
-        if (sequence_elements == 1) {
-            var content_string = $('.tab-cli .window .wrapper').html();
-            var new_string = content_string.substring(0, content_string.length -1);
-            $('.tab-cli .window .wrapper').html(new_string);
+function handle_CLI(readInfo) {
+    var data = new Uint8Array(readInfo.data);
+    var text = "";
+    
+    for (var i = 0; i < data.length; i++) {
+        if (data[i] == 27 || sequence_elements > 0) { // ESC + other
+            sequence_elements++;
+            
+            // delete previous space
+            if (sequence_elements == 1) {
+                text = text.substring(0, text.length -1);
+            }
+            
+            // Reset
+            if (sequence_elements >= 5) {
+                sequence_elements = 0;
+            }
         }
         
-        // Reset
-        if (sequence_elements >= 5) {
-            sequence_elements = 0;
+        if (sequence_elements == 0) {
+            switch (data[i]) {
+                case 10: // line feed
+                    if (GUI.operating_system == "Windows" || GUI.operating_system == "Linux" || GUI.operating_system == "UNIX") {
+                        text += "<br />";
+                    }
+                    break;
+                case 13: // carriage return
+                    if (GUI.operating_system == "MacOS") {
+                        text += "<br />";
+                    }
+                    break;
+                default:
+                    text += String.fromCharCode(data[i]);
+            }
         }
+        
+        char_counter++;
     }
     
-    if (sequence_elements == 0) {
-        switch (data) {
-            case 10: // line feed
-                if (GUI.operating_system == "Windows" || GUI.operating_system == "Linux" || GUI.operating_system == "UNIX") {
-                    $('.tab-cli .window .wrapper').append("<br />");
-                }
-                break;
-            case 13: // carriage return
-                if (GUI.operating_system == "MacOS") {
-                    $('.tab-cli .window .wrapper').append("<br />");
-                }
-                break;
-            default:
-                $('.tab-cli .window .wrapper').append(String.fromCharCode(data));
-                $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height());
-        }
-    }
+    $('.tab-cli .window .wrapper').append(text);
+    $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height()); // there seems to be some sort of initial rendering glitch in 33+, why?
 }

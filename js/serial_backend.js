@@ -288,7 +288,11 @@ function onClosed(result) {
 }
 
 function read_serial(info) {
-    MSP_char_read(info);
+    if (!CLI_active) {
+        MSP_char_read(info);
+    } else {
+        handle_CLI(info);
+    }
 }
 
 function port_usage() {
