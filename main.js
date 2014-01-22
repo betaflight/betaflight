@@ -169,7 +169,17 @@ function add_custom_spinners() {
     
     $('input[type="number"]').each(function() {
         var input = $(this);
-        var isInt =(input.prop('step') == '') ? true : false;
+        
+        var isInt = true;
+        if (input.prop('step') == '') {
+            isInt = true;
+        } else {
+            if (input.prop('step').indexOf('.') == -1) {
+                isInt = true;
+            } else {
+                isInt = false;
+            }
+        }
         
         // make space for spinner
         input.width(input.width() - 16);
