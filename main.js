@@ -195,30 +195,21 @@ function add_custom_spinners() {
             up();
         });
         
-        $('.up', spinner).mousedown(function() {
-            var self = $(this);
-            self.data('mousedown', true);
-            
+        $('.up', spinner).mousedown(function() {            
             GUI.timeout_add('spinner', function() {
-                if (self.data('mousedown')) {
+                GUI.interval_add('spinner', function() {
                     up();
-                    
-                    GUI.interval_add('spinner', function() {
-                        up();
-                    }, 100);
-                }
+                }, 100, true);
             }, 250);
         });
         
         $('.up', spinner).mouseup(function() {
-            var self = $(this);
-            self.data('mousedown', false);
+            GUI.timeout_remove('spinner');
             GUI.interval_remove('spinner');
         });
         
-        $('.up', spinner).mouseleave(function() {
-            var self = $(this);
-            self.data('mousedown', false);
+        $('.up', spinner).mouseleave(function() {            
+            GUI.timeout_remove('spinner');
             GUI.interval_remove('spinner');
         });
         
@@ -227,30 +218,21 @@ function add_custom_spinners() {
             down();
         });
         
-        $('.down', spinner).mousedown(function() {
-            var self = $(this);
-            self.data('mousedown', true);
-            
+        $('.down', spinner).mousedown(function() {            
             GUI.timeout_add('spinner', function() {
-                if (self.data('mousedown')) {
+                GUI.interval_add('spinner', function() {
                     down();
-                    
-                    GUI.interval_add('spinner', function() {
-                        down();
-                    }, 100);
-                }
+                }, 100, true);
             }, 250);
         });
         
         $('.down', spinner).mouseup(function() {
-            var self = $(this);
-            self.data('mousedown', false);
+            GUI.timeout_remove('spinner');
             GUI.interval_remove('spinner');
         });
         
         $('.down', spinner).mouseleave(function() {
-            var self = $(this);
-            self.data('mousedown', false);
+            GUI.timeout_remove('spinner');
             GUI.interval_remove('spinner');
         });
         
