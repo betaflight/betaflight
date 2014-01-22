@@ -59,6 +59,7 @@
                 <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
                 <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
                 <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input class="master" type="range" min="1000" max="2000" value="1000" disabled="disabled" />
             </div>
             <div class="values">
                 <ul>
@@ -70,16 +71,19 @@
                     <li>1000</li>
                     <li>1000</li>
                     <li>1000</li>
+                    <li style="font-weight: bold;">Master</li>
                 </ul>
             </div>
         </div>
         <div class="notice">
             <strong>Motor Test Mode Notice:</strong><br />
             Moving the sliders will cause the motors to <strong>spin up</strong>.<br />
-            In order to prevent injury you must <strong style="color: red">remove ALL propellers</strong> before using this feature.<br />
-            If you understand these instructions check the <strong>box</strong> below to <strong style="color: green">enable</strong> motor test mode.<br />
+            In order to prevent injury <strong style="color: red">remove ALL propellers</strong> before using this feature.<br />
+            If you understand these instructions check the <strong>box</strong> below to <strong style="color: green">enable</strong> motor test.<br />
             <br />
-            <input type="checkbox" />
+            Min: <input class="min" type="number" min="1000" max="2000" disabled="disabled" />
+            Max: <input class="max" type="number" min="1000" max="2000" disabled="disabled" />
+            Check: <input type="checkbox" />
         </div>
         <div class="cler-both"></div>
     </div>

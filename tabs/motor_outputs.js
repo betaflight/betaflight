@@ -3,10 +3,23 @@ function tab_initialize_motor_outputs() {
     GUI.active_tab = 'motor_outputs';
     
     // if CAP_DYNBALANCE is true
-    if (bit_check(CONFIG.capability, 2)) $('div.motor_testing').show();
+    if (bit_check(CONFIG.capability, 2)) {
+        $('div.motor_testing').show();
+    }
+    
+    send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, function() {
+        $('input.min').val(MISC.minthrottle);
+        $('input.max').val(MISC.maxthrottle);
+        
+        
+        $('div.sliders input').prop('min', MISC.minthrottle);
+        $('div.sliders input').prop('max', MISC.maxthrottle);
+        $('div.sliders input').val(MISC.minthrottle);
+        $('div.values li:not(:last)').html(MISC.minthrottle);
+    });
     
     // UI hooks
-    $('div.sliders input').change(function() {
+    $('div.sliders input:not(.master)').change(function() {
         var index = $(this).index();
         
         $('div.values li').eq(index).html($(this).val());
@@ -24,20 +37,39 @@ function tab_initialize_motor_outputs() {
         send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
     });
     
-    $('div.notice input').change(function() {
+    $('div.sliders input.master').change(function() {
+        var val = $(this).val();
+        
+        $('div.sliders input').val(val);
+        $('div.sliders input:not(:last)').change();
+    });
+    
+    $('div.notice input[type="checkbox"]').change(function() {
         if ($(this).is(':checked')) {
-            $('div.sliders input').prop('disabled', false);
+            $('div.sliders input, .notice input[type="number"]').prop('disabled', false);
         } else {
-            // disable sliders
-            $('div.sliders input').prop('disabled', true);
+            // disable sliders / min max
+            $('div.sliders input, .notice input[type="number"]').prop('disabled', true);
             
             // change all values to default
             $('div.sliders input').val(1000);
-            $('div.values li').html(1000);
+            $('div.values li:not(:last)').html(1000);
             
             // trigger change event so values are sent to mcu
             $('div.sliders input').change();
         }
+    });
+    
+    $('div.notice input[type="number"]').change(function() {
+        var min = parseInt($('div.notice .min').val());
+        var max = parseInt($('div.notice .max').val());
+        
+        
+        $('div.sliders input').prop('min', min);
+        $('div.sliders input').prop('max', max);
+        
+        // trigger change event so values are sent to mcu
+        $('div.sliders input').change();
     });
     
     // enable Motor data pulling
