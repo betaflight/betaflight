@@ -86,3 +86,6 @@
     .tab-pid_tuning .refresh:hover {
         background-color: #dedcdc;
     }
+    .tab-pid_tuning .update.success {
+        border: 1px solid #43c84d;
+    }

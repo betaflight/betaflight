@@ -119,4 +119,7 @@
     .tab-receiver .update:hover,
     .tab-receiver .refresh:hover {
         background-color: #dedcdc;
-    }    
+    }
+    .tab-receiver .update.success {
+        border: 1px solid #43c84d;
+    }

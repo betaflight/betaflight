@@ -132,7 +132,7 @@ function tab_initialize_initial_setup() {
                 });
 
                 
-                $('a.save_settings').click(function() {
+                $('a.update').click(function() {
                     CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
                     CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
                     
@@ -185,7 +185,14 @@ function tab_initialize_initial_setup() {
                     send_message(MSP_codes.MSP_SET_MISC, buffer_out);
                     
                     // Save changes to EEPROM
-                    send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+                    send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                        var element = $('a.update');
+                        element.addClass('success');
+                        
+                        GUI.timeout_add('success_highlight', function() {
+                            element.removeClass('success');
+                        }, 2000);
+                    });
                 });    
 
                 // reset yaw button hook

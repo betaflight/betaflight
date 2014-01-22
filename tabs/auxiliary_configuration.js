@@ -6,7 +6,7 @@ function tab_initialize_auxiliary_configuration() {
         send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
             // generate table from the supplied AUX names and AUX data
             for (var i = 0; i < AUX_CONFIG.length; i++) {
-                $('.tab-auxiliary_configuration .boxes > tbody:last').append(
+                $('.boxes > tbody:last').append(
                     '<tr>' +
                         '<td class="name">' + AUX_CONFIG[i] + '</td>' +
                         box_check(AUX_CONFIG_values[i], 0) +
@@ -29,11 +29,11 @@ function tab_initialize_auxiliary_configuration() {
             }
             
             // UI Hooks            
-            $('.tab-auxiliary_configuration a.update').click(function() {
+            $('a.update').click(function() {
                 // catch the input changes
                 var main_needle = 0;
                 var needle = 0;
-                $('.tab-auxiliary_configuration .boxes input').each(function() {
+                $('.boxes input').each(function() {
                     if ($(this).is(':checked')) {
                         AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], needle);
                     } else {
@@ -61,7 +61,14 @@ function tab_initialize_auxiliary_configuration() {
                 send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out); 
 
                 // Save changes to EEPROM
-                send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+                send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                    var element = $('a.update');
+                    element.addClass('success');
+                    
+                    GUI.timeout_add('success_highlight', function() {
+                        element.removeClass('success');
+                    }, 2000);
+                });
             });
 
             // enable data pulling

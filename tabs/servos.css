@@ -133,3 +133,6 @@
     .tab-servos .update:hover {
         background-color: #dedcdc;
     }
+    .tab-servos .update.success {
+        border: 1px solid #43c84d;
+    }

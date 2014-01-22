@@ -309,7 +309,7 @@
             border: 1px solid silver;
             text-align: center;
         }
-    .tab-initial_setup .save_settings {
+    .tab-initial_setup .update {
         display: block;
         float: left;
         
@@ -325,9 +325,12 @@
         border: 1px solid silver;
         background-color: #ececec;
     }
-    .tab-initial_setup .save_settings:hover {
+    .tab-initial_setup .update:hover {
         background-color: #dedcdc;
-    }        
+    }
+    .tab-initial_setup .update.success {
+        border: 1px solid #43c84d;
+    }
     .tab-initial_setup .compass-wrapper {
         position: absolute;
         

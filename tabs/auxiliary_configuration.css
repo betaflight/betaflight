@@ -80,3 +80,6 @@
     .tab-auxiliary_configuration .update:hover {
         background-color: #dedcdc;
     }
+    .tab-auxiliary_configuration .update.success {
+        border: 1px solid #43c84d;
+    }

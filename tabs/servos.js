@@ -190,7 +190,14 @@ function servos_update(save_to_eeprom) {
     
     if (save_to_eeprom) {
         // Save changes to EEPROM
-        send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+        send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+            var element = $('a.update');
+            element.addClass('success');
+            
+            GUI.timeout_add('success_highlight', function() {
+                element.removeClass('success');
+            }, 2000);
+        });
     }
 }
 
