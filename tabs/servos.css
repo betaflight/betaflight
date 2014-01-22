@@ -1,3 +1,19 @@
+.tab-servos {
+}
+    .tab-servos .spinner {
+        float: right;
+        width: 15px;
+        height: 20px;
+        
+        background-image: url('../images/arrows.png');
+        background-repeat: no-repeat;
+    }
+        .tab-servos .spinner .up {
+            height: 10px;
+        }
+        .tab-servos .spinner .down {
+            height: 10px;
+        }
 .tab-servos .supported_wrapper, 
 .tab-servos .direction_wrapper {
     display: none;
@@ -40,11 +56,9 @@
         
         background-color: #ececec;
     }
-    .tab-servos table input[type="number"] {
+    .tab-servos table input[type="number"] {        
         width: 65px;
         height: 20px;
-        
-        padding-right: 5px;
         
         line-height: 20px;
         

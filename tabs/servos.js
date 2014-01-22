@@ -103,6 +103,9 @@ function tab_initialize_servos() {
                         }
                 }
                 
+                // enable custom spinners
+                add_custom_spinners();
+                
                 // UI hooks for dynamically generated elements
                 $('table.directions select, table.directions input, table.fields select, table.fields input').change(function() {
                     if ($('div.live input').is(':checked')) {

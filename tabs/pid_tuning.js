@@ -2,6 +2,9 @@ function tab_initialize_pid_tuning() {
     ga_tracker.sendAppView('PID Tuning');
     GUI.active_tab = 'pid_tuning';
     
+    // enable custom spinners
+    add_custom_spinners();
+    
     send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, function() {
         send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
             // Fill in the data from PIDs array
