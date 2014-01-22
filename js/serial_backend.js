@@ -214,7 +214,7 @@ function onOpen(openInfo) {
         // reset connecting_to
         GUI.connecting_to = false;
         
-        console.log('Connection was opened with ID: ' + openInfo.connectionId);
+        console.log('Connection was opened with ID: ' + openInfo.connectionId + ', Baud: ' + openInfo.bitrate);
         
         // save selected port with chrome.storage if the port differs
         chrome.storage.local.get('last_used_port', function(result) {
