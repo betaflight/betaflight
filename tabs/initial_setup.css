@@ -1,5 +1,22 @@
 .tab-initial_setup {
 }
+    .tab-initial_setup .spinner {
+        float: right;
+        width: 15px;
+        height: 20px;
+        
+        background-image: url('../images/arrows.png');
+        background-repeat: no-repeat;    
+        
+        border: 1px solid silver;
+        border-left: 0;
+    }
+        .tab-initial_setup .spinner .up {
+            height: 10px;
+        }
+        .tab-initial_setup .spinner .down {
+            height: 10px;
+        }
     .tab-initial_setup .section {
         clear: both;
         padding-bottom: 8px;

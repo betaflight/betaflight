@@ -2,6 +2,9 @@ function tab_initialize_initial_setup() {
     ga_tracker.sendAppView('Initial Setup');
     GUI.active_tab = 'initial_setup';
     
+    // enable custom spinners
+    add_custom_spinners();
+    
     send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
         send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, function() {
             send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, function() {
