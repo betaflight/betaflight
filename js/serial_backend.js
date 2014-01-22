@@ -1,5 +1,6 @@
 var configuration_received = false;
 var CLI_active = false;
+var CLI_valid = false;
 
 var CONFIG = {
     version:       0,

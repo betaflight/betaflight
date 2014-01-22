@@ -228,7 +228,8 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                 // we can setup an interval asking for data lets say every 200ms, when data arrives, callback will be triggered and tab switched
                 // we could probably implement this someday
                 GUI.timeout_add('waiting_for_bootup', function() {
-                    CLI_active = false; 
+                    CLI_active = false;
+                    CLI_valid = false;
                     
                     if (callback) callback();
                 }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one

@@ -72,11 +72,6 @@ function tab_initialize_cli() {
     // give input element user focus
     $('.tab-cli textarea').focus();
     
-    // if user clicks inside the console window, input element gets re-focused
-    $('.tab-cli .window').click(function() {
-        $('.tab-cli textarea').focus();
-    });
-    
     $('.tab-cli .copy').click(function() {
         var text = $('.tab-cli .window .wrapper').html();
         text = text.replace(/<br\s*\/?>/mg,"\n"); // replacing br tags with \n to keep some of the formating
@@ -118,43 +113,56 @@ function send_slowly(out_arr, i, timeout_needle) {
 */
 
 var sequence_elements = 0;
+var CLI_validate_text = "";
 function handle_CLI(readInfo) {
     var data = new Uint8Array(readInfo.data);
     var text = "";
     
     for (var i = 0; i < data.length; i++) {
-        if (data[i] == 27 || sequence_elements > 0) { // ESC + other
-            sequence_elements++;
-            
-            // delete previous space
-            if (sequence_elements == 1) {
-                text = text.substring(0, text.length -1);
+        if (CLI_valid) {
+            if (data[i] == 27 || sequence_elements > 0) { // ESC + other
+                sequence_elements++;
+                
+                // delete previous space
+                if (sequence_elements == 1) {
+                    text = text.substring(0, text.length -1);
+                }
+                
+                // Reset
+                if (sequence_elements >= 5) {
+                    sequence_elements = 0;
+                }
             }
             
-            // Reset
-            if (sequence_elements >= 5) {
-                sequence_elements = 0;
+            if (sequence_elements == 0) {
+                switch (data[i]) {
+                    case 10: // line feed
+                        if (GUI.operating_system == "Windows" || GUI.operating_system == "Linux" || GUI.operating_system == "UNIX") {
+                            text += "<br />";
+                        }
+                        break;
+                    case 13: // carriage return
+                        if (GUI.operating_system == "MacOS") {
+                            text += "<br />";
+                        }
+                        break;
+                    default:
+                        text += String.fromCharCode(data[i]);
+                }
             }
-        }
-        
-        if (sequence_elements == 0) {
-            switch (data[i]) {
-                case 10: // line feed
-                    if (GUI.operating_system == "Windows" || GUI.operating_system == "Linux" || GUI.operating_system == "UNIX") {
-                        text += "<br />";
-                    }
-                    break;
-                case 13: // carriage return
-                    if (GUI.operating_system == "MacOS") {
-                        text += "<br />";
-                    }
-                    break;
-                default:
-                    text += String.fromCharCode(data[i]);
-            }
+        } else {
+            // try to catch part of valid CLI enter message
+            CLI_validate_text += String.fromCharCode(data[i]);
         }
         
         char_counter++;
+    }
+    
+    if (!CLI_valid && CLI_validate_text.indexOf('CLI') != -1) {
+        CLI_valid = true;
+        CLI_validate_text = "";
+        
+        text = "Entering CLI Mode, type 'exit' to return, or 'help'<br /><br /># ";
     }
     
     $('.tab-cli .window .wrapper').append(text);
