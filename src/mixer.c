@@ -471,7 +471,11 @@ void mixTable(void)
     // forward AUX1-4 to servo outputs (not constrained)
     if (cfg.gimbal_flags & GIMBAL_FORWARDAUX) {
         int offset = 0;
-        if (feature(FEATURE_SERVO_TILT))
+        // offset servos based off number already used in mixer types
+        // airplane and servo_tilt together can't be used
+        if (mcfg.mixerConfiguration == MULTITYPE_AIRPLANE || mcfg.mixerConfiguration == MULTITYPE_FLYING_WING)
+            offset = 4;
+        else if (mixers[mcfg.mixerConfiguration].useServo)
             offset = 2;
         for (i = 0; i < 4; i++)
             pwmWriteServo(i + offset, rcData[AUX1 + i]);
