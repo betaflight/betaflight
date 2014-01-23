@@ -74,8 +74,11 @@
             .tab-motor_outputs .motor_testing .notice input[type="number"] {
                 margin: 0 10px 0 5px;
                 width: 45px;
+                height: 20px;
                 
-                text-align: center;
+                padding: 0 5px 0 5px;
+                
+                line-height: 20px;
                 
                 border: 1px solid silver;
             }
