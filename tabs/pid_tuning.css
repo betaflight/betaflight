@@ -1,21 +1,8 @@
 .tab-pid_tuning {
 }
-    .tab-pid_tuning .spinner {
-        float: right;
-        width: 16px;
-        height: 20px;
-        
-        background-image: url('../images/arrows.png');
-        background-repeat: no-repeat;
-        
-        background-color: white;
+    .tab-pid_tuning input[type="number"]::-webkit-inner-spin-button {
+        border: 0;
     }
-        .tab-pid_tuning .spinner .up {
-            height: 10px;
-        }
-        .tab-pid_tuning .spinner .down {
-            height: 10px;
-        }
 .tab-pid_tuning table {
     float: left;
     

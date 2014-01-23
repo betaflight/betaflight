@@ -88,6 +88,7 @@ function tab_initialize_servos() {
                         process_servos('Front', 'F YAW', 5, true);
                         process_servos('Rear', 'YAW', 6, true);
                         break;
+                        
                     default:
                         model.html('Doesn\'t support servos');
                         
@@ -102,9 +103,6 @@ function tab_initialize_servos() {
                             process_servos('Roll Servo', '', 1, 2);
                         }
                 }
-                
-                // enable custom spinners
-                add_custom_spinners();
                 
                 // UI hooks for dynamically generated elements
                 $('table.directions select, table.directions input, table.fields select, table.fields input').change(function() {

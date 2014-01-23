@@ -1,19 +1,8 @@
 .tab-receiver {
 }
-    .tab-receiver .spinner {
-        float: right;
-        width: 15px;
-        height: 20px;
-        
-        background-image: url('../images/arrows.png');
-        background-repeat: no-repeat;
+    .tab-receiver input[type="number"]::-webkit-inner-spin-button {
+        border: 0;
     }
-        .tab-receiver .spinner .up {
-            height: 10px;
-        }
-        .tab-receiver .spinner .down {
-            height: 10px;
-        }
     .tab-receiver .bars {
         float: left;
     }

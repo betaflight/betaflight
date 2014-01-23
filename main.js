@@ -164,6 +164,7 @@ function array_difference(firstArray, secondArray) {
     return cloneArray;
 }
 
+/*
 function add_custom_spinners() {
     var spinner_element = '<div class="spinner"><div class="up"></div><div class="down"></div></div>';
     
@@ -270,3 +271,4 @@ function add_custom_spinners() {
         }
     });
 }
+*/
