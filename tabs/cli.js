@@ -169,5 +169,8 @@ function handle_CLI(readInfo) {
     }
     
     $('.tab-cli .window .wrapper').append(text);
-    $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height()); // there seems to be some sort of initial rendering glitch in 33+, why?
+    $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height()); 
+    
+    // there seems to be some sort of initial rendering glitch in 33+, we will force redraw/refill
+    $('.tab-cli .window .wrapper').css('webkitTransform', 'scale(1)');
 }
