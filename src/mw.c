@@ -831,34 +831,42 @@ void loop(void)
             if (f.BARO_MODE) {
                 static uint8_t isAltHoldChanged = 0;
                 static int16_t AltHoldCorr = 0;
-                if (cfg.alt_hold_fast_change) {
-                    // rapid alt changes
-                    if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
-                        errorAltitudeI = 0;
-                        isAltHoldChanged = 1;
-                        rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -cfg.alt_hold_throttle_neutral : cfg.alt_hold_throttle_neutral;
+                if (!f.FIXED_WING) {
+                    // multirotor alt hold
+                    if (cfg.alt_hold_fast_change) {
+                        // rapid alt changes
+                        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
+                            errorAltitudeI = 0;
+                            isAltHoldChanged = 1;
+                            rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -cfg.alt_hold_throttle_neutral : cfg.alt_hold_throttle_neutral;
+                        } else {
+                            if (isAltHoldChanged) {
+                                AltHold = EstAlt;
+                                isAltHoldChanged = 0;
+                            }
+                            rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
+                        }
                     } else {
-                        if (isAltHoldChanged) {
+                        // slow alt changes for apfags
+                        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
+                            // Slowly increase/decrease AltHold proportional to stick movement ( +100 throttle gives ~ +50 cm in 1 second with cycle time about 3-4ms)
+                            AltHoldCorr += rcCommand[THROTTLE] - initialThrottleHold;
+                            AltHold += AltHoldCorr / 2000;
+                            AltHoldCorr %= 2000;
+                            isAltHoldChanged = 1;
+                        } else if (isAltHoldChanged) {
                             AltHold = EstAlt;
+                            AltHoldCorr = 0;
                             isAltHoldChanged = 0;
                         }
                         rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
+                        rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], mcfg.minthrottle + 150, mcfg.maxthrottle);
                     }
                 } else {
-                    // slow alt changes for apfags
-                    if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
-                        // Slowly increase/decrease AltHold proportional to stick movement ( +100 throttle gives ~ +50 cm in 1 second with cycle time about 3-4ms)
-                        AltHoldCorr += rcCommand[THROTTLE] - initialThrottleHold;
-                        AltHold += AltHoldCorr / 2000;
-                        AltHoldCorr %= 2000;
-                        isAltHoldChanged = 1;
-                    } else if (isAltHoldChanged) {
-                        AltHold = EstAlt;
-                        AltHoldCorr = 0;
-                        isAltHoldChanged = 0;
-                    }
-                    rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
-                    rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], mcfg.minthrottle + 150, mcfg.maxthrottle);
+                    // handle fixedwing-related althold. UNTESTED! and probably wrong
+                    // most likely need to check changes on pitch channel and 'reset' althold similar to
+                    // how throttle does it on multirotor
+                    rcCommand[PITCH] += BaroPID * mcfg.fixedwing_althold_dir;
                 }
             }
         }
