@@ -92,7 +92,7 @@ $(document).ready(function() {
     tab_initialize_default();
     
     // listen to all input change events and adjust the value within limits if necessary
-    $("#content").on("focus", 'input[type="number"]', function() {
+    $("#content").on('focus', 'input[type="number"]', function() {
         var element = $(this);
         var val = element.val();
         
@@ -101,7 +101,18 @@ $(document).ready(function() {
         }
     });
     
-    $("#content").on("change", 'input[type="number"]', function() {
+    $("#content").on('keydown', 'input[type="number"]', function(e) {
+        // whitelist all that we need for numeric control
+        if ((e.keyCode >= 96 && e.keyCode <= 105) || (e.keyCode >= 48 && e.keyCode <= 57)) { // allow numpad and standard number keypad
+        } else if (e.keyCode == 190 || e.keyCode == 110) { // allow and decimal point
+        } else if ((e.keyCode >= 37 && e.keyCode <= 40) || e.keyCode == 13) { // allow arrows, enter
+        } else {
+            // block everything else
+            e.preventDefault();
+        }
+    });
+    
+    $("#content").on('change', 'input[type="number"]', function() {
         var element = $(this);
         var min = parseFloat(element.prop('min'));
         var max = parseFloat(element.prop('max'));
