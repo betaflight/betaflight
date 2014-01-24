@@ -58,31 +58,32 @@ $(document).ready(function() {
                 
                 switch (tab) {
                     case 'tab_initial_setup':
-                        $('#content').load("./tabs/initial_setup.html", tab_initialize_initial_setup);
+                        tab_initialize_initial_setup();
                         break;
                     case 'tab_pid_tuning':
-                        $('#content').load("./tabs/pid_tuning.html", tab_initialize_pid_tuning);
+                        tab_initialize_pid_tuning();
                         break;
                     case 'tab_receiver':
-                        $('#content').load("./tabs/receiver.html", tab_initialize_receiver);
+                        tab_initialize_receiver();
                         break;
                     case 'tab_auxiliary_configuration':
-                        $('#content').load("./tabs/auxiliary_configuration.html", tab_initialize_auxiliary_configuration);
+                        tab_initialize_auxiliary_configuration();
                         break;
                     case 'tab_servos':
+                        tab_initialize_servos();
                         $('#content').load("./tabs/servos.html", tab_initialize_servos);
                         break;
                     case 'tab_gps':
-                        $('#content').load("./tabs/gps.html", tab_initialize_gps);
+                        tab_initialize_gps();
                         break;
                     case 'tab_motor_outputs':
-                        $('#content').load("./tabs/motor_outputs.html", tab_initialize_motor_outputs);
+                        tab_initialize_motor_outputs();
                         break;
                     case 'tab_sensors':
-                        $('#content').load("./tabs/sensors.html", tab_initialize_sensors);
+                        tab_initialize_sensors();
                         break;    
                     case 'tab_cli':
-                        $('#content').load("./tabs/cli.html", tab_initialize_cli);
+                        tab_initialize_cli();
                         break;                         
                 }
             });

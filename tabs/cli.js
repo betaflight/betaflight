@@ -23,66 +23,69 @@ cli_history = new CliHistory();
 
 function tab_initialize_cli() {
     ga_tracker.sendAppView('CLI Page');
-    GUI.active_tab = 'cli';
     
-    CLI_active = true;
-    
-    // Enter CLI mode
-    var bufferOut = new ArrayBuffer(1);
-    var bufView = new Uint8Array(bufferOut);
-    
-    bufView[0] = 0x23; // #
+    $('#content').load("./tabs/cli.html", function() {
+        GUI.active_tab = 'cli';
+        
+        CLI_active = true;
+        
+        // Enter CLI mode
+        var bufferOut = new ArrayBuffer(1);
+        var bufView = new Uint8Array(bufferOut);
+        
+        bufView[0] = 0x23; // #
 
-    serial.send(bufferOut, function(writeInfo) {});
+        serial.send(bufferOut, function(writeInfo) {});
 
-    var textarea = $('.tab-cli textarea');
-    textarea.keypress(function(event) {
-        if (event.which == 13) { // enter
-            var out_string = $('.tab-cli textarea').val();
-            var out_arr = out_string.split("\n");
-            cli_history.add(out_string.trim());
-            var timeout_needle = 0;
-            
-            for (var i = 0; i < out_arr.length; i++) {
-                send_slowly(out_arr, i, timeout_needle++);
+        var textarea = $('.tab-cli textarea');
+        textarea.keypress(function(event) {
+            if (event.which == 13) { // enter
+                var out_string = $('.tab-cli textarea').val();
+                var out_arr = out_string.split("\n");
+                cli_history.add(out_string.trim());
+                var timeout_needle = 0;
+                
+                for (var i = 0; i < out_arr.length; i++) {
+                    send_slowly(out_arr, i, timeout_needle++);
+                }
+                
+                $('.tab-cli textarea').val('');
             }
-            
-            $('.tab-cli textarea').val('');
+        });
+
+        textarea.keyup(function(event) {
+            var keyUp = { 38: true }, keyDown = { 40: true };
+
+            if (event.keyCode in keyUp)
+                textarea.val(cli_history.prev());
+
+            if (event.keyCode in keyDown)
+                textarea.val(cli_history.next());
+        });
+        
+        // handle smaller resolutions
+        if (screen.height <= 600) {
+            $('div.tab-cli .window').height(200);
         }
-    });
-
-    textarea.keyup(function(event) {
-        var keyUp = { 38: true }, keyDown = { 40: true };
-
-        if (event.keyCode in keyUp)
-            textarea.val(cli_history.prev());
-
-        if (event.keyCode in keyDown)
-            textarea.val(cli_history.next());
-    });
-    
-    // handle smaller resolutions
-    if (screen.height <= 600) {
-        $('div.tab-cli .window').height(200);
-    }
-    
-    // apply dynamic width to the textarea element according to cli window width (minus padding and border width)
-    $('div.tab-cli textarea').width($('div.tab-cli .window').outerWidth() - 7);
-    
-    // give input element user focus
-    $('.tab-cli textarea').focus();
-    
-    $('.tab-cli .copy').click(function() {
-        var text = $('.tab-cli .window .wrapper').html();
-        text = text.replace(/<br\s*\/?>/mg,"\n"); // replacing br tags with \n to keep some of the formating
         
-        var copyFrom = $('<textarea/>');
+        // apply dynamic width to the textarea element according to cli window width (minus padding and border width)
+        $('div.tab-cli textarea').width($('div.tab-cli .window').outerWidth() - 7);
         
-        copyFrom.text(text);
-        $('body').append(copyFrom);
-        copyFrom.select();
-        document.execCommand('copy');
-        copyFrom.remove();
+        // give input element user focus
+        $('.tab-cli textarea').focus();
+        
+        $('.tab-cli .copy').click(function() {
+            var text = $('.tab-cli .window .wrapper').html();
+            text = text.replace(/<br\s*\/?>/mg,"\n"); // replacing br tags with \n to keep some of the formating
+            
+            var copyFrom = $('<textarea/>');
+            
+            copyFrom.text(text);
+            $('body').append(copyFrom);
+            copyFrom.select();
+            document.execCommand('copy');
+            copyFrom.remove();
+        });
     });
 }
 
