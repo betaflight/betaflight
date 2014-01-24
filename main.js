@@ -17,10 +17,10 @@ ga_tracker.sendAppView('Application Started');
 $(document).ready(function() {
     // set bounds (default 960x600)
     if (screen.height > 600) {
-        chrome.app.window.current().setBounds({width: 962, height: 627});
+        chrome.app.window.current().setBounds({width: 962, height: 629});
     } else {
         $('div#content').height(280);
-        chrome.app.window.current().setBounds({width: 960, height: 427});
+        chrome.app.window.current().setBounds({width: 960, height: 429});
     }
     
     // bind controls  
