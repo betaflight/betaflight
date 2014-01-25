@@ -22,3 +22,7 @@ Alternative way
 How to use
 -----------
 You can find the baseflight configurator icon in your application tab "Apps"
+
+Developers
+----------
+We accept clean and reasonable patches, always target the "development" branch for the pull requests
