@@ -6,6 +6,11 @@ var serial = {
         
         chrome.serial.connect(path, options, function(connectionInfo) {
             self.connectionId = connectionInfo.connectionId;
+            
+            if (connectionInfo.connectionId > 0) {
+                console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', Baud: ' + connectionInfo.bitrate);
+            }
+            
             callback(connectionInfo);
         });
     },
@@ -13,7 +18,14 @@ var serial = {
         var self = this;
         
         chrome.serial.disconnect(this.connectionId, function(result) {
+            if (result) {
+                console.log('SERIAL: Connection with ID: ' + self.connectionId + ' closed');
+            } else {
+                console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed');
+            }
+            
             self.connectionId = -1;
+            
             callback(result);
         });
     },

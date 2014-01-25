@@ -214,8 +214,6 @@ function onOpen(openInfo) {
         // reset connecting_to
         GUI.connecting_to = false;
         
-        console.log('Connection was opened with ID: ' + openInfo.connectionId + ', Baud: ' + openInfo.bitrate);
-        
         // save selected port with chrome.storage if the port differs
         chrome.storage.local.get('last_used_port', function(result) {
             if (typeof result.last_used_port != 'undefined') {
@@ -280,10 +278,7 @@ function onClosed(result) {
         sensor_status(sensors_detected = 0); // reset active sensor indicators
         $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
         tab_initialize_default();
-        
-        console.log('Connection closed successfully.');
     } else { // Something went wrong
-        console.log('There was an error that happened during "connection-close" procedure.');
         notify('Failed to close serial port', 'red');
     } 
 }

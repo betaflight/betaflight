@@ -83,7 +83,6 @@ STM32_protocol.prototype.connect = function(hex) {
         if (!$('input.updating').is(':checked')) {
             serial.connect(selected_port, {bitrate: baud}, function(openInfo) {
                 if (openInfo.connectionId > 0) {                    
-                    console.log('Connection was opened with ID: ' + openInfo.connectionId + ' Baud: ' + baud);
                     console.log('Sending ascii "R" to reboot');
 
                     // we are connected, disabling connect button in the UI
@@ -93,19 +92,13 @@ STM32_protocol.prototype.connect = function(hex) {
                     
                     GUI.timeout_add('reboot_into_bootloader', function() {
                         serial.disconnect(function(result) {
-                            if (result) {
-                                console.log('Connection closed successfully.');
-                                
+                            if (result) {                                
                                 serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
-                                    if (openInfo.connectionId > 0) {
-                                        console.log('Connection was opened with ID: ' + openInfo.connectionId + ' Baud: ' + flashing_bitrate);
-                                        
+                                    if (openInfo.connectionId > 0) {                                        
                                         self.initialize();
                                     }
                                 });
                             } else {
-                                console.log('There was an error that happened during "connection-close" procedure');
-                                
                                 GUI.connect_lock = false;
                             }
                         });
@@ -114,9 +107,7 @@ STM32_protocol.prototype.connect = function(hex) {
             });
         } else {
             serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
-                if (openInfo.connectionId > 0) {
-                    console.log('Connection was opened with ID: ' + openInfo.connectionId + ' Baud: ' + flashing_bitrate);
-                    
+                if (openInfo.connectionId > 0) {                    
                     // we are connected, disabling connect button in the UI
                     GUI.connect_lock = true;
                     
@@ -591,9 +582,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // close connection
             serial.disconnect(function(result) {
                 if (result) { // All went as expected
-                    console.log('Connection closed successfully.');
                 } else { // Something went wrong
-                    console.log('There was an error that happened during "connection-close" procedure');
                 }
                 
                 // unlocking connect button
