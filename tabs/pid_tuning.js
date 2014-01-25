@@ -133,6 +133,22 @@ function tab_initialize_pid_tuning() {
                 });
                 needle++;  
 
+                i = 0;
+                $('.pid_tuning .Velocity input').each(function() {
+                    switch (i) {
+                        case 0:
+                            $(this).val(PIDs[needle][i++].toFixed(1));  
+                            break;
+                        case 1:
+                            $(this).val(PIDs[needle][i++].toFixed(3));  
+                            break;
+                        case 2:
+                            $(this).val(PIDs[needle][i++].toFixed(0));  
+                            break;
+                    }     
+                });
+                needle++;
+                
                 // Fill in data from RC_tuning object
                 $('.rate-tpa input[name="roll-pitch"]').val(RC_tuning.roll_pitch_rate.toFixed(2));
                 $('.rate-tpa input[name="yaw"]').val(RC_tuning.yaw_rate.toFixed(2));
