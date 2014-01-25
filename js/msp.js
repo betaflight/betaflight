@@ -219,15 +219,19 @@ function process_data(command, message_buffer, message_length_expected) {
             $('span.cycle-time').html(CONFIG.cycleTime);
             break;
         case MSP_codes.MSP_RAW_IMU:
-            SENSOR_DATA.accelerometer[0] = data.getInt16(0, 1) / 1000; // properly scaled
-            SENSOR_DATA.accelerometer[1] = data.getInt16(2, 1) / 1000;
-            SENSOR_DATA.accelerometer[2] = data.getInt16(4, 1) / 1000;
+            // 512 for mpu6050, 256 for mma
+            // currently we are unable to differentiate between the sensor types, so we are goign with 512
+            SENSOR_DATA.accelerometer[0] = data.getInt16(0, 1) / 512;
+            SENSOR_DATA.accelerometer[1] = data.getInt16(2, 1) / 512;
+            SENSOR_DATA.accelerometer[2] = data.getInt16(4, 1) / 512;
             
-            SENSOR_DATA.gyroscope[0] = data.getInt16(6, 1) / 8; // no clue about scaling factor
-            SENSOR_DATA.gyroscope[1] = data.getInt16(8, 1) / 8;
-            SENSOR_DATA.gyroscope[2] = data.getInt16(10, 1) / 8;
+            // properly scaled
+            SENSOR_DATA.gyroscope[0] = data.getInt16(6, 1) * (4 / 16.4);
+            SENSOR_DATA.gyroscope[1] = data.getInt16(8, 1) * (4 / 16.4);
+            SENSOR_DATA.gyroscope[2] = data.getInt16(10, 1) * (4 / 16.4);
 
-            SENSOR_DATA.magnetometer[0] = data.getInt16(12, 1) / 3; // no clue about scaling factor
+            // no clue about scaling factor
+            SENSOR_DATA.magnetometer[0] = data.getInt16(12, 1) / 3;
             SENSOR_DATA.magnetometer[1] = data.getInt16(14, 1) / 3;
             SENSOR_DATA.magnetometer[2] = data.getInt16(16, 1) / 3;
             break;

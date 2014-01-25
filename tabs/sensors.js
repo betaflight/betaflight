@@ -63,7 +63,9 @@ function tab_initialize_sensors() {
             title: "Gyroscope (deg/s)",
             shadowSize: 0,
             yaxis : {
-                tickDecimals: 0
+                tickDecimals: 1,
+                max : 2000,
+                min: -2000
             },
             xaxis : {
                 //noTicks = 0
@@ -82,8 +84,8 @@ function tab_initialize_sensors() {
             shadowSize: 0,
             yaxis : {
                 tickDecimals: 1,
-                max : 1.5,
-                min : -1.5
+                max : 2,
+                min : -2
             },
             xaxis : {
                 //noTicks = 0
