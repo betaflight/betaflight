@@ -59,11 +59,20 @@ var serial = {
             self.transmitting = true;
             
             var sending = function() {
-                chrome.serial.send(self.connectionId, self.output_buffer[0].data, function(sendInfo) {
-                    self.output_buffer[0].callback(sendInfo);
+                // store inside separate variables in case array gets destroyed
+                var data = self.output_buffer[0].data;
+                var callback = self.output_buffer[0].callback;
+                
+                chrome.serial.send(self.connectionId, data, function(sendInfo) {
+                    callback(sendInfo);
                     self.output_buffer.shift();
                     
                     if (self.output_buffer.length) {
+                        // keep the buffer withing reasonable limits
+                        while (self.output_buffer.length > 500) {
+                            self.output_buffer.pop();
+                        }
+                        
                         sending();
                     } else {
                         self.transmitting = false;
@@ -83,5 +92,9 @@ var serial = {
         removeListener: function(function_reference) {
             chrome.serial.onReceive.removeListener(function_reference);
         }
+    },
+    empty_output_buffer: function() {
+        this.output_buffer = [];
+        this.transmitting = false;
     }
 };

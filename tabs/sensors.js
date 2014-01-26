@@ -209,7 +209,7 @@ function tab_initialize_sensors() {
             }
             
             // timer initialization
-            GUI.interval_kill_all(['port-update', 'port_usage', 'serial_read']);
+            GUI.interval_kill_all(['port-update', 'port_usage']);
             
             // data pulling timers
             GUI.interval_add('status_pull', function() {
