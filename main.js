@@ -71,7 +71,6 @@ $(document).ready(function() {
                         break;
                     case 'tab_servos':
                         tab_initialize_servos();
-                        $('#content').load("./tabs/servos.html", tab_initialize_servos);
                         break;
                     case 'tab_gps':
                         tab_initialize_gps();
