@@ -198,10 +198,10 @@ function send_message(code, data, callback_sent, callback_msp) {
     });    
 }
 
-function process_data(command, message_buffer, message_length_expected) {
+function process_data(code, message_buffer, message_length_expected) {
     var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
     
-    switch (command) {
+    switch (code) {
         case MSP_codes.MSP_IDENT:
             CONFIG.version = parseFloat((data.getUint8(0) / 100).toFixed(2));
             CONFIG.multiType = data.getUint8(1);
@@ -482,13 +482,13 @@ function process_data(command, message_buffer, message_length_expected) {
             }
             break;
         default:
-            console.log('Unknown code detected: ' + command);
+            console.log('Unknown code detected: ' + code);
     }
     
     // trigger callbacks, cleanup/remove callback after trigger
     for (var i = (MSP.callbacks.length - 1); i >= 0; i--) { // itterating in reverse because we use .splice which modifies array length
-        if (MSP.callbacks[i].code == command) {
-            MSP.callbacks[i].callback({'command': command, 'data': data, 'length': message_length_expected});
+        if (MSP.callbacks[i].code == code) {
+            MSP.callbacks[i].callback({'command': code, 'data': data, 'length': message_length_expected});
             
             MSP.callbacks.splice(i, 1); // remove object from array
         }
