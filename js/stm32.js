@@ -346,7 +346,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             var send_counter = 0;
             GUI.interval_add('stm32_initialize_mcu', function() { // 200 ms interval (just in case mcu was already initialized), we need to break the 2 bytes command requirement
                 self.send([0x7F], 1, function(reply) {
-                    if (reply[0] == self.status.ACK || reply[0] == self.status.NACK) {
+                    if (reply[0] == 0x7F || reply[0] == self.status.ACK || reply[0] == self.status.NACK) {
                         GUI.interval_remove('stm32_initialize_mcu');
                         console.log('STM32 - Serial interface initialized on the MCU side');
                         
