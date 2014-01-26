@@ -23,8 +23,7 @@ var serial = {
     disconnect: function(callback) {
         var self = this;
         
-        self.transmitting = false;
-        self.output_buffer = [];
+        self.empty_output_buffer();
         
         chrome.serial.disconnect(this.connectionId, function(result) {
             if (result) {
