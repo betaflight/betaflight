@@ -71,12 +71,10 @@ var MSP = {
         this.state = 0; // reset packet state for "clean" initial entry (this is only required if user hot-disconnects)
         this.packet_error = 0; // reset CRC packet error counter for next session
         
-        /*
         // kill all "raw" MSP timers
         for (var i = 0; i < this.callbacks.length; i++) {
             clearInterval(this.callbacks[i].timer);
         }
-        */
         
         // drop references
         this.callbacks = [];
@@ -201,9 +199,23 @@ function send_message(code, data, callback_sent, callback_msp) {
     }
 
     if (callback_msp) {
-        MSP.callbacks.push({'code': code, 'callback': callback_msp});
+        // only utilize under the hood timeouts for codes that request callbacks
+        for (var i = 0; i < MSP.callbacks.length; i++) {
+            if (MSP.callbacks[i].code == code) {
+                // request already exist
+                return false;
+            }
+        }
+        
+        var obj = {'code': code, 'callback': callback_msp};
+        obj.timer = setInterval(function() {
+            // re-send data again
+            serial.send(bufferOut, function(writeInfo) {});
+        }, 1000);
+        
+        MSP.callbacks.push(obj);
     }
-    
+
     serial.send(bufferOut, function(writeInfo) {
         if (writeInfo.bytesSent > 0) {
             if (callback_sent) {
@@ -503,9 +515,14 @@ function process_data(code, message_buffer, message_length_expected) {
     // trigger callbacks, cleanup/remove callback after trigger
     for (var i = (MSP.callbacks.length - 1); i >= 0; i--) { // itterating in reverse because we use .splice which modifies array length
         if (MSP.callbacks[i].code == code) {
+            // remove timeout
+            clearInterval(MSP.callbacks[i].timer);
+            
+            // fire callback
             MSP.callbacks[i].callback({'command': code, 'data': data, 'length': message_length_expected});
             
-            MSP.callbacks.splice(i, 1); // remove object from array
+            // remove object from array
+            MSP.callbacks.splice(i, 1);
         }
     }
 }
