@@ -234,7 +234,7 @@ function tab_initialize_sensors() {
                     {data: baro_data[0], label: "X - meters [" + SENSOR_DATA.altitude.toFixed(2) + "]"} ], baro_options);
 
                 samples_baro_i++;
-            }, rates.baro);
+            }, rates.baro, true);
             
             GUI.interval_add('debug_pull', function() {
                 send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG);
@@ -259,7 +259,7 @@ function tab_initialize_sensors() {
                     {data: debug_data[3], label: "debug4 [" + SENSOR_DATA.debug[3] + "]"} ], debug4_options);
 
                 samples_debug_i++;
-            }, rates.debug);
+            }, rates.debug, true);
             
             // processing timers
             GUI.interval_add('process_gyro', function() {
@@ -280,7 +280,7 @@ function tab_initialize_sensors() {
                     {data: gyro_data[2], label: "Z - rate [" + SENSOR_DATA.gyroscope[2].toFixed(2) + "]"} ], gyro_options); 
                 
                 samples_gyro_i++;
-            }, rates.gyro);
+            }, rates.gyro, true);
             
             GUI.interval_add('process_accel', function() {
                 accel_data[0].push([samples_accel_i, SENSOR_DATA.accelerometer[0]]);
@@ -300,7 +300,7 @@ function tab_initialize_sensors() {
                     {data: accel_data[2], label: "Z - acceleration [" + SENSOR_DATA.accelerometer[2].toFixed(2) + "]"} ], accel_options);
 
                 samples_accel_i++;
-            }, rates.accel);
+            }, rates.accel, true);
             
             GUI.interval_add('process_mag', function() {
                 mag_data[0].push([samples_mag_i, SENSOR_DATA.magnetometer[0]]);
@@ -320,7 +320,7 @@ function tab_initialize_sensors() {
                     {data: mag_data[2], label: "Z - Ga [" + SENSOR_DATA.magnetometer[2].toFixed(2) + "]"} ], mag_options); 
 
                 samples_mag_i++;
-            }, rates.mag);
+            }, rates.mag, true);
             
             // store current/latest refresh rates in the storage
             chrome.storage.local.set({'sensor_refresh_rates': rates}, function() {

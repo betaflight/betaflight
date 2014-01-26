@@ -216,7 +216,7 @@ function tab_initialize_receiver() {
                 // Request new data
                 send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
                 send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
-            }, 50);
+            }, 50, true);
         });
     });
 }
