@@ -231,9 +231,9 @@ function process_data(command, message_buffer, message_length_expected) {
             SENSOR_DATA.gyroscope[2] = data.getInt16(10, 1) * (4 / 16.4);
 
             // no clue about scaling factor
-            SENSOR_DATA.magnetometer[0] = data.getInt16(12, 1) / 3;
-            SENSOR_DATA.magnetometer[1] = data.getInt16(14, 1) / 3;
-            SENSOR_DATA.magnetometer[2] = data.getInt16(16, 1) / 3;
+            SENSOR_DATA.magnetometer[0] = data.getInt16(12, 1) / 1090;
+            SENSOR_DATA.magnetometer[1] = data.getInt16(14, 1) / 1090;
+            SENSOR_DATA.magnetometer[2] = data.getInt16(16, 1) / 1090;
             break;
         case MSP_codes.MSP_SERVO:
             var needle = 0;
