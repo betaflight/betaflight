@@ -74,32 +74,30 @@ function tab_initialize_auxiliary_configuration() {
                 });
 
                 // enable data pulling
-                GUI.interval_add('aux_data_poll', aux_data_poll, 50, true);
+                GUI.interval_add('aux_data_poll', function() {
+                send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+                send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, function() {
+                    for (var i = 0; i < AUX_CONFIG.length; i++) {
+                        if (bit_check(CONFIG.mode, i)) {
+                            $('td.name').eq(i).addClass('on').removeClass('off'); 
+                        } else {
+                            $('td.name').eq(i).removeClass('on').removeClass('off');
+                            
+                            if (AUX_CONFIG_values[i] > 0) {
+                                $('td.name').eq(i).addClass('off');
+                            }
+                        }
+                    }
+                    
+                    box_highlight(RC.AUX1, 2);
+                    box_highlight(RC.AUX2, 5);
+                    box_highlight(RC.AUX3, 8);
+                    box_highlight(RC.AUX4, 11);
+                });
+                }, 50, true);
             });
         });
     });
-}
-
-function aux_data_poll() {
-    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-    send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC);
-    
-    for (var i = 0; i < AUX_CONFIG.length; i++) {
-        if (bit_check(CONFIG.mode, i)) {
-            $('td.name').eq(i).addClass('on').removeClass('off'); 
-        } else {
-            $('td.name').eq(i).removeClass('on').removeClass('off');
-            
-            if (AUX_CONFIG_values[i] > 0) {
-                $('td.name').eq(i).addClass('off');
-            }
-        }
-    }
-    
-    box_highlight(RC.AUX1, 2);
-    box_highlight(RC.AUX2, 5);
-    box_highlight(RC.AUX3, 8);
-    box_highlight(RC.AUX4, 11);
 }
 
 function box_check(num, pos) {
