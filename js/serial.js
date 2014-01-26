@@ -63,7 +63,7 @@ var serial = {
                     self.output_buffer[0].callback(sendInfo);
                     self.output_buffer.shift();
                     
-                    if (self.output_buffer.length != 0) {
+                    if (self.output_buffer.length) {
                         sending();
                     } else {
                         self.transmitting = false;
