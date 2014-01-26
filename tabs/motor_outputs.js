@@ -43,7 +43,7 @@ function tab_initialize_motor_outputs() {
             var val = $(this).val();
             
             $('div.sliders input').val(val);
-            $('div.sliders input:not(:last)').change();
+            $('div.sliders input:not(:last):first').change();
         });
         
         $('div.notice input[type="checkbox"]').change(function() {
