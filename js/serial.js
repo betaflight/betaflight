@@ -1,8 +1,14 @@
 var serial = {
     connectionId: -1,
     
+    transmitting: false,
+    output_buffer: [],
+    
     connect: function(path, options, callback) {
         var self = this;
+        
+        // force buffer size
+        options.bufferSize = 8192;
         
         chrome.serial.connect(path, options, function(connectionInfo) {
             self.connectionId = connectionInfo.connectionId;
@@ -43,7 +49,27 @@ var serial = {
         chrome.serial.setControlSignals(this.connectionId, signals, callback);
     },
     send: function(data, callback) {
-        chrome.serial.send(this.connectionId, data, callback);
+        var self = this;
+        self.output_buffer.push({'data': data, 'callback': callback});
+        
+        if (!self.transmitting) {
+            self.transmitting = true;
+            
+            var sending = function() {
+                chrome.serial.send(self.connectionId, self.output_buffer[0].data, function(sendInfo) {
+                    self.output_buffer[0].callback(sendInfo);
+                    self.output_buffer.shift();
+                    
+                    if (self.output_buffer.length != 0) {
+                        sending();
+                    } else {
+                        self.transmitting = false;
+                    }
+                });
+            };
+            
+            sending();
+        }
     },
     onReceive: {
         listeners_: chrome.serial.onReceive.listeners_,
