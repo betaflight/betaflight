@@ -210,6 +210,7 @@ function send_message(code, data, callback_sent, callback_msp) {
         var obj = {'code': code, 'callback': callback_msp};
         obj.timer = setInterval(function() {
             // re-send data again
+            console.log('MSP data request timed-out: ' + code);
             serial.send(bufferOut, function(writeInfo) {});
         }, 1000);
         
