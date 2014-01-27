@@ -360,7 +360,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             self.send([self.command.get, 0xFF], 2, function(data) { // 0x00 ^ 0xFF               
                 if (self.verify_response(self.status.ACK, data)) {
                     self.retrieve(data[1] + 2, function(data) {  // data[1] = number of bytes that will follow (should be 12 + ack)
-                        console.log('STM32 - Bootloader version: ' + (parseInt(data[1].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
+                        console.log('STM32 - Bootloader version: ' + (parseInt(data[0].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
                         
                         // proceed to next step
                         self.upload_procedure(3);
