@@ -9,9 +9,6 @@ var serial = {
     connect: function(path, options, callback) {
         var self = this;
         
-        // force buffer size
-        options.bufferSize = 8192;
-        
         chrome.serial.connect(path, options, function(connectionInfo) {
             self.connectionId = connectionInfo.connectionId;
             self.bytes_received = 0;
