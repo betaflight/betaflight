@@ -20,7 +20,7 @@ var STM32_protocol = function() {
     this.steps_executed_last;
     
     this.status = {
-        ACK:    0x79,
+        ACK:    0x79, // y
         NACK:   0x1F
     };
     
@@ -56,7 +56,7 @@ STM32_protocol.prototype.connect = function(hex) {
     var baud = parseInt($('div#port-picker #baud').val());
     
     if (selected_port != '0') {
-        // popular choices - 921600, 460800, 256000, 230400, 153600, 128000, 115200, 57600
+        // popular choices - 921600, 460800, 256000, 230400, 153600, 128000, 115200, 57600, 38400, 28800, 19200
         var flashing_bitrate;
         
         switch (GUI.operating_system) {
@@ -64,12 +64,12 @@ STM32_protocol.prototype.connect = function(hex) {
                 flashing_bitrate = 921600;
                 break;
             case 'MacOS':
-                flashing_bitrate = 921600;
+                flashing_bitrate = 38400; /* locked to max supported until new serial api is fixed */
                 break;
             case 'ChromeOS':
             case 'Linux':
             case 'UNIX':
-                flashing_bitrate = 256000;
+                flashing_bitrate = 921600;
                 break;
                 
             default:
@@ -166,32 +166,37 @@ STM32_protocol.prototype.initialize = function() {
 
 // no input parameters
 // this method should be executed every 1 ms via interval timer
-STM32_protocol.prototype.read = function(readInfo) {
-    var self = this;
-    
+STM32_protocol.prototype.read = function(readInfo) {    
     // routine that fills the buffer
     var data = new Uint8Array(readInfo.data);
     
     for (var i = 0; i < data.length; i++) {
-        self.receive_buffer.push(data[i]);  
+        this.receive_buffer.push(data[i]);  
     }
     
     // routine that fetches data from buffer if statement is true
-    if (self.receive_buffer.length >= self.bytes_to_read && self.bytes_to_read != 0) {
-        var data = self.receive_buffer.slice(0, self.bytes_to_read); // bytes requested
-        self.receive_buffer.splice(0, self.bytes_to_read); // remove read bytes
+    if (this.receive_buffer.length >= this.bytes_to_read && this.bytes_to_read != 0) {
+        var data = this.receive_buffer.slice(0, this.bytes_to_read); // bytes requested
+        this.receive_buffer.splice(0, this.bytes_to_read); // remove read bytes
         
-        self.bytes_to_read = 0; // reset trigger
+        this.bytes_to_read = 0; // reset trigger
         
-        self.read_callback(data);
+        this.read_callback(data);
     }
 };
 
 STM32_protocol.prototype.retrieve = function(n_bytes, callback) {
-    var data = this.receive_buffer.slice(0, n_bytes);
-    this.receive_buffer.splice(0, n_bytes); // remove read bytes
+    if (this.receive_buffer.length >= n_bytes) {
+        // data that we need are there, process immediately
+        var data = this.receive_buffer.slice(0, n_bytes);
+        this.receive_buffer.splice(0, n_bytes); // remove read bytes
     
-    callback(data);
+        callback(data);
+    } else {
+        // still waiting for data, add callback
+        this.bytes_to_read = n_bytes;
+        this.read_callback = callback;
+    }
 };
 
 // Array = array of bytes that will be send over serial
@@ -357,9 +362,9 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 2:
             // get version of the bootloader and supported commands
-            self.send([self.command.get, 0xFF], 2, function(data) { // 0x00 ^ 0xFF               
+            self.send([self.command.get, 0xFF], 2, function(data) { // 0x00 ^ 0xFF
                 if (self.verify_response(self.status.ACK, data)) {
-                    self.retrieve(data[1] + 2, function(data) {  // data[1] = number of bytes that will follow (should be 12 + ack)
+                    self.retrieve(data[1], function(data) {  // data[1] = number of bytes that will follow [– 1 except current and ACKs]
                         console.log('STM32 - Bootloader version: ' + (parseInt(data[0].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
                         
                         // proceed to next step
@@ -372,7 +377,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // get ID (device signature)
             self.send([self.command.get_ID, 0xFD], 2, function(data) { // 0x01 ^ 0xFF
                 if (self.verify_response(self.status.ACK, data)) {
-                    self.retrieve(data[1] + 2, function(data) { // data[1] = number of bytes that will follow (should be 1 + ack), its 2 + ack, WHY ???
+                    self.retrieve(data[1] + 1, function(data) { // data[1] = number of bytes that will follow [– 1 (N = 1 for STM32), except for current byte and ACKs]
                         var signature = (data[0] << 8) | data[1];
                         console.log('STM32 - Signature: 0x' + signature.toString(16)); // signature in hex representation
                         
