@@ -14,7 +14,7 @@ var serial = {
             self.bytes_received = 0;
             self.bytes_sent = 0;
             
-            self.onReceive.addListener(function(info) {
+            self.onReceive.addListener(function log_bytes_received(info) {
                 self.bytes_received += info.data.byteLength;
             });
             
