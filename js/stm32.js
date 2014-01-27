@@ -197,9 +197,7 @@ STM32_protocol.prototype.retrieve = function(n_bytes, callback) {
 // Array = array of bytes that will be send over serial
 // bytes_to_read = received bytes necessary to trigger read_callback
 // callback = function that will be executed after received bytes = bytes_to_read
-STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {
-    var self = this;
-    
+STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {    
     var bufferOut = new ArrayBuffer(Array.length);
     var bufferView = new Uint8Array(bufferOut);
     
@@ -208,7 +206,10 @@ STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {
     
     // update references
     this.bytes_to_read = bytes_to_read;
-    this.read_callback = callback; 
+    this.read_callback = callback;
+    
+    // empty receive buffer before next command is out
+    this.receive_buffer = [];
 
     // send over the actual data
     serial.send(bufferOut, function(writeInfo) {}); 
@@ -359,7 +360,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             self.send([self.command.get, 0xFF], 2, function(data) { // 0x00 ^ 0xFF               
                 if (self.verify_response(self.status.ACK, data)) {
                     self.retrieve(data[1] + 2, function(data) {  // data[1] = number of bytes that will follow (should be 12 + ack)
-                        console.log('STM32 - Bootloader version: ' + (parseInt(data[0].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
+                        console.log('STM32 - Bootloader version: ' + (parseInt(data[1].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
                         
                         // proceed to next step
                         self.upload_procedure(3);
