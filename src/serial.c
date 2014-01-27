@@ -453,11 +453,10 @@ static void evaluateCommand(void)
         serialize8(GPS_update & 1);
         break;
     case MSP_ATTITUDE:
-        headSerialReply(8);
+        headSerialReply(6);
         for (i = 0; i < 2; i++)
             serialize16(angle[i]);
         serialize16(heading);
-        serialize16(headFreeModeHold);
         break;
     case MSP_ALTITUDE:
         headSerialReply(6);
@@ -465,10 +464,11 @@ static void evaluateCommand(void)
         serialize16(vario);
         break;
     case MSP_ANALOG:
-        headSerialReply(5);
+        headSerialReply(7);
         serialize8(vbat);
         serialize16(0); // power meter trash
         serialize16(rssi);
+        serialize16(0); // amperage
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
