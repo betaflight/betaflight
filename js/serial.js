@@ -1,5 +1,7 @@
 var serial = {
     connectionId: -1,
+    bytes_received: 0,
+    bytes_sent: 0,
     
     transmitting: false,
     output_buffer: [],
@@ -12,6 +14,12 @@ var serial = {
         
         chrome.serial.connect(path, options, function(connectionInfo) {
             self.connectionId = connectionInfo.connectionId;
+            self.bytes_received = 0;
+            self.bytes_sent = 0;
+            
+            self.onReceive.addListener(function(info) {
+                self.bytes_received += info.data.byteLength;
+            });
             
             if (connectionInfo.connectionId > 0) {
                 console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', Baud: ' + connectionInfo.bitrate);
@@ -24,6 +32,11 @@ var serial = {
         var self = this;
         
         self.empty_output_buffer();
+
+        // remove listeners
+        for (var i = (self.onReceive.listeners_.length - 1); i >= 0; i--) {
+            self.onReceive.removeListener(self.onReceive.listeners_[i].callback);
+        }
         
         chrome.serial.disconnect(this.connectionId, function(result) {
             if (result) {
@@ -66,6 +79,8 @@ var serial = {
                     callback(sendInfo);
                     self.output_buffer.shift();
                     
+                    self.bytes_sent += sendInfo.bytesSent;
+                    
                     if (self.output_buffer.length) {
                         // keep the buffer withing reasonable limits
                         while (self.output_buffer.length > 500) {
@@ -82,16 +97,7 @@ var serial = {
             sending();
         }
     },
-    onReceive: {
-        listeners_: chrome.serial.onReceive.listeners_,
-        
-        addListener: function(function_reference) {
-            chrome.serial.onReceive.addListener(function_reference);
-        },
-        removeListener: function(function_reference) {
-            chrome.serial.onReceive.removeListener(function_reference);
-        }
-    },
+    onReceive: chrome.serial.onReceive,
     empty_output_buffer: function() {
         this.output_buffer = [];
         this.transmitting = false;

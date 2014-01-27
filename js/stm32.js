@@ -569,11 +569,6 @@ STM32_protocol.prototype.upload_procedure = function(step) {
         case 99:
             // disconnect
             
-            // remove listeners
-            serial.onReceive.listeners_.forEach(function(listener) {
-                serial.onReceive.removeListener(listener.callback);
-            });
-            
             GUI.interval_remove('STM32_timeout'); // stop STM32 timeout timer (everything is finished now)
             
             console.log('Transfered: ' + self.serial_bytes_send + ' bytes, Received: ' + self.serial_bytes_received + ' bytes');

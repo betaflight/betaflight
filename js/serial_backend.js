@@ -129,11 +129,6 @@ $(document).ready(function() {
                     GUI.tab_switch_cleanup();
                     GUI.timeout_remove('connecting');
                     
-                    // remove listeners
-                    serial.onReceive.listeners_.forEach(function(listener) {
-                        serial.onReceive.removeListener(listener.callback);
-                    });
-                    
                     serial.disconnect(onClosed);
                     
                     GUI.connected_to = false;
