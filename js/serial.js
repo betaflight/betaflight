@@ -42,6 +42,8 @@ var serial = {
                 console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed');
             }
             
+            console.log('SERIAL: Statistics - Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
+            
             self.connectionId = -1;
             
             callback(result);
