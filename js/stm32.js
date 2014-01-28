@@ -84,9 +84,12 @@ STM32_protocol.prototype.connect = function(hex) {
                     // we are connected, disabling connect button in the UI
                     GUI.connect_lock = true;
                     
-                    self.send([0x52]);
+                    var bufferOut = new ArrayBuffer(1);
+                    var bufferView = new Uint8Array(bufferOut);
                     
-                    GUI.timeout_add('reboot_into_bootloader', function() {
+                    bufferView[0] = 0x52;
+                    
+                    serial.send(bufferOut, function() {
                         serial.disconnect(function(result) {
                             if (result) {                                
                                 serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
@@ -98,7 +101,7 @@ STM32_protocol.prototype.connect = function(hex) {
                                 GUI.connect_lock = false;
                             }
                         });
-                    }, 100);  
+                    });
                 }
             });
         } else {
@@ -358,7 +361,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     // stop retrying, its too late to get any response from MCU
                     GUI.interval_remove('stm32_initialize_mcu');
                 }
-            }, 200);
+            }, 200, true);
             break;
         case 2:
             // get version of the bootloader and supported commands
