@@ -313,8 +313,10 @@ function process_data(code, message_buffer, message_length_expected) {
             SENSOR_DATA.altitude = parseFloat((data.getInt32(0, 1) / 100.0).toFixed(2)); // correct scale factor
             break; 
         case MSP_codes.MSP_ANALOG:
-            BATTERY.voltage = data.getUint8(0) / 10.0;
-            BATTERY.power = data.getUint16(1, 1);
+            ANALOG.voltage = data.getUint8(0) / 10.0;
+            ANALOG.power = data.getUint16(1, 1);
+            ANALOG.rssi = data.getUint16(3, 1);
+            ANALOG.amperage = data.getUint16(5, 1);
             break; 
         case MSP_codes.MSP_RC_TUNING:
             RC_tuning.RC_RATE = parseFloat((data.getUint8(0) / 100).toFixed(2));
