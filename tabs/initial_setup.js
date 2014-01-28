@@ -206,7 +206,7 @@ function tab_initialize_initial_setup() {
                     
                     GUI.interval_add('initial_setup_data_pull', function() {                    
                         // Update voltage indicator
-                        $('.bat-voltage').html(BATTERY.voltage + ' V');
+                        $('.bat-voltage').html(ANALOG.voltage + ' V');
                         
                         // Request new data, if transmission fails it doesn't matter as new transmission will be requested after 50ms
                         send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, function() { // cycle time, active sensors, etc...
