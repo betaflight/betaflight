@@ -1,3 +1,9 @@
+/*  
+    STM32 F103 serial bus seems to properly initialize with quite a huge auto-baud range
+    From 921600 down to 1200, i don't recommend getting any lower then that
+    Official "specs" are from 115200 to 1200
+*/
+
 var STM32_protocol = function() {
     this.hex; // ref
     
