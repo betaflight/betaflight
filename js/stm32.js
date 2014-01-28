@@ -188,6 +188,7 @@ STM32_protocol.prototype.read = function(readInfo) {
     }
 };
 
+// we should always try to consume all "proper" available data while using retrieve
 STM32_protocol.prototype.retrieve = function(n_bytes, callback) {
     if (this.receive_buffer.length >= n_bytes) {
         // data that we need are there, process immediately
@@ -367,7 +368,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // get version of the bootloader and supported commands
             self.send([self.command.get, 0xFF], 2, function(data) { // 0x00 ^ 0xFF
                 if (self.verify_response(self.status.ACK, data)) {
-                    self.retrieve(data[1], function(data) {  // data[1] = number of bytes that will follow [– 1 except current and ACKs]
+                    self.retrieve(data[1] + 1 + 1, function(data) { // data[1] = number of bytes that will follow [– 1 except current and ACKs]
                         console.log('STM32 - Bootloader version: ' + (parseInt(data[0].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
                         
                         // proceed to next step
@@ -380,7 +381,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // get ID (device signature)
             self.send([self.command.get_ID, 0xFD], 2, function(data) { // 0x01 ^ 0xFF
                 if (self.verify_response(self.status.ACK, data)) {
-                    self.retrieve(data[1] + 1, function(data) { // data[1] = number of bytes that will follow [– 1 (N = 1 for STM32), except for current byte and ACKs]
+                    self.retrieve(data[1] + 1 + 1, function(data) { // data[1] = number of bytes that will follow [– 1 (N = 1 for STM32), except for current byte and ACKs]
                         var signature = (data[0] << 8) | data[1];
                         console.log('STM32 - Signature: 0x' + signature.toString(16)); // signature in hex representation
                         
