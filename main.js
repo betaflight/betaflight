@@ -104,6 +104,8 @@ $(document).ready(function() {
     $("#content").on('keydown', 'input[type="number"]', function(e) {
         // whitelist all that we need for numeric control
         if ((e.keyCode >= 96 && e.keyCode <= 105) || (e.keyCode >= 48 && e.keyCode <= 57)) { // allow numpad and standard number keypad
+        } else if(e.keyCode == 109 || e.keyCode == 189) { // minus on numpad and in standard keyboard
+        } else if (e.keyCode == 8 || e.keyCode == 46) { // backspace and delete
         } else if (e.keyCode == 190 || e.keyCode == 110) { // allow and decimal point
         } else if ((e.keyCode >= 37 && e.keyCode <= 40) || e.keyCode == 13) { // allow arrows, enter
         } else {
@@ -138,6 +140,17 @@ $(document).ready(function() {
         if (isNaN(step) || step % 1 === 0) {
             if (val % 1 !== 0) {
                 element.val(element.data('previousValue'));
+            }
+        }
+        
+        // if step is set and is float and value is int, convert to float, keep decimal places in float according to step *experimental*
+        if (!isNaN(step) && step % 1 !== 0) {
+            var decimal_places = String(step).split('.')[1].length;
+            
+            if (val % 1 === 0) {
+                element.val(val.toFixed(decimal_places));
+            } else if (String(val).split('.')[1].length != decimal_places) {
+                element.val(val.toFixed(decimal_places));
             }
         }
     });
