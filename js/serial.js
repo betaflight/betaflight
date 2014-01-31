@@ -31,8 +31,8 @@ var serial = {
         self.empty_output_buffer();
 
         // remove listeners
-        for (var i = (self.onReceive.listeners_.length - 1); i >= 0; i--) {
-            self.onReceive.removeListener(self.onReceive.listeners_[i].callback);
+        for (var i = (self.onReceive.listeners.length - 1); i >= 0; i--) {
+            self.onReceive.removeListener(self.onReceive.listeners[i]);
         }
         
         chrome.serial.disconnect(this.connectionId, function(result) {
@@ -96,7 +96,25 @@ var serial = {
             sending();
         }
     },
-    onReceive: chrome.serial.onReceive,
+    onReceive: {
+        listeners: [],
+        
+        addListener: function(function_reference) {
+            var listener = chrome.serial.onReceive.addListener(function_reference);
+            
+            this.listeners.push(function_reference);
+        },
+        removeListener: function(function_reference) {            
+            for (var i = (this.listeners.length - 1); i >= 0; i--) {
+                if (this.listeners[i] == function_reference) {
+                    chrome.serial.onReceive.removeListener(function_reference);
+                    
+                    this.listeners.splice(i, 1);
+                    break;
+                }
+            }            
+        }
+    },
     empty_output_buffer: function() {
         this.output_buffer = [];
         this.transmitting = false;
