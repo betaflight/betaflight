@@ -478,6 +478,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\sbus.c</FilePath>
             </File>
+            <File>
+              <FileName>sumd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sumd.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1334,6 +1339,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\sbus.c</FilePath>
             </File>
+            <File>
+              <FileName>sumd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sumd.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2132,6 +2142,11 @@
               <FileName>sbus.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\sbus.c</FilePath>
+            </File>
+            <File>
+              <FileName>sumd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sumd.c</FilePath>
             </File>
           </Files>
         </Group>
