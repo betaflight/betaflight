@@ -120,7 +120,7 @@ const clivalue_t valueTable[] = {
     { "deadband3d_high", VAR_UINT16, &mcfg.deadband3d_high, 0, 2000 },
     { "neutral3d", VAR_UINT16, &mcfg.neutral3d, 0, 2000 },
     { "deadband3d_throttle", VAR_UINT16, &mcfg.deadband3d_throttle, 0, 2000 },
-    { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 498 },
+    { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 32000 },
     { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
     { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
     { "flaps_speed", VAR_UINT8, &mcfg.flaps_speed, 0, 100 },
