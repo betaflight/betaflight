@@ -453,6 +453,10 @@ bool spektrumFrameComplete(void);
 void sbusInit(rcReadRawDataPtr *callback);
 bool sbusFrameComplete(void);
 
+// sumd
+void sumdInit(rcReadRawDataPtr *callback);
+bool sumdFrameComplete(void);
+
 // buzzer
 void buzzer(uint8_t warn_vbat);
 void systemBeep(bool onoff);

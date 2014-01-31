@@ -447,6 +447,9 @@ void loop(void)
             case SERIALRX_SBUS:
                 rcReady = sbusFrameComplete();
                 break;
+            case SERIALRX_SUMD:
+                rcReady = sumdFrameComplete();
+                break;
         }
     }
 

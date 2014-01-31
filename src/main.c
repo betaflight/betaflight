@@ -96,9 +96,11 @@ int main(void)
             case SERIALRX_SPEKTRUM2048:
                 spektrumInit(&rcReadRawFunc);
                 break;
-
             case SERIALRX_SBUS:
                 sbusInit(&rcReadRawFunc);
+                break;
+            case SERIALRX_SUMD:
+                sumdInit(&rcReadRawFunc);
                 break;
         }
     } else { // spektrum and GPS are mutually exclusive
