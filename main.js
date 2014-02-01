@@ -20,7 +20,7 @@ $(document).ready(function() {
         chrome.app.window.current().setBounds({width: 962, height: 629});
     } else {
         $('div#content').height(280);
-        chrome.app.window.current().setBounds({width: 960, height: 429});
+        chrome.app.window.current().setBounds({width: 962, height: 429});
     }
     
     // bind controls  
