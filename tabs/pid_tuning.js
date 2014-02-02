@@ -134,7 +134,7 @@ function tab_initialize_pid_tuning() {
                 needle++;  
 
                 i = 0;
-                $('.pid_tuning .Velocity input').each(function() {
+                $('.pid_tuning .Vario input').each(function() {
                     switch (i) {
                         case 0:
                             $(this).val(PIDs[needle][i++].toFixed(1));  
