@@ -149,35 +149,58 @@ function tab_initialize_pid_tuning() {
                 
                 $('a.update').click(function() {
                     // Catch all the changes and stuff the inside PIDs array
-                    var needle_main = 0;
-                    var needle_secondary = 0;
+                    var i = 0;
+                    $('table.pid_tuning tr.ROLL input').each(function() {
+                        PIDs[0][i++] = parseFloat($(this).val());
+                    });
                     
-                    $('.pid_tuning input').each(function() {
-                        PIDs[needle_main][needle_secondary] = parseFloat($(this).val());
-                        needle_secondary++;
-                        
-                        // exceptions (required for the "shorter" PID arrays, 2 fields, 1 field, etc)
-                        if (needle_main == 4) {
-                            if (needle_secondary >= 2) {
-                                needle_main++;
-                                needle_secondary = 0;
-                            }
-                        } else if (needle_main == 8) {
-                            if (needle_secondary >= 1) {
-                                needle_main++;
-                                needle_secondary = 0;
-                            }
-                        } else {
-                            if (needle_secondary >= 3) {
-                                needle_main++;
-                                needle_secondary = 0;
-                            }
-                        }
+                    i = 0;
+                    $('table.pid_tuning tr.PITCH input').each(function() {
+                        PIDs[1][i++] = parseFloat($(this).val());
+                    });
+                    
+                    i = 0;
+                    $('table.pid_tuning tr.YAW input').each(function() {
+                        PIDs[2][i++] = parseFloat($(this).val());
+                    });
+                    
+                    i = 0;
+                    $('table.pid_tuning tr.ALT input').each(function() {
+                        PIDs[3][i++] = parseFloat($(this).val());
+                    });
+                    
+                    i = 0;
+                    $('table.pid_tuning tr.Vario input').each(function() {
+                        PIDs[9][i++] = parseFloat($(this).val());
+                    });
+                    
+                    i = 0;
+                    $('table.pid_tuning tr.Pos input').each(function() {
+                        PIDs[4][i++] = parseFloat($(this).val());
+                    });
+                    
+                    i = 0;
+                    $('table.pid_tuning tr.PosR input').each(function() {
+                        PIDs[5][i++] = parseFloat($(this).val());
+                    });
+                    
+                    i = 0;
+                    $('table.pid_tuning tr.NavR input').each(function() {
+                        PIDs[6][i++] = parseFloat($(this).val());
+                    });
+                    
+                    i = 0;
+                    $('table.pid_tuning tr.LEVEL input').each(function() {
+                        PIDs[7][i++] = parseFloat($(this).val());
+                    });
+                    
+                    i = 0;
+                    $('table.pid_tuning tr.MAG input').each(function() {
+                        PIDs[8][i++] = parseFloat($(this).val());
                     });
                     
                     var PID_buffer_out = new Array();
-                    var PID_buffer_needle = 0;
-                    for (var i = 0; i < PIDs.length; i++) {
+                    for (var i = 0, needle = 0; i < PIDs.length; i++, needle += 3) {
                         switch (i) {
                             case 0: 
                             case 1: 
@@ -186,23 +209,22 @@ function tab_initialize_pid_tuning() {
                             case 7: 
                             case 8:
                             case 9:
-                                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 10);
-                                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 1000);
-                                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2]);
+                                PID_buffer_out[needle]     = parseInt(PIDs[i][0] * 10);
+                                PID_buffer_out[needle + 1] = parseInt(PIDs[i][1] * 1000);
+                                PID_buffer_out[needle + 2] = parseInt(PIDs[i][2]);
                                 break;
                             case 4:
-                                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 100);
-                                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 100);
-                                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2]);
+                                PID_buffer_out[needle]     = parseInt(PIDs[i][0] * 100);
+                                PID_buffer_out[needle + 1] = parseInt(PIDs[i][1] * 100);
+                                PID_buffer_out[needle + 2] = parseInt(PIDs[i][2]);
                                 break;
                             case 5: 
                             case 6:
-                                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 10);
-                                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 100);
-                                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2] * 1000);
+                                PID_buffer_out[needle]     = parseInt(PIDs[i][0] * 10);
+                                PID_buffer_out[needle + 1] = parseInt(PIDs[i][1] * 100);
+                                PID_buffer_out[needle + 2] = parseInt(PIDs[i][2] * 1000);
                                 break;                     
                         }
-                        PID_buffer_needle += 3;
                     }
                     
                     // Send over the PID changes
