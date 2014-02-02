@@ -226,7 +226,7 @@ function send_message(code, data, callback_sent, callback_msp) {
     });    
 }
 
-function process_data(code, message_buffer, message_length_expected) {
+function process_data(code, message_buffer, message_length) {
     var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
     
     switch (code) {
@@ -329,8 +329,7 @@ function process_data(code, message_buffer, message_length_expected) {
             break; 
         case MSP_codes.MSP_PID:
             // PID data arrived, we need to scale it and save to appropriate bank / array
-            var needle = 0;
-            for (var i = 0; i < 10; i++) {
+            for (var i = 0, needle = 0; i < (message_length / 3); i++, needle += 3) {
                 // main for loop selecting the pid section 
                 switch (i) {
                     case 0: 
@@ -356,7 +355,6 @@ function process_data(code, message_buffer, message_length_expected) {
                         PIDs[i][2] = data.getUint8(needle + 2) / 1000;
                         break;                     
                 }
-                needle += 3;
             }
             break; 
         case MSP_codes.MSP_BOX:
@@ -522,7 +520,7 @@ function process_data(code, message_buffer, message_length_expected) {
             clearInterval(MSP.callbacks[i].timer);
             
             // fire callback
-            MSP.callbacks[i].callback({'command': code, 'data': data, 'length': message_length_expected});
+            MSP.callbacks[i].callback({'command': code, 'data': data, 'length': message_length});
             
             // remove object from array
             MSP.callbacks.splice(i, 1);
