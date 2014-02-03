@@ -106,7 +106,7 @@ $(document).ready(function() {
 }); 
 
 function onOpen(openInfo) {    
-    if (openInfo.connectionId > 0) {
+    if (openInfo) {
         // update connected_to
         GUI.connected_to = GUI.connecting_to;
         

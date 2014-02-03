@@ -84,7 +84,7 @@ STM32_protocol.prototype.connect = function(hex) {
         
         if (!$('input.updating').is(':checked')) {
             serial.connect(selected_port, {bitrate: baud}, function(openInfo) {
-                if (openInfo.connectionId > 0) {                    
+                if (openInfo) {
                     console.log('Sending ascii "R" to reboot');
 
                     // we are connected, disabling connect button in the UI
@@ -99,8 +99,10 @@ STM32_protocol.prototype.connect = function(hex) {
                         serial.disconnect(function(result) {
                             if (result) {                                
                                 serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
-                                    if (openInfo.connectionId > 0) {                                        
+                                    if (openInfo) {                                        
                                         self.initialize();
+                                    } else {
+                                        GUI.log('<span style="color: red">Failed</span> to open serial port');
                                     }
                                 });
                             } else {
@@ -108,15 +110,19 @@ STM32_protocol.prototype.connect = function(hex) {
                             }
                         });
                     });
+                } else {
+                    GUI.log('<span style="color: red">Failed</span> to open serial port');
                 }
             });
         } else {
             serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
-                if (openInfo.connectionId > 0) {                    
+                if (openInfo) {                    
                     // we are connected, disabling connect button in the UI
                     GUI.connect_lock = true;
                     
                     self.initialize();
+                } else {
+                    GUI.log('<span style="color: red">Failed</span> to open serial port');
                 }
             });
         }
