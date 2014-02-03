@@ -10,19 +10,22 @@ var serial = {
         var self = this;
         
         chrome.serial.connect(path, options, function(connectionInfo) {
-            self.connectionId = connectionInfo.connectionId;
-            self.bytes_received = 0;
-            self.bytes_sent = 0;
-            
-            self.onReceive.addListener(function log_bytes_received(info) {
-                self.bytes_received += info.data.byteLength;
-            });
-            
-            if (connectionInfo.connectionId > 0) {
+            if (connectionInfo !== undefined) {
+                self.connectionId = connectionInfo.connectionId;
+                self.bytes_received = 0;
+                self.bytes_sent = 0;
+                
+                self.onReceive.addListener(function log_bytes_received(info) {
+                    self.bytes_received += info.data.byteLength;
+                });
+                
                 console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', Baud: ' + connectionInfo.bitrate);
+                
+                callback(connectionInfo);
+            } else {
+                console.log('SERIAL: Failed to open serial port');
+                callback(false);
             }
-            
-            callback(connectionInfo);
         });
     },
     disconnect: function(callback) {
