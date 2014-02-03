@@ -28,8 +28,10 @@ $(document).ready(function() {
     });
     
     // alternative - window.navigator.appVersion.match(/Chrome\/([0-9.]*)/)[1];
-    GUI.log('Running - <strong>Configurator</strong>: ' + chrome.runtime.getManifest().version + ', <strong>Chrome</strong>: ' + window.navigator.appVersion.replace(/.*Chrome\/([0-9.]*).*/,"$1"));    
-    
+    GUI.log('Running - OS: <strong>' + GUI.operating_system + '</strong>, ' + 
+        'Chrome: <strong>' + window.navigator.appVersion.replace(/.*Chrome\/([0-9.]*).*/,"$1") + '</strong>, ' +
+        'Configurator: <strong>' + chrome.runtime.getManifest().version + '</strong>');
+        
     // Tabs
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
