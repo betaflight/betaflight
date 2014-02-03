@@ -47,7 +47,11 @@ $(document).ready(function() {
                     if (!GUI.auto_connect) $('div#port-picker #baud').prop('disabled', false);
                     
                     $(this).text('Connect');
-                    $(this).removeClass('active');                 
+                    $(this).removeClass('active');
+                    
+                    sensor_status(sensors_detected = 0); // reset active sensor indicators
+                    $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
+                    tab_initialize_default();
                 }
                 
                 $(this).data("clicks", !clicks);
@@ -109,6 +113,8 @@ function onOpen(openInfo) {
         // reset connecting_to
         GUI.connecting_to = false;
         
+        GUI.log('Serial port <span style="color: green">successfully</span> opened with ID: ' + openInfo.connectionId);
+        
         // save selected port with chrome.storage if the port differs
         chrome.storage.local.get('last_used_port', function(result) {
             if (typeof result.last_used_port != 'undefined') {
@@ -134,7 +140,7 @@ function onOpen(openInfo) {
         // disconnect after 10 seconds with error if we don't get IDENT data
         GUI.timeout_add('connecting', function() {
             if (!configuration_received) {
-                GUI.log('No configuration received within <span style="color: red">10 seconds</span>, communication <span style="color: red">failed</span> - Disconnecting');
+                GUI.log('No configuration received within <span style="color: red">10 seconds</span>, communication <span style="color: red">failed</span>');
                 
                 $('div#port-picker a.connect').click(); // disconnect
             }
@@ -169,12 +175,10 @@ function onOpen(openInfo) {
 }
 
 function onClosed(result) {
-    if (result) { // All went as expected        
-        sensor_status(sensors_detected = 0); // reset active sensor indicators
-        $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
-        tab_initialize_default();
+    if (result) { // All went as expected
+        GUI.log('Serial port <span style="color: green">successfully</span> closed');
     } else { // Something went wrong
-        GUI.log('Failed to close serial port', 'red');
+        GUI.log('<span style="color: red">Failed</span> to close serial port');
     } 
 }
 
