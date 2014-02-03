@@ -219,9 +219,11 @@ function tab_initialize_initial_setup() {
                                     $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematicsY + 'deg)');
                                     $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematicsX + 'deg)'); 
 
+                                    /*
                                     // Update Compass
                                     $('div#compass .pointer').css('-webkit-transform', 'rotate(' + (SENSOR_DATA.kinematicsZ) + 'deg)'); 
                                     $('div#compass .value').html(SENSOR_DATA.kinematicsZ + '&deg;');
+                                    */
                                 });
                             });
                         }); 

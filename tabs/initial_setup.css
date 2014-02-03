@@ -46,7 +46,7 @@
 #interactive_block {
     float: left;
     
-    height: 300px;
+    height: 280px;
     width: 400px;
     
     border: 1px solid silver;
@@ -63,7 +63,7 @@
         display: block;
         
         margin-left: 10px;
-        margin-top: 235px;
+        margin-top: 215px;
         
         height: 28px;
         line-height: 28px;
@@ -315,10 +315,11 @@
         border: 1px solid #43c84d;
     }
     .tab-initial_setup .compass-wrapper {
+        display: none;
         position: absolute;
         
-        bottom: 25px;
-        right: 85px;
+        bottom: 10px;
+        right: 10px;
 
         border: 1px solid silver;
         border-radius: 50%;

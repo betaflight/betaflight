@@ -20,7 +20,7 @@
         float: left;
         
         width: 40px;
-        height: 220px;
+        height: 150px;
         
         margin-right: 10px;
         
@@ -29,10 +29,8 @@
     }
     .tab-motor_outputs .indicator {
         position: absolute;
-        margin-top: 330px;
         
         width: 40px;
-        height: 0px;
     }
     .tab-motor_outputs p {
         margin-top: 20px;
@@ -64,7 +62,7 @@
         .tab-motor_outputs .motor_testing .notice {
             float: right;
             
-            width: 440px;
+            width: 420px;
             
             margin-top: 20px;
             padding: 5px;

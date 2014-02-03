@@ -197,7 +197,7 @@ input[type="number"]::-webkit-inner-spin-button {
 #log {    
     margin-bottom: 10px;
     
-    height: 90px;
+    height: 60px;
     
     border: 1px solid silver;
     background-color: white;
@@ -256,7 +256,7 @@ input[type="number"]::-webkit-inner-spin-button {
     padding: 10px;
     
     background-color: white;
-    height: 480px;
+    height: 429px;
     
     overflow-x: hidden;
     overflow-y: auto;
