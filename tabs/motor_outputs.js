@@ -81,19 +81,24 @@ function tab_initialize_motor_outputs() {
                 send_message(MSP_codes.MSP_MOTOR, MSP_codes.MSP_MOTOR, false, function() {
                     send_message(MSP_codes.MSP_SERVO, MSP_codes.MSP_SERVO, false, function() {
                         // Update UI
+                        
+                        var block_height = $('div.m-block:first').height();
+                        
                         for (var i = 0; i < MOTOR_DATA.length; i++) {
                             MOTOR_DATA[i] -= 1000; 
-                            var margin_top = 150.0 - (MOTOR_DATA[i] * 0.15);
-                            var height = (MOTOR_DATA[i] * 0.15);
+                            var margin_top = block_height - (MOTOR_DATA[i] * (block_height / 1000));
+                            var height = (MOTOR_DATA[i] * (block_height / 1000));
                             var color = parseInt(MOTOR_DATA[i] * 0.256);
+                            
                             $('.motor-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
                         }
                         
                         for (var i = 0; i < SERVO_DATA.length; i++) {
                             SERVO_DATA[i] -= 1000; 
-                            var margin_top = 150.0 - (SERVO_DATA[i] * 0.15);
-                            var height = (SERVO_DATA[i] * 0.15);
+                            var margin_top = block_height - (SERVO_DATA[i] * (block_height / 1000));
+                            var height = (SERVO_DATA[i] * (block_height / 1000));
                             var color = parseInt(SERVO_DATA[i] * 0.256);
+                            
                             $('.servo-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
                         } 
                     });
