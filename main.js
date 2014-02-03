@@ -25,7 +25,10 @@ $(document).ready(function() {
     
     $('#frame .close').click(function() {
         chrome.app.window.current().close();
-    });    
+    });
+    
+    // alternative - window.navigator.appVersion.match(/Chrome\/([0-9.]*)/)[1];
+    GUI.log('Running - <strong>Configurator</strong>: ' + chrome.runtime.getManifest().version + ', <strong>Chrome</strong>: ' + window.navigator.appVersion.replace(/.*Chrome\/([0-9.]*).*/,"$1"));    
     
     // Tabs
     var tabs = $('#tabs > ul');
