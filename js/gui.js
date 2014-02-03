@@ -212,6 +212,16 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             break;
         case 'motor_outputs':
             GUI.interval_remove('motor_poll');
+            
+            // send data to mcu
+            var buffer_out = [];
+            
+            for (var i = 0; i < 8; i++) {
+                buffer_out.push(lowByte(MISC.minthrottle));
+                buffer_out.push(highByte(MISC.minthrottle));
+            }
+            
+            send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
         
             if (callback) callback();
             break;
