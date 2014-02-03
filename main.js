@@ -15,14 +15,6 @@ ga_tracker.sendAppView('Application Started');
 // Google Analytics stuff end    
 
 $(document).ready(function() {
-    // set bounds (default 960x600)
-    if (screen.height > 600) {
-        chrome.app.window.current().setBounds({width: 962, height: 629});
-    } else {
-        $('div#content').height(280);
-        chrome.app.window.current().setBounds({width: 962, height: 429});
-    }
-    
     // bind controls  
     $('#frame .minimize').click(function() {
         chrome.app.window.current().minimize();
