@@ -134,7 +134,7 @@ function onOpen(openInfo) {
         // disconnect after 10 seconds with error if we don't get IDENT data
         GUI.timeout_add('connecting', function() {
             if (!configuration_received) {
-                notify('Did not received configuration within <span style="color: red">10 seconds</span>, communication <span style="color: red">failed</span> - Disconnecting');
+                GUI.log('Did not received configuration within <span style="color: red">10 seconds</span>, communication <span style="color: red">failed</span> - Disconnecting');
                 
                 $('div#port-picker a.connect').click(); // disconnect
             }
@@ -155,7 +155,7 @@ function onOpen(openInfo) {
         });
     } else {
         console.log('Failed to open serial port');
-        notify('Failed to open serial port', 'red');
+        GUI.log('Failed to open serial port', 'red');
         
         $('div#port-picker a.connect').text('Connect');
         $('div#port-picker a.connect').removeClass('active'); 
@@ -174,7 +174,7 @@ function onClosed(result) {
         $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
         tab_initialize_default();
     } else { // Something went wrong
-        notify('Failed to close serial port', 'red');
+        GUI.log('Failed to close serial port', 'red');
     } 
 }
 

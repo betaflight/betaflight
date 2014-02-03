@@ -35,7 +35,7 @@ $(document).ready(function() {
     $('a', tabs).click(function() {
         if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active
             if (configuration_received == false) { // if there is no active connection, return
-                notify('You need to connect before you can view any of the tabs', 'red');
+                GUI.log('You need to connect before you can view any of the tabs', 'red');
                 return;
             }
             
@@ -150,14 +150,6 @@ $(document).ready(function() {
         }
     });
 });
-
-function notify(message, color) {
-    $('span.notify').html('<span style="color: ' + color + '">' + message + '</span>');+
-    $('span.notify span').fadeOut(5000, function() {
-        $(this).remove();
-    });
-    
-}
 
 function microtime() {
     var now = new Date().getTime() / 1000;

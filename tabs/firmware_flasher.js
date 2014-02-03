@@ -102,7 +102,7 @@ function tab_initialize_firmware_flasher() {
             if (!GUI.connect_lock) { // button disabled while flashing is in progress                
                 tab_initialize_default();
             } else {
-                notify('You <span style="color: red">can\'t</span> do this right now, please wait for current operation to finish ...');
+                GUI.log('You <span style="color: red">can\'t</span> do this right now, please wait for current operation to finish ...');
             }
         });
     });

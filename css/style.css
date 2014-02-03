@@ -278,8 +278,3 @@ input[type="number"]::-webkit-inner-spin-button {
     border-top: 1px solid #7d7d79;
     background-color: #bfbeb5;
 }
-    #status-bar .notify {
-        float: right;
-    }
-        #status-bar .notify span {
-        }
