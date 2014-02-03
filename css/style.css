@@ -193,7 +193,22 @@ input[type="number"]::-webkit-inner-spin-button {
     }
     #sensor-status .on {
         background-color: #0d8b13;
-    }  
+    }
+#log {    
+    margin-bottom: 10px;
+    
+    height: 90px;
+    
+    border: 1px solid silver;
+    background-color: white;
+    
+    overflow-y: scroll;
+} 
+    #log .wrapper {
+        padding: 5px;
+        
+        -webkit-user-select: text;
+    }    
 #tabs {
     position: absolute;
     margin-top: 1px;
@@ -236,7 +251,7 @@ input[type="number"]::-webkit-inner-spin-button {
             background-color: white; 
         }        
 #content {
-    margin-top: 27px;
+    margin-top: 37px;
     
     padding: 10px;
     

@@ -2,7 +2,11 @@ function start_app() {
     chrome.app.window.create('main.html', {
         id: 'main-window',
         frame: 'none',
-        resizable: false
+        resizable: false,
+        minWidth: 962,
+        minHeight: 729,
+        maxWidth: 962,
+        maxHeight: 729
     }, function(window_child) {
         window_child.onClosed.addListener(function() {
             // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference

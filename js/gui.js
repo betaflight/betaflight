@@ -163,6 +163,18 @@ GUI_control.prototype.timeout_kill_all = function() {
     return timers_killed;
 };
 
+// message = string
+GUI_control.prototype.log = function(message) {
+    var command_log = $('div#log');
+    var d = new Date();
+    var time = ((d.getHours() < 10) ? '0' + d.getHours(): d.getHours()) 
+        + ':' + ((d.getMinutes() < 10) ? '0' + d.getMinutes(): d.getMinutes()) 
+        + ':' + ((d.getSeconds() < 10) ? '0' + d.getSeconds(): d.getSeconds());
+    
+    $('div.wrapper', command_log).append('<p>' + time + ' -- ' + message + '</p>');
+    command_log.scrollTop($('div.wrapper', command_log).height());   
+};
+
 // Method is called every time a valid tab change event is received
 // callback = code to run when cleanup is finished
 // default switch doesn't require callback to be set
