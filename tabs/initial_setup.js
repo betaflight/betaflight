@@ -136,7 +136,9 @@ function tab_initialize_initial_setup() {
                         send_message(MSP_codes.MSP_RESET_CONF, MSP_codes.MSP_RESET_CONF, false, function() {
                             GUI.log('Settings restored to <strong>default</strong>');
                             
-                            tab_initialize_initial_setup();
+                            GUI.tab_switch_cleanup(function() {
+                                tab_initialize_initial_setup();
+                            });
                         });
                     });
 

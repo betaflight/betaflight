@@ -144,7 +144,11 @@ function tab_initialize_pid_tuning() {
                 
                 // UI Hooks
                 $('a.refresh').click(function() {
-                    tab_initialize_pid_tuning();
+                    GUI.tab_switch_cleanup(function() {
+                        GUI.log('PID data <strong>refreshed</strong>');
+                        
+                        tab_initialize_pid_tuning();
+                    });
                 });
                 
                 $('a.update').click(function() {
