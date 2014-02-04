@@ -479,17 +479,13 @@ function process_data(code, message_buffer, message_length) {
             break;
         // Additional baseflight commands that are not compatible with MultiWii
         case MSP_codes.MSP_UID:
-            if (data.byteLength > 0) {
-                CONFIG.uid[0] = data.getUint32(0, 1);
-                CONFIG.uid[1] = data.getUint32(4, 1);
-                CONFIG.uid[2] = data.getUint32(8, 1);
-            }
+            CONFIG.uid[0] = data.getUint32(0, 1);
+            CONFIG.uid[1] = data.getUint32(4, 1);
+            CONFIG.uid[2] = data.getUint32(8, 1);
             break;
         case MSP_codes.MSP_ACC_TRIM:
-            if (data.byteLength > 0) {
-                CONFIG.accelerometerTrims[0] = data.getInt16(0, 1); // pitch
-                CONFIG.accelerometerTrims[1] = data.getInt16(2, 1); // roll
-            }
+            CONFIG.accelerometerTrims[0] = data.getInt16(0, 1); // pitch
+            CONFIG.accelerometerTrims[1] = data.getInt16(2, 1); // roll
             break;
         case MSP_codes.MSP_SET_ACC_TRIM:
             console.log('Accelerometer trimms saved.');
