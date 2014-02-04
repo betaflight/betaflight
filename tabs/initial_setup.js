@@ -101,10 +101,15 @@ function tab_initialize_initial_setup() {
                             // During this period MCU won't be able to process any serial commands because its locked in a for/while loop
                             // until this operation finishes, sending more commands through data_poll() will result in serial buffer overflow
                             GUI.interval_pause('initial_setup_data_pull');
-                            send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION);
+                            send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION, false, function() {
+                                GUI.log('Accelerometer calibration started');
+                            });
                             
                             GUI.timeout_add('button_reset', function() {
                                 GUI.interval_resume('initial_setup_data_pull');
+                                
+                                GUI.log('Accelerometer calibration finished');
+                                
                                 self.removeClass('calibrating');
                             }, 2000);
                         }
@@ -116,9 +121,12 @@ function tab_initialize_initial_setup() {
                         if (!self.hasClass('calibrating')) {
                             self.addClass('calibrating');
                         
-                            send_message(MSP_codes.MSP_MAG_CALIBRATION, MSP_codes.MSP_MAG_CALIBRATION);
+                            send_message(MSP_codes.MSP_MAG_CALIBRATION, MSP_codes.MSP_MAG_CALIBRATION, false, function() {
+                                GUI.log('Magnetometer calibration started');
+                            });
                             
                             GUI.timeout_add('button_reset', function() {
+                                GUI.log('Magnetometer calibration finished');
                                 self.removeClass('calibrating');
                             }, 30000);
                         }
@@ -126,6 +134,8 @@ function tab_initialize_initial_setup() {
 
                     $('a.resetSettings').click(function() {
                         send_message(MSP_codes.MSP_RESET_CONF, MSP_codes.MSP_RESET_CONF, false, function() {
+                            GUI.log('Settings restored to <strong>default</strong>');
+                            
                             tab_initialize_initial_setup();
                         });
                     });
@@ -185,6 +195,8 @@ function tab_initialize_initial_setup() {
                         
                         // Save changes to EEPROM
                         send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                            GUI.log('EEPROM <span style="color: green">saved</span>');
+                            
                             var element = $('a.update');
                             element.addClass('success');
                             

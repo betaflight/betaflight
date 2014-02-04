@@ -276,7 +276,9 @@ function configuration_upload() {
         // Send ove the new MISC
         send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, function() {
             // Save changes to EEPROM
-            send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE);
+            send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                GUI.log('EEPROM <span style="color: green">saved</span>');
+            });
         });
     }; 
 }

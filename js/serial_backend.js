@@ -148,6 +148,7 @@ function onOpen(openInfo) {
 
         // request configuration data
         send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID, false, function() {
+            GUI.log('Unique device ID <span style="color: green">received</span>');
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
                 GUI.timeout_remove('connecting'); // kill connecting timer
                 

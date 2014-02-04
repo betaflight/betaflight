@@ -249,6 +249,8 @@ function tab_initialize_pid_tuning() {
                     
                     // Save changes to EEPROM
                     send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                        GUI.log('EEPROM <span style="color: green">saved</span>');
+                        
                         var element = $('a.update');
                         element.addClass('success');
                         
