@@ -73,13 +73,15 @@ function read_hex_file(data) {
                 break;
             case 0x02: // extended segment address record
                 // not implemented
-                console.log('extended segment address record found - NOT IMPLEMENTED !!!');
+                if (parseInt(content, 16) != 0) { // ignore if segment is 0
+                    console.log('extended segment address record found - NOT IMPLEMENTED !!!');
+                }
                 break;
             case 0x03: // start segment address record
                 // not implemented
                 console.log('start segment address record found - NOT IMPLEMENTED !!!');
                 break;
-            case 0x04: // extended linear address record
+            case 0x04: // extended linear address record                
                 var extended_linear_address = (parseInt(content.substr(0, 2), 16) << 24) | parseInt(content.substr(2, 2), 16) << 16;
                 result.extended_linear_address.push(extended_linear_address);
                 
@@ -112,8 +114,18 @@ function read_hex_file(data) {
     }
 }
 
+function microtime() {
+    var now = new Date().getTime() / 1000;
+
+    return now;
+}
+
 onmessage = function(event) {
+    var time_parsing_start = microtime(); // track time
+    
     read_hex_file(event.data);
+    
+    console.log('HEX_PARSER - File parsed in: ' + (microtime() - time_parsing_start).toFixed(4) + ' seconds');
     
     // terminate worker
     close();
