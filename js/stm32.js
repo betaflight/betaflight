@@ -6,24 +6,15 @@
 
 var STM32_protocol = function() {
     this.hex; // ref
+    this.verify_hex;
     
     this.receive_buffer;
     
     this.bytes_to_read = 0; // ref
     this.read_callback; // ref
-
-    this.flashing_memory_address;
-    this.verify_memory_address;
-    
-    this.bytes_flashed;
-    this.bytes_verified;
-
-    this.verify_hex = new Array();
     
     this.upload_time_start;
-    
-    this.steps_executed;
-    this.steps_executed_last;
+    this.upload_process_alive;
     
     this.status = {
         ACK:    0x79, // y
@@ -138,19 +129,10 @@ STM32_protocol.prototype.initialize = function() {
     
     // reset and set some variables before we start 
     self.receive_buffer = [];
-    
-    self.flashing_memory_address = self.hex.extended_linear_address[0];
-    self.verify_memory_address = self.hex.extended_linear_address[0];
-    
-    self.bytes_flashed = 0;
-    self.bytes_verified = 0;
-
     self.verify_hex = [];
     
     self.upload_time_start = microtime();
-    
-    self.steps_executed = 0;
-    self.steps_executed_last = 0;
+    self.upload_process_alive = false;
     
     // reset progress bar to initial state
     self.progress_bar_e = $('.progress');
@@ -162,8 +144,8 @@ STM32_protocol.prototype.initialize = function() {
     });
     
     GUI.interval_add('STM32_timeout', function() {
-        if (self.steps_executed > self.steps_executed_last) { // process is running
-            self.steps_executed_last = self.steps_executed;
+        if (self.upload_process_alive) { // process is running
+            self.upload_process_alive = false;
         } else {
             console.log('STM32 - timed out, programming failed ...');
             STM32.GUI_status('STM32 - timed out, programming: <strong style="color: red">FAILED</strong>');
@@ -218,7 +200,10 @@ STM32_protocol.prototype.retrieve = function(n_bytes, callback) {
 // Array = array of bytes that will be send over serial
 // bytes_to_read = received bytes necessary to trigger read_callback
 // callback = function that will be executed after received bytes = bytes_to_read
-STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {    
+STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {
+    // flip flag
+    this.upload_process_alive = true;
+    
     var bufferOut = new ArrayBuffer(Array.length);
     var bufferView = new Uint8Array(bufferOut);
     
@@ -314,10 +299,10 @@ STM32_protocol.prototype.verify_chip_signature = function(signature) {
     }
     
     if (available_flash_size > 0) {
-        if (this.hex.bytes < available_flash_size) {
+        if (this.hex.bytes_total < available_flash_size) {
             return true;
         } else {
-            console.log('Supplied hex is bigger then flash available on the chip, HEX: ' + this.hex.bytes + ' bytes, limit = ' + available_flash_size + ' bytes');
+            console.log('Supplied hex is bigger then flash available on the chip, HEX: ' + this.hex.bytes_total + ' bytes, limit = ' + available_flash_size + ' bytes');
             
             return false;
         }
@@ -347,7 +332,6 @@ STM32_protocol.prototype.verify_flash = function(first_array, second_array) {
 // step = value depending on current state of upload_procedure
 STM32_protocol.prototype.upload_procedure = function(step) {
     var self = this;
-    self.steps_executed++;
     
     switch (step) {
         case 1:
@@ -430,139 +414,194 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 5:
             // upload
-            if (self.bytes_flashed < self.hex.data.length) {
-                var data_length;
-                
-                if ((self.bytes_flashed + 256) <= self.hex.data.length) {
-                    data_length = 256;
-                } else {
-                    data_length = self.hex.data.length - self.bytes_flashed;
-                }
-                
-                console.log('STM32 - Writing to: 0x' + self.flashing_memory_address.toString(16) + ', ' + data_length + ' bytes');
-                
-                self.send([self.command.write_memory, 0xCE], 1, function(reply) { // 0x31 ^ 0xFF
-                    if (self.verify_response(self.status.ACK, reply)) {
-                        // address needs to be transmitted as 32 bit integer, we need to bit shift each byte out and then calculate address checksum
-                        var address = [(self.flashing_memory_address >> 24), (self.flashing_memory_address >> 16), (self.flashing_memory_address >> 8), self.flashing_memory_address];
-                        var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
+            var blocks = self.hex.data.length - 1;
+            var flashing_block = 0;
+            var bytes_flashed = 0;
+            var bytes_flashed_total = 0; // used for progress bar
+            var flashing_memory_address = self.hex.data[flashing_block].address;
+            
+            var write = function() {
+                if (bytes_flashed >= self.hex.data[flashing_block].bytes) {
+                    // move to another block
+                    if (flashing_block < blocks) {
+                        flashing_block++;
                         
-                        self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function(reply) { // write start address + checksum
-                            if (self.verify_response(self.status.ACK, reply)) {
-                                var array_out = new Array(data_length + 2); // 2 byte overhead [N, ...., checksum]
-                                array_out[0] = data_length - 1; // number of bytes to be written (to write 128 bytes, N must be 127, to write 256 bytes, N must be 255)
-                                
-                                var checksum = array_out[0];
-                                for (var i = 0; i < data_length; i++) {
-                                    array_out[i + 1] = self.hex.data[self.bytes_flashed]; // + 1 because of the first byte offset
-                                    checksum ^= self.hex.data[self.bytes_flashed];
-                                    
-                                    self.bytes_flashed++;
-                                    self.flashing_memory_address++;
-                                }
-                                
-                                array_out[array_out.length - 1] = checksum; // checksum (last byte in the array_out array)
-
-                                self.send(array_out, 1, function(reply) {
-                                    if (self.verify_response(self.status.ACK, reply)) {
-                                        // flash another page
-                                        self.upload_procedure(5);
-                                    }
-                                });
-                            }
-                        });
+                        flashing_memory_address = self.hex.data[flashing_block].address;
+                        bytes_flashed = 0;
+                        
+                        write();
+                    } else {
+                        // all blocks flashed
+                        console.log('Writing: done');
+                        console.log('Verifying data ...');
+                        STM32.GUI_status('<span style="color: green">Verifying ...</span>');
+                        
+                        // proceed to next step
+                        self.upload_procedure(6);
                     }
-                });
+                } else {
+                    var bytes_to_write;
+                    if ((bytes_flashed + 128) <= self.hex.data[flashing_block].bytes) {
+                        bytes_to_write = 128;
+                    } else {
+                        bytes_to_write = self.hex.data[flashing_block].bytes - bytes_flashed;
+                    }
+                    
+                    console.log('STM32 - Writing to: 0x' + flashing_memory_address.toString(16) + ', ' + bytes_to_write + ' bytes');
+                    
+                    self.send([self.command.write_memory, 0xCE], 1, function(reply) { // 0x31 ^ 0xFF
+                        if (self.verify_response(self.status.ACK, reply)) {
+                            // address needs to be transmitted as 32 bit integer, we need to bit shift each byte out and then calculate address checksum
+                            var address = [(flashing_memory_address >> 24), (flashing_memory_address >> 16), (flashing_memory_address >> 8), flashing_memory_address];
+                            var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
+                            
+                            self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function(reply) { // write start address + checksum
+                                if (self.verify_response(self.status.ACK, reply)) {
+                                    var array_out = new Array(bytes_to_write + 2); // 2 byte overhead [N, ...., checksum]
+                                    array_out[0] = bytes_to_write - 1; // number of bytes to be written (to write 128 bytes, N must be 127, to write 256 bytes, N must be 255)
+                                    
+                                    var checksum = array_out[0];
+                                    for (var i = 0; i < bytes_to_write; i++) {
+                                        array_out[i + 1] = self.hex.data[flashing_block].data[bytes_flashed]; // + 1 because of the first byte offset
+                                        checksum ^= self.hex.data[flashing_block].data[bytes_flashed];
+                                        
+                                        bytes_flashed++;
+                                        bytes_flashed_total++;
+                                        flashing_memory_address++;
+                                    }
+                                    
+                                    array_out[array_out.length - 1] = checksum; // checksum (last byte in the array_out array)
+
+                                    self.send(array_out, 1, function(reply) {
+                                        if (self.verify_response(self.status.ACK, reply)) {
+                                            // flash another page
+                                            write();
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
                 
-                // update progress bar
-                self.progress_bar_e.val(self.bytes_flashed / (self.hex.bytes * 2) * 100);
-            } else {
-                console.log('Writing: done');
-                console.log('Verifying data ...');
-                STM32.GUI_status('<span style="color: green">Verifying ...</span>');
-                
-                // proceed to next step
-                self.upload_procedure(6);
-            }
+                    // update progress bar
+                    self.progress_bar_e.val(bytes_flashed_total / (self.hex.bytes_total * 2) * 100);
+                }
+            };
+            
+            // start writing
+            write();
             break;
         case 6:
             // verify
-            if (self.bytes_verified < self.hex.data.length) {
-                var data_length;
-                
-                if ((self.bytes_verified + 256) <= self.hex.data.length) {
-                    data_length = 256;
-                } else {
-                    data_length = self.hex.data.length - self.bytes_verified;
-                }
-                
-                console.log('STM32 - Reading from: 0x' + self.verify_memory_address.toString(16) + ', ' + data_length + ' bytes');
-                
-                self.send([self.command.read_memory, 0xEE], 1, function(reply) { // 0x11 ^ 0xFF
-                    if (self.verify_response(self.status.ACK, reply)) {
-                        var address = [(self.verify_memory_address >> 24), (self.verify_memory_address >> 16), (self.verify_memory_address >> 8), self.verify_memory_address];
-                        var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
-                        
-                        self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function(reply) { // read start address + checksum
-                            if (self.verify_response(self.status.ACK, reply)) {
-                                var bytes_to_read_n = data_length - 1;
-                                
-                                self.send([bytes_to_read_n, (~bytes_to_read_n) & 0xFF], 1, function(reply) { // bytes to be read + checksum XOR(complement of bytes_to_read_n)
-                                    if (self.verify_response(self.status.ACK, reply)) {
-                                        self.retrieve(data_length, function(data) {
-                                            for (var i = 0; i < data.length; i++) {
-                                                self.verify_hex.push(data[i]);
-                                                self.bytes_verified++;
-                                            }
-                                            
-                                            self.verify_memory_address += data_length;
-                                            
-                                            // verify another page
-                                            self.upload_procedure(6);
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                    }
-                });
-                
-                // update progress bar
-                self.progress_bar_e.val((self.bytes_flashed + self.bytes_verified) / (self.hex.bytes * 2) * 100); 
-            } else {
-                var result = self.verify_flash(self.hex.data, self.verify_hex);
-                
-                if (result) {
-                    console.log('Verifying: done');
-                    console.log('Programming: SUCCESSFUL');
-                    STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
-                    
-                    // update progress bar
-                    self.progress_bar_e.addClass('valid');
-                    
-                    // proceed to next step
-                    self.upload_procedure(7);   
-                } else {
-                    console.log('Verifying: failed');
-                    console.log('Programming: FAILED');
-                    STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
-                    
-                    // update progress bar
-                    self.progress_bar_e.addClass('invalid');
-                    
-                    // disconnect
-                    self.upload_procedure(99); 
-                }   
+            var blocks = self.hex.data.length - 1;
+            var reading_block = 0;
+            var bytes_verified = 0;
+            var bytes_verified_total = 0; // used for progress bar
+            var verifying_memory_address = self.hex.data[reading_block].address;
+            
+            // initialize arrays
+            for (var i = 0; i <= blocks; i++) {
+                self.verify_hex.push([]);
             }
+            
+            var reading = function() {
+                if (bytes_verified >= self.hex.data[reading_block].bytes) {
+                    // move to another block
+                    if (reading_block < blocks) {
+                        reading_block++;
+                        
+                        verifying_memory_address = self.hex.data[reading_block].address;
+                        bytes_verified = 0;
+                        
+                        reading();
+                    } else {
+                        // all blocks read, verify
+                        
+                        var verify = true;
+                        for (var i = 0; i <= blocks; i++) {
+                            verify = self.verify_flash(self.hex.data[i].data, self.verify_hex[i]);
+                            
+                            if (!verify) break;
+                        }
+                        
+                        if (verify) {
+                            console.log('Verifying: done');
+                            console.log('Programming: SUCCESSFUL');
+                            STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
+                            
+                            // update progress bar
+                            self.progress_bar_e.addClass('valid');
+                            
+                            // proceed to next step
+                            self.upload_procedure(7);   
+                        } else {
+                            console.log('Verifying: failed');
+                            console.log('Programming: FAILED');
+                            STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
+                            
+                            // update progress bar
+                            self.progress_bar_e.addClass('invalid');
+                            
+                            // disconnect
+                            self.upload_procedure(99); 
+                        }
+                    }
+                } else {
+                    var bytes_to_read;
+                    if ((bytes_verified + 128) <= self.hex.data[reading_block].bytes) {
+                        bytes_to_read = 128;
+                    } else {
+                        bytes_to_read = self.hex.data[reading_block].bytes - bytes_verified;
+                    }
+                
+                    console.log('STM32 - Reading from: 0x' + verifying_memory_address.toString(16) + ', ' + bytes_to_read + ' bytes');
+                    
+                    self.send([self.command.read_memory, 0xEE], 1, function(reply) { // 0x11 ^ 0xFF
+                        if (self.verify_response(self.status.ACK, reply)) {
+                            var address = [(verifying_memory_address >> 24), (verifying_memory_address >> 16), (verifying_memory_address >> 8), verifying_memory_address];
+                            var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
+                            
+                            self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function(reply) { // read start address + checksum
+                                if (self.verify_response(self.status.ACK, reply)) {
+                                    var bytes_to_read_n = bytes_to_read - 1;
+                                    
+                                    self.send([bytes_to_read_n, (~bytes_to_read_n) & 0xFF], 1, function(reply) { // bytes to be read + checksum XOR(complement of bytes_to_read_n)
+                                        if (self.verify_response(self.status.ACK, reply)) {
+                                            self.retrieve(bytes_to_read, function(data) {
+                                                for (var i = 0; i < data.length; i++) {
+                                                    self.verify_hex[reading_block].push(data[i]);
+                                                    bytes_verified++;
+                                                    bytes_verified_total++;
+                                                }
+                                                
+                                                verifying_memory_address += bytes_to_read;
+                                                
+                                                // verify another page
+                                                reading();
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                
+                    // update progress bar
+                    self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100); 
+                }
+            };
+            
+            // start reading
+            reading();
             break;
         case 7:
             // go
             // memory address = 4 bytes, 1st high byte, 4th low byte, 5th byte = checksum XOR(byte 1, byte 2, byte 3, byte 4)
-            console.log('Sending GO command: 0x' + self.hex.extended_linear_address[0].toString(16));
+            console.log('Sending GO command: 0x8000000');
 
             self.send([self.command.go, 0xDE], 1, function(reply) { // 0x21 ^ 0xFF
                 if (self.verify_response(self.status.ACK, reply)) {
-                    var gt_address = self.hex.extended_linear_address[0];
+                    var gt_address = 0x8000000;
                     var address = [(gt_address >> 24), (gt_address >> 16), (gt_address >> 8), gt_address];
                     var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
                     
@@ -579,7 +618,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // disconnect
             GUI.interval_remove('STM32_timeout'); // stop STM32 timeout timer (everything is finished now)
             
-            console.log('Script finished after: ' + (microtime() - self.upload_time_start).toFixed(4) + ' seconds, ' + self.steps_executed + ' steps');
+            console.log('Script finished after: ' + (microtime() - self.upload_time_start).toFixed(4) + ' seconds');
             
             // close connection
             serial.disconnect(function(result) {
