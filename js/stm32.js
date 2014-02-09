@@ -416,38 +416,16 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // upload
             var blocks = self.hex.data.length - 1;
             var flashing_block = 0;
-            var bytes_flashed = 0;
-            var bytes_flashed_total = 0; // used for progress bar
             var address = self.hex.data[flashing_block].address;
             
+            var bytes_flashed = 0;
+            var bytes_flashed_total = 0; // used for progress bar
+            
             var write = function() {
-                if (bytes_flashed >= self.hex.data[flashing_block].bytes) {
-                    // move to another block
-                    if (flashing_block < blocks) {
-                        flashing_block++;
-                        
-                        address = self.hex.data[flashing_block].address;
-                        bytes_flashed = 0;
-                        
-                        write();
-                    } else {
-                        // all blocks flashed
-                        console.log('Writing: done');
-                        console.log('Verifying data ...');
-                        STM32.GUI_status('<span style="color: green">Verifying ...</span>');
-                        
-                        // proceed to next step
-                        self.upload_procedure(6);
-                    }
-                } else {
-                    var bytes_to_write;
-                    if ((bytes_flashed + 128) <= self.hex.data[flashing_block].bytes) {
-                        bytes_to_write = 128;
-                    } else {
-                        bytes_to_write = self.hex.data[flashing_block].bytes - bytes_flashed;
-                    }
+                if (bytes_flashed < self.hex.data[flashing_block].bytes) {
+                    var bytes_to_write = ((bytes_flashed + 128) <= self.hex.data[flashing_block].bytes) ? 128 : (self.hex.data[flashing_block].bytes - bytes_flashed);
                     
-                    console.log('STM32 - Writing to: 0x' + address.toString(16) + ', ' + bytes_to_write + ' bytes');
+                    // console.log('STM32 - Writing to: 0x' + address.toString(16) + ', ' + bytes_to_write + ' bytes');
                     
                     self.send([self.command.write_memory, 0xCE], 1, function(reply) { // 0x31 ^ 0xFF
                         if (self.verify_response(self.status.ACK, reply)) {
@@ -474,6 +452,9 @@ STM32_protocol.prototype.upload_procedure = function(step) {
 
                                     self.send(array_out, 1, function(reply) {
                                         if (self.verify_response(self.status.ACK, reply)) {
+                                            // update progress bar
+                                            self.progress_bar_e.val(bytes_flashed_total / (self.hex.bytes_total * 2) * 100);
+                                            
                                             // flash another page
                                             write();
                                         }
@@ -482,9 +463,24 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                             });
                         }
                     });
-                
-                    // update progress bar
-                    self.progress_bar_e.val(bytes_flashed_total / (self.hex.bytes_total * 2) * 100);
+                } else {
+                    // move to another block
+                    if (flashing_block < blocks) {
+                        flashing_block++;
+                        
+                        address = self.hex.data[flashing_block].address;
+                        bytes_flashed = 0;
+                        
+                        write();
+                    } else {
+                        // all blocks flashed
+                        console.log('Writing: done');
+                        console.log('Verifying data ...');
+                        STM32.GUI_status('<span style="color: green">Verifying ...</span>');
+                        
+                        // proceed to next step
+                        self.upload_procedure(6);
+                    }
                 }
             };
             
@@ -495,9 +491,10 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // verify
             var blocks = self.hex.data.length - 1;
             var reading_block = 0;
+            var address = self.hex.data[reading_block].address;
+            
             var bytes_verified = 0;
             var bytes_verified_total = 0; // used for progress bar
-            var address = self.hex.data[reading_block].address;
             
             // initialize arrays
             for (var i = 0; i <= blocks; i++) {
@@ -505,56 +502,10 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             }
             
             var reading = function() {
-                if (bytes_verified >= self.hex.data[reading_block].bytes) {
-                    // move to another block
-                    if (reading_block < blocks) {
-                        reading_block++;
-                        
-                        address = self.hex.data[reading_block].address;
-                        bytes_verified = 0;
-                        
-                        reading();
-                    } else {
-                        // all blocks read, verify
-                        
-                        var verify = true;
-                        for (var i = 0; i <= blocks; i++) {
-                            verify = self.verify_flash(self.hex.data[i].data, self.verify_hex[i]);
-                            
-                            if (!verify) break;
-                        }
-                        
-                        if (verify) {
-                            console.log('Verifying: done');
-                            console.log('Programming: SUCCESSFUL');
-                            STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
-                            
-                            // update progress bar
-                            self.progress_bar_e.addClass('valid');
-                            
-                            // proceed to next step
-                            self.upload_procedure(7);   
-                        } else {
-                            console.log('Verifying: failed');
-                            console.log('Programming: FAILED');
-                            STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
-                            
-                            // update progress bar
-                            self.progress_bar_e.addClass('invalid');
-                            
-                            // disconnect
-                            self.upload_procedure(99); 
-                        }
-                    }
-                } else {
-                    var bytes_to_read;
-                    if ((bytes_verified + 128) <= self.hex.data[reading_block].bytes) {
-                        bytes_to_read = 128;
-                    } else {
-                        bytes_to_read = self.hex.data[reading_block].bytes - bytes_verified;
-                    }
+                if (bytes_verified < self.hex.data[reading_block].bytes) {
+                    var bytes_to_read = ((bytes_verified + 128) <= self.hex.data[reading_block].bytes) ? 128 : (self.hex.data[reading_block].bytes - bytes_verified);
                 
-                    console.log('STM32 - Reading from: 0x' + address.toString(16) + ', ' + bytes_to_read + ' bytes');
+                    // console.log('STM32 - Reading from: 0x' + address.toString(16) + ', ' + bytes_to_read + ' bytes');
                     
                     self.send([self.command.read_memory, 0xEE], 1, function(reply) { // 0x11 ^ 0xFF
                         if (self.verify_response(self.status.ACK, reply)) {
@@ -576,6 +527,9 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                                 bytes_verified += bytes_to_read;
                                                 bytes_verified_total += bytes_to_read;
                                                 
+                                                // update progress bar
+                                                self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100); 
+                                                
                                                 // verify another page
                                                 reading();
                                             });
@@ -585,9 +539,45 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                             });
                         }
                     });
-                
-                    // update progress bar
-                    self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100); 
+                } else {
+                    // move to another block
+                    if (reading_block < blocks) {
+                        reading_block++;
+                        
+                        address = self.hex.data[reading_block].address;
+                        bytes_verified = 0;
+                        
+                        reading();
+                    } else {
+                        // all blocks read, verify
+                        
+                        var verify = true;
+                        for (var i = 0; i <= blocks; i++) {
+                            verify = self.verify_flash(self.hex.data[i].data, self.verify_hex[i]);
+                            
+                            if (!verify) break;
+                        }
+                        
+                        if (verify) {
+                            console.log('Programming: SUCCESSFUL');
+                            STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
+                            
+                            // update progress bar
+                            self.progress_bar_e.addClass('valid');
+                            
+                            // proceed to next step
+                            self.upload_procedure(7);   
+                        } else {
+                            console.log('Programming: FAILED');
+                            STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
+                            
+                            // update progress bar
+                            self.progress_bar_e.addClass('invalid');
+                            
+                            // disconnect
+                            self.upload_procedure(99); 
+                        }
+                    }
                 }
             };
             
