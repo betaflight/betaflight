@@ -466,10 +466,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                         checksum ^= self.hex.data[flashing_block].data[bytes_flashed];
                                         
                                         bytes_flashed++;
-                                        bytes_flashed_total++;
-                                        address++;
                                     }
                                     array_out[array_out.length - 1] = checksum; // checksum (last byte in the array_out array)
+                                    
+                                    address += bytes_to_write;
+                                    bytes_flashed_total += bytes_to_write
 
                                     self.send(array_out, 1, function(reply) {
                                         if (self.verify_response(self.status.ACK, reply)) {
@@ -496,7 +497,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             var reading_block = 0;
             var bytes_verified = 0;
             var bytes_verified_total = 0; // used for progress bar
-            var verifying_memory_address = self.hex.data[reading_block].address;
+            var address = self.hex.data[reading_block].address;
             
             // initialize arrays
             for (var i = 0; i <= blocks; i++) {
@@ -509,7 +510,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     if (reading_block < blocks) {
                         reading_block++;
                         
-                        verifying_memory_address = self.hex.data[reading_block].address;
+                        address = self.hex.data[reading_block].address;
                         bytes_verified = 0;
                         
                         reading();
@@ -553,14 +554,14 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         bytes_to_read = self.hex.data[reading_block].bytes - bytes_verified;
                     }
                 
-                    console.log('STM32 - Reading from: 0x' + verifying_memory_address.toString(16) + ', ' + bytes_to_read + ' bytes');
+                    console.log('STM32 - Reading from: 0x' + address.toString(16) + ', ' + bytes_to_read + ' bytes');
                     
                     self.send([self.command.read_memory, 0xEE], 1, function(reply) { // 0x11 ^ 0xFF
                         if (self.verify_response(self.status.ACK, reply)) {
-                            var address = [(verifying_memory_address >> 24), (verifying_memory_address >> 16), (verifying_memory_address >> 8), verifying_memory_address];
-                            var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
+                            var address_arr = [(address >> 24), (address >> 16), (address >> 8), address];
+                            var address_checksum = address_arr[0] ^ address_arr[1] ^ address_arr[2] ^ address_arr[3];
                             
-                            self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function(reply) { // read start address + checksum
+                            self.send([address_arr[0], address_arr[1], address_arr[2], address_arr[3], address_checksum], 1, function(reply) { // read start address + checksum
                                 if (self.verify_response(self.status.ACK, reply)) {
                                     var bytes_to_read_n = bytes_to_read - 1;
                                     
@@ -569,11 +570,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                             self.retrieve(bytes_to_read, function(data) {
                                                 for (var i = 0; i < data.length; i++) {
                                                     self.verify_hex[reading_block].push(data[i]);
-                                                    bytes_verified++;
-                                                    bytes_verified_total++;
                                                 }
                                                 
-                                                verifying_memory_address += bytes_to_read;
+                                                address += bytes_to_read;
+                                                bytes_verified += bytes_to_read;
+                                                bytes_verified_total += bytes_to_read;
                                                 
                                                 // verify another page
                                                 reading();
