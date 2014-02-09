@@ -43,7 +43,7 @@ function tab_initialize_firmware_flasher() {
                                         STM32.GUI_status('<span style="color: green">Firmware loaded, ready for flashing</span>');
                                         $('a.flash_firmware').removeClass('locked');
                                         
-                                        $('span.size').html(parsed_hex.bytes + ' bytes');
+                                        $('span.size').html(parsed_hex.bytes_total + ' bytes');
                                     } else {
                                         STM32.GUI_status('<span style="color: red">HEX file appears to be corrupted</span>');
                                     }
@@ -75,7 +75,7 @@ function tab_initialize_firmware_flasher() {
                         $('a.flash_firmware').removeClass('locked');
                         
                         $('span.path').html('Using remote Firmware');
-                        $('span.size').html(parsed_hex.bytes + ' bytes');
+                        $('span.size').html(parsed_hex.bytes_total + ' bytes');
                     } else {
                         STM32.GUI_status('<span style="color: red">HEX file appears to be corrupted</span>');
                     }
