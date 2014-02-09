@@ -418,7 +418,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             var flashing_block = 0;
             var bytes_flashed = 0;
             var bytes_flashed_total = 0; // used for progress bar
-            var flashing_memory_address = self.hex.data[flashing_block].address;
+            var address = self.hex.data[flashing_block].address;
             
             var write = function() {
                 if (bytes_flashed >= self.hex.data[flashing_block].bytes) {
@@ -426,7 +426,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     if (flashing_block < blocks) {
                         flashing_block++;
                         
-                        flashing_memory_address = self.hex.data[flashing_block].address;
+                        address = self.hex.data[flashing_block].address;
                         bytes_flashed = 0;
                         
                         write();
@@ -447,15 +447,15 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         bytes_to_write = self.hex.data[flashing_block].bytes - bytes_flashed;
                     }
                     
-                    console.log('STM32 - Writing to: 0x' + flashing_memory_address.toString(16) + ', ' + bytes_to_write + ' bytes');
+                    console.log('STM32 - Writing to: 0x' + address.toString(16) + ', ' + bytes_to_write + ' bytes');
                     
                     self.send([self.command.write_memory, 0xCE], 1, function(reply) { // 0x31 ^ 0xFF
                         if (self.verify_response(self.status.ACK, reply)) {
                             // address needs to be transmitted as 32 bit integer, we need to bit shift each byte out and then calculate address checksum
-                            var address = [(flashing_memory_address >> 24), (flashing_memory_address >> 16), (flashing_memory_address >> 8), flashing_memory_address];
-                            var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
+                            var address_arr = [(address >> 24), (address >> 16), (address >> 8), address];
+                            var address_checksum = address_arr[0] ^ address_arr[1] ^ address_arr[2] ^ address_arr[3];
                             
-                            self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function(reply) { // write start address + checksum
+                            self.send([address_arr[0], address_arr[1], address_arr[2], address_arr[3], address_checksum], 1, function(reply) { // write start address + checksum
                                 if (self.verify_response(self.status.ACK, reply)) {
                                     var array_out = new Array(bytes_to_write + 2); // 2 byte overhead [N, ...., checksum]
                                     array_out[0] = bytes_to_write - 1; // number of bytes to be written (to write 128 bytes, N must be 127, to write 256 bytes, N must be 255)
@@ -467,9 +467,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                         
                                         bytes_flashed++;
                                         bytes_flashed_total++;
-                                        flashing_memory_address++;
+                                        address++;
                                     }
-                                    
                                     array_out[array_out.length - 1] = checksum; // checksum (last byte in the array_out array)
 
                                     self.send(array_out, 1, function(reply) {
