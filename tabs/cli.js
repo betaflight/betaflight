@@ -27,6 +27,9 @@ function tab_initialize_cli() {
     $('#content').load("./tabs/cli.html", function() {
         GUI.active_tab = 'cli';
         
+        // remove any active interval for delayed command
+        MSP.callbacks_cleanup();
+        
         CLI_active = true;
         
         // Enter CLI mode

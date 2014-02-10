@@ -67,17 +67,20 @@ var MSP = {
     callbacks:                  [],
     packet_error:               0,
     
-    disconnect_cleanup:         function() {
-        this.state = 0; // reset packet state for "clean" initial entry (this is only required if user hot-disconnects)
-        this.packet_error = 0; // reset CRC packet error counter for next session
-        
-        // kill all "raw" MSP timers
+    callbacks_cleanup:            function() {
         for (var i = 0; i < this.callbacks.length; i++) {
             clearInterval(this.callbacks[i].timer);
         }
         
         // drop references
         this.callbacks = [];
+    },
+    
+    disconnect_cleanup:         function() {
+        this.state = 0; // reset packet state for "clean" initial entry (this is only required if user hot-disconnects)
+        this.packet_error = 0; // reset CRC packet error counter for next session
+        
+        this.callbacks_cleanup();
     }
 };
 
