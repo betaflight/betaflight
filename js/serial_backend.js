@@ -280,7 +280,7 @@ function update_port_select_menu(ports) {
             $('div#port-picker .port select').append($("<option/>", {value: ports[i], text: ports[i]}));
         }
     } else {
-        $('div#port-picker .port select').append($("<option/>", {value: 0, text: 'NOT FOUND'}));
+        $('div#port-picker .port select').append($("<option/>", {value: 0, text: 'No Ports'}));
     }    
 }
 
