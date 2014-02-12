@@ -61,7 +61,7 @@ STM32_protocol.prototype.connect = function(hex) {
                 flashing_bitrate = 921600;
                 break;
             case 'MacOS':
-                flashing_bitrate = 38400; /* locked to max supported until new serial api is fixed */
+                flashing_bitrate = 921600; /* max of 38400 was fixed in dev branch, 33 still broken */
                 break;
             case 'ChromeOS':
             case 'Linux':
