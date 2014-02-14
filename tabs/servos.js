@@ -7,19 +7,18 @@
 
 function tab_initialize_servos() {
     ga_tracker.sendAppView('Servos');
+    GUI.active_tab = 'servos';
     
-    $('#content').load("./tabs/servos.html", function() {
-        GUI.active_tab = 'servos';
-
-        var model = $('div.tab-servos strong.model');
-        var supported_models = [1, 4, 5, 8, 14, 20, 21];
-        
-        // request current Servos Config
-        send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
-            send_message(MSP_codes.MSP_SERVO_CONF, MSP_codes.MSP_SERVO_CONF, false, function() {
-                send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
+    // request current Servos Config
+    send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
+        send_message(MSP_codes.MSP_SERVO_CONF, MSP_codes.MSP_SERVO_CONF, false, function() {
+            send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
+                $('#content').load("./tabs/servos.html", function() {
                     // drop previous table
                     $('div.tab-servos table.fields tr:not(:first)').remove();
+                    
+                    var model = $('div.tab-servos strong.model');
+                    var supported_models = [1, 4, 5, 8, 14, 20, 21];
                     
                     switch (CONFIG.multiType) {
                         case 1: // TRI
@@ -92,7 +91,7 @@ function tab_initialize_servos() {
                             break;
                             
                         default:
-                            model.html('Doesn\'t support servos');
+                            model.html("This model doesn't support servos");
                             
                             // implementation of feature servo_tilt
                             if (AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
@@ -113,21 +112,21 @@ function tab_initialize_servos() {
                             GUI.timeout_add('servos_update', servos_update, 10);
                         }
                     });
+                    
+                    $('a.update').click(function() {
+                        // standard check for supported_models + custom implementation for feature servo_tilt
+                        if (supported_models.indexOf(CONFIG.multiType) != -1 || AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
+                            servos_update(true);
+                        }
+                    });
+                    
+                    // enable data pulling
+                    GUI.interval_add('servos_data_poll', function() {
+                        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+                    }, 50);
                 });
             });
         });
-        
-        $('a.update').click(function() {
-            // standard check for supported_models + custom implementation for feature servo_tilt
-            if (supported_models.indexOf(CONFIG.multiType) != -1 || AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
-                servos_update(true);
-            }
-        });
-        
-        // enable data pulling
-        GUI.interval_add('servos_data_poll', function() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-        }, 50);
     });
 }
 

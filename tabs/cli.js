@@ -23,13 +23,12 @@ cli_history = new CliHistory();
 
 function tab_initialize_cli() {
     ga_tracker.sendAppView('CLI Page');
+    GUI.active_tab = 'cli';
     
-    $('#content').load("./tabs/cli.html", function() {
-        GUI.active_tab = 'cli';
-        
-        // remove any active interval for delayed command
-        MSP.callbacks_cleanup();
-        
+    // remove any active interval for delayed command
+    MSP.callbacks_cleanup();    
+    
+    $('#content').load("./tabs/cli.html", function() {        
         CLI_active = true;
         
         // Enter CLI mode

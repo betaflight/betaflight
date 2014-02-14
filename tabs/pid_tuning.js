@@ -1,11 +1,10 @@
 function tab_initialize_pid_tuning() {
     ga_tracker.sendAppView('PID Tuning');
+    GUI.active_tab = 'pid_tuning';
     
-    $('#content').load("./tabs/pid_tuning.html", function() {
-        GUI.active_tab = 'pid_tuning';
-
-        send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, function() {
-            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+    send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, function() {
+        send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+            $('#content').load("./tabs/pid_tuning.html", function() {
                 // Fill in the data from PIDs array
                 var i = 0;
                 $('.pid_tuning .ROLL input').each(function() {
@@ -281,8 +280,8 @@ function tab_initialize_pid_tuning() {
                 // enable data pulling
                 GUI.interval_add('pid_data_poll', function() {
                     send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-                }, 50);  
+                }, 50);
             });
         });
-    });    
+    });   
 }

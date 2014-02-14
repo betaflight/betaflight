@@ -1,11 +1,10 @@
 function tab_initialize_auxiliary_configuration() {
     ga_tracker.sendAppView('Auxiliary Configuration');
-    
-    $('#content').load("./tabs/auxiliary_configuration.html", function() {
-        GUI.active_tab = 'auxiliary_configuration';
+    GUI.active_tab = 'auxiliary_configuration';
 
-        send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
-            send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
+    send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
+        send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
+            $('#content').load("./tabs/auxiliary_configuration.html", function() {
                 // generate table from the supplied AUX names and AUX data
                 for (var i = 0; i < AUX_CONFIG.length; i++) {
                     $('.boxes > tbody:last').append(
@@ -77,25 +76,25 @@ function tab_initialize_auxiliary_configuration() {
 
                 // enable data pulling
                 GUI.interval_add('aux_data_poll', function() {
-                send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-                send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, function() {
-                    for (var i = 0; i < AUX_CONFIG.length; i++) {
-                        if (bit_check(CONFIG.mode, i)) {
-                            $('td.name').eq(i).addClass('on').removeClass('off'); 
-                        } else {
-                            $('td.name').eq(i).removeClass('on').removeClass('off');
-                            
-                            if (AUX_CONFIG_values[i] > 0) {
-                                $('td.name').eq(i).addClass('off');
+                    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+                    send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, function() {
+                        for (var i = 0; i < AUX_CONFIG.length; i++) {
+                            if (bit_check(CONFIG.mode, i)) {
+                                $('td.name').eq(i).addClass('on').removeClass('off'); 
+                            } else {
+                                $('td.name').eq(i).removeClass('on').removeClass('off');
+                                
+                                if (AUX_CONFIG_values[i] > 0) {
+                                    $('td.name').eq(i).addClass('off');
+                                }
                             }
                         }
-                    }
-                    
-                    box_highlight(RC.AUX1, 2);
-                    box_highlight(RC.AUX2, 5);
-                    box_highlight(RC.AUX3, 8);
-                    box_highlight(RC.AUX4, 11);
-                });
+                        
+                        box_highlight(RC.AUX1, 2);
+                        box_highlight(RC.AUX2, 5);
+                        box_highlight(RC.AUX3, 8);
+                        box_highlight(RC.AUX4, 11);
+                    });
                 }, 50, true);
             });
         });

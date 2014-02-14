@@ -1,9 +1,8 @@
 function tab_initialize_sensors() {
     ga_tracker.sendAppView('Sensor Page');
+    GUI.active_tab = 'sensors';
     
     $('#content').load("./tabs/sensors.html", function() {
-        GUI.active_tab = 'sensors';
-        
         // Setup variables
         samples_gyro_i = 300;
         samples_accel_i = 300;
