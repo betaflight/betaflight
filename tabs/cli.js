@@ -66,11 +66,6 @@ function tab_initialize_cli() {
                 textarea.val(cli_history.next());
         });
         
-        // handle smaller resolutions
-        if (screen.height <= 600) {
-            $('div.tab-cli .window').height(200);
-        }
-        
         // apply dynamic width to the textarea element according to cli window width (minus padding and border width)
         $('div.tab-cli textarea').width($('div.tab-cli .window').outerWidth() - 7);
         
