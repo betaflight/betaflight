@@ -142,7 +142,21 @@ function tab_initialize_pid_tuning() {
                 $('.rate-tpa input[name="yaw"]').val(RC_tuning.yaw_rate.toFixed(2));
                 $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
                 
+                // Fill in currently selected profile
+                $('input[name="profile"]').val(CONFIG.profile + 1); // +1 because the range is 0-2
+                
                 // UI Hooks
+                $('input[name="profile"]').change(function() {
+                    var profile = parseInt($(this).val());
+                    send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function() {
+                        GUI.log('Loaded Profile: <strong>' + profile + '</strong>');
+                        
+                        GUI.tab_switch_cleanup(function() {                            
+                            tab_initialize_pid_tuning();
+                        });
+                    });
+                });
+                
                 $('a.refresh').click(function() {
                     GUI.tab_switch_cleanup(function() {
                         GUI.log('PID data <strong>refreshed</strong>');

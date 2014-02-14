@@ -3,11 +3,11 @@
     .tab-pid_tuning input[type="number"]::-webkit-inner-spin-button {
         border: 0;
     }
-.tab-pid_tuning table {
-    float: left;
-    
-    border-collapse: collapse;
-}
+    .tab-pid_tuning table {
+        float: left;
+        
+        border-collapse: collapse;
+    }
     .tab-pid_tuning table, 
     .tab-pid_tuning table th, 
     .tab-pid_tuning table td {
@@ -39,6 +39,32 @@
         padding: 0 5px 0 5px;
         text-align: right;
     }
+    .tab-pid_tuning .profile {
+        float: left;
+        
+        margin-top: 10px;
+        
+        width: 70px;
+        
+        border: 1px solid silver;
+    }
+        .tab-pid_tuning .profile .head {
+            display: block;
+            
+            text-align: center;
+            line-height: 20px;
+            font-weight: bold;
+            
+            border-bottom: 1px solid silver;
+            background-color: #ececec;
+        }
+        .tab-pid_tuning .profile input {
+            padding-left: 30px;
+            
+            width: 40px;
+            height: 20px;
+            line-height: 20px;
+        }
     .tab-pid_tuning .rate-tpa {
         margin-left: 10px;
     }

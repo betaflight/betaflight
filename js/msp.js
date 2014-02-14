@@ -465,6 +465,7 @@ function process_data(code, message_buffer, message_length) {
             send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM);
             break;  
         case MSP_codes.MSP_SELECT_SETTING:
+            console.log('Profile selected');
             break;
         case MSP_codes.MSP_SET_SERVO_CONF:
             console.log('Servo Configuration saved');
