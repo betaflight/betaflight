@@ -23,6 +23,11 @@ How to use
 -----------
 You can find the baseflight configurator icon in your application tab "Apps"
 
+Linux users
+-----------
+1. Dont forget to add your user into dialout group "sudo usermod -aG dialout YOUR_USERNAME" for serial access
+2. If you have 3D model animation problems, Enable "Override software rendering list" in chrome flags chrome://flags/#ignore-gpu-blacklist
+
 Developers
 ----------
 We accept clean and reasonable patches, always target the "development" branch for the pull requests
