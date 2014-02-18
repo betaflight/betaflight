@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 57;
+static const uint8_t EEPROM_CONF_VERSION = 58;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -184,6 +184,7 @@ static void resetConf(void)
     mcfg.board_align_pitch = 0;
     mcfg.board_align_yaw = 0;
     mcfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    mcfg.max_angle_inclination = 500;    // 50 degrees
     mcfg.yaw_control_direction = 1;
     mcfg.moron_threshold = 32;
     mcfg.gyro_smoothing_factor = 0x00141403;     // default factors of 20, 20, 3 for R/P/Y

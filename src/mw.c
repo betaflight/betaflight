@@ -302,7 +302,7 @@ static void pidMultiWii(void)
     for (axis = 0; axis < 3; axis++) {
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
             // 50 degrees max inclination
-            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
+            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)mcfg.max_angle_inclination), +mcfg.max_angle_inclination) - angle[axis] + cfg.angleTrim[axis];
             PTermACC = errorAngle * cfg.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
             PTermACC = constrain(PTermACC, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
 
@@ -360,8 +360,8 @@ static void pidRewrite(void)
     for (axis = 0; axis < 3; axis++) {
         // -----Get the desired angle rate depending on flight mode
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2 ) { // MODE relying on ACC
-            // calculate error and limit the angle to 50 degrees max inclination
-            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis]; // 16 bits is ok here
+            // calculate error and limit the angle to max configured inclination
+            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int)mcfg.max_angle_inclination), +mcfg.max_angle_inclination) - angle[axis] + cfg.angleTrim[axis]; // 16 bits is ok here
         }
         if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
             AngleRateTmp = (((int32_t)(cfg.yawRate + 27) * rcCommand[2]) >> 5);
