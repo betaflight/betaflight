@@ -376,7 +376,7 @@ bool pwmInit(drv_pwm_config_t *init)
 
             motors[numMotors++] = pwmOutConfig(port, mhz, hz / init->motorPwmRate, init->idlePulse);
         } else if (mask & TYPE_S) {
-            servos[numServos++] = pwmOutConfig(port, PWM_TIMER_MHZ, 1000000 / init->servoPwmRate, PULSE_1MS);
+            servos[numServos++] = pwmOutConfig(port, PWM_TIMER_MHZ, 1000000 / init->servoPwmRate, init->servoCenterPulse);
         }
     }
 

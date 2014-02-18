@@ -73,6 +73,7 @@ int main(void)
         pwm_params.idlePulse = mcfg.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
+    pwm_params.servoCenterPulse = mcfg.midrc;
     pwm_params.failsafeThreshold = cfg.failsafe_detect_threshold;
     switch (mcfg.power_adc_channel) {
         case 1:
