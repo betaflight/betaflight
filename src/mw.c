@@ -233,22 +233,29 @@ uint16_t pwmReadRawRC(uint8_t chan)
 
 void computeRC(void)
 {
-    static int16_t rcData4Values[8][4], rcDataMean[8];
-    static uint8_t rc4ValuesIndex = 0;
-    uint8_t chan, a;
+    uint8_t chan;
 
-    rc4ValuesIndex++;
-    for (chan = 0; chan < 8; chan++) {
-        rcData4Values[chan][rc4ValuesIndex % 4] = rcReadRawFunc(chan);
-        rcDataMean[chan] = 0;
-        for (a = 0; a < 4; a++)
-            rcDataMean[chan] += rcData4Values[chan][a];
+    if (feature(FEATURE_SERIALRX)) {
+        for (chan = 0; chan < 8; chan++)
+            rcData[chan] = rcReadRawFunc(chan);
+    } else {
+        static int16_t rcData4Values[8][4], rcDataMean[8];
+        static uint8_t rc4ValuesIndex = 0;
+        uint8_t a;
 
-        rcDataMean[chan] = (rcDataMean[chan] + 2) / 4;
-        if (rcDataMean[chan] < rcData[chan] - 3)
-            rcData[chan] = rcDataMean[chan] + 2;
-        if (rcDataMean[chan] > rcData[chan] + 3)
-            rcData[chan] = rcDataMean[chan] - 2;
+        rc4ValuesIndex++;
+        for (chan = 0; chan < 8; chan++) {
+            rcData4Values[chan][rc4ValuesIndex % 4] = rcReadRawFunc(chan);
+            rcDataMean[chan] = 0;
+            for (a = 0; a < 4; a++)
+                rcDataMean[chan] += rcData4Values[chan][a];
+
+            rcDataMean[chan] = (rcDataMean[chan] + 2) / 4;
+            if (rcDataMean[chan] < rcData[chan] - 3)
+                rcData[chan] = rcDataMean[chan] + 2;
+            if (rcDataMean[chan] > rcData[chan] + 3)
+                rcData[chan] = rcDataMean[chan] - 2;
+        }
     }
 }
 
