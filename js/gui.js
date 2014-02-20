@@ -221,9 +221,9 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                 buffer_out.push(highByte(MISC.minthrottle));
             }
             
-            send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
-        
-            if (callback) callback();
+            send_message(MSP_codes.MSP_SET_MOTOR, buffer_out, false, function() {
+                if (callback) callback();
+            });
             break;
         case 'sensors':
             GUI.interval_kill_all(['port-update', 'port_usage']);
