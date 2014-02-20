@@ -113,6 +113,8 @@
                 height: 200px;
                 line-height: 200px;
 
+                font-size: 20px;
+                
                 -webkit-transform: rotateX(-90deg) translateZ(-50px);
                 background-color: purple;
             }
