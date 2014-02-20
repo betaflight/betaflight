@@ -201,24 +201,22 @@ function send_message(code, data, callback_sent, callback_msp) {
         bufView[6] = bufView[3] ^ bufView[4] ^ bufView[5]; // checksum
     }
 
-    if (callback_msp) {
-        // only utilize under the hood timeouts for codes that request callbacks
-        for (var i = 0; i < MSP.callbacks.length; i++) {
-            if (MSP.callbacks[i].code == code) {
-                // request already exist
-                return false;
-            }
+    // utilizing callback/timeout system for all commands
+    for (var i = 0; i < MSP.callbacks.length; i++) {
+        if (MSP.callbacks[i].code == code) {
+            // request already exist
+            return false; // skips the code below
         }
-        
-        var obj = {'code': code, 'callback': callback_msp};
-        obj.timer = setInterval(function() {
-            // re-send data again
-            console.log('MSP data request timed-out: ' + code);
-            serial.send(bufferOut, function(writeInfo) {});
-        }, 1000);
-        
-        MSP.callbacks.push(obj);
     }
+    
+    var obj = {'code': code, 'callback': (callback_msp) ? callback_msp : false};
+    obj.timer = setInterval(function() {
+        console.log('MSP data request timed-out: ' + code);
+        
+        serial.send(bufferOut, function(writeInfo) {});
+    }, 1000); // we should be able to define timeout in the future
+    
+    MSP.callbacks.push(obj);
 
     serial.send(bufferOut, function(writeInfo) {
         if (writeInfo.bytesSent > 0) {
@@ -480,6 +478,7 @@ function process_data(code, message_buffer, message_length) {
                 SENSOR_DATA.debug[i] = data.getInt16((2 * i), 1);
             break;
         case MSP_codes.MSP_SET_MOTOR:
+            console.log('Motor Speeds Updated');
             break;
         // Additional baseflight commands that are not compatible with MultiWii
         case MSP_codes.MSP_UID:
@@ -520,7 +519,7 @@ function process_data(code, message_buffer, message_length) {
             clearInterval(MSP.callbacks[i].timer);
             
             // fire callback
-            MSP.callbacks[i].callback({'command': code, 'data': data, 'length': message_length});
+            if (MSP.callbacks[i].callback) MSP.callbacks[i].callback({'command': code, 'data': data, 'length': message_length});
             
             // remove object from array
             MSP.callbacks.splice(i, 1);
