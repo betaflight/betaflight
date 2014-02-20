@@ -342,6 +342,7 @@ static void evaluateCommand(void)
     case MSP_SET_MOTOR:
         for (i = 0; i < 8; i++)
             motor_disarmed[i] = read16();
+        headSerialReply(0);
         break;
     case MSP_SELECT_SETTING:
         if (!f.ARMED) {
