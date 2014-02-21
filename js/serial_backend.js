@@ -22,7 +22,7 @@ $(document).ready(function() {
                     serial.connect(selected_port, {bitrate: selected_baud}, onOpen);
                 } else {
                     // Disable any active "data pulling" timer
-                    GUI.interval_kill_all(['port_handler']);
+                    GUI.interval_kill_all();
                     
                     GUI.tab_switch_cleanup();
                     GUI.timeout_remove('connecting');
