@@ -3,9 +3,6 @@ var CLI_active = false;
 var CLI_valid = false;
 
 $(document).ready(function() {    
-    console.log('Scanning for new ports...');
-    update_ports();
-    
     $('div#port-picker a.connect').click(function() {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
             var clicks = $(this).data('clicks');
@@ -25,7 +22,7 @@ $(document).ready(function() {
                     serial.connect(selected_port, {bitrate: selected_baud}, onOpen);
                 } else {
                     // Disable any active "data pulling" timer
-                    GUI.interval_kill_all(['port-update']);
+                    GUI.interval_kill_all(['port_handler']);
                     
                     GUI.tab_switch_cleanup();
                     GUI.timeout_remove('connecting');
@@ -102,7 +99,8 @@ $(document).ready(function() {
             
             chrome.storage.local.set({'auto_connect': GUI.auto_connect}, function() {});
         });
-    });    
+    });
+    PortHandler.initialize();
 }); 
 
 function onOpen(openInfo) {    
@@ -197,91 +195,6 @@ function port_usage() {
 
     // reset counter
     char_counter = 0;
-}
-
-function update_ports() {
-    var initial_ports = false;
-    
-    GUI.interval_add('port-update', function() {
-        serial.getDevices(function(current_ports) {
-            if (initial_ports.length > current_ports.length || !initial_ports) {
-                // port got removed or initial_ports wasn't initialized yet
-                var removed_ports = array_difference(initial_ports, current_ports);
-                
-                if (initial_ports != false) console.log('Port removed: ' + removed_ports);
-                
-                // disconnect "UI" if necessary
-                if (GUI.connected_to != false && removed_ports[0] == GUI.connected_to) {
-                    $('div#port-picker a.connect').click();
-                }
-                
-                // update COM port list
-                update_port_select_menu(current_ports);
-                
-                // auto-select last used port (only during initialization)
-                if (!initial_ports) {
-                    chrome.storage.local.get('last_used_port', function(result) {
-                        // if last_used_port was set, we try to select it
-                        if (result.last_used_port) {                            
-                            current_ports.forEach(function(port) {
-                                if (port == result.last_used_port) {
-                                    console.log('Selecting last used port: ' + result.last_used_port);
-                                    
-                                    $('div#port-picker .port select').val(result.last_used_port);
-                                }
-                            });
-                        } else {
-                            console.log('Last used port wasn\'t saved "yet", auto-select disabled.');
-                        }
-                    });
-                }
-                
-                // reset initial_ports
-                initial_ports = current_ports;
-            }
-            
-            var new_ports = array_difference(current_ports, initial_ports);
-            
-            if (new_ports.length > 0) {
-                console.log('New port found: ' + new_ports[0]);
-                
-                // generate new COM port list
-                update_port_select_menu(current_ports);
-                
-                // select / highlight new port, if connected -> select connected port
-                if (!GUI.connected_to) {
-                    $('div#port-picker .port select').val(new_ports[0]);
-                } else {   
-                    $('div#port-picker .port select').val(GUI.connected_to);
-                }
-                
-                // start connect procedure (if statement is valid)
-                if (GUI.auto_connect && !GUI.connecting_to && !GUI.connected_to) {
-                    // we need firmware flasher protection over here
-                    if (GUI.active_tab != 'firmware_flasher') {
-                        GUI.timeout_add('auto-connect_timeout', function() {
-                            $('div#port-picker a.connect').click();
-                        }, 50); // small timeout so we won't get any nasty connect errors due to system initializing the bus
-                    }
-                }
-                
-                // reset initial_ports
-                initial_ports = current_ports;
-            }
-        });
-    }, 250, true);
-}
-
-function update_port_select_menu(ports) {
-    $('div#port-picker .port select').html(''); // drop previous one
-    
-    if (ports.length > 0) {
-        for (var i = 0; i < ports.length; i++) {
-            $('div#port-picker .port select').append($("<option/>", {value: ports[i], text: ports[i]}));
-        }
-    } else {
-        $('div#port-picker .port select').append($("<option/>", {value: 0, text: 'No Ports'}));
-    }    
 }
 
 function sensor_status(sensors_detected) {

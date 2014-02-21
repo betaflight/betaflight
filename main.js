@@ -181,24 +181,6 @@ function microtime() {
     return now;
 }
 
-// accepting single level array with "value" as key
-function array_difference(firstArray, secondArray) {
-    var cloneArray = [];
-    
-    // create hardcopy
-    for (var i = 0; i < firstArray.length; i++) {
-        cloneArray.push(firstArray[i]);
-    }
-    
-    for (var i = 0; i < secondArray.length; i++) {
-        if (cloneArray.indexOf(secondArray[i]) != -1) {
-            cloneArray.splice(cloneArray.indexOf(secondArray[i]), 1);
-        }
-    }
-    
-    return cloneArray;
-}
-
 /*
 function add_custom_spinners() {
     var spinner_element = '<div class="spinner"><div class="up"></div><div class="down"></div></div>';
