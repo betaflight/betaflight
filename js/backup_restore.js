@@ -75,7 +75,7 @@ function configuration_backup() {
                                 if (!truncated) {
                                     // onwriteend will be fired again when truncation is finished
                                     truncated = true;
-                                    writer.truncate(serialized_config_object.length);
+                                    writer.truncate(blob.size);
                                     
                                     return;
                                 }
