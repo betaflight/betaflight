@@ -70,7 +70,16 @@ function configuration_backup() {
                                 console.error(e);
                             };
                             
+                            var truncated = false;
                             writer.onwriteend = function() {
+                                if (!truncated) {
+                                    // onwriteend will be fired again when truncation is finished
+                                    truncated = true;
+                                    writer.truncate(serialized_config_object.length);
+                                    
+                                    return;
+                                }
+                                
                                 console.log('Write SUCCESSFUL');
                             };
                             
