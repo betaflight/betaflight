@@ -89,7 +89,7 @@ GUI_control.prototype.interval_resume = function(name) {
     return false;
 };
 
-// input = array of timers thats meant to be kept
+// input = array of timers thats meant to be kept, or nothing
 // return = returns timers killed in last call
 GUI_control.prototype.interval_kill_all = function(keep_array) {
     var timers_killed = 0;
@@ -98,11 +98,13 @@ GUI_control.prototype.interval_kill_all = function(keep_array) {
         var self = this;
         
         var keep = false;
-        keep_array.forEach(function(name) {
-            if (self.interval_array[i].name == name) {
-                keep = true;
-            }
-        });
+        if (keep_array) { // only run through the array if it exists
+            keep_array.forEach(function(name) {
+                if (self.interval_array[i].name == name) {
+                    keep = true;
+                }
+            });
+        }
         
         if (!keep) {
             clearInterval(this.interval_array[i].timer); // stop timer
