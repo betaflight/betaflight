@@ -69,17 +69,6 @@
             
             border: 1px dotted silver;
         }
-            .tab-motor_outputs .motor_testing .notice input[type="number"] {
-                margin: 0 10px 0 5px;
-                width: 45px;
-                height: 20px;
-                
-                padding: 0 5px 0 5px;
-                
-                line-height: 20px;
-                
-                border: 1px solid silver;
-            }
             .tab-motor_outputs .motor_testing .notice input[type="checkbox"] {
                 margin-left: 5px;
                 

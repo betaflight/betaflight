@@ -218,8 +218,8 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             var buffer_out = [];
             
             for (var i = 0; i < 8; i++) {
-                buffer_out.push(lowByte(MISC.minthrottle));
-                buffer_out.push(highByte(MISC.minthrottle));
+                buffer_out.push(lowByte(MISC.mincommand));
+                buffer_out.push(highByte(MISC.mincommand));
             }
             
             send_message(MSP_codes.MSP_SET_MOTOR, buffer_out, false, function() {

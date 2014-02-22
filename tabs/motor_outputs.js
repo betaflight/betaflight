@@ -9,14 +9,14 @@ function tab_initialize_motor_outputs() {
                 $('div.motor_testing').show();
             }
             
-            $('input.min').val(MISC.minthrottle);
+            $('input.min').val(MISC.mincommand);
             $('input.max').val(MISC.maxthrottle);
             
             
-            $('div.sliders input').prop('min', MISC.minthrottle);
+            $('div.sliders input').prop('min', MISC.mincommand);
             $('div.sliders input').prop('max', MISC.maxthrottle);
-            $('div.sliders input').val(MISC.minthrottle);
-            $('div.values li:not(:last)').html(MISC.minthrottle);
+            $('div.sliders input').val(MISC.mincommand);
+            $('div.values li:not(:last)').html(MISC.mincommand);
             
             // UI hooks
             $('div.sliders input:not(.master)').change(function() {
@@ -58,18 +58,6 @@ function tab_initialize_motor_outputs() {
                     // trigger change event so values are sent to mcu
                     $('div.sliders input').change();
                 }
-            });
-            
-            $('div.notice input[type="number"]').change(function() {
-                var min = parseInt($('div.notice .min').val());
-                var max = parseInt($('div.notice .max').val());
-                
-                
-                $('div.sliders input').prop('min', min);
-                $('div.sliders input').prop('max', max);
-                
-                // trigger change event so values are sent to mcu
-                $('div.sliders input').change();
             });
             
             // enable Motor data pulling
