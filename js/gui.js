@@ -92,11 +92,10 @@ GUI_control.prototype.interval_resume = function(name) {
 // input = array of timers thats meant to be kept, or nothing
 // return = returns timers killed in last call
 GUI_control.prototype.interval_kill_all = function(keep_array) {
+    var self = this;
     var timers_killed = 0;
     
     for (var i = (this.interval_array.length - 1); i >= 0; i--) { // reverse iteration
-        var self = this;
-        
         var keep = false;
         if (keep_array) { // only run through the array if it exists
             keep_array.forEach(function(name) {
