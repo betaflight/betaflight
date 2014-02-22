@@ -2,8 +2,8 @@ function tab_initialize_receiver() {
     ga_tracker.sendAppView('Receiver Page');
     GUI.active_tab = 'receiver';
     
-    send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, function() {
-        send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+    send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+        send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, function() {
             $('#content').load("./tabs/receiver.html", function() {
                 // fill in data from RC_tuning
                 $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
