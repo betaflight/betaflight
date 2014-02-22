@@ -21,6 +21,7 @@ $(document).ready(function() {
     }); 
 
     $('#frame .maximize').click(function() {
+        chrome.app.window.current().maximize();
     });
     
     $('#frame .close').click(function() {

@@ -12,15 +12,17 @@ function start_app() {
     chrome.app.window.create('main.html', {
         id: 'main-window',
         frame: 'none',
-        resizable: false,
-        maxWidth: 962,
-        maxHeight: 650
-    }, function(main_window) {
+        resizable: false
+    }, function(createdWindow) {
         // set window size
-        main_window.setBounds({'width': 962, 'height': 650});
+        createdWindow.setBounds({'width': 962, 'height': 650});
         
         // bind events
-        main_window.onClosed.addListener(function() {
+        createdWindow.onMaximized.addListener(function() {
+            createdWindow.restore();
+        });
+        
+        createdWindow.onClosed.addListener(function() {
             // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference
             // allowing us to automatically close the port when application shut down
             
