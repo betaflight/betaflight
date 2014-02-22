@@ -233,7 +233,7 @@ function process_servos(name, alternate, obj, directions) {
     $('div.tab-servos table.fields').append('\
         <tr> \
             <td style="text-align: center">' + name + '</td>\
-            <td class="middle"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].middle +'" /></td>\
+            <td class="middle"><input type="number" min="1000" max="2000" value="' + ((SERVO_CONFIG[obj].middle <= 7) ? 1500 : SERVO_CONFIG[obj].middle) + '" /></td>\
             <td class="min"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].min +'" /></td>\
             <td class="max"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].max +'" /></td>\
             <td class="channel">\
