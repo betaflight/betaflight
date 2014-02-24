@@ -21,9 +21,9 @@ port_handler.prototype.check = function() {
             
             if (self.initial_ports != false) {
                 if (removed_ports.length > 1) {
-                    console.log('PortHandler - Ports removed: ' + removed_ports);
+                    console.log('PortHandler - Removed: ' + removed_ports);
                 } else {
-                    console.log('PortHandler - Port removed: ' + removed_ports[0]);
+                    console.log('PortHandler - Removed: ' + removed_ports[0]);
                 }
             }
             
@@ -86,9 +86,9 @@ port_handler.prototype.check = function() {
         
         if (new_ports.length) {
             if (new_ports.length > 1) {
-                console.log('PortHandler - Ports found: ' + new_ports);
+                console.log('PortHandler - Found: ' + new_ports);
             } else {
-                console.log('PortHandler - Port found: ' + new_ports[0]);
+                console.log('PortHandler - Found: ' + new_ports[0]);
             }
             
             self.update_port_select(current_ports);
@@ -145,40 +145,40 @@ port_handler.prototype.update_port_select = function(ports) {
 
 port_handler.prototype.port_detected = function(name, code, timeout) {
     var self = this;
-    var obj = {'name': name, 'code': code, 'timeout': timeout, 'timer': false};
+    var obj = {'name': name, 'code': code, 'timeout': (timeout) ? timeout : 10000};
     
-    if (timeout) {
-        obj.timer = setTimeout(function() {
-            console.log('PortHandler - port detected timeout triggered - ' + obj.name);
+    obj.timer = setTimeout(function() {
+        console.log('PortHandler - timeout - ' + obj.name);
+    
+        // trigger callback
+        code(false);
         
-            // trigger callback
-            code(false);
-            
-            // reset callback array
-            self.port_detected_callbacks = [];
-        }, timeout);
-    }
+        // reset callback array
+        self.port_detected_callbacks = [];
+    }, (timeout) ? timeout : 10000);
     
     this.port_detected_callbacks.push(obj);
+
+    return obj;
 };
 
 port_handler.prototype.port_removed = function(name, code, timeout) {
     var self = this;
-    var obj = {'name': name, 'code': code, 'timeout': timeout, 'timer': false};
+    var obj = {'name': name, 'code': code, 'timeout': (timeout) ? timeout : 10000};
     
-    if (timeout) {
-        obj.timer = setTimeout(function() {
-            console.log('PortHandler - port removed timeout triggered - ' + obj.name);
-            
-            // trigger callback
-            code(false);
-            
-            // reset callback array
-            self.port_removed_callbacks = [];
-        }, timeout);
-    }
+    obj.timer = setTimeout(function() {
+        console.log('PortHandler - timeout - ' + obj.name);
+        
+        // trigger callback
+        code(false);
+        
+        // reset callback array
+        self.port_removed_callbacks = [];
+    }, (timeout) ? timeout : 10000);
     
     this.port_removed_callbacks.push(obj);
+    
+    return obj;
 };
 
 // accepting single level array with "value" as key
