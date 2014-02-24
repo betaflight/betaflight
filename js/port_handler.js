@@ -41,7 +41,7 @@ port_handler.prototype.check = function() {
             
             // trigger callbacks (only after initialization)
             if (self.initial_ports) {
-                for (var i = 0; i < self.port_removed_callbacks.length; i++) {
+                for (var i = (self.port_removed_callbacks.length - 1); i >= 0; i--) {
                     var obj = self.port_removed_callbacks[i];
                     
                     // remove timeout
@@ -49,8 +49,10 @@ port_handler.prototype.check = function() {
                     
                     // trigger callback
                     obj.code(removed_ports);
+                    
+                    // cleanup
+                    self.port_removed_callbacks.splice(self.port_removed_callbacks.indexOf(obj), 1);
                 }
-                self.port_removed_callbacks = []; // drop references
             }
             
             // auto-select last used port (only during initialization)
@@ -111,7 +113,7 @@ port_handler.prototype.check = function() {
             }
             
             // trigger callbacks
-            for (var i = 0; i < self.port_detected_callbacks.length; i++) {
+            for (var i = (self.port_detected_callbacks.length - 1); i >= 0; i--) {
                 var obj = self.port_detected_callbacks[i];
                 
                 // remove timeout
@@ -119,8 +121,10 @@ port_handler.prototype.check = function() {
                 
                 // trigger callback
                 obj.code(new_ports);
+                
+                // cleanup
+                self.port_detected_callbacks.splice(self.port_detected_callbacks.indexOf(obj), 1);
             }
-            self.port_detected_callbacks = []; // drop references
             
             self.initial_ports = current_ports;
         }
@@ -153,8 +157,7 @@ port_handler.prototype.port_detected = function(name, code, timeout) {
         // trigger callback
         code(false);
         
-        // reset callback array
-        self.port_detected_callbacks = [];
+        self.port_detected_callbacks.splice(self.port_detected_callbacks.indexOf(obj), 1);
     }, (timeout) ? timeout : 10000);
     
     this.port_detected_callbacks.push(obj);
@@ -172,8 +175,7 @@ port_handler.prototype.port_removed = function(name, code, timeout) {
         // trigger callback
         code(false);
         
-        // reset callback array
-        self.port_removed_callbacks = [];
+        self.port_removed_callbacks.splice(self.port_removed_callbacks.indexOf(obj), 1);
     }, (timeout) ? timeout : 10000);
     
     this.port_removed_callbacks.push(obj);
