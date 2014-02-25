@@ -98,6 +98,26 @@ function tab_initialize_firmware_flasher() {
             }
         });
         
+        chrome.storage.local.get('no_reboot_sequence', function(result) {
+            if (typeof result.no_reboot_sequence === 'undefined') {
+                // wasn't saved yet, save and push false to the GUI
+                chrome.storage.local.set({'no_reboot_sequence': false});
+                
+                $('input.updating').prop('checked', false);
+            } else {
+                if (result.no_reboot_sequence) {
+                    $('input.updating').prop('checked', true);
+                } else {
+                    $('input.updating').prop('checked', false);
+                }
+            }
+            
+            // bind UI hook so the status is saved on change
+            $('input.updating').change(function() {                
+                chrome.storage.local.set({'no_reboot_sequence': $(this).is(':checked')}, function() {});
+            });
+        });
+        
         $('a.back').click(function() {
             if (!GUI.connect_lock) { // button disabled while flashing is in progress                
                 tab_initialize_default();
