@@ -150,12 +150,17 @@ function onOpen(openInfo) {
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
                 GUI.timeout_remove('connecting'); // kill connecting timer
                 
-                // Update UI elements that doesn't need consistent refreshing
-                $('.software-version').html(CONFIG.version);
-                
-                configuration_received = true;
-                $('div#port-picker a.connect').text('Disconnect').addClass('active');
-                $('#tabs li a:first').click();
+                if (CONFIG.version >= firmware_version_accepted) {
+                    // Update UI elements that doesn't need consistent refreshing
+                    $('.software-version').html(CONFIG.version);
+                    
+                    configuration_received = true;
+                    $('div#port-picker a.connect').text('Disconnect').addClass('active');
+                    $('#tabs li a:first').click();
+                } else {
+                    GUI.log('This firmware version is <span style="color: red">not supported</span>. Please upgrade to version <strong>' + firmware_version_accepted + '</strong> or higher.');
+                    $('div#port-picker a.connect').click(); // disconnect
+                }
             });
         });
     } else {

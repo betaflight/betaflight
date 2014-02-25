@@ -1,3 +1,5 @@
+var firmware_version_accepted = 2.3;
+
 var CONFIG = {
     version:       0,
     multiType:     0,
