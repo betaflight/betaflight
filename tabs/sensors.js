@@ -3,6 +3,12 @@ function tab_initialize_sensors() {
     GUI.active_tab = 'sensors';
     
     $('#content').load("./tabs/sensors.html", function() {
+        // Always start with default/empty sensor data array, clean slate all
+        for (var i = 0; i < 3; i++) SENSOR_DATA.accelerometer[i] = 0;
+        for (var i = 0; i < 3; i++) SENSOR_DATA.gyroscope[i] = 0;
+        for (var i = 0; i < 3; i++) SENSOR_DATA.magnetometer[i] = 0;
+        for (var i = 0; i < 4; i++) SENSOR_DATA.debug[i] = 0;
+    
         // Setup variables
         var samples_gyro_i = 300;
         var samples_accel_i = 300;
@@ -233,7 +239,7 @@ function tab_initialize_sensors() {
                     {data: baro_data[0], label: "X - meters [" + SENSOR_DATA.altitude.toFixed(2) + "]"} ], baro_options);
 
                 samples_baro_i++;
-            }, rates.baro, true);
+            }, rates.baro);
             
             GUI.interval_add('debug_pull', function() {
                 send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG);
@@ -247,7 +253,6 @@ function tab_initialize_sensors() {
                   }
                 }
 
-
                 Flotr.draw(e_graph_debug1, [
                     {data: debug_data[0], label: "debug1 [" + SENSOR_DATA.debug[0] + "]"} ], debug1_options);
                 Flotr.draw(e_graph_debug2, [
@@ -258,7 +263,7 @@ function tab_initialize_sensors() {
                     {data: debug_data[3], label: "debug4 [" + SENSOR_DATA.debug[3] + "]"} ], debug4_options);
 
                 samples_debug_i++;
-            }, rates.debug, true);
+            }, rates.debug);
             
             // processing timers
             GUI.interval_add('process_gyro', function() {
