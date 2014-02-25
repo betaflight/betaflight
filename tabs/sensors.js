@@ -4,17 +4,17 @@ function tab_initialize_sensors() {
     
     $('#content').load("./tabs/sensors.html", function() {
         // Setup variables
-        samples_gyro_i = 300;
-        samples_accel_i = 300;
-        samples_mag_i = 300;
-        samples_baro_i = 300;
-        samples_debug_i = 300;
+        var samples_gyro_i = 300;
+        var samples_accel_i = 300;
+        var samples_mag_i = 300;
+        var samples_baro_i = 300;
+        var samples_debug_i = 300;
         
-        gyro_data = new Array(3);
-        accel_data = new Array(3);
-        mag_data = new Array(3);
-        baro_data = new Array(1);
-        debug_data = new Array(4);
+        var gyro_data = new Array(3);
+        var accel_data = new Array(3);
+        var mag_data = new Array(3);
+        var baro_data = new Array(1);
+        var debug_data = new Array(4);
         
         gyro_data[0] = new Array();
         gyro_data[1] = new Array();
@@ -49,16 +49,16 @@ function tab_initialize_sensors() {
         }
         
         // plot specific stuff
-        e_graph_gyro = document.getElementById("gyro");
-        e_graph_accel = document.getElementById("accel");  
-        e_graph_mag = document.getElementById("mag");
-        e_graph_baro = document.getElementById("baro");  
-        e_graph_debug1 = document.getElementById("debug1");
-        e_graph_debug2 = document.getElementById("debug2");
-        e_graph_debug3 = document.getElementById("debug3");
-        e_graph_debug4 = document.getElementById("debug4");
+        var e_graph_gyro = document.getElementById("gyro");
+        var e_graph_accel = document.getElementById("accel");  
+        var e_graph_mag = document.getElementById("mag");
+        var e_graph_baro = document.getElementById("baro");  
+        var e_graph_debug1 = document.getElementById("debug1");
+        var e_graph_debug2 = document.getElementById("debug2");
+        var e_graph_debug3 = document.getElementById("debug3");
+        var e_graph_debug4 = document.getElementById("debug4");
         
-        gyro_options = {
+        var gyro_options = {
             title: "Gyroscope (deg/s)",
             shadowSize: 0,
             yaxis : {
@@ -78,7 +78,7 @@ function tab_initialize_sensors() {
             }
         };
         
-        accel_options = {
+        var accel_options = {
             title: "Accelerometer (g)",
             shadowSize: 0,
             yaxis : {
@@ -98,7 +98,7 @@ function tab_initialize_sensors() {
             }
         };
         
-        mag_options = {
+        var mag_options = {
             title: "Magnetometer (Ga)",
             shadowSize: 0,
             yaxis : {
@@ -116,7 +116,7 @@ function tab_initialize_sensors() {
             }
         };
         
-        baro_options = {
+        var baro_options = {
             title: "Barometer (meters)",
             shadowSize: 0,
             yaxis : {
@@ -134,7 +134,7 @@ function tab_initialize_sensors() {
             }
         };
 
-        debug1_options = {
+        var debug1_options = {
             title: "Debug1",
             shadowSize: 0,
             yaxis : {
@@ -152,15 +152,15 @@ function tab_initialize_sensors() {
             }
         };
         
-        debug2_options = {};
+        var debug2_options = {};
         for (var key in debug1_options) debug2_options[key] = debug1_options[key];
         debug2_options.title = "Debug2";
 
-        debug3_options = {};
+        var debug3_options = {};
         for (var key in debug1_options) debug3_options[key] = debug1_options[key];
         debug3_options.title = "Debug3";
 
-        debug4_options = {};
+        var debug4_options = {};
         for (var key in debug1_options) debug4_options[key] = debug1_options[key];
         debug4_options.title = "Debug4";
         
