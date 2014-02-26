@@ -127,57 +127,62 @@ function tab_initialize_firmware_flasher() {
             });
         });
         
-        chrome.storage.local.get('flash_on_connet', function(result) {
-            if (typeof result.flash_on_connet === 'undefined') {
+        chrome.storage.local.get('flash_on_connect', function(result) {
+            if (typeof result.flash_on_connect === 'undefined') {
                 // wasn't saved yet, save and push false to the GUI
-                chrome.storage.local.set({'flash_on_connet': false});
+                chrome.storage.local.set({'flash_on_connect': false});
                 
-                $('input.flash_on_connet').prop('checked', false);
+                $('input.flash_on_connect').prop('checked', false);
             } else {
-                // TODO
+                if (result.flash_on_connect) {
+                    $('input.flash_on_connect').prop('checked', true);
+                } else {
+                    $('input.flash_on_connect').prop('checked', false);
+                }
             }
-        });
-        
-        $('input.flash_on_connet').change(function() {
-            var status = $(this).is(':checked');
             
-            if (status) {
-                var flashing_port;
+            $('input.flash_on_connect').change(function() {
+                var status = $(this).is(':checked');
                 
-                var start = function() {
-                    PortHandler.port_detected('flash_next_device', function(result) {
-                        // Fire flash callback over here
-                        flashing_port = result[0];
-                        
-                        // Trigger regular Flashing sequence
-                        $('a.flash_firmware').click();
-                        
-                        // Detect port removal to create a new callback
-                        end();
-                    }, false, true);
-                };
-                
-                var end = function() {
-                    PortHandler.port_removed('flashed_device_removed', function(result) {
-                        for (var i = 0; i < result.length; i++) {
-                            if (result[i] == flashing_port) {
-                                console.log('out');
-                                // flashed device removed
-                                start();
-                                
-                                return;
+                if (status) {
+                    var flashing_port;
+                    
+                    var start = function() {
+                        PortHandler.port_detected('flash_next_device', function(result) {
+                            // Fire flash callback over here
+                            flashing_port = result[0];
+                            
+                            // Trigger regular Flashing sequence
+                            $('a.flash_firmware').click();
+                            
+                            // Detect port removal to create a new callback
+                            end();
+                        }, false, true);
+                    };
+                    
+                    var end = function() {
+                        PortHandler.port_removed('flashed_device_removed', function(result) {
+                            for (var i = 0; i < result.length; i++) {
+                                if (result[i] == flashing_port) {
+                                    // flashed device removed
+                                    start();
+                                    
+                                    return;
+                                }
                             }
-                        }
-                        
-                        // different device removed, we need to retry
-                        end();
-                    }, false, true);
-                };
+                            
+                            // different device removed, we need to retry
+                            end();
+                        }, false, true);
+                    };
+                    
+                    start();
+                } else {
+                    PortHandler.flush_callbacks();
+                }
                 
-                start();
-            } else {
-                PortHandler.flush_callbacks();
-            }
+                chrome.storage.local.set({'flash_on_connect': status}, function() {});
+            }).change();
         });
         
         $('a.back').click(function() {
