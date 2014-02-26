@@ -121,6 +121,7 @@ function tab_initialize_firmware_flasher() {
                     $('label.flash_on_connect_wrapper').show();
                 } else {
                     $('label.flash_on_connect_wrapper').hide();
+                    $('input.flash_on_connect').prop('checked', false).change();
                 }
                 
                 chrome.storage.local.set({'no_reboot_sequence': status}, function() {});
@@ -149,8 +150,9 @@ function tab_initialize_firmware_flasher() {
                     
                     var start = function() {
                         PortHandler.port_detected('flash_next_device', function(result) {
-                            // Fire flash callback over here
                             flashing_port = result[0];
+                            GUI.log('Detected: <strong>' + flashing_port + '</strong> - triggering flash on connect');
+                            console.log('Detected: ' + flashing_port + ' - triggering flash on connect');
                             
                             // Trigger regular Flashing sequence
                             $('a.flash_firmware').click();
@@ -165,6 +167,10 @@ function tab_initialize_firmware_flasher() {
                             for (var i = 0; i < result.length; i++) {
                                 if (result[i] == flashing_port) {
                                     // flashed device removed
+                                    GUI.log('Removed: <strong>' + flashing_port + '</strong> - ready for next device');
+                                    console.log('Removed: ' + flashing_port + ' - ready for next device');
+                                    
+                                    flashing_port = false;
                                     start();
                                     
                                     return;
