@@ -33,6 +33,9 @@
         float: left;
         margin-top: 2px;
     }
+    .tab-firmware_flasher .note .flash_on_connect_wrapper {
+        display: none;
+    }
 a.load_file, a.load_remote_file {
     display: block;
     float: left;
