@@ -147,36 +147,46 @@ port_handler.prototype.update_port_select = function(ports) {
     }  
 };
 
-port_handler.prototype.port_detected = function(name, code, timeout) {
+port_handler.prototype.port_detected = function(name, code, timeout, ignore_timeout) {
     var self = this;
     var obj = {'name': name, 'code': code, 'timeout': (timeout) ? timeout : 10000};
     
-    obj.timer = setTimeout(function() {
-        console.log('PortHandler - timeout - ' + obj.name);
-    
-        // trigger callback
-        code(false);
+    if (!ignore_timeout) {
+        obj.timer = setTimeout(function() {
+            console.log('PortHandler - timeout - ' + obj.name);
         
-        self.port_detected_callbacks.splice(self.port_detected_callbacks.indexOf(obj), 1);
-    }, (timeout) ? timeout : 10000);
+            // trigger callback
+            code(false);
+            
+            self.port_detected_callbacks.splice(self.port_detected_callbacks.indexOf(obj), 1);
+        }, (timeout) ? timeout : 10000);
+    } else {
+        obj.timer = false;
+        obj.timeout = false;
+    }
     
     this.port_detected_callbacks.push(obj);
 
     return obj;
 };
 
-port_handler.prototype.port_removed = function(name, code, timeout) {
+port_handler.prototype.port_removed = function(name, code, timeout, ignore_timeout) {
     var self = this;
     var obj = {'name': name, 'code': code, 'timeout': (timeout) ? timeout : 10000};
     
-    obj.timer = setTimeout(function() {
-        console.log('PortHandler - timeout - ' + obj.name);
-        
-        // trigger callback
-        code(false);
-        
-        self.port_removed_callbacks.splice(self.port_removed_callbacks.indexOf(obj), 1);
-    }, (timeout) ? timeout : 10000);
+    if (!ignore_timeout) {
+        obj.timer = setTimeout(function() {
+            console.log('PortHandler - timeout - ' + obj.name);
+            
+            // trigger callback
+            code(false);
+            
+            self.port_removed_callbacks.splice(self.port_removed_callbacks.indexOf(obj), 1);
+        }, (timeout) ? timeout : 10000);
+    } else {
+        obj.timer = false;
+        obj.timeout = false;
+    }
     
     this.port_removed_callbacks.push(obj);
     
@@ -199,6 +209,26 @@ port_handler.prototype.array_difference = function(firstArray, secondArray) {
     }
     
     return cloneArray;
+};
+
+port_handler.prototype.flush_callbacks = function() {
+    var killed = 0;
+    
+    for (var i = this.port_detected_callbacks.length - 1; i >= 0; i--) {        
+        if (this.port_detected_callbacks[i].timer) clearTimeout(this.port_detected_callbacks[i].timer);
+        this.port_detected_callbacks.splice(i, 1);
+        
+        killed++;
+    }
+    
+    for (var i = this.port_removed_callbacks.length - 1; i >= 0; i--) {
+        if (this.port_removed_callbacks[i].timer) clearTimeout(this.port_removed_callbacks[i].timer);
+        this.port_removed_callbacks.splice(i, 1);
+        
+        killed++;
+    }
+
+    return killed;
 };
 
 var PortHandler = new port_handler();
