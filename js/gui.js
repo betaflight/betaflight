@@ -259,6 +259,12 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                 }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
             });
             break;
+        
+        case 'firmware_flasher':
+            PortHandler.flush_callbacks();
+            
+            if (callback) callback();
+            break;
             
         default:
             if (callback) callback();

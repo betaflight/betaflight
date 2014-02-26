@@ -127,9 +127,64 @@ function tab_initialize_firmware_flasher() {
             });
         });
         
+        chrome.storage.local.get('flash_on_connet', function(result) {
+            if (typeof result.flash_on_connet === 'undefined') {
+                // wasn't saved yet, save and push false to the GUI
+                chrome.storage.local.set({'flash_on_connet': false});
+                
+                $('input.flash_on_connet').prop('checked', false);
+            } else {
+                // TODO
+            }
+        });
+        
+        $('input.flash_on_connet').change(function() {
+            var status = $(this).is(':checked');
+            
+            if (status) {
+                var flashing_port;
+                
+                var start = function() {
+                    PortHandler.port_detected('flash_next_device', function(result) {
+                        // Fire flash callback over here
+                        flashing_port = result[0];
+                        
+                        // Trigger regular Flashing sequence
+                        $('a.flash_firmware').click();
+                        
+                        // Detect port removal to create a new callback
+                        end();
+                    }, false, true);
+                };
+                
+                var end = function() {
+                    PortHandler.port_removed('flashed_device_removed', function(result) {
+                        for (var i = 0; i < result.length; i++) {
+                            if (result[i] == flashing_port) {
+                                console.log('out');
+                                // flashed device removed
+                                start();
+                                
+                                return;
+                            }
+                        }
+                        
+                        // different device removed, we need to retry
+                        end();
+                    }, false, true);
+                };
+                
+                start();
+            } else {
+                PortHandler.flush_callbacks();
+            }
+        });
+        
         $('a.back').click(function() {
-            if (!GUI.connect_lock) { // button disabled while flashing is in progress                
-                tab_initialize_default();
+            if (!GUI.connect_lock) { // button disabled while flashing is in progress
+                GUI.tab_switch_cleanup(function() {
+                    tab_initialize_default();
+                });
             } else {
                 GUI.log('You <span style="color: red">can\'t</span> do this right now, please wait for current operation to finish ...');
             }
