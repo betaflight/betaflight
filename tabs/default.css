@@ -91,11 +91,3 @@
     .firmware_flasher:hover {
         background-color: #dedcdc;
     }
-    .created {
-        position: absolute;
-        
-        width: 920px;
-        bottom: 5px;
-        
-        text-align: center;
-    }
