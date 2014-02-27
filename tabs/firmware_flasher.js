@@ -15,6 +15,9 @@ function tab_initialize_firmware_flasher() {
                     return;
                 }
                 
+                // hide github info (if it exists)
+                $('div.git_info').slideUp();
+                
                 chrome.fileSystem.getDisplayPath(fileEntry, function(path) {
                     console.log('Loading file from: ' + path);
                     $('span.path').html(path);
@@ -57,13 +60,7 @@ function tab_initialize_firmware_flasher() {
             });
         });
         
-        $('a.load_remote_file').click(function() {
-            /*  for future use
-                $.get('https://api.github.com/repos/multiwii/baseflight/tags', function(data) {
-                    console.log(data)
-                });
-            */
-            
+        $('a.load_remote_file').click(function() {            
             $.get('https://raw.github.com/multiwii/baseflight/master/obj/baseflight.hex', function(data) {
                 intel_hex = data;
                 
@@ -83,6 +80,19 @@ function tab_initialize_firmware_flasher() {
             }).fail(function() {
                 STM32.GUI_status('<span style="color: red">Failed to load remote firmware</span>');
                 $('a.flash_firmware').addClass('locked');
+            });
+            
+            $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function(data) {
+                var data = data[0];
+                var d = new Date(data.commit.author.date);
+                var date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
+                date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+                
+                $('div.git_info .committer').html(data.commit.author.name);
+                $('div.git_info .date').html(date);
+                $('div.git_info .message').html(data.commit.message);
+                
+                $('div.git_info').slideDown();
             });
         });
         

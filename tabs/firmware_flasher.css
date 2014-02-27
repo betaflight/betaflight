@@ -36,6 +36,9 @@
     .tab-firmware_flasher .note .flash_on_connect_wrapper {
         display: none;
     }
+    .tab-firmware_flasher .buttons {
+        margin-bottom: 10px;
+    }
 a.load_file, a.load_remote_file {
     display: block;
     float: left;
@@ -99,9 +102,7 @@ a.back:hover {
     background-color: #dedcdc;
 }
 .warning {        
-    width: 610px;
-    
-    margin-top: 20px;
+    width: 620px;
     
     border: 1px solid silver;
 }
@@ -118,3 +119,25 @@ a.back:hover {
     .warning p {
         padding: 5px;
     }
+    .tab-firmware_flasher .git_info {
+        display: none;
+        
+        width: 620px;
+        
+        margin-bottom: 10px;
+        
+        border: 1px solid silver;
+    }
+        .tab-firmware_flasher .git_info .title {
+            line-height: 20px;
+            
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            
+            border-bottom: 1px solid silver;
+            background-color: #3f4241;
+        }
+        .tab-firmware_flasher .git_info p {
+            padding: 5px;
+        }

@@ -4,7 +4,7 @@
         <strong>Size:</strong><span class="size">0 bytes</span><br />
         <strong>Status:</strong><span class="status">Firmware not loaded</span><br />
         <strong>Progress:</strong><progress class="progress" value="0" min="0" max="100"></progress>
-    </div>
+    </div>  
     <div class="note">
         <p>
             If you are flashing board with <strong>baseflight</strong> already flashed (updating), leave this checkbox unchecked.<br />
@@ -14,10 +14,20 @@
         <label class="flash_on_connect_wrapper"><input class="flash_on_connect" type="checkbox" /><span style="font-weight: bold; margin-left: 6px;">Flash on connect</span></label>
     </div>
     <div class="clear-both"></div>
-    <a class="load_file" href="#">Load Firmware [Local]</a>
-    <a class="load_remote_file" href="#">Load Firmware [Online]</a>
-    <a class="flash_firmware locked" href="#">Flash Firmware</a>
-    <div class="clear-both"></div>
+    <div class="buttons">
+        <a class="load_file" href="#">Load Firmware [Local]</a>
+        <a class="load_remote_file" href="#">Load Firmware [Online]</a>
+        <a class="flash_firmware locked" href="#">Flash Firmware</a>
+        <div class="clear-both"></div>
+    </div>
+    <div class="git_info">
+        <div class="title">Github Firmware Info</div>
+        <p>
+            <strong>Committer:</strong> <span class="committer"></span><br />
+            <strong>Date:</strong> <span class="date"></span><br />
+            <strong>Message:</strong> <span class="message"></span>
+        </p>
+    </div>  
     <div class="warning">
         <div class="title">Warning</div>
         <p>
