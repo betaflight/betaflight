@@ -72,8 +72,8 @@ var MSP = {
             // kill timer
             clearInterval(this.callbacks[i].timer);
             
-            // remove object/reference
-            this.callbacks.splice(i, 1);
+            // disable callback
+            this.callbacks[i].callback = false;
         }
     },
     
@@ -82,6 +82,7 @@ var MSP = {
         this.packet_error = 0; // reset CRC packet error counter for next session
         
         this.callbacks_cleanup();
+        this.callbacks = [];
     }
 };
 

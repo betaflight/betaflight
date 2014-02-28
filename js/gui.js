@@ -180,6 +180,8 @@ GUI_control.prototype.log = function(message) {
 // callback = code to run when cleanup is finished
 // default switch doesn't require callback to be set
 GUI_control.prototype.tab_switch_cleanup = function(callback) {
+    MSP.callbacks_cleanup(); // we don't care about any old data that might or might not arrive
+    
     switch (this.active_tab) {
         case 'initial_setup':
             GUI.interval_remove('initial_setup_data_pull');
