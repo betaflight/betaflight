@@ -71,10 +71,9 @@ var MSP = {
         for (var i = (this.callbacks.length - 1); i >= 0; i--) {
             // kill timer
             clearInterval(this.callbacks[i].timer);
-            
-            // disable callback
-            this.callbacks[i].callback = false;
         }
+        
+        this.callbacks = [];
     },
     
     disconnect_cleanup: function() {
@@ -82,7 +81,6 @@ var MSP = {
         this.packet_error = 0; // reset CRC packet error counter for next session
         
         this.callbacks_cleanup();
-        this.callbacks = [];
     }
 };
 
@@ -517,14 +515,18 @@ function process_data(code, message_buffer, message_length) {
     // trigger callbacks, cleanup/remove callback after trigger
     for (var i = (MSP.callbacks.length - 1); i >= 0; i--) { // itterating in reverse because we use .splice which modifies array length
         if (MSP.callbacks[i].code == code) {
+            // saving current obj for after-callback comparison
+            var obj = MSP.callbacks[i];
+            
             // remove timeout
-            clearInterval(MSP.callbacks[i].timer);
+            clearInterval(obj.timer);
             
             // fire callback
-            if (MSP.callbacks[i].callback) MSP.callbacks[i].callback({'command': code, 'data': data, 'length': message_length});
+            if (obj.callback) obj.callback({'command': code, 'data': data, 'length': message_length});
             
             // remove object from array
-            MSP.callbacks.splice(i, 1);
+            // we need to check if the callback object still exists as it could have been touched/removed in callback routine
+            if (MSP.callbacks.indexOf(obj) > 0) MSP.callbacks.splice(i, 1);
         }
     }
 }
