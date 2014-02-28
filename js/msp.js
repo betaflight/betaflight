@@ -526,7 +526,7 @@ function process_data(code, message_buffer, message_length) {
             
             // remove object from array
             // we need to check if the callback object still exists as it could have been touched/removed in callback routine
-            if (MSP.callbacks.indexOf(obj) > 0) MSP.callbacks.splice(i, 1);
+            if (MSP.callbacks.indexOf(obj) > -1) MSP.callbacks.splice(MSP.callbacks.indexOf(obj), 1);
         }
     }
 }
