@@ -52,7 +52,7 @@ var MSP_codes = {
 };
 
 
-var char_counter = 0;
+var char_counter = 0; // this need to be redone or removed
 
 var MSP = {
     state:                      0,
@@ -84,21 +84,21 @@ var MSP = {
     }
 };
 
-function MSP_char_read(readInfo) {
+MSP.read = function(readInfo) {
     var data = new Uint8Array(readInfo.data);
     
     for (var i = 0; i < data.length; i++) {
-        switch (MSP.state) {
+        switch (this.state) {
             case 0: // sync char 1
                 if (data[i] == 36) { // $
-                    MSP.state++;
+                    this.state++;
                 }
                 break;
             case 1: // sync char 2
                 if (data[i] == 77) { // M
-                    MSP.state++;
+                    this.state++;
                 } else { // restart and try again
-                    MSP.state = 0;
+                    this.state = 0;
                 }
                 break;
             case 2: // direction (should be >)
@@ -108,126 +108,60 @@ function MSP_char_read(readInfo) {
                     message_status = 0;
                 }
                 
-                MSP.state++;
+                this.state++;
                 break;
             case 3:
-                MSP.message_length_expected = data[i];
+                this.message_length_expected = data[i];
                
-                MSP.message_checksum = data[i];
+                this.message_checksum = data[i];
                
                 // setup arraybuffer
-                MSP.message_buffer = new ArrayBuffer(MSP.message_length_expected);
-                MSP.message_buffer_uint8_view = new Uint8Array(MSP.message_buffer);
+                this.message_buffer = new ArrayBuffer(this.message_length_expected);
+                this.message_buffer_uint8_view = new Uint8Array(this.message_buffer);
                 
-                MSP.state++;
+                this.state++;
                 break;
             case 4:
-                MSP.code = data[i];
-                MSP.message_checksum ^= data[i];
+                this.code = data[i];
+                this.message_checksum ^= data[i];
                 
-                if (MSP.message_length_expected != 0) { // standard message
-                    MSP.state++;
+                if (this.message_length_expected != 0) { // standard message
+                    this.state++;
                 } else { // MSP_ACC_CALIBRATION, etc...
-                    MSP.state += 2;
+                    this.state += 2;
                 }
                 break;
             case 5: // payload
-                MSP.message_buffer_uint8_view[MSP.message_length_received] = data[i];
-                MSP.message_checksum ^= data[i];
-                MSP.message_length_received++;
+                this.message_buffer_uint8_view[this.message_length_received] = data[i];
+                this.message_checksum ^= data[i];
+                this.message_length_received++;
                 
-                if (MSP.message_length_received >= MSP.message_length_expected) {
-                    MSP.state++;
+                if (this.message_length_received >= this.message_length_expected) {
+                    this.state++;
                 }
                 break;
             case 6:
-                if (MSP.message_checksum == data[i]) {
+                if (this.message_checksum == data[i]) {
                     // message received, process
-                    process_data(MSP.code, MSP.message_buffer, MSP.message_length_expected);
+                    this.process_data(this.code, this.message_buffer, this.message_length_expected);
                 } else {
-                    console.log('code: ' + MSP.code + ' - crc failed');
+                    console.log('code: ' + this.code + ' - crc failed');
                     
-                    MSP.packet_error++;
-                    $('span.packet-error').html(MSP.packet_error);
+                    this.packet_error++;
+                    $('span.packet-error').html(this.packet_error);
                 }
                 
                 // Reset variables
-                MSP.message_length_received = 0;
-                MSP.state = 0;                   
+                this.message_length_received = 0;
+                this.state = 0;                   
                 break;
         }
         
         char_counter++;
     }
-}
+};
 
-function send_message(code, data, callback_sent, callback_msp) {
-    var bufferOut;
-    var bufView;
-    
-    // always reserve 6 bytes for protocol overhead !
-    if (typeof data === 'object') {
-        var size = data.length + 6;
-        var checksum = 0;
-        
-        bufferOut = new ArrayBuffer(size);
-        bufView = new Uint8Array(bufferOut);        
-        
-        bufView[0] = 36; // $
-        bufView[1] = 77; // M
-        bufView[2] = 60; // <
-        bufView[3] = data.length;
-        bufView[4] = code;
-        
-        checksum = bufView[3] ^ bufView[4];
-        
-        for (var i = 0; i < data.length; i++) {
-            bufView[i + 5] = data[i];
-            
-            checksum ^= bufView[i + 5];
-        }
-
-        bufView[5 + data.length] = checksum;
-    } else {
-        bufferOut = new ArrayBuffer(7);
-        bufView = new Uint8Array(bufferOut);
-        
-        bufView[0] = 36; // $
-        bufView[1] = 77; // M
-        bufView[2] = 60; // <
-        bufView[3] = 0; // data length
-        bufView[4] = code; // code
-        bufView[5] = data; // data
-        bufView[6] = bufView[3] ^ bufView[4] ^ bufView[5]; // checksum
-    }
-
-    // utilizing callback/timeout system for all commands
-    for (var i = 0; i < MSP.callbacks.length; i++) {
-        if (MSP.callbacks[i].code == code) {
-            // request already exist
-            return false; // skips the code below
-        }
-    }
-    
-    var obj = {'code': code, 'callback': (callback_msp) ? callback_msp : false};
-    obj.timer = setInterval(function() {
-        console.log('MSP data request timed-out: ' + code);
-        
-        serial.send(bufferOut, function(writeInfo) {});
-    }, 1000); // we should be able to define timeout in the future
-    
-    MSP.callbacks.push(obj);
-
-    serial.send(bufferOut, function(writeInfo) {
-        if (writeInfo.bytesSent > 0) {
-            if (callback_sent) {
-                callback_sent();
-            }
-        }
-    });    
-}
-
-function process_data(code, message_buffer, message_length) {
+MSP.process_data = function(code, message_buffer, message_length) {
     var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
     
     switch (code) {
@@ -508,15 +442,16 @@ function process_data(code, message_buffer, message_length) {
                 }
             }
             break;
+            
         default:
             console.log('Unknown code detected: ' + code);
     }
     
     // trigger callbacks, cleanup/remove callback after trigger
-    for (var i = (MSP.callbacks.length - 1); i >= 0; i--) { // itterating in reverse because we use .splice which modifies array length
-        if (MSP.callbacks[i].code == code) {
+    for (var i = (this.callbacks.length - 1); i >= 0; i--) { // itterating in reverse because we use .splice which modifies array length
+        if (this.callbacks[i].code == code) {
             // saving current obj for after-callback comparison
-            var obj = MSP.callbacks[i];
+            var obj = this.callbacks[i];
             
             // remove timeout
             clearInterval(obj.timer);
@@ -525,8 +460,76 @@ function process_data(code, message_buffer, message_length) {
             if (obj.callback) obj.callback({'command': code, 'data': data, 'length': message_length});
             
             // remove object from array
-            // we need to check if the callback object still exists as it could have been touched/removed in callback routine
-            if (MSP.callbacks.indexOf(obj) > -1) MSP.callbacks.splice(MSP.callbacks.indexOf(obj), 1);
+            // we need to check if the callback object still exists as it could have been touched/moved/removed in callback routine
+            var index = this.callbacks.indexOf(obj);
+            
+            if (index > -1) this.callbacks.splice(index, 1);
         }
     }
+};
+
+function send_message(code, data, callback_sent, callback_msp) {
+    var bufferOut;
+    var bufView;
+    
+    // always reserve 6 bytes for protocol overhead !
+    if (typeof data === 'object') {
+        var size = data.length + 6;
+        var checksum = 0;
+        
+        bufferOut = new ArrayBuffer(size);
+        bufView = new Uint8Array(bufferOut);        
+        
+        bufView[0] = 36; // $
+        bufView[1] = 77; // M
+        bufView[2] = 60; // <
+        bufView[3] = data.length;
+        bufView[4] = code;
+        
+        checksum = bufView[3] ^ bufView[4];
+        
+        for (var i = 0; i < data.length; i++) {
+            bufView[i + 5] = data[i];
+            
+            checksum ^= bufView[i + 5];
+        }
+
+        bufView[5 + data.length] = checksum;
+    } else {
+        bufferOut = new ArrayBuffer(7);
+        bufView = new Uint8Array(bufferOut);
+        
+        bufView[0] = 36; // $
+        bufView[1] = 77; // M
+        bufView[2] = 60; // <
+        bufView[3] = 0; // data length
+        bufView[4] = code; // code
+        bufView[5] = data; // data
+        bufView[6] = bufView[3] ^ bufView[4] ^ bufView[5]; // checksum
+    }
+
+    // utilizing callback/timeout system for all commands
+    for (var i = 0; i < MSP.callbacks.length; i++) {
+        if (MSP.callbacks[i].code == code) {
+            // request already exist
+            return false; // skips the code below
+        }
+    }
+    
+    var obj = {'code': code, 'callback': (callback_msp) ? callback_msp : false};
+    obj.timer = setInterval(function() {
+        console.log('MSP data request timed-out: ' + code);
+        
+        serial.send(bufferOut, function(writeInfo) {});
+    }, 1000); // we should be able to define timeout in the future
+    
+    MSP.callbacks.push(obj);
+
+    serial.send(bufferOut, function(writeInfo) {
+        if (writeInfo.bytesSent > 0) {
+            if (callback_sent) callback_sent();
+        }
+    });
+    
+    return true;
 }

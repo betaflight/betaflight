@@ -188,7 +188,7 @@ function onClosed(result) {
 
 function read_serial(info) {
     if (!CLI_active) {
-        MSP_char_read(info);
+        MSP.read(info);
     } else {
         handle_CLI(info);
     }
