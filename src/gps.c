@@ -343,7 +343,7 @@ static void reset_PID(PID *pid)
 
 static float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 static int16_t actual_speed[2] = { 0, 0 };
-static float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
+static float GPS_scaleLonDown = 1.0f;  // this is used to offset the shrinking longitude as we go towards the poles
 
 // The difference between the desired rate of travel and the actual rate of travel
 // updated after GPS read - 5-10hz
