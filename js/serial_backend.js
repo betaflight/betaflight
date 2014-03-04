@@ -60,10 +60,14 @@ $(document).ready(function() {
     chrome.storage.local.get('auto_connect', function(result) {
         if (typeof result.auto_connect === 'undefined') {
             // auto_connect wasn't saved yet, save and push true to the GUI
-            chrome.storage.local.set({'auto_connect': true});
-            
             GUI.auto_connect = true;
+            
+            $('input.auto_connect').prop('checked', true);
+            $('input.auto_connect, span.auto_connect').prop('title', 'Auto-Connect: Enabled - Configurator automatically tries to connect when new port is detected');
             $('select#baud').val(115200).prop('disabled', true);
+            
+            // save
+            chrome.storage.local.set({'auto_connect': true});
         } else {
             if (result.auto_connect) { 
                 // enabled by user
@@ -97,7 +101,7 @@ $(document).ready(function() {
                 if (!GUI.connected_to && !GUI.connecting_to) $('select#baud').prop('disabled', false);
             }
             
-            chrome.storage.local.set({'auto_connect': GUI.auto_connect}, function() {});
+            chrome.storage.local.set({'auto_connect': GUI.auto_connect});
         });
     });
     PortHandler.initialize();
