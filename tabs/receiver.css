@@ -112,3 +112,9 @@
     .tab-receiver .update.success {
         border: 1px solid #43c84d;
     }
+    .tab-receiver select[name="rx_refresh_rate"] {
+        float: right;
+        margin-right: 20px;
+        
+        border: 1px solid silver;
+    }
