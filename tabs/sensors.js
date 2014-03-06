@@ -327,8 +327,7 @@ function tab_initialize_sensors() {
             }, rates.mag, true);
             
             // store current/latest refresh rates in the storage
-            chrome.storage.local.set({'sensor_refresh_rates': rates}, function() {
-            });
+            chrome.storage.local.set({'sensor_refresh_rates': rates});
         });
     });
 }
