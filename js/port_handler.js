@@ -50,8 +50,9 @@ port_handler.prototype.check = function() {
                     // trigger callback
                     obj.code(removed_ports);
                     
-                    // cleanup
-                    self.port_removed_callbacks.splice(self.port_removed_callbacks.indexOf(obj), 1);
+                    // remove object from array
+                    var index = self.port_removed_callbacks.indexOf(obj);
+                    if (index > -1) self.port_removed_callbacks.splice(index, 1);
                 }
             }
             
@@ -122,8 +123,9 @@ port_handler.prototype.check = function() {
                 // trigger callback
                 obj.code(new_ports);
                 
-                // cleanup
-                self.port_detected_callbacks.splice(self.port_detected_callbacks.indexOf(obj), 1);
+                // remove object from array
+                var index = self.port_detected_callbacks.indexOf(obj);
+                if (index > -1) self.port_detected_callbacks.splice(index, 1);
             }
             
             self.initial_ports = current_ports;
@@ -158,7 +160,9 @@ port_handler.prototype.port_detected = function(name, code, timeout, ignore_time
             // trigger callback
             code(false);
             
-            self.port_detected_callbacks.splice(self.port_detected_callbacks.indexOf(obj), 1);
+            // remove object from array
+            var index = self.port_detected_callbacks.indexOf(obj);
+            if (index > -1) self.port_detected_callbacks.splice(index, 1);
         }, (timeout) ? timeout : 10000);
     } else {
         obj.timer = false;
@@ -181,7 +185,9 @@ port_handler.prototype.port_removed = function(name, code, timeout, ignore_timeo
             // trigger callback
             code(false);
             
-            self.port_removed_callbacks.splice(self.port_removed_callbacks.indexOf(obj), 1);
+            // remove object from array
+            var index = self.port_removed_callbacks.indexOf(obj);
+            if (index > -1) self.port_removed_callbacks.splice(index, 1);
         }, (timeout) ? timeout : 10000);
     } else {
         obj.timer = false;
