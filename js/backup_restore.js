@@ -53,12 +53,13 @@ function configuration_backup() {
                     
                         // create config object that will be used to store all downloaded data
                         var configuration = {
-                            VERSION: CONFIG.version, // not really useful yet
-                            PID: PIDs,
-                            AUX_val: AUX_CONFIG_values,
-                            RC: RC_tuning,
-                            AccelTrim: CONFIG.accelerometerTrims,
-                            MISC: MISC
+                            'firmware_version': CONFIG.version,
+                            'configurator_version': chrome.runtime.getManifest().version,
+                            'PID': PIDs,
+                            'AUX_val': AUX_CONFIG_values,
+                            'RC': RC_tuning,
+                            'AccelTrim': CONFIG.accelerometerTrims,
+                            'MISC': MISC
                         };
                         
                         // crunch the config object
