@@ -68,8 +68,7 @@ var MSP = {
     packet_error:               0,
     
     callbacks_cleanup: function() {
-        for (var i = (this.callbacks.length - 1); i >= 0; i--) {
-            // kill timer
+        for (var i = 0; i < this.callbacks.length; i++) {
             clearInterval(this.callbacks[i].timer);
         }
         
