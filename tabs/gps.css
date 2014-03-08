@@ -3,10 +3,10 @@
     .tab-gps .GPS_info {
         float: left;
         display: block;
-        
-        
+
+
         width: 170px;
-        
+
         border: 1px solid silver;
     }
         .tab-gps .GPS_info table {
@@ -15,11 +15,11 @@
         }
     .tab-gps .GPS_signal_strength {
         float: left;
-        
+
         margin-left: 10px;
-        
+
         width: 200px;
-        
+
         border: 1px solid silver;
     }
         .tab-gps .GPS_signal_strength table {
@@ -29,11 +29,11 @@
     .tab-gps .GPS_info .head,
     .tab-gps .GPS_signal_strength .head {
         display: block;
-        
+
         text-align: center;
         line-height: 20px;
         font-weight: bold;
-        
+
         border-bottom: 1px solid silver;
         background-color: #ececec;
     }

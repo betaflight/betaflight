@@ -5,11 +5,11 @@
     }
     .tab-pid_tuning table {
         float: left;
-        
+
         border-collapse: collapse;
     }
-    .tab-pid_tuning table, 
-    .tab-pid_tuning table th, 
+    .tab-pid_tuning table,
+    .tab-pid_tuning table th,
     .tab-pid_tuning table td {
         padding: 4px;
         border: 1px solid #8b8b8b;
@@ -35,32 +35,32 @@
         width: 96px;
         height: 20px;
         line-height: 20px;
-        
+
         padding: 0 5px 0 5px;
         text-align: right;
     }
     .tab-pid_tuning .profile {
         float: left;
-        
+
         margin-top: 10px;
-        
+
         width: 70px;
-        
+
         border: 1px solid silver;
     }
         .tab-pid_tuning .profile .head {
             display: block;
-            
+
             text-align: center;
             line-height: 20px;
             font-weight: bold;
-            
+
             border-bottom: 1px solid silver;
             background-color: #ececec;
         }
         .tab-pid_tuning .profile input {
             padding-left: 30px;
-            
+
             width: 40px;
             height: 20px;
             line-height: 20px;
@@ -78,23 +78,23 @@
     .tab-pid_tuning .refresh {
         display: block;
         float: right;
-        
+
         margin-top: 10px;
-        
+
         height: 28px;
         line-height: 28px;
-        
+
         padding: 0 15px 0 15px;
-        
+
         text-align: center;
         font-weight: bold;
-        
+
         border: 1px solid silver;
         background-color: #ececec;
     }
     .tab-pid_tuning .refresh {
         margin-right: 10px;
-    }    
+    }
     .tab-pid_tuning .update:hover,
     .tab-pid_tuning .refresh:hover {
         background-color: #dedcdc;

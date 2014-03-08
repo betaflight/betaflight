@@ -6,7 +6,7 @@
     }
     .tab-firmware_flasher .info .progress {
         width: 140px;
-        
+
         border: 1px solid silver;
     }
         .tab-firmware_flasher .info .progress::-webkit-progress-value {
@@ -20,10 +20,10 @@
             }
 .tab-firmware_flasher .note {
     float: left;
-    
+
     margin-bottom: 10px;
     padding: 5px;
-    
+
     border: 1px dotted silver;
 }
     .tab-firmware_flasher .note p {
@@ -42,15 +42,15 @@
 a.load_file, a.load_remote_file {
     display: block;
     float: left;
-    
+
     margin: 0 10px 0 0;
     padding: 0 10px 0 10px;
-    
+
     height: 20px;
     line-height: 20px;
     text-align: center;
     font-weight: bold;
-    
+
     border: 1px solid silver;
     background-color: #ececec;
 }
@@ -60,14 +60,14 @@ a.load_file:hover, a.load_remote_file:hover {
 a.flash_firmware {
     display: block;
     float: left;
-    
+
     padding: 0 10px 0 10px;
-    
+
     height: 20px;
     line-height: 20px;
     text-align: center;
     font-weight: bold;
-    
+
     border: 1px solid silver;
     background-color: #ececec;
 }
@@ -84,35 +84,35 @@ a.flash_firmware:hover {
 a.back {
     display: block;
     position: absolute;
-    
+
     bottom: 10px;
-    
+
     height: 28px;
     line-height: 28px;
-    
+
     padding: 0 15px 0 15px;
-    
+
     text-align: center;
     font-weight: bold;
-    
+
     border: 1px solid silver;
     background-color: #ececec;
 }
 a.back:hover {
     background-color: #dedcdc;
 }
-.warning {        
+.warning {
     width: 620px;
-    
+
     border: 1px solid silver;
 }
     .warning .title {
         line-height: 20px;
-        
+
         text-align: center;
         font-weight: bold;
         color: white;
-        
+
         border-bottom: 1px solid silver;
         background-color: #cd4c4c;
     }
@@ -121,20 +121,20 @@ a.back:hover {
     }
     .tab-firmware_flasher .git_info {
         display: none;
-        
+
         width: 620px;
-        
+
         margin-bottom: 10px;
-        
+
         border: 1px solid silver;
     }
         .tab-firmware_flasher .git_info .title {
             line-height: 20px;
-            
+
             text-align: center;
             font-weight: bold;
             color: white;
-            
+
             border-bottom: 1px solid silver;
             background-color: #3f4241;
         }

@@ -1,7 +1,7 @@
 function tab_initialize_gps () {
     ga_tracker.sendAppView('GPS Page');
     GUI.active_tab = 'gps';
-    
+
     send_message(MSP_codes.MSP_RAW_GPS, MSP_codes.MSP_RAW_GPS, false, function() {
         $('#content').load("./tabs/gps.html", function() {
             // enable data pulling
@@ -13,10 +13,10 @@ function tab_initialize_gps () {
                 $('.GPS_info td.speed').html(GPS_DATA.speed + ' cm/s');
                 $('.GPS_info td.sats').html(GPS_DATA.numSat);
                 $('.GPS_info td.distToHome').html(GPS_DATA.distanceToHome + ' m');
-                
+
                 // Update GPS Signal Strengths
                 var e_ss_table = $('div.GPS_signal_strength table tr:not(.titles)');
-                
+
                 for (var i = 0; i < GPS_DATA.chn.length; i++) {
                     var row = e_ss_table.eq(i);
 
@@ -24,7 +24,7 @@ function tab_initialize_gps () {
                     $('td', row).eq(1).html(GPS_DATA.quality[i]);
                     $('td', row).eq(2).find('progress').val(GPS_DATA.cno[i]);
                 }
-                
+
                 send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
                 send_message(MSP_codes.MSP_RAW_GPS, MSP_codes.MSP_RAW_GPS);
                 send_message(MSP_codes.MSP_GPSSVINFO, MSP_codes.MSP_GPSSVINFO);

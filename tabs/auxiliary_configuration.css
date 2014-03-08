@@ -6,18 +6,18 @@
     }
         .tab-auxiliary_configuration .heads li {
             float: left;
-            
+
             width: 182px;
             height: 22px;
             line-height: 22px;
-            
+
             text-align: center;
             font-weight: bold;
-            
+
             border: 1px solid #8b8b8b;
             border-bottom: 0;
             border-left: 0;
-            
+
             background-color: #ececec;
         }
             .tab-auxiliary_configuration .heads li:first-child {
@@ -31,12 +31,12 @@
             }
     .tab-auxiliary_configuration .boxes {
         width: 100%;
-        border-collapse: collapse;            
+        border-collapse: collapse;
     }
-        .tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {            
+        .tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {
             line-height: 22px;
             text-align: center;
-            
+
             border: 1px solid #8b8b8b;
         }
         .tab-auxiliary_configuration .boxes .name {
@@ -53,27 +53,27 @@
         }
         .tab-auxiliary_configuration .boxes td input {
             position: absolute;
-            
+
             margin-top: -6px;
             margin-left: -6px;
-        }        
+        }
     .tab-auxiliary_configuration .boxes tr:nth-child(odd) {
         background-color: #ececec;
-    } 
+    }
     .tab-auxiliary_configuration .update {
         display: block;
         float: right;
-        
+
         margin-top: 10px;
-        
+
         height: 28px;
         line-height: 28px;
-        
+
         padding: 0 15px 0 15px;
-        
+
         text-align: center;
         font-weight: bold;
-        
+
         border: 1px solid silver;
         background-color: #ececec;
     }

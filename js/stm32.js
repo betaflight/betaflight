@@ -1,4 +1,4 @@
-/*  
+/*
     STM32 F103 serial bus seems to properly initialize with quite a huge auto-baud range
     From 921600 down to 1200, i don't recommend getting any lower then that
     Official "specs" are from 115200 to 1200
@@ -7,20 +7,20 @@
 var STM32_protocol = function() {
     this.hex; // ref
     this.verify_hex;
-    
+
     this.receive_buffer;
-    
+
     this.bytes_to_read = 0; // ref
     this.read_callback; // ref
-    
+
     this.upload_time_start;
     this.upload_process_alive;
-    
+
     this.status = {
         ACK:    0x79, // y
         NACK:   0x1F
     };
-    
+
     this.command = {
         get:                    0x00, // Gets the version and the allowed commands supported by the current version of the bootloader
         get_ver_r_protect_s:    0x01, // Gets the bootloader version and the Read Protection status of the Flash memory
@@ -35,7 +35,7 @@ var STM32_protocol = function() {
         readout_protect:        0x82, // Enables the read protection
         readout_unprotect:      0x92  // Disables the read protection
     };
-    
+
     // Erase (x043) and Extended Erase (0x44) are exclusive. A device may support either the Erase command or the Extended Erase command but not both.
 };
 
@@ -48,14 +48,14 @@ STM32_protocol.prototype.GUI_status = function(string) {
 STM32_protocol.prototype.connect = function(hex) {
     var self = this;
     self.hex = hex;
-    
+
     var selected_port = String($('div#port-picker .port select').val());
     var baud = parseInt($('div#port-picker #baud').val());
-    
+
     if (selected_port != '0') {
         // popular choices - 921600, 460800, 256000, 230400, 153600, 128000, 115200, 57600, 38400, 28800, 19200
         var flashing_bitrate;
-        
+
         switch (GUI.operating_system) {
             case 'Windows':
                 flashing_bitrate = 921600;
@@ -68,11 +68,11 @@ STM32_protocol.prototype.connect = function(hex) {
             case 'UNIX':
                 flashing_bitrate = 921600;
                 break;
-                
+
             default:
                 flashing_bitrate = 115200;
         }
-        
+
         if (!$('input.updating').is(':checked')) {
             serial.connect(selected_port, {bitrate: baud}, function(openInfo) {
                 if (openInfo) {
@@ -80,17 +80,17 @@ STM32_protocol.prototype.connect = function(hex) {
 
                     // we are connected, disabling connect button in the UI
                     GUI.connect_lock = true;
-                    
+
                     var bufferOut = new ArrayBuffer(1);
                     var bufferView = new Uint8Array(bufferOut);
-                    
+
                     bufferView[0] = 0x52;
-                    
+
                     serial.send(bufferOut, function() {
                         serial.disconnect(function(result) {
-                            if (result) {                                
+                            if (result) {
                                 serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
-                                    if (openInfo) {                                        
+                                    if (openInfo) {
                                         self.initialize();
                                     } else {
                                         GUI.log('<span style="color: red">Failed</span> to open serial port');
@@ -107,10 +107,10 @@ STM32_protocol.prototype.connect = function(hex) {
             });
         } else {
             serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
-                if (openInfo) {                    
+                if (openInfo) {
                     // we are connected, disabling connect button in the UI
                     GUI.connect_lock = true;
-                    
+
                     self.initialize();
                 } else {
                     GUI.log('<span style="color: red">Failed</span> to open serial port');
@@ -126,14 +126,14 @@ STM32_protocol.prototype.connect = function(hex) {
 // initialize certain variables and start timers that oversee the communication
 STM32_protocol.prototype.initialize = function() {
     var self = this;
-    
-    // reset and set some variables before we start 
+
+    // reset and set some variables before we start
     self.receive_buffer = [];
     self.verify_hex = [];
-    
+
     self.upload_time_start = microtime();
     self.upload_process_alive = false;
-    
+
     // reset progress bar to initial state
     self.progress_bar_e = $('.progress');
     self.progress_bar_e.val(0);
@@ -142,42 +142,42 @@ STM32_protocol.prototype.initialize = function() {
     serial.onReceive.addListener(function(info) {
         self.read(info);
     });
-    
+
     GUI.interval_add('STM32_timeout', function() {
         if (self.upload_process_alive) { // process is running
             self.upload_process_alive = false;
         } else {
             console.log('STM32 - timed out, programming failed ...');
             STM32.GUI_status('STM32 - timed out, programming: <strong style="color: red">FAILED</strong>');
-            
+
             // protocol got stuck, clear timer and disconnect
             GUI.interval_remove('STM32_timeout');
-            
+
             // exit
             self.upload_procedure(99);
         }
     }, 1000);
-    
+
     self.upload_procedure(1);
 };
 
 // no input parameters
 // this method should be executed every 1 ms via interval timer
-STM32_protocol.prototype.read = function(readInfo) {    
+STM32_protocol.prototype.read = function(readInfo) {
     // routine that fills the buffer
     var data = new Uint8Array(readInfo.data);
-    
+
     for (var i = 0; i < data.length; i++) {
-        this.receive_buffer.push(data[i]);  
+        this.receive_buffer.push(data[i]);
     }
-    
+
     // routine that fetches data from buffer if statement is true
     if (this.receive_buffer.length >= this.bytes_to_read && this.bytes_to_read != 0) {
         var data = this.receive_buffer.slice(0, this.bytes_to_read); // bytes requested
         this.receive_buffer.splice(0, this.bytes_to_read); // remove read bytes
-        
+
         this.bytes_to_read = 0; // reset trigger
-        
+
         this.read_callback(data);
     }
 };
@@ -188,7 +188,7 @@ STM32_protocol.prototype.retrieve = function(n_bytes, callback) {
         // data that we need are there, process immediately
         var data = this.receive_buffer.slice(0, n_bytes);
         this.receive_buffer.splice(0, n_bytes); // remove read bytes
-    
+
         callback(data);
     } else {
         // still waiting for data, add callback
@@ -203,38 +203,38 @@ STM32_protocol.prototype.retrieve = function(n_bytes, callback) {
 STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {
     // flip flag
     this.upload_process_alive = true;
-    
+
     var bufferOut = new ArrayBuffer(Array.length);
     var bufferView = new Uint8Array(bufferOut);
-    
+
     // set Array values inside bufferView (alternative to for loop)
     bufferView.set(Array);
-    
+
     // update references
     this.bytes_to_read = bytes_to_read;
     this.read_callback = callback;
-    
+
     // empty receive buffer before next command is out
     this.receive_buffer = [];
 
     // send over the actual data
-    serial.send(bufferOut, function(writeInfo) {}); 
+    serial.send(bufferOut, function(writeInfo) {});
 };
 
-// val = single byte to be verified 
+// val = single byte to be verified
 // data = response of n bytes from mcu (array)
 // result = true/false
 STM32_protocol.prototype.verify_response = function(val, data) {
     if (val != data[0]) {
         console.log('STM32 Communication failed, wrong response, expected: ' + val + ' received: ' + data[0]);
         STM32.GUI_status('STM32 Communication <span style="color: red">failed</span>, wrong response, expected: ' + val + ' received: ' + data[0]);
-        
+
         // disconnect
         this.upload_procedure(99);
-        
+
         return false;
     }
-    
+
     return true;
 };
 
@@ -242,7 +242,7 @@ STM32_protocol.prototype.verify_response = function(val, data) {
 // result = true/false
 STM32_protocol.prototype.verify_chip_signature = function(signature) {
     var available_flash_size = 0;
-    
+
     switch (signature) {
         case 0x412: // not tested
             console.log('Chip recognized as F1 Low-density');
@@ -297,19 +297,19 @@ STM32_protocol.prototype.verify_chip_signature = function(signature) {
             console.log('Chip recognized as F3 STM32F30xxx, STM32F31xxx');
             break;
     }
-    
+
     if (available_flash_size > 0) {
         if (this.hex.bytes_total < available_flash_size) {
             return true;
         } else {
             console.log('Supplied hex is bigger then flash available on the chip, HEX: ' + this.hex.bytes_total + ' bytes, limit = ' + available_flash_size + ' bytes');
-            
+
             return false;
         }
-    }    
-    
+    }
+
     console.log('Chip NOT recognized: ' + signature);
-    
+
     return false;
 };
 
@@ -323,16 +323,16 @@ STM32_protocol.prototype.verify_flash = function(first_array, second_array) {
             return false;
         }
     }
-    
+
     console.log('Verification successful, matching: ' + first_array.length + ' bytes');
-    
+
     return true;
 };
 
 // step = value depending on current state of upload_procedure
 STM32_protocol.prototype.upload_procedure = function(step) {
     var self = this;
-    
+
     switch (step) {
         case 1:
             // initialize serial interface on the MCU side, auto baud rate settings
@@ -342,18 +342,18 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     if (reply[0] == 0x7F || reply[0] == self.status.ACK || reply[0] == self.status.NACK) {
                         GUI.interval_remove('stm32_initialize_mcu');
                         console.log('STM32 - Serial interface initialized on the MCU side');
-                        
+
                         // proceed to next step
                         self.upload_procedure(2);
                     } else {
                         GUI.interval_remove('stm32_initialize_mcu');
                         STM32.GUI_status('STM32 Communication with bootloader <span style="color: red">failed</span>');
-                    
+
                         // disconnect
                         self.upload_procedure(99);
                     }
                 });
-                
+
                 if (send_counter++ > 3) {
                     // stop retrying, its too late to get any response from MCU
                     GUI.interval_remove('stm32_initialize_mcu');
@@ -366,7 +366,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                 if (self.verify_response(self.status.ACK, data)) {
                     self.retrieve(data[1] + 1 + 1, function(data) { // data[1] = number of bytes that will follow [– 1 except current and ACKs]
                         console.log('STM32 - Bootloader version: ' + (parseInt(data[0].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
-                        
+
                         // proceed to next step
                         self.upload_procedure(3);
                     });
@@ -380,7 +380,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     self.retrieve(data[1] + 1 + 1, function(data) { // data[1] = number of bytes that will follow [– 1 (N = 1 for STM32), except for current byte and ACKs]
                         var signature = (data[0] << 8) | data[1];
                         console.log('STM32 - Signature: 0x' + signature.toString(16)); // signature in hex representation
-                        
+
                         if (self.verify_chip_signature(signature)) {
                             // proceed to next step
                             self.upload_procedure(4);
@@ -396,7 +396,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // erase memory
             console.log('Executing global chip erase');
             STM32.GUI_status('Erasing');
-            
+
             self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
                 if (self.verify_response(self.status.ACK, reply)) {
                     self.send([0xFF, 0x00], 1, function(reply) {
@@ -404,9 +404,9 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                             console.log('Erasing: done');
                             console.log('Writing data ...');
                             STM32.GUI_status('<span style="color: green">Flashing ...</span>');
-                            
+
                             // proceed to next step
-                            self.upload_procedure(5); 
+                            self.upload_procedure(5);
                         }
                     });
                 }
@@ -417,36 +417,36 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             var blocks = self.hex.data.length - 1;
             var flashing_block = 0;
             var address = self.hex.data[flashing_block].address;
-            
+
             var bytes_flashed = 0;
             var bytes_flashed_total = 0; // used for progress bar
-            
+
             var write = function() {
                 if (bytes_flashed < self.hex.data[flashing_block].bytes) {
                     var bytes_to_write = ((bytes_flashed + 128) <= self.hex.data[flashing_block].bytes) ? 128 : (self.hex.data[flashing_block].bytes - bytes_flashed);
-                    
+
                     // console.log('STM32 - Writing to: 0x' + address.toString(16) + ', ' + bytes_to_write + ' bytes');
-                    
+
                     self.send([self.command.write_memory, 0xCE], 1, function(reply) { // 0x31 ^ 0xFF
                         if (self.verify_response(self.status.ACK, reply)) {
                             // address needs to be transmitted as 32 bit integer, we need to bit shift each byte out and then calculate address checksum
                             var address_arr = [(address >> 24), (address >> 16), (address >> 8), address];
                             var address_checksum = address_arr[0] ^ address_arr[1] ^ address_arr[2] ^ address_arr[3];
-                            
+
                             self.send([address_arr[0], address_arr[1], address_arr[2], address_arr[3], address_checksum], 1, function(reply) { // write start address + checksum
                                 if (self.verify_response(self.status.ACK, reply)) {
                                     var array_out = new Array(bytes_to_write + 2); // 2 byte overhead [N, ...., checksum]
                                     array_out[0] = bytes_to_write - 1; // number of bytes to be written (to write 128 bytes, N must be 127, to write 256 bytes, N must be 255)
-                                    
+
                                     var checksum = array_out[0];
                                     for (var i = 0; i < bytes_to_write; i++) {
                                         array_out[i + 1] = self.hex.data[flashing_block].data[bytes_flashed]; // + 1 because of the first byte offset
                                         checksum ^= self.hex.data[flashing_block].data[bytes_flashed];
-                                        
+
                                         bytes_flashed++;
                                     }
                                     array_out[array_out.length - 1] = checksum; // checksum (last byte in the array_out array)
-                                    
+
                                     address += bytes_to_write;
                                     bytes_flashed_total += bytes_to_write
 
@@ -454,7 +454,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                         if (self.verify_response(self.status.ACK, reply)) {
                                             // update progress bar
                                             self.progress_bar_e.val(bytes_flashed_total / (self.hex.bytes_total * 2) * 100);
-                                            
+
                                             // flash another page
                                             write();
                                         }
@@ -467,23 +467,23 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     // move to another block
                     if (flashing_block < blocks) {
                         flashing_block++;
-                        
+
                         address = self.hex.data[flashing_block].address;
                         bytes_flashed = 0;
-                        
+
                         write();
                     } else {
                         // all blocks flashed
                         console.log('Writing: done');
                         console.log('Verifying data ...');
                         STM32.GUI_status('<span style="color: green">Verifying ...</span>');
-                        
+
                         // proceed to next step
                         self.upload_procedure(6);
                     }
                 }
             };
-            
+
             // start writing
             write();
             break;
@@ -492,44 +492,44 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             var blocks = self.hex.data.length - 1;
             var reading_block = 0;
             var address = self.hex.data[reading_block].address;
-            
+
             var bytes_verified = 0;
             var bytes_verified_total = 0; // used for progress bar
-            
+
             // initialize arrays
             for (var i = 0; i <= blocks; i++) {
                 self.verify_hex.push([]);
             }
-            
+
             var reading = function() {
                 if (bytes_verified < self.hex.data[reading_block].bytes) {
                     var bytes_to_read = ((bytes_verified + 128) <= self.hex.data[reading_block].bytes) ? 128 : (self.hex.data[reading_block].bytes - bytes_verified);
-                
+
                     // console.log('STM32 - Reading from: 0x' + address.toString(16) + ', ' + bytes_to_read + ' bytes');
-                    
+
                     self.send([self.command.read_memory, 0xEE], 1, function(reply) { // 0x11 ^ 0xFF
                         if (self.verify_response(self.status.ACK, reply)) {
                             var address_arr = [(address >> 24), (address >> 16), (address >> 8), address];
                             var address_checksum = address_arr[0] ^ address_arr[1] ^ address_arr[2] ^ address_arr[3];
-                            
+
                             self.send([address_arr[0], address_arr[1], address_arr[2], address_arr[3], address_checksum], 1, function(reply) { // read start address + checksum
                                 if (self.verify_response(self.status.ACK, reply)) {
                                     var bytes_to_read_n = bytes_to_read - 1;
-                                    
+
                                     self.send([bytes_to_read_n, (~bytes_to_read_n) & 0xFF], 1, function(reply) { // bytes to be read + checksum XOR(complement of bytes_to_read_n)
                                         if (self.verify_response(self.status.ACK, reply)) {
                                             self.retrieve(bytes_to_read, function(data) {
                                                 for (var i = 0; i < data.length; i++) {
                                                     self.verify_hex[reading_block].push(data[i]);
                                                 }
-                                                
+
                                                 address += bytes_to_read;
                                                 bytes_verified += bytes_to_read;
                                                 bytes_verified_total += bytes_to_read;
-                                                
+
                                                 // update progress bar
-                                                self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100); 
-                                                
+                                                self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100);
+
                                                 // verify another page
                                                 reading();
                                             });
@@ -543,44 +543,44 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     // move to another block
                     if (reading_block < blocks) {
                         reading_block++;
-                        
+
                         address = self.hex.data[reading_block].address;
                         bytes_verified = 0;
-                        
+
                         reading();
                     } else {
                         // all blocks read, verify
-                        
+
                         var verify = true;
                         for (var i = 0; i <= blocks; i++) {
                             verify = self.verify_flash(self.hex.data[i].data, self.verify_hex[i]);
-                            
+
                             if (!verify) break;
                         }
-                        
+
                         if (verify) {
                             console.log('Programming: SUCCESSFUL');
                             STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
-                            
+
                             // update progress bar
                             self.progress_bar_e.addClass('valid');
-                            
+
                             // proceed to next step
-                            self.upload_procedure(7);   
+                            self.upload_procedure(7);
                         } else {
                             console.log('Programming: FAILED');
                             STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
-                            
+
                             // update progress bar
                             self.progress_bar_e.addClass('invalid');
-                            
+
                             // disconnect
-                            self.upload_procedure(99); 
+                            self.upload_procedure(99);
                         }
                     }
                 }
             };
-            
+
             // start reading
             reading();
             break;
@@ -594,7 +594,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     var gt_address = 0x8000000;
                     var address = [(gt_address >> 24), (gt_address >> 16), (gt_address >> 8), gt_address];
                     var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
-                    
+
                     self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function(reply) {
                         if (self.verify_response(self.status.ACK, reply)) {
                             // disconnect
@@ -607,15 +607,15 @@ STM32_protocol.prototype.upload_procedure = function(step) {
         case 99:
             // disconnect
             GUI.interval_remove('STM32_timeout'); // stop STM32 timeout timer (everything is finished now)
-            
+
             console.log('Script finished after: ' + (microtime() - self.upload_time_start).toFixed(4) + ' seconds');
-            
+
             // close connection
             serial.disconnect(function(result) {
                 if (result) { // All went as expected
                 } else { // Something went wrong
                 }
-                
+
                 // unlocking connect button
                 GUI.connect_lock = false;
             });

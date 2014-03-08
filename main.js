@@ -12,24 +12,24 @@ var service = analytics.getService('ice_cream_app');
 var ga_tracker = service.getTracker('UA-32728876-6');
 
 ga_tracker.sendAppView('Application Started');
-// Google Analytics stuff end    
+// Google Analytics stuff end
 
 $(document).ready(function() {
-    // bind controls  
+    // bind controls
     $('#frame .minimize').click(function() {
         chrome.app.window.current().minimize();
-    }); 
+    });
 
     $('#frame .maximize').click(function() {
         chrome.app.window.current().maximize();
     });
-    
+
     $('#frame .close').click(function() {
         chrome.app.window.current().close();
     });
-    
+
     // alternative - window.navigator.appVersion.match(/Chrome\/([0-9.]*)/)[1];
-    GUI.log('Running - OS: <strong>' + GUI.operating_system + '</strong>, ' + 
+    GUI.log('Running - OS: <strong>' + GUI.operating_system + '</strong>, ' +
         'Chrome: <strong>' + window.navigator.appVersion.replace(/.*Chrome\/([0-9.]*).*/,"$1") + '</strong>, ' +
         'Configurator: <strong>' + chrome.runtime.getManifest().version + '</strong>');
 
@@ -47,7 +47,7 @@ $(document).ready(function() {
         case 'UNIX':
             break;
     }
-    
+
     // Tabs
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
@@ -56,19 +56,19 @@ $(document).ready(function() {
                 GUI.log('You need to connect before you can view any of the tabs', 'red');
                 return;
             }
-            
+
             var self = this;
-            
+
             GUI.tab_switch_cleanup(function() {
                 // disable previously active tab highlight
                 $('li', tabs).removeClass('active');
-                
+
                 // get tab class name (there should be only one class listed)
                 var tab = $(self).parent().prop('class');
-                
+
                 // Highlight selected tab
                 $(self).parent().addClass('active');
-                
+
                 switch (tab) {
                     case 'tab_initial_setup':
                         tab_initialize_initial_setup();
@@ -93,27 +93,27 @@ $(document).ready(function() {
                         break;
                     case 'tab_sensors':
                         tab_initialize_sensors();
-                        break;    
+                        break;
                     case 'tab_cli':
                         tab_initialize_cli();
-                        break;                         
+                        break;
                 }
             });
         }
     });
-    
+
     tab_initialize_default();
-    
+
     // listen to all input change events and adjust the value within limits if necessary
     $("#content").on('focus', 'input[type="number"]', function() {
         var element = $(this);
         var val = element.val();
-        
+
         if (!isNaN(val)) {
             element.data('previousValue', parseFloat(val));
         }
     });
-    
+
     $("#content").on('keydown', 'input[type="number"]', function(e) {
         // whitelist all that we need for numeric control
         if ((e.keyCode >= 96 && e.keyCode <= 105) || (e.keyCode >= 48 && e.keyCode <= 57)) { // allow numpad and standard number keypad
@@ -126,40 +126,40 @@ $(document).ready(function() {
             e.preventDefault();
         }
     });
-    
+
     $("#content").on('change', 'input[type="number"]', function() {
         var element = $(this);
         var min = parseFloat(element.prop('min'));
         var max = parseFloat(element.prop('max'));
         var step = parseFloat(element.prop('step'));
         var val = parseFloat(element.val());
-        
+
         // only adjust minimal end if bound is set
         if (element.prop('min')) {
             if (val < min) element.val(min);
         }
-        
+
         // only adjust maximal end if bound is set
         if (element.prop('max')) {
             if (val > max) element.val(max);
         }
-        
+
         // if entered value is illegal use previous value instead
         if (isNaN(val)) {
             element.val(element.data('previousValue'));
         }
-        
+
         // if step is not set or step is int and value is float use previous value instead
         if (isNaN(step) || step % 1 === 0) {
             if (val % 1 !== 0) {
                 element.val(element.data('previousValue'));
             }
         }
-        
+
         // if step is set and is float and value is int, convert to float, keep decimal places in float according to step *experimental*
         if (!isNaN(step) && step % 1 !== 0) {
             var decimal_places = String(step).split('.')[1].length;
-            
+
             if (val % 1 === 0) {
                 element.val(val.toFixed(decimal_places));
             } else if (String(val).split('.')[1].length != decimal_places) {
@@ -178,10 +178,10 @@ function microtime() {
 /*
 function add_custom_spinners() {
     var spinner_element = '<div class="spinner"><div class="up"></div><div class="down"></div></div>';
-    
+
     $('input[type="number"]').each(function() {
         var input = $(this);
-        
+
         // only add new spinner if one doesn't already exist
         if (!input.next().hasClass('spinner')) {
             var isInt = true;
@@ -194,62 +194,62 @@ function add_custom_spinners() {
                     isInt = false;
                 }
             }
-            
+
             // make space for spinner
             input.width(input.width() - 16);
-            
+
             // add spinner
             input.after(spinner_element);
-            
+
             // get spinner refference
             var spinner = input.next();
-            
+
             // bind UI hooks to spinner
             $('.up', spinner).click(function() {
                 up();
             });
-            
-            $('.up', spinner).mousedown(function() {            
+
+            $('.up', spinner).mousedown(function() {
                 GUI.timeout_add('spinner', function() {
                     GUI.interval_add('spinner', function() {
                         up();
                     }, 100, true);
                 }, 250);
             });
-            
+
             $('.up', spinner).mouseup(function() {
                 GUI.timeout_remove('spinner');
                 GUI.interval_remove('spinner');
             });
-            
-            $('.up', spinner).mouseleave(function() {            
+
+            $('.up', spinner).mouseleave(function() {
                 GUI.timeout_remove('spinner');
                 GUI.interval_remove('spinner');
             });
-            
-            
+
+
             $('.down', spinner).click(function() {
                 down();
             });
-            
-            $('.down', spinner).mousedown(function() {            
+
+            $('.down', spinner).mousedown(function() {
                 GUI.timeout_add('spinner', function() {
                     GUI.interval_add('spinner', function() {
                         down();
                     }, 100, true);
                 }, 250);
             });
-            
+
             $('.down', spinner).mouseup(function() {
                 GUI.timeout_remove('spinner');
                 GUI.interval_remove('spinner');
             });
-            
+
             $('.down', spinner).mouseleave(function() {
                 GUI.timeout_remove('spinner');
                 GUI.interval_remove('spinner');
             });
-            
+
             var up = function() {
                 if (isInt) {
                     var current_value = parseInt(input.val());
@@ -258,13 +258,13 @@ function add_custom_spinners() {
                     var current_value = parseFloat(input.val());
                     var step = parseFloat(input.prop('step'));
                     var step_decimals = input.prop('step').length - 2;
-                    
+
                     input.val((current_value + step).toFixed(step_decimals));
                 }
-                
+
                 input.change();
             };
-            
+
             var down = function() {
                 if (isInt) {
                     var current_value = parseInt(input.val());
@@ -273,10 +273,10 @@ function add_custom_spinners() {
                     var current_value = parseFloat(input.val());
                     var step = parseFloat(input.prop('step'));
                     var step_decimals = input.prop('step').length - 2;
-                    
+
                     input.val((current_value - step).toFixed(step_decimals));
                 }
-                
+
                 input.change();
             };
         }

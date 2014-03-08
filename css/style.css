@@ -21,15 +21,15 @@ a:hover {
 }
 input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
-    
+
     display: block;
     opacity: 1; /* required for chromium 33+ beta */
-    
+
     width: 15px;
-    
+
     background-image: url('../images/arrows.png');
     background-repeat: no-repeat;
-    
+
     border-left: 1px solid silver;
 }
 .clear-both {
@@ -47,44 +47,44 @@ input[type="number"]::-webkit-inner-spin-button {
 #frame {
     height: 25px;
     line-height: 25px;
-    
+
     -webkit-app-region: drag;
-    
+
     background-color: white;
 }
     #frame .title {
         float: left;
-        
+
         margin-left: 15px;
-        
+
         font-weight: bold;
         /* text-shadow: 1px 1px #e4e4e4; */
     }
     #frame .minimize {
         float: right;
         display: block;
-        
+
         width: 26px;
         height: 20px;
-        
+
         background: url('../images/controls/minimize.png') no-repeat 0 0;
     }
     #frame .maximize {
         float: right;
         display: block;
-        
+
         width: 27px;
         height: 20px;
-        
+
         background: url('../images/controls/maximize.png') no-repeat 0 0;
-    }    
+    }
     #frame .close {
         float: right;
         display: block;
-        
+
         width: 45px;
         height: 20px;
-        
+
         background: url('../images/controls/close.png') no-repeat 0 0;
     }
     #frame a {
@@ -93,7 +93,7 @@ input[type="number"]::-webkit-inner-spin-button {
     }
     #frame a:hover {
         /* hover is disabled untill webkit-app-region: drag; starts to fire events or chromium implements native frame */
-        /* background-position: 0px -20px; */ 
+        /* background-position: 0px -20px; */
     }
     #frame a:active {
         background-position: 0px -40px;
@@ -101,12 +101,12 @@ input[type="number"]::-webkit-inner-spin-button {
 #main-wrapper {
     width: 940px;
     margin: 10px auto 0 auto;
-    
+
     padding: 0 10px 0 10px;
 }
 #port-picker {
     float: left;
-    
+
     height: 22px;
     margin-bottom: 10px;
 }
@@ -116,10 +116,10 @@ input[type="number"]::-webkit-inner-spin-button {
     #port-picker select {
         height: 20px;
         line-height: 20px;
-        
+
         float: left;
         margin-right: 10px;
-        
+
         border: 1px solid silver;
     }
     #port-picker #port {
@@ -133,19 +133,19 @@ input[type="number"]::-webkit-inner-spin-button {
     }
     #port-picker a {
         float: left;
-        
+
         display: block;
-        
+
         width: 80px;
         height: 18px;
         border: 1px solid silver;
-        
+
         line-height: 18px;
         text-align: center;
     }
     #port-picker a.connect {
         margin-right: 10px;
-        
+
         background-color: #be2222;
         color: white;
     }
@@ -161,32 +161,32 @@ input[type="number"]::-webkit-inner-spin-button {
         }
     #port-picker input.auto_connect {
         float: left;
-        
+
         margin-top: 4px;
     }
     #port-picker span.auto_connect {
         float: left;
-        
+
         margin: 3px 0 0 5px;
     }
 #sensor-status {
     float: right;
-    
+
     height: 22px;
     line-height: 22px;
 }
     #sensor-status li {
         float: left;
-        
+
         margin-left: 10px;
         padding: 0 12px 0 12px;
-        
+
         height: 18px;
         line-height: 18px;
-        
+
         color: white;
         text-align: center;
-        
+
         border: 1px solid #c0c0c0;
         border-radius: 8px;
         background-color: #be2222;
@@ -194,45 +194,45 @@ input[type="number"]::-webkit-inner-spin-button {
     #sensor-status .on {
         background-color: #0d8b13;
     }
-#log {    
+#log {
     margin-bottom: 10px;
-    
+
     height: 60px;
-    
+
     border: 1px solid silver;
     background-color: white;
-    
+
     overflow-y: scroll;
-} 
+}
     #log .wrapper {
         padding: 5px;
-        
+
         -webkit-user-select: text;
-    }    
+    }
 #tabs {
     position: absolute;
     margin-top: 1px;
-    
+
     z-index: 10;
-    
+
     font-weight: bold;
 }
     #tabs li {
         float: left;
         margin-right: 5px;
-        
+
         border: 1px solid #848484;
         border-bottom: 0;
     }
         #tabs li a {
             display: block;
-            
+
             height: 15px;
-            
+
             padding: 5px;
             padding-left: 12px;
             padding-right: 12px;
-            
+
             background-color: #d0d0d0;
         }
         #tabs li a:hover {
@@ -243,38 +243,38 @@ input[type="number"]::-webkit-inner-spin-button {
         }
         #tabs li.active a {
             height: 16px;
-            
-            background-color: white;        
+
+            background-color: white;
         }
-        #tabs li.active a:hover {            
+        #tabs li.active a:hover {
             cursor: default;
-            background-color: white; 
-        }        
+            background-color: white;
+        }
 #content {
     margin-top: 37px;
-    
+
     padding: 10px;
-    
+
     background-color: white;
     height: 429px;
-    
+
     overflow-x: hidden;
     overflow-y: auto;
-    
+
     border: 1px solid #848484;
-    
+
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
-} 
+}
 #status-bar {
     margin-left: -10px;
     margin-top: 10px;
-    
+
     width: 940px;
     height: 20px;
     line-height: 20px;
-    
+
     padding: 0 10px 0 10px;
-    
+
     border-top: 1px solid #7d7d79;
     background-color: #bfbeb5;
 }

@@ -6,7 +6,7 @@ var GUI_control = function() {
     this.operating_system;
     this.interval_array = [];
     this.timeout_array = [];
-    
+
     // check which operating system is user running
     if (navigator.appVersion.indexOf("Win") != -1)          this.operating_system = "Windows";
     else if (navigator.appVersion.indexOf("Mac") != -1)     this.operating_system = "MacOS";
@@ -23,19 +23,19 @@ var GUI_control = function() {
 // first = true/false if code should be ran initially before next timer interval hits
 GUI_control.prototype.interval_add = function(name, code, interval, first) {
     var data = {'name': name, 'timer': undefined, 'code': code, 'interval': interval, 'fired': 0, 'paused': false};
-    
+
     if (first == true) {
         code(); // execute code
-        
+
         data.fired++; // increment counter
     }
-    
+
     data.timer = setInterval(function() {
         code(); // execute code
-        
+
         data.fired++; // increment counter
     }, interval);
-    
+
     this.interval_array.push(data); // push to primary interval array
 };
 
@@ -44,13 +44,13 @@ GUI_control.prototype.interval_remove = function(name) {
     for (var i = 0; i < this.interval_array.length; i++) {
         if (this.interval_array[i].name == name) {
             clearInterval(this.interval_array[i].timer); // stop timer
-            
+
             this.interval_array.splice(i, 1); // remove element/object from array
-        
+
             return true;
         }
     }
-    
+
     return false;
 };
 
@@ -60,11 +60,11 @@ GUI_control.prototype.interval_pause = function(name) {
         if (this.interval_array[i].name == name) {
             clearInterval(this.interval_array[i].timer);
             this.interval_array[i].paused = true;
-        
+
             return true;
         }
     }
-    
+
     return false;
 };
 
@@ -73,19 +73,19 @@ GUI_control.prototype.interval_resume = function(name) {
     for (var i = 0; i < this.interval_array.length; i++) {
         if (this.interval_array[i].name == name && this.interval_array[i].paused) {
             var obj = this.interval_array[i];
-            
+
             obj.timer = setInterval(function() {
                 obj.code(); // execute code
-                
+
                 obj.fired++; // increment counter
             }, obj.interval);
-            
+
             obj.paused = false;
-        
+
             return true;
         }
     }
-    
+
     return false;
 };
 
@@ -94,7 +94,7 @@ GUI_control.prototype.interval_resume = function(name) {
 GUI_control.prototype.interval_kill_all = function(keep_array) {
     var self = this;
     var timers_killed = 0;
-    
+
     for (var i = (this.interval_array.length - 1); i >= 0; i--) { // reverse iteration
         var keep = false;
         if (keep_array) { // only run through the array if it exists
@@ -104,17 +104,17 @@ GUI_control.prototype.interval_kill_all = function(keep_array) {
                 }
             });
         }
-        
+
         if (!keep) {
             clearInterval(this.interval_array[i].timer); // stop timer
             this.interval_array[i].timer = undefined; // set timer property to undefined (mostly for debug purposes, but it doesn't hurt to have it here)
-            
+
             this.interval_array.splice(i, 1); // remove element/object from array
-            
+
             timers_killed++;
         }
     }
-    
+
     return timers_killed;
 };
 
@@ -126,10 +126,10 @@ GUI_control.prototype.timeout_add = function(name, code, timeout) {
     // start timer with "cleaning" callback
     var timer = setTimeout(function() {
         code(); // execute code
-        
+
         self.timeout_remove(name); // cleanup
     }, timeout);
-    
+
     this.timeout_array.push({'name': name, 'timer': timer, 'timeout': timeout}); // push to primary timeout array
 };
 
@@ -138,13 +138,13 @@ GUI_control.prototype.timeout_remove = function(name) {
     for (var i = 0; i < this.timeout_array.length; i++) {
         if (this.timeout_array[i].name == name) {
             clearTimeout(this.timeout_array[i].timer); // stop timer
-            
+
             this.timeout_array.splice(i, 1); // remove element/object from array
-            
+
             return true;
         }
     }
-    
+
     return false;
 };
 
@@ -152,15 +152,15 @@ GUI_control.prototype.timeout_remove = function(name) {
 // return = returns timers killed in last call
 GUI_control.prototype.timeout_kill_all = function() {
     var timers_killed = 0;
-    
+
     for (var i = 0; i < this.timeout_array.length; i++) {
         clearTimeout(this.timeout_array[i].timer); // stop timer
-        
+
         timers_killed++;
     }
-    
+
     this.timeout_array = []; // drop objects
-    
+
     return timers_killed;
 };
 
@@ -168,12 +168,12 @@ GUI_control.prototype.timeout_kill_all = function() {
 GUI_control.prototype.log = function(message) {
     var command_log = $('div#log');
     var d = new Date();
-    var time = ((d.getHours() < 10) ? '0' + d.getHours(): d.getHours()) 
-        + ':' + ((d.getMinutes() < 10) ? '0' + d.getMinutes(): d.getMinutes()) 
+    var time = ((d.getHours() < 10) ? '0' + d.getHours(): d.getHours())
+        + ':' + ((d.getMinutes() < 10) ? '0' + d.getMinutes(): d.getMinutes())
         + ':' + ((d.getSeconds() < 10) ? '0' + d.getSeconds(): d.getSeconds());
-    
+
     $('div.wrapper', command_log).append('<p>' + time + ' -- ' + message + '</p>');
-    command_log.scrollTop($('div.wrapper', command_log).height());   
+    command_log.scrollTop($('div.wrapper', command_log).height());
 };
 
 // Method is called every time a valid tab change event is received
@@ -181,56 +181,56 @@ GUI_control.prototype.log = function(message) {
 // default switch doesn't require callback to be set
 GUI_control.prototype.tab_switch_cleanup = function(callback) {
     MSP.callbacks_cleanup(); // we don't care about any old data that might or might not arrive
-    
+
     switch (this.active_tab) {
         case 'initial_setup':
             GUI.interval_remove('initial_setup_data_pull');
-            
+
             if (callback) callback();
             break;
         case 'pid_tuning':
             GUI.interval_remove('pid_data_poll');
-        
+
             if (callback) callback();
             break;
         case 'receiver':
             GUI.interval_remove('receiver_poll');
-            
+
             if (callback) callback();
             break;
         case 'auxiliary_configuration':
             GUI.interval_remove('aux_data_poll');
-            
+
             if (callback) callback();
             break;
         case 'servos':
             GUI.interval_remove('servos_data_poll');
-            
+
             if (callback) callback();
             break;
         case 'gps':
             GUI.interval_remove('gps_pull');
-            
+
             if (callback) callback();
             break;
         case 'motor_outputs':
             GUI.interval_remove('motor_poll');
-            
+
             // only enforce mincommand if necessary
             if (MOTOR_DATA != undefined) {
                 var update = false;
-                
+
                 for (var i = 0; i < MOTOR_DATA.length; i++) {
                     if (MOTOR_DATA[i] > MISC.mincommand) {
                         update = true;
                         break;
                     }
                 }
-                
+
                 if (update) {
                     // send data to mcu
                     var buffer_out = [];
-                    
+
                     for (var i = 0; i < 8; i++) {
                         buffer_out.push(lowByte(MISC.mincommand));
                         buffer_out.push(highByte(MISC.mincommand));
@@ -249,17 +249,17 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
         case 'sensors':
             GUI.interval_kill_all(['port_usage']);
             serial.empty_output_buffer();
-            
+
             // sensor data tab uses scrollbars, emptying the content before loading another tab
             // prevents scrollbar exposure to any of the tabs while new content is loaded in
             $('#content').empty();
-            
+
             if (callback) callback();
             break;
         case 'cli':
             var bufferOut = new ArrayBuffer(5);
             var bufView = new Uint8Array(bufferOut);
-            
+
             bufView[0] = 0x65; // e
             bufView[1] = 0x78; // x
             bufView[2] = 0x69; // i
@@ -274,18 +274,18 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                 GUI.timeout_add('waiting_for_bootup', function() {
                     CLI_active = false;
                     CLI_valid = false;
-                    
+
                     if (callback) callback();
                 }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
             });
             break;
-        
+
         case 'firmware_flasher':
             PortHandler.flush_callbacks();
-            
+
             if (callback) callback();
             break;
-            
+
         default:
             if (callback) callback();
     }

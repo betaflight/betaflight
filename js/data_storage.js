@@ -10,7 +10,7 @@ var CONFIG = {
     activeSensors: 0,
     mode:          0,
     profile:       0,
-    
+
     uid:           [0, 0, 0],
     accelerometerTrims: [0, 0]
 };
@@ -71,7 +71,7 @@ var GPS_DATA = {
     distanceToHome:  0,
     ditectionToHome: 0,
     update:          0,
-    
+
     // baseflight specific gps stuff
     chn:     new Array(),
     svid:    new Array(),

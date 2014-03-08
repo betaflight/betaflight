@@ -1,5 +1,5 @@
 .tab-motor_outputs {
-}    
+}
     .tab-motor_outputs .right.servos {
         margin-right: -10px;
     }
@@ -10,7 +10,7 @@
             float: left;
             width: 42px;
             margin-right: 10px;
-            
+
             text-align: center;
         }
         .tab-motor_outputs .titles .active {
@@ -18,24 +18,24 @@
         }
     .tab-motor_outputs .m-block {
         float: left;
-        
+
         width: 40px;
         height: 160px;
-        
+
         margin-right: 10px;
-        
+
         border: 1px solid silver;
         background-color: #e9e9e9;
     }
     .tab-motor_outputs .indicator {
         position: absolute;
-        
+
         width: 40px;
     }
     .tab-motor_outputs p {
         margin-top: 20px;
         padding: 5px;
-        
+
         border: 1px dotted silver;
     }
     .tab-motor_outputs .motor_testing {
@@ -46,7 +46,7 @@
         }
             .tab-motor_outputs .motor_testing .sliders input {
                 -webkit-appearance: slider-vertical;
-                
+
                 width: 48px;
             }
         .tab-motor_outputs .motor_testing .values {
@@ -54,23 +54,23 @@
         }
             .tab-motor_outputs .motor_testing .values li {
                 float: left;
-                
+
                 width: 51px;
-                
+
                 text-align: center;
             }
         .tab-motor_outputs .motor_testing .notice {
             float: right;
-            
+
             width: 420px;
-            
+
             margin-top: 20px;
             padding: 5px;
-            
+
             border: 1px dotted silver;
         }
             .tab-motor_outputs .motor_testing .notice input[type="checkbox"] {
                 margin-left: 5px;
-                
+
                 vertical-align: middle;
             }

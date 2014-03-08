@@ -9,7 +9,7 @@
     .tab-receiver .bars ul {
         height: 20px;
         line-height: 20px;
-        
+
         margin-bottom: 5px;
     }
     .tab-receiver .bars li {
@@ -21,7 +21,7 @@
         .tab-receiver .bars .meter meter {
             width: 200px;
             height: 20px;
-            
+
             border: 1px solid silver;
         }
     .tab-receiver .bars .value {
@@ -49,20 +49,20 @@
     }
     .tab-receiver .tunings table tr:nth-child(odd) {
         background-color: #ececec;
-    }    
+    }
     .tab-receiver .tunings table input {
         width: 116px;
         height: 20px;
         line-height: 20px;
-        
+
         padding: 0 5px 0 5px;
         text-align: right;
     }
     .tab-receiver #RX_plot {
         margin: auto;
         margin-top: 20px;
-        
-        width: 880px; 
+
+        width: 880px;
         height: 200px;
     }
     .tab-receiver .curves {
@@ -70,10 +70,10 @@
     }
     .tab-receiver .throttle_curve {
         margin: 0 10px 10px 0;
-        
+
         width: 220px;
         height: 58px;
-        
+
         border: 1px solid silver;
     }
     .tab-receiver .pitch_roll_curve {
@@ -81,24 +81,24 @@
 
         width: 220px;
         height: 58px;
-        
+
         border: 1px solid silver;
     }
     .tab-receiver .update,
     .tab-receiver .refresh {
         display: block;
         float: right;
-        
+
         margin-top: 22px;
-        
+
         height: 28px;
         line-height: 28px;
-        
+
         padding: 0 15px 0 15px;
-        
+
         text-align: center;
         font-weight: bold;
-        
+
         border: 1px solid silver;
         background-color: #ececec;
     }
@@ -115,6 +115,6 @@
     .tab-receiver select[name="rx_refresh_rate"] {
         float: right;
         margin-right: 20px;
-        
+
         border: 1px solid silver;
     }

@@ -24,20 +24,20 @@
     .tab-sensors #debug4 {
         height: 120px;
     }
-    
+
     .tab-sensors select {
         float: right;
-        
+
         border: 1px solid silver;
     }
 
 /* Flotr related styles */
-.flotr-legend {    
+.flotr-legend {
     padding: 2px;
     margin-left: 31px;
     top: 20px;
     border: 0;
-    
+
     background-color: white;
     opacity: 0.75;
 }

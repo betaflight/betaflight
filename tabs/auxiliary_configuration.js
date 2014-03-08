@@ -13,7 +13,7 @@ function tab_initialize_auxiliary_configuration() {
                             box_check(AUX_CONFIG_values[i], 0) +
                             box_check(AUX_CONFIG_values[i], 1) +
                             box_check(AUX_CONFIG_values[i], 2) +
-                            
+
                             box_check(AUX_CONFIG_values[i], 3) +
                             box_check(AUX_CONFIG_values[i], 4) +
                             box_check(AUX_CONFIG_values[i], 5) +
@@ -24,12 +24,12 @@ function tab_initialize_auxiliary_configuration() {
 
                             box_check(AUX_CONFIG_values[i], 9) +
                             box_check(AUX_CONFIG_values[i], 10) +
-                            box_check(AUX_CONFIG_values[i], 11) +            
+                            box_check(AUX_CONFIG_values[i], 11) +
                         '</tr>'
                     );
                 }
-                
-                // UI Hooks            
+
+                // UI Hooks
                 $('a.update').click(function() {
                     // catch the input changes
                     var main_needle = 0;
@@ -40,34 +40,34 @@ function tab_initialize_auxiliary_configuration() {
                         } else {
                             AUX_CONFIG_values[main_needle] = bit_clear(AUX_CONFIG_values[main_needle], needle);
                         }
-                        
+
                         needle++;
-                        
+
                         if (needle >= 12) { // 4 aux * 3 checkboxes = 12 bits per line
                             main_needle++;
-                            
+
                             needle = 0;
                         }
                     });
-                    
+
                     // send over the data
                     var AUX_val_buffer_out = new Array();
-                    
+
                     var needle = 0;
                     for (var i = 0; i < AUX_CONFIG_values.length; i++) {
                         AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
                         AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
                     }
-                    
-                    send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out); 
+
+                    send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out);
 
                     // Save changes to EEPROM
                     send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
                         GUI.log('EEPROM <span style="color: green">saved</span>');
-                        
+
                         var element = $('a.update');
                         element.addClass('success');
-                        
+
                         GUI.timeout_add('success_highlight', function() {
                             element.removeClass('success');
                         }, 2000);
@@ -80,16 +80,16 @@ function tab_initialize_auxiliary_configuration() {
                     send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, function() {
                         for (var i = 0; i < AUX_CONFIG.length; i++) {
                             if (bit_check(CONFIG.mode, i)) {
-                                $('td.name').eq(i).addClass('on').removeClass('off'); 
+                                $('td.name').eq(i).addClass('on').removeClass('off');
                             } else {
                                 $('td.name').eq(i).removeClass('on').removeClass('off');
-                                
+
                                 if (AUX_CONFIG_values[i] > 0) {
                                     $('td.name').eq(i).addClass('off');
                                 }
                             }
                         }
-                        
+
                         box_highlight(RC.AUX1, 2);
                         box_highlight(RC.AUX2, 5);
                         box_highlight(RC.AUX3, 8);
@@ -114,7 +114,7 @@ function box_check(num, pos) {
 function box_highlight(val, aux_num) {
     var tr = $('table.boxes tr');
     var pos = 0; // < 1300
-    
+
     if (val > 1300 && val < 1700) {
         pos = 1;
     } else if (val > 1700) {

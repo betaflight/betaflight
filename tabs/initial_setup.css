@@ -6,16 +6,16 @@
     }
         .tab-initial_setup .section a {
             display: block;
-            
+
             float: left;
-            
+
             width: 170px;
             height: 24px;
             line-height: 24px;
-            
+
             text-align: center;
             font-weight: bold;
-            
+
             border: 1px solid silver;
             background-color: #ececec;
         }
@@ -38,61 +38,61 @@
             }
         .tab-initial_setup .section p {
             margin-left: 180px;
-            
+
             padding: 5px;
-            
+
             border: 1px dotted silver;
         }
 #interactive_block {
     float: left;
-    
+
     height: 280px;
     width: 400px;
-    
+
     border: 1px solid silver;
     background-color: white;
 }
     #interactive_block .model {
         display: block;
         margin: 10px 0 0 10px;
-        
+
         font-weight: bold;
     }
     #interactive_block a.reset {
         position: absolute;
         display: block;
-        
+
         margin-left: 10px;
         margin-top: 215px;
-        
+
         height: 28px;
         line-height: 28px;
-        
+
         padding: 0 15px 0 15px;
-        
+
         text-align: center;
         font-weight: bold;
-        
+
         border: 1px solid silver;
         background-color: #ececec;
-        
+
         z-index: 100;
-    } 
+    }
     #interactive_block a.reset:hover {
         background-color: #dedcdc;
     }
     #perspective {
         -webkit-perspective: 800;
         -webkit-perspective-origin: 50% 150px; /* 150px = (350px / 2) - 25px */
-    }  
+    }
         #cube {
             position: relative;
             top: 110px;
             left: 150px; /* (916px / 2) - 50px */
-            
+
             height: 100px;
             width: 100px;
-            
+
             -webkit-transform-style: preserve-3d;
         }
             #cubePITCH {
@@ -103,7 +103,7 @@
             }
             #cube .face {
                 position: absolute;
-                
+
                 color: white;
                 font-size: 25px;
                 text-align: center;
@@ -114,7 +114,7 @@
                 line-height: 200px;
 
                 font-size: 20px;
-                
+
                 -webkit-transform: rotateX(-90deg) translateZ(-50px);
                 background-color: purple;
             }
@@ -122,7 +122,7 @@
                 width: 100px;
                 height: 50px;
                 line-height: 50px;
-                
+
                 -webkit-transform: translateZ(100px);
                 background-color: blue;
             }
@@ -130,7 +130,7 @@
                 width: 200px;
                 height: 50px;
                 line-height: 50px;
-                
+
                 -webkit-transform: rotateY(90deg);
                 background-color: green;
             }
@@ -138,7 +138,7 @@
                 width: 100px;
                 height: 50px;
                 line-height: 50px;
-                
+
                 -webkit-transform: rotateY(180deg) translateZ(100px);
                 background-color: black;
             }
@@ -146,7 +146,7 @@
                 width: 200px;
                 height: 50px;
                 line-height: 50px;
-                
+
                 -webkit-transform: rotateY(-90deg) translateZ(100px);
                 background-color: red;
             }
@@ -154,19 +154,19 @@
                 width: 100px;
                 height: 200px;
                 line-height: 200px;
-                
+
                 -webkit-transform: rotateX(90deg) translateZ(100px);
                 background-color: silver;
-            } 
+            }
     .tab-initial_setup .battery,
     .tab-initial_setup .throttle,
     .tab-initial_setup .acc-trim,
     .tab-initial_setup .magnetometer {
         float: left;
         display: block;
-        
+
         margin-left: 10px;
-        
+
         border: 1px solid silver;
     }
     .tab-initial_setup .magnetometer {
@@ -177,11 +177,11 @@
         .tab-initial_setup .acc-trim .head,
         .tab-initial_setup .magnetometer .head {
             display: block;
-            
+
             text-align: center;
             line-height: 20px;
             font-weight: bold;
-            
+
             border-bottom: 1px solid silver;
             background-color: #ececec;
         }
@@ -203,24 +203,24 @@
             float: left;
             width: 100px;
             height: 22px;
-            
+
             margin-bottom: 2px;
-            
+
             line-height: 22px;
         }
         .tab-initial_setup .battery dd {
             height: 22px;
-            
+
             margin-left: 100px;
             margin-bottom: 2px;
-            
+
             line-height: 22px;
         }
         .tab-initial_setup .battery input {
             width: 70px;
             height: 20px;
             line-height: 20px;
-            
+
             border: 1px solid silver;
             text-align: center;
         }
@@ -228,24 +228,24 @@
             float: left;
             width: 85px;
             height: 22px;
-            
+
             margin-bottom: 2px;
-            
+
             line-height: 22px;
         }
         .tab-initial_setup .throttle dd {
             height: 22px;
-            
+
             margin-left: 85px;
             margin-bottom: 2px;
-            
+
             line-height: 22px;
         }
         .tab-initial_setup .throttle input {
             width: 70px;
             height: 20px;
             line-height: 20px;
-            
+
             border: 1px solid silver;
             text-align: center;
         }
@@ -254,12 +254,12 @@
             width: 40px;
             height: 22px;
             line-height: 22px;
-            
+
             margin-bottom: 2px;
         }
         .tab-initial_setup .acc-trim dd {
             height: 22px;
-            
+
             margin-left: 40px;
             margin-bottom: 2px;
         }
@@ -267,7 +267,7 @@
             width: 70px;
             height: 20px;
             line-height: 20px;
-            
+
             border: 1px solid silver;
             text-align: center;
         }
@@ -276,13 +276,13 @@
             width: 100px;
             height: 20px;
             line-height: 22px;
-            
+
             margin-bottom: 2px;
         }
         .tab-initial_setup .magnetometer dd {
             height: 20px;
             line-height: 22px;
-            
+
             margin-left: 100px;
             margin-bottom: 2px;
         }
@@ -290,23 +290,23 @@
             width: 70px;
             height: 20px;
             line-height: 20px;
-            
+
             border: 1px solid silver;
             text-align: center;
         }
     .tab-initial_setup .update {
         display: block;
         float: left;
-        
+
         margin: 10px 0 0 10px;
-        
+
         width: 80px;
         height: 20px;
         line-height: 20px;
-        
+
         text-align: center;
         font-weight: bold;
-        
+
         border: 1px solid silver;
         background-color: #ececec;
     }
@@ -319,19 +319,19 @@
     .tab-initial_setup .compass-wrapper {
         display: none;
         position: absolute;
-        
+
         bottom: 10px;
         right: 10px;
 
         border: 1px solid silver;
         border-radius: 50%;
-    }    
+    }
     .tab-initial_setup #compass {
         position: relative;
-        
+
         width: 150px;
         height: 150px;
-        
+
         border: 6px dashed silver;
         border-radius: 50%;
     }
@@ -340,68 +340,68 @@
             font-weight: bold;
         }
         .tab-initial_setup #compass span:nth-child(1) {
-            left: 70px; 
+            left: 70px;
             top: 5px;
-        } 
+        }
         .tab-initial_setup #compass span:nth-child(2) {
-            right: 5px; 
+            right: 5px;
             top: 70px;
-        }  
+        }
         .tab-initial_setup #compass span:nth-child(3) {
-            left: 70px; 
+            left: 70px;
             bottom: 5px;
-        }  
+        }
         .tab-initial_setup #compass span:nth-child(4) {
-            left: 5px; 
+            left: 5px;
             top: 70px;
-        }          
+        }
         .tab-initial_setup #compass .pointer {
             position: absolute;
-            
+
             height: 150px;
             width: 150px;
-            
-           -webkit-transform: rotate(0deg); 
+
+           -webkit-transform: rotate(0deg);
         }
             .tab-initial_setup #compass .pointer .tip {
                 position: absolute;
-                
+
                 margin-top: 14px;
                 margin-left: -6px;
-                
-                width: 0; 
-                height: 0; 
-                
+
+                width: 0;
+                height: 0;
+
                 border-left: 10px solid transparent;
                 border-right: 10px solid transparent;
-                
+
                 border-bottom: 30px solid red;
             }
             .tab-initial_setup #compass .pointer .stick {
                 position: absolute;
                 display: block;
-                
+
                 margin-top: -22px;
                 margin-right: 69px;
-                
+
                 width: 4px;
                 height: 30px;
-                
+
                 background-color: black;
             }
             .tab-initial_setup #compass .value {
                 position: relative;
-                
+
                 top: 75px;
                 left: 53px;
-                
+
                 width: 40px;
-                height: 16px;    
+                height: 16px;
                 line-height: 16px;
-                
+
                 text-align: center;
-                
+
                 background-color: #f2f2f2;
-                
+
                 border: 1px solid silver;
             }
