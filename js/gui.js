@@ -37,6 +37,8 @@ GUI_control.prototype.interval_add = function(name, code, interval, first) {
     }, interval);
 
     this.interval_array.push(data); // push to primary interval array
+
+    return data;
 };
 
 // name = string
@@ -123,8 +125,10 @@ GUI_control.prototype.interval_kill_all = function(keep_array) {
 // timeout = timeout in miliseconds
 GUI_control.prototype.timeout_add = function(name, code, timeout) {
     var self = this;
+    var data = {'name': name, 'timer': undefined, 'timeout': timeout};
+
     // start timer with "cleaning" callback
-    var timer = setTimeout(function() {
+    data.timer = setTimeout(function() {
         code(); // execute code
 
         // remove object from array
@@ -132,7 +136,9 @@ GUI_control.prototype.timeout_add = function(name, code, timeout) {
         if (index > -1) self.timeout_array.splice(index, 1);
     }, timeout);
 
-    this.timeout_array.push({'name': name, 'timer': timer, 'timeout': timeout}); // push to primary timeout array
+    this.timeout_array.push(data); // push to primary timeout array
+
+    return data;
 };
 
 // name = string
