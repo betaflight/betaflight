@@ -447,22 +447,19 @@ MSP.process_data = function(code, message_buffer, message_length) {
     }
 
     // trigger callbacks, cleanup/remove callback after trigger
-    for (var i = (this.callbacks.length - 1); i >= 0; i--) { // itterating in reverse because we use .splice which modifies array length
+    for (var i = this.callbacks.length - 1; i >= 0; i--) { // itterating in reverse because we use .splice which modifies array length
         if (this.callbacks[i].code == code) {
-            // saving current obj for after-callback comparison
-            var obj = this.callbacks[i];
+            // save callback reference
+            var callback = this.callbacks[i].callback;
 
             // remove timeout
-            clearInterval(obj.timer);
-
-            // fire callback
-            if (obj.callback) obj.callback({'command': code, 'data': data, 'length': message_length});
+            clearInterval(this.callbacks[i].timer);
 
             // remove object from array
-            // we need to check if the callback object still exists as it could have been touched/moved/removed in callback routine
-            var index = this.callbacks.indexOf(obj);
+            this.callbacks.splice(i, 1);
 
-            if (index > -1) this.callbacks.splice(index, 1);
+            // fire callback
+            if (callback) callback({'command': code, 'data': data, 'length': message_length});
         }
     }
 };
