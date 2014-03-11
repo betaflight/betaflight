@@ -109,7 +109,6 @@ GUI_control.prototype.interval_kill_all = function(keep_array) {
 
         if (!keep) {
             clearInterval(this.interval_array[i].timer); // stop timer
-            this.interval_array[i].timer = undefined; // set timer property to undefined (mostly for debug purposes, but it doesn't hurt to have it here)
 
             this.interval_array.splice(i, 1); // remove element/object from array
 
