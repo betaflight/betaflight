@@ -48,6 +48,11 @@ $(document).ready(function() {
 
                     sensor_status(sensors_detected = 0); // reset active sensor indicators
                     $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
+
+                    // detach listeners and remove element data
+                    $('#content').empty();
+
+                    // load default html
                     tab_initialize_default();
                 }
 

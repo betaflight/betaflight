@@ -69,6 +69,9 @@ $(document).ready(function() {
                 // Highlight selected tab
                 $(self).parent().addClass('active');
 
+                // detach listeners and remove element data
+                $('#content').empty();
+
                 switch (tab) {
                     case 'tab_initial_setup':
                         tab_initialize_initial_setup();
