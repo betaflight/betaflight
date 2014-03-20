@@ -1,24 +1,55 @@
 function configuration_backup() {
     // request configuration data (one by one)
-    send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
-        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, function() {
-            send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, function() {
-                send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
-                    send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
-                        send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
-                            send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, function() {
-                                send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, function() {
-                                    backup();
-                                });
-                            });
-                        });
-                    });
-                });
-            });
-        });
-    });
 
-    var backup = function() {
+    function get_ident_data() {
+        send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
+            get_status_data();
+        });
+    }
+
+    function get_status_data() {
+        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, function() {
+            get_pid_data();
+        });
+    }
+
+    function get_pid_data() {
+        send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, function() {
+            get_rc_tuning_data();
+        });
+    }
+
+    function get_rc_tuning_data() {
+        send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+            get_box_names_data();
+        });
+    }
+
+    function get_box_names_data() {
+        send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
+            get_box_data();
+        });
+    }
+
+    function get_box_data() {
+        send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
+            get_acc_trim_data();
+        });
+    }
+
+    function get_acc_trim_data() {
+        send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, function() {
+            get_misc_data();
+        });
+    }
+
+    function get_misc_data() {
+        send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, function() {
+            backup();
+        });
+    }
+
+    function backup() {
         var chosenFileEntry = null;
 
         var accepts = [{
@@ -95,7 +126,10 @@ function configuration_backup() {
                 });
             });
         });
-    };
+    }
+
+    // begin fetching latest data
+    get_ident_data();
 }
 
 function configuration_restore() {
@@ -208,7 +242,7 @@ function configuration_upload() {
         rc_tuning();
     });
 
-    var rc_tuning = function() {
+    function rc_tuning() {
         // RC Tuning section
         var RC_tuning_buffer_out = new Array();
         RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
@@ -223,9 +257,9 @@ function configuration_upload() {
         send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, function() {
             aux();
         });
-    };
+    }
 
-    var aux = function() {
+    function aux() {
         // AUX section
         var AUX_val_buffer_out = new Array();
 
@@ -239,11 +273,10 @@ function configuration_upload() {
         send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, function() {
             trim();
         });
-    };
-
+    }
 
     // Trim section
-    var trim = function() {
+    function trim() {
         var buffer_out = new Array();
         buffer_out[0] = lowByte(CONFIG.accelerometerTrims[0]);
         buffer_out[1] = highByte(CONFIG.accelerometerTrims[0]);
@@ -254,9 +287,9 @@ function configuration_upload() {
         send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out, false, function() {
             misc();
         });
-    };
+    }
 
-    var misc = function() {
+    function misc() {
         // MISC
         // we also have to fill the unsupported bytes
         var buffer_out = new Array();
@@ -290,5 +323,5 @@ function configuration_upload() {
                 GUI.log('EEPROM <span style="color: green">saved</span>');
             });
         });
-    };
+    }
 }
