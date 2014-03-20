@@ -2,51 +2,35 @@ function configuration_backup() {
     // request configuration data (one by one)
 
     function get_ident_data() {
-        send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
-            get_status_data();
-        });
+        send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, get_status_data);
     }
 
     function get_status_data() {
-        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, function() {
-            get_pid_data();
-        });
+        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_pid_data);
     }
 
     function get_pid_data() {
-        send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, function() {
-            get_rc_tuning_data();
-        });
+        send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, get_rc_tuning_data);
     }
 
     function get_rc_tuning_data() {
-        send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
-            get_box_names_data();
-        });
+        send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, get_box_names_data);
     }
 
     function get_box_names_data() {
-        send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, function() {
-            get_box_data();
-        });
+        send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, get_box_data);
     }
 
     function get_box_data() {
-        send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, function() {
-            get_acc_trim_data();
-        });
+        send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, get_acc_trim_data);
     }
 
     function get_acc_trim_data() {
-        send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, function() {
-            get_misc_data();
-        });
+        send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, get_misc_data);
     }
 
     function get_misc_data() {
-        send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, function() {
-            backup();
-        });
+        send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, backup);
     }
 
     function backup() {
