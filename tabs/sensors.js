@@ -2,7 +2,7 @@ function tab_initialize_sensors() {
     ga_tracker.sendAppView('Sensor Page');
     GUI.active_tab = 'sensors';
 
-    $('#content').load("./tabs/sensors.html", function() {
+    $('#content').load("./tabs/sensors.html", function load_html() {
         // Always start with default/empty sensor data array, clean slate all
         for (var i = 0; i < 3; i++) SENSOR_DATA.accelerometer[i] = 0;
         for (var i = 0; i < 3; i++) SENSOR_DATA.gyroscope[i] = 0;
@@ -219,15 +219,15 @@ function tab_initialize_sensors() {
             GUI.interval_kill_all(['port_handler', 'port_usage']);
 
             // data pulling timers
-            GUI.interval_add('status_pull', function() {
+            GUI.interval_add('status_pull', function status_data_pull() {
                 send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
             }, 50);
 
-            GUI.interval_add('IMU_pull', function() {
+            GUI.interval_add('IMU_pull', function imu_data_pull() {
                 send_message(MSP_codes.MSP_RAW_IMU, MSP_codes.MSP_RAW_IMU);
             }, fastest);
 
-            GUI.interval_add('altitude_pull', function() {
+            GUI.interval_add('altitude_pull', function altitude_data_pull() {
                 send_message(MSP_codes.MSP_ALTITUDE, MSP_codes.MSP_ALTITUDE);
 
                 baro_data[0].push([samples_baro_i, SENSOR_DATA.altitude]);
@@ -243,7 +243,7 @@ function tab_initialize_sensors() {
                 samples_baro_i++;
             }, rates.baro);
 
-            GUI.interval_add('debug_pull', function() {
+            GUI.interval_add('debug_pull', function debug_data_pull() {
                 send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG);
 
                 for (var i = 0; i < 4; i++) {
@@ -268,7 +268,7 @@ function tab_initialize_sensors() {
             }, rates.debug);
 
             // processing timers
-            GUI.interval_add('process_gyro', function() {
+            GUI.interval_add('process_gyro', function process_gyro_data() {
                 gyro_data[0].push([samples_gyro_i, SENSOR_DATA.gyroscope[0]]);
                 gyro_data[1].push([samples_gyro_i, SENSOR_DATA.gyroscope[1]]);
                 gyro_data[2].push([samples_gyro_i, SENSOR_DATA.gyroscope[2]]);
@@ -288,7 +288,7 @@ function tab_initialize_sensors() {
                 samples_gyro_i++;
             }, rates.gyro, true);
 
-            GUI.interval_add('process_accel', function() {
+            GUI.interval_add('process_accel', function process_accel_data() {
                 accel_data[0].push([samples_accel_i, SENSOR_DATA.accelerometer[0]]);
                 accel_data[1].push([samples_accel_i, SENSOR_DATA.accelerometer[1]]);
                 accel_data[2].push([samples_accel_i, SENSOR_DATA.accelerometer[2]]);
@@ -308,7 +308,7 @@ function tab_initialize_sensors() {
                 samples_accel_i++;
             }, rates.accel, true);
 
-            GUI.interval_add('process_mag', function() {
+            GUI.interval_add('process_mag', function process_mag_data() {
                 mag_data[0].push([samples_mag_i, SENSOR_DATA.magnetometer[0]]);
                 mag_data[1].push([samples_mag_i, SENSOR_DATA.magnetometer[1]]);
                 mag_data[2].push([samples_mag_i, SENSOR_DATA.magnetometer[2]]);
