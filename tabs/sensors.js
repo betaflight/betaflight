@@ -198,7 +198,6 @@ function tab_initialize_sensors() {
                 'debug':  parseInt($('.tab-sensors select').eq(4).val())
             };
 
-
             // handling of "data pulling" is a little bit funky here, as MSP_RAW_IMU contains values for gyro/accel/mag but not baro
             // this means that setting a slower refresh rate on any of the attributes would have no effect
             // what we will do instead is = determinate the fastest refresh rate for those 3 attributes, use that as a "polling rate"
@@ -212,6 +211,9 @@ function tab_initialize_sensors() {
             if (rates.mag < fastest) {
                 fastest = rates.mag;
             }
+
+            // store current/latest refresh rates in the storage
+            chrome.storage.local.set({'sensor_refresh_rates': rates});
 
             // timer initialization
             GUI.interval_kill_all(['port_handler', 'port_usage']);
@@ -236,7 +238,7 @@ function tab_initialize_sensors() {
                 }
 
                 Flotr.draw(e_graph_baro, [
-                    {data: baro_data[0], label: "X - meters [" + SENSOR_DATA.altitude.toFixed(2) + "]"} ], baro_options);
+                    {data: baro_data[0], label: "Meters [" + SENSOR_DATA.altitude.toFixed(2) + "]"} ], baro_options);
 
                 samples_baro_i++;
             }, rates.baro);
@@ -319,15 +321,12 @@ function tab_initialize_sensors() {
                 }
 
                 Flotr.draw(e_graph_mag, [
-                    {data: mag_data[1], label: "X - Ga [" + SENSOR_DATA.magnetometer[0].toFixed(2) + "]"},
-                    {data: mag_data[0], label: "Y - Ga [" + SENSOR_DATA.magnetometer[1].toFixed(2) + "]"},
-                    {data: mag_data[2], label: "Z - Ga [" + SENSOR_DATA.magnetometer[2].toFixed(2) + "]"} ], mag_options);
+                    {data: mag_data[1], label: "X - gauss [" + SENSOR_DATA.magnetometer[0].toFixed(2) + "]"},
+                    {data: mag_data[0], label: "Y - gauss [" + SENSOR_DATA.magnetometer[1].toFixed(2) + "]"},
+                    {data: mag_data[2], label: "Z - gauss [" + SENSOR_DATA.magnetometer[2].toFixed(2) + "]"} ], mag_options);
 
                 samples_mag_i++;
             }, rates.mag, true);
-
-            // store current/latest refresh rates in the storage
-            chrome.storage.local.set({'sensor_refresh_rates': rates});
         });
     });
 }

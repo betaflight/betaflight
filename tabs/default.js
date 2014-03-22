@@ -6,8 +6,6 @@ function tab_initialize_default() {
         $('div.changelog.configurator .wrapper').load('./changelog.html');
 
         // UI Hooks
-        $('a.firmware_flasher').click(function() {
-            tab_initialize_firmware_flasher();
-        });
+        $('a.firmware_flasher').click(tab_initialize_firmware_flasher);
     });
 }
