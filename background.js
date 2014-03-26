@@ -48,10 +48,10 @@ chrome.runtime.onInstalled.addListener(function(details) {
         var options = {
             priority: 0,
             type: 'basic',
-            title: 'Baseflight Configurator Update',
-            message: 'Application just updated to version: ' + manifest.version,
+            title: manifest.name,
+            message: chrome.i18n.getMessage('notifications_app_just_updated_to_version', [manifest.version]),
             iconUrl: '/images/icon_128.png',
-            buttons: [{'title': 'Click this button to start the application'}]
+            buttons: [{'title': chrome.i18n.getMessage('notifications_click_here_to_start_app')}]
         };
 
         chrome.notifications.create('baseflight_update', options, function(notificationId) {

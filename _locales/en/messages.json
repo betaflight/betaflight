@@ -1,2 +1,8 @@
 {
+    "notifications_app_just_updated_to_version": {
+        "message": "Application just updated to version: $1"
+    },
+    "notifications_click_here_to_start_app": {
+        "message": "Click here to start the application"
+    }
 }
