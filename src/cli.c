@@ -50,8 +50,8 @@ static const char * const mixerNames[] = {
 // sync this with AvailableFeatures enum from board.h
 static const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SERIALRX", "MOTOR_STOP",
-    "SERVO_TILT", "GYRO_SMOOTHING", "LED_RING", "GPS",
-    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D", "SOFTSERIAL",
+    "SERVO_TILT", "SOFTSERIAL", "LED_RING", "GPS",
+    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D", 
     NULL
 };
 
@@ -120,7 +120,7 @@ const clivalue_t valueTable[] = {
     { "deadband3d_high", VAR_UINT16, &mcfg.deadband3d_high, 0, 2000 },
     { "neutral3d", VAR_UINT16, &mcfg.neutral3d, 0, 2000 },
     { "deadband3d_throttle", VAR_UINT16, &mcfg.deadband3d_throttle, 0, 2000 },
-    { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 498 },
+    { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 32000 },
     { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
     { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
     { "flaps_speed", VAR_UINT8, &mcfg.flaps_speed, 0, 100 },
@@ -130,7 +130,7 @@ const clivalue_t valueTable[] = {
     { "softserial_inverted", VAR_UINT8, &mcfg.softserial_inverted, 0, 1 },
     { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, 3 },
     { "gps_baudrate", VAR_INT8, &mcfg.gps_baudrate, -1, 4 },
-    { "serialrx_type", VAR_UINT8, &mcfg.serialrx_type, 0, 2 },
+    { "serialrx_type", VAR_UINT8, &mcfg.serialrx_type, 0, 3 },
     { "telemetry_softserial", VAR_UINT8, &mcfg.telemetry_softserial, 0, 1 },
     { "telemetry_switch", VAR_UINT8, &mcfg.telemetry_switch, 0, 1 },
     { "vbatscale", VAR_UINT8, &mcfg.vbatscale, 10, 200 },
@@ -145,6 +145,7 @@ const clivalue_t valueTable[] = {
     { "align_board_yaw", VAR_INT16, &mcfg.board_align_yaw, -180, 360 },
     { "yaw_control_direction", VAR_INT8, &mcfg.yaw_control_direction, -1, 1 },
     { "acc_hardware", VAR_UINT8, &mcfg.acc_hardware, 0, 5 },
+    { "max_angle_inclination", VAR_UINT16, &mcfg.max_angle_inclination, 100, 900 },
     { "moron_threshold", VAR_UINT8, &mcfg.moron_threshold, 0, 128 },
     { "gyro_lpf", VAR_UINT16, &mcfg.gyro_lpf, 0, 256 },
     { "gyro_cmpf_factor", VAR_UINT16, &mcfg.gyro_cmpf_factor, 100, 1000 },
@@ -209,6 +210,9 @@ const clivalue_t valueTable[] = {
     { "p_level", VAR_UINT8, &cfg.P8[PIDLEVEL], 0, 200 },
     { "i_level", VAR_UINT8, &cfg.I8[PIDLEVEL], 0, 200 },
     { "d_level", VAR_UINT8, &cfg.D8[PIDLEVEL], 0, 200 },
+    { "p_vel", VAR_UINT8, &cfg.P8[PIDVEL], 0, 200 },
+    { "i_vel", VAR_UINT8, &cfg.I8[PIDVEL], 0, 200 },
+    { "d_vel", VAR_UINT8, &cfg.D8[PIDVEL], 0, 200 },
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))

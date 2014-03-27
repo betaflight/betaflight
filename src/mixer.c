@@ -459,7 +459,7 @@ void mixTable(void)
                 servo[1] += (-(int32_t)cfg.servoConf[0].rate) * angle[PITCH] / 50 + (int32_t)cfg.servoConf[1].rate * angle[ROLL] / 50;
             } else {
                 servo[0] += (int32_t)cfg.servoConf[0].rate * angle[PITCH] / 50;
-                servo[1] += (int32_t)cfg.servoConf[0].rate * angle[ROLL]  / 50;
+                servo[1] += (int32_t)cfg.servoConf[1].rate * angle[ROLL]  / 50;
             }
         }
     }

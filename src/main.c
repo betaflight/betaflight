@@ -70,7 +70,12 @@ int main(void)
     pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = mcfg.motor_pwm_rate;
     pwm_params.servoPwmRate = mcfg.servo_pwm_rate;
-    pwm_params.idlePulse = feature(FEATURE_3D) ? mcfg.neutral3d : 0;
+    pwm_params.idlePulse = PULSE_1MS; // standard PWM for brushless ESC (default, overridden below)
+    if (feature(FEATURE_3D))
+        pwm_params.idlePulse = mcfg.neutral3d;
+    if (pwm_params.motorPwmRate > 500)
+        pwm_params.idlePulse = 0; // brushed motors
+    pwm_params.servoCenterPulse = mcfg.midrc;
     pwm_params.failsafeThreshold = cfg.failsafe_detect_threshold;
     switch (mcfg.power_adc_channel) {
         case 1:
@@ -98,9 +103,11 @@ int main(void)
             case SERIALRX_SPEKTRUM2048:
                 spektrumInit(&rcReadRawFunc);
                 break;
-
             case SERIALRX_SBUS:
                 sbusInit(&rcReadRawFunc);
+                break;
+            case SERIALRX_SUMD:
+                sumdInit(&rcReadRawFunc);
                 break;
         }
     } else { // spektrum and GPS are mutually exclusive

@@ -66,7 +66,7 @@ typedef enum {
     FEATURE_SERIALRX = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,
     FEATURE_SERVO_TILT = 1 << 5,
-    FEATURE_GYRO_SMOOTHING = 1 << 6,
+    FEATURE_SOFTSERIAL = 1 << 6,
     FEATURE_LED_RING = 1 << 7,
     FEATURE_GPS = 1 << 8,
     FEATURE_FAILSAFE = 1 << 9,
@@ -75,13 +75,13 @@ typedef enum {
     FEATURE_POWERMETER = 1 << 12,
     FEATURE_VARIO = 1 << 13,
     FEATURE_3D = 1 << 14,
-    FEATURE_SOFTSERIAL = 1 << 15,
 } AvailableFeatures;
 
 typedef enum {
     SERIALRX_SPEKTRUM1024 = 0,
     SERIALRX_SPEKTRUM2048 = 1,
     SERIALRX_SBUS = 2,
+    SERIALRX_SUMD = 3,
 } SerialRXType;
 
 typedef enum {

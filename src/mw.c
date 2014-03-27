@@ -233,22 +233,29 @@ uint16_t pwmReadRawRC(uint8_t chan)
 
 void computeRC(void)
 {
-    static int16_t rcData4Values[8][4], rcDataMean[8];
-    static uint8_t rc4ValuesIndex = 0;
-    uint8_t chan, a;
+    uint8_t chan;
 
-    rc4ValuesIndex++;
-    for (chan = 0; chan < 8; chan++) {
-        rcData4Values[chan][rc4ValuesIndex % 4] = rcReadRawFunc(chan);
-        rcDataMean[chan] = 0;
-        for (a = 0; a < 4; a++)
-            rcDataMean[chan] += rcData4Values[chan][a];
+    if (feature(FEATURE_SERIALRX)) {
+        for (chan = 0; chan < 8; chan++)
+            rcData[chan] = rcReadRawFunc(chan);
+    } else {
+        static int16_t rcData4Values[8][4], rcDataMean[8];
+        static uint8_t rc4ValuesIndex = 0;
+        uint8_t a;
 
-        rcDataMean[chan] = (rcDataMean[chan] + 2) / 4;
-        if (rcDataMean[chan] < rcData[chan] - 3)
-            rcData[chan] = rcDataMean[chan] + 2;
-        if (rcDataMean[chan] > rcData[chan] + 3)
-            rcData[chan] = rcDataMean[chan] - 2;
+        rc4ValuesIndex++;
+        for (chan = 0; chan < 8; chan++) {
+            rcData4Values[chan][rc4ValuesIndex % 4] = rcReadRawFunc(chan);
+            rcDataMean[chan] = 0;
+            for (a = 0; a < 4; a++)
+                rcDataMean[chan] += rcData4Values[chan][a];
+
+            rcDataMean[chan] = (rcDataMean[chan] + 2) / 4;
+            if (rcDataMean[chan] < rcData[chan] - 3)
+                rcData[chan] = rcDataMean[chan] + 2;
+            if (rcDataMean[chan] > rcData[chan] + 3)
+                rcData[chan] = rcDataMean[chan] - 2;
+        }
     }
 }
 
@@ -295,7 +302,7 @@ static void pidMultiWii(void)
     for (axis = 0; axis < 3; axis++) {
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
             // 50 degrees max inclination
-            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis];
+            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)mcfg.max_angle_inclination), +mcfg.max_angle_inclination) - angle[axis] + cfg.angleTrim[axis];
             PTermACC = errorAngle * cfg.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
             PTermACC = constrain(PTermACC, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
 
@@ -353,8 +360,8 @@ static void pidRewrite(void)
     for (axis = 0; axis < 3; axis++) {
         // -----Get the desired angle rate depending on flight mode
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2 ) { // MODE relying on ACC
-            // calculate error and limit the angle to 50 degrees max inclination
-            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -500, +500) - angle[axis] + cfg.angleTrim[axis]; // 16 bits is ok here
+            // calculate error and limit the angle to max configured inclination
+            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int)mcfg.max_angle_inclination), +mcfg.max_angle_inclination) - angle[axis] + cfg.angleTrim[axis]; // 16 bits is ok here
         }
         if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
             AngleRateTmp = (((int32_t)(cfg.yawRate + 27) * rcCommand[2]) >> 5);
@@ -446,6 +453,9 @@ void loop(void)
                 break;
             case SERIALRX_SBUS:
                 rcReady = sbusFrameComplete();
+                break;
+            case SERIALRX_SUMD:
+                rcReady = sumdFrameComplete();
                 break;
         }
     }

@@ -57,20 +57,7 @@ void computeIMU(void)
         accADC[Z] = 0;
     }
 
-    if (feature(FEATURE_GYRO_SMOOTHING)) {
-        static uint8_t Smoothing[3] = { 0, 0, 0 };
-        static int16_t gyroSmooth[3] = { 0, 0, 0 };
-        if (Smoothing[0] == 0) {
-            // initialize
-            Smoothing[ROLL] = (mcfg.gyro_smoothing_factor >> 16) & 0xff;
-            Smoothing[PITCH] = (mcfg.gyro_smoothing_factor >> 8) & 0xff;
-            Smoothing[YAW] = (mcfg.gyro_smoothing_factor) & 0xff;
-        }
-        for (axis = 0; axis < 3; axis++) {
-            gyroData[axis] = (int16_t)(((int32_t)((int32_t)gyroSmooth[axis] * (Smoothing[axis] - 1)) + gyroADC[axis] + 1) / Smoothing[axis]);
-            gyroSmooth[axis] = gyroData[axis];
-        }
-    } else if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
+    if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
         gyroData[YAW] = (gyroYawSmooth * 2 + gyroADC[YAW]) / 3;
         gyroYawSmooth = gyroData[YAW];
         gyroData[ROLL] = gyroADC[ROLL];
@@ -174,7 +161,7 @@ int32_t applyDeadband(int32_t value, int32_t deadband)
     return value;
 }
 
-#define F_CUT_ACCZ 20.0f
+#define F_CUT_ACCZ 10.0f // 10Hz should still be fast enough
 static const float fc_acc = 0.5f / (M_PI * F_CUT_ACCZ);
 
 // rotate acc into Earth frame and calculate acceleration in it
@@ -332,8 +319,11 @@ int getEstimatedAltitude(void)
     int32_t baroVel;
     int32_t vel_tmp;
     int32_t BaroAlt_tmp;
+    int32_t setVel;
     float dt;
     float vel_acc;
+    float accZ_tmp;
+    static float accZ_old = 0.0f;
     static float vel = 0.0f;
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
@@ -364,7 +354,8 @@ int getEstimatedAltitude(void)
     dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
     // Integrator - velocity, cm/sec
-    vel_acc = (float)accSum[2] * accVelScale * (float)accTimeSum / (float)accSumCount;
+    accZ_tmp = (float)accSum[2] / (float)accSumCount;
+    vel_acc = accZ_tmp * accVelScale * (float)accTimeSum;
 
     // Integrator - Altitude in cm
     accAlt += (vel_acc * 0.5f) * dt  + vel * dt;                                        // integrate velocity to get distance (x= a/2 * t^2)
@@ -380,16 +371,6 @@ int getEstimatedAltitude(void)
 
     accSum_reset();
 
-    //P
-    error = constrain(AltHold - EstAlt, -300, 300);
-    error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
-    BaroPID = constrain((cfg.P8[PIDALT] * error / 128), -200, +200);
-
-    //I
-    errorAltitudeI += cfg.I8[PIDALT] * error / 64;
-    errorAltitudeI = constrain(errorAltitudeI, -50000, 50000);
-    BaroPID += errorAltitudeI / 512;     // I in range +/-100
-
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = BaroAlt;
 
@@ -399,13 +380,30 @@ int getEstimatedAltitude(void)
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
     vel = vel * cfg.baro_cf_vel + baroVel * (1 - cfg.baro_cf_vel);
-    vel = constrain(vel, -1000, 1000);                // limit max velocity to +/- 10m/s (36km/h)
 
-    // D
+    // set vario
     vel_tmp = lrintf(vel);
     vel_tmp = applyDeadband(vel_tmp, 5);
     vario = vel_tmp;
-    BaroPID -= constrain(cfg.D8[PIDALT] * vel_tmp / 16, -150, 150);
+
+    // Altitude P-Controller
+    error = constrain(AltHold - EstAlt, -500, 500);
+    error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
+    setVel = constrain((cfg.P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+
+    // Velocity PID-Controller
+    // P
+    error = setVel - lrintf(vel);
+    BaroPID = constrain((cfg.P8[PIDVEL] * error / 32), -300, +300);
+
+    // I
+    errorAltitudeI += (cfg.I8[PIDVEL] * error) / 8;
+    errorAltitudeI = constrain(errorAltitudeI, -(1024 * 200), (1024 * 200));
+    BaroPID += errorAltitudeI / 1024;     // I in range +/-200
+
+    // D
+    accZ_old = accZ_tmp;
+    BaroPID -= constrain(cfg.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
 
     return 1;
 }

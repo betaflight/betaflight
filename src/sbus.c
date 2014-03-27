@@ -6,7 +6,6 @@
 #define SBUS_MAX_CHANNEL 8
 #define SBUS_FRAME_SIZE 25
 #define SBUS_SYNCBYTE 0x0F
-#define SBUS_ENDBYTE 0x00
 #define SBUS_OFFSET 988
 
 static bool sbusFrameDone = false;
@@ -23,7 +22,7 @@ void sbusInit(rcReadRawDataPtr *callback)
     int b;
     for (b = 0; b < SBUS_MAX_CHANNEL; b ++) 
         sbusChannelData[b] = 2 * (mcfg.midrc - SBUS_OFFSET);
-    core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, MODE_RX);
+    core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, MODE_RX | MODE_SBUS);
     if (callback)
         *callback = sbusReadRawRC;
     core.numRCChannels = SBUS_MAX_CHANNEL;
@@ -61,7 +60,7 @@ static void sbusDataReceive(uint16_t c)
     static uint8_t  sbusFramePosition;
 
     sbusTime = micros();
-    if ((sbusTime - sbusTimeLast) > 4000)
+    if ((sbusTime - sbusTimeLast) > 2500) // sbus2 fast timing
         sbusFramePosition = 0;
     sbusTimeLast = sbusTime;
  
@@ -73,8 +72,7 @@ static void sbusDataReceive(uint16_t c)
         sbus.in[sbusFramePosition - 1] = (uint8_t)c;
 
     if (sbusFramePosition == SBUS_FRAME_SIZE - 1) {
-        if (sbus.in[sbusFramePosition - 1] == SBUS_ENDBYTE)
-            sbusFrameDone = true;
+        sbusFrameDone = true;
         sbusFramePosition = 0;
     } else {
         sbusFramePosition++;

@@ -1,7 +1,5 @@
 #include "board.h"
 
-#define PULSE_1MS       (1000) // 1ms pulse width
-
 /*
     Configuration maps:
 
@@ -53,10 +51,13 @@ enum {
     TYPE_S = 0x80
 };
 
+typedef void (* pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
+
 static pwmPortData_t pwmPorts[MAX_PORTS];
 static uint16_t captures[MAX_INPUTS];
 static pwmPortData_t *motors[MAX_MOTORS];
 static pwmPortData_t *servos[MAX_SERVOS];
+static pwmWriteFuncPtr pwmWritePtr = NULL;
 static uint8_t numMotors = 0;
 static uint8_t numServos = 0;
 static uint8_t  numInputs = 0;
@@ -138,6 +139,7 @@ static const uint8_t * const hardwareMaps[] = {
 };
 
 #define PWM_TIMER_MHZ 1
+#define PWM_BRUSHED_TIMER_MHZ 8
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
 {
@@ -195,10 +197,10 @@ static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, GPIO_Mode mode)
     gpioInit(gpio, &cfg);
 }
 
-static pwmPortData_t *pwmOutConfig(uint8_t port, uint16_t period, uint16_t value)
+static pwmPortData_t *pwmOutConfig(uint8_t port, uint8_t mhz, uint16_t period, uint16_t value)
 {
     pwmPortData_t *p = &pwmPorts[port];
-    configTimeBase(timerHardware[port].tim, period, PWM_TIMER_MHZ);
+    configTimeBase(timerHardware[port].tim, period, mhz);
     pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, Mode_AF_PP);
     pwmOCConfig(timerHardware[port].tim, timerHardware[port].channel, value);
     // Needed only on TIM1
@@ -220,6 +222,7 @@ static pwmPortData_t *pwmOutConfig(uint8_t port, uint16_t period, uint16_t value
             p->ccr = &timerHardware[port].tim->CCR4;
             break;
     }
+    p->period = period;
     return p;
 }
 
@@ -290,6 +293,16 @@ static void pwmCallback(uint8_t port, uint16_t capture)
     }
 }
 
+static void pwmWriteBrushed(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = (value - 1000) * motors[index]->period / 1000;
+}
+
+static void pwmWriteStandard(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = value;
+}
+
 bool pwmInit(drv_pwm_config_t *init)
 {
     int i = 0;
@@ -354,19 +367,30 @@ bool pwmInit(drv_pwm_config_t *init)
             pwmInConfig(port, pwmCallback, numInputs);
             numInputs++;
         } else if (mask & TYPE_M) {
-            motors[numMotors++] = pwmOutConfig(port, 1000000 / init->motorPwmRate, init->idlePulse > 0 ? init->idlePulse : PULSE_1MS);
+            uint32_t hz, mhz;
+            if (init->motorPwmRate > 500)
+                mhz = PWM_BRUSHED_TIMER_MHZ;
+            else
+                mhz = PWM_TIMER_MHZ;
+            hz = mhz * 1000000;
+
+            motors[numMotors++] = pwmOutConfig(port, mhz, hz / init->motorPwmRate, init->idlePulse);
         } else if (mask & TYPE_S) {
-            servos[numServos++] = pwmOutConfig(port, 1000000 / init->servoPwmRate, PULSE_1MS);
+            servos[numServos++] = pwmOutConfig(port, PWM_TIMER_MHZ, 1000000 / init->servoPwmRate, init->servoCenterPulse);
         }
     }
 
+    // determine motor writer function
+    pwmWritePtr = pwmWriteStandard;
+    if (init->motorPwmRate > 500)
+        pwmWritePtr = pwmWriteBrushed;
     return false;
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
     if (index < numMotors)
-        *motors[index]->ccr = value;
+        pwmWritePtr(index, value);
 }
 
 void pwmWriteServo(uint8_t index, uint16_t value)
