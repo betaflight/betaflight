@@ -182,31 +182,40 @@ function tab_initialize_receiver() {
                 send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, update_ui);
             }
 
+            var meter_array = [];
+            $('.tab-receiver meter').each(function() {
+                meter_array.push($(this));
+            });
+
+            var meter_values_array = [];
+            $('.tab-receiver .value').each(function() {
+                meter_values_array.push($(this));
+            });
+
             function update_ui() {
-                $('.tab-receiver meter:eq(0)').val(RC.throttle);
-                $('.tab-receiver .value:eq(0)').html(RC.throttle);
+                meter_array[0].val(RC.throttle);
+                meter_values_array[0].text(RC.throttle);
 
-                $('.tab-receiver meter:eq(1)').val(RC.pitch);
-                $('.tab-receiver .value:eq(1)').html(RC.pitch);
+                meter_array[1].val(RC.pitch);
+                meter_values_array[1].text(RC.pitch);
 
-                $('.tab-receiver meter:eq(2)').val(RC.roll);
-                $('.tab-receiver .value:eq(2)').html(RC.roll);
+                meter_array[2].val(RC.roll);
+                meter_values_array[2].text(RC.roll);
 
-                $('.tab-receiver meter:eq(3)').val(RC.yaw);
-                $('.tab-receiver .value:eq(3)').html(RC.yaw);
+                meter_array[3].val(RC.yaw);
+                meter_values_array[3].text(RC.yaw);
 
+                meter_array[4].val(RC.AUX1);
+                meter_values_array[4].text(RC.AUX1);
 
-                $('.tab-receiver meter:eq(4)').val(RC.AUX1);
-                $('.tab-receiver .value:eq(4)').html(RC.AUX1);
+                meter_array[5].val(RC.AUX2);
+                meter_values_array[5].text(RC.AUX2);
 
-                $('.tab-receiver meter:eq(5)').val(RC.AUX2);
-                $('.tab-receiver .value:eq(5)').html(RC.AUX2);
+                meter_array[6].val(RC.AUX3);
+                meter_values_array[6].text(RC.AUX3);
 
-                $('.tab-receiver meter:eq(6)').val(RC.AUX3);
-                $('.tab-receiver .value:eq(6)').html(RC.AUX3);
-
-                $('.tab-receiver meter:eq(7)').val(RC.AUX4);
-                $('.tab-receiver .value:eq(7)').html(RC.AUX4);
+                meter_array[7].val(RC.AUX4);
+                meter_values_array[7].text(RC.AUX4);
 
                 // push latest data to the main array
                 RX_plot_data[0].push([samples_i, RC.throttle]);

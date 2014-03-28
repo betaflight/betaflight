@@ -312,7 +312,7 @@ function tab_initialize_sensors() {
                     // Remove old data from array
                     while (debug_data[i].length > 300) {
                         debug_data[i].shift();
-                  }
+                    }
                 }
 
                 Flotr.draw(e_graph_debug1, [
