@@ -254,7 +254,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             }
             break;
         case 'sensors':
-            GUI.interval_kill_all(['port_usage']);
+            GUI.interval_kill_all();
             serial.empty_output_buffer();
 
             // sensor data tab uses scrollbars, emptying the content before loading another tab

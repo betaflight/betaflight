@@ -4,5 +4,24 @@
     },
     "notifications_click_here_to_start_app": {
         "message": "Click here to start the application"
+    },
+
+    "statusbar_port_utilization": {
+        "message": "Port utilization:"
+    },
+    "statusbar_usage_download": {
+        "message": "D: $1%"
+    },
+    "statusbar_usage_upload": {
+        "message": "U: $1%"
+    },
+    "statusbar_packet_error": {
+        "message": "Packet error:"
+    },
+    "statusbar_firmware_version": {
+        "message": "Firmware Version:"
+    },
+    "statusbar_cycle_time": {
+        "message": "Cycle Time:"
     }
 }

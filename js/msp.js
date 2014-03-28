@@ -51,9 +51,6 @@ var MSP_codes = {
     MSP_GPSSVINFO:          164  // get Signal Strength (only U-Blox)
 };
 
-
-var char_counter = 0; // this need to be redone or removed
-
 var MSP = {
     state:                      0,
     message_status:             1,
@@ -155,8 +152,6 @@ MSP.read = function(readInfo) {
                 this.state = 0;
                 break;
         }
-
-        char_counter++;
     }
 };
 

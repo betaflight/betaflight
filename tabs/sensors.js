@@ -216,7 +216,7 @@ function tab_initialize_sensors() {
             chrome.storage.local.set({'sensor_refresh_rates': rates});
 
             // timer initialization
-            GUI.interval_kill_all(['port_handler', 'port_usage']);
+            GUI.interval_kill_all();
 
             // data pulling timers
             GUI.interval_add('status_pull', function status_data_pull() {

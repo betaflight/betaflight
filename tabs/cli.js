@@ -154,8 +154,6 @@ function handle_CLI(readInfo) {
             // try to catch part of valid CLI enter message
             CLI_validate_text += String.fromCharCode(data[i]);
         }
-
-        char_counter++;
     }
 
     if (!CLI_valid && CLI_validate_text.indexOf('CLI') != -1) {

@@ -1,10 +1,11 @@
 var serial = {
-    connectionId: -1,
+    connectionId:   -1,
+    bitrate:        0,
     bytes_received: 0,
-    bytes_sent: 0,
+    bytes_sent:     0,
 
-    transmitting: false,
-    output_buffer: [],
+    transmitting:   false,
+    output_buffer:  [],
 
     connect: function(path, options, callback) {
         var self = this;
@@ -12,6 +13,7 @@ var serial = {
         chrome.serial.connect(path, options, function(connectionInfo) {
             if (connectionInfo !== undefined) {
                 self.connectionId = connectionInfo.connectionId;
+                self.bitrate = connectionInfo.bitrate;
                 self.bytes_received = 0;
                 self.bytes_sent = 0;
 
@@ -48,6 +50,7 @@ var serial = {
             console.log('SERIAL: Statistics - Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
 
             self.connectionId = -1;
+            self.bitrate = 0;
 
             callback(result);
         });

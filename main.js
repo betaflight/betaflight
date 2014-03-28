@@ -15,6 +15,9 @@ ga_tracker.sendAppView('Application Started');
 // Google Analytics stuff end
 
 $(document).ready(function() {
+    // translate to user-selected language
+    localize();
+
     // bind controls
     $('#frame .minimize').click(function() {
         chrome.app.window.current().minimize();

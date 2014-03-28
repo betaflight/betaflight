@@ -616,6 +616,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                 } else { // Something went wrong
                 }
 
+                PortUsage.reset();
+
                 // unlocking connect button
                 GUI.connect_lock = false;
             });

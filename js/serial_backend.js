@@ -32,11 +32,11 @@ $(document).ready(function() {
                     GUI.connected_to = false;
 
                     // Reset various UI elements
-                    $('span.port-usage').html('0%');
                     $('.software-version').html('0.0');
                     $('span.cycle-time').html('0');
 
                     MSP.disconnect_cleanup();
+                    PortUsage.reset();
                     configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
 
                     // unlock port select & baud
@@ -109,7 +109,9 @@ $(document).ready(function() {
             chrome.storage.local.set({'auto_connect': GUI.auto_connect});
         });
     });
+
     PortHandler.initialize();
+    PortUsage.initialize();
 });
 
 function onOpen(openInfo) {
@@ -142,7 +144,6 @@ function onOpen(openInfo) {
         });
 
         serial.onReceive.addListener(read_serial);
-        GUI.interval_add('port_usage', port_usage, 1000, true);
 
         // disconnect after 10 seconds with error if we don't get IDENT data
         GUI.timeout_add('connecting', function() {
@@ -201,14 +202,6 @@ function read_serial(info) {
     } else {
         handle_CLI(info);
     }
-}
-
-function port_usage() {
-    var port_usage = (char_counter * 10 / parseInt($('div#port-picker #baud').val())) * 100;
-    $('span.port-usage').html(parseInt(port_usage) + '%');
-
-    // reset counter
-    char_counter = 0;
 }
 
 function sensor_status(sensors_detected) {
