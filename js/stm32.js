@@ -421,7 +421,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             var bytes_flashed = 0;
             var bytes_flashed_total = 0; // used for progress bar
 
-            var write = function() {
+            function write() {
                 if (bytes_flashed < self.hex.data[flashing_block].bytes) {
                     var bytes_to_write = ((bytes_flashed + 128) <= self.hex.data[flashing_block].bytes) ? 128 : (self.hex.data[flashing_block].bytes - bytes_flashed);
 
@@ -482,7 +482,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         self.upload_procedure(6);
                     }
                 }
-            };
+            }
 
             // start writing
             write();
@@ -501,7 +501,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                 self.verify_hex.push([]);
             }
 
-            var reading = function() {
+            function reading() {
                 if (bytes_verified < self.hex.data[reading_block].bytes) {
                     var bytes_to_read = ((bytes_verified + 128) <= self.hex.data[reading_block].bytes) ? 128 : (self.hex.data[reading_block].bytes - bytes_verified);
 
@@ -579,7 +579,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         }
                     }
                 }
-            };
+            }
 
             // start reading
             reading();
