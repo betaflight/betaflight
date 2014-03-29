@@ -5,28 +5,32 @@
     }
     .tab-receiver .bars {
         float: left;
+
+        font-weight: bold;
     }
     .tab-receiver .bars ul {
-        height: 20px;
-        line-height: 20px;
-
         margin-bottom: 5px;
     }
     .tab-receiver .bars li {
         float: left;
+
+        height: 22px;
+        line-height: 20px;
     }
     .tab-receiver .bars .name {
-        width: 80px;
+        width: 60px;
     }
         .tab-receiver .bars .meter meter {
+            margin-top: 4px;
+
             width: 200px;
-            height: 20px;
+            height: 14px;
 
             border: 1px solid silver;
         }
     .tab-receiver .bars .value {
         width: 50px;
-        padding-left: 20px;
+        margin-left: 10px;
     }
     .tab-receiver .tunings {
         float: right;
@@ -59,10 +63,8 @@
         text-align: right;
     }
     .tab-receiver #RX_plot {
-        margin: auto;
-        margin-top: 20px;
+        margin-left: 5px;
 
-        width: 880px;
         height: 200px;
     }
     .tab-receiver .curves {
@@ -114,7 +116,27 @@
     }
     .tab-receiver select[name="rx_refresh_rate"] {
         float: right;
-        margin-right: 20px;
+
+        margin-top: 30px;
+        margin-right: 13px;
 
         border: 1px solid silver;
     }
+
+/* SVG classes*/
+.tab-receiver .grid .tick {
+    stroke: silver;
+    shape-rendering: crispEdges;
+}
+.tab-receiver .line {
+    stroke-width: 2px;
+    fill: none;
+}
+.tab-receiver .grid path {
+    stroke-width: 0;
+}
+.tab-receiver .axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}

@@ -20,47 +20,6 @@ function tab_initialize_receiver() {
         $('.tunings .rate input[name="rate"]').val(RC_tuning.RC_RATE.toFixed(2));
         $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
 
-        // Setup plot variables and plot it self
-        var samples_i = 300;
-
-        RX_plot_data = new Array(8);
-        for (var i = 0; i < 8; i++) {
-            RX_plot_data[i] = new Array();
-        }
-
-        for (var i = 0; i <= 300; i++) {
-            RX_plot_data[0].push([i, 0]);
-            RX_plot_data[1].push([i, 0]);
-            RX_plot_data[2].push([i, 0]);
-            RX_plot_data[3].push([i, 0]);
-            RX_plot_data[4].push([i, 0]);
-            RX_plot_data[5].push([i, 0]);
-            RX_plot_data[6].push([i, 0]);
-            RX_plot_data[7].push([i, 0]);
-        }
-
-        e_RX_plot = document.getElementById("RX_plot");
-
-        RX_plot_options = {
-            title: "Channel width (us)",
-            shadowSize: 0,
-            yaxis : {
-                max: 2200,
-                min: 800,
-                noTicks: 10
-            },
-            xaxis : {
-                //noTicks = 0
-            },
-            grid : {
-                backgroundColor: "#FFFFFF"
-            },
-            legend : {
-                position: "we",
-                backgroundOpacity: 0
-            }
-        };
-
         chrome.storage.local.get('rx_refresh_rate', function(result) {
             if (typeof result.rx_refresh_rate != 'undefined') {
                 $('select[name="rx_refresh_rate"]').val(result.rx_refresh_rate).change();
@@ -121,6 +80,8 @@ function tab_initialize_receiver() {
 
         $('a.refresh').click(function() {
             send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+                GUI.log('RC Tuning data <strong>refreshed</strong>');
+
                 // fill in data from RC_tuning
                 $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
                 $('.tunings .throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
@@ -168,6 +129,7 @@ function tab_initialize_receiver() {
             }
         });
 
+        var e_xGrid, e_xAxis, e_yAxis;
         $('select[name="rx_refresh_rate"]').change(function() {
             var plot_update_rate = parseInt($(this).val());
 
@@ -192,40 +154,115 @@ function tab_initialize_receiver() {
                 meter_values_array.push($(this));
             });
 
+            // setup plot
+            var RX_plot_data = new Array(8);
+            for (var i = 0; i < 8; i++) {
+                RX_plot_data[i] = [];
+            }
+
+            var samples = 0;
+
+            $('svg').empty(); // dump previous layout
+
+            var margin = {top: 20, right: 20, bottom: 10, left: 40};
+            var width = 920 - margin.left - margin.right;
+            var height = 200 - margin.top - margin.bottom;
+
+            var svg = d3.select("svg");
+
+            var widthScale = d3.scale.linear()
+                .domain([0, 300])
+                .range([0, width]);
+
+            var heightScale = d3.scale.linear()
+                .domain([800, 2200])
+                .range([height, 0]);
+
+            var xAxis = d3.svg.axis()
+                .scale(widthScale)
+                .orient("bottom")
+                .tickFormat(function(d) {return d;});
+
+            var yAxis = d3.svg.axis()
+                .scale(heightScale)
+                .orient("left")
+                .tickFormat(function(d) {return d;});
+
+            var xGrid = d3.svg.axis()
+                .scale(widthScale)
+                .orient("bottom")
+                .tickSize(-height, 0, 0)
+                .tickFormat("");
+
+            var yGrid = d3.svg.axis()
+                .scale(heightScale)
+                .orient("left")
+                .tickSize(-width, 0, 0)
+                .tickFormat("");
+
+            // render xGrid
+            e_xGrid = svg.append("g")
+                .attr("class", "grid x")
+                .attr("transform", "translate(40, 180)")
+                .call(xGrid);
+
+            // render yGrid
+            svg.append("g")
+                .attr("class", "grid y")
+                .attr("transform", "translate(40, 10)")
+                .call(yGrid);
+
+            // render xAxis
+            e_xAxis = svg.append("g")
+                .attr("class", "axis x")
+                .attr("transform", "translate(40, 180)")
+                .call(xAxis);
+
+            // render yAxis
+            e_yAxis = svg.append("g")
+                .attr("class", "axis y")
+                .attr("transform", "translate(40, 10)")
+                .call(yAxis);
+
+            var svg_data = svg.append("g").attr("name", "data")
+                .attr("transform", "translate(41, 10)");
+
+            var lines = new Array(8);
+
             function update_ui() {
                 meter_array[0].val(RC.throttle);
-                meter_values_array[0].text(RC.throttle);
+                meter_values_array[0].text('[ ' + RC.throttle + ' ]');
 
                 meter_array[1].val(RC.pitch);
-                meter_values_array[1].text(RC.pitch);
+                meter_values_array[1].text('[ ' + RC.pitch + ' ]');
 
                 meter_array[2].val(RC.roll);
-                meter_values_array[2].text(RC.roll);
+                meter_values_array[2].text('[ ' + RC.roll + ' ]');
 
                 meter_array[3].val(RC.yaw);
-                meter_values_array[3].text(RC.yaw);
+                meter_values_array[3].text('[ ' + RC.yaw + ' ]');
 
                 meter_array[4].val(RC.AUX1);
-                meter_values_array[4].text(RC.AUX1);
+                meter_values_array[4].text('[ ' + RC.AUX1 + ' ]');
 
                 meter_array[5].val(RC.AUX2);
-                meter_values_array[5].text(RC.AUX2);
+                meter_values_array[5].text('[ ' + RC.AUX2 + ' ]');
 
                 meter_array[6].val(RC.AUX3);
-                meter_values_array[6].text(RC.AUX3);
+                meter_values_array[6].text('[ ' + RC.AUX3 + ' ]');
 
                 meter_array[7].val(RC.AUX4);
-                meter_values_array[7].text(RC.AUX4);
+                meter_values_array[7].text('[ ' + RC.AUX4 + ' ]');
 
                 // push latest data to the main array
-                RX_plot_data[0].push([samples_i, RC.throttle]);
-                RX_plot_data[1].push([samples_i, RC.pitch]);
-                RX_plot_data[2].push([samples_i, RC.roll]);
-                RX_plot_data[3].push([samples_i, RC.yaw]);
-                RX_plot_data[4].push([samples_i, RC.AUX1]);
-                RX_plot_data[5].push([samples_i, RC.AUX2]);
-                RX_plot_data[6].push([samples_i, RC.AUX3]);
-                RX_plot_data[7].push([samples_i, RC.AUX4]);
+                RX_plot_data[0].push([samples, RC.throttle]);
+                RX_plot_data[1].push([samples, RC.pitch]);
+                RX_plot_data[2].push([samples, RC.roll]);
+                RX_plot_data[3].push([samples, RC.yaw]);
+                RX_plot_data[4].push([samples, RC.AUX1]);
+                RX_plot_data[5].push([samples, RC.AUX2]);
+                RX_plot_data[6].push([samples, RC.AUX3]);
+                RX_plot_data[7].push([samples, RC.AUX4]);
 
                 // Remove old data from array
                 while (RX_plot_data[0].length > 300) {
@@ -239,18 +276,95 @@ function tab_initialize_receiver() {
                     RX_plot_data[7].shift();
                 };
 
-                // redraw plot
-                Flotr.draw(e_RX_plot, [
-                    {data: RX_plot_data[0], label: "THROTTLE"},
-                    {data: RX_plot_data[1], label: "PITCH"},
-                    {data: RX_plot_data[2], label: "ROLL"},
-                    {data: RX_plot_data[3], label: "YAW"},
-                    {data: RX_plot_data[4], label: "AUX1"},
-                    {data: RX_plot_data[5], label: "AUX2"},
-                    {data: RX_plot_data[6], label: "AUX3"},
-                    {data: RX_plot_data[7], label: "AUX4"} ], RX_plot_options);
+                // update required parts of the plot
+                var widthScale = d3.scale.linear()
+                    .domain([(samples - 299), samples])
+                    .range([0, width]);
 
-                samples_i++;
+                var xGrid = d3.svg.axis()
+                    .scale(widthScale)
+                    .orient("bottom")
+                    .tickSize(-height, 0, 0)
+                    .tickFormat("");
+
+                var xAxis = d3.svg.axis()
+                    .scale(widthScale)
+                    .orient("bottom")
+                    .tickFormat(function(d) {return d;});
+
+                var line = d3.svg.line()
+                    .x(function(d) {return widthScale(d[0]);})
+                    .y(function(d) {return heightScale(d[1]);});
+
+                // render xGrid
+                e_xGrid.remove();
+                e_xGrid = svg.append("g")
+                    .attr("class", "grid x")
+                    .attr("transform", "translate(40, 180)")
+                    .call(xGrid);
+
+                // render xAxis
+                e_xAxis.remove();
+                e_xAxis = svg.append("g")
+                    .attr("class", "axis x")
+                    .attr("transform", "translate(40, 180)")
+                    .call(xAxis);
+
+                // render yAxis
+                e_yAxis.remove();
+                e_yAxis = svg.append("g")
+                    .attr("class", "axis y")
+                    .attr("transform", "translate(40, 10)")
+                    .call(yAxis);
+
+                if (lines[0] != undefined) {
+                    for (var i = 0; i < lines.length; i++) {
+                        lines[i].remove();
+                    }
+                }
+
+                lines[0] = svg_data.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(RX_plot_data[0]))
+                    .style({'stroke': '#00A8F0'});
+
+                lines[1] = svg_data.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(RX_plot_data[1]))
+                    .style({'stroke': '#C0D800'});
+
+                lines[2] = svg_data.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(RX_plot_data[2]))
+                    .style({'stroke': '#CB4B4B'});
+
+                lines[3] = svg_data.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(RX_plot_data[3]))
+                    .style({'stroke': '#4DA74D'});
+
+                lines[4] = svg_data.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(RX_plot_data[4]))
+                    .style({'stroke': '#9440ED'});
+
+                lines[5] = svg_data.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(RX_plot_data[5]))
+                    .style({'stroke': '#45147a'});
+
+                lines[6] = svg_data.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(RX_plot_data[6]))
+                    .style({'stroke': '#cf7a26'});
+
+                lines[7] = svg_data.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(RX_plot_data[7]))
+                    .style({'stroke': '#147a66'});
+
+                // increment samples counter
+                samples++;
             }
 
             // timer initialization
