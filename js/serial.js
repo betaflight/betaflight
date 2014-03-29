@@ -75,7 +75,7 @@ var serial = {
         if (!self.transmitting) {
             self.transmitting = true;
 
-            var sending = function() {
+            function sending() {
                 // store inside separate variables in case array gets destroyed
                 var data = self.output_buffer[0].data;
                 var callback = self.output_buffer[0].callback;

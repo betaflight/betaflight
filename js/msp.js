@@ -511,13 +511,13 @@ function send_message(code, data, callback_sent, callback_msp) {
     obj.timer = setInterval(function() {
         console.log('MSP data request timed-out: ' + code);
 
-        serial.send(bufferOut, function(writeInfo) {});
+        serial.send(bufferOut, function(sendInfo) {});
     }, 1000); // we should be able to define timeout in the future
 
     MSP.callbacks.push(obj);
 
-    serial.send(bufferOut, function(writeInfo) {
-        if (writeInfo.bytesSent > 0) {
+    serial.send(bufferOut, function(sendInfo) {
+        if (sendInfo.bytesSent > 0) {
             if (callback_sent) callback_sent();
         }
     });
