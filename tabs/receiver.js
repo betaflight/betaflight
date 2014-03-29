@@ -129,7 +129,7 @@ function tab_initialize_receiver() {
             }
         });
 
-        var e_xGrid, e_xAxis, e_yAxis;
+        var e_xGrid, e_xAxis, e_yAxis, lines = [];
         $('select[name="rx_refresh_rate"]').change(function() {
             var plot_update_rate = parseInt($(this).val());
 
@@ -227,8 +227,6 @@ function tab_initialize_receiver() {
             var svg_data = svg.append("g").attr("name", "data")
                 .attr("transform", "translate(41, 10)");
 
-            var lines = new Array(8);
-
             function update_ui() {
                 meter_array[0].val(RC.throttle);
                 meter_values_array[0].text('[ ' + RC.throttle + ' ]');
@@ -317,11 +315,11 @@ function tab_initialize_receiver() {
                     .attr("transform", "translate(40, 10)")
                     .call(yAxis);
 
-                if (lines[0] != undefined) {
-                    for (var i = 0; i < lines.length; i++) {
-                        lines[i].remove();
-                    }
+                // dump previous lines
+                for (var i = 0; i < lines.length; i++) {
+                    lines[i].remove();
                 }
+                lines = [];
 
                 lines[0] = svg_data.append("path")
                     .attr("class", "line")
