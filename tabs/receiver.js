@@ -129,7 +129,7 @@ function tab_initialize_receiver() {
             }
         });
 
-        var e_xGrid, e_xAxis, e_yAxis, lines = [];
+        var grids = [], axis = [], lines = [];
         $('select[name="rx_refresh_rate"]').change(function() {
             var plot_update_rate = parseInt($(this).val());
 
@@ -162,69 +162,16 @@ function tab_initialize_receiver() {
 
             var samples = 0;
 
-            $('svg').empty(); // dump previous layout
-
             var margin = {top: 20, right: 20, bottom: 10, left: 40};
             var width = 920 - margin.left - margin.right;
             var height = 200 - margin.top - margin.bottom;
 
+            // drop previous layout & required data
+            $('svg').empty();
+            lines = [];
+
             var svg = d3.select("svg");
-
-            var widthScale = d3.scale.linear()
-                .domain([0, 300])
-                .range([0, width]);
-
-            var heightScale = d3.scale.linear()
-                .domain([800, 2200])
-                .range([height, 0]);
-
-            var xAxis = d3.svg.axis()
-                .scale(widthScale)
-                .orient("bottom")
-                .tickFormat(function(d) {return d;});
-
-            var yAxis = d3.svg.axis()
-                .scale(heightScale)
-                .orient("left")
-                .tickFormat(function(d) {return d;});
-
-            var xGrid = d3.svg.axis()
-                .scale(widthScale)
-                .orient("bottom")
-                .tickSize(-height, 0, 0)
-                .tickFormat("");
-
-            var yGrid = d3.svg.axis()
-                .scale(heightScale)
-                .orient("left")
-                .tickSize(-width, 0, 0)
-                .tickFormat("");
-
-            // render xGrid
-            e_xGrid = svg.append("g")
-                .attr("class", "grid x")
-                .attr("transform", "translate(40, 180)")
-                .call(xGrid);
-
-            // render yGrid
-            svg.append("g")
-                .attr("class", "grid y")
-                .attr("transform", "translate(40, 10)")
-                .call(yGrid);
-
-            // render xAxis
-            e_xAxis = svg.append("g")
-                .attr("class", "axis x")
-                .attr("transform", "translate(40, 180)")
-                .call(xAxis);
-
-            // render yAxis
-            e_yAxis = svg.append("g")
-                .attr("class", "axis y")
-                .attr("transform", "translate(40, 10)")
-                .call(yAxis);
-
-            var svg_data = svg.append("g").attr("name", "data")
+            svg_data = svg.append("g").attr("name", "data")
                 .attr("transform", "translate(41, 10)");
 
             function update_ui() {
@@ -279,10 +226,20 @@ function tab_initialize_receiver() {
                     .domain([(samples - 299), samples])
                     .range([0, width]);
 
+                var heightScale = d3.scale.linear()
+                    .domain([800, 2200])
+                    .range([height, 0]);
+
                 var xGrid = d3.svg.axis()
                     .scale(widthScale)
                     .orient("bottom")
                     .tickSize(-height, 0, 0)
+                    .tickFormat("");
+
+                var yGrid = d3.svg.axis()
+                    .scale(heightScale)
+                    .orient("left")
+                    .tickSize(-width, 0, 0)
                     .tickFormat("");
 
                 var xAxis = d3.svg.axis()
@@ -290,77 +247,97 @@ function tab_initialize_receiver() {
                     .orient("bottom")
                     .tickFormat(function(d) {return d;});
 
+                var yAxis = d3.svg.axis()
+                    .scale(heightScale)
+                    .orient("left")
+                    .tickFormat(function(d) {return d;});
+
                 var line = d3.svg.line()
                     .x(function(d) {return widthScale(d[0]);})
                     .y(function(d) {return heightScale(d[1]);});
 
+                // dump previous data
+                for (var i = 0; i < grids.length; i++) {
+                    grids[i].remove();
+                }
+                grids = [];
+
+                for (var i = 0; i < axis.length; i++) {
+                    axis[i].remove();
+                }
+                axis = [];
+
                 // render xGrid
-                e_xGrid.remove();
-                e_xGrid = svg.append("g")
+                grids[0] = svg.append("g")
                     .attr("class", "grid x")
                     .attr("transform", "translate(40, 180)")
                     .call(xGrid);
 
+                // render yGrid
+                grids[1] = svg.append("g")
+                    .attr("class", "grid y")
+                    .attr("transform", "translate(40, 10)")
+                    .call(yGrid);
+
                 // render xAxis
-                e_xAxis.remove();
-                e_xAxis = svg.append("g")
+                axis[0] = svg.append("g")
                     .attr("class", "axis x")
                     .attr("transform", "translate(40, 180)")
                     .call(xAxis);
 
                 // render yAxis
-                e_yAxis.remove();
-                e_yAxis = svg.append("g")
+                axis[1] = svg.append("g")
                     .attr("class", "axis y")
                     .attr("transform", "translate(40, 10)")
                     .call(yAxis);
 
-                // dump previous lines
-                for (var i = 0; i < lines.length; i++) {
-                    lines[i].remove();
+                if (!svg_data.select('path').empty()) {
+                    // update lines
+                    for (var i = 0; i < 8; i++) {
+                        lines[i].attr("d", line(RX_plot_data[i]));
+                    }
+                } else {
+                    // render lines
+                    lines[0] = svg_data.append("path")
+                        .attr("class", "line")
+                        .attr("d", line(RX_plot_data[0]))
+                        .style({'stroke': '#00A8F0'});
+
+                    lines[1] = svg_data.append("path")
+                        .attr("class", "line")
+                        .attr("d", line(RX_plot_data[1]))
+                        .style({'stroke': '#C0D800'});
+
+                    lines[2] = svg_data.append("path")
+                        .attr("class", "line")
+                        .attr("d", line(RX_plot_data[2]))
+                        .style({'stroke': '#CB4B4B'});
+
+                    lines[3] = svg_data.append("path")
+                        .attr("class", "line")
+                        .attr("d", line(RX_plot_data[3]))
+                        .style({'stroke': '#4DA74D'});
+
+                    lines[4] = svg_data.append("path")
+                        .attr("class", "line")
+                        .attr("d", line(RX_plot_data[4]))
+                        .style({'stroke': '#9440ED'});
+
+                    lines[5] = svg_data.append("path")
+                        .attr("class", "line")
+                        .attr("d", line(RX_plot_data[5]))
+                        .style({'stroke': '#45147a'});
+
+                    lines[6] = svg_data.append("path")
+                        .attr("class", "line")
+                        .attr("d", line(RX_plot_data[6]))
+                        .style({'stroke': '#cf7a26'});
+
+                    lines[7] = svg_data.append("path")
+                        .attr("class", "line")
+                        .attr("d", line(RX_plot_data[7]))
+                        .style({'stroke': '#147a66'});
                 }
-                lines = [];
-
-                lines[0] = svg_data.append("path")
-                    .attr("class", "line")
-                    .attr("d", line(RX_plot_data[0]))
-                    .style({'stroke': '#00A8F0'});
-
-                lines[1] = svg_data.append("path")
-                    .attr("class", "line")
-                    .attr("d", line(RX_plot_data[1]))
-                    .style({'stroke': '#C0D800'});
-
-                lines[2] = svg_data.append("path")
-                    .attr("class", "line")
-                    .attr("d", line(RX_plot_data[2]))
-                    .style({'stroke': '#CB4B4B'});
-
-                lines[3] = svg_data.append("path")
-                    .attr("class", "line")
-                    .attr("d", line(RX_plot_data[3]))
-                    .style({'stroke': '#4DA74D'});
-
-                lines[4] = svg_data.append("path")
-                    .attr("class", "line")
-                    .attr("d", line(RX_plot_data[4]))
-                    .style({'stroke': '#9440ED'});
-
-                lines[5] = svg_data.append("path")
-                    .attr("class", "line")
-                    .attr("d", line(RX_plot_data[5]))
-                    .style({'stroke': '#45147a'});
-
-                lines[6] = svg_data.append("path")
-                    .attr("class", "line")
-                    .attr("d", line(RX_plot_data[6]))
-                    .style({'stroke': '#cf7a26'});
-
-                lines[7] = svg_data.append("path")
-                    .attr("class", "line")
-                    .attr("d", line(RX_plot_data[7]))
-                    .style({'stroke': '#147a66'});
-
                 // increment samples counter
                 samples++;
             }
