@@ -136,10 +136,6 @@ function tab_initialize_receiver() {
             // save update rate
             chrome.storage.local.set({'rx_refresh_rate': plot_update_rate});
 
-            function get_status_data() {
-                send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_rc_data);
-            }
-
             function get_rc_data() {
                 send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, update_ui);
             }
@@ -343,10 +339,15 @@ function tab_initialize_receiver() {
             }
 
             // timer initialization
-            GUI.interval_remove('receiver_poll');
+            GUI.interval_remove('receiver_pull');
 
             // enable RC data pulling
-            GUI.interval_add('receiver_poll', get_status_data, plot_update_rate, true);
+            GUI.interval_add('receiver_pull', get_rc_data, plot_update_rate, true);
         });
+
+        // status data pulled via separate timer with static speed
+        GUI.interval_add('status_pull', function() {
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+        }, 250, true);
     }
 }

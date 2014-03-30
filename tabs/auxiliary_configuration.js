@@ -108,10 +108,6 @@ function tab_initialize_auxiliary_configuration() {
         });
 
         // data pulling functions used inside interval timer
-        function get_status_data() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_rc_data);
-        }
-
         function get_rc_data() {
             send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, update_ui);
         }
@@ -136,6 +132,11 @@ function tab_initialize_auxiliary_configuration() {
         }
 
         // enable data pulling
-        GUI.interval_add('aux_data_poll', get_status_data, 50, true);
+        GUI.interval_add('aux_data_pull', get_rc_data, 50, true);
+
+        // status data pulled via separate timer with static speed
+        GUI.interval_add('status_pull', function() {
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+        }, 250, true);
     }
 }

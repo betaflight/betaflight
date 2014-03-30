@@ -9,10 +9,6 @@ function tab_initialize_gps () {
     }
 
     function process_html() {
-        function get_status_data() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_raw_gps_data);
-        }
-
         function get_raw_gps_data() {
             send_message(MSP_codes.MSP_RAW_GPS, MSP_codes.MSP_RAW_GPS, false, get_gpsvinfo_data);
         }
@@ -42,6 +38,11 @@ function tab_initialize_gps () {
         }
 
         // enable data pulling
-        GUI.interval_add('gps_pull', get_status_data, 75, true);
+        GUI.interval_add('gps_pull', get_raw_gps_data, 75, true);
+
+        // status data pulled via separate timer with static speed
+        GUI.interval_add('status_pull', function() {
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+        }, 250, true);
     }
 }

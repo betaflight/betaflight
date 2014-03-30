@@ -226,10 +226,6 @@ function tab_initialize_initial_setup() {
         $('#content .restore').click(configuration_restore);
 
         // data pulling functions used inside interval timer
-        function get_status_data() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_analog_data);
-        }
-
         function get_analog_data() {
             send_message(MSP_codes.MSP_ANALOG, MSP_codes.MSP_ANALOG, false, get_attitude_data);
         }
@@ -256,6 +252,11 @@ function tab_initialize_initial_setup() {
             */
         }
 
-        GUI.interval_add('initial_setup_data_pull', get_status_data, 50, true);
+        GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);
+
+        // status data pulled via separate timer with static speed
+        GUI.interval_add('status_pull', function() {
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+        }, 250, true);
     }
 }

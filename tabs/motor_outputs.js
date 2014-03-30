@@ -76,10 +76,6 @@ function tab_initialize_motor_outputs() {
         });
 
         // data pulling functions used inside interval timer
-        function get_status_data() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_motor_data);
-        }
-
         function get_motor_data() {
             send_message(MSP_codes.MSP_MOTOR, MSP_codes.MSP_MOTOR, false, get_servo_data);
         }
@@ -111,6 +107,11 @@ function tab_initialize_motor_outputs() {
         }
 
         // enable Motor data pulling
-        GUI.interval_add('motor_poll', get_status_data, 50, true);
+        GUI.interval_add('motor_pull', get_motor_data, 50, true);
+
+        // status data pulled via separate timer with static speed
+        GUI.interval_add('status_pull', function() {
+            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+        }, 250, true);
     }
 }

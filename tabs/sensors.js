@@ -219,9 +219,11 @@ function tab_initialize_sensors() {
             GUI.interval_kill_all();
 
             // data pulling timers
-            GUI.interval_add('status_pull', function status_data_pull() {
+
+            // status data pulled via separate timer with static speed
+            GUI.interval_add('status_pull', function() {
                 send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-            }, 50);
+            }, 250, true);
 
             GUI.interval_add('IMU_pull', function imu_data_pull() {
                 send_message(MSP_codes.MSP_RAW_IMU, MSP_codes.MSP_RAW_IMU, false, update_imu_graphs);

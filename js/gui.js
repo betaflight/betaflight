@@ -192,36 +192,41 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
     switch (this.active_tab) {
         case 'initial_setup':
             GUI.interval_remove('initial_setup_data_pull');
+            GUI.interval_remove('status_pull');
 
             if (callback) callback();
             break;
         case 'pid_tuning':
-            GUI.interval_remove('pid_data_poll');
+            GUI.interval_remove('status_pull');
 
             if (callback) callback();
             break;
         case 'receiver':
-            GUI.interval_remove('receiver_poll');
+            GUI.interval_remove('receiver_pull');
+            GUI.interval_remove('status_pull');
 
             if (callback) callback();
             break;
         case 'auxiliary_configuration':
-            GUI.interval_remove('aux_data_poll');
+            GUI.interval_remove('aux_data_pull');
+            GUI.interval_remove('status_pull');
 
             if (callback) callback();
             break;
         case 'servos':
-            GUI.interval_remove('servos_data_poll');
+            GUI.interval_remove('status_pull');
 
             if (callback) callback();
             break;
         case 'gps':
             GUI.interval_remove('gps_pull');
+            GUI.interval_remove('status_pull');
 
             if (callback) callback();
             break;
         case 'motor_outputs':
-            GUI.interval_remove('motor_poll');
+            GUI.interval_remove('motor_pull');
+            GUI.interval_remove('status_pull');
 
             // only enforce mincommand if necessary
             if (MOTOR_DATA != undefined) {

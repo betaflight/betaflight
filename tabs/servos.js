@@ -296,9 +296,9 @@ function tab_initialize_servos() {
             }
         });
 
-        // enable data pulling
-        GUI.interval_add('servos_data_poll', function() {
+        // status data pulled via separate timer with static speed
+        GUI.interval_add('status_pull', function() {
             send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-        }, 50);
+        }, 250, true);
     }
 }

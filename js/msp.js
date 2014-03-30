@@ -173,7 +173,7 @@ MSP.process_data = function(code, message_buffer, message_length) {
             CONFIG.profile = data.getUint8(10);
 
             sensor_status(CONFIG.activeSensors);
-            $('span.cycle-time').html(CONFIG.cycleTime);
+            $('span.cycle-time').text(CONFIG.cycleTime);
             break;
         case MSP_codes.MSP_RAW_IMU:
             // 512 for mpu6050, 256 for mma
