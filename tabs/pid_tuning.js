@@ -2,7 +2,12 @@ function tab_initialize_pid_tuning() {
     ga_tracker.sendAppView('PID Tuning');
     GUI.active_tab = 'pid_tuning';
 
-    send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, get_rc_tuning_data);
+    // requesting MSP_STATUS manually because it contains CONFIG.profile
+    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_pid_data);
+
+    function get_pid_data() {
+        send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, get_rc_tuning_data);
+    }
 
     function get_rc_tuning_data() {
         send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, load_html);
@@ -158,9 +163,7 @@ function tab_initialize_pid_tuning() {
             send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function() {
                 GUI.log('Loaded Profile: <strong>' + profile + '</strong>');
 
-                GUI.tab_switch_cleanup(function() {
-                    tab_initialize_pid_tuning();
-                });
+                GUI.tab_switch_cleanup(tab_initialize_pid_tuning);
             });
         });
 
