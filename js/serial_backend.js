@@ -160,11 +160,11 @@ function onOpen(openInfo) {
             send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
                 GUI.timeout_remove('connecting'); // kill connecting timer
 
-                if (CONFIG.version >= firmware_version_accepted) {
-                    // Update UI elements that doesn't need consistent refreshing
-                    $('.software-version').html(CONFIG.version);
+                GUI.log(chrome.i18n.getMessage('firmware_version', [CONFIG.version]));
 
+                if (CONFIG.version >= firmware_version_accepted) {
                     configuration_received = true;
+
                     $('div#port-picker a.connect').text('Disconnect').addClass('active');
                     $('#tabs li a:first').click();
                 } else {

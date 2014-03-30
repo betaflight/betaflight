@@ -18,10 +18,11 @@
     "statusbar_packet_error": {
         "message": "Packet error:"
     },
-    "statusbar_firmware_version": {
-        "message": "Firmware Version:"
-    },
     "statusbar_cycle_time": {
         "message": "Cycle Time:"
+    },
+
+    "firmware_version": {
+        "message": "Firmware Version: <strong>$1</strong>"
     }
 }
