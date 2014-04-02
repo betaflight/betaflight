@@ -45,6 +45,13 @@
 
         background-color: #ececec;
     }
+    .tab-servos table .channel {
+        width: 40px;
+        text-align: center;
+    }
+        .tab-servos table .channel input {
+            vertical-align: middle;
+        }
     .tab-servos table input[type="number"] {
         width: 65px;
         height: 20px;
@@ -54,13 +61,6 @@
         line-height: 20px;
 
         text-align: right;
-    }
-    .tab-servos table .channel input[type="checkbox"]:first-child {
-        margin-left: 24px;
-    }
-    .tab-servos table .channel input[type="checkbox"] {
-        margin-top: 4px;
-        margin-right: 21px;
     }
     .tab-servos table .direction {
     }

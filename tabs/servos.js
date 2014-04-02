@@ -57,16 +57,14 @@ function tab_initialize_servos() {
                     <td class="middle"><input type="number" min="1000" max="2000" value="' + ((SERVO_CONFIG[obj].middle <= 7) ? 1500 : SERVO_CONFIG[obj].middle) + '" /></td>\
                     <td class="min"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].min +'" /></td>\
                     <td class="max"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].max +'" /></td>\
-                    <td class="channel">\
-                        <input type="checkbox"/>\
-                        <input type="checkbox"/>\
-                        <input type="checkbox"/>\
-                        <input type="checkbox"/>\
-                        <input type="checkbox"/>\
-                        <input type="checkbox"/>\
-                        <input type="checkbox"/>\
-                        <input type="checkbox"/>\
-                    </td>\
+                    <td class="channel"><input type="checkbox"/></td>\
+                    <td class="channel"><input type="checkbox"/></td>\
+                    <td class="channel"><input type="checkbox"/></td>\
+                    <td class="channel"><input type="checkbox"/></td>\
+                    <td class="channel"><input type="checkbox"/></td>\
+                    <td class="channel"><input type="checkbox"/></td>\
+                    <td class="channel"><input type="checkbox"/></td>\
+                    <td class="channel"><input type="checkbox"/></td>\
                     <td class="direction">\
                         <input class="first" type="checkbox"/><span class="name">' + name + '</span>\
                         <input class="second" type="checkbox"/><span class="alternate">' + alternate + '</span>\
@@ -76,7 +74,7 @@ function tab_initialize_servos() {
 
             if (SERVO_CONFIG[obj].middle <= 7) {
                 $('div.tab-servos table.fields tr:last td.middle input').prop('disabled', true);
-                $('div.tab-servos table.fields tr:last td.channel').find('input').eq(SERVO_CONFIG[obj].middle).prop('checked', true);
+                $('div.tab-servos table.fields tr:last td.channel input').eq(SERVO_CONFIG[obj].middle).prop('checked', true);
             }
 
             if (directions == true) {
@@ -107,10 +105,10 @@ function tab_initialize_servos() {
             $('div.tab-servos table.fields tr:last').data('info', {'obj': obj});
 
             // UI hooks
-            $('div.tab-servos table.fields tr:last td.channel').find('input').click(function() {
+            $('div.tab-servos table.fields tr:last td.channel input').click(function() {
                 if($(this).is(':checked')) {
                     $(this).parent().parent().find('td.middle input').prop('disabled', true);
-                    $(this).parent().find('input').not($(this)).prop('checked', false);
+                    $(this).parent().parent().find('.channel input').not($(this)).prop('checked', false);
                 } else {
                     $(this).parent().parent().find('td.middle input').prop('disabled', false).val(1500);
                 }
@@ -133,7 +131,8 @@ function tab_initialize_servos() {
                 var info = $(this).data('info');
 
                 if ($('.middle input', this).is(':disabled')) {
-                    var val = $('.channel input:checked', this).index();
+                    var selection = $('.channel input', this);
+                    var val = selection.index(selection.filter(':checked'));
 
                     SERVO_CONFIG[info.obj].middle = parseInt(val);
                 } else {
