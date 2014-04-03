@@ -276,8 +276,9 @@ typedef struct master_t {
 
     uint32_t serial_baudrate;
 
-    uint32_t softserial_baudrate;
-    uint8_t softserial_inverted;            // use inverted softserial input and output signals
+    uint32_t softserial_baudrate;             // shared by both soft serial ports
+    uint8_t softserial_1_inverted;            // use inverted softserial input and output signals on port 1
+    uint8_t softserial_2_inverted;            // use inverted softserial input and output signals on port 2
 
     uint8_t telemetry_softserial;           // Serial to use for Telemetry. 0:USART1, 1:SoftSerial1 (Enable FEATURE_SOFTSERIAL first)
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.

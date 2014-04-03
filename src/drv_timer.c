@@ -134,7 +134,7 @@ void configureTimerCaptureCompareInterrupt(const timerHardware_t *timerHardwareP
     configureTimerInputCaptureCompareChannel(timerHardwarePtr->tim, timerHardwarePtr->channel);
 }
 
-void timerNVICConfig(uint8_t irq)
+void timerNVICConfigure(uint8_t irq)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 
@@ -162,11 +162,11 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
 }
 
-void timerInConfig(const timerHardware_t *timerHardwarePtr, uint16_t period, uint8_t mhz)
+void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint8_t mhz)
 {
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
-    timerNVICConfig(timerHardwarePtr->irq);
+    timerNVICConfigure(timerHardwarePtr->irq);
 }
 
 
