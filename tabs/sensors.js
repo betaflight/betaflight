@@ -227,15 +227,15 @@ function tab_initialize_sensors() {
 
             GUI.interval_add('IMU_pull', function imu_data_pull() {
                 send_message(MSP_codes.MSP_RAW_IMU, MSP_codes.MSP_RAW_IMU, false, update_imu_graphs);
-            }, fastest);
+            }, fastest, true);
 
             GUI.interval_add('altitude_pull', function altitude_data_pull() {
                 send_message(MSP_codes.MSP_ALTITUDE, MSP_codes.MSP_ALTITUDE, false, update_altitude_graph);
-            }, rates.baro);
+            }, rates.baro, true);
 
             GUI.interval_add('debug_pull', function debug_data_pull() {
                 send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG, false, update_debug_graphs);
-            }, rates.debug);
+            }, rates.debug, true);
 
             function update_imu_graphs() {
                 gyro_data[0].push([samples_gyro_i, SENSOR_DATA.gyroscope[0]]);
