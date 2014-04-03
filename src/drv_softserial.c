@@ -1,8 +1,5 @@
 #include "board.h"
 
-// There needs to be a table of timerMhz per baud rate so the system can set the timer correctly.
-// See http://www.wormfood.net/avrbaudcalc.php?postbitrate=19200&postclock=72
-// Currently defaulting to 3Mhz to support 19200.
 #define SOFT_SERIAL_TIMER_MHZ 3
 #define SOFT_SERIAL_1_TIMER_RX_HARDWARE 4
 #define SOFT_SERIAL_1_TIMER_TX_HARDWARE 5
@@ -74,10 +71,29 @@ void serialInputPortConfig(const timerHardware_t *timerHardwarePtr)
 
 #define TICKS_PER_BIT 3
 
+bool isTimerPeriodTooLarge(uint32_t timerPeriod)
+{
+    return timerPeriod > 0xFFFF;
+}
+
 void serialTimerConfig(const timerHardware_t *timerHardwarePtr, uint32_t baud, uint8_t reference, timerCCCallbackPtr callback)
 {
-    uint16_t timerPeriod = (SOFT_SERIAL_TIMER_MHZ * 1000000) / (baud * TICKS_PER_BIT);
-    timerInConfig(timerHardwarePtr, timerPeriod, SOFT_SERIAL_TIMER_MHZ);
+    uint32_t clock = SystemCoreClock;
+    uint32_t timerPeriod;
+    do {
+        timerPeriod = clock / (baud * TICKS_PER_BIT);
+        if (isTimerPeriodTooLarge(timerPeriod)) {
+            if (clock > 1) {
+                clock = clock / 2;
+            } else {
+                // TODO unable to continue, unable to determine clock and timerPeriods for the given baud
+            }
+
+        }
+    } while (isTimerPeriodTooLarge(timerPeriod));
+
+    uint8_t mhz = SystemCoreClock / 1000000;
+    timerInConfig(timerHardwarePtr, timerPeriod, mhz);
     configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, callback);
 }
 
