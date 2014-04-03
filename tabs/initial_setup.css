@@ -161,7 +161,8 @@
     .tab-initial_setup .battery,
     .tab-initial_setup .throttle,
     .tab-initial_setup .acc-trim,
-    .tab-initial_setup .magnetometer {
+    .tab-initial_setup .magnetometer,
+    .tab-initial_setup .info {
         float: left;
         display: block;
 
@@ -169,13 +170,15 @@
 
         border: 1px solid silver;
     }
-    .tab-initial_setup .magnetometer {
+    .tab-initial_setup .magnetometer,
+    .tab-initial_setup .info {
         margin-top: 10px;
     }
         .tab-initial_setup .battery .head,
         .tab-initial_setup .throttle .head,
         .tab-initial_setup .acc-trim .head,
-        .tab-initial_setup .magnetometer .head {
+        .tab-initial_setup .magnetometer .head,
+        .tab-initial_setup .info .head {
             display: block;
 
             text-align: center;
@@ -187,7 +190,8 @@
         }
         .tab-initial_setup .battery .fields,
         .tab-initial_setup .throttle .fields,
-        .tab-initial_setup .magnetometer .fields {
+        .tab-initial_setup .magnetometer .fields,
+        .tab-initial_setup .info .fields {
             padding: 5px 5px 3px 5px;
         }
         .tab-initial_setup .acc-trim .fields {
@@ -196,12 +200,10 @@
         .tab-initial_setup .magnetometer .fields {
             padding: 5px 5px 5px 5px;
         }
-        .tab-initial_setup .battery .bat-voltage {
-            padding-left: 20px;
-        }
         .tab-initial_setup .battery dt {
             float: left;
-            width: 100px;
+
+            width: 105px;
             height: 22px;
 
             margin-bottom: 2px;
@@ -211,13 +213,13 @@
         .tab-initial_setup .battery dd {
             height: 22px;
 
-            margin-left: 100px;
+            margin-left: 105px;
             margin-bottom: 2px;
 
             line-height: 22px;
         }
         .tab-initial_setup .battery input {
-            width: 70px;
+            width: 60px;
             height: 20px;
             line-height: 20px;
 
@@ -226,7 +228,8 @@
         }
         .tab-initial_setup .throttle dt {
             float: left;
-            width: 85px;
+
+            width: 90px;
             height: 22px;
 
             margin-bottom: 2px;
@@ -236,13 +239,13 @@
         .tab-initial_setup .throttle dd {
             height: 22px;
 
-            margin-left: 85px;
+            margin-left: 90px;
             margin-bottom: 2px;
 
             line-height: 22px;
         }
         .tab-initial_setup .throttle input {
-            width: 70px;
+            width: 60px;
             height: 20px;
             line-height: 20px;
 
@@ -251,7 +254,8 @@
         }
         .tab-initial_setup .acc-trim dt {
             float: left;
-            width: 40px;
+
+            width: 65px;
             height: 22px;
             line-height: 22px;
 
@@ -260,11 +264,11 @@
         .tab-initial_setup .acc-trim dd {
             height: 22px;
 
-            margin-left: 40px;
+            margin-left: 65px;
             margin-bottom: 2px;
         }
         .tab-initial_setup .acc-trim input {
-            width: 70px;
+            width: 60px;
             height: 20px;
             line-height: 20px;
 
@@ -273,7 +277,8 @@
         }
         .tab-initial_setup .magnetometer dt {
             float: left;
-            width: 100px;
+
+            width: 90px;
             height: 20px;
             line-height: 22px;
 
@@ -283,22 +288,36 @@
             height: 20px;
             line-height: 22px;
 
-            margin-left: 100px;
+            margin-left: 90px;
             margin-bottom: 2px;
         }
         .tab-initial_setup .magnetometer input {
-            width: 70px;
+            width: 60px;
             height: 20px;
             line-height: 20px;
 
             border: 1px solid silver;
             text-align: center;
         }
+        .tab-initial_setup .info dt {
+            float: left;
+
+            width: 50px;
+            height: 20px;
+            line-height: 20px;
+        }
+        .tab-initial_setup .info dd {
+            width: 40px;
+            height: 20px;
+            line-height: 20px;
+
+            margin-left: 50px;
+        }
     .tab-initial_setup .update {
         display: block;
-        float: left;
+        float: right;
 
-        margin: 10px 0 0 10px;
+        margin: 10px 3px 0 0;
 
         width: 80px;
         height: 20px;

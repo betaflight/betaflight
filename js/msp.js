@@ -244,7 +244,7 @@ MSP.process_data = function(code, message_buffer, message_length) {
         case MSP_codes.MSP_ANALOG:
             ANALOG.voltage = data.getUint8(0) / 10.0;
             ANALOG.power = data.getUint16(1, 1);
-            ANALOG.rssi = data.getUint16(3, 1);
+            ANALOG.rssi = data.getUint16(3, 1); // 0-1023
             ANALOG.amperage = data.getUint16(5, 1);
             break;
         case MSP_codes.MSP_RC_TUNING:

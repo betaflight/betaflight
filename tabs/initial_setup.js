@@ -95,7 +95,7 @@ function tab_initialize_initial_setup() {
                 break;
         }
 
-        $('span.model').html('Model: ' + str);
+        $('span.model').text('Model: ' + str);
 
         // UI Hooks
         $('a.calibrateAccel').click(function() {
@@ -236,7 +236,8 @@ function tab_initialize_initial_setup() {
 
         function update_ui() {
             // Update voltage indicator
-            $('.bat-voltage').html(ANALOG.voltage + ' V');
+            $('.bat-voltage').text(ANALOG.voltage + ' V');
+            $('.rssi').text(((ANALOG.rssi / 1023) * 100).toFixed(0) + ' %');
 
             // Update cube
             var cube = $('div#cube');
