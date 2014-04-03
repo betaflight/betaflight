@@ -70,19 +70,6 @@ function tab_initialize_cli() {
 
         // give input element user focus
         $('.tab-cli textarea').focus();
-
-        $('.tab-cli .copy').click(function() {
-            var text = $('.tab-cli .window .wrapper').html();
-            text = text.replace(/<br\s*\/?>/mg,"\n"); // replacing br tags with \n to keep some of the formating
-
-            var copyFrom = $('<textarea/>');
-
-            copyFrom.text(text);
-            $('body').append(copyFrom);
-            copyFrom.select();
-            document.execCommand('copy');
-            copyFrom.remove();
-        });
     });
 }
 

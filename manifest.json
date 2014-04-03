@@ -25,7 +25,6 @@
         "storage",
         "fileSystem",
         "fileSystem.write",
-        "clipboardWrite",
         "notifications"
     ],
 
