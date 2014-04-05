@@ -113,9 +113,6 @@ int main(void)
     } else { // spektrum and GPS are mutually exclusive
         // Optional GPS - available in both PPM and PWM input mode, in PWM input, reduces number of available channels by 2.
         // gpsInit will return if FEATURE_GPS is not enabled.
-        // Sanity check below - protocols other than NMEA do not support baud rate autodetection
-        if (mcfg.gps_type > 0 && mcfg.gps_baudrate < 0)
-            mcfg.gps_baudrate = 0;
         gpsInit(mcfg.gps_baudrate);
     }
 #ifdef SONAR
