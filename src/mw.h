@@ -272,7 +272,7 @@ typedef struct master_t {
 
     // gps-related stuff
     uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2: MTK NMEA 3: MTK Binary
-    int8_t gps_baudrate;                    // GPS baudrate, -1: autodetect (NMEA only), 0: 115200, 1: 57600, 2: 38400, 3: 19200, 4: 9600
+    int8_t gps_baudrate;                    // GPS baudrate, 0: 115200, 1: 57600, 2: 38400, 3: 19200, 4: 9600. NMEA will cycle through these until valid data is received
 
     uint32_t serial_baudrate;
 
