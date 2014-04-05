@@ -236,7 +236,7 @@ static pwmPortData_t *pwmInConfig(uint8_t port, timerCCCallbackPtr callback, uin
     pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_IPD);
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
-    timerInConfig(timerHardwarePtr, 0xFFFF, PWM_TIMER_MHZ);
+    timerConfigure(timerHardwarePtr, 0xFFFF, PWM_TIMER_MHZ);
     configureTimerCaptureCompareInterrupt(timerHardwarePtr, port, callback);
 
     return p;
