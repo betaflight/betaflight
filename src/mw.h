@@ -284,6 +284,7 @@ typedef struct master_t {
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     config_t profile[3];                    // 3 separate profiles
     uint8_t current_profile;                // currently loaded profile
+    uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum

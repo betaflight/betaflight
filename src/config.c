@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 59;
+static const uint8_t EEPROM_CONF_VERSION = 60;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -307,6 +307,9 @@ static void resetConf(void)
     cfg.nav_speed_min = 100;
     cfg.nav_speed_max = 300;
     cfg.ap_mode = 40;
+
+    // control stuff
+    mcfg.reboot_character = 'R';
 
     // custom mixer. clear by defaults.
     for (i = 0; i < MAX_MOTORS; i++)
