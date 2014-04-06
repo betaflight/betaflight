@@ -134,7 +134,7 @@ void configureTimerCaptureCompareInterrupt(const timerHardware_t *timerHardwareP
     configureTimerInputCaptureCompareChannel(timerHardwarePtr->tim, timerHardwarePtr->channel);
 }
 
-void timerNVICConfig(uint8_t irq)
+void timerNVICConfigure(uint8_t irq)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 
@@ -145,23 +145,28 @@ void timerNVICConfig(uint8_t irq)
     NVIC_Init(&NVIC_InitStructure);
 }
 
-void configTimeBase(TIM_TypeDef *tim, uint32_t period, uint8_t mhz)
+void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
 {
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
 
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = period - 1;
+    TIM_TimeBaseStructure.TIM_Period = period - 1; // AKA TIMx_ARR
+
+    // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
+    // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
     TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
+
+
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
 }
 
-void timerInConfig(const timerHardware_t *timerHardwarePtr, uint32_t period, uint8_t mhz)
+void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint8_t mhz)
 {
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
-    timerNVICConfig(timerHardwarePtr->irq);
+    timerNVICConfigure(timerHardwarePtr->irq);
 }
 
 

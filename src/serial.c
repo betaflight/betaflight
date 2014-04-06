@@ -632,14 +632,10 @@ static void evaluateCommand(void)
 // evaluate all other incoming serial data
 static void evaluateOtherData(uint8_t sr)
 {
-    switch (sr) {
-        case '#':
-            cliProcess();
-            break;
-        case 'R':
-            systemReset(true);      // reboot to bootloader
-            break;
-    }
+    if (sr == '#')
+        cliProcess();
+    else if (sr == mcfg.reboot_character)
+        systemReset(true);      // reboot to bootloader
 }
 
 void serialCom(void)

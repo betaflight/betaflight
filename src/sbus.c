@@ -22,7 +22,7 @@ void sbusInit(rcReadRawDataPtr *callback)
     int b;
     for (b = 0; b < SBUS_MAX_CHANNEL; b ++) 
         sbusChannelData[b] = 2 * (mcfg.midrc - SBUS_OFFSET);
-    core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, MODE_RX | MODE_SBUS);
+    core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS));
     if (callback)
         *callback = sbusReadRawRC;
     core.numRCChannels = SBUS_MAX_CHANNEL;

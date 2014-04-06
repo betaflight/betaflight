@@ -31,9 +31,9 @@ int main(void)
     drv_pwm_config_t pwm_params;
     drv_adc_config_t adc_params;
 #ifdef SOFTSERIAL_LOOPBACK
-    serialPort_t* loopbackPort = NULL;
+    serialPort_t* loopbackPort1 = NULL;
+    serialPort_t* loopbackPort2 = NULL;
 #endif
-
     systemInit();
 #ifdef USE_LAME_PRINTF
     init_printf(NULL, _putc);
@@ -113,9 +113,6 @@ int main(void)
     } else { // spektrum and GPS are mutually exclusive
         // Optional GPS - available in both PPM and PWM input mode, in PWM input, reduces number of available channels by 2.
         // gpsInit will return if FEATURE_GPS is not enabled.
-        // Sanity check below - protocols other than NMEA do not support baud rate autodetection
-        if (mcfg.gps_type > 0 && mcfg.gps_baudrate < 0)
-            mcfg.gps_baudrate = 0;
         gpsInit(mcfg.gps_baudrate);
     }
 #ifdef SONAR
@@ -150,11 +147,19 @@ int main(void)
     serialInit(mcfg.serial_baudrate);
 
     if (feature(FEATURE_SOFTSERIAL)) {
-      setupSoftSerial1(mcfg.softserial_baudrate, mcfg.softserial_inverted);
+        //mcfg.softserial_baudrate = 19200; // Uncomment to override config value
+
+        setupSoftSerialPrimary(mcfg.softserial_baudrate, mcfg.softserial_1_inverted);
+        setupSoftSerialSecondary(mcfg.softserial_2_inverted);
+
 #ifdef SOFTSERIAL_LOOPBACK
-      loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
-      serialPrint(loopbackPort, "LOOPBACK ENABLED\r\n");
+        loopbackPort1 = (serialPort_t*)&(softSerialPorts[0]);
+        serialPrint(loopbackPort1, "SOFTSERIAL 1 - LOOPBACK ENABLED\r\n");
+
+        loopbackPort2 = (serialPort_t*)&(softSerialPorts[1]);
+        serialPrint(loopbackPort2, "SOFTSERIAL 2 - LOOPBACK ENABLED\r\n");
 #endif
+        //core.mainport = (serialPort_t*)&(softSerialPorts[0]); // Uncomment to switch the main port to use softserial.
     }
 
     if (feature(FEATURE_TELEMETRY))
@@ -171,11 +176,19 @@ int main(void)
     while (1) {
         loop();
 #ifdef SOFTSERIAL_LOOPBACK
-        if (loopbackPort) {
-            while (serialTotalBytesWaiting(loopbackPort)) {
-    
-                uint8_t b = serialRead(loopbackPort);
-                serialWrite(loopbackPort, b);
+        if (loopbackPort1) {
+            while (serialTotalBytesWaiting(loopbackPort1)) {
+                uint8_t b = serialRead(loopbackPort1);
+                serialWrite(loopbackPort1, b);
+                //serialWrite(core.mainport, 0x01);
+                //serialWrite(core.mainport, b);
+            };
+        }
+        if (loopbackPort2) {
+            while (serialTotalBytesWaiting(loopbackPort2)) {
+                uint8_t b = serialRead(loopbackPort2);
+                serialWrite(loopbackPort1, b);
+                //serialWrite(core.mainport, 0x02);
                 //serialWrite(core.mainport, b);
             };
         }
