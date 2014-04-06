@@ -20,8 +20,8 @@ typedef struct softSerial_s {
     
     uint8_t          isSearchingForStartBit;
     uint8_t          rxBitIndex;
-    uint8_t          rxLastRiseAtBitIndex;
-    uint8_t          rxPinMode;
+    uint8_t          rxLastLeadingEdgeAtBitIndex;
+    uint8_t          rxEdge;
 
     uint8_t          isTransmittingData;
     uint8_t          bitsLeftToTransmit;
