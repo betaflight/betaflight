@@ -252,7 +252,7 @@ bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
     return currentMillis - lastCycleTime >= CYCLETIME;
 }
 
-void sendFrSkyTelemetry(void)
+void handleFrSkyTelemetry(void)
 {
     if (!canSendFrSkyTelemetry()) {
         return;

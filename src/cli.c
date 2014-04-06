@@ -30,6 +30,9 @@ extern const char rcChannelLetters[];
 // from mixer.c
 extern int16_t motor_disarmed[MAX_MOTORS];
 
+// signal that we're in cli mode
+uint8_t cliMode = 0;
+
 // buffer
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
@@ -133,7 +136,7 @@ const clivalue_t valueTable[] = {
     { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, 3 },
     { "gps_baudrate", VAR_INT8, &mcfg.gps_baudrate, 0, 4 },
     { "serialrx_type", VAR_UINT8, &mcfg.serialrx_type, 0, 3 },
-    { "telemetry_provider", VAR_UINT8, &mcfg.telemetry_provider, 0, 0 },
+    { "telemetry_provider", VAR_UINT8, &mcfg.telemetry_provider, 0, 1 },
     { "telemetry_softserial", VAR_UINT8, &mcfg.telemetry_softserial, 0, 2 },
     { "telemetry_switch", VAR_UINT8, &mcfg.telemetry_switch, 0, 1 },
     { "vbatscale", VAR_UINT8, &mcfg.vbatscale, 10, 200 },

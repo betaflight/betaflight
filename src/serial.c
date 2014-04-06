@@ -1,6 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
+#include "cli.h"
 #include "telemetry_common.h"
 
 // Multiwii Serial Protocol 0
@@ -114,8 +115,6 @@ static const char pidnames[] =
 
 static uint8_t checksum, indRX, inBuf[INBUF_SIZE];
 static uint8_t cmdMSP;
-// signal that we're in cli mode
-uint8_t cliMode = 0;
 
 void serialize32(uint32_t a)
 {
@@ -695,8 +694,5 @@ void serialCom(void)
             }
             c_state = IDLE;
         }
-    }
-    if (!cliMode && feature(FEATURE_TELEMETRY)) { // The first condition should never evaluate to true but I'm putting it here anyway - silpstream
-        sendTelemetry();
     }
 }

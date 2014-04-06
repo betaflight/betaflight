@@ -2,6 +2,7 @@
 #include "mw.h"
 
 #include "telemetry_frsky.h"
+#include "telemetry_hott.h"
 
 void initTelemetry(void)
 {
@@ -40,12 +41,21 @@ bool isFrSkyTelemetryEnabled(void)
     return mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY;
 }
 
-void sendTelemetry(void)
+bool isHoTTTelemetryEnabled(void)
+{
+    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_HOTT;
+}
+
+void handleTelemetry(void)
 {
     if (!isTelemetryEnabled())
         return;
 
     if (isFrSkyTelemetryEnabled()) {
-        sendFrSkyTelemetry();
+        handleFrSkyTelemetry();
+    }
+
+    if (isHoTTTelemetryEnabled()) {
+        handleHoTTTelemetry();
     }
 }

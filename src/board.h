@@ -94,7 +94,8 @@ typedef enum {
 
 
 typedef enum {
-    TELEMETRY_PROVIDER_FRSKY = 0
+    TELEMETRY_PROVIDER_FRSKY = 0,
+    TELEMETRY_PROVIDER_HOTT
 } TelemetryProvider;
 
 typedef enum {

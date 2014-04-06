@@ -1,6 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
+#include "cli.h"
 #include "telemetry_common.h"
 
 // June 2013     V2.2-dev
@@ -205,6 +206,10 @@ void annexCode(void)
     }
 
     serialCom();
+
+    if (!cliMode && feature(FEATURE_TELEMETRY)) {
+        handleTelemetry();
+    }
 
     if (sensors(SENSOR_GPS)) {
         static uint32_t GPSLEDTime;
