@@ -92,9 +92,15 @@ typedef enum {
     GPS_MAG_BINARY,
 } GPSHardware;
 
+
+typedef enum {
+    TELEMETRY_PROVIDER_FRSKY = 0
+} TelemetryProvider;
+
 typedef enum {
     TELEMETRY_UART = 0,
-    TELEMETRY_SOFTSERIAL,
+    TELEMETRY_SOFTSERIAL_1,
+    TELEMETRY_SOFTSERIAL_2,
 } TelemetrySerial;
 
 typedef enum {

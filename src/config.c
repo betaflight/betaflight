@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 60;
+static const uint8_t EEPROM_CONF_VERSION = 61;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -192,7 +192,8 @@ static void resetConf(void)
     mcfg.vbatmincellvoltage = 33;
     mcfg.power_adc_channel = 0;
     mcfg.serialrx_type = 0;
-    mcfg.telemetry_softserial = 0;
+    mcfg.telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
+    mcfg.telemetry_softserial = TELEMETRY_UART;
     mcfg.telemetry_switch = 0;
     mcfg.midrc = 1500;
     mcfg.mincheck = 1100;
@@ -215,7 +216,7 @@ static void resetConf(void)
     mcfg.gps_baudrate = 0;
     // serial (USART1) baudrate
     mcfg.serial_baudrate = 115200;
-    mcfg.softserial_baudrate = 19200;
+    mcfg.softserial_baudrate = 9600;
     mcfg.softserial_1_inverted = 0;
     mcfg.softserial_2_inverted = 0;
     mcfg.looptime = 3500;

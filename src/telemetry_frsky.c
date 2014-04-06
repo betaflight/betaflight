@@ -220,75 +220,123 @@ void initTelemetry(void)
     if (!feature(FEATURE_SOFTSERIAL))
         mcfg.telemetry_softserial = TELEMETRY_UART;
 
-    if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL)
+    if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL_1)
         core.telemport = &(softSerialPorts[0].port);
+    else if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL_2)
+        core.telemport = &(softSerialPorts[1].port);
     else
         core.telemport = core.mainport;
 }
 
+bool isTelemetryEnabled()
+{
+    bool telemetryCurrentlyEnabled = true;
+
+    if (mcfg.telemetry_softserial == TELEMETRY_UART) {
+        if (!mcfg.telemetry_switch)
+            telemetryCurrentlyEnabled = f.ARMED;
+        else
+            telemetryCurrentlyEnabled = rcOptions[BOXTELEMETRY];
+    }
+
+    return telemetryCurrentlyEnabled;
+}
+
+bool shouldChangeTelemetryStateNow(bool telemetryCurrentlyEnabled)
+{
+    return telemetryCurrentlyEnabled != telemetryEnabled;
+}
+
 void updateTelemetryState(void)
 {
-    bool State;
-    if (!mcfg.telemetry_switch)
-        State = mcfg.telemetry_softserial != TELEMETRY_UART ? true : f.ARMED;
-    else
-        State = mcfg.telemetry_softserial != TELEMETRY_UART ? true : rcOptions[BOXTELEMETRY];
+    bool telemetryCurrentlyEnabled = isTelemetryEnabled();
 
-    if (State != telemetryEnabled) {
-        if (mcfg.telemetry_softserial == TELEMETRY_UART) {
-            if (State)
-                serialInit(9600);
-            else
-                serialInit(mcfg.serial_baudrate);
-        }
-        telemetryEnabled = State;
+    if (!shouldChangeTelemetryStateNow(telemetryCurrentlyEnabled)) {
+        return;
     }
+
+    if (mcfg.telemetry_softserial == TELEMETRY_UART && mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY) {
+        if (telemetryCurrentlyEnabled)
+            serialInit(9600);
+        else
+            serialInit(mcfg.serial_baudrate);
+    }
+    telemetryEnabled = telemetryCurrentlyEnabled;
 }
 
 static uint32_t lastCycleTime = 0;
 static uint8_t cycleNum = 0;
 
-void sendTelemetry(void)
+bool canSendFrSkyTelemetry(void)
 {
-    if (mcfg.telemetry_softserial == TELEMETRY_UART && ((!f.ARMED && !mcfg.telemetry_switch) || (mcfg.telemetry_switch && !rcOptions[BOXTELEMETRY])))
+    return serialTotalBytesWaiting(core.telemport) == 0;
+}
+
+bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
+{
+    return currentMillis - lastCycleTime >= CYCLETIME;
+}
+
+void sendFrSkyTelemetry(void)
+{
+    if (!canSendFrSkyTelemetry()) {
         return;
+    }
 
-    if (serialTotalBytesWaiting(core.telemport) != 0)
+    uint32_t now = millis();
+
+    if (!hasEnoughTimeLapsedSinceLastTelemetryTransmission(now)) {
         return;
+    }
 
-    if (millis() - lastCycleTime >= CYCLETIME) {
-        lastCycleTime = millis();
-        cycleNum++;
+    lastCycleTime = now;
 
-        // Sent every 125ms
-        sendAccel();
-        sendVario();
+    cycleNum++;
+
+    // Sent every 125ms
+    sendAccel();
+    sendVario();
+    sendTelemetryTail();
+
+    if ((cycleNum % 4) == 0) {      // Sent every 500ms
+        sendBaro();
+        sendHeading();
         sendTelemetryTail();
+    }
 
-        if ((cycleNum % 4) == 0) {      // Sent every 500ms
-            sendBaro();
-            sendHeading();
-            sendTelemetryTail();
+    if ((cycleNum % 8) == 0) {      // Sent every 1s
+        sendTemperature1();
+
+        if (feature(FEATURE_VBAT)) {
+            sendVoltage();
+            sendVoltageAmp();
         }
 
-        if ((cycleNum % 8) == 0) {      // Sent every 1s
-            sendTemperature1();
+        if (sensors(SENSOR_GPS))
+            sendGPS();
 
-            if (feature(FEATURE_VBAT)) {
-                sendVoltage();
-                sendVoltageAmp();
-            }
+        sendTelemetryTail();
+    }
 
-            if (sensors(SENSOR_GPS))
-                sendGPS();
-
-            sendTelemetryTail();
-        }
-
-        if (cycleNum == 40) {     //Frame 3: Sent every 5s
-            cycleNum = 0;
-            sendTime();
-            sendTelemetryTail();
-        }
+    if (cycleNum == 40) {     //Frame 3: Sent every 5s
+        cycleNum = 0;
+        sendTime();
+        sendTelemetryTail();
     }
 }
+
+bool isFrSkyTelemetryEnabled(void)
+{
+    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY;
+}
+
+void sendTelemetry(void)
+{
+    if (!isTelemetryEnabled())
+        return;
+
+    if (isFrSkyTelemetryEnabled()) {
+        sendFrSkyTelemetry();
+    }
+}
+
