@@ -41,20 +41,6 @@ static const uint8_t ubloxInit[] = {
     0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00, 0xDE, 0x6A,             // set rate to 5Hz
 };
 
-static const char *mtkNMEAInit[] = {
-    "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n",                    // only GGA and RMC sentence
-    "$PMTK220,200*2C\r\n"                                                       // 5 Hz update rate
-};
-
-static const char *mtkBinaryInit[] = {
-    "$PMTK319,1*24\r\n",                                                        // SBAS Integrity Mode
-    "$PMTK220,200*2C\r\n",                                                      // 5 Hz update rate
-    "$PMTK397,0*23\r\n",                                                        // NAVTHRES_OFF
-    "$PMTK313,1*2E\r\n",                                                        // SBAS_ON
-    "$PMTK301,2*2E\r\n",                                                        // WAAS_ON
-    "$PGCMD,16,0,0,0,0,0*6A\r\n"                                                // Binary ON
-};
-
 enum {
     GPS_UNKNOWN,
     GPS_INITIALIZING,
