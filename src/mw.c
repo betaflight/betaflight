@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+#include "telemetry_common.h"
+
 // June 2013     V2.2-dev
 
 flags_t f;

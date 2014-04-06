@@ -4,6 +4,9 @@
 #include "board.h"
 #include "mw.h"
 
+#include "telemetry_common.h"
+#include "telemetry_frsky.h"
+
 #define CYCLETIME             125
 
 #define PROTOCOL_HEADER       0x5E
@@ -212,56 +215,28 @@ static void sendHeading(void)
     serialize16(0);
 }
 
-static bool telemetryEnabled = false;
+static bool frSkyTelemetryEnabled = false;
 
-void initTelemetry(void)
+bool shouldChangeTelemetryStateNow(bool frSkyTelemetryCurrentlyEnabled)
 {
-    // Sanity check for softserial vs. telemetry port
-    if (!feature(FEATURE_SOFTSERIAL))
-        mcfg.telemetry_softserial = TELEMETRY_UART;
-
-    if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL_1)
-        core.telemport = &(softSerialPorts[0].port);
-    else if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL_2)
-        core.telemport = &(softSerialPorts[1].port);
-    else
-        core.telemport = core.mainport;
+    return frSkyTelemetryCurrentlyEnabled != frSkyTelemetryEnabled;
 }
 
-bool isTelemetryEnabled()
+void updateFrSkyTelemetryState(void)
 {
-    bool telemetryCurrentlyEnabled = true;
+    bool frSkyTelemetryCurrentlyEnabled = isTelemetryEnabled();
 
-    if (mcfg.telemetry_softserial == TELEMETRY_UART) {
-        if (!mcfg.telemetry_switch)
-            telemetryCurrentlyEnabled = f.ARMED;
-        else
-            telemetryCurrentlyEnabled = rcOptions[BOXTELEMETRY];
-    }
-
-    return telemetryCurrentlyEnabled;
-}
-
-bool shouldChangeTelemetryStateNow(bool telemetryCurrentlyEnabled)
-{
-    return telemetryCurrentlyEnabled != telemetryEnabled;
-}
-
-void updateTelemetryState(void)
-{
-    bool telemetryCurrentlyEnabled = isTelemetryEnabled();
-
-    if (!shouldChangeTelemetryStateNow(telemetryCurrentlyEnabled)) {
+    if (!shouldChangeTelemetryStateNow(frSkyTelemetryCurrentlyEnabled)) {
         return;
     }
 
     if (mcfg.telemetry_softserial == TELEMETRY_UART && mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY) {
-        if (telemetryCurrentlyEnabled)
+        if (frSkyTelemetryCurrentlyEnabled)
             serialInit(9600);
         else
             serialInit(mcfg.serial_baudrate);
     }
-    telemetryEnabled = telemetryCurrentlyEnabled;
+    frSkyTelemetryEnabled = frSkyTelemetryCurrentlyEnabled;
 }
 
 static uint32_t lastCycleTime = 0;
@@ -322,21 +297,6 @@ void sendFrSkyTelemetry(void)
         cycleNum = 0;
         sendTime();
         sendTelemetryTail();
-    }
-}
-
-bool isFrSkyTelemetryEnabled(void)
-{
-    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY;
-}
-
-void sendTelemetry(void)
-{
-    if (!isTelemetryEnabled())
-        return;
-
-    if (isFrSkyTelemetryEnabled()) {
-        sendFrSkyTelemetry();
     }
 }
 

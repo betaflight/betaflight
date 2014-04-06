@@ -477,7 +477,3 @@ void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
 int32_t wrap_18000(int32_t error);
 
-// telemetry
-void initTelemetry(void);
-void updateTelemetryState(void);
-void sendTelemetry(void);

@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+#include "telemetry_common.h"
+
 core_t core;
 
 extern rcReadRawDataPtr rcReadRawFunc;
