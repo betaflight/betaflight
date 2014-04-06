@@ -5,6 +5,19 @@
  *      Author: Hydra/cGiesen
  */
 
+/*
+ * HoTT is implemented in Graupner equipment using a bi-directional protocol over a single wire.
+ *
+ * Generally the receiver sends a single request byte out using normal uart signals, then waits a short period for a
+ * multiple byte response and checksum byte before it sends out the next request byte.
+ * Each response byte must be send with a protocol specific delay between them.
+ *
+ * Serial ports use two wires so connect the receiver's HoTT signal to a uart/softserial RX pin via a diode
+ * and then also connect a uart/softserial TX pin to the same HoTT pin on the receiver, but NOT via a diode.
+ *
+ * This is so that when baseflight transmits it does not receive it's own transmission.
+ */
+
 #include "board.h"
 #include "mw.h"
 
@@ -16,13 +29,11 @@ const uint8_t kHoTTv4TextPacketSize = 173;
 
 static uint8_t outBuffer[173];
 static void hottV4SerialWrite(uint8_t c);
-static inline void hottV4EnableReceiverMode(void);
-static inline void hottV4EnableTransmitterMode(void);
 
-static void hottV4SendData(uint8_t *data, uint8_t size);
-static void hottV4SendGPS(void);
+static void hottV4Respond(uint8_t *data, uint8_t size);
+static void hottV4FormatAndSendGPSResponse(void);
 static void hottV4GPSUpdate(void);
-static void hottV4SendEAM(void);
+static void hottV4FormatAndSendEAMResponse(void);
 static void hottV4EAMUpdateBattery(void);
 static void hottV4EAMUpdateTemperatures(void);
 bool batteryWarning;
@@ -31,7 +42,7 @@ bool batteryWarning;
  * Sends HoTTv4 capable GPS telemetry frame.
  */
 
-void hottV4SendGPS(void)
+void hottV4FormatAndSendGPSResponse(void)
 {
     /** Minimum data set for EAM */
     HoTTV4GPSModule.startByte = 0x7C;
@@ -53,7 +64,7 @@ void hottV4SendGPS(void)
     memcpy(&outBuffer, &HoTTV4GPSModule, kHoTTv4BinaryPacketSize);
 
     // Send data from output buffer
-    hottV4SendData(outBuffer, kHoTTv4BinaryPacketSize);
+    hottV4Respond(outBuffer, kHoTTv4BinaryPacketSize);
   }
 
 void hottV4GPSUpdate(void)
@@ -149,7 +160,7 @@ void hottV4GPSUpdate(void)
 /**
  * Sends HoTTv4 capable EAM telemetry frame.
  */
-void hottV4SendEAM(void) {
+void hottV4FormatAndSendEAMResponse(void) {
   /** Minimum data set for EAM */
   HoTTV4ElectricAirModule.startByte = 0x7C;
   HoTTV4ElectricAirModule.sensorID = HOTTV4_ELECTRICAL_AIR_SENSOR_ID;
@@ -176,7 +187,7 @@ void hottV4SendEAM(void) {
   memcpy(&outBuffer, &HoTTV4ElectricAirModule, kHoTTv4BinaryPacketSize);
 
   // Send data from output buffer
-  hottV4SendData(outBuffer, kHoTTv4BinaryPacketSize);
+  hottV4Respond(outBuffer, kHoTTv4BinaryPacketSize);
 }
 
 /**
@@ -184,15 +195,11 @@ void hottV4SendEAM(void) {
  * to the HoTT capable receiver. Last byte will always be treated as checksum and is
  * calculated on the fly.
  */
-static void hottV4SendData(uint8_t *data, uint8_t size) {
-  //hottV4Serial.flush();
+static void hottV4Respond(uint8_t *data, uint8_t size) {
 
-  // Protocoll specific waiting time
-  // to avoid collisions
-  delay(5);
-
-  if (serialTotalBytesWaiting(core.telemport) == 0) {
-    hottV4EnableTransmitterMode();
+    if (serialTotalBytesWaiting(core.telemport) != 0 ) {
+        return; // cannot respond since another request came in.
+    }
 
     uint16_t crc = 0;
     uint8_t i;
@@ -201,15 +208,12 @@ static void hottV4SendData(uint8_t *data, uint8_t size) {
       crc += data[i];
       hottV4SerialWrite(data[i]);
 
-      // Protocoll specific delay between each transmitted byte
+      // Protocol specific delay between each transmitted byte
       delayMicroseconds(HOTTV4_TX_DELAY);
     }
 
     // Write package checksum
     hottV4SerialWrite(crc & 0xFF);
-
-    hottV4EnableReceiverMode();
-  }
 }
 
 /**
@@ -217,35 +221,24 @@ static void hottV4SendData(uint8_t *data, uint8_t size) {
  * If in debug mode, data is also written to UART serial interface.
  */
 static void hottV4SerialWrite(uint8_t c) {
-  //hottV4Serial.write(c);
   serialWrite(core.telemport, c);
-}
-
-/**
- * Enables RX and disables TX
- */
-static inline void hottV4EnableReceiverMode() {
-  //DDRD &= ~(1 << HOTTV4_RXTX);
-  //PORTD |= (1 << HOTTV4_RXTX);
-}
-
-/**
- * Enabels TX and disables RX
- */
-static inline void hottV4EnableTransmitterMode() {
-  //DDRD |= (1 << HOTTV4_RXTX);
 }
 
 void handleHoTTTelemetry(void)
 {
     while (serialTotalBytesWaiting(core.telemport)) {
       uint8_t c = serialRead(core.telemport);
+
+      // Protocol specific waiting time
+      // to avoid collisions
+      delay(5);
+
       switch (c) {
         case 0x8A:
-            if (sensors(SENSOR_GPS)) hottV4SendGPS();
+            if (sensors(SENSOR_GPS)) hottV4FormatAndSendGPSResponse();
             break;
         case 0x8E:
-            hottV4SendEAM();
+            hottV4FormatAndSendEAMResponse();
             break;
         }
     }
