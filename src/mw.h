@@ -165,6 +165,7 @@ typedef struct config_t {
     uint8_t yawRate;
 
     uint8_t dynThrPID;
+    uint16_t tpaBreakPoint;                  // Breakpoint where TPA is activated
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
     int16_t angleTrim[2];                   // accelerometer trim
 
