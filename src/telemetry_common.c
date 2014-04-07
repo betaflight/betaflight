@@ -23,7 +23,7 @@ bool canUseTelemetryWithCurrentConfiguration(void) {
     }
 
     if (!feature(FEATURE_SOFTSERIAL)) {
-        if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1 || mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1) {
+        if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1 || mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2) {
             // softserial feature must be enabled to use telemetry on softserial ports
             return false;
         }
