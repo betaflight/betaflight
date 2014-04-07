@@ -3,6 +3,10 @@
  *
  *  Created on: 6 Apr 2014
  *      Author: Hydra/cGiesen
+ *
+ *  It should be noted that the initial cut of code that deals with the handling of requests and formatting and
+ *  sending of responses comes from the MultiHoTT-module project, here: https://github.com/cGiesen/MultiHoTT-Module
+ *
  */
 
 /*
