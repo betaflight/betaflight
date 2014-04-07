@@ -218,17 +218,20 @@ void processTxState(softSerial_t *softSerial)
         softSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1);
         softSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
         softSerial->isTransmittingData = true;
+
         return;
     }
 
-    mask = softSerial->internalTxBuffer & 1;
-    softSerial->internalTxBuffer >>= 1;
+    if (softSerial->bitsLeftToTransmit) {
+        mask = softSerial->internalTxBuffer & 1;
+        softSerial->internalTxBuffer >>= 1;
 
-    setTxSignal(softSerial, mask);
-
-    if (--softSerial->bitsLeftToTransmit <= 0) {
-        softSerial->isTransmittingData = false;
+        setTxSignal(softSerial, mask);
+        softSerial->bitsLeftToTransmit--;
+        return;
     }
+
+    softSerial->isTransmittingData = false;
 }
 
 enum {
