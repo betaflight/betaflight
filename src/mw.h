@@ -276,7 +276,7 @@ typedef struct master_t {
     int8_t gps_baudrate;                    // See GPSBaudRates enum.
 
     uint32_t serial_baudrate;
-    
+
     uint32_t softserial_baudrate;             // shared by both soft serial ports
     uint8_t softserial_1_inverted;            // use inverted softserial input and output signals on port 1
     uint8_t softserial_2_inverted;            // use inverted softserial input and output signals on port 2
