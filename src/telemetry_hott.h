@@ -8,7 +8,7 @@
 #ifndef TELEMETRY_HOTT_H_
 #define TELEMETRY_HOTT_H_
 
-/* ###### HoTT module specifications ###### */
+/* HoTT module specifications */
 
 #define HOTTV4_GENERAL_AIR_SENSOR_ID          0xD0
 
@@ -76,14 +76,14 @@ typedef enum {
     HoTTv4NotificationReceiver             = 0x35,
 } HoTTv4Notification;
 
-/*-----------------------------------------------------------
-GPS
-Receiver -> GPS Sensor (Flightcontrol)
-Byte 1: 0x80 = Receiver byte
-Byte 2: 0x8A = GPS Sensor byte (witch data Transmitter wants to get)
-5ms Idle Line!
-5ms delay
------------------------------------------------------------*/
+/**
+ * GPS
+ * Receiver -> GPS Sensor (Flightcontrol)
+ * Byte 1: 0x80 = Receiver byte
+ * Byte 2: 0x8A = GPS Sensor byte (witch data Transmitter wants to get)
+ * 5ms Idle Line!
+ * 5ms delay
+ */
 
 struct {
     uint8_t startByte;               // Byte  1: 0x7C = Start byte data
@@ -144,13 +144,13 @@ struct {
     uint8_t endByte;                 // Byte 44: 0x7D End byte
 } HoTTV4GPSModule;
 
-/*-----------------------------------------------------------
-EAM (Electric Air Module) 33620
-EmpfängerElectric Sensor
-Byte 1: 80 = Receiver byte
-Byte 2: 8E = Electric Sensor byte
-5ms Idle Line!
- *-----------------------------------------------------------*/
+/**
+ * EAM (Electric Air Module) 33620
+ * EmpfängerElectric Sensor
+ * Byte 1: 80 = Receiver byte
+ * Byte 2: 8E = Electric Sensor byte
+ * 5ms Idle Line!
+*/
 
 struct {
     uint8_t startByte;

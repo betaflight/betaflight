@@ -139,7 +139,7 @@ void hottV4GPSUpdate(void)
  * Writes cell 1-4 high, low values and if not available
  * calculates vbat.
  */
-static void hottV4EAMUpdateBattery()
+static void hottV4EAMUpdateBattery(void)
 {
 #if 0
     HoTTV4ElectricAirModule.cell1L = 4.2f * 10 * 5; // 2mv step
@@ -171,7 +171,7 @@ static void hottV4EAMUpdateBattery()
 #endif
 }
 
-static void hottV4EAMUpdateTemperatures()
+static void hottV4EAMUpdateTemperatures(void)
 {
     HoTTV4ElectricAirModule.temp1 = 20 + 0;
     HoTTV4ElectricAirModule.temp2 = 20;
