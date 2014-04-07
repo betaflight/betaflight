@@ -59,23 +59,23 @@ void initTelemetry(void)
 
 static bool telemetryEnabled = false;
 
-bool isTelemetryEnabled(void)
+bool determineNewTelemetryEnabledState(void)
 {
-    bool telemetryCurrentlyEnabled = true;
+    bool enabled = true;
 
     if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
         if (!mcfg.telemetry_switch)
-            telemetryCurrentlyEnabled = f.ARMED;
+            enabled = f.ARMED;
         else
-            telemetryCurrentlyEnabled = rcOptions[BOXTELEMETRY];
+            enabled = rcOptions[BOXTELEMETRY];
     }
 
-    return telemetryCurrentlyEnabled;
+    return enabled;
 }
 
-bool shouldChangeTelemetryStateNow(bool telemetryCurrentlyEnabled)
+bool shouldChangeTelemetryStateNow(bool newState)
 {
-    return telemetryCurrentlyEnabled != telemetryEnabled;
+    return newState != telemetryEnabled;
 }
 
 static void configureTelemetryPort(void) {
@@ -104,23 +104,23 @@ void checkTelemetryState(void)
         return;
     }
 
-    bool telemetryCurrentlyEnabled = isTelemetryEnabled();
+    bool newEnabledState = determineNewTelemetryEnabledState();
 
-    if (!shouldChangeTelemetryStateNow(telemetryCurrentlyEnabled)) {
+    if (!shouldChangeTelemetryStateNow(newEnabledState)) {
         return;
     }
 
-    if (telemetryCurrentlyEnabled)
+    if (newEnabledState)
         configureTelemetryPort();
     else
         freeTelemetryPort();
 
-    telemetryEnabled = telemetryCurrentlyEnabled;
+    telemetryEnabled = newEnabledState;
 }
 
 void handleTelemetry(void)
 {
-    if (!isTelemetryConfigurationValid || !isTelemetryEnabled())
+    if (!isTelemetryConfigurationValid || !determineNewTelemetryEnabledState())
         return;
 
     if (isTelemetryProviderFrSky()) {

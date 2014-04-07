@@ -12,6 +12,5 @@
 void initTelemetry(void);
 void checkTelemetryState(void);
 void handleTelemetry(void);
-bool isTelemetryEnabled(void);
 
 #endif /* TELEMETRY_COMMON_H_ */
