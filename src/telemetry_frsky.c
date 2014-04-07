@@ -230,7 +230,7 @@ void updateFrSkyTelemetryState(void)
         return;
     }
 
-    if (mcfg.telemetry_softserial == TELEMETRY_UART && mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY) {
+    if (mcfg.telemetry_port == TELEMETRY_PORT_UART && mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY) {
         if (frSkyTelemetryCurrentlyEnabled)
             serialInit(9600);
         else

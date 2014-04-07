@@ -8,11 +8,11 @@ void initTelemetry(void)
 {
     // Sanity check for softserial vs. telemetry port
     if (!feature(FEATURE_SOFTSERIAL))
-        mcfg.telemetry_softserial = TELEMETRY_UART;
+        mcfg.telemetry_port = TELEMETRY_PORT_UART;
 
-    if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL_1)
+    if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1)
         core.telemport = &(softSerialPorts[0].port);
-    else if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL_2)
+    else if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2)
         core.telemport = &(softSerialPorts[1].port);
     else
         core.telemport = core.mainport;
@@ -26,7 +26,7 @@ bool isTelemetryEnabled(void)
 {
     bool telemetryCurrentlyEnabled = true;
 
-    if (mcfg.telemetry_softserial == TELEMETRY_UART) {
+    if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
         if (!mcfg.telemetry_switch)
             telemetryCurrentlyEnabled = f.ARMED;
         else
