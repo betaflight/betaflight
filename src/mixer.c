@@ -304,8 +304,6 @@ void writeServos(void)
     }
 }
 
-extern uint8_t cliMode;
-
 void writeMotors(void)
 {
     uint8_t i;

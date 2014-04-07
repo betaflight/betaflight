@@ -272,8 +272,8 @@ typedef struct master_t {
     uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
 
     // gps-related stuff
-    uint8_t gps_type;                       // Type of GPS hardware. 0: NMEA 1: UBX 2: MTK NMEA 3: MTK Binary
-    int8_t gps_baudrate;                    // GPS baudrate, 0: 115200, 1: 57600, 2: 38400, 3: 19200, 4: 9600. NMEA will cycle through these until valid data is received
+    uint8_t gps_type;                       // See GPSHardware enum.
+    int8_t gps_baudrate;                    // See GPSBaudRates enum.
 
     uint32_t serial_baudrate;
 
@@ -281,7 +281,8 @@ typedef struct master_t {
     uint8_t softserial_1_inverted;            // use inverted softserial input and output signals on port 1
     uint8_t softserial_2_inverted;            // use inverted softserial input and output signals on port 2
 
-    uint8_t telemetry_softserial;           // Serial to use for Telemetry. 0:USART1, 1:SoftSerial1 (Enable FEATURE_SOFTSERIAL first)
+    uint8_t telemetry_provider;             // See TelemetryProvider enum.
+    uint8_t telemetry_port;                 // See TelemetryPort enum.
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     config_t profile[3];                    // 3 separate profiles
     uint8_t current_profile;                // currently loaded profile
@@ -477,7 +478,3 @@ void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
 int32_t wrap_18000(int32_t error);
 
-// telemetry
-void initTelemetry(void);
-void updateTelemetryState(void);
-void sendTelemetry(void);

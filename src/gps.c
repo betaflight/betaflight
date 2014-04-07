@@ -8,22 +8,24 @@
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below
-#define GPS_INIT_ENTRIES (5)
+#define GPS_INIT_ENTRIES (GPS_BAUD_MAX + 1)
 #define GPS_BAUD_DELAY (100)
 
 typedef struct gpsInitData_t {
+    uint8_t index;
     uint32_t baudrate;
     const char *ubx;
     const char *mtk;
 } gpsInitData_t;
 
+// NMEA will cycle through these until valid data is received
 static const gpsInitData_t gpsInitData[] = {
-    { 115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n", "$PMTK251,115200*1F\r\n" },
-    {  57600, "$PUBX,41,1,0003,0001,57600,0*2D\r\n", "$PMTK251,57600*2C\r\n" },
-    {  38400, "$PUBX,41,1,0003,0001,38400,0*26\r\n", "$PMTK251,38400*27\r\n" },
-    {  19200, "$PUBX,41,1,0003,0001,19200,0*23\r\n", "$PMTK251,19200*22\r\n" },
+    { GPS_BAUD_115200, 115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n", "$PMTK251,115200*1F\r\n" },
+    { GPS_BAUD_57600,   57600, "$PUBX,41,1,0003,0001,57600,0*2D\r\n", "$PMTK251,57600*2C\r\n" },
+    { GPS_BAUD_38400,   38400, "$PUBX,41,1,0003,0001,38400,0*26\r\n", "$PMTK251,38400*27\r\n" },
+    { GPS_BAUD_19200,   19200, "$PUBX,41,1,0003,0001,19200,0*23\r\n", "$PMTK251,19200*22\r\n" },
     // 9600 is not enough for 5Hz updates - leave for compatibility to dumb NMEA that only runs at this speed
-    {   9600, "", "" }
+    { GPS_BAUD_9600,     9600, "", "" }
 };
 
 static const uint8_t ubloxInit[] = {
@@ -39,20 +41,6 @@ static const uint8_t ubloxInit[] = {
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x12, 0x01, 0x1E, 0x67,           // set VELNED MSG rate
     0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x51, 0x08, 0x00, 0x00, 0x8A, 0x41, // set WAAS to EGNOS
     0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00, 0xDE, 0x6A,             // set rate to 5Hz
-};
-
-static const char *mtkNMEAInit[] = {
-    "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n",                    // only GGA and RMC sentence
-    "$PMTK220,200*2C\r\n"                                                       // 5 Hz update rate
-};
-
-static const char *mtkBinaryInit[] = {
-    "$PMTK319,1*24\r\n",                                                        // SBAS Integrity Mode
-    "$PMTK220,200*2C\r\n",                                                      // 5 Hz update rate
-    "$PMTK397,0*23\r\n",                                                        // NAVTHRES_OFF
-    "$PMTK313,1*2E\r\n",                                                        // SBAS_ON
-    "$PMTK301,2*2E\r\n",                                                        // WAAS_ON
-    "$PGCMD,16,0,0,0,0,0*6A\r\n"                                                // Binary ON
 };
 
 enum {
@@ -88,7 +76,7 @@ static void gpsSetState(uint8_t state)
     gpsData.state_ts = millis();
 }
 
-void gpsInit(uint8_t baudrate)
+void gpsInit(uint8_t baudrateIndex)
 {
     portMode_t mode = MODE_RXTX;
 
@@ -97,7 +85,7 @@ void gpsInit(uint8_t baudrate)
     if (!feature(FEATURE_GPS))
         return;
 
-    gpsData.baudrateIndex = baudrate;
+    gpsData.baudrateIndex = baudrateIndex;
     gpsData.lastMessage = millis();
     gpsData.errors = 0;
     // only RX is needed for NMEA-style GPS
@@ -105,7 +93,7 @@ void gpsInit(uint8_t baudrate)
         mode = MODE_RX;
 
     gpsSetPIDs();
-    core.gpsport = uartOpen(USART2, gpsNewData, gpsInitData[baudrate].baudrate, mode);
+    core.gpsport = uartOpen(USART2, gpsNewData, gpsInitData[baudrateIndex].baudrate, mode);
     // signal GPS "thread" to initialize when it gets to it
     gpsSetState(GPS_INITIALIZING);
 }

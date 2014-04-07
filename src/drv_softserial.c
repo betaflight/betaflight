@@ -120,20 +120,25 @@ void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)
     softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_Out_PP);
 }
 
-void initialiseSoftSerial(softSerial_t *softSerial, uint8_t portIndex, uint32_t baud, uint8_t inverted)
+void resetBuffers(softSerial_t *softSerial)
 {
-    softSerial->port.vTable = softSerialVTable;
-    softSerial->port.mode = MODE_RXTX;
-
     softSerial->port.rxBufferSize = SOFT_SERIAL_BUFFER_SIZE;
     softSerial->port.rxBuffer = softSerial->rxBuffer;
     softSerial->port.rxBufferTail = 0;
     softSerial->port.rxBufferHead = 0;
 
     softSerial->port.txBuffer = softSerial->txBuffer;
-    softSerial->port.txBufferSize = SOFT_SERIAL_BUFFER_SIZE,
+    softSerial->port.txBufferSize = SOFT_SERIAL_BUFFER_SIZE;
     softSerial->port.txBufferTail = 0;
     softSerial->port.txBufferHead = 0;
+}
+
+void initialiseSoftSerial(softSerial_t *softSerial, uint8_t portIndex, uint32_t baud, uint8_t inverted)
+{
+    softSerial->port.vTable = softSerialVTable;
+    softSerial->port.mode = MODE_RXTX;
+
+    resetBuffers(softSerial);
 
     softSerial->isTransmittingData = false;
 
@@ -237,6 +242,8 @@ void processTxState(softSerial_t *softSerial)
     softSerial->isTransmittingData = false;
 }
 
+
+
 enum {
     TRAILING,
     LEADING
@@ -268,6 +275,10 @@ void prepareForNextRxByte(softSerial_t *softSerial)
 
 void extractAndStoreRxByte(softSerial_t *softSerial)
 {
+    if ((softSerial->port.mode & MODE_RX) == 0) {
+        return;
+    }
+
     uint8_t haveStartBit = (softSerial->internalRxBuffer & START_BIT_MASK) == 0;
     uint8_t haveStopBit = (softSerial->internalRxBuffer & STOP_BIT_MASK) == 1;
 
@@ -317,6 +328,10 @@ void onSerialRxPinChange(uint8_t portIndex, uint16_t capture)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
+    if ((softSerial->port.mode & MODE_RX) == 0) {
+        return;
+    }
+
     if (softSerial->isSearchingForStartBit) {
         // synchronise bit counter
         // FIXME this reduces functionality somewhat as receiving breaks concurrent transmission on all ports because
@@ -353,6 +368,10 @@ void onSerialRxPinChange(uint8_t portIndex, uint16_t capture)
 
 uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
 {
+    if ((instance->mode & MODE_RX) == 0) {
+        return 0;
+    }
+
     int availableBytes;
     softSerial_t *softSerial = (softSerial_t *)instance;
     if (softSerial->port.rxBufferTail == softSerial->port.rxBufferHead) {
@@ -379,6 +398,11 @@ static void moveHeadToNextByte(softSerial_t *softSerial)
 uint8_t softSerialReadByte(serialPort_t *instance)
 {
     char b;
+
+    if ((instance->mode & MODE_RX) == 0) {
+        return 0;
+    }
+
     if (softSerialTotalBytesWaiting(instance) == 0) {
         return 0;
     }
@@ -391,6 +415,10 @@ uint8_t softSerialReadByte(serialPort_t *instance)
 
 void softSerialWriteByte(serialPort_t *s, uint8_t ch)
 {
+    if ((s->mode & MODE_TX) == 0) {
+        return;
+    }
+
     s->txBuffer[s->txBufferHead] = ch;
     s->txBufferHead = (s->txBufferHead + 1) % s->txBufferSize;
 }
@@ -400,6 +428,11 @@ void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
     // not implemented.
 }
 
+void softSerialSetMode(serialPort_t *instance, portMode_t mode)
+{
+    instance->mode = mode;
+}
+
 bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
 {
     return instance->txBufferHead == instance->txBufferTail;
@@ -407,10 +440,11 @@ bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
 
 const struct serialPortVTable softSerialVTable[] = {
     {
-        softSerialWriteByte, 
+        softSerialWriteByte,
         softSerialTotalBytesWaiting,
         softSerialReadByte,
         softSerialSetBaudRate,
-        isSoftSerialTransmitBufferEmpty
+        isSoftSerialTransmitBufferEmpty,
+        softSerialSetMode,
     }
 };

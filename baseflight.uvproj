@@ -1345,9 +1345,9 @@
               <FilePath>.\src\buzzer.c</FilePath>
             </File>
             <File>
-              <FileName>telemetry.c</FileName>
+              <FileName>telemetry_frsky.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\telemetry.c</FilePath>
+              <FilePath>.\src\telemetry_frsky.c</FilePath>
             </File>
             <File>
               <FileName>utils.c</FileName>

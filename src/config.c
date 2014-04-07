@@ -192,7 +192,8 @@ static void resetConf(void)
     mcfg.vbatmincellvoltage = 33;
     mcfg.power_adc_channel = 0;
     mcfg.serialrx_type = 0;
-    mcfg.telemetry_softserial = 0;
+    mcfg.telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
+    mcfg.telemetry_port = TELEMETRY_PORT_UART;
     mcfg.telemetry_switch = 0;
     mcfg.midrc = 1500;
     mcfg.mincheck = 1100;
@@ -212,10 +213,10 @@ static void resetConf(void)
     mcfg.servo_pwm_rate = 50;
     // gps/nav stuff
     mcfg.gps_type = GPS_NMEA;
-    mcfg.gps_baudrate = 0;
+    mcfg.gps_baudrate = GPS_BAUD_115200;
     // serial (USART1) baudrate
     mcfg.serial_baudrate = 115200;
-    mcfg.softserial_baudrate = 19200;
+    mcfg.softserial_baudrate = 9600;
     mcfg.softserial_1_inverted = 0;
     mcfg.softserial_2_inverted = 0;
     mcfg.looptime = 3500;
