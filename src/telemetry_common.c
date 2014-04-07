@@ -16,7 +16,8 @@ bool isTelemetryProviderHoTT(void)
     return mcfg.telemetry_provider == TELEMETRY_PROVIDER_HOTT;
 }
 
-bool canUseTelemetryWithCurrentConfiguration(void) {
+bool canUseTelemetryWithCurrentConfiguration(void)
+{
 
     if (!feature(FEATURE_TELEMETRY)) {
         return false;
@@ -78,7 +79,8 @@ bool shouldChangeTelemetryStateNow(bool newState)
     return newState != telemetryEnabled;
 }
 
-static void configureTelemetryPort(void) {
+static void configureTelemetryPort(void)
+{
     if (isTelemetryProviderFrSky()) {
         configureFrSkyTelemetryPort();
     }
@@ -88,7 +90,8 @@ static void configureTelemetryPort(void) {
     }
 }
 
-void freeTelemetryPort(void) {
+void freeTelemetryPort(void)
+{
     if (isTelemetryProviderFrSky()) {
         freeFrSkyTelemetryPort();
     }
