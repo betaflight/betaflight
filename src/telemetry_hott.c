@@ -23,20 +23,16 @@
  * the signals don't get mixed up.  When baseflight transmits it should not receive it's own transmission.
  *
  * Connect as follows:
- * HoTT TX/RX -> 1N4148 Diode -(|  )- -> Serial RX
- * Serial TX -> 1N4148 Diode -(|  )- -> 10k Resistor -(||| |) -> HoTT TX/RX
+ * HoTT TX/RX -> Serial RX (connect directly)
+ * Serial TX -> 1N4148 Diode -(|  )-> HoTT TX/RX (connect via diode)
  *
- * Diodes should be arranged to allow the data signals to flow the right way
+ * The diode should be arranged to allow the data signals to flow the right way
  * -(|  )- == Diode, | indicates cathode marker.
- * 10k Resistor is Brown Black Orange, Gold (5%)
- *
- * Note the above connections are not 100% reliable, the signal at the HoTT port is not clean, perhaps a
- * transistor on the serial RX line is needed?
  *
  * As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC 24FJ64GA-002, which digitals pins are 5V tolerant.
  *
  * Note: The softserial ports are not listed as 5V tolerant in the STM32F103xx data sheet pinouts and pin description
- * section.  No 5v/3.3v level shifters are required.  The softserial port should not be inverted.
+ * section.  Verify if you require a 5v/3.3v level shifters.  The softserial port should not be inverted.
  *
  * Technically it is possible to use less components and disable softserial RX when transmitting but that is
  * not currently supported.
