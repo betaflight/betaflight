@@ -256,6 +256,7 @@ static void resetConf(void)
     cfg.rollPitchRate = 0;
     cfg.yawRate = 0;
     cfg.dynThrPID = 0;
+    cfg.tpaBreakPoint = 1500;
     cfg.thrMid8 = 50;
     cfg.thrExpo8 = 0;
     // for (i = 0; i < CHECKBOXITEMS; i++)

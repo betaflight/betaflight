@@ -168,6 +168,8 @@ const clivalue_t valueTable[] = {
     { "thr_expo", VAR_UINT8, &cfg.thrExpo8, 0, 100 },
     { "roll_pitch_rate", VAR_UINT8, &cfg.rollPitchRate, 0, 100 },
     { "yawrate", VAR_UINT8, &cfg.yawRate, 0, 100 },
+    { "tparate", VAR_UINT8, &cfg.dynThrPID, 0, 100},
+    { "tpa_breakpoint", VAR_UINT16, &cfg.tpaBreakPoint, 1000, 2000},
     { "failsafe_delay", VAR_UINT8, &cfg.failsafe_delay, 0, 200 },
     { "failsafe_off_delay", VAR_UINT8, &cfg.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, 1000, 2000 },
