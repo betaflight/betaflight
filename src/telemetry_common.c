@@ -26,6 +26,8 @@ void initTelemetry(void)
         core.telemport = &(softSerialPorts[1].port);
     else
         core.telemport = core.mainport;
+
+    checkTelemetryState();
 }
 
 static bool telemetryEnabled = false;
@@ -71,6 +73,10 @@ void freeTelemetryPort(void) {
 
 void checkTelemetryState(void)
 {
+    if (!feature(FEATURE_TELEMETRY)) {
+        return;
+    }
+
     bool telemetryCurrentlyEnabled = isTelemetryEnabled();
 
     if (!shouldChangeTelemetryStateNow(telemetryCurrentlyEnabled)) {
