@@ -4,6 +4,8 @@
 #include "telemetry_frsky.h"
 #include "telemetry_hott.h"
 
+static bool isTelemetryConfigurationValid = false; // flag used to avoid repeated configuration checks
+
 bool isTelemetryProviderFrSky(void)
 {
     return mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY;
@@ -14,11 +16,36 @@ bool isTelemetryProviderHoTT(void)
     return mcfg.telemetry_provider == TELEMETRY_PROVIDER_HOTT;
 }
 
+bool canUseTelemetryWithCurrentConfiguration(void) {
+
+    if (!feature(FEATURE_TELEMETRY)) {
+        return false;
+    }
+
+    if (!feature(FEATURE_SOFTSERIAL)) {
+        if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1 || mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1) {
+            // softserial feature must be enabled to use telemetry on softserial ports
+            return false;
+        }
+    }
+
+    if (isTelemetryProviderHoTT()) {
+        if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
+            // HoTT requires a serial port that supports RX/TX mode swapping
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void initTelemetry(void)
 {
-    // Sanity check for softserial vs. telemetry port
+    // Force telemetry to uart when softserial disabled
     if (!feature(FEATURE_SOFTSERIAL))
         mcfg.telemetry_port = TELEMETRY_PORT_UART;
+
+    isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
 
     if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1)
         core.telemport = &(softSerialPorts[0].port);
@@ -51,7 +78,7 @@ bool shouldChangeTelemetryStateNow(bool telemetryCurrentlyEnabled)
     return telemetryCurrentlyEnabled != telemetryEnabled;
 }
 
-void configureTelemetryPort(void) {
+static void configureTelemetryPort(void) {
     if (isTelemetryProviderFrSky()) {
         configureFrSkyTelemetryPort();
     }
@@ -73,7 +100,7 @@ void freeTelemetryPort(void) {
 
 void checkTelemetryState(void)
 {
-    if (!feature(FEATURE_TELEMETRY)) {
+    if (!isTelemetryConfigurationValid) {
         return;
     }
 
@@ -93,7 +120,7 @@ void checkTelemetryState(void)
 
 void handleTelemetry(void)
 {
-    if (!isTelemetryEnabled())
+    if (!isTelemetryConfigurationValid || !isTelemetryEnabled())
         return;
 
     if (isTelemetryProviderFrSky()) {
