@@ -181,36 +181,40 @@ static void timCCxHandler(TIM_TypeDef *tim)
     uint16_t capture;
     timerConfig_t *timerConfig;
 
-    if (TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
-        TIM_ClearITPendingBit(tim, TIM_IT_CC1);
+    uint8_t channelIndex = 0;
+    for (channelIndex = 0; channelIndex < CC_CHANNELS_PER_TIMER; channelIndex++) {
+        uint8_t channel = channels[channelIndex];
 
-        timerConfig = findTimerConfig(tim, TIM_Channel_1);
-        capture = TIM_GetCapture1(tim);
-    } else if (TIM_GetITStatus(tim, TIM_IT_CC2) == SET) {
-        TIM_ClearITPendingBit(tim, TIM_IT_CC2);
+        if (channel == TIM_Channel_1 && TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
+            TIM_ClearITPendingBit(tim, TIM_IT_CC1);
 
-        timerConfig = findTimerConfig(tim, TIM_Channel_2);
-        capture = TIM_GetCapture2(tim);
-    } else if (TIM_GetITStatus(tim, TIM_IT_CC3) == SET) {
-        TIM_ClearITPendingBit(tim, TIM_IT_CC3);
+            timerConfig = findTimerConfig(tim, TIM_Channel_1);
+            capture = TIM_GetCapture1(tim);
+        } else if (channel == TIM_Channel_2 && TIM_GetITStatus(tim, TIM_IT_CC2) == SET) {
+            TIM_ClearITPendingBit(tim, TIM_IT_CC2);
 
-        timerConfig = findTimerConfig(tim, TIM_Channel_3);
-        capture = TIM_GetCapture3(tim);
-    } else if (TIM_GetITStatus(tim, TIM_IT_CC4) == SET) {
-        TIM_ClearITPendingBit(tim, TIM_IT_CC4);
+            timerConfig = findTimerConfig(tim, TIM_Channel_2);
+            capture = TIM_GetCapture2(tim);
+        } else if (channel == TIM_Channel_3 && TIM_GetITStatus(tim, TIM_IT_CC3) == SET) {
+            TIM_ClearITPendingBit(tim, TIM_IT_CC3);
 
-        timerConfig = findTimerConfig(tim, TIM_Channel_4);
-        capture = TIM_GetCapture4(tim);
-    } else {
-        return; // avoid uninitialised variable dereference
+            timerConfig = findTimerConfig(tim, TIM_Channel_3);
+            capture = TIM_GetCapture3(tim);
+        } else if (channel == TIM_Channel_4 && TIM_GetITStatus(tim, TIM_IT_CC4) == SET) {
+            TIM_ClearITPendingBit(tim, TIM_IT_CC4);
+
+            timerConfig = findTimerConfig(tim, TIM_Channel_4);
+            capture = TIM_GetCapture4(tim);
+        } else {
+            continue; // avoid uninitialised variable dereference
+        }
+
+        if (!timerConfig->callback) {
+            continue;
+        }
+        timerConfig->callback(timerConfig->reference, capture);
     }
-
-    if (!timerConfig->callback) {
-        return;
-    }
-    timerConfig->callback(timerConfig->reference, capture);
 }
-
 void TIM1_CC_IRQHandler(void)
 {
     timCCxHandler(TIM1);
