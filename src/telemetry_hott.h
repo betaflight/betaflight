@@ -138,8 +138,7 @@ struct {
   uint8_t Ascii5;                  // Byte 41: 00 ASCII Free Character [5]
   uint8_t GPS_fix;                 // Byte 42: 00 ASCII Free Character [6], we use it for GPS FIX
   uint8_t version;                 // Byte 43: 00 version number
-  uint8_t endByte;                 // Byte 44: 0x7D Ende byte
-  uint8_t chksum;                  // Byte 45: Parity Byte
+  uint8_t endByte;                 // Byte 44: 0x7D End byte
 } HoTTV4GPSModule;
 
 /*-----------------------------------------------------------
@@ -196,7 +195,6 @@ struct {
 
   uint8_t version;
   uint8_t endByte;
-  uint8_t chksum;
 } HoTTV4ElectricAirModule;
 
 void handleHoTTTelemetry(void);

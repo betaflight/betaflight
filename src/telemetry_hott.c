@@ -2,24 +2,47 @@
  * telemetry_hott.c
  *
  *  Created on: 6 Apr 2014
- *      Author: Hydra/cGiesen
+ *      Authors:
+ *      Dominic Clifton - Hydra - Software Serial, Electronics, Hardware Integration and debugging, HoTT Code cleanup and fixes, general telemetry improvements.
+ *      Carsten Giesen - cGiesen - Baseflight port
+ *      Oliver Bayer - oBayer - MultiWii-HoTT, HoTT reverse engineering
  *
- *  It should be noted that the initial cut of code that deals with the handling of requests and formatting and
- *  sending of responses comes from the MultiHoTT-module project, here: https://github.com/cGiesen/MultiHoTT-Module
+ * It should be noted that the initial cut of code that deals with the handling of requests and formatting and
+ * sending of responses comes from the MultiWii-Meets-HoTT and MultiHoTT-module projects
  *
- */
-
-/*
+ * https://github.com/obayer/MultiWii-HoTT
+ * https://github.com/oBayer/MultiHoTT-Module
+ *
  * HoTT is implemented in Graupner equipment using a bi-directional protocol over a single wire.
  *
  * Generally the receiver sends a single request byte out using normal uart signals, then waits a short period for a
  * multiple byte response and checksum byte before it sends out the next request byte.
  * Each response byte must be send with a protocol specific delay between them.
  *
- * Serial ports use two wires so connect the receiver's HoTT signal to a uart/softserial RX pin via a diode
- * and then also connect a uart/softserial TX pin to the same HoTT pin on the receiver, but NOT via a diode.
+ * Serial ports use two wires but HoTT uses a single wire so some electronics are required so that
+ * the signals don't get mixed up.  When baseflight transmits it should not receive it's own transmission.
  *
- * This is so that when baseflight transmits it does not receive it's own transmission.
+ * Connect as follows:
+ * HoTT TX/RX -> 1N4148 Diode -(|  )- -> Serial RX
+ * Serial TX -> 1N4148 Diode -(|  )- -> 10k Resistor -(||| |) -> HoTT TX/RX
+ *
+ * Diodes should be arranged to allow the data signals to flow the right way
+ * -(|  )- == Diode, | indicates cathode marker.
+ * 10k Resistor is Brown Black Orange, Gold (5%)
+ *
+ * Note the above connections are not 100% reliable, the signal at the HoTT port is not clean, perhaps a
+ * transistor on the serial RX line is needed?
+ *
+ * As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC 24FJ64GA-002, which digitals pins are 5V tolerant.
+ *
+ * Note: The softserial ports are not listed as 5V tolerant in the STM32F103xx data sheet pinouts and pin description
+ * section.  No 5v/3.3v level shifters are required.  The softserial port should not be inverted.
+ *
+ * Technically it is possible to use less components and disable softserial RX when transmitting but that is
+ * not currently supported.
+ *
+ * There is a technical discussion (in German) about HoTT here
+ * http://www.rc-network.de/forum/showthread.php/281496-Graupner-HoTT-Telemetrie-Sensoren-Eigenbau-DIY-Telemetrie-Protokoll-entschl%C3%BCsselt/page21
  */
 
 #include "board.h"
@@ -31,7 +54,6 @@
 const uint8_t kHoTTv4BinaryPacketSize = 45;
 const uint8_t kHoTTv4TextPacketSize = 173;
 
-static uint8_t outBuffer[173];
 static void hottV4SerialWrite(uint8_t c);
 
 static void hottV4Respond(uint8_t *data, uint8_t size);
@@ -48,6 +70,8 @@ bool batteryWarning;
 
 void hottV4FormatAndSendGPSResponse(void)
 {
+    memset(&HoTTV4GPSModule, 0, sizeof(HoTTV4GPSModule));
+
     /** Minimum data set for EAM */
     HoTTV4GPSModule.startByte = 0x7C;
     HoTTV4GPSModule.sensorID = HOTTV4_GPS_SENSOR_ID;
@@ -61,14 +85,8 @@ void hottV4FormatAndSendGPSResponse(void)
 
     hottV4GPSUpdate();
 
-    // Clear output buffer
-    memset(&outBuffer, 0, sizeof(outBuffer));
-
-    // Copy EAM data to output buffer
-    memcpy(&outBuffer, &HoTTV4GPSModule, kHoTTv4BinaryPacketSize);
-
     // Send data from output buffer
-    hottV4Respond(outBuffer, kHoTTv4BinaryPacketSize);
+    hottV4Respond((uint8_t*)&HoTTV4GPSModule, sizeof(HoTTV4GPSModule));
   }
 
 void hottV4GPSUpdate(void)
@@ -119,45 +137,51 @@ void hottV4GPSUpdate(void)
    }
  }
 
-   /**
-   * Writes cell 1-4 high, low values and if not available
-   * calculates vbat.
-   */
-  static void hottV4EAMUpdateBattery() {
-//    HoTTV4ElectricAirModule.cell1L = 0;
-//    HoTTV4ElectricAirModule.cell1H = 0;
+/**
+ * Writes cell 1-4 high, low values and if not available
+ * calculates vbat.
+ */
+static void hottV4EAMUpdateBattery() {
+#if 0
+    HoTTV4ElectricAirModule.cell1L = 4.2f * 10 * 5; // 2mv step
+    HoTTV4ElectricAirModule.cell1H = 0;
 
-//    HoTTV4ElectricAirModule.cell2L = 0;
-//    HoTTV4ElectricAirModule.cell2H = 0;
+    HoTTV4ElectricAirModule.cell2L = 0;
+    HoTTV4ElectricAirModule.cell2H = 0;
 
-//    HoTTV4ElectricAirModule.cell3L = 0;
-//    HoTTV4ElectricAirModule.cell3H = 0;
+    HoTTV4ElectricAirModule.cell3L = 0;
+    HoTTV4ElectricAirModule.cell3H = 0;
 
-//    HoTTV4ElectricAirModule.cell4L = 0;
-//    HoTTV4ElectricAirModule.cell4H = 0;
+    HoTTV4ElectricAirModule.cell4L = 0;
+    HoTTV4ElectricAirModule.cell4H = 0;
+#endif
 
     HoTTV4ElectricAirModule.driveVoltageLow = vbat & 0xFF;
     HoTTV4ElectricAirModule.driveVoltageHigh = vbat >> 8;
     HoTTV4ElectricAirModule.battery1Low = vbat & 0xFF;
     HoTTV4ElectricAirModule.battery1High = vbat >> 8;
 
-//    HoTTV4ElectricAirModule.battery2Low = 0 & 0xFF;
-//    HoTTV4ElectricAirModule.battery2High = 0 >> 8;
+#if 0
+    HoTTV4ElectricAirModule.battery2Low = 0 & 0xFF;
+    HoTTV4ElectricAirModule.battery2High = 0 >> 8;
 
     if (batteryWarning) {
       HoTTV4ElectricAirModule.alarmTone = HoTTv4NotificationUndervoltage;
       HoTTV4ElectricAirModule.alarmInverse1 |= 0x80; // Invert Voltage display
     }
-  }
+#endif
+}
 
-  static void hottV4EAMUpdateTemperatures() {
+static void hottV4EAMUpdateTemperatures() {
     HoTTV4ElectricAirModule.temp1 = 20 + 0;
     HoTTV4ElectricAirModule.temp2 = 20;
 
-    //if (HoTTV4ElectricAirModule.temp1 >= (20 + MultiHoTTModuleSettings.alarmTemp1)) {
-    //  HoTTV4ElectricAirModule.alarmTone = HoTTv4NotificationMaxTemperature;
-    //  HoTTV4ElectricAirModule.alarmInverse |= 0x8; // Invert Temp1 display
-    //}
+#if 0
+    if (HoTTV4ElectricAirModule.temp1 >= (20 + MultiHoTTModuleSettings.alarmTemp1)) {
+      HoTTV4ElectricAirModule.alarmTone = HoTTv4NotificationMaxTemperature;
+      HoTTV4ElectricAirModule.alarmInverse |= 0x8; // Invert Temp1 display
+    }
+#endif
   }
 
 
@@ -165,6 +189,8 @@ void hottV4GPSUpdate(void)
  * Sends HoTTv4 capable EAM telemetry frame.
  */
 void hottV4FormatAndSendEAMResponse(void) {
+  memset(&HoTTV4ElectricAirModule, 0, sizeof(HoTTV4ElectricAirModule));
+
   /** Minimum data set for EAM */
   HoTTV4ElectricAirModule.startByte = 0x7C;
   HoTTV4ElectricAirModule.sensorID = HOTTV4_ELECTRICAL_AIR_SENSOR_ID;
@@ -184,21 +210,10 @@ void hottV4FormatAndSendEAMResponse(void) {
   HoTTV4ElectricAirModule.m2s = OFFSET_M2S;
   HoTTV4ElectricAirModule.m3s = OFFSET_M3S;
 
-  // Clear output buffer
-  memset(&outBuffer, 0, sizeof(outBuffer));
-
-  // Copy EAM data to output buffer
-  memcpy(&outBuffer, &HoTTV4ElectricAirModule, kHoTTv4BinaryPacketSize);
-
   // Send data from output buffer
-  hottV4Respond(outBuffer, kHoTTv4BinaryPacketSize);
+  hottV4Respond((uint8_t*)&HoTTV4ElectricAirModule, sizeof(HoTTV4ElectricAirModule));
 }
 
-/**
- * Expects an array of at least size bytes. All bytes till size will be transmitted
- * to the HoTT capable receiver. Last byte will always be treated as checksum and is
- * calculated on the fly.
- */
 static void hottV4Respond(uint8_t *data, uint8_t size) {
 
     if (serialTotalBytesWaiting(core.telemport) != 0 ) {
@@ -208,7 +223,7 @@ static void hottV4Respond(uint8_t *data, uint8_t size) {
     uint16_t crc = 0;
     uint8_t i;
 
-    for (i = 0; i < (size - 1); i++) {
+    for (i = 0; i < size; i++) {
       crc += data[i];
       hottV4SerialWrite(data[i]);
 
@@ -218,12 +233,10 @@ static void hottV4Respond(uint8_t *data, uint8_t size) {
 
     // Write package checksum
     hottV4SerialWrite(crc & 0xFF);
+
+    delayMicroseconds(HOTTV4_TX_DELAY);
 }
 
-/**
- * Writes out given byte to HoTT serial interface.
- * If in debug mode, data is also written to UART serial interface.
- */
 static void hottV4SerialWrite(uint8_t c) {
   serialWrite(core.telemport, c);
 }
