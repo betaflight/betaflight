@@ -120,19 +120,22 @@ struct {
   uint8_t altitudeHigh;            // Byte 23: Altitude high byte
   uint8_t resolutionLow;           // Byte 24: Low Byte m/s resolution 0.01m 48 = 30000 = 0.00m/s (1=0.01m/s)
   uint8_t resolutionHigh;          // Byte 25: High Byte m/s resolution 0.01m
-  uint8_t unknow1;                 // Byte 26: 120 = 0m/3s
+
+  uint8_t m3s;                     // Byte 26: 120 = 0m/3s
   uint8_t GPSNumSat;               // Byte 27: number of satelites (1 byte)
   uint8_t GPSFixChar;              // Byte 28: GPS.FixChar. (GPS fix character. display, if DGPS, 2D oder 3D) (1 byte)
   uint8_t HomeDirection;           // Byte 29: HomeDirection (direction from starting point to Model position) (1 byte)
   uint8_t angleXdirection;         // Byte 30: angle x-direction (1 byte)
   uint8_t angleYdirection;         // Byte 31: angle y-direction (1 byte)
   uint8_t angleZdirection;         // Byte 32: angle z-direction (1 byte)
+
   uint8_t gyroXLow;                // Byte 33: gyro x low byte (2 bytes)
   uint8_t gyroXHigh;               // Byte 34: gyro x high byte
   uint8_t gyroYLow;                // Byte 35: gyro y low byte (2 bytes)
   uint8_t gyroYHigh;               // Byte 36: gyro y high byte
   uint8_t gyroZLow;                // Byte 37: gyro z low byte (2 bytes)
   uint8_t gyroZHigh;               // Byte 38: gyro z high byte
+
   uint8_t vibration;               // Byte 39: vibration (1 bytes)
   uint8_t Ascii4;                  // Byte 40: 00 ASCII Free Character [4]
   uint8_t Ascii5;                  // Byte 41: 00 ASCII Free Character [5]
