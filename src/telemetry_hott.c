@@ -221,7 +221,7 @@ static void hottV4Respond(uint8_t *data, uint8_t size) {
     uint16_t crc = 0;
     uint8_t i;
 
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < size - 1; i++) {
       crc += data[i];
       hottV4SerialWrite(data[i]);
 
@@ -242,7 +242,7 @@ static void hottV4SerialWrite(uint8_t c) {
 }
 
 void configureHoTTTelemetryPort(void) {
-    // TODO set speed here to 19200
+    // TODO set speed here to 19200?
     serialSetMode(core.telemport, MODE_RX);
 }
 
