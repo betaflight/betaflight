@@ -128,7 +128,7 @@ void resetBuffers(softSerial_t *softSerial)
     softSerial->port.rxBufferHead = 0;
 
     softSerial->port.txBuffer = softSerial->txBuffer;
-    softSerial->port.txBufferSize = SOFT_SERIAL_BUFFER_SIZE,
+    softSerial->port.txBufferSize = SOFT_SERIAL_BUFFER_SIZE;
     softSerial->port.txBufferTail = 0;
     softSerial->port.txBufferHead = 0;
 }
@@ -286,7 +286,7 @@ void extractAndStoreRxByte(softSerial_t *softSerial)
         softSerial->receiveErrors++;
         return;
     }
-    
+
     uint8_t rxByte = (softSerial->internalRxBuffer >> 1) & 0xFF;
     softSerial->port.rxBuffer[softSerial->port.rxBufferTail] = rxByte;
     updateBufferIndex(softSerial);
