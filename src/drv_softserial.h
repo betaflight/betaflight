@@ -24,7 +24,7 @@ typedef struct softSerial_s {
     uint8_t          rxEdge;
 
     uint8_t          isTransmittingData;
-    uint8_t          bitsLeftToTransmit;
+    int8_t           bitsLeftToTransmit;
 
     uint16_t         internalTxBuffer;  // includes start and stop bits
     uint16_t         internalRxBuffer;  // includes start and stop bits

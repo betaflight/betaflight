@@ -203,48 +203,42 @@ void updateBufferIndex(softSerial_t *softSerial)
 
 /*********************************************/
 
-void prepareToSendNextByte(softSerial_t *softSerial)
-{
-    char byteToSend;
-
-    if ((softSerial->port.mode & MODE_TX) == 0) {
-        return;
-    }
-
-    if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
-        return;
-    }
-
-    // choose data to send and update pointer to next byte
-    byteToSend = softSerial->port.txBuffer[softSerial->port.txBufferTail++];
-    if (softSerial->port.txBufferTail >= softSerial->port.txBufferSize) {
-        softSerial->port.txBufferTail = 0;
-    }
-
-    // build internal buffer, MSB = Stop Bit (1) + data bits (MSB to LSB) + start bit(0) LSB
-    softSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1);
-    softSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
-    softSerial->isTransmittingData = true;
-}
-
 void processTxState(softSerial_t *softSerial)
 {
     uint8_t mask;
 
-    if (softSerial->isTransmittingData) {
+    if (!softSerial->isTransmittingData) {
+        char byteToSend;
+        if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
+            return;
+        }
+
+        // data to send
+        byteToSend = softSerial->port.txBuffer[softSerial->port.txBufferTail++];
+        if (softSerial->port.txBufferTail >= softSerial->port.txBufferSize) {
+            softSerial->port.txBufferTail = 0;
+        }
+
+        // build internal buffer, MSB = Stop Bit (1) + data bits (MSB to LSB) + start bit(0) LSB
+        softSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1);
+        softSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
+        softSerial->isTransmittingData = true;
+
+        return;
+    }
+
+    if (softSerial->bitsLeftToTransmit) {
         mask = softSerial->internalTxBuffer & 1;
         softSerial->internalTxBuffer >>= 1;
 
         setTxSignal(softSerial, mask);
-
-        if (--softSerial->bitsLeftToTransmit <= 0) {
-            softSerial->isTransmittingData = false;
-        }
+        softSerial->bitsLeftToTransmit--;
         return;
     }
 
-    prepareToSendNextByte(softSerial);
+    softSerial->isTransmittingData = false;
 }
+
 
 
 enum {
