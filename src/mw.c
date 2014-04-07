@@ -1,6 +1,9 @@
 #include "board.h"
 #include "mw.h"
 
+#include "cli.h"
+#include "telemetry_common.h"
+
 // June 2013     V2.2-dev
 
 flags_t f;
@@ -80,8 +83,6 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
     }
 }
 
-#define BREAKPOINT 1500
-
 void annexCode(void)
 {
     static uint32_t calibratedAccTime;
@@ -98,11 +99,11 @@ void annexCode(void)
     int i;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-    if (rcData[THROTTLE] < BREAKPOINT) {
+    if (rcData[THROTTLE] < cfg.tpaBreakPoint) {
         prop2 = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t) cfg.dynThrPID * (rcData[THROTTLE] - BREAKPOINT) / (2000 - BREAKPOINT);
+            prop2 = 100 - (uint16_t) cfg.dynThrPID * (rcData[THROTTLE] - cfg.tpaBreakPoint) / (2000 - cfg.tpaBreakPoint);
         } else {
             prop2 = 100 - cfg.dynThrPID;
         }
@@ -177,9 +178,8 @@ void annexCode(void)
             LED0_OFF;
         if (f.ARMED)
             LED0_ON;
-        // This will switch to/from 9600 or 115200 baud depending on state. Of course, it should only do it on changes. With telemetry_softserial>0 telemetry is always enabled, also see updateTelemetryState()
-        if (feature(FEATURE_TELEMETRY))
-            updateTelemetryState();
+
+        checkTelemetryState();
     }
 
 #ifdef LEDRING
@@ -203,6 +203,10 @@ void annexCode(void)
     }
 
     serialCom();
+
+    if (!cliMode && feature(FEATURE_TELEMETRY)) {
+        handleTelemetry();
+    }
 
     if (sensors(SENSOR_GPS)) {
         static uint32_t GPSLEDTime;

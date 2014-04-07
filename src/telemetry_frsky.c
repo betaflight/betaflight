@@ -4,6 +4,9 @@
 #include "board.h"
 #include "mw.h"
 
+#include "telemetry_common.h"
+#include "telemetry_frsky.h"
+
 #define CYCLETIME             125
 
 #define PROTOCOL_HEADER       0x5E
@@ -212,83 +215,78 @@ static void sendHeading(void)
     serialize16(0);
 }
 
-static bool telemetryEnabled = false;
-
-void initTelemetry(void)
+void freeFrSkyTelemetryPort(void)
 {
-    // Sanity check for softserial vs. telemetry port
-    if (!feature(FEATURE_SOFTSERIAL))
-        mcfg.telemetry_softserial = TELEMETRY_UART;
-
-    if (mcfg.telemetry_softserial == TELEMETRY_SOFTSERIAL)
-        core.telemport = &(softSerialPorts[0].port);
-    else
-        core.telemport = core.mainport;
+    if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
+        serialInit(mcfg.serial_baudrate);
+    }
 }
 
-void updateTelemetryState(void)
+void configureFrSkyTelemetryPort(void)
 {
-    bool State;
-    if (!mcfg.telemetry_switch)
-        State = mcfg.telemetry_softserial != TELEMETRY_UART ? true : f.ARMED;
-    else
-        State = mcfg.telemetry_softserial != TELEMETRY_UART ? true : rcOptions[BOXTELEMETRY];
-
-    if (State != telemetryEnabled) {
-        if (mcfg.telemetry_softserial == TELEMETRY_UART) {
-            if (State)
-                serialInit(9600);
-            else
-                serialInit(mcfg.serial_baudrate);
-        }
-        telemetryEnabled = State;
+    if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
+        serialInit(9600);
     }
 }
 
 static uint32_t lastCycleTime = 0;
 static uint8_t cycleNum = 0;
 
-void sendTelemetry(void)
+bool canSendFrSkyTelemetry(void)
 {
-    if (mcfg.telemetry_softserial == TELEMETRY_UART && ((!f.ARMED && !mcfg.telemetry_switch) || (mcfg.telemetry_switch && !rcOptions[BOXTELEMETRY])))
+    return serialTotalBytesWaiting(core.telemport) == 0;
+}
+
+bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
+{
+    return currentMillis - lastCycleTime >= CYCLETIME;
+}
+
+void handleFrSkyTelemetry(void)
+{
+    if (!canSendFrSkyTelemetry()) {
         return;
+    }
 
-    if (serialTotalBytesWaiting(core.telemport) != 0)
+    uint32_t now = millis();
+
+    if (!hasEnoughTimeLapsedSinceLastTelemetryTransmission(now)) {
         return;
+    }
 
-    if (millis() - lastCycleTime >= CYCLETIME) {
-        lastCycleTime = millis();
-        cycleNum++;
+    lastCycleTime = now;
 
-        // Sent every 125ms
-        sendAccel();
-        sendVario();
+    cycleNum++;
+
+    // Sent every 125ms
+    sendAccel();
+    sendVario();
+    sendTelemetryTail();
+
+    if ((cycleNum % 4) == 0) {      // Sent every 500ms
+        sendBaro();
+        sendHeading();
         sendTelemetryTail();
+    }
 
-        if ((cycleNum % 4) == 0) {      // Sent every 500ms
-            sendBaro();
-            sendHeading();
-            sendTelemetryTail();
+    if ((cycleNum % 8) == 0) {      // Sent every 1s
+        sendTemperature1();
+
+        if (feature(FEATURE_VBAT)) {
+            sendVoltage();
+            sendVoltageAmp();
         }
 
-        if ((cycleNum % 8) == 0) {      // Sent every 1s
-            sendTemperature1();
+        if (sensors(SENSOR_GPS))
+            sendGPS();
 
-            if (feature(FEATURE_VBAT)) {
-                sendVoltage();
-                sendVoltageAmp();
-            }
+        sendTelemetryTail();
+    }
 
-            if (sensors(SENSOR_GPS))
-                sendGPS();
-
-            sendTelemetryTail();
-        }
-
-        if (cycleNum == 40) {     //Frame 3: Sent every 5s
-            cycleNum = 0;
-            sendTime();
-            sendTelemetryTail();
-        }
+    if (cycleNum == 40) {     //Frame 3: Sent every 5s
+        cycleNum = 0;
+        sendTime();
+        sendTelemetryTail();
     }
 }
+

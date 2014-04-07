@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+#include "telemetry_common.h"
+
 core_t core;
 
 extern rcReadRawDataPtr rcReadRawFunc;
@@ -184,14 +186,19 @@ int main(void)
                 //serialWrite(core.mainport, b);
             };
         }
+
         if (loopbackPort2) {
             while (serialTotalBytesWaiting(loopbackPort2)) {
+#ifndef OLIMEXINO // PB0/D27 and PB1/D28 internally connected so this would result in a continuous stream of data
+                serialRead(loopbackPort2);
+#else
                 uint8_t b = serialRead(loopbackPort2);
-                serialWrite(loopbackPort1, b);
+                serialWrite(loopbackPort2, b);
                 //serialWrite(core.mainport, 0x02);
                 //serialWrite(core.mainport, b);
+#endif // OLIMEXINO
             };
-        }
+    }
 #endif
     }
 }

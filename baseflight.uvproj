@@ -470,11 +470,6 @@
               <FilePath>.\src\buzzer.c</FilePath>
             </File>
             <File>
-              <FileName>telemetry.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\telemetry.c</FilePath>
-            </File>
-            <File>
               <FileName>utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\utils.c</FilePath>
@@ -488,6 +483,21 @@
               <FileName>sumd.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\sumd.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_frsky.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_frsky.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_common.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_common.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_hott.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_hott.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1345,11 +1355,6 @@
               <FilePath>.\src\buzzer.c</FilePath>
             </File>
             <File>
-              <FileName>telemetry.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\telemetry.c</FilePath>
-            </File>
-            <File>
               <FileName>utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\utils.c</FilePath>
@@ -1363,6 +1368,21 @@
               <FileName>sumd.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\sumd.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_frsky.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_frsky.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_common.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_common.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_hott.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_hott.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2160,11 +2180,6 @@
               <FilePath>.\src\buzzer.c</FilePath>
             </File>
             <File>
-              <FileName>telemetry.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\telemetry.c</FilePath>
-            </File>
-            <File>
               <FileName>utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\utils.c</FilePath>
@@ -2178,6 +2193,21 @@
               <FileName>sumd.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\sumd.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_frsky.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_frsky.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_common.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_common.c</FilePath>
+            </File>
+            <File>
+              <FileName>telemetry_hott.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\telemetry_hott.c</FilePath>
             </File>
           </Files>
         </Group>
