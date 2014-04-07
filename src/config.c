@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 60;
+static const uint8_t EEPROM_CONF_VERSION = 61;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -255,6 +255,7 @@ static void resetConf(void)
     cfg.rollPitchRate = 0;
     cfg.yawRate = 0;
     cfg.dynThrPID = 0;
+    cfg.tpaBreakPoint = 1500;
     cfg.thrMid8 = 50;
     cfg.thrExpo8 = 0;
     // for (i = 0; i < CHECKBOXITEMS; i++)

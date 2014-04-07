@@ -80,8 +80,6 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
     }
 }
 
-#define BREAKPOINT 1500
-
 void annexCode(void)
 {
     static uint32_t calibratedAccTime;
@@ -98,11 +96,11 @@ void annexCode(void)
     int i;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-    if (rcData[THROTTLE] < BREAKPOINT) {
+    if (rcData[THROTTLE] < cfg.tpaBreakPoint) {
         prop2 = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t) cfg.dynThrPID * (rcData[THROTTLE] - BREAKPOINT) / (2000 - BREAKPOINT);
+            prop2 = 100 - (uint16_t) cfg.dynThrPID * (rcData[THROTTLE] - cfg.tpaBreakPoint) / (2000 - cfg.tpaBreakPoint);
         } else {
             prop2 = 100 - cfg.dynThrPID;
         }
