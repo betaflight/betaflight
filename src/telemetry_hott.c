@@ -137,7 +137,8 @@ void hottV4GPSUpdate(void)
  * Writes cell 1-4 high, low values and if not available
  * calculates vbat.
  */
-static void hottV4EAMUpdateBattery() {
+static void hottV4EAMUpdateBattery()
+{
 #if 0
     HoTTV4ElectricAirModule.cell1L = 4.2f * 10 * 5; // 2mv step
     HoTTV4ElectricAirModule.cell1H = 0;
@@ -168,7 +169,8 @@ static void hottV4EAMUpdateBattery() {
 #endif
 }
 
-static void hottV4EAMUpdateTemperatures() {
+static void hottV4EAMUpdateTemperatures()
+{
     HoTTV4ElectricAirModule.temp1 = 20 + 0;
     HoTTV4ElectricAirModule.temp2 = 20;
 
@@ -184,7 +186,8 @@ static void hottV4EAMUpdateTemperatures() {
 /**
  * Sends HoTTv4 capable EAM telemetry frame.
  */
-void hottV4FormatAndSendEAMResponse(void) {
+void hottV4FormatAndSendEAMResponse(void)
+{
     memset(&HoTTV4ElectricAirModule, 0, sizeof(HoTTV4ElectricAirModule));
 
     /** Minimum data set for EAM */
@@ -210,7 +213,8 @@ void hottV4FormatAndSendEAMResponse(void) {
     hottV4Respond((uint8_t*)&HoTTV4ElectricAirModule, sizeof(HoTTV4ElectricAirModule));
 }
 
-static void hottV4Respond(uint8_t *data, uint8_t size) {
+static void hottV4Respond(uint8_t *data, uint8_t size)
+{
 
     serialSetMode(core.telemport, MODE_TX);
 
@@ -233,16 +237,19 @@ static void hottV4Respond(uint8_t *data, uint8_t size) {
     serialSetMode(core.telemport, MODE_RX);
 }
 
-static void hottV4SerialWrite(uint8_t c) {
+static void hottV4SerialWrite(uint8_t c)
+{
     serialWrite(core.telemport, c);
 }
 
-void configureHoTTTelemetryPort(void) {
+void configureHoTTTelemetryPort(void)
+{
     // TODO set speed here to 19200?
     serialSetMode(core.telemport, MODE_RX);
 }
 
-void freeHoTTTelemetryPort(void) {
+void freeHoTTTelemetryPort(void)
+{
     serialSetMode(core.telemport, MODE_RXTX);
 }
 
@@ -267,5 +274,4 @@ void handleHoTTTelemetry(void)
         }
     }
 }
-
 
