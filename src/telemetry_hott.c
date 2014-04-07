@@ -49,6 +49,8 @@
 
 const uint8_t kHoTTv4BinaryPacketSize = 45;
 const uint8_t kHoTTv4TextPacketSize = 173;
+static HoTTV4GPSModule_t HoTTV4GPSModule;
+static HoTTV4ElectricAirModule_t HoTTV4ElectricAirModule;
 
 static void hottV4SerialWrite(uint8_t c);
 

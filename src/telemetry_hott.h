@@ -85,7 +85,7 @@ typedef enum {
  * 5ms delay
  */
 
-struct {
+typedef struct HoTTV4GPSModule_t {
     uint8_t startByte;               // Byte  1: 0x7C = Start byte data
     uint8_t sensorID;                // Byte  2: 0x8A = GPS Sensor
     uint8_t alarmTone;               // Byte  3: 0…= warning beeps
@@ -142,7 +142,7 @@ struct {
     uint8_t GPS_fix;                 // Byte 42: 00 ASCII Free Character [6], we use it for GPS FIX
     uint8_t version;                 // Byte 43: 00 version number
     uint8_t endByte;                 // Byte 44: 0x7D End byte
-} HoTTV4GPSModule;
+} HoTTV4GPSModule_t;
 
 /**
  * EAM (Electric Air Module) 33620
@@ -152,7 +152,7 @@ struct {
  * 5ms Idle Line!
 */
 
-struct {
+typedef struct HoTTV4ElectricAirModule_t {
     uint8_t startByte;
     uint8_t sensorID;
     uint8_t alarmTone; // Alarm */
@@ -198,7 +198,7 @@ struct {
 
     uint8_t version;
     uint8_t endByte;
-} HoTTV4ElectricAirModule;
+} HoTTV4ElectricAirModule_t;
 
 void handleHoTTTelemetry(void);
 void checkTelemetryState(void);
