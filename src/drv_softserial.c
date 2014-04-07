@@ -120,11 +120,8 @@ void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)
     softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_Out_PP);
 }
 
-void initialiseSoftSerial(softSerial_t *softSerial, uint8_t portIndex, uint32_t baud, uint8_t inverted)
+void resetBuffers(softSerial_t *softSerial)
 {
-    softSerial->port.vTable = softSerialVTable;
-    softSerial->port.mode = MODE_RXTX;
-
     softSerial->port.rxBufferSize = SOFT_SERIAL_BUFFER_SIZE;
     softSerial->port.rxBuffer = softSerial->rxBuffer;
     softSerial->port.rxBufferTail = 0;
@@ -134,6 +131,14 @@ void initialiseSoftSerial(softSerial_t *softSerial, uint8_t portIndex, uint32_t 
     softSerial->port.txBufferSize = SOFT_SERIAL_BUFFER_SIZE,
     softSerial->port.txBufferTail = 0;
     softSerial->port.txBufferHead = 0;
+}
+
+void initialiseSoftSerial(softSerial_t *softSerial, uint8_t portIndex, uint32_t baud, uint8_t inverted)
+{
+    softSerial->port.vTable = softSerialVTable;
+    softSerial->port.mode = MODE_RXTX;
+
+    resetBuffers(softSerial);
 
     softSerial->isTransmittingData = false;
 
@@ -198,38 +203,49 @@ void updateBufferIndex(softSerial_t *softSerial)
 
 /*********************************************/
 
+void prepareToSendNextByte(softSerial_t *softSerial)
+{
+    char byteToSend;
+
+    if ((softSerial->port.mode & MODE_TX) == 0) {
+        return;
+    }
+
+    if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
+        return;
+    }
+
+    // choose data to send and update pointer to next byte
+    byteToSend = softSerial->port.txBuffer[softSerial->port.txBufferTail++];
+    if (softSerial->port.txBufferTail >= softSerial->port.txBufferSize) {
+        softSerial->port.txBufferTail = 0;
+    }
+
+    // build internal buffer, MSB = Stop Bit (1) + data bits (MSB to LSB) + start bit(0) LSB
+    softSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1);
+    softSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
+    softSerial->isTransmittingData = true;
+}
+
 void processTxState(softSerial_t *softSerial)
 {
     uint8_t mask;
 
-    if (!softSerial->isTransmittingData) {
-        char byteToSend;
-        if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
-            return;
-        }
+    if (softSerial->isTransmittingData) {
+        mask = softSerial->internalTxBuffer & 1;
+        softSerial->internalTxBuffer >>= 1;
 
-        // data to send
-        byteToSend = softSerial->port.txBuffer[softSerial->port.txBufferTail++];
-        if (softSerial->port.txBufferTail >= softSerial->port.txBufferSize) {
-            softSerial->port.txBufferTail = 0;
-        }
+        setTxSignal(softSerial, mask);
 
-        // build internal buffer, MSB = Stop Bit (1) + data bits (MSB to LSB) + start bit(0) LSB
-        softSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1);
-        softSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
-        softSerial->isTransmittingData = true;
+        if (--softSerial->bitsLeftToTransmit <= 0) {
+            softSerial->isTransmittingData = false;
+        }
         return;
     }
 
-    mask = softSerial->internalTxBuffer & 1;
-    softSerial->internalTxBuffer >>= 1;
-
-    setTxSignal(softSerial, mask);
-
-    if (--softSerial->bitsLeftToTransmit <= 0) {
-        softSerial->isTransmittingData = false;
-    }
+    prepareToSendNextByte(softSerial);
 }
+
 
 enum {
     TRAILING,
@@ -259,6 +275,10 @@ void prepareForNextRxByte(softSerial_t *softSerial)
 
 void extractAndStoreRxByte(softSerial_t *softSerial)
 {
+    if ((softSerial->port.mode & MODE_RX) == 0) {
+        return;
+    }
+
     uint8_t rxByte = (softSerial->internalRxBuffer >> 1) & 0xFF;
     softSerial->port.rxBuffer[softSerial->port.rxBufferTail] = rxByte;
     updateBufferIndex(softSerial);
@@ -295,6 +315,10 @@ void onSerialRxPinChange(uint8_t portIndex, uint16_t capture)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
+    if ((softSerial->port.mode & MODE_RX) == 0) {
+        return;
+    }
+
     if (softSerial->isSearchingForStartBit) {
         TIM_SetCounter(softSerial->rxTimerHardware->tim, 0); // synchronise bit counter
         serialICConfig(softSerial->rxTimerHardware->tim, softSerial->rxTimerHardware->channel, softSerial->isInverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
@@ -324,6 +348,10 @@ void onSerialRxPinChange(uint8_t portIndex, uint16_t capture)
 
 uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
 {
+    if ((instance->mode & MODE_RX) == 0) {
+        return 0;
+    }
+
     int availableBytes;
     softSerial_t *softSerial = (softSerial_t *)instance;
     if (softSerial->port.rxBufferTail == softSerial->port.rxBufferHead) {
@@ -350,6 +378,11 @@ static void moveHeadToNextByte(softSerial_t *softSerial)
 uint8_t softSerialReadByte(serialPort_t *instance)
 {
     char b;
+
+    if ((instance->mode & MODE_RX) == 0) {
+        return 0;
+    }
+
     if (softSerialTotalBytesWaiting(instance) == 0) {
         return 0;
     }
@@ -362,6 +395,10 @@ uint8_t softSerialReadByte(serialPort_t *instance)
 
 void softSerialWriteByte(serialPort_t *s, uint8_t ch)
 {
+    if ((s->mode & MODE_TX) == 0) {
+        return;
+    }
+
     s->txBuffer[s->txBufferHead] = ch;
     s->txBufferHead = (s->txBufferHead + 1) % s->txBufferSize;
 }
@@ -371,6 +408,11 @@ void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
     // not implemented.
 }
 
+void softSerialSetMode(serialPort_t *instance, portMode_t mode)
+{
+    instance->mode = mode;
+}
+
 bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
 {
     return instance->txBufferHead == instance->txBufferTail;
@@ -378,10 +420,11 @@ bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
 
 const struct serialPortVTable softSerialVTable[] = {
     {
-        softSerialWriteByte, 
+        softSerialWriteByte,
         softSerialTotalBytesWaiting,
         softSerialReadByte,
         softSerialSetBaudRate,
-        isSoftSerialTransmitBufferEmpty
+        isSoftSerialTransmitBufferEmpty,
+        softSerialSetMode,
     }
 };

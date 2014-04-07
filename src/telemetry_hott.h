@@ -198,5 +198,9 @@ struct {
 } HoTTV4ElectricAirModule;
 
 void handleHoTTTelemetry(void);
+void checkTelemetryState(void);
+
+void configureHoTTTelemetryPort(void);
+void freeHoTTTelemetryPort(void);
 
 #endif /* TELEMETRY_HOTT_H_ */

@@ -4,6 +4,16 @@
 #include "telemetry_frsky.h"
 #include "telemetry_hott.h"
 
+bool isTelemetryProviderFrSky(void)
+{
+    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY;
+}
+
+bool isTelemetryProviderHoTT(void)
+{
+    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_HOTT;
+}
+
 void initTelemetry(void)
 {
     // Sanity check for softserial vs. telemetry port
@@ -18,9 +28,7 @@ void initTelemetry(void)
         core.telemport = core.mainport;
 }
 
-void updateTelemetryState(void) {
-    updateFrSkyTelemetryState();
-}
+static bool telemetryEnabled = false;
 
 bool isTelemetryEnabled(void)
 {
@@ -36,14 +44,45 @@ bool isTelemetryEnabled(void)
     return telemetryCurrentlyEnabled;
 }
 
-bool isFrSkyTelemetryEnabled(void)
+bool shouldChangeTelemetryStateNow(bool telemetryCurrentlyEnabled)
 {
-    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY;
+    return telemetryCurrentlyEnabled != telemetryEnabled;
 }
 
-bool isHoTTTelemetryEnabled(void)
+void configureTelemetryPort(void) {
+    if (isTelemetryProviderFrSky()) {
+        configureFrSkyTelemetryPort();
+    }
+
+    if (isTelemetryProviderHoTT()) {
+        configureHoTTTelemetryPort();
+    }
+}
+
+void freeTelemetryPort(void) {
+    if (isTelemetryProviderFrSky()) {
+        freeFrSkyTelemetryPort();
+    }
+
+    if (isTelemetryProviderHoTT()) {
+        freeHoTTTelemetryPort();
+    }
+}
+
+void checkTelemetryState(void)
 {
-    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_HOTT;
+    bool telemetryCurrentlyEnabled = isTelemetryEnabled();
+
+    if (!shouldChangeTelemetryStateNow(telemetryCurrentlyEnabled)) {
+        return;
+    }
+
+    if (telemetryCurrentlyEnabled)
+        configureTelemetryPort();
+    else
+        freeTelemetryPort();
+
+    telemetryEnabled = telemetryCurrentlyEnabled;
 }
 
 void handleTelemetry(void)
@@ -51,11 +90,11 @@ void handleTelemetry(void)
     if (!isTelemetryEnabled())
         return;
 
-    if (isFrSkyTelemetryEnabled()) {
+    if (isTelemetryProviderFrSky()) {
         handleFrSkyTelemetry();
     }
 
-    if (isHoTTTelemetryEnabled()) {
+    if (isTelemetryProviderHoTT()) {
         handleHoTTTelemetry();
     }
 }

@@ -10,7 +10,7 @@
 
 // telemetry
 void initTelemetry(void);
-void updateTelemetryState(void);
+void checkTelemetryState(void);
 void handleTelemetry(void);
 bool isTelemetryEnabled(void);
 

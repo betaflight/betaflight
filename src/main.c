@@ -189,7 +189,7 @@ int main(void)
         if (loopbackPort2) {
             while (serialTotalBytesWaiting(loopbackPort2)) {
                 uint8_t b = serialRead(loopbackPort2);
-                serialWrite(loopbackPort1, b);
+                serialWrite(loopbackPort2, b);
                 //serialWrite(core.mainport, 0x02);
                 //serialWrite(core.mainport, b);
             };

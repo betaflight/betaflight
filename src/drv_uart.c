@@ -202,6 +202,12 @@ void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     s->port.baudRate = baudRate;
 }
 
+void uartSetMode(serialPort_t *s, portMode_t mode)
+{
+    // not implemented.
+}
+
+
 static void uartStartTxDMA(uartPort_t *s)
 {
     s->txDMAChannel->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
@@ -273,7 +279,8 @@ const struct serialPortVTable uartVTable[] = {
         uartTotalBytesWaiting,
         uartRead,
         uartSetBaudRate,
-        isUartTransmitBufferEmpty
+        isUartTransmitBufferEmpty,
+        uartSetMode,
     }
 };
 

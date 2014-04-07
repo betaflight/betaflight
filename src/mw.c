@@ -182,7 +182,7 @@ void annexCode(void)
             LED0_ON;
         // This will switch to/from 9600 or 115200 baud depending on state. Of course, it should only do it on changes. With telemetry_softserial>0 telemetry is always enabled, also see updateTelemetryState()
         if (feature(FEATURE_TELEMETRY))
-            updateTelemetryState();
+            checkTelemetryState();
     }
 
 #ifdef LEDRING

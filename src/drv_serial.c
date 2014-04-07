@@ -38,3 +38,8 @@ inline bool isSerialTransmitBufferEmpty(serialPort_t *instance)
     return instance->vTable->isSerialTransmitBufferEmpty(instance);
 }
 
+inline void serialSetMode(serialPort_t *instance, portMode_t mode)
+{
+    instance->vTable->setMode(instance, mode);
+}
+

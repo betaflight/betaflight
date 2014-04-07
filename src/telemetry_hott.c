@@ -216,9 +216,7 @@ void hottV4FormatAndSendEAMResponse(void) {
 
 static void hottV4Respond(uint8_t *data, uint8_t size) {
 
-    if (serialTotalBytesWaiting(core.telemport) != 0 ) {
-        return; // cannot respond since another request came in.
-    }
+    serialSetMode(core.telemport, MODE_TX);
 
     uint16_t crc = 0;
     uint8_t i;
@@ -235,16 +233,29 @@ static void hottV4Respond(uint8_t *data, uint8_t size) {
     hottV4SerialWrite(crc & 0xFF);
 
     delayMicroseconds(HOTTV4_TX_DELAY);
+
+    serialSetMode(core.telemport, MODE_RX);
 }
 
 static void hottV4SerialWrite(uint8_t c) {
   serialWrite(core.telemport, c);
 }
 
+void configureHoTTTelemetryPort(void) {
+    // TODO set speed here to 19200
+    serialSetMode(core.telemport, MODE_RX);
+}
+
+void freeHoTTTelemetryPort(void) {
+    serialSetMode(core.telemport, MODE_RXTX);
+}
+
 void handleHoTTTelemetry(void)
 {
-    while (serialTotalBytesWaiting(core.telemport)) {
-      uint8_t c = serialRead(core.telemport);
+    uint8_t c;
+
+    while (serialTotalBytesWaiting(core.telemport) > 0) {
+      c = serialRead(core.telemport);
 
       // Protocol specific waiting time
       // to avoid collisions

@@ -215,28 +215,18 @@ static void sendHeading(void)
     serialize16(0);
 }
 
-static bool frSkyTelemetryEnabled = false;
-
-bool shouldChangeTelemetryStateNow(bool frSkyTelemetryCurrentlyEnabled)
+void freeFrSkyTelemetryPort(void)
 {
-    return frSkyTelemetryCurrentlyEnabled != frSkyTelemetryEnabled;
+    if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
+        serialInit(mcfg.serial_baudrate);
+    }
 }
 
-void updateFrSkyTelemetryState(void)
+void configureFrSkyTelemetryPort(void)
 {
-    bool frSkyTelemetryCurrentlyEnabled = isTelemetryEnabled();
-
-    if (!shouldChangeTelemetryStateNow(frSkyTelemetryCurrentlyEnabled)) {
-        return;
+    if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
+        serialInit(9600);
     }
-
-    if (mcfg.telemetry_port == TELEMETRY_PORT_UART && mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY) {
-        if (frSkyTelemetryCurrentlyEnabled)
-            serialInit(9600);
-        else
-            serialInit(mcfg.serial_baudrate);
-    }
-    frSkyTelemetryEnabled = frSkyTelemetryCurrentlyEnabled;
 }
 
 static uint32_t lastCycleTime = 0;
