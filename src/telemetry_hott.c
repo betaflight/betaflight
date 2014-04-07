@@ -68,31 +68,30 @@ void hottV4FormatAndSendGPSResponse(void)
 {
     memset(&HoTTV4GPSModule, 0, sizeof(HoTTV4GPSModule));
 
-    /** Minimum data set for EAM */
+    // Minimum data set for EAM
     HoTTV4GPSModule.startByte = 0x7C;
     HoTTV4GPSModule.sensorID = HOTTV4_GPS_SENSOR_ID;
     HoTTV4GPSModule.sensorTextID = HOTTV4_GPS_SENSOR_TEXT_ID;
     HoTTV4GPSModule.endByte = 0x7D;
-    /** ### */
 
-    /** Reset alarms */
+    // Reset alarms
     HoTTV4GPSModule.alarmTone = 0x0;
     HoTTV4GPSModule.alarmInverse1 = 0x0;
 
     hottV4GPSUpdate();
 
-    // Send data from output buffer
     hottV4Respond((uint8_t*)&HoTTV4GPSModule, sizeof(HoTTV4GPSModule));
 }
 
 void hottV4GPSUpdate(void)
 {
-    //number of Satelites
+    // Number of Satelites
     HoTTV4GPSModule.GPSNumSat=GPS_numSat;
     if (f.GPS_FIX > 0) {
-        /** GPS fix */
+        // GPS fix
         HoTTV4GPSModule.GPS_fix = 0x66; // Displays a 'f' for fix
-        //latitude
+
+        // latitude
         HoTTV4GPSModule.LatitudeNS=(GPS_coord[LAT]<0);
         uint8_t deg = GPS_coord[LAT] / 100000;
         uint32_t sec = (GPS_coord[LAT] - (deg * 100000)) * 6;
@@ -103,7 +102,8 @@ void hottV4GPSUpdate(void)
         HoTTV4GPSModule.LatitudeMinHigh = degMin >> 8;
         HoTTV4GPSModule.LatitudeSecLow = sec;
         HoTTV4GPSModule.LatitudeSecHigh = sec >> 8;
-        //latitude
+
+        // longitude
         HoTTV4GPSModule.longitudeEW=(GPS_coord[LON]<0);
         deg = GPS_coord[LON] / 100000;
         sec = (GPS_coord[LON] - (deg * 100000)) * 6;
@@ -114,21 +114,23 @@ void hottV4GPSUpdate(void)
         HoTTV4GPSModule.longitudeMinHigh = degMin >> 8;
         HoTTV4GPSModule.longitudeSecLow = sec;
         HoTTV4GPSModule.longitudeSecHigh = sec >> 8;
-        /** GPS Speed in km/h */
+
+        // GPS Speed in km/h
         uint16_t speed = (GPS_speed / 100) * 36; // 0.1m/s * 0.36 = km/h
         HoTTV4GPSModule.GPSSpeedLow = speed & 0x00FF;
         HoTTV4GPSModule.GPSSpeedHigh = speed >> 8;
-        /** Distance to home */
+
+        // Distance to home
         HoTTV4GPSModule.distanceLow = GPS_distanceToHome & 0x00FF;
         HoTTV4GPSModule.distanceHigh = GPS_distanceToHome >> 8;
-        /** Altitude */
+
+        // Altitude
         HoTTV4GPSModule.altitudeLow = GPS_altitude & 0x00FF;
         HoTTV4GPSModule.altitudeHigh = GPS_altitude >> 8;
-        /** Altitude */
+
+        // Direction to home
         HoTTV4GPSModule.HomeDirection = GPS_directionToHome;
-    }
-    else
-    {
+    } else {
         HoTTV4GPSModule.GPS_fix = 0x20; // Displays a ' ' to show nothing or clear the old value
     }
 }
@@ -190,14 +192,13 @@ void hottV4FormatAndSendEAMResponse(void)
 {
     memset(&HoTTV4ElectricAirModule, 0, sizeof(HoTTV4ElectricAirModule));
 
-    /** Minimum data set for EAM */
+    // Minimum data set for EAM
     HoTTV4ElectricAirModule.startByte = 0x7C;
     HoTTV4ElectricAirModule.sensorID = HOTTV4_ELECTRICAL_AIR_SENSOR_ID;
     HoTTV4ElectricAirModule.sensorTextID = HOTTV4_ELECTRICAL_AIR_SENSOR_TEXT_ID;
     HoTTV4ElectricAirModule.endByte = 0x7D;
-    /** ### */
 
-    /** Reset alarms */
+    // Reset alarms
     HoTTV4ElectricAirModule.alarmTone = 0x0;
     HoTTV4ElectricAirModule.alarmInverse1 = 0x0;
 
@@ -209,13 +210,11 @@ void hottV4FormatAndSendEAMResponse(void)
     HoTTV4ElectricAirModule.m2s = OFFSET_M2S;
     HoTTV4ElectricAirModule.m3s = OFFSET_M3S;
 
-    // Send data from output buffer
     hottV4Respond((uint8_t*)&HoTTV4ElectricAirModule, sizeof(HoTTV4ElectricAirModule));
 }
 
 static void hottV4Respond(uint8_t *data, uint8_t size)
 {
-
     serialSetMode(core.telemport, MODE_TX);
 
     uint16_t crc = 0;
@@ -229,7 +228,6 @@ static void hottV4Respond(uint8_t *data, uint8_t size)
         delayMicroseconds(HOTTV4_TX_DELAY);
     }
 
-    // Write package checksum
     hottV4SerialWrite(crc & 0xFF);
 
     delayMicroseconds(HOTTV4_TX_DELAY);
@@ -260,8 +258,7 @@ void handleHoTTTelemetry(void)
     while (serialTotalBytesWaiting(core.telemport) > 0) {
         c = serialRead(core.telemport);
 
-        // Protocol specific waiting time
-        // to avoid collisions
+        // Protocol specific waiting time to avoid collisions
         delay(5);
 
         switch (c) {
