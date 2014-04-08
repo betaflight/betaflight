@@ -43,48 +43,48 @@ BIN_DIR		 = $(ROOT)/obj
 # Source files common to all targets
 COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   buzzer.c \
-		   ui/cli.c \
 		   config.c \
-		   gps/gps.c \
-		   flight/imu.c \
+		   drv_system.c \
 		   main.c \
-		   flight/mixer.c \
 		   mw.c \
+		   printf.c \
 		   sensors.c \
-		   ui/serial.c \
+		   utils.c \
+		   drivers/bus/drv_i2c.c \
+		   drivers/bus/drv_i2c_soft.c \
+		   drivers/gpio/drv_gpio.c \
+		   drivers/serial/drv_serial.c \
+		   drivers/serial/drv_softserial.c \
+		   drivers/serial/drv_uart.c \
+		   flight/imu.c \
+		   flight/mixer.c \
+		   gps/gps.c \
 		   rx/sbus.c \
 		   rx/sumd.c \
 		   rx/spektrum.c \
 		   telemetry/telemetry_common.c \
 		   telemetry/telemetry_frsky.c \
 		   telemetry/telemetry_hott.c \
-		   drivers/gpio/drv_gpio.c \
-		   drivers/bus/drv_i2c.c \
-		   drivers/bus/drv_i2c_soft.c \
-		   drv_system.c \
-		   drivers/serial/drv_serial.c \
-		   drivers/serial/drv_softserial.c \
-		   drivers/serial/drv_uart.c \
-		   printf.c \
-		   utils.c \
+		   ui/cli.c \
+		   ui/serial.c \
 		   $(CMSIS_SRC) \
 		   $(STDPERIPH_SRC)
 
 # Source files for the NAZE target
-NAZE_SRC	 = drivers/adc/drv_adc.c \
+NAZE_SRC	 = drv_pwm.c \
 		   drivers/accgyro/drv_adxl345.c \
 		   drivers/accgyro/drv_bma280.c \
-		   drivers/altimeter/drv_bmp085.c \
-		   drivers/altimeter/drv_ms5611.c \
-		   drivers/sonar/drv_hcsr04.c \
-		   drivers/compass/drv_hmc5883l.c \
-		   drivers/light/drv_ledring.c \
+		   drivers/accgyro/drv_l3g4200d.c \
 		   drivers/accgyro/drv_mma845x.c \
 		   drivers/accgyro/drv_mpu3050.c \
 		   drivers/accgyro/drv_mpu6050.c \
-		   drivers/accgyro/drv_l3g4200d.c \
-		   drv_pwm.c \
+		   drivers/adc/drv_adc.c \
+		   drivers/altimeter/drv_bmp085.c \
+		   drivers/altimeter/drv_ms5611.c \
 		   drivers/bus/drv_spi.c \
+		   drivers/compass/drv_hmc5883l.c \
+		   drivers/light/drv_ledring.c \
+		   drivers/sonar/drv_hcsr04.c \
 		   drivers/timer/drv_timer.c \
 		   $(COMMON_SRC)
 
@@ -94,13 +94,13 @@ FY90Q_SRC	 = drv_adc_fy90q.c \
 		   $(COMMON_SRC)
 
 # Source files for the OLIMEXINO target
-OLIMEXINO_SRC	 = drivers/bus/drv_spi.c \
-		   drivers/adc/drv_adc.c \
+OLIMEXINO_SRC	 = drv_pwm.c \
 		   drivers/accgyro/drv_adxl345.c \
 		   drivers/accgyro/drv_mpu3050.c \
 		   drivers/accgyro/drv_mpu6050.c \
 		   drivers/accgyro/drv_l3g4200d.c \
-		   drv_pwm.c \
+		   drivers/adc/drv_adc.c \
+		   drivers/bus/drv_spi.c \
 		   drivers/timer/drv_timer.c \
 		   $(COMMON_SRC)
 		   
