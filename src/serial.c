@@ -664,8 +664,8 @@ void serialCom(void)
 
         if (c_state == IDLE) {
             c_state = (c == '$') ? HEADER_START : IDLE;
-            if (c_state == IDLE)
-                evaluateOtherData(c); // evaluate all other incoming serial data
+            if (c_state == IDLE && !f.ARMED)
+                evaluateOtherData(c); // if not armed evaluate all other incoming serial data
         } else if (c_state == HEADER_START) {
             c_state = (c == 'M') ? HEADER_M : IDLE;
         } else if (c_state == HEADER_M) {
