@@ -160,8 +160,8 @@ void gpsInitHardware(void)
 void gpsThread(void)
 {
     // read out available GPS bytes
-    while (uartTotalBytesWaiting(core.gpsport))
-        gpsNewData(uartRead(core.gpsport));
+    while (serialTotalBytesWaiting(core.gpsport))
+        gpsNewData(serialRead(core.gpsport));
 
     switch (gpsData.state) {
         case GPS_UNKNOWN:
@@ -540,9 +540,6 @@ int8_t gpsSetPassthrough(void)
 {
     if (gpsData.state != GPS_RECEIVINGDATA)
         return -1;
-
-    // get rid of callback
-    core.gpsport->callback = NULL;
 
     LED0_OFF;
     LED1_OFF;
