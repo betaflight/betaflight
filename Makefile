@@ -43,49 +43,49 @@ BIN_DIR		 = $(ROOT)/obj
 # Source files common to all targets
 COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   buzzer.c \
-		   cli.c \
+		   ui/cli.c \
 		   config.c \
-		   gps.c \
-		   imu.c \
+		   gps/gps.c \
+		   flight/imu.c \
 		   main.c \
-		   mixer.c \
+		   flight/mixer.c \
 		   mw.c \
 		   sensors.c \
-		   serial.c \
-		   sbus.c \
-		   sumd.c \
-		   spektrum.c \
-		   telemetry_common.c \
-		   telemetry_frsky.c \
-		   telemetry_hott.c \
-		   drv_gpio.c \
-		   drv_i2c.c \
-		   drv_i2c_soft.c \
+		   ui/serial.c \
+		   rx/sbus.c \
+		   rx/sumd.c \
+		   rx/spektrum.c \
+		   telemetry/telemetry_common.c \
+		   telemetry/telemetry_frsky.c \
+		   telemetry/telemetry_hott.c \
+		   drivers/gpio/drv_gpio.c \
+		   drivers/bus/drv_i2c.c \
+		   drivers/bus/drv_i2c_soft.c \
 		   drv_system.c \
-		   drv_serial.c \
-		   drv_softserial.c \
-		   drv_uart.c \
+		   drivers/serial/drv_serial.c \
+		   drivers/serial/drv_softserial.c \
+		   drivers/serial/drv_uart.c \
 		   printf.c \
 		   utils.c \
 		   $(CMSIS_SRC) \
 		   $(STDPERIPH_SRC)
 
 # Source files for the NAZE target
-NAZE_SRC	 = drv_adc.c \
-		   drv_adxl345.c \
-		   drv_bma280.c \
-		   drv_bmp085.c \
-		   drv_ms5611.c \
-		   drv_hcsr04.c \
-		   drv_hmc5883l.c \
-		   drv_ledring.c \
-		   drv_mma845x.c \
-		   drv_mpu3050.c \
-		   drv_mpu6050.c \
-		   drv_l3g4200d.c \
+NAZE_SRC	 = drivers/adc/drv_adc.c \
+		   drivers/accgyro/drv_adxl345.c \
+		   drivers/accgyro/drv_bma280.c \
+		   drivers/altimeter/drv_bmp085.c \
+		   drivers/altimeter/drv_ms5611.c \
+		   drivers/sonar/drv_hcsr04.c \
+		   drivers/compass/drv_hmc5883l.c \
+		   drivers/light/drv_ledring.c \
+		   drivers/accgyro/drv_mma845x.c \
+		   drivers/accgyro/drv_mpu3050.c \
+		   drivers/accgyro/drv_mpu6050.c \
+		   drivers/accgyro/drv_l3g4200d.c \
 		   drv_pwm.c \
-		   drv_spi.c \
-		   drv_timer.c \
+		   drivers/bus/drv_spi.c \
+		   drivers/timer/drv_timer.c \
 		   $(COMMON_SRC)
 
 # Source files for the FY90Q target
@@ -94,14 +94,14 @@ FY90Q_SRC	 = drv_adc_fy90q.c \
 		   $(COMMON_SRC)
 
 # Source files for the OLIMEXINO target
-OLIMEXINO_SRC	 = drv_spi.c \
-		   drv_adc.c \
-		   drv_adxl345.c \
-		   drv_mpu3050.c \
-		   drv_mpu6050.c \
-		   drv_l3g4200d.c \
+OLIMEXINO_SRC	 = drivers/bus/drv_spi.c \
+		   drivers/adc/drv_adc.c \
+		   drivers/accgyro/drv_adxl345.c \
+		   drivers/accgyro/drv_mpu3050.c \
+		   drivers/accgyro/drv_mpu6050.c \
+		   drivers/accgyro/drv_l3g4200d.c \
 		   drv_pwm.c \
-		   drv_timer.c \
+		   drivers/timer/drv_timer.c \
 		   $(COMMON_SRC)
 		   
 # In some cases, %.s regarded as intermediate file, which is actually not.
@@ -212,6 +212,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o): %.S
 
 clean:
 	rm -f $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+	rm -rf $(OBJECT_DIR)/$(TARGET)
 
 flash_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon

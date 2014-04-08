@@ -1,7 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-#include "telemetry_common.h"
+#include "telemetry/telemetry_common.h"
 
 core_t core;
 

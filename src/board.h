@@ -21,7 +21,7 @@
 #endif
 
 #include "drv_system.h"         // timers, delays, etc
-#include "drv_gpio.h"
+#include "drivers/gpio/drv_gpio.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846f
@@ -278,48 +278,48 @@ typedef struct baro_t
 
 #ifdef FY90Q
  // FY90Q
-#include "drv_adc.h"
+#include "drivers/adc/drv_adc.h"
 #include "drv_i2c.h"
 #include "drv_pwm.h"
-#include "drv_uart.h"
+#include "drivers/serial/drv_uart.h"
 #else
 
 #ifdef OLIMEXINO
 // OLIMEXINO
-#include "drv_adc.h"
-#include "drv_i2c.h"
-#include "drv_spi.h"
-#include "drv_adxl345.h"
-#include "drv_mpu3050.h"
-#include "drv_mpu6050.h"
-#include "drv_l3g4200d.h"
+#include "drivers/adc/drv_adc.h"
+#include "drivers/bus/drv_i2c.h"
+#include "drivers/bus/drv_spi.h"
+#include "drivers/accgyro/drv_adxl345.h"
+#include "drivers/accgyro/drv_mpu3050.h"
+#include "drivers/accgyro/drv_mpu6050.h"
+#include "drivers/accgyro/drv_l3g4200d.h"
 #include "drv_pwm.h"
-#include "drv_timer.h"
-#include "drv_serial.h"
-#include "drv_uart.h"
-#include "drv_softserial.h"
+#include "drivers/timer/drv_timer.h"
+#include "drivers/serial/drv_serial.h"
+#include "drivers/serial/drv_uart.h"
+#include "drivers/serial/drv_softserial.h"
 #else
 
  // AfroFlight32
-#include "drv_adc.h"
-#include "drv_adxl345.h"
-#include "drv_bma280.h"
-#include "drv_bmp085.h"
-#include "drv_ms5611.h"
-#include "drv_hmc5883l.h"
-#include "drv_i2c.h"
-#include "drv_spi.h"
-#include "drv_ledring.h"
-#include "drv_mma845x.h"
-#include "drv_mpu3050.h"
-#include "drv_mpu6050.h"
-#include "drv_l3g4200d.h"
+#include "drivers/adc/drv_adc.h"
+#include "drivers/accgyro/drv_adxl345.h"
+#include "drivers/accgyro/drv_bma280.h"
+#include "drivers/altimeter/drv_bmp085.h"
+#include "drivers/altimeter/drv_ms5611.h"
+#include "drivers/compass/drv_hmc5883l.h"
+#include "drivers/bus/drv_i2c.h"
+#include "drivers/bus/drv_spi.h"
+#include "drivers/light/drv_ledring.h"
+#include "drivers/accgyro/drv_mma845x.h"
+#include "drivers/accgyro/drv_mpu3050.h"
+#include "drivers/accgyro/drv_mpu6050.h"
+#include "drivers/accgyro/drv_l3g4200d.h"
 #include "drv_pwm.h"
-#include "drv_timer.h"
-#include "drv_serial.h"
-#include "drv_uart.h"
-#include "drv_softserial.h"
-#include "drv_hcsr04.h"
+#include "drivers/timer/drv_timer.h"
+#include "drivers/serial/drv_serial.h"
+#include "drivers/serial/drv_uart.h"
+#include "drivers/serial/drv_softserial.h"
+#include "drivers/sonar/drv_hcsr04.h"
 
 #endif
 #endif

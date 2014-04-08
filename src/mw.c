@@ -1,8 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
-#include "cli.h"
-#include "telemetry_common.h"
+#include "ui/cli.h"
+#include "telemetry/telemetry_common.h"
 
 // June 2013     V2.2-dev
 
