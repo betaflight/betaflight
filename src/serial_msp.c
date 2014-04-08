@@ -1,8 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
-#include "ui/cli.h"
-#include "telemetry/telemetry_common.h"
+#include "serial_cli.h"
+#include "telemetry_common.h"
 
 // Multiwii Serial Protocol 0
 #define MSP_VERSION              0

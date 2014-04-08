@@ -1,9 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-#ifndef sq
-#define sq(x) ((x)*(x))
-#endif
+#include "maths.h"
 
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
 #define GPS_TIMEOUT (2500)

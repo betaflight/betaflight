@@ -1,8 +1,10 @@
 #include "board.h"
 #include "mw.h"
 
-#include "ui/cli.h"
-#include "telemetry/telemetry_common.h"
+#include "serial_cli.h"
+#include "telemetry_common.h"
+#include "typeconversion.h"
+#include "maths.h"
 
 // June 2013     V2.2-dev
 
@@ -63,10 +65,6 @@ int16_t AccInflightCalibrationArmed;
 uint16_t AccInflightCalibrationMeasurementDone = 0;
 uint16_t AccInflightCalibrationSavetoEEProm = 0;
 uint16_t AccInflightCalibrationActive = 0;
-
-// Battery monitoring stuff
-uint8_t batteryCellCount = 3;       // cell count
-uint16_t batteryWarningVoltage;     // annoying buzzer after this one, battery ready to be dead
 
 void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 {

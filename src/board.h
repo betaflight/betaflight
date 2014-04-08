@@ -17,11 +17,13 @@
 #ifndef __CC_ARM
 // only need this garbage on gcc
 #define USE_LAME_PRINTF
+#define PRINTF_LONG_SUPPORT
+
 #include "printf.h"
 #endif
 
-#include "drv_system.h"         // timers, delays, etc
-#include "drivers/gpio/drv_gpio.h"
+#include "drivers/system_common.h"         // timers, delays, etc
+#include "drivers/gpio_common.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846f
@@ -274,7 +276,9 @@ typedef struct baro_t
 
 #undef SOFT_I2C                 // enable to test software i2c
 
-#include "utils.h"
+#include "boardalignment.h"
+#include "battery.h"
+#include "math.h"
 
 #ifdef FY90Q
  // FY90Q
@@ -286,40 +290,40 @@ typedef struct baro_t
 
 #ifdef OLIMEXINO
 // OLIMEXINO
-#include "drivers/adc/drv_adc.h"
-#include "drivers/bus/drv_i2c.h"
-#include "drivers/bus/drv_spi.h"
-#include "drivers/accgyro/drv_adxl345.h"
-#include "drivers/accgyro/drv_mpu3050.h"
-#include "drivers/accgyro/drv_mpu6050.h"
-#include "drivers/accgyro/drv_l3g4200d.h"
-#include "drv_pwm.h"
-#include "drivers/timer/drv_timer.h"
-#include "drivers/serial/drv_serial.h"
-#include "drivers/serial/drv_uart.h"
-#include "drivers/serial/drv_softserial.h"
+#include "drivers/adc_common.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
+#include "drivers/accgyro_adxl345.h"
+#include "drivers/accgyro_mpu3050.h"
+#include "drivers/accgyro_mpu6050.h"
+#include "drivers/accgyro_l3g4200d.h"
+#include "drivers/pwm_common.h"
+#include "drivers/timer_common.h"
+#include "drivers/serial_common.h"
+#include "drivers/serial_uart.h"
+#include "drivers/serial_softserial.h"
 #else
 
  // AfroFlight32
-#include "drivers/adc/drv_adc.h"
-#include "drivers/accgyro/drv_adxl345.h"
-#include "drivers/accgyro/drv_bma280.h"
-#include "drivers/altimeter/drv_bmp085.h"
-#include "drivers/altimeter/drv_ms5611.h"
-#include "drivers/compass/drv_hmc5883l.h"
-#include "drivers/bus/drv_i2c.h"
-#include "drivers/bus/drv_spi.h"
-#include "drivers/light/drv_ledring.h"
-#include "drivers/accgyro/drv_mma845x.h"
-#include "drivers/accgyro/drv_mpu3050.h"
-#include "drivers/accgyro/drv_mpu6050.h"
-#include "drivers/accgyro/drv_l3g4200d.h"
-#include "drv_pwm.h"
-#include "drivers/timer/drv_timer.h"
-#include "drivers/serial/drv_serial.h"
-#include "drivers/serial/drv_uart.h"
-#include "drivers/serial/drv_softserial.h"
-#include "drivers/sonar/drv_hcsr04.h"
+#include "drivers/adc_common.h"
+#include "drivers/accgyro_adxl345.h"
+#include "drivers/accgyro_bma280.h"
+#include "drivers/altimeter_bmp085.h"
+#include "drivers/altimeter_ms5611.h"
+#include "drivers/compass_hmc5883l.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
+#include "drivers/light_ledring.h"
+#include "drivers/accgyro_mma845x.h"
+#include "drivers/accgyro_mpu3050.h"
+#include "drivers/accgyro_mpu6050.h"
+#include "drivers/accgyro_l3g4200d.h"
+#include "drivers/pwm_common.h"
+#include "drivers/timer_common.h"
+#include "drivers/serial_common.h"
+#include "drivers/serial_uart.h"
+#include "drivers/serial_softserial.h"
+#include "drivers/sonar_hcsr04.h"
 
 #endif
 #endif

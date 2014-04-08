@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+#include "maths.h"
+
 // Driver for DFRobot I2C Led Ring
 #define LED_RING_ADDRESS    0x6D
 
