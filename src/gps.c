@@ -160,8 +160,10 @@ void gpsInitHardware(void)
 void gpsThread(void)
 {
     // read out available GPS bytes
-    while (serialTotalBytesWaiting(core.gpsport))
-        gpsNewData(serialRead(core.gpsport));
+    if (core.gpsport) {
+        while (serialTotalBytesWaiting(core.gpsport))
+            gpsNewData(serialRead(core.gpsport));
+    }
 
     switch (gpsData.state) {
         case GPS_UNKNOWN:
