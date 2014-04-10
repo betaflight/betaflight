@@ -850,8 +850,10 @@ uint32_t GPS_coord_to_degrees(char* s)
     int i;
 
     // scan for decimal point or end of field
-    for (p = s; isdigit((unsigned char)*p); p++)
-        ;
+    for (p = s; isdigit((unsigned char)*p); p++) {
+        if (p >= s + 15)
+            return 0; // stop potential fail
+    }
     q = s;
 
     // convert degrees
@@ -896,6 +898,8 @@ static uint32_t grab_fields(char *src, uint8_t mult)
         tmp *= 10;
         if (src[i] >= '0' && src[i] <= '9')
             tmp += src[i] - '0';
+        if (i >= 15) 
+            return 0; // out of bounds
     }
     return tmp;
 }
