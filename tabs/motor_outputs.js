@@ -30,7 +30,7 @@ function tab_initialize_motor_outputs() {
         $('div.values li:not(:last)').html(MISC.mincommand);
 
         // UI hooks
-        $('div.sliders input:not(.master)').change(function() {
+        $('div.sliders input:not(.master)').on('input', function() {
             var index = $(this).index();
 
             $('div.values li').eq(index).html($(this).val());
@@ -48,12 +48,12 @@ function tab_initialize_motor_outputs() {
             send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
         });
 
-        $('div.sliders input.master').change(function() {
+        $('div.sliders input.master').on('input', function() {
             var val = $(this).val();
 
             $('div.sliders input:not(:disabled, :last)').val(val);
             $('div.values li:not(:last)').slice(0, number_of_valid_outputs).html(val);
-            $('div.sliders input:not(:last):first').change();
+            $('div.sliders input:not(:last):first').trigger('input');
         });
 
         $('div.notice input[type="checkbox"]').change(function() {
@@ -71,7 +71,7 @@ function tab_initialize_motor_outputs() {
                 $('div.values li:not(:last)').html(1000);
 
                 // trigger change event so values are sent to mcu
-                $('div.sliders input').change();
+                $('div.sliders input').trigger('input');
             }
         });
 
