@@ -124,7 +124,7 @@ function handle_CLI(readInfo) {
             if (sequence_elements == 0) {
                 switch (data[i]) {
                     case 10: // line feed
-                        if (GUI.operating_system == "Windows" || GUI.operating_system == "Linux" || GUI.operating_system == "UNIX") {
+                        if (GUI.operating_system != "MacOS") {
                             text += "<br />";
                         }
                         break;
