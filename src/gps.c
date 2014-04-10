@@ -93,7 +93,8 @@ void gpsInit(uint8_t baudrateIndex)
         mode = MODE_RX;
 
     gpsSetPIDs();
-    core.gpsport = uartOpen(USART2, gpsNewData, gpsInitData[baudrateIndex].baudrate, mode);
+    // Open GPS UART, no callback - buffer will be read out in gpsThread()
+    core.gpsport = uartOpen(USART2, NULL, gpsInitData[baudrateIndex].baudrate, mode);
     // signal GPS "thread" to initialize when it gets to it
     gpsSetState(GPS_INITIALIZING);
 }
@@ -158,6 +159,12 @@ void gpsInitHardware(void)
 
 void gpsThread(void)
 {
+    // read out available GPS bytes
+    if (core.gpsport) {
+        while (serialTotalBytesWaiting(core.gpsport))
+            gpsNewData(serialRead(core.gpsport));
+    }
+
     switch (gpsData.state) {
         case GPS_UNKNOWN:
             break;
@@ -536,9 +543,6 @@ int8_t gpsSetPassthrough(void)
     if (gpsData.state != GPS_RECEIVINGDATA)
         return -1;
 
-    // get rid of callback
-    core.gpsport->callback = NULL;
-
     LED0_OFF;
     LED1_OFF;
 
@@ -846,8 +850,10 @@ uint32_t GPS_coord_to_degrees(char* s)
     int i;
 
     // scan for decimal point or end of field
-    for (p = s; isdigit((unsigned char)*p); p++)
-        ;
+    for (p = s; isdigit((unsigned char)*p); p++) {
+        if (p >= s + 15)
+            return 0; // stop potential fail
+    }
     q = s;
 
     // convert degrees
@@ -892,6 +898,8 @@ static uint32_t grab_fields(char *src, uint8_t mult)
         tmp *= 10;
         if (src[i] >= '0' && src[i] <= '9')
             tmp += src[i] - '0';
+        if (i >= 15) 
+            return 0; // out of bounds
     }
     return tmp;
 }
