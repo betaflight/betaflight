@@ -13,6 +13,7 @@ var GUI_control = function() {
     else if (navigator.appVersion.indexOf("CrOS") != -1)    this.operating_system = "ChromeOS";
     else if (navigator.appVersion.indexOf("Linux") != -1)   this.operating_system = "Linux";
     else if (navigator.appVersion.indexOf("X11") != -1)     this.operating_system = "UNIX";
+    else this.operating_system = "Unknown";
 };
 
 // Timer managing methods
@@ -294,6 +295,9 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
 
         case 'firmware_flasher':
             PortHandler.flush_callbacks();
+
+            // unbind "global" events
+            $(document).unbind('keypress');
 
             if (callback) callback();
             break;
