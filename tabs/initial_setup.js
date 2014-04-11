@@ -2,10 +2,10 @@ function tab_initialize_initial_setup() {
     ga_tracker.sendAppView('Initial Setup');
     GUI.active_tab = 'initial_setup';
 
-    send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, load_misc_data);
+    send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_misc_data);
 
     function load_misc_data() {
-        send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, load_html);
+        send_message(MSP_codes.MSP_MISC, false, false, load_html);
     }
 
     function load_html() {
@@ -107,7 +107,7 @@ function tab_initialize_initial_setup() {
                 // During this period MCU won't be able to process any serial commands because its locked in a for/while loop
                 // until this operation finishes, sending more commands through data_poll() will result in serial buffer overflow
                 GUI.interval_pause('initial_setup_data_pull');
-                send_message(MSP_codes.MSP_ACC_CALIBRATION, MSP_codes.MSP_ACC_CALIBRATION, false, function() {
+                send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function() {
                     GUI.log('Accelerometer calibration started');
                 });
 
@@ -127,7 +127,7 @@ function tab_initialize_initial_setup() {
             if (!self.hasClass('calibrating')) {
                 self.addClass('calibrating');
 
-                send_message(MSP_codes.MSP_MAG_CALIBRATION, MSP_codes.MSP_MAG_CALIBRATION, false, function() {
+                send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function() {
                     GUI.log('Magnetometer calibration started');
                 });
 
@@ -139,7 +139,7 @@ function tab_initialize_initial_setup() {
         });
 
         $('a.resetSettings').click(function() {
-            send_message(MSP_codes.MSP_RESET_CONF, MSP_codes.MSP_RESET_CONF, false, function() {
+            send_message(MSP_codes.MSP_RESET_CONF, false, false, function() {
                 GUI.log('Settings restored to <strong>default</strong>');
 
                 GUI.tab_switch_cleanup(function() {
@@ -202,7 +202,7 @@ function tab_initialize_initial_setup() {
             send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
-                send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log('EEPROM <span style="color: green">saved</span>');
 
                     var element = $('a.update');
@@ -227,11 +227,11 @@ function tab_initialize_initial_setup() {
 
         // data pulling functions used inside interval timer
         function get_analog_data() {
-            send_message(MSP_codes.MSP_ANALOG, MSP_codes.MSP_ANALOG, false, get_attitude_data);
+            send_message(MSP_codes.MSP_ANALOG, false, false, get_attitude_data);
         }
 
         function get_attitude_data() {
-            send_message(MSP_codes.MSP_ATTITUDE, MSP_codes.MSP_ATTITUDE, false, update_ui);
+            send_message(MSP_codes.MSP_ATTITUDE, false, false, update_ui);
         }
 
         function update_ui() {
@@ -257,7 +257,7 @@ function tab_initialize_initial_setup() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+            send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

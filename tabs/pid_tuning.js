@@ -3,14 +3,14 @@ function tab_initialize_pid_tuning() {
     GUI.active_tab = 'pid_tuning';
 
     // requesting MSP_STATUS manually because it contains CONFIG.profile
-    send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_pid_data);
+    send_message(MSP_codes.MSP_STATUS, false, false, get_pid_data);
 
     function get_pid_data() {
-        send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, get_rc_tuning_data);
+        send_message(MSP_codes.MSP_PID, false, false, get_rc_tuning_data);
     }
 
     function get_rc_tuning_data() {
-        send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, load_html);
+        send_message(MSP_codes.MSP_RC_TUNING, false, false, load_html);
     }
 
     function load_html() {
@@ -278,7 +278,7 @@ function tab_initialize_pid_tuning() {
             }
 
             function save_to_eeprom() {
-                send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log('EEPROM <span style="color: green">saved</span>');
 
                     var element = $('a.update');
@@ -293,7 +293,7 @@ function tab_initialize_pid_tuning() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+            send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

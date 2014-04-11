@@ -2,35 +2,35 @@ function configuration_backup() {
     // request configuration data (one by one)
 
     function get_ident_data() {
-        send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, get_status_data);
+        send_message(MSP_codes.MSP_IDENT, false, false, get_status_data);
     }
 
     function get_status_data() {
-        send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS, false, get_pid_data);
+        send_message(MSP_codes.MSP_STATUS, false, false, get_pid_data);
     }
 
     function get_pid_data() {
-        send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID, false, get_rc_tuning_data);
+        send_message(MSP_codes.MSP_PID, false, false, get_rc_tuning_data);
     }
 
     function get_rc_tuning_data() {
-        send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, get_box_names_data);
+        send_message(MSP_codes.MSP_RC_TUNING, false, false, get_box_names_data);
     }
 
     function get_box_names_data() {
-        send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, get_box_data);
+        send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
     }
 
     function get_box_data() {
-        send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX, false, get_acc_trim_data);
+        send_message(MSP_codes.MSP_BOX, false, false, get_acc_trim_data);
     }
 
     function get_acc_trim_data() {
-        send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM, false, get_misc_data);
+        send_message(MSP_codes.MSP_ACC_TRIM, false, false, get_misc_data);
     }
 
     function get_misc_data() {
-        send_message(MSP_codes.MSP_MISC, MSP_codes.MSP_MISC, false, backup);
+        send_message(MSP_codes.MSP_MISC, false, false, backup);
     }
 
     function backup() {
@@ -222,9 +222,7 @@ function configuration_upload() {
     }
 
     // Send over the PID changes
-    send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, false, function() {
-        rc_tuning();
-    });
+    send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, false, rc_tuning);
 
     function rc_tuning() {
         // RC Tuning section
@@ -238,9 +236,7 @@ function configuration_upload() {
         RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
 
         // Send over the RC_tuning changes
-        send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, function() {
-            aux();
-        });
+        send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, aux);
     }
 
     function aux() {
@@ -254,9 +250,7 @@ function configuration_upload() {
         }
 
         // Send over the AUX changes
-        send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, function() {
-            trim();
-        });
+        send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, trim);
     }
 
     // Trim section
@@ -268,9 +262,7 @@ function configuration_upload() {
         buffer_out[3] = highByte(CONFIG.accelerometerTrims[1]);
 
         // Send over the new trims
-        send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out, false, function() {
-            misc();
-        });
+        send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out, false, misc);
     }
 
     function misc() {
@@ -303,7 +295,7 @@ function configuration_upload() {
         // Send ove the new MISC
         send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, function() {
             // Save changes to EEPROM
-            send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+            send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                 GUI.log('EEPROM <span style="color: green">saved</span>');
             });
         });

@@ -2,10 +2,10 @@ function tab_initialize_receiver() {
     ga_tracker.sendAppView('Receiver Page');
     GUI.active_tab = 'receiver';
 
-    send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, get_rc_data);
+    send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
 
     function get_rc_data() {
-        send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, load_html);
+        send_message(MSP_codes.MSP_RC, false, false, load_html);
     }
 
     function load_html() {
@@ -79,7 +79,7 @@ function tab_initialize_receiver() {
         }).change();
 
         $('a.refresh').click(function() {
-            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING, false, function() {
+            send_message(MSP_codes.MSP_RC_TUNING, false, false, function() {
                 GUI.log('RC Tuning data <strong>refreshed</strong>');
 
                 // fill in data from RC_tuning
@@ -116,7 +116,7 @@ function tab_initialize_receiver() {
             send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
-                send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log('EEPROM <span style="color: green">saved</span>');
 
                     var element = $('a.update');
@@ -137,7 +137,7 @@ function tab_initialize_receiver() {
             chrome.storage.local.set({'rx_refresh_rate': plot_update_rate});
 
             function get_rc_data() {
-                send_message(MSP_codes.MSP_RC, MSP_codes.MSP_RC, false, update_ui);
+                send_message(MSP_codes.MSP_RC, false, false, update_ui);
             }
 
             var meter_array = [];
@@ -347,7 +347,7 @@ function tab_initialize_receiver() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+            send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

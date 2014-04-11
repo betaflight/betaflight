@@ -2,7 +2,7 @@ function tab_initialize_gps () {
     ga_tracker.sendAppView('GPS Page');
     GUI.active_tab = 'gps';
 
-    send_message(MSP_codes.MSP_RAW_GPS, MSP_codes.MSP_RAW_GPS, false, load_html);
+    send_message(MSP_codes.MSP_RAW_GPS, false, false, load_html);
 
     function load_html() {
         $('#content').load("./tabs/gps.html", process_html);
@@ -10,11 +10,11 @@ function tab_initialize_gps () {
 
     function process_html() {
         function get_raw_gps_data() {
-            send_message(MSP_codes.MSP_RAW_GPS, MSP_codes.MSP_RAW_GPS, false, get_gpsvinfo_data);
+            send_message(MSP_codes.MSP_RAW_GPS, false, false, get_gpsvinfo_data);
         }
 
         function get_gpsvinfo_data() {
-            send_message(MSP_codes.MSP_GPSSVINFO, MSP_codes.MSP_GPSSVINFO, false, update_ui);
+            send_message(MSP_codes.MSP_GPSSVINFO, false, false, update_ui);
         }
 
         function update_ui() {
@@ -42,7 +42,7 @@ function tab_initialize_gps () {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+            send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

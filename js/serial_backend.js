@@ -155,9 +155,9 @@ function onOpen(openInfo) {
         }, 10000);
 
         // request configuration data
-        send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID, false, function() {
+        send_message(MSP_codes.MSP_UID, false, false, function() {
             GUI.log('Unique device ID <span style="color: green">received</span> - <strong>0x' + CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16) + '</strong>');
-            send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, function() {
+            send_message(MSP_codes.MSP_IDENT, false, false, function() {
                 GUI.timeout_remove('connecting'); // kill connecting timer
 
                 GUI.log(chrome.i18n.getMessage('firmware_version', [CONFIG.version]));

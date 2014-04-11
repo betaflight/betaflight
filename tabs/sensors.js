@@ -222,19 +222,19 @@ function tab_initialize_sensors() {
 
             // status data pulled via separate timer with static speed
             GUI.interval_add('status_pull', function() {
-                send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+                send_message(MSP_codes.MSP_STATUS);
             }, 250, true);
 
             GUI.interval_add('IMU_pull', function imu_data_pull() {
-                send_message(MSP_codes.MSP_RAW_IMU, MSP_codes.MSP_RAW_IMU, false, update_imu_graphs);
+                send_message(MSP_codes.MSP_RAW_IMU, false, false, update_imu_graphs);
             }, fastest, true);
 
             GUI.interval_add('altitude_pull', function altitude_data_pull() {
-                send_message(MSP_codes.MSP_ALTITUDE, MSP_codes.MSP_ALTITUDE, false, update_altitude_graph);
+                send_message(MSP_codes.MSP_ALTITUDE, false, false, update_altitude_graph);
             }, rates.baro, true);
 
             GUI.interval_add('debug_pull', function debug_data_pull() {
-                send_message(MSP_codes.MSP_DEBUG, MSP_codes.MSP_DEBUG, false, update_debug_graphs);
+                send_message(MSP_codes.MSP_DEBUG, false, false, update_debug_graphs);
             }, rates.debug, true);
 
             function update_imu_graphs() {

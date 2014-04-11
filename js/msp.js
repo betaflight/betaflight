@@ -379,16 +379,16 @@ MSP.process_data = function(code, message_buffer, message_length) {
 
             // With new flight software settings in place, we have to re-pull
             // latest values
-            send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT);
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
-            send_message(MSP_codes.MSP_PID, MSP_codes.MSP_PID);
-            send_message(MSP_codes.MSP_RC_TUNING, MSP_codes.MSP_RC_TUNING);
-            send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES);
-            send_message(MSP_codes.MSP_BOX, MSP_codes.MSP_BOX);
+            send_message(MSP_codes.MSP_IDENT);
+            send_message(MSP_codes.MSP_STATUS);
+            send_message(MSP_codes.MSP_PID);
+            send_message(MSP_codes.MSP_RC_TUNING);
+            send_message(MSP_codes.MSP_BOXNAMES);
+            send_message(MSP_codes.MSP_BOX);
 
             // baseflight specific
-            send_message(MSP_codes.MSP_UID, MSP_codes.MSP_UID);
-            send_message(MSP_codes.MSP_ACC_TRIM, MSP_codes.MSP_ACC_TRIM);
+            send_message(MSP_codes.MSP_UID);
+            send_message(MSP_codes.MSP_ACC_TRIM);
             break;
         case MSP_codes.MSP_SELECT_SETTING:
             console.log('Profile selected');
@@ -464,7 +464,7 @@ function send_message(code, data, callback_sent, callback_msp) {
     var bufView;
 
     // always reserve 6 bytes for protocol overhead !
-    if (typeof data === 'object') {
+    if (data) {
         var size = data.length + 6;
         var checksum = 0;
 
@@ -487,7 +487,7 @@ function send_message(code, data, callback_sent, callback_msp) {
 
         bufView[5 + data.length] = checksum;
     } else {
-        bufferOut = new ArrayBuffer(7);
+        bufferOut = new ArrayBuffer(6);
         bufView = new Uint8Array(bufferOut);
 
         bufView[0] = 36; // $
@@ -495,8 +495,7 @@ function send_message(code, data, callback_sent, callback_msp) {
         bufView[2] = 60; // <
         bufView[3] = 0; // data length
         bufView[4] = code; // code
-        bufView[5] = data; // data
-        bufView[6] = bufView[3] ^ bufView[4] ^ bufView[5]; // checksum
+        bufView[5] = bufView[3] ^ bufView[4]; // checksum
     }
 
     // utilizing callback/timeout system for all commands

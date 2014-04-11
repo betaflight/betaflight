@@ -9,14 +9,14 @@ function tab_initialize_servos() {
     ga_tracker.sendAppView('Servos');
     GUI.active_tab = 'servos';
 
-    send_message(MSP_codes.MSP_IDENT, MSP_codes.MSP_IDENT, false, get_servo_conf_data);
+    send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
 
     function get_servo_conf_data() {
-        send_message(MSP_codes.MSP_SERVO_CONF, MSP_codes.MSP_SERVO_CONF, false, get_boxnames_data);
+        send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_boxnames_data);
     }
 
     function get_boxnames_data() {
-        send_message(MSP_codes.MSP_BOXNAMES, MSP_codes.MSP_BOXNAMES, false, load_html);
+        send_message(MSP_codes.MSP_BOXNAMES, false, false, load_html);
     }
 
     function load_html() {
@@ -176,7 +176,7 @@ function tab_initialize_servos() {
 
             if (save_to_eeprom) {
                 // Save changes to EEPROM
-                send_message(MSP_codes.MSP_EEPROM_WRITE, MSP_codes.MSP_EEPROM_WRITE, false, function() {
+                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log('EEPROM <span style="color: green">saved</span>');
 
                     var element = $('a.update');
@@ -297,7 +297,7 @@ function tab_initialize_servos() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS, MSP_codes.MSP_STATUS);
+            send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }
