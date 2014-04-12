@@ -191,7 +191,7 @@ void acc_calc(uint32_t deltaT)
         accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
     } else
         accel_ned.V.Z -= acc_1G;
-    
+
     accz_smooth = accz_smooth + (deltaT / (fc_acc + deltaT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
     // apply Deadband to reduce integration drift and vibration influence
@@ -339,7 +339,7 @@ int getEstimatedAltitude(void)
         baroGroundPressure -= baroGroundPressure / 8;
         baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
         baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f; 
-        
+
         vel = 0;
         accAlt = 0;
         calibratingB--;
@@ -358,8 +358,8 @@ int getEstimatedAltitude(void)
     vel_acc = accZ_tmp * accVelScale * (float)accTimeSum;
 
     // Integrator - Altitude in cm
-    accAlt += (vel_acc * 0.5f) * dt  + vel * dt;                                        // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * cfg.baro_cf_alt + (float) BaroAlt *(1.0f - cfg.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
+    accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                         // integrate velocity to get distance (x= a/2 * t^2)
+    accAlt = accAlt * cfg.baro_cf_alt + (float)BaroAlt * (1.0f - cfg.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
     EstAlt = accAlt;
     vel += vel_acc;
 

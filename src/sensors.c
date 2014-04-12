@@ -179,8 +179,8 @@ static void ACC_Common(void)
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
         if (calibratingA == 1) {
             mcfg.accZero[ROLL] = (a[ROLL] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-            mcfg.accZero[PITCH] = (a[PITCH] + (CALIBRATING_ACC_CYCLES / 2))  / CALIBRATING_ACC_CYCLES;
-            mcfg.accZero[YAW] = (a[YAW] + (CALIBRATING_ACC_CYCLES / 2))  / CALIBRATING_ACC_CYCLES - acc_1G;
+            mcfg.accZero[PITCH] = (a[PITCH] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+            mcfg.accZero[YAW] = (a[YAW] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc_1G;
             cfg.angleTrim[ROLL] = 0;
             cfg.angleTrim[PITCH] = 0;
             writeEEPROM(1, true);      // write accZero in EEPROM
@@ -263,7 +263,6 @@ void Baro_Common(void)
     baroPressureSum -= baroHistTab[indexplus1];
     baroHistIdx = indexplus1;
 }
-
 
 int Baro_update(void)
 {

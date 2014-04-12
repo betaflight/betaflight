@@ -20,7 +20,7 @@ static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 void sbusInit(rcReadRawDataPtr *callback)
 {
     int b;
-    for (b = 0; b < SBUS_MAX_CHANNEL; b ++) 
+    for (b = 0; b < SBUS_MAX_CHANNEL; b++)
         sbusChannelData[b] = 2 * (mcfg.midrc - SBUS_OFFSET);
     core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS));
     if (callback)
@@ -49,9 +49,9 @@ typedef union
     uint8_t in[SBUS_FRAME_SIZE];
     struct sbus_dat msg;
 } sbus_msg;
- 
+
 static sbus_msg sbus;
- 
+
 // Receive ISR callback
 static void sbusDataReceive(uint16_t c)
 {
@@ -63,12 +63,12 @@ static void sbusDataReceive(uint16_t c)
     if ((sbusTime - sbusTimeLast) > 2500) // sbus2 fast timing
         sbusFramePosition = 0;
     sbusTimeLast = sbusTime;
- 
+
     if (sbusFramePosition == 0 && c != SBUS_SYNCBYTE)
         return;
 
     sbusFrameDone = false; // lazy main loop didnt fetch the stuff
-    if (sbusFramePosition != 0) 
+    if (sbusFramePosition != 0)
         sbus.in[sbusFramePosition - 1] = (uint8_t)c;
 
     if (sbusFramePosition == SBUS_FRAME_SIZE - 1) {
