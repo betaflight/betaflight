@@ -30,7 +30,7 @@ void initBoardAlignment(void)
     roll = mcfg.board_align_roll * M_PI / 180.0f;
     pitch = mcfg.board_align_pitch * M_PI / 180.0f;
     yaw = mcfg.board_align_yaw * M_PI / 180.0f;
-    
+
     cosx = cosf(roll);
     sinx = sinf(roll);
     cosy = cosf(pitch);
@@ -48,11 +48,11 @@ void initBoardAlignment(void)
     boardRotation[0][0] = coszcosy;
     boardRotation[0][1] = -cosy * sinz;
     boardRotation[0][2] = siny;
-    
+
     boardRotation[1][0] = sinzcosx + (coszsinx * siny);
     boardRotation[1][1] = coszcosx - (sinzsinx * siny);
     boardRotation[1][2] = -sinx * cosy;
-    
+
     boardRotation[2][0] = (sinzsinx) - (coszcosx * siny);
     boardRotation[2][1] = (coszsinx) + (sinzcosx * siny);
     boardRotation[2][2] = cosy * cosx;
