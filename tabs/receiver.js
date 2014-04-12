@@ -41,10 +41,10 @@ function tab_initialize_receiver() {
 
                 // math magic by englishman
                 var midx = 220 * mid;
-                var midxl = midx * .5;
-                var midxr = (((220 - midx) * .5) + midx);
+                var midxl = midx * 0.5;
+                var midxr = (((220 - midx) * 0.5) + midx);
                 var midy = 58 - (midx * (58 / 220));
-                var midyl = 58 - ((58 - midy) * .5 *(expo + 1));
+                var midyl = 58 - ((58 - midy) * 0.5 *(expo + 1));
                 var midyr = (midy / 2) * (expo + 1);
 
                 context.beginPath();
@@ -104,13 +104,13 @@ function tab_initialize_receiver() {
             RC_tuning.RC_EXPO = parseFloat($('.tunings .rate input[name="expo"]').val());
 
             var RC_tuning_buffer_out = new Array();
-            RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
-            RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100);
-            RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100);
-            RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100);
-            RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100);
-            RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100);
-            RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
+            RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100, 10);
+            RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100, 10);
+            RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100, 10);
+            RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100, 10);
+            RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100, 10);
+            RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100, 10);
+            RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100, 10);
 
             // Send over the RC_tuning changes
             send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
@@ -129,9 +129,8 @@ function tab_initialize_receiver() {
             }
         });
 
-        var grids = [], axis = [], lines = [];
         $('select[name="rx_refresh_rate"]').change(function() {
-            var plot_update_rate = parseInt($(this).val());
+            var plot_update_rate = parseInt($(this).val(), 10);
 
             // save update rate
             chrome.storage.local.set({'rx_refresh_rate': plot_update_rate});
@@ -162,13 +161,7 @@ function tab_initialize_receiver() {
             var width = 920 - margin.left - margin.right;
             var height = 200 - margin.top - margin.bottom;
 
-            // drop previous layout & required data
-            $('svg').empty();
-            lines = [];
-
             var svg = d3.select("svg");
-            svg_data = svg.append("g").attr("name", "data")
-                .attr("transform", "translate(41, 10)");
 
             function update_ui() {
                 meter_array[0].val(RC.throttle);
@@ -215,126 +208,54 @@ function tab_initialize_receiver() {
                     RX_plot_data[5].shift();
                     RX_plot_data[6].shift();
                     RX_plot_data[7].shift();
-                };
+                }
 
                 // update required parts of the plot
-                var widthScale = d3.scale.linear()
-                    .domain([(samples - 299), samples])
-                    .range([0, width]);
+                var widthScale = d3.scale.linear().
+                    domain([(samples - 299), samples]).
+                    range([0, width]);
 
-                var heightScale = d3.scale.linear()
-                    .domain([800, 2200])
-                    .range([height, 0]);
+                var heightScale = d3.scale.linear().
+                    domain([800, 2200]).
+                    range([height, 0]);
 
-                var xGrid = d3.svg.axis()
-                    .scale(widthScale)
-                    .orient("bottom")
-                    .tickSize(-height, 0, 0)
-                    .tickFormat("");
+                var xGrid = d3.svg.axis().
+                    scale(widthScale).
+                    orient("bottom").
+                    tickSize(-height, 0, 0).
+                    tickFormat("");
 
-                var yGrid = d3.svg.axis()
-                    .scale(heightScale)
-                    .orient("left")
-                    .tickSize(-width, 0, 0)
-                    .tickFormat("");
+                var yGrid = d3.svg.axis().
+                    scale(heightScale).
+                    orient("left").
+                    tickSize(-width, 0, 0).
+                    tickFormat("");
 
-                var xAxis = d3.svg.axis()
-                    .scale(widthScale)
-                    .orient("bottom")
-                    .tickFormat(function(d) {return d;});
+                var xAxis = d3.svg.axis().
+                    scale(widthScale).
+                    orient("bottom").
+                    tickFormat(function(d) {return d;});
 
-                var yAxis = d3.svg.axis()
-                    .scale(heightScale)
-                    .orient("left")
-                    .tickFormat(function(d) {return d;});
+                var yAxis = d3.svg.axis().
+                    scale(heightScale).
+                    orient("left").
+                    tickFormat(function(d) {return d;});
 
-                var line = d3.svg.line()
-                    .x(function(d) {return widthScale(d[0]);})
-                    .y(function(d) {return heightScale(d[1]);});
+                var line = d3.svg.line().
+                    x(function(d) {return widthScale(d[0]);}).
+                    y(function(d) {return heightScale(d[1]);});
 
-                // dump previous data
-                for (var i = 0; i < grids.length; i++) {
-                    grids[i].remove();
-                }
-                grids = [];
+                svg.select(".x.grid").call(xGrid);
+                svg.select(".y.grid").call(yGrid);
 
-                for (var i = 0; i < axis.length; i++) {
-                    axis[i].remove();
-                }
-                axis = [];
+                svg.select(".x.axis").call(xAxis);
+                svg.select(".y.axis").call(yAxis);
 
-                // render xGrid
-                grids[0] = svg.append("g")
-                    .attr("class", "grid x")
-                    .attr("transform", "translate(40, 180)")
-                    .call(xGrid);
+                var data = svg.select("g.data");
+                var lines = data.selectAll("path").data(RX_plot_data, function(d, i) { return i; });
+                var newLines = lines.enter().append("path").attr("class", "line");
+                lines.attr('d', line);
 
-                // render yGrid
-                grids[1] = svg.append("g")
-                    .attr("class", "grid y")
-                    .attr("transform", "translate(40, 10)")
-                    .call(yGrid);
-
-                // render xAxis
-                axis[0] = svg.append("g")
-                    .attr("class", "axis x")
-                    .attr("transform", "translate(40, 180)")
-                    .call(xAxis);
-
-                // render yAxis
-                axis[1] = svg.append("g")
-                    .attr("class", "axis y")
-                    .attr("transform", "translate(40, 10)")
-                    .call(yAxis);
-
-                if (!svg_data.select('path').empty()) {
-                    // update lines
-                    for (var i = 0; i < 8; i++) {
-                        lines[i].attr("d", line(RX_plot_data[i]));
-                    }
-                } else {
-                    // render lines
-                    lines[0] = svg_data.append("path")
-                        .attr("class", "line")
-                        .attr("d", line(RX_plot_data[0]))
-                        .style({'stroke': '#00A8F0'});
-
-                    lines[1] = svg_data.append("path")
-                        .attr("class", "line")
-                        .attr("d", line(RX_plot_data[1]))
-                        .style({'stroke': '#C0D800'});
-
-                    lines[2] = svg_data.append("path")
-                        .attr("class", "line")
-                        .attr("d", line(RX_plot_data[2]))
-                        .style({'stroke': '#CB4B4B'});
-
-                    lines[3] = svg_data.append("path")
-                        .attr("class", "line")
-                        .attr("d", line(RX_plot_data[3]))
-                        .style({'stroke': '#4DA74D'});
-
-                    lines[4] = svg_data.append("path")
-                        .attr("class", "line")
-                        .attr("d", line(RX_plot_data[4]))
-                        .style({'stroke': '#9440ED'});
-
-                    lines[5] = svg_data.append("path")
-                        .attr("class", "line")
-                        .attr("d", line(RX_plot_data[5]))
-                        .style({'stroke': '#45147a'});
-
-                    lines[6] = svg_data.append("path")
-                        .attr("class", "line")
-                        .attr("d", line(RX_plot_data[6]))
-                        .style({'stroke': '#cf7a26'});
-
-                    lines[7] = svg_data.append("path")
-                        .attr("class", "line")
-                        .attr("d", line(RX_plot_data[7]))
-                        .style({'stroke': '#147a66'});
-                }
-                // increment samples counter
                 samples++;
             }
 
