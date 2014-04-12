@@ -307,13 +307,13 @@ static void getEstimatedAttitude(void)
 
         float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);
 
-        if (cosZ <= 0.015f) { // // we are inverted, vertical or with a small angle < 0.86 deg
+        if (cosZ <= 0.015f) { // we are inverted, vertical or with a small angle < 0.86 deg
             throttleAngleCorrection = 0;
         } else {
-            int angle = acosf(cosZ) * throttleAngleScale;
+            int angle = lrintf(acosf(cosZ) * throttleAngleScale);
             if (angle > 900)
                 angle = 900;
-            throttleAngleCorrection = cfg.throttle_correction_value * sinf(angle / 900.0f * M_PI / 2.0f) ;
+            throttleAngleCorrection = lrintf(cfg.throttle_correction_value * sinf(angle / 900.0f * M_PI / 2.0f)) ;
         }
 
     }
