@@ -181,6 +181,12 @@ function microtime() {
     return now;
 }
 
+function millitime() {
+    var now = new Date().getTime();
+
+    return now;
+}
+
 /*
 function add_custom_spinners() {
     var spinner_element = '<div class="spinner"><div class="up"></div><div class="down"></div></div>';
