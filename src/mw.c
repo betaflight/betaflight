@@ -770,8 +770,6 @@ void loop(void)
         }
     } else {                    // not in rc loop
         static int taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
-        if (taskOrder > 4)
-            taskOrder -= 5;
         switch (taskOrder) {
         case 0:
             taskOrder++;
@@ -801,7 +799,7 @@ void loop(void)
                 break;
             }
         case 4:
-            taskOrder++;
+            taskOrder = 0;
 #ifdef SONAR
             if (sensors(SENSOR_SONAR)) {
                 Sonar_update();
