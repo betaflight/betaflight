@@ -247,7 +247,6 @@ function tab_initialize_receiver() {
 
                 svg.select(".x.grid").call(xGrid);
                 svg.select(".y.grid").call(yGrid);
-
                 svg.select(".x.axis").call(xAxis);
                 svg.select(".y.axis").call(yAxis);
 
