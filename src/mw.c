@@ -884,7 +884,7 @@ void loop(void)
         }
 #endif
 
-        if (cfg.throttle_angle_correction && (f.ANGLE_MODE || f.HORIZON_MODE)) {
+        if (cfg.throttle_correction_value && (f.ANGLE_MODE || f.HORIZON_MODE)) {
             rcCommand[THROTTLE] += throttleAngleCorrection;
         }
 

@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 61;
+static const uint8_t EEPROM_CONF_VERSION = 62;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -279,7 +279,8 @@ static void resetConf(void)
     cfg.yawdeadband = 0;
     cfg.alt_hold_throttle_neutral = 40;
     cfg.alt_hold_fast_change = 1;
-    cfg.throttle_angle_correction = 0;      // could be 40
+    cfg.throttle_correction_value = 0;      // could be 40
+    cfg.throttle_correction_angle = 300;    // 30.0 deg ,  could be 225
 
     // Failsafe Variables
     cfg.failsafe_delay = 10;                // 1sec
