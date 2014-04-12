@@ -70,6 +70,30 @@
     .tab-receiver .curves {
         float: right;
     }
+    .tab-receiver .line:nth-child(1) {
+        stroke: #00A8F0;
+    }
+    .tab-receiver .line:nth-child(2) {
+        stroke: #C0D800;
+    }
+    .tab-receiver .line:nth-child(3) {
+        stroke: #CB4B4B;
+    }
+    .tab-receiver .line:nth-child(4) {
+        stroke: #4DA74D;
+    }
+    .tab-receiver .line:nth-child(5) {
+        stroke: #9440ED;
+    }
+    .tab-receiver .line:nth-child(6) {
+        stroke: #45147A;
+    }
+    .tab-receiver .line:nth-child(7) {
+        stroke: #CF7A26;
+    }
+    .tab-receiver .line:nth-child(8) {
+        stroke: #147A66;
+    }
     .tab-receiver .throttle_curve {
         margin: 0 10px 10px 0;
 
