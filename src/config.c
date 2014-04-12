@@ -279,8 +279,8 @@ static void resetConf(void)
     cfg.yawdeadband = 0;
     cfg.alt_hold_throttle_neutral = 40;
     cfg.alt_hold_fast_change = 1;
-    cfg.throttle_correction_value = 0;      // could be 40
-    cfg.throttle_correction_angle = 300;    // 30.0 deg ,  could be 225
+    cfg.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
+    cfg.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
     cfg.failsafe_delay = 10;                // 1sec
