@@ -150,6 +150,22 @@ function tab_initialize_sensors() {
             initGraphHelpers('#debug4', samples_debug_i)
         ];
 
+        var raw_data_text_ements = {
+            x: [],
+            y: [],
+            z: [],
+        };
+        $('.plot_control .x, .plot_control .y, .plot_control .z').each(function() {
+            var e = $(this);
+            if (e.hasClass('x')) {
+                raw_data_text_ements.x.push(e);
+            } else if (e.hasClass('y')) {
+                raw_data_text_ements.y.push(e);
+            } else {
+                raw_data_text_ements.z.push(e);
+            }
+        });
+
         // set refresh speeds according to configuration saved in storage
         chrome.storage.local.get('sensor_refresh_rates', function(result) {
             if (typeof result.sensor_refresh_rates != 'undefined') {
@@ -212,23 +228,34 @@ function tab_initialize_sensors() {
             function update_imu_graphs() {
                 samples_gyro_i = addSampleToData(gyro_data, samples_gyro_i, SENSOR_DATA.gyroscope);
                 drawGraph(gyroHelpers, gyro_data, samples_gyro_i);
+                raw_data_text_ements.x[0].text(SENSOR_DATA.gyroscope[0].toFixed(2));
+                raw_data_text_ements.y[0].text(SENSOR_DATA.gyroscope[1].toFixed(2));
+                raw_data_text_ements.z[0].text(SENSOR_DATA.gyroscope[2].toFixed(2));
 
                 samples_accel_i = addSampleToData(accel_data, samples_accel_i, SENSOR_DATA.accelerometer);
                 drawGraph(accelHelpers, accel_data, samples_accel_i);
+                raw_data_text_ements.x[1].text(SENSOR_DATA.accelerometer[0].toFixed(2));
+                raw_data_text_ements.y[1].text(SENSOR_DATA.accelerometer[1].toFixed(2));
+                raw_data_text_ements.z[1].text(SENSOR_DATA.accelerometer[2].toFixed(2));
 
                 samples_mag_i = addSampleToData(mag_data, samples_mag_i, SENSOR_DATA.magnetometer);
                 drawGraph(magHelpers, mag_data, samples_mag_i);
+                raw_data_text_ements.x[2].text(SENSOR_DATA.magnetometer[0].toFixed(2));
+                raw_data_text_ements.y[2].text(SENSOR_DATA.magnetometer[1].toFixed(2));
+                raw_data_text_ements.z[2].text(SENSOR_DATA.magnetometer[2].toFixed(2));
             }
 
             function update_altitude_graph() {
                 samples_baro_i = addSampleToData(baro_data, samples_baro_i, [SENSOR_DATA.altitude]);
                 drawGraph(baroHelpers, baro_data, samples_baro_i);
+                raw_data_text_ements.x[3].text(SENSOR_DATA.altitude.toFixed(2));
             }
 
             function update_debug_graphs() {
                 for (var i = 0; i < 4; i++) {
                     addSampleToData(debug_data[i], samples_debug_i, [SENSOR_DATA.debug[i]]);
                     drawGraph(debugHelpers[i], debug_data[i], samples_debug_i);
+                    raw_data_text_ements.x[4 + i].text(SENSOR_DATA.debug[i]);
                 }
                 samples_debug_i++;
             }

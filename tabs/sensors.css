@@ -3,7 +3,7 @@
     .tab-sensors .plot_control {
         float: right;
 
-        width: 168px;
+        width: 158px;
 
         border: 1px solid silver;
     }
@@ -31,6 +31,15 @@
             margin-left: 20px;
             height: 22px;
         }
+        .tab-sensors .plot_control .x {
+            color: #00A8F0;
+        }
+        .tab-sensors .plot_control .y {
+            color: #C0D800;
+        }
+        .tab-sensors .plot_control .z {
+            color: #CB4B4B;
+        }
     .tab-sensors select {
         width: 70px;
         border: 1px solid silver;
@@ -39,7 +48,7 @@
 .tab-sensors svg {
     float: right;
 
-    width: 730px;
+    width: 740px;
     height: 140px;
 
     margin-bottom: 10px;
