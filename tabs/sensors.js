@@ -44,6 +44,7 @@ function initGraphHelpers(selector, sampleNumber, heightDomain) {
     var helpers = {selector: selector, dynamicHeightDomain: !heightDomain};
 
     helpers.widthScale = d3.scale.linear().
+        clamp(true).
         domain([(sampleNumber - 299), sampleNumber]).
         range([0, width]);
 

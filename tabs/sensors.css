@@ -55,6 +55,7 @@
 }
 .tab-sensors .grid .tick {
     stroke: silver;
+    stroke-width: 1px;
     shape-rendering: crispEdges;
 }
 .tab-sensors .line {
@@ -64,9 +65,10 @@
 .tab-sensors .grid path {
     stroke-width: 0;
 }
-.tab-sensors .axis path, .axis line {
+.tab-sensors .axis path, .tab-sensors .axis line {
     fill: none;
     stroke: #000;
+    stroke-width: 1px;
     shape-rendering: crispEdges;
 }
 .tab-sensors .line:nth-child(1) {
