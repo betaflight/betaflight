@@ -158,8 +158,8 @@ function tab_initialize_receiver() {
             var samples = 0;
 
             var margin = {top: 20, right: 20, bottom: 10, left: 40};
-            var width = 920 - margin.left - margin.right;
-            var height = 200 - margin.top - margin.bottom;
+            var width = $('#RX_plot').width() - margin.left - margin.right;
+            var height = $('#RX_plot').height() - margin.top - margin.bottom;
 
             var svg = d3.select("svg");
 

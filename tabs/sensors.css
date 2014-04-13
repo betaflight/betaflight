@@ -3,7 +3,7 @@
     .tab-sensors .plot_control {
         float: right;
 
-        width: 178px;
+        width: 168px;
 
         border: 1px solid silver;
     }
@@ -39,7 +39,7 @@
 .tab-sensors svg {
     float: right;
 
-    width: 720px;
+    width: 730px;
     height: 140px;
 
     margin-bottom: 10px;
