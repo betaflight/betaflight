@@ -40,9 +40,9 @@
     float: right;
 
     width: 720px;
-    height: 130px;
+    height: 140px;
 
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 .tab-sensors .grid .tick {
     stroke: silver;

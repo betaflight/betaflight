@@ -39,7 +39,7 @@ function addSampleToData(data, sampleNumber, sensorData) {
 function initGraphHelpers(selector, sampleNumber, heightDomain) {
     var margin = {top: 20, right: 20, bottom: 10, left: 40};
     var width = 720 - margin.left - margin.right;
-    var height = 130 - margin.top - margin.bottom;
+    var height = 140 - margin.top - margin.bottom;
 
     var helpers = {selector: selector, dynamicHeightDomain: !heightDomain};
 
