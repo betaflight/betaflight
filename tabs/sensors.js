@@ -48,6 +48,7 @@ function initGraphHelpers(selector, sampleNumber, heightDomain) {
         range([0, width]);
 
     helpers.heightScale = d3.scale.linear().
+        clamp(true).
         domain(heightDomain || [1, -1]).
         range([height, 0]);
 
