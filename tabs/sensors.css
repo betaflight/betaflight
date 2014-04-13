@@ -31,13 +31,47 @@
         border: 1px solid silver;
     }
 
-/* Flotr related styles */
-.flotr-legend {
-    padding: 2px;
-    margin-left: 31px;
-    top: 20px;
-    border: 0;
-
-    background-color: white;
-    opacity: 0.75;
+/* SVG classes*/
+.tab-sensors .grid .tick {
+    stroke: silver;
+    shape-rendering: crispEdges;
+}
+.tab-sensors .line {
+    stroke-width: 2px;
+    fill: none;
+}
+.tab-sensors .grid path {
+    stroke-width: 0;
+}
+.tab-sensors .axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+.tab-sensors svg .title {
+    font-weight: bold;
+}
+.tab-sensors .line:nth-child(1) {
+    stroke: #00A8F0;
+}
+.tab-sensors .line:nth-child(2) {
+    stroke: #C0D800;
+}
+.tab-sensors .line:nth-child(3) {
+    stroke: #CB4B4B;
+}
+.tab-sensors .line:nth-child(4) {
+    stroke: #4DA74D;
+}
+.tab-sensors .legend .item:nth-child(1) {
+    fill: #00A8F0;
+}
+.tab-sensors .legend .item:nth-child(2) {
+    fill: #C0D800;
+}
+.tab-sensors .legend .item:nth-child(3) {
+    fill: #CB4B4B;
+}
+.tab-sensors .legend .item:nth-child(4) {
+    fill: #4DA74D;
 }
