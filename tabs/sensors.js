@@ -168,26 +168,25 @@ function tab_initialize_sensors() {
         });
 
         // set refresh speeds according to configuration saved in storage
-        chrome.storage.local.get('sensor_refresh_rates', function(result) {
-            if (typeof result.sensor_refresh_rates != 'undefined') {
-                $('.tab-sensors select[name="gyro_refresh_rate"]').val(result.sensor_refresh_rates.gyro);
-                //$('.tab-sensors select[name="gyro_scale"]').val(result.scales.gyro);
+        chrome.storage.local.get('sensor_settings', function(result) {
+            if (typeof result.sensor_settings != 'undefined') {
+                $('.tab-sensors select[name="gyro_refresh_rate"]').val(result.sensor_settings.rates.gyro);
+                $('.tab-sensors select[name="gyro_scale"]').val(result.sensor_settings.scales.gyro);
 
-                $('.tab-sensors select[name="accel_refresh_rate"]').val(result.sensor_refresh_rates.accel);
-                //$('.tab-sensors select[name="accel_scale"]').val(result.scales.accel);
+                $('.tab-sensors select[name="accel_refresh_rate"]').val(result.sensor_settings.rates.accel);
+                $('.tab-sensors select[name="accel_scale"]').val(result.sensor_settings.scales.accel);
 
-                $('.tab-sensors select[name="mag_refresh_rate"]').val(result.sensor_refresh_rates.mag);
-                //$('.tab-sensors select[name="mag_scale"]').val(result.scales.mag);
+                $('.tab-sensors select[name="mag_refresh_rate"]').val(result.sensor_settings.rates.mag);
+                $('.tab-sensors select[name="mag_scale"]').val(result.sensor_settings.scales.mag);
 
-                $('.tab-sensors select[name="baro_refresh_rate"]').val(result.sensor_refresh_rates.baro);
-                $('.tab-sensors select[name="debug_refresh_rate"]').val(result.sensor_refresh_rates.debug);
+                $('.tab-sensors select[name="baro_refresh_rate"]').val(result.sensor_settings.rates.baro);
+                $('.tab-sensors select[name="debug_refresh_rate"]').val(result.sensor_settings.rates.debug);
 
                 // start polling data by triggering refresh rate change event
-                $('.tab-sensors .rate select').change();
-                //$('.tab-sensors .scale select').change();
+                $('.tab-sensors .scale select').change(); // currently fires 3 times, needs to be optimized
             } else {
                 // start polling immediatly (as there is no configuration saved in the storage)
-                $('.tab-sensors .rate select').change(); // start polling data by triggering refresh rate change event
+                $('.tab-sensors .scale select').change(); // currently fires 3 times, needs to be optimized
             }
         });
 
@@ -216,8 +215,7 @@ function tab_initialize_sensors() {
             var fastest = d3.min([rates.gyro, rates.accel, rates.mag]);
 
             // store current/latest refresh rates in the storage
-            chrome.storage.local.set({'sensor_refresh_rates': rates});
-            chrome.storage.local.set({'sensor_scales': scales});
+            chrome.storage.local.set({'sensor_settings': {'rates': rates, 'scales': scales}});
 
             // timer initialization
             GUI.interval_kill_all();
@@ -289,6 +287,8 @@ function tab_initialize_sensors() {
             } else if (name == 'mag_scale') {
                 magHelpers = initGraphHelpers('#mag', samples_mag_i, [-val, val]);
             }
+
+            $('.tab-sensors .rate select:first').change();
         });
     });
 }
