@@ -175,14 +175,14 @@ function tab_initialize_sensors() {
                 $('.tab-sensors select[name="baro_refresh_rate"]').val(result.sensor_refresh_rates.baro); // baro
                 $('.tab-sensors select[name="debug_refresh_rate"]').val(result.sensor_refresh_rates.debug); // debug
 
-                $('.tab-sensors select').change(); // start polling data by triggering refresh rate change event
+                $('.tab-sensors .rate select').change(); // start polling data by triggering refresh rate change event
             } else {
                 // start polling immediatly (as there is no configuration saved in the storage)
-                $('.tab-sensors select').change(); // start polling data by triggering refresh rate change event
+                $('.tab-sensors .rate select').change(); // start polling data by triggering refresh rate change event
             }
         });
 
-        $('.tab-sensors select').change(function() {
+        $('.tab-sensors .rate select').change(function() {
             // if any of the select fields change value, all of the select values are grabbed
             // and timers are re-initialized with the new settings
 
@@ -259,6 +259,10 @@ function tab_initialize_sensors() {
                 }
                 samples_debug_i++;
             }
+        });
+
+        $('.tab-sensors .scale select').change(function() {
+            console.log('change scale');
         });
     });
 }
