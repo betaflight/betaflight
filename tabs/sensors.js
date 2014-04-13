@@ -141,7 +141,7 @@ function tab_initialize_sensors() {
 
         var gyroHelpers = initGraphHelpers('#gyro', samples_gyro_i, [-2000, 2000]);
         var accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-2, 2]);
-        var magHelpers = initGraphHelpers('#mag', samples_mag_i);
+        var magHelpers = initGraphHelpers('#mag', samples_mag_i, [-1, 1]);
         var baroHelpers = initGraphHelpers('#baro', samples_baro_i);
         var debugHelpers = [
             initGraphHelpers('#debug1', samples_debug_i),
@@ -156,26 +156,34 @@ function tab_initialize_sensors() {
             z: [],
         };
         $('.plot_control .x, .plot_control .y, .plot_control .z').each(function() {
-            var e = $(this);
-            if (e.hasClass('x')) {
-                raw_data_text_ements.x.push(e);
-            } else if (e.hasClass('y')) {
-                raw_data_text_ements.y.push(e);
+            var el = $(this);
+            if (el.hasClass('x')) {
+                raw_data_text_ements.x.push(el);
+            } else if (el.hasClass('y')) {
+                raw_data_text_ements.y.push(el);
             } else {
-                raw_data_text_ements.z.push(e);
+                raw_data_text_ements.z.push(el);
             }
         });
 
         // set refresh speeds according to configuration saved in storage
         chrome.storage.local.get('sensor_refresh_rates', function(result) {
             if (typeof result.sensor_refresh_rates != 'undefined') {
-                $('.tab-sensors select[name="gyro_refresh_rate"]').val(result.sensor_refresh_rates.gyro); // gyro
-                $('.tab-sensors select[name="accel_refresh_rate"]').val(result.sensor_refresh_rates.accel); // accel
-                $('.tab-sensors select[name="mag_refresh_rate"]').val(result.sensor_refresh_rates.mag); // mag
-                $('.tab-sensors select[name="baro_refresh_rate"]').val(result.sensor_refresh_rates.baro); // baro
-                $('.tab-sensors select[name="debug_refresh_rate"]').val(result.sensor_refresh_rates.debug); // debug
+                $('.tab-sensors select[name="gyro_refresh_rate"]').val(result.sensor_refresh_rates.gyro);
+                //$('.tab-sensors select[name="gyro_scale"]').val(result.scales.gyro);
 
-                $('.tab-sensors .rate select').change(); // start polling data by triggering refresh rate change event
+                $('.tab-sensors select[name="accel_refresh_rate"]').val(result.sensor_refresh_rates.accel);
+                //$('.tab-sensors select[name="accel_scale"]').val(result.scales.accel);
+
+                $('.tab-sensors select[name="mag_refresh_rate"]').val(result.sensor_refresh_rates.mag);
+                //$('.tab-sensors select[name="mag_scale"]').val(result.scales.mag);
+
+                $('.tab-sensors select[name="baro_refresh_rate"]').val(result.sensor_refresh_rates.baro);
+                $('.tab-sensors select[name="debug_refresh_rate"]').val(result.sensor_refresh_rates.debug);
+
+                // start polling data by triggering refresh rate change event
+                $('.tab-sensors .rate select').change();
+                //$('.tab-sensors .scale select').change();
             } else {
                 // start polling immediatly (as there is no configuration saved in the storage)
                 $('.tab-sensors .rate select').change(); // start polling data by triggering refresh rate change event
@@ -194,6 +202,12 @@ function tab_initialize_sensors() {
                 'debug':  parseInt($('.tab-sensors select[name="debug_refresh_rate"]').val(), 10)
             };
 
+            var scales = {
+                'gyro':  parseFloat($('.tab-sensors select[name="gyro_scale"]').val()),
+                'accel': parseFloat($('.tab-sensors select[name="accel_scale"]').val()),
+                'mag':   parseFloat($('.tab-sensors select[name="mag_scale"]').val())
+            };
+
             // handling of "data pulling" is a little bit funky here, as MSP_RAW_IMU contains values for gyro/accel/mag but not baro
             // this means that setting a slower refresh rate on any of the attributes would have no effect
             // what we will do instead is = determinate the fastest refresh rate for those 3 attributes, use that as a "polling rate"
@@ -202,6 +216,7 @@ function tab_initialize_sensors() {
 
             // store current/latest refresh rates in the storage
             chrome.storage.local.set({'sensor_refresh_rates': rates});
+            chrome.storage.local.set({'sensor_scales': scales});
 
             // timer initialization
             GUI.interval_kill_all();
@@ -262,7 +277,17 @@ function tab_initialize_sensors() {
         });
 
         $('.tab-sensors .scale select').change(function() {
-            console.log('change scale');
+            var el = $(this);
+            var name = el.attr('name');
+            var val = parseFloat(el.val());
+
+            if (name == 'gyro_scale') {
+                gyroHelpers = initGraphHelpers('#gyro', samples_gyro_i, [-val, val]);
+            } else if (name == 'accel_scale') {
+                accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-val, val]);
+            } else if (name == 'mag_scale') {
+                magHelpers = initGraphHelpers('#mag', samples_mag_i, [-val, val]);
+            }
         });
     });
 }
