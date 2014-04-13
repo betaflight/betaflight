@@ -1,5 +1,22 @@
 .tab-sensors {
 }
+    .tab-sensors .info {
+        margin-bottom: 10px;
+    }
+        .tab-sensors .info p {
+            padding: 5px;
+
+            border: 1px dashed silver;
+
+            margin-bottom: 10px;
+        }
+        .tab-sensors .info input {
+            vertical-align: middle;
+            margin: 0 10px 0 5px;
+        }
+    .tab-sensors .wrapper {
+        display: none;
+    }
     .tab-sensors .plot_control {
         float: right;
 
