@@ -58,16 +58,16 @@
     stroke-width: 1px;
     shape-rendering: crispEdges;
 }
-.tab-sensors .line {
-    stroke-width: 2px;
-    fill: none;
-}
 .tab-sensors .grid path {
     stroke-width: 0;
 }
+.tab-sensors .data .line {
+    stroke-width: 2px;
+    fill: none;
+}
 .tab-sensors .axis path, .tab-sensors .axis line {
     fill: none;
-    stroke: #000;
+    stroke: #000000;
     stroke-width: 1px;
     shape-rendering: crispEdges;
 }
