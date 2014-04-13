@@ -11,9 +11,6 @@ function initDataArray(length) {
     var data = new Array(length);
     for (var i = 0; i < length; i++) {
         data[i] = new Array();
-        for (var j = 0; j <= 300; j++) {
-            data[i].push([j, 0]);
-        }
         data[i].min = -1;
         data[i].max = 1;
     }
@@ -41,8 +38,8 @@ function addSampleToData(data, sampleNumber, sensorData) {
 
 function initGraphHelpers(selector, sampleNumber, heightDomain) {
     var margin = {top: 20, right: 20, bottom: 10, left: 40};
-    var width = 900 - margin.left - margin.right;
-    var height = 120 - margin.top - margin.bottom;
+    var width = 720 - margin.left - margin.right;
+    var height = 130 - margin.top - margin.bottom;
 
     var helpers = {selector: selector, dynamicHeightDomain: !heightDomain};
 
@@ -109,8 +106,11 @@ function drawGraph(graphHelpers, data, sampleNumber) {
     var lines = group.selectAll("path").data(data, function(d, i) { return i; });
     var newLines = lines.enter().append("path").attr("class", "line");
     lines.attr('d', graphHelpers.line);
+
+    /*
     svg.selectAll('.legend .item .value').data(data, function(d, i){ return i; }).
         text(function(d) { return "[ " + d[d.length - 1][1].toFixed(2) + " ]"; });
+    */
 }
 
 function tab_initialize_sensors() {
@@ -122,11 +122,11 @@ function tab_initialize_sensors() {
         initSensorData();
 
         // Setup variables
-        var samples_gyro_i = 300;
-        var samples_accel_i = 300;
-        var samples_mag_i = 300;
-        var samples_baro_i = 300;
-        var samples_debug_i = 300;
+        var samples_gyro_i = 0;
+        var samples_accel_i = 0;
+        var samples_mag_i = 0;
+        var samples_baro_i = 0;
+        var samples_debug_i = 0;
 
         var gyro_data = initDataArray(3);
         var accel_data = initDataArray(3);
@@ -139,8 +139,8 @@ function tab_initialize_sensors() {
             initDataArray(1)
         ];
 
-        var gyroHelpers = initGraphHelpers('#gyro', samples_gyro_i, [2000, -2000]);
-        var accelHelpers = initGraphHelpers('#accel', samples_accel_i, [2, -2]);
+        var gyroHelpers = initGraphHelpers('#gyro', samples_gyro_i, [-2000, 2000]);
+        var accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-2, 2]);
         var magHelpers = initGraphHelpers('#mag', samples_mag_i);
         var baroHelpers = initGraphHelpers('#baro', samples_baro_i);
         var debugHelpers = [
@@ -153,11 +153,11 @@ function tab_initialize_sensors() {
         // set refresh speeds according to configuration saved in storage
         chrome.storage.local.get('sensor_refresh_rates', function(result) {
             if (typeof result.sensor_refresh_rates != 'undefined') {
-                $('.tab-sensors select').eq(0).val(result.sensor_refresh_rates.gyro); // gyro
-                $('.tab-sensors select').eq(1).val(result.sensor_refresh_rates.accel); // accel
-                $('.tab-sensors select').eq(2).val(result.sensor_refresh_rates.mag); // mag
-                $('.tab-sensors select').eq(3).val(result.sensor_refresh_rates.baro); // baro
-                $('.tab-sensors select').eq(4).val(result.sensor_refresh_rates.debug); // debug
+                $('.tab-sensors select[name="gyro_refresh_rate"]').val(result.sensor_refresh_rates.gyro); // gyro
+                $('.tab-sensors select[name="accel_refresh_rate"]').val(result.sensor_refresh_rates.accel); // accel
+                $('.tab-sensors select[name="mag_refresh_rate"]').val(result.sensor_refresh_rates.mag); // mag
+                $('.tab-sensors select[name="baro_refresh_rate"]').val(result.sensor_refresh_rates.baro); // baro
+                $('.tab-sensors select[name="debug_refresh_rate"]').val(result.sensor_refresh_rates.debug); // debug
 
                 $('.tab-sensors select').change(); // start polling data by triggering refresh rate change event
             } else {
@@ -171,11 +171,11 @@ function tab_initialize_sensors() {
             // and timers are re-initialized with the new settings
 
             var rates = {
-                'gyro':   parseInt($('.tab-sensors select').eq(0).val(), 10),
-                'accel':  parseInt($('.tab-sensors select').eq(1).val(), 10),
-                'mag':    parseInt($('.tab-sensors select').eq(2).val(), 10),
-                'baro':   parseInt($('.tab-sensors select').eq(3).val(), 10),
-                'debug':  parseInt($('.tab-sensors select').eq(4).val(), 10)
+                'gyro':   parseInt($('.tab-sensors select[name="gyro_refresh_rate"]').val(), 10),
+                'accel':  parseInt($('.tab-sensors select[name="accel_refresh_rate"]').val(), 10),
+                'mag':    parseInt($('.tab-sensors select[name="mag_refresh_rate"]').val(), 10),
+                'baro':   parseInt($('.tab-sensors select[name="baro_refresh_rate"]').val(), 10),
+                'debug':  parseInt($('.tab-sensors select[name="debug_refresh_rate"]').val(), 10)
             };
 
             // handling of "data pulling" is a little bit funky here, as MSP_RAW_IMU contains values for gyro/accel/mag but not baro

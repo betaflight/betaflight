@@ -1,37 +1,49 @@
 .tab-sensors {
 }
-    .tab-sensors #gyro {
-        height: 120px;
-    }
-    .tab-sensors #accel {
-        height: 120px;
-    }
-    .tab-sensors #mag {
-        height: 120px;
-    }
-    .tab-sensors #baro {
-        height: 120px;
-    }
-    .tab-sensors #debug1 {
-        height: 120px;
-    }
-    .tab-sensors #debug2 {
-        height: 120px;
-    }
-    .tab-sensors #debug3 {
-        height: 120px;
-    }
-    .tab-sensors #debug4 {
-        height: 120px;
-    }
-
-    .tab-sensors select {
+    .tab-sensors .plot_control {
         float: right;
+
+        width: 178px;
 
         border: 1px solid silver;
     }
+        .tab-sensors .plot_control .title {
+            line-height: 20px;
+            font-weight: bold;
+            text-align: center;
 
+            border-bottom: 1px solid silver;
+            background-color: #ececec;
+        }
+        .tab-sensors .plot_control dl {
+            padding: 5px 0 0 5px;
+            line-height: 22px;
+        }
+        .tab-sensors .plot_control dt {
+            float: left;
+
+            width: 60px;
+            height: 22px;
+
+            font-weight: bold;
+        }
+        .tab-sensors .plot_control dd {
+            margin-left: 20px;
+            height: 22px;
+        }
+    .tab-sensors select {
+        width: 70px;
+        border: 1px solid silver;
+    }
 /* SVG classes*/
+.tab-sensors svg {
+    float: right;
+
+    width: 720px;
+    height: 130px;
+
+    margin-bottom: 20px;
+}
 .tab-sensors .grid .tick {
     stroke: silver;
     shape-rendering: crispEdges;
@@ -47,9 +59,6 @@
     fill: none;
     stroke: #000;
     shape-rendering: crispEdges;
-}
-.tab-sensors svg .title {
-    font-weight: bold;
 }
 .tab-sensors .line:nth-child(1) {
     stroke: #00A8F0;

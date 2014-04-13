@@ -1,198 +1,211 @@
 <div class="tab-sensors">
-    <select title="Gyroscope refresh rate" name="gyro_refresh_rate">
-        <option value="10">10 ms</option>
-        <option value="20">20 ms</option>
-        <option value="30">30 ms</option>
-        <option value="40">40 ms</option>
-        <option value="50" selected="selected">50 ms</option>
-        <option value="100">100 ms</option>
-        <option value="250">250 ms</option>
-        <option value="500">500 ms</option>
-        <option value="1000">1000 ms</option>
-    </select>
-    <div class="clear-both"></div>
+    <div class="plot_control">
+        <div class="title">Gyroscope</div>
+        <dl>
+            <dt>Refresh:</dt>
+            <dd>
+                <select name="gyro_refresh_rate">
+                    <option value="10">10 ms</option>
+                    <option value="20">20 ms</option>
+                    <option value="30">30 ms</option>
+                    <option value="40">40 ms</option>
+                    <option value="50" selected="selected">50 ms</option>
+                    <option value="100">100 ms</option>
+                    <option value="250">250 ms</option>
+                    <option value="500">500 ms</option>
+                    <option value="1000">1000 ms</option>
+                </select>
+            </dd>
+            <dt>Scale:</dt>
+            <dd>
+                <select name="gyro_scale">
+                    <option value="100">100</option>
+                    <option value="1000">1000</option>
+                    <option value="2000" selected="selected">2000</option>
+                </select>
+            </dd>
+            <dt>X:</dt><dd>blue</dd>
+            <dt>Y:</dt><dd>green</dd>
+            <dt>Z:</dt><dd>red</dd>
+        </dl>
+    </div>
     <svg id="gyro">
-        <text class="title" transform="translate(400, 8)">Gyroscope (deg/s)</text>
-        <g class="grid x" transform="translate(40, 100)"></g>
+        <g class="grid x" transform="translate(40, 110)"></g>
         <g class="grid y" transform="translate(40, 10)"></g>
-        <g class="axis x" transform="translate(40, 100)"></g>
+        <g class="axis x" transform="translate(40, 110)"></g>
         <g class="axis y" transform="translate(40, 10)"></g>
-        <g class="data" transform="translate(40, 10)"></g>
-        <g class="legend" transform="translate(790, 20)">
-            <g class="item" transform="translate(0, 0)">
-                <text class="label">X - rate</text>
-                <text class="value" transform="translate(50, 0)"></text>
-            </g>
-            <g class="item" transform="translate(0, 12)">
-                <text class="label">Y - rate</text>
-                <text class="value" transform="translate(50, 0)"></text>
-            </g>
-            <g class="item" transform="translate(0, 24)">
-                <text class="label">Z - rate</text>
-                <text class="value" transform="translate(50, 0)"></text>
-            </g>
-        </g>
+        <g class="data" transform="translate(43, 10)"></g>
     </svg>
-    <select title="Accelerometer refresh rate" name="accel_refresh_rate">
-        <option value="10">10 ms</option>
-        <option value="20">20 ms</option>
-        <option value="30">30 ms</option>
-        <option value="40">40 ms</option>
-        <option value="50" selected="selected">50 ms</option>
-        <option value="100">100 ms</option>
-        <option value="250">250 ms</option>
-        <option value="500">500 ms</option>
-        <option value="1000">1000 ms</option>
-    </select>
     <div class="clear-both"></div>
+    <div class="plot_control">
+        <div class="title">Accelerometer</div>
+        <dl>
+            <dt>Refresh:</dt>
+            <dd>
+                <select name="accel_refresh_rate">
+                    <option value="10">10 ms</option>
+                    <option value="20">20 ms</option>
+                    <option value="30">30 ms</option>
+                    <option value="40">40 ms</option>
+                    <option value="50" selected="selected">50 ms</option>
+                    <option value="100">100 ms</option>
+                    <option value="250">250 ms</option>
+                    <option value="500">500 ms</option>
+                    <option value="1000">1000 ms</option>
+                </select>
+            </dd>
+            <dt>Scale:</dt>
+            <dd>
+                <select name="accel_scale">
+                    <option value="1">1</option>
+                    <option value="2" selected="selected">2</option>
+                </select>
+            </dd>
+            <dt>X:</dt><dd>blue</dd>
+            <dt>Y:</dt><dd>green</dd>
+            <dt>Z:</dt><dd>red</dd>
+        </dl>
+    </div>
     <svg id="accel">
-        <text class="title" transform="translate(400, 8)">Accelerometer (g)</text>
-        <g class="grid x" transform="translate(40, 100)"></g>
+        <g class="grid x" transform="translate(40, 110)"></g>
         <g class="grid y" transform="translate(40, 10)"></g>
-        <g class="axis x" transform="translate(40, 100)"></g>
+        <g class="axis x" transform="translate(40, 110)"></g>
         <g class="axis y" transform="translate(40, 10)"></g>
-        <g class="data" transform="translate(40, 10)"></g>
-        <g class="legend" transform="translate(750, 20)">
-            <g class="item" transform="translate(0, 0)">
-                <text class="label">X - acceleration</text>
-                <text class="value" transform="translate(90, 0)"></text>
-            </g>
-            <g class="item" transform="translate(0, 12)">
-                <text class="label">Y - acceleration</text>
-                <text class="value" transform="translate(90, 0)"></text>
-            </g>
-            <g class="item" transform="translate(0, 24)">
-                <text class="label">Z - acceleration</text>
-                <text class="value" transform="translate(90, 0)"></text>
-            </g>
-        </g>
+        <g class="data" transform="translate(43, 10)"></g>
     </svg>
-    <select title="Magnetometer refresh rate" name="mag_refrash_rate">
-        <option value="10">10 ms</option>
-        <option value="20">20 ms</option>
-        <option value="30">30 ms</option>
-        <option value="40">40 ms</option>
-        <option value="50" selected="selected">50 ms</option>
-        <option value="100">100 ms</option>
-        <option value="250">250 ms</option>
-        <option value="500">500 ms</option>
-        <option value="1000">1000 ms</option>
-    </select>
     <div class="clear-both"></div>
+    <div class="plot_control">
+        <div class="title">Magnetometer</div>
+        <dl>
+            <dt>Refresh:</dt>
+            <dd>
+                <select name="mag_refrash_rate">
+                    <option value="10">10 ms</option>
+                    <option value="20">20 ms</option>
+                    <option value="30">30 ms</option>
+                    <option value="40">40 ms</option>
+                    <option value="50" selected="selected">50 ms</option>
+                    <option value="100">100 ms</option>
+                    <option value="250">250 ms</option>
+                    <option value="500">500 ms</option>
+                    <option value="1000">1000 ms</option>
+                </select>
+            </dd>
+            <dt>Scale:</dt>
+            <dd>
+                <select name="mag_scale">
+                    <option value="0.5">0.5</option>
+                    <option value="1" selected="selected">1</option>
+                </select>
+            </dd>
+            <dt>X:</dt><dd>blue</dd>
+            <dt>Y:</dt><dd>green</dd>
+            <dt>Z:</dt><dd>red</dd>
+        </dl>
+    </div>
     <svg id="mag">
-        <text class="title" transform="translate(400, 8)">Magnetometer (Ga)</text>
-        <g class="grid x" transform="translate(40, 100)"></g>
+        <g class="grid x" transform="translate(40, 110)"></g>
         <g class="grid y" transform="translate(40, 10)"></g>
-        <g class="axis x" transform="translate(40, 100)"></g>
+        <g class="axis x" transform="translate(40, 110)"></g>
         <g class="axis y" transform="translate(40, 10)"></g>
-        <g class="data" transform="translate(40, 10)"></g>
-        <g class="legend" transform="translate(780, 20)">
-            <g class="item" transform="translate(0, 0)">
-                <text class="label">X - gauss</text>
-                <text class="value" transform="translate(60, 0)"></text>
-            </g>
-            <g class="item" transform="translate(0, 12)">
-                <text class="label">Y - gauss</text>
-                <text class="value" transform="translate(60, 0)"></text>
-            </g>
-            <g class="item" transform="translate(0, 24)">
-                <text class="label">Z - gauss</text>
-                <text class="value" transform="translate(60, 0)"></text>
-            </g>
-        </g>
+        <g class="data" transform="translate(43, 10)"></g>
     </svg>
-    <select title="Barometer refresh rate" name="baro_refresh_rate">
-        <option value="10">10 ms</option>
-        <option value="20">20 ms</option>
-        <option value="30">30 ms</option>
-        <option value="40">40 ms</option>
-        <option value="50" selected="selected">50 ms</option>
-        <option value="100">100 ms</option>
-        <option value="250">250 ms</option>
-        <option value="500">500 ms</option>
-        <option value="1000">1000 ms</option>
-    </select>
     <div class="clear-both"></div>
+    <div class="plot_control">
+        <div class="title">Barometer</div>
+        <dl>
+            <dt>Refresh:</dt>
+            <dd>
+                <select name="baro_refresh_rate">
+                    <option value="10">10 ms</option>
+                    <option value="20">20 ms</option>
+                    <option value="30">30 ms</option>
+                    <option value="40">40 ms</option>
+                    <option value="50" selected="selected">50 ms</option>
+                    <option value="100">100 ms</option>
+                    <option value="250">250 ms</option>
+                    <option value="500">500 ms</option>
+                    <option value="1000">1000 ms</option>
+                </select>
+            </dd>
+            <dt>X:</dt><dd>blue</dd>
+        </dl>
+    </div>
     <svg id="baro">
-        <text class="title" transform="translate(400, 8)">Barometer (meters)</text>
-        <g class="grid x" transform="translate(40, 100)"></g>
+        <g class="grid x" transform="translate(40, 110)"></g>
         <g class="grid y" transform="translate(40, 10)"></g>
-        <g class="axis x" transform="translate(40, 100)"></g>
+        <g class="axis x" transform="translate(40, 110)"></g>
         <g class="axis y" transform="translate(40, 10)"></g>
-        <g class="data" transform="translate(40, 10)"></g>
-        <g class="legend" transform="translate(780, 20)">
-            <g class="item" transform="translate(0, 0)">
-                <text class="label">X - meters</text>
-                <text class="value" transform="translate(60, 0)"></text>
-            </g>
-        </g>
+        <g class="data" transform="translate(43, 10)"></g>
     </svg>
-    <select title="Debug refresh rate" name="debug_refresh_rate">
-        <option value="10">10 ms</option>
-        <option value="20">20 ms</option>
-        <option value="30">30 ms</option>
-        <option value="40">40 ms</option>
-        <option value="50" selected="selected">50 ms</option>
-        <option value="100">100 ms</option>
-        <option value="250">250 ms</option>
-        <option value="500">500 ms</option>
-        <option value="1000">1000 ms</option>
-    </select>
     <div class="clear-both"></div>
+    <div class="plot_control">
+        <div class="title">Debug 1</div>
+        <dl>
+            <dt>Refresh:</dt>
+            <dd>
+                <select name="debug_refresh_rate">
+                    <option value="10">10 ms</option>
+                    <option value="20">20 ms</option>
+                    <option value="30">30 ms</option>
+                    <option value="40">40 ms</option>
+                    <option value="50" selected="selected">50 ms</option>
+                    <option value="100">100 ms</option>
+                    <option value="250">250 ms</option>
+                    <option value="500">500 ms</option>
+                    <option value="1000">1000 ms</option>
+                </select>
+            </dd>
+            <dt>X:</dt><dd>blue</dd>
+        </dl>
+    </div>
     <svg id="debug1">
-        <text class="title" transform="translate(400, 8)">Debug 1</text>
-        <g class="grid x" transform="translate(40, 100)"></g>
+        <g class="grid x" transform="translate(40, 110)"></g>
         <g class="grid y" transform="translate(40, 10)"></g>
-        <g class="axis x" transform="translate(40, 100)"></g>
+        <g class="axis x" transform="translate(40, 110)"></g>
         <g class="axis y" transform="translate(40, 10)"></g>
         <g class="data" transform="translate(40, 10)"></g>
-        <g class="legend" transform="translate(750, 20)">
-            <g class="item" transform="translate(0, 0)">
-                <text class="label">Debug 1</text>
-                <text class="value" transform="translate(60, 0)"></text>
-            </g>
-        </g>
     </svg>
+    <div class="clear-both"></div>
+    <div class="plot_control">
+        <div class="title">Debug 2</div>
+        <dl>
+            <dt>X:</dt><dd>blue</dd>
+        </dl>
+    </div>
     <svg id="debug2">
-        <text class="title" transform="translate(400, 8)">Debug 2</text>
-        <g class="grid x" transform="translate(40, 100)"></g>
+        <g class="grid x" transform="translate(40, 110)"></g>
         <g class="grid y" transform="translate(40, 10)"></g>
-        <g class="axis x" transform="translate(40, 100)"></g>
+        <g class="axis x" transform="translate(40, 110)"></g>
         <g class="axis y" transform="translate(40, 10)"></g>
         <g class="data" transform="translate(40, 10)"></g>
-        <g class="legend" transform="translate(750, 20)">
-            <g class="item" transform="translate(0, 0)">
-                <text class="label">Debug 2</text>
-                <text class="value" transform="translate(60, 0)"></text>
-            </g>
-        </g>
     </svg>
+    <div class="clear-both"></div>
+    <div class="plot_control">
+        <div class="title">Debug 3</div>
+        <dl>
+            <dt>X:</dt><dd>blue</dd>
+        </dl>
+    </div>
     <svg id="debug3">
-        <text class="title" transform="translate(400, 8)">Debug 3</text>
-        <g class="grid x" transform="translate(40, 100)"></g>
+        <g class="grid x" transform="translate(40, 110)"></g>
         <g class="grid y" transform="translate(40, 10)"></g>
-        <g class="axis x" transform="translate(40, 100)"></g>
+        <g class="axis x" transform="translate(40, 110)"></g>
         <g class="axis y" transform="translate(40, 10)"></g>
         <g class="data" transform="translate(40, 10)"></g>
-        <g class="legend" transform="translate(750, 20)">
-            <g class="item" transform="translate(0, 0)">
-                <text class="label">Debug 3</text>
-                <text class="value" transform="translate(60, 0)"></text>
-            </g>
-        </g>
     </svg>
+    <div class="clear-both"></div>
+    <div class="plot_control">
+        <div class="title">Debug 4</div>
+        <dl>
+            <dt>X:</dt><dd>blue</dd>
+        </dl>
+    </div>
     <svg id="debug4">
-        <text class="title" transform="translate(400, 8)">Debug 4</text>
-        <g class="grid x" transform="translate(40, 100)"></g>
+        <g class="grid x" transform="translate(40, 110)"></g>
         <g class="grid y" transform="translate(40, 10)"></g>
-        <g class="axis x" transform="translate(40, 100)"></g>
+        <g class="axis x" transform="translate(40, 110)"></g>
         <g class="axis y" transform="translate(40, 10)"></g>
         <g class="data" transform="translate(40, 10)"></g>
-        <g class="legend" transform="translate(750, 20)">
-            <g class="item" transform="translate(0, 0)">
-                <text class="label">Debug 4</text>
-                <text class="value" transform="translate(60, 0)"></text>
-            </g>
-        </g>
     </svg>
 </div>
