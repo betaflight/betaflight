@@ -95,7 +95,7 @@ function drawGraph(graphHelpers, data, sampleNumber) {
             limits.push(datum.min);
             limits.push(datum.max);
         });
-        graphHelpers.heightScale.domain(d3.extent(limits)).ticks(5);
+        graphHelpers.heightScale.domain(d3.extent(limits));
     }
     graphHelpers.widthScale.domain([(sampleNumber - 299), sampleNumber]);
 
@@ -108,11 +108,6 @@ function drawGraph(graphHelpers, data, sampleNumber) {
     var lines = group.selectAll("path").data(data, function(d, i) { return i; });
     var newLines = lines.enter().append("path").attr("class", "line");
     lines.attr('d', graphHelpers.line);
-
-    /*
-    svg.selectAll('.legend .item .value').data(data, function(d, i){ return i; }).
-        text(function(d) { return "[ " + d[d.length - 1][1].toFixed(2) + " ]"; });
-    */
 }
 
 function tab_initialize_sensors() {
