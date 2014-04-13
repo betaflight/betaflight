@@ -179,10 +179,10 @@ function tab_initialize_sensors() {
                 $('.tab-sensors select[name="debug_refresh_rate"]').val(result.sensor_settings.rates.debug);
 
                 // start polling data by triggering refresh rate change event
-                $('.tab-sensors .scale select').change(); // currently fires 3 times, needs to be optimized
+                $('.tab-sensors .scale select:first').change();
             } else {
                 // start polling immediatly (as there is no configuration saved in the storage)
-                $('.tab-sensors .scale select').change(); // currently fires 3 times, needs to be optimized
+                $('.tab-sensors .scale select:first').change();
             }
         });
 
@@ -272,17 +272,13 @@ function tab_initialize_sensors() {
         });
 
         $('.tab-sensors .scale select').change(function() {
-            var el = $(this);
-            var name = el.attr('name');
-            var val = parseFloat(el.val());
+            var gyro_s = parseFloat($('select[name="gyro_scale"]').val());
+            var acc_s = parseFloat($('select[name="accel_scale"]').val());
+            var mag_s = parseFloat($('select[name="mag_scale"]').val());
 
-            if (name == 'gyro_scale') {
-                gyroHelpers = initGraphHelpers('#gyro', samples_gyro_i, [-val, val]);
-            } else if (name == 'accel_scale') {
-                accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-val, val]);
-            } else if (name == 'mag_scale') {
-                magHelpers = initGraphHelpers('#mag', samples_mag_i, [-val, val]);
-            }
+            gyroHelpers = initGraphHelpers('#gyro', samples_gyro_i, [-gyro_s, gyro_s]);
+            accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-acc_s, acc_s]);
+            magHelpers = initGraphHelpers('#mag', samples_mag_i, [-mag_s, mag_s]);
 
             $('.tab-sensors .rate select:first').change();
         });
