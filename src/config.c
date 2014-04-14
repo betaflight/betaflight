@@ -56,8 +56,6 @@ static uint8_t validEEPROM(void)
 
 void readEEPROM(void)
 {
-    uint8_t i;
-
     // Sanity check
     if (!validEEPROM())
         failureMode(10);
@@ -67,8 +65,12 @@ void readEEPROM(void)
     // Copy current profile
     if (mcfg.current_profile > 2) // sanity check
         mcfg.current_profile = 0;
-    memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t));
+    memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t)); 
+}
 
+void activateConfig(void)
+{
+    uint8_t i;
     for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
         lookupPitchRollRC[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t) cfg.rcRate8 / 2500;
 
@@ -85,6 +87,12 @@ void readEEPROM(void)
 
     setPIDController(cfg.pidController);
     gpsSetPIDs();
+}
+
+void loadAndActivateConfig(void)
+{
+    readEEPROM();
+    activateConfig();
 }
 
 void writeEEPROM(uint8_t b, uint8_t updateProfile)
@@ -139,7 +147,7 @@ retry:
     }
 
     // re-read written data
-    readEEPROM();
+    loadAndActivateConfig();
     if (b)
         blinkLED(15, 20, 1);
 }

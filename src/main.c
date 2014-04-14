@@ -36,13 +36,14 @@ int main(void)
     serialPort_t* loopbackPort1 = NULL;
     serialPort_t* loopbackPort2 = NULL;
 #endif
+    checkFirstTime(false);
+    readEEPROM();
     systemInit();
 #ifdef USE_LAME_PRINTF
     init_printf(NULL, _putc);
 #endif
 
-    checkFirstTime(false);
-    readEEPROM();
+    activateConfig();
 
     // configure power ADC
     if (mcfg.power_adc_channel > 0 && (mcfg.power_adc_channel == 1 || mcfg.power_adc_channel == 9))

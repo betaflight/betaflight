@@ -5,7 +5,9 @@ static volatile uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
 // from system_stm32f10x.c
-void SetSysClock(void);
+void SetSysClock(bool overclock);
+// from config.h
+bool feature(uint32_t mask);
 #ifdef BUZZER
 void systemBeep(bool onoff);
 static void beepRev4(bool onoff);
@@ -75,7 +77,7 @@ void systemInit(void)
 
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock();
+    SetSysClock(feature(FEATURE_OVERCLOCK));
 
     // Turn on clocks for stuff we use
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);

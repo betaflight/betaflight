@@ -54,7 +54,7 @@ static const char * const mixerNames[] = {
 static const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SERIALRX", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "LED_RING", "GPS",
-    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
+    "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D", "OVERCLOCK",
     NULL
 };
 
