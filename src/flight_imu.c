@@ -21,6 +21,7 @@ int32_t vario = 0;                      // variometer in cm/s
 int16_t throttleAngleCorrection = 0;    // correction of throttle in lateral wind,
 float magneticDeclination = 0.0f;       // calculated at startup from config
 float accVelScale;
+float throttleAngleScale;
 
 // **************
 // gyro+acc IMU
@@ -36,6 +37,7 @@ void imuInit(void)
 {
     accZ_25deg = acc_1G * cosf(RAD * 25.0f);
     accVelScale = 9.80665f / acc_1G / 10000.0f;
+    throttleAngleScale = (1800.0f / M_PI) * (900.0f / cfg.throttle_correction_angle);
 
 #ifdef MAG
     // if mag sensor is enabled, use it
@@ -193,7 +195,7 @@ void acc_calc(uint32_t deltaT)
         accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
     } else
         accel_ned.V.Z -= acc_1G;
-    
+
     accz_smooth = accz_smooth + (deltaT / (fc_acc + deltaT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
     // apply Deadband to reduce integration drift and vibration influence
@@ -303,9 +305,19 @@ static void getEstimatedAttitude(void)
 
     acc_calc(deltaT); // rotate acc vector into earth frame
 
-    if (cfg.throttle_angle_correction) {
-        int cosZ = ((int32_t)(EstG.V.Z * 100.0f)) / acc_1G;
-        throttleAngleCorrection = cfg.throttle_angle_correction * constrain(100 - cosZ, 0, 100) / 8;
+    if (cfg.throttle_correction_value) {
+
+        float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);
+
+        if (cosZ <= 0.015f) { // we are inverted, vertical or with a small angle < 0.86 deg
+            throttleAngleCorrection = 0;
+        } else {
+            int angle = lrintf(acosf(cosZ) * throttleAngleScale);
+            if (angle > 900)
+                angle = 900;
+            throttleAngleCorrection = lrintf(cfg.throttle_correction_value * sinf(angle / 900.0f * M_PI / 2.0f)) ;
+        }
+
     }
 }
 
@@ -341,7 +353,7 @@ int getEstimatedAltitude(void)
         baroGroundPressure -= baroGroundPressure / 8;
         baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
         baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f; 
-        
+
         vel = 0;
         accAlt = 0;
         calibratingB--;
@@ -360,8 +372,8 @@ int getEstimatedAltitude(void)
     vel_acc = accZ_tmp * accVelScale * (float)accTimeSum;
 
     // Integrator - Altitude in cm
-    accAlt += (vel_acc * 0.5f) * dt  + vel * dt;                                        // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * cfg.baro_cf_alt + (float) BaroAlt *(1.0f - cfg.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
+    accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                         // integrate velocity to get distance (x= a/2 * t^2)
+    accAlt = accAlt * cfg.baro_cf_alt + (float)BaroAlt * (1.0f - cfg.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
     EstAlt = accAlt;
     vel += vel_acc;
 

@@ -16,7 +16,7 @@ static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 void sumdInit(rcReadRawDataPtr *callback)
 {
     core.rcvrport = uartOpen(USART2, sumdDataReceive, 115200, MODE_RX);
-    if (callback) 
+    if (callback)
         *callback = sumdReadRawRC;
 }
 
@@ -60,7 +60,7 @@ bool sumdFrameComplete(void)
         sumdFrameDone = false;
         if (sumd[1] == 0x01) {
             failsafeCnt = 0;
-            if (sumdSize > SUMD_MAX_CHANNEL) 
+            if (sumdSize > SUMD_MAX_CHANNEL)
                 sumdSize = SUMD_MAX_CHANNEL;
             for (b = 0; b < sumdSize; b++)
                 sumdChannelData[b] = ((sumd[2 * b + 3] << 8) | sumd[2 * b + 4]);

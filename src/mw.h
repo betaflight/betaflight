@@ -186,7 +186,8 @@ typedef struct config_t {
     uint8_t yawdeadband;                    // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
     uint8_t alt_hold_throttle_neutral;      // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
     uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_throttle_neutral; when enabled, altitude changes slowly proportional to stick movement
-    uint8_t throttle_angle_correction;      //
+    uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
+    uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
 
     // Servo-related stuff
     servoParam_t servoConf[8];              // servo configuration
