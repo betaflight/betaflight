@@ -224,6 +224,7 @@ typedef struct master_t {
     uint8_t mixerConfiguration;
     uint32_t enabledFeatures;
     uint16_t looptime;                      // imu loop time in us
+    uint8_t emfAvoidance;                   // change pll settings to avoid noise in the uhf band
     motorMixer_t customMixer[MAX_MOTORS];   // custom mixtable
 
     // motor/esc/servo related stuff
