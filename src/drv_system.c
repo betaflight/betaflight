@@ -6,8 +6,6 @@ static volatile uint32_t usTicks = 0;
 static volatile uint32_t sysTickUptime = 0;
 // from system_stm32f10x.c
 void SetSysClock(bool overclock);
-// from config.h
-bool feature(uint32_t mask);
 #ifdef BUZZER
 void systemBeep(bool onoff);
 static void beepRev4(bool onoff);
@@ -45,7 +43,7 @@ uint32_t millis(void)
     return sysTickUptime;
 }
 
-void systemInit(void)
+void systemInit(bool overclock)
 {
     struct {
         GPIO_TypeDef *gpio;
@@ -77,7 +75,7 @@ void systemInit(void)
 
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(feature(FEATURE_OVERCLOCK));
+    SetSysClock(overclock);
 
     // Turn on clocks for stuff we use
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
