@@ -7,11 +7,11 @@
             update periods.<br />
         </p>
         <div class="checkboxes">
-            Gyroscope <input type="checkbox" name="gyro_on" />
-            Accelerometer <input type="checkbox" name="accel_on" />
-            Magnetometer <input type="checkbox" name="mag_on" />
-            Barometer <input type="checkbox" name="baro_on" />
-            Debug <input type="checkbox" name="debug_on" />
+            <label>Gyroscope <input type="checkbox" name="gyro_on" /></label>
+            <label>Accelerometer <input type="checkbox" name="accel_on" /></label>
+            <label>Magnetometer <input type="checkbox" name="mag_on" /></label>
+            <label>Barometer <input type="checkbox" name="baro_on" /></label>
+            <label>Debug <input type="checkbox" name="debug_on" /></label>
         </div>
     </div>
     <div class="wrapper gyro">
@@ -36,6 +36,7 @@
             <dd class="scale">
                 <select name="gyro_scale">
                     <option value="100">100</option>
+                    <option value="500">500</option>
                     <option value="1000">1000</option>
                     <option value="2000" selected="selected">2000</option>
                 </select>

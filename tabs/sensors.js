@@ -157,7 +157,7 @@ function tab_initialize_sensors() {
     $('#content').load("./tabs/sensors.html", function load_html() {
         $('.tab-sensors .info .checkboxes input').change(function() {
             var enable = $(this).prop('checked');
-            var index = $(this).index();
+            var index = $(this).parent().index();
 
             switch (index) {
                 case 0:
@@ -178,7 +178,7 @@ function tab_initialize_sensors() {
             }
 
             var checkboxes = [];
-            $('.tab-sensors .info input').each(function() {
+            $('.tab-sensors .info .checkboxes input').each(function() {
                 checkboxes.push($(this).prop('checked'));
             });
 
@@ -189,7 +189,7 @@ function tab_initialize_sensors() {
 
         chrome.storage.local.get('graphs_enabled', function(result) {
             if (result.graphs_enabled) {
-                var checkboxes = $('.tab-sensors .info input');
+                var checkboxes = $('.tab-sensors .info .checkboxes input');
                 for (var i = 0; i < result.graphs_enabled.length; i++) {
                     checkboxes.eq(i).prop('checked', result.graphs_enabled[i]).change();
                 }
@@ -302,7 +302,7 @@ function tab_initialize_sensors() {
 
             // fetch currently enabled plots
             var checkboxes = [];
-            $('.tab-sensors .info input').each(function() {
+            $('.tab-sensors .info .checkboxes input').each(function() {
                 checkboxes.push($(this).prop('checked'));
             });
 
