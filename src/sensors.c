@@ -212,7 +212,7 @@ static void ACC_Common(void)
             }
             // all values are measured
             if (InflightcalibratingA == 1) {
-            	AccInflightCalibrationActive = false;
+                AccInflightCalibrationActive = false;
                 AccInflightCalibrationMeasurementDone = true;
                 toggleBeep = 2;      // buzzer for indicatiing the end of calibration
                 // recover saved values to maintain current flight behavior until new values are transferred
