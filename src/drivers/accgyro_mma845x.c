@@ -1,4 +1,18 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "accgyro_common.h"
+#include "system_common.h"
+#include "gpio_common.h"
+#include "sensors_common.h"
+
+#include "accgyro_mma845x.h"
+
+#include "bus_i2c.h"
+
+#include "boardalignment.h"
 
 // MMA8452QT, Standard address 0x1C
 // ACC_INT2 routed to PA5

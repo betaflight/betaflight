@@ -29,10 +29,22 @@
  * OF SUCH DAMAGE.
  */
 
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
 
+#include <stdarg.h>
+
+#include "drivers/serial_common.h"
+#include "runtime_config.h"
+
+#include "printf_config.h"
+
+#include "printf.h"
+
+#ifdef PRINTF_LONG_SUPPORT
 #include "typeconversion.h"
+#endif
+
 
 #ifdef USE_LAME_PRINTF
 

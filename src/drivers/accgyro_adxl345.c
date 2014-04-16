@@ -1,4 +1,17 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <platform.h>
+
+#include "accgyro_common.h"
+#include <sensors_common.h>
+
+#include "accgyro_adxl345.h"
+
+#include "system_common.h"
+#include "bus_i2c.h"
+
+#include "boardalignment.h"
 
 // ADXL345, Alternative address mode 0x53
 #define ADXL345_ADDRESS     0x53

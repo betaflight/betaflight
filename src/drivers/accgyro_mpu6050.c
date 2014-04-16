@@ -1,4 +1,21 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "accgyro_common.h"
+#include "system_common.h"
+#include "gpio_common.h"
+
+#include "sensors_common.h"
+
+#include "accgyro_mpu6050.h"
+
+#include "bus_i2c.h"
+
+#include "boardalignment.h"
+
+#include "maths.h"
 
 // MPU6050, Standard address 0x68
 // MPU_INT on PB13 on rev4 hardware

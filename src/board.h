@@ -1,45 +1,25 @@
-#pragma once
+/*
+ * This file is deprecated.  All this code belongs elsewhere - create appropriate headers and include them.
+ */
 
-// for roundf()
-#define __USE_C99_MATH
+#pragma once
 
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+#define __USE_C99_MATH // for roundf()
 #include <math.h>
+
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 
-#include "stm32f10x_conf.h"
-#include "core_cm3.h"
-
-#ifndef __CC_ARM
-// only need this garbage on gcc
-#define USE_LAME_PRINTF
-#define PRINTF_LONG_SUPPORT
-
-#include "printf.h"
-#endif
-
-#include "drivers/system_common.h"         // timers, delays, etc
+#include "platform.h"
+#include "drivers/accgyro_common.h"
 #include "drivers/gpio_common.h"
-
-#ifndef M_PI
-#define M_PI       3.14159265358979323846f
-#endif /* M_PI */
-
-#define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
-#define RAD    (M_PI / 180.0f)
-
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define abs(x) ((x) > 0 ? (x) : -(x))
-
-// Chip Unique ID on F103
-#define U_ID_0 (*(uint32_t*)0x1FFFF7E8)
-#define U_ID_1 (*(uint32_t*)0x1FFFF7EC)
-#define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
+#include "drivers/system_common.h"
+#include "sensors_common.h"
 
 typedef enum {
     SENSOR_GYRO = 1 << 0, // always present
@@ -117,24 +97,6 @@ typedef enum {
     TELEMETRY_PORT_MAX = TELEMETRY_PORT_SOFTSERIAL_2
 } TelemetryPort;
 
-typedef enum {
-    X = 0,
-    Y,
-    Z
-} sensor_axis_e;
-
-typedef enum {
-    ALIGN_DEFAULT = 0,                                      // driver-provided alignment
-    CW0_DEG = 1,
-    CW90_DEG = 2,
-    CW180_DEG = 3,
-    CW270_DEG = 4,
-    CW0_DEG_FLIP = 5,
-    CW90_DEG_FLIP = 6,
-    CW180_DEG_FLIP = 7,
-    CW270_DEG_FLIP = 8
-} sensor_align_e;
-
 enum {
     GYRO_UPDATED = 1 << 0,
     ACC_UPDATED = 1 << 1,
@@ -151,21 +113,10 @@ typedef struct sensor_data_t
     int updated;
 } sensor_data_t;
 
-typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
-typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
 typedef void (* baroOpFuncPtr)(void);                       // baro start operation
 typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
-typedef void (* serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
 typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
 typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
-
-typedef struct sensor_t
-{
-    sensorInitFuncPtr init;                                 // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
-    sensorReadFuncPtr temperature;                          // read temperature if available
-    float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
-} sensor_t;
 
 typedef struct baro_t
 {

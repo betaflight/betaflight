@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime_config.h"
+
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 #define BARO_TAB_SIZE_MAX   48
@@ -293,17 +295,6 @@ typedef struct master_t {
     uint8_t chk;                            // XOR checksum
 } master_t;
 
-// Core runtime settings
-typedef struct core_t {
-    serialPort_t *mainport;
-    serialPort_t *gpsport;
-    serialPort_t *telemport;
-    serialPort_t *rcvrport;
-    uint8_t mpu6050_scale;                  // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES, need this to be dynamic. automatically set by mpu6050 driver.
-    uint8_t numRCChannels;                  // number of rc channels as reported by current input driver
-    bool useServo;                          // feature SERVO_TILT or wing/airplane mixers will enable this
-} core_t;
-
 typedef struct flags_t {
     uint8_t OK_TO_ARM;
     uint8_t ARMED;
@@ -391,7 +382,6 @@ extern uint8_t  GPS_svinfo_svid[16];                         // Satellite ID
 extern uint8_t  GPS_svinfo_quality[16];                      // Bitfield Qualtity
 extern uint8_t  GPS_svinfo_cno[16];                          // Carrier to Noise Ratio (Signal Strength)
 
-extern core_t core;
 extern master_t mcfg;
 extern config_t cfg;
 extern flags_t f;

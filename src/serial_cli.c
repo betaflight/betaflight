@@ -1,5 +1,10 @@
+#include <stdarg.h>
+
 #include "board.h"
 #include "mw.h"
+
+#include "printf.h"
+
 
 // we unset this on 'exit'
 extern uint8_t cliMode;

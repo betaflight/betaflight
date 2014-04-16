@@ -1,5 +1,7 @@
 #include "board.h"
 
+#include "maths.h"
+
 // HMC5883L, default address 0x1E
 // PB12 connected to MAG_DRDY on rev4 hardware
 // PC14 connected to MAG_DRDY on rev5 hardware

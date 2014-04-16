@@ -1,3 +1,10 @@
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "accgyro_common.h"
+
 #include "board.h"
 
 #define ADC_BATTERY     0

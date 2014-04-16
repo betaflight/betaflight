@@ -1,4 +1,20 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "accgyro_common.h"
+#include "system_common.h"
+
+#include "sensors_common.h"
+
+#include "accgyro_mpu3050.h"
+
+#include "bus_i2c.h"
+
+#include "boardalignment.h"
+
+#include "maths.h"
 
 // MPU3050, Standard address 0x68
 #define MPU3050_ADDRESS         0x68

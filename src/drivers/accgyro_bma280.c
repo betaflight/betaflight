@@ -1,4 +1,17 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <platform.h>
+
+#include "accgyro_common.h"
+#include <sensors_common.h>
+
+#include "accgyro_bma280.h"
+
+#include "bus_i2c.h"
+
+#include "boardalignment.h"
+
 
 // BMA280, default I2C address mode 0x18
 #define BMA280_ADDRESS     0x18

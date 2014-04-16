@@ -1,4 +1,19 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <platform.h>
+
+#include "accgyro_common.h"
+#include <sensors_common.h>
+
+#include "accgyro_l3g4200d.h"
+
+#include "system_common.h"
+#include "bus_i2c.h"
+
+#include "boardalignment.h"
+
+#include "maths.h"
 
 // L3G4200D, Standard address 0x68
 #define L3G4200D_ADDRESS         0x68

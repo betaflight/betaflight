@@ -7,6 +7,8 @@ typedef enum portMode_t {
     MODE_SBUS = 1 << 2,
 } portMode_t;
 
+typedef void (* serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
+
 typedef struct serialPort {
     
     const struct serialPortVTable *vTable;
