@@ -61,7 +61,6 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_i2c_soft.c \
 		   drivers/gpio_common.c \
 		   drivers/serial_common.c \
-		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/system_common.c \
 		   flight_imu.c \
@@ -94,12 +93,15 @@ NAZE_SRC	 = drivers/accgyro_adxl345.c \
 		   drivers/light_ledring.c \
 		   drivers/sonar_hcsr04.c \
 		   drivers/pwm_common.c \
+		   drivers/serial_softserial.c \
 		   drivers/timer_common.c \
 		   $(COMMON_SRC)
 
 # Source files for the FY90Q target
-FY90Q_SRC	 = drivers/adc_fy90q.c \
+FY90Q_SRC	 = drivers/accgyro_fy90q.c \
+		   drivers/adc_fy90q.c \
 		   drivers/pwm_fy90q.c \
+		   drivers/bus_spi.c \
 		   $(COMMON_SRC)
 
 # Source files for the OLIMEXINO target
@@ -110,6 +112,7 @@ OLIMEXINO_SRC	 = drivers/accgyro_adxl345.c \
 		   drivers/adc_common.c \
 		   drivers/bus_spi.c \
 		   drivers/pwm_common.c \
+		   drivers/serial_softserial.c \
 		   drivers/timer_common.c \
 		   $(COMMON_SRC)
 		   

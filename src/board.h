@@ -233,10 +233,14 @@ typedef struct baro_t
 
 #ifdef FY90Q
  // FY90Q
-#include "drivers/adc/drv_adc.h"
-#include "drv_i2c.h"
-#include "drv_pwm.h"
-#include "drivers/serial/drv_uart.h"
+#include "drivers/adc_common.h"
+#include "drivers/adc_fy90q.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
+#include "drivers/pwm_common.h"
+#include "drivers/timer_common.h"
+#include "drivers/serial_common.h"
+#include "drivers/serial_uart.h"
 #else
 
 #ifdef OLIMEXINO

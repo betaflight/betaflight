@@ -148,6 +148,7 @@ int main(void)
 
     serialInit(mcfg.serial_baudrate);
 
+#ifndef FY90Q
     if (feature(FEATURE_SOFTSERIAL)) {
         //mcfg.softserial_baudrate = 19200; // Uncomment to override config value
 
@@ -163,6 +164,7 @@ int main(void)
 #endif
         //core.mainport = (serialPort_t*)&(softSerialPorts[0]); // Uncomment to switch the main port to use softserial.
     }
+#endif
 
     if (feature(FEATURE_TELEMETRY))
         initTelemetry();

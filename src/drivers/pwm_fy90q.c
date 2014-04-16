@@ -1,5 +1,14 @@
 #ifdef FY90Q
-#include "board.h"
+
+#include "stdbool.h"
+#include "stdint.h"
+#include "platform.h"
+
+#include "serial_common.h"
+
+#include "pwm_common.h"
+
+static uint16_t failsafeThreshold = 985;
 
 #define PULSE_1MS       (1000) // 1ms pulse width
 // #define PULSE_PERIOD    (2500) // pulse period (400Hz)
@@ -71,7 +80,6 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     if (TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
         last = now;
         now = TIM_GetCapture1(tim);
-        rcActive = true;
     }
 
     TIM_ClearITPendingBit(tim, TIM_IT_CC1);
@@ -87,7 +95,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     } else {
         if (diff > 750 && diff < 2250 && chan < 8) {   // 750 to 2250 ms is our 'valid' channel range
             Inputs[chan].capture = diff;
-            if (chan < 4 && diff > FAILSAFE_DETECT_TRESHOLD)
+            if (chan < 4 && diff > failsafeThreshold)
                 GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK
             if (GoodPulses == 0x0F) {   // If first four chanells have good pulses, clear FailSafe counter
                 GoodPulses = 0;
@@ -203,7 +211,7 @@ static void pwmInitializeInput(bool usePPM)
         TIM_ITConfig(TIM2, TIM_IT_CC1, ENABLE);
         TIM_Cmd(TIM2, ENABLE);
 
-        // configure number of PWM outputs, in PPM mode, we use bottom 4 channels more more motors
+        // configure number of PWM outputs, in PPM mode, we use bottom 4 channels for more motors
         numOutputChannels = 10;
     } else {
         // Configure TIM2 all 4 channels
@@ -331,10 +339,15 @@ bool pwmInit(drv_pwm_config_t *init)
     return false;
 }
 
-void pwmWrite(uint8_t channel, uint16_t value)
+void pwmWriteMotor(uint8_t channel, uint16_t value)
 {
     if (channel < numOutputChannels)
         *OutputChannels[channel] = value;
+}
+
+void pwmWriteServo(uint8_t channel, uint16_t value)
+{
+    // Not supported
 }
 
 uint16_t pwmRead(uint8_t channel)

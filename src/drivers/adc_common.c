@@ -5,10 +5,7 @@
 
 #include "accgyro_common.h"
 
-#include "board.h"
-
-#define ADC_BATTERY     0
-#define ADC_CURRENT     1
+#include "adc_common.h"
 
 // static volatile uint16_t adc1Ch4Value = 0;
 static volatile uint16_t adcValues[2];

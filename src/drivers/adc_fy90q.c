@@ -1,30 +1,20 @@
 #ifdef FY90Q
-#include "board.h"
 
-#define ADC_CHANNELS 9
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "accgyro_common.h"
+#include "sensors_common.h"
+
+#include "system_common.h"
+
+#include "adc_fy90q.h"
+
+//#include "boardalignment.h"
 
 volatile uint16_t adcData[ADC_CHANNELS] = { 0, };
-extern uint16_t acc_1G;
-
-static void adcAccRead(int16_t *accelData);
-static void adcAccAlign(int16_t *accelData);
-static void adcGyroRead(int16_t *gyroData);
-static void adcGyroAlign(int16_t *gyroData);
-static void adcDummyInit(void);
-
-void adcSensorInit(sensor_t *acc, sensor_t *gyro)
-{
-    acc->init = adcDummyInit;
-    acc->read = adcAccRead;
-    acc->align = adcAccAlign;
-
-    gyro->init = adcDummyInit;
-    gyro->read = adcGyroRead;
-    gyro->align = adcGyroAlign;
-    gyro->scale = 1.0f;
-
-    acc_1G = 376;
-}
 
 void adcCalibrateADC(ADC_TypeDef *ADCx, int n)
 {
@@ -95,51 +85,9 @@ void adcInit(void)
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 }
 
-static void adcAccRead(int16_t *accelData)
+uint16_t adcGetChannel(uint8_t channel)
 {
-    // ADXL335
-    // 300mV/g
-    // Vcc 3.0V
-    accelData[0] = adcData[3];
-    accelData[1] = adcData[4];
-    accelData[2] = adcData[5];
+    return 0; // Not Supported
 }
 
-static void adcAccAlign(int16_t *accelData)
-{
-    // align  OK
-}
-
-static void adcGyroRead(int16_t *gyroData)
-{
-    // Vcc: 3.0V
-    // Pitch/Roll: LPR550AL, 2000dps mode.
-    // 0.5mV/dps
-    // Zero-rate: 1.23V
-    // Yaw: LPY550AL, 2000dps mode.
-    // 0.5mV/dps
-    // Zero-rate: 1.23V
-
-    // Need to match with: 14.375lsb per dps
-    // 12-bit ADC
-
-    gyroData[0] = adcData[0] * 2;
-    gyroData[1] = adcData[1] * 2;
-    gyroData[2] = adcData[2] * 2;
-}
-
-static void adcGyroAlign(int16_t *gyroData)
-{
-    // align OK
-}
-
-static void adcDummyInit(void)
-{
-    // nothing to init here
-}
-
-uint16_t adcGetBattery(void)
-{
-    return 0;
-}
 #endif

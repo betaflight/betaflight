@@ -46,14 +46,22 @@ void initTelemetry(void)
     if (!feature(FEATURE_SOFTSERIAL))
         mcfg.telemetry_port = TELEMETRY_PORT_UART;
 
+#ifdef FY90Q
+    // FY90Q does not support softserial
+    mcfg.telemetry_port = TELEMETRY_PORT_UART;
+    core.telemport = core.mainport;
+#endif
+
     isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
 
+#ifndef FY90Q
     if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1)
         core.telemport = &(softSerialPorts[0].port);
     else if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2)
         core.telemport = &(softSerialPorts[1].port);
     else
         core.telemport = core.mainport;
+#endif
 
     checkTelemetryState();
 }
