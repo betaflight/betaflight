@@ -4,10 +4,10 @@
 uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
 extern uint16_t InflightcalibratingA;
-extern int16_t AccInflightCalibrationArmed;
-extern uint16_t AccInflightCalibrationMeasurementDone;
-extern uint16_t AccInflightCalibrationSavetoEEProm;
-extern uint16_t AccInflightCalibrationActive;
+extern bool AccInflightCalibrationArmed;
+extern bool AccInflightCalibrationMeasurementDone;
+extern bool AccInflightCalibrationSavetoEEProm;
+extern bool AccInflightCalibrationActive;
 
 void ACC_Common(void)
 {
@@ -62,8 +62,8 @@ void ACC_Common(void)
             }
             // all values are measured
             if (InflightcalibratingA == 1) {
-                AccInflightCalibrationActive = 0;
-                AccInflightCalibrationMeasurementDone = 1;
+                AccInflightCalibrationActive = false;
+                AccInflightCalibrationMeasurementDone = true;
                 toggleBeep = 2;      // buzzer for indicatiing the end of calibration
                 // recover saved values to maintain current flight behavior until new values are transferred
                 mcfg.accZero[ROLL] = accZero_saved[ROLL];
@@ -75,8 +75,8 @@ void ACC_Common(void)
             InflightcalibratingA--;
         }
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-        if (AccInflightCalibrationSavetoEEProm == 1) {      // the copter is landed, disarmed and the combo has been done again
-            AccInflightCalibrationSavetoEEProm = 0;
+        if (AccInflightCalibrationSavetoEEProm) {      // the copter is landed, disarmed and the combo has been done again
+            AccInflightCalibrationSavetoEEProm = false;
             mcfg.accZero[ROLL] = b[ROLL] / 50;
             mcfg.accZero[PITCH] = b[PITCH] / 50;
             mcfg.accZero[YAW] = b[YAW] / 50 - acc_1G;    // for nunchuk 200=1G

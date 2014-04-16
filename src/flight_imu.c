@@ -269,10 +269,12 @@ static void getEstimatedAttitude(void)
     accMag = accMag * 100 / ((int32_t)acc_1G * acc_1G);
 
     rotateV(&EstG.V, deltaGyroAngle);
-    if (sensors(SENSOR_MAG))
+    if (sensors(SENSOR_MAG)) {
         rotateV(&EstM.V, deltaGyroAngle);
-    else
+    } else {
         rotateV(&EstN.V, deltaGyroAngle);
+        normalizeV(&EstN.V, &EstN.V);
+    }
 
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
@@ -315,7 +317,7 @@ static void getEstimatedAttitude(void)
             int angle = lrintf(acosf(cosZ) * throttleAngleScale);
             if (angle > 900)
                 angle = 900;
-            throttleAngleCorrection = lrintf(cfg.throttle_correction_value * sinf(angle / 900.0f * M_PI / 2.0f)) ;
+            throttleAngleCorrection = lrintf(cfg.throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f))) ;
         }
 
     }
@@ -352,7 +354,7 @@ int getEstimatedAltitude(void)
     if (calibratingB > 0) {
         baroGroundPressure -= baroGroundPressure / 8;
         baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
-        baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f; 
+        baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
 
         vel = 0;
         accAlt = 0;

@@ -60,11 +60,11 @@ uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
 uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
 
 // Automatic ACC Offset Calibration
+bool AccInflightCalibrationArmed = false;
+bool AccInflightCalibrationMeasurementDone = false;
+bool AccInflightCalibrationSavetoEEProm = false;
+bool AccInflightCalibrationActive = false;
 uint16_t InflightcalibratingA = 0;
-int16_t AccInflightCalibrationArmed;
-uint16_t AccInflightCalibrationMeasurementDone = 0;
-uint16_t AccInflightCalibrationSavetoEEProm = 0;
-uint16_t AccInflightCalibrationActive = 0;
 
 void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
 {
@@ -120,8 +120,8 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
-            prop1 = (uint16_t) prop1 *prop2 / 100;
+            prop1 = 100 - (uint16_t)cfg.rollPitchRate * tmp / 500;
+            prop1 = (uint16_t)prop1 * prop2 / 100;
         } else {                // YAW
             if (cfg.yawdeadband) {
                 if (tmp > cfg.yawdeadband) {
@@ -558,8 +558,8 @@ void loop(void)
                 // Inflight ACC Calibration
                 } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
                     if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
-                        AccInflightCalibrationMeasurementDone = 0;
-                        AccInflightCalibrationSavetoEEProm = 1;
+                        AccInflightCalibrationMeasurementDone = false;
+                        AccInflightCalibrationSavetoEEProm = true;
                     } else {
                         AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
                         if (AccInflightCalibrationArmed) {
@@ -621,14 +621,15 @@ void loop(void)
         if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
             if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > mcfg.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
                 InflightcalibratingA = 50;
-                AccInflightCalibrationArmed = 0;
+                AccInflightCalibrationArmed = false;
             }
             if (rcOptions[BOXCALIB]) {      // Use the Calib Option to activate : Calib = TRUE Meausrement started, Land and Calib = 0 measurement stored
                 if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
                     InflightcalibratingA = 50;
+                    AccInflightCalibrationActive = true;
             } else if (AccInflightCalibrationMeasurementDone && !f.ARMED) {
-                AccInflightCalibrationMeasurementDone = 0;
-                AccInflightCalibrationSavetoEEProm = 1;
+                AccInflightCalibrationMeasurementDone = false;
+                AccInflightCalibrationSavetoEEProm = true;
             }
         }
 
