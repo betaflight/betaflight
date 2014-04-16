@@ -58,11 +58,11 @@ uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
 uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
 
 // Automatic ACC Offset Calibration
+bool AccInflightCalibrationArmed = false;
+bool AccInflightCalibrationMeasurementDone = false;
+bool AccInflightCalibrationSavetoEEProm = false;
+bool AccInflightCalibrationActive = false;
 uint16_t InflightcalibratingA = 0;
-int16_t AccInflightCalibrationArmed;
-uint16_t AccInflightCalibrationMeasurementDone = 0;
-uint16_t AccInflightCalibrationSavetoEEProm = 0;
-uint16_t AccInflightCalibrationActive = 0;
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count
@@ -560,8 +560,8 @@ void loop(void)
                 // Inflight ACC Calibration
                 } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
                     if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
-                        AccInflightCalibrationMeasurementDone = 0;
-                        AccInflightCalibrationSavetoEEProm = 1;
+                        AccInflightCalibrationMeasurementDone = false;
+                        AccInflightCalibrationSavetoEEProm = true;
                     } else {
                         AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
                         if (AccInflightCalibrationArmed) {
@@ -623,14 +623,15 @@ void loop(void)
         if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
             if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > mcfg.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
                 InflightcalibratingA = 50;
-                AccInflightCalibrationArmed = 0;
+                AccInflightCalibrationArmed = false;
             }
             if (rcOptions[BOXCALIB]) {      // Use the Calib Option to activate : Calib = TRUE Meausrement started, Land and Calib = 0 measurement stored
                 if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
                     InflightcalibratingA = 50;
+                    AccInflightCalibrationActive = true;
             } else if (AccInflightCalibrationMeasurementDone && !f.ARMED) {
-                AccInflightCalibrationMeasurementDone = 0;
-                AccInflightCalibrationSavetoEEProm = 1;
+                AccInflightCalibrationMeasurementDone = false;
+                AccInflightCalibrationSavetoEEProm = true;
             }
         }
 
