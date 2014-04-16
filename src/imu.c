@@ -315,7 +315,7 @@ static void getEstimatedAttitude(void)
             int angle = lrintf(acosf(cosZ) * throttleAngleScale);
             if (angle > 900)
                 angle = 900;
-            throttleAngleCorrection = lrintf(cfg.throttle_correction_value * sinf(angle / 900.0f * M_PI / 2.0f)) ;
+            throttleAngleCorrection = lrintf(cfg.throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f))) ;
         }
 
     }
