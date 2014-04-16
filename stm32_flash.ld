@@ -4,7 +4,7 @@
 **  File        : stm32_flash.ld
 **
 **  Abstract    : Linker script for STM32F103C8 Device with
-**                64KByte FLASH, 20KByte RAM
+**                128KByte FLASH, 20KByte RAM
 **
 *****************************************************************************
 */
@@ -13,7 +13,7 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_estack = 0x20005000;    /* end of 10K RAM */
+_estack = 0x20005000;    /* end of 20K RAM */
 
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0;      /* required amount of heap  */

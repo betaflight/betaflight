@@ -352,7 +352,7 @@ int getEstimatedAltitude(void)
     if (calibratingB > 0) {
         baroGroundPressure -= baroGroundPressure / 8;
         baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
-        baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f; 
+        baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
 
         vel = 0;
         accAlt = 0;
