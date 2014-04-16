@@ -267,10 +267,12 @@ static void getEstimatedAttitude(void)
     accMag = accMag * 100 / ((int32_t)acc_1G * acc_1G);
 
     rotateV(&EstG.V, deltaGyroAngle);
-    if (sensors(SENSOR_MAG))
+    if (sensors(SENSOR_MAG)) {
         rotateV(&EstM.V, deltaGyroAngle);
-    else
+    } else {
         rotateV(&EstN.V, deltaGyroAngle);
+        normalizeV(&EstN.V, &EstN.V);
+    }
 
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
