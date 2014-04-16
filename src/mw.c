@@ -193,7 +193,7 @@ void annexCode(void)
 #endif
 
     if ((int32_t)(currentTime - calibratedAccTime) >= 0) {
-        if (!f.SMALL_ANGLES_25) {
+        if (!f.SMALL_ANGLE) {
             f.ACC_CALIBRATED = 0; // the multi uses ACC and is not calibrated or is too much inclinated
             LED0_TOGGLE;
             calibratedAccTime = currentTime + 500000;
@@ -832,7 +832,7 @@ void loop(void)
                 if (dif >= +180)
                     dif -= 360;
                 dif *= -mcfg.yaw_control_direction;
-                if (f.SMALL_ANGLES_25)
+                if (f.SMALL_ANGLE)
                     rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;    // 18 deg
             } else
                 magHold = heading;
