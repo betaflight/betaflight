@@ -45,7 +45,7 @@ static void spektrumDataReceive(uint16_t c)
 {
     uint32_t spekTime;
     static uint32_t spekTimeLast, spekTimeInterval;
-    static uint8_t  spekFramePosition;
+    static uint8_t spekFramePosition;
 
     spekDataIncoming = true;
     spekTime = micros();

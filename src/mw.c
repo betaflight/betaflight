@@ -122,8 +122,8 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t) cfg.rollPitchRate * tmp / 500;
-            prop1 = (uint16_t) prop1 *prop2 / 100;
+            prop1 = 100 - (uint16_t)cfg.rollPitchRate * tmp / 500;
+            prop1 = (uint16_t)prop1 * prop2 / 100;
         } else {                // YAW
             if (cfg.yawdeadband) {
                 if (tmp > cfg.yawdeadband) {
