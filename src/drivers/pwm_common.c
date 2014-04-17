@@ -1,4 +1,14 @@
-#include "board.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <stdlib.h>
+
+#include "platform.h"
+
+#include "gpio_common.h"
+#include "timer_common.h"
+#include "pwm_common.h"
 
 /*
     Configuration maps:
