@@ -12,6 +12,8 @@
 #define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
 #define RAD    (M_PI / 180.0f)
 
+#define DEG2RAD(degrees) (degrees * RAD)
+
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define abs(x) ((x) > 0 ? (x) : -(x))
@@ -28,3 +30,4 @@ void devClear(stdev_t *dev);
 void devPush(stdev_t *dev, float x);
 float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
+float degreesToRadians(int16_t degrees);

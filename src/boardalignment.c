@@ -29,10 +29,9 @@ void initBoardAlignment(boardAlignment_t *boardAlignment)
 
     standardBoardAlignment = false;
 
-    // deg2rad
-    roll = boardAlignment->rollDegrees * M_PI / 180.0f;
-    pitch = boardAlignment->pitchDegrees * M_PI / 180.0f;
-    yaw = boardAlignment->yawDegrees * M_PI / 180.0f;
+    roll = degreesToRadians(boardAlignment->rollDegrees);
+    pitch = degreesToRadians(boardAlignment->pitchDegrees);
+    yaw = degreesToRadians(boardAlignment->yawDegrees);
 
     cosx = cosf(roll);
     sinx = sinf(roll);

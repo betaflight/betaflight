@@ -142,7 +142,7 @@ void annexCode(void)
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
     if (f.HEADFREE_MODE) {
-        float radDiff = (heading - headFreeModeHold) * M_PI / 180.0f;
+        float radDiff = degreesToRadians(heading - headFreeModeHold);
         float cosDiff = cosf(radDiff);
         float sinDiff = sinf(radDiff);
         int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
