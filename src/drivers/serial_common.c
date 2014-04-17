@@ -1,4 +1,10 @@
-#include "board.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "serial_common.h"
 
 void serialPrint(serialPort_t *instance, const char *str)
 {

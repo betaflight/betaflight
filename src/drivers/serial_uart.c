@@ -1,4 +1,16 @@
-#include "board.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "platform.h"
+
+#include "system_common.h"
+#include "gpio_common.h"
+
+#include "serial_common.h"
+#include "serial_uart.h"
+
 /*
     DMA UART routines idea lifted from AutoQuad
     Copyright © 2011  Bill Nesbitt

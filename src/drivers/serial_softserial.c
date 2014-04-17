@@ -1,4 +1,15 @@
-#include "board.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "system_common.h"
+#include "gpio_common.h"
+#include "timer_common.h"
+
+#include "serial_common.h"
+#include "serial_softserial.h"
 
 #define SOFT_SERIAL_TIMER_MHZ 3
 #define SOFT_SERIAL_1_TIMER_RX_HARDWARE 4
