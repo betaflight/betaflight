@@ -1,6 +1,12 @@
 #include "board.h"
 #include "mw.h"
+
 #include <string.h>
+
+#include "sensors_acceleration.h"
+#include "telemetry_common.h"
+#include "gps_common.h"
+
 
 #ifndef FLASH_PAGE_COUNT
 #define FLASH_PAGE_COUNT 128

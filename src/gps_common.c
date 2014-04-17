@@ -3,6 +3,8 @@
 
 #include "maths.h"
 
+#include "gps_common.h"
+
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below

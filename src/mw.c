@@ -5,6 +5,7 @@
 #include "telemetry_common.h"
 #include "flight_common.h"
 #include "typeconversion.h"
+#include "rx.h"
 #include "maths.h"
 
 // June 2013     V2.2-dev

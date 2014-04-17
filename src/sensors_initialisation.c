@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+#include "sensors_acceleration.h"
+
 uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 uint16_t calibratingG = 0;
 uint16_t acc_1G = 256;          // this is the 1G measured acceleration.

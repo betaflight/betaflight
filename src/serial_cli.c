@@ -5,6 +5,9 @@
 
 #include "printf.h"
 
+#include "telemetry_common.h"
+#include "gps_common.h"
+#include "sensors_acceleration.h"
 
 // we unset this on 'exit'
 extern uint8_t cliMode;

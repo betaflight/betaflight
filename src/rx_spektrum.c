@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+#include "rx.h"
+
 // driver for spektrum satellite receiver / sbus using UART2 (freeing up more motor outputs for stuff)
 
 #define SPEK_MAX_CHANNEL 7

@@ -4,6 +4,8 @@
 #include "telemetry_frsky.h"
 #include "telemetry_hott.h"
 
+#include "telemetry_common.h"
+
 static bool isTelemetryConfigurationValid = false; // flag used to avoid repeated configuration checks
 
 bool isTelemetryProviderFrSky(void)
