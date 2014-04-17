@@ -61,11 +61,7 @@ static const char * const mixerNames[] = {
 // sync this with AvailableFeatures enum from board.h
 static const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SERIALRX", "MOTOR_STOP",
-    "SERVO_TILT",
-#ifndef FY90Q
-    "SOFTSERIAL",
-#endif
-    "LED_RING", "GPS",
+    "SERVO_TILT", "SOFTSERIAL", "LED_RING", "GPS",
     "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
     NULL
 };

@@ -4,29 +4,14 @@
 #include "rx.h"
 #include "telemetry_common.h"
 
+#include "build_config.h"
+
 core_t core;
 
 extern rcReadRawDataPtr rcReadRawFunc;
 
 // receiver read function
 extern uint16_t pwmReadRawRC(uint8_t chan);
-
-#ifdef USE_LAME_PRINTF
-// gcc/GNU version
-static void _putc(void *p, char c)
-{
-    serialWrite(core.mainport, c);
-}
-#else
-// keil/armcc version
-int fputc(int c, FILE *f)
-{
-    // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isSerialTransmitBufferEmpty(core.mainport));
-    serialWrite(core.mainport, c);
-    return c;
-}
-#endif
 
 int main(void)
 {
@@ -38,9 +23,7 @@ int main(void)
     serialPort_t* loopbackPort2 = NULL;
 #endif
     systemInit();
-#ifdef USE_LAME_PRINTF
-    init_printf(NULL, _putc);
-#endif
+    initPrintfSupport();
 
     checkFirstTime(false);
     readEEPROM();

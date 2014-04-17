@@ -31,7 +31,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
 #include <stdarg.h>
 
 #include "build_config.h"
@@ -41,12 +40,12 @@
 
 #include "printf.h"
 
-#ifdef PRINTF_LONG_SUPPORT
+#ifdef REQUIRE_PRINTF_LONG_SUPPORT
 #include "typeconversion.h"
 #endif
 
 
-#ifdef USE_LAME_PRINTF
+#ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 
 typedef void (*putcf) (void *, char);
 static putcf stdout_putf;
@@ -76,7 +75,7 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va)
             putf(putp, ch);
         else {
             char lz = 0;
-#ifdef 	PRINTF_LONG_SUPPORT
+#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
             char lng = 0;
 #endif
             int w = 0;
@@ -88,7 +87,7 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va)
             if (ch >= '0' && ch <= '9') {
                 ch = a2i(ch, &fmt, 10, &w);
             }
-#ifdef 	PRINTF_LONG_SUPPORT
+#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
             if (ch == 'l') {
                 ch = *(fmt++);
                 lng = 1;
@@ -98,7 +97,7 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va)
             case 0:
                 goto abort;
             case 'u':{
-#ifdef 	PRINTF_LONG_SUPPORT
+#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
                     if (lng)
                         uli2a(va_arg(va, unsigned long int), 10, 0, bf);
                     else
@@ -108,7 +107,7 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va)
                     break;
                 }
             case 'd':{
-#ifdef 	PRINTF_LONG_SUPPORT
+#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
                     if (lng)
                         li2a(va_arg(va, unsigned long int), bf);
                     else
@@ -119,7 +118,7 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va)
                 }
             case 'x':
             case 'X':
-#ifdef 	PRINTF_LONG_SUPPORT
+#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
                 if (lng)
                     uli2a(va_arg(va, unsigned long int), 16, (ch == 'X'), bf);
                 else
@@ -171,4 +170,5 @@ void tfp_sprintf(char *s, char *fmt, ...)
     putcp(&s, 0);
     va_end(va);
 }
-#endif /* USE_LAME_PRINTF */
+
+#endif

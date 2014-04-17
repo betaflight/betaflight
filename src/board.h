@@ -28,10 +28,10 @@
 #include "drivers/sound_beeper.h"
 #include "boardalignment.h"
 #include "battery.h"
-#include "math.h"
 
 #ifdef FY90Q
  // FY90Q
+#include "drivers/accgyro_fy90q.h"
 #include "drivers/adc_common.h"
 #include "drivers/adc_fy90q.h"
 #include "drivers/bus_i2c.h"

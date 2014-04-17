@@ -3,7 +3,7 @@
 
 #include "build_config.h"
 
-#ifdef PRINTF_LONG_SUPPORT
+#ifdef REQUIRE_PRINTF_LONG_SUPPORT
 
 void uli2a(unsigned long int num, unsigned int base, int uc, char *bf)
 {
