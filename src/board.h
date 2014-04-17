@@ -19,6 +19,7 @@
 #include "drivers/accgyro_common.h"
 #include "drivers/gpio_common.h"
 #include "drivers/system_common.h"
+#include "drivers/altimeter_common.h"
 #include "sensors_common.h"
 
 typedef enum {
@@ -113,86 +114,10 @@ typedef struct sensor_data_t
     int updated;
 } sensor_data_t;
 
-typedef void (* baroOpFuncPtr)(void);                       // baro start operation
-typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
 typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
 typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
 
-typedef struct baro_t
-{
-    uint16_t ut_delay;
-    uint16_t up_delay;
-    baroOpFuncPtr start_ut;
-    baroOpFuncPtr get_ut;
-    baroOpFuncPtr start_up;
-    baroOpFuncPtr get_up;
-    baroCalculateFuncPtr calculate;
-} baro_t;
-
-// Hardware definitions and GPIO
-#ifdef FY90Q
- // FY90Q
-#define LED0_GPIO   GPIOC
-#define LED0_PIN    Pin_12
-#define LED1_GPIO   GPIOA
-#define LED1_PIN    Pin_15
-
-#define GYRO
-#define ACC
-#define LED0
-#define LED1
-
-#define SENSORS_SET (SENSOR_ACC)
-
-#else
-
-#ifdef OLIMEXINO
-// OLIMEXINO
-
-#ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
-// LED2 is using one of the pwm pins (PWM2), so we must not use PWM2.  @See pwmInit()
-#define LED0_GPIO   GPIOA
-#define LED0_PIN    Pin_1 // D3, PA1/USART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
-#define LED0
-#endif
-
-#ifdef OLIMEXINO_UNCUT_LED1_E_JUMPER
-#define LED1_GPIO   GPIOA
-#define LED1_PIN    Pin_5 // D13, PA5/SPI1_SCK/ADC5 - "LED1" on silkscreen, Green
-#define LED1
-#endif
-
-#define GYRO
-#define ACC
-
-#define SENSORS_SET (SENSOR_ACC)
-
-#else
-// Afroflight32
-
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3 // PB3 (LED)
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_4 // PB4 (LED)
-#define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_12 // PA12 (Buzzer)
-#define BARO_GPIO   GPIOC
-#define BARO_PIN    Pin_13
-
-#define GYRO
-#define ACC
-#define MAG
-#define BARO
-#define LEDRING
-#define SONAR
-#define BUZZER
-#define LED0
-#define LED1
-
-#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
-
-#endif
-#endif
+#include "platform.h"
 
 // Helpful macros
 #ifdef LED0

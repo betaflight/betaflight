@@ -1,4 +1,13 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <platform.h>
+
+#include "altimeter_common.h"
+
+#include "gpio_common.h"
+#include "system_common.h"
+#include "bus_i2c.h"
 
 // MS5611, Standard address 0x77
 #define MS5611_ADDR                 0x77
