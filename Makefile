@@ -52,7 +52,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   mw.c \
 		   printf.c \
 		   sensors_acceleration.c \
-		   sensors_altitude.c \
+		   sensors_barometer.c \
 		   sensors_compass.c \
 		   sensors_gyro.c \
 		   sensors_initialisation.c \
@@ -91,8 +91,8 @@ NAZE_SRC	 = drivers/accgyro_adxl345.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/adc_common.c \
-		   drivers/altimeter_bmp085.c \
-		   drivers/altimeter_ms5611.c \
+		   drivers/barometer_bmp085.c \
+		   drivers/barometer_ms5611.c \
 		   drivers/bus_spi.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/light_ledring.c \

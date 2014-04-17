@@ -3,7 +3,7 @@
 
 #include <platform.h>
 
-#include "altimeter_common.h"
+#include "barometer_common.h"
 
 #include "gpio_common.h"
 #include "system_common.h"
