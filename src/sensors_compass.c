@@ -1,6 +1,10 @@
 #include "board.h"
 #include "mw.h"
 
+#include "axis.h"
+
+int16_t magADC[XYZ_AXIS_COUNT];
+
 #ifdef MAG
 static uint8_t magInit = 0;
 

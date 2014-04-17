@@ -3,6 +3,8 @@
 
 #include "serial_cli.h"
 #include "telemetry_common.h"
+#include "flight_common.h"
+#include "sensors_compass.h"
 
 // Multiwii Serial Protocol 0
 #define MSP_VERSION              0

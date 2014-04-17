@@ -12,6 +12,7 @@
 #include "light_led.h"
 
 #include "boardalignment.h"
+#include "axis.h"
 #include "sensors_common.h"
 #include "maths.h"
 

@@ -21,6 +21,7 @@
 #include "drivers/system_common.h"
 #include "drivers/altimeter_common.h"
 #include "sensors_common.h"
+#include "axis.h"
 
 typedef enum {
     SENSOR_GYRO = 1 << 0, // always present

@@ -57,7 +57,7 @@ typedef enum GimbalFlags {
 } GimbalFlags;
 
 /*********** RC alias *****************/
-enum {
+typedef enum rc_alias {
     ROLL = 0,
     PITCH,
     YAW,
@@ -66,7 +66,7 @@ enum {
     AUX2,
     AUX3,
     AUX4
-};
+} rc_alias_e;
 
 enum {
     PIDROLL,
@@ -315,17 +315,12 @@ typedef struct flags_t {
     uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
 } flags_t;
 
-extern int16_t gyroZero[3];
-extern int16_t gyroData[3];
-extern int16_t angle[2];
 extern int16_t axisPID[3];
 extern int16_t rcCommand[4];
 extern uint8_t rcOptions[CHECKBOXITEMS];
 extern int16_t failsafeCnt;
 
 extern int16_t debug[4];
-extern int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
-extern int32_t accSum[3];
 extern uint16_t acc_1G;
 extern uint32_t accTimeSum;
 extern int accSumCount;

@@ -23,8 +23,4 @@ typedef struct sensor_t
     float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
 } sensor_t;
 
-typedef enum {
-    X = 0,
-    Y,
-    Z
-} sensor_axis_e;
+extern int16_t heading;

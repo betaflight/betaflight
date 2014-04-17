@@ -3,8 +3,12 @@
 
 #include "maths.h"
 
-int16_t gyroADC[3], accADC[3], accSmooth[3], magADC[3];
-int32_t accSum[3];
+#include "sensors_compass.h"
+#include "flight_common.h"
+
+int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
+int32_t accSum[XYZ_AXIS_COUNT];
+
 uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
 int16_t accZ_25deg = 0;
@@ -26,8 +30,9 @@ float throttleAngleScale;
 // **************
 // gyro+acc IMU
 // **************
-int16_t gyroData[3] = { 0, 0, 0 };
-int16_t gyroZero[3] = { 0, 0, 0 };
+int16_t gyroData[GYRO_INDEX_COUNT] = { 0, 0, 0 };
+int16_t gyroZero[GYRO_INDEX_COUNT] = { 0, 0, 0 };
+
 int16_t angle[2] = { 0, 0 };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
@@ -62,10 +67,10 @@ void computeIMU(void)
     }
 
     if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
-        gyroData[YAW] = (gyroYawSmooth * 2 + gyroADC[YAW]) / 3;
-        gyroYawSmooth = gyroData[YAW];
-        gyroData[ROLL] = gyroADC[ROLL];
-        gyroData[PITCH] = gyroADC[PITCH];
+        gyroData[GI_YAW] = (gyroYawSmooth * 2 + gyroADC[GI_YAW]) / 3;
+        gyroYawSmooth = gyroData[GI_YAW];
+        gyroData[GI_ROLL] = gyroADC[GI_ROLL];
+        gyroData[GI_PITCH] = gyroADC[GI_PITCH];
     } else {
         for (axis = 0; axis < 3; axis++)
             gyroData[axis] = gyroADC[axis];
@@ -102,6 +107,12 @@ typedef union {
 
 t_fp_vector EstG;
 
+typedef struct fp_angles {
+    float roll;
+    float pitch;
+    float yaw;
+} fp_angles_t;
+
 // Normalize a vector
 void normalizeV(struct fp_vector *src, struct fp_vector *dest)
 {
@@ -116,7 +127,7 @@ void normalizeV(struct fp_vector *src, struct fp_vector *dest)
 }
 
 // Rotate Estimated vector(s) with small angle approximation, according to the gyro data
-void rotateV(struct fp_vector *v, float *delta)
+void rotateAnglesV(struct fp_vector *v, fp_angles_t *delta)
 {
     struct fp_vector v_tmp = *v;
 
@@ -125,12 +136,12 @@ void rotateV(struct fp_vector *v, float *delta)
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, coszcosy, sinzcosx, coszsinx, sinzsinx;
 
-    cosx = cosf(delta[ROLL]);
-    sinx = sinf(delta[ROLL]);
-    cosy = cosf(delta[PITCH]);
-    siny = sinf(delta[PITCH]);
-    cosz = cosf(delta[YAW]);
-    sinz = sinf(delta[YAW]);
+    cosx = cosf(delta->roll);
+    sinx = sinf(delta->roll);
+    cosy = cosf(delta->pitch);
+    siny = sinf(delta->pitch);
+    cosz = cosf(delta->yaw);
+    sinz = sinf(delta->yaw);
 
     coszcosx = cosz * cosx;
     coszcosy = cosz * cosy;
@@ -153,6 +164,16 @@ void rotateV(struct fp_vector *v, float *delta)
     v->Z = v_tmp.X * mat[0][2] + v_tmp.Y * mat[1][2] + v_tmp.Z * mat[2][2];
 }
 
+// deprecated - it uses legacy indices for ROLL/PITCH/YAW, see rc_alias_e - use rotateAnglesV instead
+void rotateV(struct fp_vector *v, float *delta) {
+    fp_angles_t temp;
+    temp.roll = delta[ROLL];
+    temp.pitch = delta[PITCH];
+    temp.yaw = delta[YAW];
+
+    rotateAnglesV(v, &temp);
+}
+
 int32_t applyDeadband(int32_t value, int32_t deadband)
 {
     if (abs(value) < deadband) {
@@ -173,19 +194,19 @@ void acc_calc(uint32_t deltaT)
 {
     static int32_t accZoffset = 0;
     static float accz_smooth;
-    float rpy[3];
+    fp_angles_t rpy;
     t_fp_vector accel_ned;
 
     // the accel values have to be rotated into the earth frame
-    rpy[0] = -(float)anglerad[ROLL];
-    rpy[1] = -(float)anglerad[PITCH];
-    rpy[2] = -(float)heading * RAD;
+    rpy.roll = -(float)anglerad[AI_ROLL];
+    rpy.pitch = -(float)anglerad[AI_PITCH];
+    rpy.yaw = -(float)heading * RAD;
 
     accel_ned.V.X = accSmooth[0];
     accel_ned.V.Y = accSmooth[1];
     accel_ned.V.Z = accSmooth[2];
 
-    rotateV(&accel_ned.V, rpy);
+    rotateAnglesV(&accel_ned.V, &rpy);
 
     if (cfg.acc_unarmedcal == 1) {
         if (!f.ARMED) {
@@ -226,10 +247,10 @@ static int16_t calculateHeading(t_fp_vector *vec)
 {
     int16_t head;
 
-    float cosineRoll = cosf(anglerad[ROLL]);
-    float sineRoll = sinf(anglerad[ROLL]);
-    float cosinePitch = cosf(anglerad[PITCH]);
-    float sinePitch = sinf(anglerad[PITCH]);
+    float cosineRoll = cosf(anglerad[AI_ROLL]);
+    float sineRoll = sinf(anglerad[AI_ROLL]);
+    float cosinePitch = cosf(anglerad[AI_PITCH]);
+    float sinePitch = sinf(anglerad[AI_PITCH]);
     float Xh = vec->A[X] * cosinePitch + vec->A[Y] * sineRoll * sinePitch + vec->A[Z] * sinePitch * cosineRoll;
     float Yh = vec->A[Y] * cosineRoll - vec->A[Z] * sineRoll;
     float hd = (atan2f(Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
@@ -295,10 +316,10 @@ static void getEstimatedAttitude(void)
         f.SMALL_ANGLES_25 = 0;
 
     // Attitude of the estimated vector
-    anglerad[ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
-    anglerad[PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
-    angle[ROLL] = lrintf(anglerad[ROLL] * (1800.0f / M_PI));
-    angle[PITCH] = lrintf(anglerad[PITCH] * (1800.0f / M_PI));
+    anglerad[AI_ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
+    anglerad[AI_PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
+    angle[AI_ROLL] = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
+    angle[AI_PITCH] = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
 
     if (sensors(SENSOR_MAG))
         heading = calculateHeading(&EstM);

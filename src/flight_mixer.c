@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+#include "flight_common.h"
+
 #include "maths.h"
 
 static uint8_t numberMotor = 0;

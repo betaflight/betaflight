@@ -1,5 +1,13 @@
-#include "board.h"
-#include "mw.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "bus_i2c.h"
+#include "sensors_common.h"
+#include "axis.h"
+#include "flight_common.h"
 
 #include "maths.h"
 
@@ -17,7 +25,8 @@ bool ledringDetect(void)
     return true;
 }
 
-void ledringState(void)
+// pitch/roll are absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+void ledringState(bool armed, int16_t pitch, int16_t roll)
 {
     uint8_t b[10];
     static uint8_t state;
@@ -29,14 +38,14 @@ void ledringState(void)
         state = 1;
     } else if (state == 1) {
         b[0] = 'y';
-        b[1] = constrain(angle[ROLL] / 10 + 90, 0, 180);
-        b[2] = constrain(angle[PITCH] / 10 + 90, 0, 180);
+        b[1] = constrain(roll / 10 + 90, 0, 180);
+        b[2] = constrain(pitch / 10 + 90, 0, 180);
         i2cWriteBuffer(LED_RING_ADDRESS, 0xFF, 3, b);
         state = 2;
     } else if (state == 2) {
         b[0] = 'd';		// all unicolor GREEN
         b[1] = 1;
-        if (f.ARMED)
+        if (armed)
             b[2] = 1;
         else
             b[2] = 0;

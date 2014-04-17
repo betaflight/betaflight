@@ -3,6 +3,7 @@
 
 #include "serial_cli.h"
 #include "telemetry_common.h"
+#include "flight_common.h"
 #include "typeconversion.h"
 #include "maths.h"
 
@@ -185,7 +186,7 @@ void annexCode(void)
         static uint32_t LEDTime;
         if ((int32_t)(currentTime - LEDTime) >= 0) {
             LEDTime = currentTime + 50000;
-            ledringState();
+            ledringState(f.ARMED, angle[AI_PITCH], angle[AI_ROLL]);
         }
     }
 #endif

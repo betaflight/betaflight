@@ -4,7 +4,9 @@
 #include <platform.h>
 
 #include "accgyro_common.h"
-#include <sensors_common.h>
+#include "axis.h"
+#include "sensors_common.h"
+
 
 #include "accgyro_l3g4200d.h"
 
