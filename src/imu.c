@@ -409,7 +409,8 @@ int getEstimatedAltitude(void)
 
     // D
     BaroPID -= constrain(cfg.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
-	accZ_old = accZ_tmp;
+    accZ_old = accZ_tmp;
+
     return 1;
 }
 #endif /* BARO */
