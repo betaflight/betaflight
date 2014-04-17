@@ -4,14 +4,14 @@
 #include <platform.h>
 
 #include "accgyro_common.h"
-#include <sensors_common.h>
 
-#include "accgyro_adxl345.h"
-
+#include "sensors_common.h"
 #include "system_common.h"
 #include "bus_i2c.h"
 
 #include "boardalignment.h"
+
+#include "accgyro_adxl345.h"
 
 // ADXL345, Alternative address mode 0x53
 #define ADXL345_ADDRESS     0x53
@@ -41,8 +41,6 @@
 #define ADXL345_RANGE_8G    0x02
 #define ADXL345_RANGE_16G   0x03
 #define ADXL345_FIFO_STREAM 0x80
-
-extern uint16_t acc_1G;
 
 static void adxl345Init(sensor_align_e align);
 static void adxl345Read(int16_t *accelData);

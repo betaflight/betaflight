@@ -12,10 +12,6 @@
 
 #include "adc_fy90q.h"
 
-//#include "boardalignment.h"
-
-extern uint16_t acc_1G;
-
 static void adcAccRead(int16_t *accelData);
 static void adcGyroRead(int16_t *gyroData);
 static void adcDummyInit(sensor_align_e align);

@@ -1,6 +1,21 @@
-#include "board.h"
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <math.h>
+
+#include "platform.h"
+
+#include "system_common.h"
+#include "gpio_common.h"
+#include "bus_i2c.h"
+#include "light_led.h"
+
+#include "boardalignment.h"
+#include "sensors_common.h"
 #include "maths.h"
+
+#include "compass_hmc5883l.h"
 
 // HMC5883L, default address 0x1E
 // PB12 connected to MAG_DRDY on rev4 hardware

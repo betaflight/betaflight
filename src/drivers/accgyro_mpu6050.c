@@ -132,7 +132,6 @@ static void mpu6050AccRead(int16_t *accData);
 static void mpu6050GyroInit(sensor_align_e align);
 static void mpu6050GyroRead(int16_t *gyroData);
 
-extern uint16_t acc_1G;
 static uint8_t mpuAccelHalf = 0;
 
 bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)

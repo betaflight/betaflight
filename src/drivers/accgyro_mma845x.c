@@ -61,7 +61,6 @@
 #define MMA8452_CTRL_REG1_LNOISE        0x04
 #define MMA8452_CTRL_REG1_ACTIVE        0x01
 
-extern uint16_t acc_1G;
 static uint8_t device_id;
 static sensor_align_e accAlign = CW90_DEG;
 

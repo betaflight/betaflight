@@ -19,8 +19,6 @@
 #define BMA280_PMU_BW      0x10
 #define BMA280_PMU_RANGE   0x0F
 
-extern uint16_t acc_1G;
-
 static void bma280Init(sensor_align_e align);
 static void bma280Read(int16_t *accelData);
 
