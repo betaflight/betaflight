@@ -1,4 +1,11 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <platform.h>
+
+#include "build_config.h"
+
+#include "gpio_common.h"
 
 // Software I2C driver, using same pins as hardware I2C, with hw i2c module disabled.
 // SCL  PB10

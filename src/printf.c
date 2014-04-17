@@ -34,10 +34,10 @@
 
 #include <stdarg.h>
 
+#include "build_config.h"
+
 #include "drivers/serial_common.h"
 #include "runtime_config.h"
-
-#include "printf_config.h"
 
 #include "printf.h"
 

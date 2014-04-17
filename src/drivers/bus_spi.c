@@ -1,4 +1,11 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <platform.h>
+
+#include "gpio_common.h"
+
+#include "bus_spi.h"
 
 // SPI2 Driver
 // PB15     28      SPI2_MOSI

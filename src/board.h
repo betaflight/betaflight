@@ -150,8 +150,6 @@ typedef void (* pidControllerFuncPtr)(void);                // pid controller fu
 #define BEEP_ON                  ;
 #endif
 
-#undef SOFT_I2C                 // enable to test software i2c
-
 #include "boardalignment.h"
 #include "battery.h"
 #include "math.h"

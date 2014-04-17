@@ -9,7 +9,6 @@
 #define U_ID_1 (*(uint32_t*)0x1FFFF7EC)
 #define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
 
-
 // Hardware definitions and GPIO
 #ifdef FY90Q
  // FY90Q

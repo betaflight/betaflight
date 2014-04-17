@@ -1,4 +1,14 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <platform.h>
+
+#include "build_config.h"
+
+#include "gpio_common.h"
+#include "system_common.h"
+
+#include "bus_i2c.h"
 
 #ifndef SOFT_I2C
 

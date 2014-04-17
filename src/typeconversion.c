@@ -1,7 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
-#include "printf_config.h"
+#include "build_config.h"
+
 #ifdef PRINTF_LONG_SUPPORT
 
 void uli2a(unsigned long int num, unsigned int base, int uc, char *bf)
