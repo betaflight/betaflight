@@ -1,4 +1,13 @@
-#include "board.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "gpio_common.h"
+#include "system_common.h"
+
+#include "timer_common.h"
 
 /* FreeFlight/Naze32 timer layout
     TIM2_CH1    RC1             PWM1
