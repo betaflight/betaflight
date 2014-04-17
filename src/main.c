@@ -3,6 +3,8 @@
 
 #include "rx.h"
 #include "telemetry_common.h"
+#include "boardalignment.h"
+#include "config.h"
 
 #include "build_config.h"
 
@@ -37,7 +39,7 @@ int main(void)
     }
 
     adcInit(&adc_params);
-    initBoardAlignment();
+    initBoardAlignment(&mcfg.boardAlignment);
 
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);

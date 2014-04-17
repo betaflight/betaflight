@@ -1,25 +1,38 @@
-#include "board.h"
-#include "mw.h"
+#include "stdbool.h"
+#include "stdint.h"
+
+#include "math.h"
+
+#include "maths.h"
+#include "axis.h"
+#include "sensors_common.h"
+
+#include "boardalignment.h"
 
 static bool standardBoardAlignment = true;     // board orientation correction
 static float boardRotation[3][3];              // matrix
 
-void initBoardAlignment(void)
+static bool isBoardAlignmentStandard(boardAlignment_t *boardAlignment)
+{
+    return !boardAlignment->rollDegrees && !boardAlignment->pitchDegrees && !boardAlignment->yawDegrees;
+}
+
+void initBoardAlignment(boardAlignment_t *boardAlignment)
 {
     float roll, pitch, yaw;
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, coszcosy, sinzcosx, coszsinx, sinzsinx;
 
-    // standard alignment, nothing to calculate
-    if (!mcfg.board_align_roll && !mcfg.board_align_pitch && !mcfg.board_align_yaw)
+    if (isBoardAlignmentStandard(boardAlignment)) {
         return;
+    }
 
     standardBoardAlignment = false;
 
     // deg2rad
-    roll = mcfg.board_align_roll * M_PI / 180.0f;
-    pitch = mcfg.board_align_pitch * M_PI / 180.0f;
-    yaw = mcfg.board_align_yaw * M_PI / 180.0f;
+    roll = boardAlignment->rollDegrees * M_PI / 180.0f;
+    pitch = boardAlignment->pitchDegrees * M_PI / 180.0f;
+    yaw = boardAlignment->yawDegrees * M_PI / 180.0f;
 
     cosx = cosf(roll);
     sinx = sinf(roll);
@@ -48,7 +61,7 @@ void initBoardAlignment(void)
     boardRotation[2][2] = cosy * cosx;
 }
 
-void alignBoard(int16_t *vec)
+static void alignBoard(int16_t *vec)
 {
     int16_t x = vec[X];
     int16_t y = vec[Y];

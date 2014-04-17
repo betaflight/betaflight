@@ -11,6 +11,7 @@
 #include "flight_mixer.h"
 #include "sensors_common.h"
 #include "battery.h"
+#include "boardalignment.h"
 #include "config.h"
 
 #include "drivers/serial_common.h"

@@ -187,9 +187,9 @@ static void resetConf(void)
     mcfg.gyro_align = ALIGN_DEFAULT;
     mcfg.acc_align = ALIGN_DEFAULT;
     mcfg.mag_align = ALIGN_DEFAULT;
-    mcfg.board_align_roll = 0;
-    mcfg.board_align_pitch = 0;
-    mcfg.board_align_yaw = 0;
+    mcfg.boardAlignment.rollDegrees = 0;
+    mcfg.boardAlignment.pitchDegrees = 0;
+    mcfg.boardAlignment.yawDegrees = 0;
     mcfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
     mcfg.max_angle_inclination = 500;    // 50 degrees
     mcfg.yaw_control_direction = 1;
