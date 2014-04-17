@@ -1,7 +1,8 @@
 #include "board.h"
+#include "flight_common.h"
 #include "mw.h"
 
-#include "flight_common.h"
+#include "rx_common.h"
 
 #include "maths.h"
 
@@ -351,14 +352,14 @@ static void airplaneMixer(void)
         int16_t lFlap = servoMiddle(2);
 
         lFlap = constrain(lFlap, cfg.servoConf[2].min, cfg.servoConf[2].max);
-        lFlap = mcfg.midrc - lFlap; // shouldn't this be servoConf[2].middle?
+        lFlap = mcfg.rxConfig.midrc - lFlap; // shouldn't this be servoConf[2].middle?
         if (slow_LFlaps < lFlap)
             slow_LFlaps += mcfg.flaps_speed;
         else if (slow_LFlaps > lFlap)
             slow_LFlaps -= mcfg.flaps_speed;
 
         servo[2] = ((int32_t)cfg.servoConf[2].rate * slow_LFlaps) / 100L;
-        servo[2] += mcfg.midrc;
+        servo[2] += mcfg.rxConfig.midrc;
     }
 
     if (f.PASSTHRU_MODE) {   // Direct passthru from RX
@@ -498,7 +499,7 @@ void mixTable(void)
             }
         } else {
             motor[i] = constrain(motor[i], mcfg.minthrottle, mcfg.maxthrottle);
-            if ((rcData[THROTTLE]) < mcfg.mincheck) {
+            if ((rcData[THROTTLE]) < mcfg.rxConfig.mincheck) {
                 if (!feature(FEATURE_MOTOR_STOP))
                     motor[i] = mcfg.minthrottle;
                 else

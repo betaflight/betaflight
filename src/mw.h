@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime_config.h"
+#include "flight_common.h"
 
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
@@ -10,8 +11,6 @@
 
 #define LAT  0
 #define LON  1
-
-#define RC_CHANS    (18)
 
 // Serial GPS only variables
 // navigation mode
@@ -56,31 +55,6 @@ typedef enum GimbalFlags {
     GIMBAL_FORWARDAUX = 1 << 2,
 } GimbalFlags;
 
-/*********** RC alias *****************/
-typedef enum rc_alias {
-    ROLL = 0,
-    PITCH,
-    YAW,
-    THROTTLE,
-    AUX1,
-    AUX2,
-    AUX3,
-    AUX4
-} rc_alias_e;
-
-#define ROL_LO (1 << (2 * ROLL))
-#define ROL_CE (3 << (2 * ROLL))
-#define ROL_HI (2 << (2 * ROLL))
-#define PIT_LO (1 << (2 * PITCH))
-#define PIT_CE (3 << (2 * PITCH))
-#define PIT_HI (2 << (2 * PITCH))
-#define YAW_LO (1 << (2 * YAW))
-#define YAW_CE (3 << (2 * YAW))
-#define YAW_HI (2 << (2 * YAW))
-#define THR_LO (1 << (2 * THROTTLE))
-#define THR_CE (3 << (2 * THROTTLE))
-#define THR_HI (2 << (2 * THROTTLE))
-
 #include "flight_mixer.h"
 
 enum {
@@ -93,31 +67,12 @@ enum {
 #define CALIBRATING_ACC_CYCLES              400
 #define CALIBRATING_BARO_CYCLES             200
 
+#include "rx_common.h"
 #include "config.h"
-
-typedef struct flags_t {
-    uint8_t OK_TO_ARM;
-    uint8_t ARMED;
-    uint8_t ACC_CALIBRATED;
-    uint8_t ANGLE_MODE;
-    uint8_t HORIZON_MODE;
-    uint8_t MAG_MODE;
-    uint8_t BARO_MODE;
-    uint8_t GPS_HOME_MODE;
-    uint8_t GPS_HOLD_MODE;
-    uint8_t HEADFREE_MODE;
-    uint8_t PASSTHRU_MODE;
-    uint8_t GPS_FIX;
-    uint8_t GPS_FIX_HOME;
-    uint8_t SMALL_ANGLES_25;
-    uint8_t CALIBRATE_MAG;
-    uint8_t VARIO_MODE;
-    uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
-} flags_t;
+#include "config_storage.h"
 
 extern int16_t axisPID[3];
 extern int16_t rcCommand[4];
-extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
 extern int16_t failsafeCnt;
 
 extern int16_t debug[4];
@@ -146,7 +101,6 @@ extern int16_t headFreeModeHold;
 extern int16_t heading, magHold;
 extern int16_t motor[MAX_MOTORS];
 extern int16_t servo[MAX_SERVOS];
-extern int16_t rcData[RC_CHANS];
 extern uint16_t rssi;                  // range: [0;1023]
 extern uint8_t vbat;
 extern int16_t telemTemperature1;      // gyro sensor temperature
@@ -221,23 +175,10 @@ void parseRcChannels(const char *input);
 void readEEPROM(void);
 void writeEEPROM(uint8_t b, uint8_t updateProfile);
 void checkFirstTime(bool reset);
-bool sensors(uint32_t mask);
-void sensorsSet(uint32_t mask);
-void sensorsClear(uint32_t mask);
-uint32_t sensorsMask(void);
-bool feature(uint32_t mask);
-void featureSet(uint32_t mask);
-void featureClear(uint32_t mask);
-void featureClearAll(void);
-uint32_t featureMask(void);
 
 // spektrum
 void spektrumInit(rcReadRawDataPtr *callback);
 bool spektrumFrameComplete(void);
-
-// sbus
-void sbusInit(rcReadRawDataPtr *callback);
-bool sbusFrameComplete(void);
 
 // sumd
 void sumdInit(rcReadRawDataPtr *callback);

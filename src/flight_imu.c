@@ -1,10 +1,10 @@
 #include "board.h"
+#include "flight_common.h"
 #include "mw.h"
 
 #include "maths.h"
 
 #include "sensors_compass.h"
-#include "flight_common.h"
 
 int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
@@ -167,9 +167,9 @@ void rotateAnglesV(struct fp_vector *v, fp_angles_t *delta)
 // deprecated - it uses legacy indices for ROLL/PITCH/YAW, see rc_alias_e - use rotateAnglesV instead
 void rotateV(struct fp_vector *v, float *delta) {
     fp_angles_t temp;
-    temp.roll = delta[ROLL];
-    temp.pitch = delta[PITCH];
-    temp.yaw = delta[YAW];
+    temp.roll = delta[GI_ROLL];
+    temp.pitch = delta[GI_PITCH];
+    temp.yaw = delta[GI_YAW];
 
     rotateAnglesV(v, &temp);
 }

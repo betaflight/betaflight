@@ -1,27 +1,30 @@
 #include "board.h"
 #include "mw.h"
 
-#include "rx.h"
+#include "rx_common.h"
 
 // driver for spektrum satellite receiver / sbus using UART2 (freeing up more motor outputs for stuff)
 
 #define SPEK_MAX_CHANNEL 7
 #define SPEK_FRAME_SIZE 16
+
 static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
 static bool spekHiRes = false;
 static bool spekDataIncoming = false;
+
 volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
+
 static void spektrumDataReceive(uint16_t c);
-static uint16_t spektrumReadRawRC(uint8_t chan);
+static uint16_t spektrumReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
 
 // external vars (ugh)
 extern int16_t failsafeCnt;
 
 void spektrumInit(rcReadRawDataPtr *callback)
 {
-    switch (mcfg.serialrx_type) {
+    switch (mcfg.rxConfig.serialrx_type) {
         case SERIALRX_SPEKTRUM2048:
             // 11 bit frames
             spek_chan_shift = 3;
@@ -69,7 +72,7 @@ bool spektrumFrameComplete(void)
     return rcFrameComplete;
 }
 
-static uint16_t spektrumReadRawRC(uint8_t chan)
+static uint16_t spektrumReadRawRC(rxConfig_t*rxConfig, uint8_t chan)
 {
     uint16_t data;
     static uint32_t spekChannelData[SPEK_MAX_CHANNEL];
@@ -85,12 +88,12 @@ static uint16_t spektrumReadRawRC(uint8_t chan)
     }
 
     if (chan >= SPEK_MAX_CHANNEL || !spekDataIncoming) {
-        data = mcfg.midrc;
+        data = rxConfig->midrc;
     } else {
         if (spekHiRes)
-            data = 988 + (spekChannelData[mcfg.rcmap[chan]] >> 1);   // 2048 mode
+            data = 988 + (spekChannelData[rxConfig->rcmap[chan]] >> 1);   // 2048 mode
         else
-            data = 988 + spekChannelData[mcfg.rcmap[chan]];          // 1024 mode
+            data = 988 + spekChannelData[rxConfig->rcmap[chan]];          // 1024 mode
     }
 
     return data;

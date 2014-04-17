@@ -1,18 +1,18 @@
 #include "board.h"
+#include "flight_common.h"
 #include "mw.h"
 
 #include "serial_cli.h"
 #include "telemetry_common.h"
-#include "flight_common.h"
 #include "typeconversion.h"
-#include "rx.h"
+#include "rx_common.h"
+#include "rx_sbus.h"
+#include "failsafe.h"
 #include "maths.h"
 
 // June 2013     V2.2-dev
 
-flags_t f;
 int16_t debug[4];
-uint8_t toggleBeep = 0;
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
@@ -20,21 +20,16 @@ int16_t headFreeModeHold;
 
 int16_t telemTemperature1;      // gyro sensor temperature
 
-int16_t failsafeCnt = 0;
-int16_t failsafeEvents = 0;
-int16_t rcData[RC_CHANS];       // interval [1000;2000]
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
 int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 uint16_t rssi;                  // range: [0;1023]
-rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
 static void pidMultiWii(void);
 static void pidRewrite(void);
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
-uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
 
 int16_t axisPID[3];
 
@@ -104,7 +99,7 @@ void annexCode(void)
     }
 
     for (axis = 0; axis < 3; axis++) {
-        tmp = min(abs(rcData[axis] - mcfg.midrc), 500);
+        tmp = min(abs(rcData[axis] - mcfg.rxConfig.midrc), 500);
         if (axis != 2) {        // ROLL & PITCH
             if (cfg.deadband) {
                 if (tmp > cfg.deadband) {
@@ -132,12 +127,12 @@ void annexCode(void)
         dynP8[axis] = (uint16_t)cfg.P8[axis] * prop1 / 100;
         dynI8[axis] = (uint16_t)cfg.I8[axis] * prop1 / 100;
         dynD8[axis] = (uint16_t)cfg.D8[axis] * prop1 / 100;
-        if (rcData[axis] < mcfg.midrc)
+        if (rcData[axis] < mcfg.rxConfig.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
 
-    tmp = constrain(rcData[THROTTLE], mcfg.mincheck, 2000);
-    tmp = (uint32_t)(tmp - mcfg.mincheck) * 1000 / (2000 - mcfg.mincheck);       // [MINCHECK;2000] -> [0;1000]
+    tmp = constrain(rcData[THROTTLE], mcfg.rxConfig.mincheck, 2000);
+    tmp = (uint32_t)(tmp - mcfg.rxConfig.mincheck) * 1000 / (2000 - mcfg.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
@@ -213,44 +208,6 @@ void annexCode(void)
     }
 }
 
-uint16_t pwmReadRawRC(uint8_t chan)
-{
-    uint16_t data;
-
-    data = pwmRead(mcfg.rcmap[chan]);
-    if (data < 750 || data > 2250)
-        data = mcfg.midrc;
-
-    return data;
-}
-
-void computeRC(void)
-{
-    uint8_t chan;
-
-    if (feature(FEATURE_SERIALRX)) {
-        for (chan = 0; chan < 8; chan++)
-            rcData[chan] = rcReadRawFunc(chan);
-    } else {
-        static int16_t rcData4Values[8][4], rcDataMean[8];
-        static uint8_t rc4ValuesIndex = 0;
-        uint8_t a;
-
-        rc4ValuesIndex++;
-        for (chan = 0; chan < 8; chan++) {
-            rcData4Values[chan][rc4ValuesIndex % 4] = rcReadRawFunc(chan);
-            rcDataMean[chan] = 0;
-            for (a = 0; a < 4; a++)
-                rcDataMean[chan] += rcData4Values[chan][a];
-
-            rcDataMean[chan] = (rcDataMean[chan] + 2) / 4;
-            if (rcDataMean[chan] < rcData[chan] - 3)
-                rcData[chan] = rcDataMean[chan] + 2;
-            if (rcDataMean[chan] > rcData[chan] + 3)
-                rcData[chan] = rcDataMean[chan] - 2;
-        }
-    }
-}
 
 static void mwArm(void)
 {
@@ -264,12 +221,6 @@ static void mwArm(void)
     } else if (!f.ARMED) {
         blinkLED(2, 255, 1);
     }
-}
-
-static void mwDisarm(void)
-{
-    if (f.ARMED)
-        f.ARMED = 0;
 }
 
 static void mwVario(void)
@@ -439,7 +390,7 @@ void loop(void)
 
     // calculate rc stuff from serial-based receivers (spek/sbus)
     if (feature(FEATURE_SERIALRX)) {
-        switch (mcfg.serialrx_type) {
+        switch (mcfg.rxConfig.serialrx_type) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
                 rcReady = spektrumFrameComplete();
@@ -456,7 +407,7 @@ void loop(void)
     if (((int32_t)(currentTime - rcTime) >= 0) || rcReady) { // 50Hz or data driven
         rcReady = false;
         rcTime = currentTime + 20000;
-        computeRC();
+        computeRC(&mcfg.rxConfig);
 
         // in 3D mode, we need to be able to disarm by switch at any time
         if (feature(FEATURE_3D)) {
@@ -472,33 +423,15 @@ void loop(void)
             rssi = (uint16_t)((constrain(rssiChannelData - 1000, 0, 1000) / 1000.0f) * 1023.0f);
         }
 
-        // Failsafe routine
-        if (feature(FEATURE_FAILSAFE)) {
-            if (failsafeCnt > (5 * cfg.failsafe_delay) && f.ARMED) { // Stabilize, and set Throttle to specified level
-                for (i = 0; i < 3; i++)
-                    rcData[i] = mcfg.midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
-                rcData[THROTTLE] = cfg.failsafe_throttle;
-                if (failsafeCnt > 5 * (cfg.failsafe_delay + cfg.failsafe_off_delay)) {  // Turn OFF motors after specified Time (in 0.1sec)
-                    mwDisarm();             // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
-                    f.OK_TO_ARM = 0;        // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
-                }
-                failsafeEvents++;
-            }
-            if (failsafeCnt > (5 * cfg.failsafe_delay) && !f.ARMED) {  // Turn off "Ok To arm to prevent the motors from spinning after repowering the RX with low throttle and aux to arm
-                mwDisarm();         // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
-                f.OK_TO_ARM = 0;    // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
-            }
-            failsafeCnt++;
-        }
-        // end of failsafe routine - next change is made with RcOptions setting
+        updateFailsafeState();
 
         // ------------------ STICKS COMMAND HANDLER --------------------
         // checking sticks positions
         for (i = 0; i < 4; i++) {
             stTmp >>= 2;
-            if (rcData[i] > mcfg.mincheck)
+            if (rcData[i] > mcfg.rxConfig.mincheck)
                 stTmp |= 0x80;  // check for MIN
-            if (rcData[i] < mcfg.maxcheck)
+            if (rcData[i] < mcfg.rxConfig.maxcheck)
                 stTmp |= 0x40;  // check for MAX
         }
         if (stTmp == rcSticks) {
@@ -509,9 +442,9 @@ void loop(void)
         rcSticks = stTmp;
 
         // perform actions
-        if (feature(FEATURE_3D) && (rcData[THROTTLE] > (mcfg.midrc - mcfg.deadband3d_throttle) && rcData[THROTTLE] < (mcfg.midrc + mcfg.deadband3d_throttle)))
+        if (feature(FEATURE_3D) && (rcData[THROTTLE] > (mcfg.rxConfig.midrc - mcfg.deadband3d_throttle) && rcData[THROTTLE] < (mcfg.rxConfig.midrc + mcfg.deadband3d_throttle)))
             isThrottleLow = true;
-        else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < mcfg.mincheck))
+        else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < mcfg.rxConfig.mincheck))
             isThrottleLow = true;
         if (isThrottleLow) {
             errorGyroI[ROLL] = 0;
@@ -610,7 +543,7 @@ void loop(void)
         }
 
         if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-            if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > mcfg.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+            if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > mcfg.rxConfig.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
                 InflightcalibratingA = 50;
                 AccInflightCalibrationArmed = false;
             }
@@ -630,8 +563,8 @@ void loop(void)
         for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
             rcOptions[i] = (auxState & cfg.activate[i]) > 0;
 
-        // note: if FAILSAFE is disable, failsafeCnt > 5 * FAILSAVE_DELAY is always false
-        if ((rcOptions[BOXANGLE] || (failsafeCnt > 5 * cfg.failsafe_delay)) && (sensors(SENSOR_ACC))) {
+        // note: if FAILSAFE is disable, hasFailsafeTimerElapsed() is always false
+        if ((rcOptions[BOXANGLE] || hasFailsafeTimerElapsed()) && (sensors(SENSOR_ACC))) {
             // bumpless transfer to Level mode
             if (!f.ANGLE_MODE) {
                 errorAngleI[ROLL] = 0;

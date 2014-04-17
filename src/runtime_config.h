@@ -1,22 +1,51 @@
 #pragma once
 
-typedef enum {
-    FEATURE_PPM = 1 << 0,
-    FEATURE_VBAT = 1 << 1,
-    FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
-    FEATURE_SERIALRX = 1 << 3,
-    FEATURE_MOTOR_STOP = 1 << 4,
-    FEATURE_SERVO_TILT = 1 << 5,
-    FEATURE_SOFTSERIAL = 1 << 6,
-    FEATURE_LED_RING = 1 << 7,
-    FEATURE_GPS = 1 << 8,
-    FEATURE_FAILSAFE = 1 << 9,
-    FEATURE_SONAR = 1 << 10,
-    FEATURE_TELEMETRY = 1 << 11,
-    FEATURE_POWERMETER = 1 << 12,
-    FEATURE_VARIO = 1 << 13,
-    FEATURE_3D = 1 << 14,
-} AvailableFeatures;
+enum {
+    BOXARM = 0,
+    BOXANGLE,
+    BOXHORIZON,
+    BOXBARO,
+    BOXVARIO,
+    BOXMAG,
+    BOXHEADFREE,
+    BOXHEADADJ,
+    BOXCAMSTAB,
+    BOXCAMTRIG,
+    BOXGPSHOME,
+    BOXGPSHOLD,
+    BOXPASSTHRU,
+    BOXBEEPERON,
+    BOXLEDMAX,
+    BOXLEDLOW,
+    BOXLLIGHTS,
+    BOXCALIB,
+    BOXGOV,
+    BOXOSD,
+    BOXTELEMETRY,
+    CHECKBOX_ITEM_COUNT
+};
+
+extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
+
+typedef struct flags_t {
+    uint8_t OK_TO_ARM;
+    uint8_t ARMED;
+    uint8_t ACC_CALIBRATED;
+    uint8_t ANGLE_MODE;
+    uint8_t HORIZON_MODE;
+    uint8_t MAG_MODE;
+    uint8_t BARO_MODE;
+    uint8_t GPS_HOME_MODE;
+    uint8_t GPS_HOLD_MODE;
+    uint8_t HEADFREE_MODE;
+    uint8_t PASSTHRU_MODE;
+    uint8_t GPS_FIX;
+    uint8_t GPS_FIX_HOME;
+    uint8_t SMALL_ANGLES_25;
+    uint8_t CALIBRATE_MAG;
+    uint8_t VARIO_MODE;
+    uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
+} flags_t;
 
 // Core runtime settings
 typedef struct core_t {
@@ -29,7 +58,14 @@ typedef struct core_t {
     bool useServo;                          // feature SERVO_TILT or wing/airplane mixers will enable this
 } core_t;
 
-typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
 typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
 
 extern core_t core;
+extern flags_t f;
+
+bool sensors(uint32_t mask);
+void sensorsSet(uint32_t mask);
+void sensorsClear(uint32_t mask);
+uint32_t sensorsMask(void);
+
+void mwDisarm(void);

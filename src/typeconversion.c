@@ -1,6 +1,3 @@
-#include "board.h"
-#include "mw.h"
-
 #include "build_config.h"
 
 #ifdef REQUIRE_PRINTF_LONG_SUPPORT

@@ -1,5 +1,17 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "rx_common.h"
+
+#include "drivers/system_common.h"
+
+#include "drivers/serial_common.h"
+#include "drivers/serial_uart.h"
+#include "runtime_config.h"
+
+#include "rx_sbus.h"
 
 // driver for SBUS receiver using UART2
 
@@ -10,18 +22,23 @@
 
 static bool sbusFrameDone = false;
 static void sbusDataReceive(uint16_t c);
-static uint16_t sbusReadRawRC(uint8_t chan);
+static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
 
 // external vars (ugh)
 extern int16_t failsafeCnt;
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
-void sbusInit(rcReadRawDataPtr *callback)
+//rxConfig_t *rxConfig;
+
+void sbusInit(rcReadRawDataPtr *callback, rxConfig_t *rxConfig)
 {
     int b;
+
+    //rxConfig = initialRxConfig;
+
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
-        sbusChannelData[b] = 2 * (mcfg.midrc - SBUS_OFFSET);
+        sbusChannelData[b] = 2 * (rxConfig->midrc - SBUS_OFFSET);
     core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS));
     if (callback)
         *callback = sbusReadRawRC;
@@ -101,7 +118,8 @@ bool sbusFrameComplete(void)
     return false;
 }
 
-static uint16_t sbusReadRawRC(uint8_t chan)
+static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, uint8_t chan)
 {
-    return sbusChannelData[mcfg.rcmap[chan]] / 2 + SBUS_OFFSET;
+    return sbusChannelData[rxConfig->rcmap[chan]] / 2 + SBUS_OFFSET;
 }
+

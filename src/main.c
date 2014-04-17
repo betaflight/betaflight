@@ -1,19 +1,19 @@
 #include "board.h"
+#include "flight_common.h"
 #include "mw.h"
 
-#include "rx.h"
+#include "rx_sbus.h"
+#include "rx_common.h"
 #include "telemetry_common.h"
 #include "boardalignment.h"
 #include "config.h"
+#include "config_storage.h"
 
 #include "build_config.h"
 
 core_t core;
 
 extern rcReadRawDataPtr rcReadRawFunc;
-
-// receiver read function
-extern uint16_t pwmReadRawRC(uint8_t chan);
 
 int main(void)
 {
@@ -63,7 +63,7 @@ int main(void)
         pwm_params.idlePulse = mcfg.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
-    pwm_params.servoCenterPulse = mcfg.midrc;
+    pwm_params.servoCenterPulse = mcfg.rxConfig.midrc;
     pwm_params.failsafeThreshold = cfg.failsafe_detect_threshold;
     switch (mcfg.power_adc_channel) {
         case 1:
@@ -86,13 +86,13 @@ int main(void)
     core.numRCChannels = MAX_INPUTS;
 
     if (feature(FEATURE_SERIALRX)) {
-        switch (mcfg.serialrx_type) {
+        switch (mcfg.rxConfig.serialrx_type) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
                 spektrumInit(&rcReadRawFunc);
                 break;
             case SERIALRX_SBUS:
-                sbusInit(&rcReadRawFunc);
+                sbusInit(&rcReadRawFunc, &mcfg.rxConfig);
                 break;
             case SERIALRX_SUMD:
                 sumdInit(&rcReadRawFunc);

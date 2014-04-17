@@ -1,16 +1,37 @@
-#include "board.h"
-#include "mw.h"
+#include "stdbool.h"
+#include "stdint.h"
+
+#include "platform.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/system_common.h"
+#include "drivers/serial_common.h" // FIXME this file should not have a dependency on serial ports, see core_t from runtime_config.h
+#include "failsafe.h"
+#include "sensors_common.h"
+#include "runtime_config.h"
+#include "config.h"
+
+#include "buzzer.h"
+
+#define LONG_PAUSE_DELAY 50
 
 static uint8_t buzzerIsOn = 0, beepDone = 0;
 static uint32_t buzzerLastToggleTime;
 static void beep(uint16_t pulse);
 static void beep_code(char first, char second, char third, char pause);
 
+uint8_t toggleBeep = 0;
+
+typedef enum {
+    FAILSAFE_IDLE = 0,
+    FAILSAFE_LANDING,
+    FAILSAFE_FIND_ME
+} failsafeBuzzerWarnings_e;
+
 void buzzer(bool warn_vbat)
 {
     static uint8_t beeperOnBox;
     static uint8_t warn_noGPSfix = 0;
-    static uint8_t warn_failsafe = 0;
+    static failsafeBuzzerWarnings_e warn_failsafe = FAILSAFE_IDLE;
     static uint8_t warn_runtime = 0;
 
     //=====================  BeeperOn via rcOptions =====================
@@ -21,15 +42,21 @@ void buzzer(bool warn_vbat)
     }
     //===================== Beeps for failsafe =====================
     if (feature(FEATURE_FAILSAFE)) {
-        if (failsafeCnt > (5 * cfg.failsafe_delay) && f.ARMED) {
-            warn_failsafe = 1;      //set failsafe warning level to 1 while landing
-            if (failsafeCnt > 5 * (cfg.failsafe_delay + cfg.failsafe_off_delay))
-                warn_failsafe = 2;  //start "find me" signal after landing
+        if (shouldFailsafeForceLanding(f.ARMED)) {
+            warn_failsafe = FAILSAFE_LANDING;
+
+            if (shouldFailsafeHaveCausedLandingByNow()) {
+                warn_failsafe = FAILSAFE_FIND_ME;
+            }
         }
-        if (failsafeCnt > (5 * cfg.failsafe_delay) && !f.ARMED)
-            warn_failsafe = 2;      // tx turned off while motors are off: start "find me" signal
-        if (failsafeCnt == 0)
-            warn_failsafe = 0;      // turn off alarm if TX is okay
+
+        if (hasFailsafeTimerElapsed() && !f.ARMED) {
+            warn_failsafe = FAILSAFE_FIND_ME;
+        }
+
+        if (isFailsafeIdle()) {
+            warn_failsafe = FAILSAFE_IDLE;      // turn off alarm if TX is okay
+        }
     }
 
     //===================== GPS fix notification handling =====================
@@ -88,7 +115,7 @@ void beep_code(char first, char second, char third, char pause)
             Duration = 0;
             break;
         default:
-            Duration = 50;
+            Duration = LONG_PAUSE_DELAY;
             break;
     }
 
@@ -109,7 +136,7 @@ void beep_code(char first, char second, char third, char pause)
 
 static void beep(uint16_t pulse)
 {
-    if (!buzzerIsOn && (millis() >= (buzzerLastToggleTime + 50))) {         // Buzzer is off and long pause time is up -> turn it on
+    if (!buzzerIsOn && (millis() >= (buzzerLastToggleTime + LONG_PAUSE_DELAY))) {         // Buzzer is off and long pause time is up -> turn it on
         buzzerIsOn = 1;
         BEEP_ON;
         buzzerLastToggleTime = millis();      // save the time the buzer turned on

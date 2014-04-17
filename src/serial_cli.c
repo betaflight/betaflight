@@ -121,12 +121,12 @@ typedef struct {
 
 const clivalue_t valueTable[] = {
     { "looptime", VAR_UINT16, &mcfg.looptime, 0, 9000 },
-    { "midrc", VAR_UINT16, &mcfg.midrc, 1200, 1700 },
+    { "midrc", VAR_UINT16, &mcfg.rxConfig.midrc, 1200, 1700 },
     { "minthrottle", VAR_UINT16, &mcfg.minthrottle, 0, 2000 },
     { "maxthrottle", VAR_UINT16, &mcfg.maxthrottle, 0, 2000 },
     { "mincommand", VAR_UINT16, &mcfg.mincommand, 0, 2000 },
-    { "mincheck", VAR_UINT16, &mcfg.mincheck, 0, 2000 },
-    { "maxcheck", VAR_UINT16, &mcfg.maxcheck, 0, 2000 },
+    { "mincheck", VAR_UINT16, &mcfg.rxConfig.mincheck, 0, 2000 },
+    { "maxcheck", VAR_UINT16, &mcfg.rxConfig.maxcheck, 0, 2000 },
     { "deadband3d_low", VAR_UINT16, &mcfg.deadband3d_low, 0, 2000 },
     { "deadband3d_high", VAR_UINT16, &mcfg.deadband3d_high, 0, 2000 },
     { "neutral3d", VAR_UINT16, &mcfg.neutral3d, 0, 2000 },
@@ -143,7 +143,7 @@ const clivalue_t valueTable[] = {
     { "softserial_2_inverted", VAR_UINT8, &mcfg.softserial_2_inverted, 0, 1 },
     { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, GPS_HARDWARE_MAX },
     { "gps_baudrate", VAR_INT8, &mcfg.gps_baudrate, 0, GPS_BAUD_MAX },
-    { "serialrx_type", VAR_UINT8, &mcfg.serialrx_type, 0, 3 },
+    { "serialrx_type", VAR_UINT8, &mcfg.rxConfig.serialrx_type, 0, 3 },
     { "telemetry_provider", VAR_UINT8, &mcfg.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_port", VAR_UINT8, &mcfg.telemetry_port, 0, TELEMETRY_PORT_MAX },
     { "telemetry_switch", VAR_UINT8, &mcfg.telemetry_switch, 0, 1 },
@@ -615,7 +615,7 @@ static void cliDump(char *cmdline)
 
     // print RC MAPPING
     for (i = 0; i < 8; i++)
-        buf[mcfg.rcmap[i]] = rcChannelLetters[i];
+        buf[mcfg.rxConfig.rcmap[i]] = rcChannelLetters[i];
     buf[i] = '\0';
     printf("map %s\r\n", buf);
 
@@ -735,7 +735,7 @@ static void cliMap(char *cmdline)
     }
     cliPrint("Current assignment: ");
     for (i = 0; i < 8; i++)
-        out[mcfg.rcmap[i]] = rcChannelLetters[i];
+        out[mcfg.rxConfig.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
     printf("%s\r\n", out);
 }

@@ -10,6 +10,8 @@
 #include "timer_common.h"
 #include "pwm_common.h"
 
+#include "failsafe.h" // FIXME for external global variables
+
 /*
     Configuration maps:
 
@@ -72,8 +74,6 @@ static uint8_t numMotors = 0;
 static uint8_t numServos = 0;
 static uint8_t  numInputs = 0;
 static uint16_t failsafeThreshold = 985;
-// external vars (ugh)
-extern int16_t failsafeCnt;
 
 static const uint8_t multiPPM[] = {
     PWM1 | TYPE_IP,     // PPM input

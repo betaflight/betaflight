@@ -1,12 +1,15 @@
 #include "board.h"
+#include "flight_common.h"
 #include "mw.h"
-#include "config.h"
 
 #include <string.h>
 
 #include "sensors_acceleration.h"
 #include "telemetry_common.h"
 #include "gps_common.h"
+
+#include "config_storage.h"
+#include "config.h"
 
 
 #ifndef FLASH_PAGE_COUNT
@@ -21,7 +24,6 @@ config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
 static const uint8_t EEPROM_CONF_VERSION = 62;
-static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
 void parseRcChannels(const char *input)
@@ -31,7 +33,7 @@ void parseRcChannels(const char *input)
     for (c = input; *c; c++) {
         s = strchr(rcChannelLetters, *c);
         if (s)
-            mcfg.rcmap[s - rcChannelLetters] = c - input;
+            mcfg.rxConfig.rcmap[s - rcChannelLetters] = c - input;
     }
 }
 
@@ -198,13 +200,13 @@ static void resetConf(void)
     mcfg.batteryConfig.vbatmaxcellvoltage = 43;
     mcfg.batteryConfig.vbatmincellvoltage = 33;
     mcfg.power_adc_channel = 0;
-    mcfg.serialrx_type = 0;
     mcfg.telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
     mcfg.telemetry_port = TELEMETRY_PORT_UART;
     mcfg.telemetry_switch = 0;
-    mcfg.midrc = 1500;
-    mcfg.mincheck = 1100;
-    mcfg.maxcheck = 1900;
+    mcfg.rxConfig.serialrx_type = 0;
+    mcfg.rxConfig.midrc = 1500;
+    mcfg.rxConfig.mincheck = 1100;
+    mcfg.rxConfig.maxcheck = 1900;
     mcfg.retarded_arm = 0;       // disable arm/disarm on roll left/right
     mcfg.flaps_speed = 0;
     mcfg.fixedwing_althold_dir = 1;
@@ -330,25 +332,6 @@ static void resetConf(void)
         memcpy(&mcfg.profile[i], &cfg, sizeof(config_t));
 }
 
-bool sensors(uint32_t mask)
-{
-    return enabledSensors & mask;
-}
-
-void sensorsSet(uint32_t mask)
-{
-    enabledSensors |= mask;
-}
-
-void sensorsClear(uint32_t mask)
-{
-    enabledSensors &= ~(mask);
-}
-
-uint32_t sensorsMask(void)
-{
-    return enabledSensors;
-}
 
 bool feature(uint32_t mask)
 {
@@ -374,3 +357,4 @@ uint32_t featureMask(void)
 {
     return mcfg.enabledFeatures;
 }
+
