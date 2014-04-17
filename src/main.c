@@ -89,13 +89,13 @@ int main(void)
         switch (mcfg.rxConfig.serialrx_type) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
-                spektrumInit(&rcReadRawFunc);
+                spektrumInit(&mcfg.rxConfig, &rcReadRawFunc);
                 break;
             case SERIALRX_SBUS:
-                sbusInit(&rcReadRawFunc, &mcfg.rxConfig);
+                sbusInit(&mcfg.rxConfig, &rcReadRawFunc);
                 break;
             case SERIALRX_SUMD:
-                sumdInit(&rcReadRawFunc);
+                sumdInit(&mcfg.rxConfig, &rcReadRawFunc);
                 break;
         }
     } else { // spektrum and GPS are mutually exclusive

@@ -3,14 +3,13 @@
 
 #include "platform.h"
 
-#include "rx_common.h"
-
 #include "drivers/system_common.h"
 
 #include "drivers/serial_common.h"
 #include "drivers/serial_uart.h"
 #include "runtime_config.h"
 
+#include "rx_common.h"
 #include "rx_sbus.h"
 
 // driver for SBUS receiver using UART2
@@ -31,7 +30,7 @@ static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
 //rxConfig_t *rxConfig;
 
-void sbusInit(rcReadRawDataPtr *callback, rxConfig_t *rxConfig)
+void sbusInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
 {
     int b;
 

@@ -10,6 +10,8 @@
 #include "runtime_config.h"
 
 #include "rx_common.h"
+#include "rx_spektrum.h"
+
 
 // driver for spektrum satellite receiver / sbus using UART2 (freeing up more motor outputs for stuff)
 
@@ -30,7 +32,7 @@ static uint16_t spektrumReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
 // external vars (ugh)
 extern int16_t failsafeCnt;
 
-void spektrumInit(rxConfig_t*rxConfig, rcReadRawDataPtr *callback)
+void spektrumInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
 {
     switch (rxConfig->serialrx_type) {
         case SERIALRX_SPEKTRUM2048:

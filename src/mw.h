@@ -176,14 +176,6 @@ void readEEPROM(void);
 void writeEEPROM(uint8_t b, uint8_t updateProfile);
 void checkFirstTime(bool reset);
 
-// spektrum
-void spektrumInit(rcReadRawDataPtr *callback);
-bool spektrumFrameComplete(void);
-
-// sumd
-void sumdInit(rcReadRawDataPtr *callback);
-bool sumdFrameComplete(void);
-
 // buzzer
 void buzzer(bool warn_vbat);
 void systemBeep(bool onoff);

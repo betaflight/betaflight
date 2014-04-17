@@ -12,6 +12,7 @@
 #include "failsafe.h"
 
 #include "rx_common.h"
+#include "rx_sumd.h"
 
 // driver for SUMD receiver using UART2
 
@@ -25,7 +26,7 @@ static uint16_t sumdReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
 
 static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 
-void sumdInit(rcReadRawDataPtr *callback)
+void sumdInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
 {
     core.rcvrport = uartOpen(USART2, sumdDataReceive, 115200, MODE_RX);
     if (callback)
