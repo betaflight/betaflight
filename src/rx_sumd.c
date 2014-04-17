@@ -1,5 +1,17 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "drivers/system_common.h"
+
+#include "drivers/serial_common.h"
+#include "drivers/serial_uart.h"
+#include "runtime_config.h"
+
+#include "failsafe.h"
+
+#include "rx_common.h"
 
 // driver for SUMD receiver using UART2
 
