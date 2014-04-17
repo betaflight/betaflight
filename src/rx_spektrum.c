@@ -9,6 +9,8 @@
 #include "drivers/serial_uart.h"
 #include "runtime_config.h"
 
+#include "failsafe.h"
+
 #include "rx_common.h"
 #include "rx_spektrum.h"
 
@@ -28,9 +30,6 @@ volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static void spektrumDataReceive(uint16_t c);
 static uint16_t spektrumReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
-
-// external vars (ugh)
-extern int16_t failsafeCnt;
 
 void spektrumInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
 {

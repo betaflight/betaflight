@@ -9,6 +9,8 @@
 #include "drivers/serial_uart.h"
 #include "runtime_config.h"
 
+#include "failsafe.h"
+
 #include "rx_common.h"
 #include "rx_sbus.h"
 
@@ -22,9 +24,6 @@
 static bool sbusFrameDone = false;
 static void sbusDataReceive(uint16_t c);
 static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
-
-// external vars (ugh)
-extern int16_t failsafeCnt;
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 

@@ -3,6 +3,8 @@
 #include "mw.h"
 
 #include "rx_sbus.h"
+#include "rx_sumd.h"
+#include "rx_spektrum.h"
 #include "rx_common.h"
 #include "telemetry_common.h"
 #include "boardalignment.h"
