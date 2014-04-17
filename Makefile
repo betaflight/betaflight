@@ -62,6 +62,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/gpio_common.c \
 		   drivers/serial_common.c \
 		   drivers/serial_uart.c \
+		   drivers/sound_beeper.c \
 		   drivers/system_common.c \
 		   flight_imu.c \
 		   flight_mixer.c \

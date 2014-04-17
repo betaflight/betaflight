@@ -1,4 +1,17 @@
-#include "board.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "platform.h"
+
+#include "gpio_common.h"
+#include "light_led.h"
+#include "sound_beeper.h"
+#include "bus_i2c.h"
+#include "bus_spi.h"
+
+#include "system_common.h"
 
 // cycles per microsecond
 static volatile uint32_t usTicks = 0;
@@ -6,12 +19,6 @@ static volatile uint32_t usTicks = 0;
 static volatile uint32_t sysTickUptime = 0;
 // from system_stm32f10x.c
 void SetSysClock(void);
-#ifdef BUZZER
-void systemBeep(bool onoff);
-static void beepRev4(bool onoff);
-static void beepRev5(bool onoff);
-void (* systemBeepPtr)(bool onoff) = NULL;
-#endif
 
 static void cycleCounterInit(void)
 {
@@ -94,15 +101,7 @@ void systemInit(void)
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
 
-#ifdef BUZZER
-    // Configure gpio
-    // rev5 needs inverted beeper. oops.
-    if (hse_value == 12000000)
-        systemBeepPtr = beepRev5;
-    else
-        systemBeepPtr = beepRev4;
-    BEEP_OFF;
-#endif
+    beeperInit();
     LED0_OFF;
     LED1_OFF;
 
@@ -194,32 +193,5 @@ void systemReset(bool toBootloader)
 
     // Generate system reset
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
-}
-
-#ifdef BUZZER
-static void beepRev4(bool onoff)
-{
-    if (onoff) {
-        digitalLo(BEEP_GPIO, BEEP_PIN);
-    } else {
-        digitalHi(BEEP_GPIO, BEEP_PIN);
-    }
-}
-
-static void beepRev5(bool onoff)
-{
-    if (onoff) {
-        digitalHi(BEEP_GPIO, BEEP_PIN);
-    } else {
-        digitalLo(BEEP_GPIO, BEEP_PIN);
-    }
-}
-#endif
-
-void systemBeep(bool onoff)
-{
-#ifdef BUZZER
-    systemBeepPtr(onoff);
-#endif
 }
 
