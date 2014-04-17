@@ -206,6 +206,14 @@ void acc_calc(uint32_t deltaT)
     accSumCount++;
 }
 
+void accSum_reset(void)
+{
+    accSum[0] = 0;
+    accSum[1] = 0;
+    accSum[2] = 0;
+    accSumCount = 0;
+    accTimeSum = 0;
+}
 
 // baseflight calculation by Luggi09 originates from arducopter
 static int16_t calculateHeading(t_fp_vector *vec)
@@ -259,6 +267,7 @@ static void getEstimatedAttitude(void)
         rotateV(&EstM.V, deltaGyroAngle);
     } else {
         rotateV(&EstN.V, deltaGyroAngle);
+        normalizeV(&EstN.V, &EstN.V);
     }
 
     // Apply complimentary filter (Gyro drift correction)
@@ -321,6 +330,7 @@ int getEstimatedAltitude(void)
     float dt;
     float vel_acc;
     float accZ_tmp;
+    static float accZ_old = 0.0f;
     static float vel = 0.0f;
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
@@ -366,12 +376,7 @@ int getEstimatedAltitude(void)
     debug[2] = accAlt;                  // height
 #endif
 
-    // Integrator done - reset accSum
-    accSum[0] = 0;
-    accSum[1] = 0;
-    accSum[2] = 0;
-    accSumCount = 0;
-    accTimeSum = 0;
+    accSum_reset();
 
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = BaroAlt;
@@ -403,10 +408,8 @@ int getEstimatedAltitude(void)
     BaroPID += errorAltitudeI / 1024;     // I in range +/-200
 
     // D
-    BaroPID -= constrain(lrintf(cfg.D8[PIDVEL] * accZ_tmp / 32), -150, 150);
-	// was not that supposed to be :
-	//BaroPID -= constrain(cfg.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
-    //accZ_old = accZ_tmp;  
+    BaroPID -= constrain(cfg.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
+	accZ_old = accZ_tmp;
     return 1;
 }
 #endif /* BARO */
