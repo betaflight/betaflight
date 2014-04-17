@@ -93,11 +93,11 @@ struct box_t {
     { BOXGOV, "GOVERNOR;", 18 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
-    { CHECKBOXITEMS, NULL, 0xFF }
+    { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
 // this is calculated at startup based on enabled features.
-static uint8_t availableBoxes[CHECKBOXITEMS];
+static uint8_t availableBoxes[CHECKBOX_ITEM_COUNT];
 // this is the number of filled indexes in above array
 static uint8_t numberBoxItems = 0;
 // from mixer.c
@@ -305,7 +305,7 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_PID:
-        for (i = 0; i < PIDITEMS; i++) {
+        for (i = 0; i < PID_ITEM_COUNT; i++) {
             cfg.P8[i] = read8();
             cfg.I8[i] = read8();
             cfg.D8[i] = read8();
@@ -336,9 +336,9 @@ static void evaluateCommand(void)
         read16();
         read32();
         cfg.mag_declination = read16() * 10;
-        mcfg.vbatscale = read8();           // actual vbatscale as intended
-        mcfg.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
-        mcfg.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
+        mcfg.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
+        mcfg.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
+        mcfg.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
         read8();                            // vbatlevel_crit (unused)
         headSerialReply(0);
         break;
@@ -488,8 +488,8 @@ static void evaluateCommand(void)
         serialize8(cfg.thrExpo8);
         break;
     case MSP_PID:
-        headSerialReply(3 * PIDITEMS);
-        for (i = 0; i < PIDITEMS; i++) {
+        headSerialReply(3 * PID_ITEM_COUNT);
+        for (i = 0; i < PID_ITEM_COUNT; i++) {
             serialize8(cfg.P8[i]);
             serialize8(cfg.I8[i]);
             serialize8(cfg.D8[i]);
@@ -523,9 +523,9 @@ static void evaluateCommand(void)
         serialize16(0); // plog useless shit
         serialize32(0); // plog useless shit
         serialize16(cfg.mag_declination / 10); // TODO check this shit
-        serialize8(mcfg.vbatscale);
-        serialize8(mcfg.vbatmincellvoltage);
-        serialize8(mcfg.vbatmaxcellvoltage);
+        serialize8(mcfg.batteryConfig.vbatscale);
+        serialize8(mcfg.batteryConfig.vbatmincellvoltage);
+        serialize8(mcfg.batteryConfig.vbatmaxcellvoltage);
         serialize8(0);
         break;
     case MSP_MOTOR_PINS:

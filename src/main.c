@@ -145,7 +145,7 @@ int main(void)
 
     // Check battery type/voltage
     if (feature(FEATURE_VBAT))
-        batteryInit();
+        batteryInit(&mcfg.batteryConfig);
 
     serialInit(mcfg.serial_baudrate);
 

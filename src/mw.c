@@ -18,7 +18,6 @@ uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 int16_t headFreeModeHold;
 
-uint8_t vbat;                   // battery voltage in 0.1V steps
 int16_t telemTemperature1;      // gyro sensor temperature
 
 int16_t failsafeCnt = 0;
@@ -35,7 +34,7 @@ static void pidRewrite(void);
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
-uint8_t rcOptions[CHECKBOXITEMS];
+uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
 
 int16_t axisPID[3];
 
@@ -88,15 +87,10 @@ void annexCode(void)
     static uint32_t calibratedAccTime;
     int32_t tmp, tmp2;
     int32_t axis, prop1, prop2;
-    static uint8_t buzzerFreq;  // delay between buzzer ring
 
-    // vbat shit
+    static uint8_t batteryWarningEnabled = false;
+
     static uint8_t vbatTimer = 0;
-    static uint8_t ind = 0;
-    uint16_t vbatRaw = 0;
-    static uint16_t vbatRawArray[8];
-
-    int i;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
     if (rcData[THROTTLE] < cfg.tpaBreakPoint) {
@@ -158,18 +152,13 @@ void annexCode(void)
 
     if (feature(FEATURE_VBAT)) {
         if (!(++vbatTimer % VBATFREQ)) {
-            vbatRawArray[(ind++) % 8] = adcGetChannel(ADC_BATTERY);
-            for (i = 0; i < 8; i++)
-                vbatRaw += vbatRawArray[i];
-            vbat = batteryAdcToVoltage(vbatRaw / 8);
+            updateBatteryVoltage();
+
+            batteryWarningEnabled = shouldSoundBatteryAlarm();
         }
-        if ((vbat > batteryWarningVoltage) || (vbat < mcfg.vbatmincellvoltage)) { // VBAT ok, buzzer off
-            buzzerFreq = 0;
-        } else
-            buzzerFreq = 4;     // low battery
     }
 
-    buzzer(buzzerFreq);         // external buzzer routine that handles buzzer events globally now
+    buzzer(batteryWarningEnabled); // external buzzer routine that handles buzzer events globally now
 
     if ((calibratingA > 0 && sensors(SENSOR_ACC)) || (calibratingG > 0)) {      // Calibration phasis
         LED0_TOGGLE;
@@ -638,7 +627,7 @@ void loop(void)
         // Check AUX switches
         for (i = 0; i < 4; i++)
             auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) | (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) | (rcData[AUX1 + i] > 1700) << (3 * i + 2);
-        for (i = 0; i < CHECKBOXITEMS; i++)
+        for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
             rcOptions[i] = (auxState & cfg.activate[i]) > 0;
 
         // note: if FAILSAFE is disable, failsafeCnt > 5 * FAILSAVE_DELAY is always false

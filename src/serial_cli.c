@@ -151,9 +151,9 @@ const clivalue_t valueTable[] = {
     { "telemetry_provider", VAR_UINT8, &mcfg.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_port", VAR_UINT8, &mcfg.telemetry_port, 0, TELEMETRY_PORT_MAX },
     { "telemetry_switch", VAR_UINT8, &mcfg.telemetry_switch, 0, 1 },
-    { "vbatscale", VAR_UINT8, &mcfg.vbatscale, 10, 200 },
-    { "vbatmaxcellvoltage", VAR_UINT8, &mcfg.vbatmaxcellvoltage, 10, 50 },
-    { "vbatmincellvoltage", VAR_UINT8, &mcfg.vbatmincellvoltage, 10, 50 },
+    { "vbatscale", VAR_UINT8, &mcfg.batteryConfig.vbatscale, 10, 200 },
+    { "vbatmaxcellvoltage", VAR_UINT8, &mcfg.batteryConfig.vbatmaxcellvoltage, 10, 50 },
+    { "vbatmincellvoltage", VAR_UINT8, &mcfg.batteryConfig.vbatmincellvoltage, 10, 50 },
     { "power_adc_channel", VAR_UINT8, &mcfg.power_adc_channel, 0, 9 },
     { "align_gyro", VAR_UINT8, &mcfg.gyro_align, 0, 8 },
     { "align_acc", VAR_UINT8, &mcfg.acc_align, 0, 8 },
@@ -447,17 +447,17 @@ static void cliAux(char *cmdline)
     len = strlen(cmdline);
     if (len == 0) {
         // print out aux channel settings
-        for (i = 0; i < CHECKBOXITEMS; i++)
+        for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
             printf("aux %u %u\r\n", i, cfg.activate[i]);
     } else {
         ptr = cmdline;
         i = atoi(ptr);
-        if (i < CHECKBOXITEMS) {
+        if (i < CHECKBOX_ITEM_COUNT) {
             ptr = strchr(cmdline, ' ');
             val = atoi(ptr);
             cfg.activate[i] = val;
         } else {
-            printf("Invalid Feature index: must be < %u\r\n", CHECKBOXITEMS);
+            printf("Invalid Feature index: must be < %u\r\n", CHECKBOX_ITEM_COUNT);
         }
     }
 }

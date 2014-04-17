@@ -6,7 +6,7 @@ static uint32_t buzzerLastToggleTime;
 static void beep(uint16_t pulse);
 static void beep_code(char first, char second, char third, char pause);
 
-void buzzer(uint8_t warn_vbat)
+void buzzer(bool warn_vbat)
 {
     static uint8_t beeperOnBox;
     static uint8_t warn_noGPSfix = 0;
@@ -52,12 +52,8 @@ void buzzer(uint8_t warn_vbat)
         beep_code('S','S','N','M');
     else if (beeperOnBox == 1)
         beep_code('S','S','S','M');                 // beeperon
-    else if (warn_vbat == 4)
+    else if (warn_vbat)
         beep_code('S','M','M','D');
-    else if (warn_vbat == 2)
-        beep_code('S','S','M','D');
-    else if (warn_vbat == 1)
-        beep_code('S','M','N','D');
     else if (warn_runtime == 1 && f.ARMED)
         beep_code('S','S','M','N');                 // Runtime warning
     else if (toggleBeep > 0)

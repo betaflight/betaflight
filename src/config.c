@@ -1,5 +1,6 @@
 #include "board.h"
 #include "mw.h"
+#include "config.h"
 
 #include <string.h>
 
@@ -193,9 +194,9 @@ static void resetConf(void)
     mcfg.max_angle_inclination = 500;    // 50 degrees
     mcfg.yaw_control_direction = 1;
     mcfg.moron_threshold = 32;
-    mcfg.vbatscale = 110;
-    mcfg.vbatmaxcellvoltage = 43;
-    mcfg.vbatmincellvoltage = 33;
+    mcfg.batteryConfig.vbatscale = 110;
+    mcfg.batteryConfig.vbatmaxcellvoltage = 43;
+    mcfg.batteryConfig.vbatmincellvoltage = 33;
     mcfg.power_adc_channel = 0;
     mcfg.serialrx_type = 0;
     mcfg.telemetry_provider = TELEMETRY_PROVIDER_FRSKY;

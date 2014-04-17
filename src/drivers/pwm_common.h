@@ -3,6 +3,7 @@
 #define MAX_MOTORS  12
 #define MAX_SERVOS  8
 #define MAX_INPUTS  8
+
 #define PULSE_1MS       (1000) // 1ms pulse width
 
 typedef struct drv_pwm_config_t {

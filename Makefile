@@ -42,6 +42,7 @@ BIN_DIR		 = $(ROOT)/obj
 
 # Source files common to all targets
 COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
+		   build_config.c \
 		   battery.c \
 		   boardalignment.c \
 		   buzzer.c \
