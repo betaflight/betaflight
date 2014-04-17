@@ -1,7 +1,5 @@
 #pragma once
 
-#define UART_BUFFER_SIZE    64
-
 #define UART1_RX_BUFFER_SIZE    256
 #define UART1_TX_BUFFER_SIZE    256
 #define UART2_RX_BUFFER_SIZE    128
