@@ -3,6 +3,8 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
+
 #include "accgyro_common.h"
 #include "system_common.h"
 
@@ -14,7 +16,6 @@
 
 #include "boardalignment.h"
 
-#include "maths.h"
 
 // MPU3050, Standard address 0x68
 #define MPU3050_ADDRESS         0x68

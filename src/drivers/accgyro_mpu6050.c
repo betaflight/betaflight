@@ -3,6 +3,8 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
+
 #include "accgyro_common.h"
 #include "system_common.h"
 #include "gpio_common.h"
@@ -14,8 +16,6 @@
 #include "bus_i2c.h"
 
 #include "boardalignment.h"
-
-#include "maths.h"
 
 // MPU6050, Standard address 0x68
 // MPU_INT on PB13 on rev4 hardware

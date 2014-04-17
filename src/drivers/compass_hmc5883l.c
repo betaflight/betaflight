@@ -6,15 +6,16 @@
 
 #include "platform.h"
 
+#include "common/axis.h"
+#include "common/maths.h"
+
 #include "system_common.h"
 #include "gpio_common.h"
 #include "bus_i2c.h"
 #include "light_led.h"
 
 #include "boardalignment.h"
-#include "axis.h"
 #include "sensors_common.h"
-#include "maths.h"
 
 #include "compass_hmc5883l.h"
 

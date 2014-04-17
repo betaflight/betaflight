@@ -16,12 +16,14 @@
 #include <stdio.h>
 
 #include "platform.h"
+
+#include "common/axis.h"
+
 #include "drivers/accgyro_common.h"
 #include "drivers/gpio_common.h"
 #include "drivers/system_common.h"
 #include "drivers/barometer_common.h"
 #include "sensors_common.h"
-#include "axis.h"
 
 #include "platform.h"
 #include "drivers/light_led.h"

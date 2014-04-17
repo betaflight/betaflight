@@ -1,10 +1,11 @@
 #include "board.h"
-#include "flight_common.h"
 #include "mw.h"
 
-#include "maths.h"
+#include "common/maths.h"
 
 #include "sensors_compass.h"
+
+#include "flight_common.h"
 
 int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];

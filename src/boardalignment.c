@@ -1,10 +1,10 @@
-#include "stdbool.h"
-#include "stdint.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <math.h>
 
-#include "math.h"
+#include "common/maths.h"
+#include "common/axis.h"
 
-#include "maths.h"
-#include "axis.h"
 #include "sensors_common.h"
 
 #include "boardalignment.h"

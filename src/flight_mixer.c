@@ -1,10 +1,11 @@
 #include "board.h"
-#include "flight_common.h"
 #include "mw.h"
+
+#include "common/maths.h"
 
 #include "rx_common.h"
 
-#include "maths.h"
+#include "flight_common.h"
 
 static uint8_t numberMotor = 0;
 int16_t motor[MAX_MOTORS];

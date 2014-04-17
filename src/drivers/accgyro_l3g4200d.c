@@ -3,10 +3,10 @@
 
 #include <platform.h>
 
-#include "accgyro_common.h"
-#include "axis.h"
-#include "sensors_common.h"
+#include "common/axis.h"
 
+#include "accgyro_common.h"
+#include "sensors_common.h"
 
 #include "accgyro_l3g4200d.h"
 
@@ -15,7 +15,7 @@
 
 #include "boardalignment.h"
 
-#include "maths.h"
+#include "common/maths.h"
 
 // L3G4200D, Standard address 0x68
 #define L3G4200D_ADDRESS         0x68

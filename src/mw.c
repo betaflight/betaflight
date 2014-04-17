@@ -1,14 +1,15 @@
 #include "board.h"
-#include "flight_common.h"
 #include "mw.h"
 
+#include "common/maths.h"
+
+#include "flight_common.h"
 #include "serial_cli.h"
 #include "telemetry_common.h"
 #include "typeconversion.h"
 #include "rx_common.h"
 #include "rx_sbus.h"
 #include "failsafe.h"
-#include "maths.h"
 
 // June 2013     V2.2-dev
 

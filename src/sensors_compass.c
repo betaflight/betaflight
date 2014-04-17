@@ -1,7 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
-#include "axis.h"
+#include "common/axis.h"
 
 int16_t magADC[XYZ_AXIS_COUNT];
 

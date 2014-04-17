@@ -7,12 +7,7 @@
 #include "rx_common.h"
 #include "config.h"
 
-// FIXME all includes below are just for pwmReadRawRC because it uses mcfg
-#ifdef FY90Q
-#include "drivers/pwm_fy90q.h"
-#else
 #include "drivers/pwm_common.h"
-#endif
 
 
 int16_t rcData[RC_CHANS];       // interval [1000;2000]

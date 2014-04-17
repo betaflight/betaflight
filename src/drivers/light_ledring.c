@@ -4,12 +4,13 @@
 
 #include "platform.h"
 
+#include "common/axis.h"
+#include "common/maths.h"
+
 #include "bus_i2c.h"
 #include "sensors_common.h"
-#include "axis.h"
 #include "flight_common.h"
 
-#include "maths.h"
 
 // Driver for DFRobot I2C Led Ring
 #define LED_RING_ADDRESS    0x6D

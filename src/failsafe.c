@@ -1,12 +1,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rx_common.h"
+#include "common/axis.h" // FIXME this file should not have a dependency axis
 
+#include "rx_common.h"
 
 #include "drivers/serial_common.h" // FIXME this file should not have a dependency on serial ports, see core_t from runtime_config.h
 #include "flight_mixer.h" // FIXME this file should not have a dependency on the flight mixer, see config_t, servoParam_t, etc from config_storage.h
-#include "axis.h" // FIXME this file should not have a dependency axis
 #include "flight_common.h" // FIXME this file should not have a dependency on the flight common, see config_t from config_storage.h
 #include "sensors_common.h" // FIXME this file should not have a dependency on the sensors, see sensor_align_e from config_storage.h
 #include "boardalignment.h" // FIXME this file should not have a dependency on board alignment

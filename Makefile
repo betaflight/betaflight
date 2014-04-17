@@ -47,6 +47,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   boardalignment.c \
 		   buzzer.c \
 		   config.c \
+		   common/maths.c \
 		   failsafe.c \
 		   main.c \
 		   mw.c \
@@ -57,7 +58,6 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   sensors_gyro.c \
 		   sensors_initialisation.c \
 		   sensors_sonar.c \
-		   maths.c \
 		   typeconversion.c \
 		   drivers/bus_i2c.c \
 		   drivers/bus_i2c_soft.c \

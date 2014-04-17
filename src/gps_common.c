@@ -1,8 +1,9 @@
 #include "board.h"
-#include "flight_common.h"
 #include "mw.h"
 
-#include "maths.h"
+#include "common/maths.h"
+
+#include "flight_common.h"
 
 #include "gps_common.h"
 
