@@ -1,5 +1,13 @@
-#include "board.h"
-#include "mw.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "system_common.h"
+#include "gpio_common.h"
+
+#include "sonar_hcsr04.h"
 
 #ifdef SONAR
 
