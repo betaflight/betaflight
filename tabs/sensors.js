@@ -47,45 +47,45 @@ function tab_initialize_sensors() {
 
         var helpers = {selector: selector, dynamicHeightDomain: !heightDomain};
 
-        helpers.widthScale = d3.scale.linear().
-            clamp(true).
-            domain([(sampleNumber - 299), sampleNumber]).
-            range([0, width]);
+        helpers.widthScale = d3.scale.linear()
+            .clamp(true)
+            .domain([(sampleNumber - 299), sampleNumber])
+            .range([0, width]);
 
-        helpers.heightScale = d3.scale.linear().
-            clamp(true).
-            domain(heightDomain || [1, -1]).
-            range([height, 0]);
+        helpers.heightScale = d3.scale.linear()
+            .clamp(true)
+            .domain(heightDomain || [1, -1])
+            .range([height, 0]);
 
-        helpers.xGrid = d3.svg.axis().
-            scale(helpers.widthScale).
-            orient("bottom").
-            ticks(5).
-            tickSize(-height, 0, 0).
-            tickFormat("");
+        helpers.xGrid = d3.svg.axis()
+            .scale(helpers.widthScale)
+            .orient("bottom")
+            .ticks(5)
+            .tickSize(-height, 0, 0)
+            .tickFormat("");
 
-        helpers.yGrid = d3.svg.axis().
-            scale(helpers.heightScale).
-            orient("left").
-            ticks(5).
-            tickSize(-width, 0, 0).
-            tickFormat("");
+        helpers.yGrid = d3.svg.axis()
+            .scale(helpers.heightScale)
+            .orient("left")
+            .ticks(5)
+            .tickSize(-width, 0, 0)
+            .tickFormat("");
 
-        helpers.xAxis = d3.svg.axis().
-            scale(helpers.widthScale).
-            ticks(5).
-            orient("bottom").
-            tickFormat(function(d) {return d;});
+        helpers.xAxis = d3.svg.axis()
+            .scale(helpers.widthScale)
+            .ticks(5)
+            .orient("bottom")
+            .tickFormat(function(d) {return d;});
 
-        helpers.yAxis = d3.svg.axis().
-            scale(helpers.heightScale).
-            ticks(5).
-            orient("left").
-            tickFormat(function(d) {return d;});
+        helpers.yAxis = d3.svg.axis()
+            .scale(helpers.heightScale)
+            .ticks(5)
+            .orient("left")
+            .tickFormat(function(d) {return d;});
 
-        helpers.line = d3.svg.line().
-            x(function(d) { return helpers.widthScale(d[0]); }).
-            y(function(d) { return helpers.heightScale(d[1]); });
+        helpers.line = d3.svg.line()
+            .x(function(d) { return helpers.widthScale(d[0]); })
+            .y(function(d) { return helpers.heightScale(d[1]); });
 
         return helpers;
     }
