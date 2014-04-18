@@ -142,7 +142,7 @@ int main(void)
         calibratingA = CALIBRATING_ACC_CYCLES;
     calibratingG = CALIBRATING_GYRO_CYCLES;
     calibratingB = CALIBRATING_BARO_CYCLES;             // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
-    f.SMALL_ANGLES_25 = 1;
+    f.SMALL_ANGLE = 1;
 
     // loopy
     while (1) {

@@ -41,7 +41,7 @@ typedef struct flags_t {
     uint8_t PASSTHRU_MODE;
     uint8_t GPS_FIX;
     uint8_t GPS_FIX_HOME;
-    uint8_t SMALL_ANGLES_25;
+    uint8_t SMALL_ANGLE;
     uint8_t CALIBRATE_MAG;
     uint8_t VARIO_MODE;
     uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
