@@ -258,6 +258,12 @@ void mixerLoadMix(int index)
     }
 }
 
+static void updateGimbalServos(void)
+{
+    pwmWriteServo(0, servo[0]);
+    pwmWriteServo(1, servo[1]);
+}
+
 void writeServos(void)
 {
     if (!core.useServo)
@@ -288,8 +294,7 @@ void writeServos(void)
             break;
 
         case MULTITYPE_GIMBAL:
-            pwmWriteServo(0, servo[0]);
-            pwmWriteServo(1, servo[1]);
+            updateGimbalServos();
             break;
 
         case MULTITYPE_DUALCOPTER:
@@ -308,8 +313,7 @@ void writeServos(void)
         default:
             // Two servos for SERVO_TILT, if enabled
             if (feature(FEATURE_SERVO_TILT)) {
-                pwmWriteServo(0, servo[0]);
-                pwmWriteServo(1, servo[1]);
+                updateGimbalServos();
             }
             break;
     }
