@@ -52,3 +52,5 @@ typedef struct servoParam_t {
     int8_t rate;                            // range [-100;+100] ; can be used to ajust a rate 0-100% and a direction
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
+
+bool isMixerUsingServos(void);

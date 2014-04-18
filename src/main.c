@@ -1,5 +1,6 @@
 #include "board.h"
 #include "flight_common.h"
+#include "flight_mixer.h"
 #include "mw.h"
 
 #include "gps_common.h"
@@ -44,7 +45,7 @@ int main(void)
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
 
-    mixerInit(); // this will set core.useServo var depending on mixer type
+    mixerInit();
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (mcfg.mixerConfiguration == MULTITYPE_AIRPLANE || mcfg.mixerConfiguration == MULTITYPE_FLYING_WING)
         pwm_params.airplane = true;
@@ -54,7 +55,7 @@ int main(void)
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SERIALRX); // disable inputs if using spektrum
-    pwm_params.useServos = core.useServo;
+    pwm_params.useServos = isMixerUsingServos();
     pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = mcfg.motor_pwm_rate;
     pwm_params.servoPwmRate = mcfg.servo_pwm_rate;

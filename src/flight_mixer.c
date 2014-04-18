@@ -12,6 +12,8 @@ int16_t motor[MAX_MOTORS];
 int16_t motor_disarmed[MAX_MOTORS];
 int16_t servo[MAX_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
+static int useServo;
+
 static motorMixer_t currentMixer[MAX_MOTORS];
 
 static const motorMixer_t mixerTri[] = {
@@ -189,10 +191,10 @@ void mixerInit(void)
     int i;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    core.useServo = mixers[mcfg.mixerConfiguration].useServo;
+    useServo = mixers[mcfg.mixerConfiguration].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (feature(FEATURE_SERVO_TILT))
-        core.useServo = 1;
+        useServo = 1;
 
     if (mcfg.mixerConfiguration == MULTITYPE_CUSTOM) {
         // load custom mixer into currentMixer
@@ -266,7 +268,7 @@ static void updateGimbalServos(void)
 
 void writeServos(void)
 {
-    if (!core.useServo)
+    if (!useServo)
         return;
 
     switch (mcfg.mixerConfiguration) {
@@ -520,4 +522,9 @@ void mixTable(void)
             motor[i] = motor_disarmed[i];
         }
     }
+}
+
+bool isMixerUsingServos(void)
+{
+    return useServo;
 }
