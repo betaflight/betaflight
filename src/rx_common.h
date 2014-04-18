@@ -43,8 +43,27 @@ typedef struct rxConfig_s {
     uint16_t maxcheck;                      // maximum rc end
 } rxConfig_t;
 
+typedef struct controlRateConfig_s {
+    uint8_t rcRate8;
+    uint8_t rcExpo8;
+    uint8_t thrMid8;
+    uint8_t thrExpo8;
+    uint8_t rollPitchRate;
+    uint8_t yawRate;
+} controlRateConfig_t;
+
+#define PITCH_LOOKUP_LENGTH 7
+#define THROTTLE_LOOKUP_LENGTH 12
+extern int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];   // lookup table for expo & RC rate PITCH+ROLL
+extern int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
+
 typedef uint16_t (* rcReadRawDataPtr)(rxConfig_t *rxConfig, uint8_t chan);        // used by receiver driver to return channel data
 
 uint16_t pwmReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
 void computeRC(rxConfig_t *rxConfig);
+
+void generatePitchCurve(controlRateConfig_t *controlRateConfig);
+void generateThrottleCurve(controlRateConfig_t *controlRateConfig, uint16_t minThrottle, uint16_t maxThrottle);
+
+void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 

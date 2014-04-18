@@ -2,6 +2,7 @@
 #include "flight_common.h"
 #include "mw.h"
 
+#include "gps_common.h"
 #include "rx_sbus.h"
 #include "rx_sumd.h"
 #include "rx_spektrum.h"

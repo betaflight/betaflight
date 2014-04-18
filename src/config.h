@@ -41,3 +41,6 @@ void featureClear(uint32_t mask);
 void featureClearAll(void);
 uint32_t featureMask(void);
 
+void readEEPROM(void);
+void writeEEPROM(uint8_t b, uint8_t updateProfile);
+void checkFirstTime(bool reset);

@@ -6,13 +6,7 @@ typedef struct config_t {
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    uint8_t rcRate8;
-    uint8_t rcExpo8;
-    uint8_t thrMid8;
-    uint8_t thrExpo8;
-
-    uint8_t rollPitchRate;
-    uint8_t yawRate;
+    controlRateConfig_t controlRateConfig;
 
     uint8_t dynThrPID;
     uint16_t tpaBreakPoint;                  // Breakpoint where TPA is activated
@@ -85,6 +79,7 @@ typedef struct master_t {
     uint16_t deadband3d_high;               // max 3d value
     uint16_t neutral3d;                     // center 3d value
     uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
+
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
 

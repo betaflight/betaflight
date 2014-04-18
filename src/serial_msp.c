@@ -1,6 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
+#include "gps_common.h"
 #include "serial_cli.h"
 #include "telemetry_common.h"
 #include "flight_common.h"
@@ -318,13 +319,13 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_RC_TUNING:
-        cfg.rcRate8 = read8();
-        cfg.rcExpo8 = read8();
-        cfg.rollPitchRate = read8();
-        cfg.yawRate = read8();
+        cfg.controlRateConfig.rcRate8 = read8();
+        cfg.controlRateConfig.rcExpo8 = read8();
+        cfg.controlRateConfig.rollPitchRate = read8();
+        cfg.controlRateConfig.yawRate = read8();
         cfg.dynThrPID = read8();
-        cfg.thrMid8 = read8();
-        cfg.thrExpo8 = read8();
+        cfg.controlRateConfig.thrMid8 = read8();
+        cfg.controlRateConfig.thrExpo8 = read8();
         headSerialReply(0);
         break;
     case MSP_SET_MISC:
@@ -479,13 +480,13 @@ static void evaluateCommand(void)
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
-        serialize8(cfg.rcRate8);
-        serialize8(cfg.rcExpo8);
-        serialize8(cfg.rollPitchRate);
-        serialize8(cfg.yawRate);
+        serialize8(cfg.controlRateConfig.rcRate8);
+        serialize8(cfg.controlRateConfig.rcExpo8);
+        serialize8(cfg.controlRateConfig.rollPitchRate);
+        serialize8(cfg.controlRateConfig.yawRate);
         serialize8(cfg.dynThrPID);
-        serialize8(cfg.thrMid8);
-        serialize8(cfg.thrExpo8);
+        serialize8(cfg.controlRateConfig.thrMid8);
+        serialize8(cfg.controlRateConfig.thrExpo8);
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);

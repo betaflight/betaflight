@@ -44,6 +44,7 @@
 #include "board.h"
 #include "mw.h"
 
+#include "gps_common.h"
 #include "telemetry_hott.h"
 
 

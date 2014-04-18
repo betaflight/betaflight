@@ -80,6 +80,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   typeconversion.c \
 		   serial_cli.c \
 		   serial_msp.c \
+		   statusindicator.c \
 		   $(CMSIS_SRC) \
 		   $(STDPERIPH_SRC)
 

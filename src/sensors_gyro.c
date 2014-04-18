@@ -4,7 +4,7 @@
 #include "common/maths.h"
 
 #include "flight_common.h"
-
+#include "statusindicator.h"
 
 void GYRO_Common(void)
 {
@@ -37,7 +37,7 @@ void GYRO_Common(void)
                     continue;
                 }
                 gyroZero[axis] = (g[axis] + (CALIBRATING_GYRO_CYCLES / 2)) / CALIBRATING_GYRO_CYCLES;
-                blinkLED(10, 15, 1);
+                blinkLedAndSoundBeeper(10, 15, 1);
             }
         }
         calibratingG--;

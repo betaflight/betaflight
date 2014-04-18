@@ -6,6 +6,8 @@
 
 #include "flight_common.h"
 
+#include "gps_common.h"
+
 #include "telemetry_common.h"
 #include "telemetry_frsky.h"
 

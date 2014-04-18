@@ -243,7 +243,8 @@ static void GPS_calc_nav_rate(int max_speed);
 static void GPS_update_crosstrack(void);
 static bool UBLOX_parse_gps(void);
 static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow);
-int32_t wrap_18000(int32_t error);
+
+static int32_t wrap_18000(int32_t error);
 static int32_t wrap_36000(int32_t angle);
 
 typedef struct {
@@ -785,7 +786,7 @@ static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow)
 ////////////////////////////////////////////////////////////////////////////////////
 // Utilities
 //
-int32_t wrap_18000(int32_t error)
+static int32_t wrap_18000(int32_t error)
 {
     if (error > 18000)
         error -= 36000;
@@ -1264,4 +1265,19 @@ static bool UBLOX_parse_gps(void)
         return true;
     }
     return false;
+}
+
+void updateGpsState(void)
+{
+    float sin_yaw_y = sinf(heading * 0.0174532925f);
+    float cos_yaw_x = cosf(heading * 0.0174532925f);
+    if (cfg.nav_slew_rate) {
+        nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -cfg.nav_slew_rate, cfg.nav_slew_rate); // TODO check this on uint8
+        nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -cfg.nav_slew_rate, cfg.nav_slew_rate);
+        GPS_angle[ROLL] = (nav_rated[LON] * cos_yaw_x - nav_rated[LAT] * sin_yaw_y) / 10;
+        GPS_angle[PITCH] = (nav_rated[LON] * sin_yaw_y + nav_rated[LAT] * cos_yaw_x) / 10;
+    } else {
+        GPS_angle[ROLL] = (nav[LON] * cos_yaw_x - nav[LAT] * sin_yaw_y) / 10;
+        GPS_angle[PITCH] = (nav[LON] * sin_yaw_y + nav[LAT] * cos_yaw_x) / 10;
+    }
 }

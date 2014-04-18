@@ -9,9 +9,6 @@
 
 #define  VERSION  230
 
-#define LAT  0
-#define LON  1
-
 // Serial GPS only variables
 // navigation mode
 typedef enum NavigationMode
@@ -21,40 +18,7 @@ typedef enum NavigationMode
     NAV_MODE_WP
 } NavigationMode;
 
-// Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
-typedef enum MultiType
-{
-    MULTITYPE_TRI = 1,
-    MULTITYPE_QUADP = 2,
-    MULTITYPE_QUADX = 3,
-    MULTITYPE_BI = 4,
-    MULTITYPE_GIMBAL = 5,
-    MULTITYPE_Y6 = 6,
-    MULTITYPE_HEX6 = 7,
-    MULTITYPE_FLYING_WING = 8,
-    MULTITYPE_Y4 = 9,
-    MULTITYPE_HEX6X = 10,
-    MULTITYPE_OCTOX8 = 11,          // Java GUI is same for the next 3 configs
-    MULTITYPE_OCTOFLATP = 12,       // MultiWinGui shows this differently
-    MULTITYPE_OCTOFLATX = 13,       // MultiWinGui shows this differently
-    MULTITYPE_AIRPLANE = 14,        // airplane / singlecopter / dualcopter (not yet properly supported)
-    MULTITYPE_HELI_120_CCPM = 15,
-    MULTITYPE_HELI_90_DEG = 16,
-    MULTITYPE_VTAIL4 = 17,
-    MULTITYPE_HEX6H = 18,
-    MULTITYPE_PPM_TO_SERVO = 19,    // PPM -> servo relay 
-    MULTITYPE_DUALCOPTER = 20,
-    MULTITYPE_SINGLECOPTER = 21,
-    MULTITYPE_CUSTOM = 22,          // no current GUI displays this
-    MULTITYPE_LAST = 23
-} MultiType;
-
-typedef enum GimbalFlags {
-    GIMBAL_NORMAL = 1 << 0,
-    GIMBAL_MIXTILT = 1 << 1,
-    GIMBAL_FORWARDAUX = 1 << 2,
-} GimbalFlags;
-
+#include "gimbal.h"
 #include "flight_mixer.h"
 
 enum {
@@ -105,11 +69,6 @@ extern uint8_t vbat;
 extern int16_t telemTemperature1;      // gyro sensor temperature
 extern uint8_t toggleBeep;
 
-#define PITCH_LOOKUP_LENGTH 7
-#define THROTTLE_LOOKUP_LENGTH 12
-extern int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];   // lookup table for expo & RC rate PITCH+ROLL
-extern int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
-
 // GPS stuff
 extern int32_t  GPS_coord[2];
 extern int32_t  GPS_home[2];
@@ -143,7 +102,6 @@ void loop(void);
 void imuInit(void);
 void annexCode(void);
 void computeIMU(void);
-void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat);
 int getEstimatedAltitude(void);
 
 // Sensors
@@ -169,26 +127,9 @@ void mixTable(void);
 void serialInit(uint32_t baudrate);
 void serialCom(void);
 
-// Config
-void parseRcChannels(const char *input);
-void readEEPROM(void);
-void writeEEPROM(uint8_t b, uint8_t updateProfile);
-void checkFirstTime(bool reset);
-
 // buzzer
 void buzzer(bool warn_vbat);
 void systemBeep(bool onoff);
 
 // cli
 void cliProcess(void);
-
-// gps
-void gpsInit(uint8_t baudrate);
-void gpsThread(void);
-void gpsSetPIDs(void);
-int8_t gpsSetPassthrough(void);
-void GPS_reset_home_position(void);
-void GPS_reset_nav(void);
-void GPS_set_next_wp(int32_t* lat, int32_t* lon);
-int32_t wrap_18000(int32_t error);
-

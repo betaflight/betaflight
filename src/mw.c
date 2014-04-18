@@ -7,11 +7,13 @@
 #include "serial_cli.h"
 #include "telemetry_common.h"
 #include "typeconversion.h"
+#include "gps_common.h"
 #include "rx_common.h"
 #include "rx_sbus.h"
 #include "rx_sumd.h"
 #include "rx_spektrum.h"
 #include "failsafe.h"
+#include "statusindicator.h"
 
 // June 2013     V2.2-dev
 
@@ -24,8 +26,6 @@ int16_t headFreeModeHold;
 int16_t telemTemperature1;      // gyro sensor temperature
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
-int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
-int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 uint16_t rssi;                  // range: [0;1023]
 
 static void pidMultiWii(void);
@@ -65,21 +65,6 @@ bool AccInflightCalibrationSavetoEEProm = false;
 bool AccInflightCalibrationActive = false;
 uint16_t InflightcalibratingA = 0;
 
-void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat)
-{
-    uint8_t i, r;
-
-    for (r = 0; r < repeat; r++) {
-        for (i = 0; i < num; i++) {
-            LED0_TOGGLE;            // switch LEDPIN state
-            BEEP_ON;
-            delay(wait);
-            BEEP_OFF;
-        }
-        delay(60);
-    }
-}
-
 void annexCode(void)
 {
     static uint32_t calibratedAccTime;
@@ -114,7 +99,7 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t)cfg.rollPitchRate * tmp / 500;
+            prop1 = 100 - (uint16_t)cfg.controlRateConfig.rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         } else {                // YAW
             if (cfg.yawdeadband) {
@@ -125,7 +110,7 @@ void annexCode(void)
                 }
             }
             rcCommand[axis] = tmp * -mcfg.yaw_control_direction;
-            prop1 = 100 - (uint16_t)cfg.yawRate * abs(tmp) / 500;
+            prop1 = 100 - (uint16_t)cfg.controlRateConfig.yawRate * abs(tmp) / 500;
         }
         dynP8[axis] = (uint16_t)cfg.P8[axis] * prop1 / 100;
         dynI8[axis] = (uint16_t)cfg.I8[axis] * prop1 / 100;
@@ -222,7 +207,7 @@ static void mwArm(void)
             headFreeModeHold = heading;
         }
     } else if (!f.ARMED) {
-        blinkLED(2, 255, 1);
+        blinkLedAndSoundBeeper(2, 255, 1);
     }
 }
 
@@ -311,10 +296,10 @@ static void pidRewrite(void)
             errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int)mcfg.max_angle_inclination), +mcfg.max_angle_inclination) - angle[axis] + cfg.angleTrim[axis]; // 16 bits is ok here
         }
         if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = (((int32_t)(cfg.yawRate + 27) * rcCommand[2]) >> 5);
+            AngleRateTmp = (((int32_t)(cfg.controlRateConfig.yawRate + 27) * rcCommand[2]) >> 5);
          } else {
             if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
-                AngleRateTmp = ((int32_t) (cfg.rollPitchRate + 27) * rcCommand[axis]) >> 4;
+                AngleRateTmp = ((int32_t) (cfg.controlRateConfig.rollPitchRate + 27) * rcCommand[axis]) >> 4;
                 if (f.HORIZON_MODE) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel
                     AngleRateTmp += (errorAngle * cfg.I8[PIDLEVEL]) >> 8;
@@ -507,7 +492,7 @@ void loop(void)
                 if (i) {
                     mcfg.current_profile = i - 1;
                     writeEEPROM(0, false);
-                    blinkLED(2, 40, i);
+                    blinkLedAndSoundBeeper(2, 40, i);
                     // TODO alarmArray[0] = i;
                 }
 
@@ -816,17 +801,7 @@ void loop(void)
 
         if (sensors(SENSOR_GPS)) {
             if ((f.GPS_HOME_MODE || f.GPS_HOLD_MODE) && f.GPS_FIX_HOME) {
-                float sin_yaw_y = sinf(heading * 0.0174532925f);
-                float cos_yaw_x = cosf(heading * 0.0174532925f);
-                if (cfg.nav_slew_rate) {
-                    nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -cfg.nav_slew_rate, cfg.nav_slew_rate); // TODO check this on uint8
-                    nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -cfg.nav_slew_rate, cfg.nav_slew_rate);
-                    GPS_angle[ROLL] = (nav_rated[LON] * cos_yaw_x - nav_rated[LAT] * sin_yaw_y) / 10;
-                    GPS_angle[PITCH] = (nav_rated[LON] * sin_yaw_y + nav_rated[LAT] * cos_yaw_x) / 10;
-                } else {
-                    GPS_angle[ROLL] = (nav[LON] * cos_yaw_x - nav[LAT] * sin_yaw_y) / 10;
-                    GPS_angle[PITCH] = (nav[LON] * sin_yaw_y + nav[LAT] * cos_yaw_x) / 10;
-                }
+                updateGpsState();
             }
         }
 

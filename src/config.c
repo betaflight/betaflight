@@ -1,16 +1,33 @@
-#include "board.h"
-#include "flight_common.h"
-#include "mw.h"
-
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
+#include "platform.h"
+
+#include "common/axis.h"
+#include "flight_common.h"
+
+#include "drivers/system_common.h"
+
+#include "statusindicator.h"
 #include "sensors_acceleration.h"
 #include "telemetry_common.h"
 #include "gps_common.h"
 
-#include "config_storage.h"
-#include "config.h"
+#include "drivers/serial_common.h"
+#include "flight_mixer.h"
+#include "sensors_common.h"
+#include "boardalignment.h"
+#include "battery.h"
+#include "gimbal.h"
+#include "rx_common.h"
+#include "gps_common.h"
 
+#include "runtime_config.h"
+#include "config.h"
+#include "config_storage.h"
+
+void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 
 #ifndef FLASH_PAGE_COUNT
 #define FLASH_PAGE_COUNT 128
@@ -21,21 +38,9 @@
 
 master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
-const char rcChannelLetters[] = "AERT1234";
 
 static const uint8_t EEPROM_CONF_VERSION = 62;
 static void resetConf(void);
-
-void parseRcChannels(const char *input)
-{
-    const char *c, *s;
-
-    for (c = input; *c; c++) {
-        s = strchr(rcChannelLetters, *c);
-        if (s)
-            mcfg.rxConfig.rcmap[s - rcChannelLetters] = c - input;
-    }
-}
 
 static uint8_t validEEPROM(void)
 {
@@ -65,8 +70,6 @@ static uint8_t validEEPROM(void)
 
 void readEEPROM(void)
 {
-    uint8_t i;
-
     // Sanity check
     if (!validEEPROM())
         failureMode(10);
@@ -78,19 +81,8 @@ void readEEPROM(void)
         mcfg.current_profile = 0;
     memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t));
 
-    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
-        lookupPitchRollRC[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t) cfg.rcRate8 / 2500;
-
-    for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
-        int16_t tmp = 10 * i - cfg.thrMid8;
-        uint8_t y = 1;
-        if (tmp > 0)
-            y = 100 - cfg.thrMid8;
-        if (tmp < 0)
-            y = cfg.thrMid8;
-        lookupThrottleRC[i] = 10 * cfg.thrMid8 + tmp * (100 - cfg.thrExpo8 + (int32_t) cfg.thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = mcfg.minthrottle + (int32_t) (mcfg.maxthrottle - mcfg.minthrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
-    }
+    generatePitchCurve(&cfg.controlRateConfig);
+    generateThrottleCurve(&cfg.controlRateConfig, mcfg.minthrottle, mcfg.maxthrottle);
 
     setPIDController(cfg.pidController);
     gpsSetPIDs();
@@ -150,7 +142,7 @@ retry:
     // re-read written data
     readEEPROM();
     if (b)
-        blinkLED(15, 20, 1);
+        blinkLedAndSoundBeeper(15, 20, 1);
 }
 
 void checkFirstTime(bool reset)
@@ -260,14 +252,14 @@ static void resetConf(void)
     cfg.P8[PIDVEL] = 120;
     cfg.I8[PIDVEL] = 45;
     cfg.D8[PIDVEL] = 1;
-    cfg.rcRate8 = 90;
-    cfg.rcExpo8 = 65;
-    cfg.rollPitchRate = 0;
-    cfg.yawRate = 0;
+    cfg.controlRateConfig.rcRate8 = 90;
+    cfg.controlRateConfig.rcExpo8 = 65;
+    cfg.controlRateConfig.rollPitchRate = 0;
+    cfg.controlRateConfig.yawRate = 0;
     cfg.dynThrPID = 0;
     cfg.tpaBreakPoint = 1500;
-    cfg.thrMid8 = 50;
-    cfg.thrExpo8 = 0;
+    cfg.controlRateConfig.thrMid8 = 50;
+    cfg.controlRateConfig.thrExpo8 = 0;
     // for (i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
     cfg.angleTrim[0] = 0;
@@ -283,7 +275,7 @@ static void resetConf(void)
     cfg.acc_unarmedcal = 1;
 
     // Radio
-    parseRcChannels("AETR1234");
+    parseRcChannels("AETR1234", &mcfg.rxConfig);
     cfg.deadband = 0;
     cfg.yawdeadband = 0;
     cfg.alt_hold_throttle_neutral = 40;
@@ -324,7 +316,7 @@ static void resetConf(void)
     mcfg.reboot_character = 'R';
 
     // custom mixer. clear by defaults.
-    for (i = 0; i < MAX_MOTORS; i++)
+    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         mcfg.customMixer[i].throttle = 0.0f;
 
     // copy default config into all 3 profiles
