@@ -132,9 +132,14 @@ static void mpu6050AccRead(int16_t *accData);
 static void mpu6050GyroInit(sensor_align_e align);
 static void mpu6050GyroRead(int16_t *gyroData);
 
-static uint8_t mpuAccelHalf = 0;
+typedef enum {
+    MPU_6050_HALF_RESOLUTION,
+    MPU_6050_FULL_RESOLUTION
+} mpu6050Resolution_e;
 
-bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)
+static mpu6050Resolution_e mpuAccelTrim;
+
+bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf)
 {
     bool ack;
     uint8_t sig, rev;
@@ -150,8 +155,12 @@ bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)
     // The contents of WHO_AM_I are the upper 6 bits of the MPU-60X0’s 7-bit I2C address.
     // The least significant bit of the MPU-60X0’s I2C address is determined by the value of the AD0 pin. (we know that already).
     // But here's the best part: The value of the AD0 pin is not reflected in this register.
+
     if (sig != (MPU6050_ADDRESS & 0x7e))
         return false;
+
+    // There is a map of revision contained in the android source tree which is quite comprehensive and may help to understand this code
+    // See https://android.googlesource.com/kernel/msm.git/+/eaf36994a3992b8f918c18e4f7411e8b2320a35f/drivers/misc/mpu6050/mldl_cfg.c
 
     // determine product ID and accel revision
     i2cRead(MPU6050_ADDRESS, MPU_RA_XA_OFFS_H, 6, tmp);
@@ -159,9 +168,9 @@ bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)
     if (rev) {
         /* Congrats, these parts are better. */
         if (rev == 1) {
-            mpuAccelHalf = 1;
+            mpuAccelTrim = MPU_6050_HALF_RESOLUTION;
         } else if (rev == 2) {
-            mpuAccelHalf = 0;
+            mpuAccelTrim = MPU_6050_FULL_RESOLUTION;
         } else {
             failureMode(5);
         }
@@ -171,23 +180,20 @@ bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)
         if (!rev) {
             failureMode(5);
         } else if (rev == 4) {
-            mpuAccelHalf = 1;
+            mpuAccelTrim = MPU_6050_HALF_RESOLUTION;
         } else {
-            mpuAccelHalf = 0;
+            mpuAccelTrim = MPU_6050_FULL_RESOLUTION;
         }
     }
 
     acc->init = mpu6050AccInit;
     acc->read = mpu6050AccRead;
+    acc->revisionCode = (mpuAccelTrim == MPU_6050_HALF_RESOLUTION  ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES.
     gyro->init = mpu6050GyroInit;
     gyro->read = mpu6050GyroRead;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = (4.0f / 16.4f) * (M_PI / 180.0f) * 0.000001f;
-
-    // give halfacc (old revision) back to system
-    if (scale)
-        *scale = mpuAccelHalf;
 
     // default lpf is 42Hz
     switch (lpf) {
@@ -220,10 +226,14 @@ bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf, uint8_t *scale)
 
 static void mpu6050AccInit(sensor_align_e align)
 {
-    if (mpuAccelHalf)
-        acc_1G = 255 * 8;
-    else
-        acc_1G = 512 * 8;
+    switch(mpuAccelTrim) {
+        case MPU_6050_HALF_RESOLUTION:
+            acc_1G = 256 * 8;
+            break;
+        case MPU_6050_FULL_RESOLUTION:
+            acc_1G = 512 * 8;
+            break;
+    }
 
     if (align > 0)
         accAlign = align;

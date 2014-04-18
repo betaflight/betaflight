@@ -4,6 +4,10 @@
 
 #include "mw.h"
 
+#include "sensors_acceleration.h"
+
+sensor_t acc;                       // acc access functions
+uint8_t accHardware = ACC_DEFAULT;  // which accel chip is used/detected
 
 uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 

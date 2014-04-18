@@ -10,6 +10,7 @@
 #include "drivers/system_common.h"
 
 #include "statusindicator.h"
+#include "sensors_common.h"
 #include "sensors_acceleration.h"
 #include "telemetry_common.h"
 #include "gps_common.h"

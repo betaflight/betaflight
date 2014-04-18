@@ -90,9 +90,6 @@ extern uint8_t  GPS_svinfo_quality[16];                      // Bitfield Qualtit
 extern uint8_t  GPS_svinfo_cno[16];                          // Carrier to Noise Ratio (Signal Strength)
 
 extern flags_t f;
-extern sensor_t acc;
-extern sensor_t gyro;
-extern baro_t baro;
 
 // main
 void setPIDController(int type);

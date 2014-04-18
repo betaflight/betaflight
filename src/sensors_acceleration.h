@@ -10,5 +10,9 @@ typedef enum AccelSensors {
     ACC_NONE = 5
 } AccelSensors;
 
+extern uint8_t accHardware;
+extern sensor_t acc;
+
 void ACC_Common(void);
 void ACC_getADC(void);
+

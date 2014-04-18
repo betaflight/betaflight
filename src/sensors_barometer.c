@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mw.h"
 
+baro_t baro;                        // barometer access functions
+
 #ifdef BARO
 void Baro_Common(void)
 {

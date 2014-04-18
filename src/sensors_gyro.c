@@ -6,6 +6,8 @@
 #include "flight_common.h"
 #include "statusindicator.h"
 
+sensor_t gyro;                      // gyro access functions
+
 void GYRO_Common(void)
 {
     int axis;

@@ -3,6 +3,7 @@
 
 #include "common/maths.h"
 
+#include "sensors_gyro.h"
 #include "sensors_compass.h"
 
 #include "flight_common.h"

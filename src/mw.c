@@ -4,6 +4,7 @@
 #include "common/maths.h"
 #include "common/typeconversion.h"
 
+#include "sensors_gyro.h"
 #include "flight_common.h"
 #include "serial_cli.h"
 #include "telemetry_common.h"

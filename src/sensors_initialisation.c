@@ -2,6 +2,10 @@
 #include "mw.h"
 
 #include "sensors_acceleration.h"
+#include "sensors_barometer.h"
+#include "sensors_gyro.h"
+
+#include "sensors_common.h"
 
 uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 uint16_t calibratingG = 0;
@@ -12,15 +16,12 @@ extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
 extern float magneticDeclination;
 
-sensor_t acc;                       // acc access functions
-sensor_t gyro;                      // gyro access functions
-baro_t baro;                        // barometer access functions
-uint8_t accHardware = ACC_DEFAULT;  // which accel chip is used/detected
-
 #ifdef FY90Q
 // FY90Q analog gyro/acc
 void sensorsAutodetect(void)
 {
+    memset(&acc, sizeof(acc), 0);
+    memset(&gyro, sizeof(gyro), 0);
     adcSensorInit(&acc, &gyro);
 }
 #else
@@ -31,8 +32,11 @@ void sensorsAutodetect(void)
     drv_adxl345_config_t acc_params;
     bool haveMpu6k = false;
 
+    memset(&acc, sizeof(acc), 0);
+    memset(&gyro, sizeof(gyro), 0);
+
     // Autodetect gyro hardware. We have MPU3050 or MPU6050.
-    if (mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &core.mpu6050_scale)) {
+    if (mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf)) {
         // this filled up  acc.* struct with init values
         haveMpu6k = true;
     } else if (l3g4200dDetect(&gyro, mcfg.gyro_lpf)) {
@@ -60,7 +64,7 @@ retry:
             ; // fallthrough
         case ACC_MPU6050: // MPU6050
             if (haveMpu6k) {
-                mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf, &core.mpu6050_scale); // yes, i'm rerunning it again.  re-fill acc struct
+                mpu6050Detect(&acc, &gyro, mcfg.gyro_lpf); // yes, i'm rerunning it again.  re-fill acc struct
                 accHardware = ACC_MPU6050;
                 if (mcfg.acc_hardware == ACC_MPU6050)
                     break;

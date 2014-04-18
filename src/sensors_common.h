@@ -31,6 +31,7 @@ typedef struct sensor_t
     sensorReadFuncPtr read;                                 // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
     float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
+    char revisionCode;                                      // a revision code for the sensor, if known
 } sensor_t;
 
 extern int16_t heading;

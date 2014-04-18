@@ -30,7 +30,6 @@ static void cliVersion(char *cmdline);
 
 // from sensors.c
 extern uint8_t batteryCellCount;
-extern uint8_t accHardware;
 
 // from config.c RC Channel mapping
 extern const char rcChannelLetters[];
@@ -996,8 +995,8 @@ static void cliStatus(char *cmdline)
     }
     if (sensors(SENSOR_ACC)) {
         printf("ACCHW: %s", accNames[accHardware]);
-        if (accHardware == ACC_MPU6050)
-            printf(".%c", core.mpu6050_scale ? 'o' : 'n');
+        if (acc.revisionCode)
+            printf(".%c", acc.revisionCode);
     }
     cliPrint("\r\n");
 
