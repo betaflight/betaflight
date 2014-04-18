@@ -39,7 +39,7 @@ void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 62;
+static const uint8_t EEPROM_CONF_VERSION = 63;
 static void resetConf(void);
 
 static uint8_t validEEPROM(void)
@@ -291,10 +291,11 @@ static void resetConf(void)
 
     // servos
     for (i = 0; i < 8; i++) {
-        cfg.servoConf[i].min = 1020;
-        cfg.servoConf[i].max = 2000;
-        cfg.servoConf[i].middle = 1500;
+        cfg.servoConf[i].min = DEFAULT_SERVO_MIN;
+        cfg.servoConf[i].max = DEFAULT_SERVO_MAX;
+        cfg.servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
         cfg.servoConf[i].rate = servoRates[i];
+        cfg.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
     cfg.yaw_direction = 1;

@@ -155,14 +155,19 @@ const mixer_t mixers[] = {
     { 0, 0, NULL },                // MULTITYPE_CUSTOM
 };
 
-int16_t servoMiddle(int nr)
+int16_t determineServoMiddleOrForwardFromChannel(int nr)
 {
-    // Normally, servo.middle is a value between 1000..2000, but for the purposes of stupid, if it's less than
-    // the number of RC channels, it means the center value is taken FROM that RC channel (by its index)
-    if (cfg.servoConf[nr].middle < MAX_SUPPORTED_RC_CHANNEL_COUNT && nr < MAX_SERVOS)
-        return rcData[cfg.servoConf[nr].middle];
-    else
+    uint8_t channelToForwardFrom = cfg.servoConf[nr].forwardFromChannel;
+
+    if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom << MAX_SUPPORTED_RC_CHANNEL_COUNT) {
+        return rcData[channelToForwardFrom];
+    }
+
+    if (nr < MAX_SERVOS) {
         return cfg.servoConf[nr].middle;
+    }
+
+    return DEFAULT_SERVO_MIDDLE;
 }
 
 int servoDirection(int nr, int lr)
@@ -350,7 +355,7 @@ static void airplaneMixer(void)
         // configure SERVO3 middle point in GUI to using an AUX channel for FLAPS control
         // use servo min, servo max and servo rate for proper endpoints adjust
         static int16_t slow_LFlaps;
-        int16_t lFlap = servoMiddle(2);
+        int16_t lFlap = determineServoMiddleOrForwardFromChannel(2);
 
         lFlap = constrain(lFlap, cfg.servoConf[2].min, cfg.servoConf[2].max);
         lFlap = mcfg.rxConfig.midrc - lFlap; // shouldn't this be servoConf[2].middle?
@@ -377,7 +382,7 @@ static void airplaneMixer(void)
     }
     for (i = 3; i < 7; i++) {
         servo[i] = ((int32_t)cfg.servoConf[i].rate * servo[i]) / 100L; // servo rates
-        servo[i] += servoMiddle(i);
+        servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
 }
 
@@ -399,17 +404,17 @@ void mixTable(void)
     // airplane / servo mixes
     switch (mcfg.mixerConfiguration) {
         case MULTITYPE_BI:
-            servo[4] = (servoDirection(4, 2) * axisPID[YAW]) + (servoDirection(4, 1) * axisPID[PITCH]) + servoMiddle(4);     // LEFT
-            servo[5] = (servoDirection(5, 2) * axisPID[YAW]) + (servoDirection(5, 1) * axisPID[PITCH]) + servoMiddle(5);     // RIGHT
+            servo[4] = (servoDirection(4, 2) * axisPID[YAW]) + (servoDirection(4, 1) * axisPID[PITCH]) + determineServoMiddleOrForwardFromChannel(4);     // LEFT
+            servo[5] = (servoDirection(5, 2) * axisPID[YAW]) + (servoDirection(5, 1) * axisPID[PITCH]) + determineServoMiddleOrForwardFromChannel(5);     // RIGHT
             break;
 
         case MULTITYPE_TRI:
-            servo[5] = (servoDirection(5, 1) * axisPID[YAW]) + servoMiddle(5); // REAR
+            servo[5] = (servoDirection(5, 1) * axisPID[YAW]) + determineServoMiddleOrForwardFromChannel(5); // REAR
             break;
 
         case MULTITYPE_GIMBAL:
-            servo[0] = (((int32_t)cfg.servoConf[0].rate * angle[PITCH]) / 50) + servoMiddle(0);
-            servo[1] = (((int32_t)cfg.servoConf[1].rate * angle[ROLL]) / 50) + servoMiddle(1);
+            servo[0] = (((int32_t)cfg.servoConf[0].rate * angle[PITCH]) / 50) + determineServoMiddleOrForwardFromChannel(0);
+            servo[1] = (((int32_t)cfg.servoConf[1].rate * angle[ROLL]) / 50) + determineServoMiddleOrForwardFromChannel(1);
             break;
 
         case MULTITYPE_AIRPLANE:
@@ -431,21 +436,21 @@ void mixTable(void)
                 servo[3] = (servoDirection(3, 1) * axisPID[PITCH]) + (servoDirection(3, 2) * axisPID[ROLL]);
                 servo[4] = (servoDirection(4, 1) * axisPID[PITCH]) + (servoDirection(4, 2) * axisPID[ROLL]);
             }
-            servo[3] += servoMiddle(3);
-            servo[4] += servoMiddle(4);
+            servo[3] += determineServoMiddleOrForwardFromChannel(3);
+            servo[4] += determineServoMiddleOrForwardFromChannel(4);
             break;
 
         case MULTITYPE_DUALCOPTER:
             for (i = 4; i < 6; i++ ) {
                 servo[i] = axisPID[5 - i] * servoDirection(i, 1); // mix and setup direction
-                servo[i] += servoMiddle(i);
+                servo[i] += determineServoMiddleOrForwardFromChannel(i);
             }
             break;
 
         case MULTITYPE_SINGLECOPTER:
             for (i = 3; i < 7; i++) {
                 servo[i] = (axisPID[YAW] * servoDirection(i, 2)) + (axisPID[(6 - i) >> 1] * servoDirection(i, 1)); // mix and setup direction
-                servo[i] += servoMiddle(i);
+                servo[i] += determineServoMiddleOrForwardFromChannel(i);
             }
             motor[0] = rcCommand[THROTTLE];
             break;
@@ -454,8 +459,8 @@ void mixTable(void)
     // do camstab
     if (feature(FEATURE_SERVO_TILT)) {
         // center at fixed position, or vary either pitch or roll by RC channel
-        servo[0] = servoMiddle(0);
-        servo[1] = servoMiddle(1);
+        servo[0] = determineServoMiddleOrForwardFromChannel(0);
+        servo[1] = determineServoMiddleOrForwardFromChannel(1);
 
         if (rcOptions[BOXCAMSTAB]) {
             if (cfg.gimbal_flags & GIMBAL_MIXTILT) {

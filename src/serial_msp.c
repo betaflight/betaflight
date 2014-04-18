@@ -12,6 +12,7 @@
 #define CAP_PLATFORM_32BIT          ((uint32_t)1 << 31)
 #define CAP_DYNBALANCE              ((uint32_t)1 << 2)
 #define CAP_FLAPS                   ((uint32_t)1 << 3)
+#define CAP_CHANNEL_FORWARDING      ((uint32_t)1 << 4)
 
 #define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
@@ -36,6 +37,7 @@
 #define MSP_SERVO_CONF           120    //out message         Servo settings
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
+#define MSP_CHANNEL_FORWARDING   123    //out message         Returns channel forwarding settings
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -50,6 +52,7 @@
 #define MSP_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
 #define MSP_SET_HEAD             211    //in message          define a new heading hold direction
 #define MSP_SET_SERVO_CONF       212    //in message          Servo settings
+#define MSP_SET_CHANNEL_FORWARDING 213    //in message          Channel forwarding settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
 
@@ -367,7 +370,7 @@ static void evaluateCommand(void)
         serialize8(VERSION);                // multiwii version
         serialize8(mcfg.mixerConfiguration); // type of multicopter
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
-        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (mcfg.flaps_speed ? CAP_FLAPS : 0));        // "capability"
+        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (mcfg.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
         break;
     case MSP_STATUS:
         headSerialReply(11);
@@ -434,6 +437,18 @@ static void evaluateCommand(void)
             cfg.servoConf[i].max = read16();
             cfg.servoConf[i].middle = read16();
             cfg.servoConf[i].rate = read8();
+        }
+        break;
+    case MSP_CHANNEL_FORWARDING:
+        headSerialReply(8);
+        for (i = 0; i < MAX_SERVOS; i++) {
+            serialize8(cfg.servoConf[i].forwardFromChannel);
+        }
+        break;
+    case MSP_SET_CHANNEL_FORWARDING:
+        headSerialReply(0);
+        for (i = 0; i < MAX_SERVOS; i++) {
+            cfg.servoConf[i].forwardFromChannel = read8();
         }
         break;
     case MSP_MOTOR:

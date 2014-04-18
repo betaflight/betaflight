@@ -24,6 +24,10 @@ typedef enum rc_alias {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
+#define DEFAULT_SERVO_MIN 1020
+#define DEFAULT_SERVO_MIDDLE 1500
+#define DEFAULT_SERVO_MAX 2000
+
 typedef enum {
     SERIALRX_SPEKTRUM1024 = 0,
     SERIALRX_SPEKTRUM2048 = 1,
