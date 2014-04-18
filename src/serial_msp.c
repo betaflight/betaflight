@@ -435,7 +435,14 @@ static void evaluateCommand(void)
         for (i = 0; i < MAX_SERVOS; i++) {
             cfg.servoConf[i].min = read16();
             cfg.servoConf[i].max = read16();
-            cfg.servoConf[i].middle = read16();
+            // provide temporary support for old clients that try and send a channel index instead of a servo middle
+            uint16_t potentialServoMiddleOrChannelToForward = read16();
+            if (potentialServoMiddleOrChannelToForward < MAX_SERVOS) {
+                cfg.servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
+            }
+            if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
+                cfg.servoConf[i].middle = potentialServoMiddleOrChannelToForward;
+            }
             cfg.servoConf[i].rate = read8();
         }
         break;
