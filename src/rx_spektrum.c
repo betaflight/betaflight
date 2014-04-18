@@ -17,7 +17,10 @@
 
 // driver for spektrum satellite receiver / sbus using UART2 (freeing up more motor outputs for stuff)
 
-#define SPEK_MAX_CHANNEL 7
+#define SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT 12
+#define SPEKTRUM_2048_CHANNEL_COUNT 12
+#define SPEKTRUM_1024_CHANNEL_COUNT 7
+
 #define SPEK_FRAME_SIZE 16
 
 static uint8_t spek_chan_shift;
@@ -29,9 +32,9 @@ static bool spekDataIncoming = false;
 volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static void spektrumDataReceive(uint16_t c);
-static uint16_t spektrumReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
+static uint16_t spektrumReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-void spektrumInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
+void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     switch (rxConfig->serialrx_type) {
         case SERIALRX_SPEKTRUM2048:
@@ -39,19 +42,20 @@ void spektrumInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
             spek_chan_shift = 3;
             spek_chan_mask = 0x07;
             spekHiRes = true;
+            rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
             break;
         case SERIALRX_SPEKTRUM1024:
             // 10 bit frames
             spek_chan_shift = 2;
             spek_chan_mask = 0x03;
             spekHiRes = false;
+            rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
             break;
     }
 
     core.rcvrport = uartOpen(USART2, spektrumDataReceive, 115200, MODE_RX);
     if (callback)
         *callback = spektrumReadRawRC;
-    core.numRCChannels = SPEK_MAX_CHANNEL;
 }
 
 // Receive ISR callback
@@ -81,22 +85,22 @@ bool spektrumFrameComplete(void)
     return rcFrameComplete;
 }
 
-static uint16_t spektrumReadRawRC(rxConfig_t*rxConfig, uint8_t chan)
+static uint16_t spektrumReadRawRC(rxConfig_t*rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     uint16_t data;
-    static uint32_t spekChannelData[SPEK_MAX_CHANNEL];
+    static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
     uint8_t b;
 
     if (rcFrameComplete) {
         for (b = 3; b < SPEK_FRAME_SIZE; b += 2) {
             uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
-            if (spekChannel < SPEK_MAX_CHANNEL)
+            if (spekChannel < rxRuntimeConfig->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT)
                 spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
         }
         rcFrameComplete = false;
     }
 
-    if (chan >= SPEK_MAX_CHANNEL || !spekDataIncoming) {
+    if (chan >= rxRuntimeConfig->channelCount || !spekDataIncoming) {
         data = rxConfig->midrc;
     } else {
         if (spekHiRes)

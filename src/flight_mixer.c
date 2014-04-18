@@ -159,7 +159,7 @@ int16_t servoMiddle(int nr)
 {
     // Normally, servo.middle is a value between 1000..2000, but for the purposes of stupid, if it's less than
     // the number of RC channels, it means the center value is taken FROM that RC channel (by its index)
-    if (cfg.servoConf[nr].middle < RC_CHANS && nr < MAX_SERVOS)
+    if (cfg.servoConf[nr].middle < MAX_SUPPORTED_RC_CHANNEL_COUNT && nr < MAX_SERVOS)
         return rcData[cfg.servoConf[nr].middle];
     else
         return cfg.servoConf[nr].middle;

@@ -31,9 +31,10 @@ typedef enum {
     SERIALRX_SUMD = 3,
 } SerialRXType;
 
-#define RC_CHANS    (18)
+#define MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT 8
+#define MAX_SUPPORTED_RC_CHANNEL_COUNT (18)
 
-extern int16_t rcData[RC_CHANS];       // interval [1000;2000]
+extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
 
 typedef struct rxConfig_s {
     uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
@@ -52,15 +53,23 @@ typedef struct controlRateConfig_s {
     uint8_t yawRate;
 } controlRateConfig_t;
 
+typedef struct rxRuntimeConfig_s {
+    uint8_t channelCount;                  // number of rc channels as reported by current input driver
+} rxRuntimeConfig_t;
+
 #define PITCH_LOOKUP_LENGTH 7
 #define THROTTLE_LOOKUP_LENGTH 12
 extern int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];   // lookup table for expo & RC rate PITCH+ROLL
 extern int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 
-typedef uint16_t (* rcReadRawDataPtr)(rxConfig_t *rxConfig, uint8_t chan);        // used by receiver driver to return channel data
+extern rxRuntimeConfig_t rxRuntimeConfig;
 
-uint16_t pwmReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
-void computeRC(rxConfig_t *rxConfig);
+typedef uint16_t (* rcReadRawDataPtr)(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
+
+void rxInit(rxConfig_t *rxConfig);
+void serialRxInit(rxConfig_t *rxConfig);
+
+void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 
 void generatePitchCurve(controlRateConfig_t *controlRateConfig);
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, uint16_t minThrottle, uint16_t maxThrottle);

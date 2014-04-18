@@ -78,14 +78,13 @@ static void gpsSetState(uint8_t state)
     gpsData.state_ts = millis();
 }
 
+// When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
 void gpsInit(uint8_t baudrateIndex)
 {
     portMode_t mode = MODE_RXTX;
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_UNKNOWN);
-    if (!feature(FEATURE_GPS))
-        return;
 
     gpsData.baudrateIndex = baudrateIndex;
     gpsData.lastMessage = millis();

@@ -22,15 +22,17 @@
 
 static bool sumdFrameDone = false;
 static void sumdDataReceive(uint16_t c);
-static uint16_t sumdReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
+static uint16_t sumdReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 
-void sumdInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
+void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     core.rcvrport = uartOpen(USART2, sumdDataReceive, 115200, MODE_RX);
     if (callback)
         *callback = sumdReadRawRC;
+
+    rxRuntimeConfig->channelCount = SUMD_MAX_CHANNEL;
 }
 
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
@@ -83,7 +85,7 @@ bool sumdFrameComplete(void)
     return false;
 }
 
-static uint16_t sumdReadRawRC(rxConfig_t *rxConfig, uint8_t chan)
+static uint16_t sumdReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     return sumdChannelData[rxConfig->rcmap[chan]] / 8;
 }

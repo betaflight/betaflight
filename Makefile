@@ -71,6 +71,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   gps_common.c \
 		   runtime_config.c \
 		   rx_common.c \
+		   rx_pwm.c \
 		   rx_sbus.c \
 		   rx_sumd.c \
 		   rx_spektrum.c \

@@ -23,13 +23,13 @@
 
 static bool sbusFrameDone = false;
 static void sbusDataReceive(uint16_t c);
-static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, uint8_t chan);
+static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
 //rxConfig_t *rxConfig;
 
-void sbusInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
+void sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     int b;
 
@@ -40,7 +40,7 @@ void sbusInit(rxConfig_t *rxConfig, rcReadRawDataPtr *callback)
     core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS));
     if (callback)
         *callback = sbusReadRawRC;
-    core.numRCChannels = SBUS_MAX_CHANNEL;
+    rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
 }
 
 struct sbus_dat
@@ -116,7 +116,7 @@ bool sbusFrameComplete(void)
     return false;
 }
 
-static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, uint8_t chan)
+static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     return sbusChannelData[rxConfig->rcmap[chan]] / 2 + SBUS_OFFSET;
 }

@@ -3,9 +3,6 @@
 #include "mw.h"
 
 #include "gps_common.h"
-#include "rx_sbus.h"
-#include "rx_sumd.h"
-#include "rx_spektrum.h"
 #include "rx_common.h"
 #include "telemetry_common.h"
 #include "boardalignment.h"
@@ -53,7 +50,7 @@ int main(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-    pwm_params.useUART = feature(FEATURE_GPS) || feature(FEATURE_SERIALRX); // spektrum/sbus support uses UART too
+    pwm_params.useUART = feature(FEATURE_GPS) || feature(FEATURE_SERIALRX); // serial rx support uses UART too
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SERIALRX); // disable inputs if using spektrum
@@ -82,30 +79,12 @@ int main(void)
 
     pwmInit(&pwm_params);
 
-    // configure PWM/CPPM read function and max number of channels. spektrum or sbus below will override both of these, if enabled
-    for (i = 0; i < RC_CHANS; i++)
-        rcData[i] = 1502;
-    rcReadRawFunc = pwmReadRawRC;
-    core.numRCChannels = MAX_INPUTS;
+    rxInit(&mcfg.rxConfig);
 
-    if (feature(FEATURE_SERIALRX)) {
-        switch (mcfg.rxConfig.serialrx_type) {
-            case SERIALRX_SPEKTRUM1024:
-            case SERIALRX_SPEKTRUM2048:
-                spektrumInit(&mcfg.rxConfig, &rcReadRawFunc);
-                break;
-            case SERIALRX_SBUS:
-                sbusInit(&mcfg.rxConfig, &rcReadRawFunc);
-                break;
-            case SERIALRX_SUMD:
-                sumdInit(&mcfg.rxConfig, &rcReadRawFunc);
-                break;
-        }
-    } else { // spektrum and GPS are mutually exclusive
-        // Optional GPS - available in both PPM and PWM input mode, in PWM input, reduces number of available channels by 2.
-        // gpsInit will return if FEATURE_GPS is not enabled.
+    if (feature(FEATURE_GPS) && !feature(FEATURE_SERIALRX)) {
         gpsInit(mcfg.gps_baudrate);
     }
+
 #ifdef SONAR
     // sonar stuff only works with PPM
     if (feature(FEATURE_PPM)) {

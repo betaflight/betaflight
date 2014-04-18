@@ -9,47 +9,81 @@
 #include "rx_common.h"
 #include "config.h"
 
-#include "drivers/pwm_common.h"
-
+#include "rx_pwm.h"
+#include "rx_sbus.h"
+#include "rx_spektrum.h"
+#include "rx_sumd.h"
 const char rcChannelLetters[] = "AERT1234";
 
 int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
 int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
-int16_t rcData[RC_CHANS];       // interval [1000;2000]
+int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
+
+#define PPM_AND_PWM_SAMPLE_COUNT 4
 
 rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
-uint16_t pwmReadRawRC(rxConfig_t *rxConfig, uint8_t chan)
+rxRuntimeConfig_t rxRuntimeConfig;
+
+void rxInit(rxConfig_t *rxConfig)
 {
-    uint16_t data;
+    uint8_t i;
 
-    data = pwmRead(rxConfig->rcmap[chan]);
-    if (data < 750 || data > 2250)
-        data = rxConfig->midrc;
+    for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+        rcData[i] = rxConfig->midrc;
+    }
 
-    return data;
+    if (feature(FEATURE_SERIALRX)) {
+        serialRxInit(rxConfig);
+    } else {
+        pwmRxInit(&rxRuntimeConfig, &rcReadRawFunc);
+    }
+
+}
+void serialRxInit(rxConfig_t *rxConfig)
+{
+    switch (rxConfig->serialrx_type) {
+        case SERIALRX_SPEKTRUM1024:
+        case SERIALRX_SPEKTRUM2048:
+            spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            break;
+        case SERIALRX_SBUS:
+            sbusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            break;
+        case SERIALRX_SUMD:
+            sumdInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            break;
+    }
 }
 
-void computeRC(rxConfig_t *rxConfig)
+void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     uint8_t chan;
 
     if (feature(FEATURE_SERIALRX)) {
-        for (chan = 0; chan < 8; chan++)
-            rcData[chan] = rcReadRawFunc(rxConfig, chan);
+        for (chan = 0; chan < MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT; chan++)
+            rcData[chan] = rcReadRawFunc(rxConfig, rxRuntimeConfig, chan);
     } else {
-        static int16_t rcData4Values[8][4], rcDataMean[8];
-        static uint8_t rc4ValuesIndex = 0;
+        static int16_t rcSamples[MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT][PPM_AND_PWM_SAMPLE_COUNT], rcDataMean[MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT];
+        static uint8_t rcSampleIndex = 0;
         uint8_t a;
 
-        rc4ValuesIndex++;
-        for (chan = 0; chan < 8; chan++) {
-            rcData4Values[chan][rc4ValuesIndex % 4] = rcReadRawFunc(rxConfig, chan);
-            rcDataMean[chan] = 0;
-            for (a = 0; a < 4; a++)
-                rcDataMean[chan] += rcData4Values[chan][a];
+        rcSampleIndex++;
+        uint8_t currentSampleIndex = rcSampleIndex % PPM_AND_PWM_SAMPLE_COUNT;
 
-            rcDataMean[chan] = (rcDataMean[chan] + 2) / 4;
+        for (chan = 0; chan < MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT; chan++) {
+
+            // sample the channel
+            rcSamples[chan][currentSampleIndex] = rcReadRawFunc(rxConfig, rxRuntimeConfig, chan);
+
+            // compute the average of recent samples
+            rcDataMean[chan] = 0;
+            for (a = 0; a < PPM_AND_PWM_SAMPLE_COUNT; a++)
+                rcDataMean[chan] += rcSamples[chan][a];
+
+            rcDataMean[chan] = (rcDataMean[chan] + 2) / PPM_AND_PWM_SAMPLE_COUNT;
+
+
             if (rcDataMean[chan] < rcData[chan] - 3)
                 rcData[chan] = rcDataMean[chan] + 2;
             if (rcDataMean[chan] > rcData[chan] + 3)

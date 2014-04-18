@@ -395,7 +395,7 @@ void loop(void)
     if (((int32_t)(currentTime - rcTime) >= 0) || rcReady) { // 50Hz or data driven
         rcReady = false;
         rcTime = currentTime + 20000;
-        computeRC(&mcfg.rxConfig);
+        computeRC(&mcfg.rxConfig, &rxRuntimeConfig);
 
         // in 3D mode, we need to be able to disarm by switch at any time
         if (feature(FEATURE_3D)) {
