@@ -3,7 +3,7 @@
 #include "board.h"
 #include "mw.h"
 
-#include "printf.h"
+#include "common/printf.h"
 
 #include "telemetry_common.h"
 #include "gps_common.h"

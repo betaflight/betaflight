@@ -48,17 +48,17 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   buzzer.c \
 		   config.c \
 		   common/maths.c \
+		   common/printf.c \
+		   common/typeconversion.c \
 		   failsafe.c \
 		   main.c \
 		   mw.c \
-		   printf.c \
 		   sensors_acceleration.c \
 		   sensors_barometer.c \
 		   sensors_compass.c \
 		   sensors_gyro.c \
 		   sensors_initialisation.c \
 		   sensors_sonar.c \
-		   typeconversion.c \
 		   drivers/bus_i2c.c \
 		   drivers/bus_i2c_soft.c \
 		   drivers/gpio_common.c \
@@ -77,7 +77,6 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   telemetry_common.c \
 		   telemetry_frsky.c \
 		   telemetry_hott.c \
-		   typeconversion.c \
 		   serial_cli.c \
 		   serial_msp.c \
 		   statusindicator.c \

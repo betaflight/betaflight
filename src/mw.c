@@ -2,11 +2,11 @@
 #include "mw.h"
 
 #include "common/maths.h"
+#include "common/typeconversion.h"
 
 #include "flight_common.h"
 #include "serial_cli.h"
 #include "telemetry_common.h"
-#include "typeconversion.h"
 #include "gps_common.h"
 #include "rx_common.h"
 #include "rx_sbus.h"

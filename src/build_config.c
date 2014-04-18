@@ -5,6 +5,9 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+#include "common/printf.h"
+
 #include "drivers/gpio_common.h"
 #include "drivers/timer_common.h"
 #include "drivers/pwm_common.h"
@@ -16,9 +19,7 @@
 
 #include "drivers/serial_common.h"
 #include "runtime_config.h"
-#include "printf.h"
 
-#include "build_config.h"
 
 #if MAX_MOTORS != MAX_SUPPORTED_MOTORS
 #error Motor configuration mismatch
