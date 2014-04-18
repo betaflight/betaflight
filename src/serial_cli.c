@@ -122,15 +122,15 @@ typedef struct {
 const clivalue_t valueTable[] = {
     { "looptime", VAR_UINT16, &mcfg.looptime, 0, 9000 },
     { "midrc", VAR_UINT16, &mcfg.rxConfig.midrc, 1200, 1700 },
-    { "minthrottle", VAR_UINT16, &mcfg.minthrottle, 0, 2000 },
-    { "maxthrottle", VAR_UINT16, &mcfg.maxthrottle, 0, 2000 },
-    { "mincommand", VAR_UINT16, &mcfg.mincommand, 0, 2000 },
-    { "mincheck", VAR_UINT16, &mcfg.rxConfig.mincheck, 0, 2000 },
-    { "maxcheck", VAR_UINT16, &mcfg.rxConfig.maxcheck, 0, 2000 },
-    { "deadband3d_low", VAR_UINT16, &mcfg.deadband3d_low, 0, 2000 },
-    { "deadband3d_high", VAR_UINT16, &mcfg.deadband3d_high, 0, 2000 },
-    { "neutral3d", VAR_UINT16, &mcfg.neutral3d, 0, 2000 },
-    { "deadband3d_throttle", VAR_UINT16, &mcfg.deadband3d_throttle, 0, 2000 },
+    { "minthrottle", VAR_UINT16, &mcfg.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "maxthrottle", VAR_UINT16, &mcfg.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "mincommand", VAR_UINT16, &mcfg.mincommand, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "mincheck", VAR_UINT16, &mcfg.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "maxcheck", VAR_UINT16, &mcfg.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "deadband3d_low", VAR_UINT16, &mcfg.deadband3d_low, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "deadband3d_high", VAR_UINT16, &mcfg.deadband3d_high, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "neutral3d", VAR_UINT16, &mcfg.neutral3d, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "deadband3d_throttle", VAR_UINT16, &mcfg.deadband3d_throttle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 32000 },
     { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
     { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
@@ -178,11 +178,11 @@ const clivalue_t valueTable[] = {
     { "roll_pitch_rate", VAR_UINT8, &cfg.controlRateConfig.rollPitchRate, 0, 100 },
     { "yawrate", VAR_UINT8, &cfg.controlRateConfig.yawRate, 0, 100 },
     { "tparate", VAR_UINT8, &cfg.dynThrPID, 0, 100},
-    { "tpa_breakpoint", VAR_UINT16, &cfg.tpaBreakPoint, 1000, 2000},
+    { "tpa_breakpoint", VAR_UINT16, &cfg.tpaBreakPoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
     { "failsafe_delay", VAR_UINT8, &cfg.failsafe_delay, 0, 200 },
     { "failsafe_off_delay", VAR_UINT8, &cfg.failsafe_off_delay, 0, 200 },
-    { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, 1000, 2000 },
-    { "failsafe_detect_threshold", VAR_UINT16, &cfg.failsafe_detect_threshold, 100, 2000 },
+    { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },
+    { "failsafe_detect_threshold", VAR_UINT16, &cfg.failsafe_detect_threshold, 100, PWM_RANGE_MAX },
     { "rssi_aux_channel", VAR_INT8, &mcfg.rssi_aux_channel, 0, 4 },
     { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
     { "tri_unarmed_servo", VAR_INT8, &cfg.tri_unarmed_servo, 0, 1 },
@@ -811,7 +811,7 @@ static void cliMotor(char *cmdline)
         return;
     }
 
-    if (motor_value < 1000 || motor_value > 2000) {
+    if (motor_value < PWM_RANGE_MIN || motor_value > PWM_RANGE_MAX) {
         printf("Invalid motor value, 1000..2000\r\n");
         return;
     }

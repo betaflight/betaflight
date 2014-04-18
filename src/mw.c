@@ -119,8 +119,8 @@ void annexCode(void)
             rcCommand[axis] = -rcCommand[axis];
     }
 
-    tmp = constrain(rcData[THROTTLE], mcfg.rxConfig.mincheck, 2000);
-    tmp = (uint32_t)(tmp - mcfg.rxConfig.mincheck) * 1000 / (2000 - mcfg.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
+    tmp = constrain(rcData[THROTTLE], mcfg.rxConfig.mincheck, PWM_RANGE_MAX);
+    tmp = (uint32_t)(tmp - mcfg.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - mcfg.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 

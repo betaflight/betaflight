@@ -24,6 +24,10 @@ typedef enum rc_alias {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
+#define PWM_RANGE_ZERO 0 // FIXME should all usages of this be changed to use PWM_RANGE_MIN?
+#define PWM_RANGE_MIN 1000
+#define PWM_RANGE_MAX 2000
+
 #define DEFAULT_SERVO_MIN 1020
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
