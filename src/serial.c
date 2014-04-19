@@ -592,7 +592,7 @@ static void evaluateCommand(void)
     case MSP_EEPROM_WRITE:
         if (f.ARMED) {
             headSerialError(0);
-        }else
+        } else {
             writeEEPROM(0, true);
             headSerialReply(0);
         }
