@@ -31,6 +31,7 @@ enum {
 #define CALIBRATING_ACC_CYCLES              400
 #define CALIBRATING_BARO_CYCLES             200
 
+#include "serial_common.h"
 #include "rx_common.h"
 #include "config.h"
 #include "config_storage.h"
@@ -119,10 +120,6 @@ void writeServos(void);
 void writeMotors(void);
 void writeAllMotors(int16_t mc);
 void mixTable(void);
-
-// Serial
-void serialInit(uint32_t baudrate);
-void serialCom(void);
 
 // buzzer
 void buzzer(bool warn_vbat);

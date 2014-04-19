@@ -23,6 +23,7 @@
 #include "gimbal.h"
 #include "rx_common.h"
 #include "gps_common.h"
+#include "serial_common.h"
 
 #include "runtime_config.h"
 #include "config.h"
@@ -40,7 +41,7 @@ void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 63;
+static const uint8_t EEPROM_CONF_VERSION = 64;
 static void resetConf(void);
 
 static uint8_t validEEPROM(void)
@@ -216,11 +217,14 @@ static void resetConf(void)
     // gps/nav stuff
     mcfg.gps_type = GPS_NMEA;
     mcfg.gps_baudrate = GPS_BAUD_115200;
+
     // serial (USART1) baudrate
-    mcfg.serial_baudrate = 115200;
-    mcfg.softserial_baudrate = 9600;
-    mcfg.softserial_1_inverted = 0;
-    mcfg.softserial_2_inverted = 0;
+    mcfg.serialConfig.port1_baudrate = 115200;
+    mcfg.serialConfig.softserial_baudrate = 9600;
+    mcfg.serialConfig.softserial_1_inverted = 0;
+    mcfg.serialConfig.softserial_2_inverted = 0;
+    mcfg.serialConfig.reboot_character = 'R';
+
     mcfg.looptime = 3500;
     mcfg.rssi_aux_channel = 0;
 
@@ -313,9 +317,6 @@ static void resetConf(void)
     cfg.nav_speed_min = 100;
     cfg.nav_speed_max = 300;
     cfg.ap_mode = 40;
-
-    // control stuff
-    mcfg.reboot_character = 'R';
 
     // custom mixer. clear by defaults.
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)

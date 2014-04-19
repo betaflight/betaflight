@@ -18,7 +18,7 @@
 #include "config.h"
 
 #include "drivers/serial_common.h"
-#include "runtime_config.h"
+#include "serial_common.h"
 
 
 #if MAX_MOTORS != MAX_SUPPORTED_MOTORS
@@ -35,7 +35,7 @@
 // gcc/GNU version
 static void _putc(void *p, char c)
 {
-    serialWrite(core.mainport, c);
+    serialWrite(serialPorts.mainport, c);
 }
 
 void initPrintfSupport(void)
@@ -49,8 +49,8 @@ void initPrintfSupport(void)
 int fputc(int c, FILE *f)
 {
     // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isSerialTransmitBufferEmpty(core.mainport));
-    serialWrite(core.mainport, c);
+    while (!isSerialTransmitBufferEmpty(serialPorts.mainport));
+    serialWrite(serialPorts.mainport, c);
     return c;
 }
 

@@ -4,7 +4,6 @@
 #include "platform.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system_common.h"
-#include "drivers/serial_common.h" // FIXME this file should not have a dependency on serial ports, see core_t from runtime_config.h
 #include "failsafe.h"
 #include "sensors_common.h"
 #include "runtime_config.h"

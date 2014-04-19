@@ -113,18 +113,12 @@ typedef struct master_t {
     uint8_t gps_type;                       // See GPSHardware enum.
     int8_t gps_baudrate;                    // See GPSBaudRates enum.
 
-    uint32_t serial_baudrate;
-
-    uint32_t softserial_baudrate;             // shared by both soft serial ports
-    uint8_t softserial_1_inverted;            // use inverted softserial input and output signals on port 1
-    uint8_t softserial_2_inverted;            // use inverted softserial input and output signals on port 2
-
+    serialConfig_t serialConfig;
     uint8_t telemetry_provider;             // See TelemetryProvider enum.
     uint8_t telemetry_port;                 // See TelemetryPort enum.
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     config_t profile[3];                    // 3 separate profiles
     uint8_t current_profile;                // currently loaded profile
-    uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum

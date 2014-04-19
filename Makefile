@@ -78,6 +78,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   telemetry_common.c \
 		   telemetry_frsky.c \
 		   telemetry_hott.c \
+		   serial_common.c \
 		   serial_cli.c \
 		   serial_msp.c \
 		   statusindicator.c \

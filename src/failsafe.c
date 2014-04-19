@@ -1,16 +1,19 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "common/axis.h" // FIXME this file should not have a dependency axis
+// FIXME a solution to the dependency problems here is to roll up the failsafe configuration into a structure in failsafe.h and supply it using failsafeInit()
+
+#include "common/axis.h" // FIXME this file should not have this dependency
 
 #include "rx_common.h"
 
-#include "drivers/serial_common.h" // FIXME this file should not have a dependency on serial ports, see core_t from runtime_config.h
-#include "flight_mixer.h" // FIXME this file should not have a dependency on the flight mixer, see config_t, servoParam_t, etc from config_storage.h
-#include "flight_common.h" // FIXME this file should not have a dependency on the flight common, see config_t from config_storage.h
-#include "sensors_common.h" // FIXME this file should not have a dependency on the sensors, see sensor_align_e from config_storage.h
-#include "boardalignment.h" // FIXME this file should not have a dependency on board alignment
-#include "battery.h" // FIXME this file should not have a dependency on battery, see batteryConfig_t from config_storage.h
+#include "drivers/serial_common.h" // FIXME this file should not have this dependency
+#include "serial_common.h" // FIXME this file should not have this dependency
+#include "flight_mixer.h" // FIXME this file should not have this dependency
+#include "flight_common.h" // FIXME this file should not have this dependency
+#include "sensors_common.h" // FIXME this file should not have this dependency
+#include "boardalignment.h" // FIXME this file should not have this dependency
+#include "battery.h" // FIXME this file should not have this dependency
 
 #include "runtime_config.h"
 #include "config.h"

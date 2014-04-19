@@ -1,8 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "drivers/serial_common.h"
-
 #include "runtime_config.h"
 
 flags_t f;

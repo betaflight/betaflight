@@ -7,7 +7,8 @@
 
 #include "drivers/serial_common.h"
 #include "drivers/serial_uart.h"
-#include "runtime_config.h"
+#include "serial_common.h"
+
 
 #include "failsafe.h"
 
@@ -37,7 +38,7 @@ void sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
 
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
         sbusChannelData[b] = 2 * (rxConfig->midrc - SBUS_OFFSET);
-    core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS));
+    serialPorts.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS));
     if (callback)
         *callback = sbusReadRawRC;
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;

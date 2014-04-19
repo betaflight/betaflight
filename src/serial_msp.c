@@ -1,8 +1,10 @@
 #include "board.h"
 #include "mw.h"
 
+#include "drivers/serial_common.h"
+#include "serial_common.h"
+
 #include "gps_common.h"
-#include "serial_cli.h"
 #include "telemetry_common.h"
 #include "flight_common.h"
 #include "sensors_compass.h"
@@ -126,16 +128,16 @@ void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
-    serialWrite(core.mainport, t);
+    serialWrite(serialPorts.mainport, t);
     checksum ^= t;
     t = a >> 8;
-    serialWrite(core.mainport, t);
+    serialWrite(serialPorts.mainport, t);
     checksum ^= t;
     t = a >> 16;
-    serialWrite(core.mainport, t);
+    serialWrite(serialPorts.mainport, t);
     checksum ^= t;
     t = a >> 24;
-    serialWrite(core.mainport, t);
+    serialWrite(serialPorts.mainport, t);
     checksum ^= t;
 }
 
@@ -143,16 +145,16 @@ void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
-    serialWrite(core.mainport, t);
+    serialWrite(serialPorts.mainport, t);
     checksum ^= t;
     t = a >> 8 & 0xff;
-    serialWrite(core.mainport, t);
+    serialWrite(serialPorts.mainport, t);
     checksum ^= t;
 }
 
 void serialize8(uint8_t a)
 {
-    serialWrite(core.mainport, a);
+    serialWrite(serialPorts.mainport, a);
     checksum ^= a;
 }
 
@@ -239,11 +241,9 @@ reset:
     }
 }
 
-void serialInit(uint32_t baudrate)
+void mspInit(void)
 {
     int idx;
-
-    core.mainport = uartOpen(USART1, NULL, baudrate, MODE_RXTX);
 
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(availableBoxes, 0xFF, sizeof(availableBoxes));
@@ -655,16 +655,7 @@ static void evaluateCommand(void)
     tailSerialReply();
 }
 
-// evaluate all other incoming serial data
-static void evaluateOtherData(uint8_t sr)
-{
-    if (sr == '#')
-        cliProcess();
-    else if (sr == mcfg.reboot_character)
-        systemReset(true);      // reboot to bootloader
-}
-
-void serialCom(void)
+void mspProcess(void)
 {
     uint8_t c;
     static uint8_t offset;
@@ -678,14 +669,8 @@ void serialCom(void)
         HEADER_CMD,
     } c_state = IDLE;
 
-    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
-    if (cliMode) {
-        cliProcess();
-        return;
-    }
-
-    while (serialTotalBytesWaiting(core.mainport)) {
-        c = serialRead(core.mainport);
+    while (serialTotalBytesWaiting(serialPorts.mainport)) {
+        c = serialRead(serialPorts.mainport);
 
         if (c_state == IDLE) {
             c_state = (c == '$') ? HEADER_START : IDLE;

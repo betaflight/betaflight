@@ -5,6 +5,9 @@
 
 #include "flight_common.h"
 
+#include "drivers/serial_common.h"
+#include "serial_common.h"
+
 #include "gps_common.h"
 
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
@@ -95,7 +98,7 @@ void gpsInit(uint8_t baudrateIndex)
 
     gpsSetPIDs();
     // Open GPS UART, no callback - buffer will be read out in gpsThread()
-    core.gpsport = uartOpen(USART2, NULL, gpsInitData[baudrateIndex].baudrate, mode);
+    serialPorts.gpsport = uartOpen(USART2, NULL, gpsInitData[baudrateIndex].baudrate, mode);
     // signal GPS "thread" to initialize when it gets to it
     gpsSetState(GPS_INITIALIZING);
 }
@@ -105,7 +108,7 @@ void gpsInitHardware(void)
     switch (mcfg.gps_type) {
         case GPS_NMEA:
             // nothing to do, just set baud rate and try receiving some stuff and see if it parses
-            serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
+            serialSetBaudRate(serialPorts.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
             gpsSetState(GPS_RECEIVINGDATA);
             break;
 
@@ -113,7 +116,7 @@ void gpsInitHardware(void)
             // UBX will run at mcfg.gps_baudrate, it shouldn't be "autodetected". So here we force it to that rate
 
             // Wait until GPS transmit buffer is empty
-            if (!isSerialTransmitBufferEmpty(core.gpsport))
+            if (!isSerialTransmitBufferEmpty(serialPorts.gpsport))
                 break;
 
             if (gpsData.state == GPS_INITIALIZING) {
@@ -123,9 +126,9 @@ void gpsInitHardware(void)
 
                 if (gpsData.state_position < GPS_INIT_ENTRIES) {
                     // try different speed to INIT
-                    serialSetBaudRate(core.gpsport, gpsInitData[gpsData.state_position].baudrate);
+                    serialSetBaudRate(serialPorts.gpsport, gpsInitData[gpsData.state_position].baudrate);
                     // but print our FIXED init string for the baudrate we want to be at
-                    serialPrint(core.gpsport, gpsInitData[gpsData.baudrateIndex].ubx);
+                    serialPrint(serialPorts.gpsport, gpsInitData[gpsData.baudrateIndex].ubx);
 
                     gpsData.state_position++;
                     gpsData.state_ts = m;
@@ -136,10 +139,10 @@ void gpsInitHardware(void)
             } else {
                 // GPS_INITDONE, set our real baud rate and push some ublox config strings
                 if (gpsData.state_position == 0)
-                    serialSetBaudRate(core.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
+                    serialSetBaudRate(serialPorts.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
 
                 if (gpsData.state_position < sizeof(ubloxInit)) {
-                    serialWrite(core.gpsport, ubloxInit[gpsData.state_position]); // send ubx init binary
+                    serialWrite(serialPorts.gpsport, ubloxInit[gpsData.state_position]); // send ubx init binary
 
                     gpsData.state_position++;
                 } else {
@@ -161,9 +164,9 @@ void gpsInitHardware(void)
 void gpsThread(void)
 {
     // read out available GPS bytes
-    if (core.gpsport) {
-        while (serialTotalBytesWaiting(core.gpsport))
-            gpsNewData(serialRead(core.gpsport));
+    if (serialPorts.gpsport) {
+        while (serialTotalBytesWaiting(serialPorts.gpsport))
+            gpsNewData(serialRead(serialPorts.gpsport));
     }
 
     switch (gpsData.state) {
@@ -549,14 +552,14 @@ int8_t gpsSetPassthrough(void)
     LED1_OFF;
 
     while(1) {
-        if (serialTotalBytesWaiting(core.gpsport)) {
+        if (serialTotalBytesWaiting(serialPorts.gpsport)) {
             LED0_ON;
-            serialWrite(core.mainport, serialRead(core.gpsport));
+            serialWrite(serialPorts.mainport, serialRead(serialPorts.gpsport));
             LED0_OFF;
         }
-        if (serialTotalBytesWaiting(core.mainport)) {
+        if (serialTotalBytesWaiting(serialPorts.mainport)) {
             LED1_ON;
-            serialWrite(core.gpsport, serialRead(core.mainport));
+            serialWrite(serialPorts.gpsport, serialRead(serialPorts.mainport));
             LED1_OFF;
         }
     }

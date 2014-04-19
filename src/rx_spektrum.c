@@ -7,7 +7,7 @@
 
 #include "drivers/serial_common.h"
 #include "drivers/serial_uart.h"
-#include "runtime_config.h"
+#include "serial_common.h"
 
 #include "failsafe.h"
 
@@ -53,7 +53,7 @@ void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
             break;
     }
 
-    core.rcvrport = uartOpen(USART2, spektrumDataReceive, 115200, MODE_RX);
+    serialPorts.rcvrport = uartOpen(USART2, spektrumDataReceive, 115200, MODE_RX);
     if (callback)
         *callback = spektrumReadRawRC;
 }

@@ -1,10 +1,12 @@
 #include "board.h"
 #include "flight_common.h"
 #include "flight_mixer.h"
+#include "serial_common.h"
 #include "mw.h"
 
 #include "gps_common.h"
 #include "rx_common.h"
+#include "drivers/serial_common.h"
 #include "telemetry_common.h"
 #include "boardalignment.h"
 #include "config.h"
@@ -12,9 +14,10 @@
 
 #include "build_config.h"
 
-core_t core;
-
 extern rcReadRawDataPtr rcReadRawFunc;
+
+void initTelemetry(serialPorts_t *serialPorts);
+void serialInit(serialConfig_t *initialSerialConfig);
 
 int main(void)
 {
@@ -115,14 +118,14 @@ int main(void)
     if (feature(FEATURE_VBAT))
         batteryInit(&mcfg.batteryConfig);
 
-    serialInit(mcfg.serial_baudrate);
+    serialInit(&mcfg.serialConfig);
 
 #ifndef FY90Q
     if (feature(FEATURE_SOFTSERIAL)) {
         //mcfg.softserial_baudrate = 19200; // Uncomment to override config value
 
-        setupSoftSerialPrimary(mcfg.softserial_baudrate, mcfg.softserial_1_inverted);
-        setupSoftSerialSecondary(mcfg.softserial_2_inverted);
+        setupSoftSerialPrimary(mcfg.serialConfig.softserial_baudrate, mcfg.serialConfig.softserial_1_inverted);
+        setupSoftSerialSecondary(mcfg.serialConfig.softserial_2_inverted);
 
 #ifdef SOFTSERIAL_LOOPBACK
         loopbackPort1 = (serialPort_t*)&(softSerialPorts[0]);
@@ -136,7 +139,7 @@ int main(void)
 #endif
 
     if (feature(FEATURE_TELEMETRY))
-        initTelemetry();
+        initTelemetry(&serialPorts);
 
     previousTime = micros();
     if (mcfg.mixerConfiguration == MULTITYPE_GIMBAL)

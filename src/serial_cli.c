@@ -5,6 +5,9 @@
 
 #include "common/printf.h"
 
+#include "drivers/serial_common.h"
+#include "serial_common.h"
+
 #include "telemetry_common.h"
 #include "gps_common.h"
 #include "sensors_acceleration.h"
@@ -135,11 +138,11 @@ const clivalue_t valueTable[] = {
     { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
     { "flaps_speed", VAR_UINT8, &mcfg.flaps_speed, 0, 100 },
     { "fixedwing_althold_dir", VAR_INT8, &mcfg.fixedwing_althold_dir, -1, 1 },
-    { "reboot_character", VAR_UINT8, &mcfg.reboot_character, 48, 126 },
-    { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
-    { "softserial_baudrate", VAR_UINT32, &mcfg.softserial_baudrate, 1200, 19200 },
-    { "softserial_1_inverted", VAR_UINT8, &mcfg.softserial_1_inverted, 0, 1 },
-    { "softserial_2_inverted", VAR_UINT8, &mcfg.softserial_2_inverted, 0, 1 },
+    { "reboot_character", VAR_UINT8, &mcfg.serialConfig.reboot_character, 48, 126 },
+    { "serial_baudrate", VAR_UINT32, &mcfg.serialConfig.port1_baudrate, 1200, 115200 },
+    { "softserial_baudrate", VAR_UINT32, &mcfg.serialConfig.softserial_baudrate, 1200, 19200 },
+    { "softserial_1_inverted", VAR_UINT8, &mcfg.serialConfig.softserial_1_inverted, 0, 1 },
+    { "softserial_2_inverted", VAR_UINT8, &mcfg.serialConfig.softserial_2_inverted, 0, 1 },
     { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, GPS_HARDWARE_MAX },
     { "gps_baudrate", VAR_INT8, &mcfg.gps_baudrate, 0, GPS_BAUD_MAX },
     { "serialrx_type", VAR_UINT8, &mcfg.rxConfig.serialrx_type, 0, 3 },
@@ -850,12 +853,12 @@ static void cliSave(char *cmdline)
 static void cliPrint(const char *str)
 {
     while (*str)
-        serialWrite(core.mainport, *(str++));
+        serialWrite(serialPorts.mainport, *(str++));
 }
 
 static void cliWrite(uint8_t ch)
 {
-    serialWrite(core.mainport, ch);
+    serialWrite(serialPorts.mainport, ch);
 }
 
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
@@ -1016,8 +1019,8 @@ void cliProcess(void)
         cliPrompt();
     }
 
-    while (serialTotalBytesWaiting(core.mainport)) {
-        uint8_t c = serialRead(core.mainport);
+    while (serialTotalBytesWaiting(serialPorts.mainport)) {
+        uint8_t c = serialRead(serialPorts.mainport);
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;

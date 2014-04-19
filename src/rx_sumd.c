@@ -7,7 +7,7 @@
 
 #include "drivers/serial_common.h"
 #include "drivers/serial_uart.h"
-#include "runtime_config.h"
+#include "serial_common.h"
 
 #include "failsafe.h"
 
@@ -28,7 +28,7 @@ static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 
 void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    core.rcvrport = uartOpen(USART2, sumdDataReceive, 115200, MODE_RX);
+    serialPorts.rcvrport = uartOpen(USART2, sumdDataReceive, 115200, MODE_RX);
     if (callback)
         *callback = sumdReadRawRC;
 

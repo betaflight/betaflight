@@ -6,6 +6,9 @@
 
 #include "flight_common.h"
 
+#include "drivers/serial_common.h"
+#include "serial_common.h"
+
 #include "gps_common.h"
 
 #include "telemetry_common.h"
@@ -59,26 +62,26 @@ extern uint8_t batteryCellCount;
 
 static void sendDataHead(uint8_t id)
 {
-    serialWrite(core.telemport, PROTOCOL_HEADER);
-    serialWrite(core.telemport, id);
+    serialWrite(serialPorts.telemport, PROTOCOL_HEADER);
+    serialWrite(serialPorts.telemport, id);
 }
 
 static void sendTelemetryTail(void)
 {
-    serialWrite(core.telemport, PROTOCOL_TAIL);
+    serialWrite(serialPorts.telemport, PROTOCOL_TAIL);
 }
 
 static void serializeFrsky(uint8_t data)
 {
     // take care of byte stuffing
     if (data == 0x5e) {
-        serialWrite(core.telemport, 0x5d);
-        serialWrite(core.telemport, 0x3e);
+        serialWrite(serialPorts.telemport, 0x5d);
+        serialWrite(serialPorts.telemport, 0x3e);
     } else if (data == 0x5d) {
-        serialWrite(core.telemport, 0x5d);
-        serialWrite(core.telemport, 0x3d);
+        serialWrite(serialPorts.telemport, 0x5d);
+        serialWrite(serialPorts.telemport, 0x3d);
     } else
-        serialWrite(core.telemport, data);
+        serialWrite(serialPorts.telemport, data);
 }
 
 static void serialize16(int16_t a)
@@ -222,14 +225,14 @@ static void sendHeading(void)
 void freeFrSkyTelemetryPort(void)
 {
     if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
-        serialInit(mcfg.serial_baudrate);
+        resetMainSerialPort();
     }
 }
 
 void configureFrSkyTelemetryPort(void)
 {
     if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
-        serialInit(9600);
+        openMainSerialPort(9600);
     }
 }
 
@@ -238,7 +241,7 @@ static uint8_t cycleNum = 0;
 
 bool canSendFrSkyTelemetry(void)
 {
-    return serialTotalBytesWaiting(core.telemport) == 0;
+    return serialTotalBytesWaiting(serialPorts.telemport) == 0;
 }
 
 bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)

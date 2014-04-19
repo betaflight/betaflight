@@ -175,7 +175,7 @@ void annexCode(void)
         }
     }
 
-    serialCom();
+    handleSerial();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
         handleTelemetry();

@@ -47,17 +47,8 @@ typedef struct flags_t {
     uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
 } flags_t;
 
-// Core runtime settings
-typedef struct core_t {
-    serialPort_t *mainport;
-    serialPort_t *gpsport;
-    serialPort_t *telemport;
-    serialPort_t *rcvrport;
-} core_t;
-
 typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
 
-extern core_t core;
 extern flags_t f;
 
 bool sensors(uint32_t mask);

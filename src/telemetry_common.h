@@ -21,8 +21,6 @@ typedef enum {
     TELEMETRY_PORT_MAX = TELEMETRY_PORT_SOFTSERIAL_2
 } TelemetryPort;
 
-// telemetry
-void initTelemetry(void);
 void checkTelemetryState(void);
 void handleTelemetry(void);
 

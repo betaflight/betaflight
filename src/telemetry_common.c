@@ -1,6 +1,9 @@
 #include "board.h"
 #include "mw.h"
 
+#include "drivers/serial_common.h"
+#include "serial_common.h"
+
 #include "telemetry_frsky.h"
 #include "telemetry_hott.h"
 
@@ -20,7 +23,6 @@ bool isTelemetryProviderHoTT(void)
 
 bool canUseTelemetryWithCurrentConfiguration(void)
 {
-
     if (!feature(FEATURE_TELEMETRY)) {
         return false;
     }
@@ -42,7 +44,7 @@ bool canUseTelemetryWithCurrentConfiguration(void)
     return true;
 }
 
-void initTelemetry(void)
+void initTelemetry(serialPorts_t *serialPorts)
 {
     // Force telemetry to uart when softserial disabled
     if (!feature(FEATURE_SOFTSERIAL))
@@ -51,18 +53,18 @@ void initTelemetry(void)
 #ifdef FY90Q
     // FY90Q does not support softserial
     mcfg.telemetry_port = TELEMETRY_PORT_UART;
-    core.telemport = core.mainport;
+    serialPorts->telemport = serialPorts.mainport;
 #endif
 
     isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
 
 #ifndef FY90Q
     if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1)
-        core.telemport = &(softSerialPorts[0].port);
+        serialPorts->telemport = &(softSerialPorts[0].port);
     else if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2)
-        core.telemport = &(softSerialPorts[1].port);
+        serialPorts->telemport = &(softSerialPorts[1].port);
     else
-        core.telemport = core.mainport;
+        serialPorts->telemport = serialPorts->mainport;
 #endif
 
     checkTelemetryState();
