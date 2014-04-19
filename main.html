@@ -47,81 +47,73 @@
         <script type="text/javascript" src="./tabs/firmware_flasher.js"></script>
     </head>
     <body>
-        <div id="outter-wrapper">
-            <div id="frame">
-                <span class="title">Baseflight - Configurator</span>
-                <a class="close" href="#" title="Close"></a>
-                <a class="maximize" href="#"></a>
-                <a class="minimize" href="#" title="Minimize"></a>
+        <div id="main-wrapper">
+            <div id="port-picker">
+                <ul>
+                    <li class="port">
+                        <select id="port" title="Port">
+                            <!-- port list gets generated here -->
+                        </select>
+                    </li>
+                    <li>
+                        <select id="baud" title="Baud Rate">
+                            <option value="115200" selected="selected">115200</option>
+                            <option value="57600">57600</option>
+                            <option value="38400">38400</option>
+                            <option value="28800">28800</option>
+                            <option value="19200">19200</option>
+                            <option value="14400">14400</option>
+                            <option value="9600">9600</option>
+                            <option value="4800">4800</option>
+                            <option value="2400">2400</option>
+                            <option value="1200">1200</option>
+                        </select>
+                    </li>
+                    <li>
+                        <a class="connect" href="#" title="">Connect</a>
+                        <label>
+                            <input class="auto_connect" type="checkbox" title="Auto-Connect" />
+                            <span class="auto_connect">Auto-Connect</span>
+                        </label>
+                    </li>
+                </ul>
             </div>
-            <div id="main-wrapper">
-                <div id="port-picker">
-                    <ul>
-                        <li class="port">
-                            <select id="port" title="Port">
-                                <!-- port list gets generated here -->
-                            </select>
-                        </li>
-                        <li>
-                            <select id="baud" title="Baud Rate">
-                                <option value="115200" selected="selected">115200</option>
-                                <option value="57600">57600</option>
-                                <option value="38400">38400</option>
-                                <option value="28800">28800</option>
-                                <option value="19200">19200</option>
-                                <option value="14400">14400</option>
-                                <option value="9600">9600</option>
-                                <option value="4800">4800</option>
-                                <option value="2400">2400</option>
-                                <option value="1200">1200</option>
-                            </select>
-                        </li>
-                        <li>
-                            <a class="connect" href="#" title="">Connect</a>
-                            <label>
-                                <input class="auto_connect" type="checkbox" title="Auto-Connect" />
-                                <span class="auto_connect">Auto-Connect</span>
-                            </label>
-                        </li>
-                    </ul>
+            <div id="sensor-status">
+                <ul>
+                    <li class="gyro" title="Gyroscope">Gyro</li>
+                    <li class="accel" title="Accelerometer">Accel</li>
+                    <li class="mag" title="Magnetometer">Mag</li>
+                    <li class="baro" title="Barometer">Baro</li>
+                    <li class="gps" title="GPS">GPS</li>
+                    <li class="sonar" title="Sonar / Range finder">Sonar</li>
+                </ul>
+            </div>
+            <div class="clear-both"></div>
+            <div id="log">
+                <div class="wrapper">
                 </div>
-                <div id="sensor-status">
-                    <ul>
-                        <li class="gyro" title="Gyroscope">Gyro</li>
-                        <li class="accel" title="Accelerometer">Accel</li>
-                        <li class="mag" title="Magnetometer">Mag</li>
-                        <li class="baro" title="Barometer">Baro</li>
-                        <li class="gps" title="GPS">GPS</li>
-                        <li class="sonar" title="Sonar / Range finder">Sonar</li>
-                    </ul>
-                </div>
+            </div>
+            <div id="tabs">
+                <ul>
+                    <li class="tab_initial_setup"><a href="#">Initial Setup</a></li>
+                    <li class="tab_pid_tuning"><a href="#">PID Tuning</a></li>
+                    <li class="tab_receiver"><a href="#">Receiver</a></li>
+                    <li class="tab_auxiliary_configuration"><a href="#">Auxiliary Configuration</a></li>
+                    <li class="tab_servos"><a href="#">Servos</a></li>
+                    <li class="tab_gps"><a href="#">GPS</a></li>
+                    <li class="tab_motor_outputs"><a href="#">Motor/Servo Outputs</a></li>
+                    <li class="tab_sensors"><a href="#">Raw Sensor Data</a></li>
+                    <li class="tab_cli"><a href="#">CLI</a></li>
+                </ul>
                 <div class="clear-both"></div>
-                <div id="log">
-                    <div class="wrapper">
-                    </div>
-                </div>
-                <div id="tabs">
-                    <ul>
-                        <li class="tab_initial_setup"><a href="#">Initial Setup</a></li>
-                        <li class="tab_pid_tuning"><a href="#">PID Tuning</a></li>
-                        <li class="tab_receiver"><a href="#">Receiver</a></li>
-                        <li class="tab_auxiliary_configuration"><a href="#">Auxiliary Configuration</a></li>
-                        <li class="tab_servos"><a href="#">Servos</a></li>
-                        <li class="tab_gps"><a href="#">GPS</a></li>
-                        <li class="tab_motor_outputs"><a href="#">Motor/Servo Outputs</a></li>
-                        <li class="tab_sensors"><a href="#">Raw Sensor Data</a></li>
-                        <li class="tab_cli"><a href="#">CLI</a></li>
-                    </ul>
-                    <div class="clear-both"></div>
-                </div>
-                <div id="content">
-                </div>
-                <div id="status-bar">
-                    <span i18n="statusbar_port_utilization"></span> <span class="port_usage_down">D: 0%</span> <span class="port_usage_up">U: 0%</span> |
-                    <span i18n="statusbar_packet_error"></span> <span class="packet-error">0</span> |
-                    <span i18n="statusbar_cycle_time"></span> <span class="cycle-time">0</span>
-                </div>
             </div>
+            <div id="content">
+            </div>
+        </div>
+        <div id="status-bar">
+            <span i18n="statusbar_port_utilization"></span> <span class="port_usage_down">D: 0%</span> <span class="port_usage_up">U: 0%</span> |
+            <span i18n="statusbar_packet_error"></span> <span class="packet-error">0</span> |
+            <span i18n="statusbar_cycle_time"></span> <span class="cycle-time">0</span>
         </div>
     </body>
 </html>

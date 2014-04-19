@@ -11,11 +11,11 @@
 function start_app() {
     chrome.app.window.create('main.html', {
         id: 'main-window',
-        frame: 'none',
+        frame: 'chrome',
         resizable: false
     }, function(createdWindow) {
         // set window size
-        createdWindow.setBounds({'width': 962, 'height': 650});
+        createdWindow.setBounds({'width': 960, 'height': 625});
 
         // bind events
         createdWindow.onMaximized.addListener(function() {
