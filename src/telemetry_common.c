@@ -53,7 +53,7 @@ void initTelemetry(serialPorts_t *serialPorts)
 #ifdef FY90Q
     // FY90Q does not support softserial
     mcfg.telemetry_port = TELEMETRY_PORT_UART;
-    serialPorts->telemport = serialPorts.mainport;
+    serialPorts->telemport = serialPorts->mainport;
 #endif
 
     isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
