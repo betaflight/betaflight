@@ -590,8 +590,12 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_EEPROM_WRITE:
-        writeEEPROM(0, true);
-        headSerialReply(0);
+        if (f.ARMED) {
+            headSerialError(0);
+        }else
+            writeEEPROM(0, true);
+            headSerialReply(0);
+        }
         break;
     case MSP_DEBUG:
         headSerialReply(8);
