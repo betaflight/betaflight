@@ -6,7 +6,7 @@
     }
     .tab-cli .window {
         margin-top: 10px;
-        height: 350px;
+        height: 345px;
 
         padding: 5px;
 
@@ -22,8 +22,11 @@
         -webkit-user-select: text;
     }
     .tab-cli textarea {
+        -webkit-box-sizing: border-box;
+
+        width: 100%;
+
         margin-top: 8px;
-        display: block;
 
         height: 20px;
         line-height: 20px;

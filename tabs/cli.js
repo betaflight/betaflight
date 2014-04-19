@@ -65,9 +65,6 @@ function tab_initialize_cli() {
                 textarea.val(cli_history.next());
         });
 
-        // apply dynamic width to the textarea element according to cli window width (minus padding and border width)
-        $('div.tab-cli textarea').width($('div.tab-cli .window').outerWidth() - 7);
-
         // give input element user focus
         $('.tab-cli textarea').focus();
     });
