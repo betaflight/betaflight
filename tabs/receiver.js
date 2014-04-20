@@ -157,10 +157,6 @@ function tab_initialize_receiver() {
 
             var samples = 0;
 
-            var margin = {top: 20, right: 20, bottom: 10, left: 40};
-            var width = $('#RX_plot').width() - margin.left - margin.right;
-            var height = $('#RX_plot').height() - margin.top - margin.bottom;
-
             var svg = d3.select("svg");
 
             function update_ui() {
@@ -212,12 +208,21 @@ function tab_initialize_receiver() {
 
                 // update required parts of the plot
                 var widthScale = d3.scale.linear().
-                    domain([(samples - 299), samples]).
-                    range([0, width]);
+                    domain([(samples - 299), samples]);
 
                 var heightScale = d3.scale.linear().
-                    domain([800, 2200]).
-                    range([height, 0]);
+                    domain([800, 2200]);
+
+                function update_receiver_plot_size() {
+                    var margin = {top: 20, right: 20, bottom: 10, left: 40};
+                    var width = $('#RX_plot').width() - margin.left - margin.right;
+                    var height = $('#RX_plot').height() - margin.top - margin.bottom;
+                    widthSclae.range([0, width]);
+                    heightScale.range([height, 0]);
+                }
+
+                update_receiver_plot_size();
+
 
                 var xGrid = d3.svg.axis().
                     scale(widthScale).

@@ -40,22 +40,27 @@ function tab_initialize_sensors() {
         return sampleNumber + 1;
     }
 
-    function initGraphHelpers(selector, sampleNumber, heightDomain) {
+    function updateGraphHelperSize(selector, helpers) {
         var margin = {top: 20, right: 20, bottom: 10, left: 40};
         var width = $(selector).width() - margin.left - margin.right;
         var height = $(selector).height() - margin.top - margin.bottom;
 
+        helpers.widthScale.range([0, width]);
+        helpers.heightScale.range([height, 0]);
+    }
+
+    function initGraphHelpers(selector, sampleNumber, heightDomain) {
         var helpers = {selector: selector, dynamicHeightDomain: !heightDomain};
 
         helpers.widthScale = d3.scale.linear()
             .clamp(true)
-            .domain([(sampleNumber - 299), sampleNumber])
-            .range([0, width]);
+            .domain([(sampleNumber - 299), sampleNumber]);
 
         helpers.heightScale = d3.scale.linear()
             .clamp(true)
-            .domain(heightDomain || [1, -1])
-            .range([height, 0]);
+            .domain(heightDomain || [1, -1]);
+
+        updateGraphHelperSize(selector, helpers);
 
         helpers.xGrid = d3.svg.axis()
             .scale(helpers.widthScale)
