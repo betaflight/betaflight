@@ -37,6 +37,8 @@ uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 int16_t axisPID[3];
 
+extern failsafe_t *failsafe;
+
 // **********************
 // GPS
 // **********************
@@ -412,7 +414,9 @@ void loop(void)
             rssi = (uint16_t)((constrain(rssiChannelData - 1000, 0, 1000) / 1000.0f) * 1023.0f);
         }
 
-        updateFailsafeState();
+        if (feature(FEATURE_FAILSAFE)) {
+            failsafe->vTable->updateState();
+        }
 
         // ------------------ STICKS COMMAND HANDLER --------------------
         // checking sticks positions
@@ -552,8 +556,7 @@ void loop(void)
         for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
             rcOptions[i] = (auxState & cfg.activate[i]) > 0;
 
-        // note: if FAILSAFE is disable, hasFailsafeTimerElapsed() is always false
-        if ((rcOptions[BOXANGLE] || hasFailsafeTimerElapsed()) && (sensors(SENSOR_ACC))) {
+        if ((rcOptions[BOXANGLE] || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
             // bumpless transfer to Level mode
             if (!f.ANGLE_MODE) {
                 errorAngleI[ROLL] = 0;
@@ -561,7 +564,7 @@ void loop(void)
                 f.ANGLE_MODE = 1;
             }
         } else {
-            f.ANGLE_MODE = 0;        // failsave support
+            f.ANGLE_MODE = 0; // failsafe support
         }
 
         if (rcOptions[BOXHORIZON]) {

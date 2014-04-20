@@ -1,5 +1,8 @@
 #pragma once
 
+#define MAX_SUPPORTED_MOTORS 12
+#define MAX_SUPPORTED_SERVOS 8
+
 // Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
 typedef enum MultiType
 {

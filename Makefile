@@ -66,6 +66,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_uart.c \
 		   drivers/sound_beeper.c \
 		   drivers/system_common.c \
+		   flight_common.c \
 		   flight_imu.c \
 		   flight_mixer.c \
 		   gps_common.c \

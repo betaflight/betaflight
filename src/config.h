@@ -1,8 +1,5 @@
 #pragma once
 
-#define MAX_SUPPORTED_MOTORS 12
-#define MAX_SUPPORTED_SERVOS 8
-
 enum {
     PIDROLL,
     PIDPITCH,

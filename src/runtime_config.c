@@ -27,9 +27,3 @@ uint32_t sensorsMask(void)
 {
     return enabledSensors;
 }
-
-void mwDisarm(void)
-{
-    if (f.ARMED)
-        f.ARMED = 0;
-}

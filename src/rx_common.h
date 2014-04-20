@@ -74,9 +74,6 @@ extern rxRuntimeConfig_t rxRuntimeConfig;
 
 typedef uint16_t (* rcReadRawDataPtr)(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 
-void rxInit(rxConfig_t *rxConfig);
-void serialRxInit(rxConfig_t *rxConfig);
-
 void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 
 void generatePitchCurve(controlRateConfig_t *controlRateConfig);

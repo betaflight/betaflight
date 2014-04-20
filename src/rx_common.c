@@ -6,13 +6,22 @@
 
 #include "platform.h"
 
-#include "rx_common.h"
 #include "config.h"
+
+#include "failsafe.h"
 
 #include "rx_pwm.h"
 #include "rx_sbus.h"
 #include "rx_spektrum.h"
 #include "rx_sumd.h"
+
+#include "rx_common.h"
+
+void pwmRxInit(rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *failsafe, rcReadRawDataPtr *callback);
+void sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
+void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
+void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
+
 const char rcChannelLetters[] = "AERT1234";
 
 int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
@@ -25,7 +34,9 @@ rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) o
 
 rxRuntimeConfig_t rxRuntimeConfig;
 
-void rxInit(rxConfig_t *rxConfig)
+void serialRxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
+
+void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe)
 {
     uint8_t i;
 
@@ -34,24 +45,24 @@ void rxInit(rxConfig_t *rxConfig)
     }
 
     if (feature(FEATURE_SERIALRX)) {
-        serialRxInit(rxConfig);
+        serialRxInit(rxConfig, failsafe);
     } else {
-        pwmRxInit(&rxRuntimeConfig, &rcReadRawFunc);
+        pwmRxInit(&rxRuntimeConfig, failsafe, &rcReadRawFunc);
     }
-
 }
-void serialRxInit(rxConfig_t *rxConfig)
+
+void serialRxInit(rxConfig_t *rxConfig, failsafe_t *failsafe)
 {
     switch (rxConfig->serialrx_type) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
-            spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            spektrumInit(rxConfig, &rxRuntimeConfig, failsafe, &rcReadRawFunc);
             break;
         case SERIALRX_SBUS:
-            sbusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            sbusInit(rxConfig, &rxRuntimeConfig, failsafe, &rcReadRawFunc);
             break;
         case SERIALRX_SUMD:
-            sumdInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            sumdInit(rxConfig, &rxRuntimeConfig, failsafe, &rcReadRawFunc);
             break;
     }
 }

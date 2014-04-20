@@ -2,6 +2,7 @@
 #include "flight_common.h"
 #include "flight_mixer.h"
 #include "serial_common.h"
+#include "failsafe.h"
 #include "mw.h"
 
 #include "gps_common.h"
@@ -16,8 +17,14 @@
 
 extern rcReadRawDataPtr rcReadRawFunc;
 
+failsafe_t *failsafe;
+
 void initTelemetry(serialPorts_t *serialPorts);
 void serialInit(serialConfig_t *initialSerialConfig);
+failsafe_t* failsafeInit(failsafeConfig_t *initialFailsafeConfig, rxConfig_t *intialRxConfig);
+void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe);
+void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
+void buzzerInit(failsafe_t *initialFailsafe);
 
 int main(void)
 {
@@ -68,7 +75,8 @@ int main(void)
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
     pwm_params.servoCenterPulse = mcfg.rxConfig.midrc;
-    pwm_params.failsafeThreshold = cfg.failsafe_detect_threshold;
+    pwm_params.failsafeThreshold = cfg.failsafeConfig.failsafe_detect_threshold;
+
     switch (mcfg.power_adc_channel) {
         case 1:
             pwm_params.adcChannel = PWM2;
@@ -81,9 +89,11 @@ int main(void)
             break;
     }
 
-    pwmInit(&pwm_params);
+    failsafe = failsafeInit(&cfg.failsafeConfig, &mcfg.rxConfig);
+    buzzerInit(failsafe);
+    pwmInit(&pwm_params, failsafe);
 
-    rxInit(&mcfg.rxConfig);
+    rxInit(&mcfg.rxConfig, failsafe);
 
     if (feature(FEATURE_GPS) && !feature(FEATURE_SERIALRX)) {
         gpsInit(mcfg.gps_baudrate);

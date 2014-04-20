@@ -34,8 +34,12 @@ volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 static void spektrumDataReceive(uint16_t c);
 static uint16_t spektrumReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+failsafe_t *failsafe;
+
+void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
 {
+    failsafe = initialFailsafe;
+
     switch (rxConfig->serialrx_type) {
         case SERIALRX_SPEKTRUM2048:
             // 11 bit frames
@@ -74,7 +78,7 @@ static void spektrumDataReceive(uint16_t c)
     spekFrame[spekFramePosition] = (uint8_t)c;
     if (spekFramePosition == SPEK_FRAME_SIZE - 1) {
         rcFrameComplete = true;
-        failsafeCnt = 0;   // clear FailSafe counter
+        failsafe->vTable->reset();
     } else {
         spekFramePosition++;
     }

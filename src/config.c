@@ -24,6 +24,7 @@
 #include "rx_common.h"
 #include "gps_common.h"
 #include "serial_common.h"
+#include "failsafe.h"
 
 #include "runtime_config.h"
 #include "config.h"
@@ -88,6 +89,8 @@ void readEEPROM(void)
 
     setPIDController(cfg.pidController);
     gpsSetPIDs();
+    useFailsafeConfig(&cfg.failsafeConfig);
+
 }
 
 void writeEEPROM(uint8_t b, uint8_t updateProfile)
@@ -289,10 +292,10 @@ static void resetConf(void)
     cfg.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
-    cfg.failsafe_delay = 10;                // 1sec
-    cfg.failsafe_off_delay = 200;           // 20sec
-    cfg.failsafe_throttle = 1200;           // decent default which should always be below hover throttle for people.
-    cfg.failsafe_detect_threshold = 985;    // any of first 4 channels below this value will trigger failsafe
+    cfg.failsafeConfig.failsafe_delay = 10;                // 1sec
+    cfg.failsafeConfig.failsafe_off_delay = 200;           // 20sec
+    cfg.failsafeConfig.failsafe_throttle = 1200;           // decent default which should always be below hover throttle for people.
+    cfg.failsafeConfig.failsafe_detect_threshold = 985;    // any of first 4 channels below this value will trigger failsafe
 
     // servos
     for (i = 0; i < 8; i++) {

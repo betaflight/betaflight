@@ -336,7 +336,7 @@ static void evaluateCommand(void)
         mcfg.minthrottle = read16();
         mcfg.maxthrottle = read16();
         mcfg.mincommand = read16();
-        cfg.failsafe_throttle = read16();
+        cfg.failsafeConfig.failsafe_throttle = read16();
         read16();
         read32();
         cfg.mag_declination = read16() * 10;
@@ -542,7 +542,7 @@ static void evaluateCommand(void)
         serialize16(mcfg.minthrottle);
         serialize16(mcfg.maxthrottle);
         serialize16(mcfg.mincommand);
-        serialize16(cfg.failsafe_throttle);
+        serialize16(cfg.failsafeConfig.failsafe_throttle);
         serialize16(0); // plog useless shit
         serialize32(0); // plog useless shit
         serialize16(cfg.mag_declination / 10); // TODO check this shit

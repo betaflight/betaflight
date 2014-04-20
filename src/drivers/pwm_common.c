@@ -8,10 +8,10 @@
 
 #include "gpio_common.h"
 #include "timer_common.h"
+
+#include "failsafe.h" // FIXME dependency into the main code from a driver
+
 #include "pwm_common.h"
-
-#include "failsafe.h" // FIXME for external global variables
-
 /*
     Configuration maps:
 
@@ -151,6 +151,8 @@ static const uint8_t * const hardwareMaps[] = {
 #define PWM_TIMER_MHZ 1
 #define PWM_BRUSHED_TIMER_MHZ 8
 
+failsafe_t *failsafe;
+
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
 {
     TIM_OCInitTypeDef  TIM_OCInitStructure;
@@ -271,16 +273,13 @@ static void ppmCallback(uint8_t port, uint16_t capture)
             captures[chan] = diff;
             if (chan < 4 && diff > failsafeThreshold)
                 GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK
-            if (GoodPulses == 0x0F) {           // If first four chanells have good pulses, clear FailSafe counter
+            if (GoodPulses == 0x0F) {           // If first four channels have good pulses, clear FailSafe counter
                 GoodPulses = 0;
-                if (failsafeCnt > 20)
-                    failsafeCnt -= 20;
-                else
-                    failsafeCnt = 0;
+                failsafe->vTable->validDataReceived();
             }
         }
         chan++;
-        failsafeCnt = 0;
+        failsafe->vTable->reset();
     }
 }
 
@@ -299,7 +298,7 @@ static void pwmCallback(uint8_t port, uint16_t capture)
         pwmPorts[port].state = 0;
         pwmICConfig(timerHardware[port].tim, timerHardware[port].channel, TIM_ICPolarity_Rising);
         // reset failsafe
-        failsafeCnt = 0;
+        failsafe->vTable->reset();
     }
 }
 
@@ -313,10 +312,12 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
     *motors[index]->ccr = value;
 }
 
-bool pwmInit(drv_pwm_config_t *init)
+void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
 {
     int i = 0;
     const uint8_t *setup;
+
+    failsafe = initialFailsafe;
 
     // to avoid importing cfg/mcfg
     failsafeThreshold = init->failsafeThreshold;
@@ -394,7 +395,6 @@ bool pwmInit(drv_pwm_config_t *init)
     pwmWritePtr = pwmWriteStandard;
     if (init->motorPwmRate > 500)
         pwmWritePtr = pwmWriteBrushed;
-    return false;
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value)

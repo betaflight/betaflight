@@ -1,45 +1,73 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// FIXME a solution to the dependency problems here is to roll up the failsafe configuration into a structure in failsafe.h and supply it using failsafeInit()
-
-#include "common/axis.h" // FIXME this file should not have this dependency
-
 #include "rx_common.h"
 
-#include "drivers/serial_common.h" // FIXME this file should not have this dependency
-#include "serial_common.h" // FIXME this file should not have this dependency
-#include "flight_mixer.h" // FIXME this file should not have this dependency
-#include "flight_common.h" // FIXME this file should not have this dependency
-#include "sensors_common.h" // FIXME this file should not have this dependency
-#include "boardalignment.h" // FIXME this file should not have this dependency
-#include "battery.h" // FIXME this file should not have this dependency
-
+#include "common/axis.h"
+#include "flight_common.h"
 #include "runtime_config.h"
-#include "config.h"
-#include "config_storage.h"
 
-int16_t failsafeCnt = 0;
-int16_t failsafeEvents = 0;
+#include "failsafe.h"
 
-bool isFailsafeIdle(void)
+/*
+ * Usage:
+ *
+ * failsafeInit() and useFailsafeConfig() must be called before the other methods are used.
+ *
+ * failsafeInit() and useFailsafeConfig() can be called in any order.
+ * failsafeInit() should only be called once.
+ */
+
+static failsafe_t failsafe;
+
+static failsafeConfig_t *failsafeConfig;
+
+static rxConfig_t *rxConfig;
+
+const failsafeVTable_t failsafeVTable[];
+
+void reset(void)
 {
-    return failsafeCnt == 0;
+    failsafe.counter = 0;
 }
 
-bool hasFailsafeTimerElapsed(void)
+/*
+ * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
+ */
+void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse)
 {
-    return failsafeCnt > (5 * cfg.failsafe_delay);
+    failsafeConfig = failsafeConfigToUse;
+    reset();
 }
 
-bool shouldFailsafeForceLanding(bool armed)
+failsafe_t* failsafeInit(rxConfig_t *intialRxConfig)
 {
-    return hasFailsafeTimerElapsed() && armed;
+    rxConfig = intialRxConfig;
+
+    failsafe.vTable = failsafeVTable;
+    failsafe.events = 0;
+
+    return &failsafe;
 }
 
-bool shouldFailsafeHaveCausedLandingByNow(void)
+bool isIdle(void)
 {
-    return failsafeCnt > 5 * (cfg.failsafe_delay + cfg.failsafe_off_delay);
+    return failsafe.counter == 0;
+}
+
+bool hasTimerElapsed(void)
+{
+    return failsafe.counter > (5 * failsafeConfig->failsafe_delay);
+}
+
+bool shouldForceLanding(bool armed)
+{
+    return hasTimerElapsed() && armed;
+}
+
+bool shouldHaveCausedLandingByNow(void)
+{
+    return failsafe.counter > 5 * (failsafeConfig->failsafe_delay + failsafeConfig->failsafe_off_delay);
 }
 
 void failsafeAvoidRearm(void)
@@ -48,29 +76,45 @@ void failsafeAvoidRearm(void)
     f.OK_TO_ARM = 0;        // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
 }
 
+void onValidDataReceived(void)
+{
+    if (failsafe.counter > 20)
+        failsafe.counter -= 20;
+    else
+        failsafe.counter = 0;
+}
 
-void updateFailsafeState(void)
+void updateState(void)
 {
     uint8_t i;
 
-    if (!feature(FEATURE_FAILSAFE)) {
-        return;
-    }
+    if (hasTimerElapsed()) {
 
-    if (hasFailsafeTimerElapsed()) {
-
-        if (shouldFailsafeForceLanding(f.ARMED)) { // Stabilize, and set Throttle to specified level
+        if (shouldForceLanding(f.ARMED)) { // Stabilize, and set Throttle to specified level
             for (i = 0; i < 3; i++) {
-                rcData[i] = mcfg.rxConfig.midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
+                rcData[i] = rxConfig->midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
             }
-            rcData[THROTTLE] = cfg.failsafe_throttle;
-            failsafeEvents++;
+            rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
+            failsafe.events++;
         }
 
-        if (shouldFailsafeHaveCausedLandingByNow() || !f.ARMED) {
+        if (shouldHaveCausedLandingByNow() || !f.ARMED) {
             failsafeAvoidRearm();
         }
     }
-    failsafeCnt++;
+    failsafe.counter++;
 }
+
+const failsafeVTable_t failsafeVTable[] = {
+    {
+        reset,
+        onValidDataReceived,
+        shouldForceLanding,
+        hasTimerElapsed,
+        shouldHaveCausedLandingByNow,
+        updateState,
+        isIdle
+    }
+};
+
 

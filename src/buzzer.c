@@ -26,6 +26,13 @@ typedef enum {
     FAILSAFE_FIND_ME
 } failsafeBuzzerWarnings_e;
 
+failsafe_t* failsafe;
+
+void buzzerInit(failsafe_t *initialFailsafe)
+{
+    failsafe = initialFailsafe;
+}
+
 void buzzer(bool warn_vbat)
 {
     static uint8_t beeperOnBox;
@@ -41,19 +48,19 @@ void buzzer(bool warn_vbat)
     }
     //===================== Beeps for failsafe =====================
     if (feature(FEATURE_FAILSAFE)) {
-        if (shouldFailsafeForceLanding(f.ARMED)) {
+        if (failsafe->vTable->shouldForceLanding(f.ARMED)) {
             warn_failsafe = FAILSAFE_LANDING;
 
-            if (shouldFailsafeHaveCausedLandingByNow()) {
+            if (failsafe->vTable->shouldHaveCausedLandingByNow()) {
                 warn_failsafe = FAILSAFE_FIND_ME;
             }
         }
 
-        if (hasFailsafeTimerElapsed() && !f.ARMED) {
+        if (failsafe->vTable->hasTimerElapsed() && !f.ARMED) {
             warn_failsafe = FAILSAFE_FIND_ME;
         }
 
-        if (isFailsafeIdle()) {
+        if (failsafe->vTable->isIdle()) {
             warn_failsafe = FAILSAFE_IDLE;      // turn off alarm if TX is okay
         }
     }

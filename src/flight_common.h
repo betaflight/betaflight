@@ -22,3 +22,6 @@ extern int16_t gyroZero[GYRO_INDEX_COUNT]; // see gyro_index_t
 
 extern int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 extern int32_t accSum[XYZ_AXIS_COUNT];
+
+void mwDisarm(void);
+

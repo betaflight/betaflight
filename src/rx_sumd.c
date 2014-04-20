@@ -26,8 +26,12 @@ static uint16_t sumdReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntime
 
 static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 
-void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+failsafe_t *failsafe;
+
+void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
 {
+    failsafe = initialFailsafe;
+
     serialPorts.rcvrport = uartOpen(USART2, sumdDataReceive, 115200, MODE_RX);
     if (callback)
         *callback = sumdReadRawRC;
@@ -74,7 +78,7 @@ bool sumdFrameComplete(void)
     if (sumdFrameDone) {
         sumdFrameDone = false;
         if (sumd[1] == 0x01) {
-            failsafeCnt = 0;
+            failsafe->vTable->reset();
             if (sumdSize > SUMD_MAX_CHANNEL)
                 sumdSize = SUMD_MAX_CHANNEL;
             for (b = 0; b < sumdSize; b++)

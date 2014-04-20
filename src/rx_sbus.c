@@ -28,11 +28,12 @@ static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntime
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
-//rxConfig_t *rxConfig;
+failsafe_t *failsafe;
 
-void sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+void sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
 {
     int b;
+    failsafe = initialFailsafe;
 
     //rxConfig = initialRxConfig;
 
@@ -99,7 +100,7 @@ bool sbusFrameComplete(void)
 {
     if (sbusFrameDone) {
         if (!((sbus.in[22] >> 3) & 0x0001)) { // failsave flag
-            failsafeCnt = 0; // clear FailSafe counter
+            failsafe->vTable->reset();
             sbusChannelData[0] = sbus.msg.chan0;
             sbusChannelData[1] = sbus.msg.chan1;
             sbusChannelData[2] = sbus.msg.chan2;

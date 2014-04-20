@@ -2,6 +2,7 @@
 
 #include "runtime_config.h"
 #include "flight_common.h"
+#include "failsafe.h"
 
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
