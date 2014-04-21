@@ -118,6 +118,17 @@ retry:
     }
 #endif
 
+    if (mcfg.gyro_align != ALIGN_DEFAULT) {
+        gyroAlign = mcfg.gyro_align;
+    }
+    if (mcfg.acc_align != ALIGN_DEFAULT) {
+        accAlign = mcfg.acc_align;
+    }
+    if (mcfg.mag_align != ALIGN_DEFAULT) {
+        magAlign = mcfg.mag_align;
+    }
+
+
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
         acc.init();
