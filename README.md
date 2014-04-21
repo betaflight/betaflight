@@ -10,7 +10,7 @@ This fork differs from baseflight in that it attempts to use modern software dev
 3. easier to develop new features. 
 4. easier to re-use code though code de-coupling and modularisation.
 
-The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediate raise an issue so it can be fixed, or better yet submit a pull request.
+The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediately raise an issue so it can be fixed, or better yet submit a pull request.
 
 Contributing
 ============
