@@ -79,6 +79,16 @@ static bool isEEPROMContentValid(void)
     return true;
 }
 
+void activateConfig(void)
+{
+    generatePitchCurve(&cfg.controlRateConfig);
+    generateThrottleCurve(&cfg.controlRateConfig, mcfg.minthrottle, mcfg.maxthrottle);
+
+    setPIDController(cfg.pidController);
+    gpsSetPIDs();
+    useFailsafeConfig(&cfg.failsafeConfig);
+}
+
 void readEEPROM(void)
 {
     // Sanity check
@@ -90,14 +100,9 @@ void readEEPROM(void)
     // Copy current profile
     if (mcfg.current_profile > 2) // sanity check
         mcfg.current_profile = 0;
-    memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t));
+    memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t)); 
 
-    generatePitchCurve(&cfg.controlRateConfig);
-    generateThrottleCurve(&cfg.controlRateConfig, mcfg.minthrottle, mcfg.maxthrottle);
-
-    setPIDController(cfg.pidController);
-    gpsSetPIDs();
-    useFailsafeConfig(&cfg.failsafeConfig);
+    activateConfig();
 }
 
 void readEEPROMAndNotify(void)
@@ -232,6 +237,7 @@ static void resetConf(void)
     mcfg.serialConfig.reboot_character = 'R';
 
     mcfg.looptime = 3500;
+    mcfg.emfAvoidance = 0;
     mcfg.rssi_aux_channel = 0;
 
     cfg.pidController = 0;
