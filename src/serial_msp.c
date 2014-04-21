@@ -357,7 +357,7 @@ static void evaluateCommand(void)
             if (mcfg.current_profile > 2)
                 mcfg.current_profile = 0;
             // this writes new profile index and re-reads it
-            writeEEPROM(0, false);
+            writeEEPROM(0);
         }
         headSerialReply(0);
         break;
@@ -618,7 +618,8 @@ static void evaluateCommand(void)
         if (f.ARMED) {
             headSerialError(0);
         } else {
-            writeEEPROM(0, true);
+            copyCurrentProfileToProfileSlot(mcfg.current_profile);
+            writeEEPROM(0);
             headSerialReply(0);
         }
         break;

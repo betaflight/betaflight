@@ -58,9 +58,11 @@ int Mag_getADC(void)
             }
         } else {
             tCal = 0;
-            for (axis = 0; axis < 3; axis++)
+            for (axis = 0; axis < 3; axis++) {
                 mcfg.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2; // Calculate offsets
-            writeEEPROM(1, true);
+            }
+            copyCurrentProfileToProfileSlot(mcfg.current_profile);
+            writeEEPROM(1);
         }
     }
 

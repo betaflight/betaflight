@@ -40,7 +40,8 @@ void ACC_Common(void)
             mcfg.accZero[GI_YAW] = (a[GI_YAW] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc_1G;
             cfg.angleTrim[AI_ROLL] = 0;
             cfg.angleTrim[AI_PITCH] = 0;
-            writeEEPROM(1, true);      // write accZero in EEPROM
+            copyCurrentProfileToProfileSlot(mcfg.current_profile);
+            writeEEPROM(1);      // write accZero in EEPROM
         }
         calibratingA--;
     }
@@ -90,7 +91,8 @@ void ACC_Common(void)
             mcfg.accZero[GI_YAW] = b[GI_YAW] / 50 - acc_1G;    // for nunchuk 200=1G
             cfg.angleTrim[AI_ROLL] = 0;
             cfg.angleTrim[AI_PITCH] = 0;
-            writeEEPROM(1, true);          // write accZero in EEPROM
+            copyCurrentProfileToProfileSlot(mcfg.current_profile);
+            writeEEPROM(1);          // write accZero in EEPROM
         }
     }
 

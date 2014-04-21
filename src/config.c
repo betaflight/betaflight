@@ -93,7 +93,13 @@ void readEEPROM(void)
 
 }
 
-void writeEEPROM(uint8_t b, uint8_t updateProfile)
+void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
+{
+    // copy current in-memory profile to stored configuration
+    memcpy(&mcfg.profile[profileSlotIndex], &cfg, sizeof(config_t));
+}
+
+void writeEEPROM(uint8_t b)
 {
     FLASH_Status status;
     uint32_t i;
@@ -107,12 +113,6 @@ void writeEEPROM(uint8_t b, uint8_t updateProfile)
     mcfg.magic_be = 0xBE;
     mcfg.magic_ef = 0xEF;
     mcfg.chk = 0;
-
-    // when updateProfile = true, we copy contents of cfg to global configuration. when false, only profile number is updated, and then that profile is loaded on readEEPROM()
-    if (updateProfile) {
-        // copy current in-memory profile to stored configuration
-        memcpy(&mcfg.profile[mcfg.current_profile], &cfg, sizeof(config_t));
-    }
 
     // recalculate checksum before writing
     for (p = (const uint8_t *)&mcfg; p < ((const uint8_t *)&mcfg + sizeof(master_t)); p++)
@@ -155,8 +155,7 @@ void checkFirstTime(bool reset)
     // check the EEPROM integrity before resetting values
     if (!validEEPROM() || reset) {
         resetConf();
-        // no need to memcpy profile again, we just did it in resetConf() above
-        writeEEPROM(0, false);
+        writeEEPROM(0);
     }
 }
 

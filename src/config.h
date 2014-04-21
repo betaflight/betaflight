@@ -38,6 +38,8 @@ void featureClear(uint32_t mask);
 void featureClearAll(void);
 uint32_t featureMask(void);
 
+void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
+
 void readEEPROM(void);
-void writeEEPROM(uint8_t b, uint8_t updateProfile);
+void writeEEPROM(uint8_t b);
 void checkFirstTime(bool reset);
