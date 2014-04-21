@@ -5,7 +5,7 @@
 # this stuff is worth it, you can buy me a beer in return
 ###############################################################################
 #
-# Makefile for building the baseflight firmware.
+# Makefile for building the cleanflight firmware.
 #
 # Invoke this with 'make help' to see the list of supported targets.
 # 
@@ -29,6 +29,8 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
+
+FORKNAME			 = cleanflight
 
 VALID_TARGETS	 = NAZE FY90Q OLIMEXINO
 
@@ -128,8 +130,8 @@ OLIMEXINO_SRC	 = drivers/accgyro_adxl345.c \
 # This will prevent accidental deletion of startup code.
 .PRECIOUS: %.s
 
-# Search path for baseflight sources
-VPATH		:= $(SRC_DIR):$(SRC_DIR)/baseflight_startups
+# Search path for sources
+VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 
 # Search path and source files for the CMSIS sources
 VPATH		:= $(VPATH):$(CMSIS_DIR)/CM3/CoreSupport:$(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
@@ -200,10 +202,10 @@ CFLAGS = $(BASE_CFLAGS) \
 endif
 
 
-TARGET_HEX	 = $(BIN_DIR)/baseflight_$(TARGET).hex
-TARGET_ELF	 = $(BIN_DIR)/baseflight_$(TARGET).elf
+TARGET_HEX	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).hex
+TARGET_ELF	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).elf
 TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
-TARGET_MAP   = $(OBJECT_DIR)/baseflight_$(TARGET).map
+TARGET_MAP   = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
@@ -250,7 +252,7 @@ unbrick: unbrick_$(TARGET)
 
 help:
 	@echo ""
-	@echo "Makefile for the baseflight firmware"
+	@echo "Makefile for the $(FORKNAME) firmware"
 	@echo ""
 	@echo "Usage:"
 	@echo "        make [TARGET=<target>] [OPTIONS=\"<options>\"]"
