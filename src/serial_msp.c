@@ -354,10 +354,11 @@ static void evaluateCommand(void)
     case MSP_SELECT_SETTING:
         if (!f.ARMED) {
             mcfg.current_profile = read8();
-            if (mcfg.current_profile > 2)
+            if (mcfg.current_profile > 2) {
                 mcfg.current_profile = 0;
-            // this writes new profile index and re-reads it
-            writeEEPROM(0);
+            }
+            writeEEPROM();
+            readEEPROM();
         }
         headSerialReply(0);
         break;
@@ -619,7 +620,8 @@ static void evaluateCommand(void)
             headSerialError(0);
         } else {
             copyCurrentProfileToProfileSlot(mcfg.current_profile);
-            writeEEPROM(0);
+            writeEEPROM();
+            readEEPROM();
             headSerialReply(0);
         }
         break;

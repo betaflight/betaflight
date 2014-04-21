@@ -41,7 +41,8 @@ void ACC_Common(void)
             cfg.angleTrim[AI_ROLL] = 0;
             cfg.angleTrim[AI_PITCH] = 0;
             copyCurrentProfileToProfileSlot(mcfg.current_profile);
-            writeEEPROM(1);      // write accZero in EEPROM
+            writeEEPROM();      // write accZero in EEPROM
+            readEEPROMAndNotify();
         }
         calibratingA--;
     }
@@ -92,7 +93,8 @@ void ACC_Common(void)
             cfg.angleTrim[AI_ROLL] = 0;
             cfg.angleTrim[AI_PITCH] = 0;
             copyCurrentProfileToProfileSlot(mcfg.current_profile);
-            writeEEPROM(1);          // write accZero in EEPROM
+            writeEEPROM();          // write accZero in EEPROM
+            readEEPROMAndNotify();
         }
     }
 

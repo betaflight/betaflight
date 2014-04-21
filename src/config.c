@@ -90,7 +90,13 @@ void readEEPROM(void)
     setPIDController(cfg.pidController);
     gpsSetPIDs();
     useFailsafeConfig(&cfg.failsafeConfig);
+}
 
+void readEEPROMAndNotify(void)
+{
+    // re-read written data
+    readEEPROM();
+    blinkLedAndSoundBeeper(15, 20, 1);
 }
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
@@ -99,7 +105,7 @@ void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
     memcpy(&mcfg.profile[profileSlotIndex], &cfg, sizeof(config_t));
 }
 
-void writeEEPROM(uint8_t b)
+void writeEEPROM(void)
 {
     FLASH_Status status;
     uint32_t i;
@@ -143,11 +149,6 @@ retry:
     if (tries == 3 || !validEEPROM()) {
         failureMode(10);
     }
-
-    // re-read written data
-    readEEPROM();
-    if (b)
-        blinkLedAndSoundBeeper(15, 20, 1);
 }
 
 void checkFirstTime(bool reset)
@@ -155,7 +156,8 @@ void checkFirstTime(bool reset)
     // check the EEPROM integrity before resetting values
     if (!validEEPROM() || reset) {
         resetConf();
-        writeEEPROM(0);
+        writeEEPROM();
+        readEEPROM();
     }
 }
 

@@ -835,7 +835,8 @@ static void cliProfile(char *cmdline)
         i = atoi(cmdline);
         if (i >= 0 && i <= 2) {
             mcfg.current_profile = i;
-            writeEEPROM(0);
+            writeEEPROM();
+            readEEPROM();
             cliProfile("");
         }
     }
@@ -845,7 +846,7 @@ static void cliSave(char *cmdline)
 {
     cliPrint("Saving...");
     copyCurrentProfileToProfileSlot(mcfg.current_profile);
-    writeEEPROM(0);
+    writeEEPROM();
     cliPrint("\r\nRebooting...");
     delay(10);
     systemReset(false);
