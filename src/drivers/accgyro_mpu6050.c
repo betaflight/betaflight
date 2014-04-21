@@ -5,11 +5,12 @@
 
 #include "common/maths.h"
 
+#include "sensors_common.h" // FIXME dependency into the main code
+
 #include "accgyro_common.h"
 #include "system_common.h"
 #include "gpio_common.h"
 
-#include "sensors_common.h"
 
 #include "accgyro_mpu6050.h"
 
@@ -139,7 +140,7 @@ typedef enum {
 
 static mpu6050Resolution_e mpuAccelTrim;
 
-bool mpu6050Detect(sensor_t *acc, sensor_t *gyro, uint16_t lpf)
+bool mpu6050Detect(acc_t *acc, gyro_t *gyro, uint16_t lpf)
 {
     bool ack;
     uint8_t sig, rev;

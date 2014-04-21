@@ -3,10 +3,11 @@
 
 #include "platform.h"
 
+#include "sensors_common.h" // FIXME dependency into the main code
+
 #include "accgyro_common.h"
 #include "system_common.h"
 #include "gpio_common.h"
-#include "sensors_common.h"
 
 #include "accgyro_mma845x.h"
 
@@ -67,7 +68,7 @@ static sensor_align_e accAlign = CW90_DEG;
 static void mma8452Init(sensor_align_e align);
 static void mma8452Read(int16_t *accelData);
 
-bool mma8452Detect(sensor_t *acc)
+bool mma8452Detect(acc_t *acc)
 {
     bool ack = false;
     uint8_t sig = 0;

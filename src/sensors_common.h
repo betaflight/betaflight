@@ -22,16 +22,4 @@ typedef enum {
     CW270_DEG_FLIP = 8
 } sensor_align_e;
 
-typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
-typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
-
-typedef struct sensor_t
-{
-    sensorInitFuncPtr init;                                 // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
-    sensorReadFuncPtr temperature;                          // read temperature if available
-    float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
-    char revisionCode;                                      // a revision code for the sensor, if known
-} sensor_t;
-
 extern int16_t heading;

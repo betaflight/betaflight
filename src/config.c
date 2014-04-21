@@ -7,10 +7,12 @@
 #include "common/axis.h"
 #include "flight_common.h"
 
+#include "sensors_common.h"
+
+#include "drivers/accgyro_common.h"
 #include "drivers/system_common.h"
 
 #include "statusindicator.h"
-#include "sensors_common.h"
 #include "sensors_acceleration.h"
 #include "telemetry_common.h"
 #include "gps_common.h"

@@ -7,6 +7,8 @@
 
 #include "gps_common.h"
 #include "rx_common.h"
+#include "sensors_common.h"
+#include "drivers/accgyro_common.h"
 #include "drivers/serial_common.h"
 #include "telemetry_common.h"
 #include "boardalignment.h"

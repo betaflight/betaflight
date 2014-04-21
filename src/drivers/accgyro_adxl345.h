@@ -5,4 +5,4 @@ typedef struct drv_adxl345_config_t {
     uint16_t dataRate;
 } drv_adxl345_config_t;
 
-bool adxl345Detect(drv_adxl345_config_t *init, sensor_t *acc);
+bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc);

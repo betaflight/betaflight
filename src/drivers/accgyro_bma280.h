@@ -1,3 +1,3 @@
 #pragma once
 
-bool bma280Detect(sensor_t *acc);
+bool bma280Detect(acc_t *acc);

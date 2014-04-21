@@ -5,8 +5,8 @@
 
 #include "common/axis.h"
 
+#include "sensors_common.h" // FIXME dependency into the main code
 #include "accgyro_common.h"
-#include "sensors_common.h"
 
 #include "accgyro_l3g4200d.h"
 
@@ -47,7 +47,7 @@ static sensor_align_e gyroAlign = CW0_DEG;
 static void l3g4200dInit(sensor_align_e align);
 static void l3g4200dRead(int16_t *gyroData);
 
-bool l3g4200dDetect(sensor_t *gyro, uint16_t lpf)
+bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
 {
     uint8_t deviceid;
 

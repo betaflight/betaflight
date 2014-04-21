@@ -3,9 +3,10 @@
 
 #include <platform.h>
 
+#include "sensors_common.h" // FIXME dependency into the main code
+
 #include "accgyro_common.h"
 
-#include "sensors_common.h"
 #include "system_common.h"
 #include "bus_i2c.h"
 
@@ -48,7 +49,7 @@ static void adxl345Read(int16_t *accelData);
 static bool useFifo = false;
 static sensor_align_e accAlign = CW270_DEG;
 
-bool adxl345Detect(drv_adxl345_config_t *init, sensor_t *acc)
+bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
 {
     bool ack = false;
     uint8_t sig = 0;

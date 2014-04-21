@@ -5,8 +5,8 @@
 
 #include "platform.h"
 
+#include "sensors_common.h" // FIXME dependency into the main code
 #include "accgyro_common.h"
-#include "sensors_common.h"
 
 #include "system_common.h"
 

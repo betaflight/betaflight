@@ -5,10 +5,10 @@
 
 #include "common/maths.h"
 
+#include "sensors_common.h" // FIXME dependency into the main code
+
 #include "accgyro_common.h"
 #include "system_common.h"
-
-#include "sensors_common.h"
 
 #include "accgyro_mpu3050.h"
 
@@ -48,7 +48,7 @@ static void mpu3050Init(sensor_align_e align);
 static void mpu3050Read(int16_t *gyroData);
 static void mpu3050ReadTemp(int16_t *tempData);
 
-bool mpu3050Detect(sensor_t *gyro, uint16_t lpf)
+bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
 {
     bool ack;
 

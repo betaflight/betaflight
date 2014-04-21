@@ -3,8 +3,8 @@
 
 #include <platform.h>
 
+#include "sensors_common.h" // FIXME dependency into the main code
 #include "accgyro_common.h"
-#include <sensors_common.h>
 
 #include "accgyro_bma280.h"
 
@@ -24,7 +24,7 @@ static void bma280Read(int16_t *accelData);
 
 static sensor_align_e accAlign = CW0_DEG;
 
-bool bma280Detect(sensor_t *acc)
+bool bma280Detect(acc_t *acc)
 {
     bool ack = false;
     uint8_t sig = 0;

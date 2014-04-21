@@ -13,9 +13,9 @@ extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
 extern float magneticDeclination;
 
-extern sensor_t gyro;
+extern gyro_t gyro;
 extern baro_t baro;
-extern sensor_t acc;
+extern acc_t acc;
 
 #ifdef FY90Q
 // FY90Q analog gyro/acc

@@ -5,13 +5,14 @@
 #include "common/maths.h"
 
 #include "platform.h"
-//
+
 #include "common/axis.h"
 #include "flight_common.h"
-//
+
 #include "drivers/system_common.h"
-//
+
 #include "sensors_common.h"
+#include "drivers/accgyro_common.h"
 #include "sensors_gyro.h"
 #include "sensors_compass.h"
 #include "sensors_acceleration.h"
