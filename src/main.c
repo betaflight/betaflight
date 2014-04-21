@@ -23,7 +23,7 @@ failsafe_t *failsafe;
 
 void initTelemetry(serialPorts_t *serialPorts);
 void serialInit(serialConfig_t *initialSerialConfig);
-failsafe_t* failsafeInit(failsafeConfig_t *initialFailsafeConfig, rxConfig_t *intialRxConfig);
+failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
@@ -91,7 +91,7 @@ int main(void)
             break;
     }
 
-    failsafe = failsafeInit(&cfg.failsafeConfig, &mcfg.rxConfig);
+    failsafe = failsafeInit(&mcfg.rxConfig);
     buzzerInit(failsafe);
     pwmInit(&pwm_params, failsafe);
 
