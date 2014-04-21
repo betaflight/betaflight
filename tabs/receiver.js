@@ -156,8 +156,17 @@ function tab_initialize_receiver() {
             }
 
             var samples = 0;
-
             var svg = d3.select("svg");
+
+            var width, height, widthScale, heightScale;
+            function update_receiver_plot_size() {
+                var margin = {top: 20, right: 20, bottom: 10, left: 40};
+                width = $('#RX_plot').width() - margin.left - margin.right;
+                height = $('#RX_plot').height() - margin.top - margin.bottom;
+
+                widthScale.range([0, width]);
+                heightScale.range([height, 0]);
+            }
 
             function update_ui() {
                 meter_array[0].val(RC.throttle);
@@ -207,23 +216,13 @@ function tab_initialize_receiver() {
                 }
 
                 // update required parts of the plot
-                var widthScale = d3.scale.linear().
+                widthScale = d3.scale.linear().
                     domain([(samples - 299), samples]);
 
-                var heightScale = d3.scale.linear().
+                heightScale = d3.scale.linear().
                     domain([800, 2200]);
 
-                var margin, width, height;
-                function update_receiver_plot_size() {
-                    margin = {top: 20, right: 20, bottom: 10, left: 40};
-                    width = $('#RX_plot').width() - margin.left - margin.right;
-                    height = $('#RX_plot').height() - margin.top - margin.bottom;
-                    widthScale.range([0, width]);
-                    heightScale.range([height, 0]);
-                }
-
                 update_receiver_plot_size();
-
 
                 var xGrid = d3.svg.axis().
                     scale(widthScale).

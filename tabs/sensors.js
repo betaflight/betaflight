@@ -40,14 +40,13 @@ function tab_initialize_sensors() {
         return sampleNumber + 1;
     }
 
-    var margin, width, height;
     function updateGraphHelperSize(selector, helpers) {
-        margin = {top: 20, right: 20, bottom: 10, left: 40};
-        width = $(selector).width() - margin.left - margin.right;
-        height = $(selector).height() - margin.top - margin.bottom;
+        var margin = {top: 20, right: 20, bottom: 10, left: 40};
+        helpers.width = $(selector).width() - margin.left - margin.right;
+        helpers.height = $(selector).height() - margin.top - margin.bottom;
 
-        helpers.widthScale.range([0, width]);
-        helpers.heightScale.range([height, 0]);
+        helpers.widthScale.range([0, helpers.width]);
+        helpers.heightScale.range([helpers.height, 0]);
     }
 
     function initGraphHelpers(selector, sampleNumber, heightDomain) {
@@ -67,14 +66,14 @@ function tab_initialize_sensors() {
             .scale(helpers.widthScale)
             .orient("bottom")
             .ticks(5)
-            .tickSize(-height, 0, 0)
+            .tickSize(-helpers.height, 0, 0)
             .tickFormat("");
 
         helpers.yGrid = d3.svg.axis()
             .scale(helpers.heightScale)
             .orient("left")
             .ticks(5)
-            .tickSize(-width, 0, 0)
+            .tickSize(-helpers.width, 0, 0)
             .tickFormat("");
 
         helpers.xAxis = d3.svg.axis()
