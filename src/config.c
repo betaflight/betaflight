@@ -108,9 +108,9 @@ void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
 void writeEEPROM(void)
 {
     FLASH_Status status;
-    uint32_t i;
-    uint8_t chk = 0;
-    const uint8_t *p;
+    uint32_t wordOffset;
+    uint8_t checksum = 0;
+    const uint8_t *byteOffset;
     int8_t attemptsRemaining = 3;
 
     // prepare checksum/version constants
@@ -121,9 +121,9 @@ void writeEEPROM(void)
     mcfg.chk = 0;
 
     // recalculate checksum before writing
-    for (p = (const uint8_t *)&mcfg; p < ((const uint8_t *)&mcfg + sizeof(master_t)); p++)
-        chk ^= *p;
-    mcfg.chk = chk;
+    for (byteOffset = (const uint8_t *)&mcfg; byteOffset < ((const uint8_t *)&mcfg + sizeof(master_t)); byteOffset++)
+        checksum ^= *byteOffset;
+    mcfg.chk = checksum;
 
     // write it
     FLASH_Unlock();
@@ -131,8 +131,8 @@ void writeEEPROM(void)
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 
         status = FLASH_ErasePage(FLASH_WRITE_ADDR);
-        for (i = 0; i < sizeof(master_t) && status == FLASH_COMPLETE; i += 4) {
-            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *) ((char *)&mcfg + i));
+        for (wordOffset = 0; wordOffset < sizeof(master_t) && status == FLASH_COMPLETE; wordOffset += 4) {
+            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset, *(uint32_t *) ((char *)&mcfg + wordOffset));
         }
         if (status == FLASH_COMPLETE) {
             break;
