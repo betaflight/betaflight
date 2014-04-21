@@ -26,6 +26,7 @@ failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
+void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 
 int main(void)
 {
@@ -97,7 +98,12 @@ int main(void)
     rxInit(&masterConfig.rxConfig, failsafe);
 
     if (feature(FEATURE_GPS) && !feature(FEATURE_SERIALRX)) {
-        gpsInit(masterConfig.gps_baudrate);
+        gpsInit(
+            masterConfig.gps_baudrate,
+            masterConfig.gps_type,
+            &currentProfile.gpsProfile,
+            &currentProfile.pidProfile
+        );
     }
 
 #ifdef SONAR

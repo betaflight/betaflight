@@ -2,9 +2,8 @@
 
 typedef struct profile_s {
     uint8_t pidController;                  // 0 = multiwii original, 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671
-    uint8_t P8[PID_ITEM_COUNT];
-    uint8_t I8[PID_ITEM_COUNT];
-    uint8_t D8[PID_ITEM_COUNT];
+
+    pidProfile_t pidProfile;
 
     controlRateConfig_t controlRateConfig;
 
@@ -46,12 +45,5 @@ typedef struct profile_s {
     // gimbal-related configuration
     uint8_t gimbal_flags;                   // in servotilt mode, various things that affect stuff
 
-    // gps-related stuff
-    uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
-    uint8_t gps_lpf;                        // Low pass filter cut frequency for derivative calculation (default 20Hz)
-    uint8_t nav_slew_rate;                  // Adds a rate control to nav output, will smoothen out nav angle spikes
-    uint8_t nav_controls_heading;           // copter faces toward the navigation point, maghold must be enabled for it
-    uint16_t nav_speed_min;                 // cm/sec
-    uint16_t nav_speed_max;                 // cm/sec
-    uint16_t ap_mode;                       // Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks, creating a deadspan for GPS
+    gpsProfile_t gpsProfile;
 } profile_t;

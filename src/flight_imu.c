@@ -18,6 +18,8 @@
 #include "sensors_acceleration.h"
 #include "sensors_barometer.h"
 
+#include "gps_common.h"
+
 #include "flight_mixer.h"
 
 #include "boardalignment.h"
@@ -443,20 +445,20 @@ int getEstimatedAltitude(void)
     // Altitude P-Controller
     error = constrain(AltHold - EstAlt, -500, 500);
     error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
-    setVel = constrain((currentProfile.P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+    setVel = constrain((currentProfile.pidProfile.P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
 
     // Velocity PID-Controller
     // P
     error = setVel - vel_tmp;
-    BaroPID = constrain((currentProfile.P8[PIDVEL] * error / 32), -300, +300);
+    BaroPID = constrain((currentProfile.pidProfile.P8[PIDVEL] * error / 32), -300, +300);
 
     // I
-    errorAltitudeI += (currentProfile.I8[PIDVEL] * error) / 8;
+    errorAltitudeI += (currentProfile.pidProfile.I8[PIDVEL] * error) / 8;
     errorAltitudeI = constrain(errorAltitudeI, -(1024 * 200), (1024 * 200));
     BaroPID += errorAltitudeI / 1024;     // I in range +/-200
 
     // D
-    BaroPID -= constrain(currentProfile.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
+    BaroPID -= constrain(currentProfile.pidProfile.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
     accZ_old = accZ_tmp;
 
     return 1;

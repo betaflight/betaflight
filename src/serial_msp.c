@@ -310,9 +310,9 @@ static void evaluateCommand(void)
         break;
     case MSP_SET_PID:
         for (i = 0; i < PID_ITEM_COUNT; i++) {
-            currentProfile.P8[i] = read8();
-            currentProfile.I8[i] = read8();
-            currentProfile.D8[i] = read8();
+            currentProfile.pidProfile.P8[i] = read8();
+            currentProfile.pidProfile.I8[i] = read8();
+            currentProfile.pidProfile.D8[i] = read8();
         }
         headSerialReply(0);
         break;
@@ -514,9 +514,9 @@ static void evaluateCommand(void)
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
         for (i = 0; i < PID_ITEM_COUNT; i++) {
-            serialize8(currentProfile.P8[i]);
-            serialize8(currentProfile.I8[i]);
-            serialize8(currentProfile.D8[i]);
+            serialize8(currentProfile.pidProfile.P8[i]);
+            serialize8(currentProfile.pidProfile.I8[i]);
+            serialize8(currentProfile.pidProfile.D8[i]);
         }
         break;
     case MSP_PIDNAMES:

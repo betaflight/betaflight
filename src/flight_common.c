@@ -7,6 +7,8 @@
 
 #include "flight_common.h"
 
+int16_t heading, magHold;
+
 
 void mwDisarm(void)
 {

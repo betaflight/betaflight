@@ -39,34 +39,17 @@ int16_t axisPID[3];
 
 extern failsafe_t *failsafe;
 
-// **********************
-// GPS
-// **********************
-int32_t GPS_coord[2];
-int32_t GPS_home[2];
-int32_t GPS_hold[2];
-uint8_t GPS_numSat;
-uint16_t GPS_distanceToHome;        // distance to home point in meters
-int16_t GPS_directionToHome;        // direction to home or hol point in degrees
-uint16_t GPS_altitude, GPS_speed;   // altitude in 0.1m and speed in 0.1m/s
-uint8_t GPS_update = 0;             // it's a binary toogle to distinct a GPS position update
-int16_t GPS_angle[2] = { 0, 0 };    // it's the angles that must be applied for GPS correction
-uint16_t GPS_ground_course = 0;     // degrees * 10
-int16_t nav[2];
-int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
-int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
-uint8_t GPS_numCh;                  // Number of channels
-uint8_t GPS_svinfo_chn[16];         // Channel number
-uint8_t GPS_svinfo_svid[16];        // Satellite ID
-uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
-uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
-
 // Automatic ACC Offset Calibration
 bool AccInflightCalibrationArmed = false;
 bool AccInflightCalibrationMeasurementDone = false;
 bool AccInflightCalibrationSavetoEEProm = false;
 bool AccInflightCalibrationActive = false;
 uint16_t InflightcalibratingA = 0;
+
+bool areSticksInApModePosition(uint16_t ap_mode) // FIXME should probably live in rc_sticks.h
+{
+    return abs(rcCommand[ROLL]) < ap_mode && abs(rcCommand[PITCH]) < ap_mode;
+}
 
 void annexCode(void)
 {
@@ -115,9 +98,9 @@ void annexCode(void)
             rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
             prop1 = 100 - (uint16_t)currentProfile.controlRateConfig.yawRate * abs(tmp) / 500;
         }
-        dynP8[axis] = (uint16_t)currentProfile.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)currentProfile.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)currentProfile.D8[axis] * prop1 / 100;
+        dynP8[axis] = (uint16_t)currentProfile.pidProfile.P8[axis] * prop1 / 100;
+        dynI8[axis] = (uint16_t)currentProfile.pidProfile.I8[axis] * prop1 / 100;
+        dynD8[axis] = (uint16_t)currentProfile.pidProfile.D8[axis] * prop1 / 100;
         if (rcData[axis] < masterConfig.rxConfig.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
@@ -184,11 +167,7 @@ void annexCode(void)
     }
 
     if (sensors(SENSOR_GPS)) {
-        static uint32_t GPSLEDTime;
-        if ((int32_t)(currentTime - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
-            GPSLEDTime = currentTime + 150000;
-            LED1_TOGGLE;
-        }
+        updateGpsIndicator(currentTime);
     }
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
@@ -238,14 +217,14 @@ static void pidMultiWii(void)
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
             // 50 degrees max inclination
             errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)masterConfig.max_angle_inclination), +masterConfig.max_angle_inclination) - angle[axis] + currentProfile.angleTrim[axis];
-            PTermACC = errorAngle * currentProfile.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
-            PTermACC = constrain(PTermACC, -currentProfile.D8[PIDLEVEL] * 5, +currentProfile.D8[PIDLEVEL] * 5);
+            PTermACC = errorAngle * currentProfile.pidProfile.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+            PTermACC = constrain(PTermACC, -currentProfile.pidProfile.D8[PIDLEVEL] * 5, +currentProfile.pidProfile.D8[PIDLEVEL] * 5);
 
             errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000); // WindUp
-            ITermACC = (errorAngleI[axis] * currentProfile.I8[PIDLEVEL]) >> 12;
+            ITermACC = (errorAngleI[axis] * currentProfile.pidProfile.I8[PIDLEVEL]) >> 12;
         }
         if (!f.ANGLE_MODE || f.HORIZON_MODE || axis == 2) { // MODE relying on GYRO or YAW axis
-            error = (int32_t)rcCommand[axis] * 10 * 8 / currentProfile.P8[axis];
+            error = (int32_t)rcCommand[axis] * 10 * 8 / currentProfile.pidProfile.P8[axis];
             error -= gyroData[axis];
 
             PTermGYRO = rcCommand[axis];
@@ -253,7 +232,7 @@ static void pidMultiWii(void)
             errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
             if (abs(gyroData[axis]) > 640)
                 errorGyroI[axis] = 0;
-            ITermGYRO = (errorGyroI[axis] / 125 * currentProfile.I8[axis]) >> 6;
+            ITermGYRO = (errorGyroI[axis] / 125 * currentProfile.pidProfile.I8[axis]) >> 6;
         }
         if (f.HORIZON_MODE && axis < 2) {
             PTerm = (PTermACC * (500 - prop) + PTermGYRO * prop) / 500;
@@ -305,10 +284,10 @@ static void pidRewrite(void)
                 AngleRateTmp = ((int32_t) (currentProfile.controlRateConfig.rollPitchRate + 27) * rcCommand[axis]) >> 4;
                 if (f.HORIZON_MODE) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel
-                    AngleRateTmp += (errorAngle * currentProfile.I8[PIDLEVEL]) >> 8;
+                    AngleRateTmp += (errorAngle * currentProfile.pidProfile.I8[PIDLEVEL]) >> 8;
                 }
             } else { // it's the ANGLE mode - control is angle based, so control loop is needed
-                AngleRateTmp = (errorAngle * currentProfile.P8[PIDLEVEL]) >> 4;
+                AngleRateTmp = (errorAngle * currentProfile.pidProfile.P8[PIDLEVEL]) >> 4;
             }
         }
 
@@ -319,13 +298,13 @@ static void pidRewrite(void)
         RateError = AngleRateTmp - gyroData[axis];
 
         // -----calculate P component
-        PTerm = (RateError * currentProfile.P8[axis]) >> 7;
+        PTerm = (RateError * currentProfile.pidProfile.P8[axis]) >> 7;
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * currentProfile.I8[axis];
+        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * currentProfile.pidProfile.I8[axis];
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -343,7 +322,7 @@ static void pidRewrite(void)
         deltaSum = delta1[axis] + delta2[axis] + delta;
         delta2[axis] = delta1[axis];
         delta1[axis] = delta;
-        DTerm = (deltaSum * currentProfile.D8[axis]) >> 8;
+        DTerm = (deltaSum * currentProfile.pidProfile.D8[axis]) >> 8;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
@@ -375,7 +354,6 @@ void loop(void)
 #endif
     static uint32_t loopTime;
     uint16_t auxState = 0;
-    static uint8_t GPSNavReset = 1;
     bool isThrottleLow = false;
     bool rcReady = false;
 
@@ -640,41 +618,7 @@ void loop(void)
 #endif
 
         if (sensors(SENSOR_GPS)) {
-            if (f.GPS_FIX && GPS_numSat >= 5) {
-                // if both GPS_HOME & GPS_HOLD are checked => GPS_HOME is the priority
-                if (rcOptions[BOXGPSHOME]) {
-                    if (!f.GPS_HOME_MODE) {
-                        f.GPS_HOME_MODE = 1;
-                        f.GPS_HOLD_MODE = 0;
-                        GPSNavReset = 0;
-                        GPS_set_next_wp(&GPS_home[LAT], &GPS_home[LON]);
-                        nav_mode = NAV_MODE_WP;
-                    }
-                } else {
-                    f.GPS_HOME_MODE = 0;
-                    if (rcOptions[BOXGPSHOLD] && abs(rcCommand[ROLL]) < currentProfile.ap_mode && abs(rcCommand[PITCH]) < currentProfile.ap_mode) {
-                        if (!f.GPS_HOLD_MODE) {
-                            f.GPS_HOLD_MODE = 1;
-                            GPSNavReset = 0;
-                            GPS_hold[LAT] = GPS_coord[LAT];
-                            GPS_hold[LON] = GPS_coord[LON];
-                            GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
-                            nav_mode = NAV_MODE_POSHOLD;
-                        }
-                    } else {
-                        f.GPS_HOLD_MODE = 0;
-                        // both boxes are unselected here, nav is reset if not already done
-                        if (GPSNavReset == 0) {
-                            GPSNavReset = 1;
-                            GPS_reset_nav();
-                        }
-                    }
-                }
-            } else {
-                f.GPS_HOME_MODE = 0;
-                f.GPS_HOLD_MODE = 0;
-                nav_mode = NAV_MODE_NONE;
-            }
+            updateGpsWaypointsAndMode();
         }
 
         if (rcOptions[BOXPASSTHRU]) {
@@ -750,7 +694,7 @@ void loop(void)
                     dif -= 360;
                 dif *= -masterConfig.yaw_control_direction;
                 if (f.SMALL_ANGLE)
-                    rcCommand[YAW] -= dif * currentProfile.P8[PIDMAG] / 30;    // 18 deg
+                    rcCommand[YAW] -= dif * currentProfile.pidProfile.P8[PIDMAG] / 30;    // 18 deg
             } else
                 magHold = heading;
         }
@@ -808,7 +752,7 @@ void loop(void)
 
         if (sensors(SENSOR_GPS)) {
             if ((f.GPS_HOME_MODE || f.GPS_HOLD_MODE) && f.GPS_FIX_HOME) {
-                updateGpsState();
+                updateGpsStateForHomeAndHoldMode();
             }
         }
 

@@ -10,15 +10,6 @@
 
 #define  VERSION  230
 
-// Serial GPS only variables
-// navigation mode
-typedef enum NavigationMode
-{
-    NAV_MODE_NONE = 0,
-    NAV_MODE_POSHOLD,
-    NAV_MODE_WP
-} NavigationMode;
-
 #include "gimbal.h"
 #include "flight_mixer.h"
 
@@ -34,6 +25,7 @@ enum {
 
 #include "serial_common.h"
 #include "rx_common.h"
+#include "gps_common.h"
 #include "config.h"
 #include "config_profile.h"
 #include "config_master.h"
@@ -64,33 +56,12 @@ extern int32_t BaroPID;
 extern int32_t vario;
 extern int16_t throttleAngleCorrection;
 extern int16_t headFreeModeHold;
-extern int16_t heading, magHold;
 extern int16_t motor[MAX_MOTORS];
 extern int16_t servo[MAX_SERVOS];
 extern uint16_t rssi;                  // range: [0;1023]
 extern uint8_t vbat;
 extern int16_t telemTemperature1;      // gyro sensor temperature
 extern uint8_t toggleBeep;
-
-// GPS stuff
-extern int32_t  GPS_coord[2];
-extern int32_t  GPS_home[2];
-extern int32_t  GPS_hold[2];
-extern uint8_t  GPS_numSat;
-extern uint16_t GPS_distanceToHome;                          // distance to home or hold point in meters
-extern int16_t  GPS_directionToHome;                         // direction to home or hol point in degrees
-extern uint16_t GPS_altitude,GPS_speed;                      // altitude in 0.1m and speed in 0.1m/s
-extern uint8_t  GPS_update;                                  // it's a binary toogle to distinct a GPS position update
-extern int16_t  GPS_angle[2];                                // it's the angles that must be applied for GPS correction
-extern uint16_t GPS_ground_course;                           // degrees*10
-extern int16_t  nav[2];
-extern int8_t   nav_mode;                                    // Navigation mode
-extern int16_t  nav_rated[2];                                // Adding a rate controller to the navigation to make it smoother
-extern uint8_t  GPS_numCh;                                   // Number of channels
-extern uint8_t  GPS_svinfo_chn[16];                          // Channel number
-extern uint8_t  GPS_svinfo_svid[16];                         // Satellite ID
-extern uint8_t  GPS_svinfo_quality[16];                      // Bitfield Qualtity
-extern uint8_t  GPS_svinfo_cno[16];                          // Carrier to Noise Ratio (Signal Strength)
 
 extern flags_t f;
 

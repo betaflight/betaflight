@@ -8,8 +8,6 @@
 
 #include "sensors_common.h"
 
-int16_t heading, magHold;
-
 extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
 extern float magneticDeclination;

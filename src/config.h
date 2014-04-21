@@ -1,19 +1,5 @@
 #pragma once
 
-enum {
-    PIDROLL,
-    PIDPITCH,
-    PIDYAW,
-    PIDALT,
-    PIDPOS,
-    PIDPOSR,
-    PIDNAVR,
-    PIDLEVEL,
-    PIDMAG,
-    PIDVEL,
-    PID_ITEM_COUNT
-};
-
 typedef enum {
     FEATURE_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,

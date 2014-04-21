@@ -1,20 +1,64 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <string.h>
+#include <math.h>
+
+#include "platform.h"
 
 #include "common/maths.h"
 
-#include "flight_common.h"
+#include "drivers/system_common.h"
 
 #include "drivers/serial_common.h"
+#include "drivers/serial_uart.h"
 #include "serial_common.h"
 
+#include "drivers/gpio_common.h"
+#include "drivers/light_led.h"
+
+#include "common/axis.h"
+#include "flight_common.h"
+
+#include "sensors_common.h"
+
+#include "runtime_config.h"
+
 #include "gps_common.h"
+
+
+// **********************
+// GPS
+// **********************
+int32_t GPS_coord[2];               // LAT/LON
+int32_t GPS_home[2];
+int32_t GPS_hold[2];
+uint8_t GPS_numSat;
+uint16_t GPS_distanceToHome;        // distance to home point in meters
+int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint16_t GPS_altitude;              // altitude in 0.1m
+uint16_t GPS_speed;                 // speed in 0.1m/s
+uint8_t GPS_update = 0;             // it's a binary toogle to distinct a GPS position update
+int16_t GPS_angle[ANGLE_INDEX_COUNT] = { 0, 0 };    // it's the angles that must be applied for GPS correction
+uint16_t GPS_ground_course = 0;     // degrees * 10
+int16_t nav[2];
+int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
+int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
+uint8_t GPS_numCh;                  // Number of channels
+uint8_t GPS_svinfo_chn[16];         // Channel number
+uint8_t GPS_svinfo_svid[16];        // Satellite ID
+uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
+uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
+
+static uint8_t gpsProvider;
 
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUD_MAX + 1)
 #define GPS_BAUD_DELAY (100)
+
+gpsProfile_t *gpsProfile;
 
 typedef struct gpsInitData_t {
     uint8_t index;
@@ -70,6 +114,8 @@ typedef struct gpsData_t {
 
 gpsData_t gpsData;
 
+bool areSticksInApModePosition(uint16_t ap_mode); // FIXME should probably live in rc_sticks.h
+
 static void gpsNewData(uint16_t c);
 static bool gpsNewFrameNMEA(char c);
 static bool gpsNewFrameUBLOX(uint8_t data);
@@ -81,9 +127,17 @@ static void gpsSetState(uint8_t state)
     gpsData.state_ts = millis();
 }
 
-// When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
-void gpsInit(uint8_t baudrateIndex)
+void gpsUseProfile(gpsProfile_t *gpsProfileToUse)
 {
+    gpsProfile = gpsProfileToUse;
+}
+
+// When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
+void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile)
+{
+    gpsProvider = initialGpsProvider;
+    gpsUseProfile(initialGpsProfile);
+
     portMode_t mode = MODE_RXTX;
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
@@ -93,10 +147,10 @@ void gpsInit(uint8_t baudrateIndex)
     gpsData.lastMessage = millis();
     gpsData.errors = 0;
     // only RX is needed for NMEA-style GPS
-    if (masterConfig.gps_type == GPS_NMEA)
+    if (gpsProvider == GPS_NMEA)
         mode = MODE_RX;
 
-    gpsSetPIDs();
+    gpsUsePIDs(pidProfile);
     // Open GPS UART, no callback - buffer will be read out in gpsThread()
     serialPorts.gpsport = uartOpen(USART2, NULL, gpsInitData[baudrateIndex].baudrate, mode);
     // signal GPS "thread" to initialize when it gets to it
@@ -105,7 +159,7 @@ void gpsInit(uint8_t baudrateIndex)
 
 void gpsInitHardware(void)
 {
-    switch (masterConfig.gps_type) {
+    switch (gpsProvider) {
         case GPS_NMEA:
             // nothing to do, just set baud rate and try receiving some stuff and see if it parses
             serialSetBaudRate(serialPorts.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
@@ -203,7 +257,7 @@ void gpsThread(void)
 
 static bool gpsNewFrame(uint8_t c)
 {
-    switch (masterConfig.gps_type) {
+    switch (gpsProvider) {
         case GPS_NMEA:          // NMEA
         case GPS_MTK_NMEA:      // MTK in NMEA mode
             return gpsNewFrameNMEA(c);
@@ -313,7 +367,7 @@ static int32_t get_D(int32_t input, float *dt, PID *pid, PID_PARAM *pid_param)
 
     // Low pass filter cut frequency for derivative calculation
     // Set to  "1 / ( 2 * PI * gps_lpf )
-    float pidFilter = (1.0f / (2.0f * M_PI * (float)currentProfile.gps_lpf));
+    float pidFilter = (1.0f / (2.0f * M_PI * (float)gpsProfile->gps_lpf));
     // discrete low pass filter, cuts out the
     // high frequency noise that can drive the controller crazy
     pid->derivative = pid->last_derivative + (*dt / (pidFilter + *dt)) * (pid->derivative - pid->last_derivative);
@@ -471,13 +525,13 @@ static void gpsNewData(uint16_t c)
                     break;
 
                 case NAV_MODE_WP:
-                    speed = GPS_calc_desired_speed(currentProfile.nav_speed_max, NAV_SLOW_NAV);    // slow navigation
+                    speed = GPS_calc_desired_speed(gpsProfile->nav_speed_max, NAV_SLOW_NAV);    // slow navigation
                     // use error as the desired rate towards the target
                     // Desired output is in nav_lat and nav_lon where 1deg inclination is 100
                     GPS_calc_nav_rate(speed);
 
                     // Tail control
-                    if (currentProfile.nav_controls_heading) {
+                    if (gpsProfile->nav_controls_heading) {
                         if (NAV_TAIL_FIRST) {
                             magHold = wrap_18000(nav_bearing - 18000) / 100;
                         } else {
@@ -485,7 +539,7 @@ static void gpsNewData(uint16_t c)
                         }
                     }
                     // Are we there yet ?(within x meters of the destination)
-                    if ((wp_distance <= currentProfile.gps_wp_radius) || check_missed_wp()) {      // if yes switch to poshold mode
+                    if ((wp_distance <= gpsProfile->gps_wp_radius) || check_missed_wp()) {      // if yes switch to poshold mode
                         nav_mode = NAV_MODE_POSHOLD;
                         if (NAV_SET_TAKEOFF_HEADING) {
                             magHold = nav_takeoff_bearing;
@@ -526,20 +580,20 @@ void GPS_reset_nav(void)
 }
 
 // Get the relevant P I D values and set the PID controllers
-void gpsSetPIDs(void)
+void gpsUsePIDs(pidProfile_t *pidProfile)
 {
-    posholdPID_PARAM.kP = (float)currentProfile.P8[PIDPOS] / 100.0f;
-    posholdPID_PARAM.kI = (float)currentProfile.I8[PIDPOS] / 100.0f;
+    posholdPID_PARAM.kP = (float)pidProfile->P8[PIDPOS] / 100.0f;
+    posholdPID_PARAM.kI = (float)pidProfile->I8[PIDPOS] / 100.0f;
     posholdPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 
-    poshold_ratePID_PARAM.kP = (float)currentProfile.P8[PIDPOSR] / 10.0f;
-    poshold_ratePID_PARAM.kI = (float)currentProfile.I8[PIDPOSR] / 100.0f;
-    poshold_ratePID_PARAM.kD = (float)currentProfile.D8[PIDPOSR] / 1000.0f;
+    poshold_ratePID_PARAM.kP = (float)pidProfile->P8[PIDPOSR] / 10.0f;
+    poshold_ratePID_PARAM.kI = (float)pidProfile->I8[PIDPOSR] / 100.0f;
+    poshold_ratePID_PARAM.kD = (float)pidProfile->D8[PIDPOSR] / 1000.0f;
     poshold_ratePID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 
-    navPID_PARAM.kP = (float)currentProfile.P8[PIDNAVR] / 10.0f;
-    navPID_PARAM.kI = (float)currentProfile.I8[PIDNAVR] / 100.0f;
-    navPID_PARAM.kD = (float)currentProfile.D8[PIDNAVR] / 1000.0f;
+    navPID_PARAM.kP = (float)pidProfile->P8[PIDNAVR] / 10.0f;
+    navPID_PARAM.kI = (float)pidProfile->I8[PIDNAVR] / 100.0f;
+    navPID_PARAM.kD = (float)pidProfile->D8[PIDNAVR] / 1000.0f;
     navPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 }
 
@@ -597,7 +651,7 @@ void GPS_set_next_wp(int32_t *lat, int32_t *lon)
     nav_bearing = target_bearing;
     GPS_calc_location_error(&GPS_WP[LAT], &GPS_WP[LON], &GPS_coord[LAT], &GPS_coord[LON]);
     original_target_bearing = target_bearing;
-    waypoint_speed_gov = currentProfile.nav_speed_min;
+    waypoint_speed_gov = gpsProfile->nav_speed_min;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -773,7 +827,7 @@ static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow)
         max_speed = min(max_speed, wp_distance / 2);
     } else {
         max_speed = min(max_speed, wp_distance);
-        max_speed = max(max_speed, currentProfile.nav_speed_min);      // go at least 100cm/s
+        max_speed = max(max_speed, gpsProfile->nav_speed_min);      // go at least 100cm/s
     }
 
     // limit the ramp up of the speed
@@ -1269,17 +1323,68 @@ static bool UBLOX_parse_gps(void)
     return false;
 }
 
-void updateGpsState(void)
+void updateGpsStateForHomeAndHoldMode(void)
 {
     float sin_yaw_y = sinf(heading * 0.0174532925f);
     float cos_yaw_x = cosf(heading * 0.0174532925f);
-    if (currentProfile.nav_slew_rate) {
-        nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -currentProfile.nav_slew_rate, currentProfile.nav_slew_rate); // TODO check this on uint8
-        nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -currentProfile.nav_slew_rate, currentProfile.nav_slew_rate);
-        GPS_angle[ROLL] = (nav_rated[LON] * cos_yaw_x - nav_rated[LAT] * sin_yaw_y) / 10;
-        GPS_angle[PITCH] = (nav_rated[LON] * sin_yaw_y + nav_rated[LAT] * cos_yaw_x) / 10;
+    if (gpsProfile->nav_slew_rate) {
+        nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -gpsProfile->nav_slew_rate, gpsProfile->nav_slew_rate); // TODO check this on uint8
+        nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -gpsProfile->nav_slew_rate, gpsProfile->nav_slew_rate);
+        GPS_angle[AI_ROLL] = (nav_rated[LON] * cos_yaw_x - nav_rated[LAT] * sin_yaw_y) / 10;
+        GPS_angle[AI_PITCH] = (nav_rated[LON] * sin_yaw_y + nav_rated[LAT] * cos_yaw_x) / 10;
     } else {
-        GPS_angle[ROLL] = (nav[LON] * cos_yaw_x - nav[LAT] * sin_yaw_y) / 10;
-        GPS_angle[PITCH] = (nav[LON] * sin_yaw_y + nav[LAT] * cos_yaw_x) / 10;
+        GPS_angle[AI_ROLL] = (nav[LON] * cos_yaw_x - nav[LAT] * sin_yaw_y) / 10;
+        GPS_angle[AI_PITCH] = (nav[LON] * sin_yaw_y + nav[LAT] * cos_yaw_x) / 10;
+    }
+}
+
+void updateGpsWaypointsAndMode(void)
+{
+    static uint8_t GPSNavReset = 1;
+
+    if (f.GPS_FIX && GPS_numSat >= 5) {
+        // if both GPS_HOME & GPS_HOLD are checked => GPS_HOME is the priority
+        if (rcOptions[BOXGPSHOME]) {
+            if (!f.GPS_HOME_MODE) {
+                f.GPS_HOME_MODE = 1;
+                f.GPS_HOLD_MODE = 0;
+                GPSNavReset = 0;
+                GPS_set_next_wp(&GPS_home[LAT], &GPS_home[LON]);
+                nav_mode = NAV_MODE_WP;
+            }
+        } else {
+            f.GPS_HOME_MODE = 0;
+
+            if (rcOptions[BOXGPSHOLD] && areSticksInApModePosition(gpsProfile->ap_mode)) {
+                if (!f.GPS_HOLD_MODE) {
+                    f.GPS_HOLD_MODE = 1;
+                    GPSNavReset = 0;
+                    GPS_hold[LAT] = GPS_coord[LAT];
+                    GPS_hold[LON] = GPS_coord[LON];
+                    GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
+                    nav_mode = NAV_MODE_POSHOLD;
+                }
+            } else {
+                f.GPS_HOLD_MODE = 0;
+                // both boxes are unselected here, nav is reset if not already done
+                if (GPSNavReset == 0) {
+                    GPSNavReset = 1;
+                    GPS_reset_nav();
+                }
+            }
+        }
+    } else {
+        f.GPS_HOME_MODE = 0;
+        f.GPS_HOLD_MODE = 0;
+        nav_mode = NAV_MODE_NONE;
+    }
+}
+
+void updateGpsIndicator(uint32_t currentTime)
+{
+    static uint32_t GPSLEDTime;
+    if ((int32_t)(currentTime - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
+        GPSLEDTime = currentTime + 150000;
+        LED1_TOGGLE;
     }
 }

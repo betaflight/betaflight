@@ -1,5 +1,26 @@
 #pragma once
 
+
+enum {
+    PIDROLL,
+    PIDPITCH,
+    PIDYAW,
+    PIDALT,
+    PIDPOS,
+    PIDPOSR,
+    PIDNAVR,
+    PIDLEVEL,
+    PIDMAG,
+    PIDVEL,
+    PID_ITEM_COUNT
+};
+
+typedef struct pidProfile_s {
+    uint8_t P8[PID_ITEM_COUNT];
+    uint8_t I8[PID_ITEM_COUNT];
+    uint8_t D8[PID_ITEM_COUNT];
+} pidProfile_t;
+
 enum {
     AI_ROLL = 0,
     AI_PITCH,
@@ -22,6 +43,8 @@ extern int16_t gyroZero[GYRO_INDEX_COUNT]; // see gyro_index_t
 
 extern int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 extern int32_t accSum[XYZ_AXIS_COUNT];
+
+extern int16_t heading, magHold;
 
 void mwDisarm(void);
 

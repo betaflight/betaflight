@@ -86,7 +86,8 @@ void activateConfig(void)
     generateThrottleCurve(&currentProfile.controlRateConfig, masterConfig.minthrottle, masterConfig.maxthrottle);
 
     setPIDController(currentProfile.pidController);
-    gpsSetPIDs();
+    gpsUseProfile(&currentProfile.gpsProfile);
+    gpsUsePIDs(&currentProfile.pidProfile);
     useFailsafeConfig(&currentProfile.failsafeConfig);
 }
 
@@ -169,6 +170,49 @@ void resetEEPROM(void)
     writeEEPROM();
 }
 
+static void resetPidProfile(pidProfile_t *pidProfile)
+{
+    pidProfile->P8[ROLL] = 40;
+    pidProfile->I8[ROLL] = 30;
+    pidProfile->D8[ROLL] = 23;
+    pidProfile->P8[PITCH] = 40;
+    pidProfile->I8[PITCH] = 30;
+    pidProfile->D8[PITCH] = 23;
+    pidProfile->P8[YAW] = 85;
+    pidProfile->I8[YAW] = 45;
+    pidProfile->D8[YAW] = 0;
+    pidProfile->P8[PIDALT] = 50;
+    pidProfile->I8[PIDALT] = 0;
+    pidProfile->D8[PIDALT] = 0;
+    pidProfile->P8[PIDPOS] = 11; // POSHOLD_P * 100;
+    pidProfile->I8[PIDPOS] = 0; // POSHOLD_I * 100;
+    pidProfile->D8[PIDPOS] = 0;
+    pidProfile->P8[PIDPOSR] = 20; // POSHOLD_RATE_P * 10;
+    pidProfile->I8[PIDPOSR] = 8; // POSHOLD_RATE_I * 100;
+    pidProfile->D8[PIDPOSR] = 45; // POSHOLD_RATE_D * 1000;
+    pidProfile->P8[PIDNAVR] = 14; // NAV_P * 10;
+    pidProfile->I8[PIDNAVR] = 20; // NAV_I * 100;
+    pidProfile->D8[PIDNAVR] = 80; // NAV_D * 1000;
+    pidProfile->P8[PIDLEVEL] = 90;
+    pidProfile->I8[PIDLEVEL] = 10;
+    pidProfile->D8[PIDLEVEL] = 100;
+    pidProfile->P8[PIDMAG] = 40;
+    pidProfile->P8[PIDVEL] = 120;
+    pidProfile->I8[PIDVEL] = 45;
+    pidProfile->D8[PIDVEL] = 1;
+}
+
+void resetGpsProfile(gpsProfile_t *gpsProfile)
+{
+    gpsProfile->gps_wp_radius = 200;
+    gpsProfile->gps_lpf = 20;
+    gpsProfile->nav_slew_rate = 30;
+    gpsProfile->nav_controls_heading = 1;
+    gpsProfile->nav_speed_min = 100;
+    gpsProfile->nav_speed_max = 300;
+    gpsProfile->ap_mode = 40;
+}
+
 // Default settings
 static void resetConf(void)
 {
@@ -242,34 +286,8 @@ static void resetConf(void)
     masterConfig.rssi_aux_channel = 0;
 
     currentProfile.pidController = 0;
-    currentProfile.P8[ROLL] = 40;
-    currentProfile.I8[ROLL] = 30;
-    currentProfile.D8[ROLL] = 23;
-    currentProfile.P8[PITCH] = 40;
-    currentProfile.I8[PITCH] = 30;
-    currentProfile.D8[PITCH] = 23;
-    currentProfile.P8[YAW] = 85;
-    currentProfile.I8[YAW] = 45;
-    currentProfile.D8[YAW] = 0;
-    currentProfile.P8[PIDALT] = 50;
-    currentProfile.I8[PIDALT] = 0;
-    currentProfile.D8[PIDALT] = 0;
-    currentProfile.P8[PIDPOS] = 11; // POSHOLD_P * 100;
-    currentProfile.I8[PIDPOS] = 0; // POSHOLD_I * 100;
-    currentProfile.D8[PIDPOS] = 0;
-    currentProfile.P8[PIDPOSR] = 20; // POSHOLD_RATE_P * 10;
-    currentProfile.I8[PIDPOSR] = 8; // POSHOLD_RATE_I * 100;
-    currentProfile.D8[PIDPOSR] = 45; // POSHOLD_RATE_D * 1000;
-    currentProfile.P8[PIDNAVR] = 14; // NAV_P * 10;
-    currentProfile.I8[PIDNAVR] = 20; // NAV_I * 100;
-    currentProfile.D8[PIDNAVR] = 80; // NAV_D * 1000;
-    currentProfile.P8[PIDLEVEL] = 90;
-    currentProfile.I8[PIDLEVEL] = 10;
-    currentProfile.D8[PIDLEVEL] = 100;
-    currentProfile.P8[PIDMAG] = 40;
-    currentProfile.P8[PIDVEL] = 120;
-    currentProfile.I8[PIDVEL] = 45;
-    currentProfile.D8[PIDVEL] = 1;
+    resetPidProfile(&currentProfile.pidProfile);
+
     currentProfile.controlRateConfig.rcRate8 = 90;
     currentProfile.controlRateConfig.rcExpo8 = 65;
     currentProfile.controlRateConfig.rollPitchRate = 0;
@@ -322,14 +340,7 @@ static void resetConf(void)
     // gimbal
     currentProfile.gimbal_flags = GIMBAL_NORMAL;
 
-    // gps/nav stuff
-    currentProfile.gps_wp_radius = 200;
-    currentProfile.gps_lpf = 20;
-    currentProfile.nav_slew_rate = 30;
-    currentProfile.nav_controls_heading = 1;
-    currentProfile.nav_speed_min = 100;
-    currentProfile.nav_speed_max = 300;
-    currentProfile.ap_mode = 40;
+    resetGpsProfile(&currentProfile.gpsProfile);
 
     // custom mixer. clear by defaults.
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
