@@ -7,12 +7,20 @@ chrome.runtime.getBackgroundPage(function(result) {
     backgroundPage.app_window = window;
 });
 
-// Google Analytics stuff begin
+// Google Analytics BEGIN
+var ga_config; // google analytics config reference
+var ga_tracking; // global result of isTrackingPermitted
+
 var service = analytics.getService('ice_cream_app');
+service.getConfig().addCallback(function(config) {
+    ga_config = config;
+    ga_tracking = config.isTrackingPermitted();
+});
+
 var ga_tracker = service.getTracker('UA-32728876-6');
 
 ga_tracker.sendAppView('Application Started');
-// Google Analytics stuff end
+// Google Analytics END
 
 $(document).ready(function() {
     // translate to user-selected language
@@ -42,12 +50,15 @@ $(document).ready(function() {
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
         if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active
-            if (configuration_received == false) { // if there is no active connection, return
+            var self = this;
+            var index = $(self).parent().index();
+
+            // i am using hardcoded index here (for options tab) since i don't have time to write tab locking mechanism at the moment
+            // if there is no active connection, return
+            if (configuration_received == false && index != 9) {
                 GUI.log('You need to connect before you can view any of the tabs', 'red');
                 return;
             }
-
-            var self = this;
 
             GUI.tab_switch_cleanup(function() {
                 // disable previously active tab highlight
@@ -89,6 +100,9 @@ $(document).ready(function() {
                         break;
                     case 'tab_cli':
                         tab_initialize_cli();
+                        break;
+                    case 'tab_options':
+                        tab_initialize_options();
                         break;
                 }
             });

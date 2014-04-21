@@ -1,0 +1,9 @@
+.tab-options {
+    line-height: 20px;
+}
+    .tab-options input {
+        float: left;
+
+        margin-top: 3px;
+        margin-right: 5px;
+    }

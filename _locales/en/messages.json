@@ -1,4 +1,14 @@
 {
+    "options_receive_app_notifications": {
+        "message": "Receive desktop <strong>notification</strong> when application updates"
+    },
+    "options_improve_configurator": {
+        "message": "<strong>Improve</strong> Baseflight - Configurator by sending anonymous usage data to the developer team"
+    },
+    "options_back": {
+        "message": "Leave Options"
+    },
+
     "notifications_app_just_updated_to_version": {
         "message": "Application just updated to version: $1"
     },

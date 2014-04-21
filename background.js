@@ -44,18 +44,22 @@ chrome.app.runtime.onLaunched.addListener(function() {
 
 chrome.runtime.onInstalled.addListener(function(details) {
     if (details.reason == 'update') {
-        var manifest = chrome.runtime.getManifest();
-        var options = {
-            priority: 0,
-            type: 'basic',
-            title: manifest.name,
-            message: chrome.i18n.getMessage('notifications_app_just_updated_to_version', [manifest.version]),
-            iconUrl: '/images/icon_128.png',
-            buttons: [{'title': chrome.i18n.getMessage('notifications_click_here_to_start_app')}]
-        };
+        chrome.storage.local.get('update_notify', function(result) {
+            if (typeof result.update_notify === 'undefined' || result.update_notify) {
+                var manifest = chrome.runtime.getManifest();
+                var options = {
+                    priority: 0,
+                    type: 'basic',
+                    title: manifest.name,
+                    message: chrome.i18n.getMessage('notifications_app_just_updated_to_version', [manifest.version]),
+                    iconUrl: '/images/icon_128.png',
+                    buttons: [{'title': chrome.i18n.getMessage('notifications_click_here_to_start_app')}]
+                };
 
-        chrome.notifications.create('baseflight_update', options, function(notificationId) {
-            // empty
+                chrome.notifications.create('baseflight_update', options, function(notificationId) {
+                    // empty
+                });
+            }
         });
     }
 });
