@@ -213,11 +213,12 @@ function tab_initialize_receiver() {
                 var heightScale = d3.scale.linear().
                     domain([800, 2200]);
 
+                var margin, width, height;
                 function update_receiver_plot_size() {
-                    var margin = {top: 20, right: 20, bottom: 10, left: 40};
-                    var width = $('#RX_plot').width() - margin.left - margin.right;
-                    var height = $('#RX_plot').height() - margin.top - margin.bottom;
-                    widthSclae.range([0, width]);
+                    margin = {top: 20, right: 20, bottom: 10, left: 40};
+                    width = $('#RX_plot').width() - margin.left - margin.right;
+                    height = $('#RX_plot').height() - margin.top - margin.bottom;
+                    widthScale.range([0, width]);
                     heightScale.range([height, 0]);
                 }
 

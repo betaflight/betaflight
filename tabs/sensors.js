@@ -40,10 +40,11 @@ function tab_initialize_sensors() {
         return sampleNumber + 1;
     }
 
+    var margin, width, height;
     function updateGraphHelperSize(selector, helpers) {
-        var margin = {top: 20, right: 20, bottom: 10, left: 40};
-        var width = $(selector).width() - margin.left - margin.right;
-        var height = $(selector).height() - margin.top - margin.bottom;
+        margin = {top: 20, right: 20, bottom: 10, left: 40};
+        width = $(selector).width() - margin.left - margin.right;
+        height = $(selector).height() - margin.top - margin.bottom;
 
         helpers.widthScale.range([0, width]);
         helpers.heightScale.range([height, 0]);
