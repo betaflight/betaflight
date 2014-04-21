@@ -224,6 +224,7 @@ typedef struct master_t {
     uint8_t mixerConfiguration;
     uint32_t enabledFeatures;
     uint16_t looptime;                      // imu loop time in us
+    uint8_t emfAvoidance;                   // change pll settings to avoid noise in the uhf band
     motorMixer_t customMixer[MAX_MOTORS];   // custom mixtable
 
     // motor/esc/servo related stuff
@@ -437,6 +438,8 @@ void serialCom(void);
 
 // Config
 void parseRcChannels(const char *input);
+void activateConfig(void);
+void loadAndActivateConfig(void);
 void readEEPROM(void);
 void writeEEPROM(uint8_t b, uint8_t updateProfile);
 void checkFirstTime(bool reset);

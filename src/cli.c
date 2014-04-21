@@ -113,6 +113,7 @@ typedef struct {
 
 const clivalue_t valueTable[] = {
     { "looptime", VAR_UINT16, &mcfg.looptime, 0, 9000 },
+    { "emf_avoidance", VAR_UINT8, &mcfg.emfAvoidance, 0, 1 },
     { "midrc", VAR_UINT16, &mcfg.midrc, 1200, 1700 },
     { "minthrottle", VAR_UINT16, &mcfg.minthrottle, 0, 2000 },
     { "maxthrottle", VAR_UINT16, &mcfg.maxthrottle, 0, 2000 },

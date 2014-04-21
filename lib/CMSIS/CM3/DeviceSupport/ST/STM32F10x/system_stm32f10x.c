@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "stm32f10x.h"
 
 #define SYSCLK_FREQ_72MHz  72000000
@@ -86,7 +87,7 @@ enum {
 };
 
 // Set system clock to 72 (HSE) or 64 (HSI) MHz
-void SetSysClock(void)
+void SetSysClock(bool overclock)
 {
     __IO uint32_t StartUpCounter = 0, status = 0, clocksrc = SRC_NONE;
     __IO uint32_t *RCC_CRH = &GPIOC->CRH;
@@ -140,10 +141,18 @@ void SetSysClock(void)
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
     *RCC_CRH |= (uint32_t)0x8 << (RCC_CFGR_PLLMULL9 >> 16);
     GPIOC->ODR &= (uint32_t)~(CAN_MCR_RESET);
+	
     RCC_CFGR_PLLMUL = GPIOC->IDR & CAN_MCR_RESET ? hse_value = 12000000, RCC_CFGR_PLLMULL6 : RCC_CFGR_PLLMULL9;
     switch (clocksrc) {
         case SRC_HSE:
-            // PLL configuration: PLLCLK = HSE * 9 = 72 MHz
+            if (overclock) {
+                if (RCC_CFGR_PLLMUL == RCC_CFGR_PLLMULL6)
+                    RCC_CFGR_PLLMUL = RCC_CFGR_PLLMULL7;
+                else if (RCC_CFGR_PLLMUL == RCC_CFGR_PLLMULL9)
+                    RCC_CFGR_PLLMUL = RCC_CFGR_PLLMULL10;
+            }
+            // overclock=false : PLL configuration: PLLCLK = HSE * 9 = 72 MHz || HSE * 6 = 72 MHz
+            // overclock=true  : PLL configuration: PLLCLK = HSE * 10 = 80 MHz || HSE * 7 = 84 MHz
             RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSE | RCC_CFGR_PLLMUL);
             break;
         case SRC_HSI:

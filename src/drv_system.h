@@ -1,6 +1,6 @@
 #pragma once
 
-void systemInit(void);
+void systemInit(bool overclock);
 void delayMicroseconds(uint32_t us);
 void delay(uint32_t ms);
 
