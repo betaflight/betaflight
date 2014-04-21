@@ -5,16 +5,12 @@
 
 #include "common/maths.h"
 
-#include "sensors_common.h" // FIXME dependency into the main code
-
-#include "accgyro_common.h"
 #include "system_common.h"
-
-#include "accgyro_mpu3050.h"
-
 #include "bus_i2c.h"
 
-#include "boardalignment.h"
+#include "accgyro_common.h"
+#include "accgyro_mpu3050.h"
+
 
 
 // MPU3050, Standard address 0x68
@@ -42,9 +38,8 @@
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
 static uint8_t mpuLowPassFilter = MPU3050_DLPF_42HZ;
-static sensor_align_e gyroAlign = CW0_DEG;
 
-static void mpu3050Init(sensor_align_e align);
+static void mpu3050Init(void);
 static void mpu3050Read(int16_t *gyroData);
 static void mpu3050ReadTemp(int16_t *tempData);
 
@@ -90,7 +85,7 @@ bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
     return true;
 }
 
-static void mpu3050Init(sensor_align_e align)
+static void mpu3050Init(void)
 {
     bool ack;
 
@@ -104,23 +99,17 @@ static void mpu3050Init(sensor_align_e align)
     i2cWrite(MPU3050_ADDRESS, MPU3050_INT_CFG, 0);
     i2cWrite(MPU3050_ADDRESS, MPU3050_USER_CTRL, MPU3050_USER_RESET);
     i2cWrite(MPU3050_ADDRESS, MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
-
-    if (align > 0)
-        gyroAlign = align;
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
 static void mpu3050Read(int16_t *gyroData)
 {
     uint8_t buf[6];
-    int16_t data[3];
 
     i2cRead(MPU3050_ADDRESS, MPU3050_GYRO_OUT, 6, buf);
-    data[0] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
-    data[1] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
-    data[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
-
-    alignSensors(data, gyroData, gyroAlign);
+    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
+    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
+    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
 }
 
 static void mpu3050ReadTemp(int16_t *tempData)

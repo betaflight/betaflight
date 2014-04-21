@@ -92,10 +92,9 @@
 #define HMC_POS_BIAS 1
 #define HMC_NEG_BIAS 2
 
-static sensor_align_e magAlign = CW180_DEG;
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
-bool hmc5883lDetect(sensor_align_e align)
+bool hmc5883lDetect(void)
 {
     bool ack = false;
     uint8_t sig = 0;
@@ -103,9 +102,6 @@ bool hmc5883lDetect(sensor_align_e align)
     ack = i2cRead(MAG_ADDRESS, 0x0A, 1, &sig);
     if (!ack || sig != 'H')
         return false;
-
-    if (align > 0)
-        magAlign = align;
 
     return true;
 }
@@ -196,13 +192,11 @@ void hmc5883lInit(void)
 void hmc5883lRead(int16_t *magData)
 {
     uint8_t buf[6];
-    int16_t mag[3];
 
     i2cRead(MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
     // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
     // After calibration is done, magGain is set to calculated gain values.
-    mag[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
-    mag[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
-    mag[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
-    alignSensors(mag, magData, magAlign);
+    magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
+    magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
+    magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
 }

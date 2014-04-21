@@ -3,19 +3,15 @@
 
 #include <platform.h>
 
-#include "common/axis.h"
-
-#include "sensors_common.h" // FIXME dependency into the main code
-#include "accgyro_common.h"
-
-#include "accgyro_l3g4200d.h"
-
 #include "system_common.h"
 #include "bus_i2c.h"
 
-#include "boardalignment.h"
-
 #include "common/maths.h"
+#include "common/axis.h"
+
+#include "accgyro_common.h"
+#include "accgyro_l3g4200d.h"
+
 
 // L3G4200D, Standard address 0x68
 #define L3G4200D_ADDRESS         0x68
@@ -42,9 +38,8 @@
 #define L3G4200D_DLPF_93HZ       0xC0
 
 static uint8_t mpuLowPassFilter = L3G4200D_DLPF_32HZ;
-static sensor_align_e gyroAlign = CW0_DEG;
 
-static void l3g4200dInit(sensor_align_e align);
+static void l3g4200dInit(void);
 static void l3g4200dRead(int16_t *gyroData);
 
 bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
@@ -83,7 +78,7 @@ bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
     return true;
 }
 
-static void l3g4200dInit(sensor_align_e align)
+static void l3g4200dInit(void)
 {
     bool ack;
 
@@ -95,20 +90,15 @@ static void l3g4200dInit(sensor_align_e align)
 
     delay(5);
     i2cWrite(L3G4200D_ADDRESS, L3G4200D_CTRL_REG1, L3G4200D_POWER_ON | mpuLowPassFilter);
-    if (align > 0)
-        gyroAlign = align;
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
 static void l3g4200dRead(int16_t *gyroData)
 {
     uint8_t buf[6];
-    int16_t data[3];
 
     i2cRead(L3G4200D_ADDRESS, L3G4200D_AUTOINCR | L3G4200D_GYRO_OUT, 6, buf);
-    data[X] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
-    data[Y] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
-    data[Z] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
-
-    alignSensors(data, gyroData, gyroAlign);
+    gyroData[X] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
+    gyroData[Y] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
+    gyroData[Z] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
 }

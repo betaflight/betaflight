@@ -5,18 +5,12 @@
 
 #include "common/maths.h"
 
-#include "sensors_common.h" // FIXME dependency into the main code
-
-#include "accgyro_common.h"
 #include "system_common.h"
 #include "gpio_common.h"
-
-
-#include "accgyro_mpu6050.h"
-
 #include "bus_i2c.h"
 
-#include "boardalignment.h"
+#include "accgyro_common.h"
+#include "accgyro_mpu6050.h"
 
 // MPU6050, Standard address 0x68
 // MPU_INT on PB13 on rev4 hardware
@@ -125,12 +119,10 @@
 #define MPU6050_LPF_5HZ         6
 
 static uint8_t mpuLowPassFilter = MPU6050_LPF_42HZ;
-static sensor_align_e gyroAlign = CW0_DEG;
-static sensor_align_e accAlign = CW0_DEG;
 
-static void mpu6050AccInit(sensor_align_e align);
+static void mpu6050AccInit(void);
 static void mpu6050AccRead(int16_t *accData);
-static void mpu6050GyroInit(sensor_align_e align);
+static void mpu6050GyroInit(void);
 static void mpu6050GyroRead(int16_t *gyroData);
 
 typedef enum {
@@ -225,7 +217,7 @@ bool mpu6050Detect(acc_t *acc, gyro_t *gyro, uint16_t lpf)
     return true;
 }
 
-static void mpu6050AccInit(sensor_align_e align)
+static void mpu6050AccInit(void)
 {
     switch(mpuAccelTrim) {
         case MPU_6050_HALF_RESOLUTION:
@@ -235,25 +227,19 @@ static void mpu6050AccInit(sensor_align_e align)
             acc_1G = 512 * 8;
             break;
     }
-
-    if (align > 0)
-        accAlign = align;
 }
 
 static void mpu6050AccRead(int16_t *accData)
 {
     uint8_t buf[6];
-    int16_t data[3];
 
     i2cRead(MPU6050_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf);
-    data[0] = (int16_t)((buf[0] << 8) | buf[1]);
-    data[1] = (int16_t)((buf[2] << 8) | buf[3]);
-    data[2] = (int16_t)((buf[4] << 8) | buf[5]);
-
-    alignSensors(data, accData, accAlign);
+    accData[0] = (int16_t)((buf[0] << 8) | buf[1]);
+    accData[1] = (int16_t)((buf[2] << 8) | buf[3]);
+    accData[2] = (int16_t)((buf[4] << 8) | buf[5]);
 }
 
-static void mpu6050GyroInit(sensor_align_e align)
+static void mpu6050GyroInit(void)
 {
     gpio_config_t gpio;
 
@@ -277,20 +263,14 @@ static void mpu6050GyroInit(sensor_align_e align)
     // ACC Init stuff. Moved into gyro init because the reset above would screw up accel config. Oops.
     // Accel scale 8g (4096 LSB/g)
     i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, 2 << 3);
-
-    if (align > 0)
-        gyroAlign = align;
 }
 
 static void mpu6050GyroRead(int16_t *gyroData)
 {
     uint8_t buf[6];
-    int16_t data[3];
 
     i2cRead(MPU6050_ADDRESS, MPU_RA_GYRO_XOUT_H, 6, buf);
-    data[0] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
-    data[1] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
-    data[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
-
-    alignSensors(data, gyroData, gyroAlign);
+    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]) / 4;
+    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]) / 4;
+    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 4;
 }

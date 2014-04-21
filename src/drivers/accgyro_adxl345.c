@@ -3,15 +3,10 @@
 
 #include <platform.h>
 
-#include "sensors_common.h" // FIXME dependency into the main code
-
-#include "accgyro_common.h"
-
 #include "system_common.h"
 #include "bus_i2c.h"
 
-#include "boardalignment.h"
-
+#include "accgyro_common.h"
 #include "accgyro_adxl345.h"
 
 // ADXL345, Alternative address mode 0x53
@@ -43,11 +38,10 @@
 #define ADXL345_RANGE_16G   0x03
 #define ADXL345_FIFO_STREAM 0x80
 
-static void adxl345Init(sensor_align_e align);
+static void adxl345Init(void);
 static void adxl345Read(int16_t *accelData);
 
 static bool useFifo = false;
-static sensor_align_e accAlign = CW270_DEG;
 
 bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
 {
@@ -70,7 +64,7 @@ bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
     return true;
 }
 
-static void adxl345Init(sensor_align_e align)
+static void adxl345Init(void)
 {
    if (useFifo) {
         uint8_t fifoDepth = 16;
@@ -84,9 +78,6 @@ static void adxl345Init(sensor_align_e align)
         i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_RATE_100);
     }
     acc_1G = 265; // 3.3V operation
-
-    if (align > 0)
-        accAlign = align;
 }
 
 uint8_t acc_samples = 0;
@@ -94,7 +85,6 @@ uint8_t acc_samples = 0;
 static void adxl345Read(int16_t *accelData)
 {
     uint8_t buf[8];
-    int16_t data[3];
 
     if (useFifo) {
         int32_t x = 0;
@@ -111,16 +101,14 @@ static void adxl345Read(int16_t *accelData)
             z += (int16_t)(buf[4] + (buf[5] << 8));
             samples_remaining = buf[7] & 0x7F;
         } while ((i < 32) && (samples_remaining > 0));
-        data[0] = x / i;
-        data[1] = y / i;
-        data[2] = z / i;
+        accelData[0] = x / i;
+        accelData[1] = y / i;
+        accelData[2] = z / i;
         acc_samples = i;
     } else {
         i2cRead(ADXL345_ADDRESS, ADXL345_DATA_OUT, 6, buf);
-        data[0] = buf[0] + (buf[1] << 8);
-        data[1] = buf[2] + (buf[3] << 8);
-        data[2] = buf[4] + (buf[5] << 8);
+        accelData[0] = buf[0] + (buf[1] << 8);
+        accelData[1] = buf[2] + (buf[3] << 8);
+        accelData[2] = buf[4] + (buf[5] << 8);
     }
-
-    alignSensors(data, accelData, accAlign);
 }

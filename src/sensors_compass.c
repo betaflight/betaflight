@@ -4,7 +4,7 @@
 #include "common/axis.h"
 
 int16_t magADC[XYZ_AXIS_COUNT];
-
+sensor_align_e magAlign = 0;
 #ifdef MAG
 static uint8_t magInit = 0;
 
@@ -30,6 +30,7 @@ int Mag_getADC(void)
 
     // Read mag sensor
     hmc5883lRead(magADC);
+    alignSensors(magADC, magADC, magAlign);
 
     if (f.CALIBRATE_MAG) {
         tCal = t;

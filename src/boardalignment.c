@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -73,46 +74,49 @@ static void alignBoard(int16_t *vec)
 
 void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation)
 {
+    static uint16_t swap[3];
+    memcpy(swap, src, sizeof(swap));
+
     switch (rotation) {
         case CW0_DEG:
-            dest[X] = src[X];
-            dest[Y] = src[Y];
-            dest[Z] = src[Z];
+            dest[X] = swap[X];
+            dest[Y] = swap[Y];
+            dest[Z] = swap[Z];
             break;
         case CW90_DEG:
-            dest[X] = src[Y];
-            dest[Y] = -src[X];
-            dest[Z] = src[Z];
+            dest[X] = swap[Y];
+            dest[Y] = -swap[X];
+            dest[Z] = swap[Z];
             break;
         case CW180_DEG:
-            dest[X] = -src[X];
-            dest[Y] = -src[Y];
-            dest[Z] = src[Z];
+            dest[X] = -swap[X];
+            dest[Y] = -swap[Y];
+            dest[Z] = swap[Z];
             break;
         case CW270_DEG:
-            dest[X] = -src[Y];
-            dest[Y] = src[X];
-            dest[Z] = src[Z];
+            dest[X] = -swap[Y];
+            dest[Y] = swap[X];
+            dest[Z] = swap[Z];
             break;
         case CW0_DEG_FLIP:
-            dest[X] = -src[X];
-            dest[Y] = src[Y];
-            dest[Z] = -src[Z];
+            dest[X] = -swap[X];
+            dest[Y] = swap[Y];
+            dest[Z] = -swap[Z];
             break;
         case CW90_DEG_FLIP:
-            dest[X] = src[Y];
-            dest[Y] = src[X];
-            dest[Z] = -src[Z];
+            dest[X] = swap[Y];
+            dest[Y] = swap[X];
+            dest[Z] = -swap[Z];
             break;
         case CW180_DEG_FLIP:
-            dest[X] = src[X];
-            dest[Y] = -src[Y];
-            dest[Z] = -src[Z];
+            dest[X] = swap[X];
+            dest[Y] = -swap[Y];
+            dest[Z] = -swap[Z];
             break;
         case CW270_DEG_FLIP:
-            dest[X] = -src[Y];
-            dest[Y] = -src[X];
-            dest[Z] = -src[Z];
+            dest[X] = -swap[Y];
+            dest[Y] = -swap[X];
+            dest[Z] = -swap[Z];
             break;
         default:
             break;

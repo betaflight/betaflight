@@ -2,7 +2,7 @@
 
 extern uint16_t acc_1G;
 
-typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
+typedef void (* sensorInitFuncPtr)(void);   // sensor init prototype
 typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
 
 typedef struct gyro_s

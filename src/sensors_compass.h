@@ -6,3 +6,4 @@ int Mag_getADC(void);
 #endif
 
 extern int16_t magADC[XYZ_AXIS_COUNT];
+extern sensor_align_e magAlign;

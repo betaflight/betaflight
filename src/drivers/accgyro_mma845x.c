@@ -3,17 +3,12 @@
 
 #include "platform.h"
 
-#include "sensors_common.h" // FIXME dependency into the main code
-
-#include "accgyro_common.h"
 #include "system_common.h"
 #include "gpio_common.h"
-
-#include "accgyro_mma845x.h"
-
 #include "bus_i2c.h"
 
-#include "boardalignment.h"
+#include "accgyro_common.h"
+#include "accgyro_mma845x.h"
 
 // MMA8452QT, Standard address 0x1C
 // ACC_INT2 routed to PA5
@@ -63,9 +58,8 @@
 #define MMA8452_CTRL_REG1_ACTIVE        0x01
 
 static uint8_t device_id;
-static sensor_align_e accAlign = CW90_DEG;
 
-static void mma8452Init(sensor_align_e align);
+static void mma8452Init(void);
 static void mma8452Read(int16_t *accelData);
 
 bool mma8452Detect(acc_t *acc)
@@ -87,7 +81,7 @@ bool mma8452Detect(acc_t *acc)
     return true;
 }
 
-static void mma8452Init(sensor_align_e align)
+static void mma8452Init(void)
 {
     gpio_config_t gpio;
 
@@ -108,20 +102,14 @@ static void mma8452Init(sensor_align_e align)
     i2cWrite(MMA8452_ADDRESS, MMA8452_CTRL_REG1, MMA8452_CTRL_REG1_LNOISE | MMA8452_CTRL_REG1_ACTIVE); // Turn on measurements, low noise at max scale mode, Data Rate 800Hz. LNoise mode makes range +-4G.
 
     acc_1G = 256;
-
-    if (align > 0)
-        accAlign = align;
 }
 
 static void mma8452Read(int16_t *accelData)
 {
     uint8_t buf[6];
-    int16_t data[3];
 
     i2cRead(MMA8452_ADDRESS, MMA8452_OUT_X_MSB, 6, buf);
-    data[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
-    data[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
-    data[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
-
-    alignSensors(data, accelData, accAlign);
+    accelData[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
+    accelData[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
+    accelData[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
 }

@@ -5,8 +5,6 @@
 
 #include "platform.h"
 
-#include "sensors_common.h" // FIXME dependency into the main code
-
 #include "accgyro_common.h"
 
 #include "system_common.h"
@@ -15,7 +13,7 @@
 
 static void adcAccRead(int16_t *accelData);
 static void adcGyroRead(int16_t *gyroData);
-static void adcDummyInit(sensor_align_e align);
+static void adcDummyInit(void);
 
 void adcSensorInit(acc_t *acc, gyro_t *gyro)
 {
@@ -57,7 +55,7 @@ static void adcGyroRead(int16_t *gyroData)
     gyroData[2] = adcData[2] * 2;
 }
 
-static void adcDummyInit(sensor_align_e align)
+static void adcDummyInit(void)
 {
     // nothing to init here
 }

@@ -3,15 +3,10 @@
 
 #include <platform.h>
 
-#include "sensors_common.h" // FIXME dependency into the main code
-#include "accgyro_common.h"
-
-#include "accgyro_bma280.h"
-
 #include "bus_i2c.h"
 
-#include "boardalignment.h"
-
+#include "accgyro_common.h"
+#include "accgyro_bma280.h"
 
 // BMA280, default I2C address mode 0x18
 #define BMA280_ADDRESS     0x18
@@ -19,10 +14,8 @@
 #define BMA280_PMU_BW      0x10
 #define BMA280_PMU_RANGE   0x0F
 
-static void bma280Init(sensor_align_e align);
+static void bma280Init(void);
 static void bma280Read(int16_t *accelData);
-
-static sensor_align_e accAlign = CW0_DEG;
 
 bool bma280Detect(acc_t *acc)
 {
@@ -38,28 +31,22 @@ bool bma280Detect(acc_t *acc)
     return true;
 }
 
-static void bma280Init(sensor_align_e align)
+static void bma280Init(void)
 {
     i2cWrite(BMA280_ADDRESS, BMA280_PMU_RANGE, 0x08); // +-8g range
     i2cWrite(BMA280_ADDRESS, BMA280_PMU_BW, 0x0E); // 500Hz BW
 
     acc_1G = 512 * 8;
-
-    if (align > 0)
-        accAlign = align;
 }
 
 static void bma280Read(int16_t *accelData)
 {
     uint8_t buf[6];
-    int16_t data[3];
 
     i2cRead(BMA280_ADDRESS, BMA280_ACC_X_LSB, 6, buf);
 
     // Data format is lsb<5:0><crap><new_data_bit> | msb<13:6>
-    data[0] = (int16_t)((buf[0] >> 2) + (buf[1] << 8));
-    data[1] = (int16_t)((buf[2] >> 2) + (buf[3] << 8));
-    data[2] = (int16_t)((buf[4] >> 2) + (buf[5] << 8));
-
-    alignSensors(data, accelData, accAlign);
+    accelData[0] = (int16_t)((buf[0] >> 2) + (buf[1] << 8));
+    accelData[1] = (int16_t)((buf[2] >> 2) + (buf[3] << 8));
+    accelData[2] = (int16_t)((buf[4] >> 2) + (buf[5] << 8));
 }
