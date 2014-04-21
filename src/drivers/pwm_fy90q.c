@@ -6,8 +6,11 @@
 
 #include "serial_common.h"
 
+#include "failsafe.h" // FIXME dependency into the main code from a driver
+
 #include "pwm_common.h"
 
+failsafe_t *failsafe;
 static uint16_t failsafeThreshold = 985;
 
 #define PULSE_1MS       (1000) // 1ms pulse width
@@ -18,9 +21,6 @@ static uint16_t failsafeThreshold = 985;
 // Forward declaration
 static void pwmIRQHandler(TIM_TypeDef *tim);
 static void ppmIRQHandler(TIM_TypeDef *tim);
-
-// external vars (ugh)
-extern int16_t failsafeCnt;
 
 // local vars
 static struct TIM_Channel {
@@ -99,14 +99,11 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
                 GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK
             if (GoodPulses == 0x0F) {   // If first four chanells have good pulses, clear FailSafe counter
                 GoodPulses = 0;
-                if (failsafeCnt > 20)
-                    failsafeCnt -= 20;
-                else
-                    failsafeCnt = 0;
+                failsafe->vTable->validDataReceived();
             }
         }
         chan++;
-        failsafeCnt = 0;
+        failsafe->vTable->reset();
     }
 }
 
@@ -160,7 +157,7 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
                 state->state = 0;
 
                 // ping failsafe
-                failsafeCnt = 0;
+                failsafe->vTable->reset();
 
                 TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
                 TIM_ICInitStructure.TIM_Channel = channel.channel;
@@ -258,13 +255,15 @@ static void pwmInitializeInput(bool usePPM)
     }
 }
 
-bool pwmInit(drv_pwm_config_t *init)
+void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
 {
     GPIO_InitTypeDef GPIO_InitStructure = { 0, };
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
     TIM_OCInitTypeDef TIM_OCInitStructure = { 0, };
 
     uint8_t i;
+
+    failsafe = initialFailsafe;
 
     // Inputs
 
@@ -335,8 +334,6 @@ bool pwmInit(drv_pwm_config_t *init)
     if (!init->enableInput || init->usePPM) {
         // TODO
     }
-
-    return false;
 }
 
 void pwmWriteMotor(uint8_t channel, uint16_t value)
