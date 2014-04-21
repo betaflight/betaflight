@@ -113,7 +113,7 @@ void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
 
 void writeEEPROM(void)
 {
-    FLASH_Status status;
+    FLASH_Status status = 0;
     uint32_t wordOffset;
     int8_t attemptsRemaining = 3;
 
