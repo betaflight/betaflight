@@ -17,6 +17,5 @@ typedef struct acc_s
 {
     sensorInitFuncPtr init;                                 // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
-    sensorReadFuncPtr temperature;                          // read temperature if available
     char revisionCode;                                      // a revision code for the sensor, if known
 } acc_t;
