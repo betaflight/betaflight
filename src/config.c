@@ -45,7 +45,7 @@ config_t cfg;   // profile config struct
 static const uint8_t EEPROM_CONF_VERSION = 64;
 static void resetConf(void);
 
-static uint8_t validEEPROM(void)
+static bool isEEPROMContentValid(void)
 {
     const master_t *temp = (const master_t *)FLASH_WRITE_ADDR;
     const uint8_t *p;
@@ -53,11 +53,11 @@ static uint8_t validEEPROM(void)
 
     // check version number
     if (EEPROM_CONF_VERSION != temp->version)
-        return 0;
+        return false;
 
     // check size and magic numbers
     if (temp->size != sizeof(master_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
-        return 0;
+        return false;
 
     // verify integrity of temporary copy
     for (p = (const uint8_t *)temp; p < ((const uint8_t *)temp + sizeof(master_t)); p++)
@@ -65,16 +65,16 @@ static uint8_t validEEPROM(void)
 
     // checksum failed
     if (chk != 0)
-        return 0;
+        return false;
 
     // looks good, let's roll!
-    return 1;
+    return true;
 }
 
 void readEEPROM(void)
 {
     // Sanity check
-    if (!validEEPROM())
+    if (!isEEPROMContentValid())
         failureMode(10);
 
     // Read flash
@@ -146,19 +146,24 @@ retry:
     FLASH_Lock();
 
     // Flash write failed - just die now
-    if (tries == 3 || !validEEPROM()) {
+    if (tries == 3 || !isEEPROMContentValid()) {
         failureMode(10);
     }
 }
 
-void checkFirstTime(bool reset)
+void ensureEEPROMContainsValidData(void)
 {
-    // check the EEPROM integrity before resetting values
-    if (!validEEPROM() || reset) {
-        resetConf();
-        writeEEPROM();
-        readEEPROM();
+    if (isEEPROMContentValid()) {
+        return;
     }
+
+    resetEEPROM();
+}
+
+void resetEEPROM(void)
+{
+    resetConf();
+    writeEEPROM();
 }
 
 // Default settings

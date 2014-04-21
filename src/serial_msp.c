@@ -601,8 +601,10 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_RESET_CONF:
-        if (!f.ARMED)
-            checkFirstTime(true);
+        if (!f.ARMED) {
+            resetEEPROM();
+            readEEPROM();
+        }
         headSerialReply(0);
         break;
     case MSP_ACC_CALIBRATION:

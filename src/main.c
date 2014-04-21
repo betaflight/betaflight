@@ -38,7 +38,7 @@ int main(void)
     systemInit();
     initPrintfSupport();
 
-    checkFirstTime(false);
+    ensureEEPROMContainsValidData();
     readEEPROM();
 
     // configure power ADC

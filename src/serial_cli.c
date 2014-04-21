@@ -550,15 +550,6 @@ static void cliCMix(char *cmdline)
     }
 }
 
-static void cliDefaults(char *cmdline)
-{
-    cliPrint("Resetting to defaults...\r\n");
-    checkFirstTime(true);
-    cliPrint("Rebooting...");
-    delay(10);
-    systemReset(false);
-}
-
 static void cliDump(char *cmdline)
 {
     int i;
@@ -842,14 +833,25 @@ static void cliProfile(char *cmdline)
     }
 }
 
+static void cliReboot(void) {
+    cliPrint("\r\nRebooting...");
+    delay(10);
+    systemReset(false);
+}
+
 static void cliSave(char *cmdline)
 {
     cliPrint("Saving...");
     copyCurrentProfileToProfileSlot(mcfg.current_profile);
     writeEEPROM();
-    cliPrint("\r\nRebooting...");
-    delay(10);
-    systemReset(false);
+    cliReboot();
+}
+
+static void cliDefaults(char *cmdline)
+{
+    cliPrint("Resetting to defaults...");
+    resetEEPROM();
+    cliReboot();
 }
 
 static void cliPrint(const char *str)
