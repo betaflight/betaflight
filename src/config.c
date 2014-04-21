@@ -45,11 +45,20 @@ config_t cfg;   // profile config struct
 static const uint8_t EEPROM_CONF_VERSION = 64;
 static void resetConf(void);
 
+static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
+{
+    uint8_t checksum = 0;
+    const uint8_t *byteOffset;
+
+    for (byteOffset = data; byteOffset < (data + length); byteOffset++)
+        checksum ^= *byteOffset;
+    return checksum;
+}
+
 static bool isEEPROMContentValid(void)
 {
     const master_t *temp = (const master_t *)FLASH_WRITE_ADDR;
-    const uint8_t *p;
-    uint8_t chk = 0;
+    uint8_t checksum = 0;
 
     // check version number
     if (EEPROM_CONF_VERSION != temp->version)
@@ -60,11 +69,8 @@ static bool isEEPROMContentValid(void)
         return false;
 
     // verify integrity of temporary copy
-    for (p = (const uint8_t *)temp; p < ((const uint8_t *)temp + sizeof(master_t)); p++)
-        chk ^= *p;
-
-    // checksum failed
-    if (chk != 0)
+    checksum = calculateChecksum((const uint8_t *)temp, sizeof(master_t));
+    if (checksum != 0)
         return false;
 
     // looks good, let's roll!
@@ -109,8 +115,6 @@ void writeEEPROM(void)
 {
     FLASH_Status status;
     uint32_t wordOffset;
-    uint8_t checksum = 0;
-    const uint8_t *byteOffset;
     int8_t attemptsRemaining = 3;
 
     // prepare checksum/version constants
@@ -118,12 +122,8 @@ void writeEEPROM(void)
     mcfg.size = sizeof(master_t);
     mcfg.magic_be = 0xBE;
     mcfg.magic_ef = 0xEF;
-    mcfg.chk = 0;
-
-    // recalculate checksum before writing
-    for (byteOffset = (const uint8_t *)&mcfg; byteOffset < ((const uint8_t *)&mcfg + sizeof(master_t)); byteOffset++)
-        checksum ^= *byteOffset;
-    mcfg.chk = checksum;
+    mcfg.chk = 0; // erase checksum before recalculating
+    mcfg.chk = calculateChecksum((const uint8_t *)&mcfg, sizeof(master_t));
 
     // write it
     FLASH_Unlock();
