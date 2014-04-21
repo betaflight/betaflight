@@ -30,7 +30,8 @@
 
 #include "runtime_config.h"
 #include "config.h"
-#include "config_storage.h"
+#include "config_profile.h"
+#include "config_master.h"
 
 void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 
@@ -41,8 +42,8 @@ void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
 #define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 2))       // use the last 2 KB for storage
 
-master_t mcfg;  // master config struct with data independent from profiles
-config_t cfg;   // profile config struct
+master_t masterConfig;  // master config struct with data independent from profiles
+profile_t currentProfile;   // profile config struct
 
 static const uint8_t EEPROM_CONF_VERSION = 64;
 static void resetConf(void);
@@ -81,12 +82,12 @@ static bool isEEPROMContentValid(void)
 
 void activateConfig(void)
 {
-    generatePitchCurve(&cfg.controlRateConfig);
-    generateThrottleCurve(&cfg.controlRateConfig, mcfg.minthrottle, mcfg.maxthrottle);
+    generatePitchCurve(&currentProfile.controlRateConfig);
+    generateThrottleCurve(&currentProfile.controlRateConfig, masterConfig.minthrottle, masterConfig.maxthrottle);
 
-    setPIDController(cfg.pidController);
+    setPIDController(currentProfile.pidController);
     gpsSetPIDs();
-    useFailsafeConfig(&cfg.failsafeConfig);
+    useFailsafeConfig(&currentProfile.failsafeConfig);
 }
 
 void readEEPROM(void)
@@ -96,11 +97,11 @@ void readEEPROM(void)
         failureMode(10);
 
     // Read flash
-    memcpy(&mcfg, (char *)FLASH_WRITE_ADDR, sizeof(master_t));
+    memcpy(&masterConfig, (char *)FLASH_WRITE_ADDR, sizeof(master_t));
     // Copy current profile
-    if (mcfg.current_profile > 2) // sanity check
-        mcfg.current_profile = 0;
-    memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t)); 
+    if (masterConfig.current_profile > 2) // sanity check
+        masterConfig.current_profile = 0;
+    memcpy(&currentProfile, &masterConfig.profile[masterConfig.current_profile], sizeof(profile_t)); 
 
     activateConfig();
 }
@@ -115,7 +116,7 @@ void readEEPROMAndNotify(void)
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
 {
     // copy current in-memory profile to stored configuration
-    memcpy(&mcfg.profile[profileSlotIndex], &cfg, sizeof(config_t));
+    memcpy(&masterConfig.profile[profileSlotIndex], &currentProfile, sizeof(profile_t));
 }
 
 void writeEEPROM(void)
@@ -125,12 +126,12 @@ void writeEEPROM(void)
     int8_t attemptsRemaining = 3;
 
     // prepare checksum/version constants
-    mcfg.version = EEPROM_CONF_VERSION;
-    mcfg.size = sizeof(master_t);
-    mcfg.magic_be = 0xBE;
-    mcfg.magic_ef = 0xEF;
-    mcfg.chk = 0; // erase checksum before recalculating
-    mcfg.chk = calculateChecksum((const uint8_t *)&mcfg, sizeof(master_t));
+    masterConfig.version = EEPROM_CONF_VERSION;
+    masterConfig.size = sizeof(master_t);
+    masterConfig.magic_be = 0xBE;
+    masterConfig.magic_ef = 0xEF;
+    masterConfig.chk = 0; // erase checksum before recalculating
+    masterConfig.chk = calculateChecksum((const uint8_t *)&masterConfig, sizeof(master_t));
 
     // write it
     FLASH_Unlock();
@@ -139,7 +140,7 @@ void writeEEPROM(void)
 
         status = FLASH_ErasePage(FLASH_WRITE_ADDR);
         for (wordOffset = 0; wordOffset < sizeof(master_t) && status == FLASH_COMPLETE; wordOffset += 4) {
-            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset, *(uint32_t *) ((char *)&mcfg + wordOffset));
+            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset, *(uint32_t *) ((char *)&masterConfig + wordOffset));
         }
         if (status == FLASH_COMPLETE) {
             break;
@@ -175,193 +176,193 @@ static void resetConf(void)
     int8_t servoRates[8] = { 30, 30, 100, 100, 100, 100, 100, 100 };
 
     // Clear all configuration
-    memset(&mcfg, 0, sizeof(master_t));
-    memset(&cfg, 0, sizeof(config_t));
+    memset(&masterConfig, 0, sizeof(master_t));
+    memset(&currentProfile, 0, sizeof(profile_t));
 
-    mcfg.version = EEPROM_CONF_VERSION;
-    mcfg.mixerConfiguration = MULTITYPE_QUADX;
+    masterConfig.version = EEPROM_CONF_VERSION;
+    masterConfig.mixerConfiguration = MULTITYPE_QUADX;
     featureClearAll();
     featureSet(FEATURE_VBAT);
 
     // global settings
-    mcfg.current_profile = 0;       // default profile
-    mcfg.gyro_cmpf_factor = 600;    // default MWC
-    mcfg.gyro_cmpfm_factor = 250;   // default MWC
-    mcfg.gyro_lpf = 42;             // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
-    mcfg.accZero[0] = 0;
-    mcfg.accZero[1] = 0;
-    mcfg.accZero[2] = 0;
-    mcfg.gyro_align = ALIGN_DEFAULT;
-    mcfg.acc_align = ALIGN_DEFAULT;
-    mcfg.mag_align = ALIGN_DEFAULT;
-    mcfg.boardAlignment.rollDegrees = 0;
-    mcfg.boardAlignment.pitchDegrees = 0;
-    mcfg.boardAlignment.yawDegrees = 0;
-    mcfg.acc_hardware = ACC_DEFAULT;     // default/autodetect
-    mcfg.max_angle_inclination = 500;    // 50 degrees
-    mcfg.yaw_control_direction = 1;
-    mcfg.moron_threshold = 32;
-    mcfg.batteryConfig.vbatscale = 110;
-    mcfg.batteryConfig.vbatmaxcellvoltage = 43;
-    mcfg.batteryConfig.vbatmincellvoltage = 33;
-    mcfg.power_adc_channel = 0;
-    mcfg.telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
-    mcfg.telemetry_port = TELEMETRY_PORT_UART;
-    mcfg.telemetry_switch = 0;
-    mcfg.rxConfig.serialrx_type = 0;
-    mcfg.rxConfig.midrc = 1500;
-    mcfg.rxConfig.mincheck = 1100;
-    mcfg.rxConfig.maxcheck = 1900;
-    mcfg.retarded_arm = 0;       // disable arm/disarm on roll left/right
-    mcfg.flaps_speed = 0;
-    mcfg.fixedwing_althold_dir = 1;
+    masterConfig.current_profile = 0;       // default profile
+    masterConfig.gyro_cmpf_factor = 600;    // default MWC
+    masterConfig.gyro_cmpfm_factor = 250;   // default MWC
+    masterConfig.gyro_lpf = 42;             // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    masterConfig.accZero[0] = 0;
+    masterConfig.accZero[1] = 0;
+    masterConfig.accZero[2] = 0;
+    masterConfig.gyro_align = ALIGN_DEFAULT;
+    masterConfig.acc_align = ALIGN_DEFAULT;
+    masterConfig.mag_align = ALIGN_DEFAULT;
+    masterConfig.boardAlignment.rollDegrees = 0;
+    masterConfig.boardAlignment.pitchDegrees = 0;
+    masterConfig.boardAlignment.yawDegrees = 0;
+    masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    masterConfig.max_angle_inclination = 500;    // 50 degrees
+    masterConfig.yaw_control_direction = 1;
+    masterConfig.moron_threshold = 32;
+    masterConfig.batteryConfig.vbatscale = 110;
+    masterConfig.batteryConfig.vbatmaxcellvoltage = 43;
+    masterConfig.batteryConfig.vbatmincellvoltage = 33;
+    masterConfig.power_adc_channel = 0;
+    masterConfig.telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
+    masterConfig.telemetry_port = TELEMETRY_PORT_UART;
+    masterConfig.telemetry_switch = 0;
+    masterConfig.rxConfig.serialrx_type = 0;
+    masterConfig.rxConfig.midrc = 1500;
+    masterConfig.rxConfig.mincheck = 1100;
+    masterConfig.rxConfig.maxcheck = 1900;
+    masterConfig.retarded_arm = 0;       // disable arm/disarm on roll left/right
+    masterConfig.flaps_speed = 0;
+    masterConfig.fixedwing_althold_dir = 1;
     // Motor/ESC/Servo
-    mcfg.minthrottle = 1150;
-    mcfg.maxthrottle = 1850;
-    mcfg.mincommand = 1000;
-    mcfg.deadband3d_low = 1406;
-    mcfg.deadband3d_high = 1514;
-    mcfg.neutral3d = 1460;
-    mcfg.deadband3d_throttle = 50;
-    mcfg.motor_pwm_rate = 400;
-    mcfg.servo_pwm_rate = 50;
+    masterConfig.minthrottle = 1150;
+    masterConfig.maxthrottle = 1850;
+    masterConfig.mincommand = 1000;
+    masterConfig.deadband3d_low = 1406;
+    masterConfig.deadband3d_high = 1514;
+    masterConfig.neutral3d = 1460;
+    masterConfig.deadband3d_throttle = 50;
+    masterConfig.motor_pwm_rate = 400;
+    masterConfig.servo_pwm_rate = 50;
     // gps/nav stuff
-    mcfg.gps_type = GPS_NMEA;
-    mcfg.gps_baudrate = GPS_BAUD_115200;
+    masterConfig.gps_type = GPS_NMEA;
+    masterConfig.gps_baudrate = GPS_BAUD_115200;
 
     // serial (USART1) baudrate
-    mcfg.serialConfig.port1_baudrate = 115200;
-    mcfg.serialConfig.softserial_baudrate = 9600;
-    mcfg.serialConfig.softserial_1_inverted = 0;
-    mcfg.serialConfig.softserial_2_inverted = 0;
-    mcfg.serialConfig.reboot_character = 'R';
+    masterConfig.serialConfig.port1_baudrate = 115200;
+    masterConfig.serialConfig.softserial_baudrate = 9600;
+    masterConfig.serialConfig.softserial_1_inverted = 0;
+    masterConfig.serialConfig.softserial_2_inverted = 0;
+    masterConfig.serialConfig.reboot_character = 'R';
 
-    mcfg.looptime = 3500;
-    mcfg.emfAvoidance = 0;
-    mcfg.rssi_aux_channel = 0;
+    masterConfig.looptime = 3500;
+    masterConfig.emfAvoidance = 0;
+    masterConfig.rssi_aux_channel = 0;
 
-    cfg.pidController = 0;
-    cfg.P8[ROLL] = 40;
-    cfg.I8[ROLL] = 30;
-    cfg.D8[ROLL] = 23;
-    cfg.P8[PITCH] = 40;
-    cfg.I8[PITCH] = 30;
-    cfg.D8[PITCH] = 23;
-    cfg.P8[YAW] = 85;
-    cfg.I8[YAW] = 45;
-    cfg.D8[YAW] = 0;
-    cfg.P8[PIDALT] = 50;
-    cfg.I8[PIDALT] = 0;
-    cfg.D8[PIDALT] = 0;
-    cfg.P8[PIDPOS] = 11; // POSHOLD_P * 100;
-    cfg.I8[PIDPOS] = 0; // POSHOLD_I * 100;
-    cfg.D8[PIDPOS] = 0;
-    cfg.P8[PIDPOSR] = 20; // POSHOLD_RATE_P * 10;
-    cfg.I8[PIDPOSR] = 8; // POSHOLD_RATE_I * 100;
-    cfg.D8[PIDPOSR] = 45; // POSHOLD_RATE_D * 1000;
-    cfg.P8[PIDNAVR] = 14; // NAV_P * 10;
-    cfg.I8[PIDNAVR] = 20; // NAV_I * 100;
-    cfg.D8[PIDNAVR] = 80; // NAV_D * 1000;
-    cfg.P8[PIDLEVEL] = 90;
-    cfg.I8[PIDLEVEL] = 10;
-    cfg.D8[PIDLEVEL] = 100;
-    cfg.P8[PIDMAG] = 40;
-    cfg.P8[PIDVEL] = 120;
-    cfg.I8[PIDVEL] = 45;
-    cfg.D8[PIDVEL] = 1;
-    cfg.controlRateConfig.rcRate8 = 90;
-    cfg.controlRateConfig.rcExpo8 = 65;
-    cfg.controlRateConfig.rollPitchRate = 0;
-    cfg.controlRateConfig.yawRate = 0;
-    cfg.dynThrPID = 0;
-    cfg.tpaBreakPoint = 1500;
-    cfg.controlRateConfig.thrMid8 = 50;
-    cfg.controlRateConfig.thrExpo8 = 0;
+    currentProfile.pidController = 0;
+    currentProfile.P8[ROLL] = 40;
+    currentProfile.I8[ROLL] = 30;
+    currentProfile.D8[ROLL] = 23;
+    currentProfile.P8[PITCH] = 40;
+    currentProfile.I8[PITCH] = 30;
+    currentProfile.D8[PITCH] = 23;
+    currentProfile.P8[YAW] = 85;
+    currentProfile.I8[YAW] = 45;
+    currentProfile.D8[YAW] = 0;
+    currentProfile.P8[PIDALT] = 50;
+    currentProfile.I8[PIDALT] = 0;
+    currentProfile.D8[PIDALT] = 0;
+    currentProfile.P8[PIDPOS] = 11; // POSHOLD_P * 100;
+    currentProfile.I8[PIDPOS] = 0; // POSHOLD_I * 100;
+    currentProfile.D8[PIDPOS] = 0;
+    currentProfile.P8[PIDPOSR] = 20; // POSHOLD_RATE_P * 10;
+    currentProfile.I8[PIDPOSR] = 8; // POSHOLD_RATE_I * 100;
+    currentProfile.D8[PIDPOSR] = 45; // POSHOLD_RATE_D * 1000;
+    currentProfile.P8[PIDNAVR] = 14; // NAV_P * 10;
+    currentProfile.I8[PIDNAVR] = 20; // NAV_I * 100;
+    currentProfile.D8[PIDNAVR] = 80; // NAV_D * 1000;
+    currentProfile.P8[PIDLEVEL] = 90;
+    currentProfile.I8[PIDLEVEL] = 10;
+    currentProfile.D8[PIDLEVEL] = 100;
+    currentProfile.P8[PIDMAG] = 40;
+    currentProfile.P8[PIDVEL] = 120;
+    currentProfile.I8[PIDVEL] = 45;
+    currentProfile.D8[PIDVEL] = 1;
+    currentProfile.controlRateConfig.rcRate8 = 90;
+    currentProfile.controlRateConfig.rcExpo8 = 65;
+    currentProfile.controlRateConfig.rollPitchRate = 0;
+    currentProfile.controlRateConfig.yawRate = 0;
+    currentProfile.dynThrPID = 0;
+    currentProfile.tpaBreakPoint = 1500;
+    currentProfile.controlRateConfig.thrMid8 = 50;
+    currentProfile.controlRateConfig.thrExpo8 = 0;
     // for (i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
-    cfg.angleTrim[0] = 0;
-    cfg.angleTrim[1] = 0;
-    cfg.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
-    cfg.acc_lpf_factor = 4;
-    cfg.accz_deadband = 40;
-    cfg.accxy_deadband = 40;
-    cfg.baro_tab_size = 21;
-    cfg.baro_noise_lpf = 0.6f;
-    cfg.baro_cf_vel = 0.985f;
-    cfg.baro_cf_alt = 0.965f;
-    cfg.acc_unarmedcal = 1;
+    currentProfile.angleTrim[0] = 0;
+    currentProfile.angleTrim[1] = 0;
+    currentProfile.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    currentProfile.acc_lpf_factor = 4;
+    currentProfile.accz_deadband = 40;
+    currentProfile.accxy_deadband = 40;
+    currentProfile.baro_tab_size = 21;
+    currentProfile.baro_noise_lpf = 0.6f;
+    currentProfile.baro_cf_vel = 0.985f;
+    currentProfile.baro_cf_alt = 0.965f;
+    currentProfile.acc_unarmedcal = 1;
 
     // Radio
-    parseRcChannels("AETR1234", &mcfg.rxConfig);
-    cfg.deadband = 0;
-    cfg.yawdeadband = 0;
-    cfg.alt_hold_throttle_neutral = 40;
-    cfg.alt_hold_fast_change = 1;
-    cfg.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
-    cfg.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
+    parseRcChannels("AETR1234", &masterConfig.rxConfig);
+    currentProfile.deadband = 0;
+    currentProfile.yawdeadband = 0;
+    currentProfile.alt_hold_throttle_neutral = 40;
+    currentProfile.alt_hold_fast_change = 1;
+    currentProfile.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
+    currentProfile.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
-    cfg.failsafeConfig.failsafe_delay = 10;                // 1sec
-    cfg.failsafeConfig.failsafe_off_delay = 200;           // 20sec
-    cfg.failsafeConfig.failsafe_throttle = 1200;           // decent default which should always be below hover throttle for people.
-    cfg.failsafeConfig.failsafe_detect_threshold = 985;    // any of first 4 channels below this value will trigger failsafe
+    currentProfile.failsafeConfig.failsafe_delay = 10;                // 1sec
+    currentProfile.failsafeConfig.failsafe_off_delay = 200;           // 20sec
+    currentProfile.failsafeConfig.failsafe_throttle = 1200;           // decent default which should always be below hover throttle for people.
+    currentProfile.failsafeConfig.failsafe_detect_threshold = 985;    // any of first 4 channels below this value will trigger failsafe
 
     // servos
     for (i = 0; i < 8; i++) {
-        cfg.servoConf[i].min = DEFAULT_SERVO_MIN;
-        cfg.servoConf[i].max = DEFAULT_SERVO_MAX;
-        cfg.servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
-        cfg.servoConf[i].rate = servoRates[i];
-        cfg.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+        currentProfile.servoConf[i].min = DEFAULT_SERVO_MIN;
+        currentProfile.servoConf[i].max = DEFAULT_SERVO_MAX;
+        currentProfile.servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
+        currentProfile.servoConf[i].rate = servoRates[i];
+        currentProfile.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
-    cfg.yaw_direction = 1;
-    cfg.tri_unarmed_servo = 1;
+    currentProfile.yaw_direction = 1;
+    currentProfile.tri_unarmed_servo = 1;
 
     // gimbal
-    cfg.gimbal_flags = GIMBAL_NORMAL;
+    currentProfile.gimbal_flags = GIMBAL_NORMAL;
 
     // gps/nav stuff
-    cfg.gps_wp_radius = 200;
-    cfg.gps_lpf = 20;
-    cfg.nav_slew_rate = 30;
-    cfg.nav_controls_heading = 1;
-    cfg.nav_speed_min = 100;
-    cfg.nav_speed_max = 300;
-    cfg.ap_mode = 40;
+    currentProfile.gps_wp_radius = 200;
+    currentProfile.gps_lpf = 20;
+    currentProfile.nav_slew_rate = 30;
+    currentProfile.nav_controls_heading = 1;
+    currentProfile.nav_speed_min = 100;
+    currentProfile.nav_speed_max = 300;
+    currentProfile.ap_mode = 40;
 
     // custom mixer. clear by defaults.
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-        mcfg.customMixer[i].throttle = 0.0f;
+        masterConfig.customMixer[i].throttle = 0.0f;
 
     // copy default config into all 3 profiles
     for (i = 0; i < 3; i++)
-        memcpy(&mcfg.profile[i], &cfg, sizeof(config_t));
+        memcpy(&masterConfig.profile[i], &currentProfile, sizeof(profile_t));
 }
 
 
 bool feature(uint32_t mask)
 {
-    return mcfg.enabledFeatures & mask;
+    return masterConfig.enabledFeatures & mask;
 }
 
 void featureSet(uint32_t mask)
 {
-    mcfg.enabledFeatures |= mask;
+    masterConfig.enabledFeatures |= mask;
 }
 
 void featureClear(uint32_t mask)
 {
-    mcfg.enabledFeatures &= ~(mask);
+    masterConfig.enabledFeatures &= ~(mask);
 }
 
 void featureClearAll()
 {
-    mcfg.enabledFeatures = 0;
+    masterConfig.enabledFeatures = 0;
 }
 
 uint32_t featureMask(void)
 {
-    return mcfg.enabledFeatures;
+    return masterConfig.enabledFeatures;
 }
 

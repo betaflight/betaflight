@@ -33,7 +33,7 @@ void GYRO_Common(void)
             if (calibratingG == 1) {
                 float dev = devStandardDeviation(&var[axis]);
                 // check deviation and startover if idiot was moving the model
-                if (mcfg.moron_threshold && dev > mcfg.moron_threshold) {
+                if (masterConfig.moron_threshold && dev > masterConfig.moron_threshold) {
                     calibratingG = CALIBRATING_GYRO_CYCLES;
                     devClear(&var[0]);
                     devClear(&var[1]);

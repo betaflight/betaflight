@@ -224,14 +224,14 @@ static void sendHeading(void)
 
 void freeFrSkyTelemetryPort(void)
 {
-    if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
+    if (masterConfig.telemetry_port == TELEMETRY_PORT_UART) {
         resetMainSerialPort();
     }
 }
 
 void configureFrSkyTelemetryPort(void)
 {
-    if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
+    if (masterConfig.telemetry_port == TELEMETRY_PORT_UART) {
         openMainSerialPort(9600);
     }
 }

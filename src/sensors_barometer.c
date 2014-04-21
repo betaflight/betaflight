@@ -16,7 +16,7 @@ void Baro_Common(void)
     int indexplus1;
 
     indexplus1 = (baroHistIdx + 1);
-    if (indexplus1 == cfg.baro_tab_size)
+    if (indexplus1 == currentProfile.baro_tab_size)
         indexplus1 = 0;
     baroHistTab[baroHistIdx] = baroPressure;
     baroPressureSum += baroHistTab[baroHistIdx];
@@ -58,9 +58,9 @@ int32_t Baro_calculateAltitude(void)
 
     // calculates height from ground via baro readings
     // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-    BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / (cfg.baro_tab_size - 1)) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
+    BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / (currentProfile.baro_tab_size - 1)) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
     BaroAlt_tmp -= baroGroundAltitude;
-    BaroAlt = lrintf((float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf)); // additional LPF to reduce baro noise
+    BaroAlt = lrintf((float)BaroAlt * currentProfile.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - currentProfile.baro_noise_lpf)); // additional LPF to reduce baro noise
 
     return BaroAlt;
 }
@@ -68,7 +68,7 @@ int32_t Baro_calculateAltitude(void)
 void performBaroCalibrationCycle(void)
 {
     baroGroundPressure -= baroGroundPressure / 8;
-    baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
+    baroGroundPressure += baroPressureSum / (currentProfile.baro_tab_size - 1);
     baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
 
     calibratingB--;

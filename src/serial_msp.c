@@ -270,13 +270,13 @@ void mspInit(void)
         availableBoxes[idx++] = BOXGPSHOME;
         availableBoxes[idx++] = BOXGPSHOLD;
     }
-    if (mcfg.mixerConfiguration == MULTITYPE_FLYING_WING || mcfg.mixerConfiguration == MULTITYPE_AIRPLANE)
+    if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE)
         availableBoxes[idx++] = BOXPASSTHRU;
     availableBoxes[idx++] = BOXBEEPERON;
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         availableBoxes[idx++] = BOXCALIB;
     availableBoxes[idx++] = BOXOSD;
-    if (feature(FEATURE_TELEMETRY && mcfg.telemetry_switch))
+    if (feature(FEATURE_TELEMETRY && masterConfig.telemetry_switch))
         availableBoxes[idx++] = BOXTELEMETRY;
     numberBoxItems = idx;
 }
@@ -294,8 +294,8 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_ACC_TRIM:
-        cfg.angleTrim[PITCH] = read16();
-        cfg.angleTrim[ROLL]  = read16();
+        currentProfile.angleTrim[PITCH] = read16();
+        currentProfile.angleTrim[ROLL]  = read16();
         headSerialReply(0);
         break;
     case MSP_SET_RAW_GPS:
@@ -310,39 +310,39 @@ static void evaluateCommand(void)
         break;
     case MSP_SET_PID:
         for (i = 0; i < PID_ITEM_COUNT; i++) {
-            cfg.P8[i] = read8();
-            cfg.I8[i] = read8();
-            cfg.D8[i] = read8();
+            currentProfile.P8[i] = read8();
+            currentProfile.I8[i] = read8();
+            currentProfile.D8[i] = read8();
         }
         headSerialReply(0);
         break;
     case MSP_SET_BOX:
         for (i = 0; i < numberBoxItems; i++)
-            cfg.activate[availableBoxes[i]] = read16();
+            currentProfile.activate[availableBoxes[i]] = read16();
         headSerialReply(0);
         break;
     case MSP_SET_RC_TUNING:
-        cfg.controlRateConfig.rcRate8 = read8();
-        cfg.controlRateConfig.rcExpo8 = read8();
-        cfg.controlRateConfig.rollPitchRate = read8();
-        cfg.controlRateConfig.yawRate = read8();
-        cfg.dynThrPID = read8();
-        cfg.controlRateConfig.thrMid8 = read8();
-        cfg.controlRateConfig.thrExpo8 = read8();
+        currentProfile.controlRateConfig.rcRate8 = read8();
+        currentProfile.controlRateConfig.rcExpo8 = read8();
+        currentProfile.controlRateConfig.rollPitchRate = read8();
+        currentProfile.controlRateConfig.yawRate = read8();
+        currentProfile.dynThrPID = read8();
+        currentProfile.controlRateConfig.thrMid8 = read8();
+        currentProfile.controlRateConfig.thrExpo8 = read8();
         headSerialReply(0);
         break;
     case MSP_SET_MISC:
         read16(); // powerfailmeter
-        mcfg.minthrottle = read16();
-        mcfg.maxthrottle = read16();
-        mcfg.mincommand = read16();
-        cfg.failsafeConfig.failsafe_throttle = read16();
+        masterConfig.minthrottle = read16();
+        masterConfig.maxthrottle = read16();
+        masterConfig.mincommand = read16();
+        currentProfile.failsafeConfig.failsafe_throttle = read16();
         read16();
         read32();
-        cfg.mag_declination = read16() * 10;
-        mcfg.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
-        mcfg.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
-        mcfg.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
+        currentProfile.mag_declination = read16() * 10;
+        masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
+        masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
+        masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
         read8();                            // vbatlevel_crit (unused)
         headSerialReply(0);
         break;
@@ -353,9 +353,9 @@ static void evaluateCommand(void)
         break;
     case MSP_SELECT_SETTING:
         if (!f.ARMED) {
-            mcfg.current_profile = read8();
-            if (mcfg.current_profile > 2) {
-                mcfg.current_profile = 0;
+            masterConfig.current_profile = read8();
+            if (masterConfig.current_profile > 2) {
+                masterConfig.current_profile = 0;
             }
             writeEEPROM();
             readEEPROM();
@@ -369,9 +369,9 @@ static void evaluateCommand(void)
     case MSP_IDENT:
         headSerialReply(7);
         serialize8(VERSION);                // multiwii version
-        serialize8(mcfg.mixerConfiguration); // type of multicopter
+        serialize8(masterConfig.mixerConfiguration); // type of multicopter
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
-        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (mcfg.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
+        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (masterConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
         break;
     case MSP_STATUS:
         headSerialReply(11);
@@ -402,7 +402,7 @@ static void evaluateCommand(void)
                 junk |= 1 << i;
         }
         serialize32(junk);
-        serialize8(mcfg.current_profile);
+        serialize8(masterConfig.current_profile);
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
@@ -425,38 +425,38 @@ static void evaluateCommand(void)
     case MSP_SERVO_CONF:
         headSerialReply(56);
         for (i = 0; i < MAX_SERVOS; i++) {
-            serialize16(cfg.servoConf[i].min);
-            serialize16(cfg.servoConf[i].max);
-            serialize16(cfg.servoConf[i].middle);
-            serialize8(cfg.servoConf[i].rate);
+            serialize16(currentProfile.servoConf[i].min);
+            serialize16(currentProfile.servoConf[i].max);
+            serialize16(currentProfile.servoConf[i].middle);
+            serialize8(currentProfile.servoConf[i].rate);
         }
         break;
     case MSP_SET_SERVO_CONF:
         headSerialReply(0);
         for (i = 0; i < MAX_SERVOS; i++) {
-            cfg.servoConf[i].min = read16();
-            cfg.servoConf[i].max = read16();
+            currentProfile.servoConf[i].min = read16();
+            currentProfile.servoConf[i].max = read16();
             // provide temporary support for old clients that try and send a channel index instead of a servo middle
             uint16_t potentialServoMiddleOrChannelToForward = read16();
             if (potentialServoMiddleOrChannelToForward < MAX_SERVOS) {
-                cfg.servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
+                currentProfile.servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
             }
             if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
-                cfg.servoConf[i].middle = potentialServoMiddleOrChannelToForward;
+                currentProfile.servoConf[i].middle = potentialServoMiddleOrChannelToForward;
             }
-            cfg.servoConf[i].rate = read8();
+            currentProfile.servoConf[i].rate = read8();
         }
         break;
     case MSP_CHANNEL_FORWARDING:
         headSerialReply(8);
         for (i = 0; i < MAX_SERVOS; i++) {
-            serialize8(cfg.servoConf[i].forwardFromChannel);
+            serialize8(currentProfile.servoConf[i].forwardFromChannel);
         }
         break;
     case MSP_SET_CHANNEL_FORWARDING:
         headSerialReply(0);
         for (i = 0; i < MAX_SERVOS; i++) {
-            cfg.servoConf[i].forwardFromChannel = read8();
+            currentProfile.servoConf[i].forwardFromChannel = read8();
         }
         break;
     case MSP_MOTOR:
@@ -503,20 +503,20 @@ static void evaluateCommand(void)
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
-        serialize8(cfg.controlRateConfig.rcRate8);
-        serialize8(cfg.controlRateConfig.rcExpo8);
-        serialize8(cfg.controlRateConfig.rollPitchRate);
-        serialize8(cfg.controlRateConfig.yawRate);
-        serialize8(cfg.dynThrPID);
-        serialize8(cfg.controlRateConfig.thrMid8);
-        serialize8(cfg.controlRateConfig.thrExpo8);
+        serialize8(currentProfile.controlRateConfig.rcRate8);
+        serialize8(currentProfile.controlRateConfig.rcExpo8);
+        serialize8(currentProfile.controlRateConfig.rollPitchRate);
+        serialize8(currentProfile.controlRateConfig.yawRate);
+        serialize8(currentProfile.dynThrPID);
+        serialize8(currentProfile.controlRateConfig.thrMid8);
+        serialize8(currentProfile.controlRateConfig.thrExpo8);
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
         for (i = 0; i < PID_ITEM_COUNT; i++) {
-            serialize8(cfg.P8[i]);
-            serialize8(cfg.I8[i]);
-            serialize8(cfg.D8[i]);
+            serialize8(currentProfile.P8[i]);
+            serialize8(currentProfile.I8[i]);
+            serialize8(currentProfile.D8[i]);
         }
         break;
     case MSP_PIDNAMES:
@@ -526,7 +526,7 @@ static void evaluateCommand(void)
     case MSP_BOX:
         headSerialReply(2 * numberBoxItems);
         for (i = 0; i < numberBoxItems; i++)
-            serialize16(cfg.activate[availableBoxes[i]]);
+            serialize16(currentProfile.activate[availableBoxes[i]]);
         break;
     case MSP_BOXNAMES:
         // headSerialReply(sizeof(boxnames) - 1);
@@ -540,16 +540,16 @@ static void evaluateCommand(void)
     case MSP_MISC:
         headSerialReply(2 * 6 + 4 + 2 + 4);
         serialize16(0); // intPowerTrigger1 (aka useless trash)
-        serialize16(mcfg.minthrottle);
-        serialize16(mcfg.maxthrottle);
-        serialize16(mcfg.mincommand);
-        serialize16(cfg.failsafeConfig.failsafe_throttle);
+        serialize16(masterConfig.minthrottle);
+        serialize16(masterConfig.maxthrottle);
+        serialize16(masterConfig.mincommand);
+        serialize16(currentProfile.failsafeConfig.failsafe_throttle);
         serialize16(0); // plog useless shit
         serialize32(0); // plog useless shit
-        serialize16(cfg.mag_declination / 10); // TODO check this shit
-        serialize8(mcfg.batteryConfig.vbatscale);
-        serialize8(mcfg.batteryConfig.vbatmincellvoltage);
-        serialize8(mcfg.batteryConfig.vbatmaxcellvoltage);
+        serialize16(currentProfile.mag_declination / 10); // TODO check this shit
+        serialize8(masterConfig.batteryConfig.vbatscale);
+        serialize8(masterConfig.batteryConfig.vbatmincellvoltage);
+        serialize8(masterConfig.batteryConfig.vbatmaxcellvoltage);
         serialize8(0);
         break;
     case MSP_MOTOR_PINS:
@@ -621,7 +621,7 @@ static void evaluateCommand(void)
         if (f.ARMED) {
             headSerialError(0);
         } else {
-            copyCurrentProfileToProfileSlot(mcfg.current_profile);
+            copyCurrentProfileToProfileSlot(masterConfig.current_profile);
             writeEEPROM();
             readEEPROM();
             headSerialReply(0);
@@ -638,8 +638,8 @@ static void evaluateCommand(void)
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         headSerialReply(4);
-        serialize16(cfg.angleTrim[PITCH]);
-        serialize16(cfg.angleTrim[ROLL]);
+        serialize16(currentProfile.angleTrim[PITCH]);
+        serialize16(currentProfile.angleTrim[ROLL]);
         break;
     case MSP_UID:
         headSerialReply(12);

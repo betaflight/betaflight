@@ -79,22 +79,22 @@ void annexCode(void)
     static uint8_t vbatTimer = 0;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-    if (rcData[THROTTLE] < cfg.tpaBreakPoint) {
+    if (rcData[THROTTLE] < currentProfile.tpaBreakPoint) {
         prop2 = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t)cfg.dynThrPID * (rcData[THROTTLE] - cfg.tpaBreakPoint) / (2000 - cfg.tpaBreakPoint);
+            prop2 = 100 - (uint16_t)currentProfile.dynThrPID * (rcData[THROTTLE] - currentProfile.tpaBreakPoint) / (2000 - currentProfile.tpaBreakPoint);
         } else {
-            prop2 = 100 - cfg.dynThrPID;
+            prop2 = 100 - currentProfile.dynThrPID;
         }
     }
 
     for (axis = 0; axis < 3; axis++) {
-        tmp = min(abs(rcData[axis] - mcfg.rxConfig.midrc), 500);
+        tmp = min(abs(rcData[axis] - masterConfig.rxConfig.midrc), 500);
         if (axis != 2) {        // ROLL & PITCH
-            if (cfg.deadband) {
-                if (tmp > cfg.deadband) {
-                    tmp -= cfg.deadband;
+            if (currentProfile.deadband) {
+                if (tmp > currentProfile.deadband) {
+                    tmp -= currentProfile.deadband;
                 } else {
                     tmp = 0;
                 }
@@ -102,28 +102,28 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t)cfg.controlRateConfig.rollPitchRate * tmp / 500;
+            prop1 = 100 - (uint16_t)currentProfile.controlRateConfig.rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         } else {                // YAW
-            if (cfg.yawdeadband) {
-                if (tmp > cfg.yawdeadband) {
-                    tmp -= cfg.yawdeadband;
+            if (currentProfile.yawdeadband) {
+                if (tmp > currentProfile.yawdeadband) {
+                    tmp -= currentProfile.yawdeadband;
                 } else {
                     tmp = 0;
                 }
             }
-            rcCommand[axis] = tmp * -mcfg.yaw_control_direction;
-            prop1 = 100 - (uint16_t)cfg.controlRateConfig.yawRate * abs(tmp) / 500;
+            rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
+            prop1 = 100 - (uint16_t)currentProfile.controlRateConfig.yawRate * abs(tmp) / 500;
         }
-        dynP8[axis] = (uint16_t)cfg.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)cfg.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)cfg.D8[axis] * prop1 / 100;
-        if (rcData[axis] < mcfg.rxConfig.midrc)
+        dynP8[axis] = (uint16_t)currentProfile.P8[axis] * prop1 / 100;
+        dynI8[axis] = (uint16_t)currentProfile.I8[axis] * prop1 / 100;
+        dynD8[axis] = (uint16_t)currentProfile.D8[axis] * prop1 / 100;
+        if (rcData[axis] < masterConfig.rxConfig.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
 
-    tmp = constrain(rcData[THROTTLE], mcfg.rxConfig.mincheck, PWM_RANGE_MAX);
-    tmp = (uint32_t)(tmp - mcfg.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - mcfg.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
+    tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
+    tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
@@ -237,15 +237,15 @@ static void pidMultiWii(void)
     for (axis = 0; axis < 3; axis++) {
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
             // 50 degrees max inclination
-            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)mcfg.max_angle_inclination), +mcfg.max_angle_inclination) - angle[axis] + cfg.angleTrim[axis];
-            PTermACC = errorAngle * cfg.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
-            PTermACC = constrain(PTermACC, -cfg.D8[PIDLEVEL] * 5, +cfg.D8[PIDLEVEL] * 5);
+            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)masterConfig.max_angle_inclination), +masterConfig.max_angle_inclination) - angle[axis] + currentProfile.angleTrim[axis];
+            PTermACC = errorAngle * currentProfile.P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+            PTermACC = constrain(PTermACC, -currentProfile.D8[PIDLEVEL] * 5, +currentProfile.D8[PIDLEVEL] * 5);
 
             errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000); // WindUp
-            ITermACC = (errorAngleI[axis] * cfg.I8[PIDLEVEL]) >> 12;
+            ITermACC = (errorAngleI[axis] * currentProfile.I8[PIDLEVEL]) >> 12;
         }
         if (!f.ANGLE_MODE || f.HORIZON_MODE || axis == 2) { // MODE relying on GYRO or YAW axis
-            error = (int32_t)rcCommand[axis] * 10 * 8 / cfg.P8[axis];
+            error = (int32_t)rcCommand[axis] * 10 * 8 / currentProfile.P8[axis];
             error -= gyroData[axis];
 
             PTermGYRO = rcCommand[axis];
@@ -253,7 +253,7 @@ static void pidMultiWii(void)
             errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
             if (abs(gyroData[axis]) > 640)
                 errorGyroI[axis] = 0;
-            ITermGYRO = (errorGyroI[axis] / 125 * cfg.I8[axis]) >> 6;
+            ITermGYRO = (errorGyroI[axis] / 125 * currentProfile.I8[axis]) >> 6;
         }
         if (f.HORIZON_MODE && axis < 2) {
             PTerm = (PTermACC * (500 - prop) + PTermGYRO * prop) / 500;
@@ -296,19 +296,19 @@ static void pidRewrite(void)
         // -----Get the desired angle rate depending on flight mode
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis < 2) { // MODE relying on ACC
             // calculate error and limit the angle to max configured inclination
-            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int)mcfg.max_angle_inclination), +mcfg.max_angle_inclination) - angle[axis] + cfg.angleTrim[axis]; // 16 bits is ok here
+            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int)masterConfig.max_angle_inclination), +masterConfig.max_angle_inclination) - angle[axis] + currentProfile.angleTrim[axis]; // 16 bits is ok here
         }
         if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = (((int32_t)(cfg.controlRateConfig.yawRate + 27) * rcCommand[2]) >> 5);
+            AngleRateTmp = (((int32_t)(currentProfile.controlRateConfig.yawRate + 27) * rcCommand[2]) >> 5);
          } else {
             if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
-                AngleRateTmp = ((int32_t) (cfg.controlRateConfig.rollPitchRate + 27) * rcCommand[axis]) >> 4;
+                AngleRateTmp = ((int32_t) (currentProfile.controlRateConfig.rollPitchRate + 27) * rcCommand[axis]) >> 4;
                 if (f.HORIZON_MODE) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel
-                    AngleRateTmp += (errorAngle * cfg.I8[PIDLEVEL]) >> 8;
+                    AngleRateTmp += (errorAngle * currentProfile.I8[PIDLEVEL]) >> 8;
                 }
             } else { // it's the ANGLE mode - control is angle based, so control loop is needed
-                AngleRateTmp = (errorAngle * cfg.P8[PIDLEVEL]) >> 4;
+                AngleRateTmp = (errorAngle * currentProfile.P8[PIDLEVEL]) >> 4;
             }
         }
 
@@ -319,13 +319,13 @@ static void pidRewrite(void)
         RateError = AngleRateTmp - gyroData[axis];
 
         // -----calculate P component
-        PTerm = (RateError * cfg.P8[axis]) >> 7;
+        PTerm = (RateError * currentProfile.P8[axis]) >> 7;
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * cfg.I8[axis];
+        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * currentProfile.I8[axis];
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -343,7 +343,7 @@ static void pidRewrite(void)
         deltaSum = delta1[axis] + delta2[axis] + delta;
         delta2[axis] = delta1[axis];
         delta1[axis] = delta;
-        DTerm = (deltaSum * cfg.D8[axis]) >> 8;
+        DTerm = (deltaSum * currentProfile.D8[axis]) >> 8;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
@@ -381,7 +381,7 @@ void loop(void)
 
     // calculate rc stuff from serial-based receivers (spek/sbus)
     if (feature(FEATURE_SERIALRX)) {
-        switch (mcfg.rxConfig.serialrx_type) {
+        switch (masterConfig.rxConfig.serialrx_type) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
                 rcReady = spektrumFrameComplete();
@@ -398,7 +398,7 @@ void loop(void)
     if (((int32_t)(currentTime - rcTime) >= 0) || rcReady) { // 50Hz or data driven
         rcReady = false;
         rcTime = currentTime + 20000;
-        computeRC(&mcfg.rxConfig, &rxRuntimeConfig);
+        computeRC(&masterConfig.rxConfig, &rxRuntimeConfig);
 
         // in 3D mode, we need to be able to disarm by switch at any time
         if (feature(FEATURE_3D)) {
@@ -408,8 +408,8 @@ void loop(void)
 
         // Read value of AUX channel as rssi
         // 0 is disable, 1-4 is AUX{1..4}
-        if (mcfg.rssi_aux_channel > 0) {
-            const int16_t rssiChannelData = rcData[AUX1 + mcfg.rssi_aux_channel - 1];
+        if (masterConfig.rssi_aux_channel > 0) {
+            const int16_t rssiChannelData = rcData[AUX1 + masterConfig.rssi_aux_channel - 1];
             // Range of rssiChannelData is [1000;2000]. rssi should be in [0;1023];
             rssi = (uint16_t)((constrain(rssiChannelData - 1000, 0, 1000) / 1000.0f) * 1023.0f);
         }
@@ -422,9 +422,9 @@ void loop(void)
         // checking sticks positions
         for (i = 0; i < 4; i++) {
             stTmp >>= 2;
-            if (rcData[i] > mcfg.rxConfig.mincheck)
+            if (rcData[i] > masterConfig.rxConfig.mincheck)
                 stTmp |= 0x80;  // check for MIN
-            if (rcData[i] < mcfg.rxConfig.maxcheck)
+            if (rcData[i] < masterConfig.rxConfig.maxcheck)
                 stTmp |= 0x40;  // check for MAX
         }
         if (stTmp == rcSticks) {
@@ -435,9 +435,9 @@ void loop(void)
         rcSticks = stTmp;
 
         // perform actions
-        if (feature(FEATURE_3D) && (rcData[THROTTLE] > (mcfg.rxConfig.midrc - mcfg.deadband3d_throttle) && rcData[THROTTLE] < (mcfg.rxConfig.midrc + mcfg.deadband3d_throttle)))
+        if (feature(FEATURE_3D) && (rcData[THROTTLE] > (masterConfig.rxConfig.midrc - masterConfig.deadband3d_throttle) && rcData[THROTTLE] < (masterConfig.rxConfig.midrc + masterConfig.deadband3d_throttle)))
             isThrottleLow = true;
-        else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < mcfg.rxConfig.mincheck))
+        else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < masterConfig.rxConfig.mincheck))
             isThrottleLow = true;
         if (isThrottleLow) {
             errorGyroI[ROLL] = 0;
@@ -445,7 +445,7 @@ void loop(void)
             errorGyroI[YAW] = 0;
             errorAngleI[ROLL] = 0;
             errorAngleI[PITCH] = 0;
-            if (cfg.activate[BOXARM] > 0) { // Arming/Disarming via ARM BOX
+            if (currentProfile.activate[BOXARM] > 0) { // Arming/Disarming via ARM BOX
                 if (rcOptions[BOXARM] && f.OK_TO_ARM)
                     mwArm();
                 else if (f.ARMED)
@@ -456,10 +456,10 @@ void loop(void)
         if (rcDelayCommand == 20) {
             if (f.ARMED) {      // actions during armed
                 // Disarm on throttle down + yaw
-                if (cfg.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE))
+                if (currentProfile.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE))
                     mwDisarm();
                 // Disarm on roll (only when retarded_arm is enabled)
-                if (mcfg.retarded_arm && cfg.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO))
+                if (masterConfig.retarded_arm && currentProfile.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO))
                     mwDisarm();
             } else {            // actions during not armed
                 i = 0;
@@ -495,7 +495,7 @@ void loop(void)
                 else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_HI)     // ROLL right -> Profile 3
                     i = 3;
                 if (i) {
-                    mcfg.current_profile = i - 1;
+                    masterConfig.current_profile = i - 1;
                     writeEEPROM();
                     readEEPROM();
                     blinkLedAndSoundBeeper(2, 40, i);
@@ -503,10 +503,10 @@ void loop(void)
                 }
 
                 // Arm via YAW
-                if (cfg.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE))
+                if (currentProfile.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE))
                     mwArm();
                 // Arm via ROLL
-                else if (mcfg.retarded_arm && cfg.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI))
+                else if (masterConfig.retarded_arm && currentProfile.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI))
                     mwArm();
                 // Calibrating Acc
                 else if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE)
@@ -517,20 +517,20 @@ void loop(void)
                 i = 0;
                 // Acc Trim
                 if (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) {
-                    cfg.angleTrim[PITCH] += 2;
+                    currentProfile.angleTrim[PITCH] += 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) {
-                    cfg.angleTrim[PITCH] -= 2;
+                    currentProfile.angleTrim[PITCH] -= 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) {
-                    cfg.angleTrim[ROLL] += 2;
+                    currentProfile.angleTrim[ROLL] += 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) {
-                    cfg.angleTrim[ROLL] -= 2;
+                    currentProfile.angleTrim[ROLL] -= 2;
                     i = 1;
                 }
                 if (i) {
-                    copyCurrentProfileToProfileSlot(mcfg.current_profile);
+                    copyCurrentProfileToProfileSlot(masterConfig.current_profile);
                     writeEEPROM();
                     readEEPROMAndNotify();
                     rcDelayCommand = 0; // allow autorepetition
@@ -539,7 +539,7 @@ void loop(void)
         }
 
         if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-            if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > mcfg.rxConfig.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+            if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
                 InflightcalibratingA = 50;
                 AccInflightCalibrationArmed = false;
             }
@@ -557,7 +557,7 @@ void loop(void)
         for (i = 0; i < 4; i++)
             auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) | (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) | (rcData[AUX1 + i] > 1700) << (3 * i + 2);
         for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
-            rcOptions[i] = (auxState & cfg.activate[i]) > 0;
+            rcOptions[i] = (auxState & currentProfile.activate[i]) > 0;
 
         if ((rcOptions[BOXANGLE] || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
             // bumpless transfer to Level mode
@@ -652,7 +652,7 @@ void loop(void)
                     }
                 } else {
                     f.GPS_HOME_MODE = 0;
-                    if (rcOptions[BOXGPSHOLD] && abs(rcCommand[ROLL]) < cfg.ap_mode && abs(rcCommand[PITCH]) < cfg.ap_mode) {
+                    if (rcOptions[BOXGPSHOLD] && abs(rcCommand[ROLL]) < currentProfile.ap_mode && abs(rcCommand[PITCH]) < currentProfile.ap_mode) {
                         if (!f.GPS_HOLD_MODE) {
                             f.GPS_HOLD_MODE = 1;
                             GPSNavReset = 0;
@@ -683,7 +683,7 @@ void loop(void)
             f.PASSTHRU_MODE = 0;
         }
 
-        if (mcfg.mixerConfiguration == MULTITYPE_FLYING_WING || mcfg.mixerConfiguration == MULTITYPE_AIRPLANE) {
+        if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE) {
             f.HEADFREE_MODE = 0;
         }
     } else {                    // not in rc loop
@@ -730,8 +730,8 @@ void loop(void)
     }
 
     currentTime = micros();
-    if (mcfg.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
-        loopTime = currentTime + mcfg.looptime;
+    if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
+        loopTime = currentTime + masterConfig.looptime;
 
         computeIMU();
         annexCode();
@@ -748,9 +748,9 @@ void loop(void)
                     dif += 360;
                 if (dif >= +180)
                     dif -= 360;
-                dif *= -mcfg.yaw_control_direction;
+                dif *= -masterConfig.yaw_control_direction;
                 if (f.SMALL_ANGLE)
-                    rcCommand[YAW] -= dif * cfg.P8[PIDMAG] / 30;    // 18 deg
+                    rcCommand[YAW] -= dif * currentProfile.P8[PIDMAG] / 30;    // 18 deg
             } else
                 magHold = heading;
         }
@@ -763,12 +763,12 @@ void loop(void)
                 static int16_t AltHoldCorr = 0;
                 if (!f.FIXED_WING) {
                     // multirotor alt hold
-                    if (cfg.alt_hold_fast_change) {
+                    if (currentProfile.alt_hold_fast_change) {
                         // rapid alt changes
-                        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
+                        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile.alt_hold_throttle_neutral) {
                             errorAltitudeI = 0;
                             isAltHoldChanged = 1;
-                            rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -cfg.alt_hold_throttle_neutral : cfg.alt_hold_throttle_neutral;
+                            rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -currentProfile.alt_hold_throttle_neutral : currentProfile.alt_hold_throttle_neutral;
                         } else {
                             if (isAltHoldChanged) {
                                 AltHold = EstAlt;
@@ -778,7 +778,7 @@ void loop(void)
                         }
                     } else {
                         // slow alt changes for apfags
-                        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > cfg.alt_hold_throttle_neutral) {
+                        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile.alt_hold_throttle_neutral) {
                             // Slowly increase/decrease AltHold proportional to stick movement ( +100 throttle gives ~ +50 cm in 1 second with cycle time about 3-4ms)
                             AltHoldCorr += rcCommand[THROTTLE] - initialThrottleHold;
                             AltHold += AltHoldCorr / 2000;
@@ -790,19 +790,19 @@ void loop(void)
                             isAltHoldChanged = 0;
                         }
                         rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
-                        rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], mcfg.minthrottle + 150, mcfg.maxthrottle);
+                        rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], masterConfig.minthrottle + 150, masterConfig.maxthrottle);
                     }
                 } else {
                     // handle fixedwing-related althold. UNTESTED! and probably wrong
                     // most likely need to check changes on pitch channel and 'reset' althold similar to
                     // how throttle does it on multirotor
-                    rcCommand[PITCH] += BaroPID * mcfg.fixedwing_althold_dir;
+                    rcCommand[PITCH] += BaroPID * masterConfig.fixedwing_althold_dir;
                 }
             }
         }
 #endif
 
-        if (cfg.throttle_correction_value && (f.ANGLE_MODE || f.HORIZON_MODE)) {
+        if (currentProfile.throttle_correction_value && (f.ANGLE_MODE || f.HORIZON_MODE)) {
             rcCommand[THROTTLE] += throttleAngleCorrection;
         }
 

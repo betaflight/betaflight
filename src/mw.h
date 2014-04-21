@@ -35,7 +35,8 @@ enum {
 #include "serial_common.h"
 #include "rx_common.h"
 #include "config.h"
-#include "config_storage.h"
+#include "config_profile.h"
+#include "config_master.h"
 
 extern int16_t axisPID[3];
 extern int16_t rcCommand[4];

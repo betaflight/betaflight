@@ -122,117 +122,117 @@ typedef struct {
 } clivalue_t;
 
 const clivalue_t valueTable[] = {
-    { "looptime", VAR_UINT16, &mcfg.looptime, 0, 9000 },
-    { "emf_avoidance", VAR_UINT8, &mcfg.emfAvoidance, 0, 1 },
-    { "midrc", VAR_UINT16, &mcfg.rxConfig.midrc, 1200, 1700 },
-    { "minthrottle", VAR_UINT16, &mcfg.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "maxthrottle", VAR_UINT16, &mcfg.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "mincommand", VAR_UINT16, &mcfg.mincommand, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "mincheck", VAR_UINT16, &mcfg.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "maxcheck", VAR_UINT16, &mcfg.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "deadband3d_low", VAR_UINT16, &mcfg.deadband3d_low, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "deadband3d_high", VAR_UINT16, &mcfg.deadband3d_high, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "neutral3d", VAR_UINT16, &mcfg.neutral3d, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "deadband3d_throttle", VAR_UINT16, &mcfg.deadband3d_throttle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "motor_pwm_rate", VAR_UINT16, &mcfg.motor_pwm_rate, 50, 32000 },
-    { "servo_pwm_rate", VAR_UINT16, &mcfg.servo_pwm_rate, 50, 498 },
-    { "retarded_arm", VAR_UINT8, &mcfg.retarded_arm, 0, 1 },
-    { "flaps_speed", VAR_UINT8, &mcfg.flaps_speed, 0, 100 },
-    { "fixedwing_althold_dir", VAR_INT8, &mcfg.fixedwing_althold_dir, -1, 1 },
-    { "reboot_character", VAR_UINT8, &mcfg.serialConfig.reboot_character, 48, 126 },
-    { "serial_baudrate", VAR_UINT32, &mcfg.serialConfig.port1_baudrate, 1200, 115200 },
-    { "softserial_baudrate", VAR_UINT32, &mcfg.serialConfig.softserial_baudrate, 1200, 19200 },
-    { "softserial_1_inverted", VAR_UINT8, &mcfg.serialConfig.softserial_1_inverted, 0, 1 },
-    { "softserial_2_inverted", VAR_UINT8, &mcfg.serialConfig.softserial_2_inverted, 0, 1 },
-    { "gps_type", VAR_UINT8, &mcfg.gps_type, 0, GPS_HARDWARE_MAX },
-    { "gps_baudrate", VAR_INT8, &mcfg.gps_baudrate, 0, GPS_BAUD_MAX },
-    { "serialrx_type", VAR_UINT8, &mcfg.rxConfig.serialrx_type, 0, 3 },
-    { "telemetry_provider", VAR_UINT8, &mcfg.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
-    { "telemetry_port", VAR_UINT8, &mcfg.telemetry_port, 0, TELEMETRY_PORT_MAX },
-    { "telemetry_switch", VAR_UINT8, &mcfg.telemetry_switch, 0, 1 },
-    { "vbatscale", VAR_UINT8, &mcfg.batteryConfig.vbatscale, 10, 200 },
-    { "vbatmaxcellvoltage", VAR_UINT8, &mcfg.batteryConfig.vbatmaxcellvoltage, 10, 50 },
-    { "vbatmincellvoltage", VAR_UINT8, &mcfg.batteryConfig.vbatmincellvoltage, 10, 50 },
-    { "power_adc_channel", VAR_UINT8, &mcfg.power_adc_channel, 0, 9 },
-    { "align_gyro", VAR_UINT8, &mcfg.gyro_align, 0, 8 },
-    { "align_acc", VAR_UINT8, &mcfg.acc_align, 0, 8 },
-    { "align_mag", VAR_UINT8, &mcfg.mag_align, 0, 8 },
-    { "align_board_roll", VAR_INT16, &mcfg.boardAlignment.rollDegrees, -180, 360 },
-    { "align_board_pitch", VAR_INT16, &mcfg.boardAlignment.pitchDegrees, -180, 360 },
-    { "align_board_yaw", VAR_INT16, &mcfg.boardAlignment.yawDegrees, -180, 360 },
-    { "yaw_control_direction", VAR_INT8, &mcfg.yaw_control_direction, -1, 1 },
-    { "acc_hardware", VAR_UINT8, &mcfg.acc_hardware, 0, 5 },
-    { "max_angle_inclination", VAR_UINT16, &mcfg.max_angle_inclination, 100, 900 },
-    { "moron_threshold", VAR_UINT8, &mcfg.moron_threshold, 0, 128 },
-    { "gyro_lpf", VAR_UINT16, &mcfg.gyro_lpf, 0, 256 },
-    { "gyro_cmpf_factor", VAR_UINT16, &mcfg.gyro_cmpf_factor, 100, 1000 },
-    { "gyro_cmpfm_factor", VAR_UINT16, &mcfg.gyro_cmpfm_factor, 100, 1000 },
-    { "pid_controller", VAR_UINT8, &cfg.pidController, 0, 1 },
-    { "deadband", VAR_UINT8, &cfg.deadband, 0, 32 },
-    { "yawdeadband", VAR_UINT8, &cfg.yawdeadband, 0, 100 },
-    { "alt_hold_throttle_neutral", VAR_UINT8, &cfg.alt_hold_throttle_neutral, 1, 250 },
-    { "alt_hold_fast_change", VAR_UINT8, &cfg.alt_hold_fast_change, 0, 1 },
-    { "throttle_correction_value", VAR_UINT8, &cfg.throttle_correction_value, 0, 150 },
-    { "throttle_correction_angle", VAR_UINT16, &cfg.throttle_correction_angle, 1, 900 },
-    { "rc_rate", VAR_UINT8, &cfg.controlRateConfig.rcRate8, 0, 250 },
-    { "rc_expo", VAR_UINT8, &cfg.controlRateConfig.rcExpo8, 0, 100 },
-    { "thr_mid", VAR_UINT8, &cfg.controlRateConfig.thrMid8, 0, 100 },
-    { "thr_expo", VAR_UINT8, &cfg.controlRateConfig.thrExpo8, 0, 100 },
-    { "roll_pitch_rate", VAR_UINT8, &cfg.controlRateConfig.rollPitchRate, 0, 100 },
-    { "yawrate", VAR_UINT8, &cfg.controlRateConfig.yawRate, 0, 100 },
-    { "tparate", VAR_UINT8, &cfg.dynThrPID, 0, 100},
-    { "tpa_breakpoint", VAR_UINT16, &cfg.tpaBreakPoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
-    { "failsafe_delay", VAR_UINT8, &cfg.failsafeConfig.failsafe_delay, 0, 200 },
-    { "failsafe_off_delay", VAR_UINT8, &cfg.failsafeConfig.failsafe_off_delay, 0, 200 },
-    { "failsafe_throttle", VAR_UINT16, &cfg.failsafeConfig.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },
-    { "failsafe_detect_threshold", VAR_UINT16, &cfg.failsafeConfig.failsafe_detect_threshold, 100, PWM_RANGE_MAX },
-    { "rssi_aux_channel", VAR_INT8, &mcfg.rssi_aux_channel, 0, 4 },
-    { "yaw_direction", VAR_INT8, &cfg.yaw_direction, -1, 1 },
-    { "tri_unarmed_servo", VAR_INT8, &cfg.tri_unarmed_servo, 0, 1 },
-    { "gimbal_flags", VAR_UINT8, &cfg.gimbal_flags, 0, 255},
-    { "acc_lpf_factor", VAR_UINT8, &cfg.acc_lpf_factor, 0, 250 },
-    { "accxy_deadband", VAR_UINT8, &cfg.accxy_deadband, 0, 100 },
-    { "accz_deadband", VAR_UINT8, &cfg.accz_deadband, 0, 100 },
-    { "acc_unarmedcal", VAR_UINT8, &cfg.acc_unarmedcal, 0, 1 },
-    { "acc_trim_pitch", VAR_INT16, &cfg.angleTrim[PITCH], -300, 300 },
-    { "acc_trim_roll", VAR_INT16, &cfg.angleTrim[ROLL], -300, 300 },
-    { "baro_tab_size", VAR_UINT8, &cfg.baro_tab_size, 0, BARO_TAB_SIZE_MAX },
-    { "baro_noise_lpf", VAR_FLOAT, &cfg.baro_noise_lpf, 0, 1 },
-    { "baro_cf_vel", VAR_FLOAT, &cfg.baro_cf_vel, 0, 1 },
-    { "baro_cf_alt", VAR_FLOAT, &cfg.baro_cf_alt, 0, 1 },
-    { "mag_declination", VAR_INT16, &cfg.mag_declination, -18000, 18000 },
-    { "gps_pos_p", VAR_UINT8, &cfg.P8[PIDPOS], 0, 200 },
-    { "gps_pos_i", VAR_UINT8, &cfg.I8[PIDPOS], 0, 200 },
-    { "gps_pos_d", VAR_UINT8, &cfg.D8[PIDPOS], 0, 200 },
-    { "gps_posr_p", VAR_UINT8, &cfg.P8[PIDPOSR], 0, 200 },
-    { "gps_posr_i", VAR_UINT8, &cfg.I8[PIDPOSR], 0, 200 },
-    { "gps_posr_d", VAR_UINT8, &cfg.D8[PIDPOSR], 0, 200 },
-    { "gps_nav_p", VAR_UINT8, &cfg.P8[PIDNAVR], 0, 200 },
-    { "gps_nav_i", VAR_UINT8, &cfg.I8[PIDNAVR], 0, 200 },
-    { "gps_nav_d", VAR_UINT8, &cfg.D8[PIDNAVR], 0, 200 },
-    { "gps_wp_radius", VAR_UINT16, &cfg.gps_wp_radius, 0, 2000 },
-    { "nav_controls_heading", VAR_UINT8, &cfg.nav_controls_heading, 0, 1 },
-    { "nav_speed_min", VAR_UINT16, &cfg.nav_speed_min, 10, 2000 },
-    { "nav_speed_max", VAR_UINT16, &cfg.nav_speed_max, 10, 2000 },
-    { "nav_slew_rate", VAR_UINT8, &cfg.nav_slew_rate, 0, 100 },
-    { "p_pitch", VAR_UINT8, &cfg.P8[PITCH], 0, 200 },
-    { "i_pitch", VAR_UINT8, &cfg.I8[PITCH], 0, 200 },
-    { "d_pitch", VAR_UINT8, &cfg.D8[PITCH], 0, 200 },
-    { "p_roll", VAR_UINT8, &cfg.P8[ROLL], 0, 200 },
-    { "i_roll", VAR_UINT8, &cfg.I8[ROLL], 0, 200 },
-    { "d_roll", VAR_UINT8, &cfg.D8[ROLL], 0, 200 },
-    { "p_yaw", VAR_UINT8, &cfg.P8[YAW], 0, 200 },
-    { "i_yaw", VAR_UINT8, &cfg.I8[YAW], 0, 200 },
-    { "d_yaw", VAR_UINT8, &cfg.D8[YAW], 0, 200 },
-    { "p_alt", VAR_UINT8, &cfg.P8[PIDALT], 0, 200 },
-    { "i_alt", VAR_UINT8, &cfg.I8[PIDALT], 0, 200 },
-    { "d_alt", VAR_UINT8, &cfg.D8[PIDALT], 0, 200 },
-    { "p_level", VAR_UINT8, &cfg.P8[PIDLEVEL], 0, 200 },
-    { "i_level", VAR_UINT8, &cfg.I8[PIDLEVEL], 0, 200 },
-    { "d_level", VAR_UINT8, &cfg.D8[PIDLEVEL], 0, 200 },
-    { "p_vel", VAR_UINT8, &cfg.P8[PIDVEL], 0, 200 },
-    { "i_vel", VAR_UINT8, &cfg.I8[PIDVEL], 0, 200 },
-    { "d_vel", VAR_UINT8, &cfg.D8[PIDVEL], 0, 200 },
+    { "looptime", VAR_UINT16, &masterConfig.looptime, 0, 9000 },
+    { "emf_avoidance", VAR_UINT8, &masterConfig.emfAvoidance, 0, 1 },
+    { "midrc", VAR_UINT16, &masterConfig.rxConfig.midrc, 1200, 1700 },
+    { "minthrottle", VAR_UINT16, &masterConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "maxthrottle", VAR_UINT16, &masterConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "mincommand", VAR_UINT16, &masterConfig.mincommand, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "mincheck", VAR_UINT16, &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "maxcheck", VAR_UINT16, &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "deadband3d_low", VAR_UINT16, &masterConfig.deadband3d_low, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "deadband3d_high", VAR_UINT16, &masterConfig.deadband3d_high, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "neutral3d", VAR_UINT16, &masterConfig.neutral3d, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "deadband3d_throttle", VAR_UINT16, &masterConfig.deadband3d_throttle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "motor_pwm_rate", VAR_UINT16, &masterConfig.motor_pwm_rate, 50, 32000 },
+    { "servo_pwm_rate", VAR_UINT16, &masterConfig.servo_pwm_rate, 50, 498 },
+    { "retarded_arm", VAR_UINT8, &masterConfig.retarded_arm, 0, 1 },
+    { "flaps_speed", VAR_UINT8, &masterConfig.flaps_speed, 0, 100 },
+    { "fixedwing_althold_dir", VAR_INT8, &masterConfig.fixedwing_althold_dir, -1, 1 },
+    { "reboot_character", VAR_UINT8, &masterConfig.serialConfig.reboot_character, 48, 126 },
+    { "serial_baudrate", VAR_UINT32, &masterConfig.serialConfig.port1_baudrate, 1200, 115200 },
+    { "softserial_baudrate", VAR_UINT32, &masterConfig.serialConfig.softserial_baudrate, 1200, 19200 },
+    { "softserial_1_inverted", VAR_UINT8, &masterConfig.serialConfig.softserial_1_inverted, 0, 1 },
+    { "softserial_2_inverted", VAR_UINT8, &masterConfig.serialConfig.softserial_2_inverted, 0, 1 },
+    { "gps_type", VAR_UINT8, &masterConfig.gps_type, 0, GPS_HARDWARE_MAX },
+    { "gps_baudrate", VAR_INT8, &masterConfig.gps_baudrate, 0, GPS_BAUD_MAX },
+    { "serialrx_type", VAR_UINT8, &masterConfig.rxConfig.serialrx_type, 0, 3 },
+    { "telemetry_provider", VAR_UINT8, &masterConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
+    { "telemetry_port", VAR_UINT8, &masterConfig.telemetry_port, 0, TELEMETRY_PORT_MAX },
+    { "telemetry_switch", VAR_UINT8, &masterConfig.telemetry_switch, 0, 1 },
+    { "vbatscale", VAR_UINT8, &masterConfig.batteryConfig.vbatscale, 10, 200 },
+    { "vbatmaxcellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50 },
+    { "vbatmincellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmincellvoltage, 10, 50 },
+    { "power_adc_channel", VAR_UINT8, &masterConfig.power_adc_channel, 0, 9 },
+    { "align_gyro", VAR_UINT8, &masterConfig.gyro_align, 0, 8 },
+    { "align_acc", VAR_UINT8, &masterConfig.acc_align, 0, 8 },
+    { "align_mag", VAR_UINT8, &masterConfig.mag_align, 0, 8 },
+    { "align_board_roll", VAR_INT16, &masterConfig.boardAlignment.rollDegrees, -180, 360 },
+    { "align_board_pitch", VAR_INT16, &masterConfig.boardAlignment.pitchDegrees, -180, 360 },
+    { "align_board_yaw", VAR_INT16, &masterConfig.boardAlignment.yawDegrees, -180, 360 },
+    { "yaw_control_direction", VAR_INT8, &masterConfig.yaw_control_direction, -1, 1 },
+    { "acc_hardware", VAR_UINT8, &masterConfig.acc_hardware, 0, 5 },
+    { "max_angle_inclination", VAR_UINT16, &masterConfig.max_angle_inclination, 100, 900 },
+    { "moron_threshold", VAR_UINT8, &masterConfig.moron_threshold, 0, 128 },
+    { "gyro_lpf", VAR_UINT16, &masterConfig.gyro_lpf, 0, 256 },
+    { "gyro_cmpf_factor", VAR_UINT16, &masterConfig.gyro_cmpf_factor, 100, 1000 },
+    { "gyro_cmpfm_factor", VAR_UINT16, &masterConfig.gyro_cmpfm_factor, 100, 1000 },
+    { "pid_controller", VAR_UINT8, &currentProfile.pidController, 0, 1 },
+    { "deadband", VAR_UINT8, &currentProfile.deadband, 0, 32 },
+    { "yawdeadband", VAR_UINT8, &currentProfile.yawdeadband, 0, 100 },
+    { "alt_hold_throttle_neutral", VAR_UINT8, &currentProfile.alt_hold_throttle_neutral, 1, 250 },
+    { "alt_hold_fast_change", VAR_UINT8, &currentProfile.alt_hold_fast_change, 0, 1 },
+    { "throttle_correction_value", VAR_UINT8, &currentProfile.throttle_correction_value, 0, 150 },
+    { "throttle_correction_angle", VAR_UINT16, &currentProfile.throttle_correction_angle, 1, 900 },
+    { "rc_rate", VAR_UINT8, &currentProfile.controlRateConfig.rcRate8, 0, 250 },
+    { "rc_expo", VAR_UINT8, &currentProfile.controlRateConfig.rcExpo8, 0, 100 },
+    { "thr_mid", VAR_UINT8, &currentProfile.controlRateConfig.thrMid8, 0, 100 },
+    { "thr_expo", VAR_UINT8, &currentProfile.controlRateConfig.thrExpo8, 0, 100 },
+    { "roll_pitch_rate", VAR_UINT8, &currentProfile.controlRateConfig.rollPitchRate, 0, 100 },
+    { "yawrate", VAR_UINT8, &currentProfile.controlRateConfig.yawRate, 0, 100 },
+    { "tparate", VAR_UINT8, &currentProfile.dynThrPID, 0, 100},
+    { "tpa_breakpoint", VAR_UINT16, &currentProfile.tpaBreakPoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
+    { "failsafe_delay", VAR_UINT8, &currentProfile.failsafeConfig.failsafe_delay, 0, 200 },
+    { "failsafe_off_delay", VAR_UINT8, &currentProfile.failsafeConfig.failsafe_off_delay, 0, 200 },
+    { "failsafe_throttle", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },
+    { "failsafe_detect_threshold", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_detect_threshold, 100, PWM_RANGE_MAX },
+    { "rssi_aux_channel", VAR_INT8, &masterConfig.rssi_aux_channel, 0, 4 },
+    { "yaw_direction", VAR_INT8, &currentProfile.yaw_direction, -1, 1 },
+    { "tri_unarmed_servo", VAR_INT8, &currentProfile.tri_unarmed_servo, 0, 1 },
+    { "gimbal_flags", VAR_UINT8, &currentProfile.gimbal_flags, 0, 255},
+    { "acc_lpf_factor", VAR_UINT8, &currentProfile.acc_lpf_factor, 0, 250 },
+    { "accxy_deadband", VAR_UINT8, &currentProfile.accxy_deadband, 0, 100 },
+    { "accz_deadband", VAR_UINT8, &currentProfile.accz_deadband, 0, 100 },
+    { "acc_unarmedcal", VAR_UINT8, &currentProfile.acc_unarmedcal, 0, 1 },
+    { "acc_trim_pitch", VAR_INT16, &currentProfile.angleTrim[PITCH], -300, 300 },
+    { "acc_trim_roll", VAR_INT16, &currentProfile.angleTrim[ROLL], -300, 300 },
+    { "baro_tab_size", VAR_UINT8, &currentProfile.baro_tab_size, 0, BARO_TAB_SIZE_MAX },
+    { "baro_noise_lpf", VAR_FLOAT, &currentProfile.baro_noise_lpf, 0, 1 },
+    { "baro_cf_vel", VAR_FLOAT, &currentProfile.baro_cf_vel, 0, 1 },
+    { "baro_cf_alt", VAR_FLOAT, &currentProfile.baro_cf_alt, 0, 1 },
+    { "mag_declination", VAR_INT16, &currentProfile.mag_declination, -18000, 18000 },
+    { "gps_pos_p", VAR_UINT8, &currentProfile.P8[PIDPOS], 0, 200 },
+    { "gps_pos_i", VAR_UINT8, &currentProfile.I8[PIDPOS], 0, 200 },
+    { "gps_pos_d", VAR_UINT8, &currentProfile.D8[PIDPOS], 0, 200 },
+    { "gps_posr_p", VAR_UINT8, &currentProfile.P8[PIDPOSR], 0, 200 },
+    { "gps_posr_i", VAR_UINT8, &currentProfile.I8[PIDPOSR], 0, 200 },
+    { "gps_posr_d", VAR_UINT8, &currentProfile.D8[PIDPOSR], 0, 200 },
+    { "gps_nav_p", VAR_UINT8, &currentProfile.P8[PIDNAVR], 0, 200 },
+    { "gps_nav_i", VAR_UINT8, &currentProfile.I8[PIDNAVR], 0, 200 },
+    { "gps_nav_d", VAR_UINT8, &currentProfile.D8[PIDNAVR], 0, 200 },
+    { "gps_wp_radius", VAR_UINT16, &currentProfile.gps_wp_radius, 0, 2000 },
+    { "nav_controls_heading", VAR_UINT8, &currentProfile.nav_controls_heading, 0, 1 },
+    { "nav_speed_min", VAR_UINT16, &currentProfile.nav_speed_min, 10, 2000 },
+    { "nav_speed_max", VAR_UINT16, &currentProfile.nav_speed_max, 10, 2000 },
+    { "nav_slew_rate", VAR_UINT8, &currentProfile.nav_slew_rate, 0, 100 },
+    { "p_pitch", VAR_UINT8, &currentProfile.P8[PITCH], 0, 200 },
+    { "i_pitch", VAR_UINT8, &currentProfile.I8[PITCH], 0, 200 },
+    { "d_pitch", VAR_UINT8, &currentProfile.D8[PITCH], 0, 200 },
+    { "p_roll", VAR_UINT8, &currentProfile.P8[ROLL], 0, 200 },
+    { "i_roll", VAR_UINT8, &currentProfile.I8[ROLL], 0, 200 },
+    { "d_roll", VAR_UINT8, &currentProfile.D8[ROLL], 0, 200 },
+    { "p_yaw", VAR_UINT8, &currentProfile.P8[YAW], 0, 200 },
+    { "i_yaw", VAR_UINT8, &currentProfile.I8[YAW], 0, 200 },
+    { "d_yaw", VAR_UINT8, &currentProfile.D8[YAW], 0, 200 },
+    { "p_alt", VAR_UINT8, &currentProfile.P8[PIDALT], 0, 200 },
+    { "i_alt", VAR_UINT8, &currentProfile.I8[PIDALT], 0, 200 },
+    { "d_alt", VAR_UINT8, &currentProfile.D8[PIDALT], 0, 200 },
+    { "p_level", VAR_UINT8, &currentProfile.P8[PIDLEVEL], 0, 200 },
+    { "i_level", VAR_UINT8, &currentProfile.I8[PIDLEVEL], 0, 200 },
+    { "d_level", VAR_UINT8, &currentProfile.D8[PIDLEVEL], 0, 200 },
+    { "p_vel", VAR_UINT8, &currentProfile.P8[PIDVEL], 0, 200 },
+    { "i_vel", VAR_UINT8, &currentProfile.I8[PIDVEL], 0, 200 },
+    { "d_vel", VAR_UINT8, &currentProfile.D8[PIDVEL], 0, 200 },
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
@@ -447,14 +447,14 @@ static void cliAux(char *cmdline)
     if (len == 0) {
         // print out aux channel settings
         for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
-            printf("aux %u %u\r\n", i, cfg.activate[i]);
+            printf("aux %u %u\r\n", i, currentProfile.activate[i]);
     } else {
         ptr = cmdline;
         i = atoi(ptr);
         if (i < CHECKBOX_ITEM_COUNT) {
             ptr = strchr(cmdline, ' ');
             val = atoi(ptr);
-            cfg.activate[i] = val;
+            currentProfile.activate[i] = val;
         } else {
             printf("Invalid Feature index: must be < %u\r\n", CHECKBOX_ITEM_COUNT);
         }
@@ -475,20 +475,20 @@ static void cliCMix(char *cmdline)
     if (len == 0) {
         cliPrint("Custom mixer: \r\nMotor\tThr\tRoll\tPitch\tYaw\r\n");
         for (i = 0; i < MAX_MOTORS; i++) {
-            if (mcfg.customMixer[i].throttle == 0.0f)
+            if (masterConfig.customMixer[i].throttle == 0.0f)
                 break;
             num_motors++;
             printf("#%d:\t", i + 1);
-            printf("%s\t", ftoa(mcfg.customMixer[i].throttle, buf));
-            printf("%s\t", ftoa(mcfg.customMixer[i].roll, buf));
-            printf("%s\t", ftoa(mcfg.customMixer[i].pitch, buf));
-            printf("%s\r\n", ftoa(mcfg.customMixer[i].yaw, buf));
+            printf("%s\t", ftoa(masterConfig.customMixer[i].throttle, buf));
+            printf("%s\t", ftoa(masterConfig.customMixer[i].roll, buf));
+            printf("%s\t", ftoa(masterConfig.customMixer[i].pitch, buf));
+            printf("%s\r\n", ftoa(masterConfig.customMixer[i].yaw, buf));
         }
         mixsum[0] = mixsum[1] = mixsum[2] = 0.0f;
         for (i = 0; i < num_motors; i++) {
-            mixsum[0] += mcfg.customMixer[i].roll;
-            mixsum[1] += mcfg.customMixer[i].pitch;
-            mixsum[2] += mcfg.customMixer[i].yaw;
+            mixsum[0] += masterConfig.customMixer[i].roll;
+            mixsum[1] += masterConfig.customMixer[i].pitch;
+            mixsum[2] += masterConfig.customMixer[i].yaw;
         }
         cliPrint("Sanity check:\t");
         for (i = 0; i < 3; i++)
@@ -498,7 +498,7 @@ static void cliCMix(char *cmdline)
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (i = 0; i < MAX_MOTORS; i++)
-            mcfg.customMixer[i].throttle = 0.0f;
+            masterConfig.customMixer[i].throttle = 0.0f;
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = strchr(cmdline, ' ');
         if (ptr) {
@@ -522,22 +522,22 @@ static void cliCMix(char *cmdline)
         if (--i < MAX_MOTORS) {
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                mcfg.customMixer[i].throttle = _atof(++ptr);
+                masterConfig.customMixer[i].throttle = _atof(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                mcfg.customMixer[i].roll = _atof(++ptr);
+                masterConfig.customMixer[i].roll = _atof(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                mcfg.customMixer[i].pitch = _atof(++ptr);
+                masterConfig.customMixer[i].pitch = _atof(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                mcfg.customMixer[i].yaw = _atof(++ptr);
+                masterConfig.customMixer[i].yaw = _atof(++ptr);
                 check++;
             }
             if (check != 4) {
@@ -565,17 +565,17 @@ static void cliDump(char *cmdline)
     cliAux("");
 
     // print out current motor mix
-    printf("mixer %s\r\n", mixerNames[mcfg.mixerConfiguration - 1]);
+    printf("mixer %s\r\n", mixerNames[masterConfig.mixerConfiguration - 1]);
 
     // print custom mix if exists
-    if (mcfg.customMixer[0].throttle != 0.0f) {
+    if (masterConfig.customMixer[0].throttle != 0.0f) {
         for (i = 0; i < MAX_MOTORS; i++) {
-            if (mcfg.customMixer[i].throttle == 0.0f)
+            if (masterConfig.customMixer[i].throttle == 0.0f)
                 break;
-            thr = mcfg.customMixer[i].throttle;
-            roll = mcfg.customMixer[i].roll;
-            pitch = mcfg.customMixer[i].pitch;
-            yaw = mcfg.customMixer[i].yaw;
+            thr = masterConfig.customMixer[i].throttle;
+            roll = masterConfig.customMixer[i].roll;
+            pitch = masterConfig.customMixer[i].pitch;
+            yaw = masterConfig.customMixer[i].yaw;
             printf("cmix %d", i + 1);
             if (thr < 0)
                 printf(" ");
@@ -609,7 +609,7 @@ static void cliDump(char *cmdline)
 
     // print RC MAPPING
     for (i = 0; i < 8; i++)
-        buf[mcfg.rxConfig.rcmap[i]] = rcChannelLetters[i];
+        buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
     buf[i] = '\0';
     printf("map %s\r\n", buf);
 
@@ -725,11 +725,11 @@ static void cliMap(char *cmdline)
             cliPrint("Must be any order of AETR1234\r\n");
             return;
         }
-        parseRcChannels(cmdline, &mcfg.rxConfig);
+        parseRcChannels(cmdline, &masterConfig.rxConfig);
     }
     cliPrint("Current assignment: ");
     for (i = 0; i < 8; i++)
-        out[mcfg.rxConfig.rcmap[i]] = rcChannelLetters[i];
+        out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
     printf("%s\r\n", out);
 }
@@ -742,7 +742,7 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        printf("Current mixer: %s\r\n", mixerNames[mcfg.mixerConfiguration - 1]);
+        printf("Current mixer: %s\r\n", mixerNames[masterConfig.mixerConfiguration - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
@@ -761,7 +761,7 @@ static void cliMixer(char *cmdline)
             break;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
-            mcfg.mixerConfiguration = i + 1;
+            masterConfig.mixerConfiguration = i + 1;
             printf("Mixer set to %s\r\n", mixerNames[i]);
             break;
         }
@@ -821,12 +821,12 @@ static void cliProfile(char *cmdline)
 
     len = strlen(cmdline);
     if (len == 0) {
-        printf("Current profile: %d\r\n", mcfg.current_profile);
+        printf("Current profile: %d\r\n", masterConfig.current_profile);
         return;
     } else {
         i = atoi(cmdline);
         if (i >= 0 && i <= 2) {
-            mcfg.current_profile = i;
+            masterConfig.current_profile = i;
             writeEEPROM();
             readEEPROM();
             cliProfile("");
@@ -843,7 +843,7 @@ static void cliReboot(void) {
 static void cliSave(char *cmdline)
 {
     cliPrint("Saving...");
-    copyCurrentProfileToProfileSlot(mcfg.current_profile);
+    copyCurrentProfileToProfileSlot(masterConfig.current_profile);
     writeEEPROM();
     cliReboot();
 }

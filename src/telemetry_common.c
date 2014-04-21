@@ -13,12 +13,12 @@ static bool isTelemetryConfigurationValid = false; // flag used to avoid repeate
 
 bool isTelemetryProviderFrSky(void)
 {
-    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_FRSKY;
+    return masterConfig.telemetry_provider == TELEMETRY_PROVIDER_FRSKY;
 }
 
 bool isTelemetryProviderHoTT(void)
 {
-    return mcfg.telemetry_provider == TELEMETRY_PROVIDER_HOTT;
+    return masterConfig.telemetry_provider == TELEMETRY_PROVIDER_HOTT;
 }
 
 bool canUseTelemetryWithCurrentConfiguration(void)
@@ -28,14 +28,14 @@ bool canUseTelemetryWithCurrentConfiguration(void)
     }
 
     if (!feature(FEATURE_SOFTSERIAL)) {
-        if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1 || mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2) {
+        if (masterConfig.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1 || masterConfig.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2) {
             // softserial feature must be enabled to use telemetry on softserial ports
             return false;
         }
     }
 
     if (isTelemetryProviderHoTT()) {
-        if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
+        if (masterConfig.telemetry_port == TELEMETRY_PORT_UART) {
             // HoTT requires a serial port that supports RX/TX mode swapping
             return false;
         }
@@ -48,20 +48,20 @@ void initTelemetry(serialPorts_t *serialPorts)
 {
     // Force telemetry to uart when softserial disabled
     if (!feature(FEATURE_SOFTSERIAL))
-        mcfg.telemetry_port = TELEMETRY_PORT_UART;
+        masterConfig.telemetry_port = TELEMETRY_PORT_UART;
 
 #ifdef FY90Q
     // FY90Q does not support softserial
-    mcfg.telemetry_port = TELEMETRY_PORT_UART;
+    masterConfig.telemetry_port = TELEMETRY_PORT_UART;
     serialPorts->telemport = serialPorts->mainport;
 #endif
 
     isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
 
 #ifndef FY90Q
-    if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1)
+    if (masterConfig.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1)
         serialPorts->telemport = &(softSerialPorts[0].port);
-    else if (mcfg.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2)
+    else if (masterConfig.telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2)
         serialPorts->telemport = &(softSerialPorts[1].port);
     else
         serialPorts->telemport = serialPorts->mainport;
@@ -76,8 +76,8 @@ bool determineNewTelemetryEnabledState(void)
 {
     bool enabled = true;
 
-    if (mcfg.telemetry_port == TELEMETRY_PORT_UART) {
-        if (!mcfg.telemetry_switch)
+    if (masterConfig.telemetry_port == TELEMETRY_PORT_UART) {
+        if (!masterConfig.telemetry_switch)
             enabled = f.ARMED;
         else
             enabled = rcOptions[BOXTELEMETRY];

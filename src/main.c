@@ -13,7 +13,6 @@
 #include "telemetry_common.h"
 #include "boardalignment.h"
 #include "config.h"
-#include "config_storage.h"
 
 #include "build_config.h"
 
@@ -37,29 +36,29 @@ int main(void)
     serialPort_t* loopbackPort1 = NULL;
     serialPort_t* loopbackPort2 = NULL;
 #endif
-    systemInit(mcfg.emfAvoidance);
+    systemInit(masterConfig.emfAvoidance);
     initPrintfSupport();
 
     ensureEEPROMContainsValidData();
     readEEPROM();
 
     // configure power ADC
-    if (mcfg.power_adc_channel > 0 && (mcfg.power_adc_channel == 1 || mcfg.power_adc_channel == 9))
-        adc_params.powerAdcChannel = mcfg.power_adc_channel;
+    if (masterConfig.power_adc_channel > 0 && (masterConfig.power_adc_channel == 1 || masterConfig.power_adc_channel == 9))
+        adc_params.powerAdcChannel = masterConfig.power_adc_channel;
     else {
         adc_params.powerAdcChannel = 0;
-        mcfg.power_adc_channel = 0;
+        masterConfig.power_adc_channel = 0;
     }
 
     adcInit(&adc_params);
-    initBoardAlignment(&mcfg.boardAlignment);
+    initBoardAlignment(&masterConfig.boardAlignment);
 
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
 
     mixerInit();
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (mcfg.mixerConfiguration == MULTITYPE_AIRPLANE || mcfg.mixerConfiguration == MULTITYPE_FLYING_WING)
+    if (masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE || masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
@@ -68,18 +67,18 @@ int main(void)
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SERIALRX); // disable inputs if using spektrum
     pwm_params.useServos = isMixerUsingServos();
-    pwm_params.extraServos = cfg.gimbal_flags & GIMBAL_FORWARDAUX;
-    pwm_params.motorPwmRate = mcfg.motor_pwm_rate;
-    pwm_params.servoPwmRate = mcfg.servo_pwm_rate;
+    pwm_params.extraServos = currentProfile.gimbal_flags & GIMBAL_FORWARDAUX;
+    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
+    pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
     pwm_params.idlePulse = PULSE_1MS; // standard PWM for brushless ESC (default, overridden below)
     if (feature(FEATURE_3D))
-        pwm_params.idlePulse = mcfg.neutral3d;
+        pwm_params.idlePulse = masterConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
-    pwm_params.servoCenterPulse = mcfg.rxConfig.midrc;
-    pwm_params.failsafeThreshold = cfg.failsafeConfig.failsafe_detect_threshold;
+    pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
+    pwm_params.failsafeThreshold = currentProfile.failsafeConfig.failsafe_detect_threshold;
 
-    switch (mcfg.power_adc_channel) {
+    switch (masterConfig.power_adc_channel) {
         case 1:
             pwm_params.adcChannel = PWM2;
             break;
@@ -91,14 +90,14 @@ int main(void)
             break;
     }
 
-    failsafe = failsafeInit(&mcfg.rxConfig);
+    failsafe = failsafeInit(&masterConfig.rxConfig);
     buzzerInit(failsafe);
     pwmInit(&pwm_params, failsafe);
 
-    rxInit(&mcfg.rxConfig, failsafe);
+    rxInit(&masterConfig.rxConfig, failsafe);
 
     if (feature(FEATURE_GPS) && !feature(FEATURE_SERIALRX)) {
-        gpsInit(mcfg.gps_baudrate);
+        gpsInit(masterConfig.gps_baudrate);
     }
 
 #ifdef SONAR
@@ -128,16 +127,16 @@ int main(void)
 
     // Check battery type/voltage
     if (feature(FEATURE_VBAT))
-        batteryInit(&mcfg.batteryConfig);
+        batteryInit(&masterConfig.batteryConfig);
 
-    serialInit(&mcfg.serialConfig);
+    serialInit(&masterConfig.serialConfig);
 
 #ifndef FY90Q
     if (feature(FEATURE_SOFTSERIAL)) {
         //mcfg.softserial_baudrate = 19200; // Uncomment to override config value
 
-        setupSoftSerialPrimary(mcfg.serialConfig.softserial_baudrate, mcfg.serialConfig.softserial_1_inverted);
-        setupSoftSerialSecondary(mcfg.serialConfig.softserial_2_inverted);
+        setupSoftSerialPrimary(masterConfig.serialConfig.softserial_baudrate, masterConfig.serialConfig.softserial_1_inverted);
+        setupSoftSerialSecondary(masterConfig.serialConfig.softserial_2_inverted);
 
 #ifdef SOFTSERIAL_LOOPBACK
         loopbackPort1 = (serialPort_t*)&(softSerialPorts[0]);
@@ -154,7 +153,7 @@ int main(void)
         initTelemetry(&serialPorts);
 
     previousTime = micros();
-    if (mcfg.mixerConfiguration == MULTITYPE_GIMBAL)
+    if (masterConfig.mixerConfiguration == MULTITYPE_GIMBAL)
         calibratingA = CALIBRATING_ACC_CYCLES;
     calibratingG = CALIBRATING_GYRO_CYCLES;
     calibratingB = CALIBRATING_BARO_CYCLES;             // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
@@ -192,6 +191,6 @@ int main(void)
 void HardFault_Handler(void)
 {
     // fall out of the sky
-    writeAllMotors(mcfg.mincommand);
+    writeAllMotors(masterConfig.mincommand);
     while (1);
 }

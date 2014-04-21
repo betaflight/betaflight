@@ -159,14 +159,14 @@ const mixer_t mixers[] = {
 
 int16_t determineServoMiddleOrForwardFromChannel(int nr)
 {
-    uint8_t channelToForwardFrom = cfg.servoConf[nr].forwardFromChannel;
+    uint8_t channelToForwardFrom = currentProfile.servoConf[nr].forwardFromChannel;
 
     if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom << MAX_SUPPORTED_RC_CHANNEL_COUNT) {
         return rcData[channelToForwardFrom];
     }
 
     if (nr < MAX_SERVOS) {
-        return cfg.servoConf[nr].middle;
+        return currentProfile.servoConf[nr].middle;
     }
 
     return DEFAULT_SERVO_MIDDLE;
@@ -180,7 +180,7 @@ int servoDirection(int nr, int lr)
     // rate[1] = roll_direction
     // rate[0] = pitch_direction
     // servo.rate is also used as gimbal gain multiplier (yeah)
-    if (cfg.servoConf[nr].rate & lr)
+    if (currentProfile.servoConf[nr].rate & lr)
         return -1;
     else
         return 1;
@@ -191,26 +191,26 @@ void mixerInit(void)
     int i;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    useServo = mixers[mcfg.mixerConfiguration].useServo;
+    useServo = mixers[masterConfig.mixerConfiguration].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (feature(FEATURE_SERVO_TILT))
         useServo = 1;
 
-    if (mcfg.mixerConfiguration == MULTITYPE_CUSTOM) {
+    if (masterConfig.mixerConfiguration == MULTITYPE_CUSTOM) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_MOTORS; i++) {
             // check if done
-            if (mcfg.customMixer[i].throttle == 0.0f)
+            if (masterConfig.customMixer[i].throttle == 0.0f)
                 break;
-            currentMixer[i] = mcfg.customMixer[i];
+            currentMixer[i] = masterConfig.customMixer[i];
             numberMotor++;
         }
     } else {
-        numberMotor = mixers[mcfg.mixerConfiguration].numberMotor;
+        numberMotor = mixers[masterConfig.mixerConfiguration].numberMotor;
         // copy motor-based mixers
-        if (mixers[mcfg.mixerConfiguration].motor) {
+        if (mixers[masterConfig.mixerConfiguration].motor) {
             for (i = 0; i < numberMotor; i++)
-                currentMixer[i] = mixers[mcfg.mixerConfiguration].motor[i];
+                currentMixer[i] = mixers[masterConfig.mixerConfiguration].motor[i];
         }
     }
 
@@ -226,8 +226,8 @@ void mixerInit(void)
     }
 
     // set flag that we're on something with wings
-    if (mcfg.mixerConfiguration == MULTITYPE_FLYING_WING ||
-        mcfg.mixerConfiguration == MULTITYPE_AIRPLANE)
+    if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING ||
+        masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE)
         f.FIXED_WING = 1;
     else
         f.FIXED_WING = 0;
@@ -240,7 +240,7 @@ void mixerResetMotors(void)
     int i;
     // set disarmed motor values
     for (i = 0; i < MAX_MOTORS; i++)
-        motor_disarmed[i] = feature(FEATURE_3D) ? mcfg.neutral3d : mcfg.mincommand;
+        motor_disarmed[i] = feature(FEATURE_3D) ? masterConfig.neutral3d : masterConfig.mincommand;
 }
 
 void mixerLoadMix(int index)
@@ -251,12 +251,12 @@ void mixerLoadMix(int index)
     index++;
     // clear existing
     for (i = 0; i < MAX_MOTORS; i++)
-        mcfg.customMixer[i].throttle = 0.0f;
+        masterConfig.customMixer[i].throttle = 0.0f;
 
     // do we have anything here to begin with?
     if (mixers[index].motor != NULL) {
         for (i = 0; i < mixers[index].numberMotor; i++)
-            mcfg.customMixer[i] = mixers[index].motor[i];
+            masterConfig.customMixer[i] = mixers[index].motor[i];
     }
 }
 
@@ -271,14 +271,14 @@ void writeServos(void)
     if (!useServo)
         return;
 
-    switch (mcfg.mixerConfiguration) {
+    switch (masterConfig.mixerConfiguration) {
         case MULTITYPE_BI:
             pwmWriteServo(0, servo[4]);
             pwmWriteServo(1, servo[5]);
             break;
 
         case MULTITYPE_TRI:
-            if (cfg.tri_unarmed_servo) {
+            if (currentProfile.tri_unarmed_servo) {
                 // if unarmed flag set, we always move servo
                 pwmWriteServo(0, servo[5]);
             } else {
@@ -345,33 +345,33 @@ static void airplaneMixer(void)
     int i;
 
     if (!f.ARMED)
-        servo[7] = mcfg.mincommand; // Kill throttle when disarmed
+        servo[7] = masterConfig.mincommand; // Kill throttle when disarmed
     else
-        servo[7] = constrain(rcCommand[THROTTLE], mcfg.minthrottle, mcfg.maxthrottle);
+        servo[7] = constrain(rcCommand[THROTTLE], masterConfig.minthrottle, masterConfig.maxthrottle);
     motor[0] = servo[7];
 
 #if 0
-    if (cfg.flaperons) {
+    if (currentProfile.flaperons) {
 
 
     }
 #endif
 
-    if (mcfg.flaps_speed) {
+    if (masterConfig.flaps_speed) {
         // configure SERVO3 middle point in GUI to using an AUX channel for FLAPS control
         // use servo min, servo max and servo rate for proper endpoints adjust
         static int16_t slow_LFlaps;
         int16_t lFlap = determineServoMiddleOrForwardFromChannel(2);
 
-        lFlap = constrain(lFlap, cfg.servoConf[2].min, cfg.servoConf[2].max);
-        lFlap = mcfg.rxConfig.midrc - lFlap; // shouldn't this be servoConf[2].middle?
+        lFlap = constrain(lFlap, currentProfile.servoConf[2].min, currentProfile.servoConf[2].max);
+        lFlap = masterConfig.rxConfig.midrc - lFlap; // shouldn't this be servoConf[2].middle?
         if (slow_LFlaps < lFlap)
-            slow_LFlaps += mcfg.flaps_speed;
+            slow_LFlaps += masterConfig.flaps_speed;
         else if (slow_LFlaps > lFlap)
-            slow_LFlaps -= mcfg.flaps_speed;
+            slow_LFlaps -= masterConfig.flaps_speed;
 
-        servo[2] = ((int32_t)cfg.servoConf[2].rate * slow_LFlaps) / 100L;
-        servo[2] += mcfg.rxConfig.midrc;
+        servo[2] = ((int32_t)currentProfile.servoConf[2].rate * slow_LFlaps) / 100L;
+        servo[2] += masterConfig.rxConfig.midrc;
     }
 
     if (f.PASSTHRU_MODE) {   // Direct passthru from RX
@@ -387,7 +387,7 @@ static void airplaneMixer(void)
         servo[6] = axisPID[PITCH];                      // Elevator
     }
     for (i = 3; i < 7; i++) {
-        servo[i] = ((int32_t)cfg.servoConf[i].rate * servo[i]) / 100L; // servo rates
+        servo[i] = ((int32_t)currentProfile.servoConf[i].rate * servo[i]) / 100L; // servo rates
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
 }
@@ -405,10 +405,10 @@ void mixTable(void)
     // motors for non-servo mixes
     if (numberMotor > 1)
         for (i = 0; i < numberMotor; i++)
-            motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + -cfg.yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
+            motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + -currentProfile.yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
 
     // airplane / servo mixes
-    switch (mcfg.mixerConfiguration) {
+    switch (masterConfig.mixerConfiguration) {
         case MULTITYPE_BI:
             servo[4] = (servoDirection(4, 2) * axisPID[YAW]) + (servoDirection(4, 1) * axisPID[PITCH]) + determineServoMiddleOrForwardFromChannel(4);     // LEFT
             servo[5] = (servoDirection(5, 2) * axisPID[YAW]) + (servoDirection(5, 1) * axisPID[PITCH]) + determineServoMiddleOrForwardFromChannel(5);     // RIGHT
@@ -419,8 +419,8 @@ void mixTable(void)
             break;
 
         case MULTITYPE_GIMBAL:
-            servo[0] = (((int32_t)cfg.servoConf[0].rate * angle[PITCH]) / 50) + determineServoMiddleOrForwardFromChannel(0);
-            servo[1] = (((int32_t)cfg.servoConf[1].rate * angle[ROLL]) / 50) + determineServoMiddleOrForwardFromChannel(1);
+            servo[0] = (((int32_t)currentProfile.servoConf[0].rate * angle[PITCH]) / 50) + determineServoMiddleOrForwardFromChannel(0);
+            servo[1] = (((int32_t)currentProfile.servoConf[1].rate * angle[ROLL]) / 50) + determineServoMiddleOrForwardFromChannel(1);
             break;
 
         case MULTITYPE_AIRPLANE:
@@ -429,9 +429,9 @@ void mixTable(void)
 
         case MULTITYPE_FLYING_WING:
             if (!f.ARMED)
-                servo[7] = mcfg.mincommand;
+                servo[7] = masterConfig.mincommand;
             else
-                servo[7] = constrain(rcCommand[THROTTLE], mcfg.minthrottle, mcfg.maxthrottle);
+                servo[7] = constrain(rcCommand[THROTTLE], masterConfig.minthrottle, masterConfig.maxthrottle);
             motor[0] = servo[7];
             if (f.PASSTHRU_MODE) {
                 // do not use sensors for correction, simple 2 channel mixing
@@ -469,28 +469,28 @@ void mixTable(void)
         servo[1] = determineServoMiddleOrForwardFromChannel(1);
 
         if (rcOptions[BOXCAMSTAB]) {
-            if (cfg.gimbal_flags & GIMBAL_MIXTILT) {
-                servo[0] -= (-(int32_t)cfg.servoConf[0].rate) * angle[PITCH] / 50 - (int32_t)cfg.servoConf[1].rate * angle[ROLL] / 50;
-                servo[1] += (-(int32_t)cfg.servoConf[0].rate) * angle[PITCH] / 50 + (int32_t)cfg.servoConf[1].rate * angle[ROLL] / 50;
+            if (currentProfile.gimbal_flags & GIMBAL_MIXTILT) {
+                servo[0] -= (-(int32_t)currentProfile.servoConf[0].rate) * angle[PITCH] / 50 - (int32_t)currentProfile.servoConf[1].rate * angle[ROLL] / 50;
+                servo[1] += (-(int32_t)currentProfile.servoConf[0].rate) * angle[PITCH] / 50 + (int32_t)currentProfile.servoConf[1].rate * angle[ROLL] / 50;
             } else {
-                servo[0] += (int32_t)cfg.servoConf[0].rate * angle[PITCH] / 50;
-                servo[1] += (int32_t)cfg.servoConf[1].rate * angle[ROLL]  / 50;
+                servo[0] += (int32_t)currentProfile.servoConf[0].rate * angle[PITCH] / 50;
+                servo[1] += (int32_t)currentProfile.servoConf[1].rate * angle[ROLL]  / 50;
             }
         }
     }
 
     // constrain servos
     for (i = 0; i < MAX_SERVOS; i++)
-        servo[i] = constrain(servo[i], cfg.servoConf[i].min, cfg.servoConf[i].max); // limit the values
+        servo[i] = constrain(servo[i], currentProfile.servoConf[i].min, currentProfile.servoConf[i].max); // limit the values
 
     // forward AUX1-4 to servo outputs (not constrained)
-    if (cfg.gimbal_flags & GIMBAL_FORWARDAUX) {
+    if (currentProfile.gimbal_flags & GIMBAL_FORWARDAUX) {
         int offset = 0;
         // offset servos based off number already used in mixer types
         // airplane and servo_tilt together can't be used
-        if (mcfg.mixerConfiguration == MULTITYPE_AIRPLANE || mcfg.mixerConfiguration == MULTITYPE_FLYING_WING)
+        if (masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE || masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING)
             offset = 4;
-        else if (mixers[mcfg.mixerConfiguration].useServo)
+        else if (mixers[masterConfig.mixerConfiguration].useServo)
             offset = 2;
         for (i = 0; i < 4; i++)
             pwmWriteServo(i + offset, rcData[AUX1 + i]);
@@ -501,21 +501,21 @@ void mixTable(void)
         if (motor[i] > maxMotor)
             maxMotor = motor[i];
     for (i = 0; i < numberMotor; i++) {
-        if (maxMotor > mcfg.maxthrottle)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
-            motor[i] -= maxMotor - mcfg.maxthrottle;
+        if (maxMotor > masterConfig.maxthrottle)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
+            motor[i] -= maxMotor - masterConfig.maxthrottle;
         if (feature(FEATURE_3D)) {
             if ((rcData[THROTTLE]) > 1500) {
-                motor[i] = constrain(motor[i], mcfg.deadband3d_high, mcfg.maxthrottle);
+                motor[i] = constrain(motor[i], masterConfig.deadband3d_high, masterConfig.maxthrottle);
             } else {
-                motor[i] = constrain(motor[i], mcfg.mincommand, mcfg.deadband3d_low);
+                motor[i] = constrain(motor[i], masterConfig.mincommand, masterConfig.deadband3d_low);
             }
         } else {
-            motor[i] = constrain(motor[i], mcfg.minthrottle, mcfg.maxthrottle);
-            if ((rcData[THROTTLE]) < mcfg.rxConfig.mincheck) {
+            motor[i] = constrain(motor[i], masterConfig.minthrottle, masterConfig.maxthrottle);
+            if ((rcData[THROTTLE]) < masterConfig.rxConfig.mincheck) {
                 if (!feature(FEATURE_MOTOR_STOP))
-                    motor[i] = mcfg.minthrottle;
+                    motor[i] = masterConfig.minthrottle;
                 else
-                    motor[i] = mcfg.mincommand;
+                    motor[i] = masterConfig.mincommand;
             }
         }
         if (!f.ARMED) {

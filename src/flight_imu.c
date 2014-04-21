@@ -28,7 +28,8 @@
 #include "failsafe.h"
 #include "runtime_config.h"
 #include "config.h"
-#include "config_storage.h"
+#include "config_profile.h"
+#include "config_master.h"
 
 
 int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
@@ -75,7 +76,7 @@ void imuInit(void)
 {
     smallAngle = lrintf(acc_1G * cosf(RAD * 25.0f));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
-    throttleAngleScale = (1800.0f / M_PI) * (900.0f / cfg.throttle_correction_angle);
+    throttleAngleScale = (1800.0f / M_PI) * (900.0f / currentProfile.throttle_correction_angle);
 
 #ifdef MAG
     // if mag sensor is enabled, use it
@@ -99,7 +100,7 @@ void computeIMU(void)
         accADC[Z] = 0;
     }
 
-    if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
+    if (masterConfig.mixerConfiguration == MULTITYPE_TRI) {
         gyroData[GI_YAW] = (gyroYawSmooth * 2 + gyroADC[GI_YAW]) / 3;
         gyroYawSmooth = gyroData[GI_YAW];
         gyroData[GI_ROLL] = gyroADC[GI_ROLL];
@@ -123,9 +124,6 @@ void computeIMU(void)
 // for heading approximation.
 //
 // **************************************************
-
-#define INV_GYR_CMPF_FACTOR   (1.0f / ((float)mcfg.gyro_cmpf_factor + 1.0f))
-#define INV_GYR_CMPFM_FACTOR  (1.0f / ((float)mcfg.gyro_cmpfm_factor + 1.0f))
 
 typedef struct fp_vector {
     float X;
@@ -241,7 +239,7 @@ void acc_calc(uint32_t deltaT)
 
     rotateAnglesV(&accel_ned.V, &rpy);
 
-    if (cfg.acc_unarmedcal == 1) {
+    if (currentProfile.acc_unarmedcal == 1) {
         if (!f.ARMED) {
             accZoffset -= accZoffset / 64;
             accZoffset += accel_ned.V.Z;
@@ -253,9 +251,9 @@ void acc_calc(uint32_t deltaT)
     accz_smooth = accz_smooth + (deltaT / (fc_acc + deltaT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
     // apply Deadband to reduce integration drift and vibration influence
-    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), cfg.accxy_deadband);
-    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), cfg.accxy_deadband);
-    accSum[Z] += applyDeadband(lrintf(accz_smooth), cfg.accz_deadband);
+    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), currentProfile.accxy_deadband);
+    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), currentProfile.accxy_deadband);
+    accSum[Z] += applyDeadband(lrintf(accz_smooth), currentProfile.accz_deadband);
 
     // sum up Values for later integration to get velocity and distance
     accTimeSum += deltaT;
@@ -308,8 +306,8 @@ static void getEstimatedAttitude(void)
     // Initialization
     for (axis = 0; axis < 3; axis++) {
         deltaGyroAngle[axis] = gyroADC[axis] * scale;
-        if (cfg.acc_lpf_factor > 0) {
-            accLPF[axis] = accLPF[axis] * (1.0f - (1.0f / cfg.acc_lpf_factor)) + accADC[axis] * (1.0f / cfg.acc_lpf_factor);
+        if (currentProfile.acc_lpf_factor > 0) {
+            accLPF[axis] = accLPF[axis] * (1.0f - (1.0f / currentProfile.acc_lpf_factor)) + accADC[axis] * (1.0f / currentProfile.acc_lpf_factor);
             accSmooth[axis] = accLPF[axis];
         } else {
             accSmooth[axis] = accADC[axis];
@@ -329,14 +327,20 @@ static void getEstimatedAttitude(void)
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
     // To do that, we just skip filter, as EstV already rotated by Gyro
+
+    float invGyroComplimentaryFilterFactor = (1.0f / ((float)masterConfig.gyro_cmpf_factor + 1.0f));
+
     if (72 < (uint16_t)accMag && (uint16_t)accMag < 133) {
         for (axis = 0; axis < 3; axis++)
-            EstG.A[axis] = (EstG.A[axis] * (float)mcfg.gyro_cmpf_factor + accSmooth[axis]) * INV_GYR_CMPF_FACTOR;
+            EstG.A[axis] = (EstG.A[axis] * (float)masterConfig.gyro_cmpf_factor + accSmooth[axis]) * invGyroComplimentaryFilterFactor;
     }
+
+    // FIXME what does the _M_ mean?
+    float invGyroComplimentaryFilter_M_Factor = (1.0f / ((float)masterConfig.gyro_cmpfm_factor + 1.0f));
 
     if (sensors(SENSOR_MAG)) {
         for (axis = 0; axis < 3; axis++)
-            EstM.A[axis] = (EstM.A[axis] * (float)mcfg.gyro_cmpfm_factor + magADC[axis]) * INV_GYR_CMPFM_FACTOR;
+            EstM.A[axis] = (EstM.A[axis] * (float)masterConfig.gyro_cmpfm_factor + magADC[axis]) * invGyroComplimentaryFilter_M_Factor;
     }
 
     f.SMALL_ANGLE = (EstG.A[Z] > smallAngle);
@@ -354,7 +358,7 @@ static void getEstimatedAttitude(void)
 
     acc_calc(deltaT); // rotate acc vector into earth frame
 
-    if (cfg.throttle_correction_value) {
+    if (currentProfile.throttle_correction_value) {
 
         float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);
 
@@ -364,7 +368,7 @@ static void getEstimatedAttitude(void)
             int angle = lrintf(acosf(cosZ) * throttleAngleScale);
             if (angle > 900)
                 angle = 900;
-            throttleAngleCorrection = lrintf(cfg.throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f))) ;
+            throttleAngleCorrection = lrintf(currentProfile.throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f))) ;
         }
 
     }
@@ -410,7 +414,7 @@ int getEstimatedAltitude(void)
 
     // Integrator - Altitude in cm
     accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                         // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * cfg.baro_cf_alt + (float)BaroAlt * (1.0f - cfg.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
+    accAlt = accAlt * currentProfile.baro_cf_alt + (float)BaroAlt * (1.0f - currentProfile.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
     EstAlt = accAlt;
     vel += vel_acc;
 
@@ -430,7 +434,7 @@ int getEstimatedAltitude(void)
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
-    vel = vel * cfg.baro_cf_vel + baroVel * (1 - cfg.baro_cf_vel);
+    vel = vel * currentProfile.baro_cf_vel + baroVel * (1 - currentProfile.baro_cf_vel);
     vel_tmp = lrintf(vel);
 
     // set vario
@@ -439,20 +443,20 @@ int getEstimatedAltitude(void)
     // Altitude P-Controller
     error = constrain(AltHold - EstAlt, -500, 500);
     error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
-    setVel = constrain((cfg.P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+    setVel = constrain((currentProfile.P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
 
     // Velocity PID-Controller
     // P
     error = setVel - vel_tmp;
-    BaroPID = constrain((cfg.P8[PIDVEL] * error / 32), -300, +300);
+    BaroPID = constrain((currentProfile.P8[PIDVEL] * error / 32), -300, +300);
 
     // I
-    errorAltitudeI += (cfg.I8[PIDVEL] * error) / 8;
+    errorAltitudeI += (currentProfile.I8[PIDVEL] * error) / 8;
     errorAltitudeI = constrain(errorAltitudeI, -(1024 * 200), (1024 * 200));
     BaroPID += errorAltitudeI / 1024;     // I in range +/-200
 
     // D
-    BaroPID -= constrain(cfg.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
+    BaroPID -= constrain(currentProfile.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
     accZ_old = accZ_tmp;
 
     return 1;

@@ -35,7 +35,7 @@ int Mag_getADC(void)
     if (f.CALIBRATE_MAG) {
         tCal = t;
         for (axis = 0; axis < 3; axis++) {
-            mcfg.magZero[axis] = 0;
+            masterConfig.magZero[axis] = 0;
             magZeroTempMin[axis] = magADC[axis];
             magZeroTempMax[axis] = magADC[axis];
         }
@@ -43,9 +43,9 @@ int Mag_getADC(void)
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done
-        magADC[X] -= mcfg.magZero[X];
-        magADC[Y] -= mcfg.magZero[Y];
-        magADC[Z] -= mcfg.magZero[Z];
+        magADC[X] -= masterConfig.magZero[X];
+        magADC[Y] -= masterConfig.magZero[Y];
+        magADC[Z] -= masterConfig.magZero[Z];
     }
 
     if (tCal != 0) {
@@ -60,9 +60,9 @@ int Mag_getADC(void)
         } else {
             tCal = 0;
             for (axis = 0; axis < 3; axis++) {
-                mcfg.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2; // Calculate offsets
+                masterConfig.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2; // Calculate offsets
             }
-            copyCurrentProfileToProfileSlot(mcfg.current_profile);
+            copyCurrentProfileToProfileSlot(masterConfig.current_profile);
             writeEEPROM();
             readEEPROMAndNotify();
         }

@@ -32,16 +32,16 @@ void ACC_Common(void)
             a[axis] += accADC[axis];
             // Clear global variables for next reading
             accADC[axis] = 0;
-            mcfg.accZero[axis] = 0;
+            masterConfig.accZero[axis] = 0;
         }
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
         if (calibratingA == 1) {
-            mcfg.accZero[GI_ROLL] = (a[GI_ROLL] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-            mcfg.accZero[GI_PITCH] = (a[GI_PITCH] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-            mcfg.accZero[GI_YAW] = (a[GI_YAW] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc_1G;
-            cfg.angleTrim[AI_ROLL] = 0;
-            cfg.angleTrim[AI_PITCH] = 0;
-            copyCurrentProfileToProfileSlot(mcfg.current_profile);
+            masterConfig.accZero[GI_ROLL] = (a[GI_ROLL] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+            masterConfig.accZero[GI_PITCH] = (a[GI_PITCH] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+            masterConfig.accZero[GI_YAW] = (a[GI_YAW] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc_1G;
+            currentProfile.angleTrim[AI_ROLL] = 0;
+            currentProfile.angleTrim[AI_PITCH] = 0;
+            copyCurrentProfileToProfileSlot(masterConfig.current_profile);
             writeEEPROM();      // write accZero in EEPROM
             readEEPROMAndNotify();
         }
@@ -54,11 +54,11 @@ void ACC_Common(void)
         static int16_t angleTrim_saved[2] = { 0, 0 };
         // Saving old zeropoints before measurement
         if (InflightcalibratingA == 50) {
-            accZero_saved[GI_ROLL] = mcfg.accZero[GI_ROLL];
-            accZero_saved[GI_PITCH] = mcfg.accZero[GI_PITCH];
-            accZero_saved[GI_YAW] = mcfg.accZero[GI_YAW];
-            angleTrim_saved[AI_ROLL] = cfg.angleTrim[AI_ROLL];
-            angleTrim_saved[AI_PITCH] = cfg.angleTrim[AI_PITCH];
+            accZero_saved[GI_ROLL] = masterConfig.accZero[GI_ROLL];
+            accZero_saved[GI_PITCH] = masterConfig.accZero[GI_PITCH];
+            accZero_saved[GI_YAW] = masterConfig.accZero[GI_YAW];
+            angleTrim_saved[AI_ROLL] = currentProfile.angleTrim[AI_ROLL];
+            angleTrim_saved[AI_PITCH] = currentProfile.angleTrim[AI_PITCH];
         }
         if (InflightcalibratingA > 0) {
             for (axis = 0; axis < 3; axis++) {
@@ -69,7 +69,7 @@ void ACC_Common(void)
                 b[axis] += accADC[axis];
                 // Clear global variables for next reading
                 accADC[axis] = 0;
-                mcfg.accZero[axis] = 0;
+                masterConfig.accZero[axis] = 0;
             }
             // all values are measured
             if (InflightcalibratingA == 1) {
@@ -77,31 +77,31 @@ void ACC_Common(void)
                 AccInflightCalibrationMeasurementDone = true;
                 toggleBeep = 2;      // buzzer for indicatiing the end of calibration
                 // recover saved values to maintain current flight behavior until new values are transferred
-                mcfg.accZero[GI_ROLL] = accZero_saved[GI_ROLL];
-                mcfg.accZero[GI_PITCH] = accZero_saved[GI_PITCH];
-                mcfg.accZero[GI_YAW] = accZero_saved[GI_YAW];
-                cfg.angleTrim[AI_ROLL] = angleTrim_saved[AI_ROLL];
-                cfg.angleTrim[AI_PITCH] = angleTrim_saved[AI_PITCH];
+                masterConfig.accZero[GI_ROLL] = accZero_saved[GI_ROLL];
+                masterConfig.accZero[GI_PITCH] = accZero_saved[GI_PITCH];
+                masterConfig.accZero[GI_YAW] = accZero_saved[GI_YAW];
+                currentProfile.angleTrim[AI_ROLL] = angleTrim_saved[AI_ROLL];
+                currentProfile.angleTrim[AI_PITCH] = angleTrim_saved[AI_PITCH];
             }
             InflightcalibratingA--;
         }
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
         if (AccInflightCalibrationSavetoEEProm) {      // the copter is landed, disarmed and the combo has been done again
             AccInflightCalibrationSavetoEEProm = false;
-            mcfg.accZero[GI_ROLL] = b[GI_ROLL] / 50;
-            mcfg.accZero[GI_PITCH] = b[GI_PITCH] / 50;
-            mcfg.accZero[GI_YAW] = b[GI_YAW] / 50 - acc_1G;    // for nunchuk 200=1G
-            cfg.angleTrim[AI_ROLL] = 0;
-            cfg.angleTrim[AI_PITCH] = 0;
-            copyCurrentProfileToProfileSlot(mcfg.current_profile);
+            masterConfig.accZero[GI_ROLL] = b[GI_ROLL] / 50;
+            masterConfig.accZero[GI_PITCH] = b[GI_PITCH] / 50;
+            masterConfig.accZero[GI_YAW] = b[GI_YAW] / 50 - acc_1G;    // for nunchuk 200=1G
+            currentProfile.angleTrim[AI_ROLL] = 0;
+            currentProfile.angleTrim[AI_PITCH] = 0;
+            copyCurrentProfileToProfileSlot(masterConfig.current_profile);
             writeEEPROM();          // write accZero in EEPROM
             readEEPROMAndNotify();
         }
     }
 
-    accADC[GI_ROLL] -= mcfg.accZero[GI_ROLL];
-    accADC[GI_PITCH] -= mcfg.accZero[GI_PITCH];
-    accADC[GI_YAW] -= mcfg.accZero[GI_YAW];
+    accADC[GI_ROLL] -= masterConfig.accZero[GI_ROLL];
+    accADC[GI_PITCH] -= masterConfig.accZero[GI_PITCH];
+    accADC[GI_YAW] -= masterConfig.accZero[GI_YAW];
 }
 
 void ACC_getADC(void)
