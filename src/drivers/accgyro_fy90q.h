@@ -1,3 +1,3 @@
 #pragma once
 
-void adcSensorInit(sensor_t *acc, sensor_t *gyro);
+void adcSensorInit(acc_t *acc, gyro_t *gyro);
