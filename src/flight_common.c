@@ -1,5 +1,7 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "common/axis.h"
 
 #include "runtime_config.h"
 

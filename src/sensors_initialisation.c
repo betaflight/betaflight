@@ -7,14 +7,15 @@
 
 #include "sensors_common.h"
 
-uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
-uint16_t calibratingG = 0;
-uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
 int16_t heading, magHold;
 
 extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
 extern float magneticDeclination;
+
+extern sensor_t gyro;
+extern baro_t baro;
+extern sensor_t acc;
 
 #ifdef FY90Q
 // FY90Q analog gyro/acc

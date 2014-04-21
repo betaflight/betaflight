@@ -6,6 +6,8 @@
 #include "flight_common.h"
 #include "statusindicator.h"
 
+uint16_t calibratingG = 0;
+uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
 sensor_t gyro;                      // gyro access functions
 
 void GYRO_Common(void)

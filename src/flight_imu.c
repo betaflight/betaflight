@@ -1,33 +1,63 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <math.h>
 
 #include "common/maths.h"
 
+#include "platform.h"
+//
+#include "common/axis.h"
+#include "flight_common.h"
+//
+#include "drivers/system_common.h"
+//
+#include "sensors_common.h"
 #include "sensors_gyro.h"
 #include "sensors_compass.h"
+#include "sensors_acceleration.h"
+#include "sensors_barometer.h"
 
-#include "flight_common.h"
+#include "flight_mixer.h"
+
+#include "boardalignment.h"
+#include "battery.h"
+#include "rx_common.h"
+#include "drivers/serial_common.h"
+#include "serial_common.h"
+#include "failsafe.h"
+#include "runtime_config.h"
+#include "config.h"
+#include "config_storage.h"
+
 
 int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
+float accVelScale;
+
 int16_t smallAngle = 0;
+
+int32_t sonarAlt;              // to think about the unit
+int32_t EstAlt;                // in cm
+int32_t AltHold;
+int32_t errorAltitudeI = 0;
+
+int32_t vario = 0;                      // variometer in cm/s
+
+int16_t throttleAngleCorrection = 0;    // correction of throttle in lateral wind,
+float throttleAngleScale;
+
+uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 int32_t baroPressure = 0;
 int32_t baroTemperature = 0;
 uint32_t baroPressureSum = 0;
-int32_t BaroAlt = 0;
-int32_t sonarAlt;              // to think about the unit
-int32_t EstAlt;                // in cm
 int32_t BaroPID = 0;
-int32_t AltHold;
-int32_t errorAltitudeI = 0;
-int32_t vario = 0;                      // variometer in cm/s
-int16_t throttleAngleCorrection = 0;    // correction of throttle in lateral wind,
+int32_t BaroAlt = 0;
+
 float magneticDeclination = 0.0f;       // calculated at startup from config
-float accVelScale;
-float throttleAngleScale;
+
 
 // **************
 // gyro+acc IMU
@@ -350,7 +380,6 @@ int getEstimatedAltitude(void)
     int32_t error;
     int32_t baroVel;
     int32_t vel_tmp;
-    int32_t BaroAlt_tmp;
     int32_t setVel;
     float dt;
     float vel_acc;
@@ -359,29 +388,18 @@ int getEstimatedAltitude(void)
     static float vel = 0.0f;
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
-    static int32_t baroGroundAltitude = 0;
-    static int32_t baroGroundPressure = 0;
 
     dTime = currentT - previousT;
     if (dTime < UPDATE_INTERVAL)
         return 0;
     previousT = currentT;
 
-    if (calibratingB > 0) {
-        baroGroundPressure -= baroGroundPressure / 8;
-        baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
-        baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
-
+    if (!isBaroCalibrationComplete()) {
+        performBaroCalibrationCycle();
         vel = 0;
         accAlt = 0;
-        calibratingB--;
     }
-
-    // calculates height from ground via baro readings
-    // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-    BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / (cfg.baro_tab_size - 1)) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
-    BaroAlt_tmp -= baroGroundAltitude;
-    BaroAlt = lrintf((float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf)); // additional LPF to reduce baro noise
+    BaroAlt = Baro_calculateAltitude();
 
     dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 

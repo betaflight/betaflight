@@ -1,9 +1,14 @@
 #include "board.h"
 #include "mw.h"
 
+#include "drivers/barometer_common.h"
+
 baro_t baro;                        // barometer access functions
 
 #ifdef BARO
+static int32_t baroGroundAltitude = 0;
+static int32_t baroGroundPressure = 0;
+
 void Baro_Common(void)
 {
     static int32_t baroHistTab[BARO_TAB_SIZE_MAX];
@@ -45,5 +50,32 @@ int Baro_update(void)
         baroDeadline += baro.up_delay;
         return 1;
     }
+}
+
+int32_t Baro_calculateAltitude(void)
+{
+    int32_t BaroAlt_tmp;
+
+    // calculates height from ground via baro readings
+    // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
+    BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / (cfg.baro_tab_size - 1)) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
+    BaroAlt_tmp -= baroGroundAltitude;
+    BaroAlt = lrintf((float)BaroAlt * cfg.baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - cfg.baro_noise_lpf)); // additional LPF to reduce baro noise
+
+    return BaroAlt;
+}
+
+void performBaroCalibrationCycle(void)
+{
+    baroGroundPressure -= baroGroundPressure / 8;
+    baroGroundPressure += baroPressureSum / (cfg.baro_tab_size - 1);
+    baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
+
+    calibratingB--;
+}
+
+bool isBaroCalibrationComplete(void)
+{
+    return calibratingB == 0;
 }
 #endif /* BARO */
