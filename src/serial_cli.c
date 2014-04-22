@@ -194,8 +194,8 @@ const clivalue_t valueTable[] = {
     { "accxy_deadband", VAR_UINT8, &currentProfile.accxy_deadband, 0, 100 },
     { "accz_deadband", VAR_UINT8, &currentProfile.accz_deadband, 0, 100 },
     { "acc_unarmedcal", VAR_UINT8, &currentProfile.acc_unarmedcal, 0, 1 },
-    { "acc_trim_pitch", VAR_INT16, &currentProfile.angleTrim[PITCH], -300, 300 },
-    { "acc_trim_roll", VAR_INT16, &currentProfile.angleTrim[ROLL], -300, 300 },
+    { "acc_trim_pitch", VAR_INT16, &currentProfile.accelerometerTrims.trims.pitch, -300, 300 },
+    { "acc_trim_roll", VAR_INT16, &currentProfile.accelerometerTrims.trims.roll, -300, 300 },
     { "baro_tab_size", VAR_UINT8, &currentProfile.baro_tab_size, 0, BARO_TAB_SIZE_MAX },
     { "baro_noise_lpf", VAR_FLOAT, &currentProfile.baro_noise_lpf, 0, 1 },
     { "baro_cf_vel", VAR_FLOAT, &currentProfile.baro_cf_vel, 0, 1 },
@@ -821,12 +821,12 @@ static void cliProfile(char *cmdline)
 
     len = strlen(cmdline);
     if (len == 0) {
-        printf("Current profile: %d\r\n", masterConfig.current_profile);
+        printf("Current profile: %d\r\n", masterConfig.current_profile_index);
         return;
     } else {
         i = atoi(cmdline);
         if (i >= 0 && i <= 2) {
-            masterConfig.current_profile = i;
+            masterConfig.current_profile_index = i;
             writeEEPROM();
             readEEPROM();
             cliProfile("");
@@ -843,7 +843,7 @@ static void cliReboot(void) {
 static void cliSave(char *cmdline)
 {
     cliPrint("Saving...");
-    copyCurrentProfileToProfileSlot(masterConfig.current_profile);
+    copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
     writeEEPROM();
     cliReboot();
 }

@@ -4,10 +4,12 @@
 #include "common/maths.h"
 #include "common/typeconversion.h"
 
+#include "buzzer.h"
 #include "sensors_sonar.h"
 #include "sensors_gyro.h"
 #include "sensors_compass.h"
 #include "sensors_barometer.h"
+#include "sensors_acceleration.h"
 #include "flight_common.h"
 #include "serial_cli.h"
 #include "telemetry_common.h"
@@ -34,7 +36,7 @@ uint16_t rssi;                  // range: [0;1023]
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 extern failsafe_t *failsafe;
 
-typedef void (* pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination, int16_t *angleTrim);
+typedef void (* pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination, rollAndPitchTrims_t *accelerometerTrims);
 
 extern pidControllerFuncPtr pid_controller;
 
@@ -305,9 +307,9 @@ void loop(void)
                     } else {
                         AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
                         if (AccInflightCalibrationArmed) {
-                            toggleBeep = 2;
+                            queueConfirmationBeep(2);
                         } else {
-                            toggleBeep = 3;
+                            queueConfirmationBeep(3);
                         }
                     }
                 }
@@ -320,7 +322,7 @@ void loop(void)
                 else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_HI)     // ROLL right -> Profile 3
                     i = 3;
                 if (i) {
-                    masterConfig.current_profile = i - 1;
+                    masterConfig.current_profile_index = i - 1;
                     writeEEPROM();
                     readEEPROM();
                     blinkLedAndSoundBeeper(2, 40, i);
@@ -335,27 +337,27 @@ void loop(void)
                     mwArm();
                 // Calibrating Acc
                 else if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE)
-                    calibratingA = CALIBRATING_ACC_CYCLES;
+                    accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
                 // Calibrating Mag
                 else if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE)
                     f.CALIBRATE_MAG = 1;
                 i = 0;
                 // Acc Trim
                 if (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) {
-                    currentProfile.angleTrim[PITCH] += 2;
+                    currentProfile.accelerometerTrims.trims.pitch += 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) {
-                    currentProfile.angleTrim[PITCH] -= 2;
+                    currentProfile.accelerometerTrims.trims.pitch -= 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) {
-                    currentProfile.angleTrim[ROLL] += 2;
+                    currentProfile.accelerometerTrims.trims.roll += 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) {
-                    currentProfile.angleTrim[ROLL] -= 2;
+                    currentProfile.accelerometerTrims.trims.roll -= 2;
                     i = 1;
                 }
                 if (i) {
-                    copyCurrentProfileToProfileSlot(masterConfig.current_profile);
+                    copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
                     writeEEPROM();
                     readEEPROMAndNotify();
                     rcDelayCommand = 0; // allow autorepetition
@@ -602,7 +604,7 @@ void loop(void)
         }
 
         // PID - note this is function pointer set by setPIDController()
-        pid_controller(&currentProfile.pidProfile, &currentProfile.controlRateConfig, masterConfig.max_angle_inclination, currentProfile.angleTrim);
+        pid_controller(&currentProfile.pidProfile, &currentProfile.controlRateConfig, masterConfig.max_angle_inclination, &currentProfile.accelerometerTrims);
 
         mixTable();
         writeServos();

@@ -16,6 +16,5 @@ extern acc_t acc;
 extern uint16_t calibratingA;
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
-void accCommon(void);
-void accGetADC(void);
-
+void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
+void setAccelerationTrims(int16_flightDynamicsTrims_t *accelerationTrimsToUse);

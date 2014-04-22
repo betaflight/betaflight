@@ -8,6 +8,7 @@
 #include "telemetry_common.h"
 #include "flight_common.h"
 #include "sensors_compass.h"
+#include "sensors_acceleration.h"
 
 // Multiwii Serial Protocol 0
 #define MSP_VERSION              0
@@ -294,8 +295,8 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_ACC_TRIM:
-        currentProfile.angleTrim[PITCH] = read16();
-        currentProfile.angleTrim[ROLL]  = read16();
+        currentProfile.accelerometerTrims.trims.pitch = read16();
+        currentProfile.accelerometerTrims.trims.roll  = read16();
         headSerialReply(0);
         break;
     case MSP_SET_RAW_GPS:
@@ -353,9 +354,9 @@ static void evaluateCommand(void)
         break;
     case MSP_SELECT_SETTING:
         if (!f.ARMED) {
-            masterConfig.current_profile = read8();
-            if (masterConfig.current_profile > 2) {
-                masterConfig.current_profile = 0;
+            masterConfig.current_profile_index = read8();
+            if (masterConfig.current_profile_index > 2) {
+                masterConfig.current_profile_index = 0;
             }
             writeEEPROM();
             readEEPROM();
@@ -402,7 +403,7 @@ static void evaluateCommand(void)
                 junk |= 1 << i;
         }
         serialize32(junk);
-        serialize8(masterConfig.current_profile);
+        serialize8(masterConfig.current_profile_index);
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
@@ -609,7 +610,7 @@ static void evaluateCommand(void)
         break;
     case MSP_ACC_CALIBRATION:
         if (!f.ARMED)
-            calibratingA = CALIBRATING_ACC_CYCLES;
+            accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
         headSerialReply(0);
         break;
     case MSP_MAG_CALIBRATION:
@@ -621,7 +622,7 @@ static void evaluateCommand(void)
         if (f.ARMED) {
             headSerialError(0);
         } else {
-            copyCurrentProfileToProfileSlot(masterConfig.current_profile);
+            copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
             writeEEPROM();
             readEEPROM();
             headSerialReply(0);
@@ -638,8 +639,8 @@ static void evaluateCommand(void)
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         headSerialReply(4);
-        serialize16(currentProfile.angleTrim[PITCH]);
-        serialize16(currentProfile.angleTrim[ROLL]);
+        serialize16(currentProfile.accelerometerTrims.trims.pitch);
+        serialize16(currentProfile.accelerometerTrims.trims.roll);
         break;
     case MSP_UID:
         headSerialReply(12);

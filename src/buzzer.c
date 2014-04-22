@@ -11,14 +11,15 @@
 
 #include "buzzer.h"
 
-#define LONG_PAUSE_DELAY 50
+#define LONG_PAUSE_DURATION_MILLIS 50
+#define SHORT_CONFIRMATION_BEEP_DURATION_MILLIS 50
 
 static uint8_t buzzerIsOn = 0, beepDone = 0;
 static uint32_t buzzerLastToggleTime;
-static void beep(uint16_t pulse);
+static void beep(uint16_t pulseMillis);
 static void beep_code(char first, char second, char third, char pause);
 
-uint8_t toggleBeep = 0;
+static uint8_t toggleBeep = 0;
 
 typedef enum {
     FAILSAFE_IDLE = 0,
@@ -97,6 +98,11 @@ void buzzer(bool warn_vbat)
     }
 }
 
+// duration is specified in multiples of SHORT_CONFIRMATION_BEEP_DURATION_MILLIS
+void queueConfirmationBeep(uint8_t duration) {
+    toggleBeep = duration;
+}
+
 void beep_code(char first, char second, char third, char pause)
 {
     char patternChar[4];
@@ -121,7 +127,7 @@ void beep_code(char first, char second, char third, char pause)
             Duration = 0;
             break;
         default:
-            Duration = LONG_PAUSE_DELAY;
+            Duration = LONG_PAUSE_DURATION_MILLIS;
             break;
     }
 
@@ -140,18 +146,23 @@ void beep_code(char first, char second, char third, char pause)
     }
 }
 
-static void beep(uint16_t pulse)
+static void beep(uint16_t pulseMillis)
 {
-    if (!buzzerIsOn && (millis() >= (buzzerLastToggleTime + LONG_PAUSE_DELAY))) {         // Buzzer is off and long pause time is up -> turn it on
+    if (buzzerIsOn) {
+        if (millis() >= buzzerLastToggleTime + pulseMillis) {
+            buzzerIsOn = 0;
+            BEEP_OFF;
+            buzzerLastToggleTime = millis();
+            if (toggleBeep >0)
+                toggleBeep--;
+            beepDone = 1;
+        }
+        return;
+    }
+
+    if (millis() >= (buzzerLastToggleTime + LONG_PAUSE_DURATION_MILLIS)) {         // Buzzer is off and long pause time is up -> turn it on
         buzzerIsOn = 1;
         BEEP_ON;
         buzzerLastToggleTime = millis();      // save the time the buzer turned on
-    } else if (buzzerIsOn && (millis() >= buzzerLastToggleTime + pulse)) {         // Buzzer is on and time is up -> turn it off
-        buzzerIsOn = 0;
-        BEEP_OFF;
-        buzzerLastToggleTime = millis();
-        if (toggleBeep >0)
-            toggleBeep--;
-        beepDone = 1;
     }
 }

@@ -90,6 +90,8 @@ void activateConfig(void)
     gpsUseProfile(&currentProfile.gpsProfile);
     gpsUsePIDs(&currentProfile.pidProfile);
     useFailsafeConfig(&currentProfile.failsafeConfig);
+
+    setAccelerationTrims(&masterConfig.accZero);
 }
 
 void readEEPROM(void)
@@ -101,9 +103,9 @@ void readEEPROM(void)
     // Read flash
     memcpy(&masterConfig, (char *)FLASH_WRITE_ADDR, sizeof(master_t));
     // Copy current profile
-    if (masterConfig.current_profile > 2) // sanity check
-        masterConfig.current_profile = 0;
-    memcpy(&currentProfile, &masterConfig.profile[masterConfig.current_profile], sizeof(profile_t)); 
+    if (masterConfig.current_profile_index > 2) // sanity check
+        masterConfig.current_profile_index = 0;
+    memcpy(&currentProfile, &masterConfig.profile[masterConfig.current_profile_index], sizeof(profile_t)); 
 
     activateConfig();
 }
@@ -171,6 +173,13 @@ void resetEEPROM(void)
     writeEEPROM();
 }
 
+static void resetAccelerometerTrims(int16_flightDynamicsTrims_t *accelerometerTrims)
+{
+    accelerometerTrims->trims.pitch = 0;
+    accelerometerTrims->trims.roll = 0;
+    accelerometerTrims->trims.yaw = 0;
+}
+
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->P8[ROLL] = 40;
@@ -230,13 +239,11 @@ static void resetConf(void)
     featureSet(FEATURE_VBAT);
 
     // global settings
-    masterConfig.current_profile = 0;       // default profile
+    masterConfig.current_profile_index = 0;       // default profile
     masterConfig.gyro_cmpf_factor = 600;    // default MWC
     masterConfig.gyro_cmpfm_factor = 250;   // default MWC
     masterConfig.gyro_lpf = 42;             // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
-    masterConfig.accZero[0] = 0;
-    masterConfig.accZero[1] = 0;
-    masterConfig.accZero[2] = 0;
+    resetAccelerometerTrims(&masterConfig.accZero);
     masterConfig.gyro_align = ALIGN_DEFAULT;
     masterConfig.acc_align = ALIGN_DEFAULT;
     masterConfig.mag_align = ALIGN_DEFAULT;
@@ -299,8 +306,7 @@ static void resetConf(void)
     currentProfile.controlRateConfig.thrExpo8 = 0;
     // for (i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
-    currentProfile.angleTrim[0] = 0;
-    currentProfile.angleTrim[1] = 0;
+    resetRollAndPitchTrims(&currentProfile.accelerometerTrims);
     currentProfile.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     currentProfile.acc_lpf_factor = 4;
     currentProfile.accz_deadband = 40;
@@ -352,6 +358,12 @@ static void resetConf(void)
         memcpy(&masterConfig.profile[i], &currentProfile, sizeof(profile_t));
 }
 
+void saveAndReloadCurrentProfileToCurrentProfileSlot(void)
+{
+    copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
+    writeEEPROM();
+    readEEPROMAndNotify();
+}
 
 bool feature(uint32_t mask)
 {

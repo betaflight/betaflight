@@ -8,9 +8,9 @@ typedef struct profile_s {
     controlRateConfig_t controlRateConfig;
 
     uint8_t dynThrPID;
-    uint16_t tpaBreakPoint;                  // Breakpoint where TPA is activated
+    uint16_t tpaBreakPoint;                 // Breakpoint where TPA is activated
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
-    int16_t angleTrim[ANGLE_INDEX_COUNT];   // accelerometer trim
+    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
 
     // sensor-related stuff
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter

@@ -66,8 +66,8 @@ float magneticDeclination = 0.0f;       // calculated at startup from config
 // **************
 // gyro+acc IMU
 // **************
-int16_t gyroData[GYRO_INDEX_COUNT] = { 0, 0, 0 };
-int16_t gyroZero[GYRO_INDEX_COUNT] = { 0, 0, 0 };
+int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
+int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 int16_t angle[2] = { 0, 0 };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
@@ -94,7 +94,7 @@ void computeIMU(void)
 
     gyroGetADC();
     if (sensors(SENSOR_ACC)) {
-        accGetADC();
+        updateAccelerationReadings(&currentProfile.accelerometerTrims);
         getEstimatedAttitude();
     } else {
         accADC[X] = 0;
@@ -103,10 +103,10 @@ void computeIMU(void)
     }
 
     if (masterConfig.mixerConfiguration == MULTITYPE_TRI) {
-        gyroData[GI_YAW] = (gyroYawSmooth * 2 + gyroADC[GI_YAW]) / 3;
-        gyroYawSmooth = gyroData[GI_YAW];
-        gyroData[GI_ROLL] = gyroADC[GI_ROLL];
-        gyroData[GI_PITCH] = gyroADC[GI_PITCH];
+        gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
+        gyroYawSmooth = gyroData[FD_YAW];
+        gyroData[FD_ROLL] = gyroADC[FD_ROLL];
+        gyroData[FD_PITCH] = gyroADC[FD_PITCH];
     } else {
         for (axis = 0; axis < 3; axis++)
             gyroData[axis] = gyroADC[axis];
@@ -127,24 +127,8 @@ void computeIMU(void)
 //
 // **************************************************
 
-typedef struct fp_vector {
-    float X;
-    float Y;
-    float Z;
-} t_fp_vector_def;
-
-typedef union {
-    float A[3];
-    t_fp_vector_def V;
-} t_fp_vector;
 
 t_fp_vector EstG;
-
-typedef struct fp_angles {
-    float roll;
-    float pitch;
-    float yaw;
-} fp_angles_t;
 
 // Normalize a vector
 void normalizeV(struct fp_vector *src, struct fp_vector *dest)
@@ -200,9 +184,9 @@ void rotateAnglesV(struct fp_vector *v, fp_angles_t *delta)
 // deprecated - it uses legacy indices for ROLL/PITCH/YAW, see rc_alias_e - use rotateAnglesV instead
 void rotateV(struct fp_vector *v, float *delta) {
     fp_angles_t temp;
-    temp.roll = delta[GI_ROLL];
-    temp.pitch = delta[GI_PITCH];
-    temp.yaw = delta[GI_YAW];
+    temp.roll = delta[FD_ROLL];
+    temp.pitch = delta[FD_PITCH];
+    temp.yaw = delta[FD_YAW];
 
     rotateAnglesV(v, &temp);
 }

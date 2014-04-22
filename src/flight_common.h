@@ -30,16 +30,55 @@ enum {
 
 extern int16_t angle[ANGLE_INDEX_COUNT]; // see angle_index_t
 
+// See http://en.wikipedia.org/wiki/Flight_dynamics
 enum {
-    GI_ROLL = 0,
-    GI_PITCH,
-    GI_YAW
-} gyro_index_t;
+    FD_ROLL = 0,
+    FD_PITCH,
+    FD_YAW
+} flight_dynamics_index_t;
 
-#define GYRO_INDEX_COUNT 3
+#define FLIGHT_DYNAMICS_INDEX_COUNT 3
 
-extern int16_t gyroData[GYRO_INDEX_COUNT]; // see gyro_index_t
-extern int16_t gyroZero[GYRO_INDEX_COUNT]; // see gyro_index_t
+typedef struct fp_vector {
+    float X;
+    float Y;
+    float Z;
+} t_fp_vector_def;
+
+typedef union {
+    float A[3];
+    t_fp_vector_def V;
+} t_fp_vector;
+
+typedef struct fp_angles {
+    float roll;
+    float pitch;
+    float yaw;
+} fp_angles_t;
+
+typedef struct int16_flightDynamicsTrims_s {
+    int16_t roll;
+    int16_t pitch;
+    int16_t yaw;
+} int16_flightDynamicsTrims_def_t;
+
+typedef union {
+    int16_t raw[3];
+    int16_flightDynamicsTrims_def_t trims;
+} int16_flightDynamicsTrims_t;
+
+typedef struct rollAndPitchTrims_s {
+    int16_t roll;
+    int16_t pitch;
+} rollAndPitchTrims_t_def;
+
+typedef union {
+    int16_t raw[2];
+    rollAndPitchTrims_t_def trims;
+} rollAndPitchTrims_t;
+
+extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT]; // see gyro_index_t
+extern int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT]; // see gyro_index_t
 
 extern int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 extern int32_t accSum[XYZ_AXIS_COUNT];
@@ -49,6 +88,7 @@ extern int16_t heading, magHold;
 
 void mwDisarm(void);
 void setPIDController(int type);
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void resetErrorAngle(void);
 void resetErrorGyro(void);
 

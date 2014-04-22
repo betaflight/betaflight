@@ -36,7 +36,7 @@ typedef struct master_t {
     uint16_t gyro_cmpfm_factor;             // Set the Gyro Weight for Gyro/Magnetometer complementary filter. Increasing this value would reduce and delay Magnetometer influence on the output of the filter
     uint8_t moron_threshold;                // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
-    int16_t accZero[3];
+    int16_flightDynamicsTrims_t accZero;
     int16_t magZero[3];
 
     batteryConfig_t batteryConfig;
@@ -59,8 +59,8 @@ typedef struct master_t {
     uint8_t telemetry_provider;             // See TelemetryProvider enum.
     uint8_t telemetry_port;                 // See TelemetryPort enum.
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
-    profile_t profile[3];                    // 3 separate profiles
-    uint8_t current_profile;                // currently loaded profile
+    profile_t profile[3];                   // 3 separate profiles
+    uint8_t current_profile_index;          // currently loaded profile
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum

@@ -62,7 +62,7 @@ int compassGetADC(void)
             for (axis = 0; axis < 3; axis++) {
                 masterConfig.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2; // Calculate offsets
             }
-            copyCurrentProfileToProfileSlot(masterConfig.current_profile);
+            copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
             writeEEPROM();
             readEEPROMAndNotify();
         }
