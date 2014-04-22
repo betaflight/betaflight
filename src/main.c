@@ -55,7 +55,7 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
 void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
-void sensorsAutodetect(void);
+void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
 
 void loop(void);
@@ -160,7 +160,7 @@ int main(void)
     LED1_OFF;
 
     // drop out any sensors that don't seem to work, init all the others. halt if gyro is dead.
-    sensorsAutodetect();
+    sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, currentProfile.mag_declination);
     imuInit(); // Mag is initialized inside imuInit
 
     // Check battery type/voltage

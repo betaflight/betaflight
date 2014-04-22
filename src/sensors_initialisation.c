@@ -1,12 +1,39 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
+#include "platform.h"
+#include "common/axis.h"
+
+#include "drivers/accgyro_common.h"
+
+#ifdef FY90Q
+#include "drivers/accgyro_fy90q.h"
+#else
+#include "drivers/accgyro_adxl345.h"
+#include "drivers/accgyro_bma280.h"
+#include "drivers/accgyro_l3g4200d.h"
+#include "drivers/accgyro_mma845x.h"
+#include "drivers/accgyro_mpu3050.h"
+#include "drivers/accgyro_mpu6050.h"
+#endif
+
+#include "drivers/barometer_common.h"
+#include "drivers/barometer_bmp085.h"
+#include "drivers/barometer_ms5611.h"
+#include "drivers/compass_hmc5883l.h"
+#include "drivers/sonar_hcsr04.h"
+#include "drivers/system_common.h"
+
+#include "flight_common.h"
+#include "runtime_config.h"
+
+#include "sensors_common.h"
 #include "sensors_acceleration.h"
 #include "sensors_barometer.h"
 #include "sensors_gyro.h"
 #include "sensors_compass.h"
-
-#include "sensors_common.h"
+#include "sensors_sonar.h"
 
 extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
@@ -18,15 +45,14 @@ extern acc_t acc;
 
 #ifdef FY90Q
 // FY90Q analog gyro/acc
-void sensorsAutodetect(void)
+void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
 {
     memset(&acc, sizeof(acc), 0);
     memset(&gyro, sizeof(gyro), 0);
     adcSensorInit(&acc, &gyro);
 }
 #else
-// AfroFlight32 i2c sensors
-void sensorsAutodetect(void)
+void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
 {
     int16_t deg, min;
     drv_adxl345_config_t acc_params;
@@ -36,12 +62,12 @@ void sensorsAutodetect(void)
     memset(&gyro, sizeof(gyro), 0);
 
     // Autodetect gyro hardware. We have MPU3050 or MPU6050.
-    if (mpu6050Detect(&acc, &gyro, masterConfig.gyro_lpf)) {
+    if (mpu6050Detect(&acc, &gyro, gyroLpf)) {
         haveMpu6k = true;
         gyroAlign = CW0_DEG; // default NAZE alignment
-    } else if (l3g4200dDetect(&gyro, masterConfig.gyro_lpf)) {
+    } else if (l3g4200dDetect(&gyro, gyroLpf)) {
         gyroAlign = CW0_DEG;
-    } else if (mpu3050Detect(&gyro, masterConfig.gyro_lpf)) {
+    } else if (mpu3050Detect(&gyro, gyroLpf)) {
         gyroAlign = CW0_DEG;
     } else {
         // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
@@ -50,7 +76,7 @@ void sensorsAutodetect(void)
 
     // Accelerometer. Fuck it. Let user break shit.
 retry:
-    switch (masterConfig.acc_hardware) {
+    switch (accHardwareToUse) {
         case ACC_NONE: // disable ACC
             sensorsClear(SENSOR_ACC);
             break;
@@ -62,15 +88,15 @@ retry:
                 accHardware = ACC_ADXL345;
                 accAlign = CW270_DEG; // default NAZE alignment
             }
-            if (masterConfig.acc_hardware == ACC_ADXL345)
+            if (accHardwareToUse == ACC_ADXL345)
                 break;
             ; // fallthrough
         case ACC_MPU6050: // MPU6050
             if (haveMpu6k) {
-                mpu6050Detect(&acc, &gyro, masterConfig.gyro_lpf); // yes, i'm rerunning it again.  re-fill acc struct
+                mpu6050Detect(&acc, &gyro, gyroLpf); // yes, i'm rerunning it again.  re-fill acc struct
                 accHardware = ACC_MPU6050;
                 accAlign = CW0_DEG; // default NAZE alignment
-                if (masterConfig.acc_hardware == ACC_MPU6050)
+                if (accHardwareToUse == ACC_MPU6050)
                     break;
             }
             ; // fallthrough
@@ -79,7 +105,7 @@ retry:
             if (mma8452Detect(&acc)) {
                 accHardware = ACC_MMA8452;
                 accAlign = CW90_DEG; // default NAZE alignment
-                if (masterConfig.acc_hardware == ACC_MMA8452)
+                if (accHardwareToUse == ACC_MMA8452)
                     break;
             }
             ; // fallthrough
@@ -87,7 +113,7 @@ retry:
             if (bma280Detect(&acc)) {
                 accHardware = ACC_BMA280;
                 accAlign = CW0_DEG; //
-                if (masterConfig.acc_hardware == ACC_BMA280)
+                if (accHardwareToUse == ACC_BMA280)
                     break;
             }
 #endif
@@ -95,9 +121,9 @@ retry:
 
     // Found anything? Check if user fucked up or ACC is really missing.
     if (accHardware == ACC_DEFAULT) {
-        if (masterConfig.acc_hardware > ACC_DEFAULT) {
+        if (accHardwareToUse > ACC_DEFAULT) {
             // Nothing was found and we have a forced sensor type. Stupid user probably chose a sensor that isn't present.
-            masterConfig.acc_hardware = ACC_DEFAULT;
+            accHardwareToUse = ACC_DEFAULT;
             goto retry;
         } else {
             // We're really screwed
@@ -116,14 +142,15 @@ retry:
     }
 #endif
 
-    if (masterConfig.gyro_align != ALIGN_DEFAULT) {
-        gyroAlign = masterConfig.gyro_align;
+
+    if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
+        gyroAlign = sensorAlignmentConfig->gyro_align;
     }
-    if (masterConfig.acc_align != ALIGN_DEFAULT) {
-        accAlign = masterConfig.acc_align;
+    if (sensorAlignmentConfig->acc_align != ALIGN_DEFAULT) {
+        accAlign = sensorAlignmentConfig->acc_align;
     }
-    if (masterConfig.mag_align != ALIGN_DEFAULT) {
-        magAlign = masterConfig.mag_align;
+    if (sensorAlignmentConfig->mag_align != ALIGN_DEFAULT) {
+        magAlign = sensorAlignmentConfig->mag_align;
     }
 
 
@@ -141,10 +168,11 @@ retry:
     }
 #endif
 
+    // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (sensors(SENSOR_MAG)) {
-    // calculate magnetic declination
-        deg = currentProfile.mag_declination / 100;
-        min = currentProfile.mag_declination % 100;
+        // calculate magnetic declination
+        deg = magDeclinationFromConfig / 100;
+        min = magDeclinationFromConfig % 100;
 
         magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     } else {

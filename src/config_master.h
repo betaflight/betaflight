@@ -25,10 +25,10 @@ typedef struct master_t {
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
 
     // global sensor-related stuff
-    sensor_align_e gyro_align;              // gyro alignment
-    sensor_align_e acc_align;               // acc alignment
-    sensor_align_e mag_align;               // mag alignment
+
+    sensorAlignmentConfig_t sensorAlignmentConfig;
     boardAlignment_t boardAlignment;
+
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.

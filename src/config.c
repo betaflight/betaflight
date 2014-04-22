@@ -235,6 +235,13 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_cf_alt = 0.965f;
 }
 
+void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
+{
+    sensorAlignmentConfig->gyro_align = ALIGN_DEFAULT;
+    sensorAlignmentConfig->acc_align = ALIGN_DEFAULT;
+    sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
+}
+
 // Default settings
 static void resetConf(void)
 {
@@ -255,10 +262,11 @@ static void resetConf(void)
     masterConfig.gyro_cmpf_factor = 600;    // default MWC
     masterConfig.gyro_cmpfm_factor = 250;   // default MWC
     masterConfig.gyro_lpf = 42;             // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+
     resetAccelerometerTrims(&masterConfig.accZero);
-    masterConfig.gyro_align = ALIGN_DEFAULT;
-    masterConfig.acc_align = ALIGN_DEFAULT;
-    masterConfig.mag_align = ALIGN_DEFAULT;
+
+    resetSensorAlignment(&masterConfig.sensorAlignmentConfig);
+
     masterConfig.boardAlignment.rollDegrees = 0;
     masterConfig.boardAlignment.pitchDegrees = 0;
     masterConfig.boardAlignment.yawDegrees = 0;
