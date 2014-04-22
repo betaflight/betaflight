@@ -53,9 +53,8 @@ $(document).ready(function() {
             var self = this;
             var index = $(self).parent().index();
 
-            // i am using hardcoded index here (for options tab) since i don't have time to write tab locking mechanism at the moment
             // if there is no active connection, return
-            if (configuration_received == false && index != 9) {
+            if (configuration_received == false) {
                 GUI.log('You need to connect before you can view any of the tabs', 'red');
                 return;
             }
@@ -101,9 +100,6 @@ $(document).ready(function() {
                     case 'tab_cli':
                         tab_initialize_cli();
                         break;
-                    case 'tab_options':
-                        tab_initialize_options();
-                        break;
                 }
             });
         }
@@ -123,15 +119,6 @@ $(document).ready(function() {
 
                 // translate to user-selected language
                 localize();
-
-                if (configuration_received) {
-                    $('a.back').hide();
-                } else {
-                    $('a.back').click(function() {
-                        $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
-                        tab_initialize_default();
-                    });
-                }
 
                 // if notifications are enabled, or wasn't set, check the notifications checkbox
                 chrome.storage.local.get('update_notify', function(result) {
