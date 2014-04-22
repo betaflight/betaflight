@@ -44,7 +44,6 @@ float accVelScale;
 
 int16_t smallAngle = 0;
 
-int32_t sonarAlt;              // to think about the unit
 int32_t EstAlt;                // in cm
 int32_t AltHold;
 int32_t errorAltitudeI = 0;
