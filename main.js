@@ -167,18 +167,6 @@ $(document).ready(function() {
                 $(this).empty().remove();
             });
         }
-
-
-        /*
-        chrome.app.window.create('./tabs/options.html', {
-            id: 'option-window',
-            frame: 'none',
-            resizable: false
-        }, function(createdWindow) {
-            // translate to user-selected language
-            localize();
-        });
-        */
     });
 
     // listen to all input change events and adjust the value within limits if necessary

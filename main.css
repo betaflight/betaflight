@@ -90,6 +90,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
         background-color: #be2222;
         color: white;
+
+        font-weight: bold;
     }
         #port-picker a.connect:hover {
             text-decoration: none;
@@ -122,7 +124,6 @@ input[type="number"]::-webkit-inner-spin-button {
     #sensor-status li {
         float: left;
 
-        margin-left: 10px;
         padding: 0 12px 0 12px;
 
         height: 18px;
@@ -132,11 +133,15 @@ input[type="number"]::-webkit-inner-spin-button {
         text-align: center;
 
         border: 1px solid #c0c0c0;
-        border-radius: 8px;
-        background-color: #be2222;
+        border-right: 0;
+
+        background-color: #901515;
+    }
+    #sensor-status li:last-child {
+        border-right: 1px solid #c0c0c0;
     }
     #sensor-status .on {
-        background-color: #0d8b13;
+        background-color: #076b0c;
     }
 #options {
     float: right;
