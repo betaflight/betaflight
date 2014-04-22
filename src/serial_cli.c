@@ -1013,7 +1013,7 @@ static void cliStatus(char *cmdline)
 
 static void cliVersion(char *cmdline)
 {
-    cliPrint("Afro32 CLI version 2.2 " __DATE__ " / " __TIME__);
+    cliPrint("Afro32 CLI version 2.2 " __DATE__ " / " __TIME__ " - (" __FORKNAME__ ")");
 }
 
 void cliProcess(void)
