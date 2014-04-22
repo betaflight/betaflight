@@ -11,12 +11,12 @@ uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
-void GYRO_SetCalibrationCycles(uint16_t calibrationCyclesRequired)
+void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
     calibratingG = calibrationCyclesRequired;
 }
 
-void GYRO_Common(void)
+void gyroCommon(void)
 {
     int axis;
     static int32_t g[3];
@@ -56,10 +56,10 @@ void GYRO_Common(void)
         gyroADC[axis] -= gyroZero[axis];
 }
 
-void Gyro_getADC(void)
+void gyroGetADC(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
     gyro.read(gyroADC);
     alignSensors(gyroADC, gyroADC, gyroAlign);
-    GYRO_Common();
+    gyroCommon();
 }

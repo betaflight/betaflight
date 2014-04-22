@@ -1,10 +1,10 @@
 #pragma once
 
 #ifdef BARO
-void Baro_SetCalibrationCycles(uint16_t calibrationCyclesRequired);
-void Baro_Common(void);
-int Baro_update(void);
-int32_t Baro_calculateAltitude(void);
+void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+void baroCommon(void);
+int baroUpdate(void);
+int32_t baroCalculateAltitude(void);
 bool isBaroCalibrationComplete(void);
 void performBaroCalibrationCycle(void);
 #endif

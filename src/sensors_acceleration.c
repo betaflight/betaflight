@@ -18,12 +18,12 @@ extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
 
-void ACC_SetCalibrationCycles(uint16_t calibrationCyclesRequired)
+void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
     calibratingA = calibrationCyclesRequired;
 }
 
-void ACC_Common(void)
+void accCommon(void)
 {
     static int32_t a[3];
     int axis;
@@ -109,11 +109,11 @@ void ACC_Common(void)
     accADC[GI_YAW] -= masterConfig.accZero[GI_YAW];
 }
 
-void ACC_getADC(void)
+void accGetADC(void)
 {
     acc.read(accADC);
     alignSensors(accADC, accADC, accAlign);
 
-    ACC_Common();
+    accCommon();
 }
 

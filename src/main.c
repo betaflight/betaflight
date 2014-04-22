@@ -193,11 +193,11 @@ int main(void)
     previousTime = micros();
 
     if (masterConfig.mixerConfiguration == MULTITYPE_GIMBAL) {
-        ACC_SetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+        accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
-    GYRO_SetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
+    gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
 #ifdef BARO
-    Baro_SetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+    baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
     f.SMALL_ANGLE = 1;

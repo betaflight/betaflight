@@ -8,7 +8,7 @@ sensor_align_e magAlign = 0;
 #ifdef MAG
 static uint8_t magInit = 0;
 
-void Mag_init(void)
+void compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
@@ -17,7 +17,7 @@ void Mag_init(void)
     magInit = 1;
 }
 
-int Mag_getADC(void)
+int compassGetADC(void)
 {
     static uint32_t t, tCal = 0;
     static int16_t magZeroTempMin[3];

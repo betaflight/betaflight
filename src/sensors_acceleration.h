@@ -15,7 +15,7 @@ extern sensor_align_e accAlign;
 extern acc_t acc;
 extern uint16_t calibratingA;
 
-void ACC_SetCalibrationCycles(uint16_t calibrationCyclesRequired);
-void ACC_Common(void);
-void ACC_getADC(void);
+void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+void accCommon(void);
+void accGetADC(void);
 

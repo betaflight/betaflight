@@ -64,13 +64,6 @@ void annexCode(void);
 void computeIMU(void);
 int getEstimatedAltitude(void);
 
-// Sensors
-void ACC_getADC(void);
-int Baro_update(void);
-void Gyro_getADC(void);
-void Mag_init(void);
-int Mag_getADC(void);
-
 // Output
 void mixerResetMotors(void);
 void mixerLoadMix(int index);

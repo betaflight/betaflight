@@ -6,6 +6,8 @@
 
 #include "sensors_sonar.h"
 #include "sensors_gyro.h"
+#include "sensors_compass.h"
+#include "sensors_barometer.h"
 #include "flight_common.h"
 #include "serial_cli.h"
 #include "telemetry_common.h"
@@ -479,13 +481,13 @@ void loop(void)
         case 0:
             taskOrder++;
 #ifdef MAG
-            if (sensors(SENSOR_MAG) && Mag_getADC())
+            if (sensors(SENSOR_MAG) && compassGetADC())
                 break;
 #endif
         case 1:
             taskOrder++;
 #ifdef BARO
-            if (sensors(SENSOR_BARO) && Baro_update())
+            if (sensors(SENSOR_BARO) && baroUpdate())
                 break;
 #endif
         case 2:

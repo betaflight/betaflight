@@ -83,7 +83,7 @@ void imuInit(void)
 #ifdef MAG
     // if mag sensor is enabled, use it
     if (sensors(SENSOR_MAG))
-        Mag_init();
+        compassInit();
 #endif
 }
 
@@ -92,9 +92,9 @@ void computeIMU(void)
     uint32_t axis;
     static int16_t gyroYawSmooth = 0;
 
-    Gyro_getADC();
+    gyroGetADC();
     if (sensors(SENSOR_ACC)) {
-        ACC_getADC();
+        accGetADC();
         getEstimatedAttitude();
     } else {
         accADC[X] = 0;
@@ -406,7 +406,7 @@ int getEstimatedAltitude(void)
         vel = 0;
         accAlt = 0;
     }
-    BaroAlt = Baro_calculateAltitude();
+    BaroAlt = baroCalculateAltitude();
 
     dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 

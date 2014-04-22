@@ -11,12 +11,12 @@ uint16_t calibratingB = 0;      // baro calibration = get new ground pressure va
 static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
 
-void Baro_SetCalibrationCycles(uint16_t calibrationCyclesRequired)
+void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
     calibratingB = calibrationCyclesRequired;
 }
 
-void Baro_Common(void)
+void baroCommon(void)
 {
     static int32_t baroHistTab[BARO_TAB_SIZE_MAX];
     static int baroHistIdx;
@@ -32,7 +32,7 @@ void Baro_Common(void)
 }
 
 
-int Baro_update(void)
+int baroUpdate(void)
 {
     static uint32_t baroDeadline = 0;
     static int state = 0;
@@ -52,14 +52,14 @@ int Baro_update(void)
     } else {
         baro.get_ut();
         baro.start_up();
-        Baro_Common();
+        baroCommon();
         state = 1;
         baroDeadline += baro.up_delay;
         return 1;
     }
 }
 
-int32_t Baro_calculateAltitude(void)
+int32_t baroCalculateAltitude(void)
 {
     int32_t BaroAlt_tmp;
 
