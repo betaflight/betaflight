@@ -7,7 +7,6 @@
 
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
-#define BARO_TAB_SIZE_MAX   48
 
 #define  VERSION  230
 
@@ -20,6 +19,7 @@ enum {
     ALIGN_MAG = 2
 };
 
+#include "sensors_barometer.h"
 #include "serial_common.h"
 #include "rc_controls.h"
 #include "rx_common.h"

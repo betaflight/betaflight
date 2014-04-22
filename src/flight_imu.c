@@ -54,11 +54,7 @@ int32_t vario = 0;                      // variometer in cm/s
 int16_t throttleAngleCorrection = 0;    // correction of throttle in lateral wind,
 float throttleAngleScale;
 
-int32_t baroPressure = 0;
-int32_t baroTemperature = 0;
-uint32_t baroPressureSum = 0;
 int32_t BaroPID = 0;
-int32_t BaroAlt = 0;
 
 float magneticDeclination = 0.0f;       // calculated at startup from config
 
@@ -400,7 +396,7 @@ int getEstimatedAltitude(void)
 
     // Integrator - Altitude in cm
     accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                         // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * currentProfile.baro_cf_alt + (float)BaroAlt * (1.0f - currentProfile.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
+    accAlt = accAlt * currentProfile.barometerConfig.baro_cf_alt + (float)BaroAlt * (1.0f - currentProfile.barometerConfig.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
     EstAlt = accAlt;
     vel += vel_acc;
 
@@ -420,7 +416,7 @@ int getEstimatedAltitude(void)
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
-    vel = vel * currentProfile.baro_cf_vel + baroVel * (1 - currentProfile.baro_cf_vel);
+    vel = vel * currentProfile.barometerConfig.baro_cf_vel + baroVel * (1 - currentProfile.barometerConfig.baro_cf_vel);
     vel_tmp = lrintf(vel);
 
     // set vario

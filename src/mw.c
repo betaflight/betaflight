@@ -489,7 +489,7 @@ void loop(void)
         case 1:
             taskOrder++;
 #ifdef BARO
-            if (sensors(SENSOR_BARO) && baroUpdate())
+            if (sensors(SENSOR_BARO) && baroUpdate(currentTime) != BAROMETER_ACTION_NOT_READY)
                 break;
 #endif
         case 2:

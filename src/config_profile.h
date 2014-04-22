@@ -16,10 +16,10 @@ typedef struct profile_s {
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
     uint8_t accz_deadband;                  // set the acc deadband for z-Axis, this ignores small accelerations
     uint8_t accxy_deadband;                 // set the acc deadband for xy-Axis
-    uint8_t baro_tab_size;                  // size of baro filter array
-    float baro_noise_lpf;                   // additional LPF to reduce baro noise
-    float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
-    float baro_cf_alt;                      // apply CF to use ACC for height estimation
+
+    barometerConfig_t barometerConfig;
+
+
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
 
     uint16_t activate[CHECKBOX_ITEM_COUNT]; // activate switches

@@ -14,6 +14,7 @@
 
 #include "statusindicator.h"
 #include "sensors_acceleration.h"
+#include "sensors_barometer.h"
 #include "telemetry_common.h"
 #include "gps_common.h"
 
@@ -90,8 +91,11 @@ void activateConfig(void)
     gpsUseProfile(&currentProfile.gpsProfile);
     gpsUsePIDs(&currentProfile.pidProfile);
     useFailsafeConfig(&currentProfile.failsafeConfig);
-
     setAccelerationTrims(&masterConfig.accZero);
+
+#ifdef BARO
+    useBarometerConfig(&currentProfile.barometerConfig);
+#endif
 }
 
 void readEEPROM(void)
@@ -223,6 +227,14 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
     gpsProfile->ap_mode = 40;
 }
 
+void resetBarometerConfig(barometerConfig_t *barometerConfig)
+{
+    barometerConfig->baro_sample_count = 21;
+    barometerConfig->baro_noise_lpf = 0.6f;
+    barometerConfig->baro_cf_vel = 0.985f;
+    barometerConfig->baro_cf_alt = 0.965f;
+}
+
 // Default settings
 static void resetConf(void)
 {
@@ -306,15 +318,16 @@ static void resetConf(void)
     currentProfile.controlRateConfig.thrExpo8 = 0;
     // for (i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
+
     resetRollAndPitchTrims(&currentProfile.accelerometerTrims);
+
     currentProfile.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     currentProfile.acc_lpf_factor = 4;
     currentProfile.accz_deadband = 40;
     currentProfile.accxy_deadband = 40;
-    currentProfile.baro_tab_size = 21;
-    currentProfile.baro_noise_lpf = 0.6f;
-    currentProfile.baro_cf_vel = 0.985f;
-    currentProfile.baro_cf_alt = 0.965f;
+
+    resetBarometerConfig(&currentProfile.barometerConfig);
+
     currentProfile.acc_unarmedcal = 1;
 
     // Radio
