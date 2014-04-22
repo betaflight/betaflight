@@ -196,7 +196,9 @@ int main(void)
         ACC_SetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     GYRO_SetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
+#ifdef BARO
     Baro_SetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+#endif
 
     f.SMALL_ANGLE = 1;
 

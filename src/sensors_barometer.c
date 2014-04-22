@@ -4,9 +4,9 @@
 #include "drivers/barometer_common.h"
 
 baro_t baro;                        // barometer access functions
+uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 
 #ifdef BARO
-uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 
 static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
