@@ -2,4 +2,4 @@
 
 void mspProcess(void);
 void mspInit(void);
-
+void sendMspTelemetry(void);

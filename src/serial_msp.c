@@ -715,3 +715,54 @@ void mspProcess(void)
         }
     }
 }
+
+void sendMspTelemetry(void)
+{
+    static int state = -1;
+
+    switch (state) {
+        default:
+            cmdMSP = MSP_BOXNAMES;
+            evaluateCommand();
+        case 0:
+            cmdMSP = MSP_STATUS;
+            evaluateCommand();
+            cmdMSP = MSP_IDENT;
+            evaluateCommand();
+            state++;
+            break;
+        case 1:
+            cmdMSP = MSP_RAW_IMU;
+            evaluateCommand();
+            state++;
+            break;
+        case 2:
+            cmdMSP = MSP_DEBUG;
+            evaluateCommand();
+            cmdMSP = MSP_ALTITUDE;
+            evaluateCommand();
+            state++;
+            break;
+        case 3:
+            cmdMSP = MSP_RAW_GPS;
+            evaluateCommand();
+            cmdMSP = MSP_RC;
+            evaluateCommand();
+            state++;
+            break;
+        case 4:
+            cmdMSP = MSP_MOTOR_PINS;
+            evaluateCommand();
+            cmdMSP = MSP_ATTITUDE;
+            evaluateCommand();
+            state++;
+            break;
+        case 5:
+            cmdMSP = MSP_SERVO;
+            evaluateCommand();
+            state=0;
+            break;
+    }
+
+
+}

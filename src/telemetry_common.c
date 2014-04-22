@@ -6,6 +6,7 @@
 
 #include "telemetry_frsky.h"
 #include "telemetry_hott.h"
+#include "telemetry_msp.h"
 
 #include "telemetry_common.h"
 
@@ -21,6 +22,10 @@ bool isTelemetryProviderHoTT(void)
     return masterConfig.telemetry_provider == TELEMETRY_PROVIDER_HOTT;
 }
 
+bool isTelemetryProviderMSP(void)
+{
+    return masterConfig.telemetry_provider == TELEMETRY_PROVIDER_MSP;
+}
 bool canUseTelemetryWithCurrentConfiguration(void)
 {
     if (!feature(FEATURE_TELEMETRY)) {
@@ -144,5 +149,8 @@ void handleTelemetry(void)
 
     if (isTelemetryProviderHoTT()) {
         handleHoTTTelemetry();
+    }
+    if (isTelemetryProviderMSP()) {
+        handleMSPTelemetry();
     }
 }
