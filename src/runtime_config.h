@@ -27,6 +27,7 @@ enum {
 
 extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
 
+// FIXME some of these are flight modes, some of these are general status indicators
 typedef struct flags_t {
     uint8_t OK_TO_ARM;
     uint8_t ARMED;
