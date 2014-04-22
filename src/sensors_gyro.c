@@ -1,10 +1,18 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
 
+#include "platform.h"
+
+#include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/accgyro_common.h"
 #include "flight_common.h"
+#include "sensors_common.h"
 #include "statusindicator.h"
+#include "boardalignment.h"
+
+#include "sensors_gyro.h"
 
 uint16_t calibratingG = 0;
 uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
@@ -16,7 +24,7 @@ void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
     calibratingG = calibrationCyclesRequired;
 }
 
-void gyroCommon(void)
+static void gyroCommon(uint8_t gyroMovementCalibrationThreshold)
 {
     int axis;
     static int32_t g[3];
@@ -38,7 +46,7 @@ void gyroCommon(void)
             if (calibratingG == 1) {
                 float dev = devStandardDeviation(&var[axis]);
                 // check deviation and startover if idiot was moving the model
-                if (masterConfig.moron_threshold && dev > masterConfig.moron_threshold) {
+                if (gyroMovementCalibrationThreshold && dev > gyroMovementCalibrationThreshold) {
                     calibratingG = CALIBRATING_GYRO_CYCLES;
                     devClear(&var[0]);
                     devClear(&var[1]);
@@ -56,10 +64,10 @@ void gyroCommon(void)
         gyroADC[axis] -= gyroZero[axis];
 }
 
-void gyroGetADC(void)
+void gyroGetADC(uint8_t gyroMovementCalibrationThreshold)
 {
     // range: +/- 8192; +/- 2000 deg/sec
     gyro.read(gyroADC);
     alignSensors(gyroADC, gyroADC, gyroAlign);
-    gyroCommon();
+    gyroCommon(gyroMovementCalibrationThreshold);
 }

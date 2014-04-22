@@ -5,6 +5,5 @@ extern gyro_t gyro;
 extern sensor_align_e gyroAlign;
 
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
-void gyroCommon(void);
-void gyroGetADC(void);
+void gyroGetADC(uint8_t gyroMovementCalibrationThreshold);
 
