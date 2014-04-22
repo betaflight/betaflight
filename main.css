@@ -114,6 +114,8 @@ input[type="number"]::-webkit-inner-spin-button {
 #sensor-status {
     float: right;
 
+    margin-right: 10px;
+
     height: 22px;
     line-height: 22px;
 }
@@ -135,6 +137,48 @@ input[type="number"]::-webkit-inner-spin-button {
     }
     #sensor-status .on {
         background-color: #0d8b13;
+    }
+#options {
+    float: right;
+
+    margin-top: -1px;
+
+    width: 21px;
+    height: 21px;
+
+    opacity: 0.6;
+
+    background-image: url('../images/options.png');
+    background-repeat: no-repeat;
+}
+    #options:hover {
+        opacity: 0.70;
+    }
+    #options.active {
+        opacity: 0.70;
+    }
+    #options.active:hover {
+        opacity: 0.85;
+    }
+#options-window {
+    display: none;
+    position: fixed;
+
+    right: 10px;
+    top: 32px;
+
+    padding: 5px;
+
+    line-height: 20px;
+
+    border: 1px solid silver;
+    background-color: white;
+}
+    #options-window input {
+        float: left;
+
+        margin-top: 3px;
+        margin-right: 5px;
     }
 #log {
     margin-bottom: 10px;

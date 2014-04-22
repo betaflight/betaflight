@@ -111,6 +111,76 @@ $(document).ready(function() {
 
     tab_initialize_default();
 
+    // options
+    $('a#options').click(function() {
+        var el = $(this);
+
+        if (!el.hasClass('active')) {
+            el.addClass('active');
+            el.after('<div id="options-window"></div>');
+            $('div#options-window').load('./tabs/options.html', function() {
+                ga_tracker.sendAppView('Options');
+
+                // translate to user-selected language
+                localize();
+
+                if (configuration_received) {
+                    $('a.back').hide();
+                } else {
+                    $('a.back').click(function() {
+                        $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
+                        tab_initialize_default();
+                    });
+                }
+
+                // if notifications are enabled, or wasn't set, check the notifications checkbox
+                chrome.storage.local.get('update_notify', function(result) {
+                    if (typeof result.update_notify === 'undefined' || result.update_notify) {
+                        $('div.notifications input').prop('checked', true);
+                    }
+                });
+
+                $('div.notifications input').change(function() {
+                    var check = $(this).is(':checked');
+
+                    chrome.storage.local.set({'update_notify': check});
+                });
+
+                // if tracking is enabled, check the statistics checkbox
+                if (ga_tracking == true) {
+                    $('div.statistics input').prop('checked', true);
+                }
+
+                $('div.statistics input').change(function() {
+                    var check = $(this).is(':checked');
+
+                    ga_tracking = check;
+
+                    ga_config.setTrackingPermitted(check);
+                });
+
+                $(this).slideDown();
+            });
+        } else {
+            $('div#options-window').slideUp(function() {
+                el.removeClass('active');
+                $(this).empty().remove();
+            });
+        }
+
+
+        /*
+        chrome.app.window.create('./tabs/options.html', {
+            id: 'option-window',
+            frame: 'none',
+            resizable: false
+        }, function(createdWindow) {
+            // translate to user-selected language
+            localize();
+        });
+        */
+    });
+
     // listen to all input change events and adjust the value within limits if necessary
     $("#content").on('focus', 'input[type="number"]', function() {
         var element = $(this);

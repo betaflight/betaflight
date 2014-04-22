@@ -3,7 +3,7 @@
         "message": "Receive desktop <strong>notification</strong> when application updates"
     },
     "options_improve_configurator": {
-        "message": "<strong>Improve</strong> Baseflight - Configurator by sending anonymous usage data to the developer team"
+        "message": "Send anonymous usage data to the developer team"
     },
     "options_back": {
         "message": "Leave Options"
