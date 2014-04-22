@@ -483,7 +483,7 @@ void loop(void)
         case 0:
             taskOrder++;
 #ifdef MAG
-            if (sensors(SENSOR_MAG) && compassGetADC())
+            if (sensors(SENSOR_MAG) && compassGetADC(&masterConfig.magZero))
                 break;
 #endif
         case 1:

@@ -1,7 +1,23 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
 
 #include "common/axis.h"
+
+#include "drivers/compass_hmc5883l.h"
+#include "drivers/gpio_common.h"
+#include "drivers/light_led.h"
+
+#include "flight_common.h"
+#include "boardalignment.h"
+#include "runtime_config.h"
+#include "config.h"
+
+#include "sensors_common.h"
+#include "sensors_compass.h"
+
+extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
 int16_t magADC[XYZ_AXIS_COUNT];
 sensor_align_e magAlign = 0;
@@ -17,11 +33,11 @@ void compassInit(void)
     magInit = 1;
 }
 
-int compassGetADC(void)
+int compassGetADC(int16_flightDynamicsTrims_t *magZero)
 {
     static uint32_t t, tCal = 0;
-    static int16_t magZeroTempMin[3];
-    static int16_t magZeroTempMax[3];
+    static int16_flightDynamicsTrims_t magZeroTempMin;
+    static int16_flightDynamicsTrims_t magZeroTempMax;
     uint32_t axis;
 
     if ((int32_t)(currentTime - t) < 0)
@@ -35,36 +51,35 @@ int compassGetADC(void)
     if (f.CALIBRATE_MAG) {
         tCal = t;
         for (axis = 0; axis < 3; axis++) {
-            masterConfig.magZero[axis] = 0;
-            magZeroTempMin[axis] = magADC[axis];
-            magZeroTempMax[axis] = magADC[axis];
+            magZero->raw[axis] = 0;
+            magZeroTempMin.raw[axis] = magADC[axis];
+            magZeroTempMax.raw[axis] = magADC[axis];
         }
         f.CALIBRATE_MAG = 0;
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done
-        magADC[X] -= masterConfig.magZero[X];
-        magADC[Y] -= masterConfig.magZero[Y];
-        magADC[Z] -= masterConfig.magZero[Z];
+        magADC[X] -= magZero->raw[X];
+        magADC[Y] -= magZero->raw[Y];
+        magADC[Z] -= magZero->raw[Z];
     }
 
     if (tCal != 0) {
         if ((t - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
             LED0_TOGGLE;
             for (axis = 0; axis < 3; axis++) {
-                if (magADC[axis] < magZeroTempMin[axis])
-                    magZeroTempMin[axis] = magADC[axis];
-                if (magADC[axis] > magZeroTempMax[axis])
-                    magZeroTempMax[axis] = magADC[axis];
+                if (magADC[axis] < magZeroTempMin.raw[axis])
+                    magZeroTempMin.raw[axis] = magADC[axis];
+                if (magADC[axis] > magZeroTempMax.raw[axis])
+                    magZeroTempMax.raw[axis] = magADC[axis];
             }
         } else {
             tCal = 0;
             for (axis = 0; axis < 3; axis++) {
-                masterConfig.magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis]) / 2; // Calculate offsets
+                magZero->raw[axis] = (magZeroTempMin.raw[axis] + magZeroTempMax.raw[axis]) / 2; // Calculate offsets
             }
-            copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
-            writeEEPROM();
-            readEEPROMAndNotify();
+
+            saveAndReloadCurrentProfileToCurrentProfileSlot();
         }
     }
 

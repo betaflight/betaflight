@@ -37,7 +37,7 @@ typedef struct master_t {
     uint8_t moron_threshold;                // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
     int16_flightDynamicsTrims_t accZero;
-    int16_t magZero[3];
+    int16_flightDynamicsTrims_t magZero;
 
     batteryConfig_t batteryConfig;
 
