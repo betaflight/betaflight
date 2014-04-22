@@ -1,10 +1,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rx_common.h"
-
 #include "common/axis.h"
-#include "flight_common.h"
+
+#include "rc_controls.h"
+#include "rx_common.h"
 #include "runtime_config.h"
 
 #include "failsafe.h"

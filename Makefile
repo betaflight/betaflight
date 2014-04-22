@@ -73,6 +73,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   flight_mixer.c \
 		   gps_common.c \
 		   runtime_config.c \
+		   rc_controls.c \
 		   rx_common.c \
 		   rx_pwm.c \
 		   rx_sbus.c \

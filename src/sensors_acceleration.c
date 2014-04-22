@@ -18,6 +18,11 @@ extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
 
+void ACC_SetCalibrationCycles(uint16_t calibrationCyclesRequired)
+{
+    calibratingA = calibrationCyclesRequired;
+}
+
 void ACC_Common(void)
 {
     static int32_t a[3];

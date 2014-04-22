@@ -1,5 +1,9 @@
 #pragma once
 
+#define CALIBRATING_GYRO_CYCLES             1000
+#define CALIBRATING_ACC_CYCLES              400
+#define CALIBRATING_BARO_CYCLES             200 // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
+
 typedef enum {
     SENSOR_GYRO = 1 << 0, // always present
     SENSOR_ACC = 1 << 1,

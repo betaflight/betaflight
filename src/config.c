@@ -23,6 +23,7 @@
 #include "boardalignment.h"
 #include "battery.h"
 #include "gimbal.h"
+#include "rc_controls.h"
 #include "rx_common.h"
 #include "gps_common.h"
 #include "serial_common.h"

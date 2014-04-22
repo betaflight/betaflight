@@ -11,6 +11,11 @@ uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
+void GYRO_SetCalibrationCycles(uint16_t calibrationCyclesRequired)
+{
+    calibratingG = calibrationCyclesRequired;
+}
+
 void GYRO_Common(void)
 {
     int axis;

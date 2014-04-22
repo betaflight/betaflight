@@ -6,8 +6,15 @@
 baro_t baro;                        // barometer access functions
 
 #ifdef BARO
+uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
+
 static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
+
+void Baro_SetCalibrationCycles(uint16_t calibrationCyclesRequired)
+{
+    calibratingB = calibrationCyclesRequired;
+}
 
 void Baro_Common(void)
 {

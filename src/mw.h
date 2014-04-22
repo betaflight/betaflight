@@ -1,5 +1,6 @@
 #pragma once
 
+#include "rc_controls.h"
 #include "runtime_config.h"
 #include "flight_common.h"
 #include "failsafe.h"
@@ -19,26 +20,19 @@ enum {
     ALIGN_MAG = 2
 };
 
-#define CALIBRATING_GYRO_CYCLES             1000
-#define CALIBRATING_ACC_CYCLES              400
-#define CALIBRATING_BARO_CYCLES             200
-
 #include "serial_common.h"
+#include "rc_controls.h"
 #include "rx_common.h"
 #include "gps_common.h"
 #include "config.h"
 #include "config_profile.h"
 #include "config_master.h"
 
-extern int16_t axisPID[3];
-extern int16_t rcCommand[4];
-
 extern int16_t debug[4];
 extern uint16_t acc_1G;
 extern uint32_t accTimeSum;
 extern int accSumCount;
 extern uint32_t currentTime;
-extern uint32_t previousTime;
 extern uint16_t cycleTime;
 extern uint16_t calibratingA;
 extern uint16_t calibratingB;
@@ -65,28 +59,19 @@ extern uint8_t toggleBeep;
 
 extern flags_t f;
 
-// main
-void setPIDController(int type);
-void loop(void);
-
 // IMU
-void imuInit(void);
 void annexCode(void);
 void computeIMU(void);
 int getEstimatedAltitude(void);
 
 // Sensors
-void sensorsAutodetect(void);
 void ACC_getADC(void);
 int Baro_update(void);
 void Gyro_getADC(void);
 void Mag_init(void);
 int Mag_getADC(void);
-void Sonar_init(void);
-void Sonar_update(void);
 
 // Output
-void mixerInit(void);
 void mixerResetMotors(void);
 void mixerLoadMix(int index);
 void writeServos(void);

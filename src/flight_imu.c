@@ -24,6 +24,7 @@
 
 #include "boardalignment.h"
 #include "battery.h"
+#include "rc_controls.h"
 #include "rx_common.h"
 #include "drivers/serial_common.h"
 #include "serial_common.h"
@@ -53,7 +54,6 @@ int32_t vario = 0;                      // variometer in cm/s
 int16_t throttleAngleCorrection = 0;    // correction of throttle in lateral wind,
 float throttleAngleScale;
 
-uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 int32_t baroPressure = 0;
 int32_t baroTemperature = 0;
 uint32_t baroPressureSum = 0;

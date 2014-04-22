@@ -1,29 +1,5 @@
 #pragma once
 
-typedef enum rc_alias {
-    ROLL = 0,
-    PITCH,
-    YAW,
-    THROTTLE,
-    AUX1,
-    AUX2,
-    AUX3,
-    AUX4
-} rc_alias_e;
-
-#define ROL_LO (1 << (2 * ROLL))
-#define ROL_CE (3 << (2 * ROLL))
-#define ROL_HI (2 << (2 * ROLL))
-#define PIT_LO (1 << (2 * PITCH))
-#define PIT_CE (3 << (2 * PITCH))
-#define PIT_HI (2 << (2 * PITCH))
-#define YAW_LO (1 << (2 * YAW))
-#define YAW_CE (3 << (2 * YAW))
-#define YAW_HI (2 << (2 * YAW))
-#define THR_LO (1 << (2 * THROTTLE))
-#define THR_CE (3 << (2 * THROTTLE))
-#define THR_HI (2 << (2 * THROTTLE))
-
 #define PWM_RANGE_ZERO 0 // FIXME should all usages of this be changed to use PWM_RANGE_MIN?
 #define PWM_RANGE_MIN 1000
 #define PWM_RANGE_MAX 2000
@@ -51,15 +27,6 @@ typedef struct rxConfig_s {
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
 } rxConfig_t;
-
-typedef struct controlRateConfig_s {
-    uint8_t rcRate8;
-    uint8_t rcExpo8;
-    uint8_t thrMid8;
-    uint8_t thrExpo8;
-    uint8_t rollPitchRate;
-    uint8_t yawRate;
-} controlRateConfig_t;
 
 typedef struct rxRuntimeConfig_s {
     uint8_t channelCount;                  // number of rc channels as reported by current input driver

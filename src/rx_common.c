@@ -9,6 +9,7 @@
 #include "config.h"
 
 #include "failsafe.h"
+#include "rc_controls.h"
 
 #include "rx_pwm.h"
 #include "rx_sbus.h"

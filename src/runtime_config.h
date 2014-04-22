@@ -47,8 +47,6 @@ typedef struct flags_t {
     uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
 } flags_t;
 
-typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
-
 extern flags_t f;
 
 bool sensors(uint32_t mask);

@@ -8,9 +8,13 @@
 #include "common/maths.h"
 
 #include "bus_i2c.h"
+
+// FIXME there should be no dependencies on the main source code
+#include "rc_controls.h"
 #include "sensors_common.h"
 #include "flight_common.h"
 
+#include "light_ledring.h"
 
 // Driver for DFRobot I2C Led Ring
 #define LED_RING_ADDRESS    0x6D

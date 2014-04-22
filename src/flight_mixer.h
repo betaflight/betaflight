@@ -57,3 +57,5 @@ typedef struct servoParam_t {
 } servoParam_t;
 
 bool isMixerUsingServos(void);
+void mixerInit(void);
+void writeAllMotors(int16_t mc);

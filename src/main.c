@@ -1,22 +1,50 @@
-#include "board.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "common/axis.h"
+
+#include "drivers/system_common.h"
+#include "drivers/gpio_common.h"
+#include "drivers/light_led.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/timer_common.h"
+#include "drivers/serial_common.h"
+#include "drivers/serial_softserial.h"
+#include "drivers/serial_uart.h"
+#include "drivers/accgyro_common.h"
+#include "drivers/pwm_common.h"
+#include "drivers/adc_common.h"
+
 #include "flight_common.h"
 #include "flight_mixer.h"
+
 #include "serial_common.h"
 #include "failsafe.h"
-#include "mw.h"
 
 #include "gps_common.h"
+#include "rc_controls.h"
 #include "rx_common.h"
+#include "gimbal.h"
 #include "sensors_common.h"
-#include "drivers/accgyro_common.h"
-#include "drivers/serial_common.h"
+#include "sensors_sonar.h"
+#include "sensors_barometer.h"
+#include "sensors_acceleration.h"
+#include "sensors_gyro.h"
 #include "telemetry_common.h"
+#include "battery.h"
 #include "boardalignment.h"
+#include "runtime_config.h"
 #include "config.h"
+#include "config_profile.h"
+#include "config_master.h"
 
 #include "build_config.h"
 
 extern rcReadRawDataPtr rcReadRawFunc;
+
+extern uint32_t previousTime;
 
 failsafe_t *failsafe;
 
@@ -27,6 +55,10 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
 void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
+void sensorsAutodetect(void);
+void imuInit(void);
+
+void loop(void);
 
 int main(void)
 {
@@ -159,10 +191,13 @@ int main(void)
         initTelemetry(&serialPorts);
 
     previousTime = micros();
-    if (masterConfig.mixerConfiguration == MULTITYPE_GIMBAL)
-        calibratingA = CALIBRATING_ACC_CYCLES;
-    calibratingG = CALIBRATING_GYRO_CYCLES;
-    calibratingB = CALIBRATING_BARO_CYCLES;             // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
+
+    if (masterConfig.mixerConfiguration == MULTITYPE_GIMBAL) {
+        ACC_SetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+    }
+    GYRO_SetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
+    Baro_SetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+
     f.SMALL_ANGLE = 1;
 
     // loopy

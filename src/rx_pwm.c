@@ -6,6 +6,7 @@
 
 #include "platform.h"
 
+#include "rc_controls.h"
 #include "rx_common.h"
 #include "config.h"
 
