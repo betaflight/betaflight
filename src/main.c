@@ -69,7 +69,7 @@ int main(void)
     serialPort_t* loopbackPort1 = NULL;
     serialPort_t* loopbackPort2 = NULL;
 #endif
-    systemInit(masterConfig.emfAvoidance);
+    systemInit(masterConfig.emf_avoidance);
     initPrintfSupport();
 
     ensureEEPROMContainsValidData();

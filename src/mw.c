@@ -58,11 +58,11 @@ void annexCode(void)
     static uint8_t vbatTimer = 0;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-    if (rcData[THROTTLE] < currentProfile.tpaBreakPoint) {
+    if (rcData[THROTTLE] < currentProfile.tpa_breakpoint) {
         prop2 = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t)currentProfile.dynThrPID * (rcData[THROTTLE] - currentProfile.tpaBreakPoint) / (2000 - currentProfile.tpaBreakPoint);
+            prop2 = 100 - (uint16_t)currentProfile.dynThrPID * (rcData[THROTTLE] - currentProfile.tpa_breakpoint) / (2000 - currentProfile.tpa_breakpoint);
         } else {
             prop2 = 100 - currentProfile.dynThrPID;
         }

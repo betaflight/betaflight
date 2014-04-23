@@ -123,7 +123,7 @@ typedef struct {
 
 const clivalue_t valueTable[] = {
     { "looptime", VAR_UINT16, &masterConfig.looptime, 0, 9000 },
-    { "emf_avoidance", VAR_UINT8, &masterConfig.emfAvoidance, 0, 1 },
+    { "emf_avoidance", VAR_UINT8, &masterConfig.emf_avoidance, 0, 1 },
     { "midrc", VAR_UINT16, &masterConfig.rxConfig.midrc, 1200, 1700 },
     { "minthrottle", VAR_UINT16, &masterConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "maxthrottle", VAR_UINT16, &masterConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
@@ -179,9 +179,9 @@ const clivalue_t valueTable[] = {
     { "thr_mid", VAR_UINT8, &currentProfile.controlRateConfig.thrMid8, 0, 100 },
     { "thr_expo", VAR_UINT8, &currentProfile.controlRateConfig.thrExpo8, 0, 100 },
     { "roll_pitch_rate", VAR_UINT8, &currentProfile.controlRateConfig.rollPitchRate, 0, 100 },
-    { "yawrate", VAR_UINT8, &currentProfile.controlRateConfig.yawRate, 0, 100 },
-    { "tparate", VAR_UINT8, &currentProfile.dynThrPID, 0, 100},
-    { "tpa_breakpoint", VAR_UINT16, &currentProfile.tpaBreakPoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
+    { "yaw_rate", VAR_UINT8, &currentProfile.controlRateConfig.yawRate, 0, 100 },
+    { "tpa_rate", VAR_UINT8, &currentProfile.dynThrPID, 0, 100},
+    { "tpa_breakpoint", VAR_UINT16, &currentProfile.tpa_breakpoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
     { "failsafe_delay", VAR_UINT8, &currentProfile.failsafeConfig.failsafe_delay, 0, 200 },
     { "failsafe_off_delay", VAR_UINT8, &currentProfile.failsafeConfig.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },

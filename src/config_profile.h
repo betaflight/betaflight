@@ -8,7 +8,7 @@ typedef struct profile_s {
     controlRateConfig_t controlRateConfig;
 
     uint8_t dynThrPID;
-    uint16_t tpaBreakPoint;                 // Breakpoint where TPA is activated
+    uint16_t tpa_breakpoint;                 // Breakpoint where TPA is activated
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
     rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
 

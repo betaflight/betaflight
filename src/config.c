@@ -313,7 +313,7 @@ static void resetConf(void)
     masterConfig.serialConfig.reboot_character = 'R';
 
     masterConfig.looptime = 3500;
-    masterConfig.emfAvoidance = 0;
+    masterConfig.emf_avoidance = 0;
     masterConfig.rssi_aux_channel = 0;
 
     currentProfile.pidController = 0;
@@ -324,9 +324,10 @@ static void resetConf(void)
     currentProfile.controlRateConfig.rollPitchRate = 0;
     currentProfile.controlRateConfig.yawRate = 0;
     currentProfile.dynThrPID = 0;
-    currentProfile.tpaBreakPoint = 1500;
+    currentProfile.tpa_breakpoint = 1500;
     currentProfile.controlRateConfig.thrMid8 = 50;
     currentProfile.controlRateConfig.thrExpo8 = 0;
+
     // for (i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
 
