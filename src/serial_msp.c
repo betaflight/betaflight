@@ -425,7 +425,7 @@ static void evaluateCommand(void)
         break;
     case MSP_SERVO_CONF:
         headSerialReply(56);
-        for (i = 0; i < MAX_SERVOS; i++) {
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize16(currentProfile.servoConf[i].min);
             serialize16(currentProfile.servoConf[i].max);
             serialize16(currentProfile.servoConf[i].middle);
@@ -434,12 +434,12 @@ static void evaluateCommand(void)
         break;
     case MSP_SET_SERVO_CONF:
         headSerialReply(0);
-        for (i = 0; i < MAX_SERVOS; i++) {
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             currentProfile.servoConf[i].min = read16();
             currentProfile.servoConf[i].max = read16();
             // provide temporary support for old clients that try and send a channel index instead of a servo middle
             uint16_t potentialServoMiddleOrChannelToForward = read16();
-            if (potentialServoMiddleOrChannelToForward < MAX_SERVOS) {
+            if (potentialServoMiddleOrChannelToForward < MAX_SUPPORTED_SERVOS) {
                 currentProfile.servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
             }
             if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
@@ -450,13 +450,13 @@ static void evaluateCommand(void)
         break;
     case MSP_CHANNEL_FORWARDING:
         headSerialReply(8);
-        for (i = 0; i < MAX_SERVOS; i++) {
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize8(currentProfile.servoConf[i].forwardFromChannel);
         }
         break;
     case MSP_SET_CHANNEL_FORWARDING:
         headSerialReply(0);
-        for (i = 0; i < MAX_SERVOS; i++) {
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             currentProfile.servoConf[i].forwardFromChannel = read8();
         }
         break;

@@ -10,7 +10,7 @@
 static uint8_t numberMotor = 0;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-int16_t servo[MAX_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
+int16_t servo[MAX_SUPPORTED_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
 static int useServo;
 
@@ -165,7 +165,7 @@ int16_t determineServoMiddleOrForwardFromChannel(int nr)
         return rcData[channelToForwardFrom];
     }
 
-    if (nr < MAX_SERVOS) {
+    if (nr < MAX_SUPPORTED_SERVOS) {
         return currentProfile.servoConf[nr].middle;
     }
 
@@ -480,7 +480,7 @@ void mixTable(void)
     }
 
     // constrain servos
-    for (i = 0; i < MAX_SERVOS; i++)
+    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++)
         servo[i] = constrain(servo[i], currentProfile.servoConf[i].min, currentProfile.servoConf[i].max); // limit the values
 
     // forward AUX1-4 to servo outputs (not constrained)

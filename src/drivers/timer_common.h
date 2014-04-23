@@ -1,5 +1,7 @@
 #pragma once
 
+#define USABLE_TIMER_CHANNEL_COUNT 14
+
 typedef void timerCCCallbackPtr(uint8_t port, uint16_t capture);
 
 typedef struct {

@@ -1,8 +1,8 @@
 #pragma once
 
-#define MAX_MOTORS  12
-#define MAX_SERVOS  8
-#define MAX_INPUTS  8
+#define MAX_PWM_MOTORS  12
+#define MAX_PWM_SERVOS  8
+#define MAX_PPM_AND_PWM_INPUTS  8
 
 #define PULSE_1MS       (1000) // 1ms pulse width
 
@@ -23,7 +23,7 @@ typedef struct drv_pwm_config_t {
     uint16_t failsafeThreshold;
 } drv_pwm_config_t;
 
-// This indexes into the read-only hardware definition structure in drv_pwm.c, as well as into pwmPorts[] structure with dynamic data.
+// This indexes into the read-only hardware definition structure, timerHardware_t, as well as into pwmPorts structure with dynamic data.
 enum {
     PWM1 = 0,
     PWM2,
@@ -38,8 +38,7 @@ enum {
     PWM11,
     PWM12,
     PWM13,
-    PWM14,
-    MAX_PORTS
+    PWM14
 };
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);

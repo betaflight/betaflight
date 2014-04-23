@@ -65,10 +65,10 @@ enum {
 
 typedef void (* pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
 
-static pwmPortData_t pwmPorts[MAX_PORTS];
-static uint16_t captures[MAX_INPUTS];
-static pwmPortData_t *motors[MAX_MOTORS];
-static pwmPortData_t *servos[MAX_SERVOS];
+static pwmPortData_t pwmPorts[USABLE_TIMER_CHANNEL_COUNT];
+static uint16_t captures[MAX_PPM_AND_PWM_INPUTS];
+static pwmPortData_t *motors[MAX_PWM_MOTORS];
+static pwmPortData_t *servos[MAX_PWM_SERVOS];
 static pwmWriteFuncPtr pwmWritePtr = NULL;
 static uint8_t numMotors = 0;
 static uint8_t numServos = 0;
@@ -269,7 +269,7 @@ static void ppmCallback(uint8_t port, uint16_t capture)
     if (diff > 2700) { // Per http://www.rcgroups.com/forums/showpost.php?p=21996147&postcount=3960 "So, if you use 2.5ms or higher as being the reset for the PPM stream start, you will be fine. I use 2.7ms just to be safe."
         chan = 0;
     } else {
-        if (diff > 750 && diff < 2250 && chan < MAX_INPUTS) {   // 750 to 2250 ms is our 'valid' channel range
+        if (diff > 750 && diff < 2250 && chan < MAX_PPM_AND_PWM_INPUTS) {   // 750 to 2250 ms is our 'valid' channel range
             captures[chan] = diff;
             if (chan < 4 && diff > failsafeThreshold)
                 GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK
@@ -330,7 +330,7 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
 
     setup = hardwareMaps[i];
 
-    for (i = 0; i < MAX_PORTS; i++) {
+    for (i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         uint8_t port = setup[i] & 0x0F;
         uint8_t mask = setup[i] & 0xF0;
 
