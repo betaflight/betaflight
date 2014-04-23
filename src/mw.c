@@ -84,9 +84,9 @@ void annexCode(void)
             prop1 = 100 - (uint16_t)currentProfile.controlRateConfig.rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         } else {                // YAW
-            if (currentProfile.yawdeadband) {
-                if (tmp > currentProfile.yawdeadband) {
-                    tmp -= currentProfile.yawdeadband;
+            if (currentProfile.yaw_deadband) {
+                if (tmp > currentProfile.yaw_deadband) {
+                    tmp -= currentProfile.yaw_deadband;
                 } else {
                     tmp = 0;
                 }

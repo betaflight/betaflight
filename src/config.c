@@ -345,7 +345,7 @@ static void resetConf(void)
     // Radio
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
     currentProfile.deadband = 0;
-    currentProfile.yawdeadband = 0;
+    currentProfile.yaw_deadband = 0;
     currentProfile.alt_hold_throttle_neutral = 40;
     currentProfile.alt_hold_fast_change = 1;
     currentProfile.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv

@@ -51,10 +51,9 @@ extern int32_t BaroPID;
 extern int32_t vario;
 extern int16_t throttleAngleCorrection;
 extern int16_t headFreeModeHold;
-extern int16_t motor[MAX_MOTORS];
+extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t servo[MAX_SERVOS];
 extern uint16_t rssi;                  // range: [0;1023]
-extern uint8_t vbat;
 extern int16_t telemTemperature1;      // gyro sensor temperature
 extern uint8_t toggleBeep;
 

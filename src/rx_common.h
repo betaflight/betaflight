@@ -18,6 +18,8 @@ typedef enum {
 #define MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT 8
 #define MAX_SUPPORTED_RC_CHANNEL_COUNT (18)
 
+extern const char rcChannelLetters[];
+
 extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
 
 typedef struct rxConfig_s {

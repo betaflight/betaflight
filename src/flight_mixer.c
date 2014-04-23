@@ -8,13 +8,13 @@
 #include "flight_common.h"
 
 static uint8_t numberMotor = 0;
-int16_t motor[MAX_MOTORS];
-int16_t motor_disarmed[MAX_MOTORS];
+int16_t motor[MAX_SUPPORTED_MOTORS];
+int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 int16_t servo[MAX_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
 static int useServo;
 
-static motorMixer_t currentMixer[MAX_MOTORS];
+static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
 static const motorMixer_t mixerTri[] = {
     { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
@@ -198,7 +198,7 @@ void mixerInit(void)
 
     if (masterConfig.mixerConfiguration == MULTITYPE_CUSTOM) {
         // load custom mixer into currentMixer
-        for (i = 0; i < MAX_MOTORS; i++) {
+        for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
             if (masterConfig.customMixer[i].throttle == 0.0f)
                 break;
@@ -239,7 +239,7 @@ void mixerResetMotors(void)
 {
     int i;
     // set disarmed motor values
-    for (i = 0; i < MAX_MOTORS; i++)
+    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         motor_disarmed[i] = feature(FEATURE_3D) ? masterConfig.neutral3d : masterConfig.mincommand;
 }
 
@@ -250,7 +250,7 @@ void mixerLoadMix(int index)
     // we're 1-based
     index++;
     // clear existing
-    for (i = 0; i < MAX_MOTORS; i++)
+    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         masterConfig.customMixer[i].throttle = 0.0f;
 
     // do we have anything here to begin with?

@@ -6,6 +6,8 @@ typedef struct batteryConfig_s {
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery out alarms, in 0.1V units, default is 33 (3.3V)
 } batteryConfig_t;
 
+extern uint8_t vbat;
+extern uint8_t batteryCellCount;
 extern uint16_t batteryWarningVoltage;
 
 uint16_t batteryAdcToVoltage(uint16_t src);

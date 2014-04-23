@@ -59,3 +59,9 @@ typedef struct servoParam_t {
 bool isMixerUsingServos(void);
 void mixerInit(void);
 void writeAllMotors(int16_t mc);
+void mixerLoadMix(int index);
+void mixerResetMotors(void);
+
+// from mixer.c
+extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+

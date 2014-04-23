@@ -108,7 +108,7 @@ static uint8_t availableBoxes[CHECKBOX_ITEM_COUNT];
 // this is the number of filled indexes in above array
 static uint8_t numberBoxItems = 0;
 // from mixer.c
-extern int16_t motor_disarmed[MAX_MOTORS];
+extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 static const char pidnames[] =
     "ROLL;"
@@ -348,7 +348,7 @@ static void evaluateCommand(void)
         headSerialReply(0);
         break;
     case MSP_SET_MOTOR:
-        for (i = 0; i < 8; i++)
+        for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
             motor_disarmed[i] = read16();
         headSerialReply(0);
         break;
