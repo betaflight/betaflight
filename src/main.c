@@ -38,7 +38,7 @@ int main(void)
 #endif
     checkFirstTime(false);
     readEEPROM();
-    systemInit(mcfg.emfAvoidance);
+    systemInit(mcfg.emf_avoidance);
 #ifdef USE_LAME_PRINTF
     init_printf(NULL, _putc);
 #endif

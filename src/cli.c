@@ -113,7 +113,7 @@ typedef struct {
 
 const clivalue_t valueTable[] = {
     { "looptime", VAR_UINT16, &mcfg.looptime, 0, 9000 },
-    { "emf_avoidance", VAR_UINT8, &mcfg.emfAvoidance, 0, 1 },
+    { "emf_avoidance", VAR_UINT8, &mcfg.emf_avoidance, 0, 1 },
     { "midrc", VAR_UINT16, &mcfg.midrc, 1200, 1700 },
     { "minthrottle", VAR_UINT16, &mcfg.minthrottle, 0, 2000 },
     { "maxthrottle", VAR_UINT16, &mcfg.maxthrottle, 0, 2000 },
@@ -169,9 +169,9 @@ const clivalue_t valueTable[] = {
     { "thr_mid", VAR_UINT8, &cfg.thrMid8, 0, 100 },
     { "thr_expo", VAR_UINT8, &cfg.thrExpo8, 0, 100 },
     { "roll_pitch_rate", VAR_UINT8, &cfg.rollPitchRate, 0, 100 },
-    { "yawrate", VAR_UINT8, &cfg.yawRate, 0, 100 },
-    { "tparate", VAR_UINT8, &cfg.dynThrPID, 0, 100},
-    { "tpa_breakpoint", VAR_UINT16, &cfg.tpaBreakPoint, 1000, 2000},
+    { "yaw_rate", VAR_UINT8, &cfg.yawRate, 0, 100 },
+    { "tpa_rate", VAR_UINT8, &cfg.dynThrPID, 0, 100},
+    { "tpa_breakpoint", VAR_UINT16, &cfg.tpa_breakpoint, 1000, 2000},
     { "failsafe_delay", VAR_UINT8, &cfg.failsafe_delay, 0, 200 },
     { "failsafe_off_delay", VAR_UINT8, &cfg.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &cfg.failsafe_throttle, 1000, 2000 },

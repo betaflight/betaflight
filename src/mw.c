@@ -99,11 +99,11 @@ void annexCode(void)
     int i;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-    if (rcData[THROTTLE] < cfg.tpaBreakPoint) {
+    if (rcData[THROTTLE] < cfg.tpa_breakpoint) {
         prop2 = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t)cfg.dynThrPID * (rcData[THROTTLE] - cfg.tpaBreakPoint) / (2000 - cfg.tpaBreakPoint);
+            prop2 = 100 - (uint16_t)cfg.dynThrPID * (rcData[THROTTLE] - cfg.tpa_breakpoint) / (2000 - cfg.tpa_breakpoint);
         } else {
             prop2 = 100 - cfg.dynThrPID;
         }

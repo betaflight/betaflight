@@ -165,7 +165,7 @@ typedef struct config_t {
     uint8_t yawRate;
 
     uint8_t dynThrPID;
-    uint16_t tpaBreakPoint;                  // Breakpoint where TPA is activated
+    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
     int16_t angleTrim[2];                   // accelerometer trim
 
@@ -224,7 +224,7 @@ typedef struct master_t {
     uint8_t mixerConfiguration;
     uint32_t enabledFeatures;
     uint16_t looptime;                      // imu loop time in us
-    uint8_t emfAvoidance;                   // change pll settings to avoid noise in the uhf band
+    uint8_t emf_avoidance;                  // change pll settings to avoid noise in the uhf band
     motorMixer_t customMixer[MAX_MOTORS];   // custom mixtable
 
     // motor/esc/servo related stuff

@@ -228,7 +228,7 @@ static void resetConf(void)
     mcfg.softserial_1_inverted = 0;
     mcfg.softserial_2_inverted = 0;
     mcfg.looptime = 3500;
-    mcfg.emfAvoidance = 0;
+    mcfg.emf_avoidance = 0;
     mcfg.rssi_aux_channel = 0;
 
     cfg.pidController = 0;
@@ -265,7 +265,7 @@ static void resetConf(void)
     cfg.rollPitchRate = 0;
     cfg.yawRate = 0;
     cfg.dynThrPID = 0;
-    cfg.tpaBreakPoint = 1500;
+    cfg.tpa_breakpoint = 1500;
     cfg.thrMid8 = 50;
     cfg.thrExpo8 = 0;
     // for (i = 0; i < CHECKBOXITEMS; i++)
