@@ -265,7 +265,7 @@ void loop(void)
         rcSticks = stTmp;
 
         // perform actions
-        if (feature(FEATURE_3D) && (rcData[THROTTLE] > (masterConfig.rxConfig.midrc - masterConfig.deadband3d_throttle) && rcData[THROTTLE] < (masterConfig.rxConfig.midrc + masterConfig.deadband3d_throttle)))
+        if (feature(FEATURE_3D) && (rcData[THROTTLE] > (masterConfig.rxConfig.midrc - masterConfig.flight3DConfig.deadband3d_throttle) && rcData[THROTTLE] < (masterConfig.rxConfig.midrc + masterConfig.flight3DConfig.deadband3d_throttle)))
             isThrottleLow = true;
         else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < masterConfig.rxConfig.mincheck))
             isThrottleLow = true;
@@ -581,7 +581,7 @@ void loop(void)
                             isAltHoldChanged = 0;
                         }
                         rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
-                        rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], masterConfig.minthrottle + 150, masterConfig.maxthrottle);
+                        rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], masterConfig.escAndServoConfig.minthrottle + 150, masterConfig.escAndServoConfig.maxthrottle);
                     }
                 } else {
                     // handle fixedwing-related althold. UNTESTED! and probably wrong

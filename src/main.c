@@ -24,6 +24,7 @@
 #include "failsafe.h"
 
 #include "gps_common.h"
+#include "escservo.h"
 #include "rc_controls.h"
 #include "rx_common.h"
 #include "gimbal.h"
@@ -89,7 +90,7 @@ int main(void)
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
 
-    mixerInit();
+    mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer);
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE || masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING)
         pwm_params.airplane = true;
@@ -100,12 +101,12 @@ int main(void)
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SERIALRX); // disable inputs if using spektrum
     pwm_params.useServos = isMixerUsingServos();
-    pwm_params.extraServos = currentProfile.gimbal_flags & GIMBAL_FORWARDAUX;
+    pwm_params.extraServos = currentProfile.gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
     pwm_params.idlePulse = PULSE_1MS; // standard PWM for brushless ESC (default, overridden below)
     if (feature(FEATURE_3D))
-        pwm_params.idlePulse = masterConfig.neutral3d;
+        pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
     pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
@@ -234,6 +235,6 @@ int main(void)
 void HardFault_Handler(void)
 {
     // fall out of the sky
-    writeAllMotors(masterConfig.mincommand);
+    writeAllMotors(masterConfig.escAndServoConfig.mincommand);
     while (1);
 }

@@ -7,8 +7,6 @@
 #include "common/axis.h"
 #include "flight_common.h"
 
-
-
 #include "drivers/accgyro_common.h"
 #include "drivers/system_common.h"
 
@@ -26,7 +24,9 @@
 #include "boardalignment.h"
 #include "battery.h"
 #include "gimbal.h"
+#include "escservo.h"
 #include "rc_controls.h"
+#include "rc_curves.h"
 #include "rx_common.h"
 #include "gps_common.h"
 #include "serial_common.h"
@@ -38,6 +38,8 @@
 #include "config_master.h"
 
 void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
+void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse, escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse, airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfig, gimbalConfig_t *gimbalConfigToUse);
+
 
 #ifndef FLASH_PAGE_COUNT
 #define FLASH_PAGE_COUNT 128
@@ -87,7 +89,7 @@ static bool isEEPROMContentValid(void)
 void activateConfig(void)
 {
     generatePitchCurve(&currentProfile.controlRateConfig);
-    generateThrottleCurve(&currentProfile.controlRateConfig, masterConfig.minthrottle, masterConfig.maxthrottle);
+    generateThrottleCurve(&currentProfile.controlRateConfig, &masterConfig.escAndServoConfig);
 
 	useGyroConfig(&masterConfig.gyroConfig);
     setPIDController(currentProfile.pidController);
@@ -95,6 +97,15 @@ void activateConfig(void)
     gpsUsePIDs(&currentProfile.pidProfile);
     useFailsafeConfig(&currentProfile.failsafeConfig);
     setAccelerationTrims(&masterConfig.accZero);
+    mixerUseConfigs(
+        currentProfile.servoConf,
+        &masterConfig.flight3DConfig,
+        &masterConfig.escAndServoConfig,
+        &currentProfile.mixerConfig,
+        &masterConfig.airplaneConfig,
+        &masterConfig.rxConfig,
+        &currentProfile.gimbalConfig
+    );
 
 #ifdef BARO
     useBarometerConfig(&currentProfile.barometerConfig);
@@ -245,6 +256,21 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
+void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
+{
+    escAndServoConfig->minthrottle = 1150;
+    escAndServoConfig->maxthrottle = 1850;
+    escAndServoConfig->mincommand = 1000;
+}
+
+void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
+{
+    flight3DConfig->deadband3d_low = 1406;
+    flight3DConfig->deadband3d_high = 1514;
+    flight3DConfig->neutral3d = 1460;
+    flight3DConfig->deadband3d_throttle = 50;
+}
+
 // Default settings
 static void resetConf(void)
 {
@@ -289,16 +315,12 @@ static void resetConf(void)
     masterConfig.rxConfig.mincheck = 1100;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.retarded_arm = 0;       // disable arm/disarm on roll left/right
-    masterConfig.flaps_speed = 0;
+    masterConfig.airplaneConfig.flaps_speed = 0;
     masterConfig.fixedwing_althold_dir = 1;
+
     // Motor/ESC/Servo
-    masterConfig.minthrottle = 1150;
-    masterConfig.maxthrottle = 1850;
-    masterConfig.mincommand = 1000;
-    masterConfig.deadband3d_low = 1406;
-    masterConfig.deadband3d_high = 1514;
-    masterConfig.neutral3d = 1460;
-    masterConfig.deadband3d_throttle = 50;
+    resetEscAndServoConfig(&masterConfig.escAndServoConfig);
+    resetFlight3DConfig(&masterConfig.flight3DConfig);
     masterConfig.motor_pwm_rate = 400;
     masterConfig.servo_pwm_rate = 50;
     // gps/nav stuff
@@ -366,11 +388,11 @@ static void resetConf(void)
         currentProfile.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
-    currentProfile.yaw_direction = 1;
-    currentProfile.tri_unarmed_servo = 1;
+    currentProfile.mixerConfig.yaw_direction = 1;
+    currentProfile.mixerConfig.tri_unarmed_servo = 1;
 
     // gimbal
-    currentProfile.gimbal_flags = GIMBAL_NORMAL;
+    currentProfile.gimbalConfig.gimbal_flags = GIMBAL_NORMAL;
 
     resetGpsProfile(&currentProfile.gpsProfile);
 

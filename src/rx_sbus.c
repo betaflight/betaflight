@@ -9,9 +9,7 @@
 #include "drivers/serial_uart.h"
 #include "serial_common.h"
 
-
 #include "failsafe.h"
-#include "rc_controls.h"
 
 #include "rx_common.h"
 #include "rx_sbus.h"

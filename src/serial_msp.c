@@ -14,11 +14,13 @@
 #include "serial_common.h"
 #include "flight_common.h"
 #include "flight_mixer.h"
+#include "escservo.h"
 #include "rc_controls.h"
 #include "boardalignment.h"
 #include "gps_common.h"
 #include "rx_common.h"
 #include "battery.h"
+#include "gimbal.h"
 #include "sensors_common.h"
 #include "sensors_acceleration.h"
 #include "sensors_barometer.h"
@@ -363,9 +365,9 @@ static void evaluateCommand(void)
         break;
     case MSP_SET_MISC:
         read16(); // powerfailmeter
-        masterConfig.minthrottle = read16();
-        masterConfig.maxthrottle = read16();
-        masterConfig.mincommand = read16();
+        masterConfig.escAndServoConfig.minthrottle = read16();
+        masterConfig.escAndServoConfig.maxthrottle = read16();
+        masterConfig.escAndServoConfig.mincommand = read16();
         currentProfile.failsafeConfig.failsafe_throttle = read16();
         read16();
         read32();
@@ -401,7 +403,7 @@ static void evaluateCommand(void)
         serialize8(VERSION);                // multiwii version
         serialize8(masterConfig.mixerConfiguration); // type of multicopter
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
-        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (masterConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
+        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
         break;
     case MSP_STATUS:
         headSerialReply(11);
@@ -570,9 +572,9 @@ static void evaluateCommand(void)
     case MSP_MISC:
         headSerialReply(2 * 6 + 4 + 2 + 4);
         serialize16(0); // intPowerTrigger1 (aka useless trash)
-        serialize16(masterConfig.minthrottle);
-        serialize16(masterConfig.maxthrottle);
-        serialize16(masterConfig.mincommand);
+        serialize16(masterConfig.escAndServoConfig.minthrottle);
+        serialize16(masterConfig.escAndServoConfig.maxthrottle);
+        serialize16(masterConfig.escAndServoConfig.mincommand);
         serialize16(currentProfile.failsafeConfig.failsafe_throttle);
         serialize16(0); // plog useless shit
         serialize32(0); // plog useless shit

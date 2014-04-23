@@ -6,13 +6,12 @@
 
 #include "platform.h"
 
-#include "rc_controls.h"
-#include "rx_common.h"
-#include "config.h"
-
 #include "drivers/pwm_common.h"
 
+#include "config.h"
+
 #include "failsafe.h"
+
 #include "rx_common.h"
 #include "rx_pwm.h"
 

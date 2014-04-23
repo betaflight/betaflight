@@ -1,6 +1,8 @@
 #pragma once
 
 #include "rc_controls.h"
+#include "escservo.h"
+#include "rc_curves.h"
 #include "runtime_config.h"
 #include "flight_common.h"
 #include "failsafe.h"
@@ -20,7 +22,6 @@ enum {
 #include "sensors_barometer.h"
 #include "sensors_gyro.h"
 #include "serial_common.h"
-#include "rc_controls.h"
 #include "rx_common.h"
 #include "gps_common.h"
 #include "config.h"
@@ -64,7 +65,6 @@ int getEstimatedAltitude(void);
 
 // Output
 void mixerResetMotors(void);
-void mixerLoadMix(int index);
 void writeServos(void);
 void writeMotors(void);
 void writeAllMotors(int16_t mc);

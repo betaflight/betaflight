@@ -42,11 +42,10 @@ typedef struct profile_s {
     failsafeConfig_t failsafeConfig;
 
     // mixer-related configuration
-    int8_t yaw_direction;
-    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
+    mixerConfig_t mixerConfig;
 
     // gimbal-related configuration
-    uint8_t gimbal_flags;                   // in servotilt mode, various things that affect stuff
+    gimbalConfig_t gimbalConfig;
 
     gpsProfile_t gpsProfile;
 } profile_t;

@@ -10,6 +10,7 @@
 #include "bus_i2c.h"
 
 // FIXME there should be no dependencies on the main source code
+#include "escservo.h"
 #include "rc_controls.h"
 #include "sensors_common.h"
 #include "flight_common.h"

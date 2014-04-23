@@ -46,6 +46,22 @@ typedef struct mixer_t {
     const motorMixer_t *motor;
 } mixer_t;
 
+typedef struct mixerConfig_s {
+    int8_t yaw_direction;
+    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
+} mixerConfig_t;
+
+typedef struct flight3DConfig_s {
+    uint16_t deadband3d_low;                // min 3d value
+    uint16_t deadband3d_high;               // max 3d value
+    uint16_t neutral3d;                     // center 3d value
+    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
+} flight3DConfig_t;
+
+typedef struct airplaneConfig_t {
+    uint8_t flaps_speed;                    // airplane mode flaps, 0 = no flaps, > 0 = flap speed, larger = faster
+} airplaneConfig_t;
+
 #define CHANNEL_FORWARDING_DISABLED 0xFF
 
 typedef struct servoParam_t {
@@ -61,9 +77,9 @@ extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 bool isMixerUsingServos(void);
-void mixerInit(void);
+void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers);
 void writeAllMotors(int16_t mc);
-void mixerLoadMix(int index);
+void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerResetMotors(void);
 
 // from mixer.c

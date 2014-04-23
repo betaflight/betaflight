@@ -10,16 +10,12 @@ typedef struct master_t {
     uint32_t enabledFeatures;
     uint16_t looptime;                      // imu loop time in us
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
+
     motorMixer_t customMixer[MAX_SUPPORTED_MOTORS]; // custom mixtable
 
     // motor/esc/servo related stuff
-    uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
-    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
-    uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
-    uint16_t deadband3d_low;                // min 3d value
-    uint16_t deadband3d_high;               // max 3d value
-    uint16_t neutral3d;                     // center 3d value
-    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
+    escAndServoConfig_t escAndServoConfig;
+    flight3DConfig_t flight3DConfig;
 
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
@@ -48,7 +44,8 @@ typedef struct master_t {
     rxConfig_t rxConfig;
 
     uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
-    uint8_t flaps_speed;                    // airplane mode flaps, 0 = no flaps, > 0 = flap speed, larger = faster
+
+    airplaneConfig_t airplaneConfig;
     int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
 
     uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.

@@ -36,3 +36,4 @@ typedef struct controlRateConfig_s {
 extern int16_t rcCommand[4];
 
 bool areSticksInApModePosition(uint16_t ap_mode);
+

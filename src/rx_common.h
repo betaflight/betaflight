@@ -34,19 +34,11 @@ typedef struct rxRuntimeConfig_s {
     uint8_t channelCount;                  // number of rc channels as reported by current input driver
 } rxRuntimeConfig_t;
 
-#define PITCH_LOOKUP_LENGTH 7
-#define THROTTLE_LOOKUP_LENGTH 12
-extern int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];   // lookup table for expo & RC rate PITCH+ROLL
-extern int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
-
 extern rxRuntimeConfig_t rxRuntimeConfig;
 
 typedef uint16_t (* rcReadRawDataPtr)(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 
 void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-
-void generatePitchCurve(controlRateConfig_t *controlRateConfig);
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, uint16_t minThrottle, uint16_t maxThrottle);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 

@@ -19,12 +19,14 @@
 #include "serial_common.h"
 #include "flight_common.h"
 #include "flight_mixer.h"
+#include "escservo.h"
 #include "rc_controls.h"
 #include "boardalignment.h"
 #include "telemetry_common.h"
 #include "gps_common.h"
 #include "rx_common.h"
 #include "battery.h"
+#include "gimbal.h"
 #include "sensors_common.h"
 #include "sensors_acceleration.h"
 #include "sensors_gyro.h"
@@ -140,56 +142,78 @@ typedef struct {
 const clivalue_t valueTable[] = {
     { "looptime", VAR_UINT16, &masterConfig.looptime, 0, 9000 },
     { "emf_avoidance", VAR_UINT8, &masterConfig.emf_avoidance, 0, 1 },
+
     { "midrc", VAR_UINT16, &masterConfig.rxConfig.midrc, 1200, 1700 },
-    { "minthrottle", VAR_UINT16, &masterConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "maxthrottle", VAR_UINT16, &masterConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "mincommand", VAR_UINT16, &masterConfig.mincommand, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "mincheck", VAR_UINT16, &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "maxcheck", VAR_UINT16, &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "deadband3d_low", VAR_UINT16, &masterConfig.deadband3d_low, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "deadband3d_high", VAR_UINT16, &masterConfig.deadband3d_high, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "neutral3d", VAR_UINT16, &masterConfig.neutral3d, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "deadband3d_throttle", VAR_UINT16, &masterConfig.deadband3d_throttle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+
+    { "minthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "maxthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "mincommand", VAR_UINT16, &masterConfig.escAndServoConfig.mincommand, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+
+    { "deadband3d_low", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_low, PWM_RANGE_ZERO, PWM_RANGE_MAX }, // FIXME upper limit should match code in the mixer, 1500 currently
+    { "deadband3d_high", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_high, PWM_RANGE_ZERO, PWM_RANGE_MAX }, // FIXME lower limit should match code in the mixer, 1500 currently,
+    { "neutral3d", VAR_UINT16, &masterConfig.flight3DConfig.neutral3d, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "deadband3d_throttle", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_throttle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+
     { "motor_pwm_rate", VAR_UINT16, &masterConfig.motor_pwm_rate, 50, 32000 },
     { "servo_pwm_rate", VAR_UINT16, &masterConfig.servo_pwm_rate, 50, 498 },
+
     { "retarded_arm", VAR_UINT8, &masterConfig.retarded_arm, 0, 1 },
-    { "flaps_speed", VAR_UINT8, &masterConfig.flaps_speed, 0, 100 },
+
+    { "flaps_speed", VAR_UINT8, &masterConfig.airplaneConfig.flaps_speed, 0, 100 },
+
     { "fixedwing_althold_dir", VAR_INT8, &masterConfig.fixedwing_althold_dir, -1, 1 },
+
     { "reboot_character", VAR_UINT8, &masterConfig.serialConfig.reboot_character, 48, 126 },
     { "serial_baudrate", VAR_UINT32, &masterConfig.serialConfig.port1_baudrate, 1200, 115200 },
     { "softserial_baudrate", VAR_UINT32, &masterConfig.serialConfig.softserial_baudrate, 1200, 19200 },
     { "softserial_1_inverted", VAR_UINT8, &masterConfig.serialConfig.softserial_1_inverted, 0, 1 },
     { "softserial_2_inverted", VAR_UINT8, &masterConfig.serialConfig.softserial_2_inverted, 0, 1 },
+
     { "gps_type", VAR_UINT8, &masterConfig.gps_type, 0, GPS_HARDWARE_MAX },
     { "gps_baudrate", VAR_INT8, &masterConfig.gps_baudrate, 0, GPS_BAUD_MAX },
+
     { "serialrx_type", VAR_UINT8, &masterConfig.rxConfig.serialrx_type, 0, 3 },
+
     { "telemetry_provider", VAR_UINT8, &masterConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_port", VAR_UINT8, &masterConfig.telemetry_port, 0, TELEMETRY_PORT_MAX },
     { "telemetry_switch", VAR_UINT8, &masterConfig.telemetry_switch, 0, 1 },
+
     { "vbatscale", VAR_UINT8, &masterConfig.batteryConfig.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50 },
     { "vbatmincellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmincellvoltage, 10, 50 },
+
     { "power_adc_channel", VAR_UINT8, &masterConfig.power_adc_channel, 0, 9 },
+
     { "align_gyro", VAR_UINT8, &masterConfig.sensorAlignmentConfig.gyro_align, 0, 8 },
     { "align_acc", VAR_UINT8, &masterConfig.sensorAlignmentConfig.acc_align, 0, 8 },
     { "align_mag", VAR_UINT8, &masterConfig.sensorAlignmentConfig.mag_align, 0, 8 },
+
     { "align_board_roll", VAR_INT16, &masterConfig.boardAlignment.rollDegrees, -180, 360 },
     { "align_board_pitch", VAR_INT16, &masterConfig.boardAlignment.pitchDegrees, -180, 360 },
     { "align_board_yaw", VAR_INT16, &masterConfig.boardAlignment.yawDegrees, -180, 360 },
-    { "yaw_control_direction", VAR_INT8, &masterConfig.yaw_control_direction, -1, 1 },
-    { "acc_hardware", VAR_UINT8, &masterConfig.acc_hardware, 0, 5 },
+
     { "max_angle_inclination", VAR_UINT16, &masterConfig.max_angle_inclination, 100, 900 },
-    { "moron_threshold", VAR_UINT8, &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, 0, 128 },
+
     { "gyro_lpf", VAR_UINT16, &masterConfig.gyro_lpf, 0, 256 },
+    { "moron_threshold", VAR_UINT8, &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, 0, 128 },
     { "gyro_cmpf_factor", VAR_UINT16, &masterConfig.gyro_cmpf_factor, 100, 1000 },
     { "gyro_cmpfm_factor", VAR_UINT16, &masterConfig.gyro_cmpfm_factor, 100, 1000 },
-    { "pid_controller", VAR_UINT8, &currentProfile.pidController, 0, 1 },
-    { "deadband", VAR_UINT8, &currentProfile.deadband, 0, 32 },
-    { "yawdeadband", VAR_UINT8, &currentProfile.yaw_deadband, 0, 100 },
+
     { "alt_hold_throttle_neutral", VAR_UINT8, &currentProfile.alt_hold_throttle_neutral, 1, 250 },
     { "alt_hold_fast_change", VAR_UINT8, &currentProfile.alt_hold_fast_change, 0, 1 },
+
     { "throttle_correction_value", VAR_UINT8, &currentProfile.throttle_correction_value, 0, 150 },
     { "throttle_correction_angle", VAR_UINT16, &currentProfile.throttle_correction_angle, 1, 900 },
+
+    { "deadband", VAR_UINT8, &currentProfile.deadband, 0, 32 },
+    { "yawdeadband", VAR_UINT8, &currentProfile.yaw_deadband, 0, 100 },
+    { "yaw_control_direction", VAR_INT8, &masterConfig.yaw_control_direction, -1, 1 },
+
+    { "yaw_direction", VAR_INT8, &currentProfile.mixerConfig.yaw_direction, -1, 1 },
+    { "tri_unarmed_servo", VAR_INT8, &currentProfile.mixerConfig.tri_unarmed_servo, 0, 1 },
+
     { "rc_rate", VAR_UINT8, &currentProfile.controlRateConfig.rcRate8, 0, 250 },
     { "rc_expo", VAR_UINT8, &currentProfile.controlRateConfig.rcExpo8, 0, 100 },
     { "thr_mid", VAR_UINT8, &currentProfile.controlRateConfig.thrMid8, 0, 100 },
@@ -198,25 +222,32 @@ const clivalue_t valueTable[] = {
     { "yaw_rate", VAR_UINT8, &currentProfile.controlRateConfig.yawRate, 0, 100 },
     { "tpa_rate", VAR_UINT8, &currentProfile.dynThrPID, 0, 100},
     { "tpa_breakpoint", VAR_UINT16, &currentProfile.tpa_breakpoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
+
     { "failsafe_delay", VAR_UINT8, &currentProfile.failsafeConfig.failsafe_delay, 0, 200 },
     { "failsafe_off_delay", VAR_UINT8, &currentProfile.failsafeConfig.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },
     { "failsafe_detect_threshold", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_detect_threshold, 100, PWM_RANGE_MAX },
+
     { "rssi_aux_channel", VAR_INT8, &masterConfig.rssi_aux_channel, 0, 4 },
-    { "yaw_direction", VAR_INT8, &currentProfile.yaw_direction, -1, 1 },
-    { "tri_unarmed_servo", VAR_INT8, &currentProfile.tri_unarmed_servo, 0, 1 },
-    { "gimbal_flags", VAR_UINT8, &currentProfile.gimbal_flags, 0, 255},
+
+
+    { "gimbal_flags", VAR_UINT8, &currentProfile.gimbalConfig.gimbal_flags, 0, 255},
+
+    { "acc_hardware", VAR_UINT8, &masterConfig.acc_hardware, 0, 5 },
     { "acc_lpf_factor", VAR_UINT8, &currentProfile.acc_lpf_factor, 0, 250 },
     { "accxy_deadband", VAR_UINT8, &currentProfile.accxy_deadband, 0, 100 },
     { "accz_deadband", VAR_UINT8, &currentProfile.accz_deadband, 0, 100 },
     { "acc_unarmedcal", VAR_UINT8, &currentProfile.acc_unarmedcal, 0, 1 },
     { "acc_trim_pitch", VAR_INT16, &currentProfile.accelerometerTrims.trims.pitch, -300, 300 },
     { "acc_trim_roll", VAR_INT16, &currentProfile.accelerometerTrims.trims.roll, -300, 300 },
+
     { "baro_tab_size", VAR_UINT8, &currentProfile.barometerConfig.baro_sample_count, 0, BARO_SAMPLE_COUNT_MAX },
     { "baro_noise_lpf", VAR_FLOAT, &currentProfile.barometerConfig.baro_noise_lpf, 0, 1 },
     { "baro_cf_vel", VAR_FLOAT, &currentProfile.barometerConfig.baro_cf_vel, 0, 1 },
     { "baro_cf_alt", VAR_FLOAT, &currentProfile.barometerConfig.baro_cf_alt, 0, 1 },
+
     { "mag_declination", VAR_INT16, &currentProfile.mag_declination, -18000, 18000 },
+
     { "gps_pos_p", VAR_UINT8, &currentProfile.pidProfile.P8[PIDPOS], 0, 200 },
     { "gps_pos_i", VAR_UINT8, &currentProfile.pidProfile.I8[PIDPOS], 0, 200 },
     { "gps_pos_d", VAR_UINT8, &currentProfile.pidProfile.D8[PIDPOS], 0, 200 },
@@ -231,6 +262,8 @@ const clivalue_t valueTable[] = {
     { "nav_speed_min", VAR_UINT16, &currentProfile.gpsProfile.nav_speed_min, 10, 2000 },
     { "nav_speed_max", VAR_UINT16, &currentProfile.gpsProfile.nav_speed_max, 10, 2000 },
     { "nav_slew_rate", VAR_UINT8, &currentProfile.gpsProfile.nav_slew_rate, 0, 100 },
+
+    { "pid_controller", VAR_UINT8, &currentProfile.pidController, 0, 1 },
     { "p_pitch", VAR_UINT8, &currentProfile.pidProfile.P8[PITCH], 0, 200 },
     { "i_pitch", VAR_UINT8, &currentProfile.pidProfile.I8[PITCH], 0, 200 },
     { "d_pitch", VAR_UINT8, &currentProfile.pidProfile.D8[PITCH], 0, 200 },
@@ -347,7 +380,7 @@ static void cliCMix(char *cmdline)
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
-                    mixerLoadMix(i);
+                    mixerLoadMix(i, masterConfig.customMixer);
                     printf("Loaded %s mix...\r\n", mixerNames[i]);
                     cliCMix("");
                     break;

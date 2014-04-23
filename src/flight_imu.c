@@ -20,10 +20,12 @@
 
 #include "gps_common.h"
 
+#include "gimbal.h"
 #include "flight_mixer.h"
 
 #include "boardalignment.h"
 #include "battery.h"
+#include "escservo.h"
 #include "rc_controls.h"
 #include "rx_common.h"
 #include "drivers/serial_common.h"

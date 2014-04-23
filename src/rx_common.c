@@ -9,7 +9,6 @@
 #include "config.h"
 
 #include "failsafe.h"
-#include "rc_controls.h"
 
 #include "rx_pwm.h"
 #include "rx_sbus.h"
@@ -25,8 +24,6 @@ void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe
 
 const char rcChannelLetters[] = "AERT1234";
 
-int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
-int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
 #define PPM_AND_PWM_SAMPLE_COUNT 4
@@ -101,30 +98,6 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
             if (rcDataMean[chan] > rcData[chan] + 3)
                 rcData[chan] = rcDataMean[chan] - 2;
         }
-    }
-}
-
-void generatePitchCurve(controlRateConfig_t *controlRateConfig)
-{
-    uint8_t i;
-
-    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
-        lookupPitchRollRC[i] = (2500 + controlRateConfig->rcExpo8 * (i * i - 25)) * i * (int32_t) controlRateConfig->rcRate8 / 2500;
-}
-
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, uint16_t minThrottle, uint16_t maxThrottle)
-{
-    uint8_t i;
-
-    for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
-        int16_t tmp = 10 * i - controlRateConfig->thrMid8;
-        uint8_t y = 1;
-        if (tmp > 0)
-            y = 100 - controlRateConfig->thrMid8;
-        if (tmp < 0)
-            y = controlRateConfig->thrMid8;
-        lookupThrottleRC[i] = 10 * controlRateConfig->thrMid8 + tmp * (100 - controlRateConfig->thrExpo8 + (int32_t) controlRateConfig->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = minThrottle + (int32_t) (maxThrottle - minThrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
 }
 

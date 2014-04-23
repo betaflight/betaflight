@@ -3,6 +3,7 @@
 
 #include "common/axis.h"
 
+#include "escservo.h"
 #include "rc_controls.h"
 #include "rx_common.h"
 #include "runtime_config.h"
