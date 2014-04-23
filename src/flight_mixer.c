@@ -536,7 +536,7 @@ void mixTable(void)
         if (maxMotor > escAndServoConfig->maxthrottle)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
             motor[i] -= maxMotor - escAndServoConfig->maxthrottle;
         if (feature(FEATURE_3D)) {
-            if ((rcData[THROTTLE]) > 1500) {
+            if ((rcData[THROTTLE]) > rxConfig->midrc) {
                 motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
             } else {
                 motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
