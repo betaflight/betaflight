@@ -77,14 +77,19 @@ typedef union {
     rollAndPitchTrims_t_def trims;
 } rollAndPitchTrims_t;
 
-extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT]; // see gyro_index_t
-extern int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT]; // see gyro_index_t
+extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT];
+extern int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT];
 
 extern int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 extern int32_t accSum[XYZ_AXIS_COUNT];
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 
 extern int16_t heading, magHold;
+
+extern int32_t EstAlt;
+extern int32_t AltHold;
+extern int32_t EstAlt;
+extern int32_t vario;
 
 void mwDisarm(void);
 void setPIDController(int type);

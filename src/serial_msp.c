@@ -1,14 +1,43 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
+#include "platform.h"
+
+#include "common/axis.h"
+
+#include "drivers/system_common.h"
+#include "drivers/accgyro_common.h"
 #include "drivers/serial_common.h"
-#include "serial_common.h"
+#include "drivers/bus_i2c.h"
 
-#include "gps_common.h"
-#include "telemetry_common.h"
+#include "serial_common.h"
 #include "flight_common.h"
-#include "sensors_compass.h"
+#include "flight_mixer.h"
+#include "rc_controls.h"
+#include "boardalignment.h"
+#include "gps_common.h"
+#include "rx_common.h"
+#include "battery.h"
+#include "sensors_common.h"
 #include "sensors_acceleration.h"
+#include "sensors_barometer.h"
+#include "sensors_compass.h"
+#include "sensors_gyro.h"
+#include "failsafe.h"
+
+#include "runtime_config.h"
+#include "config.h"
+#include "config_profile.h"
+#include "config_master.h"
+
+#include "version.h"
+
+#include "serial_msp.h"
+
+extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern uint16_t rssi; // FIXME dependency on mw.c
+extern int16_t debug[4]; // FIXME dependency on mw.c
 
 // Multiwii Serial Protocol 0
 #define MSP_VERSION              0

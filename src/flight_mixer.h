@@ -56,6 +56,10 @@ typedef struct servoParam_t {
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 
+extern int16_t motor[MAX_SUPPORTED_MOTORS];
+extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+extern int16_t servo[MAX_SUPPORTED_SERVOS];
+
 bool isMixerUsingServos(void);
 void mixerInit(void);
 void writeAllMotors(int16_t mc);
