@@ -333,7 +333,7 @@ static void resetConf(void)
 
     resetRollAndPitchTrims(&currentProfile.accelerometerTrims);
 
-    currentProfile.mag_declination = 0;    // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    currentProfile.mag_declination = 0;
     currentProfile.acc_lpf_factor = 4;
     currentProfile.accz_deadband = 40;
     currentProfile.accxy_deadband = 40;
