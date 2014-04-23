@@ -87,7 +87,7 @@ void computeIMU(void)
     uint32_t axis;
     static int16_t gyroYawSmooth = 0;
 
-    gyroGetADC(masterConfig.moron_threshold);
+    gyroGetADC();
     if (sensors(SENSOR_ACC)) {
         updateAccelerationReadings(&currentProfile.accelerometerTrims);
         getEstimatedAttitude();

@@ -20,6 +20,7 @@ enum {
 };
 
 #include "sensors_barometer.h"
+#include "sensors_gyro.h"
 #include "serial_common.h"
 #include "rc_controls.h"
 #include "rx_common.h"

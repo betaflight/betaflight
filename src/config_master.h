@@ -34,7 +34,9 @@ typedef struct master_t {
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
     uint16_t gyro_cmpfm_factor;             // Set the Gyro Weight for Gyro/Magnetometer complementary filter. Increasing this value would reduce and delay Magnetometer influence on the output of the filter
-    uint8_t moron_threshold;                // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+
+    gyroConfig_t gyroConfig;
+
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
     int16_flightDynamicsTrims_t accZero;
     int16_flightDynamicsTrims_t magZero;

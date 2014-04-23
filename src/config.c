@@ -7,10 +7,13 @@
 #include "common/axis.h"
 #include "flight_common.h"
 
-#include "sensors_common.h"
+
 
 #include "drivers/accgyro_common.h"
 #include "drivers/system_common.h"
+
+#include "sensors_common.h"
+#include "sensors_gyro.h"
 
 #include "statusindicator.h"
 #include "sensors_acceleration.h"
@@ -20,7 +23,6 @@
 
 #include "drivers/serial_common.h"
 #include "flight_mixer.h"
-#include "sensors_common.h"
 #include "boardalignment.h"
 #include "battery.h"
 #include "gimbal.h"
@@ -87,6 +89,7 @@ void activateConfig(void)
     generatePitchCurve(&currentProfile.controlRateConfig);
     generateThrottleCurve(&currentProfile.controlRateConfig, masterConfig.minthrottle, masterConfig.maxthrottle);
 
+	useGyroConfig(&masterConfig.gyroConfig);
     setPIDController(currentProfile.pidController);
     gpsUseProfile(&currentProfile.gpsProfile);
     gpsUsePIDs(&currentProfile.pidProfile);
@@ -273,7 +276,7 @@ static void resetConf(void)
     masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     masterConfig.max_angle_inclination = 500;    // 50 degrees
     masterConfig.yaw_control_direction = 1;
-    masterConfig.moron_threshold = 32;
+    masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
     masterConfig.batteryConfig.vbatscale = 110;
     masterConfig.batteryConfig.vbatmaxcellvoltage = 43;
     masterConfig.batteryConfig.vbatmincellvoltage = 33;
