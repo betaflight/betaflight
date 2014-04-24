@@ -141,7 +141,7 @@ void normalizeV(struct fp_vector *src, struct fp_vector *dest)
 }
 
 // Rotate Estimated vector(s) with small angle approximation, according to the gyro data
-void rotateAnglesV(struct fp_vector *v, fp_angles_t *delta)
+void rotateV(struct fp_vector *v, fp_angles_t *delta)
 {
     struct fp_vector v_tmp = *v;
 
@@ -150,12 +150,12 @@ void rotateAnglesV(struct fp_vector *v, fp_angles_t *delta)
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, coszcosy, sinzcosx, coszsinx, sinzsinx;
 
-    cosx = cosf(delta->roll);
-    sinx = sinf(delta->roll);
-    cosy = cosf(delta->pitch);
-    siny = sinf(delta->pitch);
-    cosz = cosf(delta->yaw);
-    sinz = sinf(delta->yaw);
+    cosx = cosf(delta->angles.roll);
+    sinx = sinf(delta->angles.roll);
+    cosy = cosf(delta->angles.pitch);
+    siny = sinf(delta->angles.pitch);
+    cosz = cosf(delta->angles.yaw);
+    sinz = sinf(delta->angles.yaw);
 
     coszcosx = cosz * cosx;
     coszcosy = cosz * cosy;
@@ -176,16 +176,6 @@ void rotateAnglesV(struct fp_vector *v, fp_angles_t *delta)
     v->X = v_tmp.X * mat[0][0] + v_tmp.Y * mat[1][0] + v_tmp.Z * mat[2][0];
     v->Y = v_tmp.X * mat[0][1] + v_tmp.Y * mat[1][1] + v_tmp.Z * mat[2][1];
     v->Z = v_tmp.X * mat[0][2] + v_tmp.Y * mat[1][2] + v_tmp.Z * mat[2][2];
-}
-
-// deprecated - it uses legacy indices for ROLL/PITCH/YAW, see rc_alias_e - use rotateAnglesV instead
-void rotateV(struct fp_vector *v, float *delta) {
-    fp_angles_t temp;
-    temp.roll = delta[FD_ROLL];
-    temp.pitch = delta[FD_PITCH];
-    temp.yaw = delta[FD_YAW];
-
-    rotateAnglesV(v, &temp);
 }
 
 int32_t applyDeadband(int32_t value, int32_t deadband)
@@ -212,15 +202,15 @@ void acc_calc(uint32_t deltaT)
     t_fp_vector accel_ned;
 
     // the accel values have to be rotated into the earth frame
-    rpy.roll = -(float)anglerad[AI_ROLL];
-    rpy.pitch = -(float)anglerad[AI_PITCH];
-    rpy.yaw = -(float)heading * RAD;
+    rpy.angles.roll = -(float)anglerad[AI_ROLL];
+    rpy.angles.pitch = -(float)anglerad[AI_PITCH];
+    rpy.angles.yaw = -(float)heading * RAD;
 
     accel_ned.V.X = accSmooth[0];
     accel_ned.V.Y = accSmooth[1];
     accel_ned.V.Z = accSmooth[2];
 
-    rotateAnglesV(&accel_ned.V, &rpy);
+    rotateV(&accel_ned.V, &rpy);
 
     if (currentProfile.acc_unarmedcal == 1) {
         if (!f.ARMED) {
@@ -281,14 +271,15 @@ static void getEstimatedAttitude(void)
     static uint32_t previousT;
     uint32_t currentT = micros();
     uint32_t deltaT;
-    float scale, deltaGyroAngle[3];
+    float scale;
+    fp_angles_t deltaGyroAngle;
     deltaT = currentT - previousT;
     scale = deltaT * gyro.scale;
     previousT = currentT;
 
     // Initialization
     for (axis = 0; axis < 3; axis++) {
-        deltaGyroAngle[axis] = gyroADC[axis] * scale;
+        deltaGyroAngle.raw[axis] = gyroADC[axis] * scale;
         if (currentProfile.acc_lpf_factor > 0) {
             accLPF[axis] = accLPF[axis] * (1.0f - (1.0f / currentProfile.acc_lpf_factor)) + accADC[axis] * (1.0f / currentProfile.acc_lpf_factor);
             accSmooth[axis] = accLPF[axis];
@@ -299,11 +290,11 @@ static void getEstimatedAttitude(void)
     }
     accMag = accMag * 100 / ((int32_t)acc_1G * acc_1G);
 
-    rotateV(&EstG.V, deltaGyroAngle);
+    rotateV(&EstG.V, &deltaGyroAngle);
     if (sensors(SENSOR_MAG)) {
-        rotateV(&EstM.V, deltaGyroAngle);
+        rotateV(&EstM.V, &deltaGyroAngle);
     } else {
-        rotateV(&EstN.V, deltaGyroAngle);
+        rotateV(&EstN.V, &deltaGyroAngle);
         normalizeV(&EstN.V, &EstN.V);
     }
 

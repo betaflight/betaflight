@@ -54,6 +54,11 @@ typedef struct fp_angles {
     float roll;
     float pitch;
     float yaw;
+} fp_angles_def;
+
+typedef union {
+    float raw[3];
+    fp_angles_def angles;
 } fp_angles_t;
 
 typedef struct int16_flightDynamicsTrims_s {
