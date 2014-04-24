@@ -11,4 +11,5 @@ typedef struct gyroConfig_s {
 void useGyroConfig(gyroConfig_t *gyroConfigToUse);
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void gyroGetADC(void);
+bool isGyroCalibrationComplete(void);
 

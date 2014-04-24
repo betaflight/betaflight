@@ -81,6 +81,9 @@ void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers);
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerResetMotors(void);
+void mixTable(void);
+void writeServos(void);
+void writeMotors(void);
 
 // from mixer.c
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];

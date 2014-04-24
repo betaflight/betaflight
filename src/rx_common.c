@@ -65,6 +65,20 @@ void serialRxInit(rxConfig_t *rxConfig, failsafe_t *failsafe)
     }
 }
 
+bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
+{
+    switch (rxConfig->serialrx_type) {
+        case SERIALRX_SPEKTRUM1024:
+        case SERIALRX_SPEKTRUM2048:
+            return spektrumFrameComplete();
+        case SERIALRX_SBUS:
+            return sbusFrameComplete();
+        case SERIALRX_SUMD:
+            return sumdFrameComplete();
+    }
+    return false;
+}
+
 void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     uint8_t chan;

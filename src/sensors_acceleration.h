@@ -13,8 +13,8 @@ typedef enum AccelSensors {
 extern uint8_t accHardware;
 extern sensor_align_e accAlign;
 extern acc_t acc;
-extern uint16_t calibratingA;
 
+bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
 void setAccelerationTrims(int16_flightDynamicsTrims_t *accelerationTrimsToUse);

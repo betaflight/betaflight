@@ -41,4 +41,4 @@ typedef uint16_t (* rcReadRawDataPtr)(rxConfig_t *rxConfig, rxRuntimeConfig_t *r
 void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
-
+bool isSerialRxFrameComplete(rxConfig_t *rxConfig);

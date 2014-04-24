@@ -1,27 +1,59 @@
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <math.h>
+
+#include "platform.h"
 
 #include "common/maths.h"
-#include "common/typeconversion.h"
+#include "common/axis.h"
 
+#include "drivers/accgyro_common.h"
+#include "drivers/light_ledring.h"
+#include "drivers/light_led.h"
+#include "drivers/gpio_common.h"
+#include "drivers/system_common.h"
+#include "drivers/serial_common.h"
+
+#include "boardalignment.h"
+#include "battery.h"
 #include "buzzer.h"
-#include "sensors_sonar.h"
-#include "sensors_gyro.h"
-#include "sensors_compass.h"
-#include "sensors_barometer.h"
-#include "sensors_acceleration.h"
-#include "flight_common.h"
-#include "serial_cli.h"
-#include "telemetry_common.h"
-#include "gps_common.h"
-#include "rx_common.h"
-#include "rx_sbus.h"
-#include "rx_sumd.h"
-#include "rx_spektrum.h"
+#include "escservo.h"
 #include "failsafe.h"
+#include "flight_imu.h"
+#include "flight_common.h"
+#include "flight_mixer.h"
+#include "gimbal.h"
+#include "gps_common.h"
+#include "sensors_common.h"
+#include "sensors_sonar.h"
+#include "sensors_compass.h"
+#include "sensors_acceleration.h"
+#include "sensors_barometer.h"
+#include "sensors_gyro.h"
+#include "serial_cli.h"
+#include "serial_common.h"
 #include "statusindicator.h"
+#include "rc_controls.h"
+#include "rc_curves.h"
+#include "rx_common.h"
+#include "telemetry_common.h"
+
+#include "runtime_config.h"
+#include "config.h"
+#include "config_profile.h"
+#include "config_master.h"
 
 // June 2013     V2.2-dev
+
+enum {
+    ALIGN_GYRO = 0,
+    ALIGN_ACCEL = 1,
+    ALIGN_MAG = 2
+};
+
+/* for VBAT monitoring frequency */
+#define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 
 int16_t debug[4];
 uint32_t currentTime = 0;
@@ -125,7 +157,7 @@ void annexCode(void)
 
     buzzer(batteryWarningEnabled); // external buzzer routine that handles buzzer events globally now
 
-    if ((calibratingA > 0 && sensors(SENSOR_ACC)) || (calibratingG > 0)) {      // Calibration phasis
+    if ((!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete())) {      // Calibration phasis
         LED0_TOGGLE;
     } else {
         if (f.ACC_CALIBRATED)
@@ -177,7 +209,7 @@ void annexCode(void)
 
 static void mwArm(void)
 {
-    if (calibratingG == 0 && f.ACC_CALIBRATED) {
+    if (isGyroCalibrationComplete() && f.ACC_CALIBRATED) {
         // TODO: feature(FEATURE_FAILSAFE) && failsafeCnt < 2
         // TODO: && ( !feature || ( feature && ( failsafecnt > 2) )
         if (!f.ARMED) {         // arm now!
@@ -211,18 +243,7 @@ void loop(void)
 
     // calculate rc stuff from serial-based receivers (spek/sbus)
     if (feature(FEATURE_SERIALRX)) {
-        switch (masterConfig.rxConfig.serialrx_type) {
-            case SERIALRX_SPEKTRUM1024:
-            case SERIALRX_SPEKTRUM2048:
-                rcReady = spektrumFrameComplete();
-                break;
-            case SERIALRX_SBUS:
-                rcReady = sbusFrameComplete();
-                break;
-            case SERIALRX_SUMD:
-                rcReady = sumdFrameComplete();
-                break;
-        }
+        rcReady = isSerialRxFrameComplete(&masterConfig.rxConfig);
     }
 
     if (((int32_t)(currentTime - rcTime) >= 0) || rcReady) { // 50Hz or data driven
@@ -292,11 +313,13 @@ void loop(void)
                 i = 0;
                 // GYRO calibration
                 if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
-                    calibratingG = CALIBRATING_GYRO_CYCLES;
+                    gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
                     if (feature(FEATURE_GPS))
                         GPS_reset_home_position();
+#ifdef BARO
                     if (sensors(SENSOR_BARO))
-                        calibratingB = 10; // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
+                        baroSetCalibrationCycles(10); // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
+#endif
                     if (!sensors(SENSOR_MAG))
                         heading = 0; // reset heading to zero after gyro calibration
                 // Inflight ACC Calibration
