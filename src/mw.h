@@ -24,6 +24,7 @@ enum {
 #include "serial_common.h"
 #include "rx_common.h"
 #include "gps_common.h"
+#include "telemetry_common.h"
 #include "config.h"
 #include "config_profile.h"
 #include "config_master.h"

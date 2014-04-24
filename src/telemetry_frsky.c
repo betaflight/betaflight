@@ -1,18 +1,35 @@
 /*
  * FrSky Telemetry implementation by silpstream @ rcgroups
  */
-#include "board.h"
-#include "mw.h"
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "flight_common.h"
+#include "platform.h"
 
+#include "common/maths.h"
+#include "common/axis.h"
+
+#include "drivers/system_common.h"
+#include "drivers/accgyro_common.h"
+#include "drivers/timer_common.h"
 #include "drivers/serial_common.h"
 #include "serial_common.h"
 
+#include "runtime_config.h"
+#include "config.h"
+
+#include "sensors_common.h"
+#include "sensors_gyro.h"
+#include "sensors_barometer.h"
+#include "flight_common.h"
 #include "gps_common.h"
+#include "battery.h"
 
 #include "telemetry_common.h"
 #include "telemetry_frsky.h"
+
+extern telemetryConfig_t *telemetryConfig;
+int16_t telemTemperature1; // FIXME dependency on mw.c
 
 #define CYCLETIME             125
 
@@ -56,9 +73,6 @@
 #define ID_GYRO_Z             0x42
 
 #define ID_VERT_SPEED         0x30 //opentx vario
-
-// from sensors.c
-extern uint8_t batteryCellCount;
 
 static void sendDataHead(uint8_t id)
 {
@@ -224,14 +238,14 @@ static void sendHeading(void)
 
 void freeFrSkyTelemetryPort(void)
 {
-    if (masterConfig.telemetry_port == TELEMETRY_PORT_UART) {
+    if (telemetryConfig->telemetry_port == TELEMETRY_PORT_UART) {
         resetMainSerialPort();
     }
 }
 
 void configureFrSkyTelemetryPort(void)
 {
-    if (masterConfig.telemetry_port == TELEMETRY_PORT_UART) {
+    if (telemetryConfig->telemetry_port == TELEMETRY_PORT_UART) {
         openMainSerialPort(9600);
     }
 }

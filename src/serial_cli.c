@@ -176,9 +176,9 @@ const clivalue_t valueTable[] = {
 
     { "serialrx_type", VAR_UINT8, &masterConfig.rxConfig.serialrx_type, 0, 3 },
 
-    { "telemetry_provider", VAR_UINT8, &masterConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
-    { "telemetry_port", VAR_UINT8, &masterConfig.telemetry_port, 0, TELEMETRY_PORT_MAX },
-    { "telemetry_switch", VAR_UINT8, &masterConfig.telemetry_switch, 0, 1 },
+    { "telemetry_provider", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
+    { "telemetry_port", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_port, 0, TELEMETRY_PORT_MAX },
+    { "telemetry_switch", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_switch, 0, 1 },
 
     { "vbatscale", VAR_UINT8, &masterConfig.batteryConfig.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50 },

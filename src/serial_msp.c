@@ -21,6 +21,7 @@
 #include "rx_common.h"
 #include "battery.h"
 #include "gimbal.h"
+#include "telemetry_common.h"
 #include "sensors_common.h"
 #include "sensors_acceleration.h"
 #include "sensors_barometer.h"
@@ -308,7 +309,7 @@ void mspInit(void)
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         availableBoxes[idx++] = BOXCALIB;
     availableBoxes[idx++] = BOXOSD;
-    if (feature(FEATURE_TELEMETRY && masterConfig.telemetry_switch))
+    if (feature(FEATURE_TELEMETRY && masterConfig.telemetryConfig.telemetry_switch))
         availableBoxes[idx++] = BOXTELEMETRY;
     numberBoxItems = idx;
 }

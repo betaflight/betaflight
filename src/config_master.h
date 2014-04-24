@@ -55,9 +55,8 @@ typedef struct master_t {
     int8_t gps_baudrate;                    // See GPSBaudRates enum.
 
     serialConfig_t serialConfig;
-    uint8_t telemetry_provider;             // See TelemetryProvider enum.
-    uint8_t telemetry_port;                 // See TelemetryPort enum.
-    uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
+
+    telemetryConfig_t telemetryConfig;
     profile_t profile[3];                   // 3 separate profiles
     uint8_t current_profile_index;          // currently loaded profile
 

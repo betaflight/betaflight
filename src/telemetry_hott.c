@@ -40,16 +40,31 @@
  * There is a technical discussion (in German) about HoTT here
  * http://www.rc-network.de/forum/showthread.php/281496-Graupner-HoTT-Telemetrie-Sensoren-Eigenbau-DIY-Telemetrie-Protokoll-entschl%C3%BCsselt/page21
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "board.h"
-#include "mw.h"
+#include "platform.h"
+
+#include "common/axis.h"
+
+#include "drivers/system_common.h"
 
 #include "drivers/serial_common.h"
 #include "serial_common.h"
 
-#include "gps_common.h"
+#include "runtime_config.h"
 
+#include "sensors_common.h"
+
+#include "flight_common.h"
+#include "gps_common.h"
+#include "battery.h"
+
+#include "telemetry_common.h"
 #include "telemetry_hott.h"
+
+extern telemetryConfig_t *telemetryConfig;
 
 
 const uint8_t kHoTTv4BinaryPacketSize = 45;

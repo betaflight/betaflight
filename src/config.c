@@ -91,7 +91,8 @@ void activateConfig(void)
     generatePitchCurve(&currentProfile.controlRateConfig);
     generateThrottleCurve(&currentProfile.controlRateConfig, &masterConfig.escAndServoConfig);
 
-	useGyroConfig(&masterConfig.gyroConfig);
+    useGyroConfig(&masterConfig.gyroConfig);
+    useTelemetryConfig(&masterConfig.telemetryConfig);
     setPIDController(currentProfile.pidController);
     gpsUseProfile(&currentProfile.gpsProfile);
     gpsUsePIDs(&currentProfile.pidProfile);
@@ -271,6 +272,13 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
     flight3DConfig->deadband3d_throttle = 50;
 }
 
+void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
+{
+    telemetryConfig->telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
+    telemetryConfig->telemetry_port = TELEMETRY_PORT_UART;
+    telemetryConfig->telemetry_switch = 0;
+
+}
 // Default settings
 static void resetConf(void)
 {
@@ -307,9 +315,9 @@ static void resetConf(void)
     masterConfig.batteryConfig.vbatmaxcellvoltage = 43;
     masterConfig.batteryConfig.vbatmincellvoltage = 33;
     masterConfig.power_adc_channel = 0;
-    masterConfig.telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
-    masterConfig.telemetry_port = TELEMETRY_PORT_UART;
-    masterConfig.telemetry_switch = 0;
+
+    resetTelemetryConfig(&masterConfig.telemetryConfig);
+
     masterConfig.rxConfig.serialrx_type = 0;
     masterConfig.rxConfig.midrc = 1500;
     masterConfig.rxConfig.mincheck = 1100;
