@@ -144,6 +144,7 @@ void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
 
 void writeEEPROM(void)
 {
+#ifndef STM32F3DISCOVERY
     FLASH_Status status = 0;
     uint32_t wordOffset;
     int8_t attemptsRemaining = 3;
@@ -175,6 +176,7 @@ void writeEEPROM(void)
     if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
         failureMode(10);
     }
+#endif
 }
 
 void ensureEEPROMContainsValidData(void)

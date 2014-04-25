@@ -14,6 +14,8 @@ static volatile uint16_t adcValues[2];
 
 void adcInit(drv_adc_config_t *init)
 {
+#ifndef STM32F3DISCOVERY
+
     ADC_InitTypeDef ADC_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
     bool multiChannel = init->powerAdcChannel > 0;
@@ -58,6 +60,7 @@ void adcInit(drv_adc_config_t *init)
 
     // Fire off ADC
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+#endif
 }
 
 uint16_t adcGetChannel(uint8_t channel)

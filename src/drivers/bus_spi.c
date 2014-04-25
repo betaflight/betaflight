@@ -83,9 +83,19 @@ bool spiTransfer(uint8_t *out, uint8_t *in, int len)
     while (len--) {
         b = in ? *(in++) : 0xFF;
         while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
+#ifdef STM32F303xC
+        SPI_I2S_SendData16(SPI2, b);
+#endif
+#ifdef STM32F10X_MD
         SPI_I2S_SendData(SPI2, b);
+#endif
         while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET);
+#ifdef STM32F303xC
+        b = SPI_I2S_ReceiveData16(SPI2);
+#endif
+#ifdef STM32F10X_MD
         b = SPI_I2S_ReceiveData(SPI2);
+#endif
         if (out)
             *(out++) = b;
     }

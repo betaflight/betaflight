@@ -1,6 +1,35 @@
 
 #pragma once
 
+#ifdef STM32F3DISCOVERY
+
+#include "stm32f30x_conf.h"
+#include "core_cm4.h"
+
+// FIXME use correct ID
+#define U_ID_0 (*(uint32_t*)0x10000003)
+#define U_ID_1 (*(uint32_t*)0x10000000)
+#define U_ID_2 (*(uint32_t*)0x10000003)
+
+#define LED0_GPIO   GPIOB
+#define LED0_PIN    Pin_3 // PB3 (LED)
+#define LED1_GPIO   GPIOB
+#define LED1_PIN    Pin_4 // PB4 (LED)
+#define BEEP_GPIO   GPIOA
+#define BEEP_PIN    Pin_12 // PA12 (Buzzer)
+#define BARO_GPIO   GPIOC
+#define BARO_PIN    Pin_13
+
+#define GYRO
+#define ACC
+#define BUZZER
+#define LED0
+#define LED1
+
+#define SENSORS_SET (SENSOR_ACC)
+
+#else
+
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
 
@@ -72,4 +101,6 @@
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 #endif
+#endif
+
 #endif

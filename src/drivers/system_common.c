@@ -17,8 +17,15 @@
 static volatile uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
+
+#ifdef STM32F303xC
+// from system_stm32f30x.c
+void SetSysClock(void);
+#endif
+#ifdef STM32F10X_MD
 // from system_stm32f10x.c
 void SetSysClock(bool overclock);
+#endif
 
 static void cycleCounterInit(void)
 {
@@ -80,13 +87,25 @@ void systemInit(bool overclock)
     uint32_t i;
     uint8_t gpio_count = sizeof(gpio_setup) / sizeof(gpio_setup[0]);
 
+#ifdef STM32F303xC
+    SetSysClock();
+#endif
+#ifdef STM32F10X_MD
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
     SetSysClock(overclock);
+#endif
 
     // Turn on clocks for stuff we use
+#ifdef STM32F303xC
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1 | RCC_APB2Periph_USART1, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_ADC12, ENABLE);
+#endif
+#ifdef STM32F10X_MD
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_TIM1 | RCC_APB2Periph_ADC1 | RCC_APB2Periph_USART1, ENABLE);
+#endif
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_ClearFlag();
 
@@ -97,9 +116,11 @@ void systemInit(bool overclock)
     gpioInit(GPIOB, &gpio);
     gpioInit(GPIOC, &gpio);
 
+#ifdef STM32F10X_MD
     // Turn off JTAG port 'cause we're using the GPIO for leds
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
+#endif
 
     beeperInit();
     LED0_OFF;

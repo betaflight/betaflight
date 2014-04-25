@@ -100,7 +100,7 @@ retry:
                     break;
             }
             ; // fallthrough
-#ifndef OLIMEXINO
+#if !defined(OLIMEXINO) && !defined(STM32F3DISCOVERY)
         case ACC_MMA8452: // MMA8452
             if (mma8452Detect(&acc)) {
                 accHardware = ACC_MMA8452;

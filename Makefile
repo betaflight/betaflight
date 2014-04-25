@@ -14,7 +14,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, must be one of NAZE, FY90Q OR OLIMEXINO
+# The target to build, must be one of NAZE, FY90Q, OLIMEXINO or STM32F3DISCOVERY
 TARGET		?= NAZE
 
 # Compile-time options
@@ -32,19 +32,56 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = NAZE FY90Q OLIMEXINO
+VALID_TARGETS	 = NAZE FY90Q OLIMEXINO STM32F3DISCOVERY
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
 SRC_DIR		 = $(ROOT)/src
-CMSIS_DIR	 = $(ROOT)/lib/CMSIS
-STDPERIPH_DIR	 = $(ROOT)/lib/STM32F10x_StdPeriph_Driver
 OBJECT_DIR	 = $(ROOT)/obj
 BIN_DIR		 = $(ROOT)/obj
+CMSIS_DIR	 = $(ROOT)/lib/CMSIS
+INCLUDE_DIRS = $(SRC_DIR)
+
+# Search path for sources
+VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
+
+ifeq ($(TARGET),STM32F3DISCOVERY)
+
+STDPERIPH_DIR	 = $(ROOT)/lib/STM32F30x_StdPeriph_Driver
+
+VPATH		:= $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
+CMSIS_SRC	 = $(notdir $(wildcard $(CMSIS_DIR)/CM1/CoreSupport/*.c \
+			   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x/*.c))
+
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+		   $(STDPERIPH_DIR)/inc \
+		   $(CMSIS_DIR)/CM1/CoreSupport \
+		   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x \
+
+ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4
+DEVICE_FLAGS = -DSTM32F303xC
+
+else
+
+STDPERIPH_DIR	 = $(ROOT)/lib/STM32F10x_StdPeriph_Driver
+
+# Search path and source files for the CMSIS sources
+VPATH		:= $(VPATH):$(CMSIS_DIR)/CM3/CoreSupport:$(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
+CMSIS_SRC	 = $(notdir $(wildcard $(CMSIS_DIR)/CM3/CoreSupport/*.c \
+			   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x/*.c))
+
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+		   $(STDPERIPH_DIR)/inc \
+		   $(CMSIS_DIR)/CM3/CoreSupport \
+		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
+
+ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
+DEVICE_FLAGS = -DSTM32F10X_MD
+
+endif
 
 # Source files common to all targets
-COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
-		   build_config.c \
+COMMON_SRC	 = build_config.c \
 		   battery.c \
 		   boardalignment.c \
 		   buzzer.c \
@@ -61,11 +98,8 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   sensors_gyro.c \
 		   sensors_initialisation.c \
 		   sensors_sonar.c \
-		   drivers/bus_i2c.c \
 		   drivers/bus_i2c_soft.c \
-		   drivers/gpio_common.c \
 		   drivers/serial_common.c \
-		   drivers/serial_uart.c \
 		   drivers/sound_beeper.c \
 		   drivers/system_common.c \
 		   flight_common.c \
@@ -91,7 +125,8 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(STDPERIPH_SRC)
 
 # Source files for the NAZE target
-NAZE_SRC	 = drivers/accgyro_adxl345.c \
+NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
+		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_bma280.c \
 		   drivers/accgyro_l3g4200d.c \
 		   drivers/accgyro_mma845x.c \
@@ -101,44 +136,63 @@ NAZE_SRC	 = drivers/accgyro_adxl345.c \
 		   drivers/barometer_bmp085.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/bus_spi.c \
+		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/gpio_stm32f10x.c \
 		   drivers/light_ledring.c \
 		   drivers/sonar_hcsr04.c \
 		   drivers/pwm_common.c \
 		   drivers/serial_softserial.c \
+		   drivers/serial_uart_stm32f10x.c \
 		   drivers/timer_common.c \
 		   $(COMMON_SRC)
 
 # Source files for the FY90Q target
-FY90Q_SRC	 = drivers/accgyro_fy90q.c \
+FY90Q_SRC	 = startup_stm32f10x_md_gcc.S \
+		   drivers/accgyro_fy90q.c \
 		   drivers/adc_fy90q.c \
+		   drivers/gpio_stm32f10x.c \
 		   drivers/pwm_fy90q.c \
+		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
+		   drivers/serial_uart_stm32f10x.c \
 		   $(COMMON_SRC)
 
 # Source files for the OLIMEXINO target
-OLIMEXINO_SRC	 = drivers/accgyro_adxl345.c \
+OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
+		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_l3g4200d.c \
 		   drivers/adc_common.c \
+		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
+		   drivers/gpio_stm32f10x.c \
 		   drivers/pwm_common.c \
+		   drivers/serial_softserial.c \
+		   drivers/serial_uart_stm32f10x.c \
+		   drivers/timer_common.c \
+		   $(COMMON_SRC)
+
+# Source files for the STM32F3DISCOVERY target
+STM32F3DISCOVERY_SRC	 = startup_stm32f30x_md_gcc.S \
+		   drivers/accgyro_adxl345.c \
+		   drivers/accgyro_mpu3050.c \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_l3g4200d.c \
+		   drivers/adc_common.c \
+		   drivers/bus_i2c_stm32f30x.c \
+		   drivers/bus_spi.c \
+		   drivers/gpio_stm32f10x.c \
+		   drivers/pwm_common.c \
+		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
 		   drivers/timer_common.c \
 		   $(COMMON_SRC)
-		   
+
 # In some cases, %.s regarded as intermediate file, which is actually not.
 # This will prevent accidental deletion of startup code.
 .PRECIOUS: %.s
-
-# Search path for sources
-VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
-
-# Search path and source files for the CMSIS sources
-VPATH		:= $(VPATH):$(CMSIS_DIR)/CM3/CoreSupport:$(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
-CMSIS_SRC	 = $(notdir $(wildcard $(CMSIS_DIR)/CM3/CoreSupport/*.c \
-			               $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x/*.c))
 
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
@@ -155,10 +209,6 @@ OBJCOPY		 = arm-none-eabi-objcopy
 #
 # Tool options.
 #
-INCLUDE_DIRS	 = $(SRC_DIR) \
-		   $(STDPERIPH_DIR)/inc \
-		   $(CMSIS_DIR)/CM3/CoreSupport \
-		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 BASE_CFLAGS	 = $(ARCH_FLAGS) \
@@ -167,7 +217,7 @@ BASE_CFLAGS	 = $(ARCH_FLAGS) \
 		   -Wall \
 		   -ffunction-sections \
 		   -fdata-sections \
-		   -DSTM32F10X_MD \
+		   $(DEVICE_FLAGS) \
 		   -DUSE_STDPERIPH_DRIVER \
 		   -D$(TARGET) \
 		   -D'__FORKNAME__="$(FORKNAME)"'
