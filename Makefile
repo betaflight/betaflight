@@ -183,7 +183,7 @@ STM32F3DISCOVERY_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/adc_common.c \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/bus_spi.c \
-		   drivers/gpio_stm32f10x.c \
+		   drivers/gpio_stm32f30x.c \
 		   drivers/pwm_common.c \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
