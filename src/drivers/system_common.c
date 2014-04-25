@@ -110,9 +110,15 @@ void systemInit(bool overclock)
     RCC_ClearFlag();
 
     // Make all GPIO in by default to save power and reduce noise
-    gpio.pin = Pin_All;
     gpio.mode = Mode_AIN;
+    gpio.pin = Pin_All;
+#ifdef STM32F3DISCOVERY
+    gpio.pin = Pin_All & ~(Pin_13|Pin_14);
     gpioInit(GPIOA, &gpio);
+    gpio.pin = Pin_All;
+#else
+    gpioInit(GPIOA, &gpio);
+#endif
     gpioInit(GPIOB, &gpio);
     gpioInit(GPIOC, &gpio);
 

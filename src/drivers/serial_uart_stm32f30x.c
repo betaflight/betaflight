@@ -25,7 +25,6 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     uartPort_t *s;
     static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
     static volatile uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
-    gpio_config_t gpio;
     NVIC_InitTypeDef NVIC_InitStructure;
 
     s = &uartPort1;
@@ -42,8 +41,34 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     s->txDMAChannel = DMA1_Channel4;
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+
     // USART1_TX    PA9
     // USART1_RX    PA10
+
+#ifdef STM32F303xC
+
+#define UART1_TX_PIN GPIO_Pin_9
+#define UART1_RX_PIN GPIO_Pin_10
+#define UART1_GPIO GPIOA
+#define UART1_TX_PINSOURCE GPIO_PinSource9
+#define UART1_RX_PINSOURCE GPIO_PinSource10
+
+    GPIO_InitTypeDef  GPIO_InitStructure;
+
+    GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN | UART1_RX_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+
+    GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, GPIO_AF_7);
+    GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, GPIO_AF_7);
+
+    GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+#endif
+
+#ifdef STM32F10X_MD
+    gpio_config_t gpio;
     gpio.speed = Speed_2MHz;
     gpio.pin = Pin_9;
     gpio.mode = Mode_AF_PP;
@@ -53,6 +78,7 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     gpio.mode = Mode_IPU;
     if (mode & MODE_RX)
         gpioInit(GPIOA, &gpio);
+#endif
 
     // DMA TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
@@ -146,7 +172,6 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     if (mode & MODE_TX)
         USART_InitStructure.USART_Mode |= USART_Mode_Tx;
     USART_Init(USARTx, &USART_InitStructure);
-    USART_Cmd(USARTx, ENABLE);
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&USARTx->RDR;
@@ -199,6 +224,8 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
             USART_ITConfig(USARTx, USART_IT_TXE, ENABLE);
         }
     }
+
+    USART_Cmd(USARTx, ENABLE);
 
     return (serialPort_t *)s;
 }

@@ -4,6 +4,8 @@
 #ifdef STM32F3DISCOVERY
 
 #include "stm32f30x_conf.h"
+#include "stm32f30x_rcc.h"
+#include "stm32f30x_gpio.h"
 #include "core_cm4.h"
 
 // FIXME use correct ID
