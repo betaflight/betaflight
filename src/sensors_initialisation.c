@@ -43,6 +43,30 @@ extern gyro_t gyro;
 extern baro_t baro;
 extern acc_t acc;
 
+static void fakeGyroInit(void) {}
+static void fakeGyroRead(int16_t *gyroData) {}
+static void fakeGyroReadTemp(int16_t *tempData) {}
+
+bool fakeGyroDetect(gyro_t *gyro, uint16_t lpf)
+{
+    gyro->init = fakeGyroInit;
+    gyro->read = fakeGyroRead;
+    gyro->temperature = fakeGyroReadTemp;
+    return true;
+}
+
+static void fakeAccInit(void) {}
+static void fakeAccRead(int16_t *gyroData) {}
+
+bool fakeAccDetect(acc_t *acc)
+{
+    acc->init = fakeAccInit;
+    acc->read = fakeAccRead;
+    acc->revisionCode = 0;
+    return true;
+}
+
+
 #ifdef FY90Q
 // FY90Q analog gyro/acc
 void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
@@ -69,6 +93,10 @@ void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
         gyroAlign = CW0_DEG;
     } else if (mpu3050Detect(&gyro, gyroLpf)) {
         gyroAlign = CW0_DEG;
+#ifdef STM32F3DISCOVERY
+    } else if (fakeGyroDetect(&gyro, gyroLpf)) {
+        gyroAlign = ALIGN_DEFAULT;
+#endif
     } else {
         // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
         failureMode(3);
@@ -114,6 +142,15 @@ retry:
                 accHardware = ACC_BMA280;
                 accAlign = CW0_DEG; //
                 if (accHardwareToUse == ACC_BMA280)
+                    break;
+            }
+#endif
+#ifdef STM32F3DISCOVERY
+        default:
+            if (fakeAccDetect(&acc)) {
+                accHardware = ACC_BMA280;
+                accAlign = CW0_DEG; //
+                if (accHardwareToUse == ACC_FAKE)
                     break;
             }
 #endif

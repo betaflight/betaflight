@@ -92,7 +92,7 @@ static const char * const sensorNames[] = {
 };
 
 static const char * const accNames[] = {
-    "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "None", NULL
+    "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "FAKE", "None", NULL
 };
 
 typedef struct {

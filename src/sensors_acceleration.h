@@ -7,7 +7,8 @@ typedef enum AccelSensors {
     ACC_MPU6050 = 2,
     ACC_MMA8452 = 3,
     ACC_BMA280 = 4,
-    ACC_NONE = 5
+    ACC_FAKE = 5,
+    ACC_NONE = 6
 } AccelSensors;
 
 extern uint8_t accHardware;

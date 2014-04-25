@@ -144,7 +144,6 @@ void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
 
 void writeEEPROM(void)
 {
-#ifndef STM32F3DISCOVERY
     FLASH_Status status = 0;
     uint32_t wordOffset;
     int8_t attemptsRemaining = 3;
@@ -160,8 +159,12 @@ void writeEEPROM(void)
     // write it
     FLASH_Unlock();
     while (attemptsRemaining--) {
+#ifdef STM32F3DISCOVERY
+        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
+#endif
+#ifdef STM32F10X_MD
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
-
+#endif
         status = FLASH_ErasePage(FLASH_WRITE_ADDR);
         for (wordOffset = 0; wordOffset < sizeof(master_t) && status == FLASH_COMPLETE; wordOffset += 4) {
             status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset, *(uint32_t *) ((char *)&masterConfig + wordOffset));
@@ -176,7 +179,6 @@ void writeEEPROM(void)
     if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
         failureMode(10);
     }
-#endif
 }
 
 void ensureEEPROMContainsValidData(void)
