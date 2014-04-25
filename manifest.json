@@ -21,6 +21,7 @@
     "permissions": [
         "https://www.google-analytics.com/",
         "https://*.github.com/",
+        "https://*.githubusercontent.com/",
         "serial",
         "storage",
         "fileSystem",
