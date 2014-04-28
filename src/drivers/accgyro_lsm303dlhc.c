@@ -99,14 +99,15 @@ static void lsm303dlhcAccRead(int16_t *gyroData)
         return;
 
     // the values range from -8192 to +8191
-    gyroData[X] = (int16_t)((buf[1] << 8) | buf[0]);
-    gyroData[Y] = (int16_t)((buf[3] << 8) | buf[2]);
-    gyroData[Z] = (int16_t)((buf[5] << 8) | buf[4]);
+    gyroData[X] = (int16_t)((buf[1] << 8) | buf[0]) / 2;
+    gyroData[Y] = (int16_t)((buf[3] << 8) | buf[2]) / 2;
+    gyroData[Z] = (int16_t)((buf[5] << 8) | buf[4]) / 2;
 
+#if 0
     debug[0] = (int16_t)((buf[1] << 8) | buf[0]);
     debug[1] = (int16_t)((buf[3] << 8) | buf[2]);
     debug[2] = (int16_t)((buf[5] << 8) | buf[4]);
-
+#endif
 }
 
 bool lsm303dlhcAccDetect(acc_t *acc)
