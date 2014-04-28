@@ -16,6 +16,9 @@
 #include "drivers/accgyro_mma845x.h"
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
+#ifdef STM32F3DISCOVERY
+#include "drivers/accgyro_lsm303dlhc.h"
+#endif
 #endif
 
 #include "drivers/barometer_common.h"
@@ -146,13 +149,20 @@ retry:
             }
 #endif
 #ifdef STM32F3DISCOVERY
-        default:
-            if (fakeAccDetect(&acc)) {
-                accHardware = ACC_BMA280;
-                accAlign = CW0_DEG; //
-                if (accHardwareToUse == ACC_FAKE)
+        case ACC_LSM303DLHC:
+            if (lsm303dlhcAccDetect(&acc)) {
+                accHardware = ACC_LSM303DLHC;
+                accAlign = ALIGN_DEFAULT; //
+                if (accHardwareToUse == ACC_LSM303DLHC)
                     break;
             }
+//        default:
+//            if (fakeAccDetect(&acc)) {
+//                accHardware = ACC_FAKE;
+//                accAlign = CW0_DEG; //
+//                if (accHardwareToUse == ACC_FAKE)
+//                    break;
+//            }
 #endif
     }
 
