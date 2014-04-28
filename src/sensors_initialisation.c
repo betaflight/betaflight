@@ -17,6 +17,7 @@
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
 #ifdef STM32F3DISCOVERY
+#include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
 #endif
 #endif
@@ -97,6 +98,8 @@ void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     } else if (mpu3050Detect(&gyro, gyroLpf)) {
         gyroAlign = CW0_DEG;
 #ifdef STM32F3DISCOVERY
+    } else if (l3gd20Detect(&gyro, gyroLpf)) {
+        gyroAlign = ALIGN_DEFAULT;
     } else if (fakeGyroDetect(&gyro, gyroLpf)) {
         gyroAlign = ALIGN_DEFAULT;
 #endif

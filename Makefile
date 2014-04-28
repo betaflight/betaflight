@@ -180,6 +180,7 @@ STM32F3DISCOVERY_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_l3g4200d.c \
+		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
 		   drivers/adc_common.c \
 		   drivers/bus_i2c_stm32f30x.c \
