@@ -18,6 +18,7 @@ function tab_initialize_gps () {
         }
 
         function update_ui() {
+            $('.GPS_info td.fix').html((GPS_DATA.fix) ? '<span style="color: green">True</span>' : '<span style="color: red">False</span>');
             $('.GPS_info td.alt').html(GPS_DATA.alt + ' m');
             $('.GPS_info td.lat').html((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
             $('.GPS_info td.lon').html((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
