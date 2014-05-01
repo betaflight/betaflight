@@ -119,3 +119,24 @@ void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation)
     if (!standardBoardAlignment)
         alignBoard(dest);
 }
+
+#ifdef PROD_DEBUG
+void productionDebug(void)
+{
+    gpio_config_t gpio;
+
+    // remap PB6 to USART1_TX
+    gpio.pin = Pin_6;
+    gpio.mode = Mode_AF_PP;
+    gpio.speed = Speed_2MHz;
+    gpioInit(GPIOB, &gpio);
+    gpioPinRemapConfig(AFIO_MAPR_USART1_REMAP, true);
+    serialInit(mcfg.serial_baudrate);
+    delay(25);
+    serialPrint(core.mainport, "DBG ");
+    printf("%08x%08x%08x OK\n", U_ID_0, U_ID_1, U_ID_2);
+    serialPrint(core.mainport, "EOF");
+    delay(25);
+    gpioPinRemapConfig(AFIO_MAPR_USART1_REMAP, false);
+}
+#endif

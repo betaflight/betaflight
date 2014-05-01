@@ -239,6 +239,7 @@ typedef struct baro_t
 #define LED1
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
+// #define PROD_DEBUG
 
 #endif
 #endif
