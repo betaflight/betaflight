@@ -60,7 +60,7 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
     voltage = batteryAdcToVoltage((uint16_t)(voltage / 32));
 
     // autodetect cell count, going from 2S..6S
-    for (i = 2; i < 6; i++) {
+    for (i = 1; i < 6; i++) {
         if (voltage < i * batteryConfig->vbatmaxcellvoltage)
             break;
     }
