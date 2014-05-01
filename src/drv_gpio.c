@@ -40,3 +40,41 @@ void gpioExtiLineConfig(uint8_t portsrc, uint8_t pinsrc)
     AFIO->EXTICR[pinsrc >> 0x02] &= ~tmp;
     AFIO->EXTICR[pinsrc >> 0x02] |= (((uint32_t)portsrc) << (0x04 * (pinsrc & (uint8_t)0x03)));
 }
+
+#define LSB_MASK                    ((uint16_t)0xFFFF)
+#define DBGAFR_POSITION_MASK        ((uint32_t)0x000F0000)
+#define DBGAFR_SWJCFG_MASK          ((uint32_t)0xF0FFFFFF)
+#define DBGAFR_LOCATION_MASK        ((uint32_t)0x00200000)
+#define DBGAFR_NUMBITS_MASK         ((uint32_t)0x00100000)
+
+void gpioPinRemapConfig(uint32_t remap, bool enable)
+{
+    uint32_t tmp = 0x00, tmp1 = 0x00, tmpreg = 0x00, tmpmask = 0x00;
+    if ((remap & 0x80000000) == 0x80000000)
+        tmpreg = AFIO->MAPR2;
+    else
+        tmpreg = AFIO->MAPR;
+
+    tmpmask = (remap & DBGAFR_POSITION_MASK) >> 0x10;
+    tmp = remap & LSB_MASK;
+
+    if ((remap & (DBGAFR_LOCATION_MASK | DBGAFR_NUMBITS_MASK)) == (DBGAFR_LOCATION_MASK | DBGAFR_NUMBITS_MASK)) {
+        tmpreg &= DBGAFR_SWJCFG_MASK;
+        AFIO->MAPR &= DBGAFR_SWJCFG_MASK;
+    } else if ((remap & DBGAFR_NUMBITS_MASK) == DBGAFR_NUMBITS_MASK) {
+        tmp1 = ((uint32_t)0x03) << tmpmask;
+        tmpreg &= ~tmp1;
+        tmpreg |= ~DBGAFR_SWJCFG_MASK;
+    } else {
+        tmpreg &= ~(tmp << ((remap >> 0x15) * 0x10));
+        tmpreg |= ~DBGAFR_SWJCFG_MASK;
+    }
+
+    if (enable)
+        tmpreg |= (tmp << ((remap >> 0x15)*0x10));
+
+    if ((remap & 0x80000000) == 0x80000000)
+        AFIO->MAPR2 = tmpreg;
+    else
+        AFIO->MAPR = tmpreg;
+}
