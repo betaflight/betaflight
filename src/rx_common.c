@@ -14,6 +14,7 @@
 #include "rx_sbus.h"
 #include "rx_spektrum.h"
 #include "rx_sumd.h"
+#include "rx_msp.h"
 
 #include "rx_common.h"
 
@@ -21,6 +22,7 @@ void pwmRxInit(rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *failsafe, rcReadR
 void sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
 void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
 void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
+void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
 
 const char rcChannelLetters[] = "AERT1234";
 
@@ -62,6 +64,9 @@ void serialRxInit(rxConfig_t *rxConfig, failsafe_t *failsafe)
         case SERIALRX_SUMD:
             sumdInit(rxConfig, &rxRuntimeConfig, failsafe, &rcReadRawFunc);
             break;
+        case SERIALRX_MSP:
+            rxMspInit(rxConfig, &rxRuntimeConfig, failsafe, &rcReadRawFunc);
+            break;
     }
 }
 
@@ -75,6 +80,8 @@ bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
             return sbusFrameComplete();
         case SERIALRX_SUMD:
             return sumdFrameComplete();
+        case SERIALRX_MSP:
+            return rxMspFrameComplete();
     }
     return false;
 }

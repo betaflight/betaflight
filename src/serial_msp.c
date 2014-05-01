@@ -19,6 +19,7 @@
 #include "boardalignment.h"
 #include "gps_common.h"
 #include "rx_common.h"
+#include "rx_msp.h"
 #include "battery.h"
 #include "gimbal.h"
 #include "telemetry_common.h"
@@ -325,6 +326,7 @@ static void evaluateCommand(void)
         for (i = 0; i < 8; i++)
             rcData[i] = read16();
         headSerialReply(0);
+        rxMspFrameRecieve();
         break;
     case MSP_SET_ACC_TRIM:
         currentProfile.accelerometerTrims.trims.pitch = read16();

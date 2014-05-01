@@ -174,7 +174,7 @@ const clivalue_t valueTable[] = {
     { "gps_type", VAR_UINT8, &masterConfig.gps_type, 0, GPS_HARDWARE_MAX },
     { "gps_baudrate", VAR_INT8, &masterConfig.gps_baudrate, 0, GPS_BAUD_MAX },
 
-    { "serialrx_type", VAR_UINT8, &masterConfig.rxConfig.serialrx_type, 0, 3 },
+    { "serialrx_type", VAR_UINT8, &masterConfig.rxConfig.serialrx_type, 0, SERIALRX_PROVIDER_MAX },
 
     { "telemetry_provider", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_port", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_port, 0, TELEMETRY_PORT_MAX },

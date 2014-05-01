@@ -110,6 +110,7 @@ COMMON_SRC	 = build_config.c \
 		   rc_controls.c \
 		   rc_curves.c \
 		   rx_common.c \
+		   rx_msp.c \
 		   rx_pwm.c \
 		   rx_sbus.c \
 		   rx_sumd.c \
