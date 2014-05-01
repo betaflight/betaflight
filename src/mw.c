@@ -461,6 +461,9 @@ void loop(void)
             case SERIALRX_SUMD:
                 rcReady = sumdFrameComplete();
                 break;
+            case SERIALRX_MSP:
+                rcReady = mspFrameComplete();
+                break;
         }
     }
 
