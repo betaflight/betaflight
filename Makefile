@@ -55,6 +55,7 @@ COMMON_SRC	 = startup_stm32f10x_md_gcc.S \
 		   sbus.c \
 		   sumd.c \
 		   spektrum.c \
+		   rxmsp.c \
 		   telemetry_common.c \
 		   telemetry_frsky.c \
 		   telemetry_hott.c \

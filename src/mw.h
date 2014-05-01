@@ -465,6 +465,11 @@ bool sbusFrameComplete(void);
 void sumdInit(rcReadRawDataPtr *callback);
 bool sumdFrameComplete(void);
 
+// rxmsp
+void mspInit(rcReadRawDataPtr *callback);
+bool mspFrameComplete(void);
+void mspFrameRecieve(void);
+
 // buzzer
 void buzzer(uint8_t warn_vbat);
 void systemBeep(bool onoff);

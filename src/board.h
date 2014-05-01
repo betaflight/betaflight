@@ -82,6 +82,8 @@ typedef enum {
     SERIALRX_SPEKTRUM2048 = 1,
     SERIALRX_SBUS = 2,
     SERIALRX_SUMD = 3,
+    SERIALRX_MSP = 4,
+    SERIALRX_PROVIDER_MAX = SERIALRX_MSP,
 } SerialRXType;
 
 typedef enum {
