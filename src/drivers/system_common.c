@@ -99,8 +99,8 @@ void systemInit(bool overclock)
     // Turn on clocks for stuff we use
 #ifdef STM32F303xC
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1 | RCC_APB2Periph_USART1, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_ADC12, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17 | RCC_APB2Periph_USART1, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOF | RCC_AHBPeriph_ADC12, ENABLE);
 #endif
 #ifdef STM32F10X_MD
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
@@ -126,6 +126,28 @@ void systemInit(bool overclock)
     // Turn off JTAG port 'cause we're using the GPIO for leds
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
+#endif
+
+#ifdef STM32F303xC
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource8,  GPIO_AF_6);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_1);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_1);
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6,  GPIO_AF_4);
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7,  GPIO_AF_4);
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource8,  GPIO_AF_4);
+    //GPIO_PinAFConfig(GPIOF, GPIO_PinSource9,  GPIO_AF_3); // Potential alternate, untested
+    //GPIO_PinAFConfig(GPIOF, GPIO_PinSource10, GPIO_AF_3); // Potential alternate, untested
+
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource15, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource1,  GPIO_AF_1);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource2,  GPIO_AF_1);
+
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource0, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_2);
 #endif
 
     beeperInit();

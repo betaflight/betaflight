@@ -37,7 +37,7 @@
     Outputs
     PWM1 TIM1_CH1 PA8
     PWM2 TIM1_CH4 PA11
-    PWM3 TIM4_CH1 PB6? [also I2C1_SCL]
+    PWM3 TIM4_CH1 PB6 [also I2C1_SCL]
     PWM4 TIM4_CH2 PB7 [also I2C1_SDA]
     PWM5 TIM4_CH3 PB8
     PWM6 TIM4_CH4 PB9
@@ -49,6 +49,7 @@
     TIM4 4 channels
 */
 
+#if defined(STM32F10X_MD) || defined(NAZE)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 0, },          // PWM1
     { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, },          // PWM2
@@ -67,12 +68,65 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 };
 
 #define MAX_TIMERS 4 // TIM1..TIM4
-#define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
 
 static const TIM_TypeDef *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4
 };
 
+#endif
+
+
+// Parallel PWM Inputs
+// RX1  TIM1_CH1   PA8
+// RX2  TIM16_CH1  PB8
+// RX3  TIM17_CH1  PB9
+// RX4  TIM8_CH1   PC6
+// RX5  TIM8_CH2   PC7
+// RX6  TIM8_CH3   PC8
+// RX7  TIM15_CH1  PF9
+// RX8  TIM15_CH2  PF10
+
+// Servo PWM1  TIM3_CH3  PB0
+// Servo PWM2  TIM3_CH4  PB1
+// Servo PWM3  TIM3_CH2  PA4
+
+// ESC PWM1  TIM4_CH1  PD12
+// ESC PWM2  TIM4_CH2  PD13
+// ESC PWM3  TIM4_CH3  PD14
+// ESC PWM4  TIM4_CH4  PD15
+// ESC PWM5  TIM2_CH2  PA1
+// ESC PWM6  TIM2_CH3  PA2
+
+
+#if defined(STM32F303xC) || defined(STM32F3DISCOVERY)
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+
+    { TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, },          // PWM1
+    { TIM16, GPIOB, Pin_8, TIM_Channel_1, TIM1_UP_TIM16_IRQn, 0, },        // PWM2
+    { TIM17, GPIOB, Pin_9, TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, },        // PWM3
+    { TIM8, GPIOC, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, 1, },          // PWM4
+    { TIM8, GPIOC, Pin_7, TIM_Channel_2, TIM8_CC_IRQn, 1, },          // PWM5
+    { TIM8, GPIOC, Pin_8, TIM_Channel_3, TIM8_CC_IRQn, 1, },          // PWM6
+    //{ TIM15, GPIOF, Pin_9, TIM_Channel_1, TIM15_IRQn, 0, },      // PWM7 - Potential alternate, untested
+    //{ TIM15, GPIOF, Pin_10, TIM_Channel_2, TIM15_IRQn, 0, },     // PWM8 - Potential alternate, untested
+    { TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn, 0, },          // PWM7
+    { TIM3, GPIOA, Pin_4, TIM_Channel_2, TIM3_IRQn, 0, },          // PWM8
+    { TIM4, GPIOD, Pin_12, TIM_Channel_1, TIM4_IRQn, 0, },         // PWM9
+    { TIM4, GPIOD, Pin_13, TIM_Channel_2, TIM4_IRQn, 0, },         // PWM10
+    { TIM4, GPIOD, Pin_14, TIM_Channel_3, TIM4_IRQn, 0, },         // PWM11
+    { TIM4, GPIOD, Pin_15, TIM_Channel_4, TIM4_IRQn, 0, },         // PWM12
+    { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, },          // PWM13
+    { TIM2, GPIOA, Pin_2, TIM_Channel_3, TIM2_IRQn, 0, },          // PWM14
+};
+
+#define MAX_TIMERS 7
+
+static const TIM_TypeDef *timers[MAX_TIMERS] = {
+    TIM1, TIM2, TIM3, TIM4, TIM8, TIM16, TIM17
+};
+#endif
+
+#define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
 static const uint8_t channels[CC_CHANNELS_PER_TIMER] = {
     TIM_Channel_1, TIM_Channel_2, TIM_Channel_3, TIM_Channel_4
 };
@@ -243,3 +297,20 @@ void TIM4_IRQHandler(void)
 {
     timCCxHandler(TIM4);
 }
+
+#if defined(STM32F303xC) || defined(STM32F3DISCOVERY)
+void TIM8_IRQHandler(void)
+{
+    timCCxHandler(TIM8);
+}
+
+void TIM1_UP_TIM16_IRQHandler(void)
+{
+    timCCxHandler(TIM16);
+}
+
+void TIM1_TRG_COM_TIM17_IRQHandler(void)
+{
+    timCCxHandler(TIM17);
+}
+#endif

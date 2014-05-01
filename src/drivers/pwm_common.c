@@ -45,7 +45,13 @@
 */
 
 typedef struct {
+#ifdef STM32F303xC
+    volatile uint32_t *ccr;
+#endif
+
+#ifdef STM32F10X_MD
     volatile uint16_t *ccr;
+#endif
     uint16_t period;
 
     // for input only
@@ -215,7 +221,6 @@ static pwmPortData_t *pwmOutConfig(uint8_t port, uint8_t mhz, uint16_t period, u
     configTimeBase(timerHardware[port].tim, period, mhz);
     pwmGPIOConfig(timerHardware[port].gpio, timerHardware[port].pin, Mode_AF_PP);
     pwmOCConfig(timerHardware[port].tim, timerHardware[port].channel, value);
-    // Needed only on TIM1
     if (timerHardware[port].outputEnable)
         TIM_CtrlPWMOutputs(timerHardware[port].tim, ENABLE);
     TIM_Cmd(timerHardware[port].tim, ENABLE);
@@ -343,6 +348,7 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
             continue;
 #endif
 
+#ifdef STM32F10X_MD
         // skip UART ports for GPS
         if (init->useUART && (port == PWM3 || port == PWM4))
             continue;
@@ -350,6 +356,12 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
         // skip softSerial ports
         if (init->useSoftSerial && (port == PWM5 || port == PWM6 || port == PWM7 || port == PWM8))
             continue;
+#endif
+#ifdef STM32F303xC
+        // skip softSerial ports
+        if (init->useSoftSerial && (port == PWM9 || port == PWM10 || port == PWM11 || port == PWM12))
+            continue;
+#endif
 
         // skip ADC for powerMeter if configured
         if (init->adcChannel && (init->adcChannel == port))
