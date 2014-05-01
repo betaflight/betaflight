@@ -11,6 +11,7 @@
 
 #include "drivers/system_common.h"
 #include "drivers/accgyro_common.h"
+#include "drivers/gpio_common.h"
 #include "drivers/timer_common.h"
 #include "drivers/serial_common.h"
 #include "serial_common.h"

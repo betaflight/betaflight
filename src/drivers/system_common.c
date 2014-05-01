@@ -97,16 +97,40 @@ void systemInit(bool overclock)
 #endif
 
     // Turn on clocks for stuff we use
-#ifdef STM32F303xC
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17 | RCC_APB2Periph_USART1, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOF | RCC_AHBPeriph_ADC12, ENABLE);
-#endif
 #ifdef STM32F10X_MD
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_TIM1 | RCC_APB2Periph_ADC1 | RCC_APB2Periph_USART1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 #endif
+#ifdef STM32F303xC
+    RCC_APB1PeriphClockCmd(
+        RCC_APB1Periph_TIM2 |
+        RCC_APB1Periph_TIM3 |
+        RCC_APB1Periph_TIM4 |
+        RCC_APB1Periph_I2C2,
+        ENABLE
+    );
+    RCC_APB2PeriphClockCmd(
+        RCC_APB2Periph_TIM1 |
+        RCC_APB2Periph_TIM8 |
+        /*RCC_APB2Periph_TIM15 | */
+        RCC_APB2Periph_TIM16 |
+        RCC_APB2Periph_TIM17 |
+        RCC_APB2Periph_USART1,
+        ENABLE
+    );
+    RCC_AHBPeriphClockCmd(
+        RCC_AHBPeriph_DMA1 |
+        RCC_AHBPeriph_GPIOA |
+        RCC_AHBPeriph_GPIOB |
+        RCC_AHBPeriph_GPIOC |
+        RCC_AHBPeriph_GPIOD |
+        /*RCC_AHBPeriph_GPIOF | */
+        RCC_AHBPeriph_ADC12,
+        ENABLE
+    );
+#endif
+
     RCC_ClearFlag();
 
     // Make all GPIO in by default to save power and reduce noise

@@ -3,6 +3,7 @@
 
 #include "platform.h"
 
+#include "drivers/gpio_common.h"
 #include "drivers/timer_common.h"
 #include "drivers/serial_common.h"
 #include "drivers/serial_softserial.h"

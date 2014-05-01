@@ -13,7 +13,9 @@
 
 #include "pwm_common.h"
 /*
-    Configuration maps:
+    Configuration maps
+
+    Note: this documentation is only valid for STM32F10x, for STM32F30x please read the code itself.
 
     1) multirotor PPM input
     PWM1 used for PPM
@@ -250,7 +252,7 @@ static pwmPortData_t *pwmInConfig(uint8_t port, timerCCCallbackPtr callback, uin
 
     p->channel = channel;
 
-    pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_IPD);
+    pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, 0xFFFF, PWM_TIMER_MHZ);
@@ -372,10 +374,17 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
             mask = 0;
 
         if (init->useServos && !init->airplane) {
-            // remap PWM9+10 as servos (but not in airplane mode LOL)
+#ifdef STM32F10X_MD
+            // remap PWM9+10 as servos
             if (port == PWM9 || port == PWM10)
                 mask = TYPE_S;
-        }
+#endif
+#ifdef STM32F303xC
+            // remap PWM5+6 as servos
+            if (port == PWM5 || port == PWM6)
+                mask = TYPE_S;
+#endif
+            }
 
         if (init->extraServos && !init->airplane) {
             // remap PWM5..8 as servos when used in extended servo mode

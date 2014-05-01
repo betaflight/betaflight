@@ -11,6 +11,7 @@ typedef struct {
     uint8_t channel;
     uint8_t irq;
     uint8_t outputEnable;
+    GPIO_Mode gpioInputMode;
 } timerHardware_t;
 
 extern const timerHardware_t timerHardware[];
