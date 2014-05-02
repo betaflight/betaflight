@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -12,7 +13,7 @@
 #include "drivers/timer_common.h"
 #include "drivers/serial_common.h"
 #include "drivers/serial_softserial.h"
-#include "drivers/serial_uart.h"
+#include "drivers/serial_uart_common.h"
 #include "drivers/accgyro_common.h"
 #include "drivers/pwm_common.h"
 #include "drivers/adc_common.h"
@@ -42,6 +43,8 @@
 #include "config_master.h"
 
 #include "build_config.h"
+
+//#define USE_SOFTSERIAL_FOR_MAIN_PORT
 
 extern rcReadRawDataPtr rcReadRawFunc;
 
@@ -174,8 +177,10 @@ int main(void)
 
 #ifndef FY90Q
     if (canSoftwareSerialBeUsed()) {
-        //mcfg.softserial_baudrate = 19200; // Uncomment to override config value
 
+#if defined(USE_SOFTSERIAL_FOR_MAIN_PORT) || (0)
+        masterConfig.serialConfig.softserial_baudrate = 19200;
+#endif
         setupSoftSerialPrimary(masterConfig.serialConfig.softserial_baudrate, masterConfig.serialConfig.softserial_1_inverted);
         setupSoftSerialSecondary(masterConfig.serialConfig.softserial_2_inverted);
 
@@ -184,9 +189,14 @@ int main(void)
         serialPrint(loopbackPort1, "SOFTSERIAL 1 - LOOPBACK ENABLED\r\n");
 
         loopbackPort2 = (serialPort_t*)&(softSerialPorts[1]);
+#ifndef OLIMEXINO // PB0/D27 and PB1/D28 internally connected so this would result in a continuous stream of data
         serialPrint(loopbackPort2, "SOFTSERIAL 2 - LOOPBACK ENABLED\r\n");
 #endif
-        //core.mainport = (serialPort_t*)&(softSerialPorts[0]); // Uncomment to switch the main port to use softserial.
+#endif
+
+#ifdef USE_SOFTSERIAL_FOR_MAIN_PORT
+        serialPorts.mainport = (serialPort_t*)&(softSerialPorts[0]); // Uncomment to switch the main port to use softserial.
+#endif
     }
 #endif
 
