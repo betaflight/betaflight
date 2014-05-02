@@ -48,7 +48,9 @@ typedef enum
     Mode_Out_OD =       (GPIO_OType_OD << 4) | GPIO_Mode_OUT,
     Mode_Out_PP =       (GPIO_OType_PP << 4) | GPIO_Mode_OUT,
     Mode_AF_OD =        (GPIO_OType_OD << 4) | GPIO_Mode_AF,
-    Mode_AF_PP =        (GPIO_OType_PP << 4) | GPIO_Mode_AF
+    Mode_AF_PP =        (GPIO_OType_PP << 4) | GPIO_Mode_AF,
+    Mode_AF_PP_PD =     (GPIO_OType_PP << 4) | (GPIO_PuPd_DOWN  << 2) | GPIO_Mode_AF,
+    Mode_AF_PP_PU =     (GPIO_OType_PP << 4) | (GPIO_PuPd_UP    << 2) | GPIO_Mode_AF
 } GPIO_Mode;
 #endif
 

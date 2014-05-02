@@ -49,6 +49,7 @@ extern uint32_t previousTime;
 
 failsafe_t *failsafe;
 
+void timerInit(void);
 void initTelemetry(serialPorts_t *serialPorts);
 void serialInit(serialConfig_t *initialSerialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
@@ -97,7 +98,7 @@ int main(void)
     else
         pwm_params.airplane = false;
     pwm_params.useUART = feature(FEATURE_GPS) || feature(FEATURE_SERIALRX); // serial rx support uses UART too
-    pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
+    pwm_params.useSoftSerial = canSoftwareSerialBeUsed();
     pwm_params.usePPM = feature(FEATURE_PPM);
     pwm_params.enableInput = !feature(FEATURE_SERIALRX); // disable inputs if using spektrum
     pwm_params.useServos = isMixerUsingServos();
@@ -126,6 +127,7 @@ int main(void)
 
     failsafe = failsafeInit(&masterConfig.rxConfig);
     buzzerInit(failsafe);
+    timerInit();
     pwmInit(&pwm_params, failsafe);
 
     rxInit(&masterConfig.rxConfig, failsafe);
@@ -171,7 +173,7 @@ int main(void)
     serialInit(&masterConfig.serialConfig);
 
 #ifndef FY90Q
-    if (feature(FEATURE_SOFTSERIAL)) {
+    if (canSoftwareSerialBeUsed()) {
         //mcfg.softserial_baudrate = 19200; // Uncomment to override config value
 
         setupSoftSerialPrimary(masterConfig.serialConfig.softserial_baudrate, masterConfig.serialConfig.softserial_1_inverted);

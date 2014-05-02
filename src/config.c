@@ -449,3 +449,10 @@ uint32_t featureMask(void)
     return masterConfig.enabledFeatures;
 }
 
+bool canSoftwareSerialBeUsed(void)
+{
+    // FIXME this is not ideal because it means you can't disable parallel PWM input even when using spektrum/sbus etc.
+    // really we want to say 'return !feature(FEATURE_PARALLEL_PWM);'
+    return feature(FEATURE_SOFTSERIAL) && feature(FEATURE_PPM); // Software serial can only be used in PPM mode because parallel PWM uses the same hardware pins/timers
+}
+

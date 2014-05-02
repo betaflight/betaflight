@@ -32,3 +32,5 @@ void readEEPROMAndNotify(void);
 void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 void saveAndReloadCurrentProfileToCurrentProfileSlot(void);
+
+bool canSoftwareSerialBeUsed(void);

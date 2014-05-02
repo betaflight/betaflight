@@ -2,7 +2,14 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
 
-typedef void timerCCCallbackPtr(uint8_t port, uint16_t capture);
+#ifdef STM32F303xC
+typedef uint32_t captureCompare_t;
+#endif
+#ifdef STM32F10X_MD
+typedef uint32_t captureCompare_t;
+#endif
+
+typedef void timerCCCallbackPtr(uint8_t port, captureCompare_t capture);
 
 typedef struct {
     TIM_TypeDef *tim;

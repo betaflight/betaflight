@@ -13,20 +13,6 @@
 #define MODE_MASK ((1|2) << MODE_OFFSET)
 #define PUPD_MASK ((1|2) << PUPD_OFFSET)
 #define OUTPUT_MASK ((1|2) << OUTPUT_OFFSET)
-/*
-typedef enum
-{
-    Mode_AIN =          (GPIO_PuPd_NOPULL << 2) | GPIO_Mode_AN,
-    Mode_IN_FLOATING =  (GPIO_PuPd_NOPULL << 2) | GPIO_Mode_IN,
-    Mode_IPD =          (GPIO_PuPd_DOWN   << 2) | GPIO_Mode_IN,
-    Mode_IPU =          (GPIO_PuPd_UP     << 2) | GPIO_Mode_IN,
-    Mode_Out_OD =       (GPIO_OType_OD << 4) | GPIO_Mode_OUT,
-    Mode_Out_PP =       (GPIO_OType_PP << 4) | GPIO_Mode_OUT,
-    Mode_AF_OD =        (GPIO_OType_OD << 4) | GPIO_Mode_AF,
-    Mode_AF_PP =        (GPIO_OType_PP << 4) | GPIO_Mode_AF
-} GPIO_Mode;
-
-*/
 
 //#define GPIO_Speed_10MHz GPIO_Speed_Level_1   Fast Speed:10MHz
 //#define GPIO_Speed_2MHz  GPIO_Speed_Level_2   Medium Speed:2MHz

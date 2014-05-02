@@ -32,8 +32,8 @@
 softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 
 
-void onSerialTimer(uint8_t portIndex, uint16_t capture);
-void onSerialRxPinChange(uint8_t portIndex, uint16_t capture);
+void onSerialTimer(uint8_t portIndex, captureCompare_t capture);
+void onSerialRxPinChange(uint8_t portIndex, captureCompare_t capture);
 
 void setTxSignal(softSerial_t *softSerial, uint8_t state)
 {
@@ -335,7 +335,7 @@ void processRxState(softSerial_t *softSerial)
     }
 }
 
-void onSerialTimer(uint8_t portIndex, uint16_t capture)
+void onSerialTimer(uint8_t portIndex, captureCompare_t capture)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
@@ -343,7 +343,7 @@ void onSerialTimer(uint8_t portIndex, uint16_t capture)
     processRxState(softSerial);
 }
 
-void onSerialRxPinChange(uint8_t portIndex, uint16_t capture)
+void onSerialRxPinChange(uint8_t portIndex, captureCompare_t capture)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 

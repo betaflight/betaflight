@@ -59,9 +59,9 @@ typedef struct {
     // for input only
     uint8_t channel;
     uint8_t state;
-    uint16_t rise;
-    uint16_t fall;
-    uint16_t capture;
+    captureCompare_t rise;
+    captureCompare_t fall;
+    captureCompare_t capture;
 } pwmPortData_t;
 
 enum {
@@ -261,11 +261,12 @@ static pwmPortData_t *pwmInConfig(uint8_t port, timerCCCallbackPtr callback, uin
     return p;
 }
 
-static void ppmCallback(uint8_t port, uint16_t capture)
+static void ppmCallback(uint8_t port, captureCompare_t capture)
 {
-    uint16_t diff;
-    static uint16_t now;
-    static uint16_t last = 0;
+    captureCompare_t diff;
+    static captureCompare_t now;
+    static captureCompare_t last = 0;
+
     static uint8_t chan = 0;
     static uint8_t GoodPulses;
 
@@ -290,7 +291,7 @@ static void ppmCallback(uint8_t port, uint16_t capture)
     }
 }
 
-static void pwmCallback(uint8_t port, uint16_t capture)
+static void pwmCallback(uint8_t port, captureCompare_t capture)
 {
     if (pwmPorts[port].state == 0) {
         pwmPorts[port].rise = capture;
@@ -380,11 +381,16 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
                 mask = TYPE_S;
 #endif
 #ifdef STM32F303xC
-            // remap PWM5+6 as servos
-            if (port == PWM5 || port == PWM6)
-                mask = TYPE_S;
-#endif
+            // remap PWM 5+6 or 9+10 as servos - softserial pin pairs timer ports that use the same timer
+            if (init->useSoftSerial) {
+                if (port == PWM5 || port == PWM6)
+                    mask = TYPE_S;
+            } else {
+                if (port == PWM9 || port == PWM10)
+                    mask = TYPE_S;
             }
+#endif
+        }
 
         if (init->extraServos && !init->airplane) {
             // remap PWM5..8 as servos when used in extended servo mode
