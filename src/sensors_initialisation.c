@@ -39,6 +39,10 @@
 #include "sensors_compass.h"
 #include "sensors_sonar.h"
 
+// Use these to help with porting to new boards
+//#define USE_FAKE_ACC
+//#define USE_FAKE_GYRO
+
 extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
 extern float magneticDeclination;
@@ -47,6 +51,7 @@ extern gyro_t gyro;
 extern baro_t baro;
 extern acc_t acc;
 
+#ifdef USE_FAKE_GYRO
 static void fakeGyroInit(void) {}
 static void fakeGyroRead(int16_t *gyroData) {}
 static void fakeGyroReadTemp(int16_t *tempData) {}
@@ -58,9 +63,11 @@ bool fakeGyroDetect(gyro_t *gyro, uint16_t lpf)
     gyro->temperature = fakeGyroReadTemp;
     return true;
 }
+#endif
 
+#ifdef USE_FAKE_ACC
 static void fakeAccInit(void) {}
-static void fakeAccRead(int16_t *gyroData) {}
+static void fakeAccRead(int16_t *accData) {}
 
 bool fakeAccDetect(acc_t *acc)
 {
@@ -69,7 +76,7 @@ bool fakeAccDetect(acc_t *acc)
     acc->revisionCode = 0;
     return true;
 }
-
+#endif
 
 #ifdef FY90Q
 // FY90Q analog gyro/acc
@@ -89,6 +96,11 @@ void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     memset(&acc, sizeof(acc), 0);
     memset(&gyro, sizeof(gyro), 0);
 
+#ifdef USE_FAKE_GYRO
+    if (fakeGyroDetect(&gyro, gyroLpf)) {
+        gyroAlign = ALIGN_DEFAULT;
+#else
+
     // Autodetect gyro hardware. We have MPU3050 or MPU6050.
     if (mpu6050Detect(&acc, &gyro, gyroLpf)) {
         haveMpu6k = true;
@@ -100,8 +112,7 @@ void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
 #ifdef STM32F3DISCOVERY
     } else if (l3gd20Detect(&gyro, gyroLpf)) {
         gyroAlign = ALIGN_DEFAULT;
-    } else if (fakeGyroDetect(&gyro, gyroLpf)) {
-        gyroAlign = ALIGN_DEFAULT;
+#endif
 #endif
     } else {
         // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
@@ -111,6 +122,15 @@ void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     // Accelerometer. Fuck it. Let user break shit.
 retry:
     switch (accHardwareToUse) {
+#ifdef USE_FAKE_ACC
+        default:
+            if (fakeAccDetect(&acc)) {
+                accHardware = ACC_FAKE;
+                accAlign = CW0_DEG; //
+                if (accHardwareToUse == ACC_FAKE)
+                    break;
+            }
+#else
         case ACC_NONE: // disable ACC
             sensorsClear(SENSOR_ACC);
             break;
@@ -159,13 +179,7 @@ retry:
                 if (accHardwareToUse == ACC_LSM303DLHC)
                     break;
             }
-//        default:
-//            if (fakeAccDetect(&acc)) {
-//                accHardware = ACC_FAKE;
-//                accAlign = CW0_DEG; //
-//                if (accHardwareToUse == ACC_FAKE)
-//                    break;
-//            }
+#endif
 #endif
     }
 
