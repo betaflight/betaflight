@@ -412,7 +412,7 @@ void blinkLED(uint8_t num, uint8_t wait, uint8_t repeat);
 int getEstimatedAltitude(void);
 
 // Sensors
-void sensorsAutodetect(void);
+bool sensorsAutodetect(void);
 void batteryInit(void);
 uint16_t batteryAdcToVoltage(uint16_t src);
 void ACC_getADC(void);
