@@ -130,7 +130,9 @@ int main(void)
 
     failsafe = failsafeInit(&masterConfig.rxConfig);
     buzzerInit(failsafe);
+#ifndef FY90Q
     timerInit();
+#endif
     pwmInit(&pwm_params, failsafe);
 
     rxInit(&masterConfig.rxConfig, failsafe);
