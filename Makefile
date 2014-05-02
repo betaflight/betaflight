@@ -143,6 +143,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/sonar_hcsr04.c \
 		   drivers/pwm_common.c \
 		   drivers/serial_softserial.c \
+		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   drivers/timer_common.c \
 		   $(COMMON_SRC)
@@ -155,6 +156,7 @@ FY90Q_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/pwm_fy90q.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
+		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   $(COMMON_SRC)
 
@@ -170,6 +172,7 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/pwm_common.c \
 		   drivers/serial_softserial.c \
+		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   drivers/timer_common.c \
 		   $(COMMON_SRC)
@@ -187,6 +190,7 @@ STM32F3DISCOVERY_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f30x.c \
 		   drivers/pwm_common.c \
+		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
 		   drivers/timer_common.c \

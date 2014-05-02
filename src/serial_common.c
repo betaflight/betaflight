@@ -6,7 +6,7 @@
 
 #include "drivers/system_common.h"
 #include "drivers/serial_common.h"
-#include "drivers/serial_uart.h"
+#include "drivers/serial_uart_common.h"
 
 #include "serial_cli.h"
 #include "serial_msp.h"

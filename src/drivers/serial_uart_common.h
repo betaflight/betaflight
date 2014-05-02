@@ -19,6 +19,9 @@ typedef struct {
     uint32_t rxDMAPos;
     bool txDMAEmpty;
 
+    uint32_t txDMAPeripheralBaseAddr;
+    uint32_t rxDMAPeripheralBaseAddr;
+
     USART_TypeDef *USARTx;
 } uartPort_t;
 
