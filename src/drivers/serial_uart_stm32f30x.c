@@ -1,4 +1,9 @@
 
+/*
+    DMA UART routines idea lifted from AutoQuad
+    Copyright © 2011  Bill Nesbitt
+*/
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -11,21 +16,33 @@
 #include "serial_common.h"
 #include "serial_uart.h"
 
-/*
-    DMA UART routines idea lifted from AutoQuad
-    Copyright © 2011  Bill Nesbitt
-*/
+// USART1_TX    PA9
+// USART1_RX    PA10
+// USART2_TX    PD5
+// USART2_RX    PD6
+
+#define UART1_TX_PIN GPIO_Pin_9
+#define UART1_RX_PIN GPIO_Pin_10
+#define UART1_GPIO GPIOA
+#define UART1_TX_PINSOURCE GPIO_PinSource9
+#define UART1_RX_PINSOURCE GPIO_PinSource10
+
+#define UART2_TX_PIN        GPIO_Pin_5
+#define UART2_RX_PIN        GPIO_Pin_6
+#define UART2_GPIO          GPIOD
+#define UART2_TX_PINSOURCE  GPIO_PinSource5
+#define UART2_RX_PINSOURCE  GPIO_PinSource6
 
 static uartPort_t uartPort1;
 static uartPort_t uartPort2;
 
-// USART1 - Telemetry (RX/TX by DMA)
 uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 {
     uartPort_t *s;
     static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
     static volatile uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
     NVIC_InitTypeDef NVIC_InitStructure;
+    GPIO_InitTypeDef  GPIO_InitStructure;
 
     s = &uartPort1;
     s->port.vTable = uartVTable;
@@ -42,43 +59,22 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
-    // USART1_TX    PA9
-    // USART1_RX    PA10
-
-#ifdef STM32F303xC
-
-#define UART1_TX_PIN GPIO_Pin_9
-#define UART1_RX_PIN GPIO_Pin_10
-#define UART1_GPIO GPIOA
-#define UART1_TX_PINSOURCE GPIO_PinSource9
-#define UART1_RX_PINSOURCE GPIO_PinSource10
-
-    GPIO_InitTypeDef  GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN | UART1_RX_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 
-    GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, GPIO_AF_7);
-    GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, GPIO_AF_7);
+    if (mode & MODE_TX) {
+        GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
+        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+    }
 
-    GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
-#endif
-
-#ifdef STM32F10X_MD
-    gpio_config_t gpio;
-    gpio.speed = Speed_2MHz;
-    gpio.pin = Pin_9;
-    gpio.mode = Mode_AF_PP;
-    if (mode & MODE_TX)
-        gpioInit(GPIOA, &gpio);
-    gpio.pin = Pin_10;
-    gpio.mode = Mode_IPU;
-    if (mode & MODE_RX)
-        gpioInit(GPIOA, &gpio);
-#endif
+    if (mode & MODE_RX) {
+        GPIO_InitStructure.GPIO_Pin = UART1_RX_PIN;
+        GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+    }
 
     // DMA TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
@@ -90,14 +86,13 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     return s;
 }
 
-// USART2 - GPS or Spektrum or ?? (RX + TX by IRQ)
 uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 {
     uartPort_t *s;
     static volatile uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
     static volatile uint8_t tx2Buffer[UART2_TX_BUFFER_SIZE];
-    gpio_config_t gpio;
     NVIC_InitTypeDef NVIC_InitStructure;
+    GPIO_InitTypeDef  GPIO_InitStructure;
 
     s = &uartPort2;
     s->port.vTable = uartVTable;
@@ -109,25 +104,36 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     s->port.rxBuffer = rx2Buffer;
     s->port.txBuffer = tx2Buffer;
     
+    s->rxDMAChannel = DMA1_Channel6;
+    s->txDMAChannel = DMA1_Channel7;
+
     s->USARTx = USART2;
 
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD,    ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1,     ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
-    // USART2_TX    PA2
-    // USART2_RX    PA3
-    gpio.speed = Speed_2MHz;
-    gpio.pin = Pin_2;
-    gpio.mode = Mode_AF_PP;
-    if (mode & MODE_TX)
-        gpioInit(GPIOA, &gpio);
-    gpio.pin = Pin_3;
-    gpio.mode = Mode_IPU;
-    if (mode & MODE_RX)
-        gpioInit(GPIOA, &gpio);
 
-    // RX/TX Interrupt
-    NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+
+    if (mode & MODE_TX) {
+        GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
+        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
+    }
+
+    if (mode & MODE_RX) {
+        GPIO_InitStructure.GPIO_Pin = UART2_RX_PIN;
+        GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
+    }
+
+    // DMA TX Interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel7_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
@@ -195,6 +201,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
             USART_DMACmd(USARTx, USART_DMAReq_Rx, ENABLE);
             s->rxDMAPos = DMA_GetCurrDataCounter(s->rxDMAChannel);
         } else {
+            USART_ClearITPendingBit(USARTx, USART_IT_RXNE);
             USART_ITConfig(USARTx, USART_IT_RXNE, ENABLE);
         }
     }
@@ -332,13 +339,8 @@ const struct serialPortVTable uartVTable[] = {
     }
 };
 
-// Handlers
-
-// USART1 Tx DMA Handler
-void DMA1_Channel4_IRQHandler(void)
+static void handleUsartTxDma(uartPort_t *s)
 {
-    uartPort_t *s = &uartPort1;
-    DMA_ClearITPendingBit(DMA1_IT_TC4);
     DMA_Cmd(s->txDMAChannel, DISABLE);
 
     if (s->port.txBufferHead != s->port.txBufferTail)
@@ -347,13 +349,30 @@ void DMA1_Channel4_IRQHandler(void)
         s->txDMAEmpty = true;
 }
 
+// USART1 Tx DMA Handler
+void DMA1_Channel4_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort1;
+    DMA_ClearITPendingBit(DMA1_IT_TC4);
+    handleUsartTxDma(s);
+}
+
+// USART2 Tx DMA Handler
+void DMA1_Channel7_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort2;
+    DMA_ClearITPendingBit(DMA1_IT_TC7);
+    DMA_Cmd(DMA1_Channel7, DISABLE);
+    handleUsartTxDma(s);
+}
+
 // USART1 Tx IRQ Handler
 void USART1_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
-    uint16_t SR = s->USARTx->ISR;
+    uint16_t ISR = s->USARTx->ISR;
 
-    if (SR & USART_FLAG_TXE) {
+    if (ISR & USART_FLAG_TXE) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
             s->USARTx->TDR = s->port.txBuffer[s->port.txBufferTail];
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
@@ -367,9 +386,9 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort2;
-    uint16_t SR = s->USARTx->ISR;
+    uint16_t ISR = s->USARTx->ISR;
 
-    if (SR & USART_FLAG_RXNE) {
+    if (ISR & USART_FLAG_RXNE) {
         // If we registered a callback, pass crap there
         if (s->port.callback) {
             s->port.callback(s->USARTx->RDR);
@@ -378,7 +397,7 @@ void USART2_IRQHandler(void)
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
     }
-    if (SR & USART_FLAG_TXE) {
+    if (ISR & USART_FLAG_TXE) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
             s->USARTx->TDR = s->port.txBuffer[s->port.txBufferTail];
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
