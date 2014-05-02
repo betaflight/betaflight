@@ -85,7 +85,7 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     if (diff > 4000) {
         chan = 0;
     } else {
-        if (diff > 750 && diff < 2250 && chan < 8) {   // 750 to 2250 ms is our 'valid' channel range
+        if (diff > PULSE_MIN && diff < PULSE_MAX && chan < 8) {   // 750 to 2250 ms is our 'valid' channel range
             Inputs[chan].capture = diff;
             if (chan < 4 && diff > FAILSAFE_DETECT_TRESHOLD)
                 GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK

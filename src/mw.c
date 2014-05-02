@@ -226,13 +226,7 @@ void annexCode(void)
 
 uint16_t pwmReadRawRC(uint8_t chan)
 {
-    uint16_t data;
-
-    data = pwmRead(mcfg.rcmap[chan]);
-    if (data < 750 || data > 2250)
-        data = mcfg.midrc;
-
-    return data;
+    return pwmRead(mcfg.rcmap[chan]);
 }
 
 void computeRC(void)
