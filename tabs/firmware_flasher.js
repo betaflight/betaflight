@@ -245,6 +245,17 @@ function tab_initialize_firmware_flasher() {
         }
         */
 
+        /*
+        GUI.interval_add('factory_mode', function factory_mode() {
+            serial.getControlSignals(function(result) {
+                if (result.cts == true) {
+                    // Trigger regular Flashing sequence
+                    $('a.flash_firmware').click();
+                }
+            });
+        }, 500);
+        */
+
         $(document).keypress(function(e) {
             if (e.which == 13) { // enter
                 // Trigger regular Flashing sequence

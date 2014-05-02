@@ -68,6 +68,9 @@ var serial = {
     setControlSignals: function(signals, callback) {
         chrome.serial.setControlSignals(this.connectionId, signals, callback);
     },
+    getControlSignals: function(callback) {
+        chrome.serial.getControlSignals(this.connectionId, callback);
+    },
     send: function(data, callback) {
         var self = this;
         self.output_buffer.push({'data': data, 'callback': callback});

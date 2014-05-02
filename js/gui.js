@@ -294,6 +294,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             break;
 
         case 'firmware_flasher':
+            // this.interval_remove('factory_mode');
             PortHandler.flush_callbacks();
 
             // unbind "global" events
