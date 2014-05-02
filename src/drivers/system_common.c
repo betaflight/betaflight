@@ -241,6 +241,7 @@ void delay(uint32_t ms)
         delayMicroseconds(1000);
 }
 
+// FIXME replace mode with an enum so usage can be tracked, currently mode is a magic number
 void failureMode(uint8_t mode)
 {
     LED1_ON;
