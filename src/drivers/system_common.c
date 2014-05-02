@@ -107,7 +107,8 @@ void systemInit(bool overclock)
         RCC_APB1Periph_TIM2 |
         RCC_APB1Periph_TIM3 |
         RCC_APB1Periph_TIM4 |
-        RCC_APB1Periph_I2C2,
+        RCC_APB1Periph_I2C2 |
+        RCC_APB1Periph_USART2,
         ENABLE
     );
     RCC_APB2PeriphClockCmd(

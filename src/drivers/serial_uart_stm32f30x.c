@@ -16,6 +16,10 @@
 #include "serial_common.h"
 #include "serial_uart.h"
 
+// Using RX DMA disables the use of receive callbacks
+#define USE_USART1_RX_DMA
+//#define USE_USART2_RX_DMA
+
 // USART1_TX    PA9
 // USART1_RX    PA10
 // USART2_TX    PD5
@@ -54,10 +58,10 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     s->port.rxBufferSize = UART1_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART1_TX_BUFFER_SIZE;
     
+#ifdef USE_USART1_RX_DMA
     s->rxDMAChannel = DMA1_Channel5;
+#endif
     s->txDMAChannel = DMA1_Channel4;
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -83,6 +87,14 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
+#ifndef USE_USART1_RX_DMA
+    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
+
     return s;
 }
 
@@ -104,14 +116,12 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     s->port.rxBuffer = rx2Buffer;
     s->port.txBuffer = tx2Buffer;
     
+#ifdef USE_USART2_RX_DMA
     s->rxDMAChannel = DMA1_Channel6;
+#endif
     s->txDMAChannel = DMA1_Channel7;
 
     s->USARTx = USART2;
-
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD,    ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1,     ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -136,6 +146,14 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+
+#ifndef USE_USART2_RX_DMA
+    NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
 
     return s;
 }
@@ -366,27 +384,9 @@ void DMA1_Channel7_IRQHandler(void)
     handleUsartTxDma(s);
 }
 
-// USART1 Tx IRQ Handler
-void USART1_IRQHandler(void)
+void usartIrqHandler(uartPort_t *s)
 {
-    uartPort_t *s = &uartPort1;
-    uint16_t ISR = s->USARTx->ISR;
-
-    if (ISR & USART_FLAG_TXE) {
-        if (s->port.txBufferTail != s->port.txBufferHead) {
-            s->USARTx->TDR = s->port.txBuffer[s->port.txBufferTail];
-            s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
-        } else {
-            USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
-        }
-    }
-}
-
-// USART2 Rx/Tx IRQ Handler
-void USART2_IRQHandler(void)
-{
-    uartPort_t *s = &uartPort2;
-    uint16_t ISR = s->USARTx->ISR;
+    uint32_t ISR = s->USARTx->ISR;
 
     if (ISR & USART_FLAG_RXNE) {
         // If we registered a callback, pass crap there
@@ -406,3 +406,18 @@ void USART2_IRQHandler(void)
         }
     }
 }
+
+void USART1_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort1;
+
+    usartIrqHandler(s);
+}
+
+void USART2_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort2;
+
+    usartIrqHandler(s);
+}
+
