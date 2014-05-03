@@ -17,13 +17,7 @@
 
 static uint16_t pwmReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
-    uint16_t data;
-
-    data = pwmRead(rxConfig->rcmap[chan]);
-    if (data < 750 || data > 2250)
-        data = rxConfig->midrc;
-
-    return data;
+    return pwmRead(rxConfig->rcmap[chan]);
 }
 
 void pwmRxInit(rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)

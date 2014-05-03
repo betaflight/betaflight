@@ -206,7 +206,6 @@ void annexCode(void)
     }
 }
 
-
 static void mwArm(void)
 {
     if (isGyroCalibrationComplete() && f.ACC_CALIBRATED) {

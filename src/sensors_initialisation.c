@@ -80,14 +80,15 @@ bool fakeAccDetect(acc_t *acc)
 
 #ifdef FY90Q
 // FY90Q analog gyro/acc
-void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
 {
     memset(&acc, sizeof(acc), 0);
     memset(&gyro, sizeof(gyro), 0);
     adcSensorInit(&acc, &gyro);
+    return true;
 }
 #else
-void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
 {
     int16_t deg, min;
     drv_adxl345_config_t acc_params;
@@ -115,8 +116,7 @@ void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
 #endif
 #endif
     } else {
-        // if this fails, we get a beep + blink pattern. we're doomed, no gyro or i2c error.
-        failureMode(3);
+        return false;
     }
 
     // Accelerometer. Fuck it. Let user break shit.
@@ -242,6 +242,8 @@ retry:
     } else {
         magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
     }
+
+    return true;
 }
 #endif
 

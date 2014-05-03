@@ -60,25 +60,50 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
 void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
-void sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
 
 void loop(void);
+
+// FIXME bad naming - this appears to be for some new board that hasn't been made available yet.
+#ifdef PROD_DEBUG
+void productionDebug(void)
+{
+    gpio_config_t gpio;
+
+    // remap PB6 to USART1_TX
+    gpio.pin = Pin_6;
+    gpio.mode = Mode_AF_PP;
+    gpio.speed = Speed_2MHz;
+    gpioInit(GPIOB, &gpio);
+    gpioPinRemapConfig(AFIO_MAPR_USART1_REMAP, true);
+    serialInit(mcfg.serial_baudrate);
+    delay(25);
+    serialPrint(core.mainport, "DBG ");
+    printf("%08x%08x%08x OK\n", U_ID_0, U_ID_1, U_ID_2);
+    serialPrint(core.mainport, "EOF");
+    delay(25);
+    gpioPinRemapConfig(AFIO_MAPR_USART1_REMAP, false);
+}
+#endif
 
 int main(void)
 {
     uint8_t i;
     drv_pwm_config_t pwm_params;
     drv_adc_config_t adc_params;
+    bool sensorsOK = false;
 #ifdef SOFTSERIAL_LOOPBACK
     serialPort_t* loopbackPort1 = NULL;
     serialPort_t* loopbackPort2 = NULL;
 #endif
-    systemInit(masterConfig.emf_avoidance);
-    initPrintfSupport();
 
     ensureEEPROMContainsValidData();
     readEEPROM();
+
+    systemInit(masterConfig.emf_avoidance);
+
+    initPrintfSupport();
 
     // configure power ADC
     if (masterConfig.power_adc_channel > 0 && (masterConfig.power_adc_channel == 1 || masterConfig.power_adc_channel == 9))
@@ -89,12 +114,45 @@ int main(void)
     }
 
     adcInit(&adc_params);
+
+    // Check battery type/voltage
+    if (feature(FEATURE_VBAT))
+        batteryInit(&masterConfig.batteryConfig);
+
     initBoardAlignment(&masterConfig.boardAlignment);
 
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
+    // drop out any sensors that don't seem to work, init all the others. halt if gyro is dead.
+    sensorsOK = sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, currentProfile.mag_declination);
 
+    // production debug output
+#ifdef PROD_DEBUG
+    productionDebug();
+#endif
+
+    // if gyro was not detected due to whatever reason, we give up now.
+    if (!sensorsOK)
+        failureMode(3);
+
+    LED1_ON;
+    LED0_OFF;
+    for (i = 0; i < 10; i++) {
+        LED1_TOGGLE;
+        LED0_TOGGLE;
+        delay(25);
+        BEEP_ON;
+        delay(25);
+        BEEP_OFF;
+    }
+    LED0_OFF;
+    LED1_OFF;
+
+    imuInit(); // Mag is initialized inside imuInit
     mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer);
+
+    serialInit(&masterConfig.serialConfig);
+
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE || masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING)
         pwm_params.airplane = true;
@@ -154,32 +212,8 @@ int main(void)
     }
 #endif
 
-    LED1_ON;
-    LED0_OFF;
-    for (i = 0; i < 10; i++) {
-        LED1_TOGGLE;
-        LED0_TOGGLE;
-        delay(25);
-        BEEP_ON;
-        delay(25);
-        BEEP_OFF;
-    }
-    LED0_OFF;
-    LED1_OFF;
-
-    // drop out any sensors that don't seem to work, init all the others. halt if gyro is dead.
-    sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, currentProfile.mag_declination);
-    imuInit(); // Mag is initialized inside imuInit
-
-    // Check battery type/voltage
-    if (feature(FEATURE_VBAT))
-        batteryInit(&masterConfig.batteryConfig);
-
-    serialInit(&masterConfig.serialConfig);
-
 #ifndef FY90Q
     if (canSoftwareSerialBeUsed()) {
-
 #if defined(USE_SOFTSERIAL_FOR_MAIN_PORT) || (0)
         masterConfig.serialConfig.softserial_baudrate = 19200;
 #endif
