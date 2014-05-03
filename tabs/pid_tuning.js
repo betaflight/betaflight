@@ -22,6 +22,19 @@ function tab_initialize_pid_tuning() {
     }
 
     function process_html() {
+        // Fill in the names from PID_names array
+        // this needs to be reworked, but will do for now
+        $('.pid_tuning tr:eq(1) td:first').text(PID_names[0]);
+        $('.pid_tuning tr:eq(2) td:first').text(PID_names[1]);
+        $('.pid_tuning tr:eq(3) td:first').text(PID_names[2]);
+        $('.pid_tuning tr:eq(4) td:first').text(PID_names[3]);
+        $('.pid_tuning tr:eq(5) td:first').text(PID_names[9]);
+        $('.pid_tuning tr:eq(6) td:first').text(PID_names[4]);
+        $('.pid_tuning tr:eq(7) td:first').text(PID_names[5]);
+        $('.pid_tuning tr:eq(8) td:first').text(PID_names[6]);
+        $('.pid_tuning tr:eq(9) td:first').text(PID_names[7]);
+        $('.pid_tuning tr:eq(10) td:first').text(PID_names[8]);
+
         // Fill in the data from PIDs array
         var i = 0;
         $('.pid_tuning .ROLL input').each(function() {
