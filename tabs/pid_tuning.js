@@ -3,7 +3,11 @@ function tab_initialize_pid_tuning() {
     GUI.active_tab = 'pid_tuning';
 
     // requesting MSP_STATUS manually because it contains CONFIG.profile
-    send_message(MSP_codes.MSP_STATUS, false, false, get_pid_data);
+    send_message(MSP_codes.MSP_STATUS, false, false, get_pid_names);
+
+    function get_pid_names() {
+        send_message(MSP_codes.MSP_PIDNAMES, false, false, get_pid_data);
+    }
 
     function get_pid_data() {
         send_message(MSP_codes.MSP_PID, false, false, get_rc_tuning_data);

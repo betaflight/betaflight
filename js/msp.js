@@ -315,7 +315,7 @@ MSP.process_data = function(code, message_buffer, message_length) {
         case MSP_codes.MSP_BOXNAMES:
             AUX_CONFIG = []; // empty the array as new data is coming in
 
-            var buff = new Array();
+            var buff = [];
             for (var i = 0; i < data.byteLength; i++) {
                 if (data.getUint8(i) == 0x3B) { // ; (delimeter char)
                     AUX_CONFIG.push(String.fromCharCode.apply(null, buff)); // convert bytes into ASCII and save as strings
@@ -325,11 +325,22 @@ MSP.process_data = function(code, message_buffer, message_length) {
                 } else {
                     buff.push(data.getUint8(i));
                 }
-
             }
             break;
         case MSP_codes.MSP_PIDNAMES:
-            console.log(data);
+            PID_names = []; // empty the array as new data is coming in
+
+            var buff = [];
+            for (var i = 0; i < data.byteLength; i++) {
+                if (data.getUint8(i) == 0x3B) { // ; (delimeter char)
+                    PID_names.push(String.fromCharCode.apply(null, buff)); // convert bytes into ASCII and save as strings
+
+                    // empty buffer
+                    buff = [];
+                } else {
+                    buff.push(data.getUint8(i));
+                }
+            }
             break;
         case MSP_codes.MSP_WP:
             console.log(data);
