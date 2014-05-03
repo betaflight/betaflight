@@ -1,7 +1,8 @@
+.tab-default .left {
+    width: 520px;
+}
     .welcome {
-        margin: 0 10px 10px 0;
-
-        width: 499px;
+        margin-bottom: 10px;
 
         padding: 5px;
 
@@ -14,7 +15,7 @@
             text-decoration: underline;
         }
     .changelog {
-        margin: 0 0 10px 0;
+        margin: 0 0 10px 530px;
 
         border: 1px solid silver;
     }
@@ -45,10 +46,6 @@
                 margin-bottom: 5px;
             }
     .donate {
-        float: left;
-
-        width: 509px;
-
         padding: 0 0 5px 0;
 
         border: 1px solid silver;
