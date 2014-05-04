@@ -1,34 +1,5 @@
 .tab-auxiliary_configuration {
-
 }
-    .tab-auxiliary_configuration .heads {
-        float: right;
-    }
-        .tab-auxiliary_configuration .heads li {
-            float: left;
-
-            width: 182px;
-            height: 22px;
-            line-height: 22px;
-
-            text-align: center;
-            font-weight: bold;
-
-            border: 1px solid #8b8b8b;
-            border-bottom: 0;
-            border-left: 0;
-
-            background-color: #ececec;
-        }
-            .tab-auxiliary_configuration .heads li:first-child {
-                border-left: 1px solid #8b8b8b;
-            }
-            .tab-auxiliary_configuration .heads li:nth-child(3) {
-                width: 183px;
-            }
-            .tab-auxiliary_configuration .heads li:nth-child(4) {
-                width: 185px;
-            }
     .tab-auxiliary_configuration .boxes {
         width: 100%;
         border-collapse: collapse;
@@ -39,8 +10,13 @@
 
             border: 1px solid #8b8b8b;
         }
+        .tab-auxiliary_configuration .boxes .heads {
+            background-color: #ececec;
+        }
+        .tab-auxiliary_configuration .boxes .main {
+            background-color: #ececec;
+        }
         .tab-auxiliary_configuration .boxes .name {
-            /* padding-left: 5px; */
             text-align: center;
         }
         .tab-auxiliary_configuration .boxes .on {
@@ -57,9 +33,13 @@
             margin-top: -6px;
             margin-left: -6px;
         }
-    .tab-auxiliary_configuration .boxes tr:nth-child(odd) {
-        background-color: #ececec;
-    }
+        .tab-auxiliary_configuration .boxes .switches:nth-child(odd) {
+            background-color: #ececec;
+        }
+        .tab-auxiliary_configuration .boxes .heads th:first-child {
+            border: 0;
+            background-color: white;
+        }
     .tab-auxiliary_configuration .update {
         display: block;
         float: right;

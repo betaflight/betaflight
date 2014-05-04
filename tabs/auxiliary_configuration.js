@@ -24,7 +24,7 @@ function tab_initialize_auxiliary_configuration() {
         // val = channel value
         // aux_num = position of corresponding aux channel in the html table
         function box_highlight(val, aux_num) {
-            var tr = $('table.boxes tr');
+            var tr = $('table.boxes .switches');
             var pos = 0; // < 1300
 
             if (val > 1300 && val < 1700) {
@@ -33,14 +33,14 @@ function tab_initialize_auxiliary_configuration() {
                 pos = 2;
             }
 
-            $(':nth-child(' + aux_num + '), :nth-child(' + (aux_num + 1) + '), :nth-child(' + (aux_num + 2) + ')', tr).css('background-color', 'transparent');
+            $('td:nth-child(' + aux_num + '), td:nth-child(' + (aux_num + 1) + '), td:nth-child(' + (aux_num + 2) + ')', tr).css('background-color', 'transparent');
             $('td:nth-child(' + (aux_num + pos) + ')', tr).css('background-color', 'orange');
         }
 
         // generate table from the supplied AUX names and AUX data
         for (var i = 0; i < AUX_CONFIG.length; i++) {
             $('.boxes > tbody:last').append(
-                '<tr>' +
+                '<tr class="switches">' +
                     '<td class="name">' + AUX_CONFIG[i] + '</td>' +
                     box_check(AUX_CONFIG_values[i], 0) +
                     box_check(AUX_CONFIG_values[i], 1) +
