@@ -1,4 +1,5 @@
 .tab-cli {
+    height: 100%;
 }
     .tab-cli p {
         padding: 5px;
@@ -6,7 +7,7 @@
     }
     .tab-cli .window {
         margin-top: 10px;
-        height: 345px;
+        height: calc(100% - 80px); /* - (p, textarea) */
 
         padding: 5px;
 
