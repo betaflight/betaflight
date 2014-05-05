@@ -68,7 +68,7 @@ float magneticDeclination = 0.0f;       // calculated at startup from config
 int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
-angleInclinations_t angle = { { 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+rollAndPitchInclination_t inclination = { { 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
 static void getEstimatedAttitude(void);
@@ -324,8 +324,8 @@ static void getEstimatedAttitude(void)
     // Attitude of the estimated vector
     anglerad[AI_ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
     anglerad[AI_PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
-    angle.angles.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
-    angle.angles.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
+    inclination.angle.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
+    inclination.angle.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
 
     if (sensors(SENSOR_MAG))
         heading = calculateHeading(&EstM);
@@ -356,9 +356,9 @@ static void getEstimatedAttitude(void)
 
 #define DEGREES_80_IN_DECIDEGREES 800
 
-bool isThrustFacingDownwards(angleInclinations_t *angleInclinations)
+bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
 {
-    return abs(angleInclinations->angles.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && abs(angleInclinations->angles.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
+    return abs(inclination->angle.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && abs(inclination->angle.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
 }
 
 int getEstimatedAltitude(void)
@@ -425,7 +425,7 @@ int getEstimatedAltitude(void)
     vario = applyDeadband(vel_tmp, 5);
 
     // only calculate pid if the copters thrust is facing downwards
-    if (isThrustFacingDownwards(&angle)) {
+    if (isThrustFacingDownwards(&inclination)) {
 		// Altitude P-Controller
 		error = constrain(AltHold - EstAlt, -500, 500);
 		error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position

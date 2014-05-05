@@ -48,18 +48,18 @@
 #define UPWARDS_THRUST false
 
 
-bool isThrustFacingDownwards(angleInclinations_t *angleInclinations);
+bool isThrustFacingDownwards(rollAndPitchInclination_t *inclinations);
 
-typedef struct angleInclinationExpectation_s {
-    angleInclinations_t inclination;
+typedef struct inclinationExpectation_s {
+    rollAndPitchInclination_t inclination;
     bool expectDownwardsThrust;
-} angleInclinationExpectation_t;
+} inclinationExpectation_t;
 
 TEST(FlightImuTest, IsThrustFacingDownwards)
 {
     // given
 
-    angleInclinationExpectation_t angleInclinationExpectations[] = {
+    inclinationExpectation_t inclinationExpectations[] = {
             { { 0, 0 }, DOWNWARDS_THRUST },
             { { 799, 799 }, DOWNWARDS_THRUST },
             { { 800, 799 }, UPWARDS_THRUST },
@@ -72,12 +72,12 @@ TEST(FlightImuTest, IsThrustFacingDownwards)
             { { -800, -800 }, UPWARDS_THRUST },
             { { -801, -801 }, UPWARDS_THRUST }
     };
-    uint8_t testIterationCount = sizeof(angleInclinationExpectations) / sizeof(angleInclinationExpectation_t);
+    uint8_t testIterationCount = sizeof(inclinationExpectations) / sizeof(inclinationExpectation_t);
 
     // expect
 
     for (uint8_t index = 0; index < testIterationCount; index ++) {
-        angleInclinationExpectation_t *angleInclinationExpectation = &angleInclinationExpectations[index];
+        inclinationExpectation_t *angleInclinationExpectation = &inclinationExpectations[index];
         printf("iteration: %d\n", index);
         bool result = isThrustFacingDownwards(&angleInclinationExpectation->inclination);
         EXPECT_EQ(angleInclinationExpectation->expectDownwardsThrust, result);

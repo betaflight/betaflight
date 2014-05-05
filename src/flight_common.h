@@ -80,19 +80,19 @@ typedef union {
     rollAndPitchTrims_t_def trims;
 } rollAndPitchTrims_t;
 
-typedef struct angleInclinations_s {
+typedef struct rollAndPitchInclination_s {
     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
     int16_t rollDeciDegrees;
     int16_t pitchDeciDegrees;
-} angleInclinations_t_def;
+} rollAndPitchInclination_t_def;
 
 typedef union {
-    int16_t raw[ANGLE_INDEX_COUNT];
-    angleInclinations_t_def angles;
-} angleInclinations_t;
+    int16_t rawAngles[ANGLE_INDEX_COUNT];
+    rollAndPitchInclination_t_def angle;
+} rollAndPitchInclination_t;
 
 
-extern angleInclinations_t angle;
+extern rollAndPitchInclination_t inclination;
 
 extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT];
 extern int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT];

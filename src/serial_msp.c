@@ -521,7 +521,7 @@ static void evaluateCommand(void)
     case MSP_ATTITUDE:
         headSerialReply(6);
         for (i = 0; i < 2; i++)
-            serialize16(angle.raw[i]);
+            serialize16(inclination.rawAngles[i]);
         serialize16(heading);
         break;
     case MSP_ALTITUDE:

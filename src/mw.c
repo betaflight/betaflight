@@ -173,7 +173,7 @@ void annexCode(void)
         static uint32_t LEDTime;
         if ((int32_t)(currentTime - LEDTime) >= 0) {
             LEDTime = currentTime + 50000;
-            ledringState(f.ARMED, angle.angles.pitchDeciDegrees, angle.angles.rollDeciDegrees);
+            ledringState(f.ARMED, inclination.angle.pitchDeciDegrees, inclination.angle.rollDeciDegrees);
         }
     }
 #endif
