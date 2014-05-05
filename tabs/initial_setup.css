@@ -166,13 +166,9 @@
         float: left;
         display: block;
 
-        margin-left: 10px;
+        margin: 0 0 10px 10px;
 
         border: 1px solid silver;
-    }
-    .tab-initial_setup .magnetometer,
-    .tab-initial_setup .info {
-        margin-top: 10px;
     }
         .tab-initial_setup .battery .head,
         .tab-initial_setup .throttle .head,
@@ -317,7 +313,7 @@
         display: block;
         float: right;
 
-        margin: 10px 3px 0 0;
+        margin: 0 3px 0 0;
 
         width: 80px;
         height: 28px;
@@ -335,92 +331,3 @@
     .tab-initial_setup .update.success {
         border: 1px solid #43c84d;
     }
-    .tab-initial_setup .compass-wrapper {
-        display: none;
-        position: absolute;
-
-        bottom: 10px;
-        right: 10px;
-
-        border: 1px solid silver;
-        border-radius: 50%;
-    }
-    .tab-initial_setup #compass {
-        position: relative;
-
-        width: 150px;
-        height: 150px;
-
-        border: 6px dashed silver;
-        border-radius: 50%;
-    }
-        .tab-initial_setup #compass span {
-            position: absolute;
-            font-weight: bold;
-        }
-        .tab-initial_setup #compass span:nth-child(1) {
-            left: 70px;
-            top: 5px;
-        }
-        .tab-initial_setup #compass span:nth-child(2) {
-            right: 5px;
-            top: 70px;
-        }
-        .tab-initial_setup #compass span:nth-child(3) {
-            left: 70px;
-            bottom: 5px;
-        }
-        .tab-initial_setup #compass span:nth-child(4) {
-            left: 5px;
-            top: 70px;
-        }
-        .tab-initial_setup #compass .pointer {
-            position: absolute;
-
-            height: 150px;
-            width: 150px;
-
-           -webkit-transform: rotate(0deg);
-        }
-            .tab-initial_setup #compass .pointer .tip {
-                position: absolute;
-
-                margin-top: 14px;
-                margin-left: -6px;
-
-                width: 0;
-                height: 0;
-
-                border-left: 10px solid transparent;
-                border-right: 10px solid transparent;
-
-                border-bottom: 30px solid red;
-            }
-            .tab-initial_setup #compass .pointer .stick {
-                position: absolute;
-                display: block;
-
-                margin-top: -22px;
-                margin-right: 69px;
-
-                width: 4px;
-                height: 30px;
-
-                background-color: black;
-            }
-            .tab-initial_setup #compass .value {
-                position: relative;
-
-                top: 75px;
-                left: 53px;
-
-                width: 40px;
-                height: 16px;
-                line-height: 16px;
-
-                text-align: center;
-
-                background-color: #f2f2f2;
-
-                border: 1px solid silver;
-            }
