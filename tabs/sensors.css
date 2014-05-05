@@ -65,7 +65,7 @@
 .tab-sensors svg {
     float: left;
 
-    width: 730px; /* BEWARE of scrollbar DPI scaling */
+    width: calc(100% - 168px); /* - (plot control, margin)*/
     height: 140px;
 
     margin-bottom: 10px;
