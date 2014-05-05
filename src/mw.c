@@ -587,7 +587,7 @@ void loop(void)
                                 AltHold = EstAlt;
                                 isAltHoldChanged = 0;
                             }
-                            rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
+                            rcCommand[THROTTLE] = constrain(initialThrottleHold + BaroPID, masterConfig.escAndServoConfig.minthrottle + 100, masterConfig.escAndServoConfig.maxthrottle);
                         }
                     } else {
                         // slow alt changes for apfags
@@ -602,8 +602,7 @@ void loop(void)
                             AltHoldCorr = 0;
                             isAltHoldChanged = 0;
                         }
-                        rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
-                        rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE], masterConfig.escAndServoConfig.minthrottle + 150, masterConfig.escAndServoConfig.maxthrottle);
+                        rcCommand[THROTTLE] = constrain(initialThrottleHold + BaroPID, masterConfig.escAndServoConfig.minthrottle + 100, masterConfig.escAndServoConfig.maxthrottle);
                     }
                 } else {
                     // handle fixedwing-related althold. UNTESTED! and probably wrong
