@@ -1,17 +1,30 @@
 .tab-motor_outputs {
 }
+    .tab-motor_outputs .left.motors {
+        float: left;
+
+        margin-right: 50px;
+
+        width: calc(50% - 50px);
+    }
     .tab-motor_outputs .right.servos {
-        margin-right: -10px;
+        float: left;
+
+        width: 50%;
     }
     .tab-motor_outputs .titles {
         height: 20px;
     }
         .tab-motor_outputs .titles li {
             float: left;
-            width: 42px;
+
+            width: calc((100% / 9) - 10px); /* - (margin) */
             margin-right: 10px;
 
             text-align: center;
+        }
+        .tab-motor_outputs .servos .titles li {
+            width: calc((100% / 8) - 10px); /* - (margin) */
         }
         .tab-motor_outputs .titles .active {
             color: green;
@@ -19,7 +32,7 @@
     .tab-motor_outputs .m-block {
         float: left;
 
-        width: 40px;
+        width: calc((100% / 9) - 12px); /* - (margin, border) */
         height: 160px;
 
         margin-right: 10px;
@@ -27,10 +40,13 @@
         border: 1px solid silver;
         background-color: #e9e9e9;
     }
+    .tab-motor_outputs .servos .m-block {
+        width: calc((100% / 8) - 12px); /* - (margin, border) */
+    }
     .tab-motor_outputs .indicator {
-        position: absolute;
+        float: left;
 
-        width: 40px;
+        width: 100%;
     }
     .tab-motor_outputs p {
         margin-top: 20px;
@@ -41,13 +57,18 @@
     .tab-motor_outputs .motor_testing {
         display: none;
     }
+        .tab-motor_outputs .motor_testing .left {
+            margin-right: 50px;
+
+            width: calc(50% - 50px);
+        }
         .tab-motor_outputs .motor_testing .sliders {
             margin-top: 20px;
         }
             .tab-motor_outputs .motor_testing .sliders input {
                 -webkit-appearance: slider-vertical;
 
-                width: 48px;
+                width: calc((100% / 9) - 3px); /* - (width / 9 elements, not sure about -3 */
             }
         .tab-motor_outputs .motor_testing .values {
             margin-top: 5px;
@@ -55,14 +76,14 @@
             .tab-motor_outputs .motor_testing .values li {
                 float: left;
 
-                width: 51px;
+                width: calc((100% / 9));
 
                 text-align: center;
             }
         .tab-motor_outputs .motor_testing .notice {
-            float: right;
+            float: left;
 
-            width: 420px;
+            width: calc(50% - 12px); /* - (padding, border) */
 
             margin-top: 20px;
             padding: 5px;
