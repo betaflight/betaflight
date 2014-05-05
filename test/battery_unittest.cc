@@ -2,6 +2,8 @@
 
 #include <limits.h>
 #include "battery.h"
+
+#include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 typedef struct batteryAdcToVoltageExpectation_s {
@@ -43,9 +45,6 @@ TEST(BatteryTest, BatteryADCToVoltage)
 }
 
 // STUBS
-
-#define UNUSED(x) (void)(x)
-
 
 uint16_t adcGetChannel(uint8_t channel)
 {

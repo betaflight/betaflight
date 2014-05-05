@@ -4,7 +4,7 @@
 
 #include "common/maths.h"
 
-#include "platform.h"
+#include <platform.h>
 
 #include "common/axis.h"
 #include "flight_common.h"
@@ -68,7 +68,7 @@ float magneticDeclination = 0.0f;       // calculated at startup from config
 int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
-int16_t angle[2] = { 0, 0 };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+angleInclinations_t angle = { { 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
 static void getEstimatedAttitude(void);
@@ -324,8 +324,8 @@ static void getEstimatedAttitude(void)
     // Attitude of the estimated vector
     anglerad[AI_ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
     anglerad[AI_PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
-    angle[AI_ROLL] = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
-    angle[AI_PITCH] = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
+    angle.angles.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
+    angle.angles.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
 
     if (sensors(SENSOR_MAG))
         heading = calculateHeading(&EstM);
@@ -352,6 +352,14 @@ static void getEstimatedAttitude(void)
 
 #ifdef BARO
 #define UPDATE_INTERVAL 25000   // 40hz update rate (20hz LPF on acc)
+
+
+#define DEGREES_80_IN_DECIDEGREES 800
+
+bool isThrustFacingDownwards(angleInclinations_t *angleInclinations)
+{
+    return abs(angleInclinations->angles.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && abs(angleInclinations->angles.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
+}
 
 int getEstimatedAltitude(void)
 {
@@ -415,7 +423,9 @@ int getEstimatedAltitude(void)
 
     // set vario
     vario = applyDeadband(vel_tmp, 5);
-    if (abs(angle[ROLL]) < 800 && abs(angle[PITCH]) < 800) { // only calculate pid if the copters thrust is facing downwards(<80deg)
+
+    // only calculate pid if the copters thrust is facing downwards
+    if (isThrustFacingDownwards(&angle)) {
 		// Altitude P-Controller
 		error = constrain(AltHold - EstAlt, -500, 500);
 		error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position

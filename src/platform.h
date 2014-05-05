@@ -33,7 +33,9 @@
 
 #define SENSORS_SET (SENSOR_ACC)
 
-#else
+#endif // STM32F3DISCOVERY
+
+#ifdef STM32F10X_MD
 
 #include "stm32f10x_conf.h"
 #include "core_cm3.h"
@@ -108,4 +110,4 @@
 #endif
 #endif
 
-#endif
+#endif // STM32F10X_MD

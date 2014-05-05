@@ -30,7 +30,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = battery_unittest
+TESTS = battery_unittest flight_imu_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -71,6 +71,8 @@ gtest_main.a : gtest-all.o gtest_main.o
 # gtest_main.a, depending on whether it defines its own main()
 # function.
 
+
+
 battery.o : $(USER_DIR)/battery.c $(USER_DIR)/battery.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/battery.c
 
@@ -79,5 +81,18 @@ battery_unittest.o : $(TEST_DIR)/battery_unittest.cc \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/battery_unittest.cc -I$(USER_DIR)
 
 battery_unittest : battery.o battery_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+
+
+
+flight_imu.o : $(USER_DIR)/flight_imu.c $(USER_DIR)/flight_imu.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/flight_imu.c -I$(TEST_DIR)
+
+flight_imu_unittest.o : $(TEST_DIR)/flight_imu_unittest.cc \
+                     $(USER_DIR)/flight_imu.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/flight_imu_unittest.cc -I$(USER_DIR)
+
+flight_imu_unittest : flight_imu.o flight_imu_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 

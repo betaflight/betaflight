@@ -28,8 +28,6 @@ enum {
 
 #define ANGLE_INDEX_COUNT 2
 
-extern int16_t angle[ANGLE_INDEX_COUNT]; // see angle_index_t
-
 // See http://en.wikipedia.org/wiki/Flight_dynamics
 enum {
     FD_ROLL = 0,
@@ -81,6 +79,20 @@ typedef union {
     int16_t raw[2];
     rollAndPitchTrims_t_def trims;
 } rollAndPitchTrims_t;
+
+typedef struct angleInclinations_s {
+    // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+    int16_t rollDeciDegrees;
+    int16_t pitchDeciDegrees;
+} angleInclinations_t_def;
+
+typedef union {
+    int16_t raw[ANGLE_INDEX_COUNT];
+    angleInclinations_t_def angles;
+} angleInclinations_t;
+
+
+extern angleInclinations_t angle;
 
 extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT];
 extern int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT];
