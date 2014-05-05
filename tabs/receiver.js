@@ -158,11 +158,12 @@ function tab_initialize_receiver() {
             var samples = 0;
             var svg = d3.select("svg");
 
+            var RX_plot_e = $('#RX_plot');
             var width, height, widthScale, heightScale;
             function update_receiver_plot_size() {
                 var margin = {top: 20, right: 20, bottom: 10, left: 40};
-                width = $('#RX_plot').width() - margin.left - margin.right;
-                height = $('#RX_plot').height() - margin.top - margin.bottom;
+                width = RX_plot_e.width() - margin.left - margin.right;
+                height = RX_plot_e.height() - margin.top - margin.bottom;
 
                 widthScale.range([0, width]);
                 heightScale.range([height, 0]);
