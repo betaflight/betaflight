@@ -361,17 +361,48 @@ bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
     return abs(inclination->angle.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && abs(inclination->angle.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
 }
 
+int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
+{
+    uint32_t baroPID = 0;
+    int32_t error;
+    int32_t setVel;
+
+    if (!isThrustFacingDownwards(&inclination)) {
+        return baroPID;
+    }
+
+    // Altitude P-Controller
+
+    error = constrain(AltHold - EstAlt, -500, 500);
+    error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
+    setVel = constrain((currentProfile.pidProfile.P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+
+    // Velocity PID-Controller
+
+    // P
+    error = setVel - vel_tmp;
+    baroPID = constrain((currentProfile.pidProfile.P8[PIDVEL] * error / 32), -300, +300);
+
+    // I
+    errorAltitudeI += (currentProfile.pidProfile.I8[PIDVEL] * error) / 8;
+    errorAltitudeI = constrain(errorAltitudeI, -(1024 * 200), (1024 * 200));
+    baroPID += errorAltitudeI / 1024;     // I in range +/-200
+
+    // D
+    baroPID -= constrain(currentProfile.pidProfile.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
+
+    return baroPID;
+}
+
 int getEstimatedAltitude(void)
 {
     static uint32_t previousT;
     uint32_t currentT = micros();
     uint32_t dTime;
-    int32_t error;
     int32_t baroVel;
-    int32_t vel_tmp;
-    int32_t setVel;
     float dt;
     float vel_acc;
+    int32_t vel_tmp;
     float accZ_tmp;
     static float accZ_old = 0.0f;
     static float vel = 0.0f;
@@ -424,28 +455,7 @@ int getEstimatedAltitude(void)
     // set vario
     vario = applyDeadband(vel_tmp, 5);
 
-    // only calculate pid if the copters thrust is facing downwards
-    if (isThrustFacingDownwards(&inclination)) {
-		// Altitude P-Controller
-		error = constrain(AltHold - EstAlt, -500, 500);
-		error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
-		setVel = constrain((currentProfile.pidProfile.P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
-
-		// Velocity PID-Controller
-		// P
-		error = setVel - vel_tmp;
-		BaroPID = constrain((currentProfile.pidProfile.P8[PIDVEL] * error / 32), -300, +300);
-
-		// I
-		errorAltitudeI += (currentProfile.pidProfile.I8[PIDVEL] * error) / 8;
-		errorAltitudeI = constrain(errorAltitudeI, -(1024 * 200), (1024 * 200));
-		BaroPID += errorAltitudeI / 1024;     // I in range +/-200
-
-		// D
-		BaroPID -= constrain(currentProfile.pidProfile.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
-    } else {
-        BaroPID = 0;
-    }
+    BaroPID = calculateBaroPid(vel_tmp, accZ_tmp, accZ_old);
     accZ_old = accZ_tmp;
 
     return 1;
