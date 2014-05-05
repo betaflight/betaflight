@@ -387,7 +387,7 @@ void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
                 mask = TYPE_S;
 #endif
 #ifdef STM32F303xC
-            // remap PWM 5+6 or 9+10 as servos - softserial pin pairs timer ports that use the same timer
+            // remap PWM 5+6 or 9+10 as servos - softserial pin pairs require timer ports that use the same timer
             if (init->useSoftSerial) {
                 if (port == PWM5 || port == PWM6)
                     mask = TYPE_S;
