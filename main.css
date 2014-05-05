@@ -5,6 +5,9 @@
     list-style: none;
     outline: none;
 }
+html, body {
+    height: 100%;
+}
 body {
     font-family: sans-serif;
     font-size: 12px;
@@ -43,8 +46,9 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 #main-wrapper {
     margin: 10px auto 0 auto;
-
     padding: 0 10px 0 10px;
+
+    height: calc(100% - 10px); /* - padding */
 }
 #port-picker {
     float: left;
@@ -245,11 +249,11 @@ input[type="number"]::-webkit-inner-spin-button {
         }
 #content {
     margin-top: 37px;
-
     padding: 10px;
 
+    height: calc(100% - 184px); /* - (port picker, log, tab, status bar) */
+
     background-color: white;
-    height: 431px;
 
     overflow-x: hidden;
     overflow-y: auto;
