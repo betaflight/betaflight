@@ -6,6 +6,8 @@
     .tab-pid_tuning table {
         float: left;
 
+        margin-bottom: 10px;
+
         border-collapse: collapse;
     }
     .tab-pid_tuning table,
@@ -23,16 +25,10 @@
     .tab-pid_tuning table tr:nth-child(odd) {
         background-color: #ececec;
     }
-    .tab-pid_tuning .name {
-        width: 150px;
-    }
-    .tab-pid_tuning .proportional,
-    .tab-pid_tuning .integral,
-    .tab-pid_tuning .derivative {
-        width: 100px;
-    }
     .tab-pid_tuning table input {
-        width: 96px;
+        display: block;
+
+        width: calc(100% - 10px);
         height: 20px;
         line-height: 20px;
 
@@ -42,9 +38,7 @@
     .tab-pid_tuning .profile {
         float: left;
 
-        margin-top: 10px;
-
-        width: 70px;
+        width: calc(18% - 2px); /* - border*/
 
         border: 1px solid silver;
     }
@@ -59,27 +53,30 @@
             background-color: #ececec;
         }
         .tab-pid_tuning .profile input {
-            padding-left: 30px;
+            display: block;
 
-            width: 40px;
+            width: calc(100% - 10px);
             height: 20px;
+
             line-height: 20px;
+
+            padding: 0 5px 0 5px;
+            text-align: right;
+        }
+    .tab-pid_tuning .pid_tuning {
+        width: 60%;
+    }
+        .tab-pid_tuning .pid_tuning .name {
+            width: 30%;
         }
     .tab-pid_tuning .rate-tpa {
+        width: calc(40% - 12px); /* - (margin, border) */
         margin-left: 10px;
-    }
-    .tab-pid_tuning .rate-tpa th {
-        width: 131px;
-    }
-    .tab-pid_tuning .rate-tpa input {
-        width: 127px;
     }
     .tab-pid_tuning .update,
     .tab-pid_tuning .refresh {
         display: block;
         float: right;
-
-        margin-top: 10px;
 
         height: 28px;
         line-height: 28px;
