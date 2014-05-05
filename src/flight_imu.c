@@ -1,3 +1,5 @@
+// Inertial Measurement Unit (IMU)
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
