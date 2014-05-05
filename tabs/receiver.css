@@ -5,6 +5,7 @@
     }
     .tab-receiver .bars {
         float: left;
+        width: 45%;
 
         font-weight: bold;
     }
@@ -20,10 +21,13 @@
     .tab-receiver .bars .name {
         width: 60px;
     }
+    .tab-receiver .bars .meter {
+        width: 70%;
+    }
         .tab-receiver .bars .meter meter {
             margin-top: 4px;
 
-            width: 200px;
+            width: 100%;
             height: 14px;
 
             border: 1px solid silver;
