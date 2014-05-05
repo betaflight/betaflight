@@ -70,8 +70,8 @@
             width: 30%;
         }
     .tab-pid_tuning .rate-tpa {
-        width: calc(40% - 12px); /* - (margin, border) */
-        margin-left: 10px;
+        float: right;
+        width: calc(40% - 10px); /* - ( "virtual" margin) */
     }
     .tab-pid_tuning .update,
     .tab-pid_tuning .refresh {
