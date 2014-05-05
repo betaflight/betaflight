@@ -13,12 +13,15 @@
 #define U_ID_1 (*(uint32_t*)0x10000000)
 #define U_ID_2 (*(uint32_t*)0x10000003)
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3 // PB3 (LED)
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_4 // PB4 (LED)
-#define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_12 // PA12 (Buzzer)
+#define LED0_GPIO   GPIOE
+#define LED0_PIN    Pin_8|Pin_12 // Blue LEDs - PE8/PE12
+#define LED0_INVERTED
+#define LED1_GPIO   GPIOE
+#define LED1_PIN    Pin_10|Pin_14  // Orange LEDs - PE10/PE14
+#define LED1_INVERTED
+#define BEEP_GPIO   GPIOE
+#define BEEP_PIN    Pin_9|Pin_13 // Red LEDs - PE9/PE13
+#define BUZZER_INVERTED
 #define BARO_GPIO   GPIOC
 #define BARO_PIN    Pin_13
 

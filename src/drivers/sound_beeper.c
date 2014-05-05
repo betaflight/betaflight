@@ -15,7 +15,7 @@
 
 void (* systemBeepPtr)(bool onoff) = NULL;
 
-static void beepRev4(bool onoff)
+static void beepNormal(bool onoff)
 {
     if (onoff) {
         digitalLo(BEEP_GPIO, BEEP_PIN);
@@ -24,7 +24,7 @@ static void beepRev4(bool onoff)
     }
 }
 
-static void beepRev5(bool onoff)
+static void beepInverted(bool onoff)
 {
     if (onoff) {
         digitalHi(BEEP_GPIO, BEEP_PIN);
@@ -41,15 +41,24 @@ void systemBeep(bool onoff)
 #endif
 }
 
+static inline bool isBuzzerOutputInverted(void)
+{
+#ifdef BUZZER_INVERTED
+    return true;
+#else
+    // Naze rev5 needs inverted beeper.
+    return hse_value == 12000000;
+#endif
+}
+
 void beeperInit(void)
 {
 #ifdef BUZZER
     // Configure gpio
-    // rev5 needs inverted beeper. oops.
-    if (hse_value == 12000000)
-        systemBeepPtr = beepRev5;
+    if (isBuzzerOutputInverted())
+        systemBeepPtr = beepInverted;
     else
-        systemBeepPtr = beepRev4;
+        systemBeepPtr = beepNormal;
     BEEP_OFF;
 #endif
 }

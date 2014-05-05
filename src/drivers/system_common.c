@@ -126,6 +126,7 @@ void systemInit(bool overclock)
         RCC_AHBPeriph_GPIOB |
         RCC_AHBPeriph_GPIOC |
         RCC_AHBPeriph_GPIOD |
+        RCC_AHBPeriph_GPIOE |
         /*RCC_AHBPeriph_GPIOF | */
         RCC_AHBPeriph_ADC12,
         ENABLE
