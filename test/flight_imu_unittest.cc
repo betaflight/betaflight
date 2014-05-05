@@ -84,15 +84,6 @@ TEST(FlightImuTest, IsThrustFacingDownwards)
     }
 }
 
-TEST(FlightImuTest, IsThrustFacingUpwards)
-{
-    angleInclinations_t angleInclinations = { { 800, 800 } };
-
-    bool result = isThrustFacingDownwards(&angleInclinations);
-
-    EXPECT_EQ(false, result);
-}
-
 // STUBS
 
 uint16_t acc_1G;
