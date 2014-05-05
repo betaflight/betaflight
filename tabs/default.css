@@ -1,5 +1,12 @@
 .tab-default .left {
-    width: 520px;
+    width: 60%;
+}
+.tab-default .right {
+    float: left;
+
+    margin-left: 10px;
+
+    width: calc(40% - 10px);
 }
     .welcome {
         margin-bottom: 10px;
@@ -15,7 +22,7 @@
             text-decoration: underline;
         }
     .changelog {
-        margin: 0 0 10px 530px;
+        margin: 0 0 10px 0;
 
         border: 1px solid silver;
     }
