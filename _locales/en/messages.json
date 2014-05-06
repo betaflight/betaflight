@@ -304,5 +304,24 @@
     },
     "receiverEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
+    },
+
+    "auxiliaryName": {
+        "message": "Name"
+    },
+    "auxiliaryLow": {
+        "message": "LOW"
+    },
+    "auxiliaryMed": {
+        "message": "MED"
+    },
+    "auxiliaryHigh": {
+        "message": "HIGH"
+    },
+    "auxiliaryButtonSave": {
+        "message": "Save"
+    },
+    "auxiliaryEepromSaved": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
     }
 }

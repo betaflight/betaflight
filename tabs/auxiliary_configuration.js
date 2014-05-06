@@ -98,7 +98,7 @@ function tab_initialize_auxiliary_configuration() {
 
             function save_to_eeprom() {
                 send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
-                    GUI.log('EEPROM <span style="color: green">saved</span>');
+                    GUI.log(chrome.i18n.getMessage('auxiliaryEepromSaved'));
 
                     var element = $('a.update');
                     element.addClass('success');
