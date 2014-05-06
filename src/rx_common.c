@@ -18,7 +18,7 @@
 
 #include "rx_common.h"
 
-void pwmRxInit(rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *failsafe, rcReadRawDataPtr *callback);
+void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *failsafe, rcReadRawDataPtr *callback);
 void sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
 void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
 void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback);
@@ -47,7 +47,7 @@ void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe)
     if (feature(FEATURE_SERIALRX)) {
         serialRxInit(rxConfig, failsafe);
     } else {
-        pwmRxInit(&rxRuntimeConfig, failsafe, &rcReadRawFunc);
+        rxPwmInit(&rxRuntimeConfig, failsafe, &rcReadRawFunc);
     }
 }
 

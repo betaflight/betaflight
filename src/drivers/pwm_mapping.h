@@ -2,15 +2,28 @@
 
 #define MAX_PWM_MOTORS  12
 #define MAX_PWM_SERVOS  8
-#define MAX_PPM_AND_PWM_INPUTS  8
+
+#define MAX_PWM_INPUT_PORTS 8
+
+#define MAX_MOTORS  12
+#define MAX_SERVOS  8
+#define MAX_PWM_OUTPUT_PORTS MAX_PWM_MOTORS // must be set to the largest of either MAX_MOTORS or MAX_SERVOS
+
+#if MAX_PWM_OUTPUT_PORTS < MAX_MOTORS || MAX_PWM_OUTPUT_PORTS < MAX_SERVOS
+#error Invalid motor/servo/port configuration
+#endif
+
 
 #define PULSE_1MS   (1000)      // 1ms pulse width
 #define PULSE_MIN   (750)       // minimum PWM pulse width which is considered valid
 #define PULSE_MAX   (2250)      // maximum PWM pulse width which is considered valid
 
-#define MAX_MOTORS  12
-#define MAX_SERVOS  8
+
+
+
 #define MAX_INPUTS  8
+
+#define PWM_TIMER_MHZ 1
 
 typedef struct drv_pwm_config_t {
     bool enableInput;
@@ -26,7 +39,6 @@ typedef struct drv_pwm_config_t {
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm), 
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
     uint16_t servoCenterPulse;
-    uint16_t failsafeThreshold;
 } drv_pwm_config_t;
 
 // This indexes into the read-only hardware definition structure, timerHardware_t, as well as into pwmPorts structure with dynamic data.
@@ -46,11 +58,3 @@ enum {
     PWM13,
     PWM14
 };
-
-void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
-
-void pwmWriteMotor(uint8_t index, uint16_t value);
-void pwmWriteServo(uint8_t index, uint16_t value);
-uint16_t pwmRead(uint8_t channel);
-
-// void pwmWrite(uint8_t channel, uint16_t value);

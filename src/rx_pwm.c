@@ -6,7 +6,7 @@
 
 #include "platform.h"
 
-#include "drivers/pwm_common.h"
+#include "drivers/pwm_rx.h"
 
 #include "config.h"
 
@@ -20,7 +20,7 @@ static uint16_t pwmReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeC
     return pwmRead(rxConfig->rcmap[chan]);
 }
 
-void pwmRxInit(rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
+void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
 {
     // configure PWM/CPPM read function and max number of channels. serial rx below will override both of these, if enabled
     *callback = pwmReadRawRC;

@@ -15,7 +15,7 @@
 #include "drivers/serial_softserial.h"
 #include "drivers/serial_uart_common.h"
 #include "drivers/accgyro_common.h"
-#include "drivers/pwm_common.h"
+#include "drivers/pwm_mapping.h"
 #include "drivers/adc_common.h"
 
 #include "flight_common.h"
@@ -56,7 +56,8 @@ void timerInit(void);
 void initTelemetry(serialPorts_t *serialPorts);
 void serialInit(serialConfig_t *initialSerialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
-void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe);
+void pwmInit(drv_pwm_config_t *init);
+void pwmRxInit(failsafe_t *initialFailsafe, failsafeConfig_t *initialFailsafeConfig);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
 void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
@@ -172,7 +173,6 @@ int main(void)
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
     pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
-    pwm_params.failsafeThreshold = currentProfile.failsafeConfig.failsafe_detect_threshold;
 
     switch (masterConfig.power_adc_channel) {
         case 1:
@@ -191,7 +191,8 @@ int main(void)
 #ifndef FY90Q
     timerInit();
 #endif
-    pwmInit(&pwm_params, failsafe);
+    pwmInit(&pwm_params);
+    pwmRxInit(failsafe, &currentProfile.failsafeConfig);
 
     rxInit(&masterConfig.rxConfig, failsafe);
 

@@ -10,7 +10,7 @@
 
 #include "drivers/gpio_common.h"
 #include "drivers/timer_common.h"
-#include "drivers/pwm_common.h"
+#include "drivers/pwm_mapping.h"
 #include "flight_mixer.h"
 
 #include "drivers/serial_common.h"

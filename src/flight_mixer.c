@@ -7,7 +7,9 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/pwm_common.h"
+#include "drivers/gpio_common.h"
+#include "drivers/timer_common.h"
+#include "drivers/pwm_output.h"
 
 #include "gimbal.h"
 #include "escservo.h"

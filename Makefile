@@ -142,7 +142,9 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/light_ledring.c \
 		   drivers/sonar_hcsr04.c \
-		   drivers/pwm_common.c \
+		   drivers/pwm_mapping.c \
+		   drivers/pwm_output.c \
+		   drivers/pwm_rx.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f10x.c \
@@ -171,7 +173,9 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f10x.c \
-		   drivers/pwm_common.c \
+		   drivers/pwm_mapping.c \
+		   drivers/pwm_output.c \
+		   drivers/pwm_rx.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f10x.c \
@@ -190,7 +194,9 @@ STM32F3DISCOVERY_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f30x.c \
-		   drivers/pwm_common.c \
+		   drivers/pwm_mapping.c \
+		   drivers/pwm_output.c \
+		   drivers/pwm_rx.c \
 		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
