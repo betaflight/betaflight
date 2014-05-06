@@ -83,7 +83,7 @@ function tab_initialize_receiver() {
 
         $('a.refresh').click(function() {
             send_message(MSP_codes.MSP_RC_TUNING, false, false, function() {
-                GUI.log('RC Tuning data <strong>refreshed</strong>');
+                GUI.log(chrome.i18n.getMessage('receiverDataRefreshed'));
 
                 // fill in data from RC_tuning
                 $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
@@ -120,7 +120,7 @@ function tab_initialize_receiver() {
 
             function save_to_eeprom() {
                 send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
-                    GUI.log('EEPROM <span style="color: green">saved</span>');
+                    GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
 
                     var element = $('a.update');
                     element.addClass('success');

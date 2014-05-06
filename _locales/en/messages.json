@@ -279,5 +279,30 @@
     },
     "pidTuningEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
+    },
+
+    "receiverThrottleMid": {
+        "message": "Throttle MID"
+    },
+    "receiverThrottleExpo": {
+        "message": "Throttle EXPO"
+    },
+    "receiverRcRate": {
+        "message": "RC Rate"
+    },
+    "receiverRcExpo": {
+        "message": "RC Expo"
+    },
+    "receiverButtonSave": {
+        "message": "Save"
+    },
+    "receiverButtonRefresh": {
+        "message": "Refresh"
+    },
+    "receiverDataRefreshed": {
+        "message": "RC Tuning data <strong>refreshed</strong>"
+    },
+    "receiverEepromSaved": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
     }
 }
