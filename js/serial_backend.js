@@ -150,11 +150,11 @@ function onOpen(openInfo) {
 
         // request configuration data
         send_message(MSP_codes.MSP_UID, false, false, function() {
-            GUI.log('Unique device ID <span style="color: green">received</span> - <strong>0x' + CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16) + '</strong>');
+            GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
             send_message(MSP_codes.MSP_IDENT, false, false, function() {
                 GUI.timeout_remove('connecting'); // kill connecting timer
 
-                GUI.log(chrome.i18n.getMessage('firmware_version', [CONFIG.version]));
+                GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
 
                 if (CONFIG.version >= firmware_version_accepted) {
                     configuration_received = true;
@@ -169,9 +169,9 @@ function onOpen(openInfo) {
         });
     } else {
         console.log('Failed to open serial port');
-        GUI.log('Failed to open serial port', 'red');
+        GUI.log(chrome.i18n.getMessage('serialPortOpenFail'));
 
-        $('div#port-picker a.connect').text('Connect');
+        $('div#port-picker a.connect').text(chrome.i18n.getMessage('connect'));
         $('div#port-picker a.connect').removeClass('active');
 
         // unlock port select & baud

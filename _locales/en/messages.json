@@ -59,6 +59,9 @@
     "serialPortOpened": {
         "message": "Serial port <span style=\"color: green\">successfully</span> opened with ID: $1"
     },
+    "serialPortOpenFail": {
+        "message": "<span style=\"color: red\">Failed</span> to open serial port"
+    },
     "serialPortClosedOk": {
         "message": "Serial port <span style=\"color: green\">successfully</span> closed"
     },
@@ -71,6 +74,12 @@
     },
     "firmwareVersionNotSupported": {
         "message": "This firmware version is <span style=\"color: red\">not supported</span>. Please upgrade to version <strong>$1</strong> or higher"
+    },
+    "firmwareVersion": {
+        "message": "Firmware Version: <strong>$1</strong>"
+    },
+    "uniqueDeviceIdReceived": {
+        "message": "Unique device ID <span style=\"color: green\">received</span> - <strong>0x$1</strong>"
     },
 
     "notifications_app_just_updated_to_version": {
@@ -94,9 +103,5 @@
     },
     "statusbar_cycle_time": {
         "message": "Cycle Time:"
-    },
-
-    "firmware_version": {
-        "message": "Firmware Version: <strong>$1</strong>"
     }
 }
