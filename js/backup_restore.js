@@ -296,7 +296,7 @@ function configuration_upload() {
         send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, function() {
             // Save changes to EEPROM
             send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
-                GUI.log('EEPROM <span style="color: green">saved</span>');
+                GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
             });
         });
     }
