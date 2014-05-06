@@ -18,10 +18,14 @@ function tab_initialize_gps () {
         }
 
         function update_ui() {
+            var lat = GPS_DATA.lat / 100000000;
+            var lon = GPS_DATA.lon / 100000000;
+            var url = 'https://maps.google.com/?q=' + lat + ',' + lon;
+
             $('.GPS_info td.fix').html((GPS_DATA.fix) ? '<span style="color: green">True</span>' : '<span style="color: red">False</span>');
             $('.GPS_info td.alt').text(GPS_DATA.alt + ' m');
-            $('.GPS_info td.lat').text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
-            $('.GPS_info td.lon').text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
+            $('.GPS_info td.lat a').prop('href', url).text(lat.toFixed(4) + ' deg');
+            $('.GPS_info td.lon a').prop('href', url).text(lon.toFixed(4) + ' deg');
             $('.GPS_info td.speed').text(GPS_DATA.speed + ' cm/s');
             $('.GPS_info td.sats').text(GPS_DATA.numSat);
             $('.GPS_info td.distToHome').text(GPS_DATA.distanceToHome + ' m');

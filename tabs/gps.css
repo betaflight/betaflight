@@ -37,3 +37,9 @@
         border-bottom: 1px solid silver;
         background-color: #ececec;
     }
+    .tab-gps a {
+        font-weight: bold;
+    }
+    .tab-gps a:hover {
+        text-decoration: underline;
+    }
