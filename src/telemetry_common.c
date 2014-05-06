@@ -62,7 +62,7 @@ bool canUseTelemetryWithCurrentConfiguration(void)
 void initTelemetry(serialPorts_t *serialPorts)
 {
     // Force telemetry to uart when softserial disabled
-    if (canSoftwareSerialBeUsed())
+    if (!canSoftwareSerialBeUsed())
         telemetryConfig->telemetry_port = TELEMETRY_PORT_UART;
 
 #ifdef FY90Q
