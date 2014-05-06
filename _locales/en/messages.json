@@ -9,6 +9,70 @@
         "message": "Send anonymous usage data to the developer team"
     },
 
+    "connect": {
+        "message": "Connect"
+    },
+    "connecting": {
+        "message": "Connecting"
+    },
+    "disconnect": {
+        "message": "Disconnect"
+    },
+    "autoConnect": {
+        "message": "Auto-Connect"
+    },
+    "autoConnectEnabled": {
+        "message": "Auto-Connect: Enabled - Configurator automatically tries to connect when new port is detected"
+    },
+    "autoConnectDisabled": {
+        "message": "Auto-Connect: Disabled - User needs to select the correct serial port and click \"Connect\" button on its own"
+    },
+
+    "tab1": {
+        "message": "Initial Setup"
+    },
+    "tab2": {
+        "message": "PID Tuning"
+    },
+    "tab3": {
+        "message": "Receiver"
+    },
+    "tab4": {
+        "message": "Auxiliary Configuration"
+    },
+    "tab5": {
+        "message": "Servos"
+    },
+    "tab6": {
+        "message": "GPS"
+    },
+    "tab7": {
+        "message": "Motor/Servo Outputs"
+    },
+    "tab8": {
+        "message": "Raw Sensor Data"
+    },
+    "tab9": {
+        "message": "CLI"
+    },
+
+    "serialPortOpened": {
+        "message": "Serial port <span style=\"color: green\">successfully</span> opened with ID: $1"
+    },
+    "serialPortClosedOk": {
+        "message": "Serial port <span style=\"color: green\">successfully</span> closed"
+    },
+    "serialPortClosedFail": {
+        "message": "<span style=\"color: red\">Failed</span> to close serial port"
+    },
+
+    "noConfigurationReceived": {
+        "message": "No configuration received within <span style=\"color: red\">10 seconds</span>, communication <span style=\"color: red\">failed</span>"
+    },
+    "firmwareVersionNotSupported": {
+        "message": "This firmware version is <span style=\"color: red\">not supported</span>. Please upgrade to version <strong>$1</strong> or higher"
+    },
+
     "notifications_app_just_updated_to_version": {
         "message": "Application just updated to version: $1"
     },

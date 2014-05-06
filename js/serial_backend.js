@@ -17,7 +17,7 @@ $(document).ready(function() {
 
                     // lock port select & baud while we are connecting / connected
                     $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', true);
-                    $('div#port-picker a.connect').text('Connecting');
+                    $('div#port-picker a.connect').text(chrome.i18n.getMessage('connecting'));
 
                     serial.connect(selected_port, {bitrate: selected_baud}, onOpen);
                 } else {
@@ -43,7 +43,7 @@ $(document).ready(function() {
                     $('div#port-picker #port').prop('disabled', false);
                     if (!GUI.auto_connect) $('div#port-picker #baud').prop('disabled', false);
 
-                    $(this).text('Connect');
+                    $(this).text(chrome.i18n.getMessage('connect'));
                     $(this).removeClass('active');
 
                     sensor_status(sensors_detected = 0); // reset active sensor indicators
@@ -68,7 +68,7 @@ $(document).ready(function() {
             GUI.auto_connect = true;
 
             $('input.auto_connect').prop('checked', true);
-            $('input.auto_connect, span.auto_connect').prop('title', 'Auto-Connect: Enabled - Configurator automatically tries to connect when new port is detected');
+            $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectEnabled'));
             $('select#baud').val(115200).prop('disabled', true);
 
             // save
@@ -79,7 +79,7 @@ $(document).ready(function() {
                 GUI.auto_connect = true;
 
                 $('input.auto_connect').prop('checked', true);
-                $('input.auto_connect, span.auto_connect').prop('title', 'Auto-Connect: Enabled - Configurator automatically tries to connect when new serial port is detected');
+                $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectEnabled'));
 
                 $('select#baud').val(115200).prop('disabled', true);
             } else {
@@ -87,7 +87,7 @@ $(document).ready(function() {
                 GUI.auto_connect = false;
 
                 $('input.auto_connect').prop('checked', false);
-                $('input.auto_connect, span.auto_connect').prop('title', 'Auto-Connect: Disabled - User needs to select the correct serial port and click "Connect" button on its own');
+                $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectDisabled'));
             }
         }
 
@@ -97,11 +97,11 @@ $(document).ready(function() {
 
             // update title/tooltip
             if (GUI.auto_connect) {
-                $('input.auto_connect, span.auto_connect').prop('title', 'Auto-Connect: Enabled - Configurator automatically tries to connect when new port is detected');
+                $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectEnabled'));
 
                 $('select#baud').val(115200).prop('disabled', true);
             } else {
-                $('input.auto_connect, span.auto_connect').prop('title', 'Auto-Connect: Disabled - User needs to select the correct serial port and click "Connect" button on its own');
+                $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectDisabled'));
 
                 if (!GUI.connected_to && !GUI.connecting_to) $('select#baud').prop('disabled', false);
             }
@@ -122,24 +122,18 @@ function onOpen(openInfo) {
         // reset connecting_to
         GUI.connecting_to = false;
 
-        GUI.log('Serial port <span style="color: green">successfully</span> opened with ID: ' + openInfo.connectionId);
+        GUI.log(chrome.i18n.getMessage('serialPortOpened', [openInfo.connectionId]));
 
         // save selected port with chrome.storage if the port differs
         chrome.storage.local.get('last_used_port', function(result) {
             if (typeof result.last_used_port != 'undefined') {
                 if (result.last_used_port != GUI.connected_to) {
                     // last used port doesn't match the one found in local db, we will store the new one
-                    chrome.storage.local.set({'last_used_port': GUI.connected_to}, function() {
-                        // Debug message is currently disabled (we dont need to spam the console log with that)
-                        // console.log('Last selected port was saved in chrome.storage.');
-                    });
+                    chrome.storage.local.set({'last_used_port': GUI.connected_to});
                 }
             } else {
                 // variable isn't stored yet, saving
-                chrome.storage.local.set({'last_used_port': GUI.connected_to}, function() {
-                    // Debug message is currently disabled (we dont need to spam the console log with that)
-                    // console.log('Last selected port was saved in chrome.storage.');
-                });
+                chrome.storage.local.set({'last_used_port': GUI.connected_to});
             }
         });
 
@@ -148,7 +142,7 @@ function onOpen(openInfo) {
         // disconnect after 10 seconds with error if we don't get IDENT data
         GUI.timeout_add('connecting', function() {
             if (!configuration_received) {
-                GUI.log('No configuration received within <span style="color: red">10 seconds</span>, communication <span style="color: red">failed</span>');
+                GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
 
                 $('div#port-picker a.connect').click(); // disconnect
             }
@@ -165,10 +159,10 @@ function onOpen(openInfo) {
                 if (CONFIG.version >= firmware_version_accepted) {
                     configuration_received = true;
 
-                    $('div#port-picker a.connect').text('Disconnect').addClass('active');
+                    $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
                     $('#tabs li a:first').click();
                 } else {
-                    GUI.log('This firmware version is <span style="color: red">not supported</span>. Please upgrade to version <strong>' + firmware_version_accepted + '</strong> or higher.');
+                    GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [firmware_version_accepted]));
                     $('div#port-picker a.connect').click(); // disconnect
                 }
             });
@@ -190,9 +184,9 @@ function onOpen(openInfo) {
 
 function onClosed(result) {
     if (result) { // All went as expected
-        GUI.log('Serial port <span style="color: green">successfully</span> closed');
+        GUI.log(chrome.i18n.getMessage('serialPortClosedOk'));
     } else { // Something went wrong
-        GUI.log('<span style="color: red">Failed</span> to close serial port');
+        GUI.log(chrome.i18n.getMessage('serialPortClosedFail'));
     }
 }
 
