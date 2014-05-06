@@ -13,6 +13,9 @@ function tab_initialize_auxiliary_configuration() {
     }
 
     function process_html() {
+        // translate to user-selected language
+        localize();
+
         function box_check(num, pos) {
             if (bit_check(num, pos)) { // 1
                 return '<td><input type="checkbox" checked="checked" /></td>';

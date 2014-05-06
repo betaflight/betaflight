@@ -9,6 +9,9 @@ function tab_initialize_gps () {
     }
 
     function process_html() {
+        // translate to user-selected language
+        localize();
+
         function get_raw_gps_data() {
             send_message(MSP_codes.MSP_RAW_GPS, false, false, get_gpsvinfo_data);
         }

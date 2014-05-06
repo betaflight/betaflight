@@ -24,6 +24,9 @@ function tab_initialize_servos() {
     }
 
     function process_html() {
+        // translate to user-selected language
+        localize();
+
         function process_directions(name, obj, bitpos) {
             $('div.direction_wrapper').show();
 

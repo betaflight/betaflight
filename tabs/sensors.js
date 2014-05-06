@@ -165,6 +165,9 @@ function tab_initialize_sensors() {
     }
 
     $('#content').load("./tabs/sensors.html", function load_html() {
+        // translate to user-selected language
+        localize();
+
         $('.tab-sensors .info .checkboxes input').change(function() {
             var enable = $(this).prop('checked');
             var index = $(this).parent().index();

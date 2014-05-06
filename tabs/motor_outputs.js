@@ -13,6 +13,9 @@ function tab_initialize_motor_outputs() {
     }
 
     function process_html() {
+        // translate to user-selected language
+        localize();
+
         // if CAP_DYNBALANCE is true
         if (bit_check(CONFIG.capability, 2)) {
             $('div.motor_testing').show();

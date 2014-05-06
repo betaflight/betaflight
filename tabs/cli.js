@@ -29,6 +29,9 @@ function tab_initialize_cli() {
     MSP.callbacks_cleanup();
 
     $('#content').load("./tabs/cli.html", function() {
+        // translate to user-selected language
+        localize();
+
         CLI_active = true;
 
         // Enter CLI mode

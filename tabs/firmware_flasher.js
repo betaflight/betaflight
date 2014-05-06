@@ -6,6 +6,9 @@ function tab_initialize_firmware_flasher() {
     var parsed_hex = false; // parsed raw hex in array format
 
     $('#content').load("./tabs/firmware_flasher.html", function() {
+        // translate to user-selected language
+        localize();
+
         // UI Hooks
         $('a.load_file').click(function() {
             chrome.fileSystem.chooseEntry({type: 'openFile', accepts: [{extensions: ['hex']}]}, function(fileEntry) {

@@ -13,6 +13,9 @@ function tab_initialize_initial_setup() {
     }
 
     function process_html() {
+        // translate to user-selected language
+        localize();
+
         var yaw_fix = 0.0;
 
         // Fill in misc stuff

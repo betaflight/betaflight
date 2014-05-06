@@ -22,6 +22,9 @@ function tab_initialize_pid_tuning() {
     }
 
     function process_html() {
+        // translate to user-selected language
+        localize();
+
         // Fill in the names from PID_names array
         // this needs to be reworked, but will do for now
         $('.pid_tuning tr:eq(1) td:first').text(PID_names[0]);
