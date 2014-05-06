@@ -98,7 +98,7 @@ function tab_initialize_initial_setup() {
                 break;
         }
 
-        $('span.model').text('Model: ' + str);
+        $('span.model').text(chrome.i18n.getMessage('initialSetupModel', [str]));
 
         // UI Hooks
         $('a.calibrateAccel').click(function() {
@@ -111,13 +111,13 @@ function tab_initialize_initial_setup() {
                 // until this operation finishes, sending more commands through data_poll() will result in serial buffer overflow
                 GUI.interval_pause('initial_setup_data_pull');
                 send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function() {
-                    GUI.log('Accelerometer calibration started');
+                    GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibStarted'));
                 });
 
                 GUI.timeout_add('button_reset', function() {
                     GUI.interval_resume('initial_setup_data_pull');
 
-                    GUI.log('Accelerometer calibration finished');
+                    GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibEnded'));
 
                     self.removeClass('calibrating');
                 }, 2000);
@@ -131,11 +131,11 @@ function tab_initialize_initial_setup() {
                 self.addClass('calibrating');
 
                 send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function() {
-                    GUI.log('Magnetometer calibration started');
+                    GUI.log(chrome.i18n.getMessage('initialSetupMagCalibStarted'));
                 });
 
                 GUI.timeout_add('button_reset', function() {
-                    GUI.log('Magnetometer calibration finished');
+                    GUI.log(chrome.i18n.getMessage('initialSetupMagCalibEnded'));
                     self.removeClass('calibrating');
                 }, 30000);
             }
@@ -143,7 +143,7 @@ function tab_initialize_initial_setup() {
 
         $('a.resetSettings').click(function() {
             send_message(MSP_codes.MSP_RESET_CONF, false, false, function() {
-                GUI.log('Settings restored to <strong>default</strong>');
+                GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
                 GUI.tab_switch_cleanup(function() {
                     tab_initialize_initial_setup();
@@ -206,7 +206,7 @@ function tab_initialize_initial_setup() {
 
             function save_to_eeprom() {
                 send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
-                    GUI.log('EEPROM <span style="color: green">saved</span>');
+                    GUI.log(chrome.i18n.getMessage('initialSetupEepromSaved'));
 
                     var element = $('a.update');
                     element.addClass('success');
@@ -239,8 +239,8 @@ function tab_initialize_initial_setup() {
 
         function update_ui() {
             // Update voltage indicator
-            $('.bat-voltage').text(ANALOG.voltage + ' V');
-            $('.rssi').text(((ANALOG.rssi / 1023) * 100).toFixed(0) + ' %');
+            $('.bat-voltage').text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
+            $('.rssi').text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
 
             // Update cube
             var cube = $('div#cube');
@@ -248,12 +248,6 @@ function tab_initialize_initial_setup() {
             cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematicsZ * -1.0) - yaw_fix) + 'deg)');
             $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematicsY + 'deg)');
             $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematicsX + 'deg)');
-
-            /*
-            // Update Compass
-            $('div#compass .pointer').css('-webkit-transform', 'rotate(' + (SENSOR_DATA.kinematicsZ) + 'deg)');
-            $('div#compass .value').html(SENSOR_DATA.kinematicsZ + '&deg;');
-            */
         }
 
         GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);

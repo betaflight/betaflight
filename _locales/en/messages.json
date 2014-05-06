@@ -1,4 +1,8 @@
 {
+    "translation_version": {
+        "message": "0"
+    },
+
     "options_title": {
         "message": "Application Options"
     },
@@ -123,6 +127,118 @@
     },
     "defaultDonateText": {
         "message": "This utility is fully <strong>open source</strong> and is available free of charge to all <strong>baseflight</strong> users.<br />If you found the utility useful, please consider <strong>supporting</strong> its development by donating."
+    },
+
+    "initialSetupButtonCalibrateAccel": {
+        "message": "Calibrate Accelerometer"
+    },
+    "initialSetupCalibrateAccelText": {
+        "message": "Place board or frame on <strong style=\"color: green\">leveled</strong> surface, proceed with calibration, ensure platform is <strong style=\"color: red\">not</strong> moving during calibration period."
+    },
+    "initialSetupButtonCalibrateMag": {
+        "message": "Calibrate Magnetometer"
+    },
+    "initialSetupCalibrateMagText": {
+        "message": "Move multirotor atleast <strong>360</strong> degrees on all axis of rotation. You have <strong style=\"color: red\">30 seconds</strong> to perform this task."
+    },
+    "initialSetupButtonReset": {
+        "message": "Reset Settings"
+    },
+    "initialSetupResetText": {
+        "message": "Restore <span style=\"color: red\">all</span> settings to <strong>default</strong>."
+    },
+    "initialSetupButtonBackup": {
+        "message": "Backup"
+    },
+    "initialSetupButtonRestore": {
+        "message": "Restore"
+    },
+    "initialSetupBackupRestoreText": {
+        "message": "<strong>Backup</strong> your configuration in case of an accident. (<strong>CLI</strong> settings are <strong style=\"color: red\">not</strong> included)."
+    },
+    "initialSetupButtonResetZaxis": {
+        "message": "Reset Z axis"
+    },
+    "initialSetupThrottleHead": {
+        "message": "Throttle Settings"
+    },
+    "initialSetupMinimum": {
+        "message": "Minimum:"
+    },
+    "initialSetupMaximum": {
+        "message": "Maximum:"
+    },
+    "initialSetupFailsafe": {
+        "message": "Failsafe:"
+    },
+    "initialSetupMinCommand": {
+        "message": "MinCommand:"
+    },
+    "initialSetupBatteryHead": {
+        "message": "Battery"
+    },
+    "initialSetupMinCellV": {
+        "message": "Min Cell Voltage:"
+    },
+    "initialSetupMaxCellV": {
+        "message": "Max Cell Voltage:"
+    },
+    "initialSetupVoltageScale": {
+        "message": "Voltage Scale:"
+    },
+    "initialSetupAccelTrimsHead": {
+        "message": "Accelerometer trims"
+    },
+    "initialSetupPitch": {
+        "message": "Pitch:"
+    },
+    "initialSetupRoll": {
+        "message": "Roll:"
+    },
+    "initialSetupMagHead": {
+        "message": "Magnetometer"
+    },
+    "initialSetupDeclination": {
+        "message": "Declination:"
+    },
+    "initialSetupInfoHead": {
+        "message": "Info"
+    },
+    "initialSetupBattery": {
+        "message": "Battery:"
+    },
+    "initialSetupBatteryValue": {
+        "message": "$1 V"
+    },
+    "initialSetupRSSI": {
+        "message": "RSSI:"
+    },
+    "initialSetupRSSIValue": {
+        "message": "$1 %"
+    },
+    "initialSetupButtonSave": {
+        "message": "Save"
+    },
+    "initialSetupModel": {
+        "message": "Model: $1"
+    },
+    "initialSetupAccelCalibStarted": {
+        "message": "Accelerometer calibration started"
+    },
+    "initialSetupAccelCalibEnded": {
+        "message": "Accelerometer calibration finished"
+    },
+    "initialSetupMagCalibStarted": {
+        "message": "Magnetometer calibration started"
+    },
+    "initialSetupMagCalibEnded": {
+        "message": "Magnetometer calibration finished"
+    },
+    "initialSetupSettingsRestored": {
+        "message": "Settings restored to <strong>default</strong>"
+    },
+    "initialSetupEepromSaved": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
     },
 
     "pidTuningName": {
