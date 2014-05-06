@@ -191,8 +191,8 @@ int main(void)
 #ifndef FY90Q
     timerInit();
 #endif
-    pwmInit(&pwm_params);
     pwmRxInit(failsafe, &currentProfile.failsafeConfig);
+    pwmInit(&pwm_params);
 
     rxInit(&masterConfig.rxConfig, failsafe);
 

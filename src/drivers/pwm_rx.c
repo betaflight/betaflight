@@ -150,6 +150,7 @@ void ppmInConfig(uint8_t timerIndex)
     const timerHardware_t *timerHardwarePtr = &(timerHardware[timerIndex]);
 
     p->mode = INPUT_MODE_PPM;
+    p->timerHardware = timerHardwarePtr;
 
     pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
