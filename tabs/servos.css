@@ -53,7 +53,9 @@
             vertical-align: middle;
         }
     .tab-servos table input[type="number"] {
-        width: 65px;
+        display: block;
+
+        width: calc(100% - 5px);
         height: 20px;
 
         padding-right: 5px;

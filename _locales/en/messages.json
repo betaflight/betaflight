@@ -323,5 +323,48 @@
     },
     "auxiliaryEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
+    },
+
+    "servosModel": {
+        "message": "Model:"
+    },
+    "servosChangeDirection": {
+        "message": "Change Direction in TX To Match"
+    },
+    "servosGyroAccelDirection": {
+        "message": "Gyroscope / Accelerometer Direction"
+    },
+    "servosName": {
+        "message": "Name"
+    },
+    "servosMid": {
+        "message": "MID"
+    },
+    "servosMin": {
+        "message": "MIN"
+    },
+    "servosMax": {
+        "message": "MAX"
+    },
+    "servosDirection": {
+        "message": "Direction"
+    },
+    "servosLiveMode": {
+        "message": "Enable Live mode:"
+    },
+    "servosButtonSave": {
+        "message": "Save"
+    },
+    "servosModelNoSupport": {
+        "message": "This model doesn't support servos"
+    },
+    "servosNormal": {
+        "message": "Normal"
+    },
+    "servosReverse": {
+        "message": "Reverse"
+    },
+    "servosEepromSave": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
     }
 }

@@ -37,8 +37,8 @@ function tab_initialize_servos() {
                     <td class="name" style="text-align: center">' + name + '</td>\
                     <td class="direction" style="text-align: right">\
                         <select name="direction">\
-                            <option value="0">Normal</option>\
-                            <option value="1">Reverse</option>\
+                            <option value="0">' + chrome.i18n.getMessage('servosNormal') + '</option>\
+                            <option value="1">' + chrome.i18n.getMessage('servosReverse') + '</option>\
                         </select>\
                     </td>\
                 </tr>\
@@ -180,7 +180,7 @@ function tab_initialize_servos() {
             if (save_to_eeprom) {
                 // Save changes to EEPROM
                 send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
-                    GUI.log('EEPROM <span style="color: green">saved</span>');
+                    GUI.log(chrome.i18n.getMessage('servosEepromSave'));
 
                     var element = $('a.update');
                     element.addClass('success');
@@ -201,7 +201,7 @@ function tab_initialize_servos() {
         switch (CONFIG.multiType) {
             case 1: // TRI
                 // looking ok so far
-                model.html('TRI');
+                model.text('TRI');
 
                 process_directions('YAW', 5, 0);
 
@@ -209,7 +209,7 @@ function tab_initialize_servos() {
                 break;
             case 4: // BI
                 // looking ok so far
-                model.html('BI');
+                model.text('BI');
 
                 process_directions('L YAW', 4, 1);
                 process_directions('R YAW', 5, 1);
@@ -221,7 +221,7 @@ function tab_initialize_servos() {
                 break;
             case 5: // Gimbal
                 // needs to be verified
-                model.html('Gimbal');
+                model.text('Gimbal');
 
                 // rate
                 process_servos('Pitch Servo', '', 0, 2);
@@ -229,7 +229,7 @@ function tab_initialize_servos() {
                 break;
             case 8: // Flying Wing
                 // looking ok so far
-                model.html('Flying Wing');
+                model.text('Flying Wing');
 
                 process_directions('L ROLL', 3, 1);
                 process_directions('R ROLL', 4, 1);
@@ -240,7 +240,7 @@ function tab_initialize_servos() {
                 process_servos('Right Wing', '', 4, false);
                 break;
             case 14: // Airplane
-                model.html('Airplane');
+                model.text('Airplane');
 
                 // rate
                 process_servos('Wing 1', '', 3, 2);
@@ -250,7 +250,7 @@ function tab_initialize_servos() {
                 break;
             case 20: // Dualcopter
                 // looking ok so far
-                model.html('Dualcopter');
+                model.text('Dualcopter');
 
                 process_directions('PITCH', 4, 0);
                 process_directions('ROLL', 5, 0);
@@ -260,7 +260,7 @@ function tab_initialize_servos() {
                 break;
             case 21: // Singlecopter
                 // looking ok so far
-                model.html('Singlecopter');
+                model.text('Singlecopter');
 
                 process_servos('Right', 'R YAW', 3, true);
                 process_servos('Left', 'L YAW', 4, true);
@@ -269,13 +269,13 @@ function tab_initialize_servos() {
                 break;
 
             default:
-                model.html("This model doesn't support servos");
+                model.text(chrome.i18n.getMessage('servosModelNoSupport'));
 
                 // implementation of feature servo_tilt
                 if (AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
                     // Gimbal on
                     // needs to be verified
-                    model.html('Gimbal / Tilt Servos');
+                    model.text('Gimbal / Tilt Servos');
 
                     // rate
                     process_servos('Pitch Servo', '', 0, 2);
