@@ -123,5 +123,45 @@
     },
     "defaultDonateText": {
         "message": "This utility is fully <strong>open source</strong> and is available free of charge to all <strong>baseflight</strong> users.<br />If you found the utility useful, please consider <strong>supporting</strong> its development by donating."
+    },
+
+    "pidTuningName": {
+        "message": "Name"
+    },
+    "pidTuningProportional": {
+        "message": "Proportional"
+    },
+    "pidTuningIntegral": {
+        "message": "Integral"
+    },
+    "pidTuningDerivative": {
+        "message": "Derivative"
+    },
+    "pidTuningRollPitchRate": {
+        "message": "ROLL &amp; PITCH rate"
+    },
+    "pidTuningYawRate": {
+        "message": "YAW rate"
+    },
+    "pidTuningTPA": {
+        "message": "TPA"
+    },
+    "pidTuningButtonSave": {
+        "message": "Save"
+    },
+    "pidTuningButtonRefresh": {
+        "message": "Refresh"
+    },
+    "pidTuningProfileHead": {
+        "message": "Profile"
+    },
+    "pidTuningLoadedProfile": {
+        "message": "Loaded Profile: <strong>$1</strong>"
+    },
+    "pidTuningDataRefreshed": {
+        "message": "PID data <strong>refreshed</strong>"
+    },
+    "pidTuningEepromSaved": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
     }
 }

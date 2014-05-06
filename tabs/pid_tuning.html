@@ -1,10 +1,10 @@
 <div class="tab-pid_tuning">
     <table class="pid_tuning">
         <tr>
-            <th class="name">Name</th>
-            <th class="proportional">Proportional</th>
-            <th class="integral">Integral</th>
-            <th class="derivative">Derivative</th>
+            <th class="name" i18n="pidTuningName"></th>
+            <th class="proportional" i18n="pidTuningProportional"></th>
+            <th class="integral" i18n="pidTuningIntegral"></th>
+            <th class="derivative" i18n="pidTuningDerivative"></th>
         </tr>
         <tr class="ROLL"><!-- 0 -->
             <td></td>
@@ -66,9 +66,9 @@
     </table>
     <table class="rate-tpa">
         <tr>
-            <th>ROLL &amp; PITCH rate</th>
-            <th>YAW rate</th>
-            <th>TPA</th>
+            <th i18n="pidTuningRollPitchRate"></th>
+            <th i18n="pidTuningYawRate"></th>
+            <th i18n="pidTuningTPA"></th>
         </tr>
         <tr>
             <td><input type="number" name="roll-pitch" step="0.01" min="0" max="2.55" /></td>
@@ -76,11 +76,11 @@
             <td><input type="number" name="tpa"        step="0.01" min="0" max="2.55" /></td>
         </tr>
     </table>
-    <a class="update" href="#">Save</a>
-    <a class="refresh" href="#">Refresh</a>
+    <a class="update" href="#" i18n="pidTuningButtonSave"></a>
+    <a class="refresh" href="#" i18n="pidTuningButtonRefresh"></a>
     <div class="clear-both"></div>
     <div class="profile">
-        <span class="head">Profile</span>
+        <span class="head" i18n="pidTuningProfileHead"></span>
         <input type="number" name="profile" min="1" max="3" />
     </div>
 </div>

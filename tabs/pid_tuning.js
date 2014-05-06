@@ -181,7 +181,7 @@ function tab_initialize_pid_tuning() {
         $('input[name="profile"]').change(function() {
             var profile = parseInt($(this).val());
             send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function() {
-                GUI.log('Loaded Profile: <strong>' + profile + '</strong>');
+                GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile]));
 
                 GUI.tab_switch_cleanup(tab_initialize_pid_tuning);
             });
@@ -189,7 +189,7 @@ function tab_initialize_pid_tuning() {
 
         $('a.refresh').click(function() {
             GUI.tab_switch_cleanup(function() {
-                GUI.log('PID data <strong>refreshed</strong>');
+                GUI.log(chrome.i18n.getMessage('pidTuningDataRefreshed'));
 
                 tab_initialize_pid_tuning();
             });
@@ -299,7 +299,7 @@ function tab_initialize_pid_tuning() {
 
             function save_to_eeprom() {
                 send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
-                    GUI.log('EEPROM <span style="color: green">saved</span>');
+                    GUI.log(chrome.i18n.getMessage('pidTuningEepromSaved'));
 
                     var element = $('a.update');
                     element.addClass('success');
