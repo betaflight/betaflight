@@ -20,8 +20,6 @@
 
 void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config)
 {
-    // FIXME implement
-
     GPIO_InitTypeDef GPIO_InitStructure;
 
     uint32_t pinIndex;
@@ -56,5 +54,5 @@ void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config)
 
 void gpioExtiLineConfig(uint8_t portsrc, uint8_t pinsrc)
 {
-    // FIXME needed? implement?
+    // FIXME needed yet? implement?
 }
