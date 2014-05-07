@@ -37,6 +37,9 @@ var STM32_protocol = function() {
     };
 
     // Erase (x043) and Extended Erase (0x44) are exclusive. A device may support either the Erase command or the Extended Erase command but not both.
+
+    this.available_flash_size = 0;
+    this.page_size = 0;
 };
 
 // string = string .. duh
@@ -241,15 +244,14 @@ STM32_protocol.prototype.verify_response = function(val, data) {
 // input = 16 bit value
 // result = true/false
 STM32_protocol.prototype.verify_chip_signature = function(signature) {
-    var available_flash_size = 0;
-
     switch (signature) {
         case 0x412: // not tested
             console.log('Chip recognized as F1 Low-density');
             break;
         case 0x410:
             console.log('Chip recognized as F1 Medium-density');
-            available_flash_size = 131072;
+            this.available_flash_size = 131072;
+            this.page_size = 1024;
             break;
         case 0x414: // not tested
             console.log('Chip recognized as F1 High-density');
@@ -298,11 +300,11 @@ STM32_protocol.prototype.verify_chip_signature = function(signature) {
             break;
     }
 
-    if (available_flash_size > 0) {
-        if (this.hex.bytes_total < available_flash_size) {
+    if (this.available_flash_size > 0) {
+        if (this.hex.bytes_total < this.available_flash_size) {
             return true;
         } else {
-            console.log('Supplied hex is bigger then flash available on the chip, HEX: ' + this.hex.bytes_total + ' bytes, limit = ' + available_flash_size + ' bytes');
+            console.log('Supplied hex is bigger then flash available on the chip, HEX: ' + this.hex.bytes_total + ' bytes, limit = ' + this.available_flash_size + ' bytes');
 
             return false;
         }
@@ -394,6 +396,39 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 4:
             // erase memory
+            // EXPERIMENTAL
+            console.log('Executing local erase (only needed pages)');
+            STM32.GUI_status('Erasing');
+
+            self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
+                if (self.verify_response(self.status.ACK, reply)) {
+                    // the bootloader receives one byte that contains N, the number of pages to be erased – 1
+                    var erase_pages_n = Math.ceil(self.hex.bytes_total / self.page_size);
+
+                    var buff = [];
+                    buff.push(erase_pages_n - 1);
+                    var checksum = buff[0];
+                    for (var i = 0; i < erase_pages_n; i++) {
+                        buff.push(i);
+                        checksum ^= i;
+                    }
+                    buff.push(checksum);
+
+                    self.send(buff, 1, function(reply) {
+                        if (self.verify_response(self.status.ACK, reply)) {
+                            console.log('Erasing: done');
+                            console.log('Writing data ...');
+                            STM32.GUI_status('<span style="color: green">Flashing ...</span>');
+
+                            // proceed to next step
+                            self.upload_procedure(5);
+                        }
+                    });
+                }
+            });
+
+            // OLD BUT GOLD
+            /*
             console.log('Executing global chip erase');
             STM32.GUI_status('Erasing');
 
@@ -411,6 +446,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     });
                 }
             });
+            */
             break;
         case 5:
             // upload
@@ -423,7 +459,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
 
             function write() {
                 if (bytes_flashed < self.hex.data[flashing_block].bytes) {
-                    var bytes_to_write = ((bytes_flashed + 128) <= self.hex.data[flashing_block].bytes) ? 128 : (self.hex.data[flashing_block].bytes - bytes_flashed);
+                    var bytes_to_write = ((bytes_flashed + 256) <= self.hex.data[flashing_block].bytes) ? 256 : (self.hex.data[flashing_block].bytes - bytes_flashed);
 
                     // console.log('STM32 - Writing to: 0x' + address.toString(16) + ', ' + bytes_to_write + ' bytes');
 
@@ -503,7 +539,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
 
             function reading() {
                 if (bytes_verified < self.hex.data[reading_block].bytes) {
-                    var bytes_to_read = ((bytes_verified + 128) <= self.hex.data[reading_block].bytes) ? 128 : (self.hex.data[reading_block].bytes - bytes_verified);
+                    var bytes_to_read = ((bytes_verified + 256) <= self.hex.data[reading_block].bytes) ? 256 : (self.hex.data[reading_block].bytes - bytes_verified);
 
                     // console.log('STM32 - Reading from: 0x' + address.toString(16) + ', ' + bytes_to_read + ' bytes');
 
