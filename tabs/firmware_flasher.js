@@ -113,9 +113,7 @@ function tab_initialize_firmware_flasher() {
 
         chrome.storage.local.get('no_reboot_sequence', function(result) {
             if (typeof result.no_reboot_sequence === 'undefined') {
-                // wasn't saved yet, save and push false to the GUI
-                chrome.storage.local.set({'no_reboot_sequence': false});
-
+                // wasn't saved yet
                 $('input.updating').prop('checked', false);
             } else {
                 if (result.no_reboot_sequence) {
@@ -137,15 +135,13 @@ function tab_initialize_firmware_flasher() {
                     $('input.flash_on_connect').prop('checked', false).change();
                 }
 
-                chrome.storage.local.set({'no_reboot_sequence': status}, function() {});
+                chrome.storage.local.set({'no_reboot_sequence': status});
             });
         });
 
         chrome.storage.local.get('flash_on_connect', function(result) {
             if (typeof result.flash_on_connect === 'undefined') {
-                // wasn't saved yet, save and push false to the GUI
-                chrome.storage.local.set({'flash_on_connect': false});
-
+                // wasn't saved yet
                 $('input.flash_on_connect').prop('checked', false);
             } else {
                 if (result.flash_on_connect) {
@@ -200,7 +196,7 @@ function tab_initialize_firmware_flasher() {
                     PortHandler.flush_callbacks();
                 }
 
-                chrome.storage.local.set({'flash_on_connect': status}, function() {});
+                chrome.storage.local.set({'flash_on_connect': status});
             }).change();
         });
 
