@@ -396,58 +396,57 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 4:
             // erase memory
-            // EXPERIMENTAL
-            console.log('Executing local erase (only needed pages)');
-            STM32.GUI_status('Erasing');
+            if (!$('input.erase_chip').is(':checked')) {
+                // EXPERIMENTAL
+                console.log('Executing local erase (only needed pages)');
+                STM32.GUI_status('Erasing');
 
-            self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
-                if (self.verify_response(self.status.ACK, reply)) {
-                    // the bootloader receives one byte that contains N, the number of pages to be erased – 1
-                    var max_address = self.hex.data[self.hex.data.length - 1].address + self.hex.data[self.hex.data.length - 1].bytes - 0x8000000;
-                    var erase_pages_n = Math.ceil(max_address / self.page_size);
+                self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
+                    if (self.verify_response(self.status.ACK, reply)) {
+                        // the bootloader receives one byte that contains N, the number of pages to be erased – 1
+                        var max_address = self.hex.data[self.hex.data.length - 1].address + self.hex.data[self.hex.data.length - 1].bytes - 0x8000000;
+                        var erase_pages_n = Math.ceil(max_address / self.page_size);
 
-                    var buff = [];
-                    buff.push(erase_pages_n - 1);
-                    var checksum = buff[0];
-                    for (var i = 0; i < erase_pages_n; i++) {
-                        buff.push(i);
-                        checksum ^= i;
+                        var buff = [];
+                        buff.push(erase_pages_n - 1);
+                        var checksum = buff[0];
+                        for (var i = 0; i < erase_pages_n; i++) {
+                            buff.push(i);
+                            checksum ^= i;
+                        }
+                        buff.push(checksum);
+
+                        self.send(buff, 1, function(reply) {
+                            if (self.verify_response(self.status.ACK, reply)) {
+                                console.log('Erasing: done');
+                                console.log('Writing data ...');
+                                STM32.GUI_status('<span style="color: green">Flashing ...</span>');
+
+                                // proceed to next step
+                                self.upload_procedure(5);
+                            }
+                        });
                     }
-                    buff.push(checksum);
+                });
+            } else {
+                console.log('Executing global chip erase');
+                STM32.GUI_status('Erasing');
 
-                    self.send(buff, 1, function(reply) {
-                        if (self.verify_response(self.status.ACK, reply)) {
-                            console.log('Erasing: done');
-                            console.log('Writing data ...');
-                            STM32.GUI_status('<span style="color: green">Flashing ...</span>');
+                self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
+                    if (self.verify_response(self.status.ACK, reply)) {
+                        self.send([0xFF, 0x00], 1, function(reply) {
+                            if (self.verify_response(self.status.ACK, reply)) {
+                                console.log('Erasing: done');
+                                console.log('Writing data ...');
+                                STM32.GUI_status('<span style="color: green">Flashing ...</span>');
 
-                            // proceed to next step
-                            self.upload_procedure(5);
-                        }
-                    });
-                }
-            });
-
-            // OLD BUT GOLD
-            /*
-            console.log('Executing global chip erase');
-            STM32.GUI_status('Erasing');
-
-            self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
-                if (self.verify_response(self.status.ACK, reply)) {
-                    self.send([0xFF, 0x00], 1, function(reply) {
-                        if (self.verify_response(self.status.ACK, reply)) {
-                            console.log('Erasing: done');
-                            console.log('Writing data ...');
-                            STM32.GUI_status('<span style="color: green">Flashing ...</span>');
-
-                            // proceed to next step
-                            self.upload_procedure(5);
-                        }
-                    });
-                }
-            });
-            */
+                                // proceed to next step
+                                self.upload_procedure(5);
+                            }
+                        });
+                    }
+                });
+            }
             break;
         case 5:
             // upload

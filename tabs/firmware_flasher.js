@@ -200,6 +200,26 @@ function tab_initialize_firmware_flasher() {
             }).change();
         });
 
+        chrome.storage.local.get('erase_chip', function(result) {
+            if (typeof result.erase_chip === 'undefined') {
+                // wasn't saved yet
+                $('input.updating').prop('checked', false);
+            } else {
+                if (result.erase_chip) {
+                    $('input.erase_chip').prop('checked', true);
+                } else {
+                    $('input.erase_chip').prop('checked', false);
+                }
+            }
+
+            // bind UI hook so the status is saved on change
+            $('input.erase_chip').change(function() {
+                var status = $(this).is(':checked');
+
+                chrome.storage.local.set({'erase_chip': status});
+            });
+        });
+
         /*
         chrome.storage.local.get('dev_mode', function(result) {
             if (typeof result.dev_mode !== 'undefined') {
