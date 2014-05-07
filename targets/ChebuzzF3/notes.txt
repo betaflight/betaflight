@@ -10,7 +10,7 @@ Connections
 
 Board orientation.
 
-These notes assume the with the header pins facing up that the bottom right of the board is next to the 8 sets of INPUT pin headers.
+These notes assume that when the board is placed with the header pins facing up, the bottom right of the board is next to the 8 sets of INPUT pin headers.
 Inner means between the two rows of header sockets, outer means between the left/right board edges and the header sockets.
 
 
