@@ -42,6 +42,7 @@
 // Use these to help with porting to new boards
 //#define USE_FAKE_ACC
 //#define USE_FAKE_GYRO
+#define USE_ACC_ADXL345
 
 extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
@@ -78,6 +79,16 @@ bool fakeAccDetect(acc_t *acc)
 }
 #endif
 
+#ifdef CHEBUZZF3
+// FIXME ugly hack to support a target that will never use these sensors.  There needs to be a better way of compiling in and detecting only the sensors needed.
+#define mpu6050Detect(a,b,c) false
+#define l3g4200dDetect(a,b) false
+#define mpu3050Detect(a,b) false
+#define adxl345Detect(a,b) false
+#undef USE_ACC_ADXL345
+#endif
+
+
 #ifdef FY90Q
 // FY90Q analog gyro/acc
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
@@ -91,7 +102,9 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
 {
     int16_t deg, min;
+#ifdef USE_ACC_ADXL345
     drv_adxl345_config_t acc_params;
+#endif
     bool haveMpu6k = false;
 
     memset(&acc, sizeof(acc), 0);
@@ -135,6 +148,7 @@ retry:
             sensorsClear(SENSOR_ACC);
             break;
         case ACC_DEFAULT: // autodetect
+#ifdef USE_ACC_ADXL345
         case ACC_ADXL345: // ADXL345
             acc_params.useFifo = false;
             acc_params.dataRate = 800; // unused currently
@@ -145,9 +159,9 @@ retry:
             if (accHardwareToUse == ACC_ADXL345)
                 break;
             ; // fallthrough
+#endif
         case ACC_MPU6050: // MPU6050
-            if (haveMpu6k) {
-                mpu6050Detect(&acc, &gyro, gyroLpf); // yes, i'm rerunning it again.  re-fill acc struct
+            if (haveMpu6k && mpu6050Detect(&acc, &gyro, gyroLpf)) { // FIXME decouple mpu detection from gyro/acc struct filling
                 accHardware = ACC_MPU6050;
                 accAlign = CW0_DEG; // default NAZE alignment
                 if (accHardwareToUse == ACC_MPU6050)

@@ -32,7 +32,7 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = NAZE FY90Q OLIMEXINO STM32F3DISCOVERY
+VALID_TARGETS	 = NAZE FY90Q OLIMEXINO STM32F3DISCOVERY CHEBUZZF3
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
@@ -45,7 +45,7 @@ INCLUDE_DIRS = $(SRC_DIR)
 # Search path for sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 
-ifeq ($(TARGET),STM32F3DISCOVERY)
+ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3))
 
 STDPERIPH_DIR	 = $(ROOT)/lib/STM32F30x_StdPeriph_Driver
 
@@ -60,6 +60,12 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4
 DEVICE_FLAGS = -DSTM32F303xC
+TARGET_FLAGS = -D$(TARGET)
+ifeq ($(TARGET),CHEBUZZF3)
+# CHEBUZZ is a VARIANT of STM32F3DISCOVERY
+TARGET_FLAGS := $(TARGET_FLAGS) -DSTM32F3DISCOVERY
+endif
+
 
 else
 
@@ -76,11 +82,11 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
+TARGET_FLAGS = -D$(TARGET)
 DEVICE_FLAGS = -DSTM32F10X_MD
 
 endif
 
-# Source files common to all targets
 COMMON_SRC	 = build_config.c \
 		   battery.c \
 		   boardalignment.c \
@@ -125,7 +131,6 @@ COMMON_SRC	 = build_config.c \
 		   $(CMSIS_SRC) \
 		   $(STDPERIPH_SRC)
 
-# Source files for the NAZE target
 NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_bma280.c \
@@ -151,7 +156,6 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/timer_common.c \
 		   $(COMMON_SRC)
 
-# Source files for the FY90Q target
 FY90Q_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_fy90q.c \
 		   drivers/adc_fy90q.c \
@@ -163,7 +167,6 @@ FY90Q_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_uart_stm32f10x.c \
 		   $(COMMON_SRC)
 
-# Source files for the OLIMEXINO target
 OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_mpu3050.c \
@@ -182,12 +185,7 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/timer_common.c \
 		   $(COMMON_SRC)
 
-# Source files for the STM32F3DISCOVERY target
-STM32F3DISCOVERY_SRC	 = startup_stm32f30x_md_gcc.S \
-		   drivers/accgyro_adxl345.c \
-		   drivers/accgyro_mpu3050.c \
-		   drivers/accgyro_mpu6050.c \
-		   drivers/accgyro_l3g4200d.c \
+STM32F3DISCOVERY_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
 		   drivers/adc_common.c \
@@ -200,7 +198,17 @@ STM32F3DISCOVERY_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
-		   drivers/timer_common.c \
+		   drivers/timer_common.c
+
+STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
+		   drivers/accgyro_l3g4200d.c \
+		   drivers/accgyro_adxl345.c \
+		   drivers/accgyro_mpu3050.c \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_l3g4200d.c \
+		   $(COMMON_SRC)
+
+CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 		   $(COMMON_SRC)
 
 # In some cases, %.s regarded as intermediate file, which is actually not.
@@ -232,7 +240,7 @@ BASE_CFLAGS	 = $(ARCH_FLAGS) \
 		   -fdata-sections \
 		   $(DEVICE_FLAGS) \
 		   -DUSE_STDPERIPH_DRIVER \
-		   -D$(TARGET) \
+		   $(TARGET_FLAGS) \
 		   -D'__FORKNAME__="$(FORKNAME)"'
 
 ASFLAGS		 = $(ARCH_FLAGS) \
