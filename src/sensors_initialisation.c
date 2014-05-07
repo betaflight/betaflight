@@ -40,9 +40,39 @@
 #include "sensors_sonar.h"
 
 // Use these to help with porting to new boards
-//#define USE_FAKE_ACC
 //#define USE_FAKE_GYRO
+#define USE_GYRO_L3G4200D
+#define USE_GYRO_L3GD20
+#define USE_GYRO_MPU6050
+#define USE_GYRO_MPU3050
+//#define USE_FAKE_ACC
 #define USE_ACC_ADXL345
+#define USE_ACC_BMA280
+#define USE_ACC_MMA8452
+#define USE_ACC_LSM303DLHC
+#define USE_ACC_MPU6050
+
+#ifdef NAZE
+#undef USE_ACC_LSM303DLHC
+#undef USE_GYRO_L3GD20
+#endif
+
+#if defined(OLIMEXINO)
+#undef USE_ACC_LSM303DLHC
+#undef USE_GYRO_L3GD20
+#undef USE_ACC_BMA280
+#undef USE_ACC_MMA8452
+#endif
+
+#ifdef CHEBUZZF3
+#undef USE_GYRO_L3G4200D
+#undef USE_GYRO_MPU6050
+#undef USE_GYRO_MPU3050
+#undef USE_ACC_ADXL345
+#undef USE_ACC_BMA280
+#undef USE_ACC_MPU6050
+#undef USE_ACC_MMA8452
+#endif
 
 extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
@@ -79,16 +109,6 @@ bool fakeAccDetect(acc_t *acc)
 }
 #endif
 
-#ifdef CHEBUZZF3
-// FIXME ugly hack to support a target that will never use these sensors.  There needs to be a better way of compiling in and detecting only the sensors needed.
-#define mpu6050Detect(a,b,c) false
-#define l3g4200dDetect(a,b) false
-#define mpu3050Detect(a,b) false
-#define adxl345Detect(a,b) false
-#undef USE_ACC_ADXL345
-#endif
-
-
 #ifdef FY90Q
 // FY90Q analog gyro/acc
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
@@ -99,51 +119,68 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     return true;
 }
 #else
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
+
+bool detectGyro(uint16_t gyroLpf)
 {
-    int16_t deg, min;
+    gyroAlign = ALIGN_DEFAULT;
+#ifdef USE_FAKE_GYRO
+    if (fakeGyroDetect(&gyro, gyroLpf)) {
+        return true;
+#endif
+
+#ifdef USE_GYRO_MPU6050
+    if (mpu6050GyroDetect(&gyro, gyroLpf)) {
+#ifdef NAZE
+        gyroAlign = CW0_DEG;
+#endif
+        return true;
+    }
+#endif
+
+#ifdef USE_GYRO_L3G4200D
+    if (l3g4200dDetect(&gyro, gyroLpf)) {
+#ifdef NAZE
+        gyroAlign = CW0_DEG;
+#endif
+        return true;
+    }
+#endif
+
+#ifdef USE_GYRO_MPU3050
+    if (mpu3050Detect(&gyro, gyroLpf)) {
+#ifdef NAZE
+        gyroAlign = CW0_DEG;
+#endif
+        return true;
+    }
+#endif
+
+#ifdef USE_GYRO_L3GD20
+    if (l3gd20Detect(&gyro, gyroLpf)) {
+        return true;
+    }
+#endif
+    return false;
+}
+
+static void detectAcc(uint8_t accHardwareToUse)
+{
 #ifdef USE_ACC_ADXL345
     drv_adxl345_config_t acc_params;
 #endif
-    bool haveMpu6k = false;
 
-    memset(&acc, sizeof(acc), 0);
-    memset(&gyro, sizeof(gyro), 0);
-
-#ifdef USE_FAKE_GYRO
-    if (fakeGyroDetect(&gyro, gyroLpf)) {
-        gyroAlign = ALIGN_DEFAULT;
-#else
-
-    // Autodetect gyro hardware. We have MPU3050 or MPU6050.
-    if (mpu6050Detect(&acc, &gyro, gyroLpf)) {
-        haveMpu6k = true;
-        gyroAlign = CW0_DEG; // default NAZE alignment
-    } else if (l3g4200dDetect(&gyro, gyroLpf)) {
-        gyroAlign = CW0_DEG;
-    } else if (mpu3050Detect(&gyro, gyroLpf)) {
-        gyroAlign = CW0_DEG;
-#ifdef STM32F3DISCOVERY
-    } else if (l3gd20Detect(&gyro, gyroLpf)) {
-        gyroAlign = ALIGN_DEFAULT;
-#endif
-#endif
-    } else {
-        return false;
-    }
-
-    // Accelerometer. Fuck it. Let user break shit.
 retry:
+    accAlign = ALIGN_DEFAULT;
+
     switch (accHardwareToUse) {
 #ifdef USE_FAKE_ACC
         default:
             if (fakeAccDetect(&acc)) {
                 accHardware = ACC_FAKE;
-                accAlign = CW0_DEG; //
                 if (accHardwareToUse == ACC_FAKE)
                     break;
             }
-#else
+#endif
         case ACC_NONE: // disable ACC
             sensorsClear(SENSOR_ACC);
             break;
@@ -154,46 +191,56 @@ retry:
             acc_params.dataRate = 800; // unused currently
             if (adxl345Detect(&acc_params, &acc)) {
                 accHardware = ACC_ADXL345;
-                accAlign = CW270_DEG; // default NAZE alignment
+#ifdef NAZE
+                accAlign = CW270_DEG;
+#endif
             }
             if (accHardwareToUse == ACC_ADXL345)
                 break;
             ; // fallthrough
 #endif
+#ifdef USE_ACC_MPU6050
         case ACC_MPU6050: // MPU6050
-            if (haveMpu6k && mpu6050Detect(&acc, &gyro, gyroLpf)) { // FIXME decouple mpu detection from gyro/acc struct filling
+            if (mpu6050AccDetect(&acc)) {
                 accHardware = ACC_MPU6050;
-                accAlign = CW0_DEG; // default NAZE alignment
+#ifdef NAZE
+                accAlign = CW0_DEG;
+#endif
                 if (accHardwareToUse == ACC_MPU6050)
                     break;
             }
             ; // fallthrough
-#if !defined(OLIMEXINO) && !defined(STM32F3DISCOVERY)
+#endif
+#ifdef USE_ACC_MMA8452
         case ACC_MMA8452: // MMA8452
             if (mma8452Detect(&acc)) {
                 accHardware = ACC_MMA8452;
-                accAlign = CW90_DEG; // default NAZE alignment
+#ifdef NAZE
+                accAlign = CW90_DEG;
+#endif
                 if (accHardwareToUse == ACC_MMA8452)
                     break;
             }
             ; // fallthrough
+#endif
+#ifdef USE_ACC_BMA280
         case ACC_BMA280: // BMA280
             if (bma280Detect(&acc)) {
                 accHardware = ACC_BMA280;
-                accAlign = CW0_DEG; //
+#ifdef NAZE
+                accAlign = CW0_DEG;
+#endif
                 if (accHardwareToUse == ACC_BMA280)
                     break;
             }
 #endif
-#ifdef STM32F3DISCOVERY
+#ifdef USE_ACC_LSM303DLHC
         case ACC_LSM303DLHC:
             if (lsm303dlhcAccDetect(&acc)) {
                 accHardware = ACC_LSM303DLHC;
-                accAlign = ALIGN_DEFAULT; //
                 if (accHardwareToUse == ACC_LSM303DLHC)
                     break;
             }
-#endif
 #endif
     }
 
@@ -204,11 +251,14 @@ retry:
             accHardwareToUse = ACC_DEFAULT;
             goto retry;
         } else {
-            // We're really screwed
+            // No ACC was detected
             sensorsClear(SENSOR_ACC);
         }
     }
+}
 
+static void detectBaro()
+{
 #ifdef BARO
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
     if (!ms5611Detect(&baro)) {
@@ -219,8 +269,10 @@ retry:
         }
     }
 #endif
+}
 
-
+void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
+{
     if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
         gyroAlign = sensorAlignmentConfig->gyro_align;
     }
@@ -230,7 +282,21 @@ retry:
     if (sensorAlignmentConfig->mag_align != ALIGN_DEFAULT) {
         magAlign = sensorAlignmentConfig->mag_align;
     }
+}
 
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
+{
+    int16_t deg, min;
+    memset(&acc, sizeof(acc), 0);
+    memset(&gyro, sizeof(gyro), 0);
+
+    if (!detectGyro(gyroLpf)) {
+        return false;
+    }
+    detectAcc(accHardwareToUse);
+    detectBaro();
+
+    reconfigureAlignment(sensorAlignmentConfig);
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))

@@ -201,8 +201,9 @@ STM32F3DISCOVERY_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/timer_common.c
 
 STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
-		   drivers/accgyro_l3g4200d.c \
 		   drivers/accgyro_adxl345.c \
+		   drivers/accgyro_bma280.c \
+		   drivers/accgyro_mma845x.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_l3g4200d.c \

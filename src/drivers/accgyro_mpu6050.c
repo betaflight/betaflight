@@ -132,11 +132,10 @@ typedef enum {
 
 static mpu6050Resolution_e mpuAccelTrim;
 
-bool mpu6050Detect(acc_t *acc, gyro_t *gyro, uint16_t lpf)
+static bool mpu6050Detect(void)
 {
     bool ack;
-    uint8_t sig, rev;
-    uint8_t tmp[6];
+    uint8_t sig;
 
     delay(35);                  // datasheet page 13 says 30ms. other stuff could have been running meanwhile. but we'll be safe
 
@@ -152,27 +151,40 @@ bool mpu6050Detect(acc_t *acc, gyro_t *gyro, uint16_t lpf)
     if (sig != (MPU6050_ADDRESS & 0x7e))
         return false;
 
+    return true;
+}
+
+bool mpu6050AccDetect(acc_t *acc)
+{
+    uint8_t readBuffer[6];
+    uint8_t revision;
+    uint8_t productId;
+
+    if (!mpu6050Detect()) {
+        return false;
+    }
+
     // There is a map of revision contained in the android source tree which is quite comprehensive and may help to understand this code
     // See https://android.googlesource.com/kernel/msm.git/+/eaf36994a3992b8f918c18e4f7411e8b2320a35f/drivers/misc/mpu6050/mldl_cfg.c
 
     // determine product ID and accel revision
-    i2cRead(MPU6050_ADDRESS, MPU_RA_XA_OFFS_H, 6, tmp);
-    rev = ((tmp[5] & 0x01) << 2) | ((tmp[3] & 0x01) << 1) | (tmp[1] & 0x01);
-    if (rev) {
+    i2cRead(MPU6050_ADDRESS, MPU_RA_XA_OFFS_H, 6, readBuffer);
+    revision = ((readBuffer[5] & 0x01) << 2) | ((readBuffer[3] & 0x01) << 1) | (readBuffer[1] & 0x01);
+    if (revision) {
         /* Congrats, these parts are better. */
-        if (rev == 1) {
+        if (revision == 1) {
             mpuAccelTrim = MPU_6050_HALF_RESOLUTION;
-        } else if (rev == 2) {
+        } else if (revision == 2) {
             mpuAccelTrim = MPU_6050_FULL_RESOLUTION;
         } else {
             failureMode(5);
         }
     } else {
-        i2cRead(MPU6050_ADDRESS, MPU_RA_PRODUCT_ID, 1, &sig);
-        rev = sig & 0x0F;
-        if (!rev) {
+        i2cRead(MPU6050_ADDRESS, MPU_RA_PRODUCT_ID, 1, &productId);
+        revision = productId & 0x0F;
+        if (!revision) {
             failureMode(5);
-        } else if (rev == 4) {
+        } else if (revision == 4) {
             mpuAccelTrim = MPU_6050_HALF_RESOLUTION;
         } else {
             mpuAccelTrim = MPU_6050_FULL_RESOLUTION;
@@ -181,7 +193,17 @@ bool mpu6050Detect(acc_t *acc, gyro_t *gyro, uint16_t lpf)
 
     acc->init = mpu6050AccInit;
     acc->read = mpu6050AccRead;
-    acc->revisionCode = (mpuAccelTrim == MPU_6050_HALF_RESOLUTION  ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half my boards are mpu6000ES.
+    acc->revisionCode = (mpuAccelTrim == MPU_6050_HALF_RESOLUTION  ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half of the naze boards are mpu6000ES.
+
+    return true;
+}
+
+bool mpu6050GyroDetect(gyro_t *gyro, uint16_t lpf)
+{
+    if (!mpu6050Detect()) {
+        return false;
+    }
+
     gyro->init = mpu6050GyroInit;
     gyro->read = mpu6050GyroRead;
 
