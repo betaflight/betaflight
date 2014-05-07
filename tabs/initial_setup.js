@@ -2,7 +2,11 @@ function tab_initialize_initial_setup() {
     ga_tracker.sendAppView('Initial Setup');
     GUI.active_tab = 'initial_setup';
 
-    send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_misc_data);
+    send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_ident);
+
+    function load_ident() {
+        send_message(MSP_codes.MSP_IDENT, false, false, load_misc_data);
+    }
 
     function load_misc_data() {
         send_message(MSP_codes.MSP_MISC, false, false, load_html);
