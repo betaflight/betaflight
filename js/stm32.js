@@ -403,7 +403,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
                 if (self.verify_response(self.status.ACK, reply)) {
                     // the bootloader receives one byte that contains N, the number of pages to be erased – 1
-                    var erase_pages_n = Math.ceil(self.hex.bytes_total / self.page_size);
+                    var max_address = self.hex.data[self.hex.data.length - 1].address + self.hex.data[self.hex.data.length - 1].bytes - 0x8000000;
+                    var erase_pages_n = Math.ceil(max_address / self.page_size);
 
                     var buff = [];
                     buff.push(erase_pages_n - 1);
