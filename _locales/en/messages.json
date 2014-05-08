@@ -366,5 +366,42 @@
     },
     "servosEepromSave": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
+    },
+
+    "gpsHead": {
+        "message": "GPS"
+    },
+    "gps3dFix": {
+        "message": "3D Fix:"
+    },
+    "gpsFixTrue": {
+        "message": "<span style=\"color: green\">True</span>"
+    },
+    "gpsFixFalse": {
+        "message": "<span style=\"color: red\">False</span>"
+    },
+    "gpsAltitude": {
+        "message": "Altitude:"
+    },
+    "gpsLat": {
+        "message": "Latitude:"
+    },
+    "gpsLon": {
+        "message": "Longitude:"
+    },
+    "gpsSpeed": {
+        "message": "Speed:"
+    },
+    "gpsSats": {
+        "message": "Sats:"
+    },
+    "gpsDistToHome": {
+        "message": "Dist to Home:"
+    },
+    "gpsSignalStrHead": {
+        "message": "GPS Signal Strength"
+    },
+    "gpsSignalStr": {
+        "message": "Signal Strength"
     }
 }
