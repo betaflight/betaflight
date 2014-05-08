@@ -41,14 +41,14 @@ static pwmInputPort_t pwmInputPorts[MAX_PWM_INPUT_PORTS];
 
 static uint16_t captures[MAX_PWM_INPUT_PORTS];
 
-static void failsafeCheck(uint8_t channel, uint16_t pulse)
+static void failsafeCheck(uint8_t channel, uint16_t pulseDuration)
 {
-    static uint8_t goodPulses;
+    static uint8_t goodChannelMask;
 
-    if (channel < 4 && pulse > failsafeConfig->failsafe_detect_threshold)
-        goodPulses |= (1 << channel);       // if signal is valid - mark channel as OK
-    if (goodPulses == 0x0F) {               // If first four chanells have good pulses, clear FailSafe counter
-        goodPulses = 0;
+    if (channel < 4 && pulseDuration > failsafeConfig->failsafe_detect_threshold)
+        goodChannelMask |= (1 << channel);       // if signal is valid - mark channel as OK
+    if (goodChannelMask == 0x0F) {               // If first four channels have good pulses, clear FailSafe counter
+        goodChannelMask = 0;
         failsafe->vTable->validDataReceived();
     }
 }
