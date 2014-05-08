@@ -23,7 +23,7 @@
 
 static bool sbusFrameDone = false;
 static void sbusDataReceive(uint16_t c);
-static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
@@ -117,8 +117,8 @@ bool sbusFrameComplete(void)
     return false;
 }
 
-static uint16_t sbusReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
-    return sbusChannelData[rxConfig->rcmap[chan]] / 2 + SBUS_OFFSET;
+    return sbusChannelData[chan] / 2 + SBUS_OFFSET;
 }
 

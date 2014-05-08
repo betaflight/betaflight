@@ -86,13 +86,19 @@ bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
     return false;
 }
 
+uint8_t calculateChannelRemapping(uint8_t *rcmap, uint8_t channelToRemap) {
+    return rcmap[channelToRemap];
+}
+
 void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     uint8_t chan;
 
     if (feature(FEATURE_SERIALRX)) {
-        for (chan = 0; chan < MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT; chan++)
-            rcData[chan] = rcReadRawFunc(rxConfig, rxRuntimeConfig, chan);
+        for (chan = 0; chan < MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT; chan++) {
+            uint8_t rawChannel = calculateChannelRemapping(rxConfig->rcmap, chan);
+            rcData[chan] = rcReadRawFunc(rxRuntimeConfig, rawChannel);
+        }
     } else {
         static int16_t rcSamples[MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT][PPM_AND_PWM_SAMPLE_COUNT], rcDataMean[MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT];
         static uint8_t rcSampleIndex = 0;
@@ -103,8 +109,16 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
         for (chan = 0; chan < MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT; chan++) {
 
+            uint8_t rawChannel = calculateChannelRemapping(rxConfig->rcmap, chan);
+
             // sample the channel
-            rcSamples[chan][currentSampleIndex] = rcReadRawFunc(rxConfig, rxRuntimeConfig, chan);
+            uint16_t sample = rcReadRawFunc(rxRuntimeConfig, rawChannel);
+
+            // validate the range
+            if (sample < 750 || sample > 2250)
+                sample = rxConfig->midrc;
+
+            rcSamples[chan][currentSampleIndex] = sample;
 
             // compute the average of recent samples
             rcDataMean[chan] = 0;

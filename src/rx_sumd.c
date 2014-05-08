@@ -22,7 +22,7 @@
 
 static bool sumdFrameDone = false;
 static void sumdDataReceive(uint16_t c);
-static uint16_t sumdReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 
@@ -89,7 +89,7 @@ bool sumdFrameComplete(void)
     return false;
 }
 
-static uint16_t sumdReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
-    return sumdChannelData[rxConfig->rcmap[chan]] / 8;
+    return sumdChannelData[chan] / 8;
 }

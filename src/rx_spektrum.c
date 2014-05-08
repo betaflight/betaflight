@@ -31,7 +31,7 @@ static bool spekDataIncoming = false;
 volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static void spektrumDataReceive(uint16_t c);
-static uint16_t spektrumReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 failsafe_t *failsafe;
 
@@ -88,7 +88,7 @@ bool spektrumFrameComplete(void)
     return rcFrameComplete;
 }
 
-static uint16_t spektrumReadRawRC(rxConfig_t*rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     uint16_t data;
     static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
@@ -104,13 +104,13 @@ static uint16_t spektrumReadRawRC(rxConfig_t*rxConfig, rxRuntimeConfig_t *rxRunt
     }
 
     if (chan >= rxRuntimeConfig->channelCount || !spekDataIncoming) {
-        data = rxConfig->midrc;
-    } else {
-        if (spekHiRes)
-            data = 988 + (spekChannelData[rxConfig->rcmap[chan]] >> 1);   // 2048 mode
-        else
-            data = 988 + spekChannelData[rxConfig->rcmap[chan]];          // 1024 mode
+        return 0;
     }
+
+    if (spekHiRes)
+        data = 988 + (spekChannelData[chan] >> 1);   // 2048 mode
+    else
+        data = 988 + spekChannelData[chan];          // 1024 mode
 
     return data;
 }

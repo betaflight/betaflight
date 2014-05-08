@@ -18,7 +18,7 @@ failsafe_t *failsafe;
 
 static bool rxMspFrameDone = false;
 
-static uint16_t rxMspReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t rxMspReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     return rcData[chan];
 }

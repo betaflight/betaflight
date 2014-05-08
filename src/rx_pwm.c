@@ -15,9 +15,9 @@
 #include "rx_common.h"
 #include "rx_pwm.h"
 
-static uint16_t pwmReadRawRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t pwmReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
-    return pwmRead(rxConfig->rcmap[chan]);
+    return pwmRead(chan);
 }
 
 void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
