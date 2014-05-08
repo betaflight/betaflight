@@ -88,13 +88,13 @@ void hottV4FormatAndSendGPSResponse(void)
 void hottV4GPSUpdate(void)
 {
     // Number of Satelites
-    HoTTV4GPSModule.GPSNumSat=GPS_numSat;
+    HoTTV4GPSModule.GPSNumSat = GPS_numSat;
     if (f.GPS_FIX > 0) {
         // GPS fix
         HoTTV4GPSModule.GPS_fix = 0x66; // Displays a 'f' for fix
 
         // latitude
-        HoTTV4GPSModule.LatitudeNS=(GPS_coord[LAT]<0);
+        HoTTV4GPSModule.LatitudeNS = (GPS_coord[LAT] < 0);
         uint8_t deg = GPS_coord[LAT] / 100000;
         uint32_t sec = (GPS_coord[LAT] - (deg * 100000)) * 6;
         uint8_t min = sec / 10000;
@@ -106,7 +106,7 @@ void hottV4GPSUpdate(void)
         HoTTV4GPSModule.LatitudeSecHigh = sec >> 8;
 
         // longitude
-        HoTTV4GPSModule.longitudeEW=(GPS_coord[LON]<0);
+        HoTTV4GPSModule.longitudeEW = (GPS_coord[LON] < 0);
         deg = GPS_coord[LON] / 100000;
         sec = (GPS_coord[LON] - (deg * 100000)) * 6;
         min = sec / 10000;
@@ -265,7 +265,8 @@ void handleHoTTTelemetry(void)
 
         switch (c) {
         case 0x8A:
-            if (sensors(SENSOR_GPS)) hottV4FormatAndSendGPSResponse();
+                if (sensors(SENSOR_GPS))
+                    hottV4FormatAndSendGPSResponse();
             break;
         case 0x8E:
             hottV4FormatAndSendEAMResponse();

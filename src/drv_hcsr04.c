@@ -61,7 +61,7 @@ void hcsr04_init(sonar_config_t config)
     // enable AFIO for EXTI support - already done is drv_system.c
     // RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph, ENABLE);
 
-    switch(config) {
+    switch (config) {
         case sonar_pwm56:
             trigger_pin = Pin_8;   // PWM5 (PB8) - 5v tolerant
             echo_pin = Pin_9;      // PWM6 (PB9) - 5v tolerant

@@ -142,8 +142,7 @@ enum {
     TEMP_UPDATED = 1 << 3
 };
 
-typedef struct sensor_data_t
-{
+typedef struct sensor_data_t {
     int16_t gyro[3];
     int16_t acc[3];
     int16_t mag[3];
@@ -151,24 +150,22 @@ typedef struct sensor_data_t
     int updated;
 } sensor_data_t;
 
-typedef void (* sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
-typedef void (* sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
-typedef void (* baroOpFuncPtr)(void);                       // baro start operation
-typedef void (* baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
-typedef void (* serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
-typedef uint16_t (* rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
-typedef void (* pidControllerFuncPtr)(void);                // pid controller function prototype
+typedef void (*sensorInitFuncPtr)(sensor_align_e align);   // sensor init prototype
+typedef void (*sensorReadFuncPtr)(int16_t *data);          // sensor read and align prototype
+typedef void (*baroOpFuncPtr)(void);                       // baro start operation
+typedef void (*baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature);             // baro calculation (filled params are pressure and temperature)
+typedef void (*serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
+typedef uint16_t (*rcReadRawDataPtr)(uint8_t chan);        // used by receiver driver to return channel data
+typedef void (*pidControllerFuncPtr)(void);                // pid controller function prototype
 
-typedef struct sensor_t
-{
+typedef struct sensor_t {
     sensorInitFuncPtr init;                                 // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
     float scale;                                            // scalefactor (currently used for gyro only, todo for accel)
 } sensor_t;
 
-typedef struct baro_t
-{
+typedef struct baro_t {
     uint16_t ut_delay;
     uint16_t up_delay;
     baroOpFuncPtr start_ut;

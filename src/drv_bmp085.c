@@ -30,7 +30,7 @@ typedef struct {
     int16_t md;
 } bmp085_smd500_calibration_param_t;
 
-typedef struct  {
+typedef struct {
     bmp085_smd500_calibration_param_t cal_param;
     uint8_t mode;
     uint8_t chip_id, ml_version, al_version;
@@ -189,9 +189,9 @@ static int32_t bmp085_get_pressure(uint32_t up)
 
     // *****calculate B4************
     x1 = (bmp085.cal_param.ac3 * b6) >> 13;
-    x2 = (bmp085.cal_param.b1 * ((b6 * b6) >> 12) ) >> 16;
+    x2 = (bmp085.cal_param.b1 * ((b6 * b6) >> 12)) >> 16;
     x3 = ((x1 + x2) + 2) >> 2;
-    b4 = (bmp085.cal_param.ac4 * (uint32_t) (x3 + 32768)) >> 15;
+    b4 = (bmp085.cal_param.ac4 * (uint32_t)(x3 + 32768)) >> 15;
 
     b7 = ((uint32_t)(up - b3) * (50000 >> bmp085.oversampling_setting));
     if (b7 < 0x80000000) {
@@ -249,7 +249,7 @@ static void bmp085_get_up(void)
         convOverrun++;
 
     i2cRead(BMP085_I2C_ADDR, BMP085_ADC_OUT_MSB_REG, 3, data);
-    bmp085_up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2]) >> (8 - bmp085.oversampling_setting);
+    bmp085_up = (((uint32_t)data[0] << 16) | ((uint32_t)data[1] << 8) | (uint32_t)data[2]) >> (8 - bmp085.oversampling_setting);
 }
 
 static void bmp085_calculate(int32_t *pressure, int32_t *temperature)

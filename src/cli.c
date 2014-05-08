@@ -297,7 +297,7 @@ static float _atof(const char *p)
     float sign, value, scale;
 
     // Skip leading white space, if any.
-    while (white_space(*p) ) {
+    while (white_space(*p)) {
         p += 1;
     }
 
@@ -352,7 +352,7 @@ static float _atof(const char *p)
             expon = expon * 10 + (*p - '0');
             p += 1;
         }
-        if (expon > 308) 
+        if (expon > 308)
             expon = 308;
 
         // Calculate scaling factor.
@@ -381,7 +381,7 @@ static char *ftoa(float x, char *floatString)
     else
         x -= 0.0005f;
 
-    value = (int32_t) (x * 1000.0f);    // Convert float * 1000 to an integer
+    value = (int32_t)(x * 1000.0f);    // Convert float * 1000 to an integer
 
     itoa(abs(value), intString1, 10);   // Create string from abs of integer value
 

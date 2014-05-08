@@ -18,14 +18,14 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 
     s = &uartPort1;
     s->port.vTable = uartVTable;
-    
+
     s->port.baudRate = baudRate;
-    
+
     s->port.rxBuffer = rx1Buffer;
     s->port.txBuffer = tx1Buffer;
     s->port.rxBufferSize = UART1_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART1_TX_BUFFER_SIZE;
-    
+
     s->rxDMAChannel = DMA1_Channel5;
     s->txDMAChannel = DMA1_Channel4;
 
@@ -63,14 +63,14 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 
     s = &uartPort2;
     s->port.vTable = uartVTable;
-    
+
     s->port.baudRate = baudRate;
-    
+
     s->port.rxBufferSize = UART2_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART2_TX_BUFFER_SIZE;
     s->port.rxBuffer = rx2Buffer;
     s->port.txBuffer = tx2Buffer;
-    
+
     s->USARTx = USART2;
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
@@ -100,7 +100,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 {
     DMA_InitTypeDef DMA_InitStructure;
     USART_InitTypeDef USART_InitStructure;
-    
+
     uartPort_t *s = NULL;
 
     if (USARTx == USART1)
@@ -109,7 +109,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
         s = serialUSART2(baudRate, mode);
 
     s->USARTx = USARTx;
-    
+
     // common serial initialisation code should move to serialPort::init()
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
@@ -185,7 +185,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     USART_InitTypeDef USART_InitStructure;
-    uartPort_t *s = (uartPort_t *)instance; 
+    uartPort_t *s = (uartPort_t *)instance;
 
     USART_InitStructure.USART_BaudRate = baudRate;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -198,7 +198,7 @@ void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     if (s->port.mode & MODE_TX)
         USART_InitStructure.USART_Mode |= USART_Mode_Tx;
     USART_Init(s->USARTx, &USART_InitStructure);
-    
+
     s->port.baudRate = baudRate;
 }
 

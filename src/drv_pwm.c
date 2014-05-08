@@ -51,7 +51,7 @@ enum {
     TYPE_S = 0x80
 };
 
-typedef void (* pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
+typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
 
 static pwmPortData_t pwmPorts[MAX_PORTS];
 static uint16_t captures[MAX_INPUTS];
@@ -60,7 +60,7 @@ static pwmPortData_t *servos[MAX_SERVOS];
 static pwmWriteFuncPtr pwmWritePtr = NULL;
 static uint8_t numMotors = 0;
 static uint8_t numServos = 0;
-static uint8_t  numInputs = 0;
+static uint8_t numInputs = 0;
 static uint16_t failsafeThreshold = 985;
 // external vars (ugh)
 extern int16_t failsafeCnt;
@@ -143,7 +143,7 @@ static const uint8_t * const hardwareMaps[] = {
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
 {
-    TIM_OCInitTypeDef  TIM_OCInitStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
 
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
@@ -175,7 +175,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
-    TIM_ICInitTypeDef  TIM_ICInitStructure;
+    TIM_ICInitTypeDef TIM_ICInitStructure;
 
     TIM_ICStructInit(&TIM_ICInitStructure);
     TIM_ICInitStructure.TIM_Channel = channel;
@@ -245,7 +245,7 @@ static pwmPortData_t *pwmInConfig(uint8_t port, timerCCCallbackPtr callback, uin
 static void failsafeCheck(uint8_t channel, uint16_t pulse)
 {
     static uint8_t goodPulses;
-    
+
     if (channel < 4 && pulse > failsafeThreshold)
         goodPulses |= (1 << channel);       // if signal is valid - mark channel as OK
     if (goodPulses == 0x0F) {               // If first four chanells have good pulses, clear FailSafe counter

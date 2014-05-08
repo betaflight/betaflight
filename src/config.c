@@ -65,14 +65,14 @@ void readEEPROM(void)
     // Copy current profile
     if (mcfg.current_profile > 2) // sanity check
         mcfg.current_profile = 0;
-    memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t)); 
+    memcpy(&cfg, &mcfg.profile[mcfg.current_profile], sizeof(config_t));
 }
 
 void activateConfig(void)
 {
     uint8_t i;
     for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
-        lookupPitchRollRC[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t) cfg.rcRate8 / 2500;
+        lookupPitchRollRC[i] = (2500 + cfg.rcExpo8 * (i * i - 25)) * i * (int32_t)cfg.rcRate8 / 2500;
 
     for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
         int16_t tmp = 10 * i - cfg.thrMid8;
@@ -81,8 +81,8 @@ void activateConfig(void)
             y = 100 - cfg.thrMid8;
         if (tmp < 0)
             y = cfg.thrMid8;
-        lookupThrottleRC[i] = 10 * cfg.thrMid8 + tmp * (100 - cfg.thrExpo8 + (int32_t) cfg.thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = mcfg.minthrottle + (int32_t) (mcfg.maxthrottle - mcfg.minthrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+        lookupThrottleRC[i] = 10 * cfg.thrMid8 + tmp * (100 - cfg.thrExpo8 + (int32_t)cfg.thrExpo8 * (tmp * tmp) / (y * y)) / 10;
+        lookupThrottleRC[i] = mcfg.minthrottle + (int32_t)(mcfg.maxthrottle - mcfg.minthrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
 
     setPIDController(cfg.pidController);
@@ -128,7 +128,7 @@ retry:
 
     if (FLASH_ErasePage(FLASH_WRITE_ADDR) == FLASH_COMPLETE) {
         for (i = 0; i < sizeof(master_t); i += 4) {
-            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *) ((char *)&mcfg + i));
+            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *)((char *)&mcfg + i));
             if (status != FLASH_COMPLETE) {
                 FLASH_Lock();
                 tries++;
