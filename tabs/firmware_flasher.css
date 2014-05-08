@@ -5,7 +5,7 @@
         margin-right: 5px;
     }
     .tab-firmware_flasher .info .progress {
-        width: 140px;
+        width: 25%;
 
         border: 1px solid silver;
     }
@@ -19,8 +19,6 @@
                 background-color: #cf2222;
             }
 .tab-firmware_flasher .note {
-    float: left;
-
     margin-bottom: 10px;
     padding: 5px;
 
@@ -81,48 +79,8 @@ a.flash_firmware:hover {
         cursor: default;
         background-color: #b8b8b8;
     }
-a.back {
-    display: block;
-    position: absolute;
-
-    bottom: 10px;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-a.back:hover {
-    background-color: #dedcdc;
-}
-.warning {
-    width: 620px;
-
-    border: 1px solid silver;
-}
-    .warning .title {
-        line-height: 20px;
-
-        text-align: center;
-        font-weight: bold;
-        color: white;
-
-        border-bottom: 1px solid silver;
-        background-color: #cd4c4c;
-    }
-    .warning p {
-        padding: 5px;
-    }
     .tab-firmware_flasher .git_info {
         display: none;
-
-        width: 620px;
 
         margin-bottom: 10px;
 
@@ -141,3 +99,40 @@ a.back:hover {
         .tab-firmware_flasher .git_info p {
             padding: 5px;
         }
+.warning {
+    border: 1px solid silver;
+}
+    .warning .title {
+        line-height: 20px;
+
+        text-align: center;
+        font-weight: bold;
+        color: white;
+
+        border-bottom: 1px solid silver;
+        background-color: #cd4c4c;
+    }
+    .warning p {
+        padding: 5px;
+    }
+a.back {
+    display: block;
+    position: absolute;
+
+    bottom: 10px;
+    right: 10px;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+a.back:hover {
+    background-color: #dedcdc;
+}
