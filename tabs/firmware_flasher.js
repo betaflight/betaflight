@@ -46,12 +46,12 @@ function tab_initialize_firmware_flasher() {
                                     parsed_hex = data;
 
                                     if (parsed_hex) {
-                                        STM32.GUI_status('<span style="color: green">Firmware loaded, ready for flashing</span>');
+                                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherFirmwareLoaded'));
                                         $('a.flash_firmware').removeClass('locked');
 
                                         $('span.size').html(parsed_hex.bytes_total + ' bytes');
                                     } else {
-                                        STM32.GUI_status('<span style="color: red">HEX file appears to be corrupted</span>');
+                                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                                     }
                                 });
                             }
@@ -71,17 +71,17 @@ function tab_initialize_firmware_flasher() {
                     parsed_hex = data;
 
                     if (parsed_hex) {
-                        STM32.GUI_status('<span style="color: green">Remote Firmware loaded, ready for flashing</span>');
+                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherRemoteFirmwareLoaded'));
                         $('a.flash_firmware').removeClass('locked');
 
-                        $('span.path').html('Using remote Firmware');
-                        $('span.size').html(parsed_hex.bytes_total + ' bytes');
+                        $('span.path').text('Using remote Firmware');
+                        $('span.size').text(parsed_hex.bytes_total + ' bytes');
                     } else {
-                        STM32.GUI_status('<span style="color: red">HEX file appears to be corrupted</span>');
+                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
                 });
             }).fail(function() {
-                STM32.GUI_status('<span style="color: red">Failed to load remote firmware</span>');
+                STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
                 $('a.flash_firmware').addClass('locked');
             });
 
@@ -91,9 +91,9 @@ function tab_initialize_firmware_flasher() {
                 var date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
                 date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
 
-                $('div.git_info .committer').html(data.commit.author.name);
-                $('div.git_info .date').html(date);
-                $('div.git_info .message').html(data.commit.message);
+                $('div.git_info .committer').text(data.commit.author.name);
+                $('div.git_info .date').text(date);
+                $('div.git_info .message').text(data.commit.message);
 
                 $('div.git_info').slideDown();
             });
@@ -105,7 +105,7 @@ function tab_initialize_firmware_flasher() {
                     if (parsed_hex != false) {
                         STM32.connect(parsed_hex);
                     } else {
-                        STM32.GUI_status('<span style="color: red">Firmware not loaded</span>');
+                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
                     }
                 }
             }
@@ -289,7 +289,7 @@ function tab_initialize_firmware_flasher() {
                     tab_initialize_default();
                 });
             } else {
-                GUI.log('You <span style="color: red">can\'t</span> do this right now, please wait for current operation to finish ...');
+                GUI.log(chrome.i18n.getMessage('firmwareFlasherWaitForFinish'));
             }
         });
     });

@@ -430,5 +430,78 @@
     },
     "cliInputPlaceholder": {
         "message": "Write your command here"
+    },
+
+    "firmwareFlasherPath": {
+        "message": "Path:"
+    },
+    "firmwareFlasherSize": {
+        "message": "Size:"
+    },
+    "firmwareFlasherStatus": {
+        "message": "Status:"
+    },
+    "firmwareFlasherProgress": {
+        "message": "Progress:"
+    },
+    "firmwareFlasherNote": {
+        "message": "If you are flashing board with <strong>baseflight</strong> already flashed (updating), leave this checkbox unchecked.<br />If you are flashing \"<strong>bare</strong>\" board with no firmware preloaded or you have bootloader pins <strong>shorted</strong>, check this box.<br />"
+    },
+    "firmwareFlasherNoReboot": {
+        "message": "No reboot sequence"
+    },
+    "firmwareFlasherFlashOnConnect": {
+        "message": "Flash on connect"
+    },
+    "firmwareFlasherFullChipErase": {
+        "message": "Full Chip Erase"
+    },
+    "firmwareFlasherButtonLoadLocal": {
+        "message": "Load Firmware [Local]"
+    },
+    "firmwareFlasherButtonLoadOnline": {
+        "message": "Load Firmware [Online]"
+    },
+    "firmwareFlasherFlashFirmware": {
+        "message": "Flash Firmware"
+    },
+    "firmwareFlasherGithubInfoHead": {
+        "message": "Github Firmware Info"
+    },
+    "firmwareFlasherCommiter": {
+        "message": "Committer:"
+    },
+    "firmwareFlasherDate": {
+        "message": "Date:"
+    },
+    "firmwareFlasherMessage": {
+        "message": "Message:"
+    },
+    "firmwareFlasherWarninghead": {
+        "message": "Warning"
+    },
+    "firmwareFlasherWarningText": {
+        "message": "Please do not try to flash <strong>non-baseflight</strong> hardware with this firmware flasher (it wont work).<br />Do not <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br />Note: <strong>STM32</strong> bootloader is stored in <strong>ROM</strong>, it cannot be bricked.<br />Note: <strong>Auto-Connect</strong> is always disabled while you are inside firmware flasher.<br />"
+    },
+    "firmwareFlasherButtonLeave": {
+        "message": "Leave Firmware Flasher"
+    },
+    "firmwareFlasherFirmwareNotLoaded": {
+        "message": "<span style=\"color: red\">Firmware not loaded</span>"
+    },
+    "firmwareFlasherFirmwareLoaded": {
+        "message": "<span style=\"color: green\">Firmware loaded, ready for flashing</span>"
+    },
+    "firmwareFlasherHexCorrupted": {
+        "message": "<span style=\"color: red\">HEX file appears to be corrupted</span>"
+    },
+    "firmwareFlasherRemoteFirmwareLoaded": {
+        "message": "<span style=\"color: green\">Remote Firmware loaded, ready for flashing</span>"
+    },
+    "firmwareFlasherFailedToLoadOnlineFirmware": {
+        "message": "<span style=\"color: red\">Failed to load remote firmware</span>"
+    },
+    "firmwareFlasherWaitForFinish": {
+        "message": "You <span style=\"color: red\">can't</span> do this right now, please wait for current operation to finish ..."
     }
 }
