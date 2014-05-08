@@ -63,32 +63,20 @@ $(document).ready(function() {
 
     // auto-connect
     chrome.storage.local.get('auto_connect', function(result) {
-        if (typeof result.auto_connect === 'undefined') {
-            // auto_connect wasn't saved yet, save and push true to the GUI
+        if (typeof result.auto_connect === 'undefined' || result.auto_connect) {
+            // default or enabled by user
             GUI.auto_connect = true;
 
             $('input.auto_connect').prop('checked', true);
             $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectEnabled'));
+
             $('select#baud').val(115200).prop('disabled', true);
-
-            // save
-            chrome.storage.local.set({'auto_connect': true});
         } else {
-            if (result.auto_connect) {
-                // enabled by user
-                GUI.auto_connect = true;
+            // disabled by user
+            GUI.auto_connect = false;
 
-                $('input.auto_connect').prop('checked', true);
-                $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectEnabled'));
-
-                $('select#baud').val(115200).prop('disabled', true);
-            } else {
-                // disabled by user
-                GUI.auto_connect = false;
-
-                $('input.auto_connect').prop('checked', false);
-                $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectDisabled'));
-            }
+            $('input.auto_connect').prop('checked', false);
+            $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectDisabled'));
         }
 
         // bind UI hook to auto-connect checkbos
