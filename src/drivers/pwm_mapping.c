@@ -160,32 +160,46 @@ void pwmInit(drv_pwm_config_t *init)
         // skip UART ports for GPS
         if (init->useUART && (timerIndex == PWM3 || timerIndex == PWM4))
             continue;
+#endif
 
+#ifdef STM32F10X_MD
         // skip softSerial ports
         if (init->useSoftSerial && (timerIndex == PWM5 || timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8))
             continue;
 #endif
-#ifdef STM32F303xC
+
+#ifdef CHEBUZZF3
+        // skip softSerial ports
+        // PWM4 can no-longer be used since it uses the same timer as PWM5 and PWM6
+        if (init->useSoftSerial && (timerIndex == PWM4 || timerIndex == PWM5 || timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8))
+            continue;
+#endif
+
+#ifdef STM32F3DISCOVERY
         // skip softSerial ports
         if (init->useSoftSerial && (timerIndex == PWM9 || timerIndex == PWM10 || timerIndex == PWM11 || timerIndex == PWM12))
             continue;
 #endif
 
+#ifdef STM32F10X_MD
         // skip ADC for powerMeter if configured
+        // See FIXME where init->adcChannel is initialised
         if (init->adcChannel && (init->adcChannel == timerIndex))
             continue;
+#endif
 
         // hacks to allow current functionality
         if (mask & (TYPE_IP | TYPE_IW) && !init->enableInput)
             mask = 0;
 
         if (init->useServos && !init->airplane) {
-#ifdef STM32F10X_MD
+#if defined(STM32F10X_MD) || defined(CHEBUZZF3)
             // remap PWM9+10 as servos
             if (timerIndex == PWM9 || timerIndex == PWM10)
                 mask = TYPE_S;
 #endif
-#ifdef STM32F303xC
+
+#if (defined(STM32F303xC) || defined(STM32F3DISCOVERY)) && !defined(CHEBUZZF3)
             // remap PWM 5+6 or 9+10 as servos - softserial pin pairs require timer ports that use the same timer
             if (init->useSoftSerial) {
                 if (timerIndex == PWM5 || timerIndex == PWM6)

@@ -114,7 +114,9 @@ void systemInit(bool overclock)
     RCC_APB2PeriphClockCmd(
         RCC_APB2Periph_TIM1 |
         RCC_APB2Periph_TIM8 |
-        /*RCC_APB2Periph_TIM15 | */
+#ifdef CHEBUZZF3
+        RCC_APB2Periph_TIM15 |
+#endif
         RCC_APB2Periph_TIM16 |
         RCC_APB2Periph_TIM17 |
         RCC_APB2Periph_USART1,
@@ -127,7 +129,9 @@ void systemInit(bool overclock)
         RCC_AHBPeriph_GPIOC |
         RCC_AHBPeriph_GPIOD |
         RCC_AHBPeriph_GPIOE |
-        /*RCC_AHBPeriph_GPIOF | */
+#ifdef CHEBUZZF3
+        RCC_AHBPeriph_GPIOF |
+#endif
         RCC_AHBPeriph_ADC12,
         ENABLE
     );
@@ -161,9 +165,10 @@ void systemInit(bool overclock)
     GPIO_PinAFConfig(GPIOC, GPIO_PinSource6,  GPIO_AF_4);
     GPIO_PinAFConfig(GPIOC, GPIO_PinSource7,  GPIO_AF_4);
     GPIO_PinAFConfig(GPIOC, GPIO_PinSource8,  GPIO_AF_4);
-    //GPIO_PinAFConfig(GPIOF, GPIO_PinSource9,  GPIO_AF_3); // Potential alternate, untested
-    //GPIO_PinAFConfig(GPIOF, GPIO_PinSource10, GPIO_AF_3); // Potential alternate, untested
-
+#ifdef CHEBUZZF3
+    GPIO_PinAFConfig(GPIOF, GPIO_PinSource9,  GPIO_AF_3);
+    GPIO_PinAFConfig(GPIOF, GPIO_PinSource10, GPIO_AF_3);
+#endif
     GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_2);
     GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_2);
     GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_2);

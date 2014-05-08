@@ -182,7 +182,7 @@ int main(void)
             pwm_params.adcChannel = PWM8;
             break;
         default:
-            pwm_params.adcChannel = 0;
+            pwm_params.adcChannel = 0; // FIXME this is the same as PWM1
             break;
     }
 

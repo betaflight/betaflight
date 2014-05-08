@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef CHEBUZZF3
+#define USABLE_TIMER_CHANNEL_COUNT 18
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 14
+#endif
 
 #ifdef STM32F303xC
 typedef uint32_t captureCompare_t;

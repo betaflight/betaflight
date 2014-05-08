@@ -11,14 +11,14 @@
 #include "serial_common.h"
 #include "serial_softserial.h"
 
-#ifdef STM32F10X_MD
+#if defined(STM32F10X_MD) || defined(CHEBUZZF3)
 #define SOFT_SERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFT_SERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
 #define SOFT_SERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
 #define SOFT_SERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 #endif
 
-#ifdef STM32F303xC
+#if defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3)
 #define SOFT_SERIAL_1_TIMER_RX_HARDWARE 8 // PWM 9
 #define SOFT_SERIAL_1_TIMER_TX_HARDWARE 9 // PWM 10
 #define SOFT_SERIAL_2_TIMER_RX_HARDWARE 10 // PWM 11
