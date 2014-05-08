@@ -141,12 +141,7 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         for (sampleIndex = 0; sampleIndex < PPM_AND_PWM_SAMPLE_COUNT; sampleIndex++)
             rcDataMean[chan] += rcSamples[chan][sampleIndex];
 
-        rcDataMean[chan] = (rcDataMean[chan] + 2) / PPM_AND_PWM_SAMPLE_COUNT;
-
-        if (rcDataMean[chan] < rcData[chan] - 3)
-            rcData[chan] = rcDataMean[chan] + 2;
-        if (rcDataMean[chan] > rcData[chan] + 3)
-            rcData[chan] = rcDataMean[chan] - 2;
+        rcData[chan] = rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
     }
 }
 
