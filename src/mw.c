@@ -4,8 +4,6 @@
 #include "cli.h"
 #include "telemetry_common.h"
 
-// June 2013     V2.2-dev
-
 flags_t f;
 int16_t debug[4];
 uint8_t toggleBeep = 0;
@@ -239,11 +237,18 @@ void computeRC(void)
     } else {
         static int16_t rcData4Values[8][4], rcDataMean[8];
         static uint8_t rc4ValuesIndex = 0;
+        uint16_t capture;
         uint8_t a;
 
         rc4ValuesIndex++;
         for (chan = 0; chan < 8; chan++) {
-            rcData4Values[chan][rc4ValuesIndex % 4] = rcReadRawFunc(chan);
+            capture = rcReadRawFunc(chan);
+
+            // validate input
+            if (capture < PULSE_MIN || capture > PULSE_MAX)
+                capture = mcfg.midrc;
+
+            rcData4Values[chan][rc4ValuesIndex % 4] = capture;
             rcDataMean[chan] = 0;
             for (a = 0; a < 4; a++)
                 rcDataMean[chan] += rcData4Values[chan][a];
