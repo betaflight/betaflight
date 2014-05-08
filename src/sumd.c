@@ -31,17 +31,17 @@ static void sumdDataReceive(uint16_t c)
     static uint8_t sumdIndex;
 
     sumdTime = micros();
-    if ((sumdTime - sumdTimeLast) > 4000) 
+    if ((sumdTime - sumdTimeLast) > 4000)
         sumdIndex = 0;
     sumdTimeLast = sumdTime;
 
     if (sumdIndex == 0) {
-        if (c != SUMD_SYNCBYTE) 
+        if (c != SUMD_SYNCBYTE)
             return;
         else
             sumdFrameDone = false; // lazy main loop didnt fetch the stuff
     }
-    if (sumdIndex == 2) 
+    if (sumdIndex == 2)
         sumdSize = (uint8_t)c;
     if (sumdIndex < SUMD_BUFFSIZE)
         sumd[sumdIndex] = (uint8_t)c;

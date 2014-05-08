@@ -96,7 +96,7 @@ void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t refere
 
 void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
-    TIM_ICInitTypeDef  TIM_ICInitStructure;
+    TIM_ICInitTypeDef TIM_ICInitStructure;
 
     TIM_ICStructInit(&TIM_ICInitStructure);
     TIM_ICInitStructure.TIM_Channel = channel;
@@ -253,7 +253,7 @@ void applyChangedBits(softSerial_t *softSerial)
 {
     if (softSerial->rxEdge == TRAILING) {
         uint8_t bitToSet;
-        for (bitToSet = softSerial->rxLastLeadingEdgeAtBitIndex; bitToSet < softSerial->rxBitIndex ; bitToSet++) {
+        for (bitToSet = softSerial->rxLastLeadingEdgeAtBitIndex; bitToSet < softSerial->rxBitIndex; bitToSet++) {
             softSerial->internalRxBuffer |= 1 << bitToSet;
         }
     }

@@ -391,7 +391,7 @@ int getEstimatedAltitude(void)
 
     // set vario
     vario = applyDeadband(vel_tmp, 5);
-    
+
     if (abs(angle[ROLL]) < 800 && abs(angle[PITCH]) < 800) { // only calculate pid if the copters thrust is facing downwards(<80deg)
         // Altitude P-Controller
         error = constrain(AltHold - EstAlt, -500, 500);
@@ -410,11 +410,11 @@ int getEstimatedAltitude(void)
 
         // D
         BaroPID -= constrain(cfg.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
-        
+
     } else {
         BaroPID = 0;
     }
-    
+
     accZ_old = accZ_tmp;
 
     return 1;

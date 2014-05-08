@@ -430,7 +430,7 @@ void mixTable(void)
             break;
 
         case MULTITYPE_DUALCOPTER:
-            for (i = 4; i < 6; i++ ) {
+            for (i = 4; i < 6; i++) {
                 servo[i] = axisPID[5 - i] * servoDirection(i, 1); // mix and setup direction
                 servo[i] += servoMiddle(i);
             }

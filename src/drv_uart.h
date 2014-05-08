@@ -12,7 +12,7 @@
 // FIXME this is a uart_t really.  Move the generic properties into a separate structure (serialPort_t) and update the code to use it
 typedef struct {
     serialPort_t port;
-    
+
     // FIXME these are uart specific and do not belong in here
     DMA_Channel_TypeDef *rxDMAChannel;
     DMA_Channel_TypeDef *txDMAChannel;

@@ -10,7 +10,7 @@ void SetSysClock(bool overclock);
 void systemBeep(bool onoff);
 static void beepRev4(bool onoff);
 static void beepRev5(bool onoff);
-void (* systemBeepPtr)(bool onoff) = NULL;
+void (*systemBeepPtr)(bool onoff) = NULL;
 #endif
 
 static void cycleCounterInit(void)

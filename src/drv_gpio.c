@@ -71,7 +71,7 @@ void gpioPinRemapConfig(uint32_t remap, bool enable)
     }
 
     if (enable)
-        tmpreg |= (tmp << ((remap >> 0x15)*0x10));
+        tmpreg |= (tmp << ((remap >> 0x15) * 0x10));
 
     if ((remap & 0x80000000) == 0x80000000)
         AFIO->MAPR2 = tmpreg;

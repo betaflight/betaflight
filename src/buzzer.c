@@ -78,7 +78,7 @@ void beep_code(char first, char second, char third, char pause)
     patternChar[1] = second;
     patternChar[2] = third;
     patternChar[3] = pause;
-    switch(patternChar[icnt]) {
+    switch (patternChar[icnt]) {
         case 'M':
             Duration = 100;
             break;
@@ -121,7 +121,7 @@ static void beep(uint16_t pulse)
         buzzerIsOn = 0;
         BEEP_OFF;
         buzzerLastToggleTime = millis();
-        if (toggleBeep >0)
+        if (toggleBeep > 0)
             toggleBeep--;
         beepDone = 1;
     }

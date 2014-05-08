@@ -60,7 +60,7 @@ bool adxl345Detect(drv_adxl345_config_t *init, sensor_t *acc)
 
 static void adxl345Init(sensor_align_e align)
 {
-   if (useFifo) {
+    if (useFifo) {
         uint8_t fifoDepth = 16;
         i2cWrite(ADXL345_ADDRESS, ADXL345_POWER_CTL, ADXL345_POWER_MEAS);
         i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, ADXL345_FULL_RANGE | ADXL345_RANGE_8G);

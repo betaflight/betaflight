@@ -1,7 +1,6 @@
 #pragma once
 
-typedef enum
-{
+typedef enum {
     Mode_AIN = 0x0,
     Mode_IN_FLOATING = 0x04,
     Mode_IPD = 0x28,
@@ -12,15 +11,13 @@ typedef enum
     Mode_AF_PP = 0x18
 } GPIO_Mode;
 
-typedef enum
-{
+typedef enum {
     Speed_10MHz = 1,
     Speed_2MHz,
     Speed_50MHz
 } GPIO_Speed;
 
-typedef enum
-{
+typedef enum {
     Pin_0 = 0x0001,
     Pin_1 = 0x0002,
     Pin_2 = 0x0004,
@@ -40,8 +37,7 @@ typedef enum
     Pin_All = 0xFFFF
 } GPIO_Pin;
 
-typedef struct
-{
+typedef struct {
     uint16_t pin;
     GPIO_Mode mode;
     GPIO_Speed speed;
