@@ -101,9 +101,11 @@ retry:
 
 #ifdef BARO
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
-    if (!ms5611Detect(&baro)) {
-        // ms5611 disables BMP085, and tries to initialize + check PROM crc. if this works, we have a baro
-        if (!bmp085Detect(&baro)) {
+    if (!bmp085Detect(&baro)) {
+        // ms5611 disables BMP085, and tries to initialize + check PROM crc. 
+        // moved 5611 init here because there have been some reports that calibration data in BMP180
+        // has been "passing" ms5611 PROM crc check
+        if (!ms5611Detect(&baro)) {
             // if both failed, we don't have anything
             sensorsClear(SENSOR_BARO);
         }
