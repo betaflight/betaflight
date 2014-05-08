@@ -34,71 +34,26 @@
     .tab-firmware_flasher .note .flash_on_connect_wrapper {
         display: none;
     }
-    .tab-firmware_flasher .buttons {
-        margin-bottom: 10px;
-    }
-a.load_file, a.load_remote_file {
-    display: block;
-    float: left;
+.tab-firmware_flasher .git_info {
+    display: none;
 
-    margin: 0 10px 0 0;
-    padding: 0 10px 0 10px;
-
-    height: 20px;
-    line-height: 20px;
-    text-align: center;
-    font-weight: bold;
+    margin-bottom: 10px;
 
     border: 1px solid silver;
-    background-color: #ececec;
 }
-a.load_file:hover, a.load_remote_file:hover {
-    background-color: #dedcdc;
-}
-a.flash_firmware {
-    display: block;
-    float: left;
+    .tab-firmware_flasher .git_info .title {
+        line-height: 20px;
 
-    padding: 0 10px 0 10px;
+        text-align: center;
+        font-weight: bold;
+        color: white;
 
-    height: 20px;
-    line-height: 20px;
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-a.flash_firmware:hover {
-    background-color: #dedcdc;
-}
-    a.flash_firmware.locked {
-        background-color: #b8b8b8;
+        border-bottom: 1px solid silver;
+        background-color: #3f4241;
     }
-    a.flash_firmware.locked:hover {
-        cursor: default;
-        background-color: #b8b8b8;
+    .tab-firmware_flasher .git_info p {
+        padding: 5px;
     }
-    .tab-firmware_flasher .git_info {
-        display: none;
-
-        margin-bottom: 10px;
-
-        border: 1px solid silver;
-    }
-        .tab-firmware_flasher .git_info .title {
-            line-height: 20px;
-
-            text-align: center;
-            font-weight: bold;
-            color: white;
-
-            border-bottom: 1px solid silver;
-            background-color: #3f4241;
-        }
-        .tab-firmware_flasher .git_info p {
-            padding: 5px;
-        }
 .warning {
     border: 1px solid silver;
 }
@@ -115,24 +70,38 @@ a.flash_firmware:hover {
     .warning p {
         padding: 5px;
     }
-a.back {
-    display: block;
+.tab-firmware_flasher .buttons {
+    width: calc(100% - 20px);
+
     position: absolute;
-
     bottom: 10px;
-    right: 10px;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
 }
-a.back:hover {
-    background-color: #dedcdc;
-}
+    .tab-firmware_flasher .buttons a {
+        display: block;
+        float: left;
+
+        margin: 0 10px 0 0;
+        padding: 0 15px 0 15px;
+
+        height: 28px;
+        line-height: 28px;
+        text-align: center;
+        font-weight: bold;
+
+        border: 1px solid silver;
+        background-color: #ececec;
+    }
+    .tab-firmware_flasher .buttons a:hover {
+        background-color: #dedcdc;
+    }
+    .tab-firmware_flasher .buttons a.flash_firmware.locked {
+        background-color: #b8b8b8;
+    }
+    .tab-firmware_flasher .buttons a.flash_firmware.locked:hover {
+        cursor: default;
+        background-color: #b8b8b8;
+    }
+    .tab-firmware_flasher .buttons a.back {
+        float: right;
+        margin: 0;
+    }
