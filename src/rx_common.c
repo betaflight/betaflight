@@ -103,7 +103,7 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     uint8_t chan;
     static int16_t rcSamples[MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT][PPM_AND_PWM_SAMPLE_COUNT], rcDataMean[MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT];
     static uint8_t rcSampleIndex = 0;
-    uint8_t currentSampleIndex;
+    uint8_t currentSampleIndex = 0;
 
     if (feature(FEATURE_FAILSAFE)) {
         failsafe->vTable->incrementCounter();
