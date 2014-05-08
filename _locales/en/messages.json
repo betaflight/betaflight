@@ -403,5 +403,15 @@
     },
     "gpsSignalStr": {
         "message": "Signal Strength"
+    },
+
+    "motorsBarInfo": {
+        "message": "Bars on the <strong>left</strong> are representing raw PWM signal for <strong>ESCs</strong>.<br />Bars on the <strong>right</strong> are representing raw PWM signal for <strong>Servos</strong>.<br />"
+    },
+    "motorsMaster": {
+        "message": "Master"
+    },
+    "motorsNotice": {
+        "message": "<strong>Motor Test Mode Notice:</strong><br />Moving the sliders will cause the motors to <strong>spin up</strong>.<br />In order to prevent injury <strong style=\"color: red\">remove ALL propellers</strong> before using this feature.<br />If you understand these instructions check the <strong>box</strong> below to <strong style=\"color: green\">enable</strong> motor test.<br /><br /><label>Check: <input type=\"checkbox\" /></label>"
     }
 }
