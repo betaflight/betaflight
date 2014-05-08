@@ -12,7 +12,10 @@
         }
         .tab-sensors .info input {
             vertical-align: middle;
-            margin: 0 10px 0 5px;
+            margin: 0 5px 0 15px;
+        }
+        .tab-sensors .info .first {
+            margin: 0 5px 0 0;
         }
     .tab-sensors .wrapper {
         display: none;

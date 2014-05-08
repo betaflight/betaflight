@@ -168,6 +168,15 @@ function tab_initialize_sensors() {
         // translate to user-selected language
         localize();
 
+        // disable graphs for sensors that are missing
+        var checkboxes = $('.tab-sensors .info .checkboxes input');
+        if (!bit_check(CONFIG.activeSensors, 1)) { // baro
+            checkboxes.eq(3).prop('disabled', true);
+        }
+        if (!bit_check(CONFIG.activeSensors, 2)) { // mag
+            checkboxes.eq(2).prop('disabled', true);
+        }
+
         $('.tab-sensors .info .checkboxes input').change(function() {
             var enable = $(this).prop('checked');
             var index = $(this).parent().index();
@@ -204,7 +213,7 @@ function tab_initialize_sensors() {
             if (result.graphs_enabled) {
                 var checkboxes = $('.tab-sensors .info .checkboxes input');
                 for (var i = 0; i < result.graphs_enabled.length; i++) {
-                    checkboxes.eq(i).prop('checked', result.graphs_enabled[i]).change();
+                    checkboxes.eq(i).not(':disabled').prop('checked', result.graphs_enabled[i]).change();
                 }
             } else {
                 $('.tab-sensors .info input:lt(4)').prop('checked', true).change();
