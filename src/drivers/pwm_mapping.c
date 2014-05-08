@@ -175,7 +175,7 @@ void pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef STM32F3DISCOVERY
+#if defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3)
         // skip softSerial ports
         if (init->useSoftSerial && (timerIndex == PWM9 || timerIndex == PWM10 || timerIndex == PWM11 || timerIndex == PWM12))
             continue;
