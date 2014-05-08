@@ -206,6 +206,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
         -webkit-user-select: text;
     }
+    #log a {
+        font-weight: bold;
+    }
+    #log a:hover {
+        text-decoration: underline;
+    }
 #tabs {
     position: absolute;
     margin-top: 1px;
