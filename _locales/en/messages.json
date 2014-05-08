@@ -423,5 +423,12 @@
     },
     "sensorsScale": {
         "message": "Scale:"
+    },
+
+    "cliInfo": {
+        "message": "<span style=\"color: red\">Note</span>: Leaving CLI tab or pressing Disconnect will <strong>automatically</strong> send \"<strong>exit</strong>\" to the board, which will make the controller save all the changes and <span style=\"color: red\">restart</span>."
+    },
+    "cliInputPlaceholder": {
+        "message": "Write your command here"
     }
 }
