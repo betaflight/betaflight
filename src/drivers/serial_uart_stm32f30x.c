@@ -184,6 +184,7 @@ void DMA1_Channel4_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
     DMA_ClearITPendingBit(DMA1_IT_TC4);
+    DMA_Cmd(DMA1_Channel4, DISABLE);
     handleUsartTxDma(s);
 }
 
@@ -209,6 +210,11 @@ void usartIrqHandler(uartPort_t *s)
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
     }
+
+    if (s->txDMAChannel) {
+        return;
+    }
+
     if (ISR & USART_FLAG_TXE) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
             s->USARTx->TDR = s->port.txBuffer[s->port.txBufferTail];

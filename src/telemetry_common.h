@@ -12,19 +12,12 @@ typedef enum {
     TELEMETRY_PROVIDER_FRSKY = 0,
     TELEMETRY_PROVIDER_HOTT,
     TELEMETRY_PROVIDER_MAX = TELEMETRY_PROVIDER_HOTT
-} TelemetryProvider;
-
-typedef enum {
-    TELEMETRY_PORT_UART = 0,
-    TELEMETRY_PORT_SOFTSERIAL_1, // Requires FEATURE_SOFTSERIAL
-    TELEMETRY_PORT_SOFTSERIAL_2, // Requires FEATURE_SOFTSERIAL
-    TELEMETRY_PORT_MAX = TELEMETRY_PORT_SOFTSERIAL_2
-} TelemetryPort;
+} telemetryProvider_e;
 
 typedef struct telemetryConfig_s {
-    uint8_t telemetry_provider;             // See TelemetryProvider enum.
-    uint8_t telemetry_port;                 // See TelemetryPort enum.
+    telemetryProvider_e telemetry_provider;
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
+    serialInversion_e frsky_inversion;
 } telemetryConfig_t;
 
 void checkTelemetryState(void);

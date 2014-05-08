@@ -10,10 +10,32 @@
 uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode);
 uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode);
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode)
+static void uartReconfigure(uartPort_t *uartPort)
+{
+    USART_InitTypeDef USART_InitStructure;
+
+    USART_InitStructure.USART_BaudRate = uartPort->port.baudRate;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    if (uartPort->port.mode & MODE_SBUS) {
+        USART_InitStructure.USART_StopBits = USART_StopBits_2;
+        USART_InitStructure.USART_Parity = USART_Parity_Even;
+    } else {
+        USART_InitStructure.USART_StopBits = USART_StopBits_1;
+        USART_InitStructure.USART_Parity = USART_Parity_No;
+    }
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_InitStructure.USART_Mode = 0;
+    if (uartPort->port.mode & MODE_RX)
+        USART_InitStructure.USART_Mode |= USART_Mode_Rx;
+    if (uartPort->port.mode & MODE_TX)
+        USART_InitStructure.USART_Mode |= USART_Mode_Tx;
+
+    USART_Init(uartPort->USARTx, &USART_InitStructure);
+}
+
+serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion)
 {
     DMA_InitTypeDef DMA_InitStructure;
-    USART_InitTypeDef USART_InitStructure;
 
     uartPort_t *s = NULL;
 
@@ -32,22 +54,14 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     s->port.mode = mode;
     s->port.baudRate = baudRate;
 
-    USART_InitStructure.USART_BaudRate = baudRate;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    if (mode & MODE_SBUS) {
-        USART_InitStructure.USART_StopBits = USART_StopBits_2;
-        USART_InitStructure.USART_Parity = USART_Parity_Even;
-    } else {
-        USART_InitStructure.USART_StopBits = USART_StopBits_1;
-        USART_InitStructure.USART_Parity = USART_Parity_No;
-    }
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode = 0;
-    if (mode & MODE_RX)
-        USART_InitStructure.USART_Mode |= USART_Mode_Rx;
-    if (mode & MODE_TX)
-        USART_InitStructure.USART_Mode |= USART_Mode_Tx;
-    USART_Init(s->USARTx, &USART_InitStructure);
+
+#if 1 // FIXME use inversion on STM32F3
+    s->port.inversion = SERIAL_NOT_INVERTED;
+#else
+    s->port.inversion = inversion;
+#endif
+
+    uartReconfigure(s);
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = s->rxDMAPeripheralBaseAddr;
@@ -109,29 +123,25 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 
 void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
-    USART_InitTypeDef USART_InitStructure;
-    uartPort_t *s = (uartPort_t *)instance;
-
-    USART_InitStructure.USART_BaudRate = baudRate;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode = 0;
-    if (s->port.mode & MODE_RX)
-        USART_InitStructure.USART_Mode |= USART_Mode_Rx;
-    if (s->port.mode & MODE_TX)
-        USART_InitStructure.USART_Mode |= USART_Mode_Tx;
-    USART_Init(s->USARTx, &USART_InitStructure);
-
-    s->port.baudRate = baudRate;
+    uartPort_t *uartPort = (uartPort_t *)instance;
+    uartPort->port.baudRate = baudRate;
+#ifndef STM32F303xC // FIXME this doesnt seem to work, for now re-open the port from scratch, perhaps clearing some uart flags may help?
+    uartReconfigure(uartPort);
+#else
+    uartOpen(uartPort->USARTx, uartPort->port.callback, uartPort->port.baudRate, uartPort->port.mode, uartPort->port.inversion);
+#endif
 }
 
-void uartSetMode(serialPort_t *s, portMode_t mode)
+void uartSetMode(serialPort_t *instance, portMode_t mode)
 {
-    // not implemented.
+    uartPort_t *uartPort = (uartPort_t *)instance;
+    uartPort->port.mode = mode;
+#ifndef STM32F303xC // FIXME this doesnt seem to work, for now re-open the port from scratch, perhaps clearing some uart flags may help?
+    uartReconfigure(uartPort);
+#else
+    uartOpen(uartPort->USARTx, uartPort->port.callback, uartPort->port.baudRate, uartPort->port.mode, uartPort->port.inversion);
+#endif
 }
-
 
 void uartStartTxDMA(uartPort_t *s)
 {

@@ -39,6 +39,8 @@
 
 #include "serial_msp.h"
 
+static serialPort_t *mspPort;
+
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern int16_t debug[4]; // FIXME dependency on mw.c
@@ -162,16 +164,16 @@ void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
-    serialWrite(serialPorts.mainport, t);
+    serialWrite(mspPort, t);
     checksum ^= t;
     t = a >> 8;
-    serialWrite(serialPorts.mainport, t);
+    serialWrite(mspPort, t);
     checksum ^= t;
     t = a >> 16;
-    serialWrite(serialPorts.mainport, t);
+    serialWrite(mspPort, t);
     checksum ^= t;
     t = a >> 24;
-    serialWrite(serialPorts.mainport, t);
+    serialWrite(mspPort, t);
     checksum ^= t;
 }
 
@@ -179,16 +181,16 @@ void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
-    serialWrite(serialPorts.mainport, t);
+    serialWrite(mspPort, t);
     checksum ^= t;
     t = a >> 8 & 0xff;
-    serialWrite(serialPorts.mainport, t);
+    serialWrite(mspPort, t);
     checksum ^= t;
 }
 
 void serialize8(uint8_t a)
 {
-    serialWrite(serialPorts.mainport, a);
+    serialWrite(mspPort, a);
     checksum ^= a;
 }
 
@@ -275,7 +277,7 @@ reset:
     }
 }
 
-void mspInit(void)
+void mspInit(serialConfig_t *serialConfig)
 {
     int idx;
 
@@ -313,6 +315,11 @@ void mspInit(void)
     if (feature(FEATURE_TELEMETRY && masterConfig.telemetryConfig.telemetry_switch))
         availableBoxes[idx++] = BOXTELEMETRY;
     numberBoxItems = idx;
+
+    mspPort = findOpenSerialPort(FUNCTION_MSP);
+    if (!mspPort) {
+        mspPort = openSerialPort(FUNCTION_MSP, NULL, serialConfig->msp_baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
+    }
 }
 
 static void evaluateCommand(void)
@@ -713,8 +720,8 @@ void mspProcess(void)
         HEADER_CMD,
     } c_state = IDLE;
 
-    while (serialTotalBytesWaiting(serialPorts.mainport)) {
-        c = serialRead(serialPorts.mainport);
+    while (serialTotalBytesWaiting(mspPort)) {
+        c = serialRead(mspPort);
 
         if (c_state == IDLE) {
             c_state = (c == '$') ? HEADER_START : IDLE;

@@ -32,18 +32,20 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
-#include "build_config.h"
 
 #include "drivers/serial_common.h"
 #include "serial_common.h"
 
+#include "build_config.h"
 #include "printf.h"
 
 #ifdef REQUIRE_PRINTF_LONG_SUPPORT
 #include "typeconversion.h"
 #endif
 
+serialPort_t *printfSerialPort;
 
 #ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 
@@ -154,7 +156,7 @@ void tfp_printf(char *fmt, ...)
     va_start(va, fmt);
     tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
-    while (!isSerialTransmitBufferEmpty(serialPorts.mainport));
+    while (!isSerialTransmitBufferEmpty(printfSerialPort));
 }
 
 static void putcp(void *p, char c)
@@ -171,4 +173,35 @@ void tfp_sprintf(char *s, char *fmt, ...)
     va_end(va);
 }
 
+
+static void _putc(void *p, char c)
+{
+    serialWrite(printfSerialPort, c);
+}
+
+void initPrintfSupport(void)
+{
+    init_printf(NULL, _putc);
+}
+
+#else
+
+// keil/armcc version
+int fputc(int c, FILE *f)
+{
+    // let DMA catch up a bit when using set or dump, we're too fast.
+    while (!isSerialTransmitBufferEmpty(serialPorts.mainport));
+    serialWrite(printfSerialPort, c);
+    return c;
+}
+
+void initPrintfSupport(serialPort_t *serialPort)
+{
+    // Nothing to do
+}
 #endif
+
+void setPrintfSerialPort(serialPort_t *serialPort)
+{
+    printfSerialPort = serialPort;
+}

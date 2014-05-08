@@ -24,9 +24,11 @@ static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 
+static serialPort_t *sumdPort;
+
 void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    serialPorts.rcvrport = uartOpen(USART2, sumdDataReceive, 115200, MODE_RX);
+    sumdPort = openSerialPort(FUNCTION_SERIAL_RX, sumdDataReceive, 115200, MODE_RX, SERIAL_NOT_INVERTED);
     if (callback)
         *callback = sumdReadRawRC;
 

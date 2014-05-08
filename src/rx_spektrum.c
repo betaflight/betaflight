@@ -26,10 +26,12 @@ static bool rcFrameComplete = false;
 static bool spekHiRes = false;
 static bool spekDataIncoming = false;
 
-volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
+volatile static uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static void spektrumDataReceive(uint16_t c);
 static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+
+static serialPort_t *spektrumPort;
 
 void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
@@ -50,7 +52,7 @@ void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
             break;
     }
 
-    serialPorts.rcvrport = uartOpen(USART2, spektrumDataReceive, 115200, MODE_RX);
+    spektrumPort = openSerialPort(FUNCTION_SERIAL_RX, spektrumDataReceive, 115200, MODE_RX, SERIAL_NOT_INVERTED);
     if (callback)
         *callback = spektrumReadRawRC;
 }

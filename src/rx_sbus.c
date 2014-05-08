@@ -25,15 +25,16 @@ static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
+static serialPort_t *sBusPort;
+
 void sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     int b;
 
-    //rxConfig = initialRxConfig;
+    sBusPort = openSerialPort(FUNCTION_SERIAL_RX, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_NOT_INVERTED);
 
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
         sbusChannelData[b] = 2 * (rxConfig->midrc - SBUS_OFFSET);
-    serialPorts.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS));
     if (callback)
         *callback = sbusReadRawRC;
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;

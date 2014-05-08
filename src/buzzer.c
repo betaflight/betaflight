@@ -27,7 +27,7 @@ typedef enum {
     FAILSAFE_FIND_ME
 } failsafeBuzzerWarnings_e;
 
-failsafe_t* failsafe;
+static failsafe_t* failsafe;
 
 void buzzerInit(failsafe_t *initialFailsafe)
 {

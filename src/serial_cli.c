@@ -9,7 +9,6 @@
 #include "platform.h"
 
 #include "common/axis.h"
-#include "common/printf.h"
 #include "common/typeconversion.h"
 
 #include "drivers/system_common.h"
@@ -38,6 +37,8 @@
 #include "config_profile.h"
 #include "config_master.h"
 
+#include "common/printf.h"
+
 #include "serial_cli.h"
 
 // we unset this on 'exit'
@@ -59,7 +60,9 @@ static void cliSet(char *cmdline);
 static void cliStatus(char *cmdline);
 static void cliVersion(char *cmdline);
 
-uint16_t cycleTime; // FIXME dependency on mw.c
+extern uint16_t cycleTime; // FIXME dependency on mw.c
+
+static serialPort_t *cliPort;
 
 // signal that we're in cli mode
 uint8_t cliMode = 0;
@@ -166,19 +169,18 @@ const clivalue_t valueTable[] = {
     { "fixedwing_althold_dir", VAR_INT8, &masterConfig.fixedwing_althold_dir, -1, 1 },
 
     { "reboot_character", VAR_UINT8, &masterConfig.serialConfig.reboot_character, 48, 126 },
-    { "serial_baudrate", VAR_UINT32, &masterConfig.serialConfig.port1_baudrate, 1200, 115200 },
-    { "softserial_baudrate", VAR_UINT32, &masterConfig.serialConfig.softserial_baudrate, 1200, 19200 },
-    { "softserial_1_inverted", VAR_UINT8, &masterConfig.serialConfig.softserial_1_inverted, 0, 1 },
-    { "softserial_2_inverted", VAR_UINT8, &masterConfig.serialConfig.softserial_2_inverted, 0, 1 },
+    { "msp_baudrate", VAR_UINT32, &masterConfig.serialConfig.msp_baudrate, 1200, 115200 },
+    { "cli_baudrate", VAR_UINT32, &masterConfig.serialConfig.cli_baudrate, 1200, 115200 },
+    { "gps_passthrough_baudrate", VAR_UINT32, &masterConfig.serialConfig.gps_passthrough_baudrate, 1200, 115200 },
 
-    { "gps_type", VAR_UINT8, &masterConfig.gps_type, 0, GPS_HARDWARE_MAX },
-    { "gps_baudrate", VAR_INT8, &masterConfig.gps_baudrate, 0, GPS_BAUD_MAX },
+    { "gps_provider", VAR_UINT8, &masterConfig.gps_provider, 0, GPS_PROVIDER_MAX },
+    { "gps_initial_baudrate_index", VAR_INT8, &masterConfig.gps_initial_baudrate_index, 0, GPS_BAUDRATE_MAX },
 
     { "serialrx_type", VAR_UINT8, &masterConfig.rxConfig.serialrx_type, 0, SERIALRX_PROVIDER_MAX },
 
     { "telemetry_provider", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
-    { "telemetry_port", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_port, 0, TELEMETRY_PORT_MAX },
     { "telemetry_switch", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_switch, 0, 1 },
+    { "frsky_inversion", VAR_UINT8, &masterConfig.telemetryConfig.frsky_inversion, 0, 1 },
 
     { "vbatscale", VAR_UINT8, &masterConfig.batteryConfig.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50 },
@@ -493,6 +495,15 @@ static void cliDump(char *cmdline)
     }
 }
 
+static void cliEnter(void)
+{
+    cliMode = 1;
+    beginSerialPortFunction(cliPort, FUNCTION_CLI);
+    setPrintfSerialPort(cliPort);
+    cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
+    cliPrompt();
+}
+
 static void cliExit(char *cmdline)
 {
     cliPrint("\r\nLeaving CLI mode...\r\n");
@@ -501,8 +512,12 @@ static void cliExit(char *cmdline)
     cliMode = 0;
     // incase some idiot leaves a motor running during motortest, clear it here
     mixerResetMotors();
-    // save and reboot... I think this makes the most sense
+    // save and reboot... I think this makes the most sense - otherwise config changes can be out of sync, maybe just need to applyConfig and return?
+#if 1
     cliSave(cmdline);
+#else
+    releaseSerialPort(cliPort, FUNCTION_CLI);
+#endif
 }
 
 static void cliFeature(char *cmdline)
@@ -563,10 +578,20 @@ static void cliFeature(char *cmdline)
 
 static void cliGpsPassthrough(char *cmdline)
 {
-    if (gpsSetPassthrough() == -1)
-        cliPrint("Error: Enable and plug in GPS first\r\n");
-    else
-        cliPrint("Enabling GPS passthrough...\r\n");
+    gpsEnablePassthroughResult_e result = gpsEnablePassthrough();
+
+    switch (result) {
+        case GPS_PASSTHROUGH_NO_GPS:
+            cliPrint("Error: Enable and plug in GPS first\r\n");
+            break;
+
+        case GPS_PASSTHROUGH_NO_SERIAL_PORT:
+            cliPrint("Error: Enable and plug in GPS first\r\n");
+            break;
+
+        default:
+            break;
+    }
 }
 
 static void cliHelp(char *cmdline)
@@ -707,7 +732,7 @@ static void cliProfile(char *cmdline)
 
 static void cliReboot(void) {
     cliPrint("\r\nRebooting...");
-    delay(10);
+    waitForSerialPortToFinishTransmitting(cliPort);
     systemReset(false);
 }
 
@@ -729,12 +754,12 @@ static void cliDefaults(char *cmdline)
 static void cliPrint(const char *str)
 {
     while (*str)
-        serialWrite(serialPorts.mainport, *(str++));
+        serialWrite(cliPort, *(str++));
 }
 
 static void cliWrite(uint8_t ch)
 {
-    serialWrite(serialPorts.mainport, ch);
+    serialWrite(cliPort, ch);
 }
 
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
@@ -890,13 +915,11 @@ static void cliVersion(char *cmdline)
 void cliProcess(void)
 {
     if (!cliMode) {
-        cliMode = 1;
-        cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
-        cliPrompt();
+        cliEnter();
     }
 
-    while (serialTotalBytesWaiting(serialPorts.mainport)) {
-        uint8_t c = serialRead(serialPorts.mainport);
+    while (serialTotalBytesWaiting(cliPort)) {
+        uint8_t c = serialRead(cliPort);
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
@@ -976,4 +999,13 @@ void cliProcess(void)
             cliWrite(c);
         }
     }
+}
+
+void cliInit(serialConfig_t *serialConfig)
+{
+    cliPort = findOpenSerialPort(FUNCTION_CLI);
+    if (!cliPort) {
+        cliPort = openSerialPort(FUNCTION_CLI, NULL, serialConfig->cli_baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
+    }
+
 }

@@ -11,7 +11,7 @@
 void handleFrSkyTelemetry(void);
 void checkFrSkyTelemetryState(void);
 
-void configureFrSkyTelemetryPort(void);
+void configureFrSkyTelemetryPort(telemetryConfig_t *telemetryConfig);
 void freeFrSkyTelemetryPort(void);
 
 #endif /* TELEMETRY_FRSKY_H_ */

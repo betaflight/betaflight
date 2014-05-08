@@ -34,13 +34,13 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 #define PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
 
 
-rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
+static rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
 rxRuntimeConfig_t rxRuntimeConfig;
 
 void serialRxInit(rxConfig_t *rxConfig);
 
-failsafe_t *failsafe;
+static failsafe_t *failsafe;
 
 void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 {

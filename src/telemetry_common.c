@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -12,14 +13,14 @@
 #include "runtime_config.h"
 #include "config.h"
 
+#include "telemetry_common.h"
 #include "telemetry_frsky.h"
 #include "telemetry_hott.h"
 
-#include "telemetry_common.h"
 
 static bool isTelemetryConfigurationValid = false; // flag used to avoid repeated configuration checks
 
-telemetryConfig_t *telemetryConfig;
+static telemetryConfig_t *telemetryConfig;
 
 void useTelemetryConfig(telemetryConfig_t *telemetryConfigToUse)
 {
@@ -42,45 +43,17 @@ bool canUseTelemetryWithCurrentConfiguration(void)
         return false;
     }
 
-    if (!feature(FEATURE_SOFTSERIAL)) {
-        if (telemetryConfig->telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1 || telemetryConfig->telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2) {
-            // softserial feature must be enabled to use telemetry on softserial ports
-            return false;
-        }
-    }
-
-    if (isTelemetryProviderHoTT()) {
-        if (telemetryConfig->telemetry_port == TELEMETRY_PORT_UART) {
-            // HoTT requires a serial port that supports RX/TX mode swapping
-            return false;
-        }
-    }
+   if (!canOpenSerialPort(FUNCTION_TELEMETRY)) {
+       return false;
+   }
 
     return true;
 }
 
-void initTelemetry(serialPorts_t *serialPorts)
+void initTelemetry()
 {
-    // Force telemetry to uart when softserial disabled
-    if (!canSoftwareSerialBeUsed())
-        telemetryConfig->telemetry_port = TELEMETRY_PORT_UART;
-
-#ifdef FY90Q
-    // FY90Q does not support softserial
-    telemetryConfig->telemetry_port = TELEMETRY_PORT_UART;
-    serialPorts->telemport = serialPorts->mainport;
-#endif
 
     isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
-
-#ifndef FY90Q
-    if (telemetryConfig->telemetry_port == TELEMETRY_PORT_SOFTSERIAL_1)
-        serialPorts->telemport = &(softSerialPorts[0].port);
-    else if (telemetryConfig->telemetry_port == TELEMETRY_PORT_SOFTSERIAL_2)
-        serialPorts->telemport = &(softSerialPorts[1].port);
-    else
-        serialPorts->telemport = serialPorts->mainport;
-#endif
 
     checkTelemetryState();
 }
@@ -89,13 +62,17 @@ static bool telemetryEnabled = false;
 
 bool determineNewTelemetryEnabledState(void)
 {
+    bool telemetryPortIsShared;
     bool enabled = true;
 
-    if (telemetryConfig->telemetry_port == TELEMETRY_PORT_UART) {
-        if (!telemetryConfig->telemetry_switch)
-            enabled = f.ARMED;
-        else
+    serialPortFunction_t *function = findSerialPortFunction(FUNCTION_TELEMETRY);
+    telemetryPortIsShared = function && function->scenario != SCENARIO_TELEMETRY_ONLY;
+
+    if (telemetryPortIsShared) {
+        if (telemetryConfig->telemetry_switch)
             enabled = rcOptions[BOXTELEMETRY];
+        else
+            enabled = f.ARMED;
     }
 
     return enabled;
@@ -109,11 +86,11 @@ bool shouldChangeTelemetryStateNow(bool newState)
 static void configureTelemetryPort(void)
 {
     if (isTelemetryProviderFrSky()) {
-        configureFrSkyTelemetryPort();
+        configureFrSkyTelemetryPort(telemetryConfig);
     }
 
     if (isTelemetryProviderHoTT()) {
-        configureHoTTTelemetryPort();
+        configureHoTTTelemetryPort(telemetryConfig);
     }
 }
 

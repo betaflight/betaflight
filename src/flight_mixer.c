@@ -30,13 +30,13 @@ int16_t servo[MAX_SUPPORTED_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500
 
 static int useServo;
 
-servoParam_t *servoConf;
-mixerConfig_t *mixerConfig;
-flight3DConfig_t *flight3DConfig;
-escAndServoConfig_t *escAndServoConfig;
-airplaneConfig_t *airplaneConfig;
-rxConfig_t *rxConfig;
-gimbalConfig_t *gimbalConfig;
+static servoParam_t *servoConf;
+static mixerConfig_t *mixerConfig;
+static flight3DConfig_t *flight3DConfig;
+static escAndServoConfig_t *escAndServoConfig;
+static airplaneConfig_t *airplaneConfig;
+static rxConfig_t *rxConfig;
+static gimbalConfig_t *gimbalConfig;
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static MultiType currentMixerConfiguration;

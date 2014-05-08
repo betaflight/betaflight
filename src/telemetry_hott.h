@@ -203,7 +203,7 @@ typedef struct HoTTV4ElectricAirModule_t {
 void handleHoTTTelemetry(void);
 void checkTelemetryState(void);
 
-void configureHoTTTelemetryPort(void);
+void configureHoTTTelemetryPort(telemetryConfig_t *telemetryConfig);
 void freeHoTTTelemetryPort(void);
 
 #endif /* TELEMETRY_HOTT_H_ */

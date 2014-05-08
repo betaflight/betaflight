@@ -7,28 +7,25 @@ typedef enum {
     GPS_NMEA = 0,
     GPS_UBLOX,
     GPS_MTK_NMEA,
-    GPS_MTK_BINARY,
-    GPS_MAG_BINARY,
-    GPS_HARDWARE_MAX = GPS_MAG_BINARY,
-} GPSHardware;
+    GPS_PROVIDER_MAX = GPS_MTK_NMEA,
+} gpsProvider_e;
 
 typedef enum {
-    GPS_BAUD_115200 = 0,
-    GPS_BAUD_57600,
-    GPS_BAUD_38400,
-    GPS_BAUD_19200,
-    GPS_BAUD_9600,
-    GPS_BAUD_MAX = GPS_BAUD_9600
-} GPSBaudRates;
+    GPS_BAUDRATE_115200 = 0,
+    GPS_BAUDRATE_57600,
+    GPS_BAUDRATE_38400,
+    GPS_BAUDRATE_19200,
+    GPS_BAUDRATE_9600,
+    GPS_BAUDRATE_MAX = GPS_BAUDRATE_9600
+} gpsBaudRate_e;
 
 // Serial GPS only variables
 // navigation mode
-typedef enum NavigationMode
-{
+typedef enum {
     NAV_MODE_NONE = 0,
     NAV_MODE_POSHOLD,
     NAV_MODE_WP
-} NavigationMode;
+} navigationMode_e;
 
 typedef struct gpsProfile_s {
     uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
@@ -39,6 +36,12 @@ typedef struct gpsProfile_s {
     uint16_t nav_speed_max;                 // cm/sec
     uint16_t ap_mode;                       // Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks, creating a deadspan for GPS
 } gpsProfile_t;
+
+typedef enum {
+    GPS_PASSTHROUGH_ENABLED = 1,
+    GPS_PASSTHROUGH_NO_GPS,
+    GPS_PASSTHROUGH_NO_SERIAL_PORT
+} gpsEnablePassthroughResult_e;
 
 extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
 extern int32_t GPS_coord[2];               // LAT/LON
@@ -62,7 +65,7 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 extern int8_t nav_mode;                    // Navigation mode
 
 void gpsThread(void);
-int8_t gpsSetPassthrough(void);
+gpsEnablePassthroughResult_e gpsEnablePassthrough(void);
 void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);

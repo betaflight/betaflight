@@ -22,9 +22,12 @@
 
 #include "sensors_common.h"
 
+#include "config.h"
 #include "runtime_config.h"
 
 #include "gps_common.h"
+
+extern int16_t debug[4];
 
 
 // **********************
@@ -55,10 +58,13 @@ static uint8_t gpsProvider;
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below
-#define GPS_INIT_ENTRIES (GPS_BAUD_MAX + 1)
-#define GPS_BAUD_DELAY (100)
+#define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
+#define GPS_BAUDRATE_CHATE_DELAY (100)
 
-gpsProfile_t *gpsProfile;
+static gpsProfile_t *gpsProfile;
+
+static serialConfig_t *serialConfig;
+static serialPort_t *gpsPort;
 
 typedef struct gpsInitData_t {
     uint8_t index;
@@ -69,12 +75,12 @@ typedef struct gpsInitData_t {
 
 // NMEA will cycle through these until valid data is received
 static const gpsInitData_t gpsInitData[] = {
-    { GPS_BAUD_115200, 115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n", "$PMTK251,115200*1F\r\n" },
-    { GPS_BAUD_57600,   57600, "$PUBX,41,1,0003,0001,57600,0*2D\r\n", "$PMTK251,57600*2C\r\n" },
-    { GPS_BAUD_38400,   38400, "$PUBX,41,1,0003,0001,38400,0*26\r\n", "$PMTK251,38400*27\r\n" },
-    { GPS_BAUD_19200,   19200, "$PUBX,41,1,0003,0001,19200,0*23\r\n", "$PMTK251,19200*22\r\n" },
+    { GPS_BAUDRATE_115200, 115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n", "$PMTK251,115200*1F\r\n" },
+    { GPS_BAUDRATE_57600,   57600, "$PUBX,41,1,0003,0001,57600,0*2D\r\n", "$PMTK251,57600*2C\r\n" },
+    { GPS_BAUDRATE_38400,   38400, "$PUBX,41,1,0003,0001,38400,0*26\r\n", "$PMTK251,38400*27\r\n" },
+    { GPS_BAUDRATE_19200,   19200, "$PUBX,41,1,0003,0001,19200,0*23\r\n", "$PMTK251,19200*22\r\n" },
     // 9600 is not enough for 5Hz updates - leave for compatibility to dumb NMEA that only runs at this speed
-    { GPS_BAUD_9600,     9600, "", "" }
+    { GPS_BAUDRATE_9600,     9600, "", "" }
 };
 
 static const uint8_t ubloxInit[] = {
@@ -133,12 +139,12 @@ void gpsUseProfile(gpsProfile_t *gpsProfileToUse)
 }
 
 // When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
-void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile)
+void gpsInit(serialConfig_t *initialSerialConfig, uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile)
 {
+    serialConfig = initialSerialConfig;
+
     gpsProvider = initialGpsProvider;
     gpsUseProfile(initialGpsProfile);
-
-    portMode_t mode = MODE_RXTX;
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_UNKNOWN);
@@ -146,13 +152,21 @@ void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *in
     gpsData.baudrateIndex = baudrateIndex;
     gpsData.lastMessage = millis();
     gpsData.errors = 0;
+
+    portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
     if (gpsProvider == GPS_NMEA)
         mode = MODE_RX;
 
     gpsUsePIDs(pidProfile);
-    // Open GPS UART, no callback - buffer will be read out in gpsThread()
-    serialPorts.gpsport = uartOpen(USART2, NULL, gpsInitData[baudrateIndex].baudrate, mode);
+
+    // no callback - buffer will be consumed in gpsThread()
+    gpsPort = openSerialPort(FUNCTION_GPS, NULL, gpsInitData[baudrateIndex].baudrate, mode, SERIAL_NOT_INVERTED);
+    if (!gpsPort) {
+        featureClear(FEATURE_GPS);
+        return;
+    }
+
     // signal GPS "thread" to initialize when it gets to it
     gpsSetState(GPS_INITIALIZING);
 }
@@ -162,7 +176,7 @@ void gpsInitHardware(void)
     switch (gpsProvider) {
         case GPS_NMEA:
             // nothing to do, just set baud rate and try receiving some stuff and see if it parses
-            serialSetBaudRate(serialPorts.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
+            serialSetBaudRate(gpsPort, gpsInitData[gpsData.baudrateIndex].baudrate);
             gpsSetState(GPS_RECEIVINGDATA);
             break;
 
@@ -170,19 +184,19 @@ void gpsInitHardware(void)
             // UBX will run at mcfg.gps_baudrate, it shouldn't be "autodetected". So here we force it to that rate
 
             // Wait until GPS transmit buffer is empty
-            if (!isSerialTransmitBufferEmpty(serialPorts.gpsport))
+            if (!isSerialTransmitBufferEmpty(gpsPort))
                 break;
 
             if (gpsData.state == GPS_INITIALIZING) {
                 uint32_t m = millis();
-                if (m - gpsData.state_ts < GPS_BAUD_DELAY)
+                if (m - gpsData.state_ts < GPS_BAUDRATE_CHATE_DELAY)
                     return;
 
                 if (gpsData.state_position < GPS_INIT_ENTRIES) {
                     // try different speed to INIT
-                    serialSetBaudRate(serialPorts.gpsport, gpsInitData[gpsData.state_position].baudrate);
+                    serialSetBaudRate(gpsPort, gpsInitData[gpsData.state_position].baudrate);
                     // but print our FIXED init string for the baudrate we want to be at
-                    serialPrint(serialPorts.gpsport, gpsInitData[gpsData.baudrateIndex].ubx);
+                    serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
 
                     gpsData.state_position++;
                     gpsData.state_ts = m;
@@ -193,10 +207,10 @@ void gpsInitHardware(void)
             } else {
                 // GPS_INITDONE, set our real baud rate and push some ublox config strings
                 if (gpsData.state_position == 0)
-                    serialSetBaudRate(serialPorts.gpsport, gpsInitData[gpsData.baudrateIndex].baudrate);
+                    serialSetBaudRate(gpsPort, gpsInitData[gpsData.baudrateIndex].baudrate);
 
                 if (gpsData.state_position < sizeof(ubloxInit)) {
-                    serialWrite(serialPorts.gpsport, ubloxInit[gpsData.state_position]); // send ubx init binary
+                    serialWrite(gpsPort, ubloxInit[gpsData.state_position]); // send ubx init binary
 
                     gpsData.state_position++;
                 } else {
@@ -204,10 +218,6 @@ void gpsInitHardware(void)
                     gpsSetState(GPS_RECEIVINGDATA);
                 }
             }
-            break;
-        case GPS_MTK_NMEA:
-        case GPS_MTK_BINARY:
-            // TODO. need to find my old piece of shit MTK GPS.
             break;
     }
 
@@ -218,9 +228,9 @@ void gpsInitHardware(void)
 void gpsThread(void)
 {
     // read out available GPS bytes
-    if (serialPorts.gpsport) {
-        while (serialTotalBytesWaiting(serialPorts.gpsport))
-            gpsNewData(serialRead(serialPorts.gpsport));
+    if (gpsPort) {
+        while (serialTotalBytesWaiting(gpsPort))
+            gpsNewData(serialRead(gpsPort));
     }
 
     switch (gpsData.state) {
@@ -263,8 +273,6 @@ static bool gpsNewFrame(uint8_t c)
             return gpsNewFrameNMEA(c);
         case GPS_UBLOX:         // UBX binary
             return gpsNewFrameUBLOX(c);
-        case GPS_MTK_BINARY:    // MTK in BINARY mode (TODO)
-            return false;
     }
 
     return false;
@@ -463,11 +471,16 @@ static void gpsNewData(uint16_t c)
         gpsData.lastLastMessage = gpsData.lastMessage;
         gpsData.lastMessage = millis();
         sensorsSet(SENSOR_GPS);
+
         if (GPS_update == 1)
             GPS_update = 0;
         else
             GPS_update = 1;
-        if (f.GPS_FIX && GPS_numSat >= 5) {
+#if 1
+            debug[3] = GPS_update;
+#endif
+
+            if (f.GPS_FIX && GPS_numSat >= 5) {
             if (!f.ARMED)
                 f.GPS_FIX_HOME = 0;
             if (!f.GPS_FIX_HOME && f.ARMED)
@@ -597,26 +610,39 @@ void gpsUsePIDs(pidProfile_t *pidProfile)
     navPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 }
 
-int8_t gpsSetPassthrough(void)
+gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
 {
     if (gpsData.state != GPS_RECEIVINGDATA)
-        return -1;
+        return GPS_PASSTHROUGH_NO_GPS;
+
+    serialPort_t *gpsPassthroughPort = findOpenSerialPort(FUNCTION_GPS_PASSTHROUGH);
+    if (gpsPassthroughPort) {
+
+        waitForSerialPortToFinishTransmitting(gpsPassthroughPort);
+        serialSetBaudRate(gpsPassthroughPort, serialConfig->gps_passthrough_baudrate);
+    } else {
+        gpsPassthroughPort = openSerialPort(FUNCTION_GPS_PASSTHROUGH, NULL, serialConfig->gps_passthrough_baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
+        if (!gpsPassthroughPort) {
+            return GPS_PASSTHROUGH_NO_SERIAL_PORT;
+        }
+    }
 
     LED0_OFF;
     LED1_OFF;
 
     while(1) {
-        if (serialTotalBytesWaiting(serialPorts.gpsport)) {
+        if (serialTotalBytesWaiting(gpsPort)) {
             LED0_ON;
-            serialWrite(serialPorts.mainport, serialRead(serialPorts.gpsport));
+            serialWrite(gpsPassthroughPort, serialRead(gpsPort));
             LED0_OFF;
         }
-        if (serialTotalBytesWaiting(serialPorts.mainport)) {
+        if (serialTotalBytesWaiting(gpsPassthroughPort)) {
             LED1_ON;
-            serialWrite(serialPorts.gpsport, serialRead(serialPorts.mainport));
+            serialWrite(gpsPort, serialRead(gpsPassthroughPort));
             LED1_OFF;
         }
     }
+    return GPS_PASSTHROUGH_ENABLED;
 }
 
 // OK here is the onboard GPS code

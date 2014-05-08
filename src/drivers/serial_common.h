@@ -1,5 +1,11 @@
 #pragma once
 
+
+typedef enum {
+    SERIAL_NOT_INVERTED = 0,
+    SERIAL_INVERTED
+} serialInversion_e;
+
 typedef enum portMode_t {
     MODE_RX = 1  << 0,
     MODE_TX = 1 << 1,
@@ -12,8 +18,9 @@ typedef void (* serialReceiveCallbackPtr)(uint16_t data);   // used by serial dr
 typedef struct serialPort {
     
     const struct serialPortVTable *vTable;
-    
+    uint8_t identifier;
     portMode_t mode;
+    serialInversion_e inversion;
     uint32_t baudRate;
 
     uint32_t rxBufferSize;

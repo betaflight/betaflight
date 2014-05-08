@@ -16,10 +16,10 @@
 #include "statusindicator.h"
 #include "sensors_acceleration.h"
 #include "sensors_barometer.h"
-#include "telemetry_common.h"
-#include "gps_common.h"
-
 #include "drivers/serial_common.h"
+#include "serial_common.h"
+#include "telemetry_common.h"
+
 #include "flight_mixer.h"
 #include "boardalignment.h"
 #include "battery.h"
@@ -29,7 +29,6 @@
 #include "rc_curves.h"
 #include "rx_common.h"
 #include "gps_common.h"
-#include "serial_common.h"
 #include "failsafe.h"
 
 #include "runtime_config.h"
@@ -51,7 +50,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 master_t masterConfig;  // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 64;
+static const uint8_t EEPROM_CONF_VERSION = 65;
 static void resetConf(void);
 
 static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
@@ -279,10 +278,10 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
     telemetryConfig->telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
-    telemetryConfig->telemetry_port = TELEMETRY_PORT_UART;
+    telemetryConfig->frsky_inversion = SERIAL_NOT_INVERTED;
     telemetryConfig->telemetry_switch = 0;
-
 }
+
 // Default settings
 static void resetConf(void)
 {
@@ -336,14 +335,12 @@ static void resetConf(void)
     masterConfig.motor_pwm_rate = 400;
     masterConfig.servo_pwm_rate = 50;
     // gps/nav stuff
-    masterConfig.gps_type = GPS_NMEA;
-    masterConfig.gps_baudrate = GPS_BAUD_115200;
+    masterConfig.gps_provider = GPS_NMEA;
+    masterConfig.gps_initial_baudrate_index = GPS_BAUDRATE_115200;
 
-    // serial (USART1) baudrate
-    masterConfig.serialConfig.port1_baudrate = 115200;
-    masterConfig.serialConfig.softserial_baudrate = 9600;
-    masterConfig.serialConfig.softserial_1_inverted = 0;
-    masterConfig.serialConfig.softserial_2_inverted = 0;
+    masterConfig.serialConfig.msp_baudrate = 115200;
+    masterConfig.serialConfig.cli_baudrate = 115200;
+    masterConfig.serialConfig.gps_passthrough_baudrate = 115200;
     masterConfig.serialConfig.reboot_character = 'R';
 
     masterConfig.looptime = 3500;
@@ -451,6 +448,9 @@ uint32_t featureMask(void)
 
 bool canSoftwareSerialBeUsed(void)
 {
+#ifdef FY90Q
+    return false;
+#endif
     // FIXME this is not ideal because it means you can't disable parallel PWM input even when using spektrum/sbus etc.
     // really we want to say 'return !feature(FEATURE_PARALLEL_PWM);'
     return feature(FEATURE_SOFTSERIAL) && feature(FEATURE_PPM); // Software serial can only be used in PPM mode because parallel PWM uses the same hardware pins/timers

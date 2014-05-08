@@ -64,6 +64,10 @@
 #include "telemetry_common.h"
 #include "telemetry_hott.h"
 
+static serialPort_t *hottPort;
+#define HOTT_BAUDRATE 19200
+#define HOTT_INITIAL_PORT_MODE MODE_RX
+
 extern telemetryConfig_t *telemetryConfig;
 
 
@@ -237,7 +241,7 @@ void hottV4FormatAndSendEAMResponse(void)
 
 static void hottV4Respond(uint8_t *data, uint8_t size)
 {
-    serialSetMode(serialPorts.telemport, MODE_TX);
+    serialSetMode(hottPort, MODE_TX);
 
     uint16_t crc = 0;
     uint8_t i;
@@ -254,31 +258,54 @@ static void hottV4Respond(uint8_t *data, uint8_t size)
 
     delayMicroseconds(HOTTV4_TX_DELAY);
 
-    serialSetMode(serialPorts.telemport, MODE_RX);
+    serialSetMode(hottPort, MODE_RX);
 }
 
 static void hottV4SerialWrite(uint8_t c)
 {
-    serialWrite(serialPorts.telemport, c);
+    serialWrite(hottPort, c);
 }
 
-void configureHoTTTelemetryPort(void)
-{
-    // TODO set speed here to 19200?
-    serialSetMode(serialPorts.telemport, MODE_RX);
-}
+static portMode_t previousPortMode;
+static uint32_t previousBaudRate;
 
 void freeHoTTTelemetryPort(void)
 {
-    serialSetMode(serialPorts.telemport, MODE_RXTX);
+    // FIXME only need to do this if the port is shared
+    serialSetMode(hottPort, previousPortMode);
+    serialSetBaudRate(hottPort, previousBaudRate);
+
+    endSerialPortFunction(hottPort, FUNCTION_TELEMETRY);
 }
+
+void configureHoTTTelemetryPort(telemetryConfig_t *telemetryConfig)
+{
+    hottPort = findOpenSerialPort(FUNCTION_TELEMETRY);
+    if (hottPort) {
+        previousPortMode = hottPort->mode;
+        previousBaudRate = hottPort->baudRate;
+
+        //waitForSerialPortToFinishTransmitting(hottPort); // FIXME locks up the system
+
+        serialSetBaudRate(hottPort, HOTT_BAUDRATE);
+        serialSetMode(hottPort, HOTT_INITIAL_PORT_MODE);
+        beginSerialPortFunction(hottPort, FUNCTION_TELEMETRY);
+    } else {
+        hottPort = openSerialPort(FUNCTION_TELEMETRY, NULL, HOTT_BAUDRATE, HOTT_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+
+        // FIXME only need to do this if the port is shared
+        previousPortMode = hottPort->mode;
+        previousBaudRate = hottPort->baudRate;
+    }
+}
+
 
 void handleHoTTTelemetry(void)
 {
     uint8_t c;
 
-    while (serialTotalBytesWaiting(serialPorts.telemport) > 0) {
-        c = serialRead(serialPorts.telemport);
+    while (serialTotalBytesWaiting(hottPort) > 0) {
+        c = serialRead(hottPort);
 
         // Protocol specific waiting time to avoid collisions
         delay(5);

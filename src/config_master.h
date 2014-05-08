@@ -51,12 +51,13 @@ typedef struct master_t {
     uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
 
     // gps-related stuff
-    uint8_t gps_type;                       // See GPSHardware enum.
-    int8_t gps_baudrate;                    // See GPSBaudRates enum.
+    gpsProvider_e gps_provider;
+    gpsBaudRate_e gps_initial_baudrate_index;
 
     serialConfig_t serialConfig;
 
     telemetryConfig_t telemetryConfig;
+
     profile_t profile[3];                   // 3 separate profiles
     uint8_t current_profile_index;          // currently loaded profile
 

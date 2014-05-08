@@ -3,6 +3,7 @@
  */
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -29,8 +30,13 @@
 #include "telemetry_common.h"
 #include "telemetry_frsky.h"
 
-extern telemetryConfig_t *telemetryConfig;
-int16_t telemTemperature1; // FIXME dependency on mw.c
+static serialPort_t *frskyPort;
+#define FRSKY_BAUDRATE 9600
+#define FRSKY_INITIAL_PORT_MODE MODE_TX
+
+telemetryConfig_t *telemetryConfig;
+
+extern int16_t telemTemperature1; // FIXME dependency on mw.c
 
 #define CYCLETIME             125
 
@@ -77,26 +83,26 @@ int16_t telemTemperature1; // FIXME dependency on mw.c
 
 static void sendDataHead(uint8_t id)
 {
-    serialWrite(serialPorts.telemport, PROTOCOL_HEADER);
-    serialWrite(serialPorts.telemport, id);
+    serialWrite(frskyPort, PROTOCOL_HEADER);
+    serialWrite(frskyPort, id);
 }
 
 static void sendTelemetryTail(void)
 {
-    serialWrite(serialPorts.telemport, PROTOCOL_TAIL);
+    serialWrite(frskyPort, PROTOCOL_TAIL);
 }
 
 static void serializeFrsky(uint8_t data)
 {
     // take care of byte stuffing
     if (data == 0x5e) {
-        serialWrite(serialPorts.telemport, 0x5d);
-        serialWrite(serialPorts.telemport, 0x3e);
+        serialWrite(frskyPort, 0x5d);
+        serialWrite(frskyPort, 0x3e);
     } else if (data == 0x5d) {
-        serialWrite(serialPorts.telemport, 0x5d);
-        serialWrite(serialPorts.telemport, 0x3d);
+        serialWrite(frskyPort, 0x5d);
+        serialWrite(frskyPort, 0x3d);
     } else
-        serialWrite(serialPorts.telemport, data);
+        serialWrite(frskyPort, data);
 }
 
 static void serialize16(int16_t a)
@@ -237,17 +243,36 @@ static void sendHeading(void)
     serialize16(0);
 }
 
+static portMode_t previousPortMode;
+static uint32_t previousBaudRate;
+
 void freeFrSkyTelemetryPort(void)
 {
-    if (telemetryConfig->telemetry_port == TELEMETRY_PORT_UART) {
-        resetMainSerialPort();
-    }
+    // FIXME only need to reset the port if the port is shared
+    serialSetMode(frskyPort, previousPortMode);
+    serialSetBaudRate(frskyPort, previousBaudRate);
+
+    endSerialPortFunction(frskyPort, FUNCTION_TELEMETRY);
 }
 
-void configureFrSkyTelemetryPort(void)
+void configureFrSkyTelemetryPort(telemetryConfig_t *telemetryConfig)
 {
-    if (telemetryConfig->telemetry_port == TELEMETRY_PORT_UART) {
-        openMainSerialPort(9600);
+    frskyPort = findOpenSerialPort(FUNCTION_TELEMETRY);
+    if (frskyPort) {
+        previousPortMode = frskyPort->mode;
+        previousBaudRate = frskyPort->baudRate;
+
+        //waitForSerialPortToFinishTransmitting(frskyPort); // FIXME locks up the system
+
+        serialSetBaudRate(frskyPort, FRSKY_BAUDRATE);
+        serialSetMode(frskyPort, FRSKY_INITIAL_PORT_MODE);
+        beginSerialPortFunction(frskyPort, FUNCTION_TELEMETRY);
+    } else {
+        frskyPort = openSerialPort(FUNCTION_TELEMETRY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig->frsky_inversion);
+
+        // FIXME only need these values to reset the port if the port is shared
+        previousPortMode = frskyPort->mode;
+        previousBaudRate = frskyPort->baudRate;
     }
 }
 
@@ -256,7 +281,7 @@ static uint8_t cycleNum = 0;
 
 bool canSendFrSkyTelemetry(void)
 {
-    return serialTotalBytesWaiting(serialPorts.telemport) == 0;
+    return serialTotalBytesWaiting(frskyPort) == 0;
 }
 
 bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)

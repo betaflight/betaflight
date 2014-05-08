@@ -10,7 +10,7 @@
 #define SOFT_SERIAL_BUFFER_SIZE 256
 
 typedef struct softSerial_s {
-    serialPort_t port;
+    serialPort_t     port;
 
     const timerHardware_t *rxTimerHardware;
     volatile uint8_t rxBuffer[SOFT_SERIAL_BUFFER_SIZE];
@@ -29,10 +29,10 @@ typedef struct softSerial_s {
     uint16_t         internalTxBuffer;  // includes start and stop bits
     uint16_t         internalRxBuffer;  // includes start and stop bits
 
-    uint8_t          isInverted;
-
     uint16_t         transmissionErrors;
     uint16_t         receiveErrors;
+
+    uint8_t          softSerialPortIndex;
 } softSerial_t;
 
 extern timerHardware_t* serialTimerHardware;
@@ -40,8 +40,8 @@ extern softSerial_t softSerialPorts[];
 
 extern const struct serialPortVTable softSerialVTable[];
 
-void setupSoftSerialPrimary(uint32_t baud, uint8_t inverted);
-void setupSoftSerialSecondary(uint8_t inverted);
+serialPort_t *openSoftSerial1(uint32_t baud, uint8_t inverted);
+serialPort_t *openSoftSerial2(uint32_t baud, uint8_t inverted);
 
 // serialPort API
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
