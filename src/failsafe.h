@@ -9,12 +9,13 @@ typedef struct failsafeConfig_s {
 
 typedef struct failsafeVTable_s {
     void (*reset)(void);
-    void (*validDataReceived)(void);
     bool (*shouldForceLanding)(bool armed);
     bool (*hasTimerElapsed)(void);
     bool (*shouldHaveCausedLandingByNow)(void);
+    void (*incrementCounter)(void);
     void (*updateState)(void);
     bool (*isIdle)(void);
+    void (*checkPulse)(uint8_t channel, uint16_t pulseDuration);
 
 } failsafeVTable_t;
 

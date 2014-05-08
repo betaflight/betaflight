@@ -9,14 +9,9 @@
 #include "gpio_common.h"
 #include "timer_common.h"
 
-#include "failsafe.h" // FIXME dependency into the main code from a driver
-
 #include "pwm_mapping.h"
 
 #include "pwm_rx.h"
-
-failsafe_t *failsafe;
-failsafeConfig_t *failsafeConfig;
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity); // from pwm_output.c
 
@@ -41,17 +36,6 @@ static pwmInputPort_t pwmInputPorts[MAX_PWM_INPUT_PORTS];
 
 static uint16_t captures[MAX_PWM_INPUT_PORTS];
 
-static void failsafeCheck(uint8_t channel, uint16_t pulseDuration)
-{
-    static uint8_t goodChannelMask;
-
-    if (channel < 4 && pulseDuration > failsafeConfig->failsafe_detect_threshold)
-        goodChannelMask |= (1 << channel);       // if signal is valid - mark channel as OK
-    if (goodChannelMask == 0x0F) {               // If first four channels have good pulses, clear FailSafe counter
-        goodChannelMask = 0;
-        failsafe->vTable->validDataReceived();
-    }
-}
 
 static void ppmCallback(uint8_t port, captureCompare_t capture)
 {
@@ -68,9 +52,8 @@ static void ppmCallback(uint8_t port, captureCompare_t capture)
     if (diff > 2700) { // Per http://www.rcgroups.com/forums/showpost.php?p=21996147&postcount=3960 "So, if you use 2.5ms or higher as being the reset for the PPM stream start, you will be fine. I use 2.7ms just to be safe."
         chan = 0;
     } else {
-        if (diff > PULSE_MIN && diff < PULSE_MAX && chan < MAX_PWM_INPUT_PORTS) {   // 750 to 2250 ms is our 'valid' channel range
+        if (chan < MAX_PWM_INPUT_PORTS) {
             captures[chan] = diff;
-            failsafeCheck(chan, diff);
         }
         chan++;
     }
@@ -87,12 +70,11 @@ static void pwmCallback(uint8_t port, captureCompare_t capture)
         pwmICConfig(timerHardware->tim, timerHardware->channel, TIM_ICPolarity_Falling);
     } else {
         pwmInputPort->fall = capture;
-        // compute capture
+
+        // compute and store capture
         pwmInputPort->capture = pwmInputPort->fall - pwmInputPort->rise;
-        if (pwmInputPort->capture > PULSE_MIN && pwmInputPort->capture < PULSE_MAX) { // valid pulse width
-            captures[pwmInputPort->channel] = pwmInputPort->capture;
-            failsafeCheck(pwmInputPort->channel, pwmInputPort->capture);
-        }
+        captures[pwmInputPort->channel] = pwmInputPort->capture;
+
         // switch state
         pwmInputPort->state = 0;
         pwmICConfig(timerHardware->tim, timerHardware->channel, TIM_ICPolarity_Rising);
@@ -164,8 +146,3 @@ uint16_t pwmRead(uint8_t channel)
     return captures[channel];
 }
 
-void pwmRxInit(failsafe_t *initialFailsafe, failsafeConfig_t *initialFailsafeConfig)
-{
-    failsafe = initialFailsafe;
-    failsafeConfig = initialFailsafeConfig;
-}

@@ -9,12 +9,8 @@
 #include "drivers/serial_uart_common.h"
 #include "serial_common.h"
 
-#include "failsafe.h"
-
 #include "rx_common.h"
 #include "rx_msp.h"
-
-failsafe_t *failsafe;
 
 static bool rxMspFrameDone = false;
 
@@ -31,16 +27,14 @@ void rxMspFrameRecieve(void)
 bool rxMspFrameComplete(void)
 {
     if (rxMspFrameDone) {
-        failsafe->vTable->reset();
         rxMspFrameDone = false;
         return true;
     }
     return false;
 }
 
-void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
+void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    failsafe = initialFailsafe;
     if (callback)
         *callback = rxMspReadRawRC;
 }

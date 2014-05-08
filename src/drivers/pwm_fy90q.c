@@ -4,14 +4,13 @@
 #include "stdint.h"
 #include "platform.h"
 
+#include "gpio_common.h"
 #include "serial_common.h"
+#include "timer_common.h"
 
-#include "failsafe.h" // FIXME dependency into the main code from a driver
-
-#include "pwm_common.h"
-
-failsafe_t *failsafe;
-static uint16_t failsafeThreshold = 985;
+#include "pwm_mapping.h"
+#include "pwm_rx.h"
+#include "pwm_output.h"
 
 #define PULSE_1MS       (1000) // 1ms pulse width
 // #define PULSE_PERIOD    (2500) // pulse period (400Hz)
@@ -75,7 +74,6 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     static uint16_t now;
     static uint16_t last = 0;
     static uint8_t chan = 0;
-    static uint8_t GoodPulses;
 
     if (TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
         last = now;
@@ -93,17 +91,10 @@ static void ppmIRQHandler(TIM_TypeDef *tim)
     if (diff > 4000) {
         chan = 0;
     } else {
-        if (diff > PULSE_MIN && diff < PULSE_MAX && chan < 8) {   // 750 to 2250 ms is our 'valid' channel range
+        if (chan < 8) {
             Inputs[chan].capture = diff;
-            if (chan < 4 && diff > failsafeThreshold)
-                GoodPulses |= (1 << chan);      // if signal is valid - mark channel as OK
-            if (GoodPulses == 0x0F) {   // If first four chanells have good pulses, clear FailSafe counter
-                GoodPulses = 0;
-                failsafe->vTable->validDataReceived();
-            }
         }
         chan++;
-        failsafe->vTable->reset();
     }
 }
 
@@ -155,9 +146,6 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 
                 // switch state
                 state->state = 0;
-
-                // ping failsafe
-                failsafe->vTable->reset();
 
                 TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
                 TIM_ICInitStructure.TIM_Channel = channel.channel;
@@ -255,15 +243,13 @@ static void pwmInitializeInput(bool usePPM)
     }
 }
 
-void pwmInit(drv_pwm_config_t *init, failsafe_t *initialFailsafe)
+void pwmInit(drv_pwm_config_t *init)
 {
     GPIO_InitTypeDef GPIO_InitStructure = { 0, };
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
     TIM_OCInitTypeDef TIM_OCInitStructure = { 0, };
 
     uint8_t i;
-
-    failsafe = initialFailsafe;
 
     // Inputs
 

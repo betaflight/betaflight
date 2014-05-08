@@ -57,7 +57,6 @@ void initTelemetry(serialPorts_t *serialPorts);
 void serialInit(serialConfig_t *initialSerialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 void pwmInit(drv_pwm_config_t *init);
-void pwmRxInit(failsafe_t *initialFailsafe, failsafeConfig_t *initialFailsafeConfig);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
 void gpsInit(uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
@@ -191,7 +190,6 @@ int main(void)
 #ifndef FY90Q
     timerInit();
 #endif
-    pwmRxInit(failsafe, &currentProfile.failsafeConfig);
     pwmInit(&pwm_params);
 
     rxInit(&masterConfig.rxConfig, failsafe);

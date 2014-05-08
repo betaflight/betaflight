@@ -89,32 +89,51 @@ void updateState(void)
 {
     uint8_t i;
 
-    if (hasTimerElapsed()) {
-
-        if (shouldForceLanding(f.ARMED)) { // Stabilize, and set Throttle to specified level
-            for (i = 0; i < 3; i++) {
-                rcData[i] = rxConfig->midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
-            }
-            rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
-            failsafe.events++;
-        }
-
-        if (shouldHaveCausedLandingByNow() || !f.ARMED) {
-            failsafeAvoidRearm();
-        }
+    if (!hasTimerElapsed()) {
+        return;
     }
+
+    if (shouldForceLanding(f.ARMED)) { // Stabilize, and set Throttle to specified level
+        for (i = 0; i < 3; i++) {
+            rcData[i] = rxConfig->midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
+        }
+        rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
+        failsafe.events++;
+    }
+
+    if (shouldHaveCausedLandingByNow() || !f.ARMED) {
+        failsafeAvoidRearm();
+    }
+}
+
+void incrementCounter(void)
+{
     failsafe.counter++;
 }
+
+void failsafeCheckPulse(uint8_t channel, uint16_t pulseDuration)
+{
+    static uint8_t goodChannelMask;
+
+    if (channel < 4 && pulseDuration > failsafeConfig->failsafe_detect_threshold)
+        goodChannelMask |= (1 << channel);       // if signal is valid - mark channel as OK
+    if (goodChannelMask == 0x0F) {               // If first four channels have good pulses, clear FailSafe counter
+        goodChannelMask = 0;
+        onValidDataReceived();
+    }
+}
+
 
 const failsafeVTable_t failsafeVTable[] = {
     {
         reset,
-        onValidDataReceived,
         shouldForceLanding,
         hasTimerElapsed,
         shouldHaveCausedLandingByNow,
+        incrementCounter,
         updateState,
-        isIdle
+        isIdle,
+        failsafeCheckPulse
     }
 };
 

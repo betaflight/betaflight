@@ -9,8 +9,6 @@
 #include "drivers/serial_uart_common.h"
 #include "serial_common.h"
 
-#include "failsafe.h"
-
 #include "rx_common.h"
 #include "rx_sumd.h"
 
@@ -26,12 +24,8 @@ static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 
-failsafe_t *failsafe;
-
-void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
+void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    failsafe = initialFailsafe;
-
     serialPorts.rcvrport = uartOpen(USART2, sumdDataReceive, 115200, MODE_RX);
     if (callback)
         *callback = sumdReadRawRC;
@@ -78,7 +72,6 @@ bool sumdFrameComplete(void)
     if (sumdFrameDone) {
         sumdFrameDone = false;
         if (sumd[1] == 0x01) {
-            failsafe->vTable->reset();
             if (sumdSize > SUMD_MAX_CHANNEL)
                 sumdSize = SUMD_MAX_CHANNEL;
             for (b = 0; b < sumdSize; b++)

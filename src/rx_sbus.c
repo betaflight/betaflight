@@ -9,8 +9,6 @@
 #include "drivers/serial_uart_common.h"
 #include "serial_common.h"
 
-#include "failsafe.h"
-
 #include "rx_common.h"
 #include "rx_sbus.h"
 
@@ -27,12 +25,9 @@ static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
-failsafe_t *failsafe;
-
-void sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, failsafe_t *initialFailsafe, rcReadRawDataPtr *callback)
+void sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     int b;
-    failsafe = initialFailsafe;
 
     //rxConfig = initialRxConfig;
 
@@ -99,7 +94,6 @@ bool sbusFrameComplete(void)
 {
     if (sbusFrameDone) {
         if (!((sbus.in[22] >> 3) & 0x0001)) { // failsave flag
-            failsafe->vTable->reset();
             sbusChannelData[0] = sbus.msg.chan0;
             sbusChannelData[1] = sbus.msg.chan1;
             sbusChannelData[2] = sbus.msg.chan2;
