@@ -13,7 +13,7 @@
 
 #ifdef BUZZER
 
-void (* systemBeepPtr)(bool onoff) = NULL;
+void (*systemBeepPtr)(bool onoff) = NULL;
 
 static void beepNormal(bool onoff)
 {

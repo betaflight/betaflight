@@ -37,21 +37,20 @@
 #include "config_master.h"
 
 void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
-void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse, escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse, airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfig, gimbalConfig_t *gimbalConfigToUse);
-
+void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse,
+        escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse,
+        airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfig, gimbalConfig_t *gimbalConfigToUse);
 
 #ifndef FLASH_PAGE_COUNT
 #define FLASH_PAGE_COUNT 128
 #endif
 
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 2))       // use the last 2 KB for storage
-
-master_t masterConfig;  // master config struct with data independent from profiles
+#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 2))       // use the last 2 KB for storage
+master_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
 static const uint8_t EEPROM_CONF_VERSION = 66;
-
 
 static void resetAccelerometerTrims(int16_flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -168,10 +167,10 @@ static void resetConf(void)
     featureSet(FEATURE_VBAT);
 
     // global settings
-    masterConfig.current_profile_index = 0;       // default profile
-    masterConfig.gyro_cmpf_factor = 600;    // default MWC
-    masterConfig.gyro_cmpfm_factor = 250;   // default MWC
-    masterConfig.gyro_lpf = 42;             // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    masterConfig.current_profile_index = 0;     // default profile
+    masterConfig.gyro_cmpf_factor = 600;        // default MWC
+    masterConfig.gyro_cmpfm_factor = 250;       // default MWC
+    masterConfig.gyro_lpf = 42;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -195,7 +194,7 @@ static void resetConf(void)
     masterConfig.rxConfig.midrc = 1500;
     masterConfig.rxConfig.mincheck = 1100;
     masterConfig.rxConfig.maxcheck = 1900;
-    masterConfig.retarded_arm = 0;       // disable arm/disarm on roll left/right
+    masterConfig.retarded_arm = 0;              // disable arm/disarm on roll left/right
     masterConfig.airplaneConfig.flaps_speed = 0;
     masterConfig.fixedwing_althold_dir = 1;
 
@@ -250,10 +249,10 @@ static void resetConf(void)
     currentProfile.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
-    currentProfile.failsafeConfig.failsafe_delay = 10;                // 1sec
-    currentProfile.failsafeConfig.failsafe_off_delay = 200;           // 20sec
-    currentProfile.failsafeConfig.failsafe_throttle = 1200;           // decent default which should always be below hover throttle for people.
-    currentProfile.failsafeConfig.failsafe_detect_threshold = 985;    // any of first 4 channels below this value will trigger failsafe
+    currentProfile.failsafeConfig.failsafe_delay = 10;              // 1sec
+    currentProfile.failsafeConfig.failsafe_off_delay = 200;         // 20sec
+    currentProfile.failsafeConfig.failsafe_throttle = 1200;         // decent default which should always be below hover throttle for people.
+    currentProfile.failsafeConfig.failsafe_detect_threshold = 985;  // any of first 4 channels below this value will trigger failsafe
 
     // servos
     for (i = 0; i < 8; i++) {
@@ -293,7 +292,7 @@ static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
 
 static bool isEEPROMContentValid(void)
 {
-    const master_t *temp = (const master_t *)FLASH_WRITE_ADDR;
+    const master_t *temp = (const master_t *) FLASH_WRITE_ADDR;
     uint8_t checksum = 0;
 
     // check version number
@@ -305,7 +304,7 @@ static bool isEEPROMContentValid(void)
         return false;
 
     // verify integrity of temporary copy
-    checksum = calculateChecksum((const uint8_t *)temp, sizeof(master_t));
+    checksum = calculateChecksum((const uint8_t *) temp, sizeof(master_t));
     if (checksum != 0)
         return false;
 
@@ -326,21 +325,22 @@ void activateConfig(void)
     useFailsafeConfig(&currentProfile.failsafeConfig);
     setAccelerationTrims(&masterConfig.accZero);
     mixerUseConfigs(
-        currentProfile.servoConf,
-        &masterConfig.flight3DConfig,
-        &masterConfig.escAndServoConfig,
-        &currentProfile.mixerConfig,
-        &masterConfig.airplaneConfig,
-        &masterConfig.rxConfig,
-        &currentProfile.gimbalConfig
-    );
+            currentProfile.servoConf,
+            &masterConfig.flight3DConfig,
+            &masterConfig.escAndServoConfig,
+            &currentProfile.mixerConfig,
+            &masterConfig.airplaneConfig,
+            &masterConfig.rxConfig,
+            &currentProfile.gimbalConfig
+            );
 
 #ifdef BARO
     useBarometerConfig(&currentProfile.barometerConfig);
 #endif
 }
 
-void validateAndFixConfig(void) {
+void validateAndFixConfig(void)
+{
     if (!(feature(FEATURE_PARALLEL_PWM) || feature(FEATURE_PPM) || feature(FEATURE_SERIALRX))) {
         featureSet(FEATURE_PARALLEL_PWM); // Consider changing the default to PPM
     }
@@ -390,7 +390,7 @@ void readEEPROM(void)
         failureMode(10);
 
     // Read flash
-    memcpy(&masterConfig, (char *)FLASH_WRITE_ADDR, sizeof(master_t));
+    memcpy(&masterConfig, (char *) FLASH_WRITE_ADDR, sizeof(master_t));
     // Copy current profile
     if (masterConfig.current_profile_index > 2) // sanity check
         masterConfig.current_profile_index = 0;
@@ -425,7 +425,7 @@ void writeEEPROM(void)
     masterConfig.magic_be = 0xBE;
     masterConfig.magic_ef = 0xEF;
     masterConfig.chk = 0; // erase checksum before recalculating
-    masterConfig.chk = calculateChecksum((const uint8_t *)&masterConfig, sizeof(master_t));
+    masterConfig.chk = calculateChecksum((const uint8_t *) &masterConfig, sizeof(master_t));
 
     // write it
     FLASH_Unlock();
@@ -438,7 +438,8 @@ void writeEEPROM(void)
 #endif
         status = FLASH_ErasePage(FLASH_WRITE_ADDR);
         for (wordOffset = 0; wordOffset < sizeof(master_t) && status == FLASH_COMPLETE; wordOffset += 4) {
-            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset, *(uint32_t *) ((char *)&masterConfig + wordOffset));
+            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset,
+                    *(uint32_t *) ((char *) &masterConfig + wordOffset));
         }
         if (status == FLASH_COMPLETE) {
             break;

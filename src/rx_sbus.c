@@ -43,8 +43,7 @@ bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
     return sBusPort != NULL;
 }
 
-struct sbus_dat
-{
+struct sbus_dat {
     unsigned int chan0 : 11;
     unsigned int chan1 : 11;
     unsigned int chan2 : 11;
@@ -59,8 +58,7 @@ struct sbus_dat
     unsigned int chan11 : 11;
 } __attribute__ ((__packed__));
 
-typedef union
-{
+typedef union {
     uint8_t in[SBUS_FRAME_SIZE];
     struct sbus_dat msg;
 } sbus_msg;
@@ -72,7 +70,7 @@ static void sbusDataReceive(uint16_t c)
 {
     uint32_t sbusTime;
     static uint32_t sbusTimeLast;
-    static uint8_t  sbusFramePosition;
+    static uint8_t sbusFramePosition;
 
     sbusTime = micros();
     if ((sbusTime - sbusTimeLast) > 2500) // sbus2 fast timing

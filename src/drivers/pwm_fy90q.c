@@ -56,7 +56,7 @@ static struct PWM_State {
     uint16_t capture;
 } Inputs[8] = { { 0, } };
 
-static TIM_ICInitTypeDef  TIM_ICInitStructure = { 0, };
+static TIM_ICInitTypeDef TIM_ICInitStructure = { 0, };
 static bool usePPMFlag = false;
 static uint8_t numOutputChannels = 0;
 
@@ -158,11 +158,11 @@ static void pwmIRQHandler(TIM_TypeDef *tim)
 static void pwmInitializeInput(bool usePPM)
 {
     GPIO_InitTypeDef GPIO_InitStructure = { 0, };
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure = { 0, };
     NVIC_InitTypeDef NVIC_InitStructure = { 0, };
     uint8_t i;
 
-   // Input pins
+    // Input pins
     if (usePPM) {
         // Configure TIM2_CH1 for PPM input
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
@@ -246,7 +246,7 @@ static void pwmInitializeInput(bool usePPM)
 void pwmInit(drv_pwm_config_t *init)
 {
     GPIO_InitTypeDef GPIO_InitStructure = { 0, };
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure = { 0, };
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure = { 0, };
     TIM_OCInitTypeDef TIM_OCInitStructure = { 0, };
 
     uint8_t i;

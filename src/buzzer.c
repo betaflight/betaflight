@@ -113,7 +113,7 @@ void beep_code(char first, char second, char third, char pause)
     patternChar[1] = second;
     patternChar[2] = third;
     patternChar[3] = pause;
-    switch(patternChar[icnt]) {
+    switch (patternChar[icnt]) {
         case 'M':
             Duration = 100;
             break;

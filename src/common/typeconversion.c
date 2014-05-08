@@ -93,18 +93,18 @@ char a2i(char ch, char **src, int base, int *nump)
 #ifndef HAVE_ITOA_FUNCTION
 
 /*
-** The following two functions together make up an itoa()
-** implementation. Function i2a() is a 'private' function
-** called by the public itoa() function.
-**
-** itoa() takes three arguments:
-**        1) the integer to be converted,
-**        2) a pointer to a character conversion buffer,
-**        3) the radix for the conversion
-**           which can range between 2 and 36 inclusive
-**           range errors on the radix default it to base10
-** Code from http://groups.google.com/group/comp.lang.c/msg/66552ef8b04fe1ab?pli=1
-*/
+ ** The following two functions together make up an itoa()
+ ** implementation. Function i2a() is a 'private' function
+ ** called by the public itoa() function.
+ **
+ ** itoa() takes three arguments:
+ **        1) the integer to be converted,
+ **        2) a pointer to a character conversion buffer,
+ **        3) the radix for the conversion
+ **           which can range between 2 and 36 inclusive
+ **           range errors on the radix default it to base10
+ ** Code from http://groups.google.com/group/comp.lang.c/msg/66552ef8b04fe1ab?pli=1
+ */
 
 static char *_i2a(unsigned i, char *a, unsigned r)
 {
@@ -120,7 +120,7 @@ char *itoa(int i, char *a, int r)
         r = 10;
     if (i < 0) {
         *a = '-';
-        *_i2a(-(unsigned)i, a + 1, r) = 0;
+        *_i2a(-(unsigned) i, a + 1, r) = 0;
     } else
         *_i2a(i, a, r) = 0;
     return a;
@@ -141,7 +141,7 @@ char *ftoa(float x, char *floatString)
     else
         x -= 0.0005f;
 
-    value = (int32_t) (x * 1000.0f);    // Convert float * 1000 to an integer
+    value = (int32_t)(x * 1000.0f);    // Convert float * 1000 to an integer
 
     itoa(abs(value), intString1, 10);   // Create string from abs of integer value
 
@@ -176,7 +176,6 @@ char *ftoa(float x, char *floatString)
     return floatString;
 }
 
-
 // Simple and fast atof (ascii to float) function.
 //
 // - Executes about 5x faster than standard MSCRT library atof().
@@ -194,7 +193,7 @@ float fastA2F(const char *p)
     float sign, value, scale;
 
     // Skip leading white space, if any.
-    while (white_space(*p) ) {
+    while (white_space(*p)) {
         p += 1;
     }
 
@@ -254,8 +253,14 @@ float fastA2F(const char *p)
 
         // Calculate scaling factor.
         // while (expon >= 50) { scale *= 1E50f; expon -= 50; }
-        while (expon >=  8) { scale *= 1E8f;  expon -=  8; }
-        while (expon >   0) { scale *= 10.0f; expon -=  1; }
+        while (expon >= 8) {
+            scale *= 1E8f;
+            expon -= 8;
+        }
+        while (expon > 0) {
+            scale *= 10.0f;
+            expon -= 1;
+        }
     }
 
     // Return signed and scaled floating point result.

@@ -458,6 +458,7 @@ int getEstimatedAltitude(void)
     vario = applyDeadband(vel_tmp, 5);
 
     BaroPID = calculateBaroPid(vel_tmp, accZ_tmp, accZ_old);
+
     accZ_old = accZ_tmp;
 
     return 1;

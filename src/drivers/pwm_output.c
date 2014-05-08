@@ -14,7 +14,7 @@
 
 #include "pwm_output.h"
 
-typedef void (* pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
+typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
 
 typedef struct {
 #ifdef STM32F303xC
