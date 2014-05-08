@@ -112,16 +112,11 @@ function tab_initialize_firmware_flasher() {
         });
 
         chrome.storage.local.get('no_reboot_sequence', function(result) {
-            if (typeof result.no_reboot_sequence === 'undefined') {
-                // wasn't saved yet
-                $('input.updating').prop('checked', false);
+            if (result.no_reboot_sequence) {
+                $('input.updating').prop('checked', true);
+                $('label.flash_on_connect_wrapper').show();
             } else {
-                if (result.no_reboot_sequence) {
-                    $('input.updating').prop('checked', true);
-                    $('label.flash_on_connect_wrapper').show();
-                } else {
-                    $('input.updating').prop('checked', false);
-                }
+                $('input.updating').prop('checked', false);
             }
 
             // bind UI hook so the status is saved on change
@@ -131,8 +126,8 @@ function tab_initialize_firmware_flasher() {
                 if (status) {
                     $('label.flash_on_connect_wrapper').show();
                 } else {
-                    $('label.flash_on_connect_wrapper').hide();
                     $('input.flash_on_connect').prop('checked', false).change();
+                    $('label.flash_on_connect_wrapper').hide();
                 }
 
                 chrome.storage.local.set({'no_reboot_sequence': status});
@@ -140,15 +135,10 @@ function tab_initialize_firmware_flasher() {
         });
 
         chrome.storage.local.get('flash_on_connect', function(result) {
-            if (typeof result.flash_on_connect === 'undefined') {
-                // wasn't saved yet
-                $('input.flash_on_connect').prop('checked', false);
+            if (result.flash_on_connect) {
+                $('input.flash_on_connect').prop('checked', true);
             } else {
-                if (result.flash_on_connect) {
-                    $('input.flash_on_connect').prop('checked', true);
-                } else {
-                    $('input.flash_on_connect').prop('checked', false);
-                }
+                $('input.flash_on_connect').prop('checked', false);
             }
 
             $('input.flash_on_connect').change(function() {
@@ -157,7 +147,7 @@ function tab_initialize_firmware_flasher() {
                 if (status) {
                     var flashing_port;
 
-                    var start = function() {
+                    function start() {
                         PortHandler.port_detected('flash_next_device', function(result) {
                             flashing_port = result[0];
                             GUI.log('Detected: <strong>' + flashing_port + '</strong> - triggering flash on connect');
@@ -169,9 +159,9 @@ function tab_initialize_firmware_flasher() {
                             // Detect port removal to create a new callback
                             end();
                         }, false, true);
-                    };
+                    }
 
-                    var end = function() {
+                    function end() {
                         PortHandler.port_removed('flashed_device_removed', function(result) {
                             for (var i = 0; i < result.length; i++) {
                                 if (result[i] == flashing_port) {
@@ -189,7 +179,7 @@ function tab_initialize_firmware_flasher() {
                             // different device removed, we need to retry
                             end();
                         }, false, true);
-                    };
+                    }
 
                     start();
                 } else {
@@ -201,15 +191,10 @@ function tab_initialize_firmware_flasher() {
         });
 
         chrome.storage.local.get('erase_chip', function(result) {
-            if (typeof result.erase_chip === 'undefined') {
-                // wasn't saved yet
-                $('input.updating').prop('checked', false);
+            if (result.erase_chip) {
+                $('input.erase_chip').prop('checked', true);
             } else {
-                if (result.erase_chip) {
-                    $('input.erase_chip').prop('checked', true);
-                } else {
-                    $('input.erase_chip').prop('checked', false);
-                }
+                $('input.erase_chip').prop('checked', false);
             }
 
             // bind UI hook so the status is saved on change
