@@ -28,5 +28,12 @@ function localize() {
         element.addClass('i18n_value-replaced');
     });
 
+    $('[i18n_placeholder]:not(.i18n_placeholder-replaced').each(function() {
+        var element = $(this);
+
+        element.attr('placeholder', translate(element.attr('i18n_placeholder')));
+        element.addClass('i18n_placeholder-replaced');
+    });
+
     return localized;
 }
