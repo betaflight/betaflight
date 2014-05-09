@@ -61,7 +61,7 @@ void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 
 void serialRxInit(rxConfig_t *rxConfig)
 {
-    switch (rxConfig->serialrx_type) {
+    switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
             spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
@@ -80,7 +80,7 @@ void serialRxInit(rxConfig_t *rxConfig)
 
 bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
 {
-    switch (rxConfig->serialrx_type) {
+    switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
             return spektrumFrameComplete();

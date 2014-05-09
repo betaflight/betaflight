@@ -35,7 +35,7 @@ static serialPort_t *spektrumPort;
 
 void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    switch (rxConfig->serialrx_type) {
+    switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM2048:
             // 11 bit frames
             spek_chan_shift = 3;

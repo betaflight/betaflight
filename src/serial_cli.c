@@ -176,7 +176,7 @@ const clivalue_t valueTable[] = {
     { "gps_provider", VAR_UINT8, &masterConfig.gps_provider, 0, GPS_PROVIDER_MAX },
     { "gps_initial_baudrate_index", VAR_INT8, &masterConfig.gps_initial_baudrate_index, 0, GPS_BAUDRATE_MAX },
 
-    { "serialrx_type", VAR_UINT8, &masterConfig.rxConfig.serialrx_type, 0, SERIALRX_PROVIDER_MAX },
+    { "serialrx_provider", VAR_UINT8, &masterConfig.rxConfig.serialrx_provider, 0, SERIALRX_PROVIDER_MAX },
 
     { "telemetry_provider", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_switch", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_switch, 0, 1 },
