@@ -79,24 +79,25 @@ static void sbusDataReceive(uint16_t c)
 
 bool sbusFrameComplete(void)
 {
-    if (sbusFrameDone) {
-        if (!((sbus.in[22] >> 3) & 0x0001)) { // failsave flag
-            failsafeCnt = 0; // clear FailSafe counter
-            sbusChannelData[0] = sbus.msg.chan0;
-            sbusChannelData[1] = sbus.msg.chan1;
-            sbusChannelData[2] = sbus.msg.chan2;
-            sbusChannelData[3] = sbus.msg.chan3;
-            sbusChannelData[4] = sbus.msg.chan4;
-            sbusChannelData[5] = sbus.msg.chan5;
-            sbusChannelData[6] = sbus.msg.chan6;
-            sbusChannelData[7] = sbus.msg.chan7;
-            // need more channels? No problem. Add them.
-            sbusFrameDone = false;
-            return true;
-        }
-        sbusFrameDone = false;
+    if (!sbusFrameDone) {
+        return false;
     }
-    return false;
+    sbusFrameDone = false;
+    if (feature(FEATURE_FAILSAFE) && ((sbus.in[22] >> 3) & 0x0001)) {
+        // internal failsafe enabled and rx failsafe flag set
+        return false;
+    }
+    failsafeCnt = 0; // clear FailSafe counter
+    sbusChannelData[0] = sbus.msg.chan0;
+    sbusChannelData[1] = sbus.msg.chan1;
+    sbusChannelData[2] = sbus.msg.chan2;
+    sbusChannelData[3] = sbus.msg.chan3;
+    sbusChannelData[4] = sbus.msg.chan4;
+    sbusChannelData[5] = sbus.msg.chan5;
+    sbusChannelData[6] = sbus.msg.chan6;
+    sbusChannelData[7] = sbus.msg.chan7;
+    // need more channels? No problem. Add them.
+    return true;
 }
 
 static uint16_t sbusReadRawRC(uint8_t chan)
