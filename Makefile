@@ -168,10 +168,7 @@ FY90Q_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(COMMON_SRC)
 
 OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
-		   drivers/accgyro_adxl345.c \
-		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
-		   drivers/accgyro_l3g4200d.c \
 		   drivers/adc_common.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \

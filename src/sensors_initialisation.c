@@ -58,10 +58,13 @@
 #endif
 
 #if defined(OLIMEXINO)
-#undef USE_ACC_LSM303DLHC
 #undef USE_GYRO_L3GD20
+#undef USE_GYRO_L3G4200D
+#undef USE_GYRO_MPU3050
+#undef USE_ACC_LSM303DLHC
 #undef USE_ACC_BMA280
 #undef USE_ACC_MMA8452
+#undef USE_ACC_ADXL345
 #endif
 
 #ifdef CHEBUZZF3
