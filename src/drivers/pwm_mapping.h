@@ -21,9 +21,11 @@
 #define PWM_TIMER_MHZ 1
 
 typedef struct drv_pwm_config_t {
-    bool enableInput;
+    bool useParallelPWM;
     bool usePPM;
-    bool useUART;
+#ifdef STM32F10X_MD
+    bool useUART2;
+#endif
     bool useSoftSerial;
     bool useServos;
     bool extraServos;    // configure additional 4 channels in PPM mode as servos, not motors

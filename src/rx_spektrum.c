@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -33,7 +34,7 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
 
 static serialPort_t *spektrumPort;
 
-void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM2048:
@@ -55,6 +56,8 @@ void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
     spektrumPort = openSerialPort(FUNCTION_SERIAL_RX, spektrumDataReceive, 115200, MODE_RX, SERIAL_NOT_INVERTED);
     if (callback)
         *callback = spektrumReadRawRC;
+
+    return spektrumPort != NULL;
 }
 
 // Receive ISR callback

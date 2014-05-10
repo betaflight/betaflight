@@ -19,10 +19,11 @@
 #include "rx_common.h"
 
 void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
-void sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
-void spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
-void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
-void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+
+bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 const char rcChannelLetters[] = "AERT1234";
 
@@ -54,27 +55,35 @@ void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 
     if (feature(FEATURE_SERIALRX)) {
         serialRxInit(rxConfig);
-    } else {
+    }
+
+    if (feature(FEATURE_PPM) || feature(FEATURE_PARALLEL_PWM)) {
         rxPwmInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
 }
 
 void serialRxInit(rxConfig_t *rxConfig)
 {
+    bool enabled = false;
     switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
-            spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            enabled = spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_SBUS:
-            sbusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            enabled = sbusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_SUMD:
-            sumdInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            enabled = sumdInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_MSP:
-            rxMspInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            enabled = rxMspInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+    }
+
+    if (!enabled) {
+        featureClear(FEATURE_SERIALRX);
+        rcReadRawFunc = NULL;
     }
 }
 
@@ -115,6 +124,12 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     for (chan = 0; chan < MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT; chan++) {
+
+        if (!rcReadRawFunc) {
+            rcData[chan] = rxConfig->midrc;
+            continue;
+        }
+
         uint8_t rawChannel = calculateChannelRemapping(rxConfig->rcmap, chan);
 
         // sample the channel

@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -26,13 +27,15 @@ static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
 
 static serialPort_t *sumdPort;
 
-void sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     sumdPort = openSerialPort(FUNCTION_SERIAL_RX, sumdDataReceive, 115200, MODE_RX, SERIAL_NOT_INVERTED);
     if (callback)
         *callback = sumdReadRawRC;
 
     rxRuntimeConfig->channelCount = SUMD_MAX_CHANNEL;
+
+    return sumdPort != NULL;
 }
 
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };

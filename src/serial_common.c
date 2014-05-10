@@ -19,7 +19,6 @@
 
 void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
-void resetSerialConfig(serialConfig_t *serialConfig);
 
 // this exists so the user can reference scenarios by a number in the CLI instead of an unuser-friendly bitmask.
 const serialPortFunctionScenario_e serialPortScenarios[SERIAL_PORT_SCENARIO_COUNT] = {
@@ -170,7 +169,7 @@ static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function)
         uint8_t serialPortIndex = lookupSerialPortIndexByIdentifier(serialPortFunction->identifier);
         const serialPortConstraint_t *serialPortConstraint = &serialPortConstraints[serialPortIndex];
 
-        if (!canSoftwareSerialBeUsed() && (
+        if (!feature(FEATURE_SOFTSERIAL) && (
                 serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL1 ||
                 serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2
         )) {
@@ -349,6 +348,20 @@ bool isSerialConfigValid(serialConfig_t *serialConfig)
     return true;
 }
 
+
+bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier)
+{
+    serialPortSearchResult_t *searchResult;
+    uint8_t index;
+    for (index = 0; index < FUNCTION_CONSTRAINT_COUNT; index++) {
+        searchResult = findSerialPort(functionConstraints[index].function);
+        if (searchResult->portConstraint->identifier == portIdentifier) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void applySerialConfigToPortFunctions(serialConfig_t *serialConfig)
 {
     serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART1)].scenario = serialPortScenarios[serialConfig->serial_port_1_scenario];
@@ -362,11 +375,6 @@ void serialInit(serialConfig_t *initialSerialConfig)
 {
     serialConfig = initialSerialConfig;
     applySerialConfigToPortFunctions(serialConfig);
-
-    if (!isSerialConfigValid(serialConfig)) {
-        resetSerialConfig(serialConfig);
-        applySerialConfigToPortFunctions(serialConfig);
-    }
 
     mspInit(serialConfig);
     cliInit(serialConfig);

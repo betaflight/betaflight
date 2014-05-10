@@ -33,8 +33,10 @@ bool rxMspFrameComplete(void)
     return false;
 }
 
-void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     if (callback)
         *callback = rxMspReadRawRC;
+
+    return true;
 }

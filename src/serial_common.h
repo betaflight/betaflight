@@ -92,5 +92,9 @@ serialPortFunction_t *findSerialPortFunction(uint16_t functionMask);
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 
+void applySerialConfigToPortFunctions(serialConfig_t *serialConfig);
+bool isSerialConfigValid(serialConfig_t *serialConfig);
+bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier);
+
 void evaluateOtherData(uint8_t sr);
 void handleSerial(void);

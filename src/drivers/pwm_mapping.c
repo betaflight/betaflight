@@ -157,8 +157,8 @@ void pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef STM32F10X_MD
-        // skip UART ports for GPS
-        if (init->useUART && (timerIndex == PWM3 || timerIndex == PWM4))
+        // skip UART2 ports
+        if (init->useUART2 && (timerIndex == PWM3 || timerIndex == PWM4))
             continue;
 #endif
 
@@ -189,7 +189,10 @@ void pwmInit(drv_pwm_config_t *init)
 #endif
 
         // hacks to allow current functionality
-        if (mask & (TYPE_IP | TYPE_IW) && !init->enableInput)
+        if (mask & TYPE_IW && !init->useParallelPWM)
+            mask = 0;
+
+        if (mask & TYPE_IP && !init->usePPM)
             mask = 0;
 
         if (init->useServos && !init->airplane) {

@@ -89,8 +89,8 @@ void productionDebug(void)
 int main(void)
 {
     uint8_t i;
-    drv_pwm_config_t pwm_params;
-    drv_adc_config_t adc_params;
+    drv_pwm_config_t pwm_params; // FIXME never freed, remains on heap
+    drv_adc_config_t adc_params; // FIXME never freed, remains on heap
     bool sensorsOK = false;
 
     initPrintfSupport();
@@ -146,10 +146,6 @@ int main(void)
     imuInit(); // Mag is initialized inside imuInit
     mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer);
 
-    if (!canSoftwareSerialBeUsed()) {
-        featureClear(FEATURE_SOFTSERIAL);
-    }
-
 #ifndef FY90Q
     timerInit();
 #endif
@@ -161,10 +157,14 @@ int main(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-    pwm_params.useUART = feature(FEATURE_GPS) || feature(FEATURE_SERIALRX); // serial rx support uses UART too
-    pwm_params.useSoftSerial = canSoftwareSerialBeUsed();
+
+#ifdef STM32F10X_MD
+    pwm_params.useUART2 = doesConfigurationUsePort(&masterConfig.serialConfig, SERIAL_PORT_USART2);
+#endif
+
+    pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
+    pwm_params.useParallelPWM = feature(FEATURE_PARALLEL_PWM);
     pwm_params.usePPM = feature(FEATURE_PPM);
-    pwm_params.enableInput = !feature(FEATURE_SERIALRX); // disable inputs if using spektrum
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.extraServos = currentProfile.gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
@@ -205,10 +205,8 @@ int main(void)
     }
 
 #ifdef SONAR
-    // sonar stuff only works with PPM
-    if (feature(FEATURE_PPM)) {
-        if (feature(FEATURE_SONAR))
-            Sonar_init();
+    if (feature(FEATURE_SONAR)) {
+        Sonar_init();
     }
 #endif
 

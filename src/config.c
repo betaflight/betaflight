@@ -51,149 +51,7 @@ master_t masterConfig;  // master config struct with data independent from profi
 profile_t currentProfile;   // profile config struct
 
 static const uint8_t EEPROM_CONF_VERSION = 66;
-static void resetConf(void);
 
-static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
-{
-    uint8_t checksum = 0;
-    const uint8_t *byteOffset;
-
-    for (byteOffset = data; byteOffset < (data + length); byteOffset++)
-        checksum ^= *byteOffset;
-    return checksum;
-}
-
-static bool isEEPROMContentValid(void)
-{
-    const master_t *temp = (const master_t *)FLASH_WRITE_ADDR;
-    uint8_t checksum = 0;
-
-    // check version number
-    if (EEPROM_CONF_VERSION != temp->version)
-        return false;
-
-    // check size and magic numbers
-    if (temp->size != sizeof(master_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
-        return false;
-
-    // verify integrity of temporary copy
-    checksum = calculateChecksum((const uint8_t *)temp, sizeof(master_t));
-    if (checksum != 0)
-        return false;
-
-    // looks good, let's roll!
-    return true;
-}
-
-void activateConfig(void)
-{
-    generatePitchCurve(&currentProfile.controlRateConfig);
-    generateThrottleCurve(&currentProfile.controlRateConfig, &masterConfig.escAndServoConfig);
-
-    useGyroConfig(&masterConfig.gyroConfig);
-    useTelemetryConfig(&masterConfig.telemetryConfig);
-    setPIDController(currentProfile.pidController);
-    gpsUseProfile(&currentProfile.gpsProfile);
-    gpsUsePIDs(&currentProfile.pidProfile);
-    useFailsafeConfig(&currentProfile.failsafeConfig);
-    setAccelerationTrims(&masterConfig.accZero);
-    mixerUseConfigs(
-        currentProfile.servoConf,
-        &masterConfig.flight3DConfig,
-        &masterConfig.escAndServoConfig,
-        &currentProfile.mixerConfig,
-        &masterConfig.airplaneConfig,
-        &masterConfig.rxConfig,
-        &currentProfile.gimbalConfig
-    );
-
-#ifdef BARO
-    useBarometerConfig(&currentProfile.barometerConfig);
-#endif
-}
-
-void readEEPROM(void)
-{
-    // Sanity check
-    if (!isEEPROMContentValid())
-        failureMode(10);
-
-    // Read flash
-    memcpy(&masterConfig, (char *)FLASH_WRITE_ADDR, sizeof(master_t));
-    // Copy current profile
-    if (masterConfig.current_profile_index > 2) // sanity check
-        masterConfig.current_profile_index = 0;
-    memcpy(&currentProfile, &masterConfig.profile[masterConfig.current_profile_index], sizeof(profile_t)); 
-
-    activateConfig();
-}
-
-void readEEPROMAndNotify(void)
-{
-    // re-read written data
-    readEEPROM();
-    blinkLedAndSoundBeeper(15, 20, 1);
-}
-
-void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
-{
-    // copy current in-memory profile to stored configuration
-    memcpy(&masterConfig.profile[profileSlotIndex], &currentProfile, sizeof(profile_t));
-}
-
-void writeEEPROM(void)
-{
-    FLASH_Status status = 0;
-    uint32_t wordOffset;
-    int8_t attemptsRemaining = 3;
-
-    // prepare checksum/version constants
-    masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.size = sizeof(master_t);
-    masterConfig.magic_be = 0xBE;
-    masterConfig.magic_ef = 0xEF;
-    masterConfig.chk = 0; // erase checksum before recalculating
-    masterConfig.chk = calculateChecksum((const uint8_t *)&masterConfig, sizeof(master_t));
-
-    // write it
-    FLASH_Unlock();
-    while (attemptsRemaining--) {
-#ifdef STM32F3DISCOVERY
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
-#endif
-#ifdef STM32F10X_MD
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
-#endif
-        status = FLASH_ErasePage(FLASH_WRITE_ADDR);
-        for (wordOffset = 0; wordOffset < sizeof(master_t) && status == FLASH_COMPLETE; wordOffset += 4) {
-            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset, *(uint32_t *) ((char *)&masterConfig + wordOffset));
-        }
-        if (status == FLASH_COMPLETE) {
-            break;
-        }
-    }
-    FLASH_Lock();
-
-    // Flash write failed - just die now
-    if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
-        failureMode(10);
-    }
-}
-
-void ensureEEPROMContainsValidData(void)
-{
-    if (isEEPROMContentValid()) {
-        return;
-    }
-
-    resetEEPROM();
-}
-
-void resetEEPROM(void)
-{
-    resetConf();
-    writeEEPROM();
-}
 
 static void resetAccelerometerTrims(int16_flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -423,6 +281,192 @@ static void resetConf(void)
         memcpy(&masterConfig.profile[i], &currentProfile, sizeof(profile_t));
 }
 
+static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
+{
+    uint8_t checksum = 0;
+    const uint8_t *byteOffset;
+
+    for (byteOffset = data; byteOffset < (data + length); byteOffset++)
+        checksum ^= *byteOffset;
+    return checksum;
+}
+
+static bool isEEPROMContentValid(void)
+{
+    const master_t *temp = (const master_t *)FLASH_WRITE_ADDR;
+    uint8_t checksum = 0;
+
+    // check version number
+    if (EEPROM_CONF_VERSION != temp->version)
+        return false;
+
+    // check size and magic numbers
+    if (temp->size != sizeof(master_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
+        return false;
+
+    // verify integrity of temporary copy
+    checksum = calculateChecksum((const uint8_t *)temp, sizeof(master_t));
+    if (checksum != 0)
+        return false;
+
+    // looks good, let's roll!
+    return true;
+}
+
+void activateConfig(void)
+{
+    generatePitchCurve(&currentProfile.controlRateConfig);
+    generateThrottleCurve(&currentProfile.controlRateConfig, &masterConfig.escAndServoConfig);
+
+    useGyroConfig(&masterConfig.gyroConfig);
+    useTelemetryConfig(&masterConfig.telemetryConfig);
+    setPIDController(currentProfile.pidController);
+    gpsUseProfile(&currentProfile.gpsProfile);
+    gpsUsePIDs(&currentProfile.pidProfile);
+    useFailsafeConfig(&currentProfile.failsafeConfig);
+    setAccelerationTrims(&masterConfig.accZero);
+    mixerUseConfigs(
+        currentProfile.servoConf,
+        &masterConfig.flight3DConfig,
+        &masterConfig.escAndServoConfig,
+        &currentProfile.mixerConfig,
+        &masterConfig.airplaneConfig,
+        &masterConfig.rxConfig,
+        &currentProfile.gimbalConfig
+    );
+
+#ifdef BARO
+    useBarometerConfig(&currentProfile.barometerConfig);
+#endif
+}
+
+void validateAndFixConfig(void) {
+    if (!(feature(FEATURE_PARALLEL_PWM) || feature(FEATURE_PPM) || feature(FEATURE_SERIALRX))) {
+        featureSet(FEATURE_PARALLEL_PWM); // Consider changing the default to PPM
+    }
+
+    if (feature(FEATURE_SERIALRX)) {
+        if (feature(FEATURE_PARALLEL_PWM)) {
+            featureClear(FEATURE_PARALLEL_PWM);
+        }
+        if (feature(FEATURE_PPM)) {
+            featureClear(FEATURE_PPM);
+        }
+    }
+
+    if (feature(FEATURE_PPM)) {
+        if (feature(FEATURE_PARALLEL_PWM)) {
+            featureClear(FEATURE_PARALLEL_PWM);
+        }
+    }
+
+#ifdef SONAR
+    if (feature(FEATURE_SONAR)) {
+        // sonar needs a free PWM port
+        if (!feature(FEATURE_PARALLEL_PWM)) {
+            featureClear(FEATURE_SONAR);
+        }
+    }
+#endif
+    if (feature(FEATURE_SOFTSERIAL)) {
+        // software serial needs free PWM ports
+        if (feature(FEATURE_PARALLEL_PWM)) {
+            featureClear(FEATURE_SOFTSERIAL);
+        }
+    }
+
+    serialConfig_t *serialConfig = &masterConfig.serialConfig;
+    applySerialConfigToPortFunctions(serialConfig);
+
+    if (!isSerialConfigValid(serialConfig)) {
+        resetSerialConfig(serialConfig);
+    }
+}
+
+void readEEPROM(void)
+{
+    // Sanity check
+    if (!isEEPROMContentValid())
+        failureMode(10);
+
+    // Read flash
+    memcpy(&masterConfig, (char *)FLASH_WRITE_ADDR, sizeof(master_t));
+    // Copy current profile
+    if (masterConfig.current_profile_index > 2) // sanity check
+        masterConfig.current_profile_index = 0;
+    memcpy(&currentProfile, &masterConfig.profile[masterConfig.current_profile_index], sizeof(profile_t));
+
+    validateAndFixConfig();
+    activateConfig();
+}
+
+void readEEPROMAndNotify(void)
+{
+    // re-read written data
+    readEEPROM();
+    blinkLedAndSoundBeeper(15, 20, 1);
+}
+
+void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
+{
+    // copy current in-memory profile to stored configuration
+    memcpy(&masterConfig.profile[profileSlotIndex], &currentProfile, sizeof(profile_t));
+}
+
+void writeEEPROM(void)
+{
+    FLASH_Status status = 0;
+    uint32_t wordOffset;
+    int8_t attemptsRemaining = 3;
+
+    // prepare checksum/version constants
+    masterConfig.version = EEPROM_CONF_VERSION;
+    masterConfig.size = sizeof(master_t);
+    masterConfig.magic_be = 0xBE;
+    masterConfig.magic_ef = 0xEF;
+    masterConfig.chk = 0; // erase checksum before recalculating
+    masterConfig.chk = calculateChecksum((const uint8_t *)&masterConfig, sizeof(master_t));
+
+    // write it
+    FLASH_Unlock();
+    while (attemptsRemaining--) {
+#ifdef STM32F3DISCOVERY
+        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
+#endif
+#ifdef STM32F10X_MD
+        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
+#endif
+        status = FLASH_ErasePage(FLASH_WRITE_ADDR);
+        for (wordOffset = 0; wordOffset < sizeof(master_t) && status == FLASH_COMPLETE; wordOffset += 4) {
+            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset, *(uint32_t *) ((char *)&masterConfig + wordOffset));
+        }
+        if (status == FLASH_COMPLETE) {
+            break;
+        }
+    }
+    FLASH_Lock();
+
+    // Flash write failed - just die now
+    if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
+        failureMode(10);
+    }
+}
+
+void ensureEEPROMContainsValidData(void)
+{
+    if (isEEPROMContentValid()) {
+        return;
+    }
+
+    resetEEPROM();
+}
+
+void resetEEPROM(void)
+{
+    resetConf();
+    writeEEPROM();
+}
+
 void saveAndReloadCurrentProfileToCurrentProfileSlot(void)
 {
     copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
@@ -453,15 +497,5 @@ void featureClearAll()
 uint32_t featureMask(void)
 {
     return masterConfig.enabledFeatures;
-}
-
-bool canSoftwareSerialBeUsed(void)
-{
-#ifdef FY90Q
-    return false;
-#endif
-    // FIXME this is not ideal because it means you can't disable parallel PWM input even when using spektrum/sbus etc.
-    // really we want to say 'return !feature(FEATURE_PARALLEL_PWM);'
-    return feature(FEATURE_SOFTSERIAL) && feature(FEATURE_PPM); // Software serial can only be used in PPM mode because parallel PWM uses the same hardware pins/timers
 }
 
