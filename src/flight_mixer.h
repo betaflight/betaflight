@@ -84,7 +84,3 @@ void mixerResetMotors(void);
 void mixTable(void);
 void writeServos(void);
 void writeMotors(void);
-
-// from mixer.c
-extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-
