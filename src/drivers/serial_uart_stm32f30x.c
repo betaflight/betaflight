@@ -19,6 +19,7 @@
 // Using RX DMA disables the use of receive callbacks
 #define USE_USART1_RX_DMA
 //#define USE_USART2_RX_DMA
+//#define USE_USART2_TX_DMA
 
 // USART1_TX    PA9
 // USART1_RX    PA10
@@ -122,16 +123,17 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     s->port.txBufferSize = UART2_TX_BUFFER_SIZE;
     s->port.rxBuffer = rx2Buffer;
     s->port.txBuffer = tx2Buffer;
+
+    s->USARTx = USART2;
     
 #ifdef USE_USART2_RX_DMA
     s->rxDMAChannel = DMA1_Channel6;
-#endif
-    s->txDMAChannel = DMA1_Channel7;
-
-    s->USARTx = USART2;
-
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
+#endif
+#ifdef USE_USART2_TX_DMA
+    s->txDMAChannel = DMA1_Channel7;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
+#endif
 
 
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
@@ -151,12 +153,14 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
     }
 
+#ifdef USE_USART2_TX_DMA
     // DMA TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel7_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+#endif
 
 #ifndef USE_USART2_RX_DMA
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
@@ -201,8 +205,7 @@ void usartIrqHandler(uartPort_t *s)
 {
     uint32_t ISR = s->USARTx->ISR;
 
-    if (ISR & USART_FLAG_RXNE) {
-        // If we registered a callback, pass crap there
+    if (!s->rxDMAChannel && (ISR & USART_FLAG_RXNE)) {
         if (s->port.callback) {
             s->port.callback(s->USARTx->RDR);
         } else {
@@ -211,13 +214,9 @@ void usartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (s->txDMAChannel) {
-        return;
-    }
-
-    if (ISR & USART_FLAG_TXE) {
+    if (!s->txDMAChannel && (ISR & USART_FLAG_TXE)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
-            s->USARTx->TDR = s->port.txBuffer[s->port.txBufferTail];
+            USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
             USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
