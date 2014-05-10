@@ -47,15 +47,15 @@ extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles t
 extern int32_t GPS_coord[2];               // LAT/LON
 extern int32_t GPS_home[2];
 extern int32_t GPS_hold[2];
+
 extern uint8_t GPS_numSat;
+extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update
+
 extern uint16_t GPS_distanceToHome;        // distance to home point in meters
 extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 extern uint16_t GPS_altitude;              // altitude in 0.1m
 extern uint16_t GPS_speed;                 // speed in 0.1m/s
 extern uint16_t GPS_ground_course;         // degrees * 10
-
-extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update
-
 extern uint8_t GPS_numCh;                  // Number of channels
 extern uint8_t GPS_svinfo_chn[16];         // Channel number
 extern uint8_t GPS_svinfo_svid[16];        // Satellite ID

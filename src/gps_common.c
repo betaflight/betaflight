@@ -33,25 +33,31 @@ extern int16_t debug[4];
 // **********************
 // GPS
 // **********************
+int16_t GPS_angle[ANGLE_INDEX_COUNT] = { 0, 0 };    // it's the angles that must be applied for GPS correction
 int32_t GPS_coord[2];               // LAT/LON
 int32_t GPS_home[2];
 int32_t GPS_hold[2];
+
 uint8_t GPS_numSat;
+uint8_t GPS_update = 0;             // it's a binary toggle to distinct a GPS position update
+
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+
 uint16_t GPS_altitude;              // altitude in 0.1m
 uint16_t GPS_speed;                 // speed in 0.1m/s
-uint8_t GPS_update = 0;             // it's a binary toogle to distinct a GPS position update
-int16_t GPS_angle[ANGLE_INDEX_COUNT] = { 0, 0 };    // it's the angles that must be applied for GPS correction
 uint16_t GPS_ground_course = 0;     // degrees * 10
-int16_t nav[2];
-int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
-int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
+
 uint8_t GPS_numCh;                  // Number of channels
 uint8_t GPS_svinfo_chn[16];         // Channel number
 uint8_t GPS_svinfo_svid[16];        // Satellite ID
 uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
 uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
+
+static int16_t nav[2];
+static int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
+int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
+
 
 static uint8_t gpsProvider;
 
@@ -118,7 +124,7 @@ typedef struct gpsData_t {
     
 } gpsData_t;
 
-gpsData_t gpsData;
+static gpsData_t gpsData;
 
 bool areSticksInApModePosition(uint16_t ap_mode); // FIXME should probably live in rc_sticks.h
 
@@ -314,25 +320,6 @@ static int32_t wrap_36000(int32_t angle);
 typedef struct {
     int16_t last_velocity;
 } LeadFilter_PARAM;
-
-void leadFilter_clear(LeadFilter_PARAM *param)
-{
-    param->last_velocity = 0;
-}
-
-int32_t leadFilter_getPosition(LeadFilter_PARAM *param, int32_t pos, int16_t vel, float lag_in_seconds)
-{
-    int16_t accel_contribution = (vel - param->last_velocity) * lag_in_seconds * lag_in_seconds;
-    int16_t vel_contribution = vel * lag_in_seconds;
-
-    // store velocity for next iteration
-    param->last_velocity = vel;
-
-    return pos + vel_contribution + accel_contribution;
-}
-
-LeadFilter_PARAM xLeadFilter;
-LeadFilter_PARAM yLeadFilter;
 
 typedef struct {
     float kP;
@@ -1179,7 +1166,7 @@ enum {
     MSG_CFG_RATE = 0x08,
     MSG_CFG_SET_RATE = 0x01,
     MSG_CFG_NAV_SETTINGS = 0x24
-} ubs_protocol_bytes;
+} ubx_protocol_bytes;
 
 enum {
     FIX_NONE = 0,
