@@ -44,6 +44,7 @@ b) SERIAL_RX and TELEMETRY (when armed)
 - SERIAL_RX on UART2
 
 ```
+feature -PARALLEL_PWM
 feature TELEMETRY
 feature SERIAL_RX
 set serial_port_2_scenario = 3
@@ -56,6 +57,8 @@ c) GPS and TELEMETRY via softserial
 - GPS on UART2
 
 ```
+feature -PARALLEL_PWM
+feature PPM
 feature TELEMETRY
 feature GPS
 feature SOFTSERIAL
@@ -67,10 +70,9 @@ d) SERIAL_RX, GPS and TELEMETRY (when armed) MSP/CLI via softserial
 - GPS on UART1
 - SERIAL RX on UART2
 - TELEMETRY,MSP,CLI,GPS PASSTHROUGH on SOFTSERIAL1
-Note: PPM needed to disable parallel PWM which in turn allows SOFTSERIAL to be used.
 
 ```
-feature PPM
+feature -PARALLEL_PWM
 feature TELEMETRY
 feature GPS
 feature SERIALRX

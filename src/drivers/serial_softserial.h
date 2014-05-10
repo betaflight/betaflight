@@ -9,6 +9,11 @@
 
 #define SOFT_SERIAL_BUFFER_SIZE 256
 
+typedef enum {
+    SOFTSERIAL1 = 0,
+    SOFTSERIAL2
+} softSerialPortIndex_e;
+
 typedef struct softSerial_s {
     serialPort_t     port;
 
@@ -40,8 +45,7 @@ extern softSerial_t softSerialPorts[];
 
 extern const struct serialPortVTable softSerialVTable[];
 
-serialPort_t *openSoftSerial1(uint32_t baud, uint8_t inverted);
-serialPort_t *openSoftSerial2(uint32_t baud, uint8_t inverted);
+serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint32_t baud, serialInversion_e inversion);
 
 // serialPort API
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);

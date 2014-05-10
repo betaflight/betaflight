@@ -49,8 +49,8 @@ static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
 const static serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_USART1,        9600, 115200,   SPF_NONE | SPF_SUPPORTS_SBUS_MODE },
     {SERIAL_PORT_USART2,        9600, 115200,   SPF_SUPPORTS_CALLBACK | SPF_SUPPORTS_SBUS_MODE},
-    {SERIAL_PORT_SOFTSERIAL1,   9600, 19200,    SPF_IS_SOFTWARE_INVERTABLE},
-    {SERIAL_PORT_SOFTSERIAL2,   9600, 19200,    SPF_IS_SOFTWARE_INVERTABLE}
+    {SERIAL_PORT_SOFTSERIAL1,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE},
+    {SERIAL_PORT_SOFTSERIAL2,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE}
 };
 
 typedef struct functionConstraint_s {
@@ -200,7 +200,7 @@ bool canOpenSerialPort(uint16_t functionMask)
     return result != NULL;
 }
 
-serialPortFunction_t *findSerialPortFunction(uint16_t functionMask)
+static serialPortFunction_t *findSerialPortFunction(uint16_t functionMask)
 {
     serialPortIndex_e portIndex;
 
@@ -221,6 +221,16 @@ serialPortFunction_t *findSerialPortFunction(uint16_t functionMask)
     }
 
     return NULL;
+}
+
+bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask)
+{
+    serialPortSearchResult_t *result = findSerialPort(functionToUse);
+    if (!result) {
+        return false;
+    }
+
+    return result->portFunction->scenario & functionMask;
 }
 
 /*
@@ -260,11 +270,11 @@ serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbac
             serialPort = uartOpen(USART2, callback, baudRate, mode, inversion);
             break;
         case SERIAL_PORT_SOFTSERIAL1:
-            serialPort = openSoftSerial1(baudRate, inversion);
+            serialPort = openSoftSerial(SOFTSERIAL1, callback, baudRate, inversion);
             serialSetMode(serialPort, mode);
             break;
         case SERIAL_PORT_SOFTSERIAL2:
-            serialPort = openSoftSerial2(baudRate, inversion);
+            serialPort = openSoftSerial(SOFTSERIAL2, callback, baudRate, inversion);
             serialSetMode(serialPort, mode);
             break;
     }

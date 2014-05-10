@@ -88,13 +88,13 @@ serialPort_t *openSerialPort(serialPortFunction_e functionMask, serialReceiveCal
 bool canOpenSerialPort(uint16_t functionMask);
 void beginSerialPortFunction(serialPort_t *port, serialPortFunction_e function);
 void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function);
-serialPortFunction_t *findSerialPortFunction(uint16_t functionMask);
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 
 void applySerialConfigToPortFunctions(serialConfig_t *serialConfig);
 bool isSerialConfigValid(serialConfig_t *serialConfig);
 bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier);
+bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask);
 
 void evaluateOtherData(uint8_t sr);
 void handleSerial(void);

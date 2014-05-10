@@ -48,30 +48,6 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
     }
 }
 
-softSerial_t* lookupSoftSerial(uint8_t reference)
-{
-    assert_param(reference >= 0 && reference <= MAX_SOFTSERIAL_PORTS);
-
-    return &(softSerialPorts[reference]);
-}
-
-void resetSerialTimer(softSerial_t *softSerial)
-{
-    //uint16_t counter = TIM_GetCounter(softSerial->rxTimerHardware->tim);
-    TIM_SetCounter(softSerial->rxTimerHardware->tim, 0);
-    //counter = TIM_GetCounter(softSerial->rxTimerHardware->tim);
-}
-
-void stopSerialTimer(softSerial_t *softSerial)
-{
-    TIM_Cmd(softSerial->rxTimerHardware->tim, DISABLE);
-}
-
-void startSerialTimer(softSerial_t *softSerial)
-{
-    TIM_Cmd(softSerial->rxTimerHardware->tim, ENABLE);
-}
-
 static void softSerialGPIOConfig(GPIO_TypeDef *gpio, uint16_t pin, GPIO_Mode mode)
 {
     gpio_config_t cfg;
@@ -87,12 +63,12 @@ void serialInputPortConfig(const timerHardware_t *timerHardwarePtr)
     softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_IPU);
 }
 
-bool isTimerPeriodTooLarge(uint32_t timerPeriod)
+static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
 {
     return timerPeriod > 0xFFFF;
 }
 
-void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, uint32_t baud)
+static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, uint32_t baud)
 {
     uint32_t clock = SystemCoreClock;
     uint32_t timerPeriod;
@@ -113,7 +89,7 @@ void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t refere
     configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, onSerialTimer);
 }
 
-void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
+static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_ICInitTypeDef  TIM_ICInitStructure;
 
@@ -127,19 +103,19 @@ void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }
 
-void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, serialInversion_e inversion)
+static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, serialInversion_e inversion)
 {
     // start bit is usually a FALLING signal
     serialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, inversion == SERIAL_INVERTED ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
     configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, onSerialRxPinChange);
 }
 
-void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)
+static void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)
 {
     softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_Out_PP);
 }
 
-void resetBuffers(softSerial_t *softSerial)
+static void resetBuffers(softSerial_t *softSerial)
 {
     softSerial->port.rxBufferSize = SOFT_SERIAL_BUFFER_SIZE;
     softSerial->port.rxBuffer = softSerial->rxBuffer;
@@ -152,12 +128,25 @@ void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-void initialiseSoftSerial(softSerial_t *softSerial, uint8_t portIndex, uint32_t baud, serialInversion_e inversion)
+serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint32_t baud, serialInversion_e inversion)
 {
+    softSerial_t *softSerial = &(softSerialPorts[portIndex]);
+
+    if (portIndex == SOFTSERIAL1) {
+        softSerial->rxTimerHardware = &(timerHardware[SOFT_SERIAL_1_TIMER_RX_HARDWARE]);
+        softSerial->txTimerHardware = &(timerHardware[SOFT_SERIAL_1_TIMER_TX_HARDWARE]);
+    }
+
+    if (portIndex == SOFTSERIAL2) {
+        softSerial->rxTimerHardware = &(timerHardware[SOFT_SERIAL_2_TIMER_RX_HARDWARE]);
+        softSerial->txTimerHardware = &(timerHardware[SOFT_SERIAL_2_TIMER_TX_HARDWARE]);
+    }
+
     softSerial->port.vTable = softSerialVTable;
     softSerial->port.baudRate = baud;
     softSerial->port.mode = MODE_RXTX;
     softSerial->port.inversion = inversion;
+    softSerial->port.callback = callback;
 
     resetBuffers(softSerial);
 
@@ -179,30 +168,6 @@ void initialiseSoftSerial(softSerial_t *softSerial, uint8_t portIndex, uint32_t 
 
     serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
     serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, inversion);
-}
-
-serialPort_t *openSoftSerial1(uint32_t baud, serialInversion_e inversion)
-{
-    uint8_t portIndex = 0;
-    softSerial_t *softSerial = &(softSerialPorts[portIndex]);
-
-    softSerial->rxTimerHardware = &(timerHardware[SOFT_SERIAL_1_TIMER_RX_HARDWARE]);
-    softSerial->txTimerHardware = &(timerHardware[SOFT_SERIAL_1_TIMER_TX_HARDWARE]);
-
-    initialiseSoftSerial(softSerial, portIndex, baud, inversion);
-
-    return &softSerial->port;
-}
-
-serialPort_t * openSoftSerial2(uint32_t baud, serialInversion_e inversion)
-{
-    int portIndex = 1;
-    softSerial_t *softSerial = &(softSerialPorts[portIndex]);
-
-    softSerial->rxTimerHardware = &(timerHardware[SOFT_SERIAL_2_TIMER_RX_HARDWARE]);
-    softSerial->txTimerHardware = &(timerHardware[SOFT_SERIAL_2_TIMER_TX_HARDWARE]);
-
-    initialiseSoftSerial(softSerial, portIndex, baud, inversion);
 
     return &softSerial->port;
 }
@@ -305,8 +270,13 @@ void extractAndStoreRxByte(softSerial_t *softSerial)
     }
 
     uint8_t rxByte = (softSerial->internalRxBuffer >> 1) & 0xFF;
-    softSerial->port.rxBuffer[softSerial->port.rxBufferTail] = rxByte;
-    updateBufferIndex(softSerial);
+
+    if (softSerial->port.callback) {
+        softSerial->port.callback(rxByte);
+    } else {
+        softSerial->port.rxBuffer[softSerial->port.rxBufferTail] = rxByte;
+        updateBufferIndex(softSerial);
+    }
 }
 
 void processRxState(softSerial_t *softSerial)
@@ -443,7 +413,7 @@ void softSerialWriteByte(serialPort_t *s, uint8_t ch)
 void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
 {
     softSerial_t *softSerial = (softSerial_t *)s;
-    initialiseSoftSerial(softSerial, softSerial->softSerialPortIndex, baudRate, softSerial->port.inversion);
+    openSoftSerial(softSerial->softSerialPortIndex, s->callback, baudRate, softSerial->port.inversion);
 }
 
 void softSerialSetMode(serialPort_t *instance, portMode_t mode)

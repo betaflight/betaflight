@@ -65,8 +65,8 @@ bool determineNewTelemetryEnabledState(void)
     bool telemetryPortIsShared;
     bool enabled = true;
 
-    serialPortFunction_t *function = findSerialPortFunction(FUNCTION_TELEMETRY);
-    telemetryPortIsShared = function && function->scenario != SCENARIO_TELEMETRY_ONLY;
+
+    telemetryPortIsShared = isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP);
 
     if (telemetryPortIsShared) {
         if (telemetryConfig->telemetry_switch)
