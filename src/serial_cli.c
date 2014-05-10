@@ -168,6 +168,11 @@ const clivalue_t valueTable[] = {
 
     { "fixedwing_althold_dir", VAR_INT8, &masterConfig.fixedwing_althold_dir, -1, 1 },
 
+    { "serial_port_1_scenario", VAR_UINT8, &masterConfig.serialConfig.serial_port_1_scenario, 0, SERIAL_PORT_SCENARIO_MAX },
+    { "serial_port_2_scenario", VAR_UINT8, &masterConfig.serialConfig.serial_port_2_scenario, 0, SERIAL_PORT_SCENARIO_MAX },
+    { "serial_port_3_scenario", VAR_UINT8, &masterConfig.serialConfig.serial_port_3_scenario, 0, SERIAL_PORT_SCENARIO_MAX },
+    { "serial_port_4_scenario", VAR_UINT8, &masterConfig.serialConfig.serial_port_4_scenario, 0, SERIAL_PORT_SCENARIO_MAX },
+
     { "reboot_character", VAR_UINT8, &masterConfig.serialConfig.reboot_character, 48, 126 },
     { "msp_baudrate", VAR_UINT32, &masterConfig.serialConfig.msp_baudrate, 1200, 115200 },
     { "cli_baudrate", VAR_UINT32, &masterConfig.serialConfig.cli_baudrate, 1200, 115200 },

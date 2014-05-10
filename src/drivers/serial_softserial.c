@@ -155,6 +155,7 @@ void resetBuffers(softSerial_t *softSerial)
 void initialiseSoftSerial(softSerial_t *softSerial, uint8_t portIndex, uint32_t baud, serialInversion_e inversion)
 {
     softSerial->port.vTable = softSerialVTable;
+    softSerial->port.baudRate = baud;
     softSerial->port.mode = MODE_RXTX;
     softSerial->port.inversion = inversion;
 

@@ -15,27 +15,37 @@
 #include "serial_msp.h"
 
 #include "serial_common.h"
+#include "config.h"
 
 void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
+void resetSerialConfig(serialConfig_t *serialConfig);
+
+// this exists so the user can reference scenarios by a number in the CLI instead of an unuser-friendly bitmask.
+const serialPortFunctionScenario_e serialPortScenarios[SERIAL_PORT_SCENARIO_COUNT] = {
+    SCENARIO_UNUSED,
+
+    // common scenarios in order of importance
+    SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH,
+    SCENARIO_GPS_ONLY,
+    SCENARIO_SERIAL_RX_ONLY,
+    SCENARIO_TELEMETRY_ONLY,
+
+    // other scenarios
+    SCENARIO_MSP_CLI_GPS_PASTHROUGH,
+    SCENARIO_CLI_ONLY,
+    SCENARIO_GPS_PASSTHROUGH_ONLY,
+    SCENARIO_MSP_ONLY
+};
 
 static serialConfig_t *serialConfig;
 static serialPort_t *serialPorts[SERIAL_PORT_COUNT];
 static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
-    {SERIAL_PORT_USART1,      NULL, SCENARIO_MAIN_PORT,         FUNCTION_NONE},
-    {SERIAL_PORT_USART2,      NULL, SCENARIO_GPS_AND_TELEMETRY, FUNCTION_NONE},
-    {SERIAL_PORT_SOFTSERIAL1, NULL, SCENARIO_UNUSED,            FUNCTION_NONE},
-    {SERIAL_PORT_SOFTSERIAL2, NULL, SCENARIO_UNUSED,            FUNCTION_NONE}
+    {SERIAL_PORT_USART1,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+    {SERIAL_PORT_USART2,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+    {SERIAL_PORT_SOFTSERIAL1, NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+    {SERIAL_PORT_SOFTSERIAL2, NULL, SCENARIO_UNUSED, FUNCTION_NONE}
 };
-
-#if 0 // example using softserial for telemetry, note that it is used because the scenario is more specific than telemetry on usart1
-static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
-    {SERIAL_PORT_USART1,      NULL, SCENARIO_MAIN_PORT,         FUNCTION_NONE},
-    {SERIAL_PORT_USART2,      NULL, SCENARIO_GPS_ONLY,          FUNCTION_NONE},
-    {SERIAL_PORT_SOFTSERIAL1, NULL, SCENARIO_TELEMETRY_ONLY,    FUNCTION_NONE},
-    {SERIAL_PORT_SOFTSERIAL2, NULL, SCENARIO_UNUSED,            FUNCTION_NONE}
-};
-#endif
 
 const static serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_USART1,        9600, 115200,   SPF_NONE | SPF_SUPPORTS_SBUS_MODE },
@@ -61,23 +71,42 @@ const functionConstraint_t functionConstraints[] = {
 #define FUNCTION_CONSTRAINT_COUNT (sizeof(functionConstraints) / sizeof(functionConstraint_t))
 
 typedef struct serialPortSearchResult_s {
-    bool found;
     serialPortIndex_e portIndex;
     serialPortFunction_t *portFunction;
     const serialPortConstraint_t *portConstraint;
     const functionConstraint_t *functionConstraint;
 } serialPortSearchResult_t;
 
-static serialPortIndex_e findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
+uint8_t lookupScenarioIndex(serialPortFunctionScenario_e scenario) {
+    uint8_t index;
+    for (index = 0; index < SERIAL_PORT_SCENARIO_COUNT; index++) {
+        if (serialPortScenarios[index] == scenario) {
+            break;
+        }
+    }
+    return index;
+}
+
+static serialPortIndex_e lookupSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
 {
     serialPortIndex_e portIndex;
     for (portIndex = 0; portIndex < SERIAL_PORT_COUNT; portIndex++) {
         if (serialPortConstraints[portIndex].identifier == identifier) {
-            return portIndex;
+            break;
         }
     }
+    return portIndex;
+}
 
-    return SERIAL_PORT_1; // FIXME use failureMode() ? - invalid identifier used.
+static uint8_t lookupSerialPortFunctionIndexByIdentifier(serialPortIdentifier_e identifier)
+{
+    uint8_t index;
+    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
+        if (serialPortFunctions[index].identifier == identifier) {
+            break;
+        }
+    }
+    return index;
 }
 
 static const functionConstraint_t *findFunctionConstraint(serialPortFunction_e function)
@@ -113,7 +142,6 @@ static void sortSerialPortFunctions(serialPortFunction_t *serialPortFunctions, u
     qsort(serialPortFunctions, elements, sizeof(serialPortFunction_t), serialPortFunctionMostSpecificFirstComparator);
 }
 
-
 /*
  * since this method, and other methods that use it, use a single instance of
  * searchPortSearchResult be sure to copy the data out of it before it gets overwritten by another caller.
@@ -122,7 +150,6 @@ static void sortSerialPortFunctions(serialPortFunction_t *serialPortFunctions, u
 static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function)
 {
     static serialPortSearchResult_t serialPortSearchResult;
-    serialPortSearchResult.found = false;
 
     const functionConstraint_t *functionConstraint = findFunctionConstraint(function);
     if (!functionConstraint) {
@@ -140,8 +167,15 @@ static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function)
             continue;
         }
 
-        uint8_t serialPortIndex = findSerialPortIndexByIdentifier(serialPortFunction->identifier);
+        uint8_t serialPortIndex = lookupSerialPortIndexByIdentifier(serialPortFunction->identifier);
         const serialPortConstraint_t *serialPortConstraint = &serialPortConstraints[serialPortIndex];
+
+        if (!canSoftwareSerialBeUsed() && (
+                serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL1 ||
+                serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2
+        )) {
+            continue;
+        }
 
         if (functionConstraint->requiredSerialPortFeatures != SPF_NONE) {
             if (!(serialPortConstraint->feature & functionConstraint->requiredSerialPortFeatures)) {
@@ -155,17 +189,16 @@ static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function)
         serialPortSearchResult.portConstraint = serialPortConstraint;
         serialPortSearchResult.portFunction = serialPortFunction;
         serialPortSearchResult.functionConstraint = functionConstraint;
-        serialPortSearchResult.found = true;
-        break;
+        return &serialPortSearchResult;
     }
 
-    return &serialPortSearchResult;
+    return NULL;
 }
 
 bool canOpenSerialPort(uint16_t functionMask)
 {
     serialPortSearchResult_t *result = findSerialPort(functionMask);
-    return result->found;
+    return result != NULL;
 }
 
 serialPortFunction_t *findSerialPortFunction(uint16_t functionMask)
@@ -212,7 +245,7 @@ serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbac
 
     serialPortSearchResult_t *searchResult = findSerialPort(function);
 
-    if (!searchResult->found) {
+    if (!searchResult) {
         return NULL;
     }
     serialPortIndex_e portIndex = searchResult->portIndex;
@@ -284,9 +317,56 @@ void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
     serialPortFunction->currentFunction = FUNCTION_NONE;
 }
 
+bool isSerialConfigValid(serialConfig_t *serialConfig)
+{
+    serialPortSearchResult_t *searchResult;
+
+    searchResult = findSerialPort(FUNCTION_MSP);
+    if (!searchResult) {
+        return false;
+    }
+
+    searchResult = findSerialPort(FUNCTION_CLI);
+    if (!searchResult) {
+        return false;
+    }
+
+    searchResult = findSerialPort(FUNCTION_GPS);
+    if (feature(FEATURE_GPS) && !searchResult) {
+        return false;
+    }
+
+    searchResult = findSerialPort(FUNCTION_SERIAL_RX);
+    if (feature(FEATURE_SERIALRX) && !searchResult) {
+        return false;
+    }
+
+    searchResult = findSerialPort(FUNCTION_TELEMETRY);
+    if (feature(FEATURE_TELEMETRY) && !searchResult) {
+        return false;
+    }
+
+    return true;
+}
+
+void applySerialConfigToPortFunctions(serialConfig_t *serialConfig)
+{
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART1)].scenario = serialPortScenarios[serialConfig->serial_port_1_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART2)].scenario = serialPortScenarios[serialConfig->serial_port_2_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL1)].scenario = serialPortScenarios[serialConfig->serial_port_3_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL2)].scenario = serialPortScenarios[serialConfig->serial_port_4_scenario];
+}
+
+
 void serialInit(serialConfig_t *initialSerialConfig)
 {
     serialConfig = initialSerialConfig;
+    applySerialConfigToPortFunctions(serialConfig);
+
+    if (!isSerialConfigValid(serialConfig)) {
+        resetSerialConfig(serialConfig);
+        applySerialConfigToPortFunctions(serialConfig);
+    }
 
     mspInit(serialConfig);
     cliInit(serialConfig);

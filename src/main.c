@@ -92,10 +92,6 @@ int main(void)
     drv_pwm_config_t pwm_params;
     drv_adc_config_t adc_params;
     bool sensorsOK = false;
-#ifdef SOFTSERIAL_LOOPBACK
-    serialPort_t* loopbackPort1 = NULL;
-    serialPort_t* loopbackPort2 = NULL;
-#endif
 
     initPrintfSupport();
 
@@ -154,6 +150,10 @@ int main(void)
         featureClear(FEATURE_SOFTSERIAL);
     }
 
+#ifndef FY90Q
+    timerInit();
+#endif
+
     serialInit(&masterConfig.serialConfig);
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
@@ -188,13 +188,10 @@ int main(void)
             break;
     }
 
-    failsafe = failsafeInit(&masterConfig.rxConfig);
-    buzzerInit(failsafe);
-#ifndef FY90Q
-    timerInit();
-#endif
     pwmInit(&pwm_params);
 
+    failsafe = failsafeInit(&masterConfig.rxConfig);
+    buzzerInit(failsafe);
     rxInit(&masterConfig.rxConfig, failsafe);
 
     if (feature(FEATURE_GPS)) {
@@ -230,9 +227,28 @@ int main(void)
 
     f.SMALL_ANGLE = 1;
 
+#ifdef SOFTSERIAL_LOOPBACK
+    // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
+    serialPort_t *loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+    if (!loopbackPort->vTable) {
+        openSoftSerial1(19200, false);
+    }
+    serialPrint(loopbackPort, "LOOPBACK\r\n");
+#endif
+    
     // loopy
     while (1) {
         loop();
+        
+#ifdef SOFTSERIAL_LOOPBACK
+        if (loopbackPort) {
+            while (serialTotalBytesWaiting(loopbackPort)) {
+                uint8_t b = serialRead(loopbackPort);
+                serialWrite(loopbackPort, b);
+            };
+        }
+#endif
+
     }
 }
 

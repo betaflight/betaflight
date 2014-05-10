@@ -50,7 +50,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 master_t masterConfig;  // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 65;
+static const uint8_t EEPROM_CONF_VERSION = 66;
 static void resetConf(void);
 
 static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
@@ -282,6 +282,18 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->telemetry_switch = 0;
 }
 
+void resetSerialConfig(serialConfig_t *serialConfig)
+{
+    serialConfig->serial_port_1_scenario = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
+    serialConfig->serial_port_2_scenario = lookupScenarioIndex(SCENARIO_GPS_ONLY);
+    serialConfig->serial_port_3_scenario = lookupScenarioIndex(SCENARIO_UNUSED);
+    serialConfig->serial_port_4_scenario = lookupScenarioIndex(SCENARIO_UNUSED);
+    serialConfig->msp_baudrate = 115200;
+    serialConfig->cli_baudrate = 115200;
+    serialConfig->gps_passthrough_baudrate = 115200;
+    serialConfig->reboot_character = 'R';
+}
+
 // Default settings
 static void resetConf(void)
 {
@@ -338,10 +350,7 @@ static void resetConf(void)
     masterConfig.gps_provider = GPS_NMEA;
     masterConfig.gps_initial_baudrate_index = GPS_BAUDRATE_115200;
 
-    masterConfig.serialConfig.msp_baudrate = 115200;
-    masterConfig.serialConfig.cli_baudrate = 115200;
-    masterConfig.serialConfig.gps_passthrough_baudrate = 115200;
-    masterConfig.serialConfig.reboot_character = 'R';
+    resetSerialConfig(&masterConfig.serialConfig);
 
     masterConfig.looptime = 3500;
     masterConfig.emf_avoidance = 0;
