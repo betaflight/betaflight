@@ -45,7 +45,7 @@
 #include "typeconversion.h"
 #endif
 
-serialPort_t *printfSerialPort;
+static serialPort_t *printfSerialPort;
 
 #ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 

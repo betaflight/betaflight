@@ -28,7 +28,7 @@ typedef struct {
     pwmWriteFuncPtr pwmWritePtr;
 } pwmOutputPort_t;
 
-pwmOutputPort_t pwmOutputPorts[MAX_PWM_OUTPUT_PORTS];
+static pwmOutputPort_t pwmOutputPorts[MAX_PWM_OUTPUT_PORTS];
 
 static pwmOutputPort_t *motors[MAX_PWM_MOTORS];
 static pwmOutputPort_t *servos[MAX_PWM_SERVOS];

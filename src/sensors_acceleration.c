@@ -28,7 +28,7 @@ extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
 
-int16_flightDynamicsTrims_t *accelerationTrims;
+static int16_flightDynamicsTrims_t *accelerationTrims;
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {

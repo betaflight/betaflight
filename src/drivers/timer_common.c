@@ -146,7 +146,7 @@ typedef struct timerConfig_s {
     uint8_t reference;
 } timerConfig_t;
 
-timerConfig_t timerConfig[MAX_TIMERS * CC_CHANNELS_PER_TIMER];
+static timerConfig_t timerConfig[MAX_TIMERS * CC_CHANNELS_PER_TIMER];
 
 static uint8_t lookupTimerIndex(const TIM_TypeDef *tim)
 {
