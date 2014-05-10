@@ -48,6 +48,10 @@ extern rcReadRawDataPtr rcReadRawFunc;
 
 extern uint32_t previousTime;
 
+#ifdef SOFTSERIAL_LOOPBACK
+serialPort_t *loopbackPort
+#endif
+
 failsafe_t *failsafe;
 
 void initPrintfSupport(void);
@@ -86,11 +90,11 @@ void productionDebug(void)
 }
 #endif
 
-int main(void)
+void init(void)
 {
     uint8_t i;
-    drv_pwm_config_t pwm_params; // FIXME never freed, remains on heap
-    drv_adc_config_t adc_params; // FIXME never freed, remains on heap
+    drv_pwm_config_t pwm_params;
+    drv_adc_config_t adc_params;
     bool sensorsOK = false;
 
     initPrintfSupport();
@@ -233,20 +237,27 @@ int main(void)
     }
     serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
-    
-    // loopy
-    while (1) {
-        loop();
-        
+}
+
 #ifdef SOFTSERIAL_LOOPBACK
-        if (loopbackPort) {
-            while (serialTotalBytesWaiting(loopbackPort)) {
-                uint8_t b = serialRead(loopbackPort);
-                serialWrite(loopbackPort, b);
-            };
-        }
+void processLoopback(void) {
+    if (loopbackPort) {
+        while (serialTotalBytesWaiting(loopbackPort)) {
+            uint8_t b = serialRead(loopbackPort);
+            serialWrite(loopbackPort, b);
+        };
+    }
+}
+#else
+#define processLoopback()
 #endif
 
+int main(void) {
+    init();
+
+    while (1) {
+        loop();
+        processLoopback();
     }
 }
 
