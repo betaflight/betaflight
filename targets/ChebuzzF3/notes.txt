@@ -55,10 +55,10 @@ GPIOB 3 / PB3 / Ext 4
 There are some solder pads labelled ADC0-3 & Diff Press at the top left inner of the board
 They are connected to the ADC socket at the top left outer of the board
 
-PC3 / Diff Press (Differential Pressure)
-PC2 / ADC2
-PC1 / ADC1
-PC0 / ADC0
+PC3 / Diff Press - ADC12_IN9 (Differential Pressure)
+PC2 / ADC2 - ADC12_IN8
+PC1 / ADC1 - ADC12_IN7
+PC0 / ADC0 - ADC12_IN6
 
 There is space for a MPXV5004/MPVZ5004 differential pressure sensor, if populated it's analog pin connects to PC3.
 

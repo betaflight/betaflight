@@ -58,6 +58,8 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM1/CoreSupport \
 		   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x \
 
+LD_SCRIPT	 = $(ROOT)/stm32_flash_f303.ld
+
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4
 DEVICE_FLAGS = -DSTM32F303xC
 TARGET_FLAGS = -D$(TARGET)
@@ -80,6 +82,8 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(STDPERIPH_DIR)/inc \
 		   $(CMSIS_DIR)/CM3/CoreSupport \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
+
+LD_SCRIPT	 = $(ROOT)/stm32_flash_f103.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET)
@@ -139,6 +143,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/adc_common.c \
+		   drivers/adc_stm32f10x.c \
 		   drivers/barometer_bmp085.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/bus_spi.c \
@@ -170,6 +175,7 @@ FY90Q_SRC	 = startup_stm32f10x_md_gcc.S \
 OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/adc_common.c \
+		   drivers/adc_stm32f10x.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f10x.c \
@@ -186,6 +192,7 @@ STM32F3DISCOVERY_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
 		   drivers/adc_common.c \
+		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f30x.c \
@@ -246,7 +253,6 @@ ASFLAGS		 = $(ARCH_FLAGS) \
 		   $(addprefix -I,$(INCLUDE_DIRS))
 
 # XXX Map/crossref output?
-LD_SCRIPT	 = $(ROOT)/stm32_flash.ld
 LDFLAGS		 = -lm \
 		   $(ARCH_FLAGS) \
 		   -static \

@@ -103,6 +103,8 @@ void systemInit(bool overclock)
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 #endif
 #ifdef STM32F303xC
+    RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+
     RCC_APB1PeriphClockCmd(
         RCC_APB1Periph_TIM2 |
         RCC_APB1Periph_TIM3 |
@@ -143,7 +145,7 @@ void systemInit(bool overclock)
     gpio.mode = Mode_AIN;
     gpio.pin = Pin_All;
 #ifdef STM32F3DISCOVERY
-    gpio.pin = Pin_All & ~(Pin_13|Pin_14);
+    gpio.pin = Pin_All & ~(Pin_13|Pin_14|Pin_15);  // Leave JTAG pins alone
     gpioInit(GPIOA, &gpio);
     gpio.pin = Pin_All;
 #else
@@ -151,6 +153,13 @@ void systemInit(bool overclock)
 #endif
     gpioInit(GPIOB, &gpio);
     gpioInit(GPIOC, &gpio);
+#ifdef STM32F303xC
+    gpioInit(GPIOD, &gpio);
+    gpioInit(GPIOE, &gpio);
+#ifdef CHEBUZZF3
+    gpioInit(GPIOF, &gpio);
+#endif
+#endif
 
 #ifdef STM32F10X_MD
     // Turn off JTAG port 'cause we're using the GPIO for leds
