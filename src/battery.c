@@ -17,8 +17,8 @@ static batteryConfig_t *batteryConfig;
 uint16_t batteryAdcToVoltage(uint16_t src)
 {
     // calculate battery voltage based on ADC reading
-    // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 4095 = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
-    return (((src) * 3.3f) / 4095) * batteryConfig->vbatscale;
+    // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 0xFFF = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
+    return (((src) * 3.3f) / 0xFFF) * batteryConfig->vbatscale;
 }
 
 
