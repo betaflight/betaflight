@@ -223,7 +223,7 @@ static void l3gd20GyroRead(int16_t *gyroData)
     gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]) / 8;
     gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]) / 8;
 
-#if 1
+#if 0
     debug[0] = (int16_t)((buf[1] << 8) | buf[0]);
     debug[1] = (int16_t)((buf[3] << 8) | buf[2]);
     debug[2] = (int16_t)((buf[5] << 8) | buf[4]);
