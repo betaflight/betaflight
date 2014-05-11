@@ -303,7 +303,6 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrint(const char *str);
 static void cliWrite(uint8_t ch);
-
 static void cliPrompt(void)
 {
     cliPrint("\r\n# ");
