@@ -19,7 +19,7 @@
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
-uint8_t adcChannelCount;
+extern uint8_t adcChannelCount;
 
 void adcInit(drv_adc_config_t *init)
 {
@@ -29,19 +29,20 @@ void adcInit(drv_adc_config_t *init)
 
     // configure always-present battery index (ADC4)
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_4;
-    adcConfig[ADC_BATTERY].dmaIndex = adcChannelCount - 1;
+    adcConfig[ADC_BATTERY].dmaIndex = adcChannelCount;
+    adcChannelCount++;
 
     // optional ADC5 input on rev.5 hardware
     if (hse_value == 12000000) {
-        adcChannelCount++;
         adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
-        adcConfig[ADC_EXTERNAL1].dmaIndex = adcChannelCount - 1;
+        adcConfig[ADC_EXTERNAL1].dmaIndex = adcChannelCount;
+        adcChannelCount++;
     }
     // another channel can be stolen from PWM for current measurement or other things
     if (init->powerAdcChannel > 0) {
-        adcChannelCount++;
         adcConfig[ADC_EXTERNAL2].adcChannel = init->powerAdcChannel;
-        adcConfig[ADC_EXTERNAL2].dmaIndex = adcChannelCount - 1;
+        adcConfig[ADC_EXTERNAL2].dmaIndex = adcChannelCount;
+        adcChannelCount++;
     }
 
     // ADC driver assumes all the GPIO was already placed in 'AIN' mode
@@ -68,21 +69,16 @@ void adcInit(drv_adc_config_t *init)
     adc.ADC_NbrOfChannel = adcChannelCount;
     ADC_Init(ADC1, &adc);
 
-    // fixed ADC4
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 1, ADC_SampleTime_28Cycles5);
-    // configure any additional ADC channels (2 + n)
-    for (i = 1; i < adcChannelCount; i++)
+    for (i = 0; i < adcChannelCount; i++)
         ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, i + 1, ADC_SampleTime_28Cycles5);
-    ADC_DMACmd(ADC1, ENABLE);
 
+    ADC_DMACmd(ADC1, ENABLE);
     ADC_Cmd(ADC1, ENABLE);
 
-    // Calibrate ADC
     ADC_ResetCalibration(ADC1);
     while(ADC_GetResetCalibrationStatus(ADC1));
     ADC_StartCalibration(ADC1);
     while(ADC_GetCalibrationStatus(ADC1));
 
-    // Fire off ADC
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 }
