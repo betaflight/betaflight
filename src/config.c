@@ -41,6 +41,10 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
         escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse,
         airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfig, gimbalConfig_t *gimbalConfigToUse);
 
+#ifdef STM32F303xC
+#define FLASH_PAGE_COUNT 256
+#endif
+
 #ifndef FLASH_PAGE_COUNT
 #define FLASH_PAGE_COUNT 128
 #endif
