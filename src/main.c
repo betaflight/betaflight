@@ -167,8 +167,8 @@ void init(void)
 #endif
 
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
-    pwm_params.useParallelPWM = feature(FEATURE_PARALLEL_PWM);
-    pwm_params.usePPM = feature(FEATURE_PPM);
+    pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
+    pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.extraServos = currentProfile.gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;

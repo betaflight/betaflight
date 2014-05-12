@@ -37,6 +37,7 @@
 #include "rc_controls.h"
 #include "rc_curves.h"
 #include "rx_common.h"
+#include "rx_msp.h"
 #include "telemetry_common.h"
 
 #include "runtime_config.h"
@@ -241,8 +242,12 @@ void loop(void)
     bool rcReady = false;
 
     // calculate rc stuff from serial-based receivers (spek/sbus)
-    if (feature(FEATURE_SERIALRX)) {
+    if (feature(FEATURE_RX_SERIAL)) {
         rcReady = isSerialRxFrameComplete(&masterConfig.rxConfig);
+    }
+
+    if (feature(FEATURE_RX_MSP)) {
+        rcReady = rxMspFrameComplete();
     }
 
     if (((int32_t)(currentTime - rcTime) >= 0) || rcReady) { // 50Hz or data driven

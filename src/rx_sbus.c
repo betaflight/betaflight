@@ -20,6 +20,8 @@
 #define SBUS_SYNCBYTE 0x0F
 #define SBUS_OFFSET 988
 
+#define SBUS_BAUDRATE 100000
+
 static bool sbusFrameDone = false;
 static void sbusDataReceive(uint16_t c);
 static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
@@ -28,11 +30,17 @@ static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
 static serialPort_t *sBusPort;
 
+void sbusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
+{
+    functionConstraint->minBaudRate = SBUS_BAUDRATE;
+    functionConstraint->maxBaudRate = SBUS_BAUDRATE;
+    functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK | SPF_SUPPORTS_SBUS_MODE;
+}
+
 bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     int b;
-
-    sBusPort = openSerialPort(FUNCTION_SERIAL_RX, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_NOT_INVERTED);
+    sBusPort = openSerialPort(FUNCTION_SERIAL_RX, sbusDataReceive, SBUS_BAUDRATE, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_NOT_INVERTED);
 
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
         sbusChannelData[b] = 2 * (rxConfig->midrc - SBUS_OFFSET);

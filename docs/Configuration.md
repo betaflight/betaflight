@@ -7,7 +7,7 @@
 0   UNUSED
 1   MSP, CLI, TELEMETRY, GPS-PASTHROUGH
 2   GPS ONLY
-3   SERIAL-RX ONLY
+3   RX SERIAL ONLY
 4   TELEMETRY ONLY
 5   MSP, CLI, GPS-PASTHROUGH
 6   CLI ONLY
@@ -38,44 +38,61 @@ feature GPS
 save
 ```
 
-b) SERIAL_RX and TELEMETRY (when armed)
+b) RX SERIAL and TELEMETRY (when armed)
 
 - TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
-- SERIAL_RX on UART2
+- RX SERIAL on UART2
 
 ```
-feature -PARALLEL_PWM
+feature -RX_PARALLEL_PWM
+feature RX_SERIAL
 feature TELEMETRY
-feature SERIAL_RX
 set serial_port_2_scenario = 3
+save
+```
+
+b) RX SERIAL and TELEMETRY via softserial
+
+- MSP,CLI,GPS PASSTHROUGH on UART1
+- RX SERIAL on UART2
+- TELEMETRY on SOFTSERIAL1
+
+```
+feature -RX_PARALLEL_PWM
+feature RX_SERIAL
+feature TELEMETRY
+feature SOFTSERIAL
+set serial_port_2_scenario = 3
+set serial_port_3_scenario = 4
 save
 ```
 
 c) GPS and TELEMETRY via softserial
 
-- TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
+- MSP,CLI,GPS PASSTHROUGH on UART1
 - GPS on UART2
+- TELEMETRY on SOFTSERIAL1
 
 ```
-feature -PARALLEL_PWM
-feature PPM
+feature -RX_PARALLEL_PWM
+feature RX_PPM
 feature TELEMETRY
 feature GPS
 feature SOFTSERIAL
 set serial_port_3_scenario = 4
 save
 ```
-d) SERIAL_RX, GPS and TELEMETRY (when armed) MSP/CLI via softserial
+d) RX SERIAL, GPS and TELEMETRY (when armed) MSP/CLI via softserial
 
 - GPS on UART1
-- SERIAL RX on UART2
+- RX SERIAL on UART2
 - TELEMETRY,MSP,CLI,GPS PASSTHROUGH on SOFTSERIAL1
 
 ```
-feature -PARALLEL_PWM
+feature -RX_PARALLEL_PWM
 feature TELEMETRY
 feature GPS
-feature SERIALRX
+feature RX_SERIAL
 feature SOFTSERIAL
 set serial_port_1_scenario = 2
 set serial_port_2_scenario = 3

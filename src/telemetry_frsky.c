@@ -337,3 +337,6 @@ void handleFrSkyTelemetry(void)
     }
 }
 
+uint32_t getFrSkyTelemetryProviderBaudRate(void) {
+    return FRSKY_BAUDRATE;
+}

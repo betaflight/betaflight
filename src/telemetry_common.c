@@ -19,6 +19,8 @@
 
 
 static bool isTelemetryConfigurationValid = false; // flag used to avoid repeated configuration checks
+static bool telemetryEnabled = false;
+static bool telemetryPortIsShared;
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -43,30 +45,24 @@ bool canUseTelemetryWithCurrentConfiguration(void)
         return false;
     }
 
-   if (!canOpenSerialPort(FUNCTION_TELEMETRY)) {
-       return false;
-   }
+    if (!canOpenSerialPort(FUNCTION_TELEMETRY)) {
+        return false;
+    }
 
     return true;
 }
 
 void initTelemetry()
 {
-
+    telemetryPortIsShared = isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP);
     isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
 
     checkTelemetryState();
 }
 
-static bool telemetryEnabled = false;
-
 bool determineNewTelemetryEnabledState(void)
 {
-    bool telemetryPortIsShared;
     bool enabled = true;
-
-
-    telemetryPortIsShared = isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP);
 
     if (telemetryPortIsShared) {
         if (telemetryConfig->telemetry_switch)
@@ -83,6 +79,18 @@ bool shouldChangeTelemetryStateNow(bool newState)
     return newState != telemetryEnabled;
 }
 
+uint32_t getTelemetryProviderBaudRate(void)
+{
+    if (isTelemetryProviderFrSky()) {
+        return getFrSkyTelemetryProviderBaudRate();
+    }
+
+    if (isTelemetryProviderHoTT()) {
+        return getHoTTTelemetryProviderBaudRate();
+    }
+    return 0;
+}
+
 static void configureTelemetryPort(void)
 {
     if (isTelemetryProviderFrSky()) {
@@ -93,6 +101,7 @@ static void configureTelemetryPort(void)
         configureHoTTTelemetryPort(telemetryConfig);
     }
 }
+
 
 void freeTelemetryPort(void)
 {

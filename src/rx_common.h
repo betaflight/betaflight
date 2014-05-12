@@ -13,9 +13,10 @@ typedef enum {
     SERIALRX_SPEKTRUM2048 = 1,
     SERIALRX_SBUS = 2,
     SERIALRX_SUMD = 3,
-    SERIALRX_MSP = 4,
-    SERIALRX_PROVIDER_MAX = SERIALRX_MSP
+    SERIALRX_PROVIDER_MAX = SERIALRX_SUMD
 } SerialRXType;
+
+#define SERIALRX_PROVIDER_COUNT (SERIALRX_PROVIDER_MAX + 1)
 
 #define MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT 8
 #define MAX_SUPPORTED_RC_CHANNEL_COUNT (18)
@@ -26,7 +27,7 @@ extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2
 
 typedef struct rxConfig_s {
     uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
-    uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_SERIALRX first.
+    uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
@@ -37,6 +38,8 @@ typedef struct rxRuntimeConfig_s {
 } rxRuntimeConfig_t;
 
 extern rxRuntimeConfig_t rxRuntimeConfig;
+
+void useRxConfig(rxConfig_t *rxConfigToUse);
 
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -16,6 +17,9 @@
 
 #include "serial_common.h"
 #include "config.h"
+
+uint32_t getTelemetryProviderBaudRate(void);
+void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintToUpdate);
 
 void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
@@ -53,18 +57,13 @@ const static serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_SOFTSERIAL2,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE}
 };
 
-typedef struct functionConstraint_s {
-    serialPortFunction_e function;
-    uint8_t requiredSerialPortFeatures;
-} functionConstraint_t;
-
 const functionConstraint_t functionConstraints[] = {
-        { FUNCTION_CLI,             SPF_NONE },
-        { FUNCTION_GPS,             SPF_NONE },
-        { FUNCTION_GPS_PASSTHROUGH, SPF_NONE },
-        { FUNCTION_MSP,             SPF_NONE },
-        { FUNCTION_SERIAL_RX,       SPF_SUPPORTS_SBUS_MODE | SPF_SUPPORTS_CALLBACK },
-        { FUNCTION_TELEMETRY,       SPF_NONE }
+        { FUNCTION_CLI,             9600, 115200, NO_AUTOBAUD, SPF_NONE },
+        { FUNCTION_GPS,             9600, 115200, AUTOBAUD,    SPF_NONE },
+        { FUNCTION_GPS_PASSTHROUGH, 9600, 115200, NO_AUTOBAUD, SPF_NONE },
+        { FUNCTION_MSP,             9600, 115200, NO_AUTOBAUD, SPF_NONE },
+        { FUNCTION_SERIAL_RX,       9600, 115200, NO_AUTOBAUD, SPF_SUPPORTS_SBUS_MODE | SPF_SUPPORTS_CALLBACK },
+        { FUNCTION_TELEMETRY,       9600, 19200,  NO_AUTOBAUD, SPF_NONE }
 };
 
 #define FUNCTION_CONSTRAINT_COUNT (sizeof(functionConstraints) / sizeof(functionConstraint_t))
@@ -146,14 +145,9 @@ static void sortSerialPortFunctions(serialPortFunction_t *serialPortFunctions, u
  * searchPortSearchResult be sure to copy the data out of it before it gets overwritten by another caller.
  * If this becomes a problem perhaps change the implementation to use a destination argument.
  */
-static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function)
+static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function, const functionConstraint_t *functionConstraint)
 {
     static serialPortSearchResult_t serialPortSearchResult;
-
-    const functionConstraint_t *functionConstraint = findFunctionConstraint(function);
-    if (!functionConstraint) {
-        return NULL;
-    }
 
     sortSerialPortFunctions(serialPortFunctions, SERIAL_PORT_COUNT);
 
@@ -182,6 +176,10 @@ static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function)
             }
         }
 
+        if (functionConstraint->minBaudRate < serialPortConstraint->minBaudRate || functionConstraint->maxBaudRate > serialPortConstraint->maxBaudRate) {
+            continue;
+        }
+
         // TODO check speed and mode
 
         serialPortSearchResult.portIndex = serialPortIndex;
@@ -192,12 +190,6 @@ static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function)
     }
 
     return NULL;
-}
-
-bool canOpenSerialPort(uint16_t functionMask)
-{
-    serialPortSearchResult_t *result = findSerialPort(functionMask);
-    return result != NULL;
 }
 
 static serialPortFunction_t *findSerialPortFunction(uint16_t functionMask)
@@ -223,16 +215,6 @@ static serialPortFunction_t *findSerialPortFunction(uint16_t functionMask)
     return NULL;
 }
 
-bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask)
-{
-    serialPortSearchResult_t *result = findSerialPort(functionToUse);
-    if (!result) {
-        return false;
-    }
-
-    return result->portFunction->scenario & functionMask;
-}
-
 /*
  * find a serial port that is:
  * a) open
@@ -248,11 +230,169 @@ serialPort_t *findOpenSerialPort(uint16_t functionMask)
 }
 
 
+
+static serialPortFunction_t * findSerialPortFunctionByPort(serialPort_t *port)
+{
+    serialPortFunction_t *serialPortFunction;
+    uint8_t functionIndex;
+
+    for (functionIndex = 0; functionIndex < SERIAL_PORT_COUNT; functionIndex++) {
+        serialPortFunction = &serialPortFunctions[functionIndex];
+        if (serialPortFunction->port == port) {
+            return serialPortFunction;
+        }
+    }
+
+    return NULL;
+}
+
+void beginSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
+{
+    serialPortFunction_t *serialPortFunction = findSerialPortFunctionByPort(port);
+
+    serialPortFunction->currentFunction = function;
+}
+
+void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
+{
+    serialPortFunction_t *serialPortFunction = findSerialPortFunctionByPort(port);
+
+    serialPortFunction->currentFunction = FUNCTION_NONE;
+}
+
+functionConstraint_t *getConfiguredFunctionConstraint(serialPortFunction_e function)
+{
+    static functionConstraint_t configuredFunctionConstraint;
+    const functionConstraint_t *functionConstraint;
+
+    functionConstraint = findFunctionConstraint(function);
+    if (!functionConstraint) {
+        return NULL;
+    }
+    memcpy(&configuredFunctionConstraint, functionConstraint, sizeof(functionConstraint_t));
+
+    switch(function) {
+        case FUNCTION_MSP:
+            configuredFunctionConstraint.minBaudRate = serialConfig->msp_baudrate;
+            configuredFunctionConstraint.maxBaudRate = configuredFunctionConstraint.minBaudRate;
+            break;
+
+        case FUNCTION_CLI:
+            configuredFunctionConstraint.minBaudRate = serialConfig->cli_baudrate;
+            configuredFunctionConstraint.maxBaudRate = configuredFunctionConstraint.minBaudRate;
+            break;
+
+        case FUNCTION_GPS_PASSTHROUGH:
+            configuredFunctionConstraint.minBaudRate = serialConfig->gps_passthrough_baudrate;
+            configuredFunctionConstraint.maxBaudRate = configuredFunctionConstraint.minBaudRate;
+            break;
+
+        case FUNCTION_TELEMETRY:
+            configuredFunctionConstraint.minBaudRate = getTelemetryProviderBaudRate();
+            configuredFunctionConstraint.maxBaudRate = configuredFunctionConstraint.minBaudRate;
+            break;
+        case FUNCTION_SERIAL_RX:
+            updateSerialRxFunctionConstraint(&configuredFunctionConstraint);
+            break;
+        case FUNCTION_GPS:
+        default:
+            break;
+    }
+    return &configuredFunctionConstraint;
+}
+
+bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
+{
+    serialPortSearchResult_t *searchResult;
+    functionConstraint_t *functionConstraint;
+
+    serialConfig = serialConfigToCheck;
+
+    functionConstraint = getConfiguredFunctionConstraint(FUNCTION_MSP);
+    searchResult = findSerialPort(FUNCTION_MSP, functionConstraint);
+    if (!searchResult) {
+        return false;
+    }
+
+    functionConstraint = getConfiguredFunctionConstraint(FUNCTION_CLI);
+    searchResult = findSerialPort(FUNCTION_CLI, functionConstraint);
+    if (!searchResult) {
+        return false;
+    }
+
+    functionConstraint = getConfiguredFunctionConstraint(FUNCTION_GPS);
+    searchResult = findSerialPort(FUNCTION_GPS, functionConstraint);
+    if (feature(FEATURE_GPS) && !searchResult) {
+        return false;
+    }
+
+    functionConstraint = getConfiguredFunctionConstraint(FUNCTION_SERIAL_RX);
+    searchResult = findSerialPort(FUNCTION_SERIAL_RX, functionConstraint);
+    if (feature(FEATURE_RX_SERIAL) && !searchResult) {
+        return false;
+    }
+
+    functionConstraint = getConfiguredFunctionConstraint(FUNCTION_TELEMETRY);
+    searchResult = findSerialPort(FUNCTION_TELEMETRY, functionConstraint);
+    if (feature(FEATURE_TELEMETRY) && !searchResult) {
+        return false;
+    }
+
+    return true;
+}
+
+bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier)
+{
+    serialPortSearchResult_t *searchResult;
+    const functionConstraint_t *functionConstraint;
+    serialPortFunction_e function;
+
+    uint8_t index;
+    for (index = 0; index < FUNCTION_CONSTRAINT_COUNT; index++) {
+        function = functionConstraints[index].function;
+        functionConstraint = findFunctionConstraint(function);
+        searchResult = findSerialPort(function, functionConstraint);
+        if (searchResult->portConstraint->identifier == portIdentifier) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool canOpenSerialPort(serialPortFunction_e function)
+{
+    functionConstraint_t *functionConstraint = getConfiguredFunctionConstraint(function);
+
+    serialPortSearchResult_t *result = findSerialPort(function, functionConstraint);
+    return result != NULL;
+}
+
+bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask)
+{
+    functionConstraint_t *functionConstraint = getConfiguredFunctionConstraint(functionToUse);
+    serialPortSearchResult_t *result = findSerialPort(functionToUse, functionConstraint);
+    if (!result) {
+        return false;
+    }
+
+    return result->portFunction->scenario & functionMask;
+}
+
+void applySerialConfigToPortFunctions(serialConfig_t *serialConfig)
+{
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART1)].scenario = serialPortScenarios[serialConfig->serial_port_1_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART2)].scenario = serialPortScenarios[serialConfig->serial_port_2_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL1)].scenario = serialPortScenarios[serialConfig->serial_port_3_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL2)].scenario = serialPortScenarios[serialConfig->serial_port_4_scenario];
+}
+
 serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion)
 {
     serialPort_t *serialPort = NULL;
 
-    serialPortSearchResult_t *searchResult = findSerialPort(function);
+    functionConstraint_t *functionConstraint = getConfiguredFunctionConstraint(function);
+
+    serialPortSearchResult_t *searchResult = findSerialPort(function, functionConstraint);
 
     if (!searchResult) {
         return NULL;
@@ -296,90 +436,6 @@ serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbac
 
     return serialPort;
 }
-
-static serialPortFunction_t * findSerialPortFunctionByPort(serialPort_t *port)
-{
-    serialPortFunction_t *serialPortFunction;
-    uint8_t functionIndex;
-
-    for (functionIndex = 0; functionIndex < SERIAL_PORT_COUNT; functionIndex++) {
-        serialPortFunction = &serialPortFunctions[functionIndex];
-        if (serialPortFunction->port == port) {
-            return serialPortFunction;
-        }
-    }
-
-    return NULL;
-}
-
-void beginSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
-{
-    serialPortFunction_t *serialPortFunction = findSerialPortFunctionByPort(port);
-
-    serialPortFunction->currentFunction = function;
-}
-
-void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
-{
-    serialPortFunction_t *serialPortFunction = findSerialPortFunctionByPort(port);
-
-    serialPortFunction->currentFunction = FUNCTION_NONE;
-}
-
-bool isSerialConfigValid(serialConfig_t *serialConfig)
-{
-    serialPortSearchResult_t *searchResult;
-
-    searchResult = findSerialPort(FUNCTION_MSP);
-    if (!searchResult) {
-        return false;
-    }
-
-    searchResult = findSerialPort(FUNCTION_CLI);
-    if (!searchResult) {
-        return false;
-    }
-
-    searchResult = findSerialPort(FUNCTION_GPS);
-    if (feature(FEATURE_GPS) && !searchResult) {
-        return false;
-    }
-
-    searchResult = findSerialPort(FUNCTION_SERIAL_RX);
-    if (feature(FEATURE_SERIALRX) && !searchResult) {
-        return false;
-    }
-
-    searchResult = findSerialPort(FUNCTION_TELEMETRY);
-    if (feature(FEATURE_TELEMETRY) && !searchResult) {
-        return false;
-    }
-
-    return true;
-}
-
-
-bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier)
-{
-    serialPortSearchResult_t *searchResult;
-    uint8_t index;
-    for (index = 0; index < FUNCTION_CONSTRAINT_COUNT; index++) {
-        searchResult = findSerialPort(functionConstraints[index].function);
-        if (searchResult->portConstraint->identifier == portIdentifier) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void applySerialConfigToPortFunctions(serialConfig_t *serialConfig)
-{
-    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART1)].scenario = serialPortScenarios[serialConfig->serial_port_1_scenario];
-    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART2)].scenario = serialPortScenarios[serialConfig->serial_port_2_scenario];
-    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL1)].scenario = serialPortScenarios[serialConfig->serial_port_3_scenario];
-    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL2)].scenario = serialPortScenarios[serialConfig->serial_port_4_scenario];
-}
-
 
 void serialInit(serialConfig_t *initialSerialConfig)
 {

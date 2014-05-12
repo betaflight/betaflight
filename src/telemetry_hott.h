@@ -206,4 +206,5 @@ void checkTelemetryState(void);
 void configureHoTTTelemetryPort(telemetryConfig_t *telemetryConfig);
 void freeHoTTTelemetryPort(void);
 
+uint32_t getHoTTTelemetryProviderBaudRate(void);
 #endif /* TELEMETRY_HOTT_H_ */

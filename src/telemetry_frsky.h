@@ -14,4 +14,6 @@ void checkFrSkyTelemetryState(void);
 void configureFrSkyTelemetryPort(telemetryConfig_t *telemetryConfig);
 void freeFrSkyTelemetryPort(void);
 
+uint32_t getFrSkyTelemetryProviderBaudRate(void);
+
 #endif /* TELEMETRY_FRSKY_H_ */

@@ -11,6 +11,19 @@ typedef enum {
 } serialPortFunction_e;
 
 typedef enum {
+    NO_AUTOBAUD = 0,
+    AUTOBAUD
+} autoBaud_e;
+
+typedef struct functionConstraint_s {
+    serialPortFunction_e function;
+    uint32_t minBaudRate;
+    uint32_t maxBaudRate;
+    autoBaud_e autoBaud;
+    uint8_t requiredSerialPortFeatures;
+} functionConstraint_t;
+
+typedef enum {
     SCENARIO_UNUSED                             = FUNCTION_NONE,
 
     SCENARIO_CLI_ONLY                           = FUNCTION_CLI,
@@ -85,7 +98,7 @@ uint8_t lookupScenarioIndex(serialPortFunctionScenario_e scenario);
 serialPort_t *findOpenSerialPort(uint16_t functionMask);
 serialPort_t *openSerialPort(serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion);
 
-bool canOpenSerialPort(uint16_t functionMask);
+bool canOpenSerialPort(serialPortFunction_e function);
 void beginSerialPortFunction(serialPort_t *port, serialPortFunction_e function);
 void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function);
 

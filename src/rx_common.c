@@ -8,6 +8,9 @@
 
 #include "config.h"
 
+#include "drivers/serial_common.h"
+#include "serial_common.h"
+
 #include "failsafe.h"
 
 #include "rx_pwm.h"
@@ -38,14 +41,37 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 static rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
 rxRuntimeConfig_t rxRuntimeConfig;
+static rxConfig_t *rxConfig;
 
 void serialRxInit(rxConfig_t *rxConfig);
 
 static failsafe_t *failsafe;
 
+void useRxConfig(rxConfig_t *rxConfigToUse)
+{
+    rxConfig = rxConfigToUse;
+}
+
+void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintToUpdate)
+{
+    switch (rxConfig->serialrx_provider) {
+        case SERIALRX_SPEKTRUM1024:
+        case SERIALRX_SPEKTRUM2048:
+            spektrumUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
+            break;
+        case SERIALRX_SBUS:
+            sbusUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
+            break;
+        case SERIALRX_SUMD:
+            sumdUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
+            break;
+    }
+}
+
 void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 {
     uint8_t i;
+    useRxConfig(rxConfig);
 
     for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rcData[i] = rxConfig->midrc;
@@ -53,11 +79,15 @@ void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 
     failsafe = initialFailsafe;
 
-    if (feature(FEATURE_SERIALRX)) {
+    if (feature(FEATURE_RX_SERIAL)) {
         serialRxInit(rxConfig);
     }
 
-    if (feature(FEATURE_PPM) || feature(FEATURE_PARALLEL_PWM)) {
+    if (feature(FEATURE_RX_MSP)) {
+        rxMspInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+    }
+
+    if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
         rxPwmInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
 }
@@ -76,13 +106,10 @@ void serialRxInit(rxConfig_t *rxConfig)
         case SERIALRX_SUMD:
             enabled = sumdInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
-        case SERIALRX_MSP:
-            enabled = rxMspInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
-            break;
     }
 
     if (!enabled) {
-        featureClear(FEATURE_SERIALRX);
+        featureClear(FEATURE_RX_SERIAL);
         rcReadRawFunc = NULL;
     }
 }
@@ -97,8 +124,6 @@ bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
             return sbusFrameComplete();
         case SERIALRX_SUMD:
             return sumdFrameComplete();
-        case SERIALRX_MSP:
-            return rxMspFrameComplete();
     }
     return false;
 }
@@ -118,7 +143,7 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         failsafe->vTable->incrementCounter();
     }
 
-    if (!feature(FEATURE_SERIALRX)) {
+    if (feature(FEATURE_RX_PARALLEL_PWM) || feature(FEATURE_RX_PPM)) {
         rcSampleIndex++;
         currentSampleIndex = rcSampleIndex % PPM_AND_PWM_SAMPLE_COUNT;
     }
@@ -143,7 +168,7 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         if (sample < PULSE_MIN || sample > PULSE_MAX)
             sample = rxConfig->midrc;
 
-        if (feature(FEATURE_SERIALRX)) {
+        if (!(feature(FEATURE_RX_PARALLEL_PWM) || feature(FEATURE_RX_PPM))) {
             rcData[chan] = sample;
             continue;
         }

@@ -345,39 +345,53 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    if (!(feature(FEATURE_PARALLEL_PWM) || feature(FEATURE_PPM) || feature(FEATURE_SERIALRX))) {
-        featureSet(FEATURE_PARALLEL_PWM); // Consider changing the default to PPM
+    if (!(feature(FEATURE_RX_PARALLEL_PWM) || feature(FEATURE_RX_PPM) || feature(FEATURE_RX_SERIAL) || feature(FEATURE_RX_MSP))) {
+        featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
     }
 
-    if (feature(FEATURE_SERIALRX)) {
-        if (feature(FEATURE_PARALLEL_PWM)) {
-            featureClear(FEATURE_PARALLEL_PWM);
+    if (feature(FEATURE_RX_MSP)) {
+        if (feature(FEATURE_RX_SERIAL)) {
+            featureClear(FEATURE_RX_SERIAL);
         }
-        if (feature(FEATURE_PPM)) {
-            featureClear(FEATURE_PPM);
+        if (feature(FEATURE_RX_PARALLEL_PWM)) {
+            featureClear(FEATURE_RX_PARALLEL_PWM);
+        }
+        if (feature(FEATURE_RX_PPM)) {
+            featureClear(FEATURE_RX_PPM);
         }
     }
 
-    if (feature(FEATURE_PPM)) {
-        if (feature(FEATURE_PARALLEL_PWM)) {
-            featureClear(FEATURE_PARALLEL_PWM);
+    if (feature(FEATURE_RX_SERIAL)) {
+        if (feature(FEATURE_RX_PARALLEL_PWM)) {
+            featureClear(FEATURE_RX_PARALLEL_PWM);
+        }
+        if (feature(FEATURE_RX_PPM)) {
+            featureClear(FEATURE_RX_PPM);
+        }
+    }
+
+    if (feature(FEATURE_RX_PPM)) {
+        if (feature(FEATURE_RX_PARALLEL_PWM)) {
+            featureClear(FEATURE_RX_PARALLEL_PWM);
         }
     }
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
         // sonar needs a free PWM port
-        if (!feature(FEATURE_PARALLEL_PWM)) {
+        if (!feature(FEATURE_RX_PARALLEL_PWM)) {
             featureClear(FEATURE_SONAR);
         }
     }
 #endif
     if (feature(FEATURE_SOFTSERIAL)) {
         // software serial needs free PWM ports
-        if (feature(FEATURE_PARALLEL_PWM)) {
+        if (feature(FEATURE_RX_PARALLEL_PWM)) {
             featureClear(FEATURE_SOFTSERIAL);
         }
     }
+
+    useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
     applySerialConfigToPortFunctions(serialConfig);

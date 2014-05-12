@@ -322,3 +322,8 @@ void handleHoTTTelemetry(void)
     }
 }
 
+uint32_t getHoTTTelemetryProviderBaudRate(void) {
+    return HOTT_BAUDRATE;
+}
+
+

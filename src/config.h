@@ -1,10 +1,10 @@
 #pragma once
 
 typedef enum {
-    FEATURE_PPM = 1 << 0,
+    FEATURE_RX_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,
     FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
-    FEATURE_SERIALRX = 1 << 3,
+    FEATURE_RX_SERIAL = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,
     FEATURE_SERVO_TILT = 1 << 5,
     FEATURE_SOFTSERIAL = 1 << 6,
@@ -16,7 +16,8 @@ typedef enum {
     FEATURE_POWERMETER = 1 << 12,
     FEATURE_VARIO = 1 << 13,
     FEATURE_3D = 1 << 14,
-    FEATURE_PARALLEL_PWM = 1 << 15,
+    FEATURE_RX_PARALLEL_PWM = 1 << 15,
+    FEATURE_RX_MSP = 1 << 16,
 } AvailableFeatures;
 
 bool feature(uint32_t mask);

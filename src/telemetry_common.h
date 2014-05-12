@@ -23,6 +23,7 @@ typedef struct telemetryConfig_s {
 void checkTelemetryState(void);
 void handleTelemetry(void);
 
+uint32_t getTelemetryProviderBaudRate(void);
 void useTelemetryConfig(telemetryConfig_t *telemetryConfig);
 
 #endif /* TELEMETRY_COMMON_H_ */
