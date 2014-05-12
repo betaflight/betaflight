@@ -1,4 +1,3 @@
-
 ## Serial port functions and scenarios
 
 ### Serial port scenarios
@@ -102,3 +101,24 @@ set cli_baudrate = 19200
 set gps_passthrough_baudrate = 19200
 save
 ```
+
+## FrSky telemetry
+
+FrSky telemetry signals are inverted.  To connect a cleanflight capable board to an FrSKy receiver you have some options.
+
+1. A hardware inverter - Built in to some flight controllers.
+2. Use software serial and enable frsky_inversion.
+3. Use a flight controller that has software configurable hardware inversion (e.g. STM32F30x).
+
+For 1, just connect your inverter to a usart or software serial port.
+For 2 and 3 use the cli command as follows:
+
+```
+set frsky_inversion = 1
+```
+
+## CLI command differences from baseflight
+
+gps_provider = gps_type
+serialrx_provider = serialrx_type
+
