@@ -12,6 +12,14 @@ This fork differs from baseflight in that it attempts to use modern software dev
 
 The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediately raise an issue so it can be fixed, or better yet submit a pull request.
 
+Documentation
+=============
+
+There is some documentation here: https://github.com/hydra/cleanflight/tree/master/docs 
+If what you need is not covered then refer to the baseflight documentation.
+If you still can't find what you need then stop by #multiwii on the Freenode IRC network - irc://irc.freenode.net/#multiwii
+
+
 Contributing
 ============
 
