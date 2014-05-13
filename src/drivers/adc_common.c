@@ -17,7 +17,7 @@ extern int16_t debug[4];
 uint16_t adcGetChannel(uint8_t channel)
 {
 #if 0
-    switch(adcChannelCount) {
+    switch (adcChannelCount) {
         case 3:
             debug[2] = adcValues[adcConfig[2].dmaIndex];
             /* no break */

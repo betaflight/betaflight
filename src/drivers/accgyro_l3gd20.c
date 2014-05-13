@@ -1,17 +1,17 @@
 /*
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -39,8 +39,6 @@ extern int16_t debug[4];
 #define OUT_TEMP_ADDR          0x26
 #define OUT_X_L_ADDR           0x28
 
-
-
 #define MODE_ACTIVE                   ((uint8_t)0x08)
 
 #define OUTPUT_DATARATE_1             ((uint8_t)0x00)
@@ -65,8 +63,6 @@ extern int16_t debug[4];
 
 #define BOOT                          ((uint8_t)0x80)
 
-
-
 static volatile uint16_t spi1ErrorCount = 0;
 static volatile uint16_t spi2ErrorCount = 0;
 static volatile uint16_t spi3ErrorCount = 0;
@@ -84,50 +80,46 @@ static volatile uint16_t spi3ErrorCount = 0;
 
 uint32_t spiTimeoutUserCallback(SPI_TypeDef *SPIx)
 {
-    if (SPIx == SPI1)
-    {
+    if (SPIx == SPI1) {
         spi1ErrorCount++;
         return spi1ErrorCount;
-    }
-    else if (SPIx == SPI2)
-    {
+    } else if (SPIx == SPI2) {
         spi2ErrorCount++;
         return spi2ErrorCount;
-    }
-    else
-    {    spi3ErrorCount++;
-         return spi3ErrorCount;
+    } else {
+        spi3ErrorCount++;
+        return spi3ErrorCount;
     }
 }
 
 static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
-    SPI_InitTypeDef  SPI_InitStructure;
+    SPI_InitTypeDef SPI_InitStructure;
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
     RCC_AHBPeriphClockCmd(SPI1_SCK_CLK | SPI1_MISO_CLK | SPI1_MOSI_CLK, ENABLE);
 
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE,  GPIO_AF_5);
+    GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_MISO_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_MOSI_PIN_SOURCE, GPIO_AF_5);
 
     // Init pins
-    GPIO_InitStructure.GPIO_Pin   = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
     GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
 
     RCC_AHBPeriphClockCmd(L3GD20_CS_GPIO_CLK, ENABLE);
 
-    GPIO_InitStructure.GPIO_Pin   = L3GD20_CS_PIN;
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_Pin = L3GD20_CS_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
     GPIO_Init(L3GD20_CS_GPIO, &GPIO_InitStructure);
 
@@ -135,15 +127,15 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 
     SPI_I2S_DeInit(SPI1);
 
-    SPI_InitStructure.SPI_Direction         = SPI_Direction_2Lines_FullDuplex;
-    SPI_InitStructure.SPI_Mode              = SPI_Mode_Master;
-    SPI_InitStructure.SPI_DataSize          = SPI_DataSize_8b;
-    SPI_InitStructure.SPI_CPOL              = SPI_CPOL_Low;
-    SPI_InitStructure.SPI_CPHA              = SPI_CPHA_1Edge;
-    SPI_InitStructure.SPI_NSS               = SPI_NSS_Soft;
+    SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+    SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+    SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+    SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+    SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
+    SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
     SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;  // 36/4 = 9 MHz SPI Clock
-    SPI_InitStructure.SPI_FirstBit          = SPI_FirstBit_MSB;
-    SPI_InitStructure.SPI_CRCPolynomial     = 7;
+    SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
+    SPI_InitStructure.SPI_CRCPolynomial = 7;
 
     SPI_Init(SPI1, &SPI_InitStructure);
 
@@ -152,22 +144,27 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     SPI_Cmd(SPI1, ENABLE);
 }
 
-
 static uint8_t spiTransfer(SPI_TypeDef *SPIx, uint8_t data)
 {
     uint16_t spiTimeout;
 
     spiTimeout = 0x1000;
-    while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_TXE) == RESET)
-      if ((spiTimeout--) == 0) return spiTimeoutUserCallback(SPIx);
+    while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_TXE) == RESET) {
+        if ((spiTimeout--) == 0) {
+            return spiTimeoutUserCallback(SPIx);
+        }
+    }
 
     SPI_SendData8(SPIx, data);
 
     spiTimeout = 0x1000;
-    while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET)
-      if ((spiTimeout--) == 0) return spiTimeoutUserCallback(SPIx);
+    while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET) {
+        if ((spiTimeout--) == 0) {
+            return spiTimeoutUserCallback(SPIx);
+        }
+    }
 
-    return((uint8_t)SPI_ReceiveData8(SPIx));
+    return ((uint8_t) SPI_ReceiveData8(SPIx));
 }
 
 void l3gd20GyroInit(void)
@@ -175,16 +172,16 @@ void l3gd20GyroInit(void)
 
     l3gd20SpiInit(L3GD20_SPI);
 
-	GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
+    GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-	spiTransfer(L3GD20_SPI, CTRL_REG5_ADDR);
-	spiTransfer(L3GD20_SPI, BOOT);
+    spiTransfer(L3GD20_SPI, CTRL_REG5_ADDR);
+    spiTransfer(L3GD20_SPI, BOOT);
 
-	GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
+    GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-	delayMicroseconds(100);
+    delayMicroseconds(100);
 
-	GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
+    GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
     spiTransfer(L3GD20_SPI, CTRL_REG1_ADDR);
 
@@ -210,7 +207,7 @@ static void l3gd20GyroRead(int16_t *gyroData)
     uint8_t buf[6];
 
     GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
-    spiTransfer(L3GD20_SPI, OUT_X_L_ADDR | READ_CMD |MULTIPLEBYTE_CMD);
+    spiTransfer(L3GD20_SPI, OUT_X_L_ADDR | READ_CMD | MULTIPLEBYTE_CMD);
 
     uint8_t index;
     for (index = 0; index < sizeof(buf); index++) {

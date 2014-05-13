@@ -1,4 +1,3 @@
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -16,8 +15,8 @@
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity); // from pwm_output.c
 
 typedef enum {
-	INPUT_MODE_PPM,
-	INPUT_MODE_PWM,
+    INPUT_MODE_PPM,
+    INPUT_MODE_PWM,
 } pwmInputMode_t;
 
 typedef struct {
@@ -35,7 +34,6 @@ typedef struct {
 static pwmInputPort_t pwmInputPorts[MAX_PWM_INPUT_PORTS];
 
 static uint16_t captures[MAX_PWM_INPUT_PORTS];
-
 
 static void ppmCallback(uint8_t port, captureCompare_t capture)
 {
@@ -61,8 +59,8 @@ static void ppmCallback(uint8_t port, captureCompare_t capture)
 
 static void pwmCallback(uint8_t port, captureCompare_t capture)
 {
-	pwmInputPort_t *pwmInputPort = &pwmInputPorts[port];
-	const timerHardware_t *timerHardware = pwmInputPort->timerHardware;
+    pwmInputPort_t *pwmInputPort = &pwmInputPorts[port];
+    const timerHardware_t *timerHardware = pwmInputPort->timerHardware;
 
     if (pwmInputPort->state == 0) {
         pwmInputPort->rise = capture;
@@ -95,7 +93,7 @@ static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, GPIO_Mode mode)
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
-    TIM_ICInitTypeDef  TIM_ICInitStructure;
+    TIM_ICInitTypeDef TIM_ICInitStructure;
 
     TIM_ICStructInit(&TIM_ICInitStructure);
     TIM_ICInitStructure.TIM_Channel = channel;

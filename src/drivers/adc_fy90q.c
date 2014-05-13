@@ -5,16 +5,14 @@
 
 #include "platform.h"
 
-#include "sensors_common.h" // FIXME dependency into the main code
-#include "accgyro_common.h"
-
+#include "sensors_common.h" // FIXME dependency into the main code#include "accgyro_common.h"
 #include "system_common.h"
 
 #include "adc_fy90q.h"
 
 //#include "boardalignment.h"
 
-volatile uint16_t adcData[ADC_CHANNELS] = { 0, };
+volatile uint16_t adcData[ADC_CHANNELS] = {0,};
 
 void adcCalibrateADC(ADC_TypeDef *ADCx, int n)
 {

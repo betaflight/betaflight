@@ -1,6 +1,5 @@
 #pragma once
 
-
 typedef enum {
     SERIAL_NOT_INVERTED = 0,
     SERIAL_INVERTED

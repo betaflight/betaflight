@@ -19,25 +19,12 @@
 #define DMP_MEM_START_ADDR 0x6E
 #define DMP_MEM_R_W 0x6F
 
-#define MPU_RA_XG_OFFS_TC       0x00    //[7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD
-#define MPU_RA_YG_OFFS_TC       0x01    //[7] PWR_MODE, [6:1] YG_OFFS_TC, [0] OTP_BNK_VLD
-#define MPU_RA_ZG_OFFS_TC       0x02    //[7] PWR_MODE, [6:1] ZG_OFFS_TC, [0] OTP_BNK_VLD
-#define MPU_RA_X_FINE_GAIN      0x03    //[7:0] X_FINE_GAIN
-#define MPU_RA_Y_FINE_GAIN      0x04    //[7:0] Y_FINE_GAIN
-#define MPU_RA_Z_FINE_GAIN      0x05    //[7:0] Z_FINE_GAIN
-#define MPU_RA_XA_OFFS_H        0x06    //[15:0] XA_OFFS
-#define MPU_RA_XA_OFFS_L_TC     0x07
-#define MPU_RA_YA_OFFS_H        0x08    //[15:0] YA_OFFS
-#define MPU_RA_YA_OFFS_L_TC     0x09
-#define MPU_RA_ZA_OFFS_H        0x0A    //[15:0] ZA_OFFS
-#define MPU_RA_ZA_OFFS_L_TC     0x0B
-#define MPU_RA_PRODUCT_ID       0x0C    // Product ID Register
-#define MPU_RA_XG_OFFS_USRH     0x13    //[15:0] XG_OFFS_USR
-#define MPU_RA_XG_OFFS_USRL     0x14
-#define MPU_RA_YG_OFFS_USRH     0x15    //[15:0] YG_OFFS_USR
-#define MPU_RA_YG_OFFS_USRL     0x16
-#define MPU_RA_ZG_OFFS_USRH     0x17    //[15:0] ZG_OFFS_USR
-#define MPU_RA_ZG_OFFS_USRL     0x18
+#define MPU_RA_XG_OFFS_TC       0x00    //[7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD#define MPU_RA_YG_OFFS_TC       0x01    //[7] PWR_MODE, [6:1] YG_OFFS_TC, [0] OTP_BNK_VLD#define MPU_RA_ZG_OFFS_TC       0x02    //[7] PWR_MODE, [6:1] ZG_OFFS_TC, [0] OTP_BNK_VLD#define MPU_RA_X_FINE_GAIN      0x03    //[7:0] X_FINE_GAIN#define MPU_RA_Y_FINE_GAIN      0x04    //[7:0] Y_FINE_GAIN#define MPU_RA_Z_FINE_GAIN      0x05    //[7:0] Z_FINE_GAIN#define MPU_RA_XA_OFFS_H        0x06    //[15:0] XA_OFFS#define MPU_RA_XA_OFFS_L_TC     0x07
+#define MPU_RA_YA_OFFS_H        0x08    //[15:0] YA_OFFS#define MPU_RA_YA_OFFS_L_TC     0x09
+#define MPU_RA_ZA_OFFS_H        0x0A    //[15:0] ZA_OFFS#define MPU_RA_ZA_OFFS_L_TC     0x0B
+#define MPU_RA_PRODUCT_ID       0x0C    // Product ID Register#define MPU_RA_XG_OFFS_USRH     0x13    //[15:0] XG_OFFS_USR#define MPU_RA_XG_OFFS_USRL     0x14
+#define MPU_RA_YG_OFFS_USRH     0x15    //[15:0] YG_OFFS_USR#define MPU_RA_YG_OFFS_USRL     0x16
+#define MPU_RA_ZG_OFFS_USRH     0x17    //[15:0] ZG_OFFS_USR#define MPU_RA_ZG_OFFS_USRL     0x18
 #define MPU_RA_SMPLRT_DIV       0x19
 #define MPU_RA_CONFIG           0x1A
 #define MPU_RA_GYRO_CONFIG      0x1B
@@ -108,8 +95,7 @@
 #define MPU_RA_FIFO_R_W         0x74
 #define MPU_RA_WHO_AM_I         0x75
 
-#define MPU6050_SMPLRT_DIV      0       // 8000Hz
-
+#define MPU6050_SMPLRT_DIV      0       // 8000Hz
 #define MPU6050_LPF_256HZ       0
 #define MPU6050_LPF_188HZ       1
 #define MPU6050_LPF_98HZ        2
@@ -137,7 +123,7 @@ static bool mpu6050Detect(void)
     bool ack;
     uint8_t sig;
 
-    delay(35);                  // datasheet page 13 says 30ms. other stuff could have been running meanwhile. but we'll be safe
+    delay(35);          // datasheet page 13 says 30ms. other stuff could have been running meanwhile. but we'll be safe
 
     ack = i2cRead(MPU6050_ADDRESS, MPU_RA_WHO_AM_I, 1, &sig);
     if (!ack)
@@ -193,7 +179,7 @@ bool mpu6050AccDetect(acc_t *acc)
 
     acc->init = mpu6050AccInit;
     acc->read = mpu6050AccRead;
-    acc->revisionCode = (mpuAccelTrim == MPU_6050_HALF_RESOLUTION  ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half of the naze boards are mpu6000ES.
+    acc->revisionCode = (mpuAccelTrim == MPU_6050_HALF_RESOLUTION ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half of the naze boards are mpu6000ES.
 
     return true;
 }
@@ -222,7 +208,7 @@ bool mpu6050GyroDetect(gyro_t *gyro, uint16_t lpf)
             mpuLowPassFilter = MPU6050_LPF_98HZ;
             break;
         default:
-        case 42:
+            case 42:
             mpuLowPassFilter = MPU6050_LPF_42HZ;
             break;
         case 20:
@@ -241,7 +227,7 @@ bool mpu6050GyroDetect(gyro_t *gyro, uint16_t lpf)
 
 static void mpu6050AccInit(void)
 {
-    switch(mpuAccelTrim) {
+    switch (mpuAccelTrim) {
         case MPU_6050_HALF_RESOLUTION:
             acc_1G = 256 * 8;
             break;
@@ -276,11 +262,12 @@ static void mpu6050GyroInit(void)
 
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(5);
-    i2cWrite(MPU6050_ADDRESS, MPU_RA_SMPLRT_DIV, 0x00);      //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
-    i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x03);      //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
-    i2cWrite(MPU6050_ADDRESS, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
-    i2cWrite(MPU6050_ADDRESS, MPU_RA_CONFIG, mpuLowPassFilter);  //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
-    i2cWrite(MPU6050_ADDRESS, MPU_RA_GYRO_CONFIG, 0x18);      //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_SMPLRT_DIV, 0x00); //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x03); //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_INT_PIN_CFG,
+            0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_CONFIG, mpuLowPassFilter); //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_GYRO_CONFIG, 0x18);   //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
 
     // ACC Init stuff. Moved into gyro init because the reset above would screw up accel config. Oops.
     // Accel scale 8g (4096 LSB/g)

@@ -58,7 +58,6 @@ extern int16_t debug[4];
 
 #define CONTINUOUS_CONVERSION 0x00
 
-
 uint8_t accelCalibrating = false;
 
 float accelOneG = 9.8065;
@@ -123,6 +122,4 @@ bool lsm303dlhcAccDetect(acc_t *acc)
     acc->read = lsm303dlhcAccRead;
     return true;
 }
-
-
 

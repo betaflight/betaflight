@@ -12,7 +12,6 @@
 #include "accgyro_common.h"
 #include "accgyro_l3g4200d.h"
 
-
 // L3G4200D, Standard address 0x68
 #define L3G4200D_ADDRESS         0x68
 #define L3G4200D_ID              0xD3
@@ -61,7 +60,7 @@ bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
     // default LPF is set to 32Hz
     switch (lpf) {
         default:
-        case 32:
+            case 32:
             mpuLowPassFilter = L3G4200D_DLPF_32HZ;
             break;
         case 54:

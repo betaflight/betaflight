@@ -56,9 +56,7 @@ typedef struct {
 #define E_SENSOR_NOT_DETECTED   (char) 0
 #define BMP085_PROM_START__ADDR 0xaa
 #define BMP085_PROM_DATA__LEN   22
-#define BMP085_T_MEASURE        0x2E                // temperature measurent
-#define BMP085_P_MEASURE        0x34                // pressure measurement
-#define BMP085_CTRL_MEAS_REG    0xF4
+#define BMP085_T_MEASURE        0x2E                // temperature measurent#define BMP085_P_MEASURE        0x34                // pressure measurement#define BMP085_CTRL_MEAS_REG    0xF4
 #define BMP085_ADC_OUT_MSB_REG  0xF6
 #define BMP085_ADC_OUT_LSB_REG  0xF7
 #define BMP085_CHIP_ID__POS     0
@@ -79,10 +77,7 @@ typedef struct {
 #define BMP085_GET_BITSLICE(regvar, bitname) (regvar & bitname##__MSK) >> bitname##__POS
 #define BMP085_SET_BITSLICE(regvar, bitname, val) (regvar & ~bitname##__MSK) | ((val<<bitname##__POS)&bitname##__MSK)
 
-#define SMD500_PARAM_MG      3038        //calibration parameter
-#define SMD500_PARAM_MH     -7357        //calibration parameter
-#define SMD500_PARAM_MI      3791        //calibration parameter
-
+#define SMD500_PARAM_MG      3038        //calibration parameter#define SMD500_PARAM_MH     -7357        //calibration parameter#define SMD500_PARAM_MI      3791        //calibration parameter
 static bmp085_t bmp085 = { { 0, } };
 static bool bmp085InitDone = false;
 static uint16_t bmp085_ut;  // static result of temperature measurement
@@ -140,14 +135,14 @@ bool bmp085Detect(baro_t *baro)
 
     delay(20); // datasheet says 10ms, we'll be careful and do 20. this is after ms5611 driver kills us, so longer the better.
 
-    i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data);  /* read Chip Id */
+    i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
     bmp085.oversampling_setting = 3;
 
-    if (bmp085.chip_id == BMP085_CHIP_ID) {            /* get bitslice */
+    if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
         i2cRead(BMP085_I2C_ADDR, BMP085_VERSION_REG, 1, &data); /* read Version reg */
-        bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION);        /* get ML Version */
-        bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION);        /* get AL Version */
+        bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
+        bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
         bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
         bmp085InitDone = true;
         baro->ut_delay = 6000;
@@ -170,8 +165,8 @@ static int32_t bmp085_get_temperature(uint32_t ut)
     int32_t temperature;
     int32_t x1, x2;
 
-    x1 = (((int32_t)ut - (int32_t)bmp085.cal_param.ac6) * (int32_t)bmp085.cal_param.ac5) >> 15;
-    x2 = ((int32_t)bmp085.cal_param.mc << 11) / (x1 + bmp085.cal_param.md);
+    x1 = (((int32_t) ut - (int32_t) bmp085.cal_param.ac6) * (int32_t) bmp085.cal_param.ac5) >> 15;
+    x2 = ((int32_t) bmp085.cal_param.mc << 11) / (x1 + bmp085.cal_param.md);
     bmp085.param_b5 = x1 + x2;
     temperature = ((bmp085.param_b5 * 10 + 8) >> 4);  // temperature in 0.01°C (make same as MS5611)
 
@@ -194,7 +189,7 @@ static int32_t bmp085_get_pressure(uint32_t up)
 
     x3 = x1 + x2;
 
-    b3 = (((((int32_t)bmp085.cal_param.ac1) * 4 + x3) << bmp085.oversampling_setting) + 2) >> 2;
+    b3 = (((((int32_t) bmp085.cal_param.ac1) * 4 + x3) << bmp085.oversampling_setting) + 2) >> 2;
 
     // *****calculate B4************
     x1 = (bmp085.cal_param.ac3 * b6) >> 13;
@@ -246,9 +241,9 @@ static void bmp085_start_up(void)
 }
 
 /** read out up for pressure conversion
-  depending on the oversampling ratio setting up can be 16 to 19 bit
-   \return up parameter that represents the uncompensated pressure value
-*/
+ depending on the oversampling ratio setting up can be 16 to 19 bit
+ \return up parameter that represents the uncompensated pressure value
+ */
 static void bmp085_get_up(void)
 {
     uint8_t data[3];
@@ -258,7 +253,8 @@ static void bmp085_get_up(void)
         convOverrun++;
 
     i2cRead(BMP085_I2C_ADDR, BMP085_ADC_OUT_MSB_REG, 3, data);
-    bmp085_up = (((uint32_t)data[0] << 16) | ((uint32_t)data[1] << 8) | (uint32_t)data[2]) >> (8 - bmp085.oversampling_setting);
+    bmp085_up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2])
+            >> (8 - bmp085.oversampling_setting);
 }
 
 static void bmp085_calculate(int32_t *pressure, int32_t *temperature)
