@@ -111,6 +111,7 @@ FrSky telemetry signals are inverted.  To connect a cleanflight capable board to
 3. Use a flight controller that has software configurable hardware inversion (e.g. STM32F30x).
 
 For 1, just connect your inverter to a usart or software serial port.
+
 For 2 and 3 use the cli command as follows:
 
 ```
@@ -119,6 +120,8 @@ set frsky_inversion = 1
 
 ## CLI command differences from baseflight
 
+```
 gps_provider = gps_type
 serialrx_provider = serialrx_type
+```
 
