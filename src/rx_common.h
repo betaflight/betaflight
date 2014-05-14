@@ -18,8 +18,15 @@ typedef enum {
 
 #define SERIALRX_PROVIDER_COUNT (SERIALRX_PROVIDER_MAX + 1)
 
-#define MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT 8
+#define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT 12
+#define MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT 8
 #define MAX_SUPPORTED_RC_CHANNEL_COUNT (18)
+
+#if MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT > MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT
+#define MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT
+#else
+#define MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT
+#endif
 
 extern const char rcChannelLetters[];
 
@@ -31,7 +38,10 @@ typedef struct rxConfig_s {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+    uint8_t rssi_channel;
 } rxConfig_t;
+
+#define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
 typedef struct rxRuntimeConfig_s {
     uint8_t channelCount;                  // number of rc channels as reported by current input driver

@@ -103,7 +103,7 @@ void annexCode(void)
 
     for (axis = 0; axis < 3; axis++) {
         tmp = min(abs(rcData[axis] - masterConfig.rxConfig.midrc), 500);
-        if (axis != 2) {        // ROLL & PITCH
+        if (axis == ROLL || axis == PITCH) {
             if (currentProfile.deadband) {
                 if (tmp > currentProfile.deadband) {
                     tmp -= currentProfile.deadband;
@@ -116,7 +116,8 @@ void annexCode(void)
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
             prop1 = 100 - (uint16_t)currentProfile.controlRateConfig.rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
-        } else {                // YAW
+        }
+        if (axis == YAW) {
             if (currentProfile.yaw_deadband) {
                 if (tmp > currentProfile.yaw_deadband) {
                     tmp -= currentProfile.yaw_deadband;
@@ -127,6 +128,7 @@ void annexCode(void)
             rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
             prop1 = 100 - (uint16_t)currentProfile.controlRateConfig.yawRate * abs(tmp) / 500;
         }
+        // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
         dynP8[axis] = (uint16_t)currentProfile.pidProfile.P8[axis] * prop1 / 100;
         dynI8[axis] = (uint16_t)currentProfile.pidProfile.I8[axis] * prop1 / 100;
         dynD8[axis] = (uint16_t)currentProfile.pidProfile.D8[axis] * prop1 / 100;
@@ -262,9 +264,8 @@ void loop(void)
         }
 
         // Read value of AUX channel as rssi
-        // 0 is disable, 1-4 is AUX{1..4}
-        if (masterConfig.rssi_aux_channel > 0) {
-            const int16_t rssiChannelData = rcData[AUX1 + masterConfig.rssi_aux_channel - 1];
+        if (masterConfig.rxConfig.rssi_channel > 0) {
+            const int16_t rssiChannelData = rcData[masterConfig.rxConfig.rssi_channel - 1];
             // Range of rssiChannelData is [1000;2000]. rssi should be in [0;1023];
             rssi = (uint16_t)((constrain(rssiChannelData - 1000, 0, 1000) / 1000.0f) * 1023.0f);
         }

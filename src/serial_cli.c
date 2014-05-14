@@ -149,6 +149,7 @@ const clivalue_t valueTable[] = {
     { "midrc", VAR_UINT16, &masterConfig.rxConfig.midrc, 1200, 1700 },
     { "mincheck", VAR_UINT16, &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "maxcheck", VAR_UINT16, &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "rssi_channel", VAR_INT8, &masterConfig.rxConfig.rssi_channel, 0, MAX_SUPPORTED_RC_CHANNEL_COUNT },
 
     { "minthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "maxthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
@@ -234,9 +235,6 @@ const clivalue_t valueTable[] = {
     { "failsafe_off_delay", VAR_UINT8, &currentProfile.failsafeConfig.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },
     { "failsafe_detect_threshold", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_detect_threshold, 100, PWM_RANGE_MAX },
-
-    { "rssi_aux_channel", VAR_INT8, &masterConfig.rssi_aux_channel, 0, 4 },
-
 
     { "gimbal_flags", VAR_UINT8, &currentProfile.gimbalConfig.gimbal_flags, 0, 255},
 

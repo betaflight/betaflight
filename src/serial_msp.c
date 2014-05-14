@@ -330,6 +330,7 @@ static void evaluateCommand(void)
 
     switch (cmdMSP) {
     case MSP_SET_RAW_RC:
+        // FIXME need support for more than 8 channels
         for (i = 0; i < 8; i++)
             rcData[i] = read16();
         headSerialReply(0);
@@ -505,8 +506,8 @@ static void evaluateCommand(void)
         s_struct((uint8_t *)motor, 16);
         break;
     case MSP_RC:
-        headSerialReply(16);
-        for (i = 0; i < 8; i++)
+        headSerialReply(2 * rxRuntimeConfig.channelCount);
+        for (i = 0; i < rxRuntimeConfig.channelCount; i++)
             serialize16(rcData[i]);
         break;
     case MSP_RAW_GPS:

@@ -13,7 +13,7 @@
 #include "rx_common.h"
 #include "rx_spektrum.h"
 
-// driver for spektrum satellite receiver / sbus using UART2 (freeing up more motor outputs for stuff)
+// driver for spektrum satellite receiver / sbus
 
 #define SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT 12
 #define SPEKTRUM_2048_CHANNEL_COUNT 12

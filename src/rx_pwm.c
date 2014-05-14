@@ -22,6 +22,12 @@ void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     // configure PWM/CPPM read function and max number of channels. serial rx below will override both of these, if enabled
     *callback = pwmReadRawRC;
-    rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PPM_AND_PWM_CHANNEL_COUNT;
+
+    if (feature(FEATURE_RX_PARALLEL_PWM)) {
+        rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT;
+    }
+    if (feature(FEATURE_RX_PPM)) {
+        rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT;
+    }
 }
 

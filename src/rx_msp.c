@@ -35,6 +35,7 @@ bool rxMspFrameComplete(void)
 
 bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
+    rxRuntimeConfig->channelCount = 8; // See MSP_SET_RAW_RC
     if (callback)
         *callback = rxMspReadRawRC;
 

@@ -48,7 +48,7 @@ typedef struct master_t {
     airplaneConfig_t airplaneConfig;
     int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
 
-    uint8_t rssi_aux_channel;               // Read rssi from channel. 1+ = AUX1+, 0 to disable.
+    uint8_t rssi_channel;               // Read rssi from channel. 0 to disable, 1 = channel 1, etc.
 
     // gps-related stuff
     gpsProvider_e gps_provider;

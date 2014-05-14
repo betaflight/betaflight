@@ -197,7 +197,7 @@ int16_t determineServoMiddleOrForwardFromChannel(int nr)
 {
     uint8_t channelToForwardFrom = servoConf[nr].forwardFromChannel;
 
-    if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom << MAX_SUPPORTED_RC_CHANNEL_COUNT) {
+    if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom < rxRuntimeConfig.channelCount) {
         return rcData[channelToForwardFrom];
     }
 

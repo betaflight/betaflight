@@ -15,9 +15,11 @@
 
 // driver for SUMD receiver using UART2
 
+// FIXME test support for more than 8 channels, should probably work up to 12 channels
+
 #define SUMD_SYNCBYTE 0xA8
 #define SUMD_MAX_CHANNEL 8
-#define SUMD_BUFFSIZE (SUMD_MAX_CHANNEL * 2 + 5) // 6 channels + 5 -> 17 bytes for 6 channels
+#define SUMD_BUFFSIZE (SUMD_MAX_CHANNEL * 2 + 5) // 6 channels + 5 = 17 bytes for 6 channels
 
 #define SUMD_BAUDRATE 115200
 

@@ -13,9 +13,7 @@
 #include "rx_common.h"
 #include "rx_sbus.h"
 
-// driver for SBUS receiver using UART2
-
-#define SBUS_MAX_CHANNEL 8
+#define SBUS_MAX_CHANNEL 12
 #define SBUS_FRAME_SIZE 25
 #define SBUS_SYNCBYTE 0x0F
 #define SBUS_OFFSET 988
@@ -118,7 +116,10 @@ bool sbusFrameComplete(void)
     sbusChannelData[5] = sbus.msg.chan5;
     sbusChannelData[6] = sbus.msg.chan6;
     sbusChannelData[7] = sbus.msg.chan7;
-    // need more channels? No problem. Add them.
+    sbusChannelData[8] = sbus.msg.chan8;
+    sbusChannelData[9] = sbus.msg.chan9;
+    sbusChannelData[10] = sbus.msg.chan10;
+    sbusChannelData[11] = sbus.msg.chan11;
     return true;
 }
 

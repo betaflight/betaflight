@@ -54,7 +54,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 66;
+static const uint8_t EEPROM_CONF_VERSION = 67;
 
 static void resetAccelerometerTrims(int16_flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -198,6 +198,8 @@ static void resetConf(void)
     masterConfig.rxConfig.midrc = 1500;
     masterConfig.rxConfig.mincheck = 1100;
     masterConfig.rxConfig.maxcheck = 1900;
+    masterConfig.rxConfig.rssi_channel = 0;
+
     masterConfig.retarded_arm = 0;              // disable arm/disarm on roll left/right
     masterConfig.airplaneConfig.flaps_speed = 0;
     masterConfig.fixedwing_althold_dir = 1;
@@ -215,7 +217,6 @@ static void resetConf(void)
 
     masterConfig.looptime = 3500;
     masterConfig.emf_avoidance = 0;
-    masterConfig.rssi_aux_channel = 0;
 
     currentProfile.pidController = 0;
     resetPidProfile(&currentProfile.pidProfile);

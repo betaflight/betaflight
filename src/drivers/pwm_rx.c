@@ -12,6 +12,16 @@
 
 #include "pwm_rx.h"
 
+
+#define PPM_CAPTURE_COUNT 12
+#define PWM_INPUT_PORT_COUNT 8
+
+#if PPM_CAPTURE_COUNT > MAX_PWM_INPUT_PORTS
+#define PWM_PORTS_OR_PPM_CAPTURE_COUNT PPM_CAPTURE_COUNT
+#else
+#define PWM_PORTS_OR_PPM_CAPTURE_COUNT PWM_INPUT_PORT_COUNT
+#endif
+
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity); // from pwm_output.c
 
 typedef enum {
@@ -31,9 +41,9 @@ typedef struct {
     const timerHardware_t *timerHardware;
 } pwmInputPort_t;
 
-static pwmInputPort_t pwmInputPorts[MAX_PWM_INPUT_PORTS];
+static pwmInputPort_t pwmInputPorts[PWM_INPUT_PORT_COUNT];
 
-static uint16_t captures[MAX_PWM_INPUT_PORTS];
+static uint16_t captures[PWM_PORTS_OR_PPM_CAPTURE_COUNT];
 
 static void ppmCallback(uint8_t port, captureCompare_t capture)
 {
@@ -50,7 +60,7 @@ static void ppmCallback(uint8_t port, captureCompare_t capture)
     if (diff > 2700) { // Per http://www.rcgroups.com/forums/showpost.php?p=21996147&postcount=3960 "So, if you use 2.5ms or higher as being the reset for the PPM stream start, you will be fine. I use 2.7ms just to be safe."
         chan = 0;
     } else {
-        if (chan < MAX_PWM_INPUT_PORTS) {
+        if (chan < PPM_CAPTURE_COUNT) {
             captures[chan] = diff;
         }
         chan++;
