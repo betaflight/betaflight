@@ -22,6 +22,7 @@ for (var i = 0; i < 10; i++) {
 }
 
 var RC = {
+	channelCount: 0,
     roll:     0,
     pitch:    0,
     yaw:      0,
@@ -29,7 +30,11 @@ var RC = {
     AUX1:     0,
     AUX2:     0,
     AUX3:     0,
-    AUX4:     0
+    AUX4:     0,
+    AUX5:     0,
+    AUX6:     0,
+    AUX7:     0,
+    AUX8:     0
 };
 
 var RC_tuning = {

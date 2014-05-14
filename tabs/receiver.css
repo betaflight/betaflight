@@ -24,14 +24,14 @@
     .tab-receiver .bars .meter {
         width: 70%;
     }
-        .tab-receiver .bars .meter meter {
-            margin-top: 4px;
+    .tab-receiver .bars .meter meter {
+        margin-top: 4px;
 
-            width: 100%;
-            height: 14px;
+        width: 100%;
+        height: 14px;
 
-            border: 1px solid silver;
-        }
+        border: 1px solid silver;
+    }
     .tab-receiver .bars .value {
         width: 50px;
         margin-left: 10px;
@@ -97,6 +97,18 @@
     }
     .tab-receiver .line:nth-child(8) {
         stroke: #147A66;
+    }
+    .tab-receiver .line:nth-child(9) {
+        stroke: #407a9e;
+    }
+    .tab-receiver .line:nth-child(10) {
+        stroke: #7a1445;
+    }
+    .tab-receiver .line:nth-child(11) {
+        stroke: #267acf;
+    }
+    .tab-receiver .line:nth-child(12) {
+        stroke: #7a6614;
     }
     .tab-receiver .throttle_curve {
         margin: 0 10px 10px 0;
