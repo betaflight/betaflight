@@ -153,8 +153,8 @@ function tab_initialize_receiver() {
             });
 
             // setup plot
-            var RX_plot_data = new Array(8);
-            for (var i = 0; i < 8; i++) {
+            var RX_plot_data = new Array(RC.active_channels);
+            for (var i = 0; i < RX_plot_data.length; i++) {
                 RX_plot_data[i] = [];
             }
 
@@ -173,50 +173,22 @@ function tab_initialize_receiver() {
             }
 
             function update_ui() {
-                meter_array[0].val(RC.throttle);
-                meter_values_array[0].text('[ ' + RC.throttle + ' ]');
-
-                meter_array[1].val(RC.pitch);
-                meter_values_array[1].text('[ ' + RC.pitch + ' ]');
-
-                meter_array[2].val(RC.roll);
-                meter_values_array[2].text('[ ' + RC.roll + ' ]');
-
-                meter_array[3].val(RC.yaw);
-                meter_values_array[3].text('[ ' + RC.yaw + ' ]');
-
-                meter_array[4].val(RC.AUX1);
-                meter_values_array[4].text('[ ' + RC.AUX1 + ' ]');
-
-                meter_array[5].val(RC.AUX2);
-                meter_values_array[5].text('[ ' + RC.AUX2 + ' ]');
-
-                meter_array[6].val(RC.AUX3);
-                meter_values_array[6].text('[ ' + RC.AUX3 + ' ]');
-
-                meter_array[7].val(RC.AUX4);
-                meter_values_array[7].text('[ ' + RC.AUX4 + ' ]');
+                // update bars with latest data
+                for (var i = 0; i < RC.active_channels; i++) {
+                    meter_array[i].val(RC.channels[i]);
+                    meter_values_array[i].text('[ ' + RC.channels[i] + ' ]');
+                }
 
                 // push latest data to the main array
-                RX_plot_data[0].push([samples, RC.throttle]);
-                RX_plot_data[1].push([samples, RC.pitch]);
-                RX_plot_data[2].push([samples, RC.roll]);
-                RX_plot_data[3].push([samples, RC.yaw]);
-                RX_plot_data[4].push([samples, RC.AUX1]);
-                RX_plot_data[5].push([samples, RC.AUX2]);
-                RX_plot_data[6].push([samples, RC.AUX3]);
-                RX_plot_data[7].push([samples, RC.AUX4]);
+                for (var i = 0; i < RC.active_channels; i++) {
+                    RX_plot_data[i].push([samples, RC.channels[i]]);
+                }
 
                 // Remove old data from array
                 while (RX_plot_data[0].length > 300) {
-                    RX_plot_data[0].shift();
-                    RX_plot_data[1].shift();
-                    RX_plot_data[2].shift();
-                    RX_plot_data[3].shift();
-                    RX_plot_data[4].shift();
-                    RX_plot_data[5].shift();
-                    RX_plot_data[6].shift();
-                    RX_plot_data[7].shift();
+                    for (var i = 0; i < RX_plot_data.length; i++) {
+                        RX_plot_data[i].shift();
+                    }
                 }
 
                 // update required parts of the plot

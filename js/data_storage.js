@@ -21,15 +21,11 @@ for (var i = 0; i < 10; i++) {
     PIDs[i] = new Array(3);
 }
 
+// defaults
+// roll, pitch, yaw, throttle, aux 1, ... aux n
 var RC = {
-    roll:     0,
-    pitch:    0,
-    yaw:      0,
-    throttle: 0,
-    AUX1:     0,
-    AUX2:     0,
-    AUX3:     0,
-    AUX4:     0
+    active_channels: 0,
+    channels: new Array(32)
 };
 
 var RC_tuning = {

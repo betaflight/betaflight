@@ -209,15 +209,11 @@ MSP.process_data = function(code, message_buffer, message_length) {
             }
             break;
         case MSP_codes.MSP_RC:
-            RC.roll = data.getUint16(0, 1);
-            RC.pitch = data.getUint16(2, 1);
-            RC.yaw = data.getUint16(4, 1);
-            RC.throttle = data.getUint16(6, 1);
+            RC.active_channels = message_length / 2;
 
-            RC.AUX1 = data.getUint16(8, 1);
-            RC.AUX2 = data.getUint16(10, 1);
-            RC.AUX3 = data.getUint16(12, 1);
-            RC.AUX4 = data.getUint16(14, 1);
+            for (var i = 0; i < RC.active_channels; i++) {
+                RC.channels[i] = data.getUint16((i * 2), 1);
+            }
             break;
         case MSP_codes.MSP_RAW_GPS:
             GPS_DATA.fix = data.getUint8(0);
