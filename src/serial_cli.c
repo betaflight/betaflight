@@ -235,7 +235,7 @@ const clivalue_t valueTable[] = {
     { "failsafe_off_delay", VAR_UINT8, &currentProfile.failsafeConfig.failsafe_off_delay, 0, 200 },
     { "failsafe_throttle", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },
     { "failsafe_min_usec", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_min_usec, 100, PWM_RANGE_MAX },
-    { "failsafe_max_usec", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_max_usec, 100, PWM_RANGE_MAX },
+    { "failsafe_max_usec", VAR_UINT16, &currentProfile.failsafeConfig.failsafe_max_usec, 100, PWM_RANGE_MAX + (PWM_RANGE_MAX - PWM_RANGE_MIN) },
 
     { "gimbal_flags", VAR_UINT8, &currentProfile.gimbalConfig.gimbal_flags, 0, 255},
 
