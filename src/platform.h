@@ -1,8 +1,7 @@
 
 #pragma once
 
-#ifdef STM32F3DISCOVERY
-
+#ifdef STM32F303xC
 #include "stm32f30x_conf.h"
 #include "stm32f30x_rcc.h"
 #include "stm32f30x_gpio.h"
@@ -12,6 +11,27 @@
 #define U_ID_0 (*(uint32_t*)0x10000003)
 #define U_ID_1 (*(uint32_t*)0x10000000)
 #define U_ID_2 (*(uint32_t*)0x10000003)
+
+#endif
+
+#ifdef NAZE32PRO
+#define LED0_GPIO   GPIOB
+#define LED0_PIN    Pin_12
+#define BEEP_GPIO   GPIOB
+#define BEEP_PIN    Pin_10
+
+#define BUZZER
+#define LED0
+
+#define GYRO
+#define ACC
+#define MAG
+
+#define SENSORS_SET (SENSOR_ACC)
+
+#endif
+
+#ifdef STM32F3DISCOVERY
 
 #define LED0_GPIO   GPIOE
 #define LED0_PIN    Pin_8|Pin_12 // Blue LEDs - PE8/PE12
