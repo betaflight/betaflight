@@ -425,20 +425,26 @@ static void evaluateCommand(void)
         // the bits in order, instead of setting the enabled bits based on BOXINDEX. WHERE IS THE FUCKING LOGIC IN THIS, FUCKWADS.
         // Serialize the boxes in the order we delivered them, until multiwii retards fix their shit
         junk = 0;
-        tmp = f.ANGLE_MODE << BOXANGLE | f.HORIZON_MODE << BOXHORIZON |
-                    f.BARO_MODE << BOXBARO | f.MAG_MODE << BOXMAG | f.HEADFREE_MODE << BOXHEADFREE | rcOptions[BOXHEADADJ] << BOXHEADADJ |
-                    rcOptions[BOXCAMSTAB] << BOXCAMSTAB | rcOptions[BOXCAMTRIG] << BOXCAMTRIG |
-                    f.GPS_HOME_MODE << BOXGPSHOME | f.GPS_HOLD_MODE << BOXGPSHOLD |
-                    f.PASSTHRU_MODE << BOXPASSTHRU |
-                    rcOptions[BOXBEEPERON] << BOXBEEPERON |
-                    rcOptions[BOXLEDMAX] << BOXLEDMAX |
-                    rcOptions[BOXLLIGHTS] << BOXLLIGHTS |
-                    rcOptions[BOXVARIO] << BOXVARIO |
-                    rcOptions[BOXCALIB] << BOXCALIB |
-                    rcOptions[BOXGOV] << BOXGOV |
-                    rcOptions[BOXOSD] << BOXOSD |
-                    rcOptions[BOXTELEMETRY] << BOXTELEMETRY |
-                    f.ARMED << BOXARM;
+        tmp = f.ANGLE_MODE << BOXANGLE |
+            f.HORIZON_MODE << BOXHORIZON |
+            f.BARO_MODE << BOXBARO |
+            f.MAG_MODE << BOXMAG |
+            f.HEADFREE_MODE << BOXHEADFREE |
+            rcOptions[BOXHEADADJ] << BOXHEADADJ |
+            rcOptions[BOXCAMSTAB] << BOXCAMSTAB |
+            rcOptions[BOXCAMTRIG] << BOXCAMTRIG |
+            f.GPS_HOME_MODE << BOXGPSHOME |
+            f.GPS_HOLD_MODE << BOXGPSHOLD |
+            f.PASSTHRU_MODE << BOXPASSTHRU |
+            rcOptions[BOXBEEPERON] << BOXBEEPERON |
+            rcOptions[BOXLEDMAX] << BOXLEDMAX |
+            rcOptions[BOXLLIGHTS] << BOXLLIGHTS |
+            rcOptions[BOXVARIO] << BOXVARIO |
+            rcOptions[BOXCALIB] << BOXCALIB |
+            rcOptions[BOXGOV] << BOXGOV |
+            rcOptions[BOXOSD] << BOXOSD |
+            rcOptions[BOXTELEMETRY] << BOXTELEMETRY |
+            f.ARMED << BOXARM;
         for (i = 0; i < numberBoxItems; i++) {
             int flag = (tmp & (1 << availableBoxes[i]));
             if (flag)
