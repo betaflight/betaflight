@@ -156,14 +156,14 @@ function tab_initialize_receiver() {
             $('.tab-receiver .bars ul').hide();
             $('.tab-receiver .line').hide();
 
-            for (var channelIndex = 0; channelIndex < RC.channelCount; channelIndex++) {
+            for (var channelIndex = 0; channelIndex < RC.active_channels; channelIndex++) {
                 $('.tab-receiver .bars ul').eq(channelIndex).show();
                 $('.tab-receiver .line').eq(channelIndex).show();
             }
             
             // setup plot
-            var RX_plot_data = new Array(RC.channelCount);
-            for (var i = 0; i < RC.channelCount; i++) {
+            var RX_plot_data = new Array(RC.active_channels);
+            for (var i = 0; i < RX_plot_data.length; i++) {
                 RX_plot_data[i] = [];
             }
 
@@ -182,64 +182,21 @@ function tab_initialize_receiver() {
             }
 
             function update_ui() {
-                meter_array[0].val(RC.throttle);
-                meter_values_array[0].text('[ ' + RC.throttle + ' ]');
-
-                meter_array[1].val(RC.pitch);
-                meter_values_array[1].text('[ ' + RC.pitch + ' ]');
-
-                meter_array[2].val(RC.roll);
-                meter_values_array[2].text('[ ' + RC.roll + ' ]');
-
-                meter_array[3].val(RC.yaw);
-                meter_values_array[3].text('[ ' + RC.yaw + ' ]');
-
-                meter_array[4].val(RC.AUX1);
-                meter_values_array[4].text('[ ' + RC.AUX1 + ' ]');
-
-                meter_array[5].val(RC.AUX2);
-                meter_values_array[5].text('[ ' + RC.AUX2 + ' ]');
-
-                meter_array[6].val(RC.AUX3);
-                meter_values_array[6].text('[ ' + RC.AUX3 + ' ]');
-
-                meter_array[7].val(RC.AUX4);
-                meter_values_array[7].text('[ ' + RC.AUX4 + ' ]');
-
-                if (RC.channelCount >= 12) {
-                    meter_array[8].val(RC.AUX5);
-                    meter_values_array[8].text('[ ' + RC.AUX5 + ' ]');
-
-                    meter_array[9].val(RC.AUX6);
-                    meter_values_array[9].text('[ ' + RC.AUX6 + ' ]');
-
-                    meter_array[10].val(RC.AUX7);
-                    meter_values_array[10].text('[ ' + RC.AUX7 + ' ]');
-
-                    meter_array[11].val(RC.AUX8);
-                    meter_values_array[11].text('[ ' + RC.AUX8 + ' ]');                	
+                // update bars with latest data
+                for (var i = 0; i < RC.active_channels; i++) {
+                    meter_array[i].val(RC.channels[i]);
+                    meter_values_array[i].text('[ ' + RC.channels[i] + ' ]');
                 }
+
                 // push latest data to the main array
-                RX_plot_data[0].push([samples, RC.throttle]);
-                RX_plot_data[1].push([samples, RC.pitch]);
-                RX_plot_data[2].push([samples, RC.roll]);
-                RX_plot_data[3].push([samples, RC.yaw]);
-                RX_plot_data[4].push([samples, RC.AUX1]);
-                RX_plot_data[5].push([samples, RC.AUX2]);
-                RX_plot_data[6].push([samples, RC.AUX3]);
-                RX_plot_data[7].push([samples, RC.AUX4]);
-
-                if (RC.channelCount >= 12) {
-                    RX_plot_data[8].push([samples, RC.AUX5]);
-                    RX_plot_data[9].push([samples, RC.AUX6]);
-                    RX_plot_data[10].push([samples, RC.AUX7]);
-                    RX_plot_data[11].push([samples, RC.AUX8]);
+                for (var i = 0; i < RC.active_channels; i++) {
+                    RX_plot_data[i].push([samples, RC.channels[i]]);
                 }
-                
+
                 // Remove old data from array
                 while (RX_plot_data[0].length > 300) {
-                    for (var channelCount = 0; channelCount < RC.channelCount; channelCount++) {
-                        RX_plot_data[channelCount].shift();
+                    for (var i = 0; i < RX_plot_data.length; i++) {
+                        RX_plot_data[i].shift();
                     }
                 }
 

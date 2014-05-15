@@ -20,13 +20,13 @@ var PortUsage = {
             // update UI
             $('span.port_usage_down').text(chrome.i18n.getMessage('statusbar_usage_download', [port_usage_down]));
             $('span.port_usage_up').text(chrome.i18n.getMessage('statusbar_usage_upload', [port_usage_up]));
+        } else {
+            $('span.port_usage_down').text(chrome.i18n.getMessage('statusbar_usage_download', [0]));
+            $('span.port_usage_up').text(chrome.i18n.getMessage('statusbar_usage_upload', [0]));
         }
     },
     reset: function() {
         this.previous_received = 0;
         this.previous_sent = 0;
-
-        $('span.port_usage_down').text(chrome.i18n.getMessage('statusbar_usage_download', [0]));
-        $('span.port_usage_up').text(chrome.i18n.getMessage('statusbar_usage_upload', [0]));
     }
 };

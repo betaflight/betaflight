@@ -128,10 +128,10 @@ function tab_initialize_auxiliary_configuration() {
                 }
             }
 
-            box_highlight(RC.AUX1, 2);
-            box_highlight(RC.AUX2, 5);
-            box_highlight(RC.AUX3, 8);
-            box_highlight(RC.AUX4, 11);
+            box_highlight(RC.channels[4], 2);  // aux 1
+            box_highlight(RC.channels[5], 5);  // aux 2
+            box_highlight(RC.channels[6], 8);  // aux 3
+            box_highlight(RC.channels[7], 11); // aux 4
         }
 
         // enable data pulling
