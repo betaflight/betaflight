@@ -136,24 +136,63 @@ uint8_t calculateChannelRemapping(uint8_t *channelMap, uint8_t channelMapEntryCo
     return channelToRemap;
 }
 
-void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+static bool rcDataReceived = false;
+static uint32_t rxTime = 0;
+
+
+void updateRx(void)
 {
-    uint8_t chan;
+    rcDataReceived = false;
+
+    // calculate rc stuff from serial-based receivers (spek/sbus)
+    if (feature(FEATURE_RX_SERIAL)) {
+        rcDataReceived = isSerialRxFrameComplete(rxConfig);
+    }
+
+    if (feature(FEATURE_RX_MSP)) {
+        rcDataReceived = rxMspFrameComplete();
+    }
+
+    if (rcDataReceived) {
+        if (feature(FEATURE_FAILSAFE)) {
+            failsafe->vTable->reset();
+        }
+    }
+}
+
+bool shouldProcessRx(uint32_t currentTime)
+{
+    return rcDataReceived || ((int32_t)(currentTime - rxTime) >= 0); // data driven or 50Hz
+}
+
+static bool isRxDataDriven(void) {
+    return !(feature(FEATURE_RX_PARALLEL_PWM) || feature(FEATURE_RX_PPM));
+}
+
+static uint8_t rcSampleIndex = 0;
+
+uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
+{
     static int16_t rcSamples[MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT][PPM_AND_PWM_SAMPLE_COUNT];
     static int16_t rcDataMean[MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT];
-    static uint8_t rcSampleIndex = 0;
-    uint8_t currentSampleIndex = 0;
 
-    if (feature(FEATURE_FAILSAFE)) {
-        failsafe->vTable->incrementCounter();
-    }
+    uint8_t currentSampleIndex = rcSampleIndex % PPM_AND_PWM_SAMPLE_COUNT;
 
-    if (feature(FEATURE_RX_PARALLEL_PWM) || feature(FEATURE_RX_PPM)) {
-        rcSampleIndex++;
-        currentSampleIndex = rcSampleIndex % PPM_AND_PWM_SAMPLE_COUNT;
-    }
+    // update the recent samples and compute the average of them
+    rcSamples[chan][currentSampleIndex] = sample;
+    rcDataMean[chan] = 0;
 
-    for (chan = 0; chan < rxRuntimeConfig->channelCount; chan++) {
+    uint8_t sampleIndex;
+    for (sampleIndex = 0; sampleIndex < PPM_AND_PWM_SAMPLE_COUNT; sampleIndex++)
+        rcDataMean[chan] += rcSamples[chan][sampleIndex];
+
+    return rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
+}
+
+void processRxChannels(void)
+{
+    uint8_t chan;
+    for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
 
         if (!rcReadRawFunc) {
             rcData[chan] = rxConfig->midrc;
@@ -163,7 +202,7 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         uint8_t rawChannel = calculateChannelRemapping(rxConfig->rcmap, REMAPPABLE_CHANNEL_COUNT, chan);
 
         // sample the channel
-        uint16_t sample = rcReadRawFunc(rxRuntimeConfig, rawChannel);
+        uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
 
         if (feature(FEATURE_FAILSAFE)) {
             failsafe->vTable->checkPulse(rawChannel, sample);
@@ -173,20 +212,46 @@ void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         if (sample < PULSE_MIN || sample > PULSE_MAX)
             sample = rxConfig->midrc;
 
-        if (!(feature(FEATURE_RX_PARALLEL_PWM) || feature(FEATURE_RX_PPM))) {
+        if (isRxDataDriven()) {
             rcData[chan] = sample;
-            continue;
+        } else {
+            rcData[chan] = calculateNonDataDrivenChannel(chan, sample);
         }
+    }
+}
 
-        // update the recent samples and compute the average of them
-        rcSamples[chan][currentSampleIndex] = sample;
-        rcDataMean[chan] = 0;
+void processDataDrivenRx(void)
+{
+    if (!rcDataReceived) {
+        return;
+    }
 
-        uint8_t sampleIndex;
-        for (sampleIndex = 0; sampleIndex < PPM_AND_PWM_SAMPLE_COUNT; sampleIndex++)
-            rcDataMean[chan] += rcSamples[chan][sampleIndex];
+    failsafe->vTable->reset();
 
-        rcData[chan] = rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
+    processRxChannels();
+
+    rcDataReceived = false;
+}
+
+void processNonDataDrivenRx(void)
+{
+    rcSampleIndex++;
+
+    processRxChannels();
+}
+
+void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
+{
+    rxTime = currentTime + 20000;
+
+    if (feature(FEATURE_FAILSAFE)) {
+        failsafe->vTable->incrementCounter();
+    }
+
+    if (isRxDataDriven()) {
+        processDataDrivenRx();
+    } else {
+        processNonDataDrivenRx();
     }
 }
 

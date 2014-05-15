@@ -257,7 +257,8 @@ static void resetConf(void)
     currentProfile.failsafeConfig.failsafe_delay = 10;              // 1sec
     currentProfile.failsafeConfig.failsafe_off_delay = 200;         // 20sec
     currentProfile.failsafeConfig.failsafe_throttle = 1200;         // decent default which should always be below hover throttle for people.
-    currentProfile.failsafeConfig.failsafe_detect_threshold = 985;  // any of first 4 channels below this value will trigger failsafe
+    currentProfile.failsafeConfig.failsafe_min_usec = 985;          // any of first 4 channels below this value will trigger failsafe
+    currentProfile.failsafeConfig.failsafe_max_usec = 2115;         // any of first 4 channels above this value will trigger failsafe
 
     // servos
     for (i = 0; i < 8; i++) {

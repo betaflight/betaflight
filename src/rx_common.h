@@ -53,7 +53,9 @@ void useRxConfig(rxConfig_t *rxConfigToUse);
 
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 
-void computeRC(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+void updateRx(void);
+bool shouldProcessRx(uint32_t currentTime);
+void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 bool isSerialRxFrameComplete(rxConfig_t *rxConfig);

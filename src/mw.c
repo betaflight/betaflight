@@ -234,28 +234,17 @@ void loop(void)
     static uint8_t rcSticks;            // this hold sticks position for command combos
     uint8_t stTmp = 0;
     int i;
-    static uint32_t rcTime = 0;
 #ifdef BARO
     static int16_t initialThrottleHold;
 #endif
     static uint32_t loopTime;
     uint16_t auxState = 0;
     bool isThrottleLow = false;
-    bool rcReady = false;
 
-    // calculate rc stuff from serial-based receivers (spek/sbus)
-    if (feature(FEATURE_RX_SERIAL)) {
-        rcReady = isSerialRxFrameComplete(&masterConfig.rxConfig);
-    }
+    updateRx();
 
-    if (feature(FEATURE_RX_MSP)) {
-        rcReady = rxMspFrameComplete();
-    }
-
-    if (((int32_t)(currentTime - rcTime) >= 0) || rcReady) { // 50Hz or data driven
-        rcReady = false;
-        rcTime = currentTime + 20000;
-        computeRC(&masterConfig.rxConfig, &rxRuntimeConfig);
+    if (shouldProcessRx(currentTime)) {
+        calculateRxChannelsAndUpdateFailsafe(currentTime);
 
         // in 3D mode, we need to be able to disarm by switch at any time
         if (feature(FEATURE_3D)) {
