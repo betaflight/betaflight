@@ -409,6 +409,15 @@ void loop(void)
         }
 
         // Check AUX switches
+
+        // auxState is a bitmask, 3 bits per channel. aux1 is first.
+        //
+        // the three bits are as follows:
+        // bit 1 is SET when the stick is less than 1300
+        // bit 2 is SET when the stick is between 1300 and 1700
+        // bit 3 is SET when the stick is above 1700
+        // if the value is 1300 or 1700 NONE of the three bits are set.
+
         for (i = 0; i < 4; i++)
             auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) | (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) | (rcData[AUX1 + i] > 1700) << (3 * i + 2);
         for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
