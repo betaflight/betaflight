@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "build_config.h"
 
 #include "common/axis.h"
 #include "flight_common.h"
@@ -36,22 +37,25 @@
 #include "config_profile.h"
 #include "config_master.h"
 
+
 void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse,
         escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse,
         airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfig, gimbalConfig_t *gimbalConfigToUse);
 
+#define FLASH_TO_RESERVE_FOR_CONFIG 0x400
+
 #ifdef STM32F303xC
-#define FLASH_PAGE_COUNT 256
+#define FLASH_PAGE_COUNT 128
+#define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
 #endif
 
 #ifndef FLASH_PAGE_COUNT
 #define FLASH_PAGE_COUNT 128
+#define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
 #endif
 
-#define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)FLASH_PAGE_SIZE * (FLASH_PAGE_COUNT - 2))       // use the last 2 KB for storage
-master_t masterConfig;      // master config struct with data independent from profiles
+#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG)) // use the last flash pages for storagemaster_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
 static const uint8_t EEPROM_CONF_VERSION = 67;
@@ -433,8 +437,12 @@ void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex)
     memcpy(&masterConfig.profile[profileSlotIndex], &currentProfile, sizeof(profile_t));
 }
 
+
 void writeEEPROM(void)
 {
+    // Generate compile time error if the config does not fit in the reserved area of flash.
+    BUILD_BUG_ON(sizeof(master_t) > FLASH_TO_RESERVE_FOR_CONFIG);
+
     FLASH_Status status = 0;
     uint32_t wordOffset;
     int8_t attemptsRemaining = 3;
@@ -456,10 +464,19 @@ void writeEEPROM(void)
 #ifdef STM32F10X_MD
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 #endif
-        status = FLASH_ErasePage(FLASH_WRITE_ADDR);
-        for (wordOffset = 0; wordOffset < sizeof(master_t) && status == FLASH_COMPLETE; wordOffset += 4) {
+        for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
+            if (wordOffset % FLASH_PAGE_SIZE == 0) {
+                status = FLASH_ErasePage(FLASH_WRITE_ADDR + wordOffset);
+                if (status != FLASH_COMPLETE) {
+                    break;
+                }
+            }
+
             status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset,
                     *(uint32_t *) ((char *) &masterConfig + wordOffset));
+            if (status != FLASH_COMPLETE) {
+                break;
+            }
         }
         if (status == FLASH_COMPLETE) {
             break;
