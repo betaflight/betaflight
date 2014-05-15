@@ -222,6 +222,11 @@ void usartIrqHandler(uartPort_t *s)
             USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
         }
     }
+
+    if (ISR & USART_FLAG_ORE)
+    {
+        USART_ClearITPendingBit (s->USARTx, USART_IT_ORE);
+    }
 }
 
 void USART1_IRQHandler(void)
