@@ -18,7 +18,7 @@
 // FIXME test support for more than 8 channels, should probably work up to 12 channels
 
 #define SUMD_SYNCBYTE 0xA8
-#define SUMD_MAX_CHANNEL 8
+#define SUMD_MAX_CHANNEL 16
 #define SUMD_BUFFSIZE (SUMD_MAX_CHANNEL * 2 + 5) // 6 channels + 5 = 17 bytes for 6 channels
 
 #define SUMD_BAUDRATE 115200
@@ -50,7 +50,7 @@ bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
 }
 
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
-static uint8_t sumdSize;
+static uint8_t sumdChannels;
 
 // Receive ISR callback
 static void sumdDataReceive(uint16_t c)
@@ -71,31 +71,45 @@ static void sumdDataReceive(uint16_t c)
             sumdFrameDone = false; // lazy main loop didnt fetch the stuff
     }
     if (sumdIndex == 2)
-        sumdSize = (uint8_t)c;
+        sumdChannels = (uint8_t)c;
     if (sumdIndex < SUMD_BUFFSIZE)
         sumd[sumdIndex] = (uint8_t)c;
     sumdIndex++;
-    if (sumdIndex == sumdSize * 2 + 5) {
+    if (sumdIndex == sumdChannels * 2 + 5) {
         sumdIndex = 0;
         sumdFrameDone = true;
     }
 }
 
+#define SUMD_OFFSET_CHANNEL_1_HIGH 3
+#define SUMD_OFFSET_CHANNEL_1_LOW 4
+#define SUMD_BYTES_PER_CHANNEL 2
+
+
 bool sumdFrameComplete(void)
 {
-    uint8_t b;
+    uint8_t channelIndex;
 
-    if (sumdFrameDone) {
-        sumdFrameDone = false;
-        if (sumd[1] == 0x01) {
-            if (sumdSize > SUMD_MAX_CHANNEL)
-                sumdSize = SUMD_MAX_CHANNEL;
-            for (b = 0; b < sumdSize; b++)
-                sumdChannelData[b] = ((sumd[2 * b + 3] << 8) | sumd[2 * b + 4]);
-            return true;
-        }
+    if (!sumdFrameDone) {
+        return false;
     }
-    return false;
+
+    sumdFrameDone = false;
+
+    if (sumd[1] != 0x01) {
+        return false;
+    }
+
+    if (sumdChannels > SUMD_MAX_CHANNEL)
+        sumdChannels = SUMD_MAX_CHANNEL;
+
+    for (channelIndex = 0; channelIndex < sumdChannels; channelIndex++) {
+        sumdChannelData[channelIndex] = (
+            (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
+            sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]
+        );
+    }
+    return true;
 }
 
 static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
