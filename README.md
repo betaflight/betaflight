@@ -1,5 +1,6 @@
-Baseflight Configurator
-=======================
+Cleanflight Configurator
+========================
+
 Configurator based on chrome.serial API running on Google Chrome/Chromium core
 
 Keep in mind that this configurator is the most up-to-date configurator implementation for Baseflight flight software,
@@ -30,3 +31,7 @@ Linux users
 Developers
 ----------
 We accept clean and reasonable patches, always target the <strong>"development"</strong> branch for the pull requests
+
+Note
+----
+This is a fork of Baseflight Configurator to support Cleanflight instead of baseflight.
