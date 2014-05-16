@@ -40,11 +40,10 @@ function tab_initialize_sensors() {
         return sampleNumber + 1;
     }
 
-    function updateGraphHelperSize(selector, helpers) {
-        var target_e = $(selector);
-        var margin = {top: 20, right: 20, bottom: 10, left: 40};
-        helpers.width = target_e.width() - margin.left - margin.right;
-        helpers.height = target_e.height() - margin.top - margin.bottom;
+    var margin = {top: 20, right: 20, bottom: 10, left: 40};
+    function updateGraphHelperSize(helpers) {
+        helpers.width = helpers.targetElement.width() - margin.left - margin.right;
+        helpers.height = helpers.targetElement.height() - margin.top - margin.bottom;
 
         helpers.widthScale.range([0, helpers.width]);
         helpers.heightScale.range([helpers.height, 0]);
@@ -54,7 +53,7 @@ function tab_initialize_sensors() {
     }
 
     function initGraphHelpers(selector, sampleNumber, heightDomain) {
-        var helpers = {selector: selector, dynamicHeightDomain: !heightDomain};
+        var helpers = {selector: selector, targetElement: $(selector), dynamicHeightDomain: !heightDomain};
 
         helpers.widthScale = d3.scale.linear()
             .clamp(true)
@@ -67,7 +66,7 @@ function tab_initialize_sensors() {
         helpers.xGrid = d3.svg.axis();
         helpers.yGrid = d3.svg.axis();
 
-        updateGraphHelperSize(selector, helpers);
+        updateGraphHelperSize(helpers);
 
         helpers.xGrid
             .scale(helpers.widthScale)
@@ -352,7 +351,7 @@ function tab_initialize_sensors() {
 
             function update_imu_graphs() {
                 if (checkboxes[0]) {
-                    updateGraphHelperSize('#gyro', gyroHelpers);
+                    updateGraphHelperSize(gyroHelpers);
 
                     samples_gyro_i = addSampleToData(gyro_data, samples_gyro_i, SENSOR_DATA.gyroscope);
                     drawGraph(gyroHelpers, gyro_data, samples_gyro_i);
@@ -362,7 +361,7 @@ function tab_initialize_sensors() {
                 }
 
                 if (checkboxes[1]) {
-                    updateGraphHelperSize('#accel', accelHelpers);
+                    updateGraphHelperSize(accelHelpers);
 
                     samples_accel_i = addSampleToData(accel_data, samples_accel_i, SENSOR_DATA.accelerometer);
                     drawGraph(accelHelpers, accel_data, samples_accel_i);
@@ -372,7 +371,7 @@ function tab_initialize_sensors() {
                 }
 
                 if (checkboxes[2]) {
-                    updateGraphHelperSize('#mag', magHelpers);
+                    updateGraphHelperSize(magHelpers);
 
                     samples_mag_i = addSampleToData(mag_data, samples_mag_i, SENSOR_DATA.magnetometer);
                     drawGraph(magHelpers, mag_data, samples_mag_i);
@@ -383,7 +382,7 @@ function tab_initialize_sensors() {
             }
 
             function update_altitude_graph() {
-                updateGraphHelperSize('#baro', baroHelpers);
+                updateGraphHelperSize(baroHelpers);
 
                 samples_baro_i = addSampleToData(baro_data, samples_baro_i, [SENSOR_DATA.altitude]);
                 drawGraph(baroHelpers, baro_data, samples_baro_i);
@@ -392,7 +391,7 @@ function tab_initialize_sensors() {
 
             function update_debug_graphs() {
                 for (var i = 0; i < 4; i++) {
-                    updateGraphHelperSize(debugHelpers[i].selector, debugHelpers[i]);
+                    updateGraphHelperSize(debugHelpers[i]);
 
                     addSampleToData(debug_data[i], samples_debug_i, [SENSOR_DATA.debug[i]]);
                     drawGraph(debugHelpers[i], debug_data[i], samples_debug_i);

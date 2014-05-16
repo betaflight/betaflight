@@ -162,9 +162,9 @@ function tab_initialize_receiver() {
             var svg = d3.select("svg");
 
             var RX_plot_e = $('#RX_plot');
+            var margin = {top: 20, right: 20, bottom: 10, left: 40};
             var width, height, widthScale, heightScale;
             function update_receiver_plot_size() {
-                var margin = {top: 20, right: 20, bottom: 10, left: 40};
                 width = RX_plot_e.width() - margin.left - margin.right;
                 height = RX_plot_e.height() - margin.top - margin.bottom;
 
