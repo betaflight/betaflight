@@ -293,6 +293,9 @@
     "receiverRcExpo": {
         "message": "RC Expo"
     },
+    "receiverRefreshRateTitle": {
+        "message": "Graph refresh rate"
+    },
     "receiverButtonSave": {
         "message": "Save"
     },

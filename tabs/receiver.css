@@ -24,14 +24,14 @@
     .tab-receiver .bars .meter {
         width: 70%;
     }
-    .tab-receiver .bars .meter meter {
-        margin-top: 4px;
+        .tab-receiver .bars .meter meter {
+            margin-top: 4px;
 
-        width: 100%;
-        height: 14px;
+            width: 100%;
+            height: 14px;
 
-        border: 1px solid silver;
-    }
+            border: 1px solid silver;
+        }
     .tab-receiver .bars .value {
         width: 50px;
         margin-left: 10px;

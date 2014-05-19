@@ -31,6 +31,44 @@ function tab_initialize_receiver() {
             }
         });
 
+        // generate bars
+        var bar_names = [
+            'Roll',
+            'Pitch',
+            'Yaw',
+            'Throttle',
+            'AUX 1',
+            'AUX 2',
+            'AUX 3',
+            'AUX 4',
+            'AUX 5',
+            'AUX 6',
+            'AUX 7',
+            'AUX 8'
+        ];
+
+        var bar_container = $('.tab-receiver .bars');
+        for (var i = 0; i < RC.active_channels; i++) {
+            bar_container.append('\
+                <ul>\
+                    <li class="name">' + bar_names[i] + '</li>\
+                    <li class="meter"><meter min="800" max="2200"></meter></li>\
+                    <li class="value"></li>\
+                </ul>\
+                <div class="clear-both"></div>\
+            ');
+        }
+
+        var meter_array = [];
+        $('meter', bar_container).each(function() {
+            meter_array.push($(this));
+        });
+
+        var meter_values_array = [];
+        $('.value', bar_container).each(function() {
+            meter_values_array.push($(this));
+        });
+
         // UI Hooks
         // curves
         $('.tunings .throttle input').change(function() {
@@ -142,25 +180,6 @@ function tab_initialize_receiver() {
                 send_message(MSP_codes.MSP_RC, false, false, update_ui);
             }
 
-            var meter_array = [];
-            $('.tab-receiver meter').each(function() {
-                meter_array.push($(this));
-            });
-
-            var meter_values_array = [];
-            $('.tab-receiver .value').each(function() {
-                meter_values_array.push($(this));
-            });
-
-            // show only relevant bars and plots for channels
-            $('.tab-receiver .bars ul').hide();
-            $('.tab-receiver .line').hide();
-
-            for (var channelIndex = 0; channelIndex < RC.active_channels; channelIndex++) {
-                $('.tab-receiver .bars ul').eq(channelIndex).show();
-                $('.tab-receiver .line').eq(channelIndex).show();
-            }
-            
             // setup plot
             var RX_plot_data = new Array(RC.active_channels);
             for (var i = 0; i < RX_plot_data.length; i++) {
@@ -171,9 +190,9 @@ function tab_initialize_receiver() {
             var svg = d3.select("svg");
 
             var RX_plot_e = $('#RX_plot');
+            var margin = {top: 20, right: 20, bottom: 10, left: 40};
             var width, height, widthScale, heightScale;
             function update_receiver_plot_size() {
-                var margin = {top: 20, right: 20, bottom: 10, left: 40};
                 width = RX_plot_e.width() - margin.left - margin.right;
                 height = RX_plot_e.height() - margin.top - margin.bottom;
 
