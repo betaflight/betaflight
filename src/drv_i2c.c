@@ -129,12 +129,19 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 
     if (!(I2Cx->CR2 & I2C_IT_EVT)) {        //if we are restarting the driver
         if (!(I2Cx->CR1 & 0x0100)) {        // ensure sending a start
-            while (I2Cx->CR1 & 0x0200) { ; }               //wait for any stop to finish sending
+            while (I2Cx->CR1 & 0x0200 && --timeout > 0) { ; }               //wait for any stop to finish sending
+            if (timeout == 0) {
+                i2cErrorCount++;
+                // reinit peripheral + clock out garbage
+                i2cInit(I2Cx);
+                return false;
+            }
             I2C_GenerateSTART(I2Cx, ENABLE);        //send the start for the new job
         }
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);        //allow the interrupts to fire off again
     }
 
+    timeout = I2C_DEFAULT_TIMEOUT;
     while (busy && --timeout > 0);
     if (timeout == 0) {
         i2cErrorCount++;
