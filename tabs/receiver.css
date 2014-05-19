@@ -12,6 +12,42 @@
     .tab-receiver .bars ul {
         margin-bottom: 5px;
     }
+        .tab-receiver .bars ul:nth-of-type(1) {
+            color: #00A8F0;
+        }
+        .tab-receiver .bars ul:nth-of-type(2) {
+            color: #C0D800;
+        }
+        .tab-receiver .bars ul:nth-of-type(3) {
+            color: #f8921a;
+        }
+        .tab-receiver .bars ul:nth-of-type(4) {
+            color: #f02525;
+        }
+        .tab-receiver .bars ul:nth-of-type(5) {
+            color: #9440ED;
+        }
+        .tab-receiver .bars ul:nth-of-type(6) {
+            color: #45147a;
+        }
+        .tab-receiver .bars ul:nth-of-type(7) {
+            color: #cf7a26;
+        }
+        .tab-receiver .bars ul:nth-of-type(8) {
+            color: #147a66;
+        }
+        .tab-receiver .bars ul:nth-of-type(9) {
+            color: #0609a9;
+        }
+        .tab-receiver .bars ul:nth-of-type(10) {
+            color: #7a1445;
+        }
+        .tab-receiver .bars ul:nth-of-type(11) {
+            color: #267acf;
+        }
+        .tab-receiver .bars ul:nth-of-type(12) {
+            color: #7a6614;
+        }
     .tab-receiver .bars li {
         float: left;
 
@@ -133,10 +169,10 @@
             stroke: #C0D800;
         }
         .tab-receiver #RX_plot .line:nth-child(3) {
-            stroke: #CB4B4B;
+            stroke: #f8921a;
         }
         .tab-receiver #RX_plot .line:nth-child(4) {
-            stroke: #4DA74D;
+            stroke: #f02525;
         }
         .tab-receiver #RX_plot .line:nth-child(5) {
             stroke: #9440ED;
@@ -149,6 +185,18 @@
         }
         .tab-receiver #RX_plot .line:nth-child(8) {
             stroke: #147A66;
+        }
+        .tab-receiver #RX_plot .line:nth-child(9) {
+            stroke: #0609a9;
+        }
+        .tab-receiver #RX_plot .line:nth-child(10) {
+            stroke: #7a1445;
+        }
+        .tab-receiver #RX_plot .line:nth-child(11) {
+            stroke: #267acf;
+        }
+        .tab-receiver #RX_plot .line:nth-child(12) {
+            stroke: #7a6614;
         }
 
 /* SVG classes*/
