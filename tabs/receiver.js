@@ -32,26 +32,21 @@ function tab_initialize_receiver() {
         });
 
         // generate bars
-        var bar_names = [
-            'Roll',
-            'Pitch',
-            'Yaw',
-            'Throttle',
-            'AUX 1',
-            'AUX 2',
-            'AUX 3',
-            'AUX 4',
-            'AUX 5',
-            'AUX 6',
-            'AUX 7',
-            'AUX 8'
-        ];
-
+        var bar_names = ['Roll', 'Pitch', 'Yaw', 'Throttle'];
         var bar_container = $('.tab-receiver .bars');
+        var aux_index = 1;
+
         for (var i = 0; i < RC.active_channels; i++) {
+            var name;
+            if (i < bar_names.length) {
+                name = bar_names[i];
+            } else {
+                name = 'AUX ' + aux_index++;
+            }
+
             bar_container.append('\
                 <ul>\
-                    <li class="name">' + bar_names[i] + '</li>\
+                    <li class="name">' + name + '</li>\
                     <li class="meter"><meter min="800" max="2200"></meter></li>\
                     <li class="value"></li>\
                 </ul>\
