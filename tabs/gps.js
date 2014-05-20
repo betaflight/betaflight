@@ -21,8 +21,8 @@ function tab_initialize_gps () {
         }
 
         function update_ui() {
-            var lat = GPS_DATA.lat / 100000000;
-            var lon = GPS_DATA.lon / 100000000;
+            var lat = GPS_DATA.lat / 10000000;
+            var lon = GPS_DATA.lon / 10000000;
             var url = 'https://maps.google.com/?q=' + lat + ',' + lon;
 
             $('.GPS_info td.fix').html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
