@@ -98,10 +98,9 @@ void loadAndActivateConfig(void)
 void writeEEPROM(uint8_t b, uint8_t updateProfile)
 {
     FLASH_Status status;
-    uint32_t i;
+    int i, tries = 3;
     uint8_t chk = 0;
     const uint8_t *p;
-    int tries = 0;
 
     // prepare checksum/version constants
     mcfg.version = EEPROM_CONF_VERSION;
@@ -122,27 +121,20 @@ void writeEEPROM(uint8_t b, uint8_t updateProfile)
     mcfg.chk = chk;
 
     // write it
-retry:
     FLASH_Unlock();
-    FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
+    while (tries--) {
+        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 
-    if (FLASH_ErasePage(FLASH_WRITE_ADDR) == FLASH_COMPLETE) {
-        for (i = 0; i < sizeof(master_t); i += 4) {
+        status = FLASH_ErasePage(FLASH_WRITE_ADDR);
+        for (i = 0; i < sizeof(master_t) && status == FLASH_COMPLETE; i += 4)
             status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *)((char *)&mcfg + i));
-            if (status != FLASH_COMPLETE) {
-                FLASH_Lock();
-                tries++;
-                if (tries < 3)
-                    goto retry;
-                else
-                    break;
-            }
-        }
+        if (status == FLASH_COMPLETE)
+            break;
     }
     FLASH_Lock();
 
     // Flash write failed - just die now
-    if (tries == 3 || !validEEPROM()) {
+    if (status != FLASH_COMPLETE || !validEEPROM()) {
         failureMode(10);
     }
 
