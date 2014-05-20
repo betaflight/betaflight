@@ -19,7 +19,7 @@
 #define HOTTV4_GPS_SENSOR_TEXT_ID             0xA0 // GPS Module ID
 
 #define HOTTV4_RXTX 4
-#define HOTTV4_TX_DELAY 1000
+#define HOTTV4_TX_DELAY 3000
 
 #define HOTTV4_BUTTON_DEC    0xEB
 #define HOTTV4_BUTTON_INC    0xED
@@ -85,7 +85,7 @@ typedef enum {
  * 5ms delay
  */
 
-typedef struct HoTTV4GPSModule_t {
+typedef struct HoTTV4GPSModule_s {
     uint8_t startByte;               // Byte  1: 0x7C = Start byte data
     uint8_t sensorID;                // Byte  2: 0x8A = GPS Sensor
     uint8_t alarmTone;               // Byte  3: 0…= warning beeps
@@ -152,11 +152,15 @@ typedef struct HoTTV4GPSModule_t {
  * 5ms Idle Line!
 */
 
-typedef struct HoTTV4ElectricAirModule_t {
+typedef struct HoTTV4ElectricAirModule_s {
     uint8_t startByte;
+
     uint8_t sensorID;
+
     uint8_t alarmTone; // Alarm */
+
     uint8_t sensorTextID;
+
     uint8_t alarmInverse1;
     uint8_t alarmInverse2;
 
@@ -167,6 +171,7 @@ typedef struct HoTTV4ElectricAirModule_t {
     uint8_t cell5L;
     uint8_t cell6L;
     uint8_t cell7L;
+
     uint8_t cell1H;              // High Voltage Cell 1-7 in 2mV steps */
     uint8_t cell2H;
     uint8_t cell3H;
@@ -177,6 +182,7 @@ typedef struct HoTTV4ElectricAirModule_t {
 
     uint8_t battery1Low;         // Battetry 1 LSB/MSB in 100mv steps; 50 == 5V */
     uint8_t battery1High;        // Battetry 1 LSB/MSB in 100mv steps; 50 == 5V */
+
     uint8_t battery2Low;         // Battetry 2 LSB/MSB in 100mv steps; 50 == 5V */
     uint8_t battery2High;        // Battetry 2 LSB/MSB in 100mv steps; 50 == 5V */
 
@@ -184,19 +190,25 @@ typedef struct HoTTV4ElectricAirModule_t {
     uint8_t temp2;               // Temp 2; Offset of 20. 20 == 0C */
 
     uint16_t height;             // Height. Offset -500. 500 == 0 */
+
     uint16_t current;            // 1 = 0.1A */
+
     uint8_t driveVoltageLow;
     uint8_t driveVoltageHigh;
+
     uint16_t capacity;           // mAh */
+
     uint16_t m2s;                // m2s; 0x48 == 0 */
+
     uint8_t m3s;                 // m3s; 0x78 == 0 */
 
     uint16_t rpm;                // RPM. 10er steps; 300 == 3000rpm */
+
     uint8_t minutes;
     uint8_t seconds;
-    uint8_t speed;
 
-    uint8_t version;
+    uint16_t speed;
+
     uint8_t endByte;
 } HoTTV4ElectricAirModule_t;
 

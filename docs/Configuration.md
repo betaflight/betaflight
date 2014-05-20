@@ -102,6 +102,19 @@ set gps_passthrough_baudrate = 19200
 save
 ```
 
+e) HoTT Telemetry via UART2
+
+- MSP,CLI,GPS PASSTHROUGH on UART1
+- HoTT telemetry on UART2
+
+```
+feature -RX_PARALLEL_PWM
+feature RX_PPM
+feature TELEMETRY
+set serial_port_2_scenario = 4
+set telemetry_provider = 1
+```
+
 ## FrSky telemetry
 
 FrSky telemetry signals are inverted.  To connect a cleanflight capable board to an FrSKy receiver you have some options.

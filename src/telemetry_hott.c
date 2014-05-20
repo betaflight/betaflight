@@ -168,8 +168,8 @@ void hottV4GPSUpdate(void)
 static void hottV4EAMUpdateBattery(void)
 {
 #if 0
-    HoTTV4ElectricAirModule.cell1L = 4.2f * 10 * 5; // 2mv step
-    HoTTV4ElectricAirModule.cell1H = 0;
+    HoTTV4ElectricAirModule.cell1L = 3.30f * 10 * 5; // 2mv step - 3.30v
+    HoTTV4ElectricAirModule.cell1H = 4.20f * 10 * 5; // 2mv step - 4.20v
 
     HoTTV4ElectricAirModule.cell2L = 0;
     HoTTV4ElectricAirModule.cell2H = 0;
