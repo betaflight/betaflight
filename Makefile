@@ -236,7 +236,6 @@ OBJCOPY		 = arm-none-eabi-objcopy
 # Tool options.
 #
 
-ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 BASE_CFLAGS	 = $(ARCH_FLAGS) \
 		   $(addprefix -D,$(OPTIONS)) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
