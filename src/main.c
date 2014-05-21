@@ -49,7 +49,7 @@ extern rcReadRawDataPtr rcReadRawFunc;
 extern uint32_t previousTime;
 
 #ifdef SOFTSERIAL_LOOPBACK
-serialPort_t *loopbackPort
+serialPort_t *loopbackPort;
 #endif
 
 failsafe_t *failsafe;
@@ -231,9 +231,9 @@ void init(void)
 
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
-    serialPort_t *loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+    loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
     if (!loopbackPort->vTable) {
-        openSoftSerial1(19200, false);
+        loopbackPort = openSoftSerial(0, NULL, 19200, SERIAL_NOT_INVERTED);
     }
     serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
@@ -242,7 +242,8 @@ void init(void)
 #ifdef SOFTSERIAL_LOOPBACK
 void processLoopback(void) {
     if (loopbackPort) {
-        while (serialTotalBytesWaiting(loopbackPort)) {
+        uint8_t bytesWaiting;
+        while ((bytesWaiting = serialTotalBytesWaiting(loopbackPort))) {
             uint8_t b = serialRead(loopbackPort);
             serialWrite(loopbackPort, b);
         };
