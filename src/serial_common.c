@@ -180,8 +180,6 @@ static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function, c
             continue;
         }
 
-        // TODO check speed and mode
-
         serialPortSearchResult.portIndex = serialPortIndex;
         serialPortSearchResult.portConstraint = serialPortConstraint;
         serialPortSearchResult.portFunction = serialPortFunction;
