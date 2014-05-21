@@ -172,16 +172,6 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     return &softSerial->port;
 }
 
-
-void updateBufferIndex(softSerial_t *softSerial)
-{
-    if (softSerial->port.rxBufferTail >= softSerial->port.rxBufferSize - 1) {
-        softSerial->port.rxBufferTail = 0; //cycling the buffer
-    } else {
-        softSerial->port.rxBufferTail++;
-    }
-}
-
 /*********************************************/
 
 void processTxState(softSerial_t *softSerial)
@@ -274,8 +264,8 @@ void extractAndStoreRxByte(softSerial_t *softSerial)
     if (softSerial->port.callback) {
         softSerial->port.callback(rxByte);
     } else {
-        softSerial->port.rxBuffer[softSerial->port.rxBufferTail] = rxByte;
-        updateBufferIndex(softSerial);
+        softSerial->port.rxBuffer[softSerial->port.rxBufferHead] = rxByte;
+        softSerial->port.rxBufferHead = (softSerial->port.rxBufferHead + 1) % softSerial->port.rxBufferSize;
     }
 }
 
@@ -364,18 +354,9 @@ uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
     return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.txBufferSize - 1);
 }
 
-static void moveHeadToNextByte(softSerial_t *softSerial)
-{
-    if (softSerial->port.rxBufferHead < softSerial->port.rxBufferSize - 1) {
-        softSerial->port.rxBufferHead++;
-    } else {
-        softSerial->port.rxBufferHead = 0;
-    }
-}
-
 uint8_t softSerialReadByte(serialPort_t *instance)
 {
-    char b;
+    uint8_t ch;
 
     if ((instance->mode & MODE_RX) == 0) {
         return 0;
@@ -385,10 +366,9 @@ uint8_t softSerialReadByte(serialPort_t *instance)
         return 0;
     }
 
-    b = instance->rxBuffer[instance->rxBufferHead];
-
-    moveHeadToNextByte((softSerial_t *)instance);
-    return b;
+    ch = instance->rxBuffer[instance->rxBufferTail];
+    instance->rxBufferTail = (instance->rxBufferTail + 1) % instance->rxBufferSize;
+    return ch;
 }
 
 void softSerialWriteByte(serialPort_t *s, uint8_t ch)
