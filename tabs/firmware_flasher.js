@@ -64,7 +64,7 @@ function tab_initialize_firmware_flasher() {
         });
 
         $('a.load_remote_file').click(function() {
-            $.get('https://raw.githubusercontent.com/multiwii/baseflight/master/obj/baseflight.hex', function(data) {
+            $.get('https://raw.githubusercontent.com/hydra/cleanflight/master/obj/cleanflight_NAZE.hex', function(data) {
                 intel_hex = data;
 
                 parse_hex(intel_hex, function(data) {
@@ -85,7 +85,7 @@ function tab_initialize_firmware_flasher() {
                 $('a.flash_firmware').addClass('locked');
             });
 
-            $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function(data) {
+            $.get('https://api.github.com/repos/hydra/cleanflight/commits?page=1&per_page=1&path=obj/cleanflight_NAZE.hex', function(data) {
                 var data = data[0];
                 var d = new Date(data.commit.author.date);
                 var date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
