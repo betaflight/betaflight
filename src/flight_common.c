@@ -117,7 +117,7 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
         rollAndPitchTrims_t *angleTrim)
 {
-    int32_t errorAngle = 0;
+    int32_t errorAngle;
     int axis;
     int32_t delta, deltaSum;
     static int32_t delta1[3], delta2[3];
@@ -128,14 +128,13 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
         // -----Get the desired angle rate depending on flight mode
-        if ((f.ANGLE_MODE || f.HORIZON_MODE) && (axis == FD_PITCH || axis == FD_ROLL)) { // MODE relying on ACC
-            // calculate error and limit the angle to max configured inclination
-            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - inclination.rawAngles[axis] + angleTrim->raw[axis]; // 16 bits is ok here
-        }
         if (axis == FD_YAW) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
             AngleRateTmp = (((int32_t)(controlRateConfig->yawRate + 27) * rcCommand[2]) >> 5);
         } else {
+            // calculate error and limit the angle to max configured inclination
+            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - inclination.rawAngles[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+
             if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
                 AngleRateTmp = ((int32_t)(controlRateConfig->rollPitchRate + 27) * rcCommand[axis]) >> 4;
                 if (f.HORIZON_MODE) {
