@@ -160,11 +160,11 @@ void uartStartTxDMA(uartPort_t *s)
 uint8_t uartTotalBytesWaiting(serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t*)instance;
-    // FIXME always returns 1 or 0, not the amount of bytes waiting
     if (s->rxDMAChannel)
-        return s->rxDMAChannel->CNDTR != s->rxDMAPos;
-    else
-        return s->port.rxBufferTail != s->port.rxBufferHead;
+        return (s->rxDMAChannel->CNDTR - s->rxDMAPos) & (s->port.txBufferSize - 1);
+    else {
+        return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.txBufferSize - 1);
+    }
 }
 
 // BUGBUG TODO TODO FIXME - What is the bug?
