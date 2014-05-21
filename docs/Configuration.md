@@ -26,7 +26,7 @@ e.g. to use GPS enable the GPS feature.
 
 All examples assume default configuration (via cli `defaults` command)
 
-a) GPS and TELEMETRY (when armed)
+a) GPS and FrSky TELEMETRY (when armed)
 
 - TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
 - GPS on UART2
@@ -37,7 +37,7 @@ feature GPS
 save
 ```
 
-b) RX SERIAL and TELEMETRY (when armed)
+b) RX SERIAL and FrSky TELEMETRY (when armed)
 
 - TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
 - RX SERIAL on UART2
@@ -50,7 +50,7 @@ set serial_port_2_scenario = 3
 save
 ```
 
-b) RX SERIAL and TELEMETRY via softserial
+b) RX SERIAL and FrSky TELEMETRY via softserial
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - RX SERIAL on UART2
@@ -66,7 +66,7 @@ set serial_port_3_scenario = 4
 save
 ```
 
-c) GPS and TELEMETRY via softserial
+c) GPS and FrSky TELEMETRY via softserial
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - GPS on UART2
@@ -113,6 +113,23 @@ feature RX_PPM
 feature TELEMETRY
 set serial_port_2_scenario = 4
 set telemetry_provider = 1
+```
+
+f) GPS, HoTT Telemetry via SoftSerial 2
+
+- MSP,CLI,GPS PASSTHROUGH on UART1
+- GPS on UART2
+- HoTT telemetry on SOFTSERIAL1
+
+```
+feature -RX_PARALLEL_PWM
+feature RX_PPM
+feature TELEMETRY
+feature GPS
+feature SOFTSERIAL
+set serial_port_3_scenario = 4
+set telemetry_provider = 1
+save
 ```
 
 ## FrSky telemetry
