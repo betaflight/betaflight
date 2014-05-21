@@ -10,6 +10,9 @@
 
 /* HoTT module specifications */
 
+#define HOTTV4_TEXT_MODE_REQUEST_ID       0x7f
+#define HOTTV4_BINARY_MODE_REQUEST_ID     0x80
+
 #define HOTTV4_GENERAL_AIR_SENSOR_ID          0xD0
 
 #define HOTTV4_ELECTRICAL_AIR_SENSOR_ID       0x8E // Electric Air Sensor ID
@@ -19,7 +22,6 @@
 #define HOTTV4_GPS_SENSOR_TEXT_ID             0xA0 // GPS Module ID
 
 #define HOTTV4_RXTX 4
-#define HOTTV4_TX_DELAY 3000
 
 #define HOTTV4_BUTTON_DEC    0xEB
 #define HOTTV4_BUTTON_INC    0xED

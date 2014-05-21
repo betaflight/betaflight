@@ -1,17 +1,15 @@
 /*
  * telemetry_hott.c
  *
- *  Created on: 6 Apr 2014
- *      Authors:
- *      Dominic Clifton - Hydra - Software Serial, Electronics, Hardware Integration and debugging, HoTT Code cleanup and fixes, general telemetry improvements.
- *      Carsten Giesen - cGiesen - Baseflight port
- *      Oliver Bayer - oBayer - MultiWii-HoTT, HoTT reverse engineering
- *
- * It should be noted that the initial cut of code that deals with the handling of requests and formatting and
- * sending of responses comes from the MultiWii-Meets-HoTT and MultiHoTT-module projects
+ * Authors:
+ * Dominic Clifton - Hydra - Software Serial, Electronics, Hardware Integration and debugging, HoTT Code cleanup and fixes, general telemetry improvements.
+ * Carsten Giesen - cGiesen - Baseflight port
+ * Oliver Bayer - oBayer - MultiWii-HoTT, HoTT reverse engineering
+ * Adam Majerczyk - HoTT-for-ardupilot from which some information and ideas are borrowed.
  *
  * https://github.com/obayer/MultiWii-HoTT
  * https://github.com/oBayer/MultiHoTT-Module
+ * https://code.google.com/p/hott-for-ardupilot
  *
  * HoTT is implemented in Graupner equipment using a bi-directional protocol over a single wire.
  *
@@ -20,7 +18,7 @@
  * Each response byte must be send with a protocol specific delay between them.
  *
  * Serial ports use two wires but HoTT uses a single wire so some electronics are required so that
- * the signals don't get mixed up.  When baseflight transmits it should not receive it's own transmission.
+ * the signals don't get mixed up.  When cleanflight transmits it should not receive it's own transmission.
  *
  * Connect as follows:
  * HoTT TX/RX -> Serial RX (connect directly)
@@ -29,13 +27,10 @@
  * The diode should be arranged to allow the data signals to flow the right way
  * -(|  )- == Diode, | indicates cathode marker.
  *
- * As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC 24FJ64GA-002, which digitals pins are 5V tolerant.
+ * As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC 24FJ64GA-002, which has 5V tolerant digital pins.
  *
  * Note: The softserial ports are not listed as 5V tolerant in the STM32F103xx data sheet pinouts and pin description
  * section.  Verify if you require a 5v/3.3v level shifters.  The softserial port should not be inverted.
- *
- * Technically it is possible to use less components and disable softserial RX when transmitting but that is
- * not currently supported.
  *
  * There is a technical discussion (in German) about HoTT here
  * http://www.rc-network.de/forum/showthread.php/281496-Graupner-HoTT-Telemetrie-Sensoren-Eigenbau-DIY-Telemetrie-Protokoll-entschl%C3%BCsselt/page21
@@ -64,7 +59,13 @@
 #include "telemetry_common.h"
 #include "telemetry_hott.h"
 
+#define HOTT_DEBUG
+#define HOTT_DEBUG_SHOW_EAM_UPDATE_TOGGLE
+#define HOTT_DEBUG_USE_EAM_TEST_DATA
+extern int16_t debug[4];
+
 static serialPort_t *hottPort;
+
 #define HOTT_BAUDRATE 19200
 #define HOTT_INITIAL_PORT_MODE MODE_RX
 
@@ -78,10 +79,7 @@ static HoTTV4ElectricAirModule_t HoTTV4ElectricAirModule;
 
 static void hottV4SerialWrite(uint8_t c);
 
-static void hottV4Respond(uint8_t *data, uint8_t size);
-static void hottV4FormatAndSendGPSResponse(void);
 static void hottV4GPSUpdate(void);
-static void hottV4FormatAndSendEAMResponse(void);
 static void hottV4EAMUpdateBattery(void);
 static void hottV4EAMUpdateTemperatures(void);
 bool batteryWarning;
@@ -90,7 +88,7 @@ bool batteryWarning;
  * Sends HoTTv4 capable GPS telemetry frame.
  */
 
-void hottV4FormatAndSendGPSResponse(void)
+void hottV4FormatGPSResponse(void)
 {
     memset(&HoTTV4GPSModule, 0, sizeof(HoTTV4GPSModule));
 
@@ -105,8 +103,6 @@ void hottV4FormatAndSendGPSResponse(void)
     HoTTV4GPSModule.alarmInverse1 = 0x0;
 
     hottV4GPSUpdate();
-
-    hottV4Respond((uint8_t*)&HoTTV4GPSModule, sizeof(HoTTV4GPSModule));
 }
 
 void hottV4GPSUpdate(void)
@@ -165,9 +161,12 @@ void hottV4GPSUpdate(void)
  * Writes cell 1-4 high, low values and if not available
  * calculates vbat.
  */
+
+static uint8_t updateCount = 0;
+
 static void hottV4EAMUpdateBattery(void)
 {
-#if 0
+#ifdef HOTT_DEBUG_USE_EAM_TEST_DATA
     HoTTV4ElectricAirModule.cell1L = 3.30f * 10 * 5; // 2mv step - 3.30v
     HoTTV4ElectricAirModule.cell1H = 4.20f * 10 * 5; // 2mv step - 4.20v
 
@@ -195,6 +194,12 @@ static void hottV4EAMUpdateBattery(void)
         HoTTV4ElectricAirModule.alarmInverse1 |= 0x80; // Invert Voltage display
     }
 #endif
+
+#ifdef HOTT_DEBUG_SHOW_EAM_UPDATE_TOGGLE
+    if (updateCount & 1) {
+        HoTTV4ElectricAirModule.alarmInverse1 |= 0x80; // Invert Voltage display
+    }
+#endif
 }
 
 static void hottV4EAMUpdateTemperatures(void)
@@ -214,7 +219,7 @@ static void hottV4EAMUpdateTemperatures(void)
 /**
  * Sends HoTTv4 capable EAM telemetry frame.
  */
-void hottV4FormatAndSendEAMResponse(void)
+void hottV4FormatEAMResponse(void)
 {
     memset(&HoTTV4ElectricAirModule, 0, sizeof(HoTTV4ElectricAirModule));
 
@@ -235,30 +240,6 @@ void hottV4FormatAndSendEAMResponse(void)
     HoTTV4ElectricAirModule.height = OFFSET_HEIGHT + 0;
     HoTTV4ElectricAirModule.m2s = OFFSET_M2S;
     HoTTV4ElectricAirModule.m3s = OFFSET_M3S;
-
-    hottV4Respond((uint8_t*)&HoTTV4ElectricAirModule, sizeof(HoTTV4ElectricAirModule));
-}
-
-static void hottV4Respond(uint8_t *data, uint8_t size)
-{
-    serialSetMode(hottPort, MODE_TX);
-
-    uint16_t crc = 0;
-    uint8_t i;
-
-    for (i = 0; i < size - 1; i++) {
-        crc += data[i];
-        hottV4SerialWrite(data[i]);
-
-        // Protocol specific delay between each transmitted byte
-        delayMicroseconds(HOTTV4_TX_DELAY);
-    }
-
-    hottV4SerialWrite(crc & 0xFF);
-
-    delayMicroseconds(HOTTV4_TX_DELAY);
-
-    serialSetMode(hottPort, MODE_RX);
 }
 
 static void hottV4SerialWrite(uint8_t c)
@@ -300,26 +281,185 @@ void configureHoTTTelemetryPort(telemetryConfig_t *telemetryConfig)
 }
 
 
-void handleHoTTTelemetry(void)
+#define CYCLETIME_50_HZ ((1000 * 1000) / 50)
+#define HOTT_RX_SCHEDULE 4000
+#define HOTTV4_TX_DELAY_US 3000
+
+static uint32_t lastHoTTRequestCheckAt = 0;
+static uint32_t lastMessagePreparedAt = 0;
+
+static bool hottIsSending = false;
+
+static uint8_t *hottMsg = NULL;
+static uint8_t hottMsgRemainingBytesToSendCount;
+static uint8_t hottMsgCrc;
+
+#define HOTT_CRC_SIZE (sizeof(hottMsgCrc))
+
+void hottV4SendResponse(uint8_t *buffer, int length)
 {
-    uint8_t c;
+    if(hottIsSending) {
+        return;
+    }
 
-    while (serialTotalBytesWaiting(hottPort) > 0) {
-        c = serialRead(hottPort);
+    hottMsg = buffer;
+    hottMsgRemainingBytesToSendCount = length;// + HOTT_CRC_SIZE;
+}
 
-        // Protocol specific waiting time to avoid collisions
-        delay(5);
+void hottV4SendGPSResponse(void)
+{
+    hottV4SendResponse((uint8_t *)&HoTTV4GPSModule, sizeof(HoTTV4GPSModule));
+}
 
-        switch (c) {
+void hottV4SendEAMResponse(void)
+{
+    updateCount++;
+    hottV4SendResponse((uint8_t *)&HoTTV4ElectricAirModule, sizeof(HoTTV4ElectricAirModule));
+}
+
+void hottPrepareMessage(void) {
+    hottV4FormatEAMResponse();
+    hottV4FormatGPSResponse();
+}
+
+void processBinaryModeRequest(uint8_t address) {
+
+    static uint8_t hottBinaryRequests = 0;
+    static uint8_t hottGPSRequests = 0;
+    static uint8_t hottEAMRequests = 0;
+
+
+    switch (address) {
         case 0x8A:
-                if (sensors(SENSOR_GPS))
-                    hottV4FormatAndSendGPSResponse();
+            hottGPSRequests++;
+            if (sensors(SENSOR_GPS)) {
+                hottV4SendGPSResponse();
+            }
             break;
         case 0x8E:
-            hottV4FormatAndSendEAMResponse();
+            hottEAMRequests++;
+            hottV4SendEAMResponse();
             break;
+    }
+
+    hottBinaryRequests++;
+#ifdef HOTT_DEBUG
+    debug[0] = hottBinaryRequests;
+    debug[1] = hottGPSRequests;
+    debug[2] = hottEAMRequests;
+#endif
+
+}
+
+void flushHottRxBuffer(void)
+{
+    while (serialTotalBytesWaiting(hottPort) > 0) {
+        serialRead(hottPort);
+    }
+}
+
+void hottCheckSerialData(uint32_t currentMicros) {
+
+    static bool lookingForRequest = true;
+
+    uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
+
+    if (bytesWaiting <= 1) {
+        return;
+    }
+
+    if (bytesWaiting != 2) {
+        flushHottRxBuffer();
+        lookingForRequest = true;
+        return;
+    }
+
+    if (lookingForRequest) {
+        lastHoTTRequestCheckAt = currentMicros;
+        lookingForRequest = false;
+        return;
+    } else {
+        bool enoughTimePassed = currentMicros - lastHoTTRequestCheckAt >= HOTT_RX_SCHEDULE;
+
+        if (!enoughTimePassed) {
+            return;
+        }
+        lookingForRequest = true;
+    }
+
+    uint8_t requestId = serialRead(hottPort);
+    uint8_t address = serialRead(hottPort);
+
+    if (requestId == HOTTV4_BINARY_MODE_REQUEST_ID) {
+        processBinaryModeRequest(address);
+    }
+}
+
+void hottSendTelemetryData(void) {
+    if (!hottIsSending) {
+        hottIsSending = true;
+        serialSetMode(hottPort, MODE_TX);
+        hottMsgCrc = 0;
+        return;
+    }
+
+    if (hottMsgRemainingBytesToSendCount == 0) {
+        hottMsg = NULL;
+        hottIsSending = false;
+
+        serialSetMode(hottPort, MODE_RX);
+        flushHottRxBuffer();
+        return;
+    }
+
+    --hottMsgRemainingBytesToSendCount;
+    if(hottMsgRemainingBytesToSendCount == 0) {
+        hottV4SerialWrite(hottMsgCrc++);
+        return;
+    }
+
+    hottMsgCrc += *hottMsg;
+    hottV4SerialWrite(*hottMsg++);
+}
+
+bool shouldPrepareHoTTMessage(uint32_t currentMicros)
+{
+    return currentMicros - lastMessagePreparedAt >= CYCLETIME_50_HZ;
+}
+
+bool shouldCheckForHoTTRequest()
+{
+    if (hottIsSending) {
+        return false;
+    }
+    return true;
+}
+
+void handleHoTTTelemetry(void)
+{
+    static uint32_t serialTimer;
+    uint32_t now = micros();
+
+
+    if (shouldPrepareHoTTMessage(now)) {
+        hottPrepareMessage();
+        lastMessagePreparedAt = now;
+    }
+
+    if (shouldCheckForHoTTRequest()) {
+        hottCheckSerialData(now);
+    }
+
+    if(!hottMsg)
+        return;
+
+    if(hottIsSending) {
+        if(now - serialTimer < HOTTV4_TX_DELAY_US) {
+            return;
         }
     }
+    hottSendTelemetryData();
+    serialTimer = now;
 }
 
 uint32_t getHoTTTelemetryProviderBaudRate(void) {

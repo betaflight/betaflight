@@ -193,10 +193,6 @@ void annexCode(void)
 
     handleSerial();
 
-    if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        handleTelemetry();
-    }
-
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTime);
     }
@@ -635,4 +631,9 @@ void loop(void)
         writeServos();
         writeMotors();
     }
+
+    if (!cliMode && feature(FEATURE_TELEMETRY)) {
+        handleTelemetry();
+    }
+
 }
