@@ -359,18 +359,9 @@ uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
         return 0;
     }
 
-    int availableBytes;
-    softSerial_t *softSerial = (softSerial_t *)instance;
-    if (softSerial->port.rxBufferTail == softSerial->port.rxBufferHead) {
-        return 0;
-    }
+    softSerial_t *s = (softSerial_t *)instance;
 
-    if (softSerial->port.rxBufferTail > softSerial->port.rxBufferHead) {
-        availableBytes = softSerial->port.rxBufferTail - softSerial->port.rxBufferHead;
-    } else {
-        availableBytes = softSerial->port.rxBufferTail + softSerial->port.rxBufferSize - softSerial->port.rxBufferHead;
-    }
-    return availableBytes;
+    return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.txBufferSize - 1);
 }
 
 static void moveHeadToNextByte(softSerial_t *softSerial)
