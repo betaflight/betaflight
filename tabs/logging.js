@@ -14,7 +14,7 @@ function tab_initialize_logging() {
         $('a.log_file').click(prepare_file);
 
         $('a.logging').click(function() {
-            if (fileEntry.isFile) {
+            if (fileEntry != null) {
                 var clicks = $(this).data('clicks');
 
                 if (!clicks) {
@@ -160,6 +160,9 @@ function tab_initialize_logging() {
 
             fileWriter.onerror = function(e) {
                 console.error(e);
+
+                // stop logging if the procedure was/is still running
+                if ($('a.logging').data('clicks')) $('a.logging').click();
             };
 
             fileWriter.onwriteend = function() {
