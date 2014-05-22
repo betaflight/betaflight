@@ -25,6 +25,12 @@
             line-height: 20px;
             color: silver;
         }
+    .tab-logging .speed {
+        margin-top: 5px;
+        width: 80px;
+
+        border: 1px solid silver;
+    }
     .tab-logging .info {
         margin-top: 10px;
     }

@@ -46,20 +46,23 @@ function tab_initialize_logging() {
                             }
                         }
 
-                        GUI.interval_add('log_data_pull', poll_data, 1000, true); // refresh rate goes here
+                        GUI.interval_add('log_data_pull', poll_data, parseInt($('select.speed').val()), true); // refresh rate goes here
                         GUI.interval_add('flush_data', function() {
-                            if (fileWriter.readyState == 0 || fileWriter.readyState == 2) {
-                                append_to_file(log_buffer.join('\n'));
+                            if (log_buffer.length) { // only execute when there is actual data to write
+                                if (fileWriter.readyState == 0 || fileWriter.readyState == 2) {
+                                    append_to_file(log_buffer.join('\n'));
 
-                                $('.samples').text(samples += log_buffer.length);
-                                $('.size').text((fileWriter.length / 1024).toFixed(2) + ' kB');
+                                    $('.samples').text(samples += log_buffer.length);
+                                    $('.size').text((fileWriter.length / 1024).toFixed(2) + ' kB');
 
-                                log_buffer = [];
-                            } else {
-                                console.log('IO having trouble keeping up with the data flow');
+                                    log_buffer = [];
+                                } else {
+                                    console.log('IO having trouble keeping up with the data flow');
+                                }
                             }
                         }, 1000);
 
+                        $('.speed').prop('disabled', true);
                         $(this).text('Stop Logging');
                         $(this).data("clicks", !clicks);
                     } else {
@@ -69,6 +72,7 @@ function tab_initialize_logging() {
                     GUI.interval_remove('log_data_pull');
                     GUI.interval_remove('flush_data');
 
+                    $('.speed').prop('disabled', false);
                     $(this).text('Start Logging');
                     $(this).data("clicks", !clicks);
                 }
