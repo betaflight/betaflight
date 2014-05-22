@@ -1,13 +1,23 @@
 <div class="tab-logging">
     <div class="note">
-        Data will be logged in this tab <span style="color: red">only</span>, leaving this tab will <span style="color: red">cancel</span> logging and application will return to its normal <strong>"configurator"</strong> operation.<br />
-        You are free to select the global update period, data will be written into the log file every <strong>1</strong> second.
+        Data will be logged in this tab <span style="color: red">only</span>, leaving the tab will <span style="color: red">cancel</span>
+        logging and application will return to its normal <strong>"configurator"</strong> state.<br />
+        You are free to select the global update period, data will be written into the log file every <strong>1</strong> second for performance reasons.
     </div>
     <div class="properties">
         <dl>
             <dt><label><input type="checkbox" name="MSP_RAW_IMU" /> MSP_RAW_IMU</label></dt><dd>9 columns (accel[x, y, z], gyro[x, y, z], mag[x, y, z])</dd>
             <dt><label><input type="checkbox" name="MSP_ATTITUDE" /> MSP_ATTITUDE</label></dt><dd>3 columns (x, y, z)</dd>
             <dt><label><input type="checkbox" name="MSP_ALTITUDE" /> MSP_ALTITUDE</label></dt><dd>one column</dd>
+            <dt><label><input type="checkbox" name="MSP_RC" /> MSP_RC</label></dt><dd>8 columns by default</dd>
+            <dt><label><input type="checkbox" name="MSP_MOTOR" /> MSP_MOTOR</label></dt><dd>8 columns by default</dd>
+            <dt><label><input type="checkbox" name="MSP_DEBUG" /> MSP_DEBUG</label></dt><dd>4 columns</dd>
+        </dl>
+    </div>
+    <div class="info">
+        <dl>
+            <dt>Samples Saved:</dt><dd class="samples">0</dd>
+            <dt>Log Size:</dt><dd class="size">0 kB</dd>
         </dl>
     </div>
     <div class="buttons">

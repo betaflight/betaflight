@@ -25,6 +25,23 @@
             line-height: 20px;
             color: silver;
         }
+    .tab-logging .info {
+        margin-top: 10px;
+    }
+        .tab-logging .info dt {
+            float: left;
+            width: 120px;
+            height: 20px;
+            line-height: 20px;
+
+            font-weight: bold;
+        }
+        .tab-logging .info dd {
+            display: block;
+            margin-left: 130px;
+            height: 20px;
+            line-height: 20px;
+        }
     .tab-logging .buttons {
         margin-top: 10px;
     }
