@@ -59,6 +59,9 @@
     "tab9": {
         "message": "CLI"
     },
+    "tab10": {
+        "message": "Logging"
+    },
 
     "serialPortOpened": {
         "message": "Serial port <span style=\"color: green\">successfully</span> opened with ID: $1"
