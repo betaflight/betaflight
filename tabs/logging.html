@@ -1,11 +1,14 @@
 <div class="tab-logging">
     <div class="note">
         Data will be logged in this tab <span style="color: red">only</span>, leaving this tab will <span style="color: red">cancel</span> logging and application will return to its normal <strong>"configurator"</strong> operation.<br />
-        Logged <strong>CSV</strong> data will respect properties order below, some of the properties will log more then 1 field, in that case please consult documentation or sourcecode
-        to find out the order and amount of fields per property.<br />
-        You are free to select the global update period, data will be written into the log file every 1 second.
+        You are free to select the global update period, data will be written into the log file every <strong>1</strong> second.
     </div>
     <div class="properties">
+        <dl>
+            <dt><label><input type="checkbox" name="MSP_RAW_IMU" /> MSP_RAW_IMU</label></dt><dd>9 columns (accel[x, y, z], gyro[x, y, z], mag[x, y, z])</dd>
+            <dt><label><input type="checkbox" name="MSP_ATTITUDE" /> MSP_ATTITUDE</label></dt><dd>3 columns (x, y, z)</dd>
+            <dt><label><input type="checkbox" name="MSP_ALTITUDE" /> MSP_ALTITUDE</label></dt><dd>one column</dd>
+        </dl>
     </div>
     <div class="buttons">
         <a href="#" class="log_file">Select Log File</a>

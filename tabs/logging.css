@@ -7,6 +7,24 @@
     .tab-logging .properties {
         margin-top: 10px;
     }
+        .tab-logging .properties dt {
+            float: left;
+            width: 120px;
+            height: 20px;
+            line-height: 20px;
+
+            font-weight: bold;
+        }
+            .tab-logging .properties dt input {
+                vertical-align: middle;
+            }
+        .tab-logging .properties dd {
+            display: block;
+            margin-left: 130px;
+            height: 20px;
+            line-height: 20px;
+            color: silver;
+        }
     .tab-logging .buttons {
         margin-top: 10px;
     }
