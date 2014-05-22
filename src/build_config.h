@@ -1,5 +1,6 @@
 #pragma once
 
+#define UNUSED(x) (void)(x)
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 //#define SOFT_I2C // enable to test software i2c

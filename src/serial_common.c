@@ -73,7 +73,20 @@ typedef struct serialPortSearchResult_s {
     serialPortFunction_t *portFunction;
     const serialPortConstraint_t *portConstraint;
     const functionConstraint_t *functionConstraint;
+
+    // private
+    uint8_t startSerialPortFunctionIndex; // used by findNextSerialPort
 } serialPortSearchResult_t;
+
+static serialPortFunctionList_t serialPortFunctionList = {
+        4,
+        serialPortFunctions
+};
+
+serialPortFunctionList_t *getSerialPortFunctionList(void)
+{
+    return &serialPortFunctionList;
+}
 
 uint8_t lookupScenarioIndex(serialPortFunctionScenario_e scenario) {
     uint8_t index;
@@ -140,20 +153,11 @@ static void sortSerialPortFunctions(serialPortFunction_t *serialPortFunctions, u
     qsort(serialPortFunctions, elements, sizeof(serialPortFunction_t), serialPortFunctionMostSpecificFirstComparator);
 }
 
-/*
- * since this method, and other methods that use it, use a single instance of
- * searchPortSearchResult be sure to copy the data out of it before it gets overwritten by another caller.
- * If this becomes a problem perhaps change the implementation to use a destination argument.
- */
-static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function, const functionConstraint_t *functionConstraint)
+serialPortSearchResult_t *findNextSerialPort(serialPortFunction_e function, const functionConstraint_t *functionConstraint, serialPortSearchResult_t *resultBuffer)
 {
-    static serialPortSearchResult_t serialPortSearchResult;
-
-    sortSerialPortFunctions(serialPortFunctions, SERIAL_PORT_COUNT);
-
     uint8_t serialPortFunctionIndex;
     serialPortFunction_t *serialPortFunction;
-    for (serialPortFunctionIndex = 0; serialPortFunctionIndex < SERIAL_PORT_COUNT; serialPortFunctionIndex++) {
+    for (serialPortFunctionIndex = resultBuffer->startSerialPortFunctionIndex; serialPortFunctionIndex < SERIAL_PORT_COUNT; serialPortFunctionIndex++) {
         serialPortFunction = &serialPortFunctions[serialPortFunctionIndex];
 
         if (!(serialPortFunction->scenario & function)) {
@@ -180,15 +184,37 @@ static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function, c
             continue;
         }
 
-        serialPortSearchResult.portIndex = serialPortIndex;
-        serialPortSearchResult.portConstraint = serialPortConstraint;
-        serialPortSearchResult.portFunction = serialPortFunction;
-        serialPortSearchResult.functionConstraint = functionConstraint;
-        return &serialPortSearchResult;
+        resultBuffer->portIndex = serialPortIndex;
+        resultBuffer->portConstraint = serialPortConstraint;
+        resultBuffer->portFunction = serialPortFunction;
+        resultBuffer->functionConstraint = functionConstraint;
+
+        uint8_t nextStartIndex = serialPortFunctionIndex + 1;
+        resultBuffer->startSerialPortFunctionIndex = nextStartIndex;
+
+        return resultBuffer;
     }
 
     return NULL;
 }
+
+/*
+ * since this method, and other methods that use it, use a single instance of
+ * searchPortSearchResult be sure to copy the data out of it before it gets overwritten by another caller.
+ * If this becomes a problem perhaps change the implementation to use a destination argument.
+ */
+static serialPortSearchResult_t *findSerialPort(serialPortFunction_e function, const functionConstraint_t *functionConstraint)
+{
+    static serialPortSearchResult_t serialPortSearchResult;
+
+    memset(&serialPortSearchResult, 0, sizeof(serialPortSearchResult));
+
+    // FIXME this only needs to be done once, after the config has been loaded.
+    sortSerialPortFunctions(serialPortFunctions, SERIAL_PORT_COUNT);
+
+    return findNextSerialPort(function, functionConstraint, &serialPortSearchResult);
+}
+
 
 static serialPortFunction_t *findSerialPortFunction(uint16_t functionMask)
 {
@@ -271,8 +297,7 @@ functionConstraint_t *getConfiguredFunctionConstraint(serialPortFunction_e funct
 
     switch(function) {
         case FUNCTION_MSP:
-            configuredFunctionConstraint.minBaudRate = serialConfig->msp_baudrate;
-            configuredFunctionConstraint.maxBaudRate = configuredFunctionConstraint.minBaudRate;
+            configuredFunctionConstraint.maxBaudRate = serialConfig->msp_baudrate;
             break;
 
         case FUNCTION_CLI:
@@ -388,13 +413,27 @@ serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbac
 {
     serialPort_t *serialPort = NULL;
 
-    functionConstraint_t *functionConstraint = getConfiguredFunctionConstraint(function);
+    functionConstraint_t *initialFunctionConstraint = getConfiguredFunctionConstraint(function);
+
+    functionConstraint_t updatedFunctionConstraint;
+    memcpy(&updatedFunctionConstraint, initialFunctionConstraint, sizeof(updatedFunctionConstraint));
+    if (initialFunctionConstraint->autoBaud == NO_AUTOBAUD) {
+        updatedFunctionConstraint.minBaudRate = baudRate;
+        updatedFunctionConstraint.maxBaudRate = baudRate;
+    }
+    functionConstraint_t *functionConstraint = &updatedFunctionConstraint;
 
     serialPortSearchResult_t *searchResult = findSerialPort(function, functionConstraint);
+
+    while(searchResult && searchResult->portFunction->port) {
+        // port is already open, find the next one
+        searchResult = findNextSerialPort(function, functionConstraint, searchResult);
+    }
 
     if (!searchResult) {
         return NULL;
     }
+
     serialPortIndex_e portIndex = searchResult->portIndex;
 
     const serialPortConstraint_t *serialPortConstraint = searchResult->portConstraint;

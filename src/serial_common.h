@@ -78,6 +78,11 @@ typedef struct serialPortFunction_s {
     serialPortFunction_e currentFunction;
 } serialPortFunction_t;
 
+typedef struct serialPortFunctionList_s {
+    uint8_t serialPortCount;
+    serialPortFunction_t *functions;
+} serialPortFunctionList_t;
+
 typedef struct serialConfig_s {
     uint8_t serial_port_1_scenario;
     uint8_t serial_port_2_scenario;
@@ -108,6 +113,8 @@ void applySerialConfigToPortFunctions(serialConfig_t *serialConfig);
 bool isSerialConfigValid(serialConfig_t *serialConfig);
 bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier);
 bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask);
+
+serialPortFunctionList_t *getSerialPortFunctionList(void);
 
 void evaluateOtherData(uint8_t sr);
 void handleSerial(void);

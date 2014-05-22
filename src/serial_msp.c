@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "build_config.h"
+
 #include "platform.h"
 
 #include "common/axis.h"
@@ -277,6 +279,44 @@ reset:
     }
 }
 
+// This rate is chosen since softserial supports it.
+#define MSP_FALLBACK_BAUDRATE 19200
+
+static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
+{
+    serialPort_t *port;
+
+    mspPort = NULL; // XXX delete this when adding support for MSP on more than one port.
+    do {
+
+        uint32_t baudRate = serialConfig->msp_baudrate;
+
+        bool triedFallbackRate = false;
+        do {
+
+            port = openSerialPort(FUNCTION_MSP, NULL, baudRate, MODE_RXTX, SERIAL_NOT_INVERTED);
+            if (!port) {
+                if (triedFallbackRate) {
+                    break;
+                }
+
+                baudRate = MSP_FALLBACK_BAUDRATE;
+                triedFallbackRate = true;
+            }
+        } while (!port);
+
+        // XXX delete this when adding support for MSP on more than one port.
+        if (port) {
+            mspPort = port; // just use the last one opened for now, the least specific serial port scenario will in for now
+        }
+
+    } while (port);
+
+    // XXX this function might help with adding support for MSP on more than one port, if not delete it.
+    serialPortFunctionList_t *serialPortFunctionList = getSerialPortFunctionList();
+    UNUSED(serialPortFunctionList);
+}
+
 void mspInit(serialConfig_t *serialConfig)
 {
     int idx;
@@ -316,10 +356,7 @@ void mspInit(serialConfig_t *serialConfig)
         availableBoxes[idx++] = BOXTELEMETRY;
     numberBoxItems = idx;
 
-    mspPort = findOpenSerialPort(FUNCTION_MSP);
-    if (!mspPort) {
-        mspPort = openSerialPort(FUNCTION_MSP, NULL, serialConfig->msp_baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
-    }
+    openAllMSPSerialPorts(serialConfig);
 }
 
 static void evaluateCommand(void)
