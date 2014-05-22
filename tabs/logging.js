@@ -53,7 +53,7 @@ function tab_initialize_logging() {
                                     append_to_file(log_buffer.join('\n'));
 
                                     $('.samples').text(samples += log_buffer.length);
-                                    $('.size').text((fileWriter.length / 1024).toFixed(2) + ' kB');
+                                    $('.size').text(chrome.i18n.getMessage('loggingKB', [(fileWriter.length / 1024).toFixed(2)]));
 
                                     log_buffer = [];
                                 } else {
@@ -63,21 +63,21 @@ function tab_initialize_logging() {
                         }, 1000);
 
                         $('.speed').prop('disabled', true);
-                        $(this).text('Stop Logging');
+                        $(this).text(chrome.i18n.getMessage('loggingStop'));
                         $(this).data("clicks", !clicks);
                     } else {
-                        GUI.log('Please select at least one property to log');
+                        GUI.log(chrome.i18n.getMessage('loggingErrorOneProperty'));
                     }
                 } else {
                     GUI.interval_remove('log_data_pull');
                     GUI.interval_remove('flush_data');
 
                     $('.speed').prop('disabled', false);
-                    $(this).text('Start Logging');
+                    $(this).text(chrome.i18n.getMessage('loggingStart'));
                     $(this).data("clicks", !clicks);
                 }
             } else {
-                GUI.log('Please select log file');
+                GUI.log(chrome.i18n.getMessage('loggingErrorLogFile'));
             }
         });
     }

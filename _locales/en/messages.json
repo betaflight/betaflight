@@ -438,6 +438,34 @@
         "message": "Write your command here"
     },
 
+    "loggingNote": {
+        "message": "Data will be logged in this tab <span style=\"color: red\">only</span>, leaving the tab will <span style=\"color: red\">cancel</span> logging and application will return to its normal <strong>\"configurator\"</strong> state.<br /> You are free to select the global update period, data will be written into the log file every <strong>1</strong> second for performance reasons."
+    },
+    "loggingSamplesSaved": {
+        "message": "Samples Saved:"
+    },
+    "loggingLogSize": {
+        "message": "Log Size:"
+    },
+    "loggingKB": {
+        "message": "$1 kB"
+    },
+    "loggingButtonLogFile": {
+        "message": "Select Log File"
+    },
+    "loggingStart": {
+        "message": "Start Logging"
+    },
+    "loggingStop": {
+        "message": "Stop Logging"
+    },
+    "loggingErrorLogFile": {
+        "message": "Please select log file"
+    },
+    "loggingErrorOneProperty": {
+        "message": "Please select at least one property to log"
+    },
+
     "firmwareFlasherPath": {
         "message": "Path:"
     },
