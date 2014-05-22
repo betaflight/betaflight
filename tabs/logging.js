@@ -4,7 +4,15 @@ function tab_initialize_logging() {
 
     var requested_properties = [];
 
-    $('#content').load("./tabs/logging.html", process_html);
+    send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
+
+    function get_motor_data() {
+        send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
+    }
+
+    function load_html() {
+        $('#content').load("./tabs/logging.html", process_html);
+    }
 
     function process_html() {
         // translate to user-selected language
@@ -28,6 +36,9 @@ function tab_initialize_logging() {
                     });
 
                     if (requested_properties.length) {
+                        // print header for the
+                        print_head();
+
                         function poll_data() {
                             // save current
                             crunch_data();
@@ -126,6 +137,53 @@ function tab_initialize_logging() {
         }
 
         log_buffer.push(sample);
+    }
+
+    function print_head() {
+        var head = "timestamp";
+
+        for (var i = 0; i < requested_properties.length; i++) {
+            switch (requested_properties[i]) {
+                case 'MSP_RAW_IMU':
+                    head += ',' + 'gyroscopeX';
+                    head += ',' + 'gyroscopeY';
+                    head += ',' + 'gyroscopeZ';
+
+                    head += ',' + 'accelerometerX';
+                    head += ',' + 'accelerometerY';
+                    head += ',' + 'accelerometerZ';
+
+                    head += ',' + 'magnetometerX';
+                    head += ',' + 'magnetometerY';
+                    head += ',' + 'magnetometerZ';
+                    break;
+                case 'MSP_ATTITUDE':
+                    head += ',' + 'kinematicsX';
+                    head += ',' + 'kinematicsY';
+                    head += ',' + 'kinematicsZ';
+                    break;
+                case 'MSP_ALTITUDE':
+                    head += ',' + 'altitude';
+                    break;
+                case 'MSP_RC':
+                    for (var chan = 0; chan < RC.active_channels; chan++) {
+                        head += ',' + 'RC' + chan;
+                    }
+                    break;
+                case 'MSP_MOTOR':
+                    for (var motor = 0; motor < MOTOR_DATA.length; motor++) {
+                        head += ',' + 'Motor' + motor;
+                    }
+                    break;
+                case 'MSP_DEBUG':
+                    for (var debug = 0; debug < SENSOR_DATA.debug.length; debug++) {
+                        head += ',' + 'Debug' + debug;
+                    }
+                    break;
+            }
+        }
+
+        log_buffer.push(head);
     }
 
     // IO related methods
