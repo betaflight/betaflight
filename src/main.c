@@ -228,6 +228,7 @@ void init(void)
 #endif
 
     f.SMALL_ANGLE = 1;
+    f.PREVENT_ARMING = 0;
 
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly

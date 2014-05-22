@@ -17,6 +17,8 @@
  *
  * failsafeInit() and useFailsafeConfig() can be called in any order.
  * failsafeInit() should only be called once.
+ *
+ * enable() should be called after system initialisation.
  */
 
 static failsafe_t failsafe;
@@ -47,6 +49,7 @@ failsafe_t* failsafeInit(rxConfig_t *intialRxConfig)
 
     failsafe.vTable = failsafeVTable;
     failsafe.events = 0;
+    failsafe.enabled = false;
 
     return &failsafe;
 }
@@ -54,6 +57,16 @@ failsafe_t* failsafeInit(rxConfig_t *intialRxConfig)
 bool isIdle(void)
 {
     return failsafe.counter == 0;
+}
+
+bool isEnabled(void)
+{
+    return failsafe.enabled;
+}
+
+void enable(void)
+{
+    failsafe.enabled = true;
 }
 
 bool hasTimerElapsed(void)
@@ -73,8 +86,9 @@ bool shouldHaveCausedLandingByNow(void)
 
 void failsafeAvoidRearm(void)
 {
-    mwDisarm();             // This will prevent the automatic rearm if failsafe shuts it down and prevents
-    f.OK_TO_ARM = 0;        // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
+    // This will prevent the automatic rearm if failsafe shuts it down and prevents
+    // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
+    f.PREVENT_ARMING = 1;
 }
 
 void onValidDataReceived(void)
@@ -93,7 +107,14 @@ void updateState(void)
         return;
     }
 
+    if (!isEnabled()) {
+        reset();
+        return;
+    }
+
     if (shouldForceLanding(f.ARMED)) { // Stabilize, and set Throttle to specified level
+        failsafeAvoidRearm();
+
         for (i = 0; i < 3; i++) {
             rcData[i] = rxConfig->midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
         }
@@ -102,7 +123,7 @@ void updateState(void)
     }
 
     if (shouldHaveCausedLandingByNow() || !f.ARMED) {
-        failsafeAvoidRearm();
+        mwDisarm();
     }
 }
 
@@ -138,7 +159,9 @@ const failsafeVTable_t failsafeVTable[] = {
         incrementCounter,
         updateState,
         isIdle,
-        failsafeCheckPulse
+        failsafeCheckPulse,
+        isEnabled,
+        enable
     }
 };
 

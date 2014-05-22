@@ -30,8 +30,8 @@ extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
 // FIXME some of these are flight modes, some of these are general status indicators
 typedef struct flags_t {
     uint8_t OK_TO_ARM;
+    uint8_t PREVENT_ARMING;
     uint8_t ARMED;
-    uint8_t ACC_CALIBRATED;
     uint8_t ANGLE_MODE;
     uint8_t HORIZON_MODE;
     uint8_t MAG_MODE;

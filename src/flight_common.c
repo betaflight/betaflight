@@ -28,12 +28,6 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
 
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
-void mwDisarm(void)
-{
-    if (f.ARMED)
-        f.ARMED = 0;
-}
-
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     rollAndPitchTrims->trims.roll = 0;

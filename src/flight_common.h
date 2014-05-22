@@ -108,7 +108,6 @@ extern int32_t AltHold;
 extern int32_t EstAlt;
 extern int32_t vario;
 
-void mwDisarm(void);
 void setPIDController(int type);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void resetErrorAngle(void);

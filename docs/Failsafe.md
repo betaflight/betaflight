@@ -14,6 +14,10 @@ It is possible to use both types at the same time and may be desirable.  Flight 
 
 ## Flight controller failsafe system 
 
+The failsafe system is not activated until 5 seconds after the flight controller boots up.  This is to prevent failsafe from activating in the case of TX/RX gear with long bind procedures before they send out valid data.
+
+After the failsafe has been forced a landing, the flight controller cannot be armed and has to be reset.
+ 
 The failsafe system attempts to detect when your receiver looses signal.  It then attempts to prevent your aircraft from flying away uncontrollably.
 
 The failsafe is activated when:
@@ -27,7 +31,6 @@ Failsafe delays are configured in 0.1 second steps.
 
 1 step = 0.1sec
 1 second = 10 steps
-
 
 ### `failsafe_delay`
 

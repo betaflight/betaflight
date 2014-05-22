@@ -80,9 +80,47 @@ bool AccInflightCalibrationSavetoEEProm = false;
 bool AccInflightCalibrationActive = false;
 uint16_t InflightcalibratingA = 0;
 
+bool isCalibrating()
+{
+#ifdef BARO
+    if (sensors(SENSOR_ACC) && !isBaroCalibrationComplete()) {
+        return false;
+    }
+#endif
+
+    // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
+
+    return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
+}
+
+static uint32_t warningLedTimer = 0;
+
+void enableWarningLed(uint32_t currentTime)
+{
+    if (warningLedTimer != 0) {
+        return; // already enabled
+    }
+    warningLedTimer = currentTime + 500000;
+    LED0_ON;
+}
+
+void disableWarningLed(void)
+{
+    warningLedTimer = 0;
+    LED0_OFF;
+}
+
+void updateWarningLed(uint32_t currentTime)
+{
+    if (warningLedTimer && (int32_t)(currentTime - warningLedTimer) >= 0) {
+        LED0_TOGGLE;
+        warningLedTimer = warningLedTimer + 500000;
+    }
+}
+
+
 void annexCode(void)
 {
-    static uint32_t calibratedAccTime;
     int32_t tmp, tmp2;
     int32_t axis, prop1, prop2;
 
@@ -160,16 +198,30 @@ void annexCode(void)
 
     buzzer(batteryWarningEnabled); // external buzzer routine that handles buzzer events globally now
 
-    if ((!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete())) {      // Calibration phasis
-        LED0_TOGGLE;
+    if (f.ARMED) {
+        LED0_ON;
     } else {
-        if (f.ACC_CALIBRATED)
-            LED0_OFF;
-        if (f.ARMED)
-            LED0_ON;
+        if (isCalibrating()) {
+            LED0_TOGGLE;
+            f.OK_TO_ARM = 0;
+        }
 
-        checkTelemetryState();
+        f.OK_TO_ARM = 1;
+
+        if (!f.ARMED && !f.SMALL_ANGLE) {
+            f.OK_TO_ARM = 0;
+        }
+
+        if (f.OK_TO_ARM) {
+            disableWarningLed();
+        } else {
+            enableWarningLed(currentTime);
+        }
+
+        updateWarningLed(currentTime);
     }
+
+    checkTelemetryState();
 
 #ifdef LEDRING
     if (feature(FEATURE_LED_RING)) {
@@ -181,15 +233,6 @@ void annexCode(void)
     }
 #endif
 
-    if ((int32_t)(currentTime - calibratedAccTime) >= 0) {
-        if (!f.SMALL_ANGLE) {
-            f.ACC_CALIBRATED = 0; // the multi uses ACC and is not calibrated or is too much inclinated
-            LED0_TOGGLE;
-            calibratedAccTime = currentTime + 500000;
-        } else {
-            f.ACC_CALIBRATED = 1;
-        }
-    }
 
     handleSerial();
 
@@ -205,19 +248,30 @@ void annexCode(void)
     }
 }
 
-static void mwArm(void)
+void mwDisarm(void)
 {
-    if (isGyroCalibrationComplete() && f.ACC_CALIBRATED) {
-        // TODO: feature(FEATURE_FAILSAFE) && failsafeCnt < 2
-        // TODO: && ( !feature || ( feature && ( failsafecnt > 2) )
-        if (!f.ARMED) {         // arm now!
+    if (f.ARMED)
+        f.ARMED = 0;
+}
+
+void mwArm(void)
+{
+    if (f.OK_TO_ARM) {
+        if (f.ARMED) {
+            return;
+        }
+        if (!f.PREVENT_ARMING) {
             f.ARMED = 1;
             headFreeModeHold = heading;
+            return;
         }
-    } else if (!f.ARMED) {
+    }
+
+    if (!f.ARMED) {
         blinkLedAndSoundBeeper(2, 255, 1);
     }
 }
+
 
 static void mwVario(void)
 {
@@ -256,6 +310,11 @@ void loop(void)
         }
 
         if (feature(FEATURE_FAILSAFE)) {
+
+            if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafe->vTable->isEnabled()) {
+                failsafe->vTable->enable();
+            }
+
             failsafe->vTable->updateState();
         }
 
@@ -428,8 +487,6 @@ void loop(void)
             f.HORIZON_MODE = 0;
         }
 
-        if ((rcOptions[BOXARM]) == 0)
-            f.OK_TO_ARM = 1;
         if (f.ANGLE_MODE || f.HORIZON_MODE) {
             LED1_ON;
         } else {
