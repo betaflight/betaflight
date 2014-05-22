@@ -80,6 +80,15 @@ function tab_initialize_logging() {
                 GUI.log(chrome.i18n.getMessage('loggingErrorLogFile'));
             }
         });
+
+        chrome.storage.local.get('logging_file_entry', function(result) {
+            if (result.logging_file_entry) {
+                chrome.fileSystem.restoreEntry(result.logging_file_entry, function(entry) {
+                    fileEntry = entry;
+                    prepare_writer(true);
+                });
+            }
+        });
     }
 
     var samples = 0;
@@ -145,6 +154,9 @@ function tab_initialize_logging() {
                     if (isWritable) {
                         fileEntry = fileEntryWritable;
 
+                        // save entry for next use
+                        chrome.storage.local.set({'logging_file_entry': chrome.fileSystem.retainEntry(fileEntry)});
+
                         prepare_writer();
                     } else {
                         console.log('File appears to be read only, sorry.');
@@ -154,7 +166,7 @@ function tab_initialize_logging() {
         });
     }
 
-    function prepare_writer() {
+    function prepare_writer(retaining) {
         fileEntry.createWriter(function(writer) {
             fileWriter = writer;
 
@@ -168,8 +180,19 @@ function tab_initialize_logging() {
             fileWriter.onwriteend = function() {
                 // console.log('Data written');
             };
+
+            if (retaining) {
+                chrome.fileSystem.getDisplayPath(fileEntry, function(path) {
+                    GUI.log(chrome.i18n.getMessage('loggingAutomaticallyRetained', [path]));
+                });
+            }
         }, function(e) {
+            // File is not readable or does not exist!
             console.error(e);
+
+            if (retaining) {
+                fileEntry = null;
+            }
         });
     }
 

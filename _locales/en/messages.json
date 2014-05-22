@@ -465,6 +465,9 @@
     "loggingErrorOneProperty": {
         "message": "Please select at least one property to log"
     },
+    "loggingAutomaticallyRetained": {
+        "message": "Automatically loaded previous log file: <strong>$1</strong>"
+    },
 
     "firmwareFlasherPath": {
         "message": "Path:"

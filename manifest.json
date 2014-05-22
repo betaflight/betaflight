@@ -26,6 +26,7 @@
         "storage",
         "fileSystem",
         "fileSystem.write",
+        "fileSystem.retainEntries",
         "notifications"
     ],
 
