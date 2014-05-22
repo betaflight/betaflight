@@ -69,91 +69,102 @@ static serialPort_t *hottPort;
 #define HOTT_BAUDRATE 19200
 #define HOTT_INITIAL_PORT_MODE MODE_RX
 
-extern telemetryConfig_t *telemetryConfig;
-
+static telemetryConfig_t *telemetryConfig;
 
 const uint8_t kHoTTv4BinaryPacketSize = 45;
 const uint8_t kHoTTv4TextPacketSize = 173;
-static HoTTV4GPSModule_t HoTTV4GPSModule;
-static HoTTV4ElectricAirModule_t HoTTV4ElectricAirModule;
+static HOTT_GPS_MSG_t HoTTV4GPSModule;
+static HOTT_EAM_MSG_t HoTTV4ElectricAirModule;
 
 static void hottV4SerialWrite(uint8_t c);
 
-static void hottV4GPSUpdate(void);
-static void hottV4EAMUpdateBattery(void);
-static void hottV4EAMUpdateTemperatures(void);
-bool batteryWarning;
+void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
+{
+    memset(msg, 0, size);
+    msg->start_byte = 0x7C;
+    msg->eam_sensor_id = HOTT_TELEMETRY_EAM_SENSOR_ID;
+    msg->sensor_id = HOTT_EAM_SENSOR_TEXT_ID;
+    msg->stop_byte = 0x7D;
+}
 
+void initialiseGPSMessage(HOTT_GPS_MSG_t *msg, size_t size)
+{
+    memset(msg, 0, size);
+    msg->start_byte = 0x7C;
+    msg->gps_sensor_id = HOTT_TELEMETRY_GPS_SENSOR_ID;
+    msg->sensor_id = HOTT_GPS_SENSOR_TEXT_ID;
+    msg->stop_byte = 0x7D;
+}
+
+void initialiseMessages(void)
+{
+    initialiseEAMMessage(&HoTTV4ElectricAirModule, sizeof(HoTTV4ElectricAirModule));
+    initialiseGPSMessage(&HoTTV4GPSModule, sizeof(HoTTV4GPSModule));
+}
+
+typedef enum {
+    GPS_FIX_CHAR_NONE = '-',
+    GPS_FIX_CHAR_2D = '2',
+    GPS_FIX_CHAR_3D = '3',
+    GPS_FIX_CHAR_DGPS = 'D',
+} gpsFixChar_e;
 /*
  * Sends HoTTv4 capable GPS telemetry frame.
  */
 
 void hottV4FormatGPSResponse(void)
 {
-    memset(&HoTTV4GPSModule, 0, sizeof(HoTTV4GPSModule));
-
-    // Minimum data set for EAM
-    HoTTV4GPSModule.startByte = 0x7C;
-    HoTTV4GPSModule.sensorID = HOTTV4_GPS_SENSOR_ID;
-    HoTTV4GPSModule.sensorTextID = HOTTV4_GPS_SENSOR_TEXT_ID;
-    HoTTV4GPSModule.endByte = 0x7D;
-
-    // Reset alarms
-    HoTTV4GPSModule.alarmTone = 0x0;
-    HoTTV4GPSModule.alarmInverse1 = 0x0;
-
-    hottV4GPSUpdate();
-}
-
-void hottV4GPSUpdate(void)
-{
     // Number of Satelites
-    HoTTV4GPSModule.GPSNumSat = GPS_numSat;
-    if (f.GPS_FIX > 0) {
+    HoTTV4GPSModule.gps_satelites = GPS_numSat;
+    if (f.GPS_FIX) {
         // GPS fix
-        HoTTV4GPSModule.GPS_fix = 0x66; // Displays a 'f' for fix
+        if (GPS_numSat >= 5) {
+            HoTTV4GPSModule.gps_fix_char = GPS_FIX_CHAR_3D;
+        } else {
+            HoTTV4GPSModule.gps_fix_char = GPS_FIX_CHAR_2D;
+        }
 
         // latitude
-        HoTTV4GPSModule.LatitudeNS = (GPS_coord[LAT] < 0);
+        HoTTV4GPSModule.pos_NS = (GPS_coord[LAT] < 0);
         uint8_t deg = GPS_coord[LAT] / 100000;
         uint32_t sec = (GPS_coord[LAT] - (deg * 100000)) * 6;
         uint8_t min = sec / 10000;
         sec = sec % 10000;
         uint16_t degMin = (deg * 100) + min;
-        HoTTV4GPSModule.LatitudeMinLow = degMin;
-        HoTTV4GPSModule.LatitudeMinHigh = degMin >> 8;
-        HoTTV4GPSModule.LatitudeSecLow = sec;
-        HoTTV4GPSModule.LatitudeSecHigh = sec >> 8;
+        HoTTV4GPSModule.pos_NS_dm_L = degMin;
+        HoTTV4GPSModule.pos_NS_dm_H = degMin >> 8;
+        HoTTV4GPSModule.pos_NS_sec_L = sec;
+        HoTTV4GPSModule.pos_NS_sec_H = sec >> 8;
 
         // longitude
-        HoTTV4GPSModule.longitudeEW = (GPS_coord[LON] < 0);
+        HoTTV4GPSModule.pos_EW = (GPS_coord[LON] < 0);
         deg = GPS_coord[LON] / 100000;
         sec = (GPS_coord[LON] - (deg * 100000)) * 6;
         min = sec / 10000;
         sec = sec % 10000;
         degMin = (deg * 100) + min;
-        HoTTV4GPSModule.longitudeMinLow = degMin;
-        HoTTV4GPSModule.longitudeMinHigh = degMin >> 8;
-        HoTTV4GPSModule.longitudeSecLow = sec;
-        HoTTV4GPSModule.longitudeSecHigh = sec >> 8;
+        HoTTV4GPSModule.pos_EW_dm_L = degMin;
+        HoTTV4GPSModule.pos_EW_dm_H = degMin >> 8;
+        HoTTV4GPSModule.pos_EW_sec_L = sec;
+        HoTTV4GPSModule.pos_EW_sec_H = sec >> 8;
 
         // GPS Speed in km/h
         uint16_t speed = (GPS_speed / 100) * 36; // 0.1m/s * 0.36 = km/h
-        HoTTV4GPSModule.GPSSpeedLow = speed & 0x00FF;
-        HoTTV4GPSModule.GPSSpeedHigh = speed >> 8;
+        HoTTV4GPSModule.gps_speed_L = speed & 0x00FF;
+        HoTTV4GPSModule.gps_speed_H = speed >> 8;
 
         // Distance to home
-        HoTTV4GPSModule.distanceLow = GPS_distanceToHome & 0x00FF;
-        HoTTV4GPSModule.distanceHigh = GPS_distanceToHome >> 8;
+        HoTTV4GPSModule.home_distance_L = GPS_distanceToHome & 0x00FF;
+        HoTTV4GPSModule.home_distance_H = GPS_distanceToHome >> 8;
 
         // Altitude
-        HoTTV4GPSModule.altitudeLow = GPS_altitude & 0x00FF;
-        HoTTV4GPSModule.altitudeHigh = GPS_altitude >> 8;
+        HoTTV4GPSModule.altitude_L = GPS_altitude & 0x00FF;
+        HoTTV4GPSModule.altitude_H = GPS_altitude >> 8;
 
         // Direction to home
-        HoTTV4GPSModule.HomeDirection = GPS_directionToHome;
+        HoTTV4GPSModule.home_direction = GPS_directionToHome;
     } else {
-        HoTTV4GPSModule.GPS_fix = 0x20; // Displays a ' ' to show nothing or clear the old value
+        HoTTV4GPSModule.gps_fix_char = GPS_FIX_CHAR_NONE;
     }
 }
 
@@ -167,52 +178,44 @@ static uint8_t updateCount = 0;
 static void hottV4EAMUpdateBattery(void)
 {
 #ifdef HOTT_DEBUG_USE_EAM_TEST_DATA
-    HoTTV4ElectricAirModule.cell1L = 3.30f * 10 * 5; // 2mv step - 3.30v
-    HoTTV4ElectricAirModule.cell1H = 4.20f * 10 * 5; // 2mv step - 4.20v
+    HoTTV4ElectricAirModule.cell1_L = 3.30f * 10 * 5; // 2mv step - 3.30v
+    HoTTV4ElectricAirModule.cell1_H = 4.20f * 10 * 5; // 2mv step - 4.20v
 
-    HoTTV4ElectricAirModule.cell2L = 0;
-    HoTTV4ElectricAirModule.cell2H = 0;
+    HoTTV4ElectricAirModule.cell2_L = 0;
+    HoTTV4ElectricAirModule.cell2_H = 0;
 
-    HoTTV4ElectricAirModule.cell3L = 0;
-    HoTTV4ElectricAirModule.cell3H = 0;
+    HoTTV4ElectricAirModule.cell3_L = 0;
+    HoTTV4ElectricAirModule.cell3_H = 0;
 
-    HoTTV4ElectricAirModule.cell4L = 0;
-    HoTTV4ElectricAirModule.cell4H = 0;
+    HoTTV4ElectricAirModule.cell4_L = 0;
+    HoTTV4ElectricAirModule.cell4_H = 0;
+
+    uint16_t currentUsed = updateCount * 10;
+    HoTTV4ElectricAirModule.batt_cap_L = currentUsed & 0xFF;
+    HoTTV4ElectricAirModule.batt_cap_H = currentUsed >> 8;
 #endif
 
-    HoTTV4ElectricAirModule.driveVoltageLow = vbat & 0xFF;
-    HoTTV4ElectricAirModule.driveVoltageHigh = vbat >> 8;
-    HoTTV4ElectricAirModule.battery1Low = vbat & 0xFF;
-    HoTTV4ElectricAirModule.battery1High = vbat >> 8;
+    HoTTV4ElectricAirModule.main_voltage_L = vbat & 0xFF;
+    HoTTV4ElectricAirModule.main_voltage_H = vbat >> 8;
+    HoTTV4ElectricAirModule.batt1_voltage_L = vbat & 0xFF;
+    HoTTV4ElectricAirModule.batt1_voltage_H = vbat >> 8;
 
-#if 0
-    HoTTV4ElectricAirModule.battery2Low = 0 & 0xFF;
-    HoTTV4ElectricAirModule.battery2High = 0 >> 8;
-
-    if (batteryWarning) {
-        HoTTV4ElectricAirModule.alarmTone = HoTTv4NotificationUndervoltage;
-        HoTTV4ElectricAirModule.alarmInverse1 |= 0x80; // Invert Voltage display
-    }
+#if 0 // TODO find other voltage via ADC?
+    HoTTV4ElectricAirModule.batt2_voltage_L = 0 & 0xFF;
+    HoTTV4ElectricAirModule.batt2_voltage_H = 0 >> 8;
 #endif
 
 #ifdef HOTT_DEBUG_SHOW_EAM_UPDATE_TOGGLE
     if (updateCount & 1) {
-        HoTTV4ElectricAirModule.alarmInverse1 |= 0x80; // Invert Voltage display
+        HoTTV4ElectricAirModule.alarm_invers1 |= HOTT_EAM_ALARM1_FLAG_MAIN_VOLTAGE; // Invert Voltage display
     }
 #endif
 }
 
 static void hottV4EAMUpdateTemperatures(void)
 {
-    HoTTV4ElectricAirModule.temp1 = 20 + 0;
-    HoTTV4ElectricAirModule.temp2 = 20;
-
-#if 0
-    if (HoTTV4ElectricAirModule.temp1 >= (20 + MultiHoTTModuleSettings.alarmTemp1)) {
-        HoTTV4ElectricAirModule.alarmTone = HoTTv4NotificationMaxTemperature;
-        HoTTV4ElectricAirModule.alarmInverse |= 0x8; // Invert Temp1 display
-    }
-#endif
+    HoTTV4ElectricAirModule.temp1 = HOTT_EAM_OFFSET_TEMPERATURE + 0;
+    HoTTV4ElectricAirModule.temp2 = HOTT_EAM_OFFSET_TEMPERATURE + 0;
 }
 
 
@@ -221,29 +224,18 @@ static void hottV4EAMUpdateTemperatures(void)
  */
 void hottV4FormatEAMResponse(void)
 {
-    memset(&HoTTV4ElectricAirModule, 0, sizeof(HoTTV4ElectricAirModule));
-
-    // Minimum data set for EAM
-    HoTTV4ElectricAirModule.startByte = 0x7C;
-    HoTTV4ElectricAirModule.sensorID = HOTTV4_ELECTRICAL_AIR_SENSOR_ID;
-    HoTTV4ElectricAirModule.sensorTextID = HOTTV4_ELECTRICAL_AIR_SENSOR_TEXT_ID;
-    HoTTV4ElectricAirModule.endByte = 0x7D;
-
     // Reset alarms
-    HoTTV4ElectricAirModule.alarmTone = 0x0;
-    HoTTV4ElectricAirModule.alarmInverse1 = 0x0;
+    HoTTV4ElectricAirModule.warning_beeps = 0x0;
+    HoTTV4ElectricAirModule.alarm_invers1 = 0x0;
 
     hottV4EAMUpdateBattery();
     hottV4EAMUpdateTemperatures();
-
-    HoTTV4ElectricAirModule.current = 0 / 10;
-    HoTTV4ElectricAirModule.height = OFFSET_HEIGHT + 0;
-    HoTTV4ElectricAirModule.m2s = OFFSET_M2S;
-    HoTTV4ElectricAirModule.m3s = OFFSET_M3S;
 }
 
 static void hottV4SerialWrite(uint8_t c)
 {
+    static uint8_t serialWrites = 0;
+    serialWrites++;
     serialWrite(hottPort, c);
 }
 
@@ -259,7 +251,14 @@ void freeHoTTTelemetryPort(void)
     endSerialPortFunction(hottPort, FUNCTION_TELEMETRY);
 }
 
-void configureHoTTTelemetryPort(telemetryConfig_t *telemetryConfig)
+void initHoTTTelemetry(telemetryConfig_t *initialTelemetryConfig)
+{
+    telemetryConfig = initialTelemetryConfig;
+
+    initialiseMessages();
+}
+
+void configureHoTTTelemetryPort(void)
 {
     hottPort = findOpenSerialPort(FUNCTION_TELEMETRY);
     if (hottPort) {
@@ -303,7 +302,7 @@ void hottV4SendResponse(uint8_t *buffer, int length)
     }
 
     hottMsg = buffer;
-    hottMsgRemainingBytesToSendCount = length;// + HOTT_CRC_SIZE;
+    hottMsgRemainingBytesToSendCount = length + HOTT_CRC_SIZE;
 }
 
 void hottV4SendGPSResponse(void)
@@ -390,7 +389,7 @@ void hottCheckSerialData(uint32_t currentMicros) {
     uint8_t requestId = serialRead(hottPort);
     uint8_t address = serialRead(hottPort);
 
-    if (requestId == HOTTV4_BINARY_MODE_REQUEST_ID) {
+    if (requestId == HOTT_BINARY_MODE_REQUEST_ID) {
         processBinaryModeRequest(address);
     }
 }

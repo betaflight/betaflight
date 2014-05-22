@@ -115,7 +115,7 @@ set serial_port_2_scenario = 4
 set telemetry_provider = 1
 ```
 
-f) GPS, HoTT Telemetry via SoftSerial 2
+f) GPS, HoTT Telemetry via SoftSerial 1
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - GPS on UART2

@@ -57,6 +57,14 @@ void initTelemetry()
     telemetryPortIsShared = isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP);
     isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
 
+    if (isTelemetryProviderFrSky()) {
+        initFrSkyTelemetry(telemetryConfig);
+    }
+
+    if (isTelemetryProviderHoTT()) {
+        initHoTTTelemetry(telemetryConfig);
+    }
+
     checkTelemetryState();
 }
 
@@ -94,11 +102,11 @@ uint32_t getTelemetryProviderBaudRate(void)
 static void configureTelemetryPort(void)
 {
     if (isTelemetryProviderFrSky()) {
-        configureFrSkyTelemetryPort(telemetryConfig);
+        configureFrSkyTelemetryPort();
     }
 
     if (isTelemetryProviderHoTT()) {
-        configureHoTTTelemetryPort(telemetryConfig);
+        configureHoTTTelemetryPort();
     }
 }
 

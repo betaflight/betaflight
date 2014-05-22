@@ -34,7 +34,7 @@ static serialPort_t *frskyPort;
 #define FRSKY_BAUDRATE 9600
 #define FRSKY_INITIAL_PORT_MODE MODE_TX
 
-telemetryConfig_t *telemetryConfig;
+static telemetryConfig_t *telemetryConfig;
 
 extern int16_t telemTemperature1; // FIXME dependency on mw.c
 
@@ -243,6 +243,11 @@ static void sendHeading(void)
     serialize16(0);
 }
 
+void initFrSkyTelemetry(telemetryConfig_t *initialTelemetryConfig)
+{
+    telemetryConfig = initialTelemetryConfig;
+}
+
 static portMode_t previousPortMode;
 static uint32_t previousBaudRate;
 
@@ -255,7 +260,7 @@ void freeFrSkyTelemetryPort(void)
     endSerialPortFunction(frskyPort, FUNCTION_TELEMETRY);
 }
 
-void configureFrSkyTelemetryPort(telemetryConfig_t *telemetryConfig)
+void configureFrSkyTelemetryPort(void)
 {
     frskyPort = findOpenSerialPort(FUNCTION_TELEMETRY);
     if (frskyPort) {
