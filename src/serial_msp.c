@@ -306,8 +306,8 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
         } while (!port);
 
         // XXX delete this when adding support for MSP on more than one port.
-        if (port) {
-            mspPort = port; // just use the last one opened for now, the least specific serial port scenario will in for now
+        if (port && !mspPort) {
+            mspPort = port; // just use the first one opened for now
         }
 
     } while (port);
