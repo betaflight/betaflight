@@ -13,6 +13,7 @@
 
 #include "failsafe.h"
 
+#include "drivers/pwm_rx.h"
 #include "rx_pwm.h"
 #include "rx_sbus.h"
 #include "rx_spektrum.h"
@@ -166,7 +167,7 @@ bool shouldProcessRx(uint32_t currentTime)
 }
 
 static bool isRxDataDriven(void) {
-    return !(feature(FEATURE_RX_PARALLEL_PWM) || feature(FEATURE_RX_PPM));
+    return !(feature(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM));
 }
 
 static uint8_t rcSampleIndex = 0;
@@ -192,6 +193,14 @@ uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
 void processRxChannels(void)
 {
     uint8_t chan;
+
+    bool shouldCheckPulse = true;
+
+    if (feature(FEATURE_FAILSAFE | FEATURE_RX_PPM)) {
+        shouldCheckPulse = isPPMDataBeingReceived();
+        resetPPMDataReceivedState();
+    }
+
     for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
 
         if (!rcReadRawFunc) {
@@ -204,7 +213,7 @@ void processRxChannels(void)
         // sample the channel
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
 
-        if (feature(FEATURE_FAILSAFE)) {
+        if (feature(FEATURE_FAILSAFE) && shouldCheckPulse) {
             failsafe->vTable->checkPulse(rawChannel, sample);
         }
 

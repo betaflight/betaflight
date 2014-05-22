@@ -45,6 +45,21 @@ static pwmInputPort_t pwmInputPorts[PWM_INPUT_PORT_COUNT];
 
 static uint16_t captures[PWM_PORTS_OR_PPM_CAPTURE_COUNT];
 
+static uint8_t ppmFrameCount = 0;
+
+static uint8_t lastPPMFrameCount = 0;
+bool isPPMDataBeingReceived(void)
+{
+    return (ppmFrameCount != lastPPMFrameCount);
+}
+
+void resetPPMDataReceivedState(void)
+{
+    lastPPMFrameCount = ppmFrameCount;
+}
+
+#define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
+
 static void ppmCallback(uint8_t port, captureCompare_t capture)
 {
     int32_t diff;
@@ -58,6 +73,9 @@ static void ppmCallback(uint8_t port, captureCompare_t capture)
     diff = now - last;
 
     if (diff > 2700) { // Per http://www.rcgroups.com/forums/showpost.php?p=21996147&postcount=3960 "So, if you use 2.5ms or higher as being the reset for the PPM stream start, you will be fine. I use 2.7ms just to be safe."
+        if (chan >= MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID) {
+            ppmFrameCount++;
+        }
         chan = 0;
     } else {
         if (chan < PPM_CAPTURE_COUNT) {
@@ -65,6 +83,7 @@ static void ppmCallback(uint8_t port, captureCompare_t capture)
         }
         chan++;
     }
+
 }
 
 static void pwmCallback(uint8_t port, captureCompare_t capture)

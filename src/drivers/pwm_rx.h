@@ -5,3 +5,5 @@ void pwmInConfig(uint8_t timerIndex, uint8_t channel);
 
 uint16_t pwmRead(uint8_t channel);
 
+bool isPPMDataBeingReceived(void);
+void resetPPMDataReceivedState(void);
