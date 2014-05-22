@@ -1,3 +1,9 @@
+/*
+ * Authors:
+ * Dominic Clifton/Hydra - Various cleanups for Cleanflight
+ * Bill Nesbitt - Code from AutoQuad
+ * Hamasaki/Timecop - Initial baseflight code
+*/
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -10,11 +16,6 @@
 
 #include "serial_common.h"
 #include "serial_uart_common.h"
-
-/*
-    DMA UART routines idea lifted from AutoQuad
-    Copyright © 2011  Bill Nesbitt
-*/
 
 static uartPort_t uartPort1;
 static uartPort_t uartPort2;

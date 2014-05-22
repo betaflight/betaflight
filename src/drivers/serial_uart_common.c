@@ -1,3 +1,8 @@
+/*
+ * Authors:
+ * Dominic Clifton - Serial port abstraction, Separation of common STM32 code for cleanflight, various cleanups.
+ * Hamasaki/Timecop - Initial baseflight code
+*/
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>

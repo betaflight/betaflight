@@ -1,7 +1,9 @@
-
 /*
-    DMA UART routines idea lifted from AutoQuad
-    Copyright © 2011  Bill Nesbitt
+ * Authors:
+ * Dominic Clifton - Port baseflight STM32F10x to STM32F30x for cleanflight
+ * J. Ihlein - Code from FocusFlight32
+ * Bill Nesbitt - Code from AutoQuad
+ * Hamasaki/Timecop - Initial baseflight code
 */
 
 #include <stdbool.h>
