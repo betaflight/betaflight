@@ -134,6 +134,16 @@ save
 
 ## CLI command differences from baseflight
 
+### gps_baudrate
+reason: simplify
+
+Cleanflight uses normal baud rate values for gps baudrate, baseflight uses an index.
+
+If an unsupported baud rate value is used the gps code will select 115200 baud.
+
+example: `set gps_baudrate = 115200`
+
+
 ### gps_type
 reason: renamed to `gps_provider` for consistency
 
@@ -147,9 +157,9 @@ Cleanflight supports using any RX channel for rssi.  Baseflight only supports AU
 
 In Cleanflight a value of 0 disables the feature, a higher value indicates the channel number to read RSSI information from.
 
-Example, to use RSSI on AUX1 in Cleanflight set the value to 5, since 5 is the first AUX channel.
+Example: to use RSSI on AUX1 in Cleanflight use `set rssi_aux_channel = 5`, since 5 is the first AUX channel.
 
 ### failsafe_detect_threshold
 reason: improved functionality
 
-See failsafe_min_usec and failsafe_max_usec in Failsafe documentation.
+See `failsafe_min_usec` and `failsafe_max_usec` in Failsafe documentation.

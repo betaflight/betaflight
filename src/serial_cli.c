@@ -177,10 +177,10 @@ const clivalue_t valueTable[] = {
     { "reboot_character", VAR_UINT8, &masterConfig.serialConfig.reboot_character, 48, 126 },
     { "msp_baudrate", VAR_UINT32, &masterConfig.serialConfig.msp_baudrate, 1200, 115200 },
     { "cli_baudrate", VAR_UINT32, &masterConfig.serialConfig.cli_baudrate, 1200, 115200 },
+    { "gps_baudrate", VAR_UINT32, &masterConfig.serialConfig.gps_baudrate, 0, 115200 },
     { "gps_passthrough_baudrate", VAR_UINT32, &masterConfig.serialConfig.gps_passthrough_baudrate, 1200, 115200 },
 
     { "gps_provider", VAR_UINT8, &masterConfig.gps_provider, 0, GPS_PROVIDER_MAX },
-    { "gps_initial_baudrate_index", VAR_INT8, &masterConfig.gps_initial_baudrate_index, 0, GPS_BAUDRATE_MAX },
 
     { "serialrx_provider", VAR_UINT8, &masterConfig.rxConfig.serialrx_provider, 0, SERIALRX_PROVIDER_MAX },
 

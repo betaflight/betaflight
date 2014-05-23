@@ -91,9 +91,8 @@ typedef struct serialConfig_s {
 
     uint32_t msp_baudrate;
     uint32_t cli_baudrate;
+    uint32_t gps_baudrate;
     uint32_t gps_passthrough_baudrate;
-
-    uint32_t hott_baudrate;
 
     uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 } serialConfig_t;

@@ -52,7 +52,6 @@ typedef struct master_t {
 
     // gps-related stuff
     gpsProvider_e gps_provider;
-    gpsBaudRate_e gps_initial_baudrate_index;
 
     serialConfig_t serialConfig;
 

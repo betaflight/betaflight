@@ -89,6 +89,10 @@ static const gpsInitData_t gpsInitData[] = {
     { GPS_BAUDRATE_9600,     9600, "", "" }
 };
 
+#define GPS_INIT_DATA_ENTRY_COUNT (sizeof(gpsInitData) / sizeof(gpsInitData[0]))
+
+#define DEFAULT_BAUD_RATE_INDEX 0
+
 static const uint8_t ubloxInit[] = {
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x05, 0x00, 0xFF, 0x19,           // VGS: Course over ground and Ground speed
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x03, 0x00, 0xFD, 0x15,           // GSV: GNSS Satellites in View
@@ -145,9 +149,18 @@ void gpsUseProfile(gpsProfile_t *gpsProfileToUse)
 }
 
 // When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
-void gpsInit(serialConfig_t *initialSerialConfig, uint8_t baudrateIndex, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile)
+void gpsInit(serialConfig_t *initialSerialConfig, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile)
 {
     serialConfig = initialSerialConfig;
+
+    gpsData.baudrateIndex = 0;
+    while (gpsInitData[gpsData.baudrateIndex].baudrate != serialConfig->gps_baudrate) {
+        gpsData.baudrateIndex++;
+        if (gpsData.baudrateIndex >= GPS_INIT_DATA_ENTRY_COUNT) {
+            gpsData.baudrateIndex = DEFAULT_BAUD_RATE_INDEX;
+            break;
+        }
+    }
 
     gpsProvider = initialGpsProvider;
     gpsUseProfile(initialGpsProfile);
@@ -155,7 +168,6 @@ void gpsInit(serialConfig_t *initialSerialConfig, uint8_t baudrateIndex, uint8_t
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_UNKNOWN);
 
-    gpsData.baudrateIndex = baudrateIndex;
     gpsData.lastMessage = millis();
     gpsData.errors = 0;
 
@@ -167,7 +179,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, uint8_t baudrateIndex, uint8_t
     gpsUsePIDs(pidProfile);
 
     // no callback - buffer will be consumed in gpsThread()
-    gpsPort = openSerialPort(FUNCTION_GPS, NULL, gpsInitData[baudrateIndex].baudrate, mode, SERIAL_NOT_INVERTED);
+    gpsPort = openSerialPort(FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrate, mode, SERIAL_NOT_INVERTED);
     if (!gpsPort) {
         featureClear(FEATURE_GPS);
         return;

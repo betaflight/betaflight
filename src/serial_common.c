@@ -318,6 +318,8 @@ functionConstraint_t *getConfiguredFunctionConstraint(serialPortFunction_e funct
             updateSerialRxFunctionConstraint(&configuredFunctionConstraint);
             break;
         case FUNCTION_GPS:
+            configuredFunctionConstraint.maxBaudRate = serialConfig->gps_baudrate;
+            break;
         default:
             break;
     }
