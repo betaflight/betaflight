@@ -475,7 +475,7 @@ static void gpsNewData(uint16_t c)
             GPS_update = 0;
         else
             GPS_update = 1;
-#if 1
+#if 0
             debug[3] = GPS_update;
 #endif
 

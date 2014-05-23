@@ -6,6 +6,8 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
+
 #include "config.h"
 
 #include "drivers/serial_common.h"
@@ -14,6 +16,7 @@
 #include "failsafe.h"
 
 #include "drivers/pwm_rx.h"
+#include "drivers/pwm_rssi.h"
 #include "rx_pwm.h"
 #include "rx_sbus.h"
 #include "rx_spektrum.h"
@@ -22,14 +25,19 @@
 
 #include "rx_common.h"
 
+extern int16_t debug[4];
+
 void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+
 bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 const char rcChannelLetters[] = "AERT1234";
+
+uint16_t rssi;                  // range: [0;1023]
 
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
@@ -274,4 +282,40 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
             rxConfig->rcmap[s - rcChannelLetters] = c - input;
     }
 }
+
+void updateRSSI(void)
+{
+    if (rxConfig->rssi_channel == 0 && !feature(FEATURE_RSSI_PWM)) {
+        return;
+    }
+
+    int16_t rawPwmRssi = 0;
+    if (rxConfig->rssi_channel > 0) {
+        // Read value of AUX channel as rssi
+        rawPwmRssi = rcData[rxConfig->rssi_channel - 1];
+    } else if (feature(FEATURE_RSSI_PWM)) {
+        rawPwmRssi = pwmRSSIRead();
+
+        if (rxConfig->rssi_pwm_provider == RSSI_PWM_PROVIDER_FRSKY_1KHZ) {
+
+            // FrSky X8R has a 1khz RSSI output which is too fast for the IRQ handlers
+            // Values range from 0 to 970 and over 1000 when the transmitter is off.
+            // When the transmitter is OFF the pulse is too short to be detected hence the high value
+            // because the edge detection in the IRQ handler is the detecting the wrong edges.
+
+            if (rawPwmRssi > 1000) {
+                rawPwmRssi = 0;
+            }
+            rawPwmRssi += 1000;
+        }
+    }
+
+#if 1
+    debug[3] = rawPwmRssi;
+#endif
+
+    // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
+    rssi = (uint16_t)((constrain(rawPwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
+}
+
 

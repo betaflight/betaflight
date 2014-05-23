@@ -64,8 +64,6 @@ int16_t headFreeModeHold;
 
 int16_t telemTemperature1;      // gyro sensor temperature
 
-uint16_t rssi;                  // range: [0;1023]
-
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 extern failsafe_t *failsafe;
 
@@ -302,12 +300,7 @@ void loop(void)
                 mwDisarm();
         }
 
-        // Read value of AUX channel as rssi
-        if (masterConfig.rxConfig.rssi_channel > 0) {
-            const int16_t rssiChannelData = rcData[masterConfig.rxConfig.rssi_channel - 1];
-            // Range of rssiChannelData is [1000;2000]. rssi should be in [0;1023];
-            rssi = (uint16_t)((constrain(rssiChannelData - 1000, 0, 1000) / 1000.0f) * 1023.0f);
-        }
+        updateRSSI();
 
         if (feature(FEATURE_FAILSAFE)) {
 

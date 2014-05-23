@@ -10,6 +10,7 @@
 #include "timer_common.h"
 
 #include "pwm_output.h"
+#include "pwm_rssi.h"
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
 /*
@@ -47,79 +48,82 @@
 */
 
 enum {
-    TYPE_IP = 0x10,
-    TYPE_IW = 0x20,
-    TYPE_M = 0x40,
-    TYPE_S = 0x80
+    TYPE_IP = 1,
+    TYPE_IW,
+    TYPE_IR,
+    TYPE_M,
+    TYPE_S,
 };
 
-static const uint8_t multiPPM[] = {
-    PWM1 | TYPE_IP,     // PPM input
-    PWM9 | TYPE_M,      // Swap to servo if needed
-    PWM10 | TYPE_M,     // Swap to servo if needed
-    PWM11 | TYPE_M,
-    PWM12 | TYPE_M,
-    PWM13 | TYPE_M,
-    PWM14 | TYPE_M,
-    PWM5 | TYPE_M,      // Swap to servo if needed
-    PWM6 | TYPE_M,      // Swap to servo if needed
-    PWM7 | TYPE_M,      // Swap to servo if needed
-    PWM8 | TYPE_M,      // Swap to servo if needed
-    0xFF
+static const uint16_t multiPPM[] = {
+    PWM1  | (TYPE_IP << 8),     // PPM input
+    PWM2  | (TYPE_IR << 8),      // PWM RSSI input
+    PWM9  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM10 | (TYPE_M << 8),     // Swap to servo if needed
+    PWM11 | (TYPE_M << 8),
+    PWM12 | (TYPE_M << 8),
+    PWM13 | (TYPE_M << 8),
+    PWM14 | (TYPE_M << 8),
+    PWM5  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM6  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM7  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM8  | (TYPE_M << 8),      // Swap to servo if needed
+    0xFFFF
 };
 
-static const uint8_t multiPWM[] = {
-    PWM1 | TYPE_IW,     // input #1
-    PWM2 | TYPE_IW,
-    PWM3 | TYPE_IW,
-    PWM4 | TYPE_IW,
-    PWM5 | TYPE_IW,
-    PWM6 | TYPE_IW,
-    PWM7 | TYPE_IW,
-    PWM8 | TYPE_IW,     // input #8
-    PWM9 | TYPE_M,      // motor #1 or servo #1 (swap to servo if needed)
-    PWM10 | TYPE_M,     // motor #2 or servo #2 (swap to servo if needed)
-    PWM11 | TYPE_M,     // motor #1 or #3
-    PWM12 | TYPE_M,
-    PWM13 | TYPE_M,
-    PWM14 | TYPE_M,     // motor #4 or #6
-    0xFF
+static const uint16_t multiPWM[] = {
+    PWM1  | (TYPE_IW << 8),     // input #1
+    PWM2  | (TYPE_IW << 8),
+    PWM3  | (TYPE_IW << 8),
+    PWM4  | (TYPE_IW << 8),
+    PWM5  | (TYPE_IW << 8),
+    PWM6  | (TYPE_IW << 8),
+    PWM7  | (TYPE_IW << 8),
+    PWM8  | (TYPE_IW << 8),     // input #8
+    PWM9  | (TYPE_M  << 8),      // motor #1 or servo #1 (swap to servo if needed)
+    PWM10 | (TYPE_M  << 8),     // motor #2 or servo #2 (swap to servo if needed)
+    PWM11 | (TYPE_M  << 8),     // motor #1 or #3
+    PWM12 | (TYPE_M  << 8),
+    PWM13 | (TYPE_M  << 8),
+    PWM14 | (TYPE_M  << 8),     // motor #4 or #6
+    0xFFFF
 };
 
-static const uint8_t airPPM[] = {
-    PWM1 | TYPE_IP,     // PPM input
-    PWM9 | TYPE_M,      // motor #1
-    PWM10 | TYPE_M,     // motor #2
-    PWM11 | TYPE_S,     // servo #1
-    PWM12 | TYPE_S,
-    PWM13 | TYPE_S,
-    PWM14 | TYPE_S,     // servo #4
-    PWM5 | TYPE_S,      // servo #5
-    PWM6 | TYPE_S,
-    PWM7 | TYPE_S,
-    PWM8 | TYPE_S,      // servo #8
-    0xFF
+static const uint16_t airPPM[] = {
+    PWM1  | (TYPE_IP << 8),     // PPM input
+    PWM2  | (TYPE_IR << 8),     // PWM RSSI input
+    PWM9  | (TYPE_M  << 8),      // motor #1
+    PWM10 | (TYPE_M  << 8),     // motor #2
+    PWM11 | (TYPE_S  << 8),     // servo #1
+    PWM12 | (TYPE_S  << 8),
+    PWM13 | (TYPE_S  << 8),
+    PWM14 | (TYPE_S  << 8),     // servo #4
+    PWM5  | (TYPE_S  << 8),      // servo #5
+    PWM6  | (TYPE_S  << 8),
+    PWM7  | (TYPE_S  << 8),
+    PWM8  | (TYPE_S  << 8),      // servo #8
+    0xFFFF
 };
 
-static const uint8_t airPWM[] = {
-    PWM1 | TYPE_IW,     // input #1
-    PWM2 | TYPE_IW,
-    PWM3 | TYPE_IW,
-    PWM4 | TYPE_IW,
-    PWM5 | TYPE_IW,
-    PWM6 | TYPE_IW,
-    PWM7 | TYPE_IW,
-    PWM8 | TYPE_IW,     // input #8
-    PWM9 | TYPE_M,      // motor #1
-    PWM10 | TYPE_M,     // motor #2
-    PWM11 | TYPE_S,     // servo #1
-    PWM12 | TYPE_S,
-    PWM13 | TYPE_S,
-    PWM14 | TYPE_S,     // servo #4
-    0xFF
+static const uint16_t airPWM[] = {
+    PWM1  | (TYPE_IW << 8),     // input #1
+    PWM2  | (TYPE_IW << 8),
+    PWM3  | (TYPE_IW << 8),
+    PWM4  | (TYPE_IW << 8),
+    PWM5  | (TYPE_IW << 8),
+    PWM6  | (TYPE_IW << 8),
+    PWM7  | (TYPE_IW << 8),
+    PWM8  | (TYPE_IW << 8),     // input #8
+    PWM9  | (TYPE_M  << 8),      // motor #1
+    PWM10 | (TYPE_M  << 8),     // motor #2
+    PWM11 | (TYPE_S  << 8),     // servo #1
+    PWM12 | (TYPE_S  << 8),
+    PWM13 | (TYPE_S  << 8),
+    PWM14 | (TYPE_S  << 8),     // servo #4
+    0xFFFF
 };
 
-static const uint8_t * const hardwareMaps[] = {
+static const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
     airPWM,
@@ -129,7 +133,7 @@ static const uint8_t * const hardwareMaps[] = {
 void pwmInit(drv_pwm_config_t *init)
 {
     int i = 0;
-    const uint8_t *setup;
+    const uint16_t *setup;
 
     int channelIndex = 0;
     int servoIndex = 0;
@@ -144,10 +148,10 @@ void pwmInit(drv_pwm_config_t *init)
     setup = hardwareMaps[i];
 
     for (i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        uint8_t timerIndex = setup[i] & 0x0F;
-        uint8_t mask = setup[i] & 0xF0;
+        uint8_t timerIndex = setup[i] & 0x00FF;
+        uint8_t type = (setup[i] & 0xFF00) >> 8;
 
-        if (setup[i] == 0xFF) // terminator
+        if (setup[i] == 0xFFFF) // terminator
             break;
 
 #ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
@@ -189,27 +193,30 @@ void pwmInit(drv_pwm_config_t *init)
 #endif
 
         // hacks to allow current functionality
-        if (mask & TYPE_IW && !init->useParallelPWM)
-            mask = 0;
+        if (type == TYPE_IW && !init->useParallelPWM)
+            type = 0;
 
-        if (mask & TYPE_IP && !init->usePPM)
-            mask = 0;
+        if (type == TYPE_IP && !init->usePPM)
+            type = 0;
+
+        if (type == TYPE_IR && (!init->usePWMRSSI || init->useParallelPWM))
+            type = 0;
 
         if (init->useServos && !init->airplane) {
 #if defined(STM32F10X_MD) || defined(CHEBUZZF3)
             // remap PWM9+10 as servos
             if (timerIndex == PWM9 || timerIndex == PWM10)
-                mask = TYPE_S;
+                type = TYPE_S;
 #endif
 
 #if (defined(STM32F303xC) || defined(STM32F3DISCOVERY)) && !defined(CHEBUZZF3)
             // remap PWM 5+6 or 9+10 as servos - softserial pin pairs require timer ports that use the same timer
             if (init->useSoftSerial) {
                 if (timerIndex == PWM5 || timerIndex == PWM6)
-                    mask = TYPE_S;
+                    type = TYPE_S;
             } else {
                 if (timerIndex == PWM9 || timerIndex == PWM10)
-                    mask = TYPE_S;
+                    type = TYPE_S;
             }
 #endif
         }
@@ -217,24 +224,24 @@ void pwmInit(drv_pwm_config_t *init)
         if (init->extraServos && !init->airplane) {
             // remap PWM5..8 as servos when used in extended servo mode
             if (timerIndex >= PWM5 && timerIndex <= PWM8)
-                mask = TYPE_S;
+                type = TYPE_S;
         }
 
-        if (mask & TYPE_IP) {
+        if (type == TYPE_IP) {
             ppmInConfig(timerIndex);
-        } else if (mask & TYPE_IW) {
+        } else if (type == TYPE_IW) {
             pwmInConfig(timerIndex, channelIndex);
             channelIndex++;
-        } else if (mask & TYPE_M) {
-
-
+        } else if (type == TYPE_IR) {
+            pwmRSSIInConfig(timerIndex);
+        } else if (type == TYPE_M) {
             if (init->motorPwmRate > 500) {
             	pwmBrushedMotorConfig(&timerHardware[timerIndex], motorIndex, init->motorPwmRate, init->idlePulse);
             } else {
             	pwmBrushlessMotorConfig(&timerHardware[timerIndex], motorIndex, init->motorPwmRate, init->idlePulse);
             }
             motorIndex++;
-        } else if (mask & TYPE_S) {
+        } else if (type == TYPE_S) {
             pwmServoConfig(&timerHardware[timerIndex], servoIndex, init->servoPwmRate, init->servoCenterPulse);
             servoIndex++;
         }

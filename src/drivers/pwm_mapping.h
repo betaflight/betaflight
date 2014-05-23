@@ -21,6 +21,7 @@
 typedef struct drv_pwm_config_t {
     bool useParallelPWM;
     bool usePPM;
+    bool usePWMRSSI;
 #ifdef STM32F10X_MD
     bool useUART2;
 #endif

@@ -86,7 +86,7 @@ static const char * const featureNames[] = {
     "RX_PPM", "VBAT", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "LED_RING", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D", "RX_PARALLEL_PWM",
-    "RX_MSP", NULL
+    "RX_MSP", "RSSI_PWM", NULL
 };
 
 // sync this with AvailableSensors enum from board.h
@@ -150,6 +150,7 @@ const clivalue_t valueTable[] = {
     { "mincheck", VAR_UINT16, &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "maxcheck", VAR_UINT16, &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "rssi_channel", VAR_INT8, &masterConfig.rxConfig.rssi_channel, 0, MAX_SUPPORTED_RC_CHANNEL_COUNT },
+    { "rssi_pwm_provider", VAR_INT8, &masterConfig.rxConfig.rssi_pwm_provider, 0, RSSI_PWM_PROVIDER_MAX },
 
     { "minthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "maxthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
