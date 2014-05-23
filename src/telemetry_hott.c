@@ -280,7 +280,7 @@ void configureHoTTTelemetryPort(void)
 }
 
 
-#define CYCLETIME_50_HZ ((1000 * 1000) / 50)
+#define CYCLETIME_5_HZ ((1000 * 1000) / 5)
 #define HOTT_RX_SCHEDULE 4000
 #define HOTTV4_TX_DELAY_US 3000
 
@@ -423,7 +423,7 @@ void hottSendTelemetryData(void) {
 
 bool shouldPrepareHoTTMessage(uint32_t currentMicros)
 {
-    return currentMicros - lastMessagePreparedAt >= CYCLETIME_50_HZ;
+    return currentMicros - lastMessagePreparedAt >= CYCLETIME_5_HZ;
 }
 
 bool shouldCheckForHoTTRequest()
