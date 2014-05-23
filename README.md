@@ -1,37 +1,58 @@
 Cleanflight Configurator
 ========================
 
-Configurator based on chrome.serial API running on Google Chrome/Chromium core
+Cleanflight configurator is a fork of Baseflight Configurator to support Cleanflight instead of baseflight.
 
-Keep in mind that this configurator is the most up-to-date configurator implementation for Baseflight flight software,
-in many cases it requires latest firmware on the flight controller, if you are experiencing any problems,
-please make sure you are running the latest version of firmware.
+It allows you to configure the Cleanflight software running on any supported cleanflight target.
+
+Cleanflight is available here:
+
+https://github.com/hydra/cleanflight
+
+Authors
+-------
+ctn - primary author and maintainer of Baseflight configurator.
+Dominic Clifton/hydra - maintainer of the Cleanflight fork. 
+
+This configurator is the only configurator for cleanflight specific features, it will likely require that you run the latest firmware on the flight controller,
+if you are experiencing any problems please make sure you are running the latest version of firmware.
 
 Installation
 ------------
-1. - Visit [Chrome web store](https://chrome.google.com/webstore/detail/baseflight-multiwii-confi/mppkgnedeapfejgfimkdoninnofofigk)
-2. - Click <strong>+ Free</strong>
-
-Alternative way
----------------
 1. - Clone the repo to any local directory or download it as zip
 2. - Start chromium or google chrome and go to tools -> extension
 3. - Check the "Developer mode" checkbox
-4. - Click on load unpacked extension and point it to the baseflight configurator directory (for example D:/baseflight-configurator)
+4. - Click on load unpacked extension and point it to the cleanflight configurator directory (for example D:/cleanflight-configurator)
 
 How to use
 -----------
-You can find the Baseflight - Configurator icon in your application tab "Apps"
+You can find the Cleanflight - Configurator icon in your application tab "Apps"
 
 Linux users
 -----------
 1. Dont forget to add your user into dialout group "sudo usermod -aG dialout YOUR_USERNAME" for serial access
 2. If you have 3D model animation problems, Enable "Override software rendering list" in chrome flags chrome://flags/#ignore-gpu-blacklist
 
+Support
+-------
+For non-Cleanflight specific issues please raise them here so that the get fixed in the primary cdoebase.
+
+https://github.com/multiwii/baseflight-configurator/issues
+
+For Cleanflight specific issues raise them here:
+
+https://github.com/hydra/cleanflight-configurator/issues
+
+There is an IRC channel for cleanflight, here: irc://irc.freenode.net/#cleanflight
+
+Support for baseflight configurator can also be found on irc, here: irc://irc.freenode.net/#multiwii
+
+Technical details
+-----------------
+
+The configurator is based on chrome.serial API running on Google Chrome/Chromium core.
+
 Developers
 ----------
-We accept clean and reasonable patches, always target the <strong>"development"</strong> branch for the pull requests
+We accept clean and reasonable patches, submit them!
 
-Note
-----
-This is a fork of Baseflight Configurator to support Cleanflight instead of baseflight.
