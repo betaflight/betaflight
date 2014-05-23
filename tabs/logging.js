@@ -122,6 +122,15 @@ function tab_initialize_logging() {
                 case 'MSP_ALTITUDE':
                     sample += ',' + SENSOR_DATA.altitude;
                     break;
+                case 'MSP_RAW_GPS':
+                    sample += ',' + GPS_DATA.fix;
+                    sample += ',' + GPS_DATA.numSat;
+                    sample += ',' + (GPS_DATA.lat / 10000000);
+                    sample += ',' + (GPS_DATA.lon / 10000000);
+                    sample += ',' + GPS_DATA.alt;
+                    sample += ',' + GPS_DATA.speed;
+                    sample += ',' + GPS_DATA.ground_course;
+                    break;
                 case 'MSP_RC':
                     for (var chan = 0; chan < RC.active_channels; chan++) {
                         sample += ',' + RC.channels[chan];
@@ -164,6 +173,15 @@ function tab_initialize_logging() {
                     break;
                 case 'MSP_ALTITUDE':
                     head += ',' + 'altitude';
+                    break;
+                case 'MSP_RAW_GPS':
+                    head += ',' + 'gpsFix';
+                    head += ',' + 'gpsNumSat';
+                    head += ',' + 'gpsLat';
+                    head += ',' + 'gpsLon';
+                    head += ',' + 'gpsAlt';
+                    head += ',' + 'gpsSpeed';
+                    head += ',' + 'gpsGroundCourse';
                     break;
                 case 'MSP_RC':
                     for (var chan = 0; chan < RC.active_channels; chan++) {
