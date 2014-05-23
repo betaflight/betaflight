@@ -1,6 +1,7 @@
 ChebuzzF3
 
 Author: Dominic Clifton
+
 All connections were traced using a multimeter and then verified against the TauLabs source code using the revision linked.
 
 https://github.com/TauLabs/TauLabs/blob/816760dec2a20db7fb9ec1a505add240e696c31f/flight/targets/flyingf3/board-info/board_hw_defs.c
