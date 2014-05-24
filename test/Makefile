@@ -30,7 +30,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread -ggdb -O0
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = battery_unittest flight_imu_unittest gps_conversion_unittest
+TESTS = battery_unittest flight_imu_unittest gps_conversion_unittest telemetry_hott_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -107,3 +107,14 @@ gps_conversion_unittest.o : $(TEST_DIR)/gps_conversion_unittest.cc \
 gps_conversion_unittest : gps_conversion.o gps_conversion_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
+
+
+telemetry_hott.o : $(USER_DIR)/telemetry_hott.c $(USER_DIR)/telemetry_hott.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/telemetry_hott.c -I$(TEST_DIR)
+
+telemetry_hott_unittest.o : $(TEST_DIR)/telemetry_hott_unittest.cc \
+                     $(USER_DIR)/telemetry_hott.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/telemetry_hott_unittest.cc -I$(USER_DIR)
+
+telemetry_hott_unittest : telemetry_hott.o telemetry_hott_unittest.o gps_conversion.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@

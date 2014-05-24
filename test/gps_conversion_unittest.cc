@@ -27,11 +27,12 @@ TEST(GpsConversionTest, GPSCoordToDegrees_NMEA_Values)
         {"000.0", 0},
         {"00000.0000", 0},
         {"0.0001", 16}, // smallest value
-        {"25599.9999", 2566666650}, // largest value
-        {"25599.99999", 2566666650}, // too many fractional digits
-        {"25699.9999", 16666650}, // overflowed without detection
-        {"5321.6802", 533613366},
-        {"00630.3372", 65056200},
+        {"25599.9999", 2566666650UL}, // largest value
+        {"25599.99999", 2566666650UL}, // too many fractional digits
+        {"25699.9999", 16666650UL}, // overflowed without detection
+        {"5128.3727", 514728783UL},
+        {"5321.6802", 533613366UL},
+        {"00630.3372", 65056200UL},
     };
 
     // expect
@@ -48,3 +49,4 @@ TEST(GpsConversionTest, GPSCoordToDegrees_NMEA_Values)
         EXPECT_EQ(result, expectation->degrees);
     }
 }
+

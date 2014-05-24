@@ -68,7 +68,7 @@ extern int16_t debug[4];
 #define HOTT_TX_DELAY_US 3000
 
 static uint32_t lastHoTTRequestCheckAt = 0;
-static uint32_t lastMessagePreparedAt = 0;
+static uint32_t lastMessagesPreparedAt = 0;
 
 static bool hottIsSending = false;
 
@@ -119,74 +119,79 @@ static void initialiseMessages(void)
     initialiseGPSMessage(&hottGPSMessage, sizeof(hottGPSMessage));
 }
 
-void hottFormatGPSResponse(void)
+void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude)
 {
-    hottGPSMessage.gps_satelites = GPS_numSat;
+    uint8_t deg = latitude / 10000000UL;
+    uint32_t sec = (latitude - (deg * 10000000UL)) * 6;
+    uint8_t min = sec / 1000000UL;
+    sec = (sec % 1000000UL) / 100UL;
+    uint16_t degMin = (deg * 100) + min;
+
+    hottGPSMessage->pos_NS = (latitude < 0);
+    hottGPSMessage->pos_NS_dm_L = degMin;
+    hottGPSMessage->pos_NS_dm_H = degMin >> 8;
+    hottGPSMessage->pos_NS_sec_L = sec;
+    hottGPSMessage->pos_NS_sec_H = sec >> 8;
+
+    deg = longitude / 10000000UL;
+    sec = (longitude - (deg * 10000000UL)) * 6;
+    min = sec / 1000000UL;
+    sec = (sec % 1000000UL) / 100UL;
+    degMin = (deg * 100) + min;
+
+    hottGPSMessage->pos_EW = (longitude < 0);
+    hottGPSMessage->pos_EW_dm_L = degMin;
+    hottGPSMessage->pos_EW_dm_H = degMin >> 8;
+    hottGPSMessage->pos_EW_sec_L = sec;
+    hottGPSMessage->pos_EW_sec_H = sec >> 8;
+}
+
+void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
+{
+    hottGPSMessage->gps_satelites = GPS_numSat;
 
     if (!f.GPS_FIX) {
-        hottGPSMessage.gps_fix_char = GPS_FIX_CHAR_NONE;
+        hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_NONE;
         return;
     }
 
     if (GPS_numSat >= 5) {
-        hottGPSMessage.gps_fix_char = GPS_FIX_CHAR_3D;
+        hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_3D;
     } else {
-        hottGPSMessage.gps_fix_char = GPS_FIX_CHAR_2D;
+        hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_2D;
     }
 
-    // latitude
-    hottGPSMessage.pos_NS = (GPS_coord[LAT] < 0);
-    uint8_t deg = GPS_coord[LAT] / 100000;
-    uint32_t sec = (GPS_coord[LAT] - (deg * 100000)) * 6;
-    uint8_t min = sec / 10000;
-    sec = sec % 10000;
-    uint16_t degMin = (deg * 100) + min;
-    hottGPSMessage.pos_NS_dm_L = degMin;
-    hottGPSMessage.pos_NS_dm_H = degMin >> 8;
-    hottGPSMessage.pos_NS_sec_L = sec;
-    hottGPSMessage.pos_NS_sec_H = sec >> 8;
-
-    // longitude
-    hottGPSMessage.pos_EW = (GPS_coord[LON] < 0);
-    deg = GPS_coord[LON] / 100000;
-    sec = (GPS_coord[LON] - (deg * 100000)) * 6;
-    min = sec / 10000;
-    sec = sec % 10000;
-    degMin = (deg * 100) + min;
-    hottGPSMessage.pos_EW_dm_L = degMin;
-    hottGPSMessage.pos_EW_dm_H = degMin >> 8;
-    hottGPSMessage.pos_EW_sec_L = sec;
-    hottGPSMessage.pos_EW_sec_H = sec >> 8;
+    addGPSCoordinates(hottGPSMessage, GPS_coord[LAT], GPS_coord[LON]);
 
     // GPS Speed in km/h
-    uint16_t speed = (GPS_speed / 100) * 36; // 0.1m/s * 0.36 = km/h
-    hottGPSMessage.gps_speed_L = speed & 0x00FF;
-    hottGPSMessage.gps_speed_H = speed >> 8;
+    uint16_t speed = (GPS_speed / 100) * 36; // 0->1m/s * 0->36 = km/h
+    hottGPSMessage->gps_speed_L = speed & 0x00FF;
+    hottGPSMessage->gps_speed_H = speed >> 8;
 
-    hottGPSMessage.home_distance_L = GPS_distanceToHome & 0x00FF;
-    hottGPSMessage.home_distance_H = GPS_distanceToHome >> 8;
+    hottGPSMessage->home_distance_L = GPS_distanceToHome & 0x00FF;
+    hottGPSMessage->home_distance_H = GPS_distanceToHome >> 8;
 
-    hottGPSMessage.altitude_L = GPS_altitude & 0x00FF;
-    hottGPSMessage.altitude_H = GPS_altitude >> 8;
+    hottGPSMessage->altitude_L = GPS_altitude & 0x00FF;
+    hottGPSMessage->altitude_H = GPS_altitude >> 8;
 
-    hottGPSMessage.home_direction = GPS_directionToHome;
+    hottGPSMessage->home_direction = GPS_directionToHome;
 }
 
-static inline void hottEAMUpdateBattery(void)
+static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    hottEAMMessage.main_voltage_L = vbat & 0xFF;
-    hottEAMMessage.main_voltage_H = vbat >> 8;
-    hottEAMMessage.batt1_voltage_L = vbat & 0xFF;
-    hottEAMMessage.batt1_voltage_H = vbat >> 8;
+    hottEAMMessage->main_voltage_L = vbat & 0xFF;
+    hottEAMMessage->main_voltage_H = vbat >> 8;
+    hottEAMMessage->batt1_voltage_L = vbat & 0xFF;
+    hottEAMMessage->batt1_voltage_H = vbat >> 8;
 }
 
-void hottFormatEAMResponse(void)
+void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     // Reset alarms
-    hottEAMMessage.warning_beeps = 0x0;
-    hottEAMMessage.alarm_invers1 = 0x0;
+    hottEAMMessage->warning_beeps = 0x0;
+    hottEAMMessage->alarm_invers1 = 0x0;
 
-    hottEAMUpdateBattery();
+    hottEAMUpdateBattery(hottEAMMessage);
 }
 
 static void hottSerialWrite(uint8_t c)
@@ -256,9 +261,9 @@ static inline void hottSendEAMResponse(void)
     hottSendResponse((uint8_t *)&hottEAMMessage, sizeof(hottEAMMessage));
 }
 
-static void hottPrepareMessage(void) {
-    hottFormatEAMResponse();
-    hottFormatGPSResponse();
+static void hottPrepareMessages(void) {
+    hottPrepareEAMResponse(&hottEAMMessage);
+    hottPrepareGPSResponse(&hottGPSMessage);
 }
 
 static void processBinaryModeRequest(uint8_t address) {
@@ -367,9 +372,9 @@ static void hottSendTelemetryData(void) {
     hottSerialWrite(*hottMsg++);
 }
 
-static inline bool shouldPrepareHoTTMessage(uint32_t currentMicros)
+static inline bool shouldPrepareHoTTMessages(uint32_t currentMicros)
 {
-    return currentMicros - lastMessagePreparedAt >= HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ;
+    return currentMicros - lastMessagesPreparedAt >= HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ;
 }
 
 static inline bool shouldCheckForHoTTRequest()
@@ -386,9 +391,9 @@ void handleHoTTTelemetry(void)
     uint32_t now = micros();
 
 
-    if (shouldPrepareHoTTMessage(now)) {
-        hottPrepareMessage();
-        lastMessagePreparedAt = now;
+    if (shouldPrepareHoTTMessages(now)) {
+        hottPrepareMessages();
+        lastMessagesPreparedAt = now;
     }
 
     if (shouldCheckForHoTTRequest()) {
