@@ -59,26 +59,43 @@
 #include "telemetry_common.h"
 #include "telemetry_hott.h"
 
-#define HOTT_DEBUG
-#define HOTT_DEBUG_SHOW_EAM_UPDATE_TOGGLE
-#define HOTT_DEBUG_USE_EAM_TEST_DATA
 extern int16_t debug[4];
 
-static serialPort_t *hottPort;
+#define HOTT_DEBUG
+
+#define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
+#define HOTT_RX_SCHEDULE 4000
+#define HOTT_TX_DELAY_US 3000
+
+static uint32_t lastHoTTRequestCheckAt = 0;
+static uint32_t lastMessagePreparedAt = 0;
+
+static bool hottIsSending = false;
+
+static uint8_t *hottMsg = NULL;
+static uint8_t hottMsgRemainingBytesToSendCount;
+static uint8_t hottMsgCrc;
+
+#define HOTT_CRC_SIZE (sizeof(hottMsgCrc))
 
 #define HOTT_BAUDRATE 19200
 #define HOTT_INITIAL_PORT_MODE MODE_RX
 
+static serialPort_t *hottPort;
+
 static telemetryConfig_t *telemetryConfig;
 
-const uint8_t kHoTTv4BinaryPacketSize = 45;
-const uint8_t kHoTTv4TextPacketSize = 173;
-static HOTT_GPS_MSG_t HoTTV4GPSModule;
-static HOTT_EAM_MSG_t HoTTV4ElectricAirModule;
+static HOTT_GPS_MSG_t hottGPSMessage;
+static HOTT_EAM_MSG_t hottEAMMessage;
 
-static void hottV4SerialWrite(uint8_t c);
+typedef enum {
+    GPS_FIX_CHAR_NONE = '-',
+    GPS_FIX_CHAR_2D = '2',
+    GPS_FIX_CHAR_3D = '3',
+    GPS_FIX_CHAR_DGPS = 'D',
+} gpsFixChar_e;
 
-void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
+static void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
 {
     memset(msg, 0, size);
     msg->start_byte = 0x7C;
@@ -87,7 +104,7 @@ void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
     msg->stop_byte = 0x7D;
 }
 
-void initialiseGPSMessage(HOTT_GPS_MSG_t *msg, size_t size)
+static void initialiseGPSMessage(HOTT_GPS_MSG_t *msg, size_t size)
 {
     memset(msg, 0, size);
     msg->start_byte = 0x7C;
@@ -96,143 +113,83 @@ void initialiseGPSMessage(HOTT_GPS_MSG_t *msg, size_t size)
     msg->stop_byte = 0x7D;
 }
 
-void initialiseMessages(void)
+static void initialiseMessages(void)
 {
-    initialiseEAMMessage(&HoTTV4ElectricAirModule, sizeof(HoTTV4ElectricAirModule));
-    initialiseGPSMessage(&HoTTV4GPSModule, sizeof(HoTTV4GPSModule));
+    initialiseEAMMessage(&hottEAMMessage, sizeof(hottEAMMessage));
+    initialiseGPSMessage(&hottGPSMessage, sizeof(hottGPSMessage));
 }
 
-typedef enum {
-    GPS_FIX_CHAR_NONE = '-',
-    GPS_FIX_CHAR_2D = '2',
-    GPS_FIX_CHAR_3D = '3',
-    GPS_FIX_CHAR_DGPS = 'D',
-} gpsFixChar_e;
-/*
- * Sends HoTTv4 capable GPS telemetry frame.
- */
-
-void hottV4FormatGPSResponse(void)
+void hottFormatGPSResponse(void)
 {
-    // Number of Satelites
-    HoTTV4GPSModule.gps_satelites = GPS_numSat;
-    if (f.GPS_FIX) {
-        // GPS fix
-        if (GPS_numSat >= 5) {
-            HoTTV4GPSModule.gps_fix_char = GPS_FIX_CHAR_3D;
-        } else {
-            HoTTV4GPSModule.gps_fix_char = GPS_FIX_CHAR_2D;
-        }
+    hottGPSMessage.gps_satelites = GPS_numSat;
 
-        // latitude
-        HoTTV4GPSModule.pos_NS = (GPS_coord[LAT] < 0);
-        uint8_t deg = GPS_coord[LAT] / 100000;
-        uint32_t sec = (GPS_coord[LAT] - (deg * 100000)) * 6;
-        uint8_t min = sec / 10000;
-        sec = sec % 10000;
-        uint16_t degMin = (deg * 100) + min;
-        HoTTV4GPSModule.pos_NS_dm_L = degMin;
-        HoTTV4GPSModule.pos_NS_dm_H = degMin >> 8;
-        HoTTV4GPSModule.pos_NS_sec_L = sec;
-        HoTTV4GPSModule.pos_NS_sec_H = sec >> 8;
+    if (!f.GPS_FIX) {
+        hottGPSMessage.gps_fix_char = GPS_FIX_CHAR_NONE;
+        return;
+    }
 
-        // longitude
-        HoTTV4GPSModule.pos_EW = (GPS_coord[LON] < 0);
-        deg = GPS_coord[LON] / 100000;
-        sec = (GPS_coord[LON] - (deg * 100000)) * 6;
-        min = sec / 10000;
-        sec = sec % 10000;
-        degMin = (deg * 100) + min;
-        HoTTV4GPSModule.pos_EW_dm_L = degMin;
-        HoTTV4GPSModule.pos_EW_dm_H = degMin >> 8;
-        HoTTV4GPSModule.pos_EW_sec_L = sec;
-        HoTTV4GPSModule.pos_EW_sec_H = sec >> 8;
-
-        // GPS Speed in km/h
-        uint16_t speed = (GPS_speed / 100) * 36; // 0.1m/s * 0.36 = km/h
-        HoTTV4GPSModule.gps_speed_L = speed & 0x00FF;
-        HoTTV4GPSModule.gps_speed_H = speed >> 8;
-
-        // Distance to home
-        HoTTV4GPSModule.home_distance_L = GPS_distanceToHome & 0x00FF;
-        HoTTV4GPSModule.home_distance_H = GPS_distanceToHome >> 8;
-
-        // Altitude
-        HoTTV4GPSModule.altitude_L = GPS_altitude & 0x00FF;
-        HoTTV4GPSModule.altitude_H = GPS_altitude >> 8;
-
-        // Direction to home
-        HoTTV4GPSModule.home_direction = GPS_directionToHome;
+    if (GPS_numSat >= 5) {
+        hottGPSMessage.gps_fix_char = GPS_FIX_CHAR_3D;
     } else {
-        HoTTV4GPSModule.gps_fix_char = GPS_FIX_CHAR_NONE;
+        hottGPSMessage.gps_fix_char = GPS_FIX_CHAR_2D;
     }
+
+    // latitude
+    hottGPSMessage.pos_NS = (GPS_coord[LAT] < 0);
+    uint8_t deg = GPS_coord[LAT] / 100000;
+    uint32_t sec = (GPS_coord[LAT] - (deg * 100000)) * 6;
+    uint8_t min = sec / 10000;
+    sec = sec % 10000;
+    uint16_t degMin = (deg * 100) + min;
+    hottGPSMessage.pos_NS_dm_L = degMin;
+    hottGPSMessage.pos_NS_dm_H = degMin >> 8;
+    hottGPSMessage.pos_NS_sec_L = sec;
+    hottGPSMessage.pos_NS_sec_H = sec >> 8;
+
+    // longitude
+    hottGPSMessage.pos_EW = (GPS_coord[LON] < 0);
+    deg = GPS_coord[LON] / 100000;
+    sec = (GPS_coord[LON] - (deg * 100000)) * 6;
+    min = sec / 10000;
+    sec = sec % 10000;
+    degMin = (deg * 100) + min;
+    hottGPSMessage.pos_EW_dm_L = degMin;
+    hottGPSMessage.pos_EW_dm_H = degMin >> 8;
+    hottGPSMessage.pos_EW_sec_L = sec;
+    hottGPSMessage.pos_EW_sec_H = sec >> 8;
+
+    // GPS Speed in km/h
+    uint16_t speed = (GPS_speed / 100) * 36; // 0.1m/s * 0.36 = km/h
+    hottGPSMessage.gps_speed_L = speed & 0x00FF;
+    hottGPSMessage.gps_speed_H = speed >> 8;
+
+    hottGPSMessage.home_distance_L = GPS_distanceToHome & 0x00FF;
+    hottGPSMessage.home_distance_H = GPS_distanceToHome >> 8;
+
+    hottGPSMessage.altitude_L = GPS_altitude & 0x00FF;
+    hottGPSMessage.altitude_H = GPS_altitude >> 8;
+
+    hottGPSMessage.home_direction = GPS_directionToHome;
 }
 
-/**
- * Writes cell 1-4 high, low values and if not available
- * calculates vbat.
- */
-
-static uint8_t updateCount = 0;
-
-static void hottV4EAMUpdateBattery(void)
+static inline void hottEAMUpdateBattery(void)
 {
-#ifdef HOTT_DEBUG_USE_EAM_TEST_DATA
-    HoTTV4ElectricAirModule.cell1_L = 3.30f * 10 * 5; // 2mv step - 3.30v
-    HoTTV4ElectricAirModule.cell1_H = 4.20f * 10 * 5; // 2mv step - 4.20v
-
-    HoTTV4ElectricAirModule.cell2_L = 0;
-    HoTTV4ElectricAirModule.cell2_H = 0;
-
-    HoTTV4ElectricAirModule.cell3_L = 0;
-    HoTTV4ElectricAirModule.cell3_H = 0;
-
-    HoTTV4ElectricAirModule.cell4_L = 0;
-    HoTTV4ElectricAirModule.cell4_H = 0;
-
-    uint16_t currentUsed = updateCount * 10;
-    HoTTV4ElectricAirModule.batt_cap_L = currentUsed & 0xFF;
-    HoTTV4ElectricAirModule.batt_cap_H = currentUsed >> 8;
-#endif
-
-    HoTTV4ElectricAirModule.main_voltage_L = vbat & 0xFF;
-    HoTTV4ElectricAirModule.main_voltage_H = vbat >> 8;
-    HoTTV4ElectricAirModule.batt1_voltage_L = vbat & 0xFF;
-    HoTTV4ElectricAirModule.batt1_voltage_H = vbat >> 8;
-
-#if 0 // TODO find other voltage via ADC?
-    HoTTV4ElectricAirModule.batt2_voltage_L = 0 & 0xFF;
-    HoTTV4ElectricAirModule.batt2_voltage_H = 0 >> 8;
-#endif
-
-#ifdef HOTT_DEBUG_SHOW_EAM_UPDATE_TOGGLE
-    if (updateCount & 1) {
-        HoTTV4ElectricAirModule.alarm_invers1 |= HOTT_EAM_ALARM1_FLAG_MAIN_VOLTAGE; // Invert Voltage display
-    }
-#endif
+    hottEAMMessage.main_voltage_L = vbat & 0xFF;
+    hottEAMMessage.main_voltage_H = vbat >> 8;
+    hottEAMMessage.batt1_voltage_L = vbat & 0xFF;
+    hottEAMMessage.batt1_voltage_H = vbat >> 8;
 }
 
-static void hottV4EAMUpdateTemperatures(void)
-{
-    HoTTV4ElectricAirModule.temp1 = HOTT_EAM_OFFSET_TEMPERATURE + 0;
-    HoTTV4ElectricAirModule.temp2 = HOTT_EAM_OFFSET_TEMPERATURE + 0;
-}
-
-
-/**
- * Sends HoTTv4 capable EAM telemetry frame.
- */
-void hottV4FormatEAMResponse(void)
+void hottFormatEAMResponse(void)
 {
     // Reset alarms
-    HoTTV4ElectricAirModule.warning_beeps = 0x0;
-    HoTTV4ElectricAirModule.alarm_invers1 = 0x0;
+    hottEAMMessage.warning_beeps = 0x0;
+    hottEAMMessage.alarm_invers1 = 0x0;
 
-    hottV4EAMUpdateBattery();
-    hottV4EAMUpdateTemperatures();
+    hottEAMUpdateBattery();
 }
 
-static void hottV4SerialWrite(uint8_t c)
+static void hottSerialWrite(uint8_t c)
 {
     static uint8_t serialWrites = 0;
     serialWrites++;
@@ -279,23 +236,7 @@ void configureHoTTTelemetryPort(void)
     }
 }
 
-
-#define CYCLETIME_5_HZ ((1000 * 1000) / 5)
-#define HOTT_RX_SCHEDULE 4000
-#define HOTTV4_TX_DELAY_US 3000
-
-static uint32_t lastHoTTRequestCheckAt = 0;
-static uint32_t lastMessagePreparedAt = 0;
-
-static bool hottIsSending = false;
-
-static uint8_t *hottMsg = NULL;
-static uint8_t hottMsgRemainingBytesToSendCount;
-static uint8_t hottMsgCrc;
-
-#define HOTT_CRC_SIZE (sizeof(hottMsgCrc))
-
-void hottV4SendResponse(uint8_t *buffer, int length)
+static void hottSendResponse(uint8_t *buffer, int length)
 {
     if(hottIsSending) {
         return;
@@ -305,44 +246,49 @@ void hottV4SendResponse(uint8_t *buffer, int length)
     hottMsgRemainingBytesToSendCount = length + HOTT_CRC_SIZE;
 }
 
-void hottV4SendGPSResponse(void)
+static inline void hottSendGPSResponse(void)
 {
-    hottV4SendResponse((uint8_t *)&HoTTV4GPSModule, sizeof(HoTTV4GPSModule));
+    hottSendResponse((uint8_t *)&hottGPSMessage, sizeof(hottGPSMessage));
 }
 
-void hottV4SendEAMResponse(void)
+static inline void hottSendEAMResponse(void)
 {
-    updateCount++;
-    hottV4SendResponse((uint8_t *)&HoTTV4ElectricAirModule, sizeof(HoTTV4ElectricAirModule));
+    hottSendResponse((uint8_t *)&hottEAMMessage, sizeof(hottEAMMessage));
 }
 
-void hottPrepareMessage(void) {
-    hottV4FormatEAMResponse();
-    hottV4FormatGPSResponse();
+static void hottPrepareMessage(void) {
+    hottFormatEAMResponse();
+    hottFormatGPSResponse();
 }
 
-void processBinaryModeRequest(uint8_t address) {
+static void processBinaryModeRequest(uint8_t address) {
 
+#ifdef HOTT_DEBUG
     static uint8_t hottBinaryRequests = 0;
     static uint8_t hottGPSRequests = 0;
     static uint8_t hottEAMRequests = 0;
-
+#endif
 
     switch (address) {
         case 0x8A:
+#ifdef HOTT_DEBUG
             hottGPSRequests++;
+#endif
             if (sensors(SENSOR_GPS)) {
-                hottV4SendGPSResponse();
+                hottSendGPSResponse();
             }
             break;
         case 0x8E:
+#ifdef HOTT_DEBUG
             hottEAMRequests++;
-            hottV4SendEAMResponse();
+#endif
+            hottSendEAMResponse();
             break;
     }
 
-    hottBinaryRequests++;
+
 #ifdef HOTT_DEBUG
+    hottBinaryRequests++;
     debug[0] = hottBinaryRequests;
     debug[1] = hottGPSRequests;
     debug[2] = hottEAMRequests;
@@ -350,14 +296,14 @@ void processBinaryModeRequest(uint8_t address) {
 
 }
 
-void flushHottRxBuffer(void)
+static void flushHottRxBuffer(void)
 {
     while (serialTotalBytesWaiting(hottPort) > 0) {
         serialRead(hottPort);
     }
 }
 
-void hottCheckSerialData(uint32_t currentMicros) {
+static void hottCheckSerialData(uint32_t currentMicros) {
 
     static bool lookingForRequest = true;
 
@@ -394,7 +340,7 @@ void hottCheckSerialData(uint32_t currentMicros) {
     }
 }
 
-void hottSendTelemetryData(void) {
+static void hottSendTelemetryData(void) {
     if (!hottIsSending) {
         hottIsSending = true;
         serialSetMode(hottPort, MODE_TX);
@@ -413,20 +359,20 @@ void hottSendTelemetryData(void) {
 
     --hottMsgRemainingBytesToSendCount;
     if(hottMsgRemainingBytesToSendCount == 0) {
-        hottV4SerialWrite(hottMsgCrc++);
+        hottSerialWrite(hottMsgCrc++);
         return;
     }
 
     hottMsgCrc += *hottMsg;
-    hottV4SerialWrite(*hottMsg++);
+    hottSerialWrite(*hottMsg++);
 }
 
-bool shouldPrepareHoTTMessage(uint32_t currentMicros)
+static inline bool shouldPrepareHoTTMessage(uint32_t currentMicros)
 {
-    return currentMicros - lastMessagePreparedAt >= CYCLETIME_5_HZ;
+    return currentMicros - lastMessagePreparedAt >= HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ;
 }
 
-bool shouldCheckForHoTTRequest()
+static inline bool shouldCheckForHoTTRequest()
 {
     if (hottIsSending) {
         return false;
@@ -449,11 +395,11 @@ void handleHoTTTelemetry(void)
         hottCheckSerialData(now);
     }
 
-    if(!hottMsg)
+    if (!hottMsg)
         return;
 
-    if(hottIsSending) {
-        if(now - serialTimer < HOTTV4_TX_DELAY_US) {
+    if (hottIsSending) {
+        if(now - serialTimer < HOTT_TX_DELAY_US) {
             return;
         }
     }
@@ -464,5 +410,3 @@ void handleHoTTTelemetry(void)
 uint32_t getHoTTTelemetryProviderBaudRate(void) {
     return HOTT_BAUDRATE;
 }
-
-
