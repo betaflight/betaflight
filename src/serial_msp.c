@@ -802,53 +802,30 @@ void mspProcess(void)
     }
 }
 
+static const uint8_t mspTelemetryCommandSequence[] = {
+    MSP_BOXNAMES,   // repeat boxnames, in case the first transmission was lost or never received.
+    MSP_STATUS,
+    MSP_IDENT,
+    MSP_RAW_IMU,
+    MSP_ALTITUDE,
+    MSP_RAW_GPS,
+    MSP_RC,
+    MSP_MOTOR_PINS,
+    MSP_ATTITUDE,
+    MSP_SERVO
+};
+
+#define MSP_TELEMETRY_COMMAND_SEQUENCE_ENTRY_COUNT (sizeof(mspTelemetryCommandSequence) / sizeof(mspTelemetryCommandSequence[0]))
+
 void sendMspTelemetry(void)
 {
-    static int state = -1;
+    static int sequenceIndex = 0;
 
-    switch (state) {
-        default:
-            cmdMSP = MSP_BOXNAMES;
-            evaluateCommand();
-        case 0:
-            cmdMSP = MSP_STATUS;
-            evaluateCommand();
-            cmdMSP = MSP_IDENT;
-            evaluateCommand();
-            state++;
-            break;
-        case 1:
-            cmdMSP = MSP_RAW_IMU;
-            evaluateCommand();
-            state++;
-            break;
-        case 2:
-            cmdMSP = MSP_DEBUG;
-            evaluateCommand();
-            cmdMSP = MSP_ALTITUDE;
-            evaluateCommand();
-            state++;
-            break;
-        case 3:
-            cmdMSP = MSP_RAW_GPS;
-            evaluateCommand();
-            cmdMSP = MSP_RC;
-            evaluateCommand();
-            state++;
-            break;
-        case 4:
-            cmdMSP = MSP_MOTOR_PINS;
-            evaluateCommand();
-            cmdMSP = MSP_ATTITUDE;
-            evaluateCommand();
-            state++;
-            break;
-        case 5:
-            cmdMSP = MSP_SERVO;
-            evaluateCommand();
-            state=0;
-            break;
+    cmdMSP = mspTelemetryCommandSequence[sequenceIndex];
+    evaluateCommand();
+
+    sequenceIndex++;
+    if (sequenceIndex >= MSP_TELEMETRY_COMMAND_SEQUENCE_ENTRY_COUNT) {
+        sequenceIndex = 0;
     }
-
-
 }
