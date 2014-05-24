@@ -26,11 +26,11 @@ TEST_DIR = .
 CPPFLAGS += -isystem $(GTEST_DIR)/inc
 
 # Flags passed to the C++ compiler.
-CXXFLAGS += -g -Wall -Wextra -pthread
+CXXFLAGS += -g -Wall -Wextra -pthread -ggdb -O0
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = battery_unittest flight_imu_unittest
+TESTS = battery_unittest flight_imu_unittest gps_conversion_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -94,5 +94,16 @@ flight_imu_unittest.o : $(TEST_DIR)/flight_imu_unittest.cc \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/flight_imu_unittest.cc -I$(USER_DIR)
 
 flight_imu_unittest : flight_imu.o flight_imu_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+
+gps_conversion.o : $(USER_DIR)/gps_conversion.c $(USER_DIR)/gps_conversion.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/gps_conversion.c -I$(TEST_DIR)
+
+gps_conversion_unittest.o : $(TEST_DIR)/gps_conversion_unittest.cc \
+                     $(USER_DIR)/gps_conversion.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/gps_conversion_unittest.cc -I$(USER_DIR)
+
+gps_conversion_unittest : gps_conversion.o gps_conversion_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 

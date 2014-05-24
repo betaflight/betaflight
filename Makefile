@@ -116,6 +116,7 @@ COMMON_SRC	 = build_config.c \
 		   flight_imu.c \
 		   flight_mixer.c \
 		   gps_common.c \
+		   gps_conversion.c \
 		   runtime_config.c \
 		   rc_controls.c \
 		   rc_curves.c \

@@ -25,6 +25,7 @@
 #include "config.h"
 #include "runtime_config.h"
 
+#include "gps_conversion.h"
 #include "gps_common.h"
 
 extern int16_t debug[4];
@@ -924,47 +925,6 @@ static uint32_t GPS_coord_to_degrees(char *s)
     return deg * 10000000UL + (min * 100000UL + frac) * 10UL / 6;
 }
 */
-
-#define DIGIT_TO_VAL(_x)    (_x - '0')
-uint32_t GPS_coord_to_degrees(char* s)
-{
-    char *p, *q;
-    uint8_t deg = 0, min = 0;
-    unsigned int frac_min = 0;
-    int i;
-
-    // scan for decimal point or end of field
-    for (p = s; isdigit((unsigned char)*p); p++) {
-        if (p >= s + 15)
-            return 0; // stop potential fail
-    }
-    q = s;
-
-    // convert degrees
-    while ((p - q) > 2) {
-        if (deg)
-            deg *= 10;
-        deg += DIGIT_TO_VAL(*q++);
-    }
-    // convert minutes
-    while (p > q) {
-        if (min)
-            min *= 10;
-        min += DIGIT_TO_VAL(*q++);
-    }
-    // convert fractional minutes
-    // expect up to four digits, result is in
-    // ten-thousandths of a minute
-    if (*p == '.') {
-        q = p + 1;
-        for (i = 0; i < 4; i++) {
-            frac_min *= 10;
-            if (isdigit((unsigned char)*q))
-                frac_min += *q++ - '0';
-        }
-    }
-    return deg * 10000000UL + (min * 1000000UL + frac_min * 100UL) / 6;
-}
 
 // helper functions
 static uint32_t grab_fields(char *src, uint8_t mult)
