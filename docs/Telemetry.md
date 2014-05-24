@@ -30,6 +30,8 @@ See the Configuration examples in the documentation for details on how to enable
 
 HoTT telemetry can be used when the TX and RX pins of a serial port are connected using a diode and a single wire to the T port on a HoTT receiver.
 
+Only Electric Air Modules and GPS Modules are emulated, remember to enable them on your transmitter - in the Telemetry Menu on the MX-20.
+ 
 Serial ports use two wires but HoTT uses a single wire so some electronics are required so that the signals don't get mixed up.
 
 Connect as follows:

@@ -42,7 +42,7 @@ Delay after failsafe activates before motors finally turn off.  If you fly high 
 
 ### `failsafe_throttle`
 
-Throttle level used for landing.  Specify a value the causes the aircraft to descend at about 1M/sec.
+Throttle level used for landing.  Specify a value the causes that aircraft to descend at about 1M/sec.
 
 Use standard RX usec values.  See Rx documentation.
 
@@ -60,4 +60,5 @@ Only valid when using Parallel PWM or PPM receivers.
 
 This setting helps catch when your RX stops sending any data when the RX looses signal.
 
-With a Graupner GR-24 configured for PWM output with failsafe on channels 1-4 set to OFF on the receiver then this setting at it's default value will allow failsafe to be activated.
+With a Graupner GR-24 configured for PWM output with failsafe on channels 1-4 set to OFF in the receiver settings
+then this setting, at it's default value, will allow failsafe to be activated.
