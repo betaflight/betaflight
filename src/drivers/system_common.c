@@ -59,6 +59,12 @@ uint32_t millis(void)
 
 void systemInit(bool overclock)
 {
+
+#ifdef STM32F303xC
+    // start fpu
+    SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
+#endif
+
     struct {
         GPIO_TypeDef *gpio;
         gpio_config_t cfg;
