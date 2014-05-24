@@ -129,6 +129,7 @@ COMMON_SRC	 = build_config.c \
 		   telemetry_common.c \
 		   telemetry_frsky.c \
 		   telemetry_hott.c \
+		   telemetry_msp.c \
 		   serial_common.c \
 		   serial_cli.c \
 		   serial_msp.c \
