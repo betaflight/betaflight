@@ -60,7 +60,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 
 LD_SCRIPT	 = $(ROOT)/stm32_flash_f303.ld
 
-ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4
+ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 
 DEVICE_FLAGS = -DSTM32F303xC
 TARGET_FLAGS = -D$(TARGET)
 ifeq ($(TARGET),CHEBUZZF3)
