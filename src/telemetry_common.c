@@ -16,6 +16,7 @@
 #include "telemetry_common.h"
 #include "telemetry_frsky.h"
 #include "telemetry_hott.h"
+#include "telemetry_msp.h"
 
 
 static bool isTelemetryConfigurationValid = false; // flag used to avoid repeated configuration checks
@@ -37,6 +38,11 @@ bool isTelemetryProviderFrSky(void)
 bool isTelemetryProviderHoTT(void)
 {
     return telemetryConfig->telemetry_provider == TELEMETRY_PROVIDER_HOTT;
+}
+
+bool isTelemetryProviderMSP(void)
+{
+    return telemetryConfig->telemetry_provider == TELEMETRY_PROVIDER_MSP;
 }
 
 bool canUseTelemetryWithCurrentConfiguration(void)
@@ -63,6 +69,10 @@ void initTelemetry()
 
     if (isTelemetryProviderHoTT()) {
         initHoTTTelemetry(telemetryConfig);
+    }
+
+    if (isTelemetryProviderMSP()) {
+        initMSPTelemetry(telemetryConfig);
     }
 
     checkTelemetryState();
@@ -153,5 +163,9 @@ void handleTelemetry(void)
 
     if (isTelemetryProviderHoTT()) {
         handleHoTTTelemetry();
+    }
+
+    if (isTelemetryProviderMSP()) {
+        handleMSPTelemetry();
     }
 }
