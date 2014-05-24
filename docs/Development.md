@@ -5,6 +5,7 @@ This document is primarily for developers only.
 ##TODO
 
 * Test OpenLRSNG's RSSI PWM on AUX5-8.
+* Add support for UART3/4 on STM32F3.
 
 ##Known Issues
 
