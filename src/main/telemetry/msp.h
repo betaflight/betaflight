@@ -28,5 +28,10 @@
 void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig);
 void handleMSPTelemetry(void);
 
+void freeMSPTelemetryPort(void);
+void configureMSPTelemetryPort(void);
+
+uint32_t getMSPTelemetryProviderBaudRate(void);
+
 
 #endif /* TELEMETRY_MSP_H_ */

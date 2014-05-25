@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -64,7 +65,7 @@
 
 #include "serial_msp.h"
 
-static serialPort_t *mspPort;
+static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
@@ -197,6 +198,12 @@ typedef enum {
     HEADER_CMD,
 } mspState_e;
 
+typedef enum {
+    UNUSED_PORT = 0,
+    FOR_GENERAL_MSP,
+    FOR_TELEMETRY
+} mspPortUsage_e;
+
 typedef struct mspPort_s {
     serialPort_t *port;
     uint8_t offset;
@@ -206,6 +213,7 @@ typedef struct mspPort_s {
     uint8_t inBuf[INBUF_SIZE];
     mspState_e c_state;
     uint8_t cmdMSP;
+    mspPortUsage_e mspPortUsage;
 } mspPort_t;
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
@@ -216,16 +224,16 @@ void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
-    serialWrite(mspPort, t);
+    serialWrite(mspSerialPort, t);
     currentPort->checksum ^= t;
     t = a >> 8;
-    serialWrite(mspPort, t);
+    serialWrite(mspSerialPort, t);
     currentPort->checksum ^= t;
     t = a >> 16;
-    serialWrite(mspPort, t);
+    serialWrite(mspSerialPort, t);
     currentPort->checksum ^= t;
     t = a >> 24;
-    serialWrite(mspPort, t);
+    serialWrite(mspSerialPort, t);
     currentPort->checksum ^= t;
 }
 
@@ -233,16 +241,16 @@ void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
-    serialWrite(mspPort, t);
+    serialWrite(mspSerialPort, t);
     currentPort->checksum ^= t;
     t = a >> 8 & 0xff;
-    serialWrite(mspPort, t);
+    serialWrite(mspSerialPort, t);
     currentPort->checksum ^= t;
 }
 
 void serialize8(uint8_t a)
 {
-    serialWrite(mspPort, a);
+    serialWrite(mspSerialPort, a);
     currentPort->checksum ^= a;
 }
 
@@ -329,6 +337,14 @@ reset:
     }
 }
 
+static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, mspPortUsage_e usage)
+{
+    memset(mspPortToReset, 0, sizeof(mspPort_t));
+
+    mspPortToReset->port = serialPort;
+    mspPortToReset->mspPortUsage = usage;
+}
+
 // This rate is chosen since softserial supports it.
 #define MSP_FALLBACK_BAUDRATE 19200
 
@@ -356,7 +372,9 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
         } while (!port);
 
         if (port && portIndex < MAX_MSP_PORT_COUNT) {
-            mspPorts[portIndex++].port = port;
+            mspPort_t *newMspPort = &mspPorts[portIndex++];
+
+            resetMspPort(newMspPort, port, FOR_GENERAL_MSP);
         }
 
     } while (port);
@@ -867,8 +885,8 @@ static void mspProcessPort(void)
 {
     uint8_t c;
 
-    while (serialTotalBytesWaiting(mspPort)) {
-        c = serialRead(mspPort);
+    while (serialTotalBytesWaiting(mspSerialPort)) {
+        c = serialRead(mspSerialPort);
 
         if (currentPort->c_state == IDLE) {
             currentPort->c_state = (c == '$') ? HEADER_START : IDLE;
@@ -909,14 +927,24 @@ static void mspProcessPort(void)
     }
 }
 
-void mspProcess(void) {
+void setCurrentPort(mspPort_t *port)
+{
+    currentPort = port;
+    mspSerialPort = currentPort->port;
+}
+
+void mspProcess(void)
+{
     uint8_t portIndex;
+    mspPort_t *candidatePort;
+
     for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        currentPort = &mspPorts[portIndex];
-        if (!currentPort->port) {
+        candidatePort = &mspPorts[portIndex];
+        if (candidatePort->mspPortUsage != FOR_GENERAL_MSP) {
             continue;
         }
-        mspPort = currentPort->port;
+
+        setCurrentPort(candidatePort);
         mspProcessPort();
     }
 }
@@ -936,21 +964,51 @@ static const uint8_t mspTelemetryCommandSequence[] = {
 
 #define MSP_TELEMETRY_COMMAND_SEQUENCE_ENTRY_COUNT (sizeof(mspTelemetryCommandSequence) / sizeof(mspTelemetryCommandSequence[0]))
 
+static mspPort_t *mspTelemetryPort = NULL;
+
+void mspSetTelemetryPort(serialPort_t *serialPort)
+{
+    uint8_t portIndex;
+    mspPort_t *candidatePort = NULL;
+    mspPort_t *matchedPort = NULL;
+
+    // find existing telemetry port
+    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT && !matchedPort; portIndex++) {
+        candidatePort = &mspPorts[portIndex];
+        if (candidatePort->mspPortUsage == FOR_TELEMETRY) {
+            matchedPort = candidatePort;
+        }
+    }
+
+    if (!matchedPort) {
+        // find unused port
+        for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT && !matchedPort; portIndex++) {
+            candidatePort = &mspPorts[portIndex];
+            if (candidatePort->mspPortUsage == UNUSED_PORT) {
+                matchedPort = candidatePort;
+            }
+        }
+    }
+    mspTelemetryPort = matchedPort;
+    if (!mspTelemetryPort) {
+        return;
+    }
+
+    resetMspPort(mspTelemetryPort, serialPort, FOR_TELEMETRY);
+}
+
 void sendMspTelemetry(void)
 {
     static uint32_t sequenceIndex = 0;
 
-    uint8_t portIndex;
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        currentPort = &mspPorts[portIndex];
-        if (!currentPort->port) {
-            continue;
-        }
-        mspPort = currentPort->port;
-        processOutCommand(mspTelemetryCommandSequence[sequenceIndex]);
-        tailSerialReply();
-
+    if (!mspTelemetryPort) {
+        return;
     }
+
+    setCurrentPort(mspTelemetryPort);
+
+    processOutCommand(mspTelemetryCommandSequence[sequenceIndex]);
+    tailSerialReply();
 
     sequenceIndex++;
     if (sequenceIndex >= MSP_TELEMETRY_COMMAND_SEQUENCE_ENTRY_COUNT) {

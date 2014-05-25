@@ -22,3 +22,4 @@
 
 void mspProcess(void);
 void sendMspTelemetry(void);
+void mspSetTelemetryPort(serialPort_t *mspTelemetryPort);
