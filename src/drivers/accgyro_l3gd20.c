@@ -195,7 +195,7 @@ void l3gd20GyroInit(void)
     GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
     spiTransfer(L3GD20_SPI, CTRL_REG4_ADDR);
-    spiTransfer(L3GD20_SPI, BLOCK_DATA_UPDATE_CONTINUOUS | BLE_MSB | FULLSCALE_500);
+    spiTransfer(L3GD20_SPI, BLOCK_DATA_UPDATE_CONTINUOUS | BLE_MSB | FULLSCALE_2000);
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
@@ -227,18 +227,15 @@ static void l3gd20GyroRead(int16_t *gyroData)
 #endif
 }
 
-#define L3GD20_GYRO_SCALE_FACTOR  0.00030543f  // (17.5e-3) * pi/180  (17.5 mdps/bit)
+// Page 9 in datasheet, So - Sensitivity, Full Scale = 2000, 70 mdps/digit
+#define L3GD20_GYRO_SCALE_FACTOR  0.07f
 
 bool l3gd20Detect(gyro_t *gyro, uint16_t lpf)
 {
     gyro->init = l3gd20GyroInit;
     gyro->read = l3gd20GyroRead;
 
-    // 16.4 dps/lsb scalefactor
-    //gyro->scale = L3GD20_GYRO_SCALE_FACTOR;
-
-    // 14.2857dps/lsb scalefactor
-    gyro->scale = 1.0f / 14.2857f;
+    gyro->scale = L3GD20_GYRO_SCALE_FACTOR;
 
     return true;  // blindly assume it's present, for now.
 }
