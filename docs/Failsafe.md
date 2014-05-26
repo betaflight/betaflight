@@ -2,8 +2,8 @@
 
 There are two types of failsafe:
 
-1) receiver based failsafe
-2) flight controller based failsafe
+1. receiver based failsafe
+2. flight controller based failsafe
 
 Receiver based failsafe is where you, from your transmitter and receiver, configure channels to output desired signals if your receiver detects signal loss.
 The idea is that you set throttle and other controls so the aircraft descends in a controlled manner.
