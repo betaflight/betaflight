@@ -61,7 +61,7 @@
 
 extern int16_t debug[4];
 
-#define HOTT_DEBUG
+//#define HOTT_DEBUG
 
 #define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
 #define HOTT_RX_SCHEDULE 4000
