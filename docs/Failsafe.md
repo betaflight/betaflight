@@ -42,7 +42,7 @@ Delay after failsafe activates before motors finally turn off.  If you fly high 
 
 ### `failsafe_throttle`
 
-Throttle level used for landing.  Specify a value the causes that aircraft to descend at about 1M/sec.
+Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec.
 
 Use standard RX usec values.  See Rx documentation.
 
