@@ -112,6 +112,7 @@ COMMON_SRC	 = build_config.c \
 		   drivers/serial_common.c \
 		   drivers/sound_beeper.c \
 		   drivers/system_common.c \
+		   flight_autotune.c \
 		   flight_common.c \
 		   flight_imu.c \
 		   flight_mixer.c \

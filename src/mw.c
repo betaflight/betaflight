@@ -22,6 +22,7 @@
 #include "failsafe.h"
 #include "flight_imu.h"
 #include "flight_common.h"
+#include "flight_autotune.h"
 #include "flight_mixer.h"
 #include "gimbal.h"
 #include "gps_common.h"
@@ -77,6 +78,30 @@ bool AccInflightCalibrationMeasurementDone = false;
 bool AccInflightCalibrationSavetoEEProm = false;
 bool AccInflightCalibrationActive = false;
 uint16_t InflightcalibratingA = 0;
+
+void updateAutotuneState(void)
+{
+    if (rcOptions[BOXAUTOTUNE]) {
+        if (!f.AUTOTUNE_MODE) {
+            if (f.ARMED) {
+                autotuneBegin(&currentProfile.pidProfile, currentProfile.pidController);
+                f.AUTOTUNE_MODE = 1;
+            } else {
+                if (havePidsBeenUpdatedByAutotune()) {
+                    //writeEEPROM();
+                    blinkLedAndSoundBeeper(5, 50, 1);
+                    autotuneReset();
+                }
+            }
+        }
+        return;
+    }
+
+    if (f.AUTOTUNE_MODE) {
+        autotuneEnd();
+        f.AUTOTUNE_MODE = 0;
+    }
+}
 
 bool isCalibrating()
 {
@@ -602,6 +627,8 @@ void loop(void)
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
+
+        updateAutotuneState();
 
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {

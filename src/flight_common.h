@@ -27,7 +27,7 @@ typedef struct pidProfile_s {
     float H_level;
 } pidProfile_t;
 
-enum {
+typedef enum {
     AI_ROLL = 0,
     AI_PITCH,
 } angle_index_t;
@@ -35,7 +35,7 @@ enum {
 #define ANGLE_INDEX_COUNT 2
 
 // See http://en.wikipedia.org/wiki/Flight_dynamics
-enum {
+typedef enum {
     FD_ROLL = 0,
     FD_PITCH,
     FD_YAW
