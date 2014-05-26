@@ -99,10 +99,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->P_f[ROLL] = 2.5f;     // new PID with preliminary defaults test carefully
-    pidProfile->I_f[ROLL] = 0.3f;
+    pidProfile->I_f[ROLL] = 0.6f;
     pidProfile->D_f[ROLL] = 0.06f;
     pidProfile->P_f[PITCH] = 2.5f;
-    pidProfile->I_f[PITCH] = 0.3f;
+    pidProfile->I_f[PITCH] = 0.6f;
     pidProfile->D_f[PITCH] = 0.06f;
     pidProfile->P_f[YAW] = 8.0f;
     pidProfile->I_f[YAW] = 0.5f;
