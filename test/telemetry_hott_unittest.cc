@@ -42,27 +42,71 @@ HOTT_GPS_MSG_t *getGPSMessageForTest(void)
     return &hottGPSMessage;
 }
 
-TEST(TelemetryHottTest, UpdateGPSCoordinates)
+TEST(TelemetryHottTest, UpdateGPSCoordinates1)
 {
     // given
     HOTT_GPS_MSG_t *hottGPSMessage = getGPSMessageForTest();
 
     // Mayrhofen, Austria
-    uint32_t latitude = GPS_coord_to_degrees("4710.5186");
-    uint32_t longitude = GPS_coord_to_degrees("1151.4252");
+    uint32_t longitude = GPS_coord_to_degrees("4710.5186");
+    uint32_t latitude = GPS_coord_to_degrees("1151.4252");
 
+    // when
+    addGPSCoordinates(hottGPSMessage, latitude, longitude);
+
+    // then
+    EXPECT_EQ(hottGPSMessage->pos_NS, 0);
+    EXPECT_EQ(hottGPSMessage->pos_NS_dm_H << 8 | hottGPSMessage->pos_NS_dm_L, 1151);
+    EXPECT_EQ((int16_t)(hottGPSMessage->pos_NS_sec_H << 8 | hottGPSMessage->pos_NS_sec_L), 4251);
+
+    EXPECT_EQ(hottGPSMessage->pos_EW, 0);
+    EXPECT_EQ(hottGPSMessage->pos_EW_dm_H << 8 | hottGPSMessage->pos_EW_dm_L, 4710);
+    EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_sec_H << 8 | hottGPSMessage->pos_EW_sec_L), 5186);
+}
+
+TEST(TelemetryHottTest, UpdateGPSCoordinates2)
+{
+    // given
+    HOTT_GPS_MSG_t *hottGPSMessage = getGPSMessageForTest();
+
+    // Hampstead Heath, London
+    // 51.563886, -0.159960
+    int32_t longitude = GPS_coord_to_degrees("5156.3886");
+    int32_t latitude  = -GPS_coord_to_degrees("015.9960");
 
     // when
     addGPSCoordinates(hottGPSMessage, longitude, latitude);
 
     // then
-    EXPECT_EQ(hottGPSMessage->pos_EW, 0);
-    EXPECT_EQ(hottGPSMessage->pos_EW_dm_H << 8 | hottGPSMessage->pos_EW_dm_L, 4710);
-    EXPECT_EQ(hottGPSMessage->pos_EW_sec_H << 8 | hottGPSMessage->pos_EW_sec_L, 5186);
-
     EXPECT_EQ(hottGPSMessage->pos_NS, 0);
-    EXPECT_EQ(hottGPSMessage->pos_NS_dm_H << 8 | hottGPSMessage->pos_NS_dm_L, 1151);
-    EXPECT_EQ(hottGPSMessage->pos_NS_sec_H << 8 | hottGPSMessage->pos_NS_sec_L, 4251);
+    EXPECT_EQ(hottGPSMessage->pos_NS_dm_H << 8 | hottGPSMessage->pos_NS_dm_L, 5156);
+    EXPECT_EQ(hottGPSMessage->pos_NS_sec_H << 8 | hottGPSMessage->pos_NS_sec_L, 3886);
+
+    EXPECT_EQ(hottGPSMessage->pos_EW, 1);
+    EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_dm_H << 8 | hottGPSMessage->pos_EW_dm_L), -15);
+    EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_sec_H << 8 | hottGPSMessage->pos_EW_sec_L), -9960);
+}
+
+
+TEST(TelemetryHottTest, UpdateGPSCoordinates3)
+{
+    // given
+    HOTT_GPS_MSG_t *hottGPSMessage = getGPSMessageForTest();
+
+    int32_t longitude = -GPS_coord_to_degrees("17999.9999");
+    int32_t latitude = GPS_coord_to_degrees("8999.9999");
+
+    // when
+    addGPSCoordinates(hottGPSMessage, longitude, latitude);
+
+    // then
+    EXPECT_EQ(hottGPSMessage->pos_NS, 1);
+    EXPECT_EQ((int16_t)(hottGPSMessage->pos_NS_dm_H << 8 | hottGPSMessage->pos_NS_dm_L), -18039);
+    EXPECT_EQ((int16_t)(hottGPSMessage->pos_NS_sec_H << 8 | hottGPSMessage->pos_NS_sec_L), -9999);
+
+    EXPECT_EQ(hottGPSMessage->pos_EW, 0);
+    EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_dm_H << 8 | hottGPSMessage->pos_EW_dm_L), 9039);
+    EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_sec_H << 8 | hottGPSMessage->pos_EW_sec_L), 9999);
 }
 
 

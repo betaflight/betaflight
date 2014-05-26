@@ -121,11 +121,11 @@ static void initialiseMessages(void)
 
 void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude)
 {
-    uint8_t deg = latitude / 10000000UL;
-    uint32_t sec = (latitude - (deg * 10000000UL)) * 6;
-    uint8_t min = sec / 1000000UL;
-    sec = (sec % 1000000UL) / 100UL;
-    uint16_t degMin = (deg * 100) + min;
+    int16_t deg = latitude / 10000000L;
+    int32_t sec = (latitude - (deg * 10000000L)) * 6;
+    int8_t min = sec / 1000000L;
+    sec = (sec % 1000000L) / 100L;
+    uint16_t degMin = (deg * 100L) + min;
 
     hottGPSMessage->pos_NS = (latitude < 0);
     hottGPSMessage->pos_NS_dm_L = degMin;
@@ -133,11 +133,11 @@ void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t
     hottGPSMessage->pos_NS_sec_L = sec;
     hottGPSMessage->pos_NS_sec_H = sec >> 8;
 
-    deg = longitude / 10000000UL;
-    sec = (longitude - (deg * 10000000UL)) * 6;
-    min = sec / 1000000UL;
-    sec = (sec % 1000000UL) / 100UL;
-    degMin = (deg * 100) + min;
+    deg = longitude / 10000000L;
+    sec = (longitude - (deg * 10000000L)) * 6;
+    min = sec / 1000000L;
+    sec = (sec % 1000000L) / 100L;
+    degMin = (deg * 100L) + min;
 
     hottGPSMessage->pos_EW = (longitude < 0);
     hottGPSMessage->pos_EW_dm_L = degMin;
