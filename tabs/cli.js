@@ -43,18 +43,21 @@ function tab_initialize_cli() {
         serial.send(bufferOut, function(writeInfo) {});
 
         var textarea = $('.tab-cli textarea');
+
         textarea.keypress(function(event) {
             if (event.which == 13) { // enter
-                var out_string = $('.tab-cli textarea').val();
+                event.preventDefault(); // prevent the adding of new line
+
+                var out_string = textarea.val();
                 var out_arr = out_string.split("\n");
                 cli_history.add(out_string.trim());
-                var timeout_needle = 0;
 
+                var timeout_needle = 0;
                 for (var i = 0; i < out_arr.length; i++) {
                     send_slowly(out_arr, i, timeout_needle++);
                 }
 
-                $('.tab-cli textarea').val('');
+                textarea.val('');
             }
         });
 
@@ -69,7 +72,7 @@ function tab_initialize_cli() {
         });
 
         // give input element user focus
-        $('.tab-cli textarea').focus();
+        textarea.focus();
     });
 }
 
