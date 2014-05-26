@@ -12,6 +12,7 @@ typedef enum {
 typedef struct adc_config_t {
     uint8_t adcChannel;         // ADC1_INxx channel number
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
+    bool enabled;
 } adc_config_t;
 
 typedef struct drv_adc_config_t {
