@@ -310,7 +310,7 @@ void updateRSSI(void)
         }
     }
 
-#if 1
+#if 0
     debug[3] = rawPwmRssi;
 #endif
 

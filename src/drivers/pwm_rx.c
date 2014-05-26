@@ -12,7 +12,6 @@
 
 #include "pwm_rx.h"
 
-
 #define PPM_CAPTURE_COUNT 12
 #define PWM_INPUT_PORT_COUNT 8
 
@@ -45,9 +44,12 @@ static pwmInputPort_t pwmInputPorts[PWM_INPUT_PORT_COUNT];
 
 static uint16_t captures[PWM_PORTS_OR_PPM_CAPTURE_COUNT];
 
-static uint8_t ppmFrameCount = 0;
+#define PPM_TIMER_PERIOD 0xFFFF
+#define PWM_TIMER_PERIOD 0xFFFF
 
+static uint8_t ppmFrameCount = 0;
 static uint8_t lastPPMFrameCount = 0;
+
 bool isPPMDataBeingReceived(void)
 {
     return (ppmFrameCount != lastPPMFrameCount);
@@ -62,7 +64,7 @@ void resetPPMDataReceivedState(void)
 
 static void ppmCallback(uint8_t port, captureCompare_t capture)
 {
-    int32_t diff;
+    uint16_t diff; // See PPM_TIMER_PERIOD
     static captureCompare_t now;
     static captureCompare_t last = 0;
 
@@ -147,7 +149,7 @@ void pwmInConfig(uint8_t timerIndex, uint8_t channel)
     pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
-    timerConfigure(timerHardwarePtr, 0xFFFF, PWM_TIMER_MHZ);
+    timerConfigure(timerHardwarePtr, PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
     configureTimerCaptureCompareInterrupt(timerHardwarePtr, channel, pwmCallback);
 }
 
@@ -166,7 +168,7 @@ void ppmInConfig(uint8_t timerIndex)
     pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
-    timerConfigure(timerHardwarePtr, 0xFFFF, PWM_TIMER_MHZ);
+    timerConfigure(timerHardwarePtr, PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
     configureTimerCaptureCompareInterrupt(timerHardwarePtr, UNUSED_PPM_TIMER_REFERENCE, ppmCallback);
 }
 
