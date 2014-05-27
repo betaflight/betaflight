@@ -1,7 +1,7 @@
 #pragma once
 
 
-enum {
+typedef enum {
     PIDROLL,
     PIDPITCH,
     PIDYAW,
@@ -13,7 +13,7 @@ enum {
     PIDMAG,
     PIDVEL,
     PID_ITEM_COUNT
-};
+} pidIndex_e;
 
 typedef struct pidProfile_s {
     uint8_t P8[PID_ITEM_COUNT];

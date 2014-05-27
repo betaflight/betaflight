@@ -113,7 +113,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfig);
 bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier);
 bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask);
 
-serialPortFunctionList_t *getSerialPortFunctionList(void);
+const serialPortFunctionList_t *getSerialPortFunctionList(void);
 
 void evaluateOtherData(uint8_t sr);
 void handleSerial(void);

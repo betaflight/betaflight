@@ -24,12 +24,25 @@ extern int16_t debug[4];
 #define AUTOTUNE_D_MULTIPLIER 1.2f
 #define AUTOTUNE_SETTLING_DELAY_MS 250  // 1/4 of a second.
 
+#define AUTOTUNE_INCREASE_MULTIPLIER 1.03f
+#define AUTOTUNE_DECREASE_MULTIPLIER 0.97f
+
+#define AUTOTUNE_MINIMUM_I_VALUE 0.001f
+
+#define YAW_GAIN_MULTIPLIER 2.0f
+
+
 typedef enum {
     PHASE_IDLE = 0,
     PHASE_TUNE_ROLL,
     PHASE_TUNE_PITCH,
     PHASE_SAVE_OR_RESTORE_PIDS,
 } autotunePhase_e;
+
+static const pidIndex_e angleIndexToPidIndexMap[] = {
+    PIDROLL,
+    PIDPITCH
+};
 
 #define AUTOTUNE_PHASE_MAX PHASE_SAVE_OR_RESTORE_PIDS
 #define AUTOTUNE_PHASE_COUNT (AUTOTUNE_PHASE_MAX + 1)
@@ -39,6 +52,7 @@ typedef enum {
 static pidProfile_t *pidProfile;
 static pidProfile_t pidBackup;
 static uint8_t pidController;
+static uint8_t pidIndex;
 static bool rising;
 static uint8_t cycleCount; // TODO can we replace this with an enum to improve readability.
 static uint32_t timeoutAt;
@@ -50,6 +64,19 @@ static float targetAngle = 0;
 static float targetAngleAtPeak;
 static float secondPeakAngle, firstPeakAngle; // deci dgrees, 180 deg = 1800
 
+typedef struct fp_pid {
+    float p;
+    float i;
+    float d;
+} fp_pid_t;
+
+static fp_pid_t pid;
+
+// These are used to convert between multiwii integer values to the float pid values used by the autotuner.
+#define MULTIWII_P_MULTIPLIER 10.0f    // e.g 0.4 * 10 = 40
+#define MULTIWII_I_MULTIPLIER 1000.0f  // e.g 0.030 * 1000 = 30
+// Note there is no D multiplier since D values are stored and used AS-IS
+
 bool isAutotuneIdle(void)
 {
     return phase == PHASE_IDLE;
@@ -59,6 +86,11 @@ static void startNewCycle(void)
 {
     rising = !rising;
     secondPeakAngle = firstPeakAngle = 0;
+}
+
+static void updatePidIndex(void)
+{
+    pidIndex = angleIndexToPidIndexMap[autoTuneAngleIndex];
 }
 
 static void updateTargetAngle(void)
@@ -75,9 +107,16 @@ static void updateTargetAngle(void)
 #endif
 }
 
-float autotune(angle_index_t angleIndex, rollAndPitchInclination_t *inclination, float errorAngle)
+float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclination, float errorAngle)
 {
+    float currentAngle;
+
     if (!(phase == PHASE_TUNE_ROLL || phase == PHASE_TUNE_PITCH) || autoTuneAngleIndex != angleIndex) {
+        return errorAngle;
+    }
+
+    if (pidController == 2) {
+        // TODO support new baseflight pid controller
         return errorAngle;
     }
 
@@ -87,7 +126,7 @@ float autotune(angle_index_t angleIndex, rollAndPitchInclination_t *inclination,
     debug[1] = inclination->rawAngles[angleIndex];
 #endif
 
-    float currentAngle;
+    updatePidIndex();
 
     if (rising) {
         currentAngle = DECIDEGREES_TO_DEGREES(inclination->rawAngles[angleIndex]);
@@ -115,16 +154,18 @@ float autotune(angle_index_t angleIndex, rollAndPitchInclination_t *inclination,
         } else if (secondPeakAngle > 0) {
             if (cycleCount == 0) {
                 // when checking the I value, we would like to overshoot the target position by half of the max oscillation.
-//                if (currentangle-targetangle<(FPAUTOTUNEMAXOSCILLATION>>1)) {
-//                    currentivalueshifted=lib_fp_multiply(currentivalueshifted,AUTOTUNEINCREASEMULTIPLIER);
-//                } else {
-//                    currentivalueshifted=lib_fp_multiply(currentivalueshifted,AUTOTUNEDECREASEMULTIPLIER);
-//                    if (currentivalueshifted<AUTOTUNEMINIMUMIVALUE) currentivalueshifted=AUTOTUNEMINIMUMIVALUE;
-//                }
+                if (currentAngle - targetAngle < AUTOTUNE_MAX_OSCILLATION / 2) {
+                    pid.i *= AUTOTUNE_INCREASE_MULTIPLIER;
+                } else {
+                    pid.i *= AUTOTUNE_DECREASE_MULTIPLIER;
+                    if (pid.i < AUTOTUNE_MINIMUM_I_VALUE) {
+                        pid.i = AUTOTUNE_MINIMUM_I_VALUE;
+                    }
+                }
 
                 // go back to checking P and D
                 cycleCount = 1;
-//                usersettings.pid_igain[autotuneindex]=0;
+                pidProfile->I8[pidIndex] = 0;
                 startNewCycle();
             } else {
                 // we are checking P and D values
@@ -152,7 +193,6 @@ float autotune(angle_index_t angleIndex, rollAndPitchInclination_t *inclination,
             // analyze the data
             // Our goal is to have zero overshoot and to have AUTOTUNEMAXOSCILLATION amplitude
 
-
             if (secondPeakAngle > targetAngleAtPeak) {
                 // overshot
                 debug[0] = 1;
@@ -161,16 +201,12 @@ float autotune(angle_index_t angleIndex, rollAndPitchInclination_t *inclination,
                 if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION) {
                     // we have too much oscillation, so we can't increase D, so decrease P
 #endif
-                // decrease P
-                //currentpvalueshifted=lib_fp_multiply(currentpvalueshifted, AUTOTUNEDECREASEMULTIPLIER); // TODO
-
+                    pid.p *= AUTOTUNE_DECREASE_MULTIPLIER;
 #ifdef PREFER_HIGH_GAIN_SOLUTION
                 } else {
-                    // we don't have too much oscillation, so we can increase D"
+                    // we don't have too much oscillation, so we can increase D
 #endif
-
-                // increase D
-                //currentdvalueshifted=lib_fp_multiply(currentdvalueshifted, AUTOTUNEINCREASEMULTIPLIER); // TODO
+                    pid.d *= AUTOTUNE_INCREASE_MULTIPLIER;
 #ifdef PREFER_HIGH_GAIN_SOLUTION
                 }
 #endif
@@ -179,16 +215,16 @@ float autotune(angle_index_t angleIndex, rollAndPitchInclination_t *inclination,
                 debug[0] = 2;
 
                 if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION) {
-                    // we have too much oscillation, so we should lower D
-                    //currentdvalueshifted=lib_fp_multiply(currentdvalueshifted, AUTOTUNEDECREASEMULTIPLIER); // TODO
+                    // we have too much oscillation
+                    pid.d *= AUTOTUNE_DECREASE_MULTIPLIER;
                 } else {
-                    // we don't have too much oscillation, so we increase P
-                    //currentpvalueshifted=lib_fp_multiply(currentpvalueshifted, AUTOTUNEINCREASEMULTIPLIER); // TODO
+                    // we don't have too much oscillation
+                    pid.p *= AUTOTUNE_INCREASE_MULTIPLIER;
                 }
             }
 
-            //usersettings.pid_pgain[autotuneindex]=currentpvalueshifted>>AUTOTUNESHIFT; // TODO
-            //usersettings.pid_dgain[autotuneindex]=currentdvalueshifted>>AUTOTUNESHIFT; // TODO
+            pidProfile->P8[pidIndex] = pid.p * MULTIWII_P_MULTIPLIER;
+            pidProfile->D8[pidIndex] = pid.d;
 
             // switch to the other direction and start a new cycle
             startNewCycle();
@@ -197,7 +233,7 @@ float autotune(angle_index_t angleIndex, rollAndPitchInclination_t *inclination,
                 // switch to testing I value
                 cycleCount = 0;
 
-                //usersettings.pid_igain[autotuneindex]=currentivalueshifted>>AUTOTUNESHIFT; // TODO
+                pidProfile->I8[pidIndex] = pid.i  * MULTIWII_I_MULTIPLIER;
             }
         }
     }
@@ -254,30 +290,33 @@ void autotuneBeginNextPhase(pidProfile_t *pidProfileToTune, uint8_t pidControlle
     pidProfile = pidProfileToTune;
     pidController = pidControllerInUse;
 
+    updatePidIndex();
     updateTargetAngle();
 
-    // TODO
-//    currentpvalueshifted=usersettings.pid_pgain[autotuneindex]<<AUTOTUNESHIFT;
-//    currentivalueshifted=usersettings.pid_igain[autotuneindex]<<AUTOTUNESHIFT;
-//    // divide by D multiplier to get our working value.  We'll multiply by D multiplier when we are done.
-//    usersettings.pid_dgain[autotuneindex]=lib_fp_multiply(usersettings.pid_dgain[autotuneindex],FPONEOVERAUTOTUNE_D_MULTIPLIER);
-//    currentdvalueshifted=usersettings.pid_dgain[autotuneindex]<<AUTOTUNESHIFT;
-//
-//    usersettings.pid_igain[autotuneindex]=0;
+    pid.p = pidProfile->P8[pidIndex] / MULTIWII_P_MULTIPLIER;
+    pid.i = pidProfile->I8[pidIndex] / MULTIWII_I_MULTIPLIER;
+    // divide by D multiplier to get our working value.  We'll multiply by D multiplier when we are done.
+    pid.d = pidProfile->D8[pidIndex] * (1.0f / AUTOTUNE_D_MULTIPLIER);
 
+    pidProfile->D8[pidIndex] = pid.d;
+    pidProfile->I8[pidIndex] = 0;
 }
 
 void autotuneEndPhase(void)
 {
-    // TODO
-//    usersettings.pid_igain[autotuneindex]=currentivalueshifted>>AUTOTUNESHIFT;
-//
-//    // multiply by D multiplier.  The best D is usually a little higher than what the algroithm produces.
-//    usersettings.pid_dgain[autotuneindex]=lib_fp_multiply(currentdvalueshifted,FPAUTOTUNE_D_MULTIPLIER)>>AUTOTUNESHIFT;
-//
-//    usersettings.pid_igain[YAWINDEX]=usersettings.pid_igain[ROLLINDEX];
-//    usersettings.pid_dgain[YAWINDEX]=usersettings.pid_dgain[ROLLINDEX];
-//    usersettings.pid_pgain[YAWINDEX]=lib_fp_multiply(usersettings.pid_pgain[ROLLINDEX],YAWGAINMULTIPLIER);
+    if (phase == PHASE_TUNE_ROLL || phase == PHASE_TUNE_PITCH) {
+
+        // we leave P alone, just update I and D
+
+        pidProfile->I8[pidIndex] = pid.i * MULTIWII_I_MULTIPLIER;
+
+        // multiply by D multiplier.  The best D is usually a little higher than what the algroithm produces.
+        pidProfile->D8[pidIndex] = (pid.d * AUTOTUNE_D_MULTIPLIER);
+
+        pidProfile->P8[PIDYAW] = pidProfile->P8[PIDROLL] * YAW_GAIN_MULTIPLIER;
+        pidProfile->I8[PIDYAW] = pidProfile->I8[PIDROLL];
+        pidProfile->D8[PIDYAW] = pidProfile->D8[PIDROLL];
+    }
 
     if (phase == AUTOTUNE_PHASE_MAX) {
         phase = PHASE_IDLE;

@@ -56,7 +56,7 @@ void resetErrorGyro(void)
     errorGyroIf[YAW] = 0;
 }
 
-angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
+const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 bool shouldAutotune(void)
 {

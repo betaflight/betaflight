@@ -316,7 +316,7 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
     } while (port);
 
     // XXX this function might help with adding support for MSP on more than one port, if not delete it.
-    serialPortFunctionList_t *serialPortFunctionList = getSerialPortFunctionList();
+    const serialPortFunctionList_t *serialPortFunctionList = getSerialPortFunctionList();
     UNUSED(serialPortFunctionList);
 }
 
