@@ -81,14 +81,19 @@ uint16_t InflightcalibratingA = 0;
 
 void updateAutotuneState(void)
 {
+    static bool landedAfterAutoTuning = false;
+    static bool autoTuneWasUsed = false;
+
     if (rcOptions[BOXAUTOTUNE]) {
         if (!f.AUTOTUNE_MODE) {
             if (f.ARMED) {
-                if (isAutotuneIdle()) {
+                if (isAutotuneIdle() || landedAfterAutoTuning) {
                     autotuneReset();
+                    landedAfterAutoTuning = false;
                 }
                 autotuneBeginNextPhase(&currentProfile.pidProfile, currentProfile.pidController);
                 f.AUTOTUNE_MODE = 1;
+                autoTuneWasUsed = true;
             } else {
                 if (havePidsBeenUpdatedByAutotune()) {
                     //writeEEPROM();
@@ -103,6 +108,10 @@ void updateAutotuneState(void)
     if (f.AUTOTUNE_MODE) {
         autotuneEndPhase();
         f.AUTOTUNE_MODE = 0;
+    }
+
+    if (!f.ARMED && autoTuneWasUsed) {
+        landedAfterAutoTuning = true;
     }
 }
 
