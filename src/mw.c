@@ -84,7 +84,10 @@ void updateAutotuneState(void)
     if (rcOptions[BOXAUTOTUNE]) {
         if (!f.AUTOTUNE_MODE) {
             if (f.ARMED) {
-                autotuneBegin(&currentProfile.pidProfile, currentProfile.pidController);
+                if (isAutotuneIdle()) {
+                    autotuneReset();
+                }
+                autotuneBeginNextPhase(&currentProfile.pidProfile, currentProfile.pidController);
                 f.AUTOTUNE_MODE = 1;
             } else {
                 if (havePidsBeenUpdatedByAutotune()) {
@@ -98,7 +101,7 @@ void updateAutotuneState(void)
     }
 
     if (f.AUTOTUNE_MODE) {
-        autotuneEnd();
+        autotuneEndPhase();
         f.AUTOTUNE_MODE = 0;
     }
 }
@@ -231,7 +234,11 @@ void annexCode(void)
 
         f.OK_TO_ARM = 1;
 
-        if (!f.ARMED && !f.SMALL_ANGLE) {
+        if (!f.SMALL_ANGLE) {
+            f.OK_TO_ARM = 0;
+        }
+
+        if (rcOptions[BOXAUTOTUNE]) {
             f.OK_TO_ARM = 0;
         }
 

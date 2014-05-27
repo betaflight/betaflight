@@ -98,6 +98,9 @@ typedef union {
 } rollAndPitchInclination_t;
 
 
+#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
+#define DECIDEGREES_TO_DEGREES(angle) (angle / 10.0f)
+
 extern rollAndPitchInclination_t inclination;
 
 extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT];
