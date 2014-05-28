@@ -33,11 +33,11 @@ void compassInit(void)
     magInit = 1;
 }
 
-int compassGetADC(int16_flightDynamicsTrims_t *magZero)
+int compassGetADC(flightDynamicsTrims_t *magZero)
 {
     static uint32_t t, tCal = 0;
-    static int16_flightDynamicsTrims_t magZeroTempMin;
-    static int16_flightDynamicsTrims_t magZeroTempMax;
+    static flightDynamicsTrims_t magZeroTempMin;
+    static flightDynamicsTrims_t magZeroTempMax;
     uint32_t axis;
 
     if ((int32_t)(currentTime - t) < 0)

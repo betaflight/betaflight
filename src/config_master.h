@@ -34,8 +34,8 @@ typedef struct master_t {
     gyroConfig_t gyroConfig;
 
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
-    int16_flightDynamicsTrims_t accZero;
-    int16_flightDynamicsTrims_t magZero;
+    flightDynamicsTrims_t accZero;
+    flightDynamicsTrims_t magZero;
 
     batteryConfig_t batteryConfig;
 

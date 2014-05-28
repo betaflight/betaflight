@@ -450,8 +450,8 @@ void mixTable(void)
             break;
 
         case MULTITYPE_GIMBAL:
-            servo[0] = (((int32_t)servoConf[0].rate * inclination.angle.pitchDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(0);
-            servo[1] = (((int32_t)servoConf[1].rate * inclination.angle.rollDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(1);
+            servo[0] = (((int32_t)servoConf[0].rate * inclination.values.pitchDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(0);
+            servo[1] = (((int32_t)servoConf[1].rate * inclination.values.rollDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(1);
             break;
 
         case MULTITYPE_AIRPLANE:
@@ -504,11 +504,11 @@ void mixTable(void)
 
         if (rcOptions[BOXCAMSTAB]) {
             if (gimbalConfig->gimbal_flags & GIMBAL_MIXTILT) {
-                servo[0] -= (-(int32_t)servoConf[0].rate) * inclination.angle.pitchDeciDegrees / 50 - (int32_t)servoConf[1].rate * inclination.angle.rollDeciDegrees / 50;
-                servo[1] += (-(int32_t)servoConf[0].rate) * inclination.angle.pitchDeciDegrees / 50 + (int32_t)servoConf[1].rate * inclination.angle.rollDeciDegrees / 50;
+                servo[0] -= (-(int32_t)servoConf[0].rate) * inclination.values.pitchDeciDegrees / 50 - (int32_t)servoConf[1].rate * inclination.values.rollDeciDegrees / 50;
+                servo[1] += (-(int32_t)servoConf[0].rate) * inclination.values.pitchDeciDegrees / 50 + (int32_t)servoConf[1].rate * inclination.values.rollDeciDegrees / 50;
             } else {
-                servo[0] += (int32_t)servoConf[0].rate * inclination.angle.pitchDeciDegrees / 50;
-                servo[1] += (int32_t)servoConf[1].rate * inclination.angle.rollDeciDegrees  / 50;
+                servo[0] += (int32_t)servoConf[0].rate * inclination.values.pitchDeciDegrees / 50;
+                servo[1] += (int32_t)servoConf[1].rate * inclination.values.rollDeciDegrees  / 50;
             }
         }
     }

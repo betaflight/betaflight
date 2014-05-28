@@ -387,8 +387,8 @@ static void evaluateCommand(void)
         rxMspFrameRecieve();
         break;
     case MSP_SET_ACC_TRIM:
-        currentProfile.accelerometerTrims.trims.pitch = read16();
-        currentProfile.accelerometerTrims.trims.roll  = read16();
+        currentProfile.accelerometerTrims.values.pitch = read16();
+        currentProfile.accelerometerTrims.values.roll  = read16();
         headSerialReply(0);
         break;
     case MSP_SET_RAW_GPS:
@@ -604,7 +604,7 @@ static void evaluateCommand(void)
     case MSP_ATTITUDE:
         headSerialReply(6);
         for (i = 0; i < 2; i++)
-            serialize16(inclination.rawAngles[i]);
+            serialize16(inclination.raw[i]);
         serialize16(heading);
         break;
     case MSP_ALTITUDE:
@@ -775,8 +775,8 @@ static void evaluateCommand(void)
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         headSerialReply(4);
-        serialize16(currentProfile.accelerometerTrims.trims.pitch);
-        serialize16(currentProfile.accelerometerTrims.trims.roll);
+        serialize16(currentProfile.accelerometerTrims.values.pitch);
+        serialize16(currentProfile.accelerometerTrims.values.roll);
         break;
     case MSP_UID:
         headSerialReply(12);

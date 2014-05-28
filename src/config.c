@@ -60,11 +60,11 @@ profile_t currentProfile;   // profile config struct
 
 static const uint8_t EEPROM_CONF_VERSION = 70;
 
-static void resetAccelerometerTrims(int16_flightDynamicsTrims_t *accelerometerTrims)
+static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
-    accelerometerTrims->trims.pitch = 0;
-    accelerometerTrims->trims.roll = 0;
-    accelerometerTrims->trims.yaw = 0;
+    accelerometerTrims->values.pitch = 0;
+    accelerometerTrims->values.roll = 0;
+    accelerometerTrims->values.yaw = 0;
 }
 
 static void resetPidProfile(pidProfile_t *pidProfile)

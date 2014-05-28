@@ -69,12 +69,12 @@ typedef struct int16_flightDynamicsTrims_s {
     int16_t roll;
     int16_t pitch;
     int16_t yaw;
-} int16_flightDynamicsTrims_def_t;
+} flightDynamicsTrims_def_t;
 
 typedef union {
     int16_t raw[3];
-    int16_flightDynamicsTrims_def_t trims;
-} int16_flightDynamicsTrims_t;
+    flightDynamicsTrims_def_t values;
+} flightDynamicsTrims_t;
 
 typedef struct rollAndPitchTrims_s {
     int16_t roll;
@@ -83,7 +83,7 @@ typedef struct rollAndPitchTrims_s {
 
 typedef union {
     int16_t raw[2];
-    rollAndPitchTrims_t_def trims;
+    rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
 
 typedef struct rollAndPitchInclination_s {
@@ -93,8 +93,8 @@ typedef struct rollAndPitchInclination_s {
 } rollAndPitchInclination_t_def;
 
 typedef union {
-    int16_t rawAngles[ANGLE_INDEX_COUNT];
-    rollAndPitchInclination_t_def angle;
+    int16_t raw[ANGLE_INDEX_COUNT];
+    rollAndPitchInclination_t_def values;
 } rollAndPitchInclination_t;
 
 
