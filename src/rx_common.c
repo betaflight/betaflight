@@ -11,12 +11,12 @@
 #include "config.h"
 
 #include "drivers/serial_common.h"
+#include "drivers/adc_common.h"
 #include "serial_common.h"
 
 #include "failsafe.h"
 
 #include "drivers/pwm_rx.h"
-#include "drivers/pwm_rssi.h"
 #include "rx_pwm.h"
 #include "rx_sbus.h"
 #include "rx_spektrum.h"
@@ -46,6 +46,7 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 #define PULSE_MIN   750       // minimum PWM pulse width which is considered valid
 #define PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
 
+#define DELAY_50_HZ (1000000 / 50)
 
 static rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
@@ -146,7 +147,7 @@ uint8_t calculateChannelRemapping(uint8_t *channelMap, uint8_t channelMapEntryCo
 }
 
 static bool rcDataReceived = false;
-static uint32_t rxTime = 0;
+static uint32_t rxUpdateAt = 0;
 
 
 void updateRx(void)
@@ -171,7 +172,7 @@ void updateRx(void)
 
 bool shouldProcessRx(uint32_t currentTime)
 {
-    return rcDataReceived || ((int32_t)(currentTime - rxTime) >= 0); // data driven or 50Hz
+    return rcDataReceived || ((int32_t)(currentTime - rxUpdateAt) >= 0); // data driven or 50Hz
 }
 
 static bool isRxDataDriven(void) {
@@ -259,7 +260,7 @@ void processNonDataDrivenRx(void)
 
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
 {
-    rxTime = currentTime + 20000;
+    rxUpdateAt = currentTime + DELAY_50_HZ;
 
     if (feature(FEATURE_FAILSAFE)) {
         failsafe->vTable->incrementCounter();
@@ -283,39 +284,59 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     }
 }
 
-void updateRSSI(void)
+void updateRSSIPWM(void)
 {
-    if (rxConfig->rssi_channel == 0 && !feature(FEATURE_RSSI_PWM)) {
-        return;
-    }
+    int16_t pwmRssi = 0;
+    // Read value of AUX channel as rssi
+    pwmRssi = rcData[rxConfig->rssi_channel - 1];
 
-    int16_t rawPwmRssi = 0;
-    if (rxConfig->rssi_channel > 0) {
-        // Read value of AUX channel as rssi
-        rawPwmRssi = rcData[rxConfig->rssi_channel - 1];
-    } else if (feature(FEATURE_RSSI_PWM)) {
-        rawPwmRssi = pwmRSSIRead();
-
-        if (rxConfig->rssi_pwm_provider == RSSI_PWM_PROVIDER_FRSKY_1KHZ) {
-
-            // FrSky X8R has a 1khz RSSI output which is too fast for the IRQ handlers
-            // Values range from 0 to 970 and over 1000 when the transmitter is off.
-            // When the transmitter is OFF the pulse is too short to be detected hence the high value
-            // because the edge detection in the IRQ handler is the detecting the wrong edges.
-
-            if (rawPwmRssi > 1000) {
-                rawPwmRssi = 0;
-            }
-            rawPwmRssi += 1000;
-        }
-    }
-
-#if 0
-    debug[3] = rawPwmRssi;
-#endif
 
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-    rssi = (uint16_t)((constrain(rawPwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
+    rssi = (uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
+}
+
+#define RSSI_ADC_SAMPLE_COUNT 16
+#define RSSI_SCALE (0xFFF / 100.0f)
+
+void updateRSSIADC(uint32_t currentTime)
+{
+    static uint8_t adcRssiSamples[RSSI_ADC_SAMPLE_COUNT];
+    static uint8_t adcRssiSampleIndex = 0;
+    static uint32_t rssiUpdateAt = 0;
+
+    if ((int32_t)(currentTime - rssiUpdateAt) < 0) {
+        return;
+    }
+    rssiUpdateAt = currentTime + DELAY_50_HZ;
+
+    int16_t adcRssiMean = 0;
+    uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
+    uint8_t rssiPercentage = adcRssiSample / RSSI_SCALE;
+
+    adcRssiSampleIndex = (adcRssiSampleIndex + 1) % RSSI_ADC_SAMPLE_COUNT;
+
+    adcRssiSamples[adcRssiSampleIndex] = rssiPercentage;
+
+    uint8_t sampleIndex;
+
+    for (sampleIndex = 0; sampleIndex < RSSI_ADC_SAMPLE_COUNT; sampleIndex++) {
+        adcRssiMean += adcRssiSamples[sampleIndex];
+    }
+
+    adcRssiMean = adcRssiMean / RSSI_ADC_SAMPLE_COUNT;
+
+    rssi = (uint16_t)((constrain(adcRssiMean, 0, 100) / 100.0f) * 1023.0f);
+}
+
+void updateRSSI(uint32_t currentTime)
+{
+
+    if (rxConfig->rssi_channel > 0) {
+        updateRSSIPWM();
+    } else if (feature(FEATURE_RSSI_ADC)) {
+        updateRSSIADC(currentTime);
+    }
+    debug[0] = rssi;
 }
 
 

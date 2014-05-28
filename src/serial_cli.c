@@ -86,7 +86,7 @@ static const char * const featureNames[] = {
     "RX_PPM", "VBAT", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "LED_RING", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D", "RX_PARALLEL_PWM",
-    "RX_MSP", "RSSI_PWM", NULL
+    "RX_MSP", "RSSI_ADC", NULL
 };
 
 // sync this with AvailableSensors enum from board.h
@@ -150,7 +150,6 @@ const clivalue_t valueTable[] = {
     { "mincheck", VAR_UINT16, &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "maxcheck", VAR_UINT16, &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "rssi_channel", VAR_INT8, &masterConfig.rxConfig.rssi_channel, 0, MAX_SUPPORTED_RC_CHANNEL_COUNT },
-    { "rssi_pwm_provider", VAR_INT8, &masterConfig.rxConfig.rssi_pwm_provider, 0, RSSI_PWM_PROVIDER_MAX },
 
     { "minthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "maxthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
@@ -192,8 +191,6 @@ const clivalue_t valueTable[] = {
     { "vbatscale", VAR_UINT8, &masterConfig.batteryConfig.vbatscale, 10, 200 },
     { "vbatmaxcellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50 },
     { "vbatmincellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmincellvoltage, 10, 50 },
-
-    { "power_adc_channel", VAR_UINT8, &masterConfig.power_adc_channel, 0, 9 },
 
     { "align_gyro", VAR_UINT8, &masterConfig.sensorAlignmentConfig.gyro_align, 0, 8 },
     { "align_acc", VAR_UINT8, &masterConfig.sensorAlignmentConfig.acc_align, 0, 8 },

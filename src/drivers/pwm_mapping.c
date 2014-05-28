@@ -50,14 +50,12 @@
 enum {
     TYPE_IP = 1,
     TYPE_IW,
-    TYPE_IR,
     TYPE_M,
     TYPE_S,
 };
 
 static const uint16_t multiPPM[] = {
     PWM1  | (TYPE_IP << 8),     // PPM input
-    PWM2  | (TYPE_IR << 8),      // PWM RSSI input
     PWM9  | (TYPE_M << 8),      // Swap to servo if needed
     PWM10 | (TYPE_M << 8),     // Swap to servo if needed
     PWM11 | (TYPE_M << 8),
@@ -91,7 +89,6 @@ static const uint16_t multiPWM[] = {
 
 static const uint16_t airPPM[] = {
     PWM1  | (TYPE_IP << 8),     // PPM input
-    PWM2  | (TYPE_IR << 8),     // PWM RSSI input
     PWM9  | (TYPE_M  << 8),      // motor #1
     PWM10 | (TYPE_M  << 8),     // motor #2
     PWM11 | (TYPE_S  << 8),     // servo #1
@@ -186,9 +183,8 @@ void pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef STM32F10X_MD
-        // skip ADC for powerMeter if configured
-        // See FIXME where init->adcChannel is initialised
-        if (init->adcChannel && (init->adcChannel == timerIndex))
+        // skip ADC for RSSI
+        if (init->useRSSIADC && timerIndex == PWM2)
             continue;
 #endif
 
@@ -197,9 +193,6 @@ void pwmInit(drv_pwm_config_t *init)
             type = 0;
 
         if (type == TYPE_IP && !init->usePPM)
-            type = 0;
-
-        if (type == TYPE_IR && (!init->usePWMRSSI || init->useParallelPWM))
             type = 0;
 
         if (init->useServos && !init->airplane) {
@@ -232,8 +225,6 @@ void pwmInit(drv_pwm_config_t *init)
         } else if (type == TYPE_IW) {
             pwmInConfig(timerIndex, channelIndex);
             channelIndex++;
-        } else if (type == TYPE_IR) {
-            pwmRSSIInConfig(timerIndex);
         } else if (type == TYPE_M) {
             if (init->motorPwmRate > 500) {
             	pwmBrushedMotorConfig(&timerHardware[timerIndex], motorIndex, init->motorPwmRate, init->idlePulse);

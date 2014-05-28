@@ -26,14 +26,17 @@ void adcInit(drv_adc_config_t *init)
 
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_6;
     adcConfig[ADC_BATTERY].dmaIndex = adcChannelCount;
+    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_181Cycles5;
     adcChannelCount++;
 
     adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_7;
     adcConfig[ADC_EXTERNAL1].dmaIndex = adcChannelCount;
+    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_181Cycles5;
     adcChannelCount++;
 
-    adcConfig[ADC_EXTERNAL2].adcChannel = ADC_Channel_8;
-    adcConfig[ADC_EXTERNAL2].dmaIndex = adcChannelCount;
+    adcConfig[ADC_RSSI].adcChannel = ADC_Channel_8;
+    adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
+    adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
     adcChannelCount++;
 
     DMA_DeInit(DMA1_Channel1);
@@ -96,7 +99,7 @@ void adcInit(drv_adc_config_t *init)
     ADC_Init(ADC1, &ADC_InitStructure);
 
     for (i = 0; i < adcChannelCount; i++)
-        ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, i + 1, ADC_SampleTime_181Cycles5);
+        ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, i + 1, adcConfig[i].sampleTime);
 
     ADC_Cmd(ADC1, ENABLE);
 

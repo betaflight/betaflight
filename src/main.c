@@ -104,13 +104,7 @@ void init(void)
 
     systemInit(masterConfig.emf_avoidance);
 
-    // configure power ADC
-    if (masterConfig.power_adc_channel > 0 && (masterConfig.power_adc_channel == 1 || masterConfig.power_adc_channel == 9))
-        adc_params.powerAdcChannel = masterConfig.power_adc_channel;
-    else {
-        adc_params.powerAdcChannel = 0;
-        masterConfig.power_adc_channel = 0;
-    }
+    adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
 
     adcInit(&adc_params);
 
@@ -168,7 +162,7 @@ void init(void)
 
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
-    pwm_params.usePWMRSSI = feature(FEATURE_RSSI_PWM);
+    pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.extraServos = currentProfile.gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
@@ -180,18 +174,6 @@ void init(void)
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
     pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
-
-    switch (masterConfig.power_adc_channel) {
-        case 1:
-            pwm_params.adcChannel = PWM2;
-            break;
-        case 9:
-            pwm_params.adcChannel = PWM8;
-            break;
-        default:
-            pwm_params.adcChannel = 0; // FIXME this is the same as PWM1
-            break;
-    }
 
     pwmInit(&pwm_params);
 

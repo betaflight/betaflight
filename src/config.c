@@ -58,7 +58,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 #define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG)) // use the last flash pages for storagemaster_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 69;
+static const uint8_t EEPROM_CONF_VERSION = 70;
 
 static void resetAccelerometerTrims(int16_flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -209,7 +209,6 @@ static void resetConf(void)
     masterConfig.batteryConfig.vbatscale = 110;
     masterConfig.batteryConfig.vbatmaxcellvoltage = 43;
     masterConfig.batteryConfig.vbatmincellvoltage = 33;
-    masterConfig.power_adc_channel = 0;
 
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 
@@ -218,7 +217,6 @@ static void resetConf(void)
     masterConfig.rxConfig.mincheck = 1100;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rssi_channel = 0;
-    masterConfig.rxConfig.rssi_pwm_provider = RSSI_PWM_PROVIDER_DEFAULT;
 
     masterConfig.retarded_arm = 0;              // disable arm/disarm on roll left/right
     masterConfig.airplaneConfig.flaps_speed = 0;
@@ -372,8 +370,8 @@ void validateAndFixConfig(void)
     }
 
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        if (feature(FEATURE_RSSI_PWM)) {
-            featureClear(FEATURE_RSSI_PWM);
+        if (feature(FEATURE_RSSI_ADC)) {
+            featureClear(FEATURE_RSSI_ADC);
         }
     }
 

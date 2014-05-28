@@ -300,7 +300,7 @@ void loop(void)
                 mwDisarm();
         }
 
-        updateRSSI();
+        updateRSSI(currentTime);
 
         if (feature(FEATURE_FAILSAFE)) {
 

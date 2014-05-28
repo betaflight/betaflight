@@ -16,12 +16,6 @@ typedef enum {
     SERIALRX_PROVIDER_MAX = SERIALRX_SUMD
 } SerialRXType;
 
-typedef enum {
-    RSSI_PWM_PROVIDER_DEFAULT,
-    RSSI_PWM_PROVIDER_FRSKY_1KHZ,
-    RSSI_PWM_PROVIDER_MAX = RSSI_PWM_PROVIDER_FRSKY_1KHZ
-} rssiProvider_e;
-
 #define SERIALRX_PROVIDER_COUNT (SERIALRX_PROVIDER_MAX + 1)
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT 12
@@ -45,7 +39,6 @@ typedef struct rxConfig_s {
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
     uint8_t rssi_channel;
-    uint8_t rssi_pwm_provider;
 } rxConfig_t;
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
@@ -67,4 +60,4 @@ void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 bool isSerialRxFrameComplete(rxConfig_t *rxConfig);
 
-void updateRSSI(void);
+void updateRSSI(uint32_t currentTime);
