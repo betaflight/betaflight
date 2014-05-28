@@ -27,6 +27,8 @@
 #define HOTT_EAM_OFFSET_M3S          120
 #define HOTT_EAM_OFFSET_TEMPERATURE   20
 
+#define HOTT_GPS_ALTITUDE_OFFSET 500
+
 typedef enum {
     HOTT_EAM_ALARM1_FLAG_NONE = 0,
     HOTT_EAM_ALARM1_FLAG_MAH = (1 << 0),
@@ -476,4 +478,7 @@ void configureHoTTTelemetryPort(void);
 void freeHoTTTelemetryPort(void);
 
 uint32_t getHoTTTelemetryProviderBaudRate(void);
+
+void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage);
+
 #endif /* TELEMETRY_HOTT_H_ */

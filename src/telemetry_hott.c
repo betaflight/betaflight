@@ -171,8 +171,10 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
     hottGPSMessage->home_distance_L = GPS_distanceToHome & 0x00FF;
     hottGPSMessage->home_distance_H = GPS_distanceToHome >> 8;
 
-    hottGPSMessage->altitude_L = GPS_altitude & 0x00FF;
-    hottGPSMessage->altitude_H = GPS_altitude >> 8;
+    uint16_t hottGpsAltitude = (GPS_altitude / 10) + HOTT_GPS_ALTITUDE_OFFSET; // 1 / 0.1f == 10, GPS_altitude of 1 == 0.1m
+
+    hottGPSMessage->altitude_L = hottGpsAltitude & 0x00FF;
+    hottGPSMessage->altitude_H = hottGpsAltitude >> 8;
 
     hottGPSMessage->home_direction = GPS_directionToHome;
 }

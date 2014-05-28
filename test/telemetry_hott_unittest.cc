@@ -109,6 +109,22 @@ TEST(TelemetryHottTest, UpdateGPSCoordinates3)
     EXPECT_EQ((int16_t)(hottGPSMessage->pos_EW_sec_H << 8 | hottGPSMessage->pos_EW_sec_L), 9999);
 }
 
+TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
+{
+    // given
+    HOTT_GPS_MSG_t *hottGPSMessage = getGPSMessageForTest();
+
+    f.GPS_FIX = 1;
+    uint16_t altitudeInMeters = 1;
+    GPS_altitude = altitudeInMeters * (1 / 0.1f); // 1 = 0.1m
+
+    // when
+    hottPrepareGPSResponse(hottGPSMessage);
+
+    // then
+    EXPECT_EQ((int16_t)(hottGPSMessage->altitude_H << 8 | hottGPSMessage->altitude_L), 1 + HOTT_GPS_ALTITUDE_OFFSET);
+}
+
 
 // STUBS
 
@@ -166,6 +182,8 @@ serialPort_t *openSerialPort(serialPortFunction_e functionMask, serialReceiveCal
     UNUSED(callback);
     UNUSED(mode);
     UNUSED(inversion);
+
+    return NULL;
 }
 
 serialPort_t *findOpenSerialPort(uint16_t functionMask) {
