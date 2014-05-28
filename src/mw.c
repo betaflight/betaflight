@@ -229,36 +229,30 @@ uint16_t pwmReadRawRC(uint8_t chan)
 
 void computeRC(void)
 {
-    uint8_t chan;
+    uint16_t capture;
+    int i, chan;
 
     if (feature(FEATURE_SERIALRX)) {
         for (chan = 0; chan < 8; chan++)
             rcData[chan] = rcReadRawFunc(chan);
     } else {
-        static int16_t rcData4Values[8][4], rcDataMean[8];
-        static uint8_t rc4ValuesIndex = 0;
-        uint16_t capture;
-        uint8_t a;
+        static int16_t rcDataAverage[8][4];
+        static int rcAverageIndex = 0;
 
-        rc4ValuesIndex++;
         for (chan = 0; chan < 8; chan++) {
             capture = rcReadRawFunc(chan);
 
             // validate input
             if (capture < PULSE_MIN || capture > PULSE_MAX)
                 capture = mcfg.midrc;
-
-            rcData4Values[chan][rc4ValuesIndex % 4] = capture;
-            rcDataMean[chan] = 0;
-            for (a = 0; a < 4; a++)
-                rcDataMean[chan] += rcData4Values[chan][a];
-
-            rcDataMean[chan] = (rcDataMean[chan] + 2) / 4;
-            if (rcDataMean[chan] < rcData[chan] - 3)
-                rcData[chan] = rcDataMean[chan] + 2;
-            if (rcDataMean[chan] > rcData[chan] + 3)
-                rcData[chan] = rcDataMean[chan] - 2;
+            rcDataAverage[chan][rcAverageIndex % 4] = capture;
+            // clear this since we're not accessing it elsewhere. saves a temp var
+            rcData[chan] = 0;
+            for (i = 0; i < 4; i++)
+                rcData[chan] += rcDataAverage[chan][i];
+            rcData[chan] /= 4;
         }
+        rcAverageIndex++;
     }
 }
 
