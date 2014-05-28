@@ -2,7 +2,7 @@
 
 #ifdef MAG
 void compassInit(void);
-int compassGetADC(int16_flightDynamicsTrims_t *magZero);
+int compassGetADC(flightDynamicsTrims_t *magZero);
 #endif
 
 extern int16_t magADC[XYZ_AXIS_COUNT];

@@ -242,8 +242,8 @@ const clivalue_t valueTable[] = {
     { "accxy_deadband", VAR_UINT8, &currentProfile.accxy_deadband, 0, 100 },
     { "accz_deadband", VAR_UINT8, &currentProfile.accz_deadband, 0, 100 },
     { "acc_unarmedcal", VAR_UINT8, &currentProfile.acc_unarmedcal, 0, 1 },
-    { "acc_trim_pitch", VAR_INT16, &currentProfile.accelerometerTrims.trims.pitch, -300, 300 },
-    { "acc_trim_roll", VAR_INT16, &currentProfile.accelerometerTrims.trims.roll, -300, 300 },
+    { "acc_trim_pitch", VAR_INT16, &currentProfile.accelerometerTrims.values.pitch, -300, 300 },
+    { "acc_trim_roll", VAR_INT16, &currentProfile.accelerometerTrims.values.roll, -300, 300 },
 
     { "baro_tab_size", VAR_UINT8, &currentProfile.barometerConfig.baro_sample_count, 0, BARO_SAMPLE_COUNT_MAX },
     { "baro_noise_lpf", VAR_FLOAT, &currentProfile.barometerConfig.baro_noise_lpf, 0, 1 },

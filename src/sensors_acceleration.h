@@ -20,4 +20,4 @@ extern uint16_t acc_1G;
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
-void setAccelerationTrims(int16_flightDynamicsTrims_t *accelerationTrimsToUse);
+void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse);

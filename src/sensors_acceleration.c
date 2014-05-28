@@ -28,7 +28,7 @@ extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
 
-static int16_flightDynamicsTrims_t *accelerationTrims;
+static flightDynamicsTrims_t *accelerationTrims;
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
@@ -95,8 +95,8 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
         accZero_saved[FD_ROLL] = accelerationTrims->raw[FD_ROLL];
         accZero_saved[FD_PITCH] = accelerationTrims->raw[FD_PITCH];
         accZero_saved[FD_YAW] = accelerationTrims->raw[FD_YAW];
-        angleTrim_saved.trims.roll = rollAndPitchTrims->trims.roll;
-        angleTrim_saved.trims.pitch = rollAndPitchTrims->trims.pitch;
+        angleTrim_saved.values.roll = rollAndPitchTrims->values.roll;
+        angleTrim_saved.values.pitch = rollAndPitchTrims->values.pitch;
     }
     if (InflightcalibratingA > 0) {
         for (axis = 0; axis < 3; axis++) {
@@ -118,8 +118,8 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
             accelerationTrims->raw[FD_ROLL] = accZero_saved[FD_ROLL];
             accelerationTrims->raw[FD_PITCH] = accZero_saved[FD_PITCH];
             accelerationTrims->raw[FD_YAW] = accZero_saved[FD_YAW];
-            rollAndPitchTrims->trims.roll = angleTrim_saved.trims.roll;
-            rollAndPitchTrims->trims.pitch = angleTrim_saved.trims.pitch;
+            rollAndPitchTrims->values.roll = angleTrim_saved.values.roll;
+            rollAndPitchTrims->values.pitch = angleTrim_saved.values.pitch;
         }
         InflightcalibratingA--;
     }
@@ -137,7 +137,7 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
 
 }
 
-void applyAccelerationTrims(int16_flightDynamicsTrims_t *accelerationTrims)
+void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 {
     accADC[FD_ROLL] -= accelerationTrims->raw[FD_ROLL];
     accADC[FD_PITCH] -= accelerationTrims->raw[FD_PITCH];
@@ -160,7 +160,7 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     applyAccelerationTrims(accelerationTrims);
 }
 
-void setAccelerationTrims(int16_flightDynamicsTrims_t *accelerationTrimsToUse)
+void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
 {
     accelerationTrims = accelerationTrimsToUse;
 }

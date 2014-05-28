@@ -327,8 +327,8 @@ static void getEstimatedAttitude(void)
     // Attitude of the estimated vector
     anglerad[AI_ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
     anglerad[AI_PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
-    inclination.angle.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
-    inclination.angle.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
+    inclination.values.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
+    inclination.values.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
 
     if (sensors(SENSOR_MAG))
         heading = calculateHeading(&EstM);
@@ -361,7 +361,7 @@ static void getEstimatedAttitude(void)
 
 bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
 {
-    return abs(inclination->angle.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && abs(inclination->angle.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
+    return abs(inclination->values.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && abs(inclination->values.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
 }
 
 int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)

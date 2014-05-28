@@ -267,7 +267,7 @@ void annexCode(void)
         static uint32_t LEDTime;
         if ((int32_t)(currentTime - LEDTime) >= 0) {
             LEDTime = currentTime + 50000;
-            ledringState(f.ARMED, inclination.angle.pitchDeciDegrees, inclination.angle.rollDeciDegrees);
+            ledringState(f.ARMED, inclination.values.pitchDeciDegrees, inclination.values.rollDeciDegrees);
         }
     }
 #endif
@@ -450,16 +450,16 @@ void loop(void)
                 i = 0;
                 // Acc Trim
                 if (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) {
-                    currentProfile.accelerometerTrims.trims.pitch += 2;
+                    currentProfile.accelerometerTrims.values.pitch += 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) {
-                    currentProfile.accelerometerTrims.trims.pitch -= 2;
+                    currentProfile.accelerometerTrims.values.pitch -= 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) {
-                    currentProfile.accelerometerTrims.trims.roll += 2;
+                    currentProfile.accelerometerTrims.values.roll += 2;
                     i = 1;
                 } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) {
-                    currentProfile.accelerometerTrims.trims.roll -= 2;
+                    currentProfile.accelerometerTrims.values.roll -= 2;
                     i = 1;
                 }
                 if (i) {
