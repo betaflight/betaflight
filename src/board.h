@@ -272,7 +272,7 @@ typedef struct baro_t {
 #define BEEP_ON                  ;
 #endif
 
-#define SOFT_I2C                 // enable to test software i2c
+// #define SOFT_I2C                 // enable to test software i2c
 
 #include "utils.h"
 

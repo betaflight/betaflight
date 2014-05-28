@@ -285,7 +285,7 @@ void i2cInit(I2C_TypeDef *I2C)
     I2C_Cmd(I2Cx, ENABLE);
     I2C_Init(I2Cx, &I2C_InitStructure);
 
-    NVIC_PriorityGroupConfig(0x500);
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
     // I2C ER Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = I2C2_ER_IRQn;
@@ -298,7 +298,6 @@ void i2cInit(I2C_TypeDef *I2C)
     NVIC_InitStructure.NVIC_IRQChannel = I2C2_EV_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
-
 }
 
 uint16_t i2cGetErrorCounter(void)
