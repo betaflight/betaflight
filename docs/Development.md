@@ -22,7 +22,7 @@ All pull requests to add/improve the testability of the code or testing methods 
 2. Strike a balance between simplicity and not-repeating code.
 3. Methods that return a boolean should be named as a question, and should not change state.  e.g. 'isOkToArm()'
 4. Methods that start with the word 'find' can return a null, methods that start with 'get' should not.
-5. Methods should have verb or verb-phrase names, like `deletePage` or `save`. 
+5. Methods should have verb or verb-phrase names, like `deletePage` or `save`.  Variables should not, they generally should be nouns.  Tell the system to 'do' something 'with' something.  e.g. deleteAllPages(pageList).
 6. Keep methods short - it makes it easier to test.
 7. Don't be afraid of moving code to a new file - it helps to reduce test dependencies.
 8. Avoid noise-words in variable names, like 'data' or 'info'.  Think about what you're naming and name it well.  Don't be afraid to rename anything.
