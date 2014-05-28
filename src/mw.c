@@ -96,8 +96,7 @@ void updateAutotuneState(void)
                 autoTuneWasUsed = true;
             } else {
                 if (havePidsBeenUpdatedByAutotune()) {
-                    //writeEEPROM();
-                    blinkLedAndSoundBeeper(5, 50, 1);
+                    saveAndReloadCurrentProfileToCurrentProfileSlot();
                     autotuneReset();
                 }
             }
