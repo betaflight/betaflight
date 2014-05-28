@@ -209,7 +209,6 @@ static void resetConf(void)
     masterConfig.batteryConfig.vbatscale = 110;
     masterConfig.batteryConfig.vbatmaxcellvoltage = 43;
     masterConfig.batteryConfig.vbatmincellvoltage = 33;
-    masterConfig.power_adc_channel = 0;
 
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 
@@ -218,7 +217,6 @@ static void resetConf(void)
     masterConfig.rxConfig.mincheck = 1100;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rssi_channel = 0;
-    masterConfig.rxConfig.rssi_pwm_provider = RSSI_PWM_PROVIDER_DEFAULT;
 
     masterConfig.retarded_arm = 0;              // disable arm/disarm on roll left/right
     masterConfig.airplaneConfig.flaps_speed = 0;
@@ -372,8 +370,8 @@ void validateAndFixConfig(void)
     }
 
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        if (feature(FEATURE_RSSI_PWM)) {
-            featureClear(FEATURE_RSSI_PWM);
+        if (feature(FEATURE_RSSI_ADC)) {
+            featureClear(FEATURE_RSSI_ADC);
         }
     }
 

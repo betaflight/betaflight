@@ -6,7 +6,7 @@ Some receivers have RSSI outputs.  3 types are supported.
 
 1. RSSI via PPM channel
 2. RSSI via Parallel PWM channel
-3. RSSI via PWM with PPM RC that does not have RSSI output - aka RSSI PWM
+3. RSSI via ADC with PPM RC that has an RSSI output - aka RSSI ADC
 
 ## RSSI via PPM
 
@@ -22,32 +22,17 @@ set rssi_channel = 1
 
 Connect the RSSI signal to any PWM input channel then set the RSSI channel as you would for RSSI via PPM
 
-## RSSI PWM
+## RSSI ADC
 
-Connect the RSSI PWM signal to the RC2/CH2 input.
+Connect the RSSI signal to the RC2/CH2 input.  The signal must be between 0v and 3.3v to indicate between 0% and 100% RSSI.
+Use inline resistors to lower voltage if required, inline smoothing capacitors may also help.
 
-Enable using the RSSI_PWM feature:
+FrSky D4R-II and X8R supported.
+
+Enable using the RSSI_ADC feature:
 
 ```
-feature RSSI_PWM
+feature RSSI_ADC
 ```
 
 The feature can not be used when RX_PARALLEL_PWM is enabled.
-
-
-### RSSI PWM Providers
-
-When using RSSI PWM it is possible to use standard ~18ms RSSI signals or a faster 1khz/1m RSSI signal.
-
-The RSSI output on the FrSky X8R (and probably the FrSky X6R) is 1khz.
-
-To support the 1khz rate enable it via the cli:
-
-```
-set rssi_pwm_provider = 1
-```
-
-| Value | Meaning     |
-| ----- | ----------- |
-| 0     | ~18ms pulse |
-| 1     | 1ms pulse   |

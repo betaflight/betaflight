@@ -39,16 +39,12 @@ typedef struct master_t {
 
     batteryConfig_t batteryConfig;
 
-    uint8_t power_adc_channel;              // which channel is used for current sensor. Right now, only 2 places are supported: RC_CH2 (unused when in CPPM mode, = 1), RC_CH8 (last channel in PWM mode, = 9)
-
     rxConfig_t rxConfig;
 
     uint8_t retarded_arm;                   // allow disarsm/arm on throttle down + roll left/right
 
     airplaneConfig_t airplaneConfig;
     int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-
-    uint8_t rssi_channel;               // Read rssi from channel. 0 to disable, 1 = channel 1, etc.
 
     // gps-related stuff
     gpsProvider_e gps_provider;

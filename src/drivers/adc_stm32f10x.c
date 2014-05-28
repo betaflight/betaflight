@@ -14,8 +14,9 @@
 // Driver for STM32F103CB onboard ADC
 // VBAT is connected to PA4 (ADC1_IN4) with 10k:1k divider
 // rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
-// Additional channel can be stolen from RC_CH2 (PA1, ADC1_IN1) or 
-// RC_CH8 (PB1, ADC1_IN9) by using set power_adc_channel=1|9
+//
+// RSSI ADC uses PA1
+// An additional ADC source is available on CH8 (PB1, ADC1_IN9)
 
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
@@ -33,18 +34,21 @@ void adcInit(drv_adc_config_t *init)
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_4;
     adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
     adcConfig[ADC_BATTERY].enabled = true;
+    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_28Cycles5;
 
     // optional ADC5 input on rev.5 hardware
     if (hse_value == 12000000) {
         adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
         adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_EXTERNAL1].enabled = true;
+        adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_28Cycles5;
     }
-    // another channel can be stolen from PWM for current measurement or other things
-    if (init->powerAdcChannel > 0) {
-        adcConfig[ADC_EXTERNAL2].adcChannel = ADC_Channel_1; // init->powerAdcChannel;
-        adcConfig[ADC_EXTERNAL2].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_EXTERNAL2].enabled = true;
+
+    if (init->enableRSSI > 0) {
+        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_1;
+        adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
+        adcConfig[ADC_RSSI].enabled = true;
+        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
     }
 
     // ADC driver assumes all the GPIO was already placed in 'AIN' mode
@@ -76,7 +80,7 @@ void adcInit(drv_adc_config_t *init)
         if (!adcConfig[i].enabled) {
             continue;
         }
-        ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, rank++, ADC_SampleTime_28Cycles5);
+        ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, rank++, adcConfig[i].sampleTime);
     }
 
     ADC_DMACmd(ADC1, ENABLE);
