@@ -79,7 +79,8 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
         // -----Get the desired angle rate depending on flight mode
-        if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
+        if (axis == FD_YAW) {
+            // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
             AngleRate = (float)((controlRateConfig->yawRate + 10) * rcCommand[YAW]) / 50.0f;
          } else {
             // calculate error and limit the angle to 50 degrees max inclination
@@ -89,14 +90,16 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
                 errorAngle = autotune(rcAliasToAngleIndexMap[axis], &inclination, errorAngle);
             }
 
-            if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
+            if (f.ANGLE_MODE) {
+                // it's the ANGLE mode - control is angle based, so control loop is needed
+                AngleRate = errorAngle * pidProfile->A_level;
+            } else {
+                //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
                 AngleRate = (float)((controlRateConfig->rollPitchRate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max yaw rate
                 if (f.HORIZON_MODE) {
-                    // mix up angle error to desired AngleRateTmp to add a little auto-level feel
+                    // mix up angle error to desired AngleRate to add a little auto-level feel
                     AngleRate += errorAngle * pidProfile->H_level;
                 }
-            } else { // it's the ANGLE mode - control is angle based, so control loop is needed
-                AngleRate = errorAngle * pidProfile->A_level;
             }
         }
 
@@ -151,7 +154,7 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]
     for (axis = 0; axis < 3; axis++) {
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && (axis == FD_ROLL || axis == FD_PITCH)) { // MODE relying on ACC
-            // 50 degrees max inclination
+            // observe max inclination
             errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.rawAngles[axis] + angleTrim->raw[axis];
 
