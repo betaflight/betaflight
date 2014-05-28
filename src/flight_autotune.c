@@ -12,14 +12,51 @@
 
 extern int16_t debug[4];
 
-// To adjust how aggressive the tuning is, adjust the AUTOTUNEMAXOSCILLATION value.  A larger
-// value will result in more aggressive tuning. A lower value will result in softer tuning.
-// It will rock back and forth between -AUTOTUNE_TARGET_ANGLE and AUTOTUNE_TARGET_ANGLE degrees
-// AUTOTUNE_D_MULTIPLIER is a multiplier that puts in a little extra D when autotuning is done. This helps damp
-// the wobbles after a quick angle change.
-// Always autotune on a full battery.
+/*
+ * Authors
+ * Brad Quick - initial implementation in BradWii
+ * Dominic Clifton - baseflight port & cleanup.
+ *
+ * Autotune in BradWii thread here: http://www.rcgroups.com/forums/showthread.php?t=1922423
+ *
+ * We start with two input parameters. The first is our target angle. By default it's 20 degrees, so we will bank to 20 degrees,
+ * see how the system reacts, then bank to -20 degrees and evaluate again. We repeat this over and over. The second input is
+ * how much oscillation we can tolerate. This can range from 2 degrees to 5 or more degrees. This defaults to 4 degrees. The
+ * higher this value is, the more agressive the result of the tuning will be.
+ *
+ * First, we turn the I gain down to zero so that we don't have to try to figure out how much overshoot is caused by the I term
+ * vs. the P term.
+ *
+ * Then, we move to the target of 20 degrees and analyze the results. Our goal is to have no overshoot and to keep the bounce
+ * back within the 4 degrees. By working to get zero overshoot, we can isolate the effects of the P and D terms. If we don't
+ * overshoot, then the P term never works in the opposite direction, so we know that any bounce we get is caused by the D term.
+ *
+ * If we overshoot the target 20 degrees, then we know our P term is too high or our D term is too low. We can determine
+ * which one to change by looking at how much bounce back (or the amplitude of the oscillation) we get. If it bounces back
+ * more than the 4 degrees, then our D is already too high, so we can't increase it, so instead we decrease P.
+ *
+ * If we undershoot, then either our P is too low or our D is too high. Again, we can determine which to change by looking at
+ * how much bounce we get.
+ *
+ * Once we have the P and D terms set, we then set the I term by repeating the same test above and measuring the overshoot.
+ * If our maximum oscillation is set to 4 degrees, then we keep increasing the I until we get an overshoot of 2 degrees, so
+ * that our oscillations are now centered around our target (in theory).
+ *
+ * In the BradWii software, it alternates between doing the P and D step and doing the I step so you can quit whenever you
+ * want without having to tell it specifically to do the I term. The sequence is actually P&D, P&D, I, P&D, P&D, I...
+ *
+ * Note: The 4 degrees mentioned above is the value of AUTOTUNE_MAX_OSCILLATION.  In the BradWii code at the time of writing
+ * the default value was 1.0f instead of 4.0f.
+ *
+ * To adjust how aggressive the tuning is, adjust the AUTOTUNEMAXOSCILLATION value.  A larger value will result in more
+ * aggressive tuning. A lower value will result in softer tuning. It will rock back and forth between -AUTOTUNE_TARGET_ANGLE
+ * and AUTOTUNE_TARGET_ANGLE degrees
+ * AUTOTUNE_D_MULTIPLIER is a multiplier that puts in a little extra D when autotuning is done. This helps damp  the wobbles
+ * after a quick angle change.
+ * Always autotune on a full battery.
+ */
 
-#define AUTOTUNE_MAX_OSCILLATION 1.0f
+#define AUTOTUNE_MAX_OSCILLATION_ANGLE 4.0f
 #define AUTOTUNE_TARGET_ANGLE 20.0f
 #define AUTOTUNE_D_MULTIPLIER 1.2f
 #define AUTOTUNE_SETTLING_DELAY_MS 250  // 1/4 of a second.
@@ -154,7 +191,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
         } else if (secondPeakAngle > 0) {
             if (cycleCount == 0) {
                 // when checking the I value, we would like to overshoot the target position by half of the max oscillation.
-                if (currentAngle - targetAngle < AUTOTUNE_MAX_OSCILLATION / 2) {
+                if (currentAngle - targetAngle < AUTOTUNE_MAX_OSCILLATION_ANGLE / 2) {
                     pid.i *= AUTOTUNE_INCREASE_MULTIPLIER;
                 } else {
                     pid.i *= AUTOTUNE_DECREASE_MULTIPLIER;
@@ -189,7 +226,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
         bool timedOut = signedDiff >= 0L;
 
         // stop looking for the 2nd peak if we time out or if we change direction again after moving by more than half the maximum oscillation
-        if (timedOut || (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION / 2 && currentAngle > firstPeakAngle)) {
+        if (timedOut || (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION_ANGLE / 2 && currentAngle > firstPeakAngle)) {
             // analyze the data
             // Our goal is to have zero overshoot and to have AUTOTUNEMAXOSCILLATION amplitude
 
@@ -198,7 +235,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
                 debug[0] = 1;
 
 #ifdef PREFER_HIGH_GAIN_SOLUTION
-                if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION) {
+                if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION_ANGLE) {
                     // we have too much oscillation, so we can't increase D, so decrease P
 #endif
                     pid.p *= AUTOTUNE_DECREASE_MULTIPLIER;
@@ -214,7 +251,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
                 // undershot
                 debug[0] = 2;
 
-                if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION) {
+                if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION_ANGLE) {
                     // we have too much oscillation
                     pid.d *= AUTOTUNE_DECREASE_MULTIPLIER;
                 } else {
