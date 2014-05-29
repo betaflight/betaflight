@@ -105,6 +105,7 @@ void init(void)
     systemInit(masterConfig.emf_avoidance);
 
     adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
+    adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
 
     adcInit(&adc_params);
 

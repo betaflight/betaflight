@@ -159,8 +159,8 @@ void annexCode(void)
     int32_t axis, prop1, prop2;
 
     static uint8_t batteryWarningEnabled = false;
-
     static uint8_t vbatTimer = 0;
+    static uint32_t vbatCycleTime = 0;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
     if (rcData[THROTTLE] < currentProfile.tpa_breakpoint) {
@@ -222,11 +222,19 @@ void annexCode(void)
         rcCommand[PITCH] = rcCommand_PITCH;
     }
 
-    if (feature(FEATURE_VBAT)) {
+    if (feature(FEATURE_VBAT || feature(FEATURE_CURRENT_METER))) {
+        vbatCycleTime += cycleTime;
         if (!(++vbatTimer % VBATFREQ)) {
-            updateBatteryVoltage();
 
-            batteryWarningEnabled = shouldSoundBatteryAlarm();
+        	if (feature(FEATURE_VBAT)) {
+        		updateBatteryVoltage();
+        	}
+
+        	if (feature(FEATURE_CURRENT_METER)) {
+        		updateCurrentMeter(vbatCycleTime);
+        	}
+
+        	batteryWarningEnabled = shouldSoundBatteryAlarm();
         }
     }
 

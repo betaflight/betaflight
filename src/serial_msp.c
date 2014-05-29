@@ -618,10 +618,13 @@ static void evaluateCommand(void)
         break;
     case MSP_ANALOG:
         headSerialReply(7);
-        serialize8(vbat);
-        serialize16(0); // power meter trash
+        serialize8((uint8_t)constrain(vbat, 0, 255));
+        serialize16(mAhdrawn); // milliamphours drawn from battery
         serialize16(rssi);
-        serialize16(0); // amperage
+        if(masterConfig.batteryConfig.multiwiiCurrentMeterOutput) {
+            serialize16((uint16_t)constrain((abs(amperage)*10), 0, 0xFFFF)); // send amperage in 0.001 A steps
+        } else
+            serialize16((uint16_t)abs(amperage)); // send amperage in 0.01 A steps
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);

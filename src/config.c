@@ -206,9 +206,12 @@ static void resetConf(void)
     masterConfig.max_angle_inclination = 500;    // 50 degrees
     masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
+
     masterConfig.batteryConfig.vbatscale = 110;
     masterConfig.batteryConfig.vbatmaxcellvoltage = 43;
     masterConfig.batteryConfig.vbatmincellvoltage = 33;
+    masterConfig.batteryConfig.currentMeterOffset = 0;
+    masterConfig.batteryConfig.currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
 
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 
@@ -372,6 +375,9 @@ void validateAndFixConfig(void)
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
         if (feature(FEATURE_RSSI_ADC)) {
             featureClear(FEATURE_RSSI_ADC);
+        }
+        if (feature(FEATURE_CURRENT_METER)) {
+            featureClear(FEATURE_CURRENT_METER);
         }
     }
 

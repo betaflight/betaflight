@@ -12,11 +12,12 @@
 #include "adc_common.h"
 
 // Driver for STM32F103CB onboard ADC
-// VBAT is connected to PA4 (ADC1_IN4) with 10k:1k divider
-// rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
 //
-// RSSI ADC uses PA1
-// An additional ADC source is available on CH8 (PB1, ADC1_IN9)
+// Battery Voltage (VBAT) is connected to PA4 (ADC1_IN4) with 10k:1k divider
+// RSSI ADC uses CH2 (PA1, ADC1_IN1)
+// Current ADC uses CH8 (PB1, ADC1_IN9)
+//
+// NAZE rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
 
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
@@ -29,6 +30,13 @@ void adcInit(drv_adc_config_t *init)
 
     uint8_t configuredAdcChannels = 0;
     memset(&adcConfig, 0, sizeof(adcConfig));
+
+    if (init->enableRSSI) {
+        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_1;
+        adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
+        adcConfig[ADC_RSSI].enabled = true;
+        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
+    }
 
     // configure always-present battery index (ADC4)
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_4;
@@ -44,8 +52,8 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
     }
 
-    if (init->enableRSSI > 0) {
-        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_1;
+    if (init->enableCurrentMeter) {
+        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_9;
         adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_RSSI].enabled = true;
         adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;

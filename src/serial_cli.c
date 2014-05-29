@@ -85,7 +85,7 @@ static const char * const mixerNames[] = {
 static const char * const featureNames[] = {
     "RX_PPM", "VBAT", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "LED_RING", "GPS", "FAILSAFE",
-    "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D", "RX_PARALLEL_PWM",
+    "SONAR", "TELEMETRY", "CURRENT_METER", "VARIO", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", NULL
 };
 
@@ -188,9 +188,13 @@ const clivalue_t valueTable[] = {
     { "telemetry_switch", VAR_UINT8, &masterConfig.telemetryConfig.telemetry_switch, 0, 1 },
     { "frsky_inversion", VAR_UINT8, &masterConfig.telemetryConfig.frsky_inversion, 0, 1 },
 
-    { "vbatscale", VAR_UINT8, &masterConfig.batteryConfig.vbatscale, 10, 200 },
-    { "vbatmaxcellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50 },
-    { "vbatmincellvoltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmincellvoltage, 10, 50 },
+    { "vbat_scale", VAR_UINT8, &masterConfig.batteryConfig.vbatscale, 10, 200 },
+    { "vbat_max_cell_voltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50 },
+    { "vbat_min_cell_voltage", VAR_UINT8, &masterConfig.batteryConfig.vbatmincellvoltage, 10, 50 },
+    { "current_meter_scale", VAR_UINT16, &masterConfig.batteryConfig.currentMeterScale, 1, 10000 },
+    { "current_meter_offset", VAR_UINT16, &masterConfig.batteryConfig.currentMeterOffset, 0, 1650 },
+    { "multiwii_current_meter_output", VAR_UINT8, &masterConfig.batteryConfig.multiwiiCurrentMeterOutput, 0, 1 },
+
 
     { "align_gyro", VAR_UINT8, &masterConfig.sensorAlignmentConfig.gyro_align, 0, 8 },
     { "align_acc", VAR_UINT8, &masterConfig.sensorAlignmentConfig.acc_align, 0, 8 },

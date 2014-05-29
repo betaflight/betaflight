@@ -27,17 +27,24 @@ void adcInit(drv_adc_config_t *init)
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_6;
     adcConfig[ADC_BATTERY].dmaIndex = adcChannelCount;
     adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_601Cycles5;
+    adcConfig[ADC_BATTERY].enabled = true;
     adcChannelCount++;
 
-    adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_7;
-    adcConfig[ADC_EXTERNAL1].dmaIndex = adcChannelCount;
-    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_601Cycles5;
-    adcChannelCount++;
+    if (init->enableCurrentMeter) {
+		adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_7;
+		adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
+		adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
+		adcConfig[ADC_CURRENT].enabled = true;
+		adcChannelCount++;
+    }
 
-    adcConfig[ADC_RSSI].adcChannel = ADC_Channel_8;
-    adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
-    adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
-    adcChannelCount++;
+    if (init->enableRSSI) {
+		adcConfig[ADC_RSSI].adcChannel = ADC_Channel_8;
+		adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
+		adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
+		adcConfig[ADC_RSSI].enabled = true;
+		adcChannelCount++;
+    }
 
     DMA_DeInit(DMA1_Channel1);
 
@@ -98,8 +105,13 @@ void adcInit(drv_adc_config_t *init)
 
     ADC_Init(ADC1, &ADC_InitStructure);
 
-    for (i = 0; i < adcChannelCount; i++)
-        ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, i + 1, adcConfig[i].sampleTime);
+    uint8_t rank = 1;
+    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (!adcConfig[i].enabled) {
+            continue;
+        }
+        ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, rank++, adcConfig[i].sampleTime);
+    }
 
     ADC_Cmd(ADC1, ENABLE);
 
