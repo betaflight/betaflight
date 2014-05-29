@@ -102,6 +102,9 @@ void systemInit(bool overclock)
     SetSysClock(overclock);
 #endif
 
+    // Configure NVIC preempt/priority groups
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+
     // Turn on clocks for stuff we use
 #ifdef STM32F10X_MD
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4 | RCC_APB1Periph_I2C2, ENABLE);
