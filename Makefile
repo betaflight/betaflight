@@ -14,7 +14,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, must be one of NAZE, FY90Q OR OLIMEXINO
+# The target to build, must be one of NAZE OR OLIMEXINO
 TARGET		?= NAZE
 
 # Compile-time options
@@ -30,7 +30,7 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 # Things that need to be maintained as the source changes
 #
 
-VALID_TARGETS	 = NAZE FY90Q OLIMEXINO
+VALID_TARGETS	 = NAZE OLIMEXINO
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
@@ -87,11 +87,6 @@ NAZE_SRC	 = drv_adc.c \
 		   drv_pwm.c \
 		   drv_spi.c \
 		   drv_timer.c \
-		   $(COMMON_SRC)
-
-# Source files for the FY90Q target
-FY90Q_SRC	 = drv_adc_fy90q.c \
-		   drv_pwm_fy90q.c \
 		   $(COMMON_SRC)
 
 # Source files for the OLIMEXINO target

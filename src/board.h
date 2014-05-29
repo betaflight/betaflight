@@ -176,22 +176,6 @@ typedef struct baro_t {
 } baro_t;
 
 // Hardware definitions and GPIO
-#ifdef FY90Q
- // FY90Q
-#define LED0_GPIO   GPIOC
-#define LED0_PIN    Pin_12
-#define LED1_GPIO   GPIOA
-#define LED1_PIN    Pin_15
-
-#define GYRO
-#define ACC
-#define LED0
-#define LED1
-
-#define SENSORS_SET (SENSOR_ACC)
-
-#else
-
 #ifdef OLIMEXINO
 // OLIMEXINO
 
@@ -239,7 +223,6 @@ typedef struct baro_t {
 // #define PROD_DEBUG
 
 #endif
-#endif
 
 // Helpful macros
 #ifdef LED0
@@ -275,14 +258,6 @@ typedef struct baro_t {
 // #define SOFT_I2C                 // enable to test software i2c
 
 #include "utils.h"
-
-#ifdef FY90Q
- // FY90Q
-#include "drv_adc.h"
-#include "drv_i2c.h"
-#include "drv_pwm.h"
-#include "drv_uart.h"
-#else
 
 #ifdef OLIMEXINO
 // OLIMEXINO
@@ -321,5 +296,4 @@ typedef struct baro_t {
 #include "drv_softserial.h"
 #include "drv_hcsr04.h"
 
-#endif
 #endif

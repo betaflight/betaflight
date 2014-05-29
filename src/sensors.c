@@ -20,15 +20,6 @@ sensor_t gyro;                      // gyro access functions
 baro_t baro;                        // barometer access functions
 uint8_t accHardware = ACC_DEFAULT;  // which accel chip is used/detected
 
-#ifdef FY90Q
-// FY90Q analog gyro/acc
-bool sensorsAutodetect(void)
-{
-    adcSensorInit(&acc, &gyro);
-    return true;
-}
-#else
-// AfroFlight32 i2c sensors
 bool sensorsAutodetect(void)
 {
     int16_t deg, min;
@@ -133,7 +124,6 @@ retry:
 
     return true;
 }
-#endif
 
 uint16_t batteryAdcToVoltage(uint16_t src)
 {
