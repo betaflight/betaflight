@@ -3,7 +3,7 @@
 typedef enum {
     ADC_BATTERY = 0,
     ADC_EXTERNAL1 = 1,
-    ADC_EXTERNAL2 = 2,
+    ADC_EXTERNAL_CURRENT = 2,
     ADC_CHANNEL_MAX = 3
 } AdcChannel;
 

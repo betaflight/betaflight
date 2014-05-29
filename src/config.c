@@ -13,7 +13,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 63;
+static const uint8_t EEPROM_CONF_VERSION = 64;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -187,6 +187,7 @@ static void resetConf(void)
     mcfg.max_angle_inclination = 500;    // 50 degrees
     mcfg.yaw_control_direction = 1;
     mcfg.moron_threshold = 32;
+    mcfg.currentscale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     mcfg.vbatscale = 110;
     mcfg.vbatmaxcellvoltage = 43;
     mcfg.vbatmincellvoltage = 33;
