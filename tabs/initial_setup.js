@@ -245,7 +245,7 @@ function tab_initialize_initial_setup() {
             // Update voltage indicator
             $('.bat-voltage').text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
             $('.bat-mah-drawn').text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.mAhdrawn]));
-            $('.bat-mah-drawing').text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.amperage]));
+            $('.bat-mah-drawing').text(chrome.i18n.getMessage('initialSetupBatteryAValue', [ANALOG.amperage.toFixed(2)]));
             $('.rssi').text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
 
             // Update cube

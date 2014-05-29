@@ -222,6 +222,9 @@
     "initialSetupBatteryMahValue": {
         "message": "$1 mAh"
     },
+    "initialSetupBatteryAValue": {
+        "message": "$1 A"
+    },
     "initialSetupRSSI": {
         "message": "RSSI:"
     },
