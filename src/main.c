@@ -144,9 +144,7 @@ void init(void)
     imuInit(); // Mag is initialized inside imuInit
     mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer);
 
-#ifndef FY90Q
     timerInit();
-#endif
 
     serialInit(&masterConfig.serialConfig);
 

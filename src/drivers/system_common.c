@@ -216,9 +216,7 @@ void systemInit(bool overclock)
     SysTick_Config(SystemCoreClock / 1000);
 
     // Configure the rest of the stuff
-#ifndef FY90Q
     i2cInit(I2C2);
-#endif
     spiInit();
 
     // sleep for 100ms

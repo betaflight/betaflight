@@ -7,9 +7,6 @@
 
 #include "drivers/accgyro_common.h"
 
-#ifdef FY90Q
-#include "drivers/accgyro_fy90q.h"
-#else
 #include "drivers/accgyro_adxl345.h"
 #include "drivers/accgyro_bma280.h"
 #include "drivers/accgyro_l3g4200d.h"
@@ -19,7 +16,6 @@
 #ifdef STM32F3DISCOVERY
 #include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
-#endif
 #endif
 
 #include "drivers/barometer_common.h"
@@ -111,17 +107,6 @@ bool fakeAccDetect(acc_t *acc)
     return true;
 }
 #endif
-
-#ifdef FY90Q
-// FY90Q analog gyro/acc
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
-{
-    memset(&acc, sizeof(acc), 0);
-    memset(&gyro, sizeof(gyro), 0);
-    adcSensorInit(&acc, &gyro);
-    return true;
-}
-#else
 
 bool detectGyro(uint16_t gyroLpf)
 {
@@ -328,5 +313,4 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
 
     return true;
 }
-#endif
 

@@ -14,7 +14,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, must be one of NAZE, FY90Q, OLIMEXINO or STM32F3DISCOVERY
+# The target to build, see VALID_TARGETS below
 TARGET		?= NAZE
 
 # Compile-time options
@@ -32,7 +32,7 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = NAZE FY90Q OLIMEXINO STM32F3DISCOVERY CHEBUZZF3
+VALID_TARGETS	 = NAZE OLIMEXINO STM32F3DISCOVERY CHEBUZZF3
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
@@ -162,17 +162,6 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_uart_common.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   drivers/timer_common.c \
-		   $(COMMON_SRC)
-
-FY90Q_SRC	 = startup_stm32f10x_md_gcc.S \
-		   drivers/accgyro_fy90q.c \
-		   drivers/adc_fy90q.c \
-		   drivers/gpio_stm32f10x.c \
-		   drivers/pwm_fy90q.c \
-		   drivers/bus_i2c_stm32f10x.c \
-		   drivers/bus_spi.c \
-		   drivers/serial_uart_common.c \
-		   drivers/serial_uart_stm32f10x.c \
 		   $(COMMON_SRC)
 
 OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
