@@ -201,19 +201,21 @@ void i2c_ev_handler(void)
         }
     } else if (SReg_1 & 0x004) {        								// Byte transfer finished - EV7_2, EV7_3 or EV8_2
         final_stop = 1;
-        if (reading && subaddress_sent) {     							// EV7_2, EV7_3
-            if (bytes > 2) {      										// EV7_2
-                I2C_AcknowledgeConfig(I2Cx, DISABLE);   				// turn off ACK
-                read_p[index++] = I2C_ReceiveData(I2Cx);    			// read data N-2
-                I2C_GenerateSTOP(I2Cx, ENABLE); 						// program the Stop
-                final_stop = 1; 										// required to fix hardware
-                read_p[index++] = I2C_ReceiveData(I2Cx);    			// read data N-1
-                I2C_ITConfig(I2Cx, I2C_IT_BUF, ENABLE); 				// enable TXE to allow the final EV7
-            } else {            										// EV7_3
+        if (reading && subaddress_sent) {                               // EV7_2, EV7_3
+            if (bytes > 2) {                                            // EV7_2
+                I2C_AcknowledgeConfig(I2Cx, DISABLE);                   // turn off ACK
+                read_p[index++] = (uint8_t)I2Cx->DR;                    // read data N-2
+                I2C_GenerateSTOP(I2Cx, ENABLE);                         // program the Stop
+                final_stop = 1;                                         // reuired to fix hardware
+                read_p[index++] = (uint8_t)I2Cx->DR;                    // read data N-1
+                I2C_ITConfig(I2Cx, I2C_IT_BUF, ENABLE);                 // enable TXE to allow the final EV7
+            } else {                                                    // EV7_3
                 if (final_stop)
                     I2C_GenerateSTOP(I2Cx, ENABLE);     				// program the Stop
                 else
-                    I2C_GenerateSTART(I2Cx, ENABLE);    				// program a rep start
+                    I2C_GenerateSTART(I2Cx, ENABLE);                    // program a rep start
+                read_p[index++] = (uint8_t)I2Cx->DR;    			    // read data N-1
+                read_p[index++] = (uint8_t)I2Cx->DR;                    // read data N
                 read_p[index++] = I2C_ReceiveData(I2Cx);    			// read data N-1
                 read_p[index++] = I2C_ReceiveData(I2Cx);    			// read data N
                 index++;        										// to show job completed
@@ -233,19 +235,19 @@ void i2c_ev_handler(void)
         //we must wait for the start to clear, otherwise we get constant BTF
         while (I2Cx->CR1 & 0x0100);
     } else if (SReg_1 & 0x0040) {       //Byte received - EV7
-        read_p[index++] = I2C_ReceiveData(I2Cx);
+        read_p[index++] = (uint8_t)I2Cx->DR;
         if (bytes == (index + 3))
             I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);   // disable TXE to allow the buffer to flush so we can get an EV7_2
         if (bytes == index)       //We have completed a final EV7
             index++;            //to show job is complete
     } else if (SReg_1 & 0x0080) {       //Byte transmitted -EV8/EV8_1
         if (index != -1) {      //we dont have a subaddress to send
-            I2C_SendData(I2Cx, write_p[index++]);
+            I2Cx->DR = write_p[index++];
             if (bytes == index)   //we have sent all the data
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);        //disable TXE to allow the buffer to flush
         } else {
             index++;
-            I2C_SendData(I2Cx, reg);       //send the subaddress
+            I2Cx->DR = reg;       // send the subaddress
             if (reading || !bytes)      //if receiving or sending 0 bytes, flush now
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);        //disable TXE to allow the buffer to flush
         }
