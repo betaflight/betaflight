@@ -208,10 +208,19 @@
         "message": "Info"
     },
     "initialSetupBattery": {
-        "message": "Battery:"
+        "message": "Battery voltage:"
     },
     "initialSetupBatteryValue": {
         "message": "$1 V"
+    },
+    "initialSetupDrawn": {
+        "message": "Capacity drawn:"
+    },
+    "initialSetupDrawing": {
+        "message": "Current draw:"
+    },
+    "initialSetupBatteryMahValue": {
+        "message": "$1 mAh"
     },
     "initialSetupRSSI": {
         "message": "RSSI:"
