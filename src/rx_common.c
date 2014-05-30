@@ -336,7 +336,6 @@ void updateRSSI(uint32_t currentTime)
     } else if (feature(FEATURE_RSSI_ADC)) {
         updateRSSIADC(currentTime);
     }
-    debug[0] = rssi;
 }
 
 
