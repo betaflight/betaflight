@@ -34,14 +34,14 @@ void adcInit(drv_adc_config_t *init)
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_4;
     adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
     adcConfig[ADC_BATTERY].enabled = true;
-    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_28Cycles5;
+    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
 
     // optional ADC5 input on rev.5 hardware
     if (hse_value == 12000000) {
         adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
         adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_EXTERNAL1].enabled = true;
-        adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_28Cycles5;
+        adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
     }
 
     if (init->enableRSSI > 0) {
