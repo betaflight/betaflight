@@ -22,6 +22,7 @@
 #include "failsafe.h"
 #include "flight_imu.h"
 #include "flight_common.h"
+#include "flight_autotune.h"
 #include "flight_mixer.h"
 #include "gimbal.h"
 #include "gps_common.h"
@@ -77,6 +78,41 @@ bool AccInflightCalibrationMeasurementDone = false;
 bool AccInflightCalibrationSavetoEEProm = false;
 bool AccInflightCalibrationActive = false;
 uint16_t InflightcalibratingA = 0;
+
+void updateAutotuneState(void)
+{
+    static bool landedAfterAutoTuning = false;
+    static bool autoTuneWasUsed = false;
+
+    if (rcOptions[BOXAUTOTUNE]) {
+        if (!f.AUTOTUNE_MODE) {
+            if (f.ARMED) {
+                if (isAutotuneIdle() || landedAfterAutoTuning) {
+                    autotuneReset();
+                    landedAfterAutoTuning = false;
+                }
+                autotuneBeginNextPhase(&currentProfile.pidProfile, currentProfile.pidController);
+                f.AUTOTUNE_MODE = 1;
+                autoTuneWasUsed = true;
+            } else {
+                if (havePidsBeenUpdatedByAutotune()) {
+                    saveAndReloadCurrentProfileToCurrentProfileSlot();
+                    autotuneReset();
+                }
+            }
+        }
+        return;
+    }
+
+    if (f.AUTOTUNE_MODE) {
+        autotuneEndPhase();
+        f.AUTOTUNE_MODE = 0;
+    }
+
+    if (!f.ARMED && autoTuneWasUsed) {
+        landedAfterAutoTuning = true;
+    }
+}
 
 bool isCalibrating()
 {
@@ -206,7 +242,11 @@ void annexCode(void)
 
         f.OK_TO_ARM = 1;
 
-        if (!f.ARMED && !f.SMALL_ANGLE) {
+        if (!f.SMALL_ANGLE) {
+            f.OK_TO_ARM = 0;
+        }
+
+        if (rcOptions[BOXAUTOTUNE]) {
             f.OK_TO_ARM = 0;
         }
 
@@ -602,6 +642,8 @@ void loop(void)
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
+
+        updateAutotuneState();
 
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {

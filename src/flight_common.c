@@ -12,6 +12,7 @@
 #include "sensors_gyro.h"
 #include "rc_controls.h"
 #include "flight_common.h"
+#include "flight_autotune.h"
 #include "gps_common.h"
 
 extern uint16_t cycleTime;
@@ -55,6 +56,12 @@ void resetErrorGyro(void)
     errorGyroIf[YAW] = 0;
 }
 
+const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
+
+bool shouldAutotune(void)
+{
+    return f.ARMED && f.AUTOTUNE_MODE;
+}
 
 static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
@@ -72,19 +79,27 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
         // -----Get the desired angle rate depending on flight mode
-        if (axis == 2) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
+        if (axis == FD_YAW) {
+            // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
             AngleRate = (float)((controlRateConfig->yawRate + 10) * rcCommand[YAW]) / 50.0f;
          } else {
             // calculate error and limit the angle to 50 degrees max inclination
             errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -500, +500) - inclination.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
-            if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
+
+            if (shouldAutotune()) {
+                errorAngle = autotune(rcAliasToAngleIndexMap[axis], &inclination, errorAngle);
+            }
+
+            if (f.ANGLE_MODE) {
+                // it's the ANGLE mode - control is angle based, so control loop is needed
+                AngleRate = errorAngle * pidProfile->A_level;
+            } else {
+                //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
                 AngleRate = (float)((controlRateConfig->rollPitchRate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max yaw rate
                 if (f.HORIZON_MODE) {
-                    // mix up angle error to desired AngleRateTmp to add a little auto-level feel
+                    // mix up angle error to desired AngleRate to add a little auto-level feel
                     AngleRate += errorAngle * pidProfile->H_level;
                 }
-            } else { // it's the ANGLE mode - control is angle based, so control loop is needed
-                AngleRate = errorAngle * pidProfile->A_level;
             }
         }
 
@@ -123,6 +138,7 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
     }
 
 }
+
 static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
 {
@@ -138,9 +154,14 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]
     for (axis = 0; axis < 3; axis++) {
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && (axis == FD_ROLL || axis == FD_PITCH)) { // MODE relying on ACC
-            // 50 degrees max inclination
+            // observe max inclination
             errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+
+            if (shouldAutotune()) {
+                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
+            }
+
             PTermACC = errorAngle * pidProfile->P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
             PTermACC = constrain(PTermACC, -pidProfile->D8[PIDLEVEL] * 5, +pidProfile->D8[PIDLEVEL] * 5);
 
@@ -204,6 +225,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             // calculate error and limit the angle to max configured inclination
             errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+
+            if (shouldAutotune()) {
+                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
+            }
 
             if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
                 AngleRateTmp = ((int32_t)(controlRateConfig->rollPitchRate + 27) * rcCommand[axis]) >> 4;

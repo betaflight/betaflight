@@ -39,7 +39,6 @@ void buzzer(bool warn_vbat)
     static uint8_t beeperOnBox;
     static uint8_t warn_noGPSfix = 0;
     static failsafeBuzzerWarnings_e warn_failsafe = FAILSAFE_IDLE;
-    static uint8_t warn_runtime = 0;
 
     //=====================  BeeperOn via rcOptions =====================
     if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch
@@ -88,8 +87,8 @@ void buzzer(bool warn_vbat)
         beep_code('S','S','S','M');                 // beeperon
     else if (warn_vbat)
         beep_code('S','M','M','D');
-    else if (warn_runtime == 1 && f.ARMED)
-        beep_code('S','S','M','N');                 // Runtime warning
+    else if (f.AUTOTUNE_MODE)
+        beep_code('S','M','S','M');
     else if (toggleBeep > 0)
         beep(50);                                   // fast confirmation beep
     else {

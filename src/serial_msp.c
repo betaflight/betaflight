@@ -139,6 +139,7 @@ struct box_t {
     { BOXGOV, "GOVERNOR;", 18 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
+    { BOXAUTOTUNE, "AUTOTUNE;", 21 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -315,7 +316,7 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
     } while (port);
 
     // XXX this function might help with adding support for MSP on more than one port, if not delete it.
-    serialPortFunctionList_t *serialPortFunctionList = getSerialPortFunctionList();
+    const serialPortFunctionList_t *serialPortFunctionList = getSerialPortFunctionList();
     UNUSED(serialPortFunctionList);
 }
 
@@ -366,6 +367,8 @@ void mspInit(serialConfig_t *serialConfig)
 
     if (feature(FEATURE_TELEMETRY && masterConfig.telemetryConfig.telemetry_switch))
         availableBoxes[idx++] = BOXTELEMETRY;
+
+    availableBoxes[idx++] = BOXAUTOTUNE;
 
     numberBoxItems = idx;
 
@@ -513,6 +516,7 @@ static void evaluateCommand(void)
             rcOptions[BOXGOV] << BOXGOV |
             rcOptions[BOXOSD] << BOXOSD |
             rcOptions[BOXTELEMETRY] << BOXTELEMETRY |
+            rcOptions[BOXAUTOTUNE] << BOXAUTOTUNE |
             f.ARMED << BOXARM;
         for (i = 0; i < numberBoxItems; i++) {
             int flag = (tmp & (1 << availableBoxes[i]));

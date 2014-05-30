@@ -78,12 +78,12 @@ typedef struct serialPortSearchResult_s {
     uint8_t startSerialPortFunctionIndex; // used by findNextSerialPort
 } serialPortSearchResult_t;
 
-static serialPortFunctionList_t serialPortFunctionList = {
+static const serialPortFunctionList_t serialPortFunctionList = {
         4,
         serialPortFunctions
 };
 
-serialPortFunctionList_t *getSerialPortFunctionList(void)
+const serialPortFunctionList_t *getSerialPortFunctionList(void)
 {
     return &serialPortFunctionList;
 }

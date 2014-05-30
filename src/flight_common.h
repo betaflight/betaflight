@@ -1,7 +1,7 @@
 #pragma once
 
 
-enum {
+typedef enum {
     PIDROLL,
     PIDPITCH,
     PIDYAW,
@@ -13,7 +13,7 @@ enum {
     PIDMAG,
     PIDVEL,
     PID_ITEM_COUNT
-};
+} pidIndex_e;
 
 typedef struct pidProfile_s {
     uint8_t P8[PID_ITEM_COUNT];
@@ -27,7 +27,7 @@ typedef struct pidProfile_s {
     float H_level;
 } pidProfile_t;
 
-enum {
+typedef enum {
     AI_ROLL = 0,
     AI_PITCH,
 } angle_index_t;
@@ -35,7 +35,7 @@ enum {
 #define ANGLE_INDEX_COUNT 2
 
 // See http://en.wikipedia.org/wiki/Flight_dynamics
-enum {
+typedef enum {
     FD_ROLL = 0,
     FD_PITCH,
     FD_YAW
@@ -97,6 +97,9 @@ typedef union {
     rollAndPitchInclination_t_def values;
 } rollAndPitchInclination_t;
 
+
+#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
+#define DECIDEGREES_TO_DEGREES(angle) (angle / 10.0f)
 
 extern rollAndPitchInclination_t inclination;
 
