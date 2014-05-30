@@ -27,8 +27,8 @@ void adcInit(drv_adc_config_t *init)
     // optional ADC5 input on rev.5 hardware
     if (hse_value == 12000000) {
         numChannels++;
-        adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
-        adcConfig[ADC_EXTERNAL1].dmaIndex = numChannels - 1;
+        adcConfig[ADC_EXTERNAL_PAD].adcChannel = ADC_Channel_5;
+        adcConfig[ADC_EXTERNAL_PAD].dmaIndex = numChannels - 1;
     }
     // another channel can be stolen from PWM for current measurement or other things
     if (init->powerAdcChannel > 0) {
