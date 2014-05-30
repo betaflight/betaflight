@@ -25,6 +25,9 @@ uint16_t adcGetChannel(uint8_t channel)
     if (adcConfig[2].enabled) {
         debug[2] = adcValues[adcConfig[2].dmaIndex];
     }
+    if (adcConfig[3].enabled) {
+        debug[3] = adcValues[adcConfig[3].dmaIndex];
+    }
 #endif
     return adcValues[adcConfig[channel].dmaIndex];
 }

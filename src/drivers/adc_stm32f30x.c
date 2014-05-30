@@ -31,11 +31,11 @@ void adcInit(drv_adc_config_t *init)
     adcChannelCount++;
 
     if (init->enableCurrentMeter) {
-		adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_7;
-		adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
-		adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
-		adcConfig[ADC_CURRENT].enabled = true;
-		adcChannelCount++;
+        adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_7;
+        adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
+        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
+        adcConfig[ADC_CURRENT].enabled = true;
+        adcChannelCount++;
     }
 
     if (init->enableRSSI) {
@@ -45,6 +45,12 @@ void adcInit(drv_adc_config_t *init)
 		adcConfig[ADC_RSSI].enabled = true;
 		adcChannelCount++;
     }
+
+    adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_9;
+    adcConfig[ADC_EXTERNAL1].dmaIndex = adcChannelCount;
+    adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_601Cycles5;
+    adcConfig[ADC_EXTERNAL1].enabled = true;
+    adcChannelCount++;
 
     DMA_DeInit(DMA1_Channel1);
 

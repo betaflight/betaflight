@@ -31,6 +31,12 @@ void adcInit(drv_adc_config_t *init)
     uint8_t configuredAdcChannels = 0;
     memset(&adcConfig, 0, sizeof(adcConfig));
 
+    // configure always-present battery index (ADC4)
+    adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_4;
+    adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
+    adcConfig[ADC_BATTERY].enabled = true;
+    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
+
     if (init->enableRSSI) {
         adcConfig[ADC_RSSI].adcChannel = ADC_Channel_1;
         adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
@@ -38,12 +44,14 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
     }
 
-    // configure always-present battery index (ADC4)
-    adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_4;
-    adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
-    adcConfig[ADC_BATTERY].enabled = true;
-    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
+#ifdef OLIMEXINO
+    adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
+    adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
+    adcConfig[ADC_EXTERNAL1].enabled = true;
+    adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
+#endif
 
+#ifdef NAZE
     // optional ADC5 input on rev.5 hardware
     if (hse_value == 12000000) {
         adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
@@ -51,6 +59,7 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_EXTERNAL1].enabled = true;
         adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
     }
+#endif
 
     if (init->enableCurrentMeter) {
         adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_9;
@@ -58,6 +67,7 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_CURRENT].enabled = true;
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;
     }
+
 
     // ADC driver assumes all the GPIO was already placed in 'AIN' mode
     DMA_DeInit(DMA1_Channel1);
