@@ -11,8 +11,12 @@
 
 #include "buzzer.h"
 
-#define LONG_PAUSE_DURATION_MILLIS 50
-#define SHORT_CONFIRMATION_BEEP_DURATION_MILLIS 50
+#define DOUBLE_PAUSE_DURATION_MILLIS (LONG_PAUSE_DURATION_MILLIS * 2)
+#define LONG_PAUSE_DURATION_MILLIS 400
+#define SHORT_PAUSE_DURATION_MILLIS (LONG_PAUSE_DURATION_MILLIS / 4)
+#define MEDIUM_PAUSE_DURATION_MILLIS (LONG_PAUSE_DURATION_MILLIS / 2)
+
+#define SHORT_CONFIRMATION_BEEP_DURATION_MILLIS (SHORT_PAUSE_DURATION_MILLIS / 2)
 
 static uint8_t buzzerIsOn = 0, beepDone = 0;
 static uint32_t buzzerLastToggleTime;
@@ -113,18 +117,19 @@ void beep_code(char first, char second, char third, char pause)
     patternChar[2] = third;
     patternChar[3] = pause;
     switch (patternChar[icnt]) {
-        case 'M':
-            Duration = 100;
-            break;
-        case 'L':
-            Duration = 200;
-            break;
-        case 'D':
-            Duration = 2000;
-            break;
         case 'N':
             Duration = 0;
             break;
+        case 'S':
+            Duration = LONG_PAUSE_DURATION_MILLIS / 4;
+            break;
+        case 'M':
+            Duration = LONG_PAUSE_DURATION_MILLIS / 2;
+            break;
+        case 'D':
+            Duration = LONG_PAUSE_DURATION_MILLIS * 2;
+            break;
+        case 'L':
         default:
             Duration = LONG_PAUSE_DURATION_MILLIS;
             break;
