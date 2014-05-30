@@ -122,20 +122,36 @@ static void sendTime(void)
     serialize16(seconds % 60);
 }
 
+// Frsky pdf: dddmm.mmmm
+// .mmmm is returned in decimal fraction of minutes.
+static void frskyGPStoDDDMM_MMMM(int32_t mwiigps, int16_t *dddmm, int16_t *mmmm)
+{
+    int32_t absgps, deg, min;
+    absgps = abs(mwiigps);
+    deg    = absgps / 10000000;
+    absgps = (absgps - deg * 10000000) * 60;        // absgps = Minutes left * 10^7
+    min    = absgps / 10000000;                     // minutes left
+    *dddmm = deg * 100 + min;
+    *mmmm  = (absgps - min * 10000000) / 1000;
+}
+
 static void sendGPS(void)
 {
-    sendDataHead(ID_LATITUDE_BP);
-    serialize16(abs(GPS_coord[LAT]) / 100000);
-    sendDataHead(ID_LATITUDE_AP);
-    serialize16((abs(GPS_coord[LAT]) / 10) % 10000);
+    int16_t ddd, mmm;
 
+    frskyGPStoDDDMM_MMMM(GPS_coord[LAT], &ddd, &mmm);
+    sendDataHead(ID_LATITUDE_BP);
+    serialize16(ddd);
+    sendDataHead(ID_LATITUDE_AP);
+    serialize16(mmm);
     sendDataHead(ID_N_S);
     serialize16(GPS_coord[LAT] < 0 ? 'S' : 'N');
 
+    frskyGPStoDDDMM_MMMM(GPS_coord[LON], &ddd, &mmm);
     sendDataHead(ID_LONGITUDE_BP);
-    serialize16(abs(GPS_coord[LON]) / 100000);
+    serialize16(ddd);
     sendDataHead(ID_LONGITUDE_AP);
-    serialize16((abs(GPS_coord[LON]) / 10) % 10000);
+    serialize16(mmm);
     sendDataHead(ID_E_W);
     serialize16(GPS_coord[LON] < 0 ? 'W' : 'E');
 }
