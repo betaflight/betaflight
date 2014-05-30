@@ -132,6 +132,17 @@ uint16_t batteryAdcToVoltage(uint16_t src)
     return (((src) * 3.3f) / 4095) * mcfg.vbatscale;
 }
 
+#define ADCVREF 33L
+int32_t currentSensorToCentiamps(uint16_t src)
+{
+    int32_t millivolts;
+    
+    millivolts = ((uint32_t)src * ADCVREF * 100) / 4095;
+    millivolts -= mcfg.currentoffset;
+    
+    return (millivolts * 1000) / (int32_t)mcfg.currentscale; // current in 0.01A steps 
+}
+
 void batteryInit(void)
 {
     uint32_t i;

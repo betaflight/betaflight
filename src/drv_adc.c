@@ -33,8 +33,8 @@ void adcInit(drv_adc_config_t *init)
     // another channel can be stolen from PWM for current measurement or other things
     if (init->powerAdcChannel > 0) {
         numChannels++;
-        adcConfig[ADC_EXTERNAL2].adcChannel = init->powerAdcChannel;
-        adcConfig[ADC_EXTERNAL2].dmaIndex = numChannels - 1;
+        adcConfig[ADC_EXTERNAL_CURRENT].adcChannel = init->powerAdcChannel;
+        adcConfig[ADC_EXTERNAL_CURRENT].dmaIndex = numChannels - 1;
     }
 
     // ADC driver assumes all the GPIO was already placed in 'AIN' mode
