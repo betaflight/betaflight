@@ -56,7 +56,7 @@ extern int16_t debug[4];
  * Always autotune on a full battery.
  */
 
-#define AUTOTUNE_MAX_OSCILLATION_ANGLE 4.0f
+#define AUTOTUNE_MAX_OSCILLATION_ANGLE 2.0f
 #define AUTOTUNE_TARGET_ANGLE 20.0f
 #define AUTOTUNE_D_MULTIPLIER 1.2f
 #define AUTOTUNE_SETTLING_DELAY_MS 250  // 1/4 of a second.
@@ -237,15 +237,14 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
 #ifdef PREFER_HIGH_GAIN_SOLUTION
                 if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION_ANGLE) {
                     // we have too much oscillation, so we can't increase D, so decrease P
-#endif
                     pid.p *= AUTOTUNE_DECREASE_MULTIPLIER;
-#ifdef PREFER_HIGH_GAIN_SOLUTION
                 } else {
                     // we don't have too much oscillation, so we can increase D
-#endif
                     pid.d *= AUTOTUNE_INCREASE_MULTIPLIER;
-#ifdef PREFER_HIGH_GAIN_SOLUTION
                 }
+#else
+				pid.p *= AUTOTUNE_DECREASE_MULTIPLIER;
+				pid.d *= AUTOTUNE_INCREASE_MULTIPLIER;
 #endif
             } else {
                 // undershot
