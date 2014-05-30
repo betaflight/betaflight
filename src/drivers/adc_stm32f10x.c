@@ -53,10 +53,10 @@ void adcInit(drv_adc_config_t *init)
     }
 
     if (init->enableCurrentMeter) {
-        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_9;
-        adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_RSSI].enabled = true;
-        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
+        adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_9;
+        adcConfig[ADC_CURRENT].dmaIndex = configuredAdcChannels++;
+        adcConfig[ADC_CURRENT].enabled = true;
+        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;
     }
 
     // ADC driver assumes all the GPIO was already placed in 'AIN' mode
