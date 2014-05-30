@@ -222,19 +222,18 @@ void annexCode(void)
         rcCommand[PITCH] = rcCommand_PITCH;
     }
 
-    if (feature(FEATURE_VBAT || feature(FEATURE_CURRENT_METER))) {
+    if (feature(FEATURE_VBAT || FEATURE_CURRENT_METER)) {
         vbatCycleTime += cycleTime;
         if (!(++vbatTimer % VBATFREQ)) {
 
         	if (feature(FEATURE_VBAT)) {
         		updateBatteryVoltage();
+                batteryWarningEnabled = shouldSoundBatteryAlarm();
         	}
 
         	if (feature(FEATURE_CURRENT_METER)) {
         		updateCurrentMeter(vbatCycleTime);
         	}
-
-        	batteryWarningEnabled = shouldSoundBatteryAlarm();
         }
     }
 
