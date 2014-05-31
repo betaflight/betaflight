@@ -32,7 +32,7 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = NAZE OLIMEXINO STM32F3DISCOVERY CHEBUZZF3
+VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
@@ -45,7 +45,7 @@ INCLUDE_DIRS = $(SRC_DIR)
 # Search path for sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 
-ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3))
+ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO))
 
 STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 
@@ -181,9 +181,7 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/timer.c \
 		   $(COMMON_SRC)
 
-STM32F3DISCOVERY_SRC_COMMON	 = startup_stm32f30x_md_gcc.S \
-		   drivers/accgyro_l3gd20.c \
-		   drivers/accgyro_lsm303dlhc.c \
+STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/adc.c \
 		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
@@ -198,7 +196,16 @@ STM32F3DISCOVERY_SRC_COMMON	 = startup_stm32f30x_md_gcc.S \
 		   drivers/serial_softserial.c \
 		   drivers/timer.c
 
-STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_SRC_COMMON) \
+NAZE32PRO_SRC	 = $(STM32F30x_COMMON_SRC) \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/compass_hmc5883l.c \
+		   $(COMMON_SRC)
+
+STM32F3DISCOVERY_COMMON_SRC	 = $(STM32F30x_COMMON_SRC) \
+		   drivers/accgyro_l3gd20.c \
+		   drivers/accgyro_lsm303dlhc.c
+
+STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_bma280.c \
 		   drivers/accgyro_mma845x.c \
@@ -209,6 +216,7 @@ STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_SRC_COMMON) \
 
 CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 		   $(COMMON_SRC)
+
 
 # In some cases, %.s regarded as intermediate file, which is actually not.
 # This will prevent accidental deletion of startup code.

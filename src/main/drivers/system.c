@@ -153,7 +153,7 @@ void systemInit(bool overclock)
     // Make all GPIO in by default to save power and reduce noise
     gpio.mode = Mode_AIN;
     gpio.pin = Pin_All;
-#ifdef STM32F3DISCOVERY
+#ifdef STM32F303xC
     gpio.pin = Pin_All & ~(Pin_13|Pin_14|Pin_15);  // Leave JTAG pins alone
     gpioInit(GPIOA, &gpio);
     gpio.pin = Pin_All;
@@ -285,6 +285,8 @@ void systemReset(bool toBootloader)
     if (toBootloader) {
         // 1FFFF000 -> 20000200 -> SP
         // 1FFFF004 -> 1FFFF021 -> PC
+
+        // FIXME update for STM32F30x
         *((uint32_t *)0x20004FF0) = 0xDEADBEEF; // 20KB STM32F103
     }
 
