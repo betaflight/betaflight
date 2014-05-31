@@ -36,10 +36,10 @@ VALID_TARGETS	 = NAZE OLIMEXINO STM32F3DISCOVERY CHEBUZZF3
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
-SRC_DIR		 = $(ROOT)/src
-OBJECT_DIR	 = $(ROOT)/obj
-BIN_DIR		 = $(ROOT)/obj
-CMSIS_DIR	 = $(ROOT)/lib/CMSIS
+SRC_DIR		 = $(ROOT)/src/main
+OBJECT_DIR	 = $(ROOT)/obj/main
+BIN_DIR		 = $(ROOT)/obj/main
+CMSIS_DIR	 = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS = $(SRC_DIR)
 
 # Search path for sources
@@ -47,7 +47,7 @@ VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 
 ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3))
 
-STDPERIPH_DIR	 = $(ROOT)/lib/STM32F30x_StdPeriph_Driver
+STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 
 VPATH		:= $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
 CMSIS_SRC	 = $(notdir $(wildcard $(CMSIS_DIR)/CM1/CoreSupport/*.c \
@@ -71,7 +71,7 @@ endif
 
 else
 
-STDPERIPH_DIR	 = $(ROOT)/lib/STM32F10x_StdPeriph_Driver
+STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
 
 # Search path and source files for the CMSIS sources
 VPATH		:= $(VPATH):$(CMSIS_DIR)/CM3/CoreSupport:$(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
@@ -92,49 +92,49 @@ DEVICE_FLAGS = -DSTM32F10X_MD
 endif
 
 COMMON_SRC	 = build_config.c \
-		   battery.c \
-		   boardalignment.c \
-		   buzzer.c \
-		   config.c \
+		   config/config.c \
+		   config/runtime_config.c \
 		   common/maths.c \
 		   common/printf.c \
 		   common/typeconversion.c \
-		   failsafe.c \
 		   main.c \
 		   mw.c \
-		   sensors_acceleration.c \
-		   sensors_barometer.c \
-		   sensors_compass.c \
-		   sensors_gyro.c \
-		   sensors_initialisation.c \
-		   sensors_sonar.c \
+		   flight/autotune.c \
+		   flight/failsafe.c \
+		   flight/flight.c \
+		   flight/imu.c \
+		   flight/mixer.c \
 		   drivers/bus_i2c_soft.c \
-		   drivers/serial_common.c \
+		   drivers/serial.c \
 		   drivers/sound_beeper.c \
-		   drivers/system_common.c \
-		   flight_autotune.c \
-		   flight_common.c \
-		   flight_imu.c \
-		   flight_mixer.c \
-		   gps_common.c \
-		   gps_conversion.c \
-		   runtime_config.c \
-		   rc_controls.c \
-		   rc_curves.c \
-		   rx_common.c \
-		   rx_msp.c \
-		   rx_pwm.c \
-		   rx_sbus.c \
-		   rx_sumd.c \
-		   rx_spektrum.c \
-		   telemetry_common.c \
-		   telemetry_frsky.c \
-		   telemetry_hott.c \
-		   telemetry_msp.c \
-		   serial_common.c \
-		   serial_cli.c \
-		   serial_msp.c \
-		   statusindicator.c \
+		   drivers/system.c \
+		   io/battery.c \
+		   io/buzzer.c \
+		   io/gps.c \
+		   io/gps_conversion.c \
+		   io/rc_controls.c \
+		   io/rc_curves.c \
+		   io/serial.c \
+		   io/serial_cli.c \
+		   io/serial_msp.c \
+		   io/statusindicator.c \
+		   rx/rx.c \
+		   rx/msp.c \
+		   rx/pwm.c \
+		   rx/sbus.c \
+		   rx/sumd.c \
+		   rx/spektrum.c \
+		   sensors/boardalignment.c \
+		   sensors/acceleration.c \
+		   sensors/barometer.c \
+		   sensors/compass.c \
+		   sensors/gyro.c \
+		   sensors/initialisation.c \
+		   sensors/sonar.c \
+		   telemetry/telemetry.c \
+		   telemetry/frsky.c \
+		   telemetry/hott.c \
+		   telemetry/msp.c \
 		   $(CMSIS_SRC) \
 		   $(STDPERIPH_SRC)
 
@@ -145,7 +145,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_mma845x.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
-		   drivers/adc_common.c \
+		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
 		   drivers/barometer_bmp085.c \
 		   drivers/barometer_ms5611.c \
@@ -159,14 +159,14 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_softserial.c \
-		   drivers/serial_uart_common.c \
+		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
-		   drivers/timer_common.c \
+		   drivers/timer.c \
 		   $(COMMON_SRC)
 
 OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_mpu6050.c \
-		   drivers/adc_common.c \
+		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
@@ -176,15 +176,15 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/pwm_rssi.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_softserial.c \
-		   drivers/serial_uart_common.c \
+		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
-		   drivers/timer_common.c \
+		   drivers/timer.c \
 		   $(COMMON_SRC)
 
-STM32F3DISCOVERY_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
+STM32F3DISCOVERY_SRC_COMMON	 = startup_stm32f30x_md_gcc.S \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
-		   drivers/adc_common.c \
+		   drivers/adc.c \
 		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/bus_spi.c \
@@ -193,12 +193,12 @@ STM32F3DISCOVERY_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rssi.c \
 		   drivers/pwm_rx.c \
-		   drivers/serial_uart_common.c \
+		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
-		   drivers/timer_common.c
+		   drivers/timer.c
 
-STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
+STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_SRC_COMMON) \
 		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_bma280.c \
 		   drivers/accgyro_mma845x.c \
@@ -207,7 +207,7 @@ STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 		   drivers/accgyro_l3g4200d.c \
 		   $(COMMON_SRC)
 
-CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
+CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 		   $(COMMON_SRC)
 
 # In some cases, %.s regarded as intermediate file, which is actually not.
