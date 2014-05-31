@@ -43,6 +43,11 @@ typedef enum {
     GPS_PASSTHROUGH_NO_SERIAL_PORT
 } gpsEnablePassthroughResult_e;
 
+typedef struct gpsCoordinateDDDMMmmmm_s {
+    int16_t dddmm;
+    int16_t mmmm;
+} gpsCoordinateDDDMMmmmm_t;
+
 extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
 extern int32_t GPS_coord[2];               // LAT/LON
 extern int32_t GPS_home[2];
