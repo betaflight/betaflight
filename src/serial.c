@@ -472,12 +472,12 @@ static void evaluateCommand(void)
     case MSP_ANALOG:
         headSerialReply(7);
         serialize8((uint8_t)constrain(vbat, 0, 255));
-        serialize16(mAhdrawn); // milliamphours drawn from battery
+        serialize16((uint16_t)constrain(mAhdrawn, 0, 0xFFFF)); // milliamphours drawn from battery
         serialize16(rssi);
         if (mcfg.multiwiicurrentoutput)
             serialize16((uint16_t)constrain((abs(amperage) * 10), 0, 0xFFFF)); // send amperage in 0.001 A steps
         else
-            serialize16((uint16_t)abs(amperage)); // send amperage in 0.01 A steps
+            serialize16((uint16_t)constrain(abs(amperage), 0, 0xFFFF)); // send amperage in 0.01 A steps
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
