@@ -25,3 +25,30 @@ void blinkLedAndSoundBeeper(uint8_t num, uint8_t wait, uint8_t repeat)
         delay(60);
     }
 }
+
+
+static uint32_t warningLedTimer = 0;
+
+void enableWarningLed(uint32_t currentTime)
+{
+    if (warningLedTimer != 0) {
+        return; // already enabled
+    }
+    warningLedTimer = currentTime + 500000;
+    LED0_ON;
+}
+
+void disableWarningLed(void)
+{
+    warningLedTimer = 0;
+    LED0_OFF;
+}
+
+void updateWarningLed(uint32_t currentTime)
+{
+    if (warningLedTimer && (int32_t)(currentTime - warningLedTimer) >= 0) {
+        LED0_TOGGLE;
+        warningLedTimer = warningLedTimer + 500000;
+    }
+}
+

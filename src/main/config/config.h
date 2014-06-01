@@ -14,11 +14,10 @@ typedef enum {
     FEATURE_SONAR = 1 << 10,
     FEATURE_TELEMETRY = 1 << 11,
     FEATURE_CURRENT_METER = 1 << 12,
-    FEATURE_VARIO = 1 << 13,
-    FEATURE_3D = 1 << 14,
-    FEATURE_RX_PARALLEL_PWM = 1 << 15,
-    FEATURE_RX_MSP = 1 << 16,
-    FEATURE_RSSI_ADC = 1 << 17
+    FEATURE_3D = 1 << 13,
+    FEATURE_RX_PARALLEL_PWM = 1 << 14,
+    FEATURE_RX_MSP = 1 << 15,
+    FEATURE_RSSI_ADC = 1 << 16
 } AvailableFeatures;
 
 bool feature(uint32_t mask);

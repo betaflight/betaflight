@@ -122,7 +122,7 @@ struct box_t {
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },
     { BOXBARO, "BARO;", 3 },
-    { BOXVARIO, "VARIO;", 4 },
+    //{ BOXVARIO, "VARIO;", 4 },
     { BOXMAG, "MAG;", 5 },
     { BOXHEADFREE, "HEADFREE;", 6 },
     { BOXHEADADJ, "HEADADJ;", 7 },
@@ -337,8 +337,6 @@ void mspInit(serialConfig_t *serialConfig)
 
     if (sensors(SENSOR_BARO)) {
         availableBoxes[idx++] = BOXBARO;
-        if (feature(FEATURE_VARIO))
-            availableBoxes[idx++] = BOXVARIO;
     }
 
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
@@ -511,7 +509,6 @@ static void evaluateCommand(void)
             rcOptions[BOXBEEPERON] << BOXBEEPERON |
             rcOptions[BOXLEDMAX] << BOXLEDMAX |
             rcOptions[BOXLLIGHTS] << BOXLLIGHTS |
-            rcOptions[BOXVARIO] << BOXVARIO |
             rcOptions[BOXCALIB] << BOXCALIB |
             rcOptions[BOXGOV] << BOXGOV |
             rcOptions[BOXOSD] << BOXOSD |

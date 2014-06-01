@@ -127,32 +127,6 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-static uint32_t warningLedTimer = 0;
-
-void enableWarningLed(uint32_t currentTime)
-{
-    if (warningLedTimer != 0) {
-        return; // already enabled
-    }
-    warningLedTimer = currentTime + 500000;
-    LED0_ON;
-}
-
-void disableWarningLed(void)
-{
-    warningLedTimer = 0;
-    LED0_OFF;
-}
-
-void updateWarningLed(uint32_t currentTime)
-{
-    if (warningLedTimer && (int32_t)(currentTime - warningLedTimer) >= 0) {
-        LED0_TOGGLE;
-        warningLedTimer = warningLedTimer + 500000;
-    }
-}
-
-
 void annexCode(void)
 {
     int32_t tmp, tmp2;
@@ -315,12 +289,6 @@ void mwArm(void)
     if (!f.ARMED) {
         blinkLedAndSoundBeeper(2, 255, 1);
     }
-}
-
-
-static void mwVario(void)
-{
-
 }
 
 void loop(void)
@@ -547,16 +515,6 @@ void loop(void)
             } else {
                 f.BARO_MODE = 0;
             }
-            // Vario signalling activate
-            if (feature(FEATURE_VARIO)) {
-                if (rcOptions[BOXVARIO]) {
-                    if (!f.VARIO_MODE) {
-                        f.VARIO_MODE = 1;
-                    }
-                } else {
-                    f.VARIO_MODE = 0;
-                }
-            }
         }
 #endif
 
@@ -633,9 +591,6 @@ void loop(void)
                 Sonar_update();
             }
 #endif
-            if (feature(FEATURE_VARIO) && f.VARIO_MODE)
-                mwVario();
-            break;
         }
     }
 

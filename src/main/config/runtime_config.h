@@ -5,7 +5,6 @@ enum {
     BOXANGLE,
     BOXHORIZON,
     BOXBARO,
-    BOXVARIO,
     BOXMAG,
     BOXHEADFREE,
     BOXHEADADJ,
@@ -45,7 +44,6 @@ typedef struct flags_t {
     uint8_t GPS_FIX_HOME;
     uint8_t SMALL_ANGLE;
     uint8_t CALIBRATE_MAG;
-    uint8_t VARIO_MODE;
     uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
     uint8_t AUTOTUNE_MODE;
 } flags_t;
