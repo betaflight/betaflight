@@ -146,19 +146,19 @@ const clivalue_t valueTable[] = {
     { "looptime", VAR_UINT16, &masterConfig.looptime, 0, 9000 },
     { "emf_avoidance", VAR_UINT8, &masterConfig.emf_avoidance, 0, 1 },
 
-    { "midrc", VAR_UINT16, &masterConfig.rxConfig.midrc, 1200, 1700 },
-    { "mincheck", VAR_UINT16, &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "maxcheck", VAR_UINT16, &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "mid_rc", VAR_UINT16, &masterConfig.rxConfig.midrc, 1200, 1700 },
+    { "min_check", VAR_UINT16, &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "max_check", VAR_UINT16, &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "rssi_channel", VAR_INT8, &masterConfig.rxConfig.rssi_channel, 0, MAX_SUPPORTED_RC_CHANNEL_COUNT },
 
-    { "minthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "maxthrottle", VAR_UINT16, &masterConfig.escAndServoConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "mincommand", VAR_UINT16, &masterConfig.escAndServoConfig.mincommand, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "min_throttle", VAR_UINT16, &masterConfig.escAndServoConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "max_throttle", VAR_UINT16, &masterConfig.escAndServoConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "min_command", VAR_UINT16, &masterConfig.escAndServoConfig.mincommand, PWM_RANGE_ZERO, PWM_RANGE_MAX },
 
-    { "deadband3d_low", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_low, PWM_RANGE_ZERO, PWM_RANGE_MAX }, // FIXME upper limit should match code in the mixer, 1500 currently
-    { "deadband3d_high", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_high, PWM_RANGE_ZERO, PWM_RANGE_MAX }, // FIXME lower limit should match code in the mixer, 1500 currently,
-    { "neutral3d", VAR_UINT16, &masterConfig.flight3DConfig.neutral3d, PWM_RANGE_ZERO, PWM_RANGE_MAX },
-    { "deadband3d_throttle", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_throttle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "3d_deadband_low", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_low, PWM_RANGE_ZERO, PWM_RANGE_MAX }, // FIXME upper limit should match code in the mixer, 1500 currently
+    { "3d_deadband_high", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_high, PWM_RANGE_ZERO, PWM_RANGE_MAX }, // FIXME lower limit should match code in the mixer, 1500 currently,
+    { "3d_neutral", VAR_UINT16, &masterConfig.flight3DConfig.neutral3d, PWM_RANGE_ZERO, PWM_RANGE_MAX },
+    { "3d_deadband_throttle", VAR_UINT16, &masterConfig.flight3DConfig.deadband3d_throttle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
 
     { "motor_pwm_rate", VAR_UINT16, &masterConfig.motor_pwm_rate, 50, 32000 },
     { "servo_pwm_rate", VAR_UINT16, &masterConfig.servo_pwm_rate, 50, 498 },
@@ -218,7 +218,7 @@ const clivalue_t valueTable[] = {
     { "throttle_correction_angle", VAR_UINT16, &currentProfile.throttle_correction_angle, 1, 900 },
 
     { "deadband", VAR_UINT8, &currentProfile.deadband, 0, 32 },
-    { "yawdeadband", VAR_UINT8, &currentProfile.yaw_deadband, 0, 100 },
+    { "yaw_deadband", VAR_UINT8, &currentProfile.yaw_deadband, 0, 100 },
     { "yaw_control_direction", VAR_INT8, &masterConfig.yaw_control_direction, -1, 1 },
 
     { "yaw_direction", VAR_INT8, &currentProfile.mixerConfig.yaw_direction, -1, 1 },
@@ -283,15 +283,15 @@ const clivalue_t valueTable[] = {
     { "i_yaw", VAR_UINT8, &currentProfile.pidProfile.I8[YAW], 0, 200 },
     { "d_yaw", VAR_UINT8, &currentProfile.pidProfile.D8[YAW], 0, 200 },
 
-    { "Ppitchf", VAR_FLOAT, &currentProfile.pidProfile.P_f[PITCH], 0, 100 },
-    { "Ipitchf", VAR_FLOAT, &currentProfile.pidProfile.I_f[PITCH], 0, 100 },
-    { "Dpitchf", VAR_FLOAT, &currentProfile.pidProfile.D_f[PITCH], 0, 100 },
-    { "Prollf", VAR_FLOAT, &currentProfile.pidProfile.P_f[ROLL], 0, 100 },
-    { "Irollf", VAR_FLOAT, &currentProfile.pidProfile.I_f[ROLL], 0, 100 },
-    { "Drollf", VAR_FLOAT, &currentProfile.pidProfile.D_f[ROLL], 0, 100 },
-    { "Pyawf", VAR_FLOAT, &currentProfile.pidProfile.P_f[YAW], 0, 100 },
-    { "Iyawf", VAR_FLOAT, &currentProfile.pidProfile.I_f[YAW], 0, 100 },
-    { "Dyawf", VAR_FLOAT, &currentProfile.pidProfile.D_f[YAW], 0, 100 },
+    { "p_pitchf", VAR_FLOAT, &currentProfile.pidProfile.P_f[PITCH], 0, 100 },
+    { "i_pitchf", VAR_FLOAT, &currentProfile.pidProfile.I_f[PITCH], 0, 100 },
+    { "d_pitchf", VAR_FLOAT, &currentProfile.pidProfile.D_f[PITCH], 0, 100 },
+    { "p_rollf", VAR_FLOAT, &currentProfile.pidProfile.P_f[ROLL], 0, 100 },
+    { "i_rollf", VAR_FLOAT, &currentProfile.pidProfile.I_f[ROLL], 0, 100 },
+    { "d_rollf", VAR_FLOAT, &currentProfile.pidProfile.D_f[ROLL], 0, 100 },
+    { "p_yawf", VAR_FLOAT, &currentProfile.pidProfile.P_f[YAW], 0, 100 },
+    { "i_yawf", VAR_FLOAT, &currentProfile.pidProfile.I_f[YAW], 0, 100 },
+    { "d_yawf", VAR_FLOAT, &currentProfile.pidProfile.D_f[YAW], 0, 100 },
 
     { "level_horizon", VAR_FLOAT, &currentProfile.pidProfile.H_level, 0, 10 },
     { "level_angle", VAR_FLOAT, &currentProfile.pidProfile.A_level, 0, 10 },
