@@ -369,7 +369,7 @@ extern uint16_t rssi;                  // range: [0;1023]
 extern uint16_t vbat;                  // battery voltage in 0.1V steps
 extern int16_t telemTemperature1;      // gyro sensor temperature
 extern int32_t amperage;               // amperage read by current sensor in 0.01A steps
-extern uint32_t mAhdrawn;              // milli ampere hours drawn from battery since start
+extern int32_t mAhdrawn;              // milli ampere hours drawn from battery since start
 extern uint8_t toggleBeep;
 
 #define PITCH_LOOKUP_LENGTH 7

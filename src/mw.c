@@ -14,7 +14,7 @@ int16_t headFreeModeHold;
 
 uint16_t vbat;                  // battery voltage in 0.1V steps
 int32_t amperage;               // amperage read by current sensor in centiampere (1/100th A)
-uint32_t mAhdrawn;              // milliampere hours drawn from the battery since start
+int32_t mAhdrawn;              // milliampere hours drawn from the battery since start
 int16_t telemTemperature1;      // gyro sensor temperature
 
 int16_t failsafeCnt = 0;
@@ -94,8 +94,8 @@ void annexCode(void)
     static uint8_t vbatTimer = 0;
     static int32_t vbatRaw = 0;
     static int32_t amperageRaw = 0;
-    static uint32_t mAhdrawnRaw = 0;
-    static uint32_t vbatCycleTime = 0;
+    static int64_t mAhdrawnRaw = 0;
+    static int32_t vbatCycleTime = 0;
 
     int i;
 
@@ -168,7 +168,7 @@ void annexCode(void)
                 amperageRaw -= amperageRaw / 8;
                 amperageRaw += adcGetChannel(ADC_EXTERNAL_CURRENT);
                 amperage = currentSensorToCentiamps(amperageRaw / 8);
-                mAhdrawnRaw += (amperage * vbatCycleTime) / 1000; // will overflow at ~11000mAh
+                mAhdrawnRaw += (amperage * vbatCycleTime) / 1000;
                 mAhdrawn = mAhdrawnRaw / (3600 * 100);
                 vbatCycleTime = 0;
             }
