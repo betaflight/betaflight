@@ -78,6 +78,17 @@
 
             margin: auto;
         }
+        .donate .buttons {
+            margin-left: auto;
+            margin-right: auto;
+            width: 160px;
+        }
+        .donate ul {
+        }
+        .donate li {
+            text-align: center;
+            display: inline-block;
+        }
     .firmware_flasher {
         display: block;
         float: right;
