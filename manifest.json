@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "minimum_chrome_version": "33",
-    "version": "0.39",
+    "version": "0.41",
 
     "author": "Hydra",
     "name": "Cleanflight - Configurator",
@@ -26,6 +26,7 @@
         "storage",
         "fileSystem",
         "fileSystem.write",
+        "fileSystem.retainEntries",
         "notifications"
     ],
 

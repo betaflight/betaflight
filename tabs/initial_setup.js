@@ -2,14 +2,14 @@ function tab_initialize_initial_setup() {
     ga_tracker.sendAppView('Initial Setup');
     GUI.active_tab = 'initial_setup';
 
-    send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_ident);
+    MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_ident);
 
     function load_ident() {
-        send_message(MSP_codes.MSP_IDENT, false, false, load_misc_data);
+        MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_misc_data);
     }
 
     function load_misc_data() {
-        send_message(MSP_codes.MSP_MISC, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_MISC, false, false, load_html);
     }
 
     function load_html() {
@@ -114,7 +114,7 @@ function tab_initialize_initial_setup() {
                 // During this period MCU won't be able to process any serial commands because its locked in a for/while loop
                 // until this operation finishes, sending more commands through data_poll() will result in serial buffer overflow
                 GUI.interval_pause('initial_setup_data_pull');
-                send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibStarted'));
                 });
 
@@ -134,7 +134,7 @@ function tab_initialize_initial_setup() {
             if (!self.hasClass('calibrating')) {
                 self.addClass('calibrating');
 
-                send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('initialSetupMagCalibStarted'));
                 });
 
@@ -146,7 +146,7 @@ function tab_initialize_initial_setup() {
         });
 
         $('a.resetSettings').click(function() {
-            send_message(MSP_codes.MSP_RESET_CONF, false, false, function() {
+            MSP.send_message(MSP_codes.MSP_RESET_CONF, false, false, function() {
                 GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
                 GUI.tab_switch_cleanup(function() {
@@ -167,7 +167,7 @@ function tab_initialize_initial_setup() {
             buffer_out[3] = highByte(CONFIG.accelerometerTrims[1]);
 
             // Send over the new trims
-            send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out);
+            MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out);
 
             MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
             MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
@@ -206,10 +206,10 @@ function tab_initialize_initial_setup() {
             buffer_out[21] = 0; // vbatlevel_crit (unused)
 
             // Send over new misc
-            send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, save_to_eeprom);
+            MSP.send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
-                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('initialSetupEepromSaved'));
 
                     var element = $('a.update');
@@ -234,16 +234,18 @@ function tab_initialize_initial_setup() {
 
         // data pulling functions used inside interval timer
         function get_analog_data() {
-            send_message(MSP_codes.MSP_ANALOG, false, false, get_attitude_data);
+            MSP.send_message(MSP_codes.MSP_ANALOG, false, false, get_attitude_data);
         }
 
         function get_attitude_data() {
-            send_message(MSP_codes.MSP_ATTITUDE, false, false, update_ui);
+            MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, update_ui);
         }
 
         function update_ui() {
             // Update voltage indicator
             $('.bat-voltage').text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
+            $('.bat-mah-drawn').text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.mAhdrawn]));
+            $('.bat-mah-drawing').text(chrome.i18n.getMessage('initialSetupBatteryAValue', [ANALOG.amperage.toFixed(2)]));
             $('.rssi').text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
 
             // Update cube
@@ -258,7 +260,7 @@ function tab_initialize_initial_setup() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

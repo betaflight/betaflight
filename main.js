@@ -102,6 +102,9 @@ $(document).ready(function() {
                     case 'tab_cli':
                         tab_initialize_cli();
                         break;
+                    case 'tab_logging':
+                        tab_initialize_logging();
+                        break;
                 }
             });
         }

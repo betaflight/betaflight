@@ -249,7 +249,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                         buffer_out.push(highByte(MISC.mincommand));
                     }
 
-                    send_message(MSP_codes.MSP_SET_MOTOR, buffer_out, false, function() {
+                    MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer_out, false, function() {
                         if (callback) callback();
                     });
                 } else {

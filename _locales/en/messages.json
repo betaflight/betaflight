@@ -59,6 +59,9 @@
     "tab9": {
         "message": "CLI"
     },
+    "tab10": {
+        "message": "Logging"
+    },
 
     "serialPortOpened": {
         "message": "Serial port <span style=\"color: green\">successfully</span> opened with ID: $1"
@@ -114,7 +117,7 @@
     },
 
     "defaultWelcomeText": {
-        "message": "This application is a configuration utility for baseflight, a 32 bit fork of the popular open source RC flight control firmware project <a href=\"http://www.multiwii.org/\" title=\"www.multiwii.org\" target=\"_blank\">MultiWii</a>.<br /><br />Application supports hardware that run Baseflight exclusively (acro naze, naze, afromini)<br /><br /><strong>Official Resellers</strong><br />&bull; <a href=\"http://www.abusemark.com/store/\" title=\"www.abusemark.com\" target=\"_blank\">AbuseMark</a> - International (Japan)<br />&bull; <a href=\"http://www.multirotorsuperstore.com/\" title=\"www.multirotorsuperstore.com\" target=\"_blank\">Multirotor Superstore</a> - International (United States)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/multiwii/baseflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/multiwii/baseflight/blob/master/obj/baseflight.hex\" title=\"www.github.com\" target=\"_blank\">here</a><br />"
+        "message": "This application is a configuration utility for baseflight, a 32 bit fork of the popular open source RC flight control firmware project <a href=\"http://www.multiwii.org/\" title=\"www.multiwii.org\" target=\"_blank\">MultiWii</a>.<br /><br />Application supports hardware that run Baseflight <strong>exclusively</strong> (acro naze, naze, afromini)<br /><br /><strong>Official Resellers &amp; Backers</strong><br />&bull; <a href=\"http://www.abusemark.com/store/\" title=\"www.abusemark.com\" target=\"_blank\">AbuseMark</a> - International (Japan)<br />&bull; <a href=\"http://www.multirotorsuperstore.com/\" title=\"www.multirotorsuperstore.com\" target=\"_blank\">Multirotor Superstore</a> - International (United States)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/multiwii/baseflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/multiwii/baseflight/blob/master/obj/baseflight.hex\" title=\"www.github.com\" target=\"_blank\">here</a><br />"
     },
     "defaultChangelogHead": {
         "message": "Configurator - Changelog"
@@ -205,10 +208,22 @@
         "message": "Info"
     },
     "initialSetupBattery": {
-        "message": "Battery:"
+        "message": "Battery voltage:"
     },
     "initialSetupBatteryValue": {
         "message": "$1 V"
+    },
+    "initialSetupDrawn": {
+        "message": "Capacity drawn:"
+    },
+    "initialSetupDrawing": {
+        "message": "Current draw:"
+    },
+    "initialSetupBatteryMahValue": {
+        "message": "$1 mAh"
+    },
+    "initialSetupBatteryAValue": {
+        "message": "$1 A"
     },
     "initialSetupRSSI": {
         "message": "RSSI:"
@@ -433,6 +448,37 @@
     },
     "cliInputPlaceholder": {
         "message": "Write your command here"
+    },
+
+    "loggingNote": {
+        "message": "Data will be logged in this tab <span style=\"color: red\">only</span>, leaving the tab will <span style=\"color: red\">cancel</span> logging and application will return to its normal <strong>\"configurator\"</strong> state.<br /> You are free to select the global update period, data will be written into the log file every <strong>1</strong> second for performance reasons."
+    },
+    "loggingSamplesSaved": {
+        "message": "Samples Saved:"
+    },
+    "loggingLogSize": {
+        "message": "Log Size:"
+    },
+    "loggingKB": {
+        "message": "$1 kB"
+    },
+    "loggingButtonLogFile": {
+        "message": "Select Log File"
+    },
+    "loggingStart": {
+        "message": "Start Logging"
+    },
+    "loggingStop": {
+        "message": "Stop Logging"
+    },
+    "loggingErrorLogFile": {
+        "message": "Please select log file"
+    },
+    "loggingErrorOneProperty": {
+        "message": "Please select at least one property to log"
+    },
+    "loggingAutomaticallyRetained": {
+        "message": "Automatically loaded previous log file: <strong>$1</strong>"
     },
 
     "firmwareFlasherPath": {

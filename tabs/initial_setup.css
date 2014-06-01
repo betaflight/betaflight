@@ -298,16 +298,16 @@
         .tab-initial_setup .info dt {
             float: left;
 
-            width: 50px;
+            width: 100px;
             height: 20px;
             line-height: 20px;
         }
         .tab-initial_setup .info dd {
-            width: 40px;
+            width: 70px;
             height: 20px;
             line-height: 20px;
 
-            margin-left: 50px;
+            margin-left: 100px;
         }
     .tab-initial_setup .update {
         display: block;

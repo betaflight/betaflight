@@ -78,7 +78,7 @@ var GPS_DATA = {
 
 var ANALOG = {
     voltage:    0,
-    pMeterSum:  0,
+    mAhdrawn:   0,
     rssi:       0,
     amperage:   0
 };

@@ -2,7 +2,7 @@ function tab_initialize_gps () {
     ga_tracker.sendAppView('GPS Page');
     GUI.active_tab = 'gps';
 
-    send_message(MSP_codes.MSP_RAW_GPS, false, false, load_html);
+    MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, load_html);
 
     function load_html() {
         $('#content').load("./tabs/gps.html", process_html);
@@ -13,16 +13,16 @@ function tab_initialize_gps () {
         localize();
 
         function get_raw_gps_data() {
-            send_message(MSP_codes.MSP_RAW_GPS, false, false, get_gpsvinfo_data);
+            MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, get_gpsvinfo_data);
         }
 
         function get_gpsvinfo_data() {
-            send_message(MSP_codes.MSP_GPSSVINFO, false, false, update_ui);
+            MSP.send_message(MSP_codes.MSP_GPSSVINFO, false, false, update_ui);
         }
 
         function update_ui() {
-            var lat = GPS_DATA.lat / 100000000;
-            var lon = GPS_DATA.lon / 100000000;
+            var lat = GPS_DATA.lat / 10000000;
+            var lon = GPS_DATA.lon / 10000000;
             var url = 'https://maps.google.com/?q=' + lat + ',' + lon;
 
             $('.GPS_info td.fix').html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
@@ -50,7 +50,7 @@ function tab_initialize_gps () {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }
