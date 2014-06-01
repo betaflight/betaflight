@@ -198,7 +198,7 @@ void annexCode(void)
         rcCommand[PITCH] = rcCommand_PITCH;
     }
 
-    if (feature(FEATURE_VBAT || FEATURE_CURRENT_METER)) {
+    if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER)) {
         vbatCycleTime += cycleTime;
         if (!(++vbatTimer % VBATFREQ)) {
 
