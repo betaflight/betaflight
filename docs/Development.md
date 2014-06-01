@@ -58,3 +58,5 @@ The tests are currently always compiled with debugging information enabled, ther
 ##Known Issues
 
 * Softserial RX on STM32F3 does not work. TX is fine.
+* Dynamic throttle PID does not work with new pid controller.
+* Autotune does not with with new pid controller.

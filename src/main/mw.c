@@ -179,6 +179,7 @@ void annexCode(void)
         dynP8[axis] = (uint16_t)currentProfile.pidProfile.P8[axis] * prop1 / 100;
         dynI8[axis] = (uint16_t)currentProfile.pidProfile.I8[axis] * prop1 / 100;
         dynD8[axis] = (uint16_t)currentProfile.pidProfile.D8[axis] * prop1 / 100;
+
         if (rcData[axis] < masterConfig.rxConfig.midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
