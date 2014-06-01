@@ -4,10 +4,10 @@ function tab_initialize_logging() {
 
     var requested_properties = [];
 
-    send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
+    MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
 
     function get_motor_data() {
-        send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
     }
 
     function load_html() {
@@ -45,13 +45,13 @@ function tab_initialize_logging() {
 
                             // request new
                             for (var i = 0; i < requested_properties.length; i++) {
-                                send_message(MSP_codes[requested_properties[i]]);
+                                MSP.send_message(MSP_codes[requested_properties[i]]);
 
                                 /* this approach could be used if we want to utilize request time compensation
                                 if (i < requested_properties.length -1) {
-                                    send_message(requested_properties[i]);
+                                    MSP.send_message(requested_properties[i]);
                                 } else {
-                                    send_message(requested_properties[i], false, false, poll_data);
+                                    MSP.send_message(requested_properties[i], false, false, poll_data);
                                 }
                                 */
                             }

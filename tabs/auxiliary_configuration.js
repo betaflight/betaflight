@@ -2,10 +2,10 @@ function tab_initialize_auxiliary_configuration() {
     ga_tracker.sendAppView('Auxiliary Configuration');
     GUI.active_tab = 'auxiliary_configuration';
 
-    send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
+    MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
 
     function get_box_data() {
-        send_message(MSP_codes.MSP_BOX, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_BOX, false, false, load_html);
     }
 
     function load_html() {
@@ -94,10 +94,10 @@ function tab_initialize_auxiliary_configuration() {
                 AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
             }
 
-            send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);
+            MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
-                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('auxiliaryEepromSaved'));
 
                     var element = $('a.update');
@@ -112,7 +112,7 @@ function tab_initialize_auxiliary_configuration() {
 
         // data pulling functions used inside interval timer
         function get_rc_data() {
-            send_message(MSP_codes.MSP_RC, false, false, update_ui);
+            MSP.send_message(MSP_codes.MSP_RC, false, false, update_ui);
         }
 
         function update_ui() {
@@ -139,7 +139,7 @@ function tab_initialize_auxiliary_configuration() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

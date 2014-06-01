@@ -2,10 +2,10 @@ function tab_initialize_receiver() {
     ga_tracker.sendAppView('Receiver Page');
     GUI.active_tab = 'receiver';
 
-    send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
+    MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
 
     function get_rc_data() {
-        send_message(MSP_codes.MSP_RC, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_RC, false, false, load_html);
     }
 
     function load_html() {
@@ -115,7 +115,7 @@ function tab_initialize_receiver() {
         }).change();
 
         $('a.refresh').click(function() {
-            send_message(MSP_codes.MSP_RC_TUNING, false, false, function() {
+            MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, function() {
                 GUI.log(chrome.i18n.getMessage('receiverDataRefreshed'));
 
                 // fill in data from RC_tuning
@@ -149,10 +149,10 @@ function tab_initialize_receiver() {
             RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100, 10);
 
             // Send over the RC_tuning changes
-            send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
+            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
-                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
 
                     var element = $('a.update');
@@ -172,7 +172,7 @@ function tab_initialize_receiver() {
             chrome.storage.local.set({'rx_refresh_rate': plot_update_rate});
 
             function get_rc_data() {
-                send_message(MSP_codes.MSP_RC, false, false, update_ui);
+                MSP.send_message(MSP_codes.MSP_RC, false, false, update_ui);
             }
 
             // setup plot
@@ -271,7 +271,7 @@ function tab_initialize_receiver() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

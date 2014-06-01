@@ -9,14 +9,14 @@ function tab_initialize_servos() {
     ga_tracker.sendAppView('Servos');
     GUI.active_tab = 'servos';
 
-    send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
+    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
 
     function get_servo_conf_data() {
-        send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_boxnames_data);
+        MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_boxnames_data);
     }
 
     function get_boxnames_data() {
-        send_message(MSP_codes.MSP_BOXNAMES, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, load_html);
     }
 
     function load_html() {
@@ -175,11 +175,11 @@ function tab_initialize_servos() {
                 buffer_out[needle++] = lowByte(SERVO_CONFIG[i].rate);
             }
 
-            send_message(MSP_codes.MSP_SET_SERVO_CONF, buffer_out);
+            MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, buffer_out);
 
             if (save_to_eeprom) {
                 // Save changes to EEPROM
-                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('servosEepromSave'));
 
                     var element = $('a.update');
@@ -300,7 +300,7 @@ function tab_initialize_servos() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

@@ -386,16 +386,16 @@ MSP.process_data = function(code, message_buffer, message_length) {
 
             // With new flight software settings in place, we have to re-pull
             // latest values
-            send_message(MSP_codes.MSP_IDENT);
-            send_message(MSP_codes.MSP_STATUS);
-            send_message(MSP_codes.MSP_PID);
-            send_message(MSP_codes.MSP_RC_TUNING);
-            send_message(MSP_codes.MSP_BOXNAMES);
-            send_message(MSP_codes.MSP_BOX);
+            MSP.send_message(MSP_codes.MSP_IDENT);
+            MSP.send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSP_codes.MSP_PID);
+            MSP.send_message(MSP_codes.MSP_RC_TUNING);
+            MSP.send_message(MSP_codes.MSP_BOXNAMES);
+            MSP.send_message(MSP_codes.MSP_BOX);
 
             // baseflight specific
-            send_message(MSP_codes.MSP_UID);
-            send_message(MSP_codes.MSP_ACC_TRIM);
+            MSP.send_message(MSP_codes.MSP_UID);
+            MSP.send_message(MSP_codes.MSP_ACC_TRIM);
             break;
         case MSP_codes.MSP_SELECT_SETTING:
             console.log('Profile selected');
@@ -466,7 +466,7 @@ MSP.process_data = function(code, message_buffer, message_length) {
     }
 };
 
-function send_message(code, data, callback_sent, callback_msp) {
+MSP.send_message = function(code, data, callback_sent, callback_msp) {
     var bufferOut;
     var bufView;
 

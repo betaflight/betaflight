@@ -2,10 +2,10 @@ function tab_initialize_motor_outputs() {
     ga_tracker.sendAppView('Motor Outputs Page');
     GUI.active_tab = 'motor_outputs';
 
-    send_message(MSP_codes.MSP_MISC, false, false, get_motor_data);
+    MSP.send_message(MSP_codes.MSP_MISC, false, false, get_motor_data);
 
     function get_motor_data() {
-        send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
     }
 
     function load_html() {
@@ -48,7 +48,7 @@ function tab_initialize_motor_outputs() {
                 buffer_out.push(highByte(val));
             }
 
-            send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
+            MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
         });
 
         $('div.sliders input.master').on('input', function() {
@@ -80,11 +80,11 @@ function tab_initialize_motor_outputs() {
 
         // data pulling functions used inside interval timer
         function get_motor_data() {
-            send_message(MSP_codes.MSP_MOTOR, false, false, get_servo_data);
+            MSP.send_message(MSP_codes.MSP_MOTOR, false, false, get_servo_data);
         }
 
         function get_servo_data() {
-            send_message(MSP_codes.MSP_SERVO, false, false, update_ui);
+            MSP.send_message(MSP_codes.MSP_SERVO, false, false, update_ui);
         }
 
         function update_ui() {
@@ -114,7 +114,7 @@ function tab_initialize_motor_outputs() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }

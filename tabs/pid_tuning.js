@@ -3,18 +3,18 @@ function tab_initialize_pid_tuning() {
     GUI.active_tab = 'pid_tuning';
 
     // requesting MSP_STATUS manually because it contains CONFIG.profile
-    send_message(MSP_codes.MSP_STATUS, false, false, get_pid_names);
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_names);
 
     function get_pid_names() {
-        send_message(MSP_codes.MSP_PIDNAMES, false, false, get_pid_data);
+        MSP.send_message(MSP_codes.MSP_PIDNAMES, false, false, get_pid_data);
     }
 
     function get_pid_data() {
-        send_message(MSP_codes.MSP_PID, false, false, get_rc_tuning_data);
+        MSP.send_message(MSP_codes.MSP_PID, false, false, get_rc_tuning_data);
     }
 
     function get_rc_tuning_data() {
-        send_message(MSP_codes.MSP_RC_TUNING, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, load_html);
     }
 
     function load_html() {
@@ -180,7 +180,7 @@ function tab_initialize_pid_tuning() {
         // UI Hooks
         $('input[name="profile"]').change(function() {
             var profile = parseInt($(this).val());
-            send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function() {
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function() {
                 GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile]));
 
                 GUI.tab_switch_cleanup(tab_initialize_pid_tuning);
@@ -276,7 +276,7 @@ function tab_initialize_pid_tuning() {
             }
 
             // Send over the PID changes
-            send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, false, send_rc_tuning_changes);
+            MSP.send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, false, send_rc_tuning_changes);
 
             function send_rc_tuning_changes() {
                 // catch RC_tuning changes
@@ -294,11 +294,11 @@ function tab_initialize_pid_tuning() {
                 RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
 
                 // Send over the RC_tuning changes
-                send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
+                MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
             }
 
             function save_to_eeprom() {
-                send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('pidTuningEepromSaved'));
 
                     var element = $('a.update');
@@ -313,7 +313,7 @@ function tab_initialize_pid_tuning() {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
-            send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
 }
