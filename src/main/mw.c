@@ -35,9 +35,9 @@
 #include "io/serial_cli.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
+#include "rx/rx.h"
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
-#include "rx/rx.h"
 #include "rx/msp.h"
 #include "telemetry/telemetry.h"
 
@@ -72,12 +72,13 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
 
 extern pidControllerFuncPtr pid_controller;
 
-// Automatic ACC Offset Calibration
-bool AccInflightCalibrationArmed = false;
-bool AccInflightCalibrationMeasurementDone = false;
-bool AccInflightCalibrationSavetoEEProm = false;
-bool AccInflightCalibrationActive = false;
-uint16_t InflightcalibratingA = 0;
+void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
+{
+    currentProfile.accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    currentProfile.accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+
+    saveAndReloadCurrentProfileToCurrentProfileSlot();
+}
 
 void updateAutotuneState(void)
 {
@@ -247,7 +248,7 @@ void annexCode(void)
         static uint32_t LEDTime;
         if ((int32_t)(currentTime - LEDTime) >= 0) {
             LEDTime = currentTime + 50000;
-            ledringState(f.ARMED, inclination.values.pitchDeciDegrees, inclination.values.rollDeciDegrees);
+            ledringState(f.ARMED, inclination.values.pitchDeciDegrees, inclination.values.rollDeciDegrees, heading);
         }
     }
 #endif
@@ -262,9 +263,6 @@ void annexCode(void)
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
     if (gyro.temperature)
         gyro.temperature(&telemTemperature1);
-    else {
-        // TODO MCU temp
-    }
 }
 
 void mwDisarm(void)
@@ -291,18 +289,53 @@ void mwArm(void)
     }
 }
 
+// Automatic ACC Offset Calibration
+bool AccInflightCalibrationArmed = false;
+bool AccInflightCalibrationMeasurementDone = false;
+bool AccInflightCalibrationSavetoEEProm = false;
+bool AccInflightCalibrationActive = false;
+uint16_t InflightcalibratingA = 0;
+
+void handleInflightCalibrationStickPosition(void)
+{
+    if (AccInflightCalibrationMeasurementDone) {
+        // trigger saving into eeprom after landing
+        AccInflightCalibrationMeasurementDone = false;
+        AccInflightCalibrationSavetoEEProm = true;
+    } else {
+        AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
+        if (AccInflightCalibrationArmed) {
+            queueConfirmationBeep(2);
+        } else {
+            queueConfirmationBeep(3);
+        }
+    }
+}
+
+void updateInflightCalibrationState(void)
+{
+    if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+        InflightcalibratingA = 50;
+        AccInflightCalibrationArmed = false;
+    }
+    if (rcOptions[BOXCALIB]) {      // Use the Calib Option to activate : Calib = TRUE Meausrement started, Land and Calib = 0 measurement stored
+        if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
+            InflightcalibratingA = 50;
+        AccInflightCalibrationActive = true;
+    } else if (AccInflightCalibrationMeasurementDone && !f.ARMED) {
+        AccInflightCalibrationMeasurementDone = false;
+        AccInflightCalibrationSavetoEEProm = true;
+    }
+}
+
 void loop(void)
 {
-    static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
-    static uint8_t rcSticks;            // this hold sticks position for command combos
-    uint8_t stTmp = 0;
     int i;
 #ifdef BARO
     static int16_t initialThrottleHold;
 #endif
     static uint32_t loopTime;
     uint16_t auxState = 0;
-    bool isThrottleLow = false;
 
     updateRx();
 
@@ -326,138 +359,17 @@ void loop(void)
             failsafe->vTable->updateState();
         }
 
-        // ------------------ STICKS COMMAND HANDLER --------------------
-        // checking sticks positions
-        for (i = 0; i < 4; i++) {
-            stTmp >>= 2;
-            if (rcData[i] > masterConfig.rxConfig.mincheck)
-                stTmp |= 0x80;  // check for MIN
-            if (rcData[i] < masterConfig.rxConfig.maxcheck)
-                stTmp |= 0x40;  // check for MAX
-        }
-        if (stTmp == rcSticks) {
-            if (rcDelayCommand < 250)
-                rcDelayCommand++;
-        } else
-            rcDelayCommand = 0;
-        rcSticks = stTmp;
+        throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-        // perform actions
-        if (feature(FEATURE_3D) && (rcData[THROTTLE] > (masterConfig.rxConfig.midrc - masterConfig.flight3DConfig.deadband3d_throttle) && rcData[THROTTLE] < (masterConfig.rxConfig.midrc + masterConfig.flight3DConfig.deadband3d_throttle)))
-            isThrottleLow = true;
-        else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < masterConfig.rxConfig.mincheck))
-            isThrottleLow = true;
-        if (isThrottleLow) {
+        if (throttleStatus == THROTTLE_LOW) {
             resetErrorAngle();
             resetErrorGyro();
-            if (currentProfile.activate[BOXARM] > 0) { // Arming/Disarming via ARM BOX
-                if (rcOptions[BOXARM] && f.OK_TO_ARM)
-                    mwArm();
-                else if (f.ARMED)
-                    mwDisarm();
-            }
         }
 
-        if (rcDelayCommand == 20) {
-            if (f.ARMED) {      // actions during armed
-                // Disarm on throttle down + yaw
-                if (currentProfile.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE))
-                    mwDisarm();
-                // Disarm on roll (only when retarded_arm is enabled)
-                if (masterConfig.retarded_arm && currentProfile.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO))
-                    mwDisarm();
-            } else {            // actions during not armed
-                i = 0;
-                // GYRO calibration
-                if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
-                    gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
-                    if (feature(FEATURE_GPS))
-                        GPS_reset_home_position();
-#ifdef BARO
-                    if (sensors(SENSOR_BARO))
-                        baroSetCalibrationCycles(10); // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
-#endif
-                    if (!sensors(SENSOR_MAG))
-                        heading = 0; // reset heading to zero after gyro calibration
-                // Inflight ACC Calibration
-                } else if (feature(FEATURE_INFLIGHT_ACC_CAL) && (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI)) {
-                    if (AccInflightCalibrationMeasurementDone) {        // trigger saving into eeprom after landing
-                        AccInflightCalibrationMeasurementDone = false;
-                        AccInflightCalibrationSavetoEEProm = true;
-                    } else {
-                        AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
-                        if (AccInflightCalibrationArmed) {
-                            queueConfirmationBeep(2);
-                        } else {
-                            queueConfirmationBeep(3);
-                        }
-                    }
-                }
-
-                // Multiple configuration profiles
-                if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_LO)          // ROLL left  -> Profile 1
-                    i = 1;
-                else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_CE)     // PITCH up   -> Profile 2
-                    i = 2;
-                else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_HI)     // ROLL right -> Profile 3
-                    i = 3;
-                if (i) {
-                    masterConfig.current_profile_index = i - 1;
-                    writeEEPROM();
-                    readEEPROM();
-                    blinkLedAndSoundBeeper(2, 40, i);
-                    // TODO alarmArray[0] = i;
-                }
-
-                // Arm via YAW
-                if (currentProfile.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE))
-                    mwArm();
-                // Arm via ROLL
-                else if (masterConfig.retarded_arm && currentProfile.activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI))
-                    mwArm();
-                // Calibrating Acc
-                else if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE)
-                    accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
-                // Calibrating Mag
-                else if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE)
-                    f.CALIBRATE_MAG = 1;
-                i = 0;
-                // Acc Trim
-                if (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) {
-                    currentProfile.accelerometerTrims.values.pitch += 2;
-                    i = 1;
-                } else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) {
-                    currentProfile.accelerometerTrims.values.pitch -= 2;
-                    i = 1;
-                } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) {
-                    currentProfile.accelerometerTrims.values.roll += 2;
-                    i = 1;
-                } else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) {
-                    currentProfile.accelerometerTrims.values.roll -= 2;
-                    i = 1;
-                }
-                if (i) {
-                    copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
-                    writeEEPROM();
-                    readEEPROMAndNotify();
-                    rcDelayCommand = 0; // allow autorepetition
-                }
-            }
-        }
+        processRcStickPositions(&masterConfig.rxConfig, throttleStatus, currentProfile.activate, masterConfig.retarded_arm);
 
         if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-            if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
-                InflightcalibratingA = 50;
-                AccInflightCalibrationArmed = false;
-            }
-            if (rcOptions[BOXCALIB]) {      // Use the Calib Option to activate : Calib = TRUE Meausrement started, Land and Calib = 0 measurement stored
-                if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
-                    InflightcalibratingA = 50;
-                AccInflightCalibrationActive = true;
-            } else if (AccInflightCalibrationMeasurementDone && !f.ARMED) {
-                AccInflightCalibrationMeasurementDone = false;
-                AccInflightCalibrationSavetoEEProm = true;
-            }
+            updateInflightCalibrationState();
         }
 
         // Check AUX switches

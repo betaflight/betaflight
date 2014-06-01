@@ -26,9 +26,9 @@
 #include "sensors/battery.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
+#include "rx/rx.h"
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
-#include "rx/rx.h"
 #include "io/gps.h"
 #include "flight/failsafe.h"
 
@@ -536,6 +536,14 @@ void saveAndReloadCurrentProfileToCurrentProfileSlot(void)
     copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
     writeEEPROM();
     readEEPROMAndNotify();
+}
+
+void changeProfile(uint8_t profileIndex)
+{
+    masterConfig.current_profile_index = profileIndex;
+    writeEEPROM();
+    readEEPROM();
+    blinkLedAndSoundBeeper(2, 40, profileIndex);
 }
 
 bool feature(uint32_t mask)

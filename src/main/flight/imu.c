@@ -28,9 +28,9 @@
 // FIXME remove dependency on config.h
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
+#include "rx/rx.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
-#include "rx/rx.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
 #include "telemetry/telemetry.h"

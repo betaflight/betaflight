@@ -10,10 +10,10 @@
 #include "bus_i2c.h"
 
 // FIXME there should be no dependencies on the main source code
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "sensors/sensors.h"
-#include "flight/flight.h"
+//#include "io/escservo.h"
+//#include "io/rc_controls.h"
+//#include "sensors/sensors.h"
+//#include "flight/flight.h"
 
 #include "light_ledring.h"
 
@@ -32,7 +32,7 @@ bool ledringDetect(void)
 }
 
 // pitch/roll are absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-void ledringState(bool armed, int16_t pitch, int16_t roll)
+void ledringState(bool armed, int16_t pitch, int16_t roll, int16_t heading)
 {
     uint8_t b[10];
     static uint8_t state;

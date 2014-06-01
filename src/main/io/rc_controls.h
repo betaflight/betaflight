@@ -11,6 +11,11 @@ typedef enum rc_alias {
     AUX4
 } rc_alias_e;
 
+typedef enum {
+    THROTTLE_LOW = 0,
+    THROTTLE_HIGH
+} throttleStatus_e;
+
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
 #define ROL_HI (2 << (2 * ROLL))
@@ -36,4 +41,7 @@ typedef struct controlRateConfig_s {
 extern int16_t rcCommand[4];
 
 bool areSticksInApModePosition(uint16_t ap_mode);
+throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, uint16_t *activate, bool retarded_arm);
+
 

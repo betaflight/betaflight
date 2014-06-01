@@ -3,9 +3,9 @@
 
 #include "common/axis.h"
 
+#include "rx/rx.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
-#include "rx/rx.h"
 #include "config/runtime_config.h"
 
 #include "flight/failsafe.h"

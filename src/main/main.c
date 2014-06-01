@@ -24,10 +24,10 @@
 #include "io/serial.h"
 #include "flight/failsafe.h"
 
+#include "rx/rx.h"
 #include "io/gps.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
-#include "rx/rx.h"
 #include "io/gimbal.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"

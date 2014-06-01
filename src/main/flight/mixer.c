@@ -11,10 +11,10 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 
+#include "rx/rx.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
-#include "rx/rx.h"
 
 #include "flight/mixer.h"
 #include "flight/flight.h"
