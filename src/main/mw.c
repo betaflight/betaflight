@@ -160,7 +160,7 @@ void annexCode(void)
 
     static uint8_t batteryWarningEnabled = false;
     static uint8_t vbatTimer = 0;
-    static uint32_t vbatCycleTime = 0;
+    static int32_t vbatCycleTime = 0;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
     if (rcData[THROTTLE] < currentProfile.tpa_breakpoint) {

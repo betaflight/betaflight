@@ -16,12 +16,12 @@ extern uint8_t vbat;
 extern uint8_t batteryCellCount;
 extern uint16_t batteryWarningVoltage;
 extern int32_t amperage;
-extern uint32_t mAhdrawn;
+extern int32_t mAhDrawn;
 
 uint16_t batteryAdcToVoltage(uint16_t src);
 bool shouldSoundBatteryAlarm(void);
 void updateBatteryVoltage(void);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 
-void updateCurrentMeter(uint32_t lastUpdateAt);
+void updateCurrentMeter(int32_t lastUpdateAt);
 int32_t currentMeterToCentiamps(uint16_t src);

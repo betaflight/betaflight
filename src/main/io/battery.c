@@ -13,7 +13,7 @@ uint16_t batteryWarningVoltage;     // annoying buzzer after this one, battery r
 uint8_t vbat = 0;                   // battery voltage in 0.1V steps
 
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
-uint32_t mAhdrawn = 0;              // milliampere hours drawn from the battery since start
+int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
 static batteryConfig_t *batteryConfig;
 
@@ -82,15 +82,15 @@ int32_t currentSensorToCentiamps(uint16_t src)
     return (millivolts * 1000) / (int32_t)batteryConfig->currentMeterScale; // current in 0.01A steps
 }
 
-void updateCurrentMeter(uint32_t lastUpdateAt)
+void updateCurrentMeter(int32_t lastUpdateAt)
 {
     static int32_t amperageRaw = 0;
-    static uint32_t mAhdrawnRaw = 0;
+    static int64_t mAhdrawnRaw = 0;
 
 	amperageRaw -= amperageRaw / 8;
 	amperageRaw += adcGetChannel(ADC_CURRENT);
 	amperage = currentSensorToCentiamps(amperageRaw / 8);
 
-	mAhdrawnRaw += (amperage * lastUpdateAt) / 1000; // will overflow at ~11000mAh
-	mAhdrawn = mAhdrawnRaw / (3600 * 100);
+	mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
+	mAhDrawn = mAhdrawnRaw / (3600 * 100);
 }
