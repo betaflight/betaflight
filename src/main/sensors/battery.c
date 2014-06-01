@@ -4,7 +4,7 @@
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
-#include "io/battery.h"
+#include "sensors/battery.h"
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count

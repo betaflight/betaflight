@@ -51,10 +51,10 @@
 #include "config/runtime_config.h"
 
 #include "sensors/sensors.h"
+#include "sensors/battery.h"
 
 #include "flight/flight.h"
 #include "io/gps.h"
-#include "io/battery.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/hott.h"

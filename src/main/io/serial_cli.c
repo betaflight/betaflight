@@ -24,7 +24,7 @@
 #include "telemetry/telemetry.h"
 #include "io/gps.h"
 #include "rx/rx.h"
-#include "io/battery.h"
+#include "sensors/battery.h"
 #include "io/gimbal.h"
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"

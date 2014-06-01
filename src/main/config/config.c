@@ -23,7 +23,7 @@
 
 #include "flight/mixer.h"
 #include "sensors/boardalignment.h"
-#include "io/battery.h"
+#include "sensors/battery.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"

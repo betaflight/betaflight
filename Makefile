@@ -108,7 +108,6 @@ COMMON_SRC	 = build_config.c \
 		   drivers/serial.c \
 		   drivers/sound_beeper.c \
 		   drivers/system.c \
-		   io/battery.c \
 		   io/buzzer.c \
 		   io/gps.c \
 		   io/gps_conversion.c \
@@ -124,6 +123,7 @@ COMMON_SRC	 = build_config.c \
 		   rx/sbus.c \
 		   rx/sumd.c \
 		   rx/spektrum.c \
+		   sensors/battery.c \
 		   sensors/boardalignment.c \
 		   sensors/acceleration.c \
 		   sensors/barometer.c \

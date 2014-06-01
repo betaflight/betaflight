@@ -16,7 +16,7 @@
 #include "drivers/serial.h"
 
 #include "sensors/boardalignment.h"
-#include "io/battery.h"
+#include "sensors/battery.h"
 #include "io/buzzer.h"
 #include "io/escservo.h"
 #include "flight/failsafe.h"

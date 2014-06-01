@@ -35,7 +35,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "telemetry/telemetry.h"
-#include "io/battery.h"
+#include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "config/runtime_config.h"
 #include "config/config.h"
