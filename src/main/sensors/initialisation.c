@@ -54,6 +54,8 @@
 #endif
 
 #ifdef NAZE32PRO
+#define USE_FAKE_ACC
+#define USE_FAKE_GYRO
 #undef USE_ACC_LSM303DLHC
 #undef USE_ACC_ADXL345
 #undef USE_ACC_BMA280
@@ -125,6 +127,7 @@ bool detectGyro(uint16_t gyroLpf)
 #ifdef USE_FAKE_GYRO
     if (fakeGyroDetect(&gyro, gyroLpf)) {
         return true;
+    }
 #endif
 
 #ifdef USE_GYRO_MPU6050

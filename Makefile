@@ -47,16 +47,31 @@ VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 
 ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO))
 
-STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
+STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
+USBFS_DIR		= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 
-VPATH		:= $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
+USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
+STDPERIPH_SRC = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
+
+EXCLUDES = stm32f30x_crc.c \
+		stm32f30x_can.c
+
+STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
+
+DEVICE_STDPERIPH_SRC = $(USBPERIPH_SRC) \
+		$(STDPERIPH_SRC)
+
+
+VPATH		:= $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x:$(USBFS_DIR)/src
 CMSIS_SRC	 = $(notdir $(wildcard $(CMSIS_DIR)/CM1/CoreSupport/*.c \
 			   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x/*.c))
 
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(STDPERIPH_DIR)/inc \
+		   $(USBFS_DIR)/inc \
 		   $(CMSIS_DIR)/CM1/CoreSupport \
 		   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x \
+		   $(ROOT)/src/main/vcp
 
 LD_SCRIPT	 = $(ROOT)/stm32_flash_f303.ld
 
@@ -197,8 +212,17 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/timer.c
 
 NAZE32PRO_SRC	 = $(STM32F30x_COMMON_SRC) \
+		   $(DEVICE_STDPERIPH_SRC) \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/serial_usb_vcp.c \
+		   vcp/hw_config.c \
+		   vcp/stm32_it.c \
+		   vcp/usb_desc.c \
+		   vcp/usb_endp.c \
+		   vcp/usb_istr.c \
+		   vcp/usb_prop.c \
+		   vcp/usb_pwr.c \
 		   $(COMMON_SRC)
 
 STM32F3DISCOVERY_COMMON_SRC	 = $(STM32F30x_COMMON_SRC) \
@@ -224,7 +248,6 @@ CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
-STDPERIPH_SRC	 = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 
 ###############################################################################
 # Things that might need changing to use different tools

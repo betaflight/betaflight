@@ -165,6 +165,9 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->serial_port_2_scenario = lookupScenarioIndex(SCENARIO_GPS_ONLY);
     serialConfig->serial_port_3_scenario = lookupScenarioIndex(SCENARIO_UNUSED);
     serialConfig->serial_port_4_scenario = lookupScenarioIndex(SCENARIO_UNUSED);
+#ifdef STM32F303xC
+    serialConfig->serial_port_5_scenario = lookupScenarioIndex(SCENARIO_UNUSED);
+#endif
 
     serialConfig->msp_baudrate = 115200;
     serialConfig->cli_baudrate = 115200;
