@@ -51,17 +51,17 @@
   *-----------------------------------------------------------------------------
   *        AHB Prescaler                          | 1
   *-----------------------------------------------------------------------------
-  *        APB2 Prescaler                         | 1
+  *        APB2 Prescaler                         | 2
   *-----------------------------------------------------------------------------
   *        APB1 Prescaler                         | 2
   *-----------------------------------------------------------------------------
-  *        HSE Frequency(Hz)                      | 8000000
+  *        HSE Frequency(Hz)                      | 12000000
   *----------------------------------------------------------------------------
-  *        PLLMUL                                 | 9
+  *        PLLMUL                                 | 6
   *-----------------------------------------------------------------------------
   *        PREDIV                                 | 1
   *-----------------------------------------------------------------------------
-  *        USB Clock                              | DISABLE
+  *        USB Clock                              | ENABLE
   *-----------------------------------------------------------------------------
   *        Flash Latency(WS)                      | 2
   *-----------------------------------------------------------------------------
@@ -331,7 +331,7 @@ void SetSysClock(void)
 
     /* PLL configuration */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
-    RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL9);
+    RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL6);
 
     /* Enable PLL */
     RCC->CR |= RCC_CR_PLLON;
