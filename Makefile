@@ -88,6 +88,8 @@ else
 
 STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
 
+STDPERIPH_SRC = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
+
 # Search path and source files for the CMSIS sources
 VPATH		:= $(VPATH):$(CMSIS_DIR)/CM3/CoreSupport:$(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
 CMSIS_SRC	 = $(notdir $(wildcard $(CMSIS_DIR)/CM3/CoreSupport/*.c \
@@ -103,6 +105,8 @@ LD_SCRIPT	 = $(ROOT)/stm32_flash_f103.ld
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET)
 DEVICE_FLAGS = -DSTM32F10X_MD
+
+DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 endif
 
@@ -151,7 +155,7 @@ COMMON_SRC	 = build_config.c \
 		   telemetry/hott.c \
 		   telemetry/msp.c \
 		   $(CMSIS_SRC) \
-		   $(STDPERIPH_SRC)
+		   $(DEVICE_STDPERIPH_SRC)
 
 NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_adxl345.c \
@@ -209,20 +213,19 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
-		   drivers/timer.c
-
-NAZE32PRO_SRC	 = $(STM32F30x_COMMON_SRC) \
-		   $(DEVICE_STDPERIPH_SRC) \
-		   drivers/accgyro_mpu6050.c \
-		   drivers/compass_hmc5883l.c \
 		   drivers/serial_usb_vcp.c \
+		   drivers/timer.c \
 		   vcp/hw_config.c \
 		   vcp/stm32_it.c \
 		   vcp/usb_desc.c \
 		   vcp/usb_endp.c \
 		   vcp/usb_istr.c \
 		   vcp/usb_prop.c \
-		   vcp/usb_pwr.c \
+		   vcp/usb_pwr.c
+
+NAZE32PRO_SRC	 = $(STM32F30x_COMMON_SRC) \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/compass_hmc5883l.c \
 		   $(COMMON_SRC)
 
 STM32F3DISCOVERY_COMMON_SRC	 = $(STM32F30x_COMMON_SRC) \
