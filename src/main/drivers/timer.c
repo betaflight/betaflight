@@ -77,7 +77,7 @@ static const TIM_TypeDef *timers[MAX_TIMERS] = {
 
 #endif
 
-#if (defined(STM32F303xC) || defined(STM32F3DISCOVERY)) && !defined(CHEBUZZF3)
+#if (defined(STM32F303xC) || defined(STM32F3DISCOVERY)) && !(defined(CHEBUZZF3) || defined(NAZE32PRO))
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, Mode_AF_PP_PD},             // PWM1 - PA8
     { TIM16, GPIOB, Pin_8, TIM_Channel_1, TIM1_UP_TIM16_IRQn, 0, Mode_AF_PP_PD},      // PWM2 - PB8
@@ -133,6 +133,33 @@ static const TIM_TypeDef *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4, TIM8, TIM15, TIM16, TIM17
 };
 #endif
+
+#ifdef NAZE32PRO
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn, 0, Mode_AF_PP_PD}, // PA8 - AF6
+    { TIM1,  GPIOA, Pin_9,  TIM_Channel_2, TIM1_CC_IRQn, 0, Mode_AF_PP_PD}, // PA9 - AF6
+    { TIM1,  GPIOA, Pin_10, TIM_Channel_3, TIM1_CC_IRQn, 0, Mode_AF_PP_PD}, // PA10 - AF6
+    { TIM3,  GPIOB, Pin_4,  TIM_Channel_1, TIM3_IRQn,    0, Mode_AF_PP_PD}, // PB3 - AF2
+    { TIM4,  GPIOB, Pin_6,  TIM_Channel_1, TIM4_IRQn,    0, Mode_AF_PP_PD}, // PB6 - AF2 - not working yet
+    { TIM4,  GPIOB, Pin_7,  TIM_Channel_2, TIM4_IRQn,    0, Mode_AF_PP_PD}, // PB7 - AF2 - not working yet
+    { TIM4,  GPIOB, Pin_8,  TIM_Channel_3, TIM4_IRQn,    0, Mode_AF_PP_PD}, // PB8 - AF2
+    { TIM4,  GPIOB, Pin_9,  TIM_Channel_4, TIM4_IRQn,    0, Mode_AF_PP_PD}, // PB9 - AF2
+
+    { TIM2,  GPIOA, Pin_0,  TIM_Channel_1, TIM2_IRQn,               1, Mode_AF_PP}, // PA0 - untested
+    { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               1, Mode_AF_PP}, // PA1 - untested
+    { TIM15, GPIOA, Pin_2,  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP}, // PA2 - untested
+    { TIM15, GPIOA, Pin_3,  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP}, // PA3 - untested
+    { TIM16, GPIOA, Pin_6,  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP}, // PA6 - untested
+    { TIM17, GPIOA, Pin_7,  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP}, // PA7 - untested
+};
+
+#define MAX_TIMERS 7
+
+static const TIM_TypeDef *timers[MAX_TIMERS] = {
+    TIM1, TIM2, TIM3, TIM4, TIM15, TIM16, TIM17
+};
+#endif
+
 
 #define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
 static const uint16_t channels[CC_CHANNELS_PER_TIMER] = {

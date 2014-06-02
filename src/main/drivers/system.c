@@ -199,6 +199,16 @@ void systemInit(bool overclock)
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_2);
 #endif
 
+#ifdef NAZE32PRO
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9,  GPIO_AF_6);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_6);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource4,  GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource6,  GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource7,  GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_2);
+#endif
+
     beeperInit();
     LED0_OFF;
     LED1_OFF;
