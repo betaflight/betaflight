@@ -189,6 +189,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
+		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   $(COMMON_SRC)
 
@@ -206,6 +207,7 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
+		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   $(COMMON_SRC)
 
@@ -223,6 +225,7 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_usb_vcp.c \
+		   drivers/system_stm32f30x.c \
 		   drivers/timer.c \
 		   vcp/hw_config.c \
 		   vcp/stm32_it.c \

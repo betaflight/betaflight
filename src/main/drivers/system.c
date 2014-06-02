@@ -288,24 +288,4 @@ void failureMode(uint8_t mode)
     }
 }
 
-#define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
-
-void systemReset(bool toBootloader)
-{
-    if (toBootloader) {
-        // 1FFFF000 -> 20000200 -> SP
-        // 1FFFF004 -> 1FFFF021 -> PC
-
-#ifdef STM32F10X_MD
-        *((uint32_t *)0x20004FF0) = 0xDEADBEEF; // 20KB STM32F103
-#endif
-#ifdef STM32F303xC
-
-        *((uint32_t *)0x20009FFC) = 0xDEADBEEF; // 40KB SRAM STM32F30X
-#endif
-    }
-
-    // Generate system reset
-    SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
-}
 
