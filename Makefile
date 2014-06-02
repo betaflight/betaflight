@@ -181,6 +181,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/gpio_stm32f10x.c \
+		   drivers/light_led_stm32f10x.c \
 		   drivers/light_ledring.c \
 		   drivers/sonar_hcsr04.c \
 		   drivers/pwm_mapping.c \
@@ -189,6 +190,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   $(COMMON_SRC)
@@ -200,6 +202,7 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f10x.c \
+		   drivers/light_led_stm32f10x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rssi.c \
@@ -207,6 +210,7 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   $(COMMON_SRC)
@@ -217,6 +221,7 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f30x.c \
+		   drivers/light_led_stm32f30x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rssi.c \
@@ -225,6 +230,7 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_usb_vcp.c \
+		   drivers/sound_beeper_stm32f30x.c \
 		   drivers/system_stm32f30x.c \
 		   drivers/timer.c \
 		   vcp/hw_config.c \

@@ -65,33 +65,7 @@ void systemInit(bool overclock)
     SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
 #endif
 
-    struct {
-        GPIO_TypeDef *gpio;
-        gpio_config_t cfg;
-    } gpio_setup[] = {
-#ifdef LED0
-        {
-            .gpio = LED0_GPIO,
-            .cfg = { LED0_PIN, Mode_Out_PP, Speed_2MHz }
-        },
-#endif
-#ifdef LED1
-
-        {
-            .gpio = LED1_GPIO,
-            .cfg = { LED1_PIN, Mode_Out_PP, Speed_2MHz }
-        },
-#endif
-#ifdef BUZZER
-        {
-            .gpio = BEEP_GPIO,
-            .cfg = { BEEP_PIN, Mode_Out_OD, Speed_2MHz }
-        },
-#endif
-    };
     gpio_config_t gpio;
-    uint32_t i;
-    uint8_t gpio_count = sizeof(gpio_setup) / sizeof(gpio_setup[0]);
 
 #ifdef STM32F303xC
     SetSysClock();
@@ -209,15 +183,8 @@ void systemInit(bool overclock)
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_2);
 #endif
 
+    ledInit();
     beeperInit();
-    LED0_OFF;
-    LED1_OFF;
-
-    for (i = 0; i < gpio_count; i++) {
-        if (hse_value == 12000000 && gpio_setup[i].cfg.mode == Mode_Out_OD)
-            gpio_setup[i].cfg.mode = Mode_Out_PP;
-        gpioInit(gpio_setup[i].gpio, &gpio_setup[i].cfg);
-    }
 
     // Init cycle counter
     cycleCounterInit();

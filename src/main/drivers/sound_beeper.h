@@ -12,3 +12,5 @@
 
 void systemBeep(bool onoff);
 void beeperInit(void);
+
+void initBeeperHardware(void);

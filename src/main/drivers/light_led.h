@@ -30,3 +30,5 @@
 #define LED1_OFF
 #define LED1_ON
 #endif
+
+void ledInit(void);

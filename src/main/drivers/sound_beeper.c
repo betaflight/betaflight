@@ -54,7 +54,7 @@ static inline bool isBuzzerOutputInverted(void)
 void beeperInit(void)
 {
 #ifdef BUZZER
-    // Configure gpio
+    initBeeperHardware();
     if (isBuzzerOutputInverted())
         systemBeepPtr = beepInverted;
     else
