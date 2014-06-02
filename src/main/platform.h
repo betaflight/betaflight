@@ -7,10 +7,10 @@
 #include "stm32f30x_gpio.h"
 #include "core_cm4.h"
 
-// FIXME use correct ID
-#define U_ID_0 (*(uint32_t*)0x10000003)
-#define U_ID_1 (*(uint32_t*)0x10000000)
-#define U_ID_2 (*(uint32_t*)0x10000003)
+// Chip Unique ID on F303
+#define U_ID_0 (*(uint32_t*)0x1FFFF7AC)
+#define U_ID_1 (*(uint32_t*)0x1FFFF7B0)
+#define U_ID_2 (*(uint32_t*)0x1FFFF7B4)
 
 #endif
 
