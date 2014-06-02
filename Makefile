@@ -110,7 +110,16 @@ DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 endif
 
+TARGET_DIR = $(ROOT)/src/main/target/$(TARGET)
+TARGET_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
+
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+		    $(TARGET_DIR)
+
+VPATH		:= $(VPATH):$(TARGET_DIR)
+
 COMMON_SRC	 = build_config.c \
+		   $(TARGET_SRC) \
 		   config/config.c \
 		   config/runtime_config.c \
 		   common/maths.c \
@@ -229,6 +238,7 @@ NAZE32PRO_SRC	 = $(STM32F30x_COMMON_SRC) \
 		   $(COMMON_SRC)
 
 STM32F3DISCOVERY_COMMON_SRC	 = $(STM32F30x_COMMON_SRC) \
+		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c
 
