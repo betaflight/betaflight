@@ -60,7 +60,7 @@ static int16_t nav_rated[2];               // Adding a rate controller to the na
 int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
 
 
-static uint8_t gpsProvider;
+static gpsConfig_t *gpsConfig;
 
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
 #define GPS_TIMEOUT (2500)
@@ -113,20 +113,13 @@ static const uint8_t ubloxInit[] = {
 // 31.21 CFG-SBAS (0x06 0x16), Page 142/210
 // A.10 SBAS Configuration (UBX-CFG-SBAS), Page 198/210 - GPS.G6-SW-10018-F
 
-typedef enum {
-    SBAS_AUTO = 0,
-    SBAS_EGNOS,
-    SBAS_WAAS,
-    SBAS_MSAS,
-    SBAS_GAGAN
-} sbasMode_e;
-
 #define UBLOX_SBAS_MESSAGE_LENGTH 16
 typedef struct ubloxSbas_s {
     sbasMode_e mode;
     uint8_t message[UBLOX_SBAS_MESSAGE_LENGTH];
 } ubloxSbas_t;
 
+// Note: these must be defined in the same order is sbasMode_e since no lookup table is used.
 static const ubloxSbas_t ubloxSbas[] = {
     { SBAS_AUTO,  { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xE5}},
     { SBAS_EGNOS, { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x51, 0x08, 0x00, 0x00, 0x8A, 0x41}},
@@ -188,7 +181,7 @@ void gpsUseProfile(gpsProfile_t *gpsProfileToUse)
 }
 
 // When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
-void gpsInit(serialConfig_t *initialSerialConfig, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile)
+void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile)
 {
     serialConfig = initialSerialConfig;
 
@@ -201,7 +194,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, uint8_t initialGpsProvider, gp
         }
     }
 
-    gpsProvider = initialGpsProvider;
+    gpsConfig = initialGpsConfig;
     gpsUseProfile(initialGpsProfile);
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
@@ -212,7 +205,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, uint8_t initialGpsProvider, gp
 
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
-    if (gpsProvider == GPS_NMEA)
+    if (gpsConfig->provider == GPS_NMEA)
         mode = MODE_RX;
 
     gpsUsePIDs(pidProfile);
@@ -289,9 +282,8 @@ void gpsInitUblox(void)
             }
 
             if (gpsData.messageState == GPS_MESSAGE_STATE_SBAS) {
-                uint8_t sbasIndex = SBAS_AUTO; // TODO allow configuration
                 if (gpsData.state_position < UBLOX_SBAS_MESSAGE_LENGTH) {
-                    serialWrite(gpsPort, ubloxSbas[sbasIndex].message[gpsData.state_position]);
+                    serialWrite(gpsPort, ubloxSbas[gpsConfig->sbasMode].message[gpsData.state_position]);
                     gpsData.state_position++;
                 } else {
                     gpsData.messageState++;
@@ -308,7 +300,7 @@ void gpsInitUblox(void)
 
 void gpsInitHardware(void)
 {
-    switch (gpsProvider) {
+    switch (gpsConfig->provider) {
         case GPS_NMEA:
             gpsInitNmea();
             break;
@@ -365,9 +357,8 @@ void gpsThread(void)
 
 static bool gpsNewFrame(uint8_t c)
 {
-    switch (gpsProvider) {
+    switch (gpsConfig->provider) {
         case GPS_NMEA:          // NMEA
-        case GPS_MTK_NMEA:      // MTK in NMEA mode
             return gpsNewFrameNMEA(c);
         case GPS_UBLOX:         // UBX binary
             return gpsNewFrameUBLOX(c);

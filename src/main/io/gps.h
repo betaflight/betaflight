@@ -5,19 +5,30 @@
 
 typedef enum {
     GPS_NMEA = 0,
-    GPS_UBLOX,
-    GPS_MTK_NMEA,
-    GPS_PROVIDER_MAX = GPS_MTK_NMEA,
+    GPS_UBLOX
 } gpsProvider_e;
+
+#define GPS_PROVIDER_MAX GPS_UBLOX
+
+typedef enum {
+    SBAS_AUTO = 0,
+    SBAS_EGNOS,
+    SBAS_WAAS,
+    SBAS_MSAS,
+    SBAS_GAGAN
+} sbasMode_e;
+
+#define SBAS_MODE_MAX SBAS_GAGAN
 
 typedef enum {
     GPS_BAUDRATE_115200 = 0,
     GPS_BAUDRATE_57600,
     GPS_BAUDRATE_38400,
     GPS_BAUDRATE_19200,
-    GPS_BAUDRATE_9600,
-    GPS_BAUDRATE_MAX = GPS_BAUDRATE_9600
+    GPS_BAUDRATE_9600
 } gpsBaudRate_e;
+
+#define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
 // Serial GPS only variables
 // navigation mode
@@ -36,6 +47,11 @@ typedef struct gpsProfile_s {
     uint16_t nav_speed_max;                 // cm/sec
     uint16_t ap_mode;                       // Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks, creating a deadspan for GPS
 } gpsProfile_t;
+
+typedef struct gpsConfig_s {
+    gpsProvider_e provider;
+    sbasMode_e sbasMode;
+} gpsConfig_t;
 
 typedef enum {
     GPS_PASSTHROUGH_ENABLED = 1,

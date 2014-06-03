@@ -235,7 +235,8 @@ static void resetConf(void)
     masterConfig.servo_pwm_rate = 50;
 
     // gps/nav stuff
-    masterConfig.gps_provider = GPS_NMEA;
+    masterConfig.gpsConfig.provider = GPS_NMEA;
+    masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
 
     resetSerialConfig(&masterConfig.serialConfig);
 

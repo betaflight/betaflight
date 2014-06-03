@@ -173,6 +173,9 @@ const clivalue_t valueTable[] = {
     { "serial_port_2_scenario", VAR_UINT8, &masterConfig.serialConfig.serial_port_2_scenario, 0, SERIAL_PORT_SCENARIO_MAX },
     { "serial_port_3_scenario", VAR_UINT8, &masterConfig.serialConfig.serial_port_3_scenario, 0, SERIAL_PORT_SCENARIO_MAX },
     { "serial_port_4_scenario", VAR_UINT8, &masterConfig.serialConfig.serial_port_4_scenario, 0, SERIAL_PORT_SCENARIO_MAX },
+#if (SERIAL_PORT_COUNT > 4)
+    { "serial_port_5_scenario", VAR_UINT8, &masterConfig.serialConfig.serial_port_5_scenario, 0, SERIAL_PORT_SCENARIO_MAX },
+#endif
 
     { "reboot_character", VAR_UINT8, &masterConfig.serialConfig.reboot_character, 48, 126 },
     { "msp_baudrate", VAR_UINT32, &masterConfig.serialConfig.msp_baudrate, 1200, 115200 },
@@ -180,7 +183,8 @@ const clivalue_t valueTable[] = {
     { "gps_baudrate", VAR_UINT32, &masterConfig.serialConfig.gps_baudrate, 0, 115200 },
     { "gps_passthrough_baudrate", VAR_UINT32, &masterConfig.serialConfig.gps_passthrough_baudrate, 1200, 115200 },
 
-    { "gps_provider", VAR_UINT8, &masterConfig.gps_provider, 0, GPS_PROVIDER_MAX },
+    { "gps_provider", VAR_UINT8, &masterConfig.gpsConfig.provider, 0, GPS_PROVIDER_MAX },
+    { "gps_sbas_mode", VAR_UINT8, &masterConfig.gpsConfig.sbasMode, 0, SBAS_MODE_MAX },
 
     { "serialrx_provider", VAR_UINT8, &masterConfig.rxConfig.serialrx_provider, 0, SERIALRX_PROVIDER_MAX },
 

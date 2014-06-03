@@ -46,8 +46,7 @@ typedef struct master_t {
     airplaneConfig_t airplaneConfig;
     int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
 
-    // gps-related stuff
-    gpsProvider_e gps_provider;
+    gpsConfig_t gpsConfig;
 
     serialConfig_t serialConfig;
 

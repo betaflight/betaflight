@@ -62,7 +62,7 @@ failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 void pwmInit(drv_pwm_config_t *init);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
-void gpsInit(serialConfig_t *serialConfig, uint8_t initialGpsProvider, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
+void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
 
@@ -183,7 +183,7 @@ void init(void)
     if (feature(FEATURE_GPS)) {
         gpsInit(
             &masterConfig.serialConfig,
-            masterConfig.gps_provider,
+            &masterConfig.gpsConfig,
             &currentProfile.gpsProfile,
             &currentProfile.pidProfile
         );
