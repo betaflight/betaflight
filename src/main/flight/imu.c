@@ -61,6 +61,7 @@ int32_t errorAltitudeI = 0;
 int32_t vario = 0;                      // variometer in cm/s
 
 float throttleAngleScale;
+float fc_acc;
 
 int32_t BaroPID = 0;
 
@@ -101,6 +102,11 @@ void imuInit()
 void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
     throttleAngleScale = (1800.0f / M_PI) * (900.0f / throttle_correction_angle);
+}
+
+void calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
+{
+    fc_acc = 0.5f / (M_PI * accz_lpf_cutoff); // calculate RC time constant used in the accZ lpf
 }
 
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfiguration)
@@ -206,9 +212,6 @@ int32_t applyDeadband(int32_t value, int32_t deadband)
     }
     return value;
 }
-
-#define F_CUT_ACCZ 10.0f // 10Hz should still be fast enough
-static const float fc_acc = 0.5f / (M_PI * F_CUT_ACCZ);
 
 // rotate acc into Earth frame and calculate acceleration in it
 void acc_calc(uint32_t deltaT)

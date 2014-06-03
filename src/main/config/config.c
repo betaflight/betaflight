@@ -85,7 +85,7 @@ static uint32_t flashWriteAddress = (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * 
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 73;
+static const uint8_t EEPROM_CONF_VERSION = 74;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -305,6 +305,7 @@ static void resetConf(void)
 
     currentProfile.mag_declination = 0;
     currentProfile.acc_lpf_factor = 4;
+    currentProfile.accz_lpf_cutoff = 5.0f;
     currentProfile.accDeadband.xy = 40;
     currentProfile.accDeadband.z = 40;
 
@@ -425,6 +426,7 @@ void activateConfig(void)
     configureImu(&imuRuntimeConfig, &currentProfile.pidProfile, &currentProfile.barometerConfig, &currentProfile.accDeadband);
 
     calculateThrottleAngleScale(currentProfile.throttle_correction_angle);
+    calculateAccZLowPassFilterRCTimeConstant(currentProfile.accz_lpf_cutoff);
 
 #ifdef BARO
     useBarometerConfig(&currentProfile.barometerConfig);

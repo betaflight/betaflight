@@ -296,6 +296,7 @@ const clivalue_t valueTable[] = {
     { "acc_lpf_factor", VAR_UINT8, &currentProfile.acc_lpf_factor, 0, 250 },
     { "accxy_deadband", VAR_UINT8, &currentProfile.accDeadband.xy, 0, 100 },
     { "accz_deadband", VAR_UINT8, &currentProfile.accDeadband.z, 0, 100 },
+    { "accz_lpf_cutoff", VAR_FLOAT, &currentProfile.accz_lpf_cutoff, 1, 20 },
     { "acc_unarmedcal", VAR_UINT8, &currentProfile.acc_unarmedcal, 0, 1 },
     { "acc_trim_pitch", VAR_INT16, &currentProfile.accelerometerTrims.values.pitch, -300, 300 },
     { "acc_trim_roll", VAR_INT16, &currentProfile.accelerometerTrims.values.roll, -300, 300 },
