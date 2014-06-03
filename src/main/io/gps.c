@@ -105,17 +105,54 @@ static const uint8_t ubloxInit[] = {
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x03, 0x01, 0x0F, 0x49,           // set STATUS MSG rate
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x06, 0x01, 0x12, 0x4F,           // set SOL MSG rate
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x12, 0x01, 0x1E, 0x67,           // set VELNED MSG rate
-    0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xE5, // set SBAS to auto-detect
     0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00, 0xDE, 0x6A,             // set rate to 5Hz
 };
+
+// UBlox 6 Protocol documentation - GPS.G6-SW-10018-F
+// SBAS Configuration Settings Desciption, Page 4/210
+// 31.21 CFG-SBAS (0x06 0x16), Page 142/210
+// A.10 SBAS Configuration (UBX-CFG-SBAS), Page 198/210 - GPS.G6-SW-10018-F
+
+typedef enum {
+    SBAS_AUTO = 0,
+    SBAS_EGNOS,
+    SBAS_WAAS,
+    SBAS_MSAS,
+    SBAS_GAGAN
+} sbasMode_e;
+
+#define UBLOX_SBAS_MESSAGE_LENGTH 16
+typedef struct ubloxSbas_s {
+    sbasMode_e mode;
+    uint8_t message[UBLOX_SBAS_MESSAGE_LENGTH];
+} ubloxSbas_t;
+
+static const ubloxSbas_t ubloxSbas[] = {
+    { SBAS_AUTO,  { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xE5}},
+    { SBAS_EGNOS, { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x51, 0x08, 0x00, 0x00, 0x8A, 0x41}},
+    { SBAS_WAAS,  { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x04, 0xE0, 0x04, 0x00, 0x19, 0x9D}},
+    { SBAS_MSAS,  { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x00, 0x02, 0x02, 0x00, 0x35, 0xEF}},
+    { SBAS_GAGAN, { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x80, 0x01, 0x00, 0x00, 0xB2, 0xE8}}
+};
+
 
 enum {
     GPS_UNKNOWN,
     GPS_INITIALIZING,
-    GPS_INITDONE,
-    GPS_RECEIVINGDATA,
-    GPS_LOSTCOMMS,
+    GPS_CHANGE_BAUD,
+    GPS_CONFIGURE,
+    GPS_RECEIVING_DATA,
+    GPS_LOST_COMMUNICATION,
 };
+
+typedef enum {
+    GPS_MESSAGE_STATE_IDLE = 0,
+    GPS_MESSAGE_STATE_INIT,
+    GPS_MESSAGE_STATE_SBAS,
+    GPS_MESSAGE_STATE_MAX = GPS_MESSAGE_STATE_SBAS
+} gpsMessageState_e;
+
+#define GPS_MESSAGE_STATE_ENTRY_COUNT (GPS_MESSAGE_STATE_MAX + 1)
 
 typedef struct gpsData_t {
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
@@ -124,9 +161,9 @@ typedef struct gpsData_t {
     uint32_t lastMessage;           // last time valid GPS data was received (millis)
     uint32_t lastLastMessage;       // last-last valid GPS message. Used to calculate delta.
 
-    uint32_t state_position;           // incremental variable for loops
-    uint32_t state_ts;                    // timestamp for last state_position increment
-
+    uint32_t state_position;        // incremental variable for loops
+    uint32_t state_ts;              // timestamp for last state_position increment
+    gpsMessageState_e messageState;
 } gpsData_t;
 
 static gpsData_t gpsData;
@@ -142,6 +179,7 @@ static void gpsSetState(uint8_t state)
     gpsData.state = state;
     gpsData.state_position = 0;
     gpsData.state_ts = millis();
+    gpsData.messageState = GPS_MESSAGE_STATE_IDLE;
 }
 
 void gpsUseProfile(gpsProfile_t *gpsProfileToUse)
@@ -190,53 +228,93 @@ void gpsInit(serialConfig_t *initialSerialConfig, uint8_t initialGpsProvider, gp
     gpsSetState(GPS_INITIALIZING);
 }
 
+void gpsInitNmea(void)
+{
+    switch(gpsData.state) {
+        case GPS_INITIALIZING:
+        case GPS_CHANGE_BAUD:
+            serialSetBaudRate(gpsPort, gpsInitData[gpsData.baudrateIndex].baudrate);
+            gpsSetState(GPS_RECEIVING_DATA);
+            break;
+    }
+}
+
+void gpsInitUblox(void)
+{
+    uint32_t now;
+    // UBX will run at mcfg.gps_baudrate, it shouldn't be "autodetected". So here we force it to that rate
+
+    // Wait until GPS transmit buffer is empty
+    if (!isSerialTransmitBufferEmpty(gpsPort))
+        return;
+
+
+    switch (gpsData.state) {
+        case GPS_INITIALIZING:
+            now = millis();
+            if (now - gpsData.state_ts < GPS_BAUDRATE_CHATE_DELAY)
+                return;
+
+            if (gpsData.state_position < GPS_INIT_ENTRIES) {
+                // try different speed to INIT
+                serialSetBaudRate(gpsPort, gpsInitData[gpsData.state_position].baudrate);
+                // but print our FIXED init string for the baudrate we want to be at
+                serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
+
+                gpsData.state_position++;
+                gpsData.state_ts = now;
+            } else {
+                // we're now (hopefully) at the correct rate, next state will switch to it
+                gpsSetState(GPS_CHANGE_BAUD);
+            }
+            break;
+        case GPS_CHANGE_BAUD:
+            serialSetBaudRate(gpsPort, gpsInitData[gpsData.baudrateIndex].baudrate);
+            gpsSetState(GPS_CONFIGURE);
+            break;
+        case GPS_CONFIGURE:
+            if (gpsData.messageState == GPS_MESSAGE_STATE_IDLE) {
+                gpsData.messageState++;
+            }
+
+            if (gpsData.messageState == GPS_MESSAGE_STATE_INIT) {
+
+                if (gpsData.state_position < sizeof(ubloxInit)) {
+                    serialWrite(gpsPort, ubloxInit[gpsData.state_position]);
+                    gpsData.state_position++;
+                } else {
+                    gpsData.state_position = 0;
+                    gpsData.messageState++;
+                }
+            }
+
+            if (gpsData.messageState == GPS_MESSAGE_STATE_SBAS) {
+                uint8_t sbasIndex = SBAS_AUTO; // TODO allow configuration
+                if (gpsData.state_position < UBLOX_SBAS_MESSAGE_LENGTH) {
+                    serialWrite(gpsPort, ubloxSbas[sbasIndex].message[gpsData.state_position]);
+                    gpsData.state_position++;
+                } else {
+                    gpsData.messageState++;
+                }
+            }
+
+            if (gpsData.messageState >= GPS_MESSAGE_STATE_ENTRY_COUNT) {
+                gpsSetState(GPS_RECEIVING_DATA);
+                // ublox should be init'd, time to try receiving
+            }
+            break;
+    }
+}
+
 void gpsInitHardware(void)
 {
     switch (gpsProvider) {
         case GPS_NMEA:
-            // nothing to do, just set baud rate and try receiving some stuff and see if it parses
-            serialSetBaudRate(gpsPort, gpsInitData[gpsData.baudrateIndex].baudrate);
-            gpsSetState(GPS_RECEIVINGDATA);
+            gpsInitNmea();
             break;
 
         case GPS_UBLOX:
-            // UBX will run at mcfg.gps_baudrate, it shouldn't be "autodetected". So here we force it to that rate
-
-            // Wait until GPS transmit buffer is empty
-            if (!isSerialTransmitBufferEmpty(gpsPort))
-                break;
-
-            if (gpsData.state == GPS_INITIALIZING) {
-                uint32_t m = millis();
-                if (m - gpsData.state_ts < GPS_BAUDRATE_CHATE_DELAY)
-                    return;
-
-                if (gpsData.state_position < GPS_INIT_ENTRIES) {
-                    // try different speed to INIT
-                    serialSetBaudRate(gpsPort, gpsInitData[gpsData.state_position].baudrate);
-                    // but print our FIXED init string for the baudrate we want to be at
-                    serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
-
-                    gpsData.state_position++;
-                    gpsData.state_ts = m;
-                } else {
-                    // we're now (hopefully) at the correct rate, next state will switch to it
-                    gpsSetState(GPS_INITDONE);
-                }
-            } else {
-                // GPS_INITDONE, set our real baud rate and push some ublox config strings
-                if (gpsData.state_position == 0)
-                    serialSetBaudRate(gpsPort, gpsInitData[gpsData.baudrateIndex].baudrate);
-
-                if (gpsData.state_position < sizeof(ubloxInit)) {
-                    serialWrite(gpsPort, ubloxInit[gpsData.state_position]); // send ubx init binary
-
-                    gpsData.state_position++;
-                } else {
-                    // ublox should be init'd, time to try receiving some junk
-                    gpsSetState(GPS_RECEIVINGDATA);
-                }
-            }
+            gpsInitUblox();
             break;
     }
 
@@ -257,11 +335,12 @@ void gpsThread(void)
             break;
 
         case GPS_INITIALIZING:
-        case GPS_INITDONE:
+        case GPS_CHANGE_BAUD:
+        case GPS_CONFIGURE:
             gpsInitHardware();
             break;
 
-        case GPS_LOSTCOMMS:
+        case GPS_LOST_COMMUNICATION:
             gpsData.errors++;
             // try another rate
             gpsData.baudrateIndex++;
@@ -273,12 +352,12 @@ void gpsThread(void)
             gpsSetState(GPS_INITIALIZING);
             break;
 
-        case GPS_RECEIVINGDATA:
+        case GPS_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
             if (millis() - gpsData.lastMessage > GPS_TIMEOUT) {
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
-                gpsSetState(GPS_LOSTCOMMS);
+                gpsSetState(GPS_LOST_COMMUNICATION);
             }
             break;
     }
@@ -612,7 +691,7 @@ void gpsUsePIDs(pidProfile_t *pidProfile)
 
 gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
 {
-    if (gpsData.state != GPS_RECEIVINGDATA)
+    if (gpsData.state != GPS_RECEIVING_DATA)
         return GPS_PASSTHROUGH_NO_GPS;
 
     serialPort_t *gpsPassthroughPort = findOpenSerialPort(FUNCTION_GPS_PASSTHROUGH);
