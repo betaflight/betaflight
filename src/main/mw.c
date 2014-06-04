@@ -353,7 +353,7 @@ void loop(void)
     static int16_t initialThrottleHold;
 #endif
     static uint32_t loopTime;
-    uint16_t auxState = 0;
+    uint32_t auxState = 0;
 
     updateRx();
 
@@ -393,6 +393,7 @@ void loop(void)
         // Check AUX switches
 
         // auxState is a bitmask, 3 bits per channel. aux1 is first.
+        // lower 16 bits contain aux 1 to 4, upper 16 bits contain aux 5 to 8
         //
         // the three bits are as follows:
         // bit 1 is SET when the stick is less than 1300
@@ -400,8 +401,14 @@ void loop(void)
         // bit 3 is SET when the stick is above 1700
         // if the value is 1300 or 1700 NONE of the three bits are set.
 
-        for (i = 0; i < 4; i++)
-            auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) | (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) | (rcData[AUX1 + i] > 1700) << (3 * i + 2);
+        for (i = 0; i < 4; i++) {
+            auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) |
+                    (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) |
+                    (rcData[AUX1 + i] > 1700) << (3 * i + 2);
+            auxState |= ((rcData[AUX5 + i] < 1300) << (3 * i) |
+                    (1300 < rcData[AUX5 + i] && rcData[AUX5 + i] < 1700) << (3 * i + 1) |
+                    (rcData[AUX5 + i] > 1700) << (3 * i + 2)) << 16;
+        }
         for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
             rcOptions[i] = (auxState & currentProfile.activate[i]) > 0;
 

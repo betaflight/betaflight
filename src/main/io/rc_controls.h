@@ -25,7 +25,11 @@ typedef enum rc_alias {
     AUX1,
     AUX2,
     AUX3,
-    AUX4
+    AUX4,
+    AUX5,
+    AUX6,
+    AUX7,
+    AUX8
 } rc_alias_e;
 
 typedef enum {
@@ -59,6 +63,6 @@ extern int16_t rcCommand[4];
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, uint16_t *activate, bool retarded_arm);
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, uint32_t *activate, bool retarded_arm);
 
 

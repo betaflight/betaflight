@@ -72,6 +72,7 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define CAP_DYNBALANCE              ((uint32_t)1 << 2)
 #define CAP_FLAPS                   ((uint32_t)1 << 3)
 #define CAP_CHANNEL_FORWARDING      ((uint32_t)1 << 4)
+#define CAP_ACTIVATE_AUX1_TO_AUX8   ((uint32_t)1 << 5)
 
 #define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
@@ -129,6 +130,8 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 
 #define INBUF_SIZE 64
+
+#define ACTIVATE_MASK 0xFFF // see
 
 struct box_t {
     const uint8_t boxIndex;         // this is from boxnames enum
@@ -448,7 +451,9 @@ static void evaluateCommand(void)
         break;
     case MSP_SET_BOX:
         for (i = 0; i < numberBoxItems; i++)
-            currentProfile.activate[availableBoxes[i]] = read16();
+            currentProfile.activate[availableBoxes[i]] = read16() & ACTIVATE_MASK;
+        for (i = 0; i < numberBoxItems; i++)
+            currentProfile.activate[availableBoxes[i]] |= (read16() & ACTIVATE_MASK) << 16;
         headSerialReply(0);
         break;
     case MSP_SET_RC_TUNING:
@@ -501,7 +506,7 @@ static void evaluateCommand(void)
         serialize8(MW_VERSION);
         serialize8(masterConfig.mixerConfiguration); // type of multicopter
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
-        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
+        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING | CAP_ACTIVATE_AUX1_TO_AUX8); // "capability"
         break;
     case MSP_STATUS:
         headSerialReply(11);
@@ -682,9 +687,11 @@ static void evaluateCommand(void)
         serializeNames(pidnames);
         break;
     case MSP_BOX:
-        headSerialReply(2 * numberBoxItems);
+        headSerialReply(4 * numberBoxItems);
         for (i = 0; i < numberBoxItems; i++)
-            serialize16(currentProfile.activate[availableBoxes[i]]);
+            serialize16(currentProfile.activate[availableBoxes[i]] & ACTIVATE_MASK);
+        for (i = 0; i < numberBoxItems; i++)
+            serialize16((currentProfile.activate[availableBoxes[i]] >> 16) & ACTIVATE_MASK);
         break;
     case MSP_BOXNAMES:
         // headSerialReply(sizeof(boxnames) - 1);
