@@ -68,14 +68,15 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     } else {
         return (serialPort_t *)s;
     }
+    s->txDMAEmpty = true;
+
     // common serial initialisation code should move to serialPort::init()
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
-    // callback for IRQ-based RX ONLY
+    // callback works for IRQ-based RX ONLY
     s->port.callback = callback;
     s->port.mode = mode;
     s->port.baudRate = baudRate;
-
 
 #if 1 // FIXME use inversion on STM32F3
     s->port.inversion = SERIAL_NOT_INVERTED;
@@ -189,7 +190,6 @@ uint8_t uartTotalBytesWaiting(serialPort_t *instance)
     }
 }
 
-// BUGBUG TODO TODO FIXME - What is the bug?
 bool isUartTransmitBufferEmpty(serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t *)instance;
