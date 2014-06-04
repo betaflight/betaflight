@@ -23,19 +23,14 @@
 //#define USE_USART2_RX_DMA
 //#define USE_USART2_TX_DMA
 
-// USART1_TX    PA9
-// USART1_RX    PA10
-// USART2_TX    PD5
-// USART2_RX    PD6
-
-#define UART1_TX_PIN GPIO_Pin_9
-#define UART1_RX_PIN GPIO_Pin_10
+#define UART1_TX_PIN GPIO_Pin_9  // PA9
+#define UART1_RX_PIN GPIO_Pin_10 // PA10
 #define UART1_GPIO GPIOA
 #define UART1_TX_PINSOURCE GPIO_PinSource9
 #define UART1_RX_PINSOURCE GPIO_PinSource10
 
-#define UART2_TX_PIN        GPIO_Pin_5
-#define UART2_RX_PIN        GPIO_Pin_6
+#define UART2_TX_PIN        GPIO_Pin_5 // PD5
+#define UART2_RX_PIN        GPIO_Pin_6 // PD6
 #define UART2_GPIO          GPIOD
 #define UART2_TX_PINSOURCE  GPIO_PinSource5
 #define UART2_RX_PINSOURCE  GPIO_PinSource6
