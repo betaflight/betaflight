@@ -52,6 +52,11 @@ void adcInit(drv_adc_config_t *init)
     adcConfig[ADC_EXTERNAL1].enabled = true;
     adcChannelCount++;
 
+    RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_ADC12, ENABLE);
+
+    // FIXME ADC driver assumes all the GPIO was already placed in 'AIN' mode
+
     DMA_DeInit(DMA1_Channel1);
 
     DMA_StructInit(&DMA_InitStructure);

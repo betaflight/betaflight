@@ -266,6 +266,8 @@ void i2cInit(I2C_TypeDef *I2C)
     I2C_InitTypeDef i2c;
     gpio_config_t gpio;
 
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2 | RCC_APB2Periph_GPIOB, ENABLE);
+
     // Init pins
     gpio.pin = Pin_10 | Pin_11;
     gpio.speed = Speed_2MHz;

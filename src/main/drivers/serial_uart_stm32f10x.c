@@ -50,6 +50,8 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     s->txDMAChannel = DMA1_Channel4;
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+
     // USART1_TX    PA9
     // USART1_RX    PA10
     gpio.speed = Speed_2MHz;
@@ -97,6 +99,8 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+
     // USART2_TX    PA2
     // USART2_RX    PA3
     gpio.speed = Speed_2MHz;

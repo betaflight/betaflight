@@ -68,8 +68,11 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;
     }
 
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
 
-    // ADC driver assumes all the GPIO was already placed in 'AIN' mode
+    // FIXME ADC driver assumes all the GPIO was already placed in 'AIN' mode
+
     DMA_DeInit(DMA1_Channel1);
     dma.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;
     dma.DMA_MemoryBaseAddr = (uint32_t)adcValues;

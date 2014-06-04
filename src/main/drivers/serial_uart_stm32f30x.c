@@ -73,6 +73,9 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -137,6 +140,11 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 #endif
 
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+
+#if defined(USE_USART2_TX_DMA) || defined(USE_USART2_RX_DMA)
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+#endif
 
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
