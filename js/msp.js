@@ -286,10 +286,22 @@ MSP.process_data = function(code, message_buffer, message_length) {
             // dump previous data (if there was any)
             AUX_CONFIG_values = new Array();
 
-            // fill in current data
-            for (var i = 0; i < data.byteLength; i += 2) { // + 2 because uint16_t = 2 bytes
-                AUX_CONFIG_values.push(data.getUint16(i, 1));
+            var boxItems = data.byteLength / 2; // AUX 1-4, 2 bytes per boxItem
+            if (bit_check(CONFIG.capability, 5)) {
+                boxItems = data.byteLength / 4; // AUX 1-8, 2 bytes per boxItem for AUX 1-4 followed by 2 bytes per boxItem for AUX 5-8
             }
+            // fill in current data
+            var offset = 0;
+            
+            for (var i = 0; offset < data.byteLength && i < boxItems; offset += 2, i ++) { // + 2 because uint16_t = 2 bytes
+                AUX_CONFIG_values.push(data.getUint16(offset, 1));
+            }
+            if (bit_check(CONFIG.capability, 5)) {
+                for (var i = 0; offset < data.byteLength && i < boxItems; offset += 2, i++) { // + 2 because uint16_t = 2 bytes
+                    AUX_CONFIG_values[i] |= (data.getUint16(offset, 1) << 16);
+                }
+            }
+           
             break;
         case MSP_codes.MSP_MISC: // 22 bytes
             MISC.PowerTrigger1 = data.getInt16(0, 1);

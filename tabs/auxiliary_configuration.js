@@ -60,7 +60,23 @@ function tab_initialize_auxiliary_configuration() {
                     box_check(AUX_CONFIG_values[i], 9) +
                     box_check(AUX_CONFIG_values[i], 10) +
                     box_check(AUX_CONFIG_values[i], 11) +
-                '</tr>'
+
+                    box_check(AUX_CONFIG_values[i], 16) +
+                    box_check(AUX_CONFIG_values[i], 17) +
+                    box_check(AUX_CONFIG_values[i], 18) +
+
+                    box_check(AUX_CONFIG_values[i], 19) +
+                    box_check(AUX_CONFIG_values[i], 20) +
+                    box_check(AUX_CONFIG_values[i], 21) +
+
+                    box_check(AUX_CONFIG_values[i], 22) +
+                    box_check(AUX_CONFIG_values[i], 23) +
+                    box_check(AUX_CONFIG_values[i], 24) +
+
+                    box_check(AUX_CONFIG_values[i], 25) +
+                    box_check(AUX_CONFIG_values[i], 26) +
+                    box_check(AUX_CONFIG_values[i], 27) +
+                    '</tr>'
             );
         }
 
@@ -69,18 +85,29 @@ function tab_initialize_auxiliary_configuration() {
             // catch the input changes
             var main_needle = 0;
             var needle = 0;
+
+            var boxCountFor4AuxChannels = 3 * 4;
+            var boxCountPerLine = boxCountFor4AuxChannels;
+            if (bit_check(CONFIG.capability, 5)) {
+                boxCountPerLine = boxCountFor4AuxChannels * 2;
+            }
+
             $('.boxes input').each(function() {
+                var bitIndex = needle;
+                if (bit_check(CONFIG.capability, 5) && needle >= boxCountFor4AuxChannels) {
+                    bitIndex += 4; // 0-11 bits for aux 1-4, 16-27 for aux 5-8
+                }
+                
                 if ($(this).is(':checked')) {
-                    AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], needle);
+                    AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], bitIndex);
                 } else {
-                    AUX_CONFIG_values[main_needle] = bit_clear(AUX_CONFIG_values[main_needle], needle);
+                    AUX_CONFIG_values[main_needle] = bit_clear(AUX_CONFIG_values[main_needle], bitIndex);
                 }
 
                 needle++;
 
-                if (needle >= 12) { // 4 aux * 3 checkboxes = 12 bits per line
+                if (needle >= boxCountPerLine) {
                     main_needle++;
-
                     needle = 0;
                 }
             });
@@ -90,10 +117,16 @@ function tab_initialize_auxiliary_configuration() {
 
             var needle = 0;
             for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
-                AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
+                AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i] & 0xFFF);
+                AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i] & 0xFFF);
             }
-
+            if (bit_check(CONFIG.capability, 5)) {
+                for (var i = 0; i < AUX_CONFIG_values.length; i++) {
+                    AUX_val_buffer_out[needle++] = lowByte((AUX_CONFIG_values[i] >> 16) & 0xFFF);
+                    AUX_val_buffer_out[needle++] = highByte((AUX_CONFIG_values[i] >> 16) & 0xFFF);
+                }
+            }
+            
             MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
@@ -128,10 +161,16 @@ function tab_initialize_auxiliary_configuration() {
                 }
             }
 
-            box_highlight(RC.channels[4], 2);  // aux 1
-            box_highlight(RC.channels[5], 5);  // aux 2
-            box_highlight(RC.channels[6], 8);  // aux 3
-            box_highlight(RC.channels[7], 11); // aux 4
+            box_highlight(RC.channels[4],  2);  // aux 1
+            box_highlight(RC.channels[5],  5);  // aux 2
+            box_highlight(RC.channels[6],  8);  // aux 3
+            box_highlight(RC.channels[7],  11); // aux 4
+            if (RC.active_channels > 8) {
+                box_highlight(RC.channels[8],  14); // aux 5
+                box_highlight(RC.channels[9],  17); // aux 6
+                box_highlight(RC.channels[10], 20); // aux 7
+                box_highlight(RC.channels[11], 23); // aux 8
+            }
         }
 
         // enable data pulling
