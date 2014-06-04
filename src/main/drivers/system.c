@@ -65,8 +65,6 @@ void systemInit(bool overclock)
     SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
 #endif
 
-    gpio_config_t gpio;
-
 #ifdef STM32F303xC
     SetSysClock();
 #endif
@@ -79,97 +77,21 @@ void systemInit(bool overclock)
     // Configure NVIC preempt/priority groups
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
-    // Turn on clocks for stuff we use
 #ifdef STM32F10X_MD
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_TIM1, ENABLE);
-#endif
-#ifdef STM32F303xC
-
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4, ENABLE);
-
-    RCC_APB2PeriphClockCmd(
-        RCC_APB2Periph_TIM1 |
-        RCC_APB2Periph_TIM8 |
-#ifdef CHEBUZZF3
-        RCC_APB2Periph_TIM15 |
-#endif
-        RCC_APB2Periph_TIM16 |
-        RCC_APB2Periph_TIM17,
-        ENABLE
-    );
-    RCC_AHBPeriphClockCmd(
-        RCC_AHBPeriph_GPIOA |
-        RCC_AHBPeriph_GPIOB |
-        RCC_AHBPeriph_GPIOC |
-        RCC_AHBPeriph_GPIOD |
-#ifdef CHEBUZZF3
-        RCC_AHBPeriph_GPIOF |
-#endif
-        RCC_AHBPeriph_GPIOE,
-        ENABLE
-    );
+    // Turn on clocks for stuff we use
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 #endif
 
     RCC_ClearFlag();
 
-    // Make all GPIO in by default to save power and reduce noise
-    gpio.mode = Mode_AIN;
-    gpio.pin = Pin_All;
-#ifdef STM32F303xC
-    gpio.pin = Pin_All & ~(Pin_13|Pin_14|Pin_15);  // Leave JTAG pins alone
-    gpioInit(GPIOA, &gpio);
-    gpio.pin = Pin_All;
-#else
-    gpioInit(GPIOA, &gpio);
-#endif
-    gpioInit(GPIOB, &gpio);
-    gpioInit(GPIOC, &gpio);
-#ifdef STM32F303xC
-    gpioInit(GPIOD, &gpio);
-    gpioInit(GPIOE, &gpio);
-#ifdef CHEBUZZF3
-    gpioInit(GPIOF, &gpio);
-#endif
-#endif
+
+    enableGPIOPowerUsageAndNoiseReductions();
+
 
 #ifdef STM32F10X_MD
     // Turn off JTAG port 'cause we're using the GPIO for leds
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
-#endif
-
-#ifdef STM32F303xC
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource8,  GPIO_AF_6);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_1);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_1);
-    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6,  GPIO_AF_4);
-    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7,  GPIO_AF_4);
-    GPIO_PinAFConfig(GPIOC, GPIO_PinSource8,  GPIO_AF_4);
-#ifdef CHEBUZZF3
-    GPIO_PinAFConfig(GPIOF, GPIO_PinSource9,  GPIO_AF_3);
-    GPIO_PinAFConfig(GPIOF, GPIO_PinSource10, GPIO_AF_3);
-#endif
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource15, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource1,  GPIO_AF_1);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource2,  GPIO_AF_1);
-
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource0, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_2);
-#endif
-
-#ifdef NAZE32PRO
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9,  GPIO_AF_6);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_6);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource4,  GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource6,  GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource7,  GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_2);
 #endif
 
     ledInit();

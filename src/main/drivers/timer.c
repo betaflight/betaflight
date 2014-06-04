@@ -75,6 +75,8 @@ static const TIM_TypeDef *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4
 };
 
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
 #endif
 
 #if (defined(STM32F303xC) || defined(STM32F3DISCOVERY)) && !(defined(CHEBUZZF3) || defined(NAZE32PRO))
@@ -100,6 +102,11 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 static const TIM_TypeDef *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4, TIM8, TIM16, TIM17
 };
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD)
+
 #endif
 
 #if defined(CHEBUZZF3)
@@ -132,6 +139,11 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 static const TIM_TypeDef *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4, TIM8, TIM15, TIM16, TIM17
 };
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOF)
+
 #endif
 
 #ifdef NAZE32PRO
@@ -158,6 +170,11 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 static const TIM_TypeDef *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4, TIM15, TIM16, TIM17
 };
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+
 #endif
 
 
@@ -363,4 +380,51 @@ void TIM1_TRG_COM_TIM17_IRQHandler(void)
 void timerInit(void)
 {
     memset(timerConfig, 0, sizeof (timerConfig));
+
+#ifdef TIMER_APB1_PERIPHERALS
+    RCC_APB1PeriphClockCmd(TIMER_APB1_PERIPHERALS, ENABLE);
+#endif
+
+#ifdef TIMER_APB2_PERIPHERALS
+    RCC_APB2PeriphClockCmd(TIMER_APB2_PERIPHERALS, ENABLE);
+#endif
+
+#ifdef TIMER_AHB_PERIPHERALS
+    RCC_AHBPeriphClockCmd(TIMER_AHB_PERIPHERALS, ENABLE);
+#endif
+
+
+#ifdef STM32F303xC
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource8,  GPIO_AF_6);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_1);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_1);
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6,  GPIO_AF_4);
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7,  GPIO_AF_4);
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource8,  GPIO_AF_4);
+#ifdef CHEBUZZF3
+    GPIO_PinAFConfig(GPIOF, GPIO_PinSource9,  GPIO_AF_3);
+    GPIO_PinAFConfig(GPIOF, GPIO_PinSource10, GPIO_AF_3);
+#endif
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource15, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource1,  GPIO_AF_1);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource2,  GPIO_AF_1);
+
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource0, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_2);
+#endif
+
+#ifdef NAZE32PRO
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9,  GPIO_AF_6);
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_6);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource4,  GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource6,  GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource7,  GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_2);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_2);
+#endif
+
 }

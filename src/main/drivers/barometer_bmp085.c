@@ -106,6 +106,8 @@ bool bmp085Detect(baro_t *baro)
     if (bmp085InitDone)
         return true;
 
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+
     // PC13, PC14 (Barometer XCLR reset output, EOC input)
     gpio.pin = Pin_13;
     gpio.speed = Speed_2MHz;

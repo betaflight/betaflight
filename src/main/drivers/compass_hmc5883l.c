@@ -115,12 +115,14 @@ void hmc5883lInit(void)
     bool bret = true;           // Error indicator
 
     if (hse_value == 8000000) {
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
         // PB12 - MAG_DRDY output on rev4 hardware
         gpio.pin = Pin_12;
         gpio.speed = Speed_2MHz;
         gpio.mode = Mode_IN_FLOATING;
         gpioInit(GPIOB, &gpio);
     } else if (hse_value == 12000000) {
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
         // PC14 - MAG_DRDY output on rev5 hardware
         gpio.pin = Pin_14;
         gpioInit(GPIOC, &gpio);

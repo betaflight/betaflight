@@ -17,6 +17,7 @@
 #ifdef STM32F10X_MD
 
 #include "stm32f10x_conf.h"
+#include "stm32f10x_gpio.h"
 #include "core_cm3.h"
 
 // Chip Unique ID on F103

@@ -376,13 +376,21 @@ void validateAndFixConfig(void)
         featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
     }
 
+    if (feature(FEATURE_RX_PPM)) {
+        if (feature(FEATURE_RX_PARALLEL_PWM)) {
+            featureClear(FEATURE_RX_PARALLEL_PWM);
+        }
+    }
+
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
+#if defined(NAZE) || defined(OLIMEXINO)
         if (feature(FEATURE_RSSI_ADC)) {
             featureClear(FEATURE_RSSI_ADC);
         }
         if (feature(FEATURE_CURRENT_METER)) {
             featureClear(FEATURE_CURRENT_METER);
         }
+#endif
     }
 
     if (feature(FEATURE_RX_MSP)) {
@@ -403,12 +411,6 @@ void validateAndFixConfig(void)
         }
         if (feature(FEATURE_RX_PPM)) {
             featureClear(FEATURE_RX_PPM);
-        }
-    }
-
-    if (feature(FEATURE_RX_PPM)) {
-        if (feature(FEATURE_RX_PARALLEL_PWM)) {
-            featureClear(FEATURE_RX_PARALLEL_PWM);
         }
     }
 

@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 #include "system.h"
@@ -14,7 +15,6 @@
 
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
-uint8_t adcChannelCount;
 
 void adcInit(drv_adc_config_t *init)
 {
@@ -23,6 +23,14 @@ void adcInit(drv_adc_config_t *init)
     GPIO_InitTypeDef GPIO_InitStructure;
 
     uint8_t i;
+    uint8_t adcChannelCount = 0;
+
+    memset(&adcConfig, 0, sizeof(adcConfig));
+
+    GPIO_StructInit(&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_0 | GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AN;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL ;
 
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_6;
     adcConfig[ADC_BATTERY].dmaIndex = adcChannelCount;
@@ -31,14 +39,19 @@ void adcInit(drv_adc_config_t *init)
     adcChannelCount++;
 
     if (init->enableCurrentMeter) {
+        GPIO_InitStructure.GPIO_Pin |= GPIO_Pin_1;
+
         adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_7;
         adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
         adcConfig[ADC_CURRENT].enabled = true;
         adcChannelCount++;
+
     }
 
     if (init->enableRSSI) {
+        GPIO_InitStructure.GPIO_Pin |= GPIO_Pin_2;
+
 		adcConfig[ADC_RSSI].adcChannel = ADC_Channel_8;
 		adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
 		adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
@@ -54,8 +67,6 @@ void adcInit(drv_adc_config_t *init)
 
     RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_ADC12, ENABLE);
-
-    // FIXME ADC driver assumes all the GPIO was already placed in 'AIN' mode
 
     DMA_DeInit(DMA1_Channel1);
 
@@ -75,11 +86,6 @@ void adcInit(drv_adc_config_t *init)
     DMA_Init(DMA1_Channel1, &DMA_InitStructure);
 
     DMA_Cmd(DMA1_Channel1, ENABLE);
-
-    GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AN;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL ;
 
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 

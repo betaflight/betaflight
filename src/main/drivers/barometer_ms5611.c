@@ -50,6 +50,8 @@ bool ms5611Detect(baro_t *baro)
     int i;
 
     if (hse_value != 12000000) {
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+
         // PC13 (BMP085's XCLR reset input, which we use to disable it). Only needed when running at 8MHz
         gpio_config_t gpio;
         gpio.pin = Pin_13;

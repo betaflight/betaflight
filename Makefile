@@ -242,8 +242,6 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   vcp/usb_pwr.c
 
 NAZE32PRO_SRC	 = $(STM32F30x_COMMON_SRC) \
-		   drivers/accgyro_mpu6050.c \
-		   drivers/compass_hmc5883l.c \
 		   $(COMMON_SRC)
 
 STM32F3DISCOVERY_COMMON_SRC	 = $(STM32F30x_COMMON_SRC) \
