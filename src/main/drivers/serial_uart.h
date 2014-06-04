@@ -27,7 +27,6 @@
 typedef struct {
     serialPort_t port;
 
-    // FIXME these are uart specific and do not belong in here
     DMA_Channel_TypeDef *rxDMAChannel;
     DMA_Channel_TypeDef *txDMAChannel;
 
