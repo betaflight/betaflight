@@ -1,3 +1,4 @@
+// TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
 function tab_initialize_auxiliary_configuration() {
     ga_tracker.sendAppView('Auxiliary Configuration');
     GUI.active_tab = 'auxiliary_configuration';
@@ -5,7 +6,11 @@ function tab_initialize_auxiliary_configuration() {
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
 
     function get_box_data() {
-        MSP.send_message(MSP_codes.MSP_BOX, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_rc_data);
+    }
+
+    function get_rc_data() {
+        MSP.send_message(MSP_codes.MSP_RC, false, false, load_html);
     }
 
     function load_html() {
@@ -13,55 +18,39 @@ function tab_initialize_auxiliary_configuration() {
     }
 
     function process_html() {
+        // generate heads according to RC count
+        var table_head = $('table.boxes .heads');
+        var main_head = $('table.boxes .main');
+        for (var i = 0; i < (RC.active_channels - 4); i++) {
+            table_head.append('<th colspan="3">AUX ' + (i + 1) + '</th>');
+
+            // 3 columns per aux channel (this might be requested to change to 6 in the future, so watch out)
+            main_head.append('\
+                <th i18n="auxiliaryLow"></th>\
+                <th i18n="auxiliaryMed"></th>\
+                <th i18n="auxiliaryHigh"></th>\
+            ');
+        }
+
         // translate to user-selected language
         localize();
 
-        function box_check(num, pos) {
-            if (bit_check(num, pos)) { // 1
-                return '<td><input type="checkbox" checked="checked" /></td>';
-            } else { // 0
-                return '<td><input type="checkbox" /></td>';
-            }
-        }
-
-        // val = channel value
-        // aux_num = position of corresponding aux channel in the html table
-        function box_highlight(val, aux_num) {
-            var tr = $('table.boxes .switches');
-            var pos = 0; // < 1300
-
-            if (val > 1300 && val < 1700) {
-                pos = 1;
-            } else if (val > 1700) {
-                pos = 2;
-            }
-
-            $('td:nth-child(' + aux_num + '), td:nth-child(' + (aux_num + 1) + '), td:nth-child(' + (aux_num + 2) + ')', tr).css('background-color', 'transparent');
-            $('td:nth-child(' + (aux_num + pos) + ')', tr).css('background-color', 'orange');
-        }
-
         // generate table from the supplied AUX names and AUX data
         for (var i = 0; i < AUX_CONFIG.length; i++) {
-            $('.boxes > tbody:last').append(
-                '<tr class="switches">' +
-                    '<td class="name">' + AUX_CONFIG[i] + '</td>' +
-                    box_check(AUX_CONFIG_values[i], 0) +
-                    box_check(AUX_CONFIG_values[i], 1) +
-                    box_check(AUX_CONFIG_values[i], 2) +
+            var line = '<tr class="switches">';
+            line += '<td class="name">' + AUX_CONFIG[i] + '</td>';
 
-                    box_check(AUX_CONFIG_values[i], 3) +
-                    box_check(AUX_CONFIG_values[i], 4) +
-                    box_check(AUX_CONFIG_values[i], 5) +
+            for (var j = 0; j < (RC.active_channels - 4) * 3; j++) {
+                if (bit_check(AUX_CONFIG_values[i], j)) {
+                    line += '<td><input type="checkbox" checked="checked" /></td>';
+                } else {
+                    line += '<td><input type="checkbox" /></td>';
+                }
+            }
 
-                    box_check(AUX_CONFIG_values[i], 6) +
-                    box_check(AUX_CONFIG_values[i], 7) +
-                    box_check(AUX_CONFIG_values[i], 8) +
+            line += '</tr>';
 
-                    box_check(AUX_CONFIG_values[i], 9) +
-                    box_check(AUX_CONFIG_values[i], 10) +
-                    box_check(AUX_CONFIG_values[i], 11) +
-                '</tr>'
-            );
+            $('.boxes > tbody:last').append(line);
         }
 
         // UI Hooks
@@ -78,7 +67,7 @@ function tab_initialize_auxiliary_configuration() {
 
                 needle++;
 
-                if (needle >= 12) { // 4 aux * 3 checkboxes = 12 bits per line
+                if (needle >= (RC.active_channels - 4) * 3) { // 1 aux * 3 checkboxes, 4 AUX = 12 bits per line
                     main_needle++;
 
                     needle = 0;
@@ -110,6 +99,25 @@ function tab_initialize_auxiliary_configuration() {
             }
         });
 
+        // val = channel value
+        // aux_num = position of corresponding aux channel in the html table
+        var switches_e = $('table.boxes .switches');
+        function box_highlight(aux_num, val) {
+            var pos = 0; // < 1300
+
+            if (val > 1300 && val < 1700) {
+                pos = 1;
+            } else if (val > 1700) {
+                pos = 2;
+            }
+
+            var highlight_column = (aux_num * 3) + pos + 2; // +2 to skip name column and index starting on 1 instead of 0
+            var erase_columns = (aux_num * 3) + 2;
+
+            $('td:nth-child(n+' + erase_columns + '):nth-child(-n+' + (erase_columns + 2) + ')', switches_e).css('background-color', 'transparent');
+            $('td:nth-child(' + highlight_column + ')', switches_e).css('background-color', 'orange');
+        }
+
         // data pulling functions used inside interval timer
         function get_rc_data() {
             MSP.send_message(MSP_codes.MSP_RC, false, false, update_ui);
@@ -126,16 +134,19 @@ function tab_initialize_auxiliary_configuration() {
                         $('td.name').eq(i).addClass('off');
                     }
                 }
+
             }
 
-            box_highlight(RC.channels[4], 2);  // aux 1
-            box_highlight(RC.channels[5], 5);  // aux 2
-            box_highlight(RC.channels[6], 8);  // aux 3
-            box_highlight(RC.channels[7], 11); // aux 4
+            for (var i = 0; i < (RC.active_channels - 4); i++) {
+                box_highlight(i, RC.channels[i + 4]);
+            }
         }
 
+        // update ui instantly on first load
+        update_ui();
+
         // enable data pulling
-        GUI.interval_add('aux_data_pull', get_rc_data, 50, true);
+        GUI.interval_add('aux_data_pull', get_rc_data, 50);
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {
