@@ -888,13 +888,20 @@ static void cliSet(char *cmdline)
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equal, set var
+        char *lastNonSpaceCharacter = eqptr;
+        while (*(lastNonSpaceCharacter - 1) == ' ') {
+            lastNonSpaceCharacter--;
+        }
+        uint8_t variableNameLength = lastNonSpaceCharacter - cmdline;
+
         eqptr++;
         len--;
         value = atoi(eqptr);
         valuef = fastA2F(eqptr);
         for (i = 0; i < VALUE_COUNT; i++) {
             val = &valueTable[i];
-            if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0) {
+            // ensure exact match when setting to prevent setting variables with shorter names
+            if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
                 if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
                     int_float_value_t tmp;
                     if (valueTable[i].type == VAR_FLOAT)
