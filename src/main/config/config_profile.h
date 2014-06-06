@@ -34,8 +34,7 @@ typedef struct profile_s {
 
     // sensor-related stuff
     uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
-    uint8_t accz_deadband;                  // set the acc deadband for z-Axis, this ignores small accelerations
-    uint8_t accxy_deadband;                 // set the acc deadband for xy-Axis
+    accDeadband_t accDeadband;
 
     barometerConfig_t barometerConfig;
 

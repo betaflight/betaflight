@@ -107,12 +107,14 @@ void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 imuRuntimeConfig_t *imuRuntimeConfig;
 pidProfile_t *pidProfile;
 barometerConfig_t *barometerConfig;
+accDeadband_t *accDeadband;
 
-void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig)
+void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, accDeadband_t *initialAccDeadband)
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
     pidProfile = initialPidProfile;
     barometerConfig = intialBarometerConfig;
+    accDeadband = initialAccDeadband;
 }
 
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims)
@@ -255,9 +257,9 @@ void acc_calc(uint32_t deltaT)
     accz_smooth = accz_smooth + (deltaT / (fc_acc + deltaT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
     // apply Deadband to reduce integration drift and vibration influence
-    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), currentProfile.accxy_deadband);
-    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), currentProfile.accxy_deadband);
-    accSum[Z] += applyDeadband(lrintf(accz_smooth), currentProfile.accz_deadband);
+    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), accDeadband->xy);
+    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), accDeadband->xy);
+    accSum[Z] += applyDeadband(lrintf(accz_smooth), accDeadband->z);
 
     // sum up Values for later integration to get velocity and distance
     accTimeSum += deltaT;

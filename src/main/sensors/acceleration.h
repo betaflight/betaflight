@@ -34,6 +34,11 @@ extern sensor_align_e accAlign;
 extern acc_t acc;
 extern uint16_t acc_1G;
 
+typedef struct accDeadband_s {
+    uint8_t xy;                 // set the acc deadband for xy-Axis
+    uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
+} accDeadband_t;
+
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);

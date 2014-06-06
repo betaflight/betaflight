@@ -27,7 +27,7 @@ typedef struct imuRuntimeConfig_s {
     float gyro_cmpfm_factor;
 } imuRuntimeConfig_t;
 
-void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig);
+void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, accDeadband_t *initialAccDeadband);
 
 int getEstimatedAltitude(void);
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims);

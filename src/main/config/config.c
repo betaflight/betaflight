@@ -280,8 +280,8 @@ static void resetConf(void)
 
     currentProfile.mag_declination = 0;
     currentProfile.acc_lpf_factor = 4;
-    currentProfile.accz_deadband = 40;
-    currentProfile.accxy_deadband = 40;
+    currentProfile.accDeadband.xy = 40;
+    currentProfile.accDeadband.z = 40;
 
     resetBarometerConfig(&currentProfile.barometerConfig);
 
@@ -389,7 +389,7 @@ void activateConfig(void)
     imuRuntimeConfig.gyro_cmpfm_factor = masterConfig.gyro_cmpfm_factor;
     imuRuntimeConfig.acc_lpf_factor = currentProfile.acc_lpf_factor;
 
-    configureImu(&imuRuntimeConfig, &currentProfile.pidProfile, &currentProfile.barometerConfig);
+    configureImu(&imuRuntimeConfig, &currentProfile.pidProfile, &currentProfile.barometerConfig, &currentProfile.accDeadband);
 
     calculateThrottleAngleScale(currentProfile.throttle_correction_angle);
 
