@@ -100,7 +100,7 @@ extern uint8_t GPS_svinfo_svid[16];        // Satellite ID
 extern uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
 extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
 
-extern int8_t nav_mode;                    // Navigation mode
+extern navigationMode_e nav_mode;          // Navigation mode
 
 void gpsThread(void);
 gpsEnablePassthroughResult_e gpsEnablePassthrough(void);

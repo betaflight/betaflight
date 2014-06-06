@@ -74,7 +74,7 @@ uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
 
 static int16_t nav[2];
 static int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
-int8_t nav_mode = NAV_MODE_NONE;    // Navigation mode
+navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 
 
 static gpsConfig_t *gpsConfig;
@@ -646,6 +646,8 @@ static void gpsNewData(uint16_t c)
                         }
                     }
                     break;
+                default:
+                    ;
                 }
             }                   //end of gps calcs
         }
