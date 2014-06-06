@@ -824,12 +824,12 @@ void loop(void)
         loopTime = currentTime + mcfg.looptime;
 
         computeIMU();
-        annexCode();
         // Measure loop rate just afer reading the sensors
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
-
+        // non IMU critical, temeperatur, serialcom
+         annexCode();
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {
             if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
