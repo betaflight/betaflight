@@ -23,3 +23,5 @@ extern int16_t throttleAngleCorrection;
 
 int getEstimatedAltitude(void);
 void computeIMU(void);
+void calculateThrottleAngleScale(uint16_t throttle_correction_angle);
+int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);

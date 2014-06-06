@@ -382,6 +382,8 @@ void activateConfig(void)
             &currentProfile.gimbalConfig
             );
 
+    calculateThrottleAngleScale(currentProfile.throttle_correction_angle);
+
 #ifdef BARO
     useBarometerConfig(&currentProfile.barometerConfig);
 #endif

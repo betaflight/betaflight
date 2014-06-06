@@ -73,7 +73,6 @@ int32_t errorAltitudeI = 0;
 
 int32_t vario = 0;                      // variometer in cm/s
 
-int16_t throttleAngleCorrection = 0;    // correction of throttle in lateral wind,
 float throttleAngleScale;
 
 int32_t BaroPID = 0;
@@ -92,18 +91,16 @@ float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
 static void getEstimatedAttitude(void);
 
-void imuInit(void)
+void imuInit()
 {
     smallAngle = lrintf(acc_1G * cosf(RAD * 25.0f));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
-    throttleAngleScale = (1800.0f / M_PI) * (900.0f / currentProfile.throttle_correction_angle);
     gyroScaleRad = gyro.scale * (M_PI / 180.0f) * 0.000001f;
+}
 
-#ifdef MAG
-    // if mag sensor is enabled, use it
-    if (sensors(SENSOR_MAG))
-        compassInit();
-#endif
+void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
+{
+    throttleAngleScale = (1800.0f / M_PI) * (900.0f / throttle_correction_angle);
 }
 
 void computeIMU(void)
@@ -353,21 +350,20 @@ static void getEstimatedAttitude(void)
         heading = calculateHeading(&EstN);
 
     acc_calc(deltaT); // rotate acc vector into earth frame
+}
 
-    if (currentProfile.throttle_correction_value) {
+// correction of throttle in lateral wind,
+int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
+{
+    float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);
 
-        float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);
-
-        if (cosZ <= 0.015f) { // we are inverted, vertical or with a small angle < 0.86 deg
-            throttleAngleCorrection = 0;
-        } else {
-            int angle = lrintf(acosf(cosZ) * throttleAngleScale);
-            if (angle > 900)
-                angle = 900;
-            throttleAngleCorrection = lrintf(currentProfile.throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f))) ;
-        }
-
+    if (cosZ <= 0.015f) { // we are inverted, vertical or with a small angle < 0.86 deg
+        return 0;
     }
+    int angle = lrintf(acosf(cosZ) * throttleAngleScale);
+    if (angle > 900)
+        angle = 900;
+    return lrintf(throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f)));
 }
 
 #ifdef BARO

@@ -606,7 +606,7 @@ void loop(void)
 #endif
 
         if (currentProfile.throttle_correction_value && (f.ANGLE_MODE || f.HORIZON_MODE)) {
-            rcCommand[THROTTLE] += throttleAngleCorrection;
+            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile.throttle_correction_value);
         }
 
         if (sensors(SENSOR_GPS)) {

@@ -159,7 +159,12 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-    imuInit(); // Mag is initialized inside imuInit
+    imuInit();
+#ifdef MAG
+    if (sensors(SENSOR_MAG))
+        compassInit();
+#endif
+
     mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer);
 
     timerInit();
