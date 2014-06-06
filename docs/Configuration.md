@@ -134,6 +134,8 @@ save
 
 ## Migrating from baseflight
 
+First ensure your main flight battery is disconnected or your props are off!
+
 Before flashing with cleanflight, dump your configs for each profile via the CLI and save to a text file.
 
 profile 0
@@ -150,6 +152,10 @@ up the new configuration options and choose appropriate values for the settings.
 
 Once you've done this for the first profile, save the config.  Then verify your config is OK, e.g. features serial ports, etc.
 When you've verified the first profile is OK repeat for the other profiles.
+
+It's also advisable to take screenshots of your AUX settings from baseflight configurator and then after re-applying the settings
+verify your aux config is correct - some changes were made and some aux settings are not backwards compatible.
+
 
 ## CLI command differences from baseflight
 
