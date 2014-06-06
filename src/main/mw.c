@@ -536,11 +536,13 @@ void loop(void)
         loopTime = currentTime + masterConfig.looptime;
 
         computeIMU(&currentProfile.accelerometerTrims, masterConfig.mixerConfiguration);
-        annexCode();
-        // Measure loop rate just afer reading the sensors
+
+        // Measure loop rate just after reading the sensors
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
+
+        annexCode();
 
         updateAutotuneState();
 
