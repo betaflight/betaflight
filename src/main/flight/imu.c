@@ -106,11 +106,13 @@ void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 
 imuRuntimeConfig_t *imuRuntimeConfig;
 pidProfile_t *pidProfile;
+barometerConfig_t *barometerConfig;
 
-void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile)
+void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig)
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
     pidProfile = initialPidProfile;
+    barometerConfig = intialBarometerConfig;
 }
 
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims)
@@ -455,7 +457,7 @@ int getEstimatedAltitude(void)
 
     // Integrator - Altitude in cm
     accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                         // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * currentProfile.barometerConfig.baro_cf_alt + (float)BaroAlt * (1.0f - currentProfile.barometerConfig.baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
+    accAlt = accAlt * barometerConfig->baro_cf_alt + (float)BaroAlt * (1.0f - barometerConfig->baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
     EstAlt = accAlt;
     vel += vel_acc;
 
@@ -475,7 +477,7 @@ int getEstimatedAltitude(void)
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
-    vel = vel * currentProfile.barometerConfig.baro_cf_vel + baroVel * (1 - currentProfile.barometerConfig.baro_cf_vel);
+    vel = vel * barometerConfig->baro_cf_vel + baroVel * (1 - barometerConfig->baro_cf_vel);
     vel_tmp = lrintf(vel);
 
     // set vario
