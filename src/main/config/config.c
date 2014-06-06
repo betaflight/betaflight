@@ -389,7 +389,7 @@ void activateConfig(void)
     imuRuntimeConfig.gyro_cmpfm_factor = masterConfig.gyro_cmpfm_factor;
     imuRuntimeConfig.acc_lpf_factor = currentProfile.acc_lpf_factor;
 
-    configureImu(&imuRuntimeConfig);
+    configureImu(&imuRuntimeConfig, &currentProfile.pidProfile);
 
     calculateThrottleAngleScale(currentProfile.throttle_correction_angle);
 

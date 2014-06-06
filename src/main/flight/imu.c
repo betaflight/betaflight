@@ -105,10 +105,12 @@ void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 }
 
 imuRuntimeConfig_t *imuRuntimeConfig;
+pidProfile_t *pidProfile;
 
-void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig)
+void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile)
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
+    pidProfile = initialPidProfile;
 }
 
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims)
@@ -399,21 +401,21 @@ int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
 
     error = constrain(AltHold - EstAlt, -500, 500);
     error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
-    setVel = constrain((currentProfile.pidProfile.P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+    setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
 
     // Velocity PID-Controller
 
     // P
     error = setVel - vel_tmp;
-    baroPID = constrain((currentProfile.pidProfile.P8[PIDVEL] * error / 32), -300, +300);
+    baroPID = constrain((pidProfile->P8[PIDVEL] * error / 32), -300, +300);
 
     // I
-    errorAltitudeI += (currentProfile.pidProfile.I8[PIDVEL] * error) / 8;
+    errorAltitudeI += (pidProfile->I8[PIDVEL] * error) / 8;
     errorAltitudeI = constrain(errorAltitudeI, -(1024 * 200), (1024 * 200));
     baroPID += errorAltitudeI / 1024;     // I in range +/-200
 
     // D
-    baroPID -= constrain(currentProfile.pidProfile.D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
+    baroPID -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
 
     return baroPID;
 }
