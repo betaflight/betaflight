@@ -57,6 +57,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#include "flight/imu.h"
 
 int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
@@ -103,14 +104,21 @@ void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
     throttleAngleScale = (1800.0f / M_PI) * (900.0f / throttle_correction_angle);
 }
 
-void computeIMU(void)
+imuRuntimeConfig_t *imuRuntimeConfig;
+
+void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig)
+{
+    imuRuntimeConfig = initialImuRuntimeConfig;
+}
+
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims)
 {
     uint32_t axis;
     static int16_t gyroYawSmooth = 0;
 
     gyroGetADC();
     if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings(&currentProfile.accelerometerTrims);
+        updateAccelerationReadings(accelerometerTrims);
         getEstimatedAttitude();
     } else {
         accADC[X] = 0;
@@ -299,8 +307,8 @@ static void getEstimatedAttitude(void)
     // Initialization
     for (axis = 0; axis < 3; axis++) {
         deltaGyroAngle.raw[axis] = gyroADC[axis] * scale;
-        if (currentProfile.acc_lpf_factor > 0) {
-            accLPF[axis] = accLPF[axis] * (1.0f - (1.0f / currentProfile.acc_lpf_factor)) + accADC[axis] * (1.0f / currentProfile.acc_lpf_factor);
+        if (imuRuntimeConfig->acc_lpf_factor > 0) {
+            accLPF[axis] = accLPF[axis] * (1.0f - (1.0f / imuRuntimeConfig->acc_lpf_factor)) + accADC[axis] * (1.0f / imuRuntimeConfig->acc_lpf_factor);
             accSmooth[axis] = accLPF[axis];
         } else {
             accSmooth[axis] = accADC[axis];
@@ -321,19 +329,19 @@ static void getEstimatedAttitude(void)
     // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
     // To do that, we just skip filter, as EstV already rotated by Gyro
 
-    float invGyroComplimentaryFilterFactor = (1.0f / ((float)masterConfig.gyro_cmpf_factor + 1.0f));
+    float invGyroComplimentaryFilterFactor = (1.0f / (imuRuntimeConfig->gyro_cmpf_factor + 1.0f));
 
     if (72 < (uint16_t)accMag && (uint16_t)accMag < 133) {
         for (axis = 0; axis < 3; axis++)
-            EstG.A[axis] = (EstG.A[axis] * (float)masterConfig.gyro_cmpf_factor + accSmooth[axis]) * invGyroComplimentaryFilterFactor;
+            EstG.A[axis] = (EstG.A[axis] * imuRuntimeConfig->gyro_cmpf_factor + accSmooth[axis]) * invGyroComplimentaryFilterFactor;
     }
 
     // FIXME what does the _M_ mean?
-    float invGyroComplimentaryFilter_M_Factor = (1.0f / ((float)masterConfig.gyro_cmpfm_factor + 1.0f));
+    float invGyroComplimentaryFilter_M_Factor = (1.0f / (imuRuntimeConfig->gyro_cmpfm_factor + 1.0f));
 
     if (sensors(SENSOR_MAG)) {
         for (axis = 0; axis < 3; axis++)
-            EstM.A[axis] = (EstM.A[axis] * (float)masterConfig.gyro_cmpfm_factor + magADC[axis]) * invGyroComplimentaryFilter_M_Factor;
+            EstM.A[axis] = (EstM.A[axis] * imuRuntimeConfig->gyro_cmpfm_factor + magADC[axis]) * invGyroComplimentaryFilter_M_Factor;
     }
 
     f.SMALL_ANGLE = (EstG.A[Z] > smallAngle);

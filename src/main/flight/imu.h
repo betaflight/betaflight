@@ -21,7 +21,15 @@ extern int32_t errorAltitudeI;
 extern int32_t BaroPID;
 extern int16_t throttleAngleCorrection;
 
+typedef struct imuRuntimeConfig_s {
+    uint8_t acc_lpf_factor;
+    float gyro_cmpf_factor;
+    float gyro_cmpfm_factor;
+} imuRuntimeConfig_t;
+
+void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig);
+
 int getEstimatedAltitude(void);
-void computeIMU(void);
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims);
 void calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);

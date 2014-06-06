@@ -48,6 +48,7 @@
 #include "io/rc_curves.h"
 #include "io/gps.h"
 #include "flight/failsafe.h"
+#include "flight/imu.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -362,6 +363,8 @@ static bool isEEPROMContentValid(void)
 
 void activateConfig(void)
 {
+    static imuRuntimeConfig_t imuRuntimeConfig;
+
     generatePitchCurve(&currentProfile.controlRateConfig);
     generateThrottleCurve(&currentProfile.controlRateConfig, &masterConfig.escAndServoConfig);
 
@@ -381,6 +384,12 @@ void activateConfig(void)
             &masterConfig.rxConfig,
             &currentProfile.gimbalConfig
             );
+
+    imuRuntimeConfig.gyro_cmpf_factor = masterConfig.gyro_cmpf_factor;
+    imuRuntimeConfig.gyro_cmpfm_factor = masterConfig.gyro_cmpfm_factor;
+    imuRuntimeConfig.acc_lpf_factor = currentProfile.acc_lpf_factor;
+
+    configureImu(&imuRuntimeConfig);
 
     calculateThrottleAngleScale(currentProfile.throttle_correction_angle);
 
