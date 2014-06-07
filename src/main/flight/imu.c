@@ -245,7 +245,7 @@ void acc_calc(uint32_t deltaT)
 
     rotateV(&accel_ned.V, &rpy);
 
-    if (currentProfile.acc_unarmedcal == 1) {
+    if (imuRuntimeConfig->acc_unarmedcal == 1) {
         if (!f.ARMED) {
             accZoffset -= accZoffset / 64;
             accZoffset += accel_ned.V.Z;

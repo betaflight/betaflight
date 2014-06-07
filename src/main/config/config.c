@@ -388,6 +388,8 @@ void activateConfig(void)
     imuRuntimeConfig.gyro_cmpf_factor = masterConfig.gyro_cmpf_factor;
     imuRuntimeConfig.gyro_cmpfm_factor = masterConfig.gyro_cmpfm_factor;
     imuRuntimeConfig.acc_lpf_factor = currentProfile.acc_lpf_factor;
+    imuRuntimeConfig.acc_unarmedcal = currentProfile.acc_unarmedcal;;
+
 
     configureImu(&imuRuntimeConfig, &currentProfile.pidProfile, &currentProfile.barometerConfig, &currentProfile.accDeadband);
 

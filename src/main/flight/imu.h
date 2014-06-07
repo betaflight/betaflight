@@ -23,6 +23,7 @@ extern int16_t throttleAngleCorrection;
 
 typedef struct imuRuntimeConfig_s {
     uint8_t acc_lpf_factor;
+    uint8_t acc_unarmedcal;
     float gyro_cmpf_factor;
     float gyro_cmpfm_factor;
 } imuRuntimeConfig_t;
