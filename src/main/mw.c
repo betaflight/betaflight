@@ -348,19 +348,18 @@ void updateInflightCalibrationState(void)
     }
 }
 
-static const uint8_t colors[][3] =
+static const uint8_t stripOrientation[][3] =
 {
+    {0,   255, 0},
+    {0,   255, 0},
+    {0,   255, 0},
+    {0,   255, 0},
+    {0,   255, 0},
+
     {255, 0,   0},
-    {0,   255, 0},
-    {0,   0,   255},
-    {255, 0,   255},
-
-    {255, 255, 255},
-    {255, 255, 255},
-
-    {255, 255, 0},
-    {0,   0,   255},
-    {0,   255, 0},
+    {255, 0,   0},
+    {255, 0,   0},
+    {255, 0,   0},
     {255, 0,   0}
 };
 
@@ -395,13 +394,13 @@ static const uint8_t stripRed[][3] =
 
 uint32_t lastStripUpdateAt = 0;
 
-#define LED_STRIP_50HZ ((1000 * 1000) / 50)
+#define LED_STRIP_10HZ ((1000 * 1000) / 10)
 
 void updateLedStrip(void)
 {
     uint32_t now = micros();
 
-    if (now - lastStripUpdateAt < LED_STRIP_50HZ) {
+    if (now - lastStripUpdateAt < LED_STRIP_10HZ) {
         return;
     }
 
@@ -411,13 +410,15 @@ void updateLedStrip(void)
 
     if (stripState == 0) {
         if (f.ARMED) {
-            ws2812SetStripColors(stripRed, 10);
+            ws2812SetStripColors(stripOrientation, sizeof(stripOrientation) / sizeof(stripOrientation[0]));
         } else {
-            ws2812SetStripColors(colors, 10);
+            ws2812SetStripColors(stripRed, sizeof(stripRed) / sizeof(stripRed[0]));
         }
         stripState = 1;
     } else {
-        ws2812SetStripColors(stripOff, 10);
+        if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
+            ws2812SetStripColors(stripOff, sizeof(stripOff) / sizeof(stripOff[0]));
+        }
         stripState = 0;
     }
 }
