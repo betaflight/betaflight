@@ -41,22 +41,23 @@ uint16_t batteryAdcToVoltage(uint16_t src)
     return (((src) * 3.3f) / 0xFFF) * batteryConfig->vbatscale;
 }
 
+#define BATTERY_SAMPLE_COUNT 8
 
 void updateBatteryVoltage(void)
 {
-    static uint16_t vbatSamples[8];
+    static uint16_t vbatSamples[BATTERY_SAMPLE_COUNT];
     static uint8_t currentSampleIndex = 0;
     uint8_t index;
     uint16_t vbatSampleTotal = 0;
 
     // store the battery voltage with some other recent battery voltage readings
-    vbatSamples[(currentSampleIndex++) % 8] = adcGetChannel(ADC_BATTERY);
+    vbatSamples[(currentSampleIndex++) % BATTERY_SAMPLE_COUNT] = adcGetChannel(ADC_BATTERY);
 
     // calculate vbat based on the average of recent readings
-    for (index = 0; index < 8; index++) {
+    for (index = 0; index < BATTERY_SAMPLE_COUNT; index++) {
         vbatSampleTotal += vbatSamples[index];
     }
-    vbat = batteryAdcToVoltage(vbatSampleTotal / 8);
+    vbat = batteryAdcToVoltage(vbatSampleTotal / BATTERY_SAMPLE_COUNT);
 }
 
 bool shouldSoundBatteryAlarm(void)
@@ -69,21 +70,18 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
     batteryConfig = initialBatteryConfig;
 
     uint32_t i;
-    uint32_t voltage = 0;
 
-    // average up some voltage readings
-    for (i = 0; i < 32; i++) {
-        voltage += adcGetChannel(ADC_BATTERY);
-        delay(10);
+    for (i = 0; i < BATTERY_SAMPLE_COUNT; i++) {
+        updateBatteryVoltage();
+        delay((32 / BATTERY_SAMPLE_COUNT) * 10);
     }
 
-    voltage = batteryAdcToVoltage((uint16_t)(voltage / 32));
-
-    // autodetect cell count, going from 2S..8S
+    // autodetect cell count, going from 1S..8S
     for (i = 1; i < 8; i++) {
-        if (voltage < i * batteryConfig->vbatmaxcellvoltage)
+        if (vbat < i * batteryConfig->vbatmaxcellvoltage)
             break;
     }
+
     batteryCellCount = i;
     batteryWarningVoltage = i * batteryConfig->vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
 }
