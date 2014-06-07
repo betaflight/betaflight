@@ -25,12 +25,6 @@
 
 #include "bus_i2c.h"
 
-// FIXME there should be no dependencies on the main source code
-//#include "io/escservo.h"
-//#include "io/rc_controls.h"
-//#include "sensors/sensors.h"
-//#include "flight/flight.h"
-
 #include "light_ledring.h"
 
 // Driver for DFRobot I2C Led Ring
