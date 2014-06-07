@@ -76,7 +76,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 #define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG)) // use the last flash pages for storagemaster_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 71;
+static const uint8_t EEPROM_CONF_VERSION = 72;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {

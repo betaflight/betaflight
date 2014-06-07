@@ -36,7 +36,6 @@
 #define ACC
 #define MAG
 #define BARO
-#define LEDRING
 #define SONAR
 #define BUZZER
 #define LED0
