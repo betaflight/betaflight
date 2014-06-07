@@ -283,8 +283,7 @@ MSP.process_data = function(code, message_buffer, message_length) {
             }
             break;
         case MSP_codes.MSP_BOX:
-            // dump previous data (if there was any)
-            AUX_CONFIG_values = new Array();
+            AUX_CONFIG_values = []; // empty the array as new data is coming in
 
             // fill in current data
             for (var i = 0; i < data.byteLength; i += 2) { // + 2 because uint16_t = 2 bytes
@@ -345,8 +344,7 @@ MSP.process_data = function(code, message_buffer, message_length) {
             console.log(data);
             break;
         case MSP_codes.MSP_SERVO_CONF:
-            // drop previous data
-            SERVO_CONFIG = [];
+            SERVO_CONFIG = []; // empty the array as new data is coming in
 
             for (var i = 0; i < 56; i += 7) {
                 var arr = {

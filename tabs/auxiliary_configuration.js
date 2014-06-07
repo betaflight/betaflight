@@ -74,13 +74,11 @@ function tab_initialize_auxiliary_configuration() {
                 }
             });
 
-            // send over the data
-            var AUX_val_buffer_out = new Array();
-
-            var needle = 0;
+            // send over data
+            var AUX_val_buffer_out = [];
             for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
-                AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
+                AUX_val_buffer_out.push(lowByte(AUX_CONFIG_values[i]));
+                AUX_val_buffer_out.push(highByte(AUX_CONFIG_values[i]));
             }
 
             MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);

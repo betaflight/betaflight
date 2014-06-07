@@ -38,10 +38,10 @@ var RC_tuning = {
     throttle_EXPO:   0,
 };
 
-var AUX_CONFIG = new Array();
-var AUX_CONFIG_values = new Array();
+var AUX_CONFIG = [];
+var AUX_CONFIG_values = [];
 
-var SERVO_CONFIG = new Array();
+var SERVO_CONFIG = [];
 
 var SENSOR_DATA = {
     gyroscope:     [0, 0, 0],
@@ -70,10 +70,10 @@ var GPS_DATA = {
     update:          0,
 
     // baseflight specific gps stuff
-    chn:     new Array(),
-    svid:    new Array(),
-    quality: new Array(),
-    cno:     new Array()
+    chn:     [],
+    svid:    [],
+    quality: [],
+    cno:     []
 };
 
 var ANALOG = {
