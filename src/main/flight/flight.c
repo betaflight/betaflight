@@ -194,8 +194,9 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             PTermGYRO = rcCommand[axis];
 
             errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
-            if (abs(gyroData[axis]) > (640 * 4))
+            if ((abs(gyroData[axis]) > 640) || (abs(rcCommand[axis]) > 50))
                 errorGyroI[axis] = 0;
+
             ITermGYRO = (errorGyroI[axis] / 125 * pidProfile->I8[axis]) / 64;
         }
         if (f.HORIZON_MODE && (axis == FD_ROLL || axis == FD_PITCH)) {
@@ -239,7 +240,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     for (axis = 0; axis < 3; axis++) {
         // -----Get the desired angle rate depending on flight mode
         if (axis == FD_YAW) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = (((int32_t)(controlRateConfig->yawRate + 27) * rcCommand[2]) >> 5);
+            AngleRateTmp = (((int32_t)(controlRateConfig->yawRate + 27) * rcCommand[YAW]) >> 5);
         } else {
             // calculate error and limit the angle to max configured inclination
             errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int) max_angle_inclination),
