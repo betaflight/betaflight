@@ -28,6 +28,8 @@
 #include "drivers/accgyro.h"
 #include "drivers/light_ledring.h"
 #include "drivers/light_led.h"
+#include "drivers/light_ws2811strip.h"
+
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -346,6 +348,82 @@ void updateInflightCalibrationState(void)
     }
 }
 
+static const uint8_t colors[][3] =
+{
+    {255, 0,   0},
+    {0,   255, 0},
+    {0,   0,   255},
+    {255, 0,   255},
+
+    {255, 255, 255},
+    {255, 255, 255},
+
+    {255, 255, 0},
+    {0,   0,   255},
+    {0,   255, 0},
+    {255, 0,   0}
+};
+
+
+static const uint8_t stripOff[][3] =
+{
+    {0,   0,   0},
+    {0,   0,   0},
+    {0,   0,   0},
+    {0,   0,   0},
+    {0,   0,   0},
+    {0,   0,   0},
+    {0,   0,   0},
+    {0,   0,   0},
+    {0,   0,   0},
+    {0,   0,   0},
+};
+
+static const uint8_t stripRed[][3] =
+{
+    {32,   0,   0},
+    {96,   0,   0},
+    {160,   0,   0},
+    {224,   0,   0},
+    {255,   0,   0},
+    {255,   0,   0},
+    {224,   0,   0},
+    {160,   0,   0},
+    {96,   0,   0},
+    {32,   0,   0},
+};
+
+uint32_t lastStripUpdateAt = 0;
+
+#define LED_STRIP_50HZ ((1000 * 1000) / 50)
+
+void updateLedStrip(void)
+{
+    uint32_t now = micros();
+
+    if (now - lastStripUpdateAt < LED_STRIP_50HZ) {
+        return;
+    }
+
+    lastStripUpdateAt = now;
+
+    static uint8_t stripState = 0;
+
+    if (stripState == 0) {
+        if (f.ARMED) {
+            ws2812SetStripColors(stripRed, 10);
+        } else {
+            ws2812SetStripColors(colors, 10);
+        }
+        stripState = 1;
+    } else {
+        ws2812SetStripColors(stripOff, 10);
+        stripState = 0;
+    }
+}
+
+
+
 void loop(void)
 {
     int i;
@@ -628,5 +706,5 @@ void loop(void)
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
         handleTelemetry();
     }
-
+    updateLedStrip();
 }
