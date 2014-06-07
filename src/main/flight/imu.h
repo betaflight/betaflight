@@ -31,6 +31,6 @@ typedef struct imuRuntimeConfig_s {
 void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, accDeadband_t *initialAccDeadband);
 
 int getEstimatedAltitude(void);
-void computeIMU(rollAndPitchTrims_t *accelerometerTrims);
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfiguration);
 void calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);

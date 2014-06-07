@@ -535,7 +535,7 @@ void loop(void)
     if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
         loopTime = currentTime + masterConfig.looptime;
 
-        computeIMU(&currentProfile.accelerometerTrims);
+        computeIMU(&currentProfile.accelerometerTrims, masterConfig.mixerConfiguration);
         annexCode();
         // Measure loop rate just afer reading the sensors
         currentTime = micros();

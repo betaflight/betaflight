@@ -22,9 +22,6 @@
 
 #define BARO
 
-
-// FIXME this giant list of includes (below) and stubs (bottom) indicates there is too much going on in flight_imu.c and that it needs decoupling and breaking up.
-
 #include "common/axis.h"
 #include "flight/flight.h"
 
@@ -35,27 +32,9 @@
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 
-#include "io/gps.h"
-
-#include "io/gimbal.h"
-#include "flight/mixer.h"
-
-// FIXME remove dependency on config.h
-#include "sensors/boardalignment.h"
-#include "io/battery.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "rx/rx.h"
-#include "drivers/serial.h"
-#include "io/serial.h"
-#include "telemetry/telemetry.h"
-#include "flight/failsafe.h"
 #include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
-
+#include "flight/mixer.h"
 #include "flight/imu.h"
 
 #include "unittest_macros.h"
@@ -104,8 +83,6 @@ TEST(FlightImuTest, IsThrustFacingDownwards)
 // STUBS
 
 uint16_t acc_1G;
-profile_t currentProfile;
-master_t masterConfig;
 int16_t heading;
 flags_t f;
 gyro_t gyro;

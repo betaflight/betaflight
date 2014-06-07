@@ -37,26 +37,9 @@
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 
-#include "io/gps.h"
-
-#include "io/gimbal.h"
-#include "flight/mixer.h"
-
-// FIXME remove dependency on config.h
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
-#include "rx/rx.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "drivers/serial.h"
-#include "io/serial.h"
-#include "telemetry/telemetry.h"
-#include "flight/failsafe.h"
 #include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
+#include "flight/mixer.h"
 #include "flight/imu.h"
 
 int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
@@ -117,7 +100,7 @@ void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *ini
     accDeadband = initialAccDeadband;
 }
 
-void computeIMU(rollAndPitchTrims_t *accelerometerTrims)
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfiguration)
 {
     uint32_t axis;
     static int16_t gyroYawSmooth = 0;
@@ -132,7 +115,7 @@ void computeIMU(rollAndPitchTrims_t *accelerometerTrims)
         accADC[Z] = 0;
     }
 
-    if (masterConfig.mixerConfiguration == MULTITYPE_TRI) {
+    if (mixerConfiguration == MULTITYPE_TRI) {
         gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
         gyroYawSmooth = gyroData[FD_YAW];
         gyroData[FD_ROLL] = gyroADC[FD_ROLL];
