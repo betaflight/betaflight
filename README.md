@@ -1,5 +1,4 @@
-Cleanflight
-===========
+# Cleanflight
 
 Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 
@@ -12,16 +11,46 @@ This fork differs from baseflight in that it attempts to use modern software dev
 
 The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediately raise an issue so it can be fixed, or better yet submit a pull request.
 
-Documentation
-=============
+## Additional Features
+
+Cleanflight also has additional features not found in baseflight.  Since the primary maintainer of baseflight also sells hardware there is no incentive for baseflight to support the target platforms and features that Cleanflight now provides.
+
+For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documenation.
+
+http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
+
+
+## Documentation
 
 There is some documentation here: https://github.com/hydra/cleanflight/tree/master/docs 
-If what you need is not covered then refer to the baseflight documentation.
-If you still can't find what you need then stop by #multiwii on the Freenode IRC network - irc://irc.freenode.net/#multiwii
+
+If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
+
+## IRC Support and Developers Channel
+
+There's a dedicated IRC channel here:
+
+irc://irc.freenode.net/#cleanflight
+
+If you are using windows and don't have an IRC client installed then take a look at HydraIRC - here: http://hydrairc.com/
+
+## Videos
 
 
-Contributing
-============
+There is a dedicated Cleanflight youtube channel which has progress update videos, flight demonstrations, instrutions and other related videos.
+
+https://www.youtube.com/playlist?list=PL6H1fAj_XUNVBEcp8vbMH2DrllZAGWkt8
+
+Please subscribe and '+1' the videos if you find them useful.
+
+## Configuration Tool
+
+To configure Cleanflight you should use Cleanflight-specific the fork of baseflight-configurator, that can be found here:
+
+https://github.com/hydra/cleanflight-configurator
+
+
+## Contributing
 
 Before making any contributions, take a note of the https://github.com/multiwii/baseflight/wiki/CodingStyle
 
