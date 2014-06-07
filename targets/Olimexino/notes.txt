@@ -70,6 +70,26 @@ Top Right
 5 - N/C
 6 - GND
 
+Top Right
+
+3 way power selector header
+
+1 - VIN
+2 - 5V from FTDI
+3 - N/C - Jumper Storage
+
+Middle Left
+
+3 way power selector header
+
+1 - VIN
+2 - 5V from CP2102
+3 - N/C - Jumper Storage
+
+Use either power selector to supply VIN from the serial port adapter sockets, ensure that both power selectors are not enabled at the same time.
+One or both of the power selector jumpers MUST be in the jumper storage position. 
+
+
 Serial IO & Serial Loopback  
 
 Bottom right
