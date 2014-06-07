@@ -36,7 +36,7 @@
 
 #include "flight/flight.h"
 #include "io/gps.h"
-#include "io/battery.h"
+#include "sensors/battery.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/hott.h"

@@ -84,16 +84,16 @@ TEST_INCLUDE_DIRS := $(TEST_DIR) \
 TEST_CFLAGS	 = $(addprefix -I,$(TEST_INCLUDE_DIRS))
 
 
-$(OBJECT_DIR)/io/battery.o : $(USER_DIR)/io/battery.c $(USER_DIR)/io/battery.h $(GTEST_HEADERS)
+$(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/battery.c -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
 
 $(OBJECT_DIR)/battery_unittest.o : $(TEST_DIR)/battery_unittest.cc \
-                     $(USER_DIR)/io/battery.h $(GTEST_HEADERS)
+                     $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/battery_unittest.cc -o $@
 
-battery_unittest : $(OBJECT_DIR)/io/battery.o $(OBJECT_DIR)/battery_unittest.o $(OBJECT_DIR)/gtest_main.a
+battery_unittest : $(OBJECT_DIR)/sensors/battery.o $(OBJECT_DIR)/battery_unittest.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 

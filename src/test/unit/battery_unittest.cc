@@ -17,7 +17,7 @@
 #include <stdint.h>
 
 #include <limits.h>
-#include "io/battery.h"
+#include "sensors/battery.h"
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
