@@ -348,7 +348,6 @@ extern uint16_t cycleTime;
 extern uint16_t calibratingA;
 extern uint16_t calibratingB;
 extern uint16_t calibratingG;
-extern int16_t heading;
 extern int32_t baroPressure;
 extern int32_t baroTemperature;
 extern uint32_t baroPressureSum;
