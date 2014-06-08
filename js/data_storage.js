@@ -51,7 +51,7 @@ var SENSOR_DATA = {
     kinematicsX:   0.0,
     kinematicsY:   0.0,
     kinematicsZ:   0.0,
-    debug:        [0, 0, 0, 0]
+    debug:         [0, 0, 0, 0]
 };
 
 var MOTOR_DATA = new Array(8);
