@@ -484,7 +484,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                     array_out[array_out.length - 1] = checksum; // checksum (last byte in the array_out array)
 
                                     address += bytes_to_write;
-                                    bytes_flashed_total += bytes_to_write
+                                    bytes_flashed_total += bytes_to_write;
 
                                     self.send(array_out, 1, function(reply) {
                                         if (self.verify_response(self.status.ACK, reply)) {
