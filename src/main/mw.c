@@ -378,53 +378,85 @@ static const rgbColor24bpp_t stripReds[] =
     {{ 32,   0,   0}},
 };
 
-uint32_t lastStripUpdateAt = 0;
+uint32_t nextIndicatorFlashAt = 0;
+uint32_t nextBatteryFlashAt = 0;
 
 #define LED_STRIP_10HZ ((1000 * 1000) / 10)
+#define LED_STRIP_5HZ ((1000 * 1000) / 5)
 
 void updateLedStrip(void)
 {
     uint32_t now = micros();
 
-    if (now - lastStripUpdateAt < LED_STRIP_10HZ) {
+    bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
+    bool batteryFlashNow = (int32_t)(now - nextBatteryFlashAt) >= 0L;
+
+    if (!(batteryFlashNow || indicatorFlashNow)) {
         return;
     }
 
-    lastStripUpdateAt = now;
+    static uint8_t indicatorFlashState = 0;
+    static uint8_t batteryFlashState = 0;
 
-    static uint8_t stripState = 0;
+    static const rgbColor24bpp_t *flashColor;
 
-    const rgbColor24bpp_t *flashColor;
+    // LAYER 1
 
-    if (stripState == 0) {
-        flashColor = &orange;
-        if (f.ARMED) {
-            setStripColors(stripOrientation);
-        } else {
-            setStripColors(stripReds);
-        }
-        stripState = 1;
+    if (f.ARMED) {
+        setStripColors(stripOrientation);
     } else {
-        flashColor = &black;
-        if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
-            setStripColor(&black);
-        }
-        stripState = 0;
+        setStripColors(stripReds);
     }
 
-    if (rcCommand[ROLL] < -100) {
+    // LAYER 2
+
+    if (batteryFlashNow) {
+        nextBatteryFlashAt = now + LED_STRIP_10HZ;
+
+        if (batteryFlashState == 0) {
+            batteryFlashState = 1;
+        } else {
+            batteryFlashState = 0;
+        }
+    }
+
+    if (batteryFlashState == 1 && feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
+        setStripColor(&black);
+    }
+
+    // LAYER 3
+
+    if (indicatorFlashNow) {
+
+        uint8_t rollScale = abs(rcCommand[ROLL]) / 50;
+        uint8_t pitchScale = abs(rcCommand[PITCH]) / 50;
+        nextIndicatorFlashAt = now + (LED_STRIP_5HZ / max(rollScale, pitchScale));
+
+        if (indicatorFlashState == 0) {
+            indicatorFlashState = 1;
+        } else {
+            indicatorFlashState = 0;
+        }
+    }
+
+    if (indicatorFlashState == 0) {
+        flashColor = &orange;
+    } else {
+        flashColor = &black;
+    }
+    if (rcCommand[ROLL] < -50) {
         setLedColor(0, flashColor);
         setLedColor(9, flashColor);
     }
-    if (rcCommand[ROLL] > 100) {
+    if (rcCommand[ROLL] > 50) {
         setLedColor(4, flashColor);
         setLedColor(5, flashColor);
     }
-    if (rcCommand[PITCH] > 100) {
+    if (rcCommand[PITCH] > 50) {
         setLedColor(0, flashColor);
         setLedColor(4, flashColor);
     }
-    if (rcCommand[PITCH] < -100) {
+    if (rcCommand[PITCH] < -50) {
         setLedColor(5, flashColor);
         setLedColor(9, flashColor);
     }
