@@ -58,15 +58,36 @@ var STM32DFU_protocol = function() {
 STM32DFU_protocol.prototype.connect = function(hex) {
     var self = this;
     self.hex = hex;
+
+    chrome.usb.getDevices(usbDevices.STM32DFU, function(result) {
+        if (result.length) {
+            console.log('USB DFU detected with ID: ' + result[0].device);
+
+            self.openDevice(result[0]);
+        } else {
+            // TODO: throw some error
+        }
+    });
 };
 
-STM32DFU_protocol.prototype.openDevice = function(callback) {
+STM32DFU_protocol.prototype.openDevice = function(device) {
+    var self = this;
+
+    chrome.usb.openDevice(device, function(handle) {
+        self.handle = handle;
+
+        console.log('Handle ID: ' + handle.handle);
+        self.claimInterface(0);
+    });
 };
 
 STM32DFU_protocol.prototype.closeDevice = function(callback) {
 };
 
-STM32DFU_protocol.prototype.claimInterface = function(callback) {
+STM32DFU_protocol.prototype.claimInterface = function(interfaceNumber) {
+    chrome.usb.claimInterface(this.handle, interfaceNumber, function claimed() {
+        console.log('Claimed interface: ' + interfaceNumber);
+    });
 };
 
 STM32DFU_protocol.prototype.releaseInterface = function(callback) {
