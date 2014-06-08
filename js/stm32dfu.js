@@ -168,12 +168,10 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
     switch (step) {
         case 1:
             self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                if (data[4] == self.state.dfuERROR) { // this is completely normal
-                    self.upload_procedure(2);
-                } else if (data[4] == self.state.dfuIDLE) {
+                if (data[4] == self.state.dfuIDLE) {
                     self.upload_procedure(3);
                 } else {
-                    // throw some error
+                    self.upload_procedure(2);
                 }
             });
             break;
@@ -193,9 +191,18 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x41], function() {
                 self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
                     if (data[4] == self.state.dfuDNBUSY) { // completely normal
-                        // calculate waiting delay from combining data 1 2 3 (3 bytes), wait then continue
+                        var delay = data[1] | (data[2] << 8) | (data[3] << 16);
 
-                        self.upload_procedure(99);
+                        setTimeout(function() {
+                            self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                    console.log('Full Chip Erase Executed');
+                                    self.upload_procedure(4);
+                                } else {
+                                    // throw some error
+                                }
+                            });
+                        }, delay);
                     } else {
                         // throw some error
                     }
@@ -203,6 +210,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             });
             break;
         case 4:
+            self.upload_procedure(99);
             break;
         case 5:
             break;
