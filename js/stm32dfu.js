@@ -59,6 +59,15 @@ STM32DFU_protocol.prototype.connect = function(hex) {
     var self = this;
     self.hex = hex;
 
+    // reset and set some variables before we start
+    self.upload_time_start = microtime();
+    self.verify_hex = [];
+
+    // reset progress bar to initial state
+    self.progress_bar_e = $('.progress');
+    self.progress_bar_e.val(0);
+    self.progress_bar_e.removeClass('valid invalid');
+
     chrome.usb.getDevices(usbDevices.STM32DFU, function(result) {
         if (result.length) {
             console.log('USB DFU detected with ID: ' + result[0].device);
@@ -187,7 +196,10 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             });
             break;
         case 3:
-            // full erase
+            // full chip erase
+            console.log('Executing global chip erase');
+            STM32.GUI_status('Erasing');
+
             self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x41], function() {
                 self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
                     if (data[4] == self.state.dfuDNBUSY) { // completely normal
@@ -196,7 +208,6 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                         setTimeout(function() {
                             self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
                                 if (data[4] == self.state.dfuDNLOAD_IDLE) {
-                                    console.log('Full Chip Erase Executed');
                                     self.upload_procedure(4);
                                 } else {
                                     // throw some error
@@ -210,12 +221,205 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             });
             break;
         case 4:
-            self.upload_procedure(99);
+            // upload
+            console.log('Writing data ...');
+            STM32.GUI_status('<span style="color: green">Flashing ...</span>');
+
+            var blocks = self.hex.data.length - 1;
+            var flashing_block = 0;
+            var address = self.hex.data[flashing_block].address;
+
+            var bytes_flashed = 0;
+            var bytes_flashed_total = 0; // used for progress bar
+            var wBlockNum = 2; // required by DFU
+
+            // this is unoptimized version of write, where address is set before every transmission, this should be reworked to only transmit addres at the beginning and at block change
+            // such approach should give a nice speed boost (if needed)
+            function write() {
+                if (bytes_flashed < self.hex.data[flashing_block].bytes) {
+                    var bytes_to_write = ((bytes_flashed + 2048) <= self.hex.data[flashing_block].bytes) ? 2048 : (self.hex.data[flashing_block].bytes - bytes_flashed);
+
+                    self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
+                        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                            if (data[4] == self.state.dfuDNBUSY) { // completely normal
+                                var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+
+                                setTimeout(function() {
+                                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                        if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                            // address loaded in this stage
+                                            var data = [];
+                                            for (var i = 0; i < bytes_to_write; i++) {
+                                                data.push(self.hex.data[flashing_block].data[bytes_flashed++]);
+                                            }
+
+                                            address += bytes_to_write;
+                                            bytes_flashed_total += bytes_to_write;
+
+                                            self.controlTransfer('out', self.request.DNLOAD, 2, 0, 0, data, function() {
+                                                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                                    var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+
+                                                    setTimeout(function() {
+                                                        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                                            if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                                                // update progress bar
+                                                                self.progress_bar_e.val(bytes_flashed_total / (self.hex.bytes_total * 2) * 100);
+
+                                                                // flash another page
+                                                                write();
+                                                            } else {
+                                                                // throw some error
+                                                                console.log(data);
+                                                            }
+                                                        });
+                                                    }, delay);
+                                                });
+                                            })
+                                        } else {
+                                            // throw some error
+                                            console.log(data);
+                                        }
+                                    });
+                                }, delay);
+                            } else {
+                                // throw some error
+                                console.log(data);
+                            }
+                        });
+                    });
+                } else {
+                    // move to another block
+                    if (flashing_block < blocks) {
+                        flashing_block++;
+
+                        address = self.hex.data[flashing_block].address;
+                        bytes_flashed = 0;
+
+                        write();
+                    } else {
+                        // all blocks flashed
+                        console.log('Writing: done');
+
+                        // proceed to next step
+                        self.upload_procedure(5);
+                    }
+                }
+            }
+
+            // start writing
+            write();
             break;
         case 5:
+            // verify
+            console.log('Verifying data ...');
+            STM32.GUI_status('<span style="color: green">Verifying ...</span>');
+
+            var blocks = self.hex.data.length - 1;
+            var reading_block = 0;
+            var address = self.hex.data[reading_block].address;
+
+            var bytes_verified = 0;
+            var bytes_verified_total = 0; // used for progress bar
+
+            // initialize arrays
+            for (var i = 0; i <= blocks; i++) {
+                self.verify_hex.push([]);
+            }
+
+            function read() {
+                if (bytes_verified < self.hex.data[reading_block].bytes) {
+                    var bytes_to_read = ((bytes_verified + 2048) <= self.hex.data[reading_block].bytes) ? 2048 : (self.hex.data[reading_block].bytes - bytes_verified);
+
+                    self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
+                        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                            if (data[4] == self.state.dfuDNBUSY) { // completely normal
+                                var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+
+                                setTimeout(function() {
+                                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                        if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                            // address loaded in this stage
+                                            self.controlTransfer('in', self.request.UPLOAD, 2, 0, bytes_to_read, 0, function(data) { // getting error code 4 so this is obviously wrong, but whats the right approach?
+                                                console.log(data);
+                                                for (var i = 0; i < data.length; i++) {
+                                                    self.verify_hex[reading_block].push(data[i]);
+                                                }
+
+                                                address += bytes_to_read;
+                                                bytes_verified += bytes_to_read;
+                                                bytes_verified_total += bytes_to_read;
+
+                                                // update progress bar
+                                                self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100);
+
+                                                // verify another page
+                                                read();
+                                            });
+                                        } else {
+                                            // throw some error
+                                            console.log(data);
+                                        }
+                                    });
+                                }, delay);
+                            } else {
+                                // throw some error
+                                console.log(data);
+                            }
+                        });
+                    });
+                } else {
+                    // move to another block
+                    if (reading_block < blocks) {
+                        reading_block++;
+
+                        address = self.hex.data[reading_block].address;
+                        bytes_verified = 0;
+
+                        read();
+                    } else {
+                        // all blocks read, verify
+
+                        var verify = true;
+                        for (var i = 0; i <= blocks; i++) {
+                            verify = self.verify_flash(self.hex.data[i].data, self.verify_hex[i]);
+
+                            if (!verify) break;
+                        }
+
+                        if (verify) {
+                            console.log('Programming: SUCCESSFUL');
+                            STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
+
+                            // update progress bar
+                            self.progress_bar_e.addClass('valid');
+
+                            // proceed to next step
+                            self.upload_procedure(6);
+                        } else {
+                            console.log('Programming: FAILED');
+                            STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
+
+                            // update progress bar
+                            self.progress_bar_e.addClass('invalid');
+
+                            // disconnect
+                            self.upload_procedure(99);
+                        }
+                    }
+                }
+            }
+
+            // start reading
+            read();
+            break;
+        case 6:
+            self.upload_procedure(99);
             break;
         case 99:
             // cleanup
+            console.log('Script finished after: ' + (microtime() - self.upload_time_start).toFixed(4) + ' seconds');
+
             self.releaseInterface(0);
             break;
     }
