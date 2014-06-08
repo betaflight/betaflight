@@ -23,11 +23,18 @@
         "https://*.github.com/",
         "https://*.githubusercontent.com/",
         "serial",
+        "usb",
         "storage",
         "fileSystem",
         "fileSystem.write",
         "fileSystem.retainEntries",
         "notifications"
+    ],
+
+    "optional_permissions": [
+        {"usbDevices": [
+            {"vendorId": 1155, "productId": 57105}
+        ]}
     ],
 
     "icons": {
