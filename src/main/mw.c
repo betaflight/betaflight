@@ -471,18 +471,17 @@ void updateLedStrip(void)
         setStripColors(stripReds);
     }
 
-    if (f.HORIZON_MODE) {
-        setStripColors(stripHorizon);
-    } else if (f.ANGLE_MODE) {
-        setStripColors(stripAngle);
+    if (f.HEADFREE_MODE) {
+        setStripColors(stripHeadfree);
 #ifdef MAG
     } else if (f.MAG_MODE) {
         setStripColors(stripMag);
 #endif
-    } else if (f.HEADFREE_MODE) {
-        setStripColors(stripHeadfree);
+    } else if (f.HORIZON_MODE) {
+        setStripColors(stripHorizon);
+    } else if (f.ANGLE_MODE) {
+        setStripColors(stripAngle);
     }
-
 
     // LAYER 2
 
