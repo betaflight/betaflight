@@ -348,21 +348,84 @@ void updateInflightCalibrationState(void)
     }
 }
 
+#define LED_RED    {255, 0,   0  }
+#define LED_GREEN  {0,   255, 0  }
+#define LED_BLUE   {0,   0,   255}
+#define LED_CYAN   {0,   255, 255}
+#define LED_YELLOW {255, 255, 0  }
+#define LED_ORANGE {255, 128, 0  }
+#define LED_PINK   {255, 0,   128}
+#define LED_PURPLE {192, 64,  255}
+
 static const rgbColor24bpp_t stripOrientation[] =
 {
-    {{0,   255, 0}},
-    {{0,   255, 0}},
-    {{0,   255, 0}},
-    {{0,   255, 0}},
-    {{0,   255, 0}},
-
-    {{255, 0,   0}},
-    {{255, 0,   0}},
-    {{255, 0,   0}},
-    {{255, 0,   0}},
-    {{255, 0,   0}}
+    {LED_GREEN},
+    {LED_GREEN},
+    {LED_GREEN},
+    {LED_GREEN},
+    {LED_GREEN},
+    {LED_RED},
+    {LED_RED},
+    {LED_RED},
+    {LED_RED},
+    {LED_RED}
 };
 
+static const rgbColor24bpp_t stripHorizon[] =
+{
+    {LED_BLUE},
+    {LED_BLUE},
+    {LED_BLUE},
+    {LED_BLUE},
+    {LED_BLUE},
+    {LED_YELLOW},
+    {LED_YELLOW},
+    {LED_YELLOW},
+    {LED_YELLOW},
+    {LED_YELLOW}
+};
+
+static const rgbColor24bpp_t stripAngle[] =
+{
+    {LED_CYAN},
+    {LED_CYAN},
+    {LED_CYAN},
+    {LED_CYAN},
+    {LED_CYAN},
+    {LED_YELLOW},
+    {LED_YELLOW},
+    {LED_YELLOW},
+    {LED_YELLOW},
+    {LED_YELLOW}
+};
+
+static const rgbColor24bpp_t stripMag[] =
+{
+    {LED_PURPLE},
+    {LED_PURPLE},
+    {LED_PURPLE},
+    {LED_PURPLE},
+    {LED_PURPLE},
+    {LED_ORANGE},
+    {LED_ORANGE},
+    {LED_ORANGE},
+    {LED_ORANGE},
+    {LED_ORANGE}
+};
+
+static const rgbColor24bpp_t stripHeadfree[] =
+{
+    {LED_PINK},
+    {LED_PINK},
+    {LED_PINK},
+    {LED_PINK},
+    {LED_PINK},
+    {LED_ORANGE},
+    {LED_ORANGE},
+    {LED_ORANGE},
+    {LED_ORANGE},
+    {LED_ORANGE}
+};
 
 static const rgbColor24bpp_t stripReds[] =
 {
@@ -407,6 +470,19 @@ void updateLedStrip(void)
     } else {
         setStripColors(stripReds);
     }
+
+    if (f.HORIZON_MODE) {
+        setStripColors(stripHorizon);
+    } else if (f.ANGLE_MODE) {
+        setStripColors(stripAngle);
+#ifdef MAG
+    } else if (f.MAG_MODE) {
+        setStripColors(stripMag);
+#endif
+    } else if (f.HEADFREE_MODE) {
+        setStripColors(stripHeadfree);
+    }
+
 
     // LAYER 2
 
