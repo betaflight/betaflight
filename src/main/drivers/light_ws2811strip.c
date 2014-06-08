@@ -31,11 +31,42 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#define LED_STRIP_LENGTH 10
+#include "drivers/light_ws2811strip.h"
 
-static uint8_t LED_BYTE_Buffer[24 * LED_STRIP_LENGTH + 42];
+#define LED_STRIP_LENGTH 10
+#define BITS_PER_LED 24
+#define DELAY_BUFFER_LENGTH 42 // for 50us delay
+
+#define DMA_BUFFER_SIZE (BITS_PER_LED * LED_STRIP_LENGTH + DELAY_BUFFER_LENGTH)   // number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes)
+
+static uint8_t ledStripDMABuffer[DMA_BUFFER_SIZE];
 static volatile uint8_t ws2811LedDataTransferInProgress = 0;
 
+static rgbColor24bpp_t ledColorBuffer[LED_STRIP_LENGTH];
+
+const rgbColor24bpp_t black = { {0, 0, 0} };
+const rgbColor24bpp_t white = { {255, 255, 255} };
+
+void setLedColor(uint16_t index, const rgbColor24bpp_t *color)
+{
+    ledColorBuffer[index].rgb = color->rgb;
+}
+
+void setStripColor(const rgbColor24bpp_t *color)
+{
+    uint16_t index;
+    for (index = 0; index < LED_STRIP_LENGTH; index++) {
+        setLedColor(index, color);
+    }
+}
+
+void setStripColors(const rgbColor24bpp_t *colors)
+{
+    uint16_t index;
+    for (index = 0; index < LED_STRIP_LENGTH; index++) {
+        setLedColor(index, colors++);
+    }
+}
 
 void ws2811LedStripInit(void)
 {
@@ -78,9 +109,9 @@ void ws2811LedStripInit(void)
     DMA_DeInit(DMA1_Channel6);
 
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&TIM3->CCR1;
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)LED_BYTE_Buffer;
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)ledStripDMABuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-    DMA_InitStructure.DMA_BufferSize = 42;
+    DMA_InitStructure.DMA_BufferSize = DMA_BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
@@ -103,6 +134,9 @@ void ws2811LedStripInit(void)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+
+    setStripColor(&white);
+    ws2811UpdateStrip();
 }
 
 void DMA1_Channel6_IRQHandler(void)
@@ -114,91 +148,62 @@ void DMA1_Channel6_IRQHandler(void)
     }
 }
 
+static uint16_t dmaBufferOffset;
+static int16_t ledIndex;
 
-/* This function sends data bytes out to a string of WS2812s
- * The first argument is a pointer to the first RGB triplet to be sent
- * The seconds argument is the number of LEDs in the chain
- *
- * This will result in the RGB triplet passed by argument 1 being sent to
- * the LED that is the furthest away from the controller (the point where
- * data is injected into the chain)
- *
- * this method is non-blocking unless an existing LED update is in progress.
+void updateLEDDMABuffer(uint8_t componentValue)
+{
+    uint8_t bitIndex;
+    
+    for (bitIndex = 0; bitIndex < 8; bitIndex++)
+    {
+        if ((componentValue << bitIndex) & 0x80 )    // data sent MSB first, j = 0 is MSB j = 7 is LSB
+        {
+            ledStripDMABuffer[dmaBufferOffset] = 17;  // compare value for logical 1
+        }
+        else
+        {
+            ledStripDMABuffer[dmaBufferOffset] = 9;   // compare value for logical 0
+        }
+        dmaBufferOffset++;
+    }
+}
+
+/*
+ * This method is non-blocking unless an existing LED update is in progress.
  * it does not wait until all the LEDs have been updated, that happens in the background.
  */
-void ws2812SetStripColors(const uint8_t (*color)[3], uint16_t len)
+void ws2811UpdateStrip(void)
 {
-    uint8_t j;
-    uint8_t led;
-    uint16_t memaddr;
-    uint16_t buffersize;
-
     while(ws2811LedDataTransferInProgress);   // wait until previous transfer completes
 
-    buffersize = (len*24)+42;   // number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes
-    memaddr = 0;                // reset buffer memory index
-    led = 0;                    // reset led index
+    dmaBufferOffset = 0;                // reset buffer memory index
+    ledIndex = 0;                    // reset led index
 
     // fill transmit buffer with correct compare values to achieve
     // correct pulse widths according to color values
-    while (len)
+    while (ledIndex < LED_STRIP_LENGTH)
     {
-        for (j = 0; j < 8; j++)                 // GREEN data
-        {
-            if ( (color[led][1]<<j) & 0x80 )    // data sent MSB first, j = 0 is MSB j = 7 is LSB
-            {
-                LED_BYTE_Buffer[memaddr] = 17;  // compare value for logical 1
-            }
-            else
-            {
-                LED_BYTE_Buffer[memaddr] = 9;   // compare value for logical 0
-            }
-            memaddr++;
-        }
+        updateLEDDMABuffer(ledColorBuffer[ledIndex].rgb.g);
+        updateLEDDMABuffer(ledColorBuffer[ledIndex].rgb.r);
+        updateLEDDMABuffer(ledColorBuffer[ledIndex].rgb.b);
 
-        for (j = 0; j < 8; j++)                 // RED data
-        {
-            if ( (color[led][0]<<j) & 0x80 )    // data sent MSB first, j = 0 is MSB j = 7 is LSB
-            {
-                LED_BYTE_Buffer[memaddr] = 17;  // compare value for logical 1
-            }
-            else
-            {
-                LED_BYTE_Buffer[memaddr] = 9;   // compare value for logical 0
-            }
-            memaddr++;
-        }
-
-        for (j = 0; j < 8; j++)                 // BLUE data
-        {
-            if ( (color[led][2]<<j) & 0x80 )    // data sent MSB first, j = 0 is MSB j = 7 is LSB
-            {
-                LED_BYTE_Buffer[memaddr] = 17;  // compare value for logical 1
-            }
-            else
-            {
-                LED_BYTE_Buffer[memaddr] = 9;   // compare value for logical 0
-            }
-            memaddr++;
-        }
-
-        led++;
-        len--;
+        ledIndex++;
     }
 
     // add needed delay at end of byte cycle, pulsewidth = 0
-    while(memaddr < buffersize)
+    while(dmaBufferOffset < DMA_BUFFER_SIZE)
     {
-        LED_BYTE_Buffer[memaddr] = 0;
-        memaddr++;
+        ledStripDMABuffer[dmaBufferOffset] = 0;
+        dmaBufferOffset++;
     }
 
     ws2811LedDataTransferInProgress = 1;
 
-    DMA_SetCurrDataCounter(DMA1_Channel6, buffersize);  // load number of bytes to be transferred
+    DMA_SetCurrDataCounter(DMA1_Channel6, DMA_BUFFER_SIZE);  // load number of bytes to be transferred
     TIM_SetCounter(TIM3, 0);
-    TIM_Cmd(TIM3, ENABLE);                      // enable Timer 3
-    DMA_Cmd(DMA1_Channel6, ENABLE);             // enable DMA channel 6
+    TIM_Cmd(TIM3, ENABLE);
+    DMA_Cmd(DMA1_Channel6, ENABLE);
 }
 
 

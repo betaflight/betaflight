@@ -348,48 +348,34 @@ void updateInflightCalibrationState(void)
     }
 }
 
-static const uint8_t stripOrientation[][3] =
+static const rgbColor24bpp_t stripOrientation[] =
 {
-    {0,   255, 0},
-    {0,   255, 0},
-    {0,   255, 0},
-    {0,   255, 0},
-    {0,   255, 0},
+    {{0,   255, 0}},
+    {{0,   255, 0}},
+    {{0,   255, 0}},
+    {{0,   255, 0}},
+    {{0,   255, 0}},
 
-    {255, 0,   0},
-    {255, 0,   0},
-    {255, 0,   0},
-    {255, 0,   0},
-    {255, 0,   0}
+    {{255, 0,   0}},
+    {{255, 0,   0}},
+    {{255, 0,   0}},
+    {{255, 0,   0}},
+    {{255, 0,   0}}
 };
 
 
-static const uint8_t stripOff[][3] =
+static const rgbColor24bpp_t stripReds[] =
 {
-    {0,   0,   0},
-    {0,   0,   0},
-    {0,   0,   0},
-    {0,   0,   0},
-    {0,   0,   0},
-    {0,   0,   0},
-    {0,   0,   0},
-    {0,   0,   0},
-    {0,   0,   0},
-    {0,   0,   0},
-};
-
-static const uint8_t stripRed[][3] =
-{
-    {32,   0,   0},
-    {96,   0,   0},
-    {160,   0,   0},
-    {224,   0,   0},
-    {255,   0,   0},
-    {255,   0,   0},
-    {224,   0,   0},
-    {160,   0,   0},
-    {96,   0,   0},
-    {32,   0,   0},
+    {{ 32,   0,   0}},
+    {{ 96,   0,   0}},
+    {{160,   0,   0}},
+    {{224,   0,   0}},
+    {{255,   0,   0}},
+    {{255,   0,   0}},
+    {{224,   0,   0}},
+    {{160,   0,   0}},
+    {{ 96,   0,   0}},
+    {{ 32,   0,   0}},
 };
 
 uint32_t lastStripUpdateAt = 0;
@@ -410,17 +396,19 @@ void updateLedStrip(void)
 
     if (stripState == 0) {
         if (f.ARMED) {
-            ws2812SetStripColors(stripOrientation, sizeof(stripOrientation) / sizeof(stripOrientation[0]));
+            setStripColors(stripOrientation);
         } else {
-            ws2812SetStripColors(stripRed, sizeof(stripRed) / sizeof(stripRed[0]));
+            setStripColors(stripReds);
         }
         stripState = 1;
     } else {
         if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
-            ws2812SetStripColors(stripOff, sizeof(stripOff) / sizeof(stripOff[0]));
+            setStripColor(&black);
         }
         stripState = 0;
     }
+
+    ws2811UpdateStrip();
 }
 
 

@@ -17,6 +17,32 @@
 
 #pragma once
 
-void ws2811LedStripInit(void);
-void ws2812SetStripColors(const uint8_t (*color)[3], uint16_t ledCount);
 
+typedef enum {
+    CC_RED = 0,
+    CC_GREEN,
+    CC_BLUE
+} colorComponent_e;
+
+#define COLOR_COMPONENT_COUNT (CC_BLUE + 1)
+
+struct rgbColor24bpp_s {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+};
+
+typedef union {
+    struct rgbColor24bpp_s rgb;
+    uint8_t raw[COLOR_COMPONENT_COUNT];
+} rgbColor24bpp_t;
+
+void ws2811LedStripInit(void);
+
+void ws2811UpdateStrip(void);
+void setLedColor(uint16_t index, const rgbColor24bpp_t *color);
+void setStripColor(const rgbColor24bpp_t *color);
+void setStripColors(const rgbColor24bpp_t *colors);
+
+extern const rgbColor24bpp_t black;
+extern const rgbColor24bpp_t white;
