@@ -45,6 +45,7 @@ static volatile uint8_t ws2811LedDataTransferInProgress = 0;
 static rgbColor24bpp_t ledColorBuffer[LED_STRIP_LENGTH];
 
 const rgbColor24bpp_t black = { {0, 0, 0} };
+const rgbColor24bpp_t orange = { {255, 128, 0} };
 const rgbColor24bpp_t white = { {255, 255, 255} };
 
 void setLedColor(uint16_t index, const rgbColor24bpp_t *color)

@@ -46,3 +46,4 @@ void setStripColors(const rgbColor24bpp_t *colors);
 
 extern const rgbColor24bpp_t black;
 extern const rgbColor24bpp_t white;
+extern const rgbColor24bpp_t orange;

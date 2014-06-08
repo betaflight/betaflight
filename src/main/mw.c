@@ -394,7 +394,10 @@ void updateLedStrip(void)
 
     static uint8_t stripState = 0;
 
+    const rgbColor24bpp_t *flashColor;
+
     if (stripState == 0) {
+        flashColor = &orange;
         if (f.ARMED) {
             setStripColors(stripOrientation);
         } else {
@@ -402,10 +405,28 @@ void updateLedStrip(void)
         }
         stripState = 1;
     } else {
+        flashColor = &black;
         if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
             setStripColor(&black);
         }
         stripState = 0;
+    }
+
+    if (rcCommand[ROLL] < -100) {
+        setLedColor(0, flashColor);
+        setLedColor(9, flashColor);
+    }
+    if (rcCommand[ROLL] > 100) {
+        setLedColor(4, flashColor);
+        setLedColor(5, flashColor);
+    }
+    if (rcCommand[PITCH] > 100) {
+        setLedColor(0, flashColor);
+        setLedColor(4, flashColor);
+    }
+    if (rcCommand[PITCH] < -100) {
+        setLedColor(5, flashColor);
+        setLedColor(9, flashColor);
     }
 
     ws2811UpdateStrip();
