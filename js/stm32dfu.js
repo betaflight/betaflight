@@ -76,21 +76,39 @@ STM32DFU_protocol.prototype.openDevice = function(device) {
     chrome.usb.openDevice(device, function(handle) {
         self.handle = handle;
 
-        console.log('Handle ID: ' + handle.handle);
+        console.log('Device opened with Handle ID: ' + handle.handle);
         self.claimInterface(0);
     });
 };
 
-STM32DFU_protocol.prototype.closeDevice = function(callback) {
-};
+STM32DFU_protocol.prototype.closeDevice = function() {
+    var self = this;
 
-STM32DFU_protocol.prototype.claimInterface = function(interfaceNumber) {
-    chrome.usb.claimInterface(this.handle, interfaceNumber, function claimed() {
-        console.log('Claimed interface: ' + interfaceNumber);
+    chrome.usb.closeDevice(this.handle, function closed() {
+        console.log('Device closed with Handle ID: ' + self.handle.handle);
+
+        self.handle = null;
     });
 };
 
-STM32DFU_protocol.prototype.releaseInterface = function(callback) {
+STM32DFU_protocol.prototype.claimInterface = function(interfaceNumber) {
+    var self = this;
+
+    chrome.usb.claimInterface(this.handle, interfaceNumber, function claimed() {
+        console.log('Claimed interface: ' + interfaceNumber);
+
+        self.upload_procedure(1);
+    });
+};
+
+STM32DFU_protocol.prototype.releaseInterface = function(interfaceNumber) {
+    var self = this;
+
+    chrome.usb.releaseInterface(this.handle, interfaceNumber, function released() {
+        console.log('Released interface: ' + interfaceNumber);
+
+        self.closeDevice();
+    });
 };
 
 STM32DFU_protocol.prototype.resetDevice = function(callback) {
@@ -112,7 +130,12 @@ STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value
             'value':        value,
             'index':        interface,
             'length':       length
-        }, callback);
+        }, function(result) {
+            if (result.resultCode) console.log(result.resultCode);
+
+            var buf = new Uint8Array(result.data);
+            callback(buf);
+        });
     } else {
         // length is ignored
         if (data) {
@@ -131,7 +154,47 @@ STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value
             'value':        value,
             'index':        interface,
             'data':         arrayBuf
-        }, callback);
+        }, function(result) {
+            if (result.resultCode) console.log(result.resultCode);
+
+            callback(result);
+        });
+    }
+};
+
+STM32DFU_protocol.prototype.upload_procedure = function(step) {
+    var self = this;
+
+    switch (step) {
+        case 1:
+            self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                if (data[4] == self.state.dfuERROR) { // this is completely normal
+                    self.upload_procedure(2);
+                } else if (data[4] == self.state.dfuIDLE) {
+                    self.upload_procedure(3);
+                } else {
+                    // throw some error
+                }
+            });
+            break;
+        case 2:
+            self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
+                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                    if (data[4] == self.state.dfuIDLE) {
+                        self.upload_procedure(3);
+                    } else {
+                        // throw some error
+                    }
+                });
+            });
+            break;
+        case 3:
+            self.upload_procedure(99);
+            break;
+        case 99:
+            // cleanup
+            self.releaseInterface(0);
+            break;
     }
 };
 
