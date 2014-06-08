@@ -189,7 +189,22 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             });
             break;
         case 3:
-            self.upload_procedure(99);
+            // full erase
+            self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x41], function() {
+                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                    if (data[4] == self.state.dfuDNBUSY) { // completely normal
+                        // calculate waiting delay from combining data 1 2 3 (3 bytes), wait then continue
+
+                        self.upload_procedure(99);
+                    } else {
+                        // throw some error
+                    }
+                });
+            });
+            break;
+        case 4:
+            break;
+        case 5:
             break;
         case 99:
             // cleanup
