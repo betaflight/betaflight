@@ -28,9 +28,6 @@
 
 #include "platform.h"
 
-#include "common/axis.h"
-#include "common/maths.h"
-
 #include "drivers/light_ws2811strip.h"
 
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
