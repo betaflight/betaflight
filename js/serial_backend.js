@@ -10,7 +10,7 @@ $(document).ready(function() {
             var selected_port = String($('div#port-picker .port select').val());
             var selected_baud = parseInt($('div#port-picker #baud').val());
 
-            if (selected_port != '0') {
+            if (selected_port != '0' && selected_port != 'DFU') {
                 if (!clicks) {
                     console.log('Connecting to: ' + selected_port);
                     GUI.connecting_to = selected_port;

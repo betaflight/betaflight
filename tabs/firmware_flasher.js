@@ -103,7 +103,11 @@ function tab_initialize_firmware_flasher() {
             if (!$(this).hasClass('locked')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
                     if (parsed_hex != false) {
-                        STM32.connect(parsed_hex);
+                        if (String($('div#port-picker .port select').val()) != 'DFU') {
+                            STM32.connect(parsed_hex);
+                        } else {
+                            STM32DFU.connect(parsed_hex);
+                        }
                     } else {
                         STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
                     }

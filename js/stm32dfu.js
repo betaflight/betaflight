@@ -55,6 +55,11 @@ var STM32DFU_protocol = function() {
     };
 };
 
+STM32DFU_protocol.prototype.connect = function(hex) {
+    var self = this;
+    self.hex = hex;
+};
+
 STM32DFU_protocol.prototype.openDevice = function(callback) {
 };
 

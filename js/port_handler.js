@@ -131,10 +131,27 @@ port_handler.prototype.check = function() {
             self.initial_ports = current_ports;
         }
 
-        self.main_timeout_reference = setTimeout(function() {
-            self.check();
-        }, 250);
+        check_usb_devices();
     });
+
+    function check_usb_devices() {
+        chrome.usb.getDevices(usbDevices.STM32DFU, function(result) {
+            if (result.length) {
+                if (!$("div#port-picker .port select [value='DFU']").length) {
+                    $('div#port-picker .port select').append('<option value="DFU">DFU</option>');
+                    $('div#port-picker .port select').val('DFU');
+                }
+            } else {
+                if ($("div#port-picker .port select [value='DFU']").length) {
+                   $("div#port-picker .port select [value='DFU']").remove();
+                }
+            }
+
+            self.main_timeout_reference = setTimeout(function() {
+                self.check();
+            }, 250);
+        });
+    }
 };
 
 port_handler.prototype.update_port_select = function(ports) {
