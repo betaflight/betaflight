@@ -30,8 +30,10 @@
 static bool convDone = false;
 static uint16_t convOverrun = 0;
 
+#ifdef BARO_GPIO
 #define BARO_OFF                 digitalLo(BARO_GPIO, BARO_PIN);
 #define BARO_ON                  digitalHi(BARO_GPIO, BARO_PIN);
+#endif
 
 // EXTI14 for BMP085 End of Conversion Interrupt
 void EXTI15_10_IRQHandler(void)
@@ -111,9 +113,6 @@ static void bmp085_calculate(int32_t *pressure, int32_t *temperature);
 
 bool bmp085Detect(baro_t *baro)
 {
-    gpio_config_t gpio;
-    EXTI_InitTypeDef EXTI_InitStructure;
-    NVIC_InitTypeDef NVIC_InitStructure;
     uint8_t data;
 
     // Not supported with this frequency
@@ -122,6 +121,11 @@ bool bmp085Detect(baro_t *baro)
 
     if (bmp085InitDone)
         return true;
+
+#if defined(BARO) && defined(BARO_GPIO)
+    EXTI_InitTypeDef EXTI_InitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+    gpio_config_t gpio;
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 
@@ -133,9 +137,7 @@ bool bmp085Detect(baro_t *baro)
     gpio.pin = Pin_14;
     gpio.mode = Mode_IN_FLOATING;
     gpioInit(GPIOC, &gpio);
-#ifdef BARO
     BARO_ON;
-#endif
 
     // EXTI interrupt for barometer EOC
     gpioExtiLineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource14);
@@ -153,6 +155,7 @@ bool bmp085Detect(baro_t *baro)
     NVIC_Init(&NVIC_InitStructure);
 
     delay(20); // datasheet says 10ms, we'll be careful and do 20. this is after ms5611 driver kills us, so longer the better.
+#endif
 
     i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
@@ -173,7 +176,8 @@ bool bmp085Detect(baro_t *baro)
         baro->calculate = bmp085_calculate;
         return true;
     }
-#ifdef BARO
+
+#if defined(BARO) && defined(BARO_GPIO)
     BARO_OFF;
 #endif
     return false;

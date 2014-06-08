@@ -63,6 +63,8 @@
 #define USE_ACC_MMA8452
 #define USE_ACC_LSM303DLHC
 #define USE_ACC_MPU6050
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
 
 #ifdef NAZE
 #undef USE_ACC_LSM303DLHC
@@ -92,6 +94,7 @@
 #undef USE_ACC_BMA280
 #undef USE_ACC_MMA8452
 #undef USE_ACC_ADXL345
+#undef USE_BARO_MS5611
 #endif
 
 #ifdef CHEBUZZF3
@@ -281,14 +284,20 @@ retry:
 static void detectBaro()
 {
 #ifdef BARO
+#ifdef USE_BARO_MS5611
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
-    if (!ms5611Detect(&baro)) {
-        // ms5611 disables BMP085, and tries to initialize + check PROM crc. if this works, we have a baro
-        if (!bmp085Detect(&baro)) {
-            // if both failed, we don't have anything
-            sensorsClear(SENSOR_BARO);
-        }
+    if (ms5611Detect(&baro)) {
+        return;
     }
+#endif
+
+#ifdef USE_BARO_BMP085
+    // ms5611 disables BMP085, and tries to initialize + check PROM crc. if this works, we have a baro
+    if (bmp085Detect(&baro)) {
+        return;
+    }
+#endif
+    sensorsClear(SENSOR_BARO);
 #endif
 }
 

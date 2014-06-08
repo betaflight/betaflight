@@ -35,7 +35,9 @@
 #define LED1
 #endif
 
-#define GYRO
 #define ACC
+#define BARO
+#define GYRO
+#define MAG
 
-#define SENSORS_SET (SENSOR_ACC)
+#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
