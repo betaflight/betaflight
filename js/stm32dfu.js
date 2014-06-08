@@ -11,7 +11,7 @@ var STM32DFU_protocol = function() {
 
     this.handle = null; // connection handle
 
-    this.command = {
+    this.request = {
         DETACH:     0x00, // OUT, Requests the device to leave DFU mode and enter the application.
         DNLOAD:     0x01, // OUT, Requests data transfer from Host to the device in order to load them into device internal Flash. Includes also erase commands
         UPLOAD:     0x02, // IN,  Requests data transfer from device to Host in order to load content of device internal Flash into a Host file.
@@ -75,7 +75,38 @@ STM32DFU_protocol.prototype.resetDevice = function(callback) {
     });
 };
 
-STM32DFU_protocol.prototype.controlTransfer = function() {
+STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value, interface, length, data, callback) {
+    if (direction == 'in') {
+        // data is ignored
+        chrome.usb.controlTransfer(this.handle, {
+            'direction':    'in',
+            'recipient':    'interface',
+            'requestType':  'class',
+            'request':      request,
+            'value':        value,
+            'index':        interface,
+            'length':       length
+        }, callback);
+    } else {
+        // length is ignored
+        if (data) {
+            var arrayBuf = new ArrayBuffer(data.length);
+            var arrayBufView = new Uint8Array(arrayBuf);
+            arrayBufView.set(data);
+        } else {
+            var arrayBuf = new ArrayBuffer(0);
+        }
+
+        chrome.usb.controlTransfer(this.handle, {
+            'direction':    'out',
+            'recipient':    'interface',
+            'requestType':  'class',
+            'request':      request,
+            'value':        value,
+            'index':        interface,
+            'data':         arrayBuf
+        }, callback);
+    }
 };
 
 // initialize object
