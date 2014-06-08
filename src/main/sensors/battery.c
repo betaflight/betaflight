@@ -83,7 +83,7 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
     }
 
     batteryCellCount = i;
-    batteryWarningVoltage = i * batteryConfig->vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
+    batteryWarningVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
 }
 
 #define ADCVREF 33L

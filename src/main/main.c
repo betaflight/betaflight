@@ -127,10 +127,6 @@ void init(void)
 
     adcInit(&adc_params);
 
-    // Check battery type/voltage
-    if (feature(FEATURE_VBAT))
-        batteryInit(&masterConfig.batteryConfig);
-
     initBoardAlignment(&masterConfig.boardAlignment);
 
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
@@ -242,6 +238,12 @@ void init(void)
     }
     serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
+
+    // Now that everything has powered up the voltage and cell count be determined.
+
+    // Check battery type/voltage
+    if (feature(FEATURE_VBAT))
+        batteryInit(&masterConfig.batteryConfig);
 }
 
 #ifdef SOFTSERIAL_LOOPBACK
