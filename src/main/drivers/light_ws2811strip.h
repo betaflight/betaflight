@@ -44,6 +44,8 @@ void setLedColor(uint16_t index, const rgbColor24bpp_t *color);
 void setStripColor(const rgbColor24bpp_t *color);
 void setStripColors(const rgbColor24bpp_t *colors);
 
+bool isWS2811LedStripReady(void);
+
 extern const rgbColor24bpp_t black;
 extern const rgbColor24bpp_t white;
 extern const rgbColor24bpp_t orange;

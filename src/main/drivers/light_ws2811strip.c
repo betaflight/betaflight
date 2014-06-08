@@ -149,6 +149,11 @@ void DMA1_Channel6_IRQHandler(void)
     }
 }
 
+bool isWS2811LedStripReady(void)
+{
+    return !ws2811LedDataTransferInProgress;
+}
+
 static uint16_t dmaBufferOffset;
 static int16_t ledIndex;
 
@@ -176,7 +181,11 @@ void updateLEDDMABuffer(uint8_t componentValue)
  */
 void ws2811UpdateStrip(void)
 {
-    while(ws2811LedDataTransferInProgress);   // wait until previous transfer completes
+    static uint32_t waitCounter = 0;
+    // wait until previous transfer completes
+    while(ws2811LedDataTransferInProgress) {
+        waitCounter++;
+    }
 
     dmaBufferOffset = 0;                // reset buffer memory index
     ledIndex = 0;                    // reset led index

@@ -449,6 +449,10 @@ uint32_t nextBatteryFlashAt = 0;
 
 void updateLedStrip(void)
 {
+    if (!isWS2811LedStripReady()) {
+        return;
+    }
+
     uint32_t now = micros();
 
     bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
