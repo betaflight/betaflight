@@ -509,7 +509,8 @@ void updateLedStrip(void)
 
         uint8_t rollScale = abs(rcCommand[ROLL]) / 50;
         uint8_t pitchScale = abs(rcCommand[PITCH]) / 50;
-        nextIndicatorFlashAt = now + (LED_STRIP_5HZ / max(rollScale, pitchScale));
+        uint8_t scale = max(rollScale, pitchScale);
+        nextIndicatorFlashAt = now + (LED_STRIP_5HZ / max(1, scale));
 
         if (indicatorFlashState == 0) {
             indicatorFlashState = 1;
