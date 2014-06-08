@@ -253,7 +253,8 @@ STM32F3DISCOVERY_COMMON_SRC	 = $(STM32F30x_COMMON_SRC) \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
-		   drivers/light_ws2811strip.c
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c
 
 STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 		   drivers/accgyro_adxl345.c \
