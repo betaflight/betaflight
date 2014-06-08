@@ -15,6 +15,14 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+/*
+ * "Note that the timing on the WS2812/WS2812B LEDs has changed as of batches from WorldSemi
+ * manufactured made in October 2013, and timing tolerance for approx 10-30% of parts is very small.
+ * Recommendation from WorldSemi is now: 0 = 400ns high/850ns low, and 1 = 850ns high, 400ns low"
+ *
+ * Currently the timings are 0 = 350ns high/800ns and 1 = 700ns high/650ns low.
+ */
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -25,7 +33,7 @@
 
 #define LED_STRIP_LENGTH 10
 
-static uint16_t LED_BYTE_Buffer[24 * LED_STRIP_LENGTH + 42];
+static uint8_t LED_BYTE_Buffer[24 * LED_STRIP_LENGTH + 42];
 static volatile uint8_t ws2811LedDataTransferInProgress = 0;
 
 
@@ -76,7 +84,7 @@ void ws2811LedStripInit(void)
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
