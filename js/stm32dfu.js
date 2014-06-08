@@ -53,12 +53,6 @@ var STM32DFU_protocol = function() {
         dfuUPLOAD_IDLE:         9, // The device is processing an upload operation. Expecting DFU_UPLOAD requests.
         dfuERROR:               10 // An error has occurred. Awaiting the DFU_CLRSTATUS request.
     };
-
-    this.usbDevices = {
-        F3DiscoveryDFU: {'vendorId': 1155, 'productId': 57105}
-    };
-
-    this.usbPermissions = {permissions: [{'usbDevices': [this.usbDevices.F3DiscoveryDFU]}]};
 };
 
 STM32DFU_protocol.prototype.openDevice = function(callback) {
