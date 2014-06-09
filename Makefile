@@ -139,6 +139,7 @@ COMMON_SRC	 = build_config.c \
 		   io/buzzer.c \
 		   io/gps.c \
 		   io/gps_conversion.c \
+		   io/ledstrip.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
 		   io/serial.c \
@@ -182,6 +183,8 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/compass_hmc5883l.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/light_led_stm32f10x.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/sonar_hcsr04.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
@@ -204,6 +207,8 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/compass_hmc5883l.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/light_led_stm32f10x.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rssi.c \
@@ -223,6 +228,8 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f30x.c \
 		   drivers/light_led_stm32f30x.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rssi.c \

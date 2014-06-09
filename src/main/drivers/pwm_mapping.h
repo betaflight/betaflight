@@ -43,6 +43,7 @@ typedef struct drv_pwm_config_t {
     bool useUART2;
 #endif
     bool useSoftSerial;
+    bool useLEDStrip;
     bool useServos;
     bool extraServos;    // configure additional 4 channels in PPM mode as servos, not motors
     bool airplane;       // fixed wing hardware config, lots of servos etc

@@ -28,6 +28,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/light_ledring.h"
 #include "drivers/light_led.h"
+
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -49,6 +50,7 @@
 #include "flight/mixer.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
+#include "io/ledstrip.h"
 #include "io/serial_cli.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
@@ -346,6 +348,8 @@ void updateInflightCalibrationState(void)
     }
 }
 
+
+
 void loop(void)
 {
     int i;
@@ -629,4 +633,7 @@ void loop(void)
         handleTelemetry();
     }
 
+    if (feature(FEATURE_LED_STRIP)) {
+        updateLedStrip();
+    }
 }

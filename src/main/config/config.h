@@ -33,7 +33,8 @@ typedef enum {
     FEATURE_3D = 1 << 12,
     FEATURE_RX_PARALLEL_PWM = 1 << 13,
     FEATURE_RX_MSP = 1 << 14,
-    FEATURE_RSSI_ADC = 1 << 15
+    FEATURE_RSSI_ADC = 1 << 15,
+    FEATURE_LED_STRIP = 1 << 16
 } AvailableFeatures;
 
 bool feature(uint32_t mask);

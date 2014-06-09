@@ -198,6 +198,28 @@ void pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
+#if defined(STM32F10X_MD)
+#define LED_STRIP_PWM PWM4
+#endif
+
+#if defined(STM32F303xC) && !(defined(CHEBUZZF3) || defined(NAZE32PRO))
+#define LED_STRIP_PWM PWM2
+#endif
+
+#if defined(CHEBUZZF3)
+#define LED_STRIP_PWM PWM2
+#endif
+
+#if defined(NAZE32PRO)
+#define LED_STRIP_PWM PWM13
+#endif
+
+#ifdef LED_STRIP_PWM
+        // skip LED Strip output
+        if (init->useLEDStrip && timerIndex == LED_STRIP_PWM)
+            continue;
+#endif
+
 #ifdef STM32F10X_MD
         // skip ADC for RSSI
         if (init->useRSSIADC && timerIndex == PWM2)

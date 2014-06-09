@@ -407,57 +407,50 @@ void validateAndFixConfig(void)
     }
 
     if (feature(FEATURE_RX_PPM)) {
-        if (feature(FEATURE_RX_PARALLEL_PWM)) {
-            featureClear(FEATURE_RX_PARALLEL_PWM);
-        }
-    }
-
-    if (feature(FEATURE_RX_PARALLEL_PWM)) {
-#if defined(NAZE) || defined(OLIMEXINO)
-        if (feature(FEATURE_RSSI_ADC)) {
-            featureClear(FEATURE_RSSI_ADC);
-        }
-        if (feature(FEATURE_CURRENT_METER)) {
-            featureClear(FEATURE_CURRENT_METER);
-        }
-#endif
+        featureClear(FEATURE_RX_PARALLEL_PWM);
     }
 
     if (feature(FEATURE_RX_MSP)) {
-        if (feature(FEATURE_RX_SERIAL)) {
-            featureClear(FEATURE_RX_SERIAL);
-        }
-        if (feature(FEATURE_RX_PARALLEL_PWM)) {
-            featureClear(FEATURE_RX_PARALLEL_PWM);
-        }
-        if (feature(FEATURE_RX_PPM)) {
-            featureClear(FEATURE_RX_PPM);
-        }
+        featureClear(FEATURE_RX_SERIAL);
+        featureClear(FEATURE_RX_PARALLEL_PWM);
+        featureClear(FEATURE_RX_PPM);
     }
 
     if (feature(FEATURE_RX_SERIAL)) {
-        if (feature(FEATURE_RX_PARALLEL_PWM)) {
-            featureClear(FEATURE_RX_PARALLEL_PWM);
-        }
-        if (feature(FEATURE_RX_PPM)) {
-            featureClear(FEATURE_RX_PPM);
-        }
+        featureClear(FEATURE_RX_PARALLEL_PWM);
+        featureClear(FEATURE_RX_PPM);
     }
 
+    if (feature(FEATURE_RX_PARALLEL_PWM)) {
+#if defined(STM32F103_MD)
+        // rssi adc needs the same ports
+        featureClear(FEATURE_RSSI_ADC);
+        // current meter needs the same ports
+        featureClear(FEATURE_CURRENT_METER);
 #ifdef SONAR
-    if (feature(FEATURE_SONAR)) {
         // sonar needs a free PWM port
-        if (!feature(FEATURE_RX_PARALLEL_PWM)) {
-            featureClear(FEATURE_SONAR);
-        }
+        featureClear(FEATURE_SONAR);
+#endif
+#endif
+
+#if defined(STM32F103_MD) || defined(CHEBUZZ) || defined(STM32F3DISCOVERY)
+        // led strip needs the same ports
+        featureClear(FEATURE_LED_STRIP);
+#endif
+
+
+        // software serial needs free PWM ports
+        featureClear(FEATURE_SOFTSERIAL);
+    }
+
+
+#if defined(STM32F103_MD)
+    // led strip needs the same timer as softserial
+    if (feature(FEATURE_SOFTSERIAL)) {
+        featureClear(FEATURE_LED_STRIP);
     }
 #endif
-    if (feature(FEATURE_SOFTSERIAL)) {
-        // software serial needs free PWM ports
-        if (feature(FEATURE_RX_PARALLEL_PWM)) {
-            featureClear(FEATURE_SOFTSERIAL);
-        }
-    }
+
 
     useRxConfig(&masterConfig.rxConfig);
 
