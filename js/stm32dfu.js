@@ -469,44 +469,11 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             break;
         case 6:
             // jump to application code
-            function clear_before_leave() {
-                self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
-                    self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
-                        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                            if (data[4] == self.state.dfuIDLE) {
-                                load_starting_address();
-                            } else {
-                                // throw some error
-                                console.log(data);
-                            }
-                        });
-                    });
-                });
-            }
-
             var address = self.hex.data[0].address;
 
-            function load_starting_address() {
-                self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
-                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                        if (data[4] == self.state.dfuDNBUSY || data[4] == self.state.dfuUPLOAD_IDLE) { // completely normal
-                            var delay = data[1] | (data[2] << 8) | (data[3] << 16);
-
-                            setTimeout(function() {
-                                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                                    if (data[4] == self.state.dfuDNLOAD_IDLE || data[4] == self.state.dfuUPLOAD_IDLE) {
-                                        leave();
-                                    } else {
-                                        console.log(data);
-                                    }
-                                });
-                            }, delay);
-                        } else {
-                            console.log(data);
-                        }
-                    });
-                });
-            }
+            self.clearStatus(function() {
+                self.loadAddress(address, leave);
+            });
 
             function leave() {
                 self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, 0, function() {
