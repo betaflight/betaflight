@@ -143,7 +143,7 @@ STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value
             if (result.resultCode) console.log(result.resultCode);
 
             var buf = new Uint8Array(result.data);
-            callback(buf);
+            callback(buf, result.resultCode);
         });
     } else {
         // length is ignored
@@ -345,38 +345,43 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             }
 
             function load_read_address() {
-                self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
-                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                        if (data[4] == self.state.dfuDNBUSY) { // completely normal
-                            var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                    var delay = data[1] | (data[2] << 8) | (data[3] << 16);
 
-                            setTimeout(function() {
-                                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                                    if (data[4] == self.state.dfuDNLOAD_IDLE) {
-                                        clear_status();
-                                    } else {
-                                        console.log(data);
-                                    }
-                                });
-                            }, delay);
-                        } else {
-                            console.log(data);
-                        }
-                    });
+                    setTimeout(function() {
+                        self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function(result) { // problem on this call !!
+                            self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                if (data[4] == self.state.dfuDNBUSY) {
+                                    var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+
+                                    setTimeout(function() {
+                                        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                            if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                                clear_status();
+                                            } else {
+                                                console.log(data);
+                                            }
+                                        });
+                                    }, delay);
+                                } else if (data[4] == self.state.dfuUPLOAD_IDLE) {
+                                    read();
+                                } else {
+                                    console.log(data);
+                                }
+                            });
+                        });
+                    }, delay);
                 });
             }
 
             function clear_status() {
                 self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
-                    self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
-                        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                            if (data[4] == self.state.dfuIDLE) {
-                                read();
-                            } else {
-                                // throw some error
-                                console.log(data);
-                            }
-                        });
+                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                        if (data[4] == self.state.dfuIDLE) {
+                            read();
+                        } else {
+                            clear_status();
+                        }
                     });
                 });
             }
@@ -385,7 +390,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                 if (bytes_verified < self.hex.data[reading_block].bytes) {
                     var bytes_to_read = ((bytes_verified + 2048) <= self.hex.data[reading_block].bytes) ? 2048 : (self.hex.data[reading_block].bytes - bytes_verified);
 
-                    self.controlTransfer('in', self.request.UPLOAD, wBlockNum++, 0, bytes_to_read, 0, function(data) {
+                    self.controlTransfer('in', self.request.UPLOAD, wBlockNum++, 0, bytes_to_read, 0, function(data, code) {
                         for (var i = 0; i < data.length; i++) {
                             self.verify_hex[reading_block].push(data[i]);
                         }
@@ -407,7 +412,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
 
                         address = self.hex.data[reading_block].address;
                         bytes_verified = 0;
-                        wBlockNum = 2;
+                        //wBlockNum = 2;
 
                         load_read_address();
                     } else {
