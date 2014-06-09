@@ -368,39 +368,12 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                 self.verify_hex.push([]);
             }
 
-            function load_read_address() {
-                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                    var delay = data[1] | (data[2] << 8) | (data[3] << 16);
-
-                    setTimeout(function() {
-                        if (data[4] != self.state.dfuUPLOAD_IDLE) {
-                            self.loadAddress(address, function() {
-                                clear_status();
-                            });
-                        } else {
-                            clear_status(function() {
-                                load_read_address();
-                            });
-                        }
-                    }, delay);
+            // start
+            self.clearStatus(function() {
+                self.loadAddress(address, function() {
+                    self.clearStatus(read);
                 });
-            }
-
-            function clear_status(callback) {
-                self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
-                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                        if (data[4] == self.state.dfuIDLE) {
-                            if (callback) {
-                                callback();
-                            } else {
-                                read();
-                            }
-                        } else {
-                            clear_status();
-                        }
-                    });
-                });
-            }
+            });
 
             function read() {
                 if (bytes_verified < self.hex.data[reading_block].bytes) {
@@ -428,9 +401,13 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
 
                         address = self.hex.data[reading_block].address;
                         bytes_verified = 0;
-                        //wBlockNum = 2;
+                        wBlockNum = 2;
 
-                        load_read_address();
+                        self.clearStatus(function() {
+                            self.loadAddress(address, function() {
+                                self.clearStatus(read);
+                            });
+                        });
                     } else {
                         // all blocks read, verify
 
@@ -463,9 +440,6 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                     }
                 }
             }
-
-            // start
-            load_read_address();
             break;
         case 6:
             // jump to application code
