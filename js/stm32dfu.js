@@ -184,7 +184,7 @@ STM32DFU_protocol.prototype.clearStatus = function(callback) {
     function check_status() {
         self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
             if (data[4] == self.state.dfuIDLE) {
-                callback();
+                callback(data);
             } else {
                 var delay = data[1] | (data[2] << 8) | (data[3] << 16);
 
@@ -194,9 +194,7 @@ STM32DFU_protocol.prototype.clearStatus = function(callback) {
     }
 
     function clear_status() {
-        self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
-            check_status();
-        });
+        self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, check_status);
     }
 
     check_status();
@@ -213,7 +211,7 @@ STM32DFU_protocol.prototype.loadAddress = function(address, callback) {
                 setTimeout(function() {
                     self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
                         if (data[4] == self.state.dfuDNLOAD_IDLE) {
-                            callback();
+                            callback(data);
                         } else {
                             console.log('Failed to execure address load');
                             self.upload_procedure(99);
