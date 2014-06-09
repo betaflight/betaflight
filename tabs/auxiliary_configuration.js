@@ -75,6 +75,7 @@ function tab_initialize_auxiliary_configuration() {
             });
 
             // send over data
+            // current code will only handle 4 AUX as the variable length is 16bits
             var AUX_val_buffer_out = [];
             for (var i = 0; i < AUX_CONFIG_values.length; i++) {
                 AUX_val_buffer_out.push(lowByte(AUX_CONFIG_values[i]));
