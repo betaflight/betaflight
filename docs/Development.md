@@ -54,6 +54,8 @@ The tests are currently always compiled with debugging information enabled, ther
 
 * Test OpenLRSNG's RSSI PWM on AUX5-8.
 * Add support for UART3/4 on STM32F3.
+* Cleanup validateAndFixConfig and pwm_mapping.c to use some kind of feature/timer/io pin mapping to remove #ifdef
+* Split RX config into RC config and RX config.
 
 ##Known Issues
 
