@@ -182,6 +182,7 @@ void init(void)
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
+    pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.extraServos = currentProfile.gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
@@ -215,7 +216,9 @@ void init(void)
     }
 #endif
 
-    ws2811LedStripInit();
+    if (feature(FEATURE_LED_STRIP)) {
+        ws2811LedStripInit();
+    }
 
     if (feature(FEATURE_TELEMETRY))
         initTelemetry();
