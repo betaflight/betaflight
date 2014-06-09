@@ -171,6 +171,22 @@ STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value
     }
 };
 
+// first_array = usually hex_to_flash array
+// second_array = usually verify_hex array
+// result = true/false
+STM32DFU_protocol.prototype.verify_flash = function(first_array, second_array) {
+    for (var i = 0; i < first_array.length; i++) {
+        if (first_array[i] != second_array[i]) {
+            console.log('Verification failed on byte: ' + i + ' expected: 0x' + first_array[i].toString(16) + ' received: 0x' + second_array[i].toString(16));
+            return false;
+        }
+    }
+
+    console.log('Verification successful, matching: ' + first_array.length + ' bytes');
+
+    return true;
+};
+
 STM32DFU_protocol.prototype.upload_procedure = function(step) {
     var self = this;
 
@@ -233,7 +249,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             var bytes_flashed_total = 0; // used for progress bar
             var wBlockNum = 2; // required by DFU
 
-            function load_address() {
+            function load_write_address() {
                 self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
                     self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
                         if (data[4] == self.state.dfuDNBUSY) { // completely normal
@@ -296,19 +312,19 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                         bytes_flashed = 0;
                         wBlockNum = 2;
 
-                        load_address();
+                        load_write_address();
                     } else {
                         // all blocks flashed
                         console.log('Writing: done');
 
                         // proceed to next step
-                        self.upload_procedure(6);
+                        self.upload_procedure(5);
                     }
                 }
             }
 
             // start
-            load_address();
+            load_write_address();
             break;
         case 5:
             // verify
@@ -328,46 +344,61 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                 self.verify_hex.push([]);
             }
 
-            function read() {
-                if (bytes_verified < self.hex.data[reading_block].bytes) {
-                    var bytes_to_read = ((bytes_verified + 2048) <= self.hex.data[reading_block].bytes) ? 2048 : (self.hex.data[reading_block].bytes - bytes_verified);
+            function load_read_address() {
+                self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
+                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                        if (data[4] == self.state.dfuDNBUSY) { // completely normal
+                            var delay = data[1] | (data[2] << 8) | (data[3] << 16);
 
-                    self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
+                            setTimeout(function() {
+                                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                    if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                        clear_status();
+                                    } else {
+                                        console.log(data);
+                                    }
+                                });
+                            }, delay);
+                        } else {
+                            console.log(data);
+                        }
+                    });
+                });
+            }
+
+            function clear_status() {
+                self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
+                    self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
                         self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                            if (data[4] == self.state.dfuDNBUSY) { // completely normal
-                                var delay = data[1] | (data[2] << 8) | (data[3] << 16);
-
-                                setTimeout(function() {
-                                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                                        if (data[4] == self.state.dfuDNLOAD_IDLE) {
-                                            // address loaded in this stage
-                                            self.controlTransfer('in', self.request.UPLOAD, 2, 0, bytes_to_read, 0, function(data) { // getting error code 4 so this is obviously wrong, but whats the right approach?
-                                                console.log(data);
-                                                for (var i = 0; i < data.length; i++) {
-                                                    self.verify_hex[reading_block].push(data[i]);
-                                                }
-
-                                                address += bytes_to_read;
-                                                bytes_verified += bytes_to_read;
-                                                bytes_verified_total += bytes_to_read;
-
-                                                // update progress bar
-                                                self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100);
-
-                                                // verify another page
-                                                read();
-                                            });
-                                        } else {
-                                            // throw some error
-                                            console.log(data);
-                                        }
-                                    });
-                                }, delay);
+                            if (data[4] == self.state.dfuIDLE) {
+                                read();
                             } else {
                                 // throw some error
                                 console.log(data);
                             }
                         });
+                    });
+                });
+            }
+
+            function read() {
+                if (bytes_verified < self.hex.data[reading_block].bytes) {
+                    var bytes_to_read = ((bytes_verified + 2048) <= self.hex.data[reading_block].bytes) ? 2048 : (self.hex.data[reading_block].bytes - bytes_verified);
+
+                    self.controlTransfer('in', self.request.UPLOAD, wBlockNum++, 0, bytes_to_read, 0, function(data) {
+                        for (var i = 0; i < data.length; i++) {
+                            self.verify_hex[reading_block].push(data[i]);
+                        }
+
+                        address += bytes_to_read;
+                        bytes_verified += bytes_to_read;
+                        bytes_verified_total += bytes_to_read;
+
+                        // update progress bar
+                        self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100);
+
+                        // verify another page
+                        read();
                     });
                 } else {
                     // move to another block
@@ -376,8 +407,9 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
 
                         address = self.hex.data[reading_block].address;
                         bytes_verified = 0;
+                        wBlockNum = 2;
 
-                        read();
+                        load_read_address();
                     } else {
                         // all blocks read, verify
 
@@ -411,8 +443,8 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                 }
             }
 
-            // start reading
-            read();
+            // start
+            load_read_address();
             break;
         case 6:
             self.upload_procedure(99);
