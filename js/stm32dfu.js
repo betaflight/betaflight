@@ -3,6 +3,12 @@
     control transfers for communicating
     recipient is interface
     request type is class
+
+    Descriptors seems to be broken in current chrome.usb API implementation (writing this while using canary 37.0.2040.0
+
+    General rule to remember is that DFU doesn't like running specific operations while the device isn't in idle state
+    that being said, it seems that certain level of CLRSTATUS is required before running another type of operation for
+    example switching from DNLOAD to UPLOAD, etc, clearning the state so device is in dfuIDLE is highly recommended.
 */
 
 var STM32DFU_protocol = function() {
@@ -171,6 +177,57 @@ STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value
     }
 };
 
+// routine calling DFU_CLRSTATUS until device is in dfuIDLE state
+STM32DFU_protocol.prototype.clearStatus = function(callback) {
+    var self = this;
+
+    function check_status() {
+        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+            if (data[4] == self.state.dfuIDLE) {
+                callback();
+            } else {
+                var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+
+                setTimeout(clear_status, delay);
+            }
+        });
+    }
+
+    function clear_status() {
+        self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
+            check_status();
+        });
+    }
+
+    check_status();
+};
+
+STM32DFU_protocol.prototype.loadAddress = function(address, callback) {
+    var self = this;
+
+    self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
+        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+            if (data[4] == self.state.dfuDNBUSY) {
+                var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+
+                setTimeout(function() {
+                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                        if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                            callback();
+                        } else {
+                            console.log('Failed to execure address load');
+                            self.upload_procedure(99);
+                        }
+                    });
+                }, delay);
+            } else {
+                console.log('Failed to request address load');
+                self.upload_procedure(99);
+            }
+        });
+    });
+};
+
 // first_array = usually hex_to_flash array
 // second_array = usually verify_hex array
 // result = true/false
@@ -192,26 +249,11 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
 
     switch (step) {
         case 1:
-            self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                if (data[4] == self.state.dfuIDLE) {
-                    self.upload_procedure(3);
-                } else {
-                    self.upload_procedure(2);
-                }
+            self.clearStatus(function() {
+                self.upload_procedure(2);
             });
             break;
         case 2:
-            self.controlTransfer('out', self.request.CLRSTATUS, 0, 0, 0, 0, function() {
-                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                    if (data[4] == self.state.dfuIDLE) {
-                        self.upload_procedure(3);
-                    } else {
-                        // throw some error
-                    }
-                });
-            });
-            break;
-        case 3:
             // full chip erase
             console.log('Executing global chip erase');
             STM32.GUI_status('Erasing');
@@ -226,18 +268,21 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                                 if (data[4] == self.state.dfuDNLOAD_IDLE) {
                                     self.upload_procedure(4);
                                 } else {
-                                    // throw some error
+                                    console.log('Failed to execute global chip erase');
+                                    self.upload_procedure(99);
                                 }
                             });
                         }, delay);
                     } else {
-                        // throw some error
+                        console.log('Failed to initiate global chip erase');
+                        self.upload_procedure(99);
                     }
                 });
             });
             break;
         case 4:
             // upload
+            // we dont need to clear the state as we are already using DFU_DNLOAD
             console.log('Writing data ...');
             STM32.GUI_status('<span style="color: green">Flashing ...</span>');
 
@@ -249,70 +294,54 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             var bytes_flashed_total = 0; // used for progress bar
             var wBlockNum = 2; // required by DFU
 
-            function load_write_address() {
-                self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x21, address, (address >> 8), (address >> 16), (address >> 24)], function() {
-                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                        if (data[4] == self.state.dfuDNBUSY) { // completely normal
-                            var delay = data[1] | (data[2] << 8) | (data[3] << 16);
-
-                            setTimeout(function() {
-                                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                                    if (data[4] == self.state.dfuDNLOAD_IDLE) {
-                                        write();
-                                    } else {
-                                        console.log(data);
-                                    }
-                                });
-                            }, delay);
-                        } else {
-                            console.log(data);
-                        }
-                    });
-                });
-            }
+            // start
+            self.loadAddress(address, write);
 
             function write() {
                 if (bytes_flashed < self.hex.data[flashing_block].bytes) {
                     var bytes_to_write = ((bytes_flashed + 2048) <= self.hex.data[flashing_block].bytes) ? 2048 : (self.hex.data[flashing_block].bytes - bytes_flashed);
 
-                    var data = [];
-                    for (var i = 0; i < bytes_to_write; i++) {
-                        data.push(self.hex.data[flashing_block].data[bytes_flashed++]);
-                    }
+                    var data_to_flash = self.hex.data[flashing_block].data.slice(bytes_flashed, bytes_flashed + bytes_to_write);
 
                     address += bytes_to_write;
+                    bytes_flashed += bytes_to_write;
                     bytes_flashed_total += bytes_to_write;
 
-                    self.controlTransfer('out', self.request.DNLOAD, wBlockNum++, 0, 0, data, function() {
+                    self.controlTransfer('out', self.request.DNLOAD, wBlockNum++, 0, 0, data_to_flash, function() {
                         self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                            var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+                            if (data[4] == self.state.dfuDNBUSY) {
+                                var delay = data[1] | (data[2] << 8) | (data[3] << 16);
 
-                            setTimeout(function() {
-                                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
-                                    if (data[4] == self.state.dfuDNLOAD_IDLE) {
-                                        // update progress bar
-                                        self.progress_bar_e.val(bytes_flashed_total / (self.hex.bytes_total * 2) * 100);
+                                setTimeout(function() {
+                                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
+                                        if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                            // update progress bar
+                                            self.progress_bar_e.val(bytes_flashed_total / (self.hex.bytes_total * 2) * 100);
 
-                                        // flash another page
-                                        write();
-                                    } else {
-                                        // throw some error
-                                        console.log(data);
-                                    }
-                                });
-                            }, delay);
+                                            // flash another page
+                                            write();
+                                        } else {
+                                            console.log('Failed to write ' + bytes_to_write + 'bytes to 0x' + address.toString(16));
+                                            self.upload_procedure(99);
+                                        }
+                                    });
+                                }, delay);
+                            } else {
+                                console.log('Failed to initiate write ' + bytes_to_write + 'bytes to 0x' + address.toString(16));
+                                self.upload_procedure(99);
+                            }
                         });
                     })
                 } else {
-                    // move to another block
                     if (flashing_block < blocks) {
+                        // move to another block
                         flashing_block++;
 
                         address = self.hex.data[flashing_block].address;
                         bytes_flashed = 0;
                         wBlockNum = 2;
 
-                        load_write_address();
+                        self.loadAddress(address, write);
                     } else {
                         // all blocks flashed
                         console.log('Writing: done');
@@ -322,9 +351,6 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                     }
                 }
             }
-
-            // start
-            load_write_address();
             break;
         case 5:
             // verify
