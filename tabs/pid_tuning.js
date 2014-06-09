@@ -141,7 +141,7 @@ function tab_initialize_pid_tuning() {
                     $(this).val(PIDs[7][i++].toFixed(1));
                     break;
                 case 1:
-                    $(this).val(PIDs[7][i++].toFixed(2));
+                    $(this).val(PIDs[7][i++].toFixed(3));
                     break;
                 case 2:
                     $(this).val(PIDs[7][i++].toFixed(0));
