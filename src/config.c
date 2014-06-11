@@ -1,3 +1,8 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
+
 #include "board.h"
 #include "mw.h"
 #include <string.h>
@@ -13,7 +18,7 @@ master_t mcfg;  // master config struct with data independent from profiles
 config_t cfg;   // profile config struct
 const char rcChannelLetters[] = "AERT1234";
 
-static const uint8_t EEPROM_CONF_VERSION = 64;
+static const uint8_t EEPROM_CONF_VERSION = 65;
 static uint32_t enabledSensors = 0;
 static void resetConf(void);
 
@@ -125,7 +130,8 @@ void writeEEPROM(uint8_t b, uint8_t updateProfile)
     while (tries--) {
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 
-        status = FLASH_ErasePage(FLASH_WRITE_ADDR);
+        FLASH_ErasePage(FLASH_WRITE_ADDR);
+        status = FLASH_ErasePage(FLASH_WRITE_ADDR + FLASH_PAGE_SIZE);
         for (i = 0; i < sizeof(master_t) && status == FLASH_COMPLETE; i += 4)
             status = FLASH_ProgramWord(FLASH_WRITE_ADDR + i, *(uint32_t *)((char *)&mcfg + i));
         if (status == FLASH_COMPLETE)

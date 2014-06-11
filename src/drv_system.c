@@ -1,3 +1,8 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
+
 #include "board.h"
 
 // cycles per microsecond
@@ -68,6 +73,10 @@ void systemInit(bool overclock)
             .cfg = { BEEP_PIN, Mode_Out_OD, Speed_2MHz }
         },
 #endif
+        {
+            .gpio = INV_GPIO,
+            .cfg = { INV_PIN, Mode_Out_PP, Speed_2MHz }
+        },
     };
     gpio_config_t gpio;
     uint32_t i;

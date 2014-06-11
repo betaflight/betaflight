@@ -1,3 +1,8 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
+
 #include "board.h"
 #include "mw.h"
 
@@ -22,6 +27,12 @@ void sbusInit(rcReadRawDataPtr *callback)
     int b;
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
         sbusChannelData[b] = 2 * (mcfg.midrc - SBUS_OFFSET);
+    // Configure hardware inverter on PB2. If not available, this has no effect.
+    if (mcfg.serial2_rx_inverted) {
+        INV_ON;
+    } else {
+        INV_OFF;
+    }
     core.rcvrport = uartOpen(USART2, sbusDataReceive, 100000, (portMode_t)(MODE_RX | MODE_SBUS));
     if (callback)
         *callback = sbusReadRawRC;

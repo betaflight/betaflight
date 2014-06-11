@@ -1,3 +1,7 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
 #pragma once
 
 // for roundf()
@@ -208,6 +212,8 @@ typedef struct baro_t {
 #define BEEP_PIN    Pin_12 // PA12 (Buzzer)
 #define BARO_GPIO   GPIOC
 #define BARO_PIN    Pin_13
+#define INV_PIN     Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INV_GPIO    GPIOB
 
 #define GYRO
 #define ACC
@@ -253,6 +259,14 @@ typedef struct baro_t {
 #define BEEP_TOGGLE              ;
 #define BEEP_OFF                 ;
 #define BEEP_ON                  ;
+#endif
+
+#ifdef INV_GPIO
+#define INV_OFF                  digitalLo(INV_GPIO, INV_PIN);
+#define INV_ON                   digitalHi(INV_GPIO, INV_PIN);
+#else
+#define INV_OFF                 ;
+#define INV_ON                  ;
 #endif
 
 // #define SOFT_I2C                 // enable to test software i2c

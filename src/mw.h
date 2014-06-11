@@ -1,3 +1,8 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
+
 #pragma once
 
 /* for VBAT monitoring frequency */
@@ -281,10 +286,11 @@ typedef struct master_t {
     int8_t gps_baudrate;                    // See GPSBaudRates enum.
 
     uint32_t serial_baudrate;
+    uint8_t serial2_rx_inverted;            // invert RX only for USART2 (for Sbus, etc)
 
-    uint32_t softserial_baudrate;             // shared by both soft serial ports
-    uint8_t softserial_1_inverted;            // use inverted softserial input and output signals on port 1
-    uint8_t softserial_2_inverted;            // use inverted softserial input and output signals on port 2
+    uint32_t softserial_baudrate;           // shared by both soft serial ports
+    uint8_t softserial_1_inverted;          // use inverted softserial input and output signals on port 1
+    uint8_t softserial_2_inverted;          // use inverted softserial input and output signals on port 2
 
     uint8_t telemetry_provider;             // See TelemetryProvider enum.
     uint8_t telemetry_port;                 // See TelemetryPort enum.
