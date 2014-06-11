@@ -78,7 +78,8 @@ void timerInit(void);
 void initTelemetry(void);
 void serialInit(serialConfig_t *initialSerialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
-void pwmInit(drv_pwm_config_t *init);
+pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
+void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers, pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void buzzerInit(failsafe_t *initialFailsafe);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
@@ -163,8 +164,6 @@ void init(void)
         compassInit();
 #endif
 
-    mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer);
-
     timerInit();
 
     serialInit(&masterConfig.serialConfig);
@@ -195,7 +194,9 @@ void init(void)
         pwm_params.idlePulse = 0; // brushed motors
     pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
 
-    pwmInit(&pwm_params);
+    pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
+
+    mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer, pwmOutputConfiguration);
 
     failsafe = failsafeInit(&masterConfig.rxConfig);
     buzzerInit(failsafe);

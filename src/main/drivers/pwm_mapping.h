@@ -54,6 +54,12 @@ typedef struct drv_pwm_config_t {
     uint16_t servoCenterPulse;
 } drv_pwm_config_t;
 
+
+typedef struct pwmOutputConfiguration_s {
+    uint8_t servoCount;
+    uint8_t motorCount;
+} pwmOutputConfiguration_t;
+
 // This indexes into the read-only hardware definition structure, timerHardware_t, as well as into pwmPorts structure with dynamic data.
 enum {
     PWM1 = 0,

@@ -17,7 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include <string.h>
 #include <stdlib.h>
 
 #include "platform.h"
@@ -143,14 +143,16 @@ static const uint16_t * const hardwareMaps[] = {
     airPPM,
 };
 
-void pwmInit(drv_pwm_config_t *init)
+pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
     int i = 0;
     const uint16_t *setup;
 
     int channelIndex = 0;
-    int servoIndex = 0;
-    int motorIndex = 0;
+
+    static pwmOutputConfiguration_t pwmOutputConfiguration;
+
+    memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
 
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
     if (init->airplane)
@@ -265,14 +267,16 @@ void pwmInit(drv_pwm_config_t *init)
             channelIndex++;
         } else if (type == TYPE_M) {
             if (init->motorPwmRate > 500) {
-            	pwmBrushedMotorConfig(&timerHardware[timerIndex], motorIndex, init->motorPwmRate, init->idlePulse);
+            	pwmBrushedMotorConfig(&timerHardware[timerIndex], pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
             } else {
-            	pwmBrushlessMotorConfig(&timerHardware[timerIndex], motorIndex, init->motorPwmRate, init->idlePulse);
+            	pwmBrushlessMotorConfig(&timerHardware[timerIndex], pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
             }
-            motorIndex++;
+            pwmOutputConfiguration.motorCount++;
         } else if (type == TYPE_S) {
-            pwmServoConfig(&timerHardware[timerIndex], servoIndex, init->servoPwmRate, init->servoCenterPulse);
-            servoIndex++;
+            pwmServoConfig(&timerHardware[timerIndex], pwmOutputConfiguration.servoCount, init->servoPwmRate, init->servoCenterPulse);
+            pwmOutputConfiguration.servoCount++;
         }
     }
+
+    return &pwmOutputConfiguration;
 }

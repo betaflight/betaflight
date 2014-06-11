@@ -27,6 +27,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
+#include "drivers/pwm_mapping.h"
 
 #include "rx/rx.h"
 #include "io/gimbal.h"
@@ -39,6 +40,7 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
+#define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
 static uint8_t numberMotor = 0;
 int16_t motor[MAX_SUPPORTED_MOTORS];
@@ -46,6 +48,8 @@ int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 int16_t servo[MAX_SUPPORTED_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
 static int useServo;
+
+static uint8_t servoCount;
 
 static servoParam_t *servoConf;
 static mixerConfig_t *mixerConfig;
@@ -239,11 +243,13 @@ int servoDirection(int nr, int lr)
         return 1;
 }
 
-void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers)
+void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers, pwmOutputConfiguration_t *pwmOutputConfiguration)
 {
     int i;
 
     currentMixerConfiguration = mixerConfiguration;
+
+    servoCount = pwmOutputConfiguration->servoCount;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
     useServo = mixers[mixerConfiguration].useServo;
@@ -536,15 +542,20 @@ void mixTable(void)
 
     // forward AUX1-4 to servo outputs (not constrained)
     if (gimbalConfig->gimbal_flags & GIMBAL_FORWARDAUX) {
-        int offset = 0;
         // offset servos based off number already used in mixer types
         // airplane and servo_tilt together can't be used
-        if (currentMixerConfiguration == MULTITYPE_AIRPLANE || currentMixerConfiguration == MULTITYPE_FLYING_WING)
-            offset = 4;
-        else if (mixers[currentMixerConfiguration].useServo)
-            offset = 2;
-        for (i = 0; i < 4; i++)
-            pwmWriteServo(i + offset, rcData[AUX1 + i]);
+        int8_t firstServo = servoCount - AUX_FORWARD_CHANNEL_TO_SERVO_COUNT;
+
+        // start forwarding from this channel
+        uint8_t channelOffset = AUX1;
+
+        int8_t servoOffset;
+        for (servoOffset = 0; servoOffset < AUX_FORWARD_CHANNEL_TO_SERVO_COUNT; servoOffset++) {
+            if (firstServo + servoOffset < 0) {
+                continue; // there are not enough servos to forward all the AUX channels.
+            }
+            pwmWriteServo(firstServo + servoOffset, rcData[channelOffset++]);
+        }
     }
 
     maxMotor = motor[0];
