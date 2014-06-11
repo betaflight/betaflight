@@ -285,8 +285,7 @@ typedef struct master_t {
     uint8_t gps_type;                       // See GPSHardware enum.
     int8_t gps_baudrate;                    // See GPSBaudRates enum.
 
-    uint32_t serial_baudrate;
-    uint8_t serial2_rx_inverted;            // invert RX only for USART2 (for Sbus, etc)
+    uint32_t serial_baudrate;               // primary serial (MSP) port baudrate
 
     uint32_t softserial_baudrate;           // shared by both soft serial ports
     uint8_t softserial_1_inverted;          // use inverted softserial input and output signals on port 1

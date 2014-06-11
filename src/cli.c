@@ -136,7 +136,6 @@ const clivalue_t valueTable[] = {
     { "fixedwing_althold_dir", VAR_INT8, &mcfg.fixedwing_althold_dir, -1, 1 },
     { "reboot_character", VAR_UINT8, &mcfg.reboot_character, 48, 126 },
     { "serial_baudrate", VAR_UINT32, &mcfg.serial_baudrate, 1200, 115200 },
-    { "serial2_rx_inverted", VAR_UINT8, &mcfg.serial2_rx_inverted, 0, 1 },
     { "softserial_baudrate", VAR_UINT32, &mcfg.softserial_baudrate, 1200, 19200 },
     { "softserial_1_inverted", VAR_UINT8, &mcfg.softserial_1_inverted, 0, 1 },
     { "softserial_2_inverted", VAR_UINT8, &mcfg.softserial_2_inverted, 0, 1 },
