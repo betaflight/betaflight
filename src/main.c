@@ -1,3 +1,7 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
 #include "board.h"
 #include "mw.h"
 
@@ -126,6 +130,7 @@ int main(void)
     }
 
     pwmInit(&pwm_params);
+    core.numServos = pwm_params.numServos;
 
     // configure PWM/CPPM read function and max number of channels. spektrum or sbus below will override both of these, if enabled
     for (i = 0; i < RC_CHANS; i++)

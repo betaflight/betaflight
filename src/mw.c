@@ -1,3 +1,7 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
 #include "board.h"
 #include "mw.h"
 
@@ -96,8 +100,6 @@ void annexCode(void)
     static int32_t amperageRaw = 0;
     static int64_t mAhdrawnRaw = 0;
     static int32_t vbatCycleTime = 0;
-
-    int i;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
     if (rcData[THROTTLE] < cfg.tpa_breakpoint) {

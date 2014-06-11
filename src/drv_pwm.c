@@ -1,3 +1,7 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
 #include "board.h"
 
 /*
@@ -361,7 +365,8 @@ bool pwmInit(drv_pwm_config_t *init)
         }
 
         if (init->extraServos && !init->airplane) {
-            // remap PWM5..8 as servos when used in extended servo mode
+            // remap PWM5..8 as servos when used in extended servo mode. 
+            // condition for airplane because airPPM already has these as servos
             if (port >= PWM5 && port <= PWM8)
                 mask = TYPE_S;
         }
@@ -390,6 +395,10 @@ bool pwmInit(drv_pwm_config_t *init)
     pwmWritePtr = pwmWriteStandard;
     if (init->motorPwmRate > 500)
         pwmWritePtr = pwmWriteBrushed;
+
+    // set return values in init struct
+    init->numServos = numServos;
+
     return false;
 }
 

@@ -1,3 +1,7 @@
+/*
+ * This file is part of baseflight
+ * Licensed under GPL V3 or modified DCL - see https://github.com/multiwii/baseflight/blob/master/README.md
+ */
 #pragma once
 
 #define MAX_MOTORS  12
@@ -22,6 +26,9 @@ typedef struct drv_pwm_config_t {
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
     uint16_t servoCenterPulse;
     uint16_t failsafeThreshold;
+    
+    // OUT parameters, filled by driver
+    uint8_t numServos;
 } drv_pwm_config_t;
 
 // This indexes into the read-only hardware definition structure in drv_pwm.c, as well as into pwmPorts[] structure with dynamic data.
