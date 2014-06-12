@@ -62,12 +62,11 @@ void computeIMU(void)
     if (mcfg.mixerConfiguration == MULTITYPE_TRI) {
         gyroData[YAW] = (gyroYawSmooth * 2 + gyroADC[YAW]) / 3;
         gyroYawSmooth = gyroData[YAW];
-        gyroData[ROLL] = gyroADC[ROLL];
-        gyroData[PITCH] = gyroADC[PITCH];
     } else {
-        for (axis = 0; axis < 3; axis++)
-            gyroData[axis] = gyroADC[axis];
+        gyroData[YAW] = gyroADC[YAW];
     }
+    gyroData[ROLL] = gyroADC[ROLL];
+    gyroData[PITCH] = gyroADC[PITCH];
 }
 
 // **************************************************
