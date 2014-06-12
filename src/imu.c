@@ -121,7 +121,7 @@ void rotateV(struct fp_vector *v, float *delta)
     // This does a  "proper" matrix rotation using gyro deltas without small-angle approximation
     float mat[3][3];
     float cosx, sinx, cosy, siny, cosz, sinz;
-    float coszcosx, coszcosy, sinzcosx, coszsinx, sinzsinx;
+    float coszcosx, sinzcosx, coszsinx, sinzsinx;
 
     cosx = cosf(delta[ROLL]);
     sinx = sinf(delta[ROLL]);
@@ -131,12 +131,11 @@ void rotateV(struct fp_vector *v, float *delta)
     sinz = sinf(delta[YAW]);
 
     coszcosx = cosz * cosx;
-    coszcosy = cosz * cosy;
     sinzcosx = sinz * cosx;
     coszsinx = sinx * cosz;
     sinzsinx = sinx * sinz;
 
-    mat[0][0] = coszcosy;
+    mat[0][0] = cosz * cosy;
     mat[0][1] = -cosy * sinz;
     mat[0][2] = siny;
     mat[1][0] = sinzcosx + (coszsinx * siny);
