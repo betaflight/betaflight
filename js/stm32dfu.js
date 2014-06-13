@@ -395,8 +395,8 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                         read();
                     });
                 } else {
-                    // move to another block
                     if (reading_block < blocks) {
+                        // move to another block
                         reading_block++;
 
                         address = self.hex.data[reading_block].address;
