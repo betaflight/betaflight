@@ -108,6 +108,9 @@
     "statusbar_packet_error": {
         "message": "Packet error:"
     },
+    "statusbar_i2c_error": {
+        "message": "I2C error:"
+    },
     "statusbar_cycle_time": {
         "message": "Cycle Time:"
     },

@@ -32,8 +32,8 @@ $(document).ready(function() {
                     GUI.connected_to = false;
 
                     // Reset various UI elements
-                    $('.software-version').html('0.0');
-                    $('span.cycle-time').html('0');
+                    $('span.i2c-error').text(0);
+                    $('span.cycle-time').text(0);
 
                     MSP.disconnect_cleanup();
                     PortUsage.reset();
