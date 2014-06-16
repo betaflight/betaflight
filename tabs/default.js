@@ -2,7 +2,7 @@ function tab_initialize_default() {
     GUI.active_tab = 'default';
 
     $('#content').load("./tabs/default.html", function() {
-        check_usb_permissions(); // temporary enabled in dev branch, should be commented out untill DFU support goes live
+        //check_usb_permissions(); // temporary enabled in dev branch, should be commented out untill DFU support goes live
 
         // translate to user-selected language
         localize();
