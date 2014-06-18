@@ -102,7 +102,6 @@ void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *ini
 
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfiguration)
 {
-    uint32_t axis;
     static int16_t gyroYawSmooth = 0;
 
     gyroGetADC();
@@ -115,14 +114,14 @@ void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfigurat
         accADC[Z] = 0;
     }
 
+    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
+    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
+
     if (mixerConfiguration == MULTITYPE_TRI) {
         gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
         gyroYawSmooth = gyroData[FD_YAW];
-        gyroData[FD_ROLL] = gyroADC[FD_ROLL];
-        gyroData[FD_PITCH] = gyroADC[FD_PITCH];
     } else {
-        for (axis = 0; axis < 3; axis++)
-            gyroData[axis] = gyroADC[axis];
+        gyroData[FD_YAW] = gyroADC[FD_YAW];
     }
 }
 
@@ -164,7 +163,7 @@ void rotateV(struct fp_vector *v, fp_angles_t *delta)
     // This does a  "proper" matrix rotation using gyro deltas without small-angle approximation
     float mat[3][3];
     float cosx, sinx, cosy, siny, cosz, sinz;
-    float coszcosx, coszcosy, sinzcosx, coszsinx, sinzsinx;
+    float coszcosx, sinzcosx, coszsinx, sinzsinx;
 
     cosx = cosf(delta->angles.roll);
     sinx = sinf(delta->angles.roll);
@@ -174,12 +173,11 @@ void rotateV(struct fp_vector *v, fp_angles_t *delta)
     sinz = sinf(delta->angles.yaw);
 
     coszcosx = cosz * cosx;
-    coszcosy = cosz * cosy;
     sinzcosx = sinz * cosx;
     coszsinx = sinx * cosz;
     sinzsinx = sinx * sinz;
 
-    mat[0][0] = coszcosy;
+    mat[0][0] = cosz * cosy;
     mat[0][1] = -cosy * sinz;
     mat[0][2] = siny;
     mat[1][0] = sinzcosx + (coszsinx * siny);
