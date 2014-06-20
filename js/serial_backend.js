@@ -1,6 +1,4 @@
 var configuration_received = false;
-var CLI_active = false;
-var CLI_valid = false;
 
 $(document).ready(function() {
     $('div#port-picker a.connect').click(function() {

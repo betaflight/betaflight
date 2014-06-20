@@ -1,3 +1,6 @@
+var CLI_active = false;
+var CLI_valid = false;
+
 var CliHistory = function () {
     this.history = [];
     this.index = 0;
