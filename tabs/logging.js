@@ -1,16 +1,34 @@
+var MSP_pass_through = false;
+
 function tab_initialize_logging() {
     ga_tracker.sendAppView('Logging');
     GUI.active_tab = 'logging';
 
     var requested_properties = [];
 
-    MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
+    if (configuration_received) {
+        MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
 
-    function get_motor_data() {
-        MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
-    }
+        function get_motor_data() {
+            MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
+        }
 
-    function load_html() {
+        function load_html() {
+            $('#content').load("./tabs/logging.html", process_html);
+        }
+    } else {
+        MSP_pass_through = true;
+
+        // we will initialize RC.channels array and MOTOR_DATA array manually
+        RC.active_channels = 8;
+        for (var i = 0; i < RC.active_channels; i++) {
+            RC.channels[i] = 0;
+        }
+
+        for (var i = 0; i < 8; i++) {
+            MOTOR_DATA[i] = 0;
+        }
+
         $('#content').load("./tabs/logging.html", process_html);
     }
 
@@ -36,7 +54,7 @@ function tab_initialize_logging() {
                     });
 
                     if (requested_properties.length) {
-                        // print header for the
+                        // print header for the csv file
                         print_head();
 
                         function poll_data() {
@@ -44,16 +62,18 @@ function tab_initialize_logging() {
                             crunch_data();
 
                             // request new
-                            for (var i = 0; i < requested_properties.length; i++) {
-                                MSP.send_message(MSP_codes[requested_properties[i]]);
+                            if (!MSP_pass_through) {
+                                for (var i = 0; i < requested_properties.length; i++) {
+                                    MSP.send_message(MSP_codes[requested_properties[i]]);
 
-                                /* this approach could be used if we want to utilize request time compensation
-                                if (i < requested_properties.length -1) {
-                                    MSP.send_message(requested_properties[i]);
-                                } else {
-                                    MSP.send_message(requested_properties[i], false, false, poll_data);
+                                    /* this approach could be used if we want to utilize request time compensation
+                                    if (i < requested_properties.length -1) {
+                                        MSP.send_message(requested_properties[i]);
+                                    } else {
+                                        MSP.send_message(requested_properties[i], false, false, poll_data);
+                                    }
+                                    */
                                 }
-                                */
                             }
                         }
 

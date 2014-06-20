@@ -54,19 +54,17 @@ $(document).ready(function() {
         if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active
             var self = this;
             var index = $(self).parent().index();
+            var tab = $(self).parent().prop('class');
 
             // if there is no active connection, return
-            if (configuration_received == false) {
-                GUI.log('You need to connect before you can view any of the tabs', 'red');
+            if (!configuration_received && tab != 'tab_logging') {
+                GUI.log('You need to <strong>connect</strong> before you can view any of the tabs');
                 return;
             }
 
             GUI.tab_switch_cleanup(function() {
                 // disable previously active tab highlight
                 $('li', tabs).removeClass('active');
-
-                // get tab class name (there should be only one class listed)
-                var tab = $(self).parent().prop('class');
 
                 // Highlight selected tab
                 $(self).parent().addClass('active');

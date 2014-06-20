@@ -36,6 +36,7 @@ $(document).ready(function() {
                     MSP.disconnect_cleanup();
                     PortUsage.reset();
                     configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
+                    MSP_pass_through = false;
 
                     // unlock port select & baud
                     $('div#port-picker #port').prop('disabled', false);
@@ -125,34 +126,39 @@ function onOpen(openInfo) {
 
         serial.onReceive.addListener(read_serial);
 
-        // disconnect after 10 seconds with error if we don't get IDENT data
-        GUI.timeout_add('connecting', function() {
-            if (!configuration_received) {
-                GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
+        if (!MSP_pass_through) {
+            // disconnect after 10 seconds with error if we don't get IDENT data
+            GUI.timeout_add('connecting', function() {
+                if (!configuration_received) {
+                    GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
 
-                $('div#port-picker a.connect').click(); // disconnect
-            }
-        }, 10000);
-
-        // request configuration data
-        MSP.send_message(MSP_codes.MSP_UID, false, false, function() {
-            GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
-            MSP.send_message(MSP_codes.MSP_IDENT, false, false, function() {
-                GUI.timeout_remove('connecting'); // kill connecting timer
-
-                GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
-
-                if (CONFIG.version >= firmware_version_accepted) {
-                    configuration_received = true;
-
-                    $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-                    $('#tabs li a:first').click();
-                } else {
-                    GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [firmware_version_accepted]));
                     $('div#port-picker a.connect').click(); // disconnect
                 }
+            }, 10000);
+
+            // request configuration data
+            MSP.send_message(MSP_codes.MSP_UID, false, false, function() {
+                GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
+                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function() {
+                    GUI.timeout_remove('connecting'); // kill connecting timer
+
+                    GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
+
+                    if (CONFIG.version >= firmware_version_accepted) {
+                        configuration_received = true;
+
+                        $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+                        $('#tabs li a:first').click();
+                    } else {
+                        GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [firmware_version_accepted]));
+                        $('div#port-picker a.connect').click(); // disconnect
+                    }
+                });
             });
-        });
+        } else {
+            $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+            GUI.log('Connection opened in <strong>pass-through</strong> mode');
+        }
     } else {
         console.log('Failed to open serial port');
         GUI.log(chrome.i18n.getMessage('serialPortOpenFail'));
@@ -177,10 +183,12 @@ function onClosed(result) {
 }
 
 function read_serial(info) {
-    if (!CLI_active) {
+    if (!CLI_active && !MSP_pass_through) {
         MSP.read(info);
-    } else {
+    } else if (CLI_active) {
         handle_CLI(info);
+    } else if (MSP_pass_through) { // needs to be verified, might be removed after pass_through is 100% deployed
+        MSP.read(info);
     }
 }
 
