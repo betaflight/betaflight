@@ -167,6 +167,12 @@ function tab_initialize_logging() {
                     sample += ',' + GPS_DATA.speed;
                     sample += ',' + GPS_DATA.ground_course;
                     break;
+                case 'MSP_ANALOG':
+                    sample += ',' + ANALOG.voltage;
+                    sample += ',' + ANALOG.amperage;
+                    sample += ',' + ANALOG.mAhdrawn;
+                    sample += ',' + ANALOG.rssi;
+                    break;
                 case 'MSP_RC':
                     for (var chan = 0; chan < RC.active_channels; chan++) {
                         sample += ',' + RC.channels[chan];
@@ -218,6 +224,12 @@ function tab_initialize_logging() {
                     head += ',' + 'gpsAlt';
                     head += ',' + 'gpsSpeed';
                     head += ',' + 'gpsGroundCourse';
+                    break;
+                case 'MSP_ANALOG':
+                    head += ',' + 'voltage';
+                    head += ',' + 'amperage';
+                    head += ',' + 'mAhdrawn';
+                    head += ',' + 'rssi';
                     break;
                 case 'MSP_RC':
                     for (var chan = 0; chan < RC.active_channels; chan++) {
