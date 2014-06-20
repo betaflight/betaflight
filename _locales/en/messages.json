@@ -493,6 +493,9 @@
     "loggingBack": {
         "message": "Leave Logging / Disconnect"
     },
+    "loggingErrorNotConnected": {
+        "message": "You need to <strong>connect</strong> first"
+    },
     "loggingErrorLogFile": {
         "message": "Please select log file"
     },

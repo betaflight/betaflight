@@ -40,75 +40,79 @@ function tab_initialize_logging() {
         $('a.log_file').click(prepare_file);
 
         $('a.logging').click(function() {
-            if (fileEntry != null) {
-                var clicks = $(this).data('clicks');
+            if (GUI.connected_to) {
+                if (fileEntry != null) {
+                    var clicks = $(this).data('clicks');
 
-                if (!clicks) {
-                    // reset some variables before start
-                    samples = 0;
-                    log_buffer = [];
-                    requested_properties = [];
+                    if (!clicks) {
+                        // reset some variables before start
+                        samples = 0;
+                        log_buffer = [];
+                        requested_properties = [];
 
-                    $('.properties input:checked').each(function() {
-                        requested_properties.push($(this).prop('name'));
-                    });
+                        $('.properties input:checked').each(function() {
+                            requested_properties.push($(this).prop('name'));
+                        });
 
-                    if (requested_properties.length) {
-                        // print header for the csv file
-                        print_head();
+                        if (requested_properties.length) {
+                            // print header for the csv file
+                            print_head();
 
-                        function poll_data() {
-                            // save current
-                            crunch_data();
+                            function poll_data() {
+                                // save current
+                                crunch_data();
 
-                            // request new
-                            if (!MSP_pass_through) {
-                                for (var i = 0; i < requested_properties.length; i++) {
-                                    MSP.send_message(MSP_codes[requested_properties[i]]);
+                                // request new
+                                if (!MSP_pass_through) {
+                                    for (var i = 0; i < requested_properties.length; i++) {
+                                        MSP.send_message(MSP_codes[requested_properties[i]]);
 
-                                    /* this approach could be used if we want to utilize request time compensation
-                                    if (i < requested_properties.length -1) {
-                                        MSP.send_message(requested_properties[i]);
-                                    } else {
-                                        MSP.send_message(requested_properties[i], false, false, poll_data);
+                                        /* this approach could be used if we want to utilize request time compensation
+                                        if (i < requested_properties.length -1) {
+                                            MSP.send_message(requested_properties[i]);
+                                        } else {
+                                            MSP.send_message(requested_properties[i], false, false, poll_data);
+                                        }
+                                        */
                                     }
-                                    */
                                 }
                             }
+
+                            GUI.interval_add('log_data_pull', poll_data, parseInt($('select.speed').val()), true); // refresh rate goes here
+                            GUI.interval_add('flush_data', function() {
+                                if (log_buffer.length) { // only execute when there is actual data to write
+                                    if (fileWriter.readyState == 0 || fileWriter.readyState == 2) {
+                                        append_to_file(log_buffer.join('\n'));
+
+                                        $('.samples').text(samples += log_buffer.length);
+                                        $('.size').text(chrome.i18n.getMessage('loggingKB', [(fileWriter.length / 1024).toFixed(2)]));
+
+                                        log_buffer = [];
+                                    } else {
+                                        console.log('IO having trouble keeping up with the data flow');
+                                    }
+                                }
+                            }, 1000);
+
+                            $('.speed').prop('disabled', true);
+                            $(this).text(chrome.i18n.getMessage('loggingStop'));
+                            $(this).data("clicks", !clicks);
+                        } else {
+                            GUI.log(chrome.i18n.getMessage('loggingErrorOneProperty'));
                         }
-
-                        GUI.interval_add('log_data_pull', poll_data, parseInt($('select.speed').val()), true); // refresh rate goes here
-                        GUI.interval_add('flush_data', function() {
-                            if (log_buffer.length) { // only execute when there is actual data to write
-                                if (fileWriter.readyState == 0 || fileWriter.readyState == 2) {
-                                    append_to_file(log_buffer.join('\n'));
-
-                                    $('.samples').text(samples += log_buffer.length);
-                                    $('.size').text(chrome.i18n.getMessage('loggingKB', [(fileWriter.length / 1024).toFixed(2)]));
-
-                                    log_buffer = [];
-                                } else {
-                                    console.log('IO having trouble keeping up with the data flow');
-                                }
-                            }
-                        }, 1000);
-
-                        $('.speed').prop('disabled', true);
-                        $(this).text(chrome.i18n.getMessage('loggingStop'));
-                        $(this).data("clicks", !clicks);
                     } else {
-                        GUI.log(chrome.i18n.getMessage('loggingErrorOneProperty'));
+                        GUI.interval_remove('log_data_pull');
+                        GUI.interval_remove('flush_data');
+
+                        $('.speed').prop('disabled', false);
+                        $(this).text(chrome.i18n.getMessage('loggingStart'));
+                        $(this).data("clicks", !clicks);
                     }
                 } else {
-                    GUI.interval_remove('log_data_pull');
-                    GUI.interval_remove('flush_data');
-
-                    $('.speed').prop('disabled', false);
-                    $(this).text(chrome.i18n.getMessage('loggingStart'));
-                    $(this).data("clicks", !clicks);
+                    GUI.log(chrome.i18n.getMessage('loggingErrorLogFile'));
                 }
             } else {
-                GUI.log(chrome.i18n.getMessage('loggingErrorLogFile'));
+                GUI.log(chrome.i18n.getMessage('loggingErrorNotConnected'));
             }
         });
 
