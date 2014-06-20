@@ -48,9 +48,7 @@ var SENSOR_DATA = {
     accelerometer: [0, 0, 0],
     magnetometer:  [0, 0, 0],
     altitude:      0,
-    kinematicsX:   0.0,
-    kinematicsY:   0.0,
-    kinematicsZ:   0.0,
+    kinematics:    [0.0, 0.0, 0.0],
     debug:         [0, 0, 0, 0]
 };
 

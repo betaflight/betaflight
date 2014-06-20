@@ -251,9 +251,9 @@ function tab_initialize_initial_setup() {
             // Update cube
             var cube = $('div#cube');
 
-            cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematicsZ * -1.0) - yaw_fix) + 'deg)');
-            $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematicsY + 'deg)');
-            $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematicsX + 'deg)');
+            cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematics[2] * -1.0) - yaw_fix) + 'deg)');
+            $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematics[1] + 'deg)');
+            $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematics[0] + 'deg)');
         }
 
         GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);

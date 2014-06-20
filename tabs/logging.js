@@ -155,9 +155,9 @@ function tab_initialize_logging() {
                     sample += ',' + SENSOR_DATA.magnetometer;
                     break;
                 case 'MSP_ATTITUDE':
-                    sample += ',' + SENSOR_DATA.kinematicsX;
-                    sample += ',' + SENSOR_DATA.kinematicsY;
-                    sample += ',' + SENSOR_DATA.kinematicsZ;
+                    sample += ',' + SENSOR_DATA.kinematics[0];
+                    sample += ',' + SENSOR_DATA.kinematics[1];
+                    sample += ',' + SENSOR_DATA.kinematics[2];
                     break;
                 case 'MSP_ALTITUDE':
                     sample += ',' + SENSOR_DATA.altitude;

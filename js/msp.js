@@ -231,9 +231,9 @@ MSP.process_data = function(code, message_buffer, message_length) {
             GPS_DATA.update = data.getUint8(4);
             break;
         case MSP_codes.MSP_ATTITUDE:
-            SENSOR_DATA.kinematicsX = data.getInt16(0, 1) / 10.0;
-            SENSOR_DATA.kinematicsY = data.getInt16(2, 1) / 10.0;
-            SENSOR_DATA.kinematicsZ = data.getInt16(4, 1);
+            SENSOR_DATA.kinematics[0] = data.getInt16(0, 1) / 10.0; // x
+            SENSOR_DATA.kinematics[1] = data.getInt16(2, 1) / 10.0; // y
+            SENSOR_DATA.kinematics[2] = data.getInt16(4, 1); // z
             break;
         case MSP_codes.MSP_ALTITUDE:
             SENSOR_DATA.altitude = parseFloat((data.getInt32(0, 1) / 100.0).toFixed(2)); // correct scale factor
