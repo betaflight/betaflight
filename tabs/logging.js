@@ -112,6 +112,22 @@ function tab_initialize_logging() {
             }
         });
 
+        if (MSP_pass_through) {
+            $('a.back').show();
+
+            $('a.back').click(function() {
+                if (GUI.connected_to) {
+                    $('a.connect').click();
+                } else {
+                    GUI.tab_switch_cleanup(function() {
+                        MSP_pass_through = false;
+                        $('#tabs > ul li').removeClass('active');
+                        tab_initialize_default();
+                    });
+                }
+            });
+        }
+
         chrome.storage.local.get('logging_file_entry', function(result) {
             if (result.logging_file_entry) {
                 chrome.fileSystem.restoreEntry(result.logging_file_entry, function(entry) {

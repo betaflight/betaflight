@@ -490,6 +490,9 @@
     "loggingStop": {
         "message": "Stop Logging"
     },
+    "loggingBack": {
+        "message": "Leave Logging / Disconnect"
+    },
     "loggingErrorLogFile": {
         "message": "Please select log file"
     },
