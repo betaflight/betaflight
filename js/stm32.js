@@ -61,11 +61,7 @@ STM32_protocol.prototype.connect = function(hex) {
 
         switch (GUI.operating_system) {
             case 'Windows':
-                flashing_bitrate = 921600;
-                break;
             case 'MacOS':
-                flashing_bitrate = 921600;
-                break;
             case 'ChromeOS':
             case 'Linux':
             case 'UNIX':
