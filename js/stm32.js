@@ -52,7 +52,7 @@ STM32_protocol.prototype.connect = function(hex) {
     var self = this;
     self.hex = hex;
 
-    var selected_port = String($('div#port-picker .port select').val());
+    var selected_port = String($('div#port-picker #port').val());
     var baud = parseInt($('div#port-picker #baud').val());
 
     if (selected_port != '0') {

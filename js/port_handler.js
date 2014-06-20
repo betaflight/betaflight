@@ -65,7 +65,7 @@ port_handler.prototype.check = function() {
                             if (port == result.last_used_port) {
                                 console.log('Selecting last used port: ' + result.last_used_port);
 
-                                $('div#port-picker .port select').val(result.last_used_port);
+                                $('div#port-picker #port').val(result.last_used_port);
                             }
                         });
                     } else {
@@ -98,9 +98,9 @@ port_handler.prototype.check = function() {
 
             // select / highlight new port, if connected -> select connected port
             if (!GUI.connected_to) {
-                $('div#port-picker .port select').val(new_ports[0]);
+                $('div#port-picker #port').val(new_ports[0]);
             } else {
-                $('div#port-picker .port select').val(GUI.connected_to);
+                $('div#port-picker #port').val(GUI.connected_to);
             }
 
             // start connect procedure (if statement is valid)
@@ -143,13 +143,13 @@ port_handler.prototype.check = function() {
     function check_usb_devices() {
         chrome.usb.getDevices(usbDevices.STM32DFU, function(result) {
             if (result.length) {
-                if (!$("div#port-picker .port select [value='DFU']").length) {
-                    $('div#port-picker .port select').append('<option value="DFU">DFU</option>');
-                    $('div#port-picker .port select').val('DFU');
+                if (!$("div#port-picker #port [value='DFU']").length) {
+                    $('div#port-picker #port').append('<option value="DFU">DFU</option>');
+                    $('div#port-picker #port').val('DFU');
                 }
             } else {
-                if ($("div#port-picker .port select [value='DFU']").length) {
-                   $("div#port-picker .port select [value='DFU']").remove();
+                if ($("div#port-picker #port [value='DFU']").length) {
+                   $("div#port-picker #port [value='DFU']").remove();
                 }
             }
         });
@@ -157,14 +157,14 @@ port_handler.prototype.check = function() {
 };
 
 port_handler.prototype.update_port_select = function(ports) {
-    $('div#port-picker .port select').html(''); // drop previous one
+    $('div#port-picker #port').html(''); // drop previous one
 
     if (ports.length > 0) {
         for (var i = 0; i < ports.length; i++) {
-            $('div#port-picker .port select').append($("<option/>", {value: ports[i], text: ports[i]}));
+            $('div#port-picker #port').append($("<option/>", {value: ports[i], text: ports[i]}));
         }
     } else {
-        $('div#port-picker .port select').append($("<option/>", {value: 0, text: 'No Ports'}));
+        $('div#port-picker #port').append($("<option/>", {value: 0, text: 'No Ports'}));
     }
 };
 

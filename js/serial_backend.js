@@ -5,7 +5,7 @@ $(document).ready(function() {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
             var clicks = $(this).data('clicks');
 
-            var selected_port = String($('div#port-picker .port select').val());
+            var selected_port = String($('div#port-picker #port').val());
             var selected_baud = parseInt($('div#port-picker #baud').val());
 
             if (selected_port != '0' && selected_port != 'DFU') {
