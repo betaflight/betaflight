@@ -291,7 +291,7 @@ static void resetConf(void)
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
     currentProfile.deadband = 0;
     currentProfile.yaw_deadband = 0;
-    currentProfile.alt_hold_throttle_neutral = 40;
+    currentProfile.alt_hold_deadband = 40;
     currentProfile.alt_hold_fast_change = 1;
     currentProfile.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     currentProfile.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv

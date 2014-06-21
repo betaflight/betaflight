@@ -230,3 +230,7 @@ reason: renamed to `3d_deadband_throttle` for consistency
 ### neutral3d
 reason: renamed to `3d_neutral` for consistency
 
+### alt_hold_throttle_neutral
+reason: renamed to 'alt_hold_deadband'
+
+

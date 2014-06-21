@@ -232,7 +232,7 @@ const clivalue_t valueTable[] = {
     { "gyro_cmpf_factor", VAR_UINT16, &masterConfig.gyro_cmpf_factor, 100, 1000 },
     { "gyro_cmpfm_factor", VAR_UINT16, &masterConfig.gyro_cmpfm_factor, 100, 1000 },
 
-    { "alt_hold_throttle_neutral", VAR_UINT8, &currentProfile.alt_hold_throttle_neutral, 1, 250 },
+    { "alt_hold_deadband", VAR_UINT8, &currentProfile.alt_hold_deadband, 1, 250 },
     { "alt_hold_fast_change", VAR_UINT8, &currentProfile.alt_hold_fast_change, 0, 1 },
 
     { "throttle_correction_value", VAR_UINT8, &currentProfile.throttle_correction_value, 0, 150 },
