@@ -128,6 +128,7 @@ COMMON_SRC	 = build_config.c \
 		   main.c \
 		   mw.c \
 		   flight/autotune.c \
+		   flight/altitudehold.c \
 		   flight/failsafe.c \
 		   flight/flight.c \
 		   flight/imu.c \

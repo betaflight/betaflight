@@ -44,6 +44,7 @@
 #include "sensors/battery.h"
 #include "io/beeper.h"
 #include "io/escservo.h"
+#include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/autotune.h"
@@ -347,81 +348,6 @@ void updateInflightCalibrationState(void)
         AccInflightCalibrationSavetoEEProm = true;
     }
 }
-
-#ifdef BARO
-
-static int16_t initialThrottleHold;
-
-void multirotorAltHold(void)
-{
-    static uint8_t isAltHoldChanged = 0;
-    static int16_t AltHoldCorr = 0;
-    // multirotor alt hold
-    if (currentProfile.alt_hold_fast_change) {
-        // rapid alt changes
-        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile.alt_hold_deadband) {
-            errorAltitudeI = 0;
-            isAltHoldChanged = 1;
-            rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -currentProfile.alt_hold_deadband : currentProfile.alt_hold_deadband;
-        } else {
-            if (isAltHoldChanged) {
-                AltHold = EstAlt;
-                isAltHoldChanged = 0;
-            }
-            rcCommand[THROTTLE] = constrain(initialThrottleHold + BaroPID, masterConfig.escAndServoConfig.minthrottle + 100, masterConfig.escAndServoConfig.maxthrottle);
-        }
-    } else {
-        // slow alt changes for apfags
-        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile.alt_hold_deadband) {
-            // Slowly increase/decrease AltHold proportional to stick movement ( +100 throttle gives ~ +50 cm in 1 second with cycle time about 3-4ms)
-            AltHoldCorr += rcCommand[THROTTLE] - initialThrottleHold;
-            AltHold += AltHoldCorr / 2000;
-            AltHoldCorr %= 2000;
-            isAltHoldChanged = 1;
-        } else if (isAltHoldChanged) {
-            AltHold = EstAlt;
-            AltHoldCorr = 0;
-            isAltHoldChanged = 0;
-        }
-        rcCommand[THROTTLE] = constrain(initialThrottleHold + BaroPID, masterConfig.escAndServoConfig.minthrottle + 100, masterConfig.escAndServoConfig.maxthrottle);
-    }
-}
-
-void fixedWingAltHold()
-{
-    // handle fixedwing-related althold. UNTESTED! and probably wrong
-    // most likely need to check changes on pitch channel and 'reset' althold similar to
-    // how throttle does it on multirotor
-
-    rcCommand[PITCH] += BaroPID * masterConfig.fixedwing_althold_dir;
-}
-
-void updateAltHold()
-{
-    if (f.FIXED_WING) {
-        fixedWingAltHold();
-    } else {
-        multirotorAltHold();
-    }
-}
-
-void updateAltHoldState()
-{
-    // Baro alt hold activate
-    if (rcOptions[BOXBARO]) {
-        if (!f.BARO_MODE) {
-            f.BARO_MODE = 1;
-            AltHold = EstAlt;
-            initialThrottleHold = rcCommand[THROTTLE];
-            errorAltitudeI = 0;
-            BaroPID = 0;
-        }
-    } else {
-        f.BARO_MODE = 0;
-    }
-}
-
-#endif
 
 void loop(void)
 {
