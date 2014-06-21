@@ -459,9 +459,9 @@
               <FilePath>.\src\spektrum.c</FilePath>
             </File>
             <File>
-              <FileName>buzzer.c</FileName>
+              <FileName>beeper.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\buzzer.c</FilePath>
+              <FilePath>.\src\beeper.c</FilePath>
             </File>
             <File>
               <FileName>utils.c</FileName>
@@ -1202,9 +1202,9 @@
               <FilePath>.\src\spektrum.c</FilePath>
             </File>
             <File>
-              <FileName>buzzer.c</FileName>
+              <FileName>beeper.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\buzzer.c</FilePath>
+              <FilePath>.\src\beeper.c</FilePath>
             </File>
             <File>
               <FileName>utils.c</FileName>

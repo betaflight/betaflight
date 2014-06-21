@@ -25,7 +25,7 @@
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count
-uint16_t batteryWarningVoltage;     // annoying buzzer after this one, battery ready to be dead
+uint16_t batteryWarningVoltage;     // annoying beeper after this one, battery ready to be dead
 
 uint8_t vbat = 0;                   // battery voltage in 0.1V steps
 

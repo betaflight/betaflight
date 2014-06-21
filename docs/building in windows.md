@@ -42,7 +42,7 @@ C:\Users\nico\Documents\GitHub\cleanflight>make
 %% build_config.c
 %% battery.c
 %% boardalignment.c
-%% buzzer.c
+%% beeper.c
 %% config.c
 %% maths.c
 %% printf.c
@@ -117,7 +117,7 @@ rs/pwm_mapping.o obj/NAZE/drivers/pwm_output.o obj/NAZE/drivers/pwm_rssi.o obj/N
 AZE/drivers/pwm_rx.o obj/NAZE/drivers/serial_softserial.o obj/NAZE/drivers/seria
 l_uart_common.o obj/NAZE/drivers/serial_uart_stm32f10x.o obj/NAZE/drivers/timer_
 common.o obj/NAZE/build_config.o obj/NAZE/battery.o obj/NAZE/boardalignment.o ob
-j/NAZE/buzzer.o obj/NAZE/config.o obj/NAZE/common/maths.o obj/NAZE/common/printf
+j/NAZE/beeper.o obj/NAZE/config.o obj/NAZE/common/maths.o obj/NAZE/common/printf
 .o obj/NAZE/common/typeconversion.o obj/NAZE/failsafe.o obj/NAZE/main.o obj/NAZE
 /mw.o obj/NAZE/sensors_acceleration.o obj/NAZE/sensors_barometer.o obj/NAZE/sens
 ors_compass.o obj/NAZE/sensors_gyro.o obj/NAZE/sensors_initialisation.o obj/NAZE

@@ -24,7 +24,7 @@
 #define BEEP_PIN    Pin_10
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
 
-#define BUZZER
+#define BEEPER
 #define LED0
 
 #define GYRO

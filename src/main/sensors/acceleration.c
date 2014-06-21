@@ -25,7 +25,7 @@
 #include "drivers/accgyro.h"
 #include "flight/flight.h"
 #include "sensors/sensors.h"
-#include "io/buzzer.h"
+#include "io/beeper.h"
 #include "sensors/boardalignment.h"
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -130,7 +130,7 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
         if (InflightcalibratingA == 1) {
             AccInflightCalibrationActive = false;
             AccInflightCalibrationMeasurementDone = true;
-            queueConfirmationBeep(2); // buzzer to indicatiing the end of calibration
+            queueConfirmationBeep(2); // beeper to indicatiing the end of calibration
             // recover saved values to maintain current flight behavior until new values are transferred
             accelerationTrims->raw[FD_ROLL] = accZero_saved[FD_ROLL];
             accelerationTrims->raw[FD_PITCH] = accZero_saved[FD_PITCH];

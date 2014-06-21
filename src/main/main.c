@@ -81,7 +81,7 @@ failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
 void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers, pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
-void buzzerInit(failsafe_t *initialFailsafe);
+void beepcodeInit(failsafe_t *initialFailsafe);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
@@ -199,7 +199,7 @@ void init(void)
     mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer, pwmOutputConfiguration);
 
     failsafe = failsafeInit(&masterConfig.rxConfig);
-    buzzerInit(failsafe);
+    beepcodeInit(failsafe);
     rxInit(&masterConfig.rxConfig, failsafe);
 
     if (feature(FEATURE_GPS)) {

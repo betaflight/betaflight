@@ -19,7 +19,7 @@ Launch the multirotor.
 
 Turn on/hold the autotune switch on your transmitter.
 
-Observe roll left/right.  A beep code will sound on the buzzer.
+Observe roll left/right.  A beep code will sound on the beeper.
 
 Turn off/release the switch while still flying to stop this phase of tuning.
 
@@ -27,7 +27,7 @@ PID settings will have been updated for ROLL/YAW.
 
 Turn on/hold the switch again.
 
-Observe pitch forwards/backwards.  A beep code will sound on the buzzer.
+Observe pitch forwards/backwards.  A beep code will sound on the beeper.
 
 Turn off/release the switch while still flying to stop this phase of tuning.
 

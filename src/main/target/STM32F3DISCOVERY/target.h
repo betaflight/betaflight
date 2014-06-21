@@ -29,16 +29,16 @@
 #define BEEP_GPIO   GPIOE
 #define BEEP_PIN    Pin_9|Pin_13 // Red LEDs - PE9/PE13
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOE
-#define BUZZER_INVERTED
+#define BEEPER_INVERTED
 
 
-#define BUZZER_INVERTED
+#define BEEPER_INVERTED
 #define BARO_GPIO   GPIOC
 #define BARO_PIN    Pin_13
 
 #define GYRO
 #define ACC
-#define BUZZER
+#define BEEPER
 #define LED0
 #define LED1
 

@@ -26,7 +26,7 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
-#include "io/buzzer.h"
+#include "io/beeper.h"
 
 #define DOUBLE_PAUSE_DURATION_MILLIS (LONG_PAUSE_DURATION_MILLIS * 2)
 #define LONG_PAUSE_DURATION_MILLIS 200
@@ -35,8 +35,8 @@
 
 #define SHORT_CONFIRMATION_BEEP_DURATION_MILLIS (SHORT_PAUSE_DURATION_MILLIS / 2)
 
-static uint8_t buzzerIsOn = 0, beepDone = 0;
-static uint32_t buzzerLastToggleTime;
+static uint8_t beeperIsOn = 0, beepDone = 0;
+static uint32_t beeperLastToggleTime;
 static void beep(uint16_t pulseMillis);
 static void beep_code(char first, char second, char third, char pause);
 
@@ -46,20 +46,20 @@ typedef enum {
     FAILSAFE_IDLE = 0,
     FAILSAFE_LANDING,
     FAILSAFE_FIND_ME
-} failsafeBuzzerWarnings_e;
+} failsafeBeeperWarnings_e;
 
 static failsafe_t* failsafe;
 
-void buzzerInit(failsafe_t *initialFailsafe)
+void beepcodeInit(failsafe_t *initialFailsafe)
 {
     failsafe = initialFailsafe;
 }
 
-void buzzer(bool warn_vbat)
+void beepcodeUpdateState(bool warn_vbat)
 {
     static uint8_t beeperOnBox;
     static uint8_t warn_noGPSfix = 0;
-    static failsafeBuzzerWarnings_e warn_failsafe = FAILSAFE_IDLE;
+    static failsafeBeeperWarnings_e warn_failsafe = FAILSAFE_IDLE;
 
     //=====================  BeeperOn via rcOptions =====================
     if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch
@@ -113,7 +113,7 @@ void buzzer(bool warn_vbat)
     else if (toggleBeep > 0)
         beep(50);                                   // fast confirmation beep
     else {
-        buzzerIsOn = 0;
+        beeperIsOn = 0;
         BEEP_OFF;
     }
 }
@@ -154,7 +154,7 @@ void beep_code(char first, char second, char third, char pause)
 
     if (icnt < 3 && Duration != 0)
         beep(Duration);
-    if (icnt >= 3 && (buzzerLastToggleTime < millis() - Duration)) {
+    if (icnt >= 3 && (beeperLastToggleTime < millis() - Duration)) {
         icnt = 0;
         toggleBeep = 0;
     }
@@ -162,18 +162,18 @@ void beep_code(char first, char second, char third, char pause)
         if (icnt < 3)
             icnt++;
         beepDone = 0;
-        buzzerIsOn = 0;
+        beeperIsOn = 0;
         BEEP_OFF;
     }
 }
 
 static void beep(uint16_t pulseMillis)
 {
-    if (buzzerIsOn) {
-        if (millis() >= buzzerLastToggleTime + pulseMillis) {
-            buzzerIsOn = 0;
+    if (beeperIsOn) {
+        if (millis() >= beeperLastToggleTime + pulseMillis) {
+            beeperIsOn = 0;
             BEEP_OFF;
-            buzzerLastToggleTime = millis();
+            beeperLastToggleTime = millis();
             if (toggleBeep >0)
                 toggleBeep--;
             beepDone = 1;
@@ -181,9 +181,9 @@ static void beep(uint16_t pulseMillis)
         return;
     }
 
-    if (millis() >= (buzzerLastToggleTime + LONG_PAUSE_DURATION_MILLIS)) {         // Buzzer is off and long pause time is up -> turn it on
-        buzzerIsOn = 1;
+    if (millis() >= (beeperLastToggleTime + LONG_PAUSE_DURATION_MILLIS)) {         // Beeper is off and long pause time is up -> turn it on
+        beeperIsOn = 1;
         BEEP_ON;
-        buzzerLastToggleTime = millis();      // save the time the buzer turned on
+        beeperLastToggleTime = millis();      // save the time the buzer turned on
     }
 }

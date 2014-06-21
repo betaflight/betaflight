@@ -42,7 +42,7 @@
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
-#include "io/buzzer.h"
+#include "io/beeper.h"
 #include "io/escservo.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -232,7 +232,7 @@ void annexCode(void)
         }
     }
 
-    buzzer(batteryWarningEnabled); // external buzzer routine that handles buzzer events globally now
+    beepcodeUpdateState(batteryWarningEnabled);
 
     if (f.ARMED) {
         LED0_ON;

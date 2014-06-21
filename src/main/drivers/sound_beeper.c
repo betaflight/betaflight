@@ -27,7 +27,7 @@
 #include "sound_beeper.h"
 
 
-#ifdef BUZZER
+#ifdef BEEPER
 
 void (*systemBeepPtr)(bool onoff) = NULL;
 
@@ -52,14 +52,14 @@ static void beepInverted(bool onoff)
 
 void systemBeep(bool onoff)
 {
-#ifdef BUZZER
+#ifdef BEEPER
     systemBeepPtr(onoff);
 #endif
 }
 
-static inline bool isBuzzerOutputInverted(void)
+static inline bool isBeeperOutputInverted(void)
 {
-#ifdef BUZZER_INVERTED
+#ifdef BEEPER_INVERTED
     return true;
 #else
     // Naze rev5 needs inverted beeper.
@@ -69,9 +69,9 @@ static inline bool isBuzzerOutputInverted(void)
 
 void beeperInit(void)
 {
-#ifdef BUZZER
+#ifdef BEEPER
     initBeeperHardware();
-    if (isBuzzerOutputInverted())
+    if (isBeeperOutputInverted())
         systemBeepPtr = beepInverted;
     else
         systemBeepPtr = beepNormal;

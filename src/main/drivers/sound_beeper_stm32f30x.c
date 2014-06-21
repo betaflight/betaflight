@@ -27,7 +27,7 @@
 
 void initBeeperHardware(void)
 {
-#ifdef BUZZER
+#ifdef BEEPER
     struct {
         GPIO_TypeDef *gpio;
         gpio_config_t cfg;

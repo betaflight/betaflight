@@ -136,7 +136,7 @@ COMMON_SRC	 = build_config.c \
 		   drivers/serial.c \
 		   drivers/sound_beeper.c \
 		   drivers/system.c \
-		   io/buzzer.c \
+		   io/beeper.c \
 		   io/gps.c \
 		   io/gps_conversion.c \
 		   io/ledstrip.c \
