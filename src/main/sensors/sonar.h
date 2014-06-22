@@ -22,4 +22,4 @@ extern int32_t sonarAlt;
 void Sonar_init(void);
 void Sonar_update(void);
 
-int16_t sonarCalculateAltitude(int32_t sonarAlt, rollAndPitchInclination_t *angle);
+int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle);

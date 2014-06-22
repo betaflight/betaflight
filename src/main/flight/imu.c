@@ -370,6 +370,11 @@ bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
     return abs(inclination->values.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && abs(inclination->values.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
 }
 
+int16_t calculateTiltAngle(rollAndPitchInclination_t *inclination)
+{
+	return max(abs(inclination->values.rollDeciDegrees), abs(inclination->values.pitchDeciDegrees));
+}
+
 int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
 {
     uint32_t newBaroPID = 0;
@@ -420,6 +425,8 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     static int32_t baroAlt_offset = 0;
     float sonarTransition;
 
+    int16_t tiltAngle;
+
 
     dTime = currentTime - previousTime;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ)
@@ -432,20 +439,22 @@ void calculateEstimatedAltitude(uint32_t currentTime)
         vel = 0;
         accAlt = 0;
     }
+
     BaroAlt = baroCalculateAltitude();
-    sonarAlt = sonarCalculateAltitude(sonarAlt, &inclination);
 
-	if (sonarAlt > 0 && sonarAlt < 200) {
-		baroAlt_offset = BaroAlt - sonarAlt;
-		BaroAlt = sonarAlt;
-	} else {
-		BaroAlt -= baroAlt_offset;
-		if (sonarAlt > 0) {
-			sonarTransition = (300 - sonarAlt) / 100.0f;
-			BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
-		}
-	}
+    tiltAngle = calculateTiltAngle(&inclination);
+    sonarAlt = sonarCalculateAltitude(sonarAlt, tiltAngle);
 
+    if (sonarAlt > 0 && sonarAlt < 200) {
+        baroAlt_offset = BaroAlt - sonarAlt;
+        BaroAlt = sonarAlt;
+    } else {
+        BaroAlt -= baroAlt_offset;
+        if (sonarAlt > 0) {
+            sonarTransition = (300 - sonarAlt) / 100.0f;
+            BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
+        }
+    }
 
     dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
@@ -471,9 +480,10 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     }
 
     if (sonarAlt > 0 && sonarAlt < 200) {
-    	EstAlt = BaroAlt;
-	} else {
-		EstAlt = accAlt;
+        // the sonar has the best range
+        EstAlt = BaroAlt;
+    } else {
+        EstAlt = accAlt;
     }
 
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;

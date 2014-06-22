@@ -47,15 +47,13 @@ void Sonar_update(void)
     hcsr04_get_distance(&sonarAlt);
 }
 
-int16_t sonarCalculateAltitude(int32_t sonarAlt, rollAndPitchInclination_t *angle)
+int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle)
 {
-	// calculate sonar altitude
-	int16_t sonarAnglecorrection = max(abs(angle->values.rollDeciDegrees), abs(angle->values.pitchDeciDegrees));
-	if (sonarAnglecorrection > 250)
-		return -1;
+    // calculate sonar altitude only if the sonar is facing downwards(<25deg)
+    if (tiltAngle > 250)
+        return -1;
 
-	return sonarAlt * (900.0f - sonarAnglecorrection) / 900.0f;
+    return sonarAlt * (900.0f - tiltAngle) / 900.0f;
 }
-
 
 #endif
