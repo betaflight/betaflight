@@ -362,8 +362,8 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
 }
 
 #ifdef BARO
-#define UPDATE_INTERVAL 25000   // 40hz update rate (20hz LPF on acc)
-
+// 40hz update rate (20hz LPF on acc)
+#define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
 
 #define DEGREES_80_IN_DECIDEGREES 800
 
@@ -405,10 +405,9 @@ int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
     return baroPID;
 }
 
-int getEstimatedAltitude(void)
+void calculateEstimatedAltitude(uint32_t currentTime)
 {
-    static uint32_t previousT;
-    uint32_t currentT = micros();
+    static uint32_t previousTime;
     uint32_t dTime;
     int32_t baroVel;
     float dt;
@@ -420,10 +419,11 @@ int getEstimatedAltitude(void)
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
 
-    dTime = currentT - previousT;
-    if (dTime < UPDATE_INTERVAL)
-        return 0;
-    previousT = currentT;
+    dTime = currentTime - previousTime;
+    if (dTime < BARO_UPDATE_FREQUENCY_40HZ)
+        return;
+        
+    previousTime = currentTime;
 
     if (!isBaroCalibrationComplete()) {
         performBaroCalibrationCycle();
@@ -469,7 +469,5 @@ int getEstimatedAltitude(void)
     BaroPID = calculateBaroPid(vel_tmp, accZ_tmp, accZ_old);
 
     accZ_old = accZ_tmp;
-
-    return 1;
 }
 #endif /* BARO */

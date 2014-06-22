@@ -50,23 +50,25 @@ void compassInit(void)
     magInit = 1;
 }
 
-int compassGetADC(flightDynamicsTrims_t *magZero)
+#define COMPASS_UPDATE_FREQUENCY_10HZ (1000 * 100)
+
+void updateCompass(flightDynamicsTrims_t *magZero)
 {
-    static uint32_t t, tCal = 0;
+    static uint32_t nextUpdateAt, tCal = 0;
     static flightDynamicsTrims_t magZeroTempMin;
     static flightDynamicsTrims_t magZeroTempMax;
     uint32_t axis;
 
-    if ((int32_t)(currentTime - t) < 0)
-        return 0;                 //each read is spaced by 100ms
-    t = currentTime + 100000;
+    if ((int32_t)(currentTime - nextUpdateAt) < 0)
+        return;
 
-    // Read mag sensor
+    nextUpdateAt = currentTime + COMPASS_UPDATE_FREQUENCY_10HZ;
+
     hmc5883lRead(magADC);
     alignSensors(magADC, magADC, magAlign);
 
     if (f.CALIBRATE_MAG) {
-        tCal = t;
+        tCal = nextUpdateAt;
         for (axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
             magZeroTempMin.raw[axis] = magADC[axis];
@@ -82,7 +84,7 @@ int compassGetADC(flightDynamicsTrims_t *magZero)
     }
 
     if (tCal != 0) {
-        if ((t - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
+        if ((nextUpdateAt - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
             LED0_TOGGLE;
             for (axis = 0; axis < 3; axis++) {
                 if (magADC[axis] < magZeroTempMin.raw[axis])
@@ -99,7 +101,5 @@ int compassGetADC(flightDynamicsTrims_t *magZero)
             saveAndReloadCurrentProfileToCurrentProfileSlot();
         }
     }
-
-    return 1;
 }
 #endif

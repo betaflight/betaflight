@@ -349,175 +349,227 @@ void updateInflightCalibrationState(void)
     }
 }
 
-void loop(void)
+void updateMagHold(void)
+{
+    if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
+        int16_t dif = heading - magHold;
+        if (dif <= -180)
+            dif += 360;
+        if (dif >= +180)
+            dif -= 360;
+        dif *= -masterConfig.yaw_control_direction;
+        if (f.SMALL_ANGLE)
+            rcCommand[YAW] -= dif * currentProfile.pidProfile.P8[PIDMAG] / 30;    // 18 deg
+    } else
+        magHold = heading;
+}
+
+typedef enum {
+#ifdef MAG
+	UPDATE_COMPASS_TASK,
+#endif
+#ifdef BARO
+	UPDATE_BARO_TASK,
+	CALCULATE_ALTITUDE_TASK,
+#endif
+#ifdef SONAR
+	UPDATE_SONAR_TASK,
+#endif
+	UPDATE_GPS_TASK
+} periodicTasks;
+
+#define PERIODIC_TASK_COUNT (UPDATE_GPS_TASK + 1)
+
+
+void executePeriodicTasks(void)
+{
+    static int periodicTaskIndex = 0;
+
+    switch (periodicTaskIndex++) {
+#ifdef MAG
+    case UPDATE_COMPASS_TASK:
+        if (sensors(SENSOR_MAG)) {
+        	updateCompass(&masterConfig.magZero);
+        }
+		break;
+#endif
+
+#ifdef BARO
+    case UPDATE_BARO_TASK:
+        if (sensors(SENSOR_BARO)) {
+        	baroUpdate(currentTime);
+        }
+        break;
+
+    case CALCULATE_ALTITUDE_TASK:
+        if (sensors(SENSOR_BARO) && isBaroReady()) {
+        	calculateEstimatedAltitude(currentTime);
+        }
+		break;
+#endif
+
+    case UPDATE_GPS_TASK:
+        // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
+        // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
+        // change this based on available hardware
+        if (feature(FEATURE_GPS)) {
+            gpsThread();
+        }
+        break;
+#ifdef SONAR
+    case UPDATE_SONAR_TASK:
+        if (sensors(SENSOR_SONAR)) {
+            Sonar_update();
+        }
+        break;
+#endif
+    }
+
+    if (periodicTaskIndex >= PERIODIC_TASK_COUNT) {
+    	periodicTaskIndex = 0;
+    }
+}
+
+void processRx(void)
 {
     int i;
-    static uint32_t loopTime;
     uint32_t auxState = 0;
+
+    calculateRxChannelsAndUpdateFailsafe(currentTime);
+
+    // in 3D mode, we need to be able to disarm by switch at any time
+    if (feature(FEATURE_3D)) {
+        if (!rcOptions[BOXARM])
+            mwDisarm();
+    }
+
+    updateRSSI(currentTime);
+
+    if (feature(FEATURE_FAILSAFE)) {
+
+        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafe->vTable->isEnabled()) {
+            failsafe->vTable->enable();
+        }
+
+        failsafe->vTable->updateState();
+    }
+
+    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+
+    if (throttleStatus == THROTTLE_LOW) {
+        resetErrorAngle();
+        resetErrorGyro();
+    }
+
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, currentProfile.activate, masterConfig.retarded_arm);
+
+    if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
+        updateInflightCalibrationState();
+    }
+
+    // Check AUX switches
+
+    // auxState is a bitmask, 3 bits per channel. aux1 is first.
+    // lower 16 bits contain aux 1 to 4, upper 16 bits contain aux 5 to 8
+    //
+    // the three bits are as follows:
+    // bit 1 is SET when the stick is less than 1300
+    // bit 2 is SET when the stick is between 1300 and 1700
+    // bit 3 is SET when the stick is above 1700
+    // if the value is 1300 or 1700 NONE of the three bits are set.
+
+    for (i = 0; i < 4; i++) {
+        auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) |
+                (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) |
+                (rcData[AUX1 + i] > 1700) << (3 * i + 2);
+        auxState |= ((rcData[AUX5 + i] < 1300) << (3 * i) |
+                (1300 < rcData[AUX5 + i] && rcData[AUX5 + i] < 1700) << (3 * i + 1) |
+                (rcData[AUX5 + i] > 1700) << (3 * i + 2)) << 16;
+    }
+    for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
+        rcOptions[i] = (auxState & currentProfile.activate[i]) > 0;
+
+    if ((rcOptions[BOXANGLE] || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
+        // bumpless transfer to Level mode
+        if (!f.ANGLE_MODE) {
+            resetErrorAngle();
+            f.ANGLE_MODE = 1;
+        }
+    } else {
+        f.ANGLE_MODE = 0; // failsafe support
+    }
+
+    if (rcOptions[BOXHORIZON]) {
+        f.ANGLE_MODE = 0;
+        if (!f.HORIZON_MODE) {
+            resetErrorAngle();
+            f.HORIZON_MODE = 1;
+        }
+    } else {
+        f.HORIZON_MODE = 0;
+    }
+
+    if (f.ANGLE_MODE || f.HORIZON_MODE) {
+        LED1_ON;
+    } else {
+        LED1_OFF;
+    }
+
+#ifdef BARO
+    if (sensors(SENSOR_BARO)) {
+        updateAltHoldState();
+    }
+#endif
+
+#ifdef  MAG
+    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+        if (rcOptions[BOXMAG]) {
+            if (!f.MAG_MODE) {
+                f.MAG_MODE = 1;
+                magHold = heading;
+            }
+        } else {
+            f.MAG_MODE = 0;
+        }
+        if (rcOptions[BOXHEADFREE]) {
+            if (!f.HEADFREE_MODE) {
+                f.HEADFREE_MODE = 1;
+            }
+        } else {
+            f.HEADFREE_MODE = 0;
+        }
+        if (rcOptions[BOXHEADADJ]) {
+            headFreeModeHold = heading; // acquire new heading
+        }
+    }
+#endif
+
+    if (sensors(SENSOR_GPS)) {
+        updateGpsWaypointsAndMode();
+    }
+
+    if (rcOptions[BOXPASSTHRU]) {
+        f.PASSTHRU_MODE = 1;
+    } else {
+        f.PASSTHRU_MODE = 0;
+    }
+
+    if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE) {
+        f.HEADFREE_MODE = 0;
+    }
+}
+
+void loop(void)
+{
+    static uint32_t loopTime;
 
     updateRx();
 
     if (shouldProcessRx(currentTime)) {
-        calculateRxChannelsAndUpdateFailsafe(currentTime);
-
-        // in 3D mode, we need to be able to disarm by switch at any time
-        if (feature(FEATURE_3D)) {
-            if (!rcOptions[BOXARM])
-                mwDisarm();
-        }
-
-        updateRSSI(currentTime);
-
-        if (feature(FEATURE_FAILSAFE)) {
-
-            if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafe->vTable->isEnabled()) {
-                failsafe->vTable->enable();
-            }
-
-            failsafe->vTable->updateState();
-        }
-
-        throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-
-        if (throttleStatus == THROTTLE_LOW) {
-            resetErrorAngle();
-            resetErrorGyro();
-        }
-
-        processRcStickPositions(&masterConfig.rxConfig, throttleStatus, currentProfile.activate, masterConfig.retarded_arm);
-
-        if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-            updateInflightCalibrationState();
-        }
-
-        // Check AUX switches
-
-        // auxState is a bitmask, 3 bits per channel. aux1 is first.
-        // lower 16 bits contain aux 1 to 4, upper 16 bits contain aux 5 to 8
-        //
-        // the three bits are as follows:
-        // bit 1 is SET when the stick is less than 1300
-        // bit 2 is SET when the stick is between 1300 and 1700
-        // bit 3 is SET when the stick is above 1700
-        // if the value is 1300 or 1700 NONE of the three bits are set.
-
-        for (i = 0; i < 4; i++) {
-            auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) |
-                    (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) |
-                    (rcData[AUX1 + i] > 1700) << (3 * i + 2);
-            auxState |= ((rcData[AUX5 + i] < 1300) << (3 * i) |
-                    (1300 < rcData[AUX5 + i] && rcData[AUX5 + i] < 1700) << (3 * i + 1) |
-                    (rcData[AUX5 + i] > 1700) << (3 * i + 2)) << 16;
-        }
-        for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
-            rcOptions[i] = (auxState & currentProfile.activate[i]) > 0;
-
-        if ((rcOptions[BOXANGLE] || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
-            // bumpless transfer to Level mode
-            if (!f.ANGLE_MODE) {
-                resetErrorAngle();
-                f.ANGLE_MODE = 1;
-            }
-        } else {
-            f.ANGLE_MODE = 0; // failsafe support
-        }
-
-        if (rcOptions[BOXHORIZON]) {
-            f.ANGLE_MODE = 0;
-            if (!f.HORIZON_MODE) {
-                resetErrorAngle();
-                f.HORIZON_MODE = 1;
-            }
-        } else {
-            f.HORIZON_MODE = 0;
-        }
-
-        if (f.ANGLE_MODE || f.HORIZON_MODE) {
-            LED1_ON;
-        } else {
-            LED1_OFF;
-        }
-
-#ifdef BARO
-        if (sensors(SENSOR_BARO)) {
-            updateAltHoldState();
-        }
-#endif
-
-#ifdef  MAG
-        if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-            if (rcOptions[BOXMAG]) {
-                if (!f.MAG_MODE) {
-                    f.MAG_MODE = 1;
-                    magHold = heading;
-                }
-            } else {
-                f.MAG_MODE = 0;
-            }
-            if (rcOptions[BOXHEADFREE]) {
-                if (!f.HEADFREE_MODE) {
-                    f.HEADFREE_MODE = 1;
-                }
-            } else {
-                f.HEADFREE_MODE = 0;
-            }
-            if (rcOptions[BOXHEADADJ]) {
-                headFreeModeHold = heading; // acquire new heading
-            }
-        }
-#endif
-
-        if (sensors(SENSOR_GPS)) {
-            updateGpsWaypointsAndMode();
-        }
-
-        if (rcOptions[BOXPASSTHRU]) {
-            f.PASSTHRU_MODE = 1;
-        } else {
-            f.PASSTHRU_MODE = 0;
-        }
-
-        if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE) {
-            f.HEADFREE_MODE = 0;
-        }
-    } else {                    // not in rc loop
-        static int taskOrder = 0;    // never call all function in the same loop, to avoid high delay spikes
-        switch (taskOrder) {
-        case 0:
-            taskOrder++;
-#ifdef MAG
-            if (sensors(SENSOR_MAG) && compassGetADC(&masterConfig.magZero))
-                break;
-#endif
-        case 1:
-            taskOrder++;
-#ifdef BARO
-            if (sensors(SENSOR_BARO) && baroUpdate(currentTime) != BAROMETER_ACTION_NOT_READY)
-                break;
-#endif
-        case 2:
-            taskOrder++;
-#ifdef BARO
-            if (sensors(SENSOR_BARO) && getEstimatedAltitude())
-                break;
-#endif
-        case 3:
-            // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-            // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
-            // change this based on available hardware
-            taskOrder++;
-            if (feature(FEATURE_GPS)) {
-                gpsThread();
-                break;
-            }
-        case 4:
-            taskOrder = 0;
-#ifdef SONAR
-            if (sensors(SENSOR_SONAR)) {
-                Sonar_update();
-            }
-#endif
-        }
+    	processRx();
+    } else {
+    	// not in rc loop
+    	executePeriodicTasks();
     }
 
     currentTime = micros();
@@ -537,17 +589,7 @@ void loop(void)
 
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {
-            if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
-                int16_t dif = heading - magHold;
-                if (dif <= -180)
-                    dif += 360;
-                if (dif >= +180)
-                    dif -= 360;
-                dif *= -masterConfig.yaw_control_direction;
-                if (f.SMALL_ANGLE)
-                    rcCommand[YAW] -= dif * currentProfile.pidProfile.P8[PIDMAG] / 30;    // 18 deg
-            } else
-                magHold = heading;
+        	updateMagHold();
         }
 #endif
 
@@ -570,7 +612,12 @@ void loop(void)
         }
 
         // PID - note this is function pointer set by setPIDController()
-        pid_controller(&currentProfile.pidProfile, &currentProfile.controlRateConfig, masterConfig.max_angle_inclination, &currentProfile.accelerometerTrims);
+        pid_controller(
+			&currentProfile.pidProfile,
+			&currentProfile.controlRateConfig,
+			masterConfig.max_angle_inclination,
+			&currentProfile.accelerometerTrims
+        );
 
         mixTable();
         writeServos();

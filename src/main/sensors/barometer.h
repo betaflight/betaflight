@@ -26,19 +26,14 @@ typedef struct barometerConfig_s {
     float baro_cf_alt;                      // apply CF to use ACC for height estimation
 } barometerConfig_t;
 
-typedef enum {
-    BAROMETER_ACTION_NOT_READY = 0,
-    BAROMETER_ACTION_OBTAINED_SAMPLES,
-    BAROMETER_ACTION_PERFORMED_CALCULATION
-} barometerAction_e;
-
 extern int32_t BaroAlt;
 
 #ifdef BARO
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse);
 bool isBaroCalibrationComplete(void);
 void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
-barometerAction_e baroUpdate(uint32_t currentTime);
+void baroUpdate(uint32_t currentTime);
+bool isBaroReady(void);
 int32_t baroCalculateAltitude(void);
 void performBaroCalibrationCycle(void);
 #endif

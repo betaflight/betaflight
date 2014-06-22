@@ -30,7 +30,7 @@ baro_t baro;                        // barometer access functions
 uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 int32_t baroPressure = 0;
 int32_t baroTemperature = 0;
-uint32_t baroPressureSum = 0;
+static uint32_t baroPressureSum = 0;
 int32_t BaroAlt = 0;
 
 #ifdef BARO
@@ -82,13 +82,19 @@ typedef enum {
     BAROMETER_NEEDS_CALCULATION
 } barometerState_e;
 
-barometerAction_e baroUpdate(uint32_t currentTime)
+static bool baroReady = false;
+
+bool isBaroReady(void) {
+	return baroReady;
+}
+
+void baroUpdate(uint32_t currentTime)
 {
     static uint32_t baroDeadline = 0;
     static barometerState_e state = BAROMETER_NEEDS_SAMPLES;
 
     if ((int32_t)(currentTime - baroDeadline) < 0)
-        return BAROMETER_ACTION_NOT_READY;
+        return;
 
     baroDeadline = currentTime;
 
@@ -98,17 +104,17 @@ barometerAction_e baroUpdate(uint32_t currentTime)
             baro.start_ut();
             baroDeadline += baro.ut_delay;
             baro.calculate(&baroPressure, &baroTemperature);
+            baroReady = true;
             state = BAROMETER_NEEDS_SAMPLES;
-            return BAROMETER_ACTION_PERFORMED_CALCULATION;
+		break;
 
         case BAROMETER_NEEDS_SAMPLES:
-        default:
             baro.get_ut();
             baro.start_up();
             baroPressureSum = recalculateBarometerTotal(barometerConfig->baro_sample_count, baroPressureSum, baroPressure);
             state = BAROMETER_NEEDS_CALCULATION;
             baroDeadline += baro.up_delay;
-            return BAROMETER_ACTION_OBTAINED_SAMPLES;
+		break;
     }
 }
 
