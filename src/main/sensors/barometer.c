@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
+
 #include "drivers/barometer.h"
 #include "config/config.h"
 

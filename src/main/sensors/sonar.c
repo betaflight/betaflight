@@ -20,13 +20,18 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
+#include "common/axis.h"
+
 #include "drivers/sonar_hcsr04.h"
 #include "config/runtime_config.h"
+
+#include "flight/flight.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 
-int32_t sonarAlt;              // to think about the unit
+int32_t sonarAlt = -1;	// in cm , -1 indicate sonar is not in range
 
 #ifdef SONAR
 
@@ -41,5 +46,16 @@ void Sonar_update(void)
 {
     hcsr04_get_distance(&sonarAlt);
 }
+
+int16_t sonarCalculateAltitude(int32_t sonarAlt, rollAndPitchInclination_t *angle)
+{
+	// calculate sonar altitude
+	int16_t sonarAnglecorrection = max(abs(angle->values.rollDeciDegrees), abs(angle->values.pitchDeciDegrees));
+	if (sonarAnglecorrection > 250)
+		return -1;
+
+	return sonarAlt * (900.0f - sonarAnglecorrection) / 900.0f;
+}
+
 
 #endif

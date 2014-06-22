@@ -36,6 +36,7 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/sonar.h"
 
 #include "config/runtime_config.h"
 
@@ -416,6 +417,10 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
 
+    static int32_t baroAlt_offset = 0;
+    float sonarTransition;
+
+
     dTime = currentTime - previousTime;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ)
         return;
@@ -428,6 +433,20 @@ void calculateEstimatedAltitude(uint32_t currentTime)
         accAlt = 0;
     }
     BaroAlt = baroCalculateAltitude();
+    sonarAlt = sonarCalculateAltitude(sonarAlt, &inclination);
+
+	if (sonarAlt > 0 && sonarAlt < 200) {
+		baroAlt_offset = BaroAlt - sonarAlt;
+		BaroAlt = sonarAlt;
+	} else {
+		BaroAlt -= baroAlt_offset;
+		if (sonarAlt > 0) {
+			sonarTransition = (300 - sonarAlt) / 100.0f;
+			BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
+		}
+	}
+
+
     dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
     // Integrator - velocity, cm/sec
@@ -451,8 +470,11 @@ void calculateEstimatedAltitude(uint32_t currentTime)
         return;
     }
 
-
-    EstAlt = accAlt;
+    if (sonarAlt > 0 && sonarAlt < 200) {
+    	EstAlt = BaroAlt;
+	} else {
+		EstAlt = accAlt;
+    }
 
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = BaroAlt;
