@@ -307,12 +307,6 @@ static void getEstimatedAttitude(void)
     accMag = accMag * 100 / ((int32_t)acc_1G * acc_1G);
 
     rotateV(&EstG.V, &deltaGyroAngle);
-    if (sensors(SENSOR_MAG)) {
-        rotateV(&EstM.V, &deltaGyroAngle);
-    } else {
-        rotateV(&EstN.V, &deltaGyroAngle);
-        normalizeV(&EstN.V, &EstN.V);
-    }
 
     // Apply complimentary filter (Gyro drift correction)
     // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
@@ -325,14 +319,6 @@ static void getEstimatedAttitude(void)
             EstG.A[axis] = (EstG.A[axis] * imuRuntimeConfig->gyro_cmpf_factor + accSmooth[axis]) * invGyroComplimentaryFilterFactor;
     }
 
-    // FIXME what does the _M_ mean?
-    float invGyroComplimentaryFilter_M_Factor = (1.0f / (imuRuntimeConfig->gyro_cmpfm_factor + 1.0f));
-
-    if (sensors(SENSOR_MAG)) {
-        for (axis = 0; axis < 3; axis++)
-            EstM.A[axis] = (EstM.A[axis] * imuRuntimeConfig->gyro_cmpfm_factor + magADC[axis]) * invGyroComplimentaryFilter_M_Factor;
-    }
-
     f.SMALL_ANGLE = (EstG.A[Z] > smallAngle);
 
     // Attitude of the estimated vector
@@ -341,10 +327,19 @@ static void getEstimatedAttitude(void)
     inclination.values.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
     inclination.values.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
 
-    if (sensors(SENSOR_MAG))
+    if (sensors(SENSOR_MAG)) {
+        rotateV(&EstM.V, &deltaGyroAngle);
+        // FIXME what does the _M_ mean?
+        float invGyroComplimentaryFilter_M_Factor = (1.0f / (imuRuntimeConfig->gyro_cmpfm_factor + 1.0f));
+        for (axis = 0; axis < 3; axis++) {
+            EstM.A[axis] = (EstM.A[axis] * imuRuntimeConfig->gyro_cmpfm_factor + magADC[axis]) * invGyroComplimentaryFilter_M_Factor;
+        }
         heading = calculateHeading(&EstM);
-    else
+    } else {
+        rotateV(&EstN.V, &deltaGyroAngle);
+        normalizeV(&EstN.V, &EstN.V);
         heading = calculateHeading(&EstN);
+    }
 
     acc_calc(deltaT); // rotate acc vector into earth frame
 }
@@ -433,7 +428,6 @@ void calculateEstimatedAltitude(uint32_t currentTime)
         accAlt = 0;
     }
     BaroAlt = baroCalculateAltitude();
-
     dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
     // Integrator - velocity, cm/sec
@@ -443,8 +437,13 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     // Integrator - Altitude in cm
     accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                         // integrate velocity to get distance (x= a/2 * t^2)
     accAlt = accAlt * barometerConfig->baro_cf_alt + (float)BaroAlt * (1.0f - barometerConfig->baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
-    EstAlt = accAlt;
     vel += vel_acc;
+
+    accSum_reset();
+
+    if (!isBaroCalibrationComplete()) {
+        return;
+    }
 
 #if 1
     debug[1] = accSum[2] / accSumCount; // acceleration
@@ -452,7 +451,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     debug[3] = accAlt;                  // height
 #endif
 
-    accSum_reset();
+    EstAlt = accAlt;
 
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = BaroAlt;

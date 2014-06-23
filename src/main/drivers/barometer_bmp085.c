@@ -167,8 +167,8 @@ bool bmp085Detect(baro_t *baro)
         bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
         bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
         bmp085InitDone = true;
-        baro->ut_delay = 6000;
-        baro->up_delay = 27000;
+        baro->ut_delay = 6000; // 1.5ms margin according to the spec (4.5ms T convetion time)
+        baro->up_delay = 27000; // 6000+21000=27000 1.5ms margin according to the spec (25.5ms P convetion time with OSS=3)
         baro->start_ut = bmp085_start_ut;
         baro->get_ut = bmp085_get_ut;
         baro->start_up = bmp085_start_up;
