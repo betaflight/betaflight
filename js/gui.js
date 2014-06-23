@@ -230,35 +230,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             GUI.interval_remove('motor_pull');
             GUI.interval_remove('status_pull');
 
-            // only enforce mincommand if necessary
-            if (MOTOR_DATA != undefined) {
-                var update = false;
-
-                for (var i = 0; i < MOTOR_DATA.length; i++) {
-                    if (MOTOR_DATA[i] > MISC.mincommand) {
-                        update = true;
-                        break;
-                    }
-                }
-
-                if (update) {
-                    // send data to mcu
-                    var buffer_out = [];
-
-                    for (var i = 0; i < 8; i++) {
-                        buffer_out.push(lowByte(MISC.mincommand));
-                        buffer_out.push(highByte(MISC.mincommand));
-                    }
-
-                    MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer_out, false, function() {
-                        if (callback) callback();
-                    });
-                } else {
-                    if (callback) callback();
-                }
-            } else {
-                if (callback) callback();
-            }
+            if (callback) callback();
             break;
         case 'sensors':
             GUI.interval_kill_all();

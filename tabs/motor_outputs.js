@@ -70,13 +70,39 @@ function tab_initialize_motor_outputs() {
                 $('div.sliders input').prop('disabled', true);
 
                 // change all values to default
-                $('div.sliders input').val(1000);
-                $('div.values li:not(:last)').html(1000);
+                $('div.sliders input').val(MISC.mincommand);
 
                 // trigger change event so values are sent to mcu
                 $('div.sliders input').trigger('input');
             }
         });
+
+        // check if motors are already spinning
+        var motors_running = false;
+
+        for (var i = 0; i < MOTOR_DATA.length; i++) {
+            if (MOTOR_DATA[i] > MISC.mincommand) {
+                motors_running = true;
+                break;
+            }
+        }
+
+        if (motors_running) {
+            // motors are running, enable test mode and adjust sliders to current values
+            $('div.notice input[type="checkbox"]').click();
+
+            var sliders = $('div.sliders input:not(.master)');
+
+            for (var i = 0; i < MOTOR_DATA.length; i++) {
+                if (MOTOR_DATA[i] > 0) {
+                    sliders.eq(i).val(MOTOR_DATA[i]);
+                }
+            }
+
+            // only fire events when all values are set
+            sliders.trigger('input');
+        }
+
 
         // data pulling functions used inside interval timer
         function get_motor_data() {
@@ -87,18 +113,20 @@ function tab_initialize_motor_outputs() {
             MSP.send_message(MSP_codes.MSP_SERVO, false, false, update_ui);
         }
 
+        var full_block_scale = MISC.maxthrottle - MISC.mincommand;
         function update_ui() {
             var block_height = $('div.m-block:first').height();
 
             for (var i = 0; i < MOTOR_DATA.length; i++) {
-                var data = MOTOR_DATA[i] - 1000;
-                var margin_top = block_height - (data * (block_height / 1000));
-                var height = (data * (block_height / 1000));
+                var data = MOTOR_DATA[i] - MISC.mincommand;
+                var margin_top = block_height - (data * (block_height / full_block_scale));
+                var height = (data * (block_height / full_block_scale));
                 var color = parseInt(data * 0.256);
 
                 $('.motor-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
 
+            // servo indicators are still using old (not flexible block scale), it will be changed in the future accordingly
             for (var i = 0; i < SERVO_DATA.length; i++) {
                 var data = SERVO_DATA[i] - 1000;
                 var margin_top = block_height - (data * (block_height / 1000));
