@@ -42,6 +42,8 @@
 #include "flight/mixer.h"
 #include "flight/imu.h"
 
+extern int16_t debug[4];
+
 int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 
@@ -374,12 +376,12 @@ bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
 
 int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
 {
-    uint32_t baroPID = 0;
+    uint32_t newBaroPID = 0;
     int32_t error;
     int32_t setVel;
 
     if (!isThrustFacingDownwards(&inclination)) {
-        return baroPID;
+        return newBaroPID;
     }
 
     // Altitude P-Controller
@@ -392,17 +394,17 @@ int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
 
     // P
     error = setVel - vel_tmp;
-    baroPID = constrain((pidProfile->P8[PIDVEL] * error / 32), -300, +300);
+    newBaroPID = constrain((pidProfile->P8[PIDVEL] * error / 32), -300, +300);
 
     // I
     errorAltitudeI += (pidProfile->I8[PIDVEL] * error) / 8;
     errorAltitudeI = constrain(errorAltitudeI, -(1024 * 200), (1024 * 200));
-    baroPID += errorAltitudeI / 1024;     // I in range +/-200
+    newBaroPID += errorAltitudeI / 1024;     // I in range +/-200
 
     // D
-    baroPID -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
+    newBaroPID -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
 
-    return baroPID;
+    return newBaroPID;
 }
 
 void calculateEstimatedAltitude(uint32_t currentTime)
@@ -444,10 +446,10 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     EstAlt = accAlt;
     vel += vel_acc;
 
-#if 0
-    debug[0] = accSum[2] / accSumCount; // acceleration
-    debug[1] = vel;                     // velocity
-    debug[2] = accAlt;                  // height
+#if 1
+    debug[1] = accSum[2] / accSumCount; // acceleration
+    debug[2] = vel;                     // velocity
+    debug[3] = accAlt;                  // height
 #endif
 
     accSum_reset();
