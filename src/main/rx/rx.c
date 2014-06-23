@@ -202,11 +202,21 @@ uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
 {
     static int16_t rcSamples[MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT][PPM_AND_PWM_SAMPLE_COUNT];
     static int16_t rcDataMean[MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT];
+    static bool rxSamplesCollected = false;
 
     uint8_t currentSampleIndex = rcSampleIndex % PPM_AND_PWM_SAMPLE_COUNT;
 
     // update the recent samples and compute the average of them
     rcSamples[chan][currentSampleIndex] = sample;
+
+    // avoid returning an incorrect average which would otherwise occur before enough samples
+    if (!rxSamplesCollected) {
+        if (rcSampleIndex < PPM_AND_PWM_SAMPLE_COUNT) {
+            return sample;
+        }
+        rxSamplesCollected = true;
+    }
+
     rcDataMean[chan] = 0;
 
     uint8_t sampleIndex;

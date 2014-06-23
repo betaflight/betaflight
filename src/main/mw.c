@@ -389,23 +389,23 @@ void executePeriodicTasks(void)
 #ifdef MAG
     case UPDATE_COMPASS_TASK:
         if (sensors(SENSOR_MAG)) {
-        	updateCompass(&masterConfig.magZero);
+            updateCompass(&masterConfig.magZero);
         }
-		break;
+        break;
 #endif
 
 #ifdef BARO
     case UPDATE_BARO_TASK:
         if (sensors(SENSOR_BARO)) {
-        	baroUpdate(currentTime);
+            baroUpdate(currentTime);
         }
         break;
 
     case CALCULATE_ALTITUDE_TASK:
         if (sensors(SENSOR_BARO) && isBaroReady()) {
-        	calculateEstimatedAltitude(currentTime);
+            calculateEstimatedAltitude(currentTime);
         }
-		break;
+        break;
 #endif
 
     case UPDATE_GPS_TASK:
@@ -426,7 +426,7 @@ void executePeriodicTasks(void)
     }
 
     if (periodicTaskIndex >= PERIODIC_TASK_COUNT) {
-    	periodicTaskIndex = 0;
+        periodicTaskIndex = 0;
     }
 }
 
@@ -515,12 +515,6 @@ void processRx(void)
         LED1_OFF;
     }
 
-#ifdef BARO
-    if (sensors(SENSOR_BARO)) {
-        updateAltHoldState();
-    }
-#endif
-
 #ifdef  MAG
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (rcOptions[BOXMAG]) {
@@ -562,14 +556,24 @@ void processRx(void)
 void loop(void)
 {
     static uint32_t loopTime;
+    static bool haveProcessedAnnexCodeOnce = false;
 
     updateRx();
 
     if (shouldProcessRx(currentTime)) {
-    	processRx();
+        processRx();
+
+#ifdef BARO
+        // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
+        if (haveProcessedAnnexCodeOnce) {
+            if (sensors(SENSOR_BARO)) {
+                updateAltHoldState();
+            }
+        }
+#endif
     } else {
-    	// not in rc loop
-    	executePeriodicTasks();
+        // not processing rx this iteration
+        executePeriodicTasks();
     }
 
     currentTime = micros();
@@ -584,6 +588,7 @@ void loop(void)
         previousTime = currentTime;
 
         annexCode();
+        haveProcessedAnnexCodeOnce = true;
 
         updateAutotuneState();
 
@@ -598,6 +603,7 @@ void loop(void)
             if (f.BARO_MODE) {
                 updateAltHold();
             }
+            debug[0] = rcCommand[THROTTLE];
         }
 #endif
 
