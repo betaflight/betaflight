@@ -224,8 +224,8 @@ function tab_initialize_initial_setup() {
 
         // reset yaw button hook
         $('div#interactive_block > a.reset').click(function() {
-            yaw_fix = SENSOR_DATA.kinematicsZ * - 1.0;
-            console.log("YAW reset to 0");
+            yaw_fix = SENSOR_DATA.kinematics[2] * - 1.0;
+            console.log('YAW reset to 0 deg, fix: ' + yaw_fix + ' deg');
         });
 
         $('#content .backup').click(configuration_backup);
