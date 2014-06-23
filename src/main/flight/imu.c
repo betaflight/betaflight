@@ -461,7 +461,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
-    vel = vel * barometerConfig->baro_cf_vel + baroVel * (1 - barometerConfig->baro_cf_vel);
+    vel = vel * barometerConfig->baro_cf_vel + baroVel * (1.0f - barometerConfig->baro_cf_vel);
     vel_tmp = lrintf(vel);
 
     // set vario
