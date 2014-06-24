@@ -153,14 +153,12 @@
         float: right;
 
         margin-top: 30px;
-        margin-right: 13px;
+        margin-right: 20px;
 
         border: 1px solid silver;
     }
     .tab-receiver #RX_plot {
-        margin-left: 5px;
-
-        width: calc(100% - 5px);
+        width: 100%;
         height: 200px;
     }
         .tab-receiver #RX_plot .line:nth-child(1) {
