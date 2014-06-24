@@ -27,9 +27,16 @@
     .tab-firmware_flasher .note p {
         margin-bottom: 5px;
     }
-    .tab-firmware_flasher .note input {
+    .tab-firmware_flasher .note label {
+        float: left;
+    }
+    .tab-firmware_flasher .note label input {
         float: left;
         margin-top: 2px;
+    }
+    .tab-firmware_flasher .note label span {
+        font-weight: bold;
+        margin-left: 6px;
     }
     .tab-firmware_flasher .note .flash_on_connect_wrapper {
         display: none;

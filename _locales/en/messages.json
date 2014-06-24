@@ -563,8 +563,8 @@
     "firmwareFlasherFirmwareNotLoaded": {
         "message": "<span style=\"color: red\">Firmware not loaded</span>"
     },
-    "firmwareFlasherFirmwareLoaded": {
-        "message": "<span style=\"color: green\">Firmware loaded, ready for flashing</span>"
+    "firmwareFlasherLocalFirmwareLoaded": {
+        "message": "<span style=\"color: green\">Local Firmware loaded, ready for flashing</span>"
     },
     "firmwareFlasherHexCorrupted": {
         "message": "<span style=\"color: red\">HEX file appears to be corrupted</span>"

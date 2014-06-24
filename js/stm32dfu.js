@@ -254,7 +254,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
         case 2:
             // full chip erase
             console.log('Executing global chip erase');
-            STM32.GUI_status('Erasing');
+            GUI.log('Erasing ...');
 
             self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x41], function() {
                 self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
@@ -282,7 +282,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             // upload
             // we dont need to clear the state as we are already using DFU_DNLOAD
             console.log('Writing data ...');
-            STM32.GUI_status('<span style="color: green">Flashing ...</span>');
+            GUI.log('Flashing ...');
 
             var blocks = self.hex.data.length - 1;
             var flashing_block = 0;
@@ -353,7 +353,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
         case 5:
             // verify
             console.log('Verifying data ...');
-            STM32.GUI_status('<span style="color: green">Verifying ...</span>');
+            GUI.log('Verifying ...');
 
             var blocks = self.hex.data.length - 1;
             var reading_block = 0;
@@ -420,7 +420,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
 
                         if (verify) {
                             console.log('Programming: SUCCESSFUL');
-                            STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
+                            GUI.log('Programming: <strong style="color: green">SUCCESSFUL</strong>');
 
                             // update progress bar
                             self.progress_bar_e.addClass('valid');
@@ -429,7 +429,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                             self.upload_procedure(6);
                         } else {
                             console.log('Programming: FAILED');
-                            STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
+                            GUI.log('Programming: <strong style="color: red">FAILED</strong>');
 
                             // update progress bar
                             self.progress_bar_e.addClass('invalid');
