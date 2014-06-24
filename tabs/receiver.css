@@ -160,6 +160,7 @@
     .tab-receiver #RX_plot {
         margin-left: 5px;
 
+        width: calc(100% - 5px);
         height: 200px;
     }
         .tab-receiver #RX_plot .line:nth-child(1) {
