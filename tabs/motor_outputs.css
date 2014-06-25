@@ -13,6 +13,9 @@
         border-bottom: 1px solid silver;
         background-color: #ececec;
     }
+    .tab-motor_outputs .plot_control .title a:hover {
+        text-decoration: underline;
+    }
     .tab-motor_outputs .plot_control dl {
         padding: 5px 0 0 5px;
         line-height: 22px;
