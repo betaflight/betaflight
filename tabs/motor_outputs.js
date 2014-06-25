@@ -205,7 +205,7 @@ function tab_initialize_motor_outputs() {
         });
 
         var accel_max_read = [0, 0, 0];
-        $('a.reset').click(function() {
+        $('a.reset_accel_max').click(function() {
             accel_max_read = [0, 0, 0];
         });
 
