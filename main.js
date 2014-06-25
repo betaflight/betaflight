@@ -237,13 +237,10 @@ function millitime() {
 }
 
 function bytesToSize(bytes) {
-   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-   var k = 1024;
-
-   if (bytes == 0) return '0 Bytes';
-
-   var i = Math.floor(Math.log(bytes) / Math.log(k));
-   return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
+    if (bytes < 1024) return bytes + ' Bytes';
+    else if (bytes < 1048576) return(bytes / 1024).toFixed(3) + ' KB';
+    else if (bytes < 1073741824) return(bytes / 1048576).toFixed(3) + ' MB';
+    else return (bytes / 1073741824).toFixed(3) + ' GB';
 }
 
 /*
