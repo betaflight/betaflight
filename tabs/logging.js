@@ -47,6 +47,7 @@ function tab_initialize_logging() {
                     if (!clicks) {
                         // reset some variables before start
                         samples = 0;
+                        requests = 0;
                         log_buffer = [];
                         requested_properties = [];
 
@@ -59,12 +60,14 @@ function tab_initialize_logging() {
                             print_head();
 
                             function poll_data() {
-                                // save current
-                                crunch_data();
+                                if (requests) {
+                                    // save current data (only after everything is initialized)
+                                    crunch_data();
+                                }
 
                                 // request new
                                 if (!MSP_pass_through) {
-                                    for (var i = 0; i < requested_properties.length; i++) {
+                                    for (var i = 0; i < requested_properties.length; i++, requests++) {
                                         MSP.send_message(MSP_codes[requested_properties[i]]);
                                     }
                                 }
@@ -196,6 +199,7 @@ function tab_initialize_logging() {
     }
 
     var samples = 0;
+    var requests = 0;
     var log_buffer = [];
     function crunch_data() {
         var sample = millitime();
