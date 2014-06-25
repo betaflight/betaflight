@@ -193,10 +193,20 @@ function tab_initialize_motor_outputs() {
 
                 samples_accel_i = addSampleToData(accel_data, samples_accel_i, SENSOR_DATA.accelerometer);
                 drawGraph(accelHelpers, accel_data, samples_accel_i);
-                raw_data_text_ements.x[0].text(SENSOR_DATA.accelerometer[0].toFixed(2));
-                raw_data_text_ements.y[0].text(SENSOR_DATA.accelerometer[1].toFixed(2));
-                raw_data_text_ements.z[0].text(SENSOR_DATA.accelerometer[2].toFixed(2));
+                raw_data_text_ements.x[0].text(SENSOR_DATA.accelerometer[0].toFixed(2) + ' (' + accel_max_read[0].toFixed(2) + ')');
+                raw_data_text_ements.y[0].text(SENSOR_DATA.accelerometer[1].toFixed(2) + ' (' + accel_max_read[1].toFixed(2) + ')');
+                raw_data_text_ements.z[0].text(SENSOR_DATA.accelerometer[2].toFixed(2) + ' (' + accel_max_read[2].toFixed(2) + ')');
+
+                // could be taken care of via for loop, but i don't care for now
+                if (Math.abs(SENSOR_DATA.accelerometer[0]) > Math.abs(accel_max_read[0])) accel_max_read[0] = SENSOR_DATA.accelerometer[0];
+                if (Math.abs(SENSOR_DATA.accelerometer[1]) > Math.abs(accel_max_read[1])) accel_max_read[1] = SENSOR_DATA.accelerometer[1];
+                if (Math.abs(SENSOR_DATA.accelerometer[2]) > Math.abs(accel_max_read[2])) accel_max_read[2] = SENSOR_DATA.accelerometer[2];
             }
+        });
+
+        var accel_max_read = [0, 0, 0];
+        $('a.reset').click(function() {
+            accel_max_read = [0, 0, 0];
         });
 
         // if CAP_DYNBALANCE is true
