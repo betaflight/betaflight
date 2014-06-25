@@ -2,6 +2,124 @@ function tab_initialize_motor_outputs() {
     ga_tracker.sendAppView('Motor Outputs Page');
     GUI.active_tab = 'motor_outputs';
 
+    function initSensorData() {
+        for (var i = 0; i < 3; i++) {
+            SENSOR_DATA.accelerometer[i] = 0;
+        }
+    }
+
+    function initDataArray(length) {
+        var data = new Array(length);
+        for (var i = 0; i < length; i++) {
+            data[i] = new Array();
+            data[i].min = -1;
+            data[i].max = 1;
+        }
+        return data;
+    }
+
+    function addSampleToData(data, sampleNumber, sensorData) {
+        for (var i = 0; i < data.length; i++) {
+            var dataPoint = sensorData[i];
+            data[i].push([sampleNumber, dataPoint]);
+            if (dataPoint < data[i].min) {
+                data[i].min = dataPoint;
+            }
+            if (dataPoint > data[i].max) {
+                data[i].max = dataPoint;
+            }
+        }
+        while (data[0].length > 300) {
+            for (i = 0; i < data.length; i++) {
+                data[i].shift();
+            }
+        }
+        return sampleNumber + 1;
+    }
+
+    var margin = {top: 20, right: 10, bottom: 10, left: 20};
+    function updateGraphHelperSize(helpers) {
+        helpers.width = helpers.targetElement.width() - margin.left - margin.right;
+        helpers.height = helpers.targetElement.height() - margin.top - margin.bottom;
+
+        helpers.widthScale.range([0, helpers.width]);
+        helpers.heightScale.range([helpers.height, 0]);
+
+        helpers.xGrid.tickSize(-helpers.height, 0, 0);
+        helpers.yGrid.tickSize(-helpers.width, 0, 0);
+    }
+
+    function initGraphHelpers(selector, sampleNumber, heightDomain) {
+        var helpers = {selector: selector, targetElement: $(selector), dynamicHeightDomain: !heightDomain};
+
+        helpers.widthScale = d3.scale.linear()
+            .clamp(true)
+            .domain([(sampleNumber - 299), sampleNumber]);
+
+        helpers.heightScale = d3.scale.linear()
+            .clamp(true)
+            .domain(heightDomain || [1, -1]);
+
+        helpers.xGrid = d3.svg.axis();
+        helpers.yGrid = d3.svg.axis();
+
+        updateGraphHelperSize(helpers);
+
+        helpers.xGrid
+            .scale(helpers.widthScale)
+            .orient("bottom")
+            .ticks(5)
+            .tickFormat("");
+
+        helpers.yGrid
+            .scale(helpers.heightScale)
+            .orient("left")
+            .ticks(5)
+            .tickFormat("");
+
+        helpers.xAxis = d3.svg.axis()
+            .scale(helpers.widthScale)
+            .ticks(5)
+            .orient("bottom")
+            .tickFormat(function(d) {return d;});
+
+        helpers.yAxis = d3.svg.axis()
+            .scale(helpers.heightScale)
+            .ticks(5)
+            .orient("left")
+            .tickFormat(function(d) {return d;});
+
+        helpers.line = d3.svg.line()
+            .x(function(d) { return helpers.widthScale(d[0]); })
+            .y(function(d) { return helpers.heightScale(d[1]); });
+
+        return helpers;
+    }
+
+    function drawGraph(graphHelpers, data, sampleNumber) {
+        svg = d3.select(graphHelpers.selector);
+
+        if (graphHelpers.dynamicHeightDomain) {
+            var limits = [];
+            $.each(data, function(idx, datum) {
+                limits.push(datum.min);
+                limits.push(datum.max);
+            });
+            graphHelpers.heightScale.domain(d3.extent(limits));
+        }
+        graphHelpers.widthScale.domain([(sampleNumber - 299), sampleNumber]);
+
+        svg.select(".x.grid").call(graphHelpers.xGrid);
+        svg.select(".y.grid").call(graphHelpers.yGrid);
+        svg.select(".x.axis").call(graphHelpers.xAxis);
+        svg.select(".y.axis").call(graphHelpers.yAxis);
+
+        var group = svg.select("g.data");
+        var lines = group.selectAll("path").data(data, function(d, i) { return i; });
+        var newLines = lines.enter().append("path").attr("class", "line");
+        lines.attr('d', graphHelpers.line);
+    }
+
     MSP.send_message(MSP_codes.MSP_MISC, false, false, get_motor_data);
 
     function get_motor_data() {
@@ -15,6 +133,58 @@ function tab_initialize_motor_outputs() {
     function process_html() {
         // translate to user-selected language
         localize();
+
+        // Always start with default/empty sensor data array, clean slate all
+        initSensorData();
+
+        // Setup variables
+        var samples_accel_i = 0;
+        var accel_data = initDataArray(3);
+        var accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-2, 2]);
+
+        var raw_data_text_ements = {
+            x: [],
+            y: [],
+            z: [],
+        };
+        $('.plot_control .x, .plot_control .y, .plot_control .z').each(function() {
+            var el = $(this);
+            if (el.hasClass('x')) {
+                raw_data_text_ements.x.push(el);
+            } else if (el.hasClass('y')) {
+                raw_data_text_ements.y.push(el);
+            } else {
+                raw_data_text_ements.z.push(el);
+            }
+        });
+
+        $('.tab-motor_outputs .rate select, .tab-motor_outputs .scale select').change(function() {
+            var rate = parseInt($('.tab-motor_outputs select[name="accel_refresh_rate"]').val(), 10);
+            var scale = parseFloat($('.tab-motor_outputs select[name="accel_scale"]').val());
+
+            accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-scale, scale]);
+
+            // timer initialization
+            GUI.interval_kill_all(['motor_pull', 'status_pull']);
+
+            GUI.interval_add('IMU_pull', function imu_data_pull() {
+                MSP.send_message(MSP_codes.MSP_RAW_IMU, false, false, update_accel_graph);
+            }, rate, true);
+
+            function update_accel_graph() {
+                updateGraphHelperSize(accelHelpers);
+
+                samples_accel_i = addSampleToData(accel_data, samples_accel_i, SENSOR_DATA.accelerometer);
+                drawGraph(accelHelpers, accel_data, samples_accel_i);
+                raw_data_text_ements.x[0].text(SENSOR_DATA.accelerometer[0].toFixed(2));
+                raw_data_text_ements.y[0].text(SENSOR_DATA.accelerometer[1].toFixed(2));
+                raw_data_text_ements.z[0].text(SENSOR_DATA.accelerometer[2].toFixed(2));
+            }
+        });
+
+        // fire change event to start accel plot
+        $('.tab-motor_outputs .rate select:first').change();
+
 
         // if CAP_DYNBALANCE is true
         if (bit_check(CONFIG.capability, 2)) {
@@ -141,7 +311,7 @@ function tab_initialize_motor_outputs() {
         GUI.interval_add('motor_pull', get_motor_data, 50, true);
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function() {
+        GUI.interval_add('status_pull', function get_status_data() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
     }
