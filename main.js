@@ -236,6 +236,16 @@ function millitime() {
     return now;
 }
 
+function bytesToSize(bytes) {
+   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+   var k = 1024;
+
+   if (bytes == 0) return '0 Bytes';
+
+   var i = Math.floor(Math.log(bytes) / Math.log(k));
+   return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
+}
+
 /*
 function add_custom_spinners() {
     var spinner_element = '<div class="spinner"><div class="up"></div><div class="down"></div></div>';

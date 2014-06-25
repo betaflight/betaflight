@@ -478,9 +478,6 @@
     "loggingLogSize": {
         "message": "Log Size:"
     },
-    "loggingKB": {
-        "message": "$1 kB"
-    },
     "loggingButtonLogFile": {
         "message": "Select Log File"
     },

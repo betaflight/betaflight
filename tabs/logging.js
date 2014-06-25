@@ -66,14 +66,6 @@ function tab_initialize_logging() {
                                 if (!MSP_pass_through) {
                                     for (var i = 0; i < requested_properties.length; i++) {
                                         MSP.send_message(MSP_codes[requested_properties[i]]);
-
-                                        /* this approach could be used if we want to utilize request time compensation
-                                        if (i < requested_properties.length -1) {
-                                            MSP.send_message(requested_properties[i]);
-                                        } else {
-                                            MSP.send_message(requested_properties[i], false, false, poll_data);
-                                        }
-                                        */
                                     }
                                 }
                             }
@@ -85,7 +77,6 @@ function tab_initialize_logging() {
                                         append_to_file(log_buffer.join('\n'));
 
                                         $('.samples').text(samples += log_buffer.length);
-                                        $('.size').text(chrome.i18n.getMessage('loggingKB', [(fileWriter.length / 1024).toFixed(2)]));
 
                                         log_buffer = [];
                                     } else {
@@ -140,58 +131,6 @@ function tab_initialize_logging() {
                 });
             }
         });
-    }
-
-    var samples = 0;
-    var log_buffer = [];
-    function crunch_data() {
-        var sample = millitime();
-
-        for (var i = 0; i < requested_properties.length; i++) {
-            switch (requested_properties[i]) {
-                case 'MSP_RAW_IMU':
-                    sample += ',' + SENSOR_DATA.gyroscope;
-                    sample += ',' + SENSOR_DATA.accelerometer;
-                    sample += ',' + SENSOR_DATA.magnetometer;
-                    break;
-                case 'MSP_ATTITUDE':
-                    sample += ',' + SENSOR_DATA.kinematics[0];
-                    sample += ',' + SENSOR_DATA.kinematics[1];
-                    sample += ',' + SENSOR_DATA.kinematics[2];
-                    break;
-                case 'MSP_ALTITUDE':
-                    sample += ',' + SENSOR_DATA.altitude;
-                    break;
-                case 'MSP_RAW_GPS':
-                    sample += ',' + GPS_DATA.fix;
-                    sample += ',' + GPS_DATA.numSat;
-                    sample += ',' + (GPS_DATA.lat / 10000000);
-                    sample += ',' + (GPS_DATA.lon / 10000000);
-                    sample += ',' + GPS_DATA.alt;
-                    sample += ',' + GPS_DATA.speed;
-                    sample += ',' + GPS_DATA.ground_course;
-                    break;
-                case 'MSP_ANALOG':
-                    sample += ',' + ANALOG.voltage;
-                    sample += ',' + ANALOG.amperage;
-                    sample += ',' + ANALOG.mAhdrawn;
-                    sample += ',' + ANALOG.rssi;
-                    break;
-                case 'MSP_RC':
-                    for (var chan = 0; chan < RC.active_channels; chan++) {
-                        sample += ',' + RC.channels[chan];
-                    }
-                    break;
-                case 'MSP_MOTOR':
-                    sample += ',' + MOTOR_DATA;
-                    break;
-                case 'MSP_DEBUG':
-                    sample += ',' + SENSOR_DATA.debug;
-                    break;
-            }
-        }
-
-        log_buffer.push(sample);
     }
 
     function print_head() {
@@ -253,7 +192,59 @@ function tab_initialize_logging() {
             }
         }
 
-        log_buffer.push(head);
+        append_to_file(head);
+    }
+
+    var samples = 0;
+    var log_buffer = [];
+    function crunch_data() {
+        var sample = millitime();
+
+        for (var i = 0; i < requested_properties.length; i++) {
+            switch (requested_properties[i]) {
+                case 'MSP_RAW_IMU':
+                    sample += ',' + SENSOR_DATA.gyroscope;
+                    sample += ',' + SENSOR_DATA.accelerometer;
+                    sample += ',' + SENSOR_DATA.magnetometer;
+                    break;
+                case 'MSP_ATTITUDE':
+                    sample += ',' + SENSOR_DATA.kinematics[0];
+                    sample += ',' + SENSOR_DATA.kinematics[1];
+                    sample += ',' + SENSOR_DATA.kinematics[2];
+                    break;
+                case 'MSP_ALTITUDE':
+                    sample += ',' + SENSOR_DATA.altitude;
+                    break;
+                case 'MSP_RAW_GPS':
+                    sample += ',' + GPS_DATA.fix;
+                    sample += ',' + GPS_DATA.numSat;
+                    sample += ',' + (GPS_DATA.lat / 10000000);
+                    sample += ',' + (GPS_DATA.lon / 10000000);
+                    sample += ',' + GPS_DATA.alt;
+                    sample += ',' + GPS_DATA.speed;
+                    sample += ',' + GPS_DATA.ground_course;
+                    break;
+                case 'MSP_ANALOG':
+                    sample += ',' + ANALOG.voltage;
+                    sample += ',' + ANALOG.amperage;
+                    sample += ',' + ANALOG.mAhdrawn;
+                    sample += ',' + ANALOG.rssi;
+                    break;
+                case 'MSP_RC':
+                    for (var chan = 0; chan < RC.active_channels; chan++) {
+                        sample += ',' + RC.channels[chan];
+                    }
+                    break;
+                case 'MSP_MOTOR':
+                    sample += ',' + MOTOR_DATA;
+                    break;
+                case 'MSP_DEBUG':
+                    sample += ',' + SENSOR_DATA.debug;
+                    break;
+            }
+        }
+
+        log_buffer.push(sample);
     }
 
     // IO related methods
@@ -285,6 +276,9 @@ function tab_initialize_logging() {
                         // save entry for next use
                         chrome.storage.local.set({'logging_file_entry': chrome.fileSystem.retainEntry(fileEntry)});
 
+                        // reset sample counter in UI
+                        $('.samples').text(0);
+
                         prepare_writer();
                     } else {
                         console.log('File appears to be read only, sorry.');
@@ -306,7 +300,7 @@ function tab_initialize_logging() {
             };
 
             fileWriter.onwriteend = function() {
-                // console.log('Data written');
+                $('.size').text(bytesToSize(fileWriter.length));
             };
 
             if (retaining) {
@@ -314,6 +308,9 @@ function tab_initialize_logging() {
                     GUI.log(chrome.i18n.getMessage('loggingAutomaticallyRetained', [path]));
                 });
             }
+
+            // update log size in UI on fileWriter creation
+            $('.size').text(bytesToSize(fileWriter.length));
         }, function(e) {
             // File is not readable or does not exist!
             console.error(e);
