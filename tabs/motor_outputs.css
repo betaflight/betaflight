@@ -84,14 +84,18 @@
 .tab-motor_outputs .left.motors {
     float: left;
 
-    margin-right: 50px;
-
     width: calc(50% - 50px);
 }
 .tab-motor_outputs .right.servos {
-    float: left;
+    float: right;
 
     width: 50%;
+}
+.tab-motor_outputs .title {
+    padding-bottom: 2px;
+
+    text-align: center;
+    font-weight: bold;
 }
 .tab-motor_outputs .titles {
     height: 20px;
@@ -118,7 +122,7 @@
     float: left;
 
     width: calc((100% / 9) - 12px);
-    height: 80px;
+    height: 100px;
 
     margin-right: 10px;
 
@@ -137,28 +141,23 @@
 
     width: 100%;
 }
-.tab-motor_outputs p {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    padding: 5px;
-
-    border: 1px dotted silver;
-}
 .tab-motor_outputs .motor_testing {
     display: none;
+    margin-top: 15px;
 }
     .tab-motor_outputs .motor_testing .left {
-        margin-right: 50px;
-
         width: calc(50% - 50px);
-    }
-    .tab-motor_outputs .motor_testing .sliders {
     }
         .tab-motor_outputs .motor_testing .sliders input {
             -webkit-appearance: slider-vertical;
 
-            width: calc((100% / 9) - 3px); /* - (width / 9 elements, not sure about -3 */
-            height: 80px;
+            width: calc((100% / 9) - 13px);
+            height: 100px;
+
+            margin-right: 10px;
+        }
+        .tab-motor_outputs .motor_testing .sliders input:first-child {
+            /* margin-left: 2px; */ /* seems to vary depending on chrome version O.o */
         }
     .tab-motor_outputs .motor_testing .values {
         margin-top: 5px;
@@ -166,7 +165,8 @@
         .tab-motor_outputs .motor_testing .values li {
             float: left;
 
-            width: calc((100% / 9));
+            width: calc((100% / 9) - 10px);
+            margin-right: 10px;
 
             text-align: center;
         }

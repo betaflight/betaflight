@@ -51,7 +51,7 @@
         "message": "GPS"
     },
     "tab7": {
-        "message": "Motor/Servo Outputs"
+        "message": "Motor Testing"
     },
     "tab8": {
         "message": "Raw Sensor Data"
@@ -442,9 +442,6 @@
         "message": "Signal Strength"
     },
 
-    "motorsBarInfo": {
-        "message": "Bars on the <strong>left</strong> are representing raw PWM signal for <strong>ESCs</strong>.<br />Bars on the <strong>right</strong> are representing raw PWM signal for <strong>Servos</strong>.<br />"
-    },
     "motorsMaster": {
         "message": "Master"
     },
