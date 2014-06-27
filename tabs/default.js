@@ -12,5 +12,11 @@ function tab_initialize_default() {
 
         // UI Hooks
         $('a.firmware_flasher').click(tab_initialize_firmware_flasher);
+
+        $('div.welcome a').click(function() {
+            var url = $(this).prop('href');
+
+            ga_tracker.sendEvent('ExternalUrls', 'Click', url);
+        });
     });
 }
