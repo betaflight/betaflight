@@ -286,14 +286,25 @@ function tab_initialize_motor_outputs() {
 
             var sliders = $('div.sliders input:not(.master)');
 
+            var master_value = MOTOR_DATA[0];
             for (var i = 0; i < MOTOR_DATA.length; i++) {
                 if (MOTOR_DATA[i] > 0) {
                     sliders.eq(i).val(MOTOR_DATA[i]);
+
+                    if (master_value != MOTOR_DATA[i]) {
+                        master_value = false;
+                    }
                 }
             }
 
             // only fire events when all values are set
             sliders.trigger('input');
+
+            // slide master slider if condition is valid
+            if (master_value) {
+                $('div.sliders input.master').val(master_value);
+                $('div.sliders input.master').trigger('input');
+            }
         }
 
 
