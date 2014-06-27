@@ -227,8 +227,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             if (callback) callback();
             break;
         case 'motor_outputs':
-            GUI.interval_remove('motor_pull');
-            GUI.interval_remove('status_pull');
+            GUI.interval_kill_all();
 
             if (callback) callback();
             break;
@@ -264,6 +263,11 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                     if (callback) callback();
                 }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
             });
+            break;
+        case 'logging':
+            GUI.interval_kill_all();
+
+            if (callback) callback();
             break;
         case 'firmware_flasher':
             // this.interval_remove('factory_mode');
