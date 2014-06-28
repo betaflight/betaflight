@@ -21,6 +21,18 @@ var serial = {
                     self.bytes_received += info.data.byteLength;
                 });
 
+                self.onReceiveError.addListener(function watch_for_on_receive_errors(info) {
+                    console.error(info);
+
+                    // valid conditions are 'disconnected', 'timeout', 'device_lost', 'system_error'
+                    if (info.error == 'system_error') {
+                        // we might be able to recover from this one
+                        chrome.serial.setPaused(self.connectionId, false, function() {
+                            console.log('SERIAL: Connection unpause after onReceiveError triggered');
+                        });
+                    }
+                });
+
                 console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', Baud: ' + connectionInfo.bitrate);
 
                 callback(connectionInfo);
@@ -38,6 +50,10 @@ var serial = {
         // remove listeners
         for (var i = (self.onReceive.listeners.length - 1); i >= 0; i--) {
             self.onReceive.removeListener(self.onReceive.listeners[i]);
+        }
+
+        for (var i = (self.onReceiveError.listeners.length - 1); i >= 0; i--) {
+            self.onReceiveError.removeListener(self.onReceiveError.listeners[i]);
         }
 
         chrome.serial.disconnect(this.connectionId, function(result) {
@@ -117,6 +133,25 @@ var serial = {
             for (var i = (this.listeners.length - 1); i >= 0; i--) {
                 if (this.listeners[i] == function_reference) {
                     chrome.serial.onReceive.removeListener(function_reference);
+
+                    this.listeners.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    },
+    onReceiveError: {
+        listeners: [],
+
+        addListener: function(function_reference) {
+            var listener = chrome.serial.onReceiveError.addListener(function_reference);
+
+            this.listeners.push(function_reference);
+        },
+        removeListener: function(function_reference) {
+            for (var i = (this.listeners.length - 1); i >= 0; i--) {
+                if (this.listeners[i] == function_reference) {
+                    chrome.serial.onReceiveError.removeListener(function_reference);
 
                     this.listeners.splice(i, 1);
                     break;
