@@ -25,19 +25,39 @@
 #include "gpio.h"
 
 // Software I2C driver, using same pins as hardware I2C, with hw i2c module disabled.
-// SCL  PB10
-// SDA  PB11
+// Can be configured for I2C2 pinout (SCL: PB10, SDA: PB11) or I2C1 pinout (SCL: PB6, SDA: PB7)
 
 #ifdef SOFT_I2C
 
-#define SCL_H         GPIOB->BSRR = Pin_10 /* GPIO_SetBits(GPIOB , GPIO_Pin_10)   */
-#define SCL_L         GPIOB->BRR  = Pin_10 /* GPIO_ResetBits(GPIOB , GPIO_Pin_10) */
+#ifdef SOFT_I2C_PB1011
+#define SCL_H         GPIOB->BSRR = Pin_10
+#define SCL_L         GPIOB->BRR  = Pin_10
 
-#define SDA_H         GPIOB->BSRR = Pin_11 /* GPIO_SetBits(GPIOB , GPIO_Pin_11)   */
-#define SDA_L         GPIOB->BRR  = Pin_11 /* GPIO_ResetBits(GPIOB , GPIO_Pin_11) */
+#define SDA_H         GPIOB->BSRR = Pin_11
+#define SDA_L         GPIOB->BRR  = Pin_11
 
-#define SCL_read      (GPIOB->IDR & Pin_10) /* GPIO_ReadInputDataBit(GPIOB , GPIO_Pin_10) */
-#define SDA_read      (GPIOB->IDR & Pin_11) /* GPIO_ReadInputDataBit(GPIOB , GPIO_Pin_11) */
+#define SCL_read      (GPIOB->IDR & Pin_10)
+#define SDA_read      (GPIOB->IDR & Pin_11)
+#define I2C_PINS      (Pin_10 | Pin_11)
+#define I2C_GPIO      GPIOB
+#endif
+
+#ifdef SOFT_I2C_PB67
+#define SCL_H         GPIOB->BSRR = Pin_6
+#define SCL_L         GPIOB->BRR  = Pin_6
+
+#define SDA_H         GPIOB->BSRR = Pin_7
+#define SDA_L         GPIOB->BRR  = Pin_7
+
+#define SCL_read      (GPIOB->IDR & Pin_6)
+#define SDA_read      (GPIOB->IDR & Pin_7)
+#define I2C_PINS      (Pin_6 | Pin_7)
+#define I2C_GPIO      GPIOB
+#endif
+
+#ifndef SCL_H
+#error Need to define SOFT_I2C_PB1011 or SOFT_I2C_PB67 (see board.h)
+#endif
 
 static void I2C_delay(void)
 {
@@ -160,10 +180,10 @@ void i2cInit(I2C_TypeDef * I2C)
 {
     gpio_config_t gpio;
 
-    gpio.pin = Pin_10 | Pin_11;
+    gpio.pin = I2C_PINS;
     gpio.speed = Speed_2MHz;
     gpio.mode = Mode_Out_OD;
-    gpioInit(GPIOB, &gpio);
+    gpioInit(I2C_GPIO, &gpio);
 }
 
 bool i2cWriteBuffer(uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
