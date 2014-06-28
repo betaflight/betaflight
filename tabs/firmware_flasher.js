@@ -47,6 +47,7 @@ function tab_initialize_firmware_flasher() {
 
                                     if (parsed_hex) {
                                         GUI.log(chrome.i18n.getMessage('firmwareFlasherLocalFirmwareLoaded'));
+                                        ga_tracker.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('locked');
 
                                         $('span.size').html(parsed_hex.bytes_total + ' bytes');
@@ -72,6 +73,7 @@ function tab_initialize_firmware_flasher() {
 
                     if (parsed_hex) {
                         GUI.log(chrome.i18n.getMessage('firmwareFlasherRemoteFirmwareLoaded'));
+                        ga_tracker.sendEvent('Flashing', 'Firmware', 'online');
                         $('a.flash_firmware').removeClass('locked');
 
                         $('span.path').text('Using remote Firmware');

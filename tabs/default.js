@@ -14,9 +14,7 @@ function tab_initialize_default() {
         $('a.firmware_flasher').click(tab_initialize_firmware_flasher);
 
         $('div.welcome a').click(function() {
-            var url = $(this).prop('href');
-
-            ga_tracker.sendEvent('ExternalUrls', 'Click', url);
+            ga_tracker.sendEvent('ExternalUrls', 'Click', $(this).prop('href'));
         });
     });
 }
