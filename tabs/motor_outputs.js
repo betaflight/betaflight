@@ -141,6 +141,9 @@ function tab_initialize_motor_outputs() {
         var samples_accel_i = 0;
         var accel_data = initDataArray(3);
         var accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-2, 2]);
+        var accel_max_read = [0, 0, 0];
+        var accel_offset = [0, 0, 0];
+        var accel_offset_established = false;
 
         var raw_data_text_ements = {
             x: [],
@@ -189,24 +192,37 @@ function tab_initialize_motor_outputs() {
             }, rate, true);
 
             function update_accel_graph() {
+                if (!accel_offset_established) {
+                    for (var i = 0; i < 3; i++) {
+                        accel_offset[i] = SENSOR_DATA.accelerometer[i] * -1;
+                    }
+
+                    accel_offset_established = true;
+                }
+
+                var accel_with_offset = [
+                    accel_offset[0] + SENSOR_DATA.accelerometer[0],
+                    accel_offset[1] + SENSOR_DATA.accelerometer[1],
+                    accel_offset[2] + SENSOR_DATA.accelerometer[2],
+                ];
+
                 updateGraphHelperSize(accelHelpers);
-
-                samples_accel_i = addSampleToData(accel_data, samples_accel_i, SENSOR_DATA.accelerometer);
+                samples_accel_i = addSampleToData(accel_data, samples_accel_i, accel_with_offset);
                 drawGraph(accelHelpers, accel_data, samples_accel_i);
-                raw_data_text_ements.x[0].text(SENSOR_DATA.accelerometer[0].toFixed(2) + ' (' + accel_max_read[0].toFixed(2) + ')');
-                raw_data_text_ements.y[0].text(SENSOR_DATA.accelerometer[1].toFixed(2) + ' (' + accel_max_read[1].toFixed(2) + ')');
-                raw_data_text_ements.z[0].text(SENSOR_DATA.accelerometer[2].toFixed(2) + ' (' + accel_max_read[2].toFixed(2) + ')');
 
-                // could be taken care of via for loop, but i don't care for now
-                if (Math.abs(SENSOR_DATA.accelerometer[0]) > Math.abs(accel_max_read[0])) accel_max_read[0] = SENSOR_DATA.accelerometer[0];
-                if (Math.abs(SENSOR_DATA.accelerometer[1]) > Math.abs(accel_max_read[1])) accel_max_read[1] = SENSOR_DATA.accelerometer[1];
-                if (Math.abs(SENSOR_DATA.accelerometer[2]) > Math.abs(accel_max_read[2])) accel_max_read[2] = SENSOR_DATA.accelerometer[2];
+                raw_data_text_ements.x[0].text(accel_with_offset[0].toFixed(2) + ' (' + accel_max_read[0].toFixed(2) + ')');
+                raw_data_text_ements.y[0].text(accel_with_offset[1].toFixed(2) + ' (' + accel_max_read[1].toFixed(2) + ')');
+                raw_data_text_ements.z[0].text(accel_with_offset[2].toFixed(2) + ' (' + accel_max_read[2].toFixed(2) + ')');
+
+                for (var i = 0; i < 3; i++) {
+                    if (Math.abs(accel_with_offset[i]) > Math.abs(accel_max_read[i])) accel_max_read[i] = accel_with_offset[i];
+                }
             }
         });
 
-        var accel_max_read = [0, 0, 0];
         $('a.reset_accel_max').click(function() {
             accel_max_read = [0, 0, 0];
+            accel_offset_established = false;
         });
 
         // if CAP_DYNBALANCE is true
