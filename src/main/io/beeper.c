@@ -58,7 +58,9 @@ void beepcodeInit(failsafe_t *initialFailsafe)
 void beepcodeUpdateState(bool warn_vbat)
 {
     static uint8_t beeperOnBox;
+#ifdef GPS
     static uint8_t warn_noGPSfix = 0;
+#endif
     static failsafeBeeperWarnings_e warn_failsafe = FAILSAFE_IDLE;
 
     //=====================  BeeperOn via rcOptions =====================
@@ -86,6 +88,7 @@ void beepcodeUpdateState(bool warn_vbat)
         }
     }
 
+#ifdef GPS
     //===================== GPS fix notification handling =====================
     if (sensors(SENSOR_GPS)) {
         if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && !f.GPS_FIX) {     // if no fix and gps funtion is activated: do warning beeps
@@ -94,6 +97,7 @@ void beepcodeUpdateState(bool warn_vbat)
             warn_noGPSfix = 0;
         }
     }
+#endif
 
     //===================== Priority driven Handling =====================
     // beepcode(length1,length2,length3,pause)
@@ -102,8 +106,10 @@ void beepcodeUpdateState(bool warn_vbat)
         beep_code('L','N','N','D');                 // failsafe "find me" signal
     else if (warn_failsafe == 1)
         beep_code('S','M','L','M');                 // failsafe landing active
+#ifdef GPS
     else if (warn_noGPSfix == 1)
         beep_code('S','S','N','M');
+#endif
     else if (beeperOnBox == 1)
         beep_code('S','S','S','M');                 // beeperon
     else if (warn_vbat)

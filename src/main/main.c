@@ -215,6 +215,7 @@ void init(void)
     beepcodeInit(failsafe);
     rxInit(&masterConfig.rxConfig, failsafe);
 
+#ifdef GPS
     if (feature(FEATURE_GPS)) {
         gpsInit(
             &masterConfig.serialConfig,
@@ -223,6 +224,7 @@ void init(void)
             &currentProfile.pidProfile
         );
     }
+#endif
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {

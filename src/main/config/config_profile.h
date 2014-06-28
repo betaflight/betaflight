@@ -64,5 +64,7 @@ typedef struct profile_s {
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
 
+#ifdef GPS
     gpsProfile_t gpsProfile;
+#endif
 } profile_t;

@@ -102,9 +102,13 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
             AngleRate = (float)((controlRateConfig->yawRate + 10) * rcCommand[YAW]) / 50.0f;
          } else {
             // calculate error and limit the angle to the max inclination
+#ifdef GPS
             errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
-
+#else
+            errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
+#endif
             if (shouldAutotune()) {
                 errorAngle = autotune(rcAliasToAngleIndexMap[axis], &inclination, errorAngle);
             }
@@ -174,8 +178,13 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     for (axis = 0; axis < 3; axis++) {
         if ((f.ANGLE_MODE || f.HORIZON_MODE) && (axis == FD_ROLL || axis == FD_PITCH)) { // MODE relying on ACC
             // observe max inclination
+#ifdef GPS
             errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+#else
+            errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+#endif
 
             if (shouldAutotune()) {
                 errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
@@ -243,9 +252,13 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             AngleRateTmp = (((int32_t)(controlRateConfig->yawRate + 27) * rcCommand[YAW]) >> 5);
         } else {
             // calculate error and limit the angle to max configured inclination
-            errorAngle = constrain((rcCommand[axis] << 1) + GPS_angle[axis], -((int) max_angle_inclination),
+#ifdef GPS
+            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
-
+#else
+            errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+#endif
             if (shouldAutotune()) {
                 errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
             }

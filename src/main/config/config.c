@@ -132,6 +132,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->H_level = 3.0f;
 }
 
+#ifdef GPS
 void resetGpsProfile(gpsProfile_t *gpsProfile)
 {
     gpsProfile->gps_wp_radius = 200;
@@ -142,6 +143,7 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
     gpsProfile->nav_speed_max = 300;
     gpsProfile->ap_mode = 40;
 }
+#endif
 
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
@@ -257,9 +259,11 @@ static void resetConf(void)
     masterConfig.motor_pwm_rate = 400;
     masterConfig.servo_pwm_rate = 50;
 
+#ifdef GPS
     // gps/nav stuff
     masterConfig.gpsConfig.provider = GPS_NMEA;
     masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
+#endif
 
     resetSerialConfig(&masterConfig.serialConfig);
 
@@ -323,7 +327,9 @@ static void resetConf(void)
     // gimbal
     currentProfile.gimbalConfig.gimbal_flags = GIMBAL_NORMAL;
 
+#ifdef GPS
     resetGpsProfile(&currentProfile.gpsProfile);
+#endif
 
     // custom mixer. clear by defaults.
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
@@ -376,8 +382,10 @@ void activateConfig(void)
     useGyroConfig(&masterConfig.gyroConfig);
     useTelemetryConfig(&masterConfig.telemetryConfig);
     setPIDController(currentProfile.pidController);
+#ifdef GPS
     gpsUseProfile(&currentProfile.gpsProfile);
     gpsUsePIDs(&currentProfile.pidProfile);
+#endif
     useFailsafeConfig(&currentProfile.failsafeConfig);
     setAccelerationTrims(&masterConfig.accZero);
     mixerUseConfigs(

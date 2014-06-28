@@ -67,7 +67,9 @@ static void cliDefaults(char *cmdline);
 static void cliDump(char *cmdLine);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
+#ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
+#endif
 static void cliHelp(char *cmdline);
 static void cliMap(char *cmdline);
 static void cliMixer(char *cmdline);
@@ -130,7 +132,9 @@ const clicmd_t cmdTable[] = {
     { "dump", "print configurable settings in a pastable form", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
+#ifdef GPS
     { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
+#endif
     { "help", "", cliHelp },
     { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
@@ -199,11 +203,30 @@ const clivalue_t valueTable[] = {
     { "reboot_character", VAR_UINT8, &masterConfig.serialConfig.reboot_character, 48, 126 },
     { "msp_baudrate", VAR_UINT32, &masterConfig.serialConfig.msp_baudrate, 1200, 115200 },
     { "cli_baudrate", VAR_UINT32, &masterConfig.serialConfig.cli_baudrate, 1200, 115200 },
+
+#ifdef GPS
     { "gps_baudrate", VAR_UINT32, &masterConfig.serialConfig.gps_baudrate, 0, 115200 },
     { "gps_passthrough_baudrate", VAR_UINT32, &masterConfig.serialConfig.gps_passthrough_baudrate, 1200, 115200 },
 
     { "gps_provider", VAR_UINT8, &masterConfig.gpsConfig.provider, 0, GPS_PROVIDER_MAX },
     { "gps_sbas_mode", VAR_UINT8, &masterConfig.gpsConfig.sbasMode, 0, SBAS_MODE_MAX },
+
+
+    { "gps_pos_p", VAR_UINT8, &currentProfile.pidProfile.P8[PIDPOS], 0, 200 },
+    { "gps_pos_i", VAR_UINT8, &currentProfile.pidProfile.I8[PIDPOS], 0, 200 },
+    { "gps_pos_d", VAR_UINT8, &currentProfile.pidProfile.D8[PIDPOS], 0, 200 },
+    { "gps_posr_p", VAR_UINT8, &currentProfile.pidProfile.P8[PIDPOSR], 0, 200 },
+    { "gps_posr_i", VAR_UINT8, &currentProfile.pidProfile.I8[PIDPOSR], 0, 200 },
+    { "gps_posr_d", VAR_UINT8, &currentProfile.pidProfile.D8[PIDPOSR], 0, 200 },
+    { "gps_nav_p", VAR_UINT8, &currentProfile.pidProfile.P8[PIDNAVR], 0, 200 },
+    { "gps_nav_i", VAR_UINT8, &currentProfile.pidProfile.I8[PIDNAVR], 0, 200 },
+    { "gps_nav_d", VAR_UINT8, &currentProfile.pidProfile.D8[PIDNAVR], 0, 200 },
+    { "gps_wp_radius", VAR_UINT16, &currentProfile.gpsProfile.gps_wp_radius, 0, 2000 },
+    { "nav_controls_heading", VAR_UINT8, &currentProfile.gpsProfile.nav_controls_heading, 0, 1 },
+    { "nav_speed_min", VAR_UINT16, &currentProfile.gpsProfile.nav_speed_min, 10, 2000 },
+    { "nav_speed_max", VAR_UINT16, &currentProfile.gpsProfile.nav_speed_max, 10, 2000 },
+    { "nav_slew_rate", VAR_UINT8, &currentProfile.gpsProfile.nav_slew_rate, 0, 100 },
+#endif
 
     { "serialrx_provider", VAR_UINT8, &masterConfig.rxConfig.serialrx_provider, 0, SERIALRX_PROVIDER_MAX },
 
@@ -278,21 +301,6 @@ const clivalue_t valueTable[] = {
     { "baro_cf_alt", VAR_FLOAT, &currentProfile.barometerConfig.baro_cf_alt, 0, 1 },
 
     { "mag_declination", VAR_INT16, &currentProfile.mag_declination, -18000, 18000 },
-
-    { "gps_pos_p", VAR_UINT8, &currentProfile.pidProfile.P8[PIDPOS], 0, 200 },
-    { "gps_pos_i", VAR_UINT8, &currentProfile.pidProfile.I8[PIDPOS], 0, 200 },
-    { "gps_pos_d", VAR_UINT8, &currentProfile.pidProfile.D8[PIDPOS], 0, 200 },
-    { "gps_posr_p", VAR_UINT8, &currentProfile.pidProfile.P8[PIDPOSR], 0, 200 },
-    { "gps_posr_i", VAR_UINT8, &currentProfile.pidProfile.I8[PIDPOSR], 0, 200 },
-    { "gps_posr_d", VAR_UINT8, &currentProfile.pidProfile.D8[PIDPOSR], 0, 200 },
-    { "gps_nav_p", VAR_UINT8, &currentProfile.pidProfile.P8[PIDNAVR], 0, 200 },
-    { "gps_nav_i", VAR_UINT8, &currentProfile.pidProfile.I8[PIDNAVR], 0, 200 },
-    { "gps_nav_d", VAR_UINT8, &currentProfile.pidProfile.D8[PIDNAVR], 0, 200 },
-    { "gps_wp_radius", VAR_UINT16, &currentProfile.gpsProfile.gps_wp_radius, 0, 2000 },
-    { "nav_controls_heading", VAR_UINT8, &currentProfile.gpsProfile.nav_controls_heading, 0, 1 },
-    { "nav_speed_min", VAR_UINT16, &currentProfile.gpsProfile.nav_speed_min, 10, 2000 },
-    { "nav_speed_max", VAR_UINT16, &currentProfile.gpsProfile.nav_speed_max, 10, 2000 },
-    { "nav_slew_rate", VAR_UINT8, &currentProfile.gpsProfile.nav_slew_rate, 0, 100 },
 
     { "pid_controller", VAR_UINT8, &currentProfile.pidController, 0, 2 },
 
@@ -606,12 +614,27 @@ static void cliFeature(char *cmdline)
                 cliPrint("Invalid feature name...\r\n");
                 break;
             }
+
             if (strncasecmp(cmdline, featureNames[i], len) == 0) {
+
+                mask = 1 << i;
+#ifndef GPS
+                if (mask & FEATURE_GPS) {
+                    cliPrint("GPS unavailable\r\n");
+                    break;
+                }
+#endif
+#ifndef SONAR
+                if (mask & FEATURE_SONAR) {
+                    cliPrint("SONAR unavailable\r\n");
+                    break;
+                }
+#endif
                 if (remove) {
-                    featureClear(1 << i);
+                    featureClear(mask);
                     cliPrint("Disabled ");
                 } else {
-                    featureSet(1 << i);
+                    featureSet(mask);
                     cliPrint("Enabled ");
                 }
                 printf("%s\r\n", featureNames[i]);
@@ -621,6 +644,7 @@ static void cliFeature(char *cmdline)
     }
 }
 
+#ifdef GPS
 static void cliGpsPassthrough(char *cmdline)
 {
     gpsEnablePassthroughResult_e result = gpsEnablePassthrough();
@@ -638,6 +662,7 @@ static void cliGpsPassthrough(char *cmdline)
             break;
     }
 }
+#endif
 
 static void cliHelp(char *cmdline)
 {

@@ -41,5 +41,6 @@
 #define BEEPER
 #define LED0
 #define LED1
+#define GPS
 
 #define SENSORS_SET (SENSOR_ACC)

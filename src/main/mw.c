@@ -278,9 +278,11 @@ void annexCode(void)
 
     handleSerial();
 
+#ifdef GPS
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTime);
     }
+#endif
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
     if (gyro.temperature)
@@ -409,6 +411,7 @@ void executePeriodicTasks(void)
         break;
 #endif
 
+#ifdef GPS
     case UPDATE_GPS_TASK:
         // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
         // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
@@ -417,6 +420,7 @@ void executePeriodicTasks(void)
             gpsThread();
         }
         break;
+#endif
 #ifdef SONAR
     case UPDATE_SONAR_TASK:
         if (sensors(SENSOR_SONAR)) {
@@ -539,9 +543,11 @@ void processRx(void)
     }
 #endif
 
+#ifdef GPS
     if (sensors(SENSOR_GPS)) {
         updateGpsWaypointsAndMode();
     }
+#endif
 
     if (rcOptions[BOXPASSTHRU]) {
         f.PASSTHRU_MODE = 1;
@@ -615,11 +621,13 @@ void loop(void)
             rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile.throttle_correction_value);
         }
 
+#ifdef GPS
         if (sensors(SENSOR_GPS)) {
             if ((f.GPS_HOME_MODE || f.GPS_HOLD_MODE) && f.GPS_FIX_HOME) {
                 updateGpsStateForHomeAndHoldMode();
             }
         }
+#endif
 
         // PID - note this is function pointer set by setPIDController()
         pid_controller(

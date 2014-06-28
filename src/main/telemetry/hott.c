@@ -105,13 +105,6 @@ static telemetryConfig_t *telemetryConfig;
 static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
 
-typedef enum {
-    GPS_FIX_CHAR_NONE = '-',
-    GPS_FIX_CHAR_2D = '2',
-    GPS_FIX_CHAR_3D = '3',
-    GPS_FIX_CHAR_DGPS = 'D',
-} gpsFixChar_e;
-
 static void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
 {
     memset(msg, 0, size);
@@ -121,6 +114,14 @@ static void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
     msg->stop_byte = 0x7D;
 }
 
+#ifdef GPS
+typedef enum {
+    GPS_FIX_CHAR_NONE = '-',
+    GPS_FIX_CHAR_2D = '2',
+    GPS_FIX_CHAR_3D = '3',
+    GPS_FIX_CHAR_DGPS = 'D',
+} gpsFixChar_e;
+
 static void initialiseGPSMessage(HOTT_GPS_MSG_t *msg, size_t size)
 {
     memset(msg, 0, size);
@@ -129,13 +130,17 @@ static void initialiseGPSMessage(HOTT_GPS_MSG_t *msg, size_t size)
     msg->sensor_id = HOTT_GPS_SENSOR_TEXT_ID;
     msg->stop_byte = 0x7D;
 }
+#endif
 
 static void initialiseMessages(void)
 {
     initialiseEAMMessage(&hottEAMMessage, sizeof(hottEAMMessage));
+#ifdef GPS
     initialiseGPSMessage(&hottGPSMessage, sizeof(hottGPSMessage));
+#endif
 }
 
+#ifdef GPS
 void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude)
 {
     int16_t deg = latitude / 10000000L;
@@ -195,6 +200,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 
     hottGPSMessage->home_direction = GPS_directionToHome;
 }
+#endif
 
 static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 {
@@ -282,7 +288,9 @@ static inline void hottSendEAMResponse(void)
 
 static void hottPrepareMessages(void) {
     hottPrepareEAMResponse(&hottEAMMessage);
+#ifdef GPS
     hottPrepareGPSResponse(&hottGPSMessage);
+#endif
 }
 
 static void processBinaryModeRequest(uint8_t address) {
@@ -294,6 +302,7 @@ static void processBinaryModeRequest(uint8_t address) {
 #endif
 
     switch (address) {
+#ifdef GPS
         case 0x8A:
 #ifdef HOTT_DEBUG
             hottGPSRequests++;
@@ -302,6 +311,7 @@ static void processBinaryModeRequest(uint8_t address) {
                 hottSendGPSResponse();
             }
             break;
+#endif
         case 0x8E:
 #ifdef HOTT_DEBUG
             hottEAMRequests++;
@@ -314,7 +324,9 @@ static void processBinaryModeRequest(uint8_t address) {
 #ifdef HOTT_DEBUG
     hottBinaryRequests++;
     debug[0] = hottBinaryRequests;
+#ifdef GPS
     debug[1] = hottGPSRequests;
+#endif
     debug[2] = hottEAMRequests;
 #endif
 

@@ -29,5 +29,6 @@
 
 #define GYRO
 #define ACC
+#define GPS
 
 #define SENSORS_SET (SENSOR_ACC)

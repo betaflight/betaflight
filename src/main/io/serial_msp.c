@@ -369,10 +369,12 @@ void mspInit(serialConfig_t *serialConfig)
     if (feature(FEATURE_SERVO_TILT))
         availableBoxes[idx++] = BOXCAMSTAB;
 
+#ifdef GPS
     if (feature(FEATURE_GPS)) {
         availableBoxes[idx++] = BOXGPSHOME;
         availableBoxes[idx++] = BOXGPSHOLD;
     }
+#endif
 
     if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE)
         availableBoxes[idx++] = BOXPASSTHRU;
@@ -397,8 +399,10 @@ void mspInit(serialConfig_t *serialConfig)
 static void evaluateCommand(void)
 {
     uint32_t i, tmp, junk;
+#ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
+#endif
 
     switch (cmdMSP) {
     case MSP_SET_RAW_RC:
@@ -413,6 +417,7 @@ static void evaluateCommand(void)
         currentProfile.accelerometerTrims.values.roll  = read16();
         headSerialReply(0);
         break;
+#ifdef GPS
     case MSP_SET_RAW_GPS:
         f.GPS_FIX = read8();
         GPS_numSat = read8();
@@ -423,6 +428,7 @@ static void evaluateCommand(void)
         GPS_update |= 2;        // New data signalisation to GPS functions
         headSerialReply(0);
         break;
+#endif
     case MSP_SET_PID:
         if (currentProfile.pidController == 2) {
             for (i = 0; i < 3; i++) {
@@ -609,6 +615,7 @@ static void evaluateCommand(void)
         for (i = 0; i < rxRuntimeConfig.channelCount; i++)
             serialize16(rcData[i]);
         break;
+#ifdef GPS
     case MSP_RAW_GPS:
         headSerialReply(16);
         serialize8(f.GPS_FIX);
@@ -625,6 +632,7 @@ static void evaluateCommand(void)
         serialize16(GPS_directionToHome);
         serialize8(GPS_update & 1);
         break;
+#endif
     case MSP_ATTITUDE:
         headSerialReply(6);
         for (i = 0; i < 2; i++)
@@ -723,6 +731,7 @@ static void evaluateCommand(void)
         for (i = 0; i < 8; i++)
             serialize8(i + 1);
         break;
+#ifdef GPS
     case MSP_WP:
         wp_no = read8();    // get the wp number
         headSerialReply(18);
@@ -766,6 +775,7 @@ static void evaluateCommand(void)
         }
         headSerialReply(0);
         break;
+#endif /* GPS */
     case MSP_RESET_CONF:
         if (!f.ARMED) {
             resetEEPROM();
@@ -813,6 +823,7 @@ static void evaluateCommand(void)
         serialize32(U_ID_1);
         serialize32(U_ID_2);
         break;
+#ifdef GPS
     case MSP_GPSSVINFO:
         headSerialReply(1 + (GPS_numCh * 4));
         serialize8(GPS_numCh);
@@ -823,6 +834,7 @@ static void evaluateCommand(void)
                serialize8(GPS_svinfo_cno[i]);
             }
         break;
+#endif
     default:                   // we do not know how to handle the (valid) message, indicate error MSP $M!
         headSerialError(0);
         break;

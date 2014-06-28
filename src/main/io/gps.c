@@ -15,6 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
@@ -44,6 +45,8 @@
 
 #include "gps_conversion.h"
 #include "io/gps.h"
+
+#ifdef GPS
 
 extern int16_t debug[4];
 
@@ -647,7 +650,7 @@ static void gpsNewData(uint16_t c)
                     }
                     break;
                 default:
-                    ;
+                    break;
                 }
             }                   //end of gps calcs
         }
@@ -1460,3 +1463,4 @@ void updateGpsIndicator(uint32_t currentTime)
         LED1_TOGGLE;
     }
 }
+#endif
