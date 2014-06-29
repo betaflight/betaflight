@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -168,6 +169,7 @@ void init(void)
 
     serialInit(&masterConfig.serialConfig);
 
+    memset(&pwm_params, 0, sizeof(pwm_params));
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE || masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING)
         pwm_params.airplane = true;
@@ -175,7 +177,9 @@ void init(void)
         pwm_params.airplane = false;
 
 #ifdef STM32F10X_MD
-    pwm_params.useUART2 = doesConfigurationUsePort(&masterConfig.serialConfig, SERIAL_PORT_USART2);
+    if (!feature(FEATURE_RX_PARALLEL_PWM)) {
+        pwm_params.useUART2 = doesConfigurationUsePort(&masterConfig.serialConfig, SERIAL_PORT_USART2);
+    }
 #endif
 
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
