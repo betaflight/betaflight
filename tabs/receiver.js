@@ -154,13 +154,6 @@ function tab_initialize_receiver() {
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
-
-                    var element = $('a.update');
-                    element.addClass('success');
-
-                    GUI.timeout_add('success_highlight', function() {
-                        element.removeClass('success');
-                    }, 2000);
                 });
             }
         });

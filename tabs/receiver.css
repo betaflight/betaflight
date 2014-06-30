@@ -146,9 +146,6 @@
     .tab-receiver .refresh:hover {
         background-color: #dedcdc;
     }
-    .tab-receiver .update.success {
-        border: 1px solid #43c84d;
-    }
     .tab-receiver select[name="rx_refresh_rate"] {
         float: right;
 
