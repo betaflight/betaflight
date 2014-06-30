@@ -243,21 +243,28 @@ int servoDirection(int nr, int lr)
         return 1;
 }
 
-void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers, pwmOutputConfiguration_t *pwmOutputConfiguration)
-{
-    int i;
+static motorMixer_t *customMixers;
 
+void mixerInit(MultiType mixerConfiguration, motorMixer_t *initialCustomMixers)
+{
     currentMixerConfiguration = mixerConfiguration;
 
-    servoCount = pwmOutputConfiguration->servoCount;
+    customMixers = initialCustomMixers;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    useServo = mixers[mixerConfiguration].useServo;
+    useServo = mixers[currentMixerConfiguration].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (feature(FEATURE_SERVO_TILT))
         useServo = 1;
+}
 
-    if (mixerConfiguration == MULTITYPE_CUSTOM) {
+void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
+{
+    int i;
+
+    servoCount = pwmOutputConfiguration->servoCount;
+
+    if (currentMixerConfiguration == MULTITYPE_CUSTOM) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
@@ -267,11 +274,11 @@ void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers, pwmOutp
             numberMotor++;
         }
     } else {
-        numberMotor = mixers[mixerConfiguration].numberMotor;
+        numberMotor = mixers[currentMixerConfiguration].numberMotor;
         // copy motor-based mixers
-        if (mixers[mixerConfiguration].motor) {
+        if (mixers[currentMixerConfiguration].motor) {
             for (i = 0; i < numberMotor; i++)
-                currentMixer[i] = mixers[mixerConfiguration].motor[i];
+                currentMixer[i] = mixers[currentMixerConfiguration].motor[i];
         }
     }
 
@@ -287,8 +294,8 @@ void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers, pwmOutp
     }
 
     // set flag that we're on something with wings
-    if (mixerConfiguration == MULTITYPE_FLYING_WING ||
-        mixerConfiguration == MULTITYPE_AIRPLANE)
+    if (currentMixerConfiguration == MULTITYPE_FLYING_WING ||
+            currentMixerConfiguration == MULTITYPE_AIRPLANE)
         f.FIXED_WING = 1;
     else
         f.FIXED_WING = 0;
@@ -585,6 +592,7 @@ void mixTable(void)
         }
     }
 }
+
 
 bool isMixerUsingServos(void)
 {

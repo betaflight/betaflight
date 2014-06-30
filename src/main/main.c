@@ -80,7 +80,8 @@ void initTelemetry(void);
 void serialInit(serialConfig_t *initialSerialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
-void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers, pwmOutputConfiguration_t *pwmOutputConfiguration);
+void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers);
+void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void beepcodeInit(failsafe_t *initialFailsafe);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
@@ -160,6 +161,8 @@ void init(void)
     LED1_OFF;
 
     imuInit();
+    mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer);
+
 #ifdef MAG
     if (sensors(SENSOR_MAG))
         compassInit();
@@ -200,7 +203,7 @@ void init(void)
 
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
-    mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer, pwmOutputConfiguration);
+    mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
     failsafe = failsafeInit(&masterConfig.rxConfig);
     beepcodeInit(failsafe);
