@@ -23,6 +23,7 @@ var serial = {
 
                 self.onReceiveError.addListener(function watch_for_on_receive_errors(info) {
                     console.error(info);
+                    ga_tracker.sendEvent('Error', 'Serial', info.error);
 
                     // valid conditions are 'disconnected', 'timeout', 'device_lost', 'system_error'
                     if (info.error == 'system_error') {
@@ -38,6 +39,7 @@ var serial = {
                 callback(connectionInfo);
             } else {
                 console.log('SERIAL: Failed to open serial port');
+                ga_tracker.sendEvent('Error', 'Serial', 'FailedToOpen');
                 callback(false);
             }
         });
@@ -61,6 +63,7 @@ var serial = {
                 console.log('SERIAL: Connection with ID: ' + self.connectionId + ' closed');
             } else {
                 console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed');
+                ga_tracker.sendEvent('Error', 'Serial', 'FailedToClose');
             }
 
             console.log('SERIAL: Statistics - Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
