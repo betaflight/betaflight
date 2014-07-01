@@ -3,7 +3,6 @@ var serial = {
     bitrate:                0,
     bytes_received:         0,
     bytes_sent:             0,
-    connectionRecovered:    0,
 
     transmitting:   false,
     output_buffer:  [],
@@ -26,24 +25,40 @@ var serial = {
                     console.error(info);
                     ga_tracker.sendEvent('Error', 'Serial', info.error);
 
-                    // valid conditions are 'disconnected', 'timeout', 'device_lost', 'system_error'
-                    if (info.error == 'system_error') {
-                        // we might be able to recover from this one
-                        chrome.serial.setPaused(self.connectionId, false, function() {
-                            console.log('SERIAL: Connection unpause after onReceiveError triggered');
-                            self.connectionRecovered++;
-                        });
-                    }
+                    switch (info.error) {
+                        case 'system_error': // we might be able to recover from this one
+                            chrome.serial.setPaused(self.connectionId, false, get_status);
 
-                    if (self.connectionRecovered >= 10) {
-                        console.log('SERIAL: Connection recovery failed, disconnecting');
-                        GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+                            function get_status() {
+                                self.getInfo(crunch_status);
+                            }
 
-                        if ($('a.connect').hasClass('active')) {
-                            $('a.connect').click();
-                        } else {
-                            self.disconnect();
-                        }
+                            function crunch_status(info) {
+                                if (!info.paused) {
+                                    console.log('SERIAL: Connection recovered from last onReceiveError');
+                                    ga_tracker.sendEvent('Error', 'Serial', 'recovered');
+                                } else {
+                                    console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
+                                    GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+                                    ga_tracker.sendEvent('Error', 'Serial', 'unrecoverable');
+
+                                    if ($('a.connect').hasClass('active')) {
+                                        $('a.connect').click();
+                                    } else {
+                                        self.disconnect();
+                                    }
+                                }
+                            }
+                            break;
+                        case 'timeout':
+                            // TODO
+                            break;
+                        case 'device_lost':
+                            // TODO
+                            break;
+                        case 'disconnected':
+                            // TODO
+                            break;
                     }
                 });
 
@@ -83,7 +98,6 @@ var serial = {
 
             self.connectionId = -1;
             self.bitrate = 0;
-            self.connectionRecovered = 0;
 
             if (callback) callback(result);
         });
@@ -97,6 +111,9 @@ var serial = {
 
             callback(devices);
         });
+    },
+    getInfo: function(callback) {
+        chrome.serial.getInfo(this.connectionId, callback);
     },
     setControlSignals: function(signals, callback) {
         chrome.serial.setControlSignals(this.connectionId, signals, callback);
