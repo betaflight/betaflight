@@ -299,7 +299,8 @@ BASE_CFLAGS	 = $(ARCH_FLAGS) \
 		   $(DEVICE_FLAGS) \
 		   -DUSE_STDPERIPH_DRIVER \
 		   $(TARGET_FLAGS) \
-		   -D'__FORKNAME__="$(FORKNAME)"'
+		   -D'__FORKNAME__="$(FORKNAME)"' \
+		   -save-temps=obj
 
 ASFLAGS		 = $(ARCH_FLAGS) \
 		   -x assembler-with-cpp \
