@@ -1,8 +1,9 @@
 var serial = {
-    connectionId:   -1,
-    bitrate:        0,
-    bytes_received: 0,
-    bytes_sent:     0,
+    connectionId:           -1,
+    bitrate:                0,
+    bytes_received:         0,
+    bytes_sent:             0,
+    connectionRecovered:    0,
 
     transmitting:   false,
     output_buffer:  [],
@@ -30,17 +31,29 @@ var serial = {
                         // we might be able to recover from this one
                         chrome.serial.setPaused(self.connectionId, false, function() {
                             console.log('SERIAL: Connection unpause after onReceiveError triggered');
+                            self.connectionRecovered++;
                         });
+                    }
+
+                    if (self.connectionRecovered >= 10) {
+                        console.log('SERIAL: Connection recovery failed, disconnecting');
+                        GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+
+                        if ($('a.connect').hasClass('active')) {
+                            $('a.connect').click();
+                        } else {
+                            self.disconnect();
+                        }
                     }
                 });
 
                 console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', Baud: ' + connectionInfo.bitrate);
 
-                callback(connectionInfo);
+                if (callback) callback(connectionInfo);
             } else {
                 console.log('SERIAL: Failed to open serial port');
                 ga_tracker.sendEvent('Error', 'Serial', 'FailedToOpen');
-                callback(false);
+                if (callback) callback(false);
             }
         });
     },
@@ -70,8 +83,9 @@ var serial = {
 
             self.connectionId = -1;
             self.bitrate = 0;
+            self.connectionRecovered = 0;
 
-            callback(result);
+            if (callback) callback(result);
         });
     },
     getDevices: function(callback) {
