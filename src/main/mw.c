@@ -556,7 +556,9 @@ void processRx(void)
 void loop(void)
 {
     static uint32_t loopTime;
+#ifdef BARO
     static bool haveProcessedAnnexCodeOnce = false;
+#endif
 
     updateRx();
 
@@ -588,8 +590,9 @@ void loop(void)
         previousTime = currentTime;
 
         annexCode();
+#ifdef BARO
         haveProcessedAnnexCodeOnce = true;
-
+#endif
         updateAutotuneState();
 
 #ifdef MAG
