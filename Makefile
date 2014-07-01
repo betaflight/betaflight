@@ -270,11 +270,6 @@ STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 		   $(COMMON_SRC)
 
-
-# In some cases, %.s regarded as intermediate file, which is actually not.
-# This will prevent accidental deletion of startup code.
-.PRECIOUS: %.s
-
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 
