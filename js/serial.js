@@ -42,7 +42,7 @@ var serial = {
                                     GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
                                     ga_tracker.sendEvent('Error', 'Serial', 'unrecoverable');
 
-                                    if ($('a.connect').hasClass('active')) {
+                                    if (GUI.connected_to || GUI.connecting_to) {
                                         $('a.connect').click();
                                     } else {
                                         self.disconnect();
