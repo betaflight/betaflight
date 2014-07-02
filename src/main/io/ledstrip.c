@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <platform.h>
 #include <common/maths.h>
 
 #include "drivers/light_ws2811strip.h"
@@ -33,6 +34,8 @@
 
 #include "io/ledstrip.h"
 
+#define LED_WHITE  {255, 255, 255}
+#define LED_BLACK  {0,   0,   0  }
 #define LED_RED    {255, 0,   0  }
 #define LED_GREEN  {0,   255, 0  }
 #define LED_BLUE   {0,   0,   255}
@@ -42,95 +45,323 @@
 #define LED_PINK   {255, 0,   128}
 #define LED_PURPLE {192, 64,  255}
 
-static const rgbColor24bpp_t stripOrientation[] =
-{
-    {LED_GREEN},
-    {LED_GREEN},
-    {LED_GREEN},
-    {LED_GREEN},
-    {LED_GREEN},
-    {LED_RED},
-    {LED_RED},
-    {LED_RED},
-    {LED_RED},
-    {LED_RED}
+const rgbColor24bpp_t black = { LED_BLACK };
+const rgbColor24bpp_t red = { LED_RED };
+const rgbColor24bpp_t orange = { LED_ORANGE };
+const rgbColor24bpp_t white = { LED_WHITE };
+const rgbColor24bpp_t green = { LED_GREEN };
+const rgbColor24bpp_t blue = { LED_BLUE };
+
+/*
+ * 0..5   - rear right cluster,  0..2 rear 3..5 right
+ * 6..11  - front right cluster, 6..8 rear, 9..11 front
+ * 12..15 - front center cluster
+ * 16..21 - front left cluster,  16..18 front, 19..21 rear
+ * 22..27 - rear left cluster,   22..24 left, 25..27 rear
+ */
+
+typedef enum {
+    LED_DISABLED = 0,
+    LED_DIRECTION_NORTH    = (1 << 0),
+    LED_DIRECTION_EAST     = (1 << 1),
+    LED_DIRECTION_SOUTH    = (1 << 2),
+    LED_DIRECTION_WEST     = (1 << 3),
+    LED_DIRECTION_UP       = (1 << 4),
+    LED_DIRECTION_DOWN     = (1 << 5),
+    LED_FUNCTION_INDICATOR = (1 << 6),
+    LED_FUNCTION_BATTERY   = (1 << 7),
+    LED_FUNCTION_MODE      = (1 << 8),
+    LED_FUNCTION_ARM_STATE = (1 << 9)
+} ledFlag_e;
+
+#define LED_X_BIT_OFFSET 4
+#define LED_Y_BIT_OFFSET 0
+
+#define LED_XY_MASK (0x0F)
+
+#define LED_X(ledConfig) ((ledConfig->xy >> LED_X_BIT_OFFSET) & LED_XY_MASK)
+#define LED_Y(ledConfig) ((ledConfig->xy >> LED_Y_BIT_OFFSET) & LED_XY_MASK)
+
+#define LED_XY(x,y) (((x & LED_XY_MASK) << LED_X_BIT_OFFSET) | ((y & LED_XY_MASK) << LED_Y_BIT_OFFSET))
+
+typedef struct ledConfig_s {
+    uint8_t xy; // see LED_X/Y_MASK defines
+    uint16_t flags; // see ledFlag_e
+} ledConfig_t;
+
+static uint8_t ledGridWidth;
+static uint8_t ledGridHeight;
+
+static const ledConfig_t ledConfigs[WS2811_LED_STRIP_LENGTH] = {
+        { LED_XY( 9,  9), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY(10, 10), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY(11, 11), LED_DIRECTION_SOUTH | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY(11, 11), LED_DIRECTION_EAST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY(10, 10), LED_DIRECTION_EAST  | LED_FUNCTION_MODE },
+        { LED_XY( 9,  9), LED_DIRECTION_EAST  | LED_FUNCTION_MODE },
+
+        { LED_XY(10,  5), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE },
+        { LED_XY(11,  4), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE },
+        { LED_XY(12,  3), LED_DIRECTION_SOUTH | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY(12,  2), LED_DIRECTION_NORTH | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY(11,  1), LED_DIRECTION_NORTH | LED_FUNCTION_MODE },
+        { LED_XY(10,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE },
+
+        { LED_XY( 7,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 6,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 5,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 4,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+
+        { LED_XY( 2,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE },
+        { LED_XY( 1,  1), LED_DIRECTION_NORTH | LED_FUNCTION_MODE },
+        { LED_XY( 0,  2), LED_DIRECTION_NORTH | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 0,  3), LED_DIRECTION_WEST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 1,  4), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+        { LED_XY( 2,  5), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+
+        { LED_XY( 2,  9), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+        { LED_XY( 1, 10), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+        { LED_XY( 0, 11), LED_DIRECTION_WEST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 0, 11), LED_DIRECTION_SOUTH | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 1, 10), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 2,  9), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY }
 };
 
-static const rgbColor24bpp_t stripHorizon[] =
-{
-    {LED_BLUE},
-    {LED_BLUE},
-    {LED_BLUE},
-    {LED_BLUE},
-    {LED_BLUE},
-    {LED_YELLOW},
-    {LED_YELLOW},
-    {LED_YELLOW},
-    {LED_YELLOW},
-    {LED_YELLOW}
-};
+// grid offsets
+uint8_t highestYValueForNorth;
+uint8_t lowestYValueForSouth;
+uint8_t highestXValueForWest;
+uint8_t lowestXValueForEast;
 
-static const rgbColor24bpp_t stripAngle[] =
-{
-    {LED_CYAN},
-    {LED_CYAN},
-    {LED_CYAN},
-    {LED_CYAN},
-    {LED_CYAN},
-    {LED_YELLOW},
-    {LED_YELLOW},
-    {LED_YELLOW},
-    {LED_YELLOW},
-    {LED_YELLOW}
-};
-
-static const rgbColor24bpp_t stripMag[] =
-{
-    {LED_PURPLE},
-    {LED_PURPLE},
-    {LED_PURPLE},
-    {LED_PURPLE},
-    {LED_PURPLE},
-    {LED_ORANGE},
-    {LED_ORANGE},
-    {LED_ORANGE},
-    {LED_ORANGE},
-    {LED_ORANGE}
-};
-
-static const rgbColor24bpp_t stripHeadfree[] =
-{
-    {LED_PINK},
-    {LED_PINK},
-    {LED_PINK},
-    {LED_PINK},
-    {LED_PINK},
-    {LED_ORANGE},
-    {LED_ORANGE},
-    {LED_ORANGE},
-    {LED_ORANGE},
-    {LED_ORANGE}
-};
-
-static const rgbColor24bpp_t stripReds[] =
-{
-    {{ 32,   0,   0}},
-    {{ 96,   0,   0}},
-    {{160,   0,   0}},
-    {{224,   0,   0}},
-    {{255,   0,   0}},
-    {{255,   0,   0}},
-    {{224,   0,   0}},
-    {{160,   0,   0}},
-    {{ 96,   0,   0}},
-    {{ 32,   0,   0}},
-};
-
+// timers
 uint32_t nextIndicatorFlashAt = 0;
 uint32_t nextBatteryFlashAt = 0;
 
 #define LED_STRIP_10HZ ((1000 * 1000) / 10)
 #define LED_STRIP_5HZ ((1000 * 1000) / 5)
+
+#define LED_DIRECTION_COUNT 6
+
+struct modeColors_s {
+    rgbColor24bpp_t north;
+    rgbColor24bpp_t east;
+    rgbColor24bpp_t south;
+    rgbColor24bpp_t west;
+    rgbColor24bpp_t up;
+    rgbColor24bpp_t down;
+};
+
+typedef union {
+    rgbColor24bpp_t raw[LED_DIRECTION_COUNT];
+    struct modeColors_s colors;
+} modeColors_t;
+
+static const modeColors_t orientationModeColors = {
+    .raw = {
+        {LED_WHITE},
+        {LED_BLUE},
+        {LED_RED},
+        {LED_GREEN},
+        {LED_PURPLE},
+        {LED_CYAN}
+    }
+};
+
+static const modeColors_t headfreeModeColors = {
+    .raw = {
+        {LED_PINK},
+        {LED_BLACK},
+        {LED_ORANGE},
+        {LED_BLACK},
+        {LED_BLACK},
+        {LED_BLACK}
+    }
+};
+
+static const modeColors_t horizonModeColors = {
+    .raw = {
+        {LED_BLUE},
+        {LED_BLACK},
+        {LED_YELLOW},
+        {LED_BLACK},
+        {LED_BLACK},
+        {LED_BLACK}
+    }
+};
+
+static const modeColors_t angleModeColors = {
+    .raw = {
+        {LED_CYAN},
+        {LED_BLACK},
+        {LED_YELLOW},
+        {LED_BLACK},
+        {LED_BLACK},
+        {LED_BLACK}
+    }
+};
+
+static const modeColors_t magModeColors = {
+    .raw = {
+        {LED_PURPLE},
+        {LED_BLACK},
+        {LED_ORANGE},
+        {LED_BLACK},
+        {LED_BLACK},
+        {LED_BLACK}
+    }
+};
+
+void applyDirectionalModeColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, const modeColors_t *modeColors)
+{
+    if (ledConfig->flags & LED_DIRECTION_NORTH && LED_Y(ledConfig) < highestYValueForNorth) {
+        setLedColor(ledIndex, &modeColors->colors.north);
+        return;
+    }
+
+    if (ledConfig->flags & LED_DIRECTION_SOUTH && LED_Y(ledConfig) >= lowestYValueForSouth) {
+        setLedColor(ledIndex, &modeColors->colors.south);
+        return;
+    }
+}
+
+typedef enum {
+    QUADRANT_NORTH_EAST = 1,
+    QUADRANT_SOUTH_EAST,
+    QUADRANT_SOUTH_WEST,
+    QUADRANT_NORTH_WEST
+} quadrant_e;
+
+void applyQuadrantColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, const quadrant_e quadrant, const rgbColor24bpp_t *color)
+{
+    switch (quadrant) {
+        case QUADRANT_NORTH_EAST:
+            if (LED_Y(ledConfig) < highestYValueForNorth && LED_X(ledConfig) >= lowestXValueForEast) {
+                setLedColor(ledIndex, color);
+            }
+            return;
+
+        case QUADRANT_SOUTH_EAST:
+            if (LED_Y(ledConfig) >= lowestYValueForSouth && LED_X(ledConfig) >= lowestXValueForEast) {
+                setLedColor(ledIndex, color);
+            }
+            return;
+
+        case QUADRANT_SOUTH_WEST:
+            if (LED_Y(ledConfig) >= lowestYValueForSouth && LED_X(ledConfig) < highestXValueForWest) {
+                setLedColor(ledIndex, color);
+            }
+            return;
+
+        case QUADRANT_NORTH_WEST:
+            if (LED_Y(ledConfig) < highestYValueForNorth && LED_X(ledConfig) < highestXValueForWest) {
+                setLedColor(ledIndex, color);
+            }
+            return;
+    }
+}
+
+void applyLedModeLayer(void)
+{
+    const ledConfig_t *ledConfig;
+
+    uint8_t ledIndex;
+    for (ledIndex = 0; ledIndex < WS2811_LED_STRIP_LENGTH; ledIndex++) {
+
+        ledConfig = &ledConfigs[ledIndex];
+
+        setLedColor(ledIndex, &black);
+
+        if (!(ledConfig->flags & LED_FUNCTION_MODE)) {
+            if (ledConfig->flags & LED_FUNCTION_ARM_STATE) {
+                if (!f.ARMED) {
+                    setLedColor(ledIndex, &green);
+                } else {
+                    setLedColor(ledIndex, &blue);
+                }
+            }
+            continue;
+        }
+
+        applyDirectionalModeColor(ledIndex, ledConfig, &orientationModeColors);
+
+        if (f.HEADFREE_MODE) {
+            applyDirectionalModeColor(ledIndex, ledConfig, &headfreeModeColors);
+#ifdef MAG
+        } else if (f.MAG_MODE) {
+            applyDirectionalModeColor(ledIndex, ledConfig, &magModeColors);
+#endif
+        } else if (f.HORIZON_MODE) {
+            applyDirectionalModeColor(ledIndex, ledConfig, &horizonModeColors);
+        } else if (f.ANGLE_MODE) {
+            applyDirectionalModeColor(ledIndex, ledConfig, &angleModeColors);
+        }
+    }
+}
+
+void applyLedLowBatteryLayer(uint8_t batteryFlashState)
+{
+    const ledConfig_t *ledConfig;
+
+    uint8_t ledIndex;
+    for (ledIndex = 0; ledIndex < WS2811_LED_STRIP_LENGTH; ledIndex++) {
+
+        ledConfig = &ledConfigs[ledIndex];
+
+        if (!(ledConfig->flags & LED_FUNCTION_BATTERY)) {
+            continue;
+        }
+
+        if (batteryFlashState == 0) {
+            setLedColor(ledIndex, &red);
+        } else {
+            setLedColor(ledIndex, &black);
+        }
+    }
+}
+
+void applyLedIndicatorLayer(uint8_t indicatorFlashState)
+{
+    const ledConfig_t *ledConfig;
+    static const rgbColor24bpp_t *flashColor;
+
+
+    if (indicatorFlashState == 0) {
+        flashColor = &orange;
+    } else {
+        flashColor = &black;
+    }
+
+
+    uint8_t ledIndex;
+    for (ledIndex = 0; ledIndex < WS2811_LED_STRIP_LENGTH; ledIndex++) {
+
+        ledConfig = &ledConfigs[ledIndex];
+
+        if (!(ledConfig->flags & LED_FUNCTION_INDICATOR)) {
+            continue;
+        }
+
+        if (rcCommand[ROLL] > 50) {
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_EAST, flashColor);
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_EAST, flashColor);
+        }
+
+        if (rcCommand[ROLL] < -50) {
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_WEST, flashColor);
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_WEST, flashColor);
+        }
+
+        if (rcCommand[PITCH] > 50) {
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_EAST, flashColor);
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_WEST, flashColor);
+        }
+
+        if (rcCommand[PITCH] < -50) {
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_EAST, flashColor);
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_WEST, flashColor);
+        }
+    }
+}
 
 void updateLedStrip(void)
 {
@@ -149,28 +380,11 @@ void updateLedStrip(void)
 
     static uint8_t indicatorFlashState = 0;
     static uint8_t batteryFlashState = 0;
-
-    static const rgbColor24bpp_t *flashColor;
+    static bool batteryWarningEnabled = false;
 
     // LAYER 1
 
-    if (f.ARMED) {
-        setStripColors(stripOrientation);
-    } else {
-        setStripColors(stripReds);
-    }
-
-    if (f.HEADFREE_MODE) {
-        setStripColors(stripHeadfree);
-#ifdef MAG
-    } else if (f.MAG_MODE) {
-        setStripColors(stripMag);
-#endif
-    } else if (f.HORIZON_MODE) {
-        setStripColors(stripHorizon);
-    } else if (f.ANGLE_MODE) {
-        setStripColors(stripAngle);
-    }
+    applyLedModeLayer();
 
     // LAYER 2
 
@@ -179,13 +393,16 @@ void updateLedStrip(void)
 
         if (batteryFlashState == 0) {
             batteryFlashState = 1;
+
+            batteryWarningEnabled = feature(FEATURE_VBAT) && shouldSoundBatteryAlarm();
         } else {
             batteryFlashState = 0;
+
         }
     }
 
-    if (batteryFlashState == 1 && feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
-        setStripColor(&black);
+    if (batteryWarningEnabled) {
+        applyLedLowBatteryLayer(batteryFlashState);
     }
 
     // LAYER 3
@@ -204,27 +421,39 @@ void updateLedStrip(void)
         }
     }
 
-    if (indicatorFlashState == 0) {
-        flashColor = &orange;
-    } else {
-        flashColor = &black;
-    }
-    if (rcCommand[ROLL] < -50) {
-        setLedColor(0, flashColor);
-        setLedColor(9, flashColor);
-    }
-    if (rcCommand[ROLL] > 50) {
-        setLedColor(4, flashColor);
-        setLedColor(5, flashColor);
-    }
-    if (rcCommand[PITCH] > 50) {
-        setLedColor(0, flashColor);
-        setLedColor(4, flashColor);
-    }
-    if (rcCommand[PITCH] < -50) {
-        setLedColor(5, flashColor);
-        setLedColor(9, flashColor);
-    }
+    applyLedIndicatorLayer(indicatorFlashState);
 
     ws2811UpdateStrip();
+}
+
+void determineLedStripDimensions()
+{
+    // TODO iterate over ledConfigs and determine programatically
+    ledGridWidth = 12;
+    ledGridHeight = 12;
+}
+
+void determineOrientationLimits(void)
+{
+    highestYValueForNorth = (ledGridHeight / 2) - 1;
+    highestYValueForNorth &= ~(1 << 0); // make even
+
+    lowestYValueForSouth = (ledGridHeight / 2) - 1;
+    if (lowestYValueForSouth & 1) {
+        lowestYValueForSouth = min(lowestYValueForSouth + 1, ledGridHeight - 1);
+    }
+
+    highestXValueForWest = (ledGridWidth / 2) - 1;
+    highestXValueForWest &= ~(1 << 0); // make even
+
+    lowestXValueForEast = (ledGridWidth / 2) - 1;
+    if (lowestXValueForEast & 1) {
+        lowestXValueForEast = min(lowestXValueForEast + 1, ledGridWidth - 1);
+    }
+}
+
+void ledStripInit(void)
+{
+    determineLedStripDimensions();
+    determineOrientationLimits();
 }

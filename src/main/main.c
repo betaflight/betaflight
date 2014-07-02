@@ -87,6 +87,7 @@ void beepcodeInit(failsafe_t *initialFailsafe);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
+void ledStripInit(void);
 
 void loop(void);
 
@@ -226,6 +227,7 @@ void init(void)
 
     if (feature(FEATURE_LED_STRIP)) {
         ws2811LedStripInit();
+        ledStripInit();
     }
 
     if (feature(FEATURE_TELEMETRY))
