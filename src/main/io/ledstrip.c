@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <platform.h>
 #include <common/maths.h>
 
 #include "drivers/light_ws2811strip.h"
@@ -43,6 +44,11 @@
 #define LED_ORANGE {255, 128, 0  }
 #define LED_PINK   {255, 0,   128}
 #define LED_PURPLE {192, 64,  255}
+
+const rgbColor24bpp_t black = { LED_BLACK };
+const rgbColor24bpp_t orange = { LED_ORANGE };
+const rgbColor24bpp_t white = { LED_WHITE };
+const rgbColor24bpp_t green = { LED_GREEN };
 
 /*
  * 0..5   - rear right cluster,  0..2 rear 3..5 right
@@ -119,6 +125,11 @@ static const ledConfig_t ledConfigs[WS2811_LED_STRIP_LENGTH] = {
         { LED_XY( 2,  9), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY }
 };
 
+// grid offsets
+uint8_t highestYValueForNorth;
+uint8_t lowestYValueForSouth;
+
+// timers
 uint32_t nextIndicatorFlashAt = 0;
 uint32_t nextBatteryFlashAt = 0;
 
@@ -141,7 +152,7 @@ typedef union {
     struct modeColors_s colors;
 } modeColors_t;
 
-static const modeColors_t orientationColors = {
+static const modeColors_t orientationModeColors = {
     .raw = {
         {LED_WHITE},
         {LED_BLUE},
@@ -152,60 +163,113 @@ static const modeColors_t orientationColors = {
     }
 };
 
+static const modeColors_t headfreeModeColors = {
+    .raw = {
+        {LED_PINK},
+        {LED_BLACK},
+        {LED_ORANGE},
+        {LED_BLACK},
+        {LED_BLACK},
+        {LED_BLACK}
+    }
+};
+
+static const modeColors_t horizonModeColors = {
+    .raw = {
+        {LED_BLUE},
+        {LED_BLACK},
+        {LED_YELLOW},
+        {LED_BLACK},
+        {LED_BLACK},
+        {LED_BLACK}
+    }
+};
+
+static const modeColors_t angleModeColors = {
+    .raw = {
+        {LED_CYAN},
+        {LED_BLACK},
+        {LED_YELLOW},
+        {LED_BLACK},
+        {LED_BLACK},
+        {LED_BLACK}
+    }
+};
+
+static const modeColors_t magModeColors = {
+    .raw = {
+        {LED_PURPLE},
+        {LED_BLACK},
+        {LED_ORANGE},
+        {LED_BLACK},
+        {LED_BLACK},
+        {LED_BLACK}
+    }
+};
+
+void applyDirectionalModeColor(uint8_t ledIndex, const ledConfig_t *ledConfig, const modeColors_t *modeColors)
+{
+    if (ledConfig->flags & LED_DIRECTION_NORTH && LED_Y(ledConfig) < highestYValueForNorth) {
+        setLedColor(ledIndex, &modeColors->colors.north);
+        return;
+    }
+
+    if (ledConfig->flags & LED_DIRECTION_SOUTH && LED_Y(ledConfig) >= lowestYValueForSouth) {
+        setLedColor(ledIndex, &modeColors->colors.south);
+        return;
+    }
+}
+
+void applyModeColor(uint8_t ledIndex, const ledConfig_t *ledConfig, const modeColors_t *modeColors)
+{
+    if (!(ledConfig->flags & LED_FUNCTION_MODE)) {
+        return;
+    }
+
+    applyDirectionalModeColor(ledIndex, ledConfig, modeColors);
+}
+
+void applyOrientationColor(uint8_t ledIndex, const ledConfig_t *ledConfig)
+{
+    if (!(ledConfig->flags & LED_FUNCTION_MODE)) {
+        setLedColor(ledIndex, &black);
+        return;
+    }
+
+    applyModeColor(ledIndex, ledConfig, &orientationModeColors);
+
+    setLedColor(ledIndex, &black);
+}
+
 void applyLEDModeLayer(void)
 {
     const ledConfig_t *ledConfig;
-
-    uint8_t highestYValueForNorth = (ledGridHeight / 2) - 1;
-    highestYValueForNorth &= ~(1 << 0); // make even
-
-    uint8_t lowestYValueForSouth = (ledGridHeight / 2) - 1;
-    if (lowestYValueForSouth & 1) {
-        lowestYValueForSouth = min(lowestYValueForSouth + 1, ledGridHeight - 1);
-    }
 
     uint8_t ledIndex;
     for (ledIndex = 0; ledIndex < WS2811_LED_STRIP_LENGTH; ledIndex++) {
 
         ledConfig = &ledConfigs[ledIndex];
 
-        if (!(ledConfig->flags & LED_FUNCTION_MODE)) {
-            setLedColor(ledIndex, &black);
-            continue;
+        if (f.ARMED) {
+            applyOrientationColor(ledIndex, ledConfig);
+        } else {
+            setLedColor(ledIndex, &green);
         }
 
-        if (ledConfig->flags & LED_DIRECTION_NORTH && LED_Y(ledConfig) < highestYValueForNorth) {
-            setLedColor(ledIndex, &orientationColors.colors.north);
-            continue;
-        }
-
-        if (ledConfig->flags & LED_DIRECTION_SOUTH && LED_Y(ledConfig) >= lowestYValueForSouth) {
-            setLedColor(ledIndex, &orientationColors.colors.south);
-            continue;
-        }
-
-        setLedColor(ledIndex, &black);
-    }
-/*
-    if (f.ARMED) {
-        setStripColors(stripOrientation);
-    } else {
-        setStripColors(stripReds);
-    }
-
-    if (f.HEADFREE_MODE) {
-        setStripColors(stripHeadfree);
+        if (f.HEADFREE_MODE) {
+            applyModeColor(ledIndex, ledConfig, &headfreeModeColors);
 #ifdef MAG
-    } else if (f.MAG_MODE) {
-        setStripColors(stripMag);
+        } else if (f.MAG_MODE) {
+            applyModeColor(ledIndex, ledConfig, &magModeColors);
 #endif
-    } else if (f.HORIZON_MODE) {
-        setStripColors(stripHorizon);
-    } else if (f.ANGLE_MODE) {
-        setStripColors(stripAngle);
+        } else if (f.HORIZON_MODE) {
+            applyModeColor(ledIndex, ledConfig, &horizonModeColors);
+        } else if (f.ANGLE_MODE) {
+            applyModeColor(ledIndex, ledConfig, &angleModeColors);
+        }
     }
-*/
 }
+
 void updateLedStrip(void)
 {
     if (!isWS2811LedStripReady()) {
@@ -287,12 +351,26 @@ void updateLedStrip(void)
     ws2811UpdateStrip();
 }
 
-void determineLedStripDimensions() {
+void determineLedStripDimensions()
+{
     // TODO iterate over ledConfigs and determine programatically
     ledGridWidth = 12;
     ledGridHeight = 12;
 }
 
-void ledStripInit(void) {
+void determineOrientationLimits(void)
+{
+    highestYValueForNorth = (ledGridHeight / 2) - 1;
+    highestYValueForNorth &= ~(1 << 0); // make even
+
+    lowestYValueForSouth = (ledGridHeight / 2) - 1;
+    if (lowestYValueForSouth & 1) {
+        lowestYValueForSouth = min(lowestYValueForSouth + 1, ledGridHeight - 1);
+    }
+}
+
+void ledStripInit(void)
+{
     determineLedStripDimensions();
+    determineOrientationLimits();
 }
