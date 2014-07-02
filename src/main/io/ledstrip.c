@@ -33,6 +33,8 @@
 
 #include "io/ledstrip.h"
 
+#define LED_WHITE  {255, 255, 255}
+#define LED_BLACK  {0,   0,   0  }
 #define LED_RED    {255, 0,   0  }
 #define LED_GREEN  {0,   255, 0  }
 #define LED_BLUE   {0,   0,   255}
@@ -42,15 +44,52 @@
 #define LED_PINK   {255, 0,   128}
 #define LED_PURPLE {192, 64,  255}
 
+/*
+ * 0..5   - rear right cluster,  0..2 rear 3..5 right
+ * 6..11  - front right cluster, 6..8 rear, 9..11 front
+ * 12..15 - front center cluster
+ * 16..21 - front left cluster,  16..18 front, 19..21 rear
+ * 22..27 - rear left cluster,   22..24 left, 25..27 rear
+ */
+
+// FIXME this will work, but it's flash intensive and very customized
+// a better solution would be to create an LED mapping and allow the user to specify it.
+// e.g. "SSSEEESSSNNNNNNNNNNSSSWWWSSS" for north east south west facing leds, add U and D for up and downwards facing.
+// additionally an led x/y position, so that sections can be lit individually.
+// e.g. "1,1:1,2:1,3:1,4:2,1:2,2..."
+// perhaps constrain the user by making them fit in a 5x5 grid (odd so you get a middle and small for easy processing)
+// a more granular effects can be achieved by using a larger grid.
 static const rgbColor24bpp_t stripOrientation[] =
 {
+    {LED_RED},
+    {LED_RED},
+    {LED_RED},
+    {LED_PURPLE},
+    {LED_PURPLE},
+    {LED_PURPLE},
+
+    {LED_RED},
+    {LED_RED},
+    {LED_RED},
     {LED_GREEN},
     {LED_GREEN},
+    {LED_GREEN},
+
+    {LED_WHITE},
+    {LED_WHITE},
+    {LED_WHITE},
+    {LED_WHITE},
+
     {LED_GREEN},
     {LED_GREEN},
     {LED_GREEN},
     {LED_RED},
     {LED_RED},
+    {LED_RED},
+
+    {LED_BLUE},
+    {LED_BLUE},
+    {LED_BLUE},
     {LED_RED},
     {LED_RED},
     {LED_RED}
