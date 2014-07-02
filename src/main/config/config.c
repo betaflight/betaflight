@@ -79,7 +79,7 @@ static uint32_t flashWriteAddress = (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * 
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 72;
+static const uint8_t EEPROM_CONF_VERSION = 73;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -250,6 +250,8 @@ static void resetConf(void)
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
     masterConfig.retarded_arm = 0;              // disable arm/disarm on roll left/right
+    masterConfig.small_angle = 25;
+
     masterConfig.airplaneConfig.flaps_speed = 0;
     masterConfig.fixedwing_althold_dir = 1;
 

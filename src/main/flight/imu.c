@@ -80,7 +80,7 @@ static void getEstimatedAttitude(void);
 
 void imuInit()
 {
-    smallAngle = lrintf(acc_1G * cosf(RAD * 25.0f));
+    smallAngle = lrintf(acc_1G * cosf(RAD * imuRuntimeConfig->small_angle));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
     gyroScaleRad = gyro.scale * (M_PI / 180.0f) * 0.000001f;
 }

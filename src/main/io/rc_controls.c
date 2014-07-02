@@ -84,11 +84,15 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
     // perform actions
     if (throttleStatus == THROTTLE_LOW) {
-        if (activate[BOXARM] > 0) { // Arming/Disarming via ARM BOX
+        if (activate[BOXARM] > 0) { // Arming via ARM BOX
             if (rcOptions[BOXARM] && f.OK_TO_ARM)
                 mwArm();
-            else if (f.ARMED)
-                mwDisarm();
+        }
+    }
+
+    if (activate[BOXARM] > 0) { // Disarming via ARM BOX
+        if (!rcOptions[BOXARM] && f.ARMED) {
+            mwDisarm();
         }
     }
 
