@@ -19,11 +19,9 @@ $(document).ready(function() {
 
                     serial.connect(selected_port, {bitrate: selected_baud}, onOpen);
                 } else {
-                    // Disable any active "data pulling" timer
+                    GUI.timeout_kill_all();
                     GUI.interval_kill_all();
-
                     GUI.tab_switch_cleanup();
-                    GUI.timeout_remove('connecting');
 
                     serial.disconnect(onClosed);
 
