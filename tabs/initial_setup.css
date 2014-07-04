@@ -309,13 +309,15 @@
 
             margin-left: 100px;
         }
+.tab-initial_setup .buttons {
+    width: calc(100% - 20px);
+
+    position: absolute;
+    bottom: 10px;
+}
     .tab-initial_setup .update {
         display: block;
-        position: absolute;
-        bottom: 11px;
-        right: 11px;
-
-        margin: 0 3px 0 0;
+        float: right;
 
         width: 80px;
         height: 28px;
