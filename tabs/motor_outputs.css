@@ -41,6 +41,10 @@
     .tab-motor_outputs .plot_control .z {
         color: #CB4B4B;
     }
+    .tab-motor_outputs .plot_control .x, .tab-motor_outputs .plot_control .y, .tab-motor_outputs .plot_control .z {
+        text-align: right;
+        margin-right: 25px;
+    }
 .tab-motor_outputs select {
     width: 70px;
     border: 1px solid silver;
