@@ -311,7 +311,9 @@
         }
     .tab-initial_setup .update {
         display: block;
-        float: right;
+        position: absolute;
+        bottom: 11px;
+        right: 11px;
 
         margin: 0 3px 0 0;
 
