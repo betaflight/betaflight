@@ -60,6 +60,10 @@
         .tab-sensors .plot_control .z {
             color: #CB4B4B;
         }
+        .tab-sensors .plot_control .x, .tab-sensors .plot_control .y, .tab-sensors .plot_control .z {
+            text-align: right;
+            margin-right: 25px;
+        }
     .tab-sensors select {
         width: 70px;
         border: 1px solid silver;
