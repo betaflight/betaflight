@@ -46,8 +46,6 @@ $(document).ready(function() {
             break;
     }
 
-    GUI.log('Are you using ESCs with SimonK firmware? Try <a href="https://chrome.google.com/webstore/detail/rapidflash/gehadojofkekobiohnefkabgimeniglh" target="_blank">RapidFlash</a>, our new utility for configuring / flashing / updating firmware.');
-
     // Tabs
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
