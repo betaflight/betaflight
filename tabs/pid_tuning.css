@@ -73,6 +73,12 @@
         float: right;
         width: calc(40% - 10px); /* - ( "virtual" margin) */
     }
+    .tab-pid_tuning .buttons {
+        width: calc(100% - 20px);
+
+        position: absolute;
+        bottom: 10px;
+    }
     .tab-pid_tuning .update,
     .tab-pid_tuning .refresh {
         display: block;

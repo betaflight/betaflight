@@ -309,19 +309,20 @@
 
             margin-left: 100px;
         }
-.tab-initial_setup .buttons {
-    width: calc(100% - 20px);
+    .tab-initial_setup .buttons {
+        width: calc(100% - 20px);
 
-    position: absolute;
-    bottom: 10px;
-}
+        position: absolute;
+        bottom: 10px;
+    }
     .tab-initial_setup .update {
         display: block;
         float: right;
 
-        width: 80px;
         height: 28px;
         line-height: 28px;
+
+        padding: 0 15px 0 15px;
 
         text-align: center;
         font-weight: bold;
