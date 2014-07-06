@@ -103,6 +103,7 @@ function tab_initialize_initial_setup() {
         }
 
         $('span.model').text(chrome.i18n.getMessage('initialSetupModel', [str]));
+        $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
 
         // UI Hooks
         $('a.calibrateAccel').click(function() {
@@ -218,6 +219,8 @@ function tab_initialize_initial_setup() {
         // reset yaw button hook
         $('div#interactive_block > a.reset').click(function() {
             yaw_fix = SENSOR_DATA.kinematics[2] * - 1.0;
+            $(this).text(chrome.i18n.getMessage('initialSetupButtonResetZaxisValue', [yaw_fix]));
+
             console.log('YAW reset to 0 deg, fix: ' + yaw_fix + ' deg');
         });
 
@@ -247,6 +250,9 @@ function tab_initialize_initial_setup() {
             cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematics[2] * -1.0) - yaw_fix) + 'deg)');
             $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematics[1] + 'deg)');
             $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematics[0] + 'deg)');
+
+            // Update heading
+            $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
         }
 
         GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);
