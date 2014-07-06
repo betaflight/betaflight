@@ -21,6 +21,7 @@ var MSP_codes = {
     MSP_WP:                 118,
     MSP_BOXIDS:             119,
     MSP_SERVO_CONF:         120,
+    MSP_CHANNEL_FORWARDING: 123,
 
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -35,6 +36,7 @@ var MSP_codes = {
     MSP_SELECT_SETTING:     210,
     MSP_SET_HEAD:           211,
     MSP_SET_SERVO_CONF:     212,
+    MSP_SET_CHANNEL_FORWARDING: 213,
     MSP_SET_MOTOR:          214,
 
     // MSP_BIND:               240,
@@ -369,6 +371,11 @@ MSP.process_data = function(code, message_buffer, message_length) {
                 };
 
                 SERVO_CONFIG.push(arr);
+            }
+            break;
+        case MSP_codes.MSP_CHANNEL_FORWARDING:
+            for (var i = 0; i < 8; i ++) {
+                SERVO_CONFIG[i].indexOfChannelToForward = data.getUint8(i);
             }
             break;
         case MSP_codes.MSP_SET_RAW_RC:

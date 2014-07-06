@@ -12,7 +12,11 @@ function tab_initialize_servos() {
     MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
 
     function get_servo_conf_data() {
-        MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_boxnames_data);
+        MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_channel_forwarding_data);
+    }
+
+    function get_channel_forwarding_data() {
+        MSP.send_message(MSP_codes.MSP_CHANNEL_FORWARDING, false, false, get_boxnames_data);
     }
 
     function get_boxnames_data() {
@@ -57,7 +61,7 @@ function tab_initialize_servos() {
             $('div.tab-servos table.fields').append('\
                 <tr> \
                     <td style="text-align: center">' + name + '</td>\
-                    <td class="middle"><input type="number" min="1000" max="2000" value="' + ((SERVO_CONFIG[obj].middle <= 7) ? 1500 : SERVO_CONFIG[obj].middle) + '" /></td>\
+                    <td class="middle"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].middle + '" /></td>\
                     <td class="min"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].min +'" /></td>\
                     <td class="max"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].max +'" /></td>\
                     <td class="channel"><input type="checkbox"/></td>\
@@ -75,10 +79,7 @@ function tab_initialize_servos() {
                 </tr> \
             ');
 
-            if (SERVO_CONFIG[obj].middle <= 7) {
-                $('div.tab-servos table.fields tr:last td.middle input').prop('disabled', true);
-                $('div.tab-servos table.fields tr:last td.channel input').eq(SERVO_CONFIG[obj].middle).prop('checked', true);
-            }
+            $('div.tab-servos table.fields tr:last td.channel input').eq(SERVO_CONFIG[obj].indexOfChannelToForward).prop('checked', true);
 
             if (directions == true) {
                 $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(SERVO_CONFIG[obj].rate, 0));
@@ -106,14 +107,13 @@ function tab_initialize_servos() {
             }
 
             $('div.tab-servos table.fields tr:last').data('info', {'obj': obj});
-
+            
             // UI hooks
+            
+            // only one checkbox for indicating a channel to forward can be selected at a time, perhaps a radio group would be best here.
             $('div.tab-servos table.fields tr:last td.channel input').click(function() {
                 if($(this).is(':checked')) {
-                    $(this).parent().parent().find('td.middle input').prop('disabled', true);
                     $(this).parent().parent().find('.channel input').not($(this)).prop('checked', false);
-                } else {
-                    $(this).parent().parent().find('td.middle input').prop('disabled', false).val(1500);
                 }
             });
         }
@@ -133,15 +133,14 @@ function tab_initialize_servos() {
             $('div.tab-servos table.fields tr:not(".main")').each(function() {
                 var info = $(this).data('info');
 
-                if ($('.middle input', this).is(':disabled')) {
-                    var selection = $('.channel input', this);
-                    var val = selection.index(selection.filter(':checked'));
 
-                    SERVO_CONFIG[info.obj].middle = parseInt(val);
-                } else {
-                    SERVO_CONFIG[info.obj].middle = parseInt($('.middle input', this).val());
-                }
+                var selection = $('.channel input', this);
+                var val = selection.index(selection.filter(':checked'));
 
+                SERVO_CONFIG[info.obj].indexOfChannelToForward = parseInt(val);
+
+                
+                SERVO_CONFIG[info.obj].middle = parseInt($('.middle input', this).val());
                 SERVO_CONFIG[info.obj].min = parseInt($('.min input', this).val());
                 SERVO_CONFIG[info.obj].max = parseInt($('.max input', this).val());
 
@@ -174,8 +173,16 @@ function tab_initialize_servos() {
 
                 buffer_out[needle++] = lowByte(SERVO_CONFIG[i].rate);
             }
-
             MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, buffer_out);
+            
+            // send channel forwarding over to mcu
+            buffer_out = [];
+
+            var needle = 0;
+            for (var i = 0; i < SERVO_CONFIG.length; i++) {
+                buffer_out[needle++] = SERVO_CONFIG[i].indexOfChannelToForward;
+            }
+            MSP.send_message(MSP_codes.MSP_SET_CHANNEL_FORWARDING, buffer_out);
 
             if (save_to_eeprom) {
                 // Save changes to EEPROM
