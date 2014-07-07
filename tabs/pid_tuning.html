@@ -55,9 +55,9 @@
         </tr>
         <tr class="LEVEL"><!-- 7 -->
             <td></td>
-            <td><input type="number" name="p" step="0.1"  min="0" max="25.5" /></td>
-            <td><input type="number" name="i" step="0.01" min="0" max="0.255" /></td>
-            <td><input type="number" name="d" step="1"    min="0" max="255" /></td>
+            <td><input type="number" name="p" step="0.1"   min="0" max="25.5" /></td>
+            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+            <td><input type="number" name="d" step="1"     min="0" max="255" /></td>
         </tr>
         <tr class="MAG"><!-- 8 -->
             <td></td>
@@ -76,11 +76,13 @@
             <td><input type="number" name="tpa"        step="0.01" min="0" max="2.55" /></td>
         </tr>
     </table>
-    <a class="update" href="#" i18n="pidTuningButtonSave"></a>
-    <a class="refresh" href="#" i18n="pidTuningButtonRefresh"></a>
     <div class="clear-both"></div>
     <div class="profile">
         <span class="head" i18n="pidTuningProfileHead"></span>
         <input type="number" name="profile" min="1" max="3" />
+    </div>
+    <div class="buttons">
+        <a class="update" href="#" i18n="pidTuningButtonSave"></a>
+        <a class="refresh" href="#" i18n="pidTuningButtonRefresh"></a>
     </div>
 </div>

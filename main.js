@@ -46,27 +46,23 @@ $(document).ready(function() {
             break;
     }
 
-    GUI.log('Are you using ESCs with SimonK firmware? Try <a href="https://chrome.google.com/webstore/detail/rapidflash/gehadojofkekobiohnefkabgimeniglh" target="_blank">RapidFlash</a>, our new utility for configuring / flashing / updating firmware.');
-
     // Tabs
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
         if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active
             var self = this;
             var index = $(self).parent().index();
+            var tab = $(self).parent().prop('class');
 
             // if there is no active connection, return
-            if (configuration_received == false) {
-                GUI.log('You need to connect before you can view any of the tabs', 'red');
+            if (!configuration_received && tab != 'tab_logging') {
+                GUI.log('You need to <strong>connect</strong> before you can view any of the tabs');
                 return;
             }
 
             GUI.tab_switch_cleanup(function() {
                 // disable previously active tab highlight
                 $('li', tabs).removeClass('active');
-
-                // get tab class name (there should be only one class listed)
-                var tab = $(self).parent().prop('class');
 
                 // Highlight selected tab
                 $(self).parent().addClass('active');
@@ -174,7 +170,7 @@ $(document).ready(function() {
     $("#content").on('keydown', 'input[type="number"]', function(e) {
         // whitelist all that we need for numeric control
         if ((e.keyCode >= 96 && e.keyCode <= 105) || (e.keyCode >= 48 && e.keyCode <= 57)) { // allow numpad and standard number keypad
-        } else if(e.keyCode == 109 || e.keyCode == 189) { // minus on numpad and in standard keyboard
+        } else if (e.keyCode == 109 || e.keyCode == 189) { // minus on numpad and in standard keyboard
         } else if (e.keyCode == 8 || e.keyCode == 46) { // backspace and delete
         } else if (e.keyCode == 190 || e.keyCode == 110) { // allow and decimal point
         } else if ((e.keyCode >= 37 && e.keyCode <= 40) || e.keyCode == 13) { // allow arrows, enter
@@ -236,6 +232,13 @@ function millitime() {
     var now = new Date().getTime();
 
     return now;
+}
+
+function bytesToSize(bytes) {
+    if (bytes < 1024) return bytes + ' Bytes';
+    else if (bytes < 1048576) return(bytes / 1024).toFixed(3) + ' KB';
+    else if (bytes < 1073741824) return(bytes / 1048576).toFixed(3) + ' MB';
+    else return (bytes / 1073741824).toFixed(3) + ' GB';
 }
 
 /*

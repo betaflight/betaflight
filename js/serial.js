@@ -1,8 +1,8 @@
 var serial = {
-    connectionId:   -1,
-    bitrate:        0,
-    bytes_received: 0,
-    bytes_sent:     0,
+    connectionId:           -1,
+    bitrate:                0,
+    bytes_received:         0,
+    bytes_sent:             0,
 
     transmitting:   false,
     output_buffer:  [],
@@ -21,12 +21,54 @@ var serial = {
                     self.bytes_received += info.data.byteLength;
                 });
 
+                self.onReceiveError.addListener(function watch_for_on_receive_errors(info) {
+                    console.error(info);
+                    ga_tracker.sendEvent('Error', 'Serial', info.error);
+
+                    switch (info.error) {
+                        case 'system_error': // we might be able to recover from this one
+                            chrome.serial.setPaused(self.connectionId, false, get_status);
+
+                            function get_status() {
+                                self.getInfo(crunch_status);
+                            }
+
+                            function crunch_status(info) {
+                                if (!info.paused) {
+                                    console.log('SERIAL: Connection recovered from last onReceiveError');
+                                    ga_tracker.sendEvent('Error', 'Serial', 'recovered');
+                                } else {
+                                    console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
+                                    GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+                                    ga_tracker.sendEvent('Error', 'Serial', 'unrecoverable');
+
+                                    if (GUI.connected_to || GUI.connecting_to) {
+                                        $('a.connect').click();
+                                    } else {
+                                        self.disconnect();
+                                    }
+                                }
+                            }
+                            break;
+                        case 'timeout':
+                            // TODO
+                            break;
+                        case 'device_lost':
+                            // TODO
+                            break;
+                        case 'disconnected':
+                            // TODO
+                            break;
+                    }
+                });
+
                 console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', Baud: ' + connectionInfo.bitrate);
 
-                callback(connectionInfo);
+                if (callback) callback(connectionInfo);
             } else {
                 console.log('SERIAL: Failed to open serial port');
-                callback(false);
+                ga_tracker.sendEvent('Error', 'Serial', 'FailedToOpen');
+                if (callback) callback(false);
             }
         });
     },
@@ -40,11 +82,16 @@ var serial = {
             self.onReceive.removeListener(self.onReceive.listeners[i]);
         }
 
+        for (var i = (self.onReceiveError.listeners.length - 1); i >= 0; i--) {
+            self.onReceiveError.removeListener(self.onReceiveError.listeners[i]);
+        }
+
         chrome.serial.disconnect(this.connectionId, function(result) {
             if (result) {
                 console.log('SERIAL: Connection with ID: ' + self.connectionId + ' closed');
             } else {
                 console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed');
+                ga_tracker.sendEvent('Error', 'Serial', 'FailedToClose');
             }
 
             console.log('SERIAL: Statistics - Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
@@ -52,7 +99,7 @@ var serial = {
             self.connectionId = -1;
             self.bitrate = 0;
 
-            callback(result);
+            if (callback) callback(result);
         });
     },
     getDevices: function(callback) {
@@ -64,6 +111,9 @@ var serial = {
 
             callback(devices);
         });
+    },
+    getInfo: function(callback) {
+        chrome.serial.getInfo(this.connectionId, callback);
     },
     setControlSignals: function(signals, callback) {
         chrome.serial.setControlSignals(this.connectionId, signals, callback);
@@ -117,6 +167,25 @@ var serial = {
             for (var i = (this.listeners.length - 1); i >= 0; i--) {
                 if (this.listeners[i] == function_reference) {
                     chrome.serial.onReceive.removeListener(function_reference);
+
+                    this.listeners.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    },
+    onReceiveError: {
+        listeners: [],
+
+        addListener: function(function_reference) {
+            var listener = chrome.serial.onReceiveError.addListener(function_reference);
+
+            this.listeners.push(function_reference);
+        },
+        removeListener: function(function_reference) {
+            for (var i = (this.listeners.length - 1); i >= 0; i--) {
+                if (this.listeners[i] == function_reference) {
+                    chrome.serial.onReceiveError.removeListener(function_reference);
 
                     this.listeners.splice(i, 1);
                     break;

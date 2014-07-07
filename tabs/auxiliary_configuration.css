@@ -40,11 +40,15 @@
             border: 0;
             background-color: white;
         }
+    .tab-auxiliary_configuration .buttons {
+        width: calc(100% - 20px);
+
+        position: absolute;
+        bottom: 10px;
+    }
     .tab-auxiliary_configuration .update {
         display: block;
         float: right;
-
-        margin-top: 10px;
 
         height: 28px;
         line-height: 28px;
@@ -59,7 +63,4 @@
     }
     .tab-auxiliary_configuration .update:hover {
         background-color: #dedcdc;
-    }
-    .tab-auxiliary_configuration .update.success {
-        border: 1px solid #43c84d;
     }

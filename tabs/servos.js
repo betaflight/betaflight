@@ -188,13 +188,6 @@ function tab_initialize_servos() {
                 // Save changes to EEPROM
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('servosEepromSave'));
-
-                    var element = $('a.update');
-                    element.addClass('success');
-
-                    GUI.timeout_add('success_highlight', function() {
-                        element.removeClass('success');
-                    }, 2000);
                 });
             }
         }

@@ -1,16 +1,34 @@
+var MSP_pass_through = false;
+
 function tab_initialize_logging() {
     ga_tracker.sendAppView('Logging');
     GUI.active_tab = 'logging';
 
     var requested_properties = [];
 
-    MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
+    if (configuration_received) {
+        MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
 
-    function get_motor_data() {
-        MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
-    }
+        function get_motor_data() {
+            MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
+        }
 
-    function load_html() {
+        function load_html() {
+            $('#content').load("./tabs/logging.html", process_html);
+        }
+    } else {
+        MSP_pass_through = true;
+
+        // we will initialize RC.channels array and MOTOR_DATA array manually
+        RC.active_channels = 8;
+        for (var i = 0; i < RC.active_channels; i++) {
+            RC.channels[i] = 0;
+        }
+
+        for (var i = 0; i < 8; i++) {
+            MOTOR_DATA[i] = 0;
+        }
+
         $('#content').load("./tabs/logging.html", process_html);
     }
 
@@ -22,75 +40,91 @@ function tab_initialize_logging() {
         $('a.log_file').click(prepare_file);
 
         $('a.logging').click(function() {
-            if (fileEntry != null) {
-                var clicks = $(this).data('clicks');
+            if (GUI.connected_to) {
+                if (fileEntry != null) {
+                    var clicks = $(this).data('clicks');
 
-                if (!clicks) {
-                    // reset some variables before start
-                    samples = 0;
-                    log_buffer = [];
-                    requested_properties = [];
+                    if (!clicks) {
+                        // reset some variables before start
+                        samples = 0;
+                        requests = 0;
+                        log_buffer = [];
+                        requested_properties = [];
 
-                    $('.properties input:checked').each(function() {
-                        requested_properties.push($(this).prop('name'));
-                    });
+                        $('.properties input:checked').each(function() {
+                            requested_properties.push($(this).prop('name'));
+                        });
 
-                    if (requested_properties.length) {
-                        // print header for the
-                        print_head();
+                        if (requested_properties.length) {
+                            // print header for the csv file
+                            print_head();
 
-                        function poll_data() {
-                            // save current
-                            crunch_data();
-
-                            // request new
-                            for (var i = 0; i < requested_properties.length; i++) {
-                                MSP.send_message(MSP_codes[requested_properties[i]]);
-
-                                /* this approach could be used if we want to utilize request time compensation
-                                if (i < requested_properties.length -1) {
-                                    MSP.send_message(requested_properties[i]);
-                                } else {
-                                    MSP.send_message(requested_properties[i], false, false, poll_data);
+                            function poll_data() {
+                                if (requests) {
+                                    // save current data (only after everything is initialized)
+                                    crunch_data();
                                 }
-                                */
+
+                                // request new
+                                if (!MSP_pass_through) {
+                                    for (var i = 0; i < requested_properties.length; i++, requests++) {
+                                        MSP.send_message(MSP_codes[requested_properties[i]]);
+                                    }
+                                }
                             }
+
+                            GUI.interval_add('log_data_pull', poll_data, parseInt($('select.speed').val()), true); // refresh rate goes here
+                            GUI.interval_add('flush_data', function() {
+                                if (log_buffer.length) { // only execute when there is actual data to write
+                                    if (fileWriter.readyState == 0 || fileWriter.readyState == 2) {
+                                        append_to_file(log_buffer.join('\n'));
+
+                                        $('.samples').text(samples += log_buffer.length);
+
+                                        log_buffer = [];
+                                    } else {
+                                        console.log('IO having trouble keeping up with the data flow');
+                                    }
+                                }
+                            }, 1000);
+
+                            $('.speed').prop('disabled', true);
+                            $(this).text(chrome.i18n.getMessage('loggingStop'));
+                            $(this).data("clicks", !clicks);
+                        } else {
+                            GUI.log(chrome.i18n.getMessage('loggingErrorOneProperty'));
                         }
-
-                        GUI.interval_add('log_data_pull', poll_data, parseInt($('select.speed').val()), true); // refresh rate goes here
-                        GUI.interval_add('flush_data', function() {
-                            if (log_buffer.length) { // only execute when there is actual data to write
-                                if (fileWriter.readyState == 0 || fileWriter.readyState == 2) {
-                                    append_to_file(log_buffer.join('\n'));
-
-                                    $('.samples').text(samples += log_buffer.length);
-                                    $('.size').text(chrome.i18n.getMessage('loggingKB', [(fileWriter.length / 1024).toFixed(2)]));
-
-                                    log_buffer = [];
-                                } else {
-                                    console.log('IO having trouble keeping up with the data flow');
-                                }
-                            }
-                        }, 1000);
-
-                        $('.speed').prop('disabled', true);
-                        $(this).text(chrome.i18n.getMessage('loggingStop'));
-                        $(this).data("clicks", !clicks);
                     } else {
-                        GUI.log(chrome.i18n.getMessage('loggingErrorOneProperty'));
+                        GUI.interval_remove('log_data_pull');
+                        GUI.interval_remove('flush_data');
+
+                        $('.speed').prop('disabled', false);
+                        $(this).text(chrome.i18n.getMessage('loggingStart'));
+                        $(this).data("clicks", !clicks);
                     }
                 } else {
-                    GUI.interval_remove('log_data_pull');
-                    GUI.interval_remove('flush_data');
-
-                    $('.speed').prop('disabled', false);
-                    $(this).text(chrome.i18n.getMessage('loggingStart'));
-                    $(this).data("clicks", !clicks);
+                    GUI.log(chrome.i18n.getMessage('loggingErrorLogFile'));
                 }
             } else {
-                GUI.log(chrome.i18n.getMessage('loggingErrorLogFile'));
+                GUI.log(chrome.i18n.getMessage('loggingErrorNotConnected'));
             }
         });
+
+        if (MSP_pass_through) {
+            $('a.back').show();
+
+            $('a.back').click(function() {
+                if (GUI.connected_to) {
+                    $('a.connect').click();
+                } else {
+                    GUI.tab_switch_cleanup(function() {
+                        MSP_pass_through = false;
+                        $('#tabs > ul li').removeClass('active');
+                        tab_initialize_default();
+                    });
+                }
+            });
+        }
 
         chrome.storage.local.get('logging_file_entry', function(result) {
             if (result.logging_file_entry) {
@@ -100,52 +134,6 @@ function tab_initialize_logging() {
                 });
             }
         });
-    }
-
-    var samples = 0;
-    var log_buffer = [];
-    function crunch_data() {
-        var sample = millitime();
-
-        for (var i = 0; i < requested_properties.length; i++) {
-            switch (requested_properties[i]) {
-                case 'MSP_RAW_IMU':
-                    sample += ',' + SENSOR_DATA.gyroscope;
-                    sample += ',' + SENSOR_DATA.accelerometer;
-                    sample += ',' + SENSOR_DATA.magnetometer;
-                    break;
-                case 'MSP_ATTITUDE':
-                    sample += ',' + SENSOR_DATA.kinematicsX;
-                    sample += ',' + SENSOR_DATA.kinematicsY;
-                    sample += ',' + SENSOR_DATA.kinematicsZ;
-                    break;
-                case 'MSP_ALTITUDE':
-                    sample += ',' + SENSOR_DATA.altitude;
-                    break;
-                case 'MSP_RAW_GPS':
-                    sample += ',' + GPS_DATA.fix;
-                    sample += ',' + GPS_DATA.numSat;
-                    sample += ',' + (GPS_DATA.lat / 10000000);
-                    sample += ',' + (GPS_DATA.lon / 10000000);
-                    sample += ',' + GPS_DATA.alt;
-                    sample += ',' + GPS_DATA.speed;
-                    sample += ',' + GPS_DATA.ground_course;
-                    break;
-                case 'MSP_RC':
-                    for (var chan = 0; chan < RC.active_channels; chan++) {
-                        sample += ',' + RC.channels[chan];
-                    }
-                    break;
-                case 'MSP_MOTOR':
-                    sample += ',' + MOTOR_DATA;
-                    break;
-                case 'MSP_DEBUG':
-                    sample += ',' + SENSOR_DATA.debug;
-                    break;
-            }
-        }
-
-        log_buffer.push(sample);
     }
 
     function print_head() {
@@ -183,6 +171,12 @@ function tab_initialize_logging() {
                     head += ',' + 'gpsSpeed';
                     head += ',' + 'gpsGroundCourse';
                     break;
+                case 'MSP_ANALOG':
+                    head += ',' + 'voltage';
+                    head += ',' + 'amperage';
+                    head += ',' + 'mAhdrawn';
+                    head += ',' + 'rssi';
+                    break;
                 case 'MSP_RC':
                     for (var chan = 0; chan < RC.active_channels; chan++) {
                         head += ',' + 'RC' + chan;
@@ -201,7 +195,60 @@ function tab_initialize_logging() {
             }
         }
 
-        log_buffer.push(head);
+        append_to_file(head);
+    }
+
+    var samples = 0;
+    var requests = 0;
+    var log_buffer = [];
+    function crunch_data() {
+        var sample = millitime();
+
+        for (var i = 0; i < requested_properties.length; i++) {
+            switch (requested_properties[i]) {
+                case 'MSP_RAW_IMU':
+                    sample += ',' + SENSOR_DATA.gyroscope;
+                    sample += ',' + SENSOR_DATA.accelerometer;
+                    sample += ',' + SENSOR_DATA.magnetometer;
+                    break;
+                case 'MSP_ATTITUDE':
+                    sample += ',' + SENSOR_DATA.kinematics[0];
+                    sample += ',' + SENSOR_DATA.kinematics[1];
+                    sample += ',' + SENSOR_DATA.kinematics[2];
+                    break;
+                case 'MSP_ALTITUDE':
+                    sample += ',' + SENSOR_DATA.altitude;
+                    break;
+                case 'MSP_RAW_GPS':
+                    sample += ',' + GPS_DATA.fix;
+                    sample += ',' + GPS_DATA.numSat;
+                    sample += ',' + (GPS_DATA.lat / 10000000);
+                    sample += ',' + (GPS_DATA.lon / 10000000);
+                    sample += ',' + GPS_DATA.alt;
+                    sample += ',' + GPS_DATA.speed;
+                    sample += ',' + GPS_DATA.ground_course;
+                    break;
+                case 'MSP_ANALOG':
+                    sample += ',' + ANALOG.voltage;
+                    sample += ',' + ANALOG.amperage;
+                    sample += ',' + ANALOG.mAhdrawn;
+                    sample += ',' + ANALOG.rssi;
+                    break;
+                case 'MSP_RC':
+                    for (var chan = 0; chan < RC.active_channels; chan++) {
+                        sample += ',' + RC.channels[chan];
+                    }
+                    break;
+                case 'MSP_MOTOR':
+                    sample += ',' + MOTOR_DATA;
+                    break;
+                case 'MSP_DEBUG':
+                    sample += ',' + SENSOR_DATA.debug;
+                    break;
+            }
+        }
+
+        log_buffer.push(sample);
     }
 
     // IO related methods
@@ -233,6 +280,9 @@ function tab_initialize_logging() {
                         // save entry for next use
                         chrome.storage.local.set({'logging_file_entry': chrome.fileSystem.retainEntry(fileEntry)});
 
+                        // reset sample counter in UI
+                        $('.samples').text(0);
+
                         prepare_writer();
                     } else {
                         console.log('File appears to be read only, sorry.');
@@ -254,7 +304,7 @@ function tab_initialize_logging() {
             };
 
             fileWriter.onwriteend = function() {
-                // console.log('Data written');
+                $('.size').text(bytesToSize(fileWriter.length));
             };
 
             if (retaining) {
@@ -262,6 +312,9 @@ function tab_initialize_logging() {
                     GUI.log(chrome.i18n.getMessage('loggingAutomaticallyRetained', [path]));
                 });
             }
+
+            // update log size in UI on fileWriter creation
+            $('.size').text(bytesToSize(fileWriter.length));
         }, function(e) {
             // File is not readable or does not exist!
             console.error(e);

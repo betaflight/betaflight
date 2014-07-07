@@ -46,12 +46,13 @@ function tab_initialize_firmware_flasher() {
                                     parsed_hex = data;
 
                                     if (parsed_hex) {
-                                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherFirmwareLoaded'));
+                                        GUI.log(chrome.i18n.getMessage('firmwareFlasherLocalFirmwareLoaded'));
+                                        ga_tracker.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('locked');
 
                                         $('span.size').html(parsed_hex.bytes_total + ' bytes');
                                     } else {
-                                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
+                                        GUI.log(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                                     }
                                 });
                             }
@@ -71,17 +72,18 @@ function tab_initialize_firmware_flasher() {
                     parsed_hex = data;
 
                     if (parsed_hex) {
-                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherRemoteFirmwareLoaded'));
+                        GUI.log(chrome.i18n.getMessage('firmwareFlasherRemoteFirmwareLoaded'));
+                        ga_tracker.sendEvent('Flashing', 'Firmware', 'online');
                         $('a.flash_firmware').removeClass('locked');
 
                         $('span.path').text('Using remote Firmware');
                         $('span.size').text(parsed_hex.bytes_total + ' bytes');
                     } else {
-                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
+                        GUI.log(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
                 });
             }).fail(function() {
-                STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
+                GUI.log(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
                 $('a.flash_firmware').addClass('locked');
             });
 
@@ -103,9 +105,13 @@ function tab_initialize_firmware_flasher() {
             if (!$(this).hasClass('locked')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
                     if (parsed_hex != false) {
-                        STM32.connect(parsed_hex);
+                        if (String($('div#port-picker #port').val()) != 'DFU') {
+                            STM32.connect(parsed_hex);
+                        } else {
+                            STM32DFU.connect(parsed_hex);
+                        }
                     } else {
-                        STM32.GUI_status(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
+                        GUI.log(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
                     }
                 }
             }

@@ -49,13 +49,16 @@
             line-height: 20px;
         }
     .tab-logging .buttons {
-        margin-top: 10px;
+        width: calc(100% - 20px);
+
+        position: absolute;
+        bottom: 10px;
     }
         .tab-logging .buttons a {
             display: block;
-            float: left;
+            float: right;
 
-            margin-right: 10px;
+            margin-left: 10px;
 
             height: 28px;
             line-height: 28px;
@@ -70,4 +73,7 @@
         }
         .tab-logging .buttons a:hover {
             background-color: #dedcdc;
+        }
+        .tab-logging .buttons .back {
+            display: none;
         }

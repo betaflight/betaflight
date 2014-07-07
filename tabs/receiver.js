@@ -154,13 +154,6 @@ function tab_initialize_receiver() {
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
-
-                    var element = $('a.update');
-                    element.addClass('success');
-
-                    GUI.timeout_add('success_highlight', function() {
-                        element.removeClass('success');
-                    }, 2000);
                 });
             }
         });
@@ -185,7 +178,7 @@ function tab_initialize_receiver() {
             var svg = d3.select("svg");
 
             var RX_plot_e = $('#RX_plot');
-            var margin = {top: 20, right: 20, bottom: 10, left: 40};
+            var margin = {top: 20, right: 0, bottom: 10, left: 40};
             var width, height, widthScale, heightScale;
             function update_receiver_plot_size() {
                 width = RX_plot_e.width() - margin.left - margin.right;

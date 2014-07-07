@@ -8,6 +8,45 @@
 
     width: calc(40% - 10px);
 }
+.tab-default .optional_permissions {
+    display: none;
+
+    margin-bottom: 10px;
+
+    border: 1px solid silver;
+}
+    .tab-default .optional_permissions .title {
+        line-height: 20px;
+
+        text-align: center;
+        font-weight: bold;
+        color: white;
+
+        border-bottom: 1px solid silver;
+        background-color: #cd4c4c;
+    }
+    .tab-default .optional_permissions p {
+        padding: 5px;
+    }
+    .tab-default .optional_permissions a {
+        display: block;
+        float: left;
+
+        height: 28px;
+        line-height: 28px;
+
+        margin: 0 0 5px 5px;
+        padding: 0 15px 0 15px;
+
+        text-align: center;
+        font-weight: bold;
+
+        border: 1px solid silver;
+        background-color: #ececec;
+    }
+    .tab-default .optional_permissions a:hover {
+        background-color: #dedcdc;
+    }
     .welcome {
         margin-bottom: 10px;
 

@@ -4,6 +4,7 @@ var GUI_control = function() {
     this.connected_to = false;
     this.active_tab;
     this.operating_system;
+    this.optional_usb_permissions = false; // controlled by usb permissions code
     this.interval_array = [];
     this.timeout_array = [];
 
@@ -226,38 +227,9 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             if (callback) callback();
             break;
         case 'motor_outputs':
-            GUI.interval_remove('motor_pull');
-            GUI.interval_remove('status_pull');
+            GUI.interval_kill_all();
 
-            // only enforce mincommand if necessary
-            if (MOTOR_DATA != undefined) {
-                var update = false;
-
-                for (var i = 0; i < MOTOR_DATA.length; i++) {
-                    if (MOTOR_DATA[i] > MISC.mincommand) {
-                        update = true;
-                        break;
-                    }
-                }
-
-                if (update) {
-                    // send data to mcu
-                    var buffer_out = [];
-
-                    for (var i = 0; i < 8; i++) {
-                        buffer_out.push(lowByte(MISC.mincommand));
-                        buffer_out.push(highByte(MISC.mincommand));
-                    }
-
-                    MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer_out, false, function() {
-                        if (callback) callback();
-                    });
-                } else {
-                    if (callback) callback();
-                }
-            } else {
-                if (callback) callback();
-            }
+            if (callback) callback();
             break;
         case 'sensors':
             GUI.interval_kill_all();
@@ -292,7 +264,11 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                 }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
             });
             break;
+        case 'logging':
+            GUI.interval_kill_all();
 
+            if (callback) callback();
+            break;
         case 'firmware_flasher':
             // this.interval_remove('factory_mode');
             PortHandler.flush_callbacks();
@@ -302,7 +278,6 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
 
             if (callback) callback();
             break;
-
         default:
             if (callback) callback();
     }

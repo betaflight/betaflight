@@ -12,6 +12,42 @@
     .tab-receiver .bars ul {
         margin-bottom: 5px;
     }
+	.tab-receiver .bars ul:nth-of-type(1) {
+            color: #00A8F0;
+        }
+        .tab-receiver .bars ul:nth-of-type(2) {
+            color: #C0D800;
+        }
+        .tab-receiver .bars ul:nth-of-type(3) {
+            color: #f8921a;
+        }
+        .tab-receiver .bars ul:nth-of-type(4) {
+            color: #f02525;
+        }
+        .tab-receiver .bars ul:nth-of-type(5) {
+            color: #9440ED;
+        }
+        .tab-receiver .bars ul:nth-of-type(6) {
+            color: #45147a;
+        }
+        .tab-receiver .bars ul:nth-of-type(7) {
+            color: #cf7a26;
+        }
+        .tab-receiver .bars ul:nth-of-type(8) {
+            color: #147a66;
+        }
+        .tab-receiver .bars ul:nth-of-type(9) {
+            color: #0609a9;
+        }
+        .tab-receiver .bars ul:nth-of-type(10) {
+            color: #7a1445;
+        }
+        .tab-receiver .bars ul:nth-of-type(11) {
+            color: #267acf;
+        }
+        .tab-receiver .bars ul:nth-of-type(12) {
+            color: #7a6614;
+        }
     .tab-receiver .bars li {
         float: left;
 
@@ -66,49 +102,8 @@
         padding: 0 5px 0 5px;
         text-align: right;
     }
-    .tab-receiver #RX_plot {
-        margin-left: 5px;
-
-        height: 200px;
-    }
     .tab-receiver .curves {
         float: right;
-    }
-    .tab-receiver .line:nth-child(1) {
-        stroke: #00A8F0;
-    }
-    .tab-receiver .line:nth-child(2) {
-        stroke: #C0D800;
-    }
-    .tab-receiver .line:nth-child(3) {
-        stroke: #CB4B4B;
-    }
-    .tab-receiver .line:nth-child(4) {
-        stroke: #4DA74D;
-    }
-    .tab-receiver .line:nth-child(5) {
-        stroke: #9440ED;
-    }
-    .tab-receiver .line:nth-child(6) {
-        stroke: #45147A;
-    }
-    .tab-receiver .line:nth-child(7) {
-        stroke: #CF7A26;
-    }
-    .tab-receiver .line:nth-child(8) {
-        stroke: #147A66;
-    }
-    .tab-receiver .line:nth-child(9) {
-        stroke: #407a9e;
-    }
-    .tab-receiver .line:nth-child(10) {
-        stroke: #7a1445;
-    }
-    .tab-receiver .line:nth-child(11) {
-        stroke: #267acf;
-    }
-    .tab-receiver .line:nth-child(12) {
-        stroke: #7a6614;
     }
     .tab-receiver .throttle_curve {
         margin: 0 10px 10px 0;
@@ -125,6 +120,57 @@
         height: 58px;
 
         border: 1px solid silver;
+    }
+    .tab-receiver select[name="rx_refresh_rate"] {
+        float: right;
+
+        border: 1px solid silver;
+    }
+    .tab-receiver #RX_plot {
+        width: 100%;
+        height: 200px;
+    }
+        .tab-receiver #RX_plot .line:nth-child(1) {
+            stroke: #00A8F0;
+        }
+        .tab-receiver #RX_plot .line:nth-child(2) {
+            stroke: #C0D800;
+        }
+        .tab-receiver #RX_plot .line:nth-child(3) {
+            stroke: #f8921a;
+        }
+        .tab-receiver #RX_plot .line:nth-child(4) {
+            stroke: #f02525;
+        }
+        .tab-receiver #RX_plot .line:nth-child(5) {
+            stroke: #9440ED;
+        }
+        .tab-receiver #RX_plot .line:nth-child(6) {
+            stroke: #45147A;
+        }
+        .tab-receiver #RX_plot .line:nth-child(7) {
+            stroke: #CF7A26;
+        }
+        .tab-receiver #RX_plot .line:nth-child(8) {
+            stroke: #147A66;
+        }
+        .tab-receiver #RX_plot .line:nth-child(9) {
+            stroke: #0609a9;
+        }
+        .tab-receiver #RX_plot .line:nth-child(10) {
+            stroke: #7a1445;
+        }
+        .tab-receiver #RX_plot .line:nth-child(11) {
+            stroke: #267acf;
+        }
+        .tab-receiver #RX_plot .line:nth-child(12) {
+            stroke: #7a6614;
+        }
+    .tab-receiver .buttons {
+        width: calc(100% - 20px);
+
+        position: absolute;
+        bottom: 10px;
     }
     .tab-receiver .update,
     .tab-receiver .refresh {
@@ -150,17 +196,6 @@
     .tab-receiver .update:hover,
     .tab-receiver .refresh:hover {
         background-color: #dedcdc;
-    }
-    .tab-receiver .update.success {
-        border: 1px solid #43c84d;
-    }
-    .tab-receiver select[name="rx_refresh_rate"] {
-        float: right;
-
-        margin-top: 30px;
-        margin-right: 13px;
-
-        border: 1px solid silver;
     }
 
 /* SVG classes*/

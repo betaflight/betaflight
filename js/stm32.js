@@ -42,17 +42,12 @@ var STM32_protocol = function() {
     this.page_size = 0;
 };
 
-// string = string .. duh
-STM32_protocol.prototype.GUI_status = function(string) {
-    $('span.status').html(string);
-};
-
 // no input parameters
 STM32_protocol.prototype.connect = function(hex) {
     var self = this;
     self.hex = hex;
 
-    var selected_port = String($('div#port-picker .port select').val());
+    var selected_port = String($('div#port-picker #port').val());
     var baud = parseInt($('div#port-picker #baud').val());
 
     if (selected_port != '0') {
@@ -61,11 +56,7 @@ STM32_protocol.prototype.connect = function(hex) {
 
         switch (GUI.operating_system) {
             case 'Windows':
-                flashing_bitrate = 921600;
-                break;
             case 'MacOS':
-                flashing_bitrate = 921600;
-                break;
             case 'ChromeOS':
             case 'Linux':
             case 'UNIX':
@@ -122,7 +113,7 @@ STM32_protocol.prototype.connect = function(hex) {
         }
     } else {
         console.log('Please select valid serial port');
-        STM32.GUI_status('<span style="color: red">Please select valid serial port</span>');
+        GUI.log('<span style="color: red">Please select valid serial port</span>');
     }
 };
 
@@ -151,7 +142,8 @@ STM32_protocol.prototype.initialize = function() {
             self.upload_process_alive = false;
         } else {
             console.log('STM32 - timed out, programming failed ...');
-            STM32.GUI_status('STM32 - timed out, programming: <strong style="color: red">FAILED</strong>');
+            GUI.log('STM32 - timed out, programming: <strong style="color: red">FAILED</strong>');
+            ga_tracker.sendEvent('Flashing', 'Programming', 'timeout');
 
             // protocol got stuck, clear timer and disconnect
             GUI.interval_remove('STM32_timeout');
@@ -159,7 +151,7 @@ STM32_protocol.prototype.initialize = function() {
             // exit
             self.upload_procedure(99);
         }
-    }, 1000);
+    }, 2000);
 
     self.upload_procedure(1);
 };
@@ -230,7 +222,7 @@ STM32_protocol.prototype.send = function(Array, bytes_to_read, callback) {
 STM32_protocol.prototype.verify_response = function(val, data) {
     if (val != data[0]) {
         console.log('STM32 Communication failed, wrong response, expected: ' + val + ' received: ' + data[0]);
-        STM32.GUI_status('STM32 Communication <span style="color: red">failed</span>, wrong response, expected: ' + val + ' received: ' + data[0]);
+        GUI.log('STM32 Communication <span style="color: red">failed</span>, wrong response, expected: ' + val + ' received: ' + data[0]);
 
         // disconnect
         this.upload_procedure(99);
@@ -338,6 +330,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
     switch (step) {
         case 1:
             // initialize serial interface on the MCU side, auto baud rate settings
+            GUI.log('Contacting bootloader ...');
+
             var send_counter = 0;
             GUI.interval_add('stm32_initialize_mcu', function() { // 200 ms interval (just in case mcu was already initialized), we need to break the 2 bytes command requirement
                 self.send([0x7F], 1, function(reply) {
@@ -349,7 +343,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         self.upload_procedure(2);
                     } else {
                         GUI.interval_remove('stm32_initialize_mcu');
-                        STM32.GUI_status('STM32 Communication with bootloader <span style="color: red">failed</span>');
+                        GUI.log('Communication with bootloader <span style="color: red">failed</span>');
 
                         // disconnect
                         self.upload_procedure(99);
@@ -396,10 +390,11 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 4:
             // erase memory
+            GUI.log('Erasing ...');
+
             if (!$('input.erase_chip').is(':checked')) {
                 // EXPERIMENTAL
                 console.log('Executing local erase (only needed pages)');
-                STM32.GUI_status('Erasing');
 
                 self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
                     if (self.verify_response(self.status.ACK, reply)) {
@@ -419,9 +414,6 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         self.send(buff, 1, function(reply) {
                             if (self.verify_response(self.status.ACK, reply)) {
                                 console.log('Erasing: done');
-                                console.log('Writing data ...');
-                                STM32.GUI_status('<span style="color: green">Flashing ...</span>');
-
                                 // proceed to next step
                                 self.upload_procedure(5);
                             }
@@ -430,16 +422,12 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                 });
             } else {
                 console.log('Executing global chip erase');
-                STM32.GUI_status('Erasing');
 
                 self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
                     if (self.verify_response(self.status.ACK, reply)) {
                         self.send([0xFF, 0x00], 1, function(reply) {
                             if (self.verify_response(self.status.ACK, reply)) {
                                 console.log('Erasing: done');
-                                console.log('Writing data ...');
-                                STM32.GUI_status('<span style="color: green">Flashing ...</span>');
-
                                 // proceed to next step
                                 self.upload_procedure(5);
                             }
@@ -450,6 +438,9 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 5:
             // upload
+            console.log('Writing data ...');
+            GUI.log('Flashing ...');
+
             var blocks = self.hex.data.length - 1;
             var flashing_block = 0;
             var address = self.hex.data[flashing_block].address;
@@ -484,7 +475,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                                     array_out[array_out.length - 1] = checksum; // checksum (last byte in the array_out array)
 
                                     address += bytes_to_write;
-                                    bytes_flashed_total += bytes_to_write
+                                    bytes_flashed_total += bytes_to_write;
 
                                     self.send(array_out, 1, function(reply) {
                                         if (self.verify_response(self.status.ACK, reply)) {
@@ -511,8 +502,6 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                     } else {
                         // all blocks flashed
                         console.log('Writing: done');
-                        console.log('Verifying data ...');
-                        STM32.GUI_status('<span style="color: green">Verifying ...</span>');
 
                         // proceed to next step
                         self.upload_procedure(6);
@@ -525,6 +514,9 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             break;
         case 6:
             // verify
+            console.log('Verifying data ...');
+            GUI.log('Verifying ...');
+
             var blocks = self.hex.data.length - 1;
             var reading_block = 0;
             var address = self.hex.data[reading_block].address;
@@ -596,7 +588,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
 
                         if (verify) {
                             console.log('Programming: SUCCESSFUL');
-                            STM32.GUI_status('Programming: <strong style="color: green">SUCCESSFUL</strong>');
+                            GUI.log('Programming: <strong style="color: green">SUCCESSFUL</strong>');
+                            ga_tracker.sendEvent('Flashing', 'Programming', 'success');
 
                             // update progress bar
                             self.progress_bar_e.addClass('valid');
@@ -605,7 +598,8 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                             self.upload_procedure(7);
                         } else {
                             console.log('Programming: FAILED');
-                            STM32.GUI_status('Programming: <strong style="color: red">FAILED</strong>');
+                            GUI.log('Programming: <strong style="color: red">FAILED</strong>');
+                            ga_tracker.sendEvent('Flashing', 'Programming', 'fail');
 
                             // update progress bar
                             self.progress_bar_e.addClass('invalid');

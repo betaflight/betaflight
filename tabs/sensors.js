@@ -40,7 +40,7 @@ function tab_initialize_sensors() {
         return sampleNumber + 1;
     }
 
-    var margin = {top: 20, right: 20, bottom: 10, left: 40};
+    var margin = {top: 20, right: 10, bottom: 10, left: 40};
     function updateGraphHelperSize(helpers) {
         helpers.width = helpers.targetElement.width() - margin.left - margin.right;
         helpers.height = helpers.targetElement.height() - margin.top - margin.bottom;

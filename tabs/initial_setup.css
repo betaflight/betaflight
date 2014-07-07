@@ -309,15 +309,20 @@
 
             margin-left: 100px;
         }
+    .tab-initial_setup .buttons {
+        width: calc(100% - 20px);
+
+        position: absolute;
+        bottom: 10px;
+    }
     .tab-initial_setup .update {
         display: block;
         float: right;
 
-        margin: 0 3px 0 0;
-
-        width: 80px;
         height: 28px;
         line-height: 28px;
+
+        padding: 0 15px 0 15px;
 
         text-align: center;
         font-weight: bold;
@@ -327,7 +332,4 @@
     }
     .tab-initial_setup .update:hover {
         background-color: #dedcdc;
-    }
-    .tab-initial_setup .update.success {
-        border: 1px solid #43c84d;
     }

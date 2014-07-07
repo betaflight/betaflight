@@ -1,12 +1,8 @@
 /*
-    resizable: false - Keep in mind this only disables the side/corner resizing via mouse, nothing more
-    maxWidth / maxHeight - is defined to prevent application reaching maximized state through window manager
-
-    We are setting Bounds through setBounds method after window was created because on linux setting Bounds as
-    window.create property seemed to fail, probably because "previous" bounds was used instead according to docs.
-
-    bounds - Size and position of the content in the window (excluding the titlebar).
     If an id is also specified and a window with a matching id has been shown before, the remembered bounds of the window will be used instead.
+
+    Size calculation for innerBounds seems to be faulty, app was designed for 960x625, using arbitrary values to make innerBounds happy for now
+    arbitrary values do match the windows ui, how it will affect other OSs is currently unknown
 */
 function start_app() {
     chrome.app.window.create('main.html', {
@@ -14,6 +10,62 @@ function start_app() {
         frame: 'chrome',
         minWidth: 960,
         minHeight: 625
+    }, function(createdWindow) {
+        createdWindow.onClosed.addListener(function() {
+            // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference
+            // allowing us to automatically close the port when application shut down
+
+            // save connectionId in separate variable before app_window is destroyed
+            var connectionId = app_window.serial.connectionId;
+            var valid_connection = app_window.configuration_received;
+            var mincommand = app_window.MISC.mincommand;
+
+            if (connectionId > 0 && valid_connection) {
+                // code below is handmade MSP message (without pretty JS wrapper), it behaves exactly like MSP.send_message
+                // reset motors to default (mincommand)
+                var bufferOut = new ArrayBuffer(22);
+                var bufView = new Uint8Array(bufferOut);
+                var checksum = 0;
+
+                bufView[0] = 36; // $
+                bufView[1] = 77; // M
+                bufView[2] = 60; // <
+                bufView[3] = 16; // data length
+                bufView[4] = 214; // MSP_SET_MOTOR
+
+                checksum = bufView[3] ^ bufView[4];
+
+                for (var i = 0; i < 16; i += 2) {
+                    bufView[i + 5] = mincommand & 0x00FF;
+                    bufView[i + 6] = mincommand >> 8;
+
+                    checksum ^= bufView[i + 5];
+                    checksum ^= bufView[i + 6];
+                }
+
+                bufView[5 + 16] = checksum;
+
+                chrome.serial.send(connectionId, bufferOut, function(sendInfo) {
+                    chrome.serial.disconnect(connectionId, function(result) {
+                        console.log('SERIAL: Connection closed - ' + result);
+                    });
+                });
+            } else if (connectionId > 0) {
+                chrome.serial.disconnect(connectionId, function(result) {
+                    console.log('SERIAL: Connection closed - ' + result);
+                });
+            }
+        });
+    });
+
+    /* code belowis chrome 36+ ready, till this is enforced in manifest we have to use the old version
+    chrome.app.window.create('main.html', {
+        id: 'main-window',
+        frame: 'chrome',
+        innerBounds: {
+            minWidth: 974,
+            minHeight: 632
+        }
     }, function(createdWindow) {
         createdWindow.onClosed.addListener(function() {
             // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference
@@ -29,6 +81,7 @@ function start_app() {
             }
         });
     });
+    */
 }
 
 chrome.app.runtime.onLaunched.addListener(function() {

@@ -106,6 +106,12 @@
             float: left;
             margin: 0 0 0 5px;
         }
+    .tab-servos .buttons {
+        width: calc(100% - 20px);
+
+        position: absolute;
+        bottom: 10px;
+    }
     .tab-servos .update {
         display: block;
         float: right;
@@ -125,7 +131,4 @@
     }
     .tab-servos .update:hover {
         background-color: #dedcdc;
-    }
-    .tab-servos .update.success {
-        border: 1px solid #43c84d;
     }

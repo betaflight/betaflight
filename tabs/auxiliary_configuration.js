@@ -1,3 +1,4 @@
+// TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
 function tab_initialize_auxiliary_configuration() {
     ga_tracker.sendAppView('Auxiliary Configuration');
     GUI.active_tab = 'auxiliary_configuration';
@@ -5,7 +6,11 @@ function tab_initialize_auxiliary_configuration() {
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
 
     function get_box_data() {
-        MSP.send_message(MSP_codes.MSP_BOX, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_rc_data);
+    }
+
+    function get_rc_data() {
+        MSP.send_message(MSP_codes.MSP_RC, false, false, load_html);
     }
 
     function load_html() {
@@ -13,71 +18,48 @@ function tab_initialize_auxiliary_configuration() {
     }
 
     function process_html() {
+        // generate heads according to RC count
+        var table_head = $('table.boxes .heads');
+        var main_head = $('table.boxes .main');
+        for (var i = 0; i < (RC.active_channels - 4); i++) {
+            table_head.append('<th colspan="3">AUX ' + (i + 1) + '</th>');
+
+            // 3 columns per aux channel (this might be requested to change to 6 in the future, so watch out)
+            main_head.append('\
+                <th i18n="auxiliaryLow"></th>\
+                <th i18n="auxiliaryMed"></th>\
+                <th i18n="auxiliaryHigh"></th>\
+            ');
+        }
+
         // translate to user-selected language
         localize();
 
-        function box_check(num, pos) {
-            if (bit_check(num, pos)) { // 1
-                return '<td><input type="checkbox" checked="checked" /></td>';
-            } else { // 0
-                return '<td><input type="checkbox" /></td>';
-            }
-        }
-
-        // val = channel value
-        // aux_num = position of corresponding aux channel in the html table
-        function box_highlight(val, aux_num) {
-            var tr = $('table.boxes .switches');
-            var pos = 0; // < 1300
-
-            if (val > 1300 && val < 1700) {
-                pos = 1;
-            } else if (val > 1700) {
-                pos = 2;
-            }
-
-            $('td:nth-child(' + aux_num + '), td:nth-child(' + (aux_num + 1) + '), td:nth-child(' + (aux_num + 2) + ')', tr).css('background-color', 'transparent');
-            $('td:nth-child(' + (aux_num + pos) + ')', tr).css('background-color', 'orange');
-        }
-
         // generate table from the supplied AUX names and AUX data
         for (var i = 0; i < AUX_CONFIG.length; i++) {
-            $('.boxes > tbody:last').append(
-                '<tr class="switches">' +
-                    '<td class="name">' + AUX_CONFIG[i] + '</td>' +
-                    box_check(AUX_CONFIG_values[i], 0) +
-                    box_check(AUX_CONFIG_values[i], 1) +
-                    box_check(AUX_CONFIG_values[i], 2) +
+            var line = '<tr class="switches">';
+            line += '<td class="name">' + AUX_CONFIG[i] + '</td>';
 
-                    box_check(AUX_CONFIG_values[i], 3) +
-                    box_check(AUX_CONFIG_values[i], 4) +
-                    box_check(AUX_CONFIG_values[i], 5) +
+            var bitIndex = 0;
+            var chunks = 1;
+            if (bit_check(CONFIG.capability, 5)) {
+                chunks = 2;
+            }
+            var channelsPerChunk = 4;
+            for (var chunk = 0; chunk < chunks; chunk++) {
+                for (var j = 0; j < channelsPerChunk * 3; j++) {
+                    if (bit_check(AUX_CONFIG_values[i], bitIndex++)) {
+                        line += '<td><input type="checkbox" checked="checked" /></td>';
+                    } else {
+                        line += '<td><input type="checkbox" /></td>';
+                    }
+                }
+                bitIndex += 16 - (4 * 3);
+            }
+            
+            line += '</tr>';
 
-                    box_check(AUX_CONFIG_values[i], 6) +
-                    box_check(AUX_CONFIG_values[i], 7) +
-                    box_check(AUX_CONFIG_values[i], 8) +
-
-                    box_check(AUX_CONFIG_values[i], 9) +
-                    box_check(AUX_CONFIG_values[i], 10) +
-                    box_check(AUX_CONFIG_values[i], 11) +
-
-                    box_check(AUX_CONFIG_values[i], 16) +
-                    box_check(AUX_CONFIG_values[i], 17) +
-                    box_check(AUX_CONFIG_values[i], 18) +
-
-                    box_check(AUX_CONFIG_values[i], 19) +
-                    box_check(AUX_CONFIG_values[i], 20) +
-                    box_check(AUX_CONFIG_values[i], 21) +
-
-                    box_check(AUX_CONFIG_values[i], 22) +
-                    box_check(AUX_CONFIG_values[i], 23) +
-                    box_check(AUX_CONFIG_values[i], 24) +
-
-                    box_check(AUX_CONFIG_values[i], 25) +
-                    box_check(AUX_CONFIG_values[i], 26) +
-                    box_check(AUX_CONFIG_values[i], 27) +
-                    '</tr>'
-            );
+            $('.boxes > tbody:last').append(line);
         }
 
         // UI Hooks
@@ -112,18 +94,17 @@ function tab_initialize_auxiliary_configuration() {
                 }
             });
 
-            // send over the data
-            var AUX_val_buffer_out = new Array();
-
-            var needle = 0;
+            // send over data
+            // current code will only handle 4 AUX as the variable length is 16bits
+            var AUX_val_buffer_out = [];
             for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i] & 0xFFF);
-                AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i] & 0xFFF);
+                AUX_val_buffer_out.push(lowByte(AUX_CONFIG_values[i] & 0xFFF));
+                AUX_val_buffer_out.push(highByte(AUX_CONFIG_values[i] & 0xFFF));
             }
             if (bit_check(CONFIG.capability, 5)) {
                 for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                    AUX_val_buffer_out[needle++] = lowByte((AUX_CONFIG_values[i] >> 16) & 0xFFF);
-                    AUX_val_buffer_out[needle++] = highByte((AUX_CONFIG_values[i] >> 16) & 0xFFF);
+                    AUX_val_buffer_out.push(lowByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
+                    AUX_val_buffer_out.push(highByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
                 }
             }
             
@@ -132,16 +113,28 @@ function tab_initialize_auxiliary_configuration() {
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('auxiliaryEepromSaved'));
-
-                    var element = $('a.update');
-                    element.addClass('success');
-
-                    GUI.timeout_add('success_highlight', function() {
-                        element.removeClass('success');
-                    }, 2000);
                 });
             }
         });
+
+        // val = channel value
+        // aux_num = position of corresponding aux channel in the html table
+        var switches_e = $('table.boxes .switches');
+        function box_highlight(aux_num, val) {
+            var pos = 0; // < 1300
+
+            if (val > 1300 && val < 1700) {
+                pos = 1;
+            } else if (val > 1700) {
+                pos = 2;
+            }
+
+            var highlight_column = (aux_num * 3) + pos + 2; // +2 to skip name column and index starting on 1 instead of 0
+            var erase_columns = (aux_num * 3) + 2;
+
+            $('td:nth-child(n+' + erase_columns + '):nth-child(-n+' + (erase_columns + 2) + ')', switches_e).css('background-color', 'transparent');
+            $('td:nth-child(' + highlight_column + ')', switches_e).css('background-color', 'orange');
+        }
 
         // data pulling functions used inside interval timer
         function get_rc_data() {
@@ -159,22 +152,19 @@ function tab_initialize_auxiliary_configuration() {
                         $('td.name').eq(i).addClass('off');
                     }
                 }
+
             }
 
-            box_highlight(RC.channels[4],  2);  // aux 1
-            box_highlight(RC.channels[5],  5);  // aux 2
-            box_highlight(RC.channels[6],  8);  // aux 3
-            box_highlight(RC.channels[7],  11); // aux 4
-            if (RC.active_channels > 8) {
-                box_highlight(RC.channels[8],  14); // aux 5
-                box_highlight(RC.channels[9],  17); // aux 6
-                box_highlight(RC.channels[10], 20); // aux 7
-                box_highlight(RC.channels[11], 23); // aux 8
-            }
+            for (var i = 0; i < (RC.active_channels - 4); i++) {
+                box_highlight(i, RC.channels[i + 4]);
+            }           
         }
 
+        // update ui instantly on first load
+        update_ui();
+
         // enable data pulling
-        GUI.interval_add('aux_data_pull', get_rc_data, 50, true);
+        GUI.interval_add('aux_data_pull', get_rc_data, 50);
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function() {

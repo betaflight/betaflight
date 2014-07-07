@@ -1,16 +1,14 @@
 var configuration_received = false;
-var CLI_active = false;
-var CLI_valid = false;
 
 $(document).ready(function() {
     $('div#port-picker a.connect').click(function() {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
             var clicks = $(this).data('clicks');
 
-            var selected_port = String($('div#port-picker .port select').val());
+            var selected_port = String($('div#port-picker #port').val());
             var selected_baud = parseInt($('div#port-picker #baud').val());
 
-            if (selected_port != '0') {
+            if (selected_port != '0' && selected_port != 'DFU') {
                 if (!clicks) {
                     console.log('Connecting to: ' + selected_port);
                     GUI.connecting_to = selected_port;
@@ -21,23 +19,22 @@ $(document).ready(function() {
 
                     serial.connect(selected_port, {bitrate: selected_baud}, onOpen);
                 } else {
-                    // Disable any active "data pulling" timer
+                    GUI.timeout_kill_all();
                     GUI.interval_kill_all();
-
                     GUI.tab_switch_cleanup();
-                    GUI.timeout_remove('connecting');
 
                     serial.disconnect(onClosed);
 
                     GUI.connected_to = false;
 
                     // Reset various UI elements
-                    $('.software-version').html('0.0');
-                    $('span.cycle-time').html('0');
+                    $('span.i2c-error').text(0);
+                    $('span.cycle-time').text(0);
 
                     MSP.disconnect_cleanup();
                     PortUsage.reset();
                     configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
+                    MSP_pass_through = false;
 
                     // unlock port select & baud
                     $('div#port-picker #port').prop('disabled', false);
@@ -127,34 +124,39 @@ function onOpen(openInfo) {
 
         serial.onReceive.addListener(read_serial);
 
-        // disconnect after 10 seconds with error if we don't get IDENT data
-        GUI.timeout_add('connecting', function() {
-            if (!configuration_received) {
-                GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
+        if (!MSP_pass_through) {
+            // disconnect after 10 seconds with error if we don't get IDENT data
+            GUI.timeout_add('connecting', function() {
+                if (!configuration_received) {
+                    GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
 
-                $('div#port-picker a.connect').click(); // disconnect
-            }
-        }, 10000);
-
-        // request configuration data
-        MSP.send_message(MSP_codes.MSP_UID, false, false, function() {
-            GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
-            MSP.send_message(MSP_codes.MSP_IDENT, false, false, function() {
-                GUI.timeout_remove('connecting'); // kill connecting timer
-
-                GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
-
-                if (CONFIG.version >= firmware_version_accepted) {
-                    configuration_received = true;
-
-                    $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-                    $('#tabs li a:first').click();
-                } else {
-                    GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [firmware_version_accepted]));
                     $('div#port-picker a.connect').click(); // disconnect
                 }
+            }, 10000);
+
+            // request configuration data
+            MSP.send_message(MSP_codes.MSP_UID, false, false, function() {
+                GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
+                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function() {
+                    GUI.timeout_remove('connecting'); // kill connecting timer
+
+                    GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
+
+                    if (CONFIG.version >= firmware_version_accepted) {
+                        configuration_received = true;
+
+                        $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+                        $('#tabs li a:first').click();
+                    } else {
+                        GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [firmware_version_accepted]));
+                        $('div#port-picker a.connect').click(); // disconnect
+                    }
+                });
             });
-        });
+        } else {
+            $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+            GUI.log('Connection opened in <strong>pass-through</strong> mode');
+        }
     } else {
         console.log('Failed to open serial port');
         GUI.log(chrome.i18n.getMessage('serialPortOpenFail'));
@@ -179,10 +181,12 @@ function onClosed(result) {
 }
 
 function read_serial(info) {
-    if (!CLI_active) {
+    if (!CLI_active && !MSP_pass_through) {
         MSP.read(info);
-    } else {
+    } else if (CLI_active) {
         handle_CLI(info);
+    } else if (MSP_pass_through) { // needs to be verified, might be removed after pass_through is 100% deployed
+        MSP.read(info);
     }
 }
 

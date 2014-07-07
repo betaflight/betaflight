@@ -211,21 +211,14 @@ function tab_initialize_initial_setup() {
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('initialSetupEepromSaved'));
-
-                    var element = $('a.update');
-                    element.addClass('success');
-
-                    GUI.timeout_add('success_highlight', function() {
-                        element.removeClass('success');
-                    }, 2000);
                 });
             }
         });
 
         // reset yaw button hook
         $('div#interactive_block > a.reset').click(function() {
-            yaw_fix = SENSOR_DATA.kinematicsZ * - 1.0;
-            console.log("YAW reset to 0");
+            yaw_fix = SENSOR_DATA.kinematics[2] * - 1.0;
+            console.log('YAW reset to 0 deg, fix: ' + yaw_fix + ' deg');
         });
 
         $('#content .backup').click(configuration_backup);
@@ -251,9 +244,9 @@ function tab_initialize_initial_setup() {
             // Update cube
             var cube = $('div#cube');
 
-            cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematicsZ * -1.0) - yaw_fix) + 'deg)');
-            $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematicsY + 'deg)');
-            $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematicsX + 'deg)');
+            cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematics[2] * -1.0) - yaw_fix) + 'deg)');
+            $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematics[1] + 'deg)');
+            $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematics[0] + 'deg)');
         }
 
         GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);
