@@ -88,6 +88,8 @@ flags_t f;
 gyro_t gyro;
 int16_t magADC[XYZ_AXIS_COUNT];
 int32_t BaroAlt;
+int16_t debug[4];
+
 
 void gyroGetADC(void) {};
 bool sensors(uint32_t mask)
