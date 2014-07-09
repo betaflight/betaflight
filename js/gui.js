@@ -3,6 +3,7 @@ var GUI_control = function() {
     this.connecting_to = false;
     this.connected_to = false;
     this.active_tab;
+    this.tab_switch_in_progress = false;
     this.operating_system;
     this.optional_usb_permissions = false; // controlled by usb permissions code
     this.interval_array = [];

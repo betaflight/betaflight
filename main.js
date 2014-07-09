@@ -49,7 +49,7 @@ $(document).ready(function() {
     // Tabs
     var tabs = $('#tabs > ul');
     $('a', tabs).click(function() {
-        if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active
+        if ($(this).parent().hasClass('active') == false && !GUI.tab_switch_in_progress) { // only initialize when the tab isn't already active
             var self = this;
             var index = $(self).parent().index();
             var tab = $(self).parent().prop('class');
@@ -59,6 +59,8 @@ $(document).ready(function() {
                 GUI.log('You need to <strong>connect</strong> before you can view any of the tabs');
                 return;
             }
+
+            GUI.tab_switch_in_progress = true;
 
             GUI.tab_switch_cleanup(function() {
                 // disable previously active tab highlight
@@ -102,6 +104,8 @@ $(document).ready(function() {
                         tab_initialize_logging();
                         break;
                 }
+
+                GUI.tab_switch_in_progress = false;
             });
         }
     });
