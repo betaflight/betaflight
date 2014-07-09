@@ -211,61 +211,6 @@ function tab_initialize_firmware_flasher() {
             });
         });
 
-        /*
-        chrome.storage.local.get('dev_mode', function(result) {
-            if (typeof result.dev_mode !== 'undefined') {
-                if (result.dev_mode) {
-                    GUI.log('Dev mode: <strong>Enabled</strong>');
-                    bind_enter_handler();
-                }
-            }
-        });
-
-        var keys_down = {};
-        $(document).keydown(function(e) {
-            keys_down[e.which] = true;
-
-            // idkfa
-            if (keys_down[65] && keys_down[68] && keys_down[70] && keys_down[73] && keys_down[75]) {
-                chrome.storage.local.get('dev_mode', function(result) {
-                    if (typeof result.dev_mode === 'undefined') {
-                        GUI.log('Dev mode: <strong>Enabled</strong>');
-                        bind_enter_handler();
-
-                        chrome.storage.local.set({'dev_mode': true});
-                    }
-                });
-            }
-        });
-
-        $(document).keyup(function(e) {
-            delete keys_down[e.which];
-        });
-
-        function bind_enter_handler() {
-            // unbind first (in case there is anything bound here)
-            $(document).unbind('keypress');
-
-            $(document).keypress(function(e) {
-                if (e.which == 13) { // enter
-                    // Trigger regular Flashing sequence
-                    $('a.flash_firmware').click();
-                }
-            });
-        }
-        */
-
-        /*
-        GUI.interval_add('factory_mode', function factory_mode() {
-            serial.getControlSignals(function(result) {
-                if (result.cts == true) {
-                    // Trigger regular Flashing sequence
-                    $('a.flash_firmware').click();
-                }
-            });
-        }, 500);
-        */
-
         $(document).keypress(function(e) {
             if (e.which == 13) { // enter
                 // Trigger regular Flashing sequence

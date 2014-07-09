@@ -193,36 +193,32 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
 
     switch (this.active_tab) {
         case 'initial_setup':
-            GUI.interval_remove('initial_setup_data_pull');
-            GUI.interval_remove('status_pull');
+            GUI.interval_kill_all();
 
             if (callback) callback();
             break;
         case 'pid_tuning':
-            GUI.interval_remove('status_pull');
+            GUI.interval_kill_all();
 
             if (callback) callback();
             break;
         case 'receiver':
-            GUI.interval_remove('receiver_pull');
-            GUI.interval_remove('status_pull');
+            GUI.interval_kill_all();
 
             if (callback) callback();
             break;
         case 'auxiliary_configuration':
-            GUI.interval_remove('aux_data_pull');
-            GUI.interval_remove('status_pull');
+            GUI.interval_kill_all();
 
             if (callback) callback();
             break;
         case 'servos':
-            GUI.interval_remove('status_pull');
+            GUI.interval_kill_all();
 
             if (callback) callback();
             break;
         case 'gps':
-            GUI.interval_remove('gps_pull');
-            GUI.interval_remove('status_pull');
+            GUI.interval_kill_all();
 
             if (callback) callback();
             break;
@@ -270,7 +266,6 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
             if (callback) callback();
             break;
         case 'firmware_flasher':
-            // this.interval_remove('factory_mode');
             PortHandler.flush_callbacks();
 
             // unbind "global" events
