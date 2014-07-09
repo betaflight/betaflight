@@ -1,4 +1,4 @@
-function tab_initialize_receiver() {
+function tab_initialize_receiver(callback) {
     ga_tracker.sendAppView('Receiver Page');
     GUI.active_tab = 'receiver';
 

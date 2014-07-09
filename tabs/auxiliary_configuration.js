@@ -1,5 +1,5 @@
 // TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
-function tab_initialize_auxiliary_configuration() {
+function tab_initialize_auxiliary_configuration(callback) {
     ga_tracker.sendAppView('Auxiliary Configuration');
     GUI.active_tab = 'auxiliary_configuration';
 

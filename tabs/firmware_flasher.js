@@ -1,4 +1,4 @@
-function tab_initialize_firmware_flasher() {
+function tab_initialize_firmware_flasher(callback) {
     ga_tracker.sendAppView('Firmware Flasher');
     GUI.active_tab = 'firmware_flasher';
 

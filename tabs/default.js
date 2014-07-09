@@ -1,4 +1,4 @@
-function tab_initialize_default() {
+function tab_initialize_default(callback) {
     GUI.active_tab = 'default';
 
     $('#content').load("./tabs/default.html", function() {

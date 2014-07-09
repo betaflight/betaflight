@@ -1,4 +1,4 @@
-function tab_initialize_initial_setup() {
+function tab_initialize_initial_setup(callback) {
     ga_tracker.sendAppView('Initial Setup');
     GUI.active_tab = 'initial_setup';
 

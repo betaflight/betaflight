@@ -1,4 +1,4 @@
-function tab_initialize_pid_tuning() {
+function tab_initialize_pid_tuning(callback) {
     ga_tracker.sendAppView('PID Tuning');
     GUI.active_tab = 'pid_tuning';
 

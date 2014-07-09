@@ -1,4 +1,4 @@
-function tab_initialize_motor_outputs() {
+function tab_initialize_motor_outputs(callback) {
     ga_tracker.sendAppView('Motor Outputs Page');
     GUI.active_tab = 'motor_outputs';
 

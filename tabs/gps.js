@@ -1,4 +1,4 @@
-function tab_initialize_gps () {
+function tab_initialize_gps (callback) {
     ga_tracker.sendAppView('GPS Page');
     GUI.active_tab = 'gps';
 

@@ -24,7 +24,7 @@ CliHistory.prototype = {
 cli_history = new CliHistory();
 
 
-function tab_initialize_cli() {
+function tab_initialize_cli(callback) {
     ga_tracker.sendAppView('CLI Page');
     GUI.active_tab = 'cli';
 

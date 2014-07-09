@@ -5,7 +5,7 @@
     that there was just no other way around this then hardcoding/implementing each model separately.
 */
 
-function tab_initialize_servos() {
+function tab_initialize_servos(callback) {
     ga_tracker.sendAppView('Servos');
     GUI.active_tab = 'servos';
 

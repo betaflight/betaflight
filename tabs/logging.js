@@ -1,6 +1,6 @@
 var MSP_pass_through = false;
 
-function tab_initialize_logging() {
+function tab_initialize_logging(callback) {
     ga_tracker.sendAppView('Logging');
     GUI.active_tab = 'logging';
 

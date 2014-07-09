@@ -1,4 +1,4 @@
-function tab_initialize_sensors() {
+function tab_initialize_sensors(callback) {
     ga_tracker.sendAppView('Sensor Page');
     GUI.active_tab = 'sensors';
 
