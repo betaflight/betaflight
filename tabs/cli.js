@@ -1,3 +1,4 @@
+// requires major cleanup since we moved to the new tabs object
 var CLI_active = false;
 var CLI_valid = false;
 
@@ -23,8 +24,10 @@ CliHistory.prototype = {
 
 cli_history = new CliHistory();
 
+tabs.cli = function() {
+};
 
-function tab_initialize_cli(callback) {
+tabs.cli.initialize = function(callback) {
     ga_tracker.sendAppView('CLI Page');
     GUI.active_tab = 'cli';
 
@@ -76,8 +79,14 @@ function tab_initialize_cli(callback) {
 
         // give input element user focus
         textarea.focus();
+
+        if (callback) callback();
     });
-}
+};
+
+tabs.cli.cleanup = function(callback) {
+    if (callback) callback();
+};
 
 function send_slowly(out_arr, i, timeout_needle) {
     GUI.timeout_add('CLI_send_slowly', function() {

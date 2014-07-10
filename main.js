@@ -98,7 +98,7 @@ $(document).ready(function() {
                         tabs.sensors.initialize();
                         break;
                     case 'tab_cli':
-                        tab_initialize_cli();
+                        tabs.cli.initialize();
                         break;
                     case 'tab_logging':
                         tab_initialize_logging();
