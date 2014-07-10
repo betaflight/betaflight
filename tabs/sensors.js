@@ -1,6 +1,4 @@
-tabs.sensors = function() {
-};
-
+tabs.sensors = {};
 tabs.sensors.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'sensors';

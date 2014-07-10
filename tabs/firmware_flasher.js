@@ -1,6 +1,4 @@
-tabs.firmware_flasher = function() {
-};
-
+tabs.firmware_flasher = {};
 tabs.firmware_flasher.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'firmware_flasher';

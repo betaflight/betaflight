@@ -1,6 +1,4 @@
-tabs.gps = function() {
-};
-
+tabs.gps = {};
 tabs.gps.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'gps';

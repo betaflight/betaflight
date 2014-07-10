@@ -1,6 +1,4 @@
-tabs.receiver = function() {
-};
-
+tabs.receiver = {};
 tabs.receiver.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'receiver';

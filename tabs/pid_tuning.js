@@ -1,6 +1,4 @@
-tabs.pid_tuning = function() {
-};
-
+tabs.pid_tuning = {};
 tabs.pid_tuning.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'pid_tuning';

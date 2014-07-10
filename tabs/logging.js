@@ -1,8 +1,6 @@
 var MSP_pass_through = false;
 
-tabs.logging = function() {
-};
-
+tabs.logging = {};
 tabs.logging.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'logging';

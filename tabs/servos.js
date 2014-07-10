@@ -5,9 +5,7 @@
     that there was just no other way around this then hardcoding/implementing each model separately.
 */
 
-tabs.servos = function() {
-};
-
+tabs.servos = {};
 tabs.servos.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'servos';

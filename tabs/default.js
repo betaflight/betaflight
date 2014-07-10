@@ -1,6 +1,4 @@
-tabs.default = function() {
-};
-
+tabs.default = {};
 tabs.default.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'default';

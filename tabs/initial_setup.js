@@ -1,6 +1,4 @@
-tabs.initial_setup = function() {
-};
-
+tabs.initial_setup = {};
 tabs.initial_setup.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'initial_setup';

@@ -1,9 +1,7 @@
-// requires major cleanup since we moved to the new tabs object
 var CLI_active = false;
 var CLI_valid = false;
 
 tabs.cli = {};
-
 tabs.cli.initialize = function(callback) {
     var self = this;
     GUI.active_tab_ref = this;
