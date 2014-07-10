@@ -119,7 +119,7 @@ function tab_initialize_logging(callback) {
                     GUI.tab_switch_cleanup(function() {
                         MSP_pass_through = false;
                         $('#tabs > ul li').removeClass('active');
-                        tab_initialize_default();
+                        tabs.default.initialize();
                     });
                 }
             });

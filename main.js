@@ -47,8 +47,8 @@ $(document).ready(function() {
     }
 
     // Tabs
-    var tabs = $('#tabs > ul');
-    $('a', tabs).click(function() {
+    var ui_tabs = $('#tabs > ul');
+    $('a', ui_tabs).click(function() {
         if ($(this).parent().hasClass('active') == false && !GUI.tab_switch_in_progress) { // only initialize when the tab isn't already active
             var self = this;
             var index = $(self).parent().index();
@@ -64,7 +64,7 @@ $(document).ready(function() {
 
             GUI.tab_switch_cleanup(function() {
                 // disable previously active tab highlight
-                $('li', tabs).removeClass('active');
+                $('li', ui_tabs).removeClass('active');
 
                 // Highlight selected tab
                 $(self).parent().addClass('active');
@@ -74,10 +74,10 @@ $(document).ready(function() {
 
                 switch (tab) {
                     case 'tab_initial_setup':
-                        tab_initialize_initial_setup();
+                        tabs.initial_setup.initialize();
                         break;
                     case 'tab_pid_tuning':
-                        tab_initialize_pid_tuning();
+                        tabs.pid_tuning.initialize();
                         break;
                     case 'tab_receiver':
                         tab_initialize_receiver();
@@ -110,7 +110,7 @@ $(document).ready(function() {
         }
     });
 
-    tab_initialize_default();
+    tabs.default.initialize();
 
     // options
     $('a#options').click(function() {

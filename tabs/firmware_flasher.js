@@ -222,7 +222,7 @@ function tab_initialize_firmware_flasher(callback) {
         $('a.back').click(function() {
             if (!GUI.connect_lock) { // button disabled while flashing is in progress
                 GUI.tab_switch_cleanup(function() {
-                    tab_initialize_default();
+                    tabs.default.initialize();
                 });
             } else {
                 GUI.log(chrome.i18n.getMessage('firmwareFlasherWaitForFinish'));

@@ -51,7 +51,7 @@ $(document).ready(function() {
                     $('#content').empty();
 
                     // load default html
-                    tab_initialize_default();
+                    tabs.default.initialize();
                 }
 
                 $(this).data("clicks", !clicks);
