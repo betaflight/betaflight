@@ -72,40 +72,42 @@ $(document).ready(function() {
                 // detach listeners and remove element data
                 $('#content').empty();
 
-                switch (tab) {
-                    case 'tab_initial_setup':
-                        tabs.initial_setup.initialize();
-                        break;
-                    case 'tab_pid_tuning':
-                        tabs.pid_tuning.initialize();
-                        break;
-                    case 'tab_receiver':
-                        tabs.receiver.initialize();
-                        break;
-                    case 'tab_auxiliary_configuration':
-                        tabs.auxiliary_configuration.initialize();
-                        break;
-                    case 'tab_servos':
-                        tabs.servos.initialize();
-                        break;
-                    case 'tab_gps':
-                        tabs.gps.initialize();
-                        break;
-                    case 'tab_motor_outputs':
-                        tabs.motor_outputs.initialize();
-                        break;
-                    case 'tab_sensors':
-                        tabs.sensors.initialize();
-                        break;
-                    case 'tab_cli':
-                        tabs.cli.initialize();
-                        break;
-                    case 'tab_logging':
-                        tabs.logging.initialize();
-                        break;
-                }
+                $('#content').load("./tabs/loading.html", function() {
+                    switch (tab) {
+                        case 'tab_initial_setup':
+                            tabs.initial_setup.initialize();
+                            break;
+                        case 'tab_pid_tuning':
+                            tabs.pid_tuning.initialize();
+                            break;
+                        case 'tab_receiver':
+                            tabs.receiver.initialize();
+                            break;
+                        case 'tab_auxiliary_configuration':
+                            tabs.auxiliary_configuration.initialize();
+                            break;
+                        case 'tab_servos':
+                            tabs.servos.initialize();
+                            break;
+                        case 'tab_gps':
+                            tabs.gps.initialize();
+                            break;
+                        case 'tab_motor_outputs':
+                            tabs.motor_outputs.initialize();
+                            break;
+                        case 'tab_sensors':
+                            tabs.sensors.initialize();
+                            break;
+                        case 'tab_cli':
+                            tabs.cli.initialize();
+                            break;
+                        case 'tab_logging':
+                            tabs.logging.initialize();
+                            break;
+                    }
 
-                GUI.tab_switch_in_progress = false;
+                    GUI.tab_switch_in_progress = false;
+                });
             });
         }
     });
