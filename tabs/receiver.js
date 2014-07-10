@@ -1,4 +1,7 @@
-function tab_initialize_receiver(callback) {
+tabs.receiver = function() {
+};
+
+tabs.receiver.initialize = function(callback) {
     ga_tracker.sendAppView('Receiver Page');
     GUI.active_tab = 'receiver';
 
@@ -266,5 +269,11 @@ function tab_initialize_receiver(callback) {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.receiver.cleanup = function(callback) {
+    if (callback) callback();
+};

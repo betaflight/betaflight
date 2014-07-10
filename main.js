@@ -80,7 +80,7 @@ $(document).ready(function() {
                         tabs.pid_tuning.initialize();
                         break;
                     case 'tab_receiver':
-                        tab_initialize_receiver();
+                        tabs.receiver.initialize();
                         break;
                     case 'tab_auxiliary_configuration':
                         tab_initialize_auxiliary_configuration();
