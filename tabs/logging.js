@@ -59,7 +59,7 @@ function tab_initialize_logging(callback) {
                             // print header for the csv file
                             print_head();
 
-                            function poll_data() {
+                            function log_data_poll() {
                                 if (requests) {
                                     // save current data (only after everything is initialized)
                                     crunch_data();
@@ -73,8 +73,8 @@ function tab_initialize_logging(callback) {
                                 }
                             }
 
-                            GUI.interval_add('log_data_pull', poll_data, parseInt($('select.speed').val()), true); // refresh rate goes here
-                            GUI.interval_add('flush_data', function() {
+                            GUI.interval_add('log_data_poll', log_data_poll, parseInt($('select.speed').val()), true); // refresh rate goes here
+                            GUI.interval_add('write_data', function write_data() {
                                 if (log_buffer.length) { // only execute when there is actual data to write
                                     if (fileWriter.readyState == 0 || fileWriter.readyState == 2) {
                                         append_to_file(log_buffer.join('\n'));
@@ -95,8 +95,7 @@ function tab_initialize_logging(callback) {
                             GUI.log(chrome.i18n.getMessage('loggingErrorOneProperty'));
                         }
                     } else {
-                        GUI.interval_remove('log_data_pull');
-                        GUI.interval_remove('flush_data');
+                        GUI.interval_kill_all();
 
                         $('.speed').prop('disabled', false);
                         $(this).text(chrome.i18n.getMessage('loggingStart'));

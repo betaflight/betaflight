@@ -191,45 +191,10 @@ GUI_control.prototype.log = function(message) {
 // default switch doesn't require callback to be set
 GUI_control.prototype.tab_switch_cleanup = function(callback) {
     MSP.callbacks_cleanup(); // we don't care about any old data that might or might not arrive
+    GUI.interval_kill_all(); // all intervals (mostly data pulling) needs to be removed on tab switch
 
     switch (this.active_tab) {
-        case 'initial_setup':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
-        case 'pid_tuning':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
-        case 'receiver':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
-        case 'auxiliary_configuration':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
-        case 'servos':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
-        case 'gps':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
-        case 'motor_outputs':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
         case 'sensors':
-            GUI.interval_kill_all();
             serial.empty_output_buffer();
 
             // sensor data tab uses scrollbars, emptying the content before loading another tab
@@ -261,11 +226,6 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
                 }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
             });
             break;
-        case 'logging':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
         case 'firmware_flasher':
             PortHandler.flush_callbacks();
 
@@ -274,6 +234,7 @@ GUI_control.prototype.tab_switch_cleanup = function(callback) {
 
             if (callback) callback();
             break;
+
         default:
             if (callback) callback();
     }
