@@ -1,8 +1,11 @@
+var tabs = {}; // filled by individual tab js file
+
 var GUI_control = function() {
     this.auto_connect = false;
     this.connecting_to = false;
     this.connected_to = false;
     this.active_tab;
+    this.active_tab_ref = false;
     this.tab_switch_in_progress = false;
     this.operating_system;
     this.optional_usb_permissions = false; // controlled by usb permissions code
