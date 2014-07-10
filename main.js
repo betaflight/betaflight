@@ -92,7 +92,7 @@ $(document).ready(function() {
                         tabs.gps.initialize();
                         break;
                     case 'tab_motor_outputs':
-                        tab_initialize_motor_outputs();
+                        tabs.motor_outputs.initialize();
                         break;
                     case 'tab_sensors':
                         tab_initialize_sensors();

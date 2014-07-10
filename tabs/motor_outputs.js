@@ -1,4 +1,7 @@
-function tab_initialize_motor_outputs(callback) {
+tabs.motor_outputs = function() {
+};
+
+tabs.motor_outputs.initialize = function(callback) {
     ga_tracker.sendAppView('Motor Outputs Page');
     GUI.active_tab = 'motor_outputs';
 
@@ -364,5 +367,11 @@ function tab_initialize_motor_outputs(callback) {
         GUI.interval_add('status_pull', function get_status_data() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.motor_outputs.cleanup = function(callback) {
+    if (callback) callback();
+};
