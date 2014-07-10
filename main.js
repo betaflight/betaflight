@@ -101,7 +101,7 @@ $(document).ready(function() {
                         tabs.cli.initialize();
                         break;
                     case 'tab_logging':
-                        tab_initialize_logging();
+                        tabs.logging.initialize();
                         break;
                 }
 

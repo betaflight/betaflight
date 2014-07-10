@@ -1,6 +1,9 @@
 var MSP_pass_through = false;
 
-function tab_initialize_logging(callback) {
+tabs.logging = function() {
+};
+
+tabs.logging.initialize = function(callback) {
     ga_tracker.sendAppView('Logging');
     GUI.active_tab = 'logging';
 
@@ -133,6 +136,8 @@ function tab_initialize_logging(callback) {
                 });
             }
         });
+
+        if (callback) callback();
     }
 
     function print_head() {
@@ -331,4 +336,8 @@ function tab_initialize_logging(callback) {
 
         fileWriter.write(new Blob([data + '\n'], {type: 'text/plain'}));
     }
-}
+};
+
+tabs.logging.cleanup = function(callback) {
+    if (callback) callback();
+};
