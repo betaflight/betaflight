@@ -1,5 +1,8 @@
 // TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
-function tab_initialize_auxiliary_configuration(callback) {
+tabs.auxiliary_configuration = function() {
+};
+
+tabs.auxiliary_configuration.initialize = function(callback) {
     ga_tracker.sendAppView('Auxiliary Configuration');
     GUI.active_tab = 'auxiliary_configuration';
 
@@ -144,5 +147,11 @@ function tab_initialize_auxiliary_configuration(callback) {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.auxiliary_configuration.cleanup = function(callback) {
+    if (callback) callback();
+};

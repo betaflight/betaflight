@@ -83,7 +83,7 @@ $(document).ready(function() {
                         tabs.receiver.initialize();
                         break;
                     case 'tab_auxiliary_configuration':
-                        tab_initialize_auxiliary_configuration();
+                        tabs.auxiliary_configuration.initialize();
                         break;
                     case 'tab_servos':
                         tab_initialize_servos();
