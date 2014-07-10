@@ -2,38 +2,13 @@
 var CLI_active = false;
 var CLI_valid = false;
 
-var CliHistory = function () {
-    this.history = [];
-    this.index = 0;
-};
-
-CliHistory.prototype = {
-    add: function (str) {
-        this.history.push(str);
-        this.index = this.history.length;
-    },
-    prev: function () {
-        if (this.index > 0) this.index -= 1;
-        return this.history[this.index];
-    },
-    next: function () {
-        if (this.index < this.history.length) this.index += 1;
-        return this.history[this.index - 1];
-    }
-};
-
-cli_history = new CliHistory();
-
-tabs.cli = function() {
-};
+tabs.cli = {};
 
 tabs.cli.initialize = function(callback) {
+    var self = this;
     GUI.active_tab_ref = this;
     GUI.active_tab = 'cli';
     ga_tracker.sendAppView('CLI Page');
-
-    // remove any active interval for delayed command
-    MSP.callbacks_cleanup();
 
     $('#content').load("./tabs/cli.html", function() {
         // translate to user-selected language
@@ -57,7 +32,7 @@ tabs.cli.initialize = function(callback) {
 
                 var out_string = textarea.val();
                 var out_arr = out_string.split("\n");
-                cli_history.add(out_string.trim());
+                self.history.add(out_string.trim());
 
                 var timeout_needle = 0;
                 for (var i = 0; i < out_arr.length; i++) {
@@ -72,10 +47,10 @@ tabs.cli.initialize = function(callback) {
             var keyUp = { 38: true }, keyDown = { 40: true };
 
             if (event.keyCode in keyUp)
-                textarea.val(cli_history.prev());
+                textarea.val(self.history.prev());
 
             if (event.keyCode in keyDown)
-                textarea.val(cli_history.next());
+                textarea.val(self.history.next());
         });
 
         // give input element user focus
@@ -83,6 +58,24 @@ tabs.cli.initialize = function(callback) {
 
         if (callback) callback();
     });
+};
+
+tabs.cli.history = {
+    history: [],
+    index:  0
+};
+
+tabs.cli.history.add = function(str) {
+    this.history.push(str);
+    this.index = this.history.length;
+};
+tabs.cli.history.prev = function() {
+    if (this.index > 0) this.index -= 1;
+    return this.history[this.index];
+};
+tabs.cli.history.next = function() {
+    if (this.index < this.history.length) this.index += 1;
+    return this.history[this.index - 1];
 };
 
 tabs.cli.cleanup = function(callback) {
