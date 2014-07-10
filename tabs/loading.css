@@ -2,14 +2,14 @@
     width: 100%;
     height: 100%;
 
-    background-image: url('../images/loading-spin.svg');
+    background-image: url('../images/loading-bars.svg');
     background-repeat: no-repeat;
-    background-position: center;
+    background-position: center 45%;
 }
 
 .tab-loading p {
     position: relative;
-    top: calc(50% + 50px);
+    top: calc(45% + 45px);
 
     text-align: center;
     font-weight: bold;
