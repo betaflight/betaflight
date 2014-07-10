@@ -1,4 +1,7 @@
-function tab_initialize_initial_setup(callback) {
+tabs.initial_setup = function() {
+};
+
+tabs.initial_setup.initialize = function(callback) {
     ga_tracker.sendAppView('Initial Setup');
     GUI.active_tab = 'initial_setup';
 
@@ -151,7 +154,7 @@ function tab_initialize_initial_setup(callback) {
                 GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
                 GUI.tab_switch_cleanup(function() {
-                    tab_initialize_initial_setup();
+                    tabs.initial_setup.initialize();
                 });
             });
         });
@@ -261,5 +264,11 @@ function tab_initialize_initial_setup(callback) {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.initial_setup.cleanup = function(callback) {
+    if (callback) callback();
+};
