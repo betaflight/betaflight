@@ -75,39 +75,41 @@ $(document).ready(function() {
                 $('#content').load("./tabs/loading.html", function() {
                     switch (tab) {
                         case 'tab_initial_setup':
-                            tabs.initial_setup.initialize();
+                            tabs.initial_setup.initialize(content_ready);
                             break;
                         case 'tab_pid_tuning':
-                            tabs.pid_tuning.initialize();
+                            tabs.pid_tuning.initialize(content_ready);
                             break;
                         case 'tab_receiver':
-                            tabs.receiver.initialize();
+                            tabs.receiver.initialize(content_ready);
                             break;
                         case 'tab_auxiliary_configuration':
-                            tabs.auxiliary_configuration.initialize();
+                            tabs.auxiliary_configuration.initialize(content_ready);
                             break;
                         case 'tab_servos':
-                            tabs.servos.initialize();
+                            tabs.servos.initialize(content_ready);
                             break;
                         case 'tab_gps':
-                            tabs.gps.initialize();
+                            tabs.gps.initialize(content_ready);
                             break;
                         case 'tab_motor_outputs':
-                            tabs.motor_outputs.initialize();
+                            tabs.motor_outputs.initialize(content_ready);
                             break;
                         case 'tab_sensors':
-                            tabs.sensors.initialize();
+                            tabs.sensors.initialize(content_ready);
                             break;
                         case 'tab_cli':
-                            tabs.cli.initialize();
+                            tabs.cli.initialize(content_ready);
                             break;
                         case 'tab_logging':
-                            tabs.logging.initialize();
+                            tabs.logging.initialize(content_ready);
                             break;
                     }
-
-                    GUI.tab_switch_in_progress = false;
                 });
+
+                function content_ready() {
+                    GUI.tab_switch_in_progress = false;
+                }
             });
         }
     });
