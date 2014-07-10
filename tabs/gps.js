@@ -2,8 +2,9 @@ tabs.gps = function() {
 };
 
 tabs.gps.initialize = function(callback) {
-    ga_tracker.sendAppView('GPS Page');
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'gps';
+    ga_tracker.sendAppView('GPS Page');
 
     MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, load_html);
 

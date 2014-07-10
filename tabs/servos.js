@@ -9,8 +9,9 @@ tabs.servos = function() {
 };
 
 tabs.servos.initialize = function(callback) {
-    ga_tracker.sendAppView('Servos');
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'servos';
+    ga_tracker.sendAppView('Servos');
 
     MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
 

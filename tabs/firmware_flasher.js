@@ -2,8 +2,9 @@ tabs.firmware_flasher = function() {
 };
 
 tabs.firmware_flasher.initialize = function(callback) {
-    ga_tracker.sendAppView('Firmware Flasher');
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'firmware_flasher';
+    ga_tracker.sendAppView('Firmware Flasher');
 
     var intel_hex = false; // standard intel hex in string format
     var parsed_hex = false; // parsed raw hex in array format

@@ -2,8 +2,9 @@ tabs.sensors = function() {
 };
 
 tabs.sensors.initialize = function(callback) {
-    ga_tracker.sendAppView('Sensor Page');
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'sensors';
+    ga_tracker.sendAppView('Sensor Page');
 
     function initSensorData(){
         for (var i = 0; i < 3; i++) {

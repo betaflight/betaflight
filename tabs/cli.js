@@ -28,8 +28,9 @@ tabs.cli = function() {
 };
 
 tabs.cli.initialize = function(callback) {
-    ga_tracker.sendAppView('CLI Page');
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'cli';
+    ga_tracker.sendAppView('CLI Page');
 
     // remove any active interval for delayed command
     MSP.callbacks_cleanup();

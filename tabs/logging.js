@@ -4,8 +4,9 @@ tabs.logging = function() {
 };
 
 tabs.logging.initialize = function(callback) {
-    ga_tracker.sendAppView('Logging');
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'logging';
+    ga_tracker.sendAppView('Logging');
 
     var requested_properties = [];
 

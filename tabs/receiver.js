@@ -2,8 +2,9 @@ tabs.receiver = function() {
 };
 
 tabs.receiver.initialize = function(callback) {
-    ga_tracker.sendAppView('Receiver Page');
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'receiver';
+    ga_tracker.sendAppView('Receiver Page');
 
     MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
 

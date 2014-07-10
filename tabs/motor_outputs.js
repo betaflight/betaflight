@@ -2,8 +2,9 @@ tabs.motor_outputs = function() {
 };
 
 tabs.motor_outputs.initialize = function(callback) {
-    ga_tracker.sendAppView('Motor Outputs Page');
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'motor_outputs';
+    ga_tracker.sendAppView('Motor Outputs Page');
 
     function initSensorData() {
         for (var i = 0; i < 3; i++) {
