@@ -39,7 +39,7 @@ tabs.motor_outputs.initialize = function(callback) {
         return sampleNumber + 1;
     }
 
-    var margin = {top: 20, right: 10, bottom: 10, left: 20};
+    var margin = {top: 20, right: 30, bottom: 10, left: 20};
     function updateGraphHelperSize(helpers) {
         helpers.width = helpers.targetElement.width() - margin.left - margin.right;
         helpers.height = helpers.targetElement.height() - margin.top - margin.bottom;
