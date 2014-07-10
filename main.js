@@ -95,7 +95,7 @@ $(document).ready(function() {
                         tabs.motor_outputs.initialize();
                         break;
                     case 'tab_sensors':
-                        tab_initialize_sensors();
+                        tabs.sensors.initialize();
                         break;
                     case 'tab_cli':
                         tab_initialize_cli();

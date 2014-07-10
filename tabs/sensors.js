@@ -1,4 +1,7 @@
-function tab_initialize_sensors(callback) {
+tabs.sensors = function() {
+};
+
+tabs.sensors.initialize = function(callback) {
     ga_tracker.sendAppView('Sensor Page');
     GUI.active_tab = 'sensors';
 
@@ -405,5 +408,11 @@ function tab_initialize_sensors(callback) {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     });
-}
+};
+
+tabs.sensors.cleanup = function(callback) {
+    if (callback) callback();
+};
