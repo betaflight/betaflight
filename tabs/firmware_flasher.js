@@ -237,6 +237,11 @@ tabs.firmware_flasher.initialize = function(callback) {
 };
 
 tabs.firmware_flasher.cleanup = function(callback) {
+    PortHandler.flush_callbacks();
+
+    // unbind "global" events
+    $(document).unbind('keypress');
+
     if (callback) callback();
 };
 
