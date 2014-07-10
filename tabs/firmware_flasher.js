@@ -1,4 +1,7 @@
-function tab_initialize_firmware_flasher(callback) {
+tabs.firmware_flasher = function() {
+};
+
+tabs.firmware_flasher.initialize = function(callback) {
     ga_tracker.sendAppView('Firmware Flasher');
     GUI.active_tab = 'firmware_flasher';
 
@@ -228,8 +231,14 @@ function tab_initialize_firmware_flasher(callback) {
                 GUI.log(chrome.i18n.getMessage('firmwareFlasherWaitForFinish'));
             }
         });
+
+        if (callback) callback();
     });
-}
+};
+
+tabs.firmware_flasher.cleanup = function(callback) {
+    if (callback) callback();
+};
 
 function parse_hex(str, callback) {
     // parsing hex in different thread
