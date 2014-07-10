@@ -1,4 +1,7 @@
-function tab_initialize_pid_tuning(callback) {
+tabs.pid_tuning = function() {
+};
+
+tabs.pid_tuning.initialize = function(callback) {
     ga_tracker.sendAppView('PID Tuning');
     GUI.active_tab = 'pid_tuning';
 
@@ -183,7 +186,9 @@ function tab_initialize_pid_tuning(callback) {
             MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function() {
                 GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile]));
 
-                GUI.tab_switch_cleanup(tab_initialize_pid_tuning);
+                GUI.tab_switch_cleanup(function() {
+                    tabs.pid_tuning.initialize();
+                });
             });
         });
 
@@ -191,7 +196,7 @@ function tab_initialize_pid_tuning(callback) {
             GUI.tab_switch_cleanup(function() {
                 GUI.log(chrome.i18n.getMessage('pidTuningDataRefreshed'));
 
-                tab_initialize_pid_tuning();
+                tabs.pid_tuning.initialize();
             });
         });
 
@@ -308,5 +313,11 @@ function tab_initialize_pid_tuning(callback) {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
+};
+
+tabs.pid_tuning.cleanup = function(callback) {
+    if (callback) callback();
 }
