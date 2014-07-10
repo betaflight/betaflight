@@ -86,7 +86,7 @@ $(document).ready(function() {
                         tabs.auxiliary_configuration.initialize();
                         break;
                     case 'tab_servos':
-                        tab_initialize_servos();
+                        tabs.servos.initialize();
                         break;
                     case 'tab_gps':
                         tab_initialize_gps();
