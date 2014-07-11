@@ -8,7 +8,11 @@ tabs.auxiliary_configuration.initialize = function(callback) {
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
 
     function get_box_data() {
-        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_rc_data);
+        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_box_ids);
+    }
+
+    function get_box_ids() {
+        MSP.send_message(MSP_codes.MSP_BOXIDS, false, false, get_rc_data);
     }
 
     function get_rc_data() {

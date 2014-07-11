@@ -342,7 +342,11 @@ MSP.process_data = function(code, message_buffer, message_length) {
             console.log(data);
             break;
         case MSP_codes.MSP_BOXIDS:
-            console.log(data);
+            AUX_CONFIG_IDS = []; // empty the array as new data is coming in
+
+            for (var i = 0; i < data.byteLength; i++) {
+                AUX_CONFIG_IDS.push(data.getUint8(i));
+            }
             break;
         case MSP_codes.MSP_SERVO_CONF:
             SERVO_CONFIG = []; // empty the array as new data is coming in
