@@ -17,7 +17,7 @@ service.getConfig().addCallback(function(config) {
     ga_tracking = config.isTrackingPermitted();
 });
 
-var ga_tracker = service.getTracker('UA-32728876-6');
+var ga_tracker = service.getTracker(("VUEtNTI4MjA5MjAtMQ=="));
 
 ga_tracker.sendAppView('Application Started');
 // Google Analytics END
