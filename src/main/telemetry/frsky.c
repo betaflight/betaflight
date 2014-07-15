@@ -273,6 +273,18 @@ static void sendVoltageAmp(void)
     serialize16(((voltage % 100) + 5) / 10);
 }
 
+static void sendAmperage(void)
+{
+    sendDataHead(ID_CURRENT);
+    serialize16((uint16_t)(amperage / 10));
+}
+
+static void sendFuelLevel(void)
+{
+    sendDataHead(ID_FUEL_LEVEL);
+    serialize16((uint16_t)mAhdrawn);
+}
+
 static void sendHeading(void)
 {
     sendDataHead(ID_COURSE_BP);
