@@ -1,28 +1,21 @@
 // Get access to the background window object
-// This object is used to pass current connectionId to the backround page
-// so the onClosed event can close the port for us if it was left opened, without this
-// users can experience weird behavior if they would like to access the serial bus afterwards.
+// This object is used to pass variables between active page and background page
 chrome.runtime.getBackgroundPage(function(result) {
     backgroundPage = result;
     backgroundPage.app_window = window;
 });
 
-// Google Analytics BEGIN
-var ga_config; // google analytics config reference
-var ga_tracking; // global result of isTrackingPermitted
-
-var service = analytics.getService('ice_cream_app');
-service.getConfig().addCallback(function(config) {
-    ga_config = config;
-    ga_tracking = config.isTrackingPermitted();
+// Google Analytics
+var googleAnalyticsService = analytics.getService('ice_cream_app');
+var googleAnalytics = googleAnalyticsService.getTracker('UA-32728876-6');
+var googleAnalyticsConfig = false;
+googleAnalyticsService.getConfig().addCallback(function(config) {
+    googleAnalyticsConfig = config;
 });
 
-var ga_tracker = service.getTracker('UA-32728876-6');
-
-ga_tracker.sendAppView('Application Started');
-// Google Analytics END
-
 $(document).ready(function() {
+    googleAnalytics.sendAppView('Application Started');
+
     // translate to user-selected language
     localize();
 
@@ -126,7 +119,7 @@ $(document).ready(function() {
             el.addClass('active');
             el.after('<div id="options-window"></div>');
             $('div#options-window').load('./tabs/options.html', function() {
-                ga_tracker.sendAppView('Options');
+                googleAnalytics.sendAppView('Options');
 
                 // translate to user-selected language
                 localize();
@@ -145,16 +138,13 @@ $(document).ready(function() {
                 });
 
                 // if tracking is enabled, check the statistics checkbox
-                if (ga_tracking == true) {
+                if (googleAnalyticsConfig.isTrackingPermitted()) {
                     $('div.statistics input').prop('checked', true);
                 }
 
                 $('div.statistics input').change(function() {
-                    var check = $(this).is(':checked');
-
-                    ga_tracking = check;
-
-                    ga_config.setTrackingPermitted(check);
+                    var result = $(this).is(':checked');
+                    googleAnalyticsConfig.setTrackingPermitted(result);
                 });
 
                 $(this).slideDown();

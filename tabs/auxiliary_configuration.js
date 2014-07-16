@@ -3,7 +3,7 @@ tabs.auxiliary_configuration = {};
 tabs.auxiliary_configuration.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'auxiliary_configuration';
-    ga_tracker.sendAppView('Auxiliary Configuration');
+    googleAnalytics.sendAppView('Auxiliary Configuration');
 
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
 

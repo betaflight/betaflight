@@ -4,7 +4,7 @@ tabs.logging = {};
 tabs.logging.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'logging';
-    ga_tracker.sendAppView('Logging');
+    googleAnalytics.sendAppView('Logging');
 
     var requested_properties = [];
 

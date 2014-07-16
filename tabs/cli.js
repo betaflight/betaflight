@@ -6,7 +6,7 @@ tabs.cli.initialize = function(callback) {
     var self = this;
     GUI.active_tab_ref = this;
     GUI.active_tab = 'cli';
-    ga_tracker.sendAppView('CLI Page');
+    googleAnalytics.sendAppView('CLI Page');
 
     $('#content').load("./tabs/cli.html", function() {
         // translate to user-selected language

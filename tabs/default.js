@@ -18,7 +18,7 @@ tabs.default.initialize = function(callback) {
         });
 
         $('div.welcome a').click(function() {
-            ga_tracker.sendEvent('ExternalUrls', 'Click', $(this).prop('href'));
+            googleAnalytics.sendEvent('ExternalUrls', 'Click', $(this).prop('href'));
         });
 
         if (callback) callback();

@@ -2,7 +2,7 @@ tabs.firmware_flasher = {};
 tabs.firmware_flasher.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'firmware_flasher';
-    ga_tracker.sendAppView('Firmware Flasher');
+    googleAnalytics.sendAppView('Firmware Flasher');
 
     var intel_hex = false; // standard intel hex in string format
     var parsed_hex = false; // parsed raw hex in array format
@@ -49,7 +49,7 @@ tabs.firmware_flasher.initialize = function(callback) {
 
                                     if (parsed_hex) {
                                         GUI.log(chrome.i18n.getMessage('firmwareFlasherLocalFirmwareLoaded'));
-                                        ga_tracker.sendEvent('Flashing', 'Firmware', 'local');
+                                        googleAnalytics.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('locked');
 
                                         $('span.size').html(parsed_hex.bytes_total + ' bytes');
@@ -75,7 +75,7 @@ tabs.firmware_flasher.initialize = function(callback) {
 
                     if (parsed_hex) {
                         GUI.log(chrome.i18n.getMessage('firmwareFlasherRemoteFirmwareLoaded'));
-                        ga_tracker.sendEvent('Flashing', 'Firmware', 'online');
+                        googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
                         $('a.flash_firmware').removeClass('locked');
 
                         $('span.path').text('Using remote Firmware');

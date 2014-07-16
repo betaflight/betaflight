@@ -2,7 +2,7 @@ tabs.pid_tuning = {};
 tabs.pid_tuning.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'pid_tuning';
-    ga_tracker.sendAppView('PID Tuning');
+    googleAnalytics.sendAppView('PID Tuning');
 
     // requesting MSP_STATUS manually because it contains CONFIG.profile
     MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_names);
