@@ -17,7 +17,9 @@
 
 #pragma once
 
-extern int32_t errorAltitudeI;
+extern int32_t errorVelocityI;
+extern uint8_t velocityControl;
+extern int32_t setVelocity;
 extern int32_t BaroPID;
 extern int16_t throttleAngleCorrection;
 

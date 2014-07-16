@@ -56,7 +56,9 @@ int16_t smallAngle = 0;
 
 int32_t EstAlt;                // in cm
 int32_t AltHold;
-int32_t errorAltitudeI = 0;
+int32_t setVelocity = 0;
+uint8_t velocityControl = 0;
+int32_t errorVelocityI = 0;
 
 int32_t vario = 0;                      // variometer in cm/s
 
@@ -394,10 +396,13 @@ int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
 
     // Altitude P-Controller
 
-    error = constrain(AltHold - EstAlt, -500, 500);
-    error = applyDeadband(error, 10);       // remove small P parametr to reduce noise near zero position
-    setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
-
+    if (!velocityControl) {
+        error = constrain(AltHold - EstAlt, -500, 500);
+        error = applyDeadband(error, 10); // remove small P parameter to reduce noise near zero position
+        setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+    } else {
+        setVel = setVelocity;
+    }
     // Velocity PID-Controller
 
     // P
@@ -405,9 +410,9 @@ int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
     newBaroPID = constrain((pidProfile->P8[PIDVEL] * error / 32), -300, +300);
 
     // I
-    errorAltitudeI += (pidProfile->I8[PIDVEL] * error);
-    errorAltitudeI = constrain(errorAltitudeI, -(8192 * 200), (8192 * 200));
-    newBaroPID += errorAltitudeI / 8192;     // I in range +/-200
+    errorVelocityI += (pidProfile->I8[PIDVEL] * error);
+    errorVelocityI = constrain(errorVelocityI, -(8192 * 200), (8192 * 200));
+    newBaroPID += errorVelocityI / 8192;     // I in range +/-200
 
     // D
     newBaroPID -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
