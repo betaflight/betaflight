@@ -23,7 +23,7 @@ var serial = {
 
                 self.onReceiveError.addListener(function watch_for_on_receive_errors(info) {
                     console.error(info);
-                    googleAnalytics.sendEvent('Error', 'Serial', info.error);
+                    googleAnalytics.sendException('Serial: ' + info.error, false);
 
                     switch (info.error) {
                         case 'system_error': // we might be able to recover from this one
@@ -36,11 +36,11 @@ var serial = {
                             function crunch_status(info) {
                                 if (!info.paused) {
                                     console.log('SERIAL: Connection recovered from last onReceiveError');
-                                    googleAnalytics.sendEvent('Error', 'Serial', 'recovered');
+                                    googleAnalytics.sendException('Serial: onReceiveError - recovered', false);
                                 } else {
                                     console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
                                     GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
-                                    googleAnalytics.sendEvent('Error', 'Serial', 'unrecoverable');
+                                    googleAnalytics.sendException('Serial: onReceiveError - unrecoverable', false);
 
                                     if (GUI.connected_to || GUI.connecting_to) {
                                         $('a.connect').click();
@@ -67,7 +67,7 @@ var serial = {
                 if (callback) callback(connectionInfo);
             } else {
                 console.log('SERIAL: Failed to open serial port');
-                googleAnalytics.sendEvent('Error', 'Serial', 'FailedToOpen');
+                googleAnalytics.sendException('Serial: FailedToOpen', false);
                 if (callback) callback(false);
             }
         });
@@ -91,7 +91,7 @@ var serial = {
                 console.log('SERIAL: Connection with ID: ' + self.connectionId + ' closed');
             } else {
                 console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed');
-                googleAnalytics.sendEvent('Error', 'Serial', 'FailedToClose');
+                googleAnalytics.sendException('Serial: FailedToClose', false);
             }
 
             console.log('SERIAL: Statistics - Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
