@@ -19,7 +19,13 @@
 
 #ifdef CHEBUZZF3
 #define USABLE_TIMER_CHANNEL_COUNT 18
-#else
+#endif
+
+#ifdef CC3D
+#define USABLE_TIMER_CHANNEL_COUNT 12
+#endif
+
+#if !defined(USABLE_TIMER_CHANNEL_COUNT)
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #endif
 

@@ -70,6 +70,7 @@ enum {
     TYPE_S,
 };
 
+#if USABLE_TIMER_CHANNEL_COUNT >= 14
 static const uint16_t multiPPM[] = {
     PWM1  | (TYPE_IP << 8),     // PPM input
     PWM9  | (TYPE_M << 8),      // Swap to servo if needed
@@ -135,6 +136,73 @@ static const uint16_t airPWM[] = {
     PWM14 | (TYPE_S  << 8),     // servo #4
     0xFFFF
 };
+#endif
+
+#if USABLE_TIMER_CHANNEL_COUNT == 12
+static const uint16_t multiPPM[] = {
+    PWM1  | (TYPE_IP << 8),     // PPM input
+    PWM7  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM8  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM9  | (TYPE_M << 8),
+    PWM10 | (TYPE_M << 8),
+    PWM11 | (TYPE_M << 8),
+    PWM12 | (TYPE_M << 8),
+    PWM2  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM3  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM4  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM5  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM6  | (TYPE_M << 8),      // Swap to servo if needed
+    0xFFFF
+};
+
+static const uint16_t multiPWM[] = {
+    PWM1  | (TYPE_IW << 8),     // input #1
+    PWM2  | (TYPE_IW << 8),
+    PWM3  | (TYPE_IW << 8),
+    PWM4  | (TYPE_IW << 8),
+    PWM5  | (TYPE_IW << 8),
+    PWM6  | (TYPE_IW << 8),     // input #6
+    PWM7  | (TYPE_M  << 8),      // motor #1 or servo #1 (swap to servo if needed)
+    PWM8  | (TYPE_M  << 8),     // motor #2 or servo #2 (swap to servo if needed)
+    PWM9  | (TYPE_M  << 8),     // motor #1 or #3
+    PWM10 | (TYPE_M  << 8),
+    PWM11 | (TYPE_M  << 8),
+    PWM12 | (TYPE_M  << 8),     // motor #4 or #6
+    0xFFFF
+};
+
+static const uint16_t airPPM[] = {
+    PWM1  | (TYPE_IP << 8),     // PPM input
+    PWM7  | (TYPE_M  << 8),
+    PWM8 | (TYPE_M  << 8),
+    PWM9 | (TYPE_S  << 8),
+    PWM10 | (TYPE_S  << 8),
+    PWM11 | (TYPE_S  << 8),
+    PWM12 | (TYPE_S  << 8),
+    PWM2  | (TYPE_S  << 8),
+    PWM3  | (TYPE_S  << 8),
+    PWM4  | (TYPE_S  << 8),
+    PWM5  | (TYPE_S  << 8),
+    PWM6  | (TYPE_S  << 8),
+    0xFFFF
+};
+
+static const uint16_t airPWM[] = {
+    PWM1  | (TYPE_IW << 8),     // input #1
+    PWM2  | (TYPE_IW << 8),
+    PWM3  | (TYPE_IW << 8),
+    PWM4  | (TYPE_IW << 8),
+    PWM5  | (TYPE_IW << 8),
+    PWM6  | (TYPE_IW << 8),     // input #6
+    PWM7  | (TYPE_M  << 8),     // motor #1
+    PWM8  | (TYPE_M  << 8),     // motor #2
+    PWM9  | (TYPE_S  << 8),     // servo #1
+    PWM10 | (TYPE_S  << 8),     // servo #2
+    PWM11 | (TYPE_S  << 8),     // servo #3
+    PWM12 | (TYPE_S  << 8),     // servo #4
+    0xFFFF
+};
+#endif
 
 static const uint16_t * const hardwareMaps[] = {
     multiPWM,

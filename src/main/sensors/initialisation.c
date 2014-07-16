@@ -107,6 +107,20 @@
 #undef USE_ACC_MMA8452
 #endif
 
+#ifdef CC3D
+#define USE_FAKE_GYRO
+#define USE_FAKE_ACC
+#undef USE_GYRO_L3GD20
+#undef USE_GYRO_L3G4200D
+#undef USE_GYRO_MPU6050
+#undef USE_GYRO_MPU3050
+#undef USE_ACC_LSM303DLHC
+#undef USE_ACC_ADXL345
+#undef USE_ACC_BMA280
+#undef USE_ACC_MPU6050
+#undef USE_ACC_MMA8452
+#endif
+
 extern uint16_t batteryWarningVoltage;
 extern uint8_t batteryCellCount;
 extern float magneticDeclination;
