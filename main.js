@@ -118,6 +118,7 @@ $(document).ready(function() {
         if (!el.hasClass('active')) {
             el.addClass('active');
             el.after('<div id="options-window"></div>');
+
             $('div#options-window').load('./tabs/options.html', function() {
                 googleAnalytics.sendAppView('Options');
 
@@ -147,12 +148,20 @@ $(document).ready(function() {
                     googleAnalyticsConfig.setTrackingPermitted(result);
                 });
 
+                function close_and_cleanup(e) {
+                    if (!$.contains($('div#options-window')[0], e.target)) {
+                        $(document).unbind('click', close_and_cleanup);
+
+                        $('div#options-window').slideUp(function() {
+                            el.removeClass('active');
+                            $(this).empty().remove();
+                        });
+                    }
+                }
+
+                $(document).bind('click', close_and_cleanup);
+
                 $(this).slideDown();
-            });
-        } else {
-            $('div#options-window').slideUp(function() {
-                el.removeClass('active');
-                $(this).empty().remove();
             });
         }
     });
