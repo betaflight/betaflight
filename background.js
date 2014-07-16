@@ -1,15 +1,23 @@
 /*
     If an id is also specified and a window with a matching id has been shown before, the remembered bounds of the window will be used instead.
 
-    Size calculation for innerBounds seems to be faulty, app was designed for 960x625, using arbitrary values to make innerBounds happy for now
-    arbitrary values do match the windows ui, how it will affect other OSs is currently unknown
+    Size calculation for innerBounds seems to be faulty, app was designed for 960x625
+
+    Bug was confirmed on Windows 7
+    OSX seems to be unaffected
+    Linux and cros is unknown
+
+    I am using arbitrary dimensions which fixes the Windows 7 problem, hopefully it will get resolved in future release so other OSs won't have to
+    use bigger dimensions by default.
 */
 function start_app() {
     chrome.app.window.create('main.html', {
         id: 'main-window',
         frame: 'chrome',
-        minWidth: 960,
-        minHeight: 625
+        innerBounds: {
+            minWidth: 974,
+            minHeight: 632
+        }
     }, function(createdWindow) {
         createdWindow.onClosed.addListener(function() {
             // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference
@@ -57,31 +65,6 @@ function start_app() {
             }
         });
     });
-
-    /* code belowis chrome 36+ ready, till this is enforced in manifest we have to use the old version
-    chrome.app.window.create('main.html', {
-        id: 'main-window',
-        frame: 'chrome',
-        innerBounds: {
-            minWidth: 974,
-            minHeight: 632
-        }
-    }, function(createdWindow) {
-        createdWindow.onClosed.addListener(function() {
-            // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference
-            // allowing us to automatically close the port when application shut down
-
-            // save connectionId in separate variable before app_window is destroyed
-            var connectionId = app_window.serial.connectionId;
-
-            if (connectionId > 0) {
-                chrome.serial.disconnect(connectionId, function(result) {
-                    console.log('SERIAL: Connection closed - ' + result);
-                });
-            }
-        });
-    });
-    */
 }
 
 chrome.app.runtime.onLaunched.addListener(function() {
