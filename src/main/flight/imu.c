@@ -405,12 +405,12 @@ int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
     newBaroPID = constrain((pidProfile->P8[PIDVEL] * error / 32), -300, +300);
 
     // I
-    errorAltitudeI += (pidProfile->I8[PIDVEL] * error) / 8;
-    errorAltitudeI = constrain(errorAltitudeI, -(1024 * 200), (1024 * 200));
-    newBaroPID += errorAltitudeI / 1024;     // I in range +/-200
+    errorAltitudeI += (pidProfile->I8[PIDVEL] * error);
+    errorAltitudeI = constrain(errorAltitudeI, -(8196 * 200), (8196 * 200));
+    newBaroPID += errorAltitudeI / 8196;     // I in range +/-200
 
     // D
-    newBaroPID -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 64, -150, 150);
+    newBaroPID -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
 
     return newBaroPID;
 }
@@ -475,8 +475,8 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     vel_acc = accZ_tmp * accVelScale * (float)accTimeSum;
 
     // Integrator - Altitude in cm
-    accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                         // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * barometerConfig->baro_cf_alt + (float)BaroAlt * (1.0f - barometerConfig->baro_cf_alt);      // complementary filter for Altitude estimation (baro & acc)
+    accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                                                 // integrate velocity to get distance (x= a/2 * t^2)
+    accAlt = accAlt * barometerConfig->baro_cf_alt + (float)BaroAlt * (1.0f - barometerConfig->baro_cf_alt);    // complementary filter for altitude estimation (baro & acc)
     vel += vel_acc;
 
 #if 1
@@ -501,7 +501,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = BaroAlt;
 
-    baroVel = constrain(baroVel, -300, 300);    // constrain baro velocity +/- 300cm/s
+    baroVel = constrain(baroVel, -1500, 1500);  // constrain baro velocity +/- 1500cm/s
     baroVel = applyDeadband(baroVel, 10);       // to reduce noise near zero
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
