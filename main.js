@@ -178,15 +178,15 @@ $(document).ready(function() {
 
     $("#content").on('keydown', 'input[type="number"]', function(e) {
         // whitelist all that we need for numeric control
-        if ((e.keyCode >= 96 && e.keyCode <= 105) || (e.keyCode >= 48 && e.keyCode <= 57)) { // allow numpad and standard number keypad
-        } else if (e.keyCode == 109 || e.keyCode == 189) { // minus on numpad and in standard keyboard
-        } else if (e.keyCode == 8 || e.keyCode == 46 || e.keyCode == 9) { // backspace, delete, tab
-        } else if (e.keyCode == 190 || e.keyCode == 110) { // allow and decimal point
-        } else if ((e.keyCode >= 37 && e.keyCode <= 40) || e.keyCode == 13) { // allow arrows, enter
-        } else {
-            // block everything else
-            e.preventDefault();
-        }
+        var whitelist = [
+            96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, // numpad and standard number keypad
+            109, 189, // minus on numpad and in standard keyboard
+            8, 46, 9, // backspace, delete, tab
+            190, 110, // decimal point
+            37, 38, 39, 40, 13 // arrows and enter
+        ];
+
+        if (whitelist.indexOf(e.keyCode) == -1) e.preventDefault();
     });
 
     $("#content").on('change', 'input[type="number"]', function() {
