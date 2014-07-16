@@ -180,7 +180,7 @@ $(document).ready(function() {
         // whitelist all that we need for numeric control
         if ((e.keyCode >= 96 && e.keyCode <= 105) || (e.keyCode >= 48 && e.keyCode <= 57)) { // allow numpad and standard number keypad
         } else if (e.keyCode == 109 || e.keyCode == 189) { // minus on numpad and in standard keyboard
-        } else if (e.keyCode == 8 || e.keyCode == 46) { // backspace and delete
+        } else if (e.keyCode == 8 || e.keyCode == 46 || e.keyCode == 9) { // backspace, delete, tab
         } else if (e.keyCode == 190 || e.keyCode == 110) { // allow and decimal point
         } else if ((e.keyCode >= 37 && e.keyCode <= 40) || e.keyCode == 13) { // allow arrows, enter
         } else {
