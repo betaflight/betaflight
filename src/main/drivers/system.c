@@ -121,7 +121,11 @@ void systemInit(bool overclock)
 
     // Configure the rest of the stuff
     i2cInit(I2C2);
-    spiInit();
+
+#ifdef CC3D
+    spiInit(SPI1);
+    spiInit(SPI2);
+#endif
 
     // sleep for 100ms
     delay(100);

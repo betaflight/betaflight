@@ -39,6 +39,10 @@
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
+#ifdef CC3D
+void adcInit(drv_adc_config_t *init) {
+}
+#else
 void adcInit(drv_adc_config_t *init)
 {
     ADC_InitTypeDef adc;
@@ -148,3 +152,4 @@ void adcInit(drv_adc_config_t *init)
 
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 }
+#endif

@@ -23,4 +23,4 @@
 #define ACC
 #define GYRO
 
-#define SENSORS_SET (SENSOR_ACC | SENSOR_MAG)
+#define SENSORS_SET (SENSOR_ACC)

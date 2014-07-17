@@ -33,6 +33,9 @@
 #include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
 #endif
+#ifdef CC3D
+#include "drivers/accgyro_spi_mpu6000.h"
+#endif
 
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
@@ -51,11 +54,13 @@
 #include "sensors/compass.h"
 #include "sensors/sonar.h"
 
+
 // Use these to help with porting to new boards
 //#define USE_FAKE_GYRO
 #define USE_GYRO_L3G4200D
 #define USE_GYRO_L3GD20
 #define USE_GYRO_MPU6050
+#define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_MPU3050
 //#define USE_FAKE_ACC
 #define USE_ACC_ADXL345
@@ -63,11 +68,14 @@
 #define USE_ACC_MMA8452
 #define USE_ACC_LSM303DLHC
 #define USE_ACC_MPU6050
+#define USE_ACC_SPI_MPU6000
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
 #ifdef NAZE
 #undef USE_ACC_LSM303DLHC
+#undef USE_ACC_SPI_MPU6000
+#undef USE_GYRO_SPI_MPU6000
 #undef USE_GYRO_L3GD20
 #endif
 
@@ -80,20 +88,24 @@
 #undef USE_ACC_MMA8452
 #undef USE_ACC_LSM303DLHC
 #undef USE_ACC_MPU6050
+#undef USE_ACC_SPI_MPU6000
 #undef USE_GYRO_L3G4200D
 #undef USE_GYRO_L3GD20
 #undef USE_GYRO_MPU3050
 #undef USE_GYRO_MPU6050
+#undef USE_GYRO_SPI_MPU6000
 #endif
 
 #if defined(OLIMEXINO)
 #undef USE_GYRO_L3GD20
 #undef USE_GYRO_L3G4200D
 #undef USE_GYRO_MPU3050
+#undef USE_GYRO_SPI_MPU6000
 #undef USE_ACC_LSM303DLHC
 #undef USE_ACC_BMA280
 #undef USE_ACC_MMA8452
 #undef USE_ACC_ADXL345
+#undef USE_ACC_SPI_MPU6000
 #undef USE_BARO_MS5611
 #endif
 
@@ -101,15 +113,15 @@
 #undef USE_GYRO_L3G4200D
 #undef USE_GYRO_MPU6050
 #undef USE_GYRO_MPU3050
+#undef USE_GYRO_SPI_MPU6000
 #undef USE_ACC_ADXL345
 #undef USE_ACC_BMA280
 #undef USE_ACC_MPU6050
 #undef USE_ACC_MMA8452
+#undef USE_ACC_SPI_MPU6000
 #endif
 
 #ifdef CC3D
-#define USE_FAKE_GYRO
-#define USE_FAKE_ACC
 #undef USE_GYRO_L3GD20
 #undef USE_GYRO_L3G4200D
 #undef USE_GYRO_MPU6050
@@ -197,6 +209,12 @@ bool detectGyro(uint16_t gyroLpf)
         return true;
     }
 #endif
+
+#ifdef USE_GYRO_SPI_MPU6000
+    if (mpu6000SpiGyroDetect(&gyro, gyroLpf)) {
+        return true;
+    }
+#endif
     return false;
 }
 
@@ -270,6 +288,7 @@ retry:
                 if (accHardwareToUse == ACC_BMA280)
                     break;
             }
+            ; // fallthrough
 #endif
 #ifdef USE_ACC_LSM303DLHC
         case ACC_LSM303DLHC:
@@ -278,8 +297,18 @@ retry:
                 if (accHardwareToUse == ACC_LSM303DLHC)
                     break;
             }
+            ; // fallthrough
 #endif
-            ;
+#ifdef USE_GYRO_SPI_MPU6000
+        case ACC_SPI_MPU6000:
+            if (mpu6000SpiAccDetect(&acc)) {
+                accHardware = ACC_SPI_MPU6000;
+                if (accHardwareToUse == ACC_SPI_MPU6000)
+                    break;
+            }
+            ; // fallthrough
+#endif
+            ; // prevent compiler error
     }
 
     // Found anything? Check if user fucked up or ACC is really missing.
