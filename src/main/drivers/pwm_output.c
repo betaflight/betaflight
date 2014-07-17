@@ -139,7 +139,7 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
     if (motors[index] && index < MAX_MOTORS)
-    	motors[index]->pwmWritePtr(index, value);
+        motors[index]->pwmWritePtr(index, value);
 }
 
 void pwmWriteServo(uint8_t index, uint16_t value)
