@@ -139,6 +139,16 @@ static const uint16_t airPWM[] = {
 #endif
 
 #if USABLE_TIMER_CHANNEL_COUNT == 12
+#ifdef CC3D // XXX HACK while PPM and MOTOR code conflicts.
+static const uint16_t multiPPM[] = {
+    PWM6  | (TYPE_IP << 8),     // PPM input
+    PWM7  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM8  | (TYPE_M << 8),      // Swap to servo if needed
+    PWM9  | (TYPE_M << 8),
+    PWM10 | (TYPE_M << 8),
+    0xFFFF
+};
+#else
 static const uint16_t multiPPM[] = {
     PWM1  | (TYPE_IP << 8),     // PPM input
     PWM7  | (TYPE_M << 8),      // Swap to servo if needed
@@ -154,7 +164,7 @@ static const uint16_t multiPPM[] = {
     PWM6  | (TYPE_M << 8),      // Swap to servo if needed
     0xFFFF
 };
-
+#endif
 static const uint16_t multiPWM[] = {
     PWM1  | (TYPE_IW << 8),     // input #1
     PWM2  | (TYPE_IW << 8),
@@ -174,8 +184,8 @@ static const uint16_t multiPWM[] = {
 static const uint16_t airPPM[] = {
     PWM1  | (TYPE_IP << 8),     // PPM input
     PWM7  | (TYPE_M  << 8),
-    PWM8 | (TYPE_M  << 8),
-    PWM9 | (TYPE_S  << 8),
+    PWM8  | (TYPE_M  << 8),
+    PWM9  | (TYPE_S  << 8),
     PWM10 | (TYPE_S  << 8),
     PWM11 | (TYPE_S  << 8),
     PWM12 | (TYPE_S  << 8),
@@ -335,9 +345,9 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             channelIndex++;
         } else if (type == TYPE_M) {
             if (init->motorPwmRate > 500) {
-            	pwmBrushedMotorConfig(&timerHardware[timerIndex], pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
+                pwmBrushedMotorConfig(&timerHardware[timerIndex], pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
             } else {
-            	pwmBrushlessMotorConfig(&timerHardware[timerIndex], pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
+                pwmBrushlessMotorConfig(&timerHardware[timerIndex], pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
             }
             pwmOutputConfiguration.motorCount++;
         } else if (type == TYPE_S) {
