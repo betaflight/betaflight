@@ -366,6 +366,7 @@ ASFLAGS		 = $(ARCH_FLAGS) \
 
 # XXX Map/crossref output?
 LDFLAGS		 = -lm \
+		   -nostartfiles \
 		   $(ARCH_FLAGS) \
 		   $(LTO_FLAGS) \
 		   $(DEBUG_FLAGS) \
