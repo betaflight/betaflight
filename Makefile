@@ -367,6 +367,8 @@ ASFLAGS		 = $(ARCH_FLAGS) \
 # XXX Map/crossref output?
 LDFLAGS		 = -lm \
 		   -nostartfiles \
+		   --specs=nano.specs \
+		   -lnosys \
 		   $(ARCH_FLAGS) \
 		   $(LTO_FLAGS) \
 		   $(DEBUG_FLAGS) \
