@@ -335,9 +335,21 @@ SIZE		 = arm-none-eabi-size
 # Tool options.
 #
 
-BASE_CFLAGS	 = $(ARCH_FLAGS) \
+ifeq ($(DEBUG),GDB)
+OPTIMIZE	 = -O0
+LTO_FLAGS	 = $(OPTIMIZE)
+else
+OPTIMIZE	 = -Os
+LTO_FLAGS	 = -flto -fuse-linker-plugin $(OPTIMIZE)
+endif
+
+DEBUG_FLAGS	 = -ggdb3
+
+CFLAGS		 = $(ARCH_FLAGS) \
+		   $(LTO_FLAGS) \
 		   $(addprefix -D,$(OPTIONS)) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
+		   $(DEBUG_FLAGS) \
 		   -Wall \
 		   -ffunction-sections \
 		   -fdata-sections \
@@ -354,6 +366,8 @@ ASFLAGS		 = $(ARCH_FLAGS) \
 # XXX Map/crossref output?
 LDFLAGS		 = -lm \
 		   $(ARCH_FLAGS) \
+		   $(LTO_FLAGS) \
+		   $(DEBUG_FLAGS) \
 		   -static \
 		   -Wl,-gc-sections,-Map,$(TARGET_MAP) \
 		   -T$(LD_SCRIPT)
@@ -367,15 +381,6 @@ LDFLAGS		 = -lm \
 #
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
-endif
-
-ifeq ($(DEBUG),GDB)
-CFLAGS = $(BASE_CFLAGS) \
-	-ggdb \
-	-O0
-else
-CFLAGS = $(BASE_CFLAGS) \
-	-Os
 endif
 
 
