@@ -19,6 +19,11 @@ if you are experiencing any problems please make sure you are running the latest
 
 Installation
 ------------
+1. - Visit [Chrome web store](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
+2. - Click <strong>+ Free</strong>
+
+Alternative way
+---------------
 1. - Clone the repo to any local directory or download it as zip
 2. - Start chromium or google chrome and go to tools -> extension
 3. - Check the "Developer mode" checkbox
