@@ -260,19 +260,6 @@ static void sendVoltage(void)
     currentCell %= batteryCellCount;
 }
 
-/*
- * Send voltage with ID_VOLTAGE_AMP
- */
-static void sendVoltageAmp(void)
-{
-    uint16_t voltage = (vbat * 110) / 21;
-
-    sendDataHead(ID_VOLTAGE_AMP_BP);
-    serialize16(voltage / 100);
-    sendDataHead(ID_VOLTAGE_AMP_AP);
-    serialize16(((voltage % 100) + 5) / 10);
-}
-
 static void sendAmperage(void)
 {
     sendDataHead(ID_CURRENT);
