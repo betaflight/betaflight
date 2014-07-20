@@ -1,8 +1,10 @@
 var MSP_pass_through = false;
 
-function tab_initialize_logging() {
-    ga_tracker.sendAppView('Logging');
+tabs.logging = {};
+tabs.logging.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'logging';
+    googleAnalytics.sendAppView('Logging');
 
     var requested_properties = [];
 
@@ -59,7 +61,7 @@ function tab_initialize_logging() {
                             // print header for the csv file
                             print_head();
 
-                            function poll_data() {
+                            function log_data_poll() {
                                 if (requests) {
                                     // save current data (only after everything is initialized)
                                     crunch_data();
@@ -73,8 +75,8 @@ function tab_initialize_logging() {
                                 }
                             }
 
-                            GUI.interval_add('log_data_pull', poll_data, parseInt($('select.speed').val()), true); // refresh rate goes here
-                            GUI.interval_add('flush_data', function() {
+                            GUI.interval_add('log_data_poll', log_data_poll, parseInt($('select.speed').val()), true); // refresh rate goes here
+                            GUI.interval_add('write_data', function write_data() {
                                 if (log_buffer.length) { // only execute when there is actual data to write
                                     if (fileWriter.readyState == 0 || fileWriter.readyState == 2) {
                                         append_to_file(log_buffer.join('\n'));
@@ -95,8 +97,7 @@ function tab_initialize_logging() {
                             GUI.log(chrome.i18n.getMessage('loggingErrorOneProperty'));
                         }
                     } else {
-                        GUI.interval_remove('log_data_pull');
-                        GUI.interval_remove('flush_data');
+                        GUI.interval_kill_all();
 
                         $('.speed').prop('disabled', false);
                         $(this).text(chrome.i18n.getMessage('loggingStart'));
@@ -120,7 +121,7 @@ function tab_initialize_logging() {
                     GUI.tab_switch_cleanup(function() {
                         MSP_pass_through = false;
                         $('#tabs > ul li').removeClass('active');
-                        tab_initialize_default();
+                        tabs.default.initialize();
                     });
                 }
             });
@@ -134,6 +135,8 @@ function tab_initialize_logging() {
                 });
             }
         });
+
+        if (callback) callback();
     }
 
     function print_head() {
@@ -332,4 +335,8 @@ function tab_initialize_logging() {
 
         fileWriter.write(new Blob([data + '\n'], {type: 'text/plain'}));
     }
-}
+};
+
+tabs.logging.cleanup = function(callback) {
+    if (callback) callback();
+};

@@ -40,6 +40,7 @@ var RC_tuning = {
 
 var AUX_CONFIG = [];
 var AUX_CONFIG_values = [];
+var AUX_CONFIG_IDS = [];
 
 var SERVO_CONFIG = [];
 

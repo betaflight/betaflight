@@ -1,6 +1,8 @@
-function tab_initialize_gps () {
-    ga_tracker.sendAppView('GPS Page');
+tabs.gps = {};
+tabs.gps.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'gps';
+    googleAnalytics.sendAppView('GPS Page');
 
     MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, load_html);
 
@@ -52,5 +54,11 @@ function tab_initialize_gps () {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.gps.cleanup = function(callback) {
+    if (callback) callback();
+};

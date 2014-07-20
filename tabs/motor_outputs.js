@@ -1,6 +1,8 @@
-function tab_initialize_motor_outputs() {
-    ga_tracker.sendAppView('Motor Outputs Page');
+tabs.motor_outputs = {};
+tabs.motor_outputs.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'motor_outputs';
+    googleAnalytics.sendAppView('Motor Outputs Page');
 
     function initSensorData() {
         for (var i = 0; i < 3; i++) {
@@ -37,7 +39,7 @@ function tab_initialize_motor_outputs() {
         return sampleNumber + 1;
     }
 
-    var margin = {top: 20, right: 10, bottom: 10, left: 20};
+    var margin = {top: 20, right: 30, bottom: 10, left: 20};
     function updateGraphHelperSize(helpers) {
         helpers.width = helpers.targetElement.width() - margin.left - margin.right;
         helpers.height = helpers.targetElement.height() - margin.top - margin.bottom;
@@ -364,5 +366,11 @@ function tab_initialize_motor_outputs() {
         GUI.interval_add('status_pull', function get_status_data() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.motor_outputs.cleanup = function(callback) {
+    if (callback) callback();
+};

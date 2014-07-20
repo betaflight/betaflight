@@ -1,6 +1,8 @@
-function tab_initialize_sensors() {
-    ga_tracker.sendAppView('Sensor Page');
+tabs.sensors = {};
+tabs.sensors.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'sensors';
+    googleAnalytics.sendAppView('Sensor Page');
 
     function initSensorData(){
         for (var i = 0; i < 3; i++) {
@@ -405,5 +407,17 @@ function tab_initialize_sensors() {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     });
-}
+};
+
+tabs.sensors.cleanup = function(callback) {
+    serial.empty_output_buffer();
+
+    // sensor data tab uses scrollbars, emptying the content before loading another tab
+    // prevents scrollbar exposure to any of the tabs while new content is loaded in
+    $('#content').empty();
+
+    if (callback) callback();
+};

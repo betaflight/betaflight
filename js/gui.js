@@ -1,8 +1,12 @@
+var tabs = {}; // filled by individual tab js file
+
 var GUI_control = function() {
     this.auto_connect = false;
     this.connecting_to = false;
     this.connected_to = false;
     this.active_tab;
+    this.active_tab_ref = false;
+    this.tab_switch_in_progress = false;
     this.operating_system;
     this.optional_usb_permissions = false; // controlled by usb permissions code
     this.interval_array = [];
@@ -190,97 +194,9 @@ GUI_control.prototype.log = function(message) {
 // default switch doesn't require callback to be set
 GUI_control.prototype.tab_switch_cleanup = function(callback) {
     MSP.callbacks_cleanup(); // we don't care about any old data that might or might not arrive
+    GUI.interval_kill_all(); // all intervals (mostly data pulling) needs to be removed on tab switch
 
-    switch (this.active_tab) {
-        case 'initial_setup':
-            GUI.interval_remove('initial_setup_data_pull');
-            GUI.interval_remove('status_pull');
-
-            if (callback) callback();
-            break;
-        case 'pid_tuning':
-            GUI.interval_remove('status_pull');
-
-            if (callback) callback();
-            break;
-        case 'receiver':
-            GUI.interval_remove('receiver_pull');
-            GUI.interval_remove('status_pull');
-
-            if (callback) callback();
-            break;
-        case 'auxiliary_configuration':
-            GUI.interval_remove('aux_data_pull');
-            GUI.interval_remove('status_pull');
-
-            if (callback) callback();
-            break;
-        case 'servos':
-            GUI.interval_remove('status_pull');
-
-            if (callback) callback();
-            break;
-        case 'gps':
-            GUI.interval_remove('gps_pull');
-            GUI.interval_remove('status_pull');
-
-            if (callback) callback();
-            break;
-        case 'motor_outputs':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
-        case 'sensors':
-            GUI.interval_kill_all();
-            serial.empty_output_buffer();
-
-            // sensor data tab uses scrollbars, emptying the content before loading another tab
-            // prevents scrollbar exposure to any of the tabs while new content is loaded in
-            $('#content').empty();
-
-            if (callback) callback();
-            break;
-        case 'cli':
-            var bufferOut = new ArrayBuffer(5);
-            var bufView = new Uint8Array(bufferOut);
-
-            bufView[0] = 0x65; // e
-            bufView[1] = 0x78; // x
-            bufView[2] = 0x69; // i
-            bufView[3] = 0x74; // t
-            bufView[4] = 0x0D; // enter
-
-            serial.send(bufferOut, function(writeInfo) {
-                // we could handle this "nicely", but this will do for now
-                // (another approach is however much more complicated):
-                // we can setup an interval asking for data lets say every 200ms, when data arrives, callback will be triggered and tab switched
-                // we could probably implement this someday
-                GUI.timeout_add('waiting_for_bootup', function() {
-                    CLI_active = false;
-                    CLI_valid = false;
-
-                    if (callback) callback();
-                }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
-            });
-            break;
-        case 'logging':
-            GUI.interval_kill_all();
-
-            if (callback) callback();
-            break;
-        case 'firmware_flasher':
-            // this.interval_remove('factory_mode');
-            PortHandler.flush_callbacks();
-
-            // unbind "global" events
-            $(document).unbind('keypress');
-
-            if (callback) callback();
-            break;
-        default:
-            if (callback) callback();
-    }
+    this.active_tab_ref.cleanup(callback);
 };
 
 // initialize object into GUI variable

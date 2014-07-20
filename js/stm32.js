@@ -143,7 +143,7 @@ STM32_protocol.prototype.initialize = function() {
         } else {
             console.log('STM32 - timed out, programming failed ...');
             GUI.log('STM32 - timed out, programming: <strong style="color: red">FAILED</strong>');
-            ga_tracker.sendEvent('Flashing', 'Programming', 'timeout');
+            googleAnalytics.sendEvent('Flashing', 'Programming', 'timeout');
 
             // protocol got stuck, clear timer and disconnect
             GUI.interval_remove('STM32_timeout');
@@ -589,7 +589,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         if (verify) {
                             console.log('Programming: SUCCESSFUL');
                             GUI.log('Programming: <strong style="color: green">SUCCESSFUL</strong>');
-                            ga_tracker.sendEvent('Flashing', 'Programming', 'success');
+                            googleAnalytics.sendEvent('Flashing', 'Programming', 'success');
 
                             // update progress bar
                             self.progress_bar_e.addClass('valid');
@@ -599,7 +599,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         } else {
                             console.log('Programming: FAILED');
                             GUI.log('Programming: <strong style="color: red">FAILED</strong>');
-                            ga_tracker.sendEvent('Flashing', 'Programming', 'fail');
+                            googleAnalytics.sendEvent('Flashing', 'Programming', 'fail');
 
                             // update progress bar
                             self.progress_bar_e.addClass('invalid');

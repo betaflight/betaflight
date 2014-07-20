@@ -5,9 +5,11 @@
     that there was just no other way around this then hardcoding/implementing each model separately.
 */
 
-function tab_initialize_servos() {
-    ga_tracker.sendAppView('Servos');
+tabs.servos = {};
+tabs.servos.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'servos';
+    googleAnalytics.sendAppView('Servos');
 
     MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
 
@@ -302,5 +304,11 @@ function tab_initialize_servos() {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.servos.cleanup = function(callback) {
+    if (callback) callback();
+};

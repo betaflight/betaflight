@@ -1,28 +1,20 @@
 // Get access to the background window object
-// This object is used to pass current connectionId to the backround page
-// so the onClosed event can close the port for us if it was left opened, without this
-// users can experience weird behavior if they would like to access the serial bus afterwards.
+// This object is used to pass variables between active page and background page
 chrome.runtime.getBackgroundPage(function(result) {
     backgroundPage = result;
     backgroundPage.app_window = window;
 });
 
-// Google Analytics BEGIN
-var ga_config; // google analytics config reference
-var ga_tracking; // global result of isTrackingPermitted
-
-var service = analytics.getService('ice_cream_app');
-service.getConfig().addCallback(function(config) {
-    ga_config = config;
-    ga_tracking = config.isTrackingPermitted();
+// Google Analytics
+var googleAnalyticsService = analytics.getService('ice_cream_app');
+var googleAnalytics = googleAnalyticsService.getTracker(atob("VUEtNTI4MjA5MjAtMQ=="));
+var googleAnalyticsConfig = false;
+googleAnalyticsService.getConfig().addCallback(function(config) {
+    googleAnalyticsConfig = config;
 });
-
-var ga_tracker = service.getTracker(("VUEtNTI4MjA5MjAtMQ=="));
-
-ga_tracker.sendAppView('Application Started');
-// Google Analytics END
-
 $(document).ready(function() {
+    googleAnalytics.sendAppView('Application Started');
+
     // translate to user-selected language
     localize();
 
@@ -47,9 +39,9 @@ $(document).ready(function() {
     }
 
     // Tabs
-    var tabs = $('#tabs > ul');
-    $('a', tabs).click(function() {
-        if ($(this).parent().hasClass('active') == false) { // only initialize when the tab isn't already active
+    var ui_tabs = $('#tabs > ul');
+    $('a', ui_tabs).click(function() {
+        if ($(this).parent().hasClass('active') == false && !GUI.tab_switch_in_progress) { // only initialize when the tab isn't already active
             var self = this;
             var index = $(self).parent().index();
             var tab = $(self).parent().prop('class');
@@ -60,53 +52,63 @@ $(document).ready(function() {
                 return;
             }
 
+            GUI.tab_switch_in_progress = true;
+
             GUI.tab_switch_cleanup(function() {
                 // disable previously active tab highlight
-                $('li', tabs).removeClass('active');
+                $('li', ui_tabs).removeClass('active');
 
                 // Highlight selected tab
                 $(self).parent().addClass('active');
 
                 // detach listeners and remove element data
-                $('#content').empty();
+                var content = $('#content');
+                content.empty();
+
+                // display loading screen
+                $('#cache .data-loading').clone().appendTo(content);
 
                 switch (tab) {
                     case 'tab_initial_setup':
-                        tab_initialize_initial_setup();
+                        tabs.initial_setup.initialize(content_ready);
                         break;
                     case 'tab_pid_tuning':
-                        tab_initialize_pid_tuning();
+                        tabs.pid_tuning.initialize(content_ready);
                         break;
                     case 'tab_receiver':
-                        tab_initialize_receiver();
+                        tabs.receiver.initialize(content_ready);
                         break;
                     case 'tab_auxiliary_configuration':
-                        tab_initialize_auxiliary_configuration();
+                        tabs.auxiliary_configuration.initialize(content_ready);
                         break;
                     case 'tab_servos':
-                        tab_initialize_servos();
+                        tabs.servos.initialize(content_ready);
                         break;
                     case 'tab_gps':
-                        tab_initialize_gps();
+                        tabs.gps.initialize(content_ready);
                         break;
                     case 'tab_motor_outputs':
-                        tab_initialize_motor_outputs();
+                        tabs.motor_outputs.initialize(content_ready);
                         break;
                     case 'tab_sensors':
-                        tab_initialize_sensors();
+                        tabs.sensors.initialize(content_ready);
                         break;
                     case 'tab_cli':
-                        tab_initialize_cli();
+                        tabs.cli.initialize(content_ready);
                         break;
                     case 'tab_logging':
-                        tab_initialize_logging();
+                        tabs.logging.initialize(content_ready);
                         break;
+                }
+
+                function content_ready() {
+                    GUI.tab_switch_in_progress = false;
                 }
             });
         }
     });
 
-    tab_initialize_default();
+    tabs.default.initialize();
 
     // options
     $('a#options').click(function() {
@@ -115,8 +117,9 @@ $(document).ready(function() {
         if (!el.hasClass('active')) {
             el.addClass('active');
             el.after('<div id="options-window"></div>');
+
             $('div#options-window').load('./tabs/options.html', function() {
-                ga_tracker.sendAppView('Options');
+                googleAnalytics.sendAppView('Options');
 
                 // translate to user-selected language
                 localize();
@@ -135,24 +138,29 @@ $(document).ready(function() {
                 });
 
                 // if tracking is enabled, check the statistics checkbox
-                if (ga_tracking == true) {
+                if (googleAnalyticsConfig.isTrackingPermitted()) {
                     $('div.statistics input').prop('checked', true);
                 }
 
                 $('div.statistics input').change(function() {
-                    var check = $(this).is(':checked');
-
-                    ga_tracking = check;
-
-                    ga_config.setTrackingPermitted(check);
+                    var result = $(this).is(':checked');
+                    googleAnalyticsConfig.setTrackingPermitted(result);
                 });
 
+                function close_and_cleanup(e) {
+                    if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
+                        $(document).unbind('click keyup', close_and_cleanup);
+
+                        $('div#options-window').slideUp(function() {
+                            el.removeClass('active');
+                            $(this).empty().remove();
+                        });
+                    }
+                }
+
+                $(document).bind('click keyup', close_and_cleanup);
+
                 $(this).slideDown();
-            });
-        } else {
-            $('div#options-window').slideUp(function() {
-                el.removeClass('active');
-                $(this).empty().remove();
             });
         }
     });
@@ -169,15 +177,15 @@ $(document).ready(function() {
 
     $("#content").on('keydown', 'input[type="number"]', function(e) {
         // whitelist all that we need for numeric control
-        if ((e.keyCode >= 96 && e.keyCode <= 105) || (e.keyCode >= 48 && e.keyCode <= 57)) { // allow numpad and standard number keypad
-        } else if (e.keyCode == 109 || e.keyCode == 189) { // minus on numpad and in standard keyboard
-        } else if (e.keyCode == 8 || e.keyCode == 46) { // backspace and delete
-        } else if (e.keyCode == 190 || e.keyCode == 110) { // allow and decimal point
-        } else if ((e.keyCode >= 37 && e.keyCode <= 40) || e.keyCode == 13) { // allow arrows, enter
-        } else {
-            // block everything else
-            e.preventDefault();
-        }
+        var whitelist = [
+            96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, // numpad and standard number keypad
+            109, 189, // minus on numpad and in standard keyboard
+            8, 46, 9, // backspace, delete, tab
+            190, 110, // decimal point
+            37, 38, 39, 40, 13 // arrows and enter
+        ];
+
+        if (whitelist.indexOf(e.keyCode) == -1) e.preventDefault();
     });
 
     $("#content").on('change', 'input[type="number"]', function() {

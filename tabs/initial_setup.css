@@ -45,6 +45,7 @@
         }
 #interactive_block {
     float: left;
+    position: relative;
 
     height: 280px;
     width: 400px;
@@ -53,17 +54,25 @@
     background-color: white;
 }
     #interactive_block .model {
-        display: block;
+        float: left;
+        height: 15px;
         margin: 10px 0 0 10px;
 
+        font-weight: bold;
+    }
+    #interactive_block .heading {
+        float: right;
+        height: 15px;
+
+        margin: 10px 10px 0 0;
         font-weight: bold;
     }
     #interactive_block a.reset {
         position: absolute;
         display: block;
 
-        margin-left: 10px;
-        margin-top: 215px;
+        bottom: 10px;
+        right: 10px;
 
         height: 28px;
         line-height: 28px;

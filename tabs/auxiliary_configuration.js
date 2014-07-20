@@ -1,12 +1,18 @@
 // TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
-function tab_initialize_auxiliary_configuration() {
-    ga_tracker.sendAppView('Auxiliary Configuration');
+tabs.auxiliary_configuration = {};
+tabs.auxiliary_configuration.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'auxiliary_configuration';
+    googleAnalytics.sendAppView('Auxiliary Configuration');
 
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
 
     function get_box_data() {
-        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_rc_data);
+        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_box_ids);
+    }
+
+    function get_box_ids() {
+        MSP.send_message(MSP_codes.MSP_BOXIDS, false, false, get_rc_data);
     }
 
     function get_rc_data() {
@@ -170,5 +176,11 @@ function tab_initialize_auxiliary_configuration() {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.auxiliary_configuration.cleanup = function(callback) {
+    if (callback) callback();
+};

@@ -22,6 +22,7 @@ $(document).ready(function() {
                     GUI.timeout_kill_all();
                     GUI.interval_kill_all();
                     GUI.tab_switch_cleanup();
+                    GUI.tab_switch_in_progress = false;
 
                     serial.disconnect(onClosed);
 
@@ -50,7 +51,7 @@ $(document).ready(function() {
                     $('#content').empty();
 
                     // load default html
-                    tab_initialize_default();
+                    tabs.default.initialize();
                 }
 
                 $(this).data("clicks", !clicks);

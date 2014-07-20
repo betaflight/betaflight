@@ -1,6 +1,8 @@
-function tab_initialize_firmware_flasher() {
-    ga_tracker.sendAppView('Firmware Flasher');
+tabs.firmware_flasher = {};
+tabs.firmware_flasher.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'firmware_flasher';
+    googleAnalytics.sendAppView('Firmware Flasher');
 
     var intel_hex = false; // standard intel hex in string format
     var parsed_hex = false; // parsed raw hex in array format
@@ -47,7 +49,7 @@ function tab_initialize_firmware_flasher() {
 
                                     if (parsed_hex) {
                                         GUI.log(chrome.i18n.getMessage('firmwareFlasherLocalFirmwareLoaded'));
-                                        ga_tracker.sendEvent('Flashing', 'Firmware', 'local');
+                                        googleAnalytics.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('locked');
 
                                         $('span.size').html(parsed_hex.bytes_total + ' bytes');
@@ -73,7 +75,7 @@ function tab_initialize_firmware_flasher() {
 
                     if (parsed_hex) {
                         GUI.log(chrome.i18n.getMessage('firmwareFlasherRemoteFirmwareLoaded'));
-                        ga_tracker.sendEvent('Flashing', 'Firmware', 'online');
+                        googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
                         $('a.flash_firmware').removeClass('locked');
 
                         $('span.path').text('Using remote Firmware');
@@ -211,61 +213,6 @@ function tab_initialize_firmware_flasher() {
             });
         });
 
-        /*
-        chrome.storage.local.get('dev_mode', function(result) {
-            if (typeof result.dev_mode !== 'undefined') {
-                if (result.dev_mode) {
-                    GUI.log('Dev mode: <strong>Enabled</strong>');
-                    bind_enter_handler();
-                }
-            }
-        });
-
-        var keys_down = {};
-        $(document).keydown(function(e) {
-            keys_down[e.which] = true;
-
-            // idkfa
-            if (keys_down[65] && keys_down[68] && keys_down[70] && keys_down[73] && keys_down[75]) {
-                chrome.storage.local.get('dev_mode', function(result) {
-                    if (typeof result.dev_mode === 'undefined') {
-                        GUI.log('Dev mode: <strong>Enabled</strong>');
-                        bind_enter_handler();
-
-                        chrome.storage.local.set({'dev_mode': true});
-                    }
-                });
-            }
-        });
-
-        $(document).keyup(function(e) {
-            delete keys_down[e.which];
-        });
-
-        function bind_enter_handler() {
-            // unbind first (in case there is anything bound here)
-            $(document).unbind('keypress');
-
-            $(document).keypress(function(e) {
-                if (e.which == 13) { // enter
-                    // Trigger regular Flashing sequence
-                    $('a.flash_firmware').click();
-                }
-            });
-        }
-        */
-
-        /*
-        GUI.interval_add('factory_mode', function factory_mode() {
-            serial.getControlSignals(function(result) {
-                if (result.cts == true) {
-                    // Trigger regular Flashing sequence
-                    $('a.flash_firmware').click();
-                }
-            });
-        }, 500);
-        */
-
         $(document).keypress(function(e) {
             if (e.which == 13) { // enter
                 // Trigger regular Flashing sequence
@@ -277,14 +224,25 @@ function tab_initialize_firmware_flasher() {
         $('a.back').click(function() {
             if (!GUI.connect_lock) { // button disabled while flashing is in progress
                 GUI.tab_switch_cleanup(function() {
-                    tab_initialize_default();
+                    tabs.default.initialize();
                 });
             } else {
                 GUI.log(chrome.i18n.getMessage('firmwareFlasherWaitForFinish'));
             }
         });
+
+        if (callback) callback();
     });
-}
+};
+
+tabs.firmware_flasher.cleanup = function(callback) {
+    PortHandler.flush_callbacks();
+
+    // unbind "global" events
+    $(document).unbind('keypress');
+
+    if (callback) callback();
+};
 
 function parse_hex(str, callback) {
     // parsing hex in different thread

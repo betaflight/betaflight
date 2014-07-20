@@ -1,4 +1,6 @@
-function tab_initialize_default() {
+tabs.default = {};
+tabs.default.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'default';
 
     $('#content').load("./tabs/default.html", function() {
@@ -11,10 +13,18 @@ function tab_initialize_default() {
         $('div.changelog.configurator .wrapper').load('./changelog.html');
 
         // UI Hooks
-        $('a.firmware_flasher').click(tab_initialize_firmware_flasher);
+        $('a.firmware_flasher').click(function() {
+            tabs.firmware_flasher.initialize();
+        });
 
         $('div.welcome a').click(function() {
-            ga_tracker.sendEvent('ExternalUrls', 'Click', $(this).prop('href'));
+            googleAnalytics.sendEvent('ExternalUrls', 'Click', $(this).prop('href'));
         });
+
+        if (callback) callback();
     });
-}
+};
+
+tabs.default.cleanup = function(callback) {
+    if (callback) callback();
+};

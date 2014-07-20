@@ -184,7 +184,10 @@
         "message": "<strong>Backup</strong> your configuration in case of an accident. (<strong>CLI</strong> settings are <strong style=\"color: red\">not</strong> included)."
     },
     "initialSetupButtonResetZaxis": {
-        "message": "Reset Z axis"
+        "message": "Reset Z axis, offset: 0 deg"
+    },
+    "initialSetupButtonResetZaxisValue": {
+        "message": "Reset Z axis, offset: $1 deg"
     },
     "initialSetupThrottleHead": {
         "message": "Throttle Settings"
@@ -260,6 +263,9 @@
     },
     "initialSetupModel": {
         "message": "Model: $1"
+    },
+    "initialSetupHeading": {
+        "message": "Heading: $1 deg"
     },
     "initialSetupAccelCalibStarted": {
         "message": "Accelerometer calibration started"

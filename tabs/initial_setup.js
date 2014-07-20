@@ -1,6 +1,11 @@
-function tab_initialize_initial_setup() {
-    ga_tracker.sendAppView('Initial Setup');
+tabs.initial_setup = {
+    yaw_fix: 0.0
+};
+tabs.initial_setup.initialize = function(callback) {
+    var self = this;
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'initial_setup';
+    googleAnalytics.sendAppView('Initial Setup');
 
     MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_ident);
 
@@ -19,8 +24,6 @@ function tab_initialize_initial_setup() {
     function process_html() {
         // translate to user-selected language
         localize();
-
-        var yaw_fix = 0.0;
 
         // Fill in misc stuff
         $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
@@ -103,6 +106,7 @@ function tab_initialize_initial_setup() {
         }
 
         $('span.model').text(chrome.i18n.getMessage('initialSetupModel', [str]));
+        $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
 
         // UI Hooks
         $('a.calibrateAccel').click(function() {
@@ -150,7 +154,7 @@ function tab_initialize_initial_setup() {
                 GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
                 GUI.tab_switch_cleanup(function() {
-                    tab_initialize_initial_setup();
+                    tabs.initial_setup.initialize();
                 });
             });
         });
@@ -215,10 +219,15 @@ function tab_initialize_initial_setup() {
             }
         });
 
+        // display current yaw fix value (important during tab re-initialization)
+        $('div#interactive_block > a.reset').text(chrome.i18n.getMessage('initialSetupButtonResetZaxisValue', [self.yaw_fix]));
+
         // reset yaw button hook
         $('div#interactive_block > a.reset').click(function() {
-            yaw_fix = SENSOR_DATA.kinematics[2] * - 1.0;
-            console.log('YAW reset to 0 deg, fix: ' + yaw_fix + ' deg');
+            self.yaw_fix = SENSOR_DATA.kinematics[2] * - 1.0;
+            $(this).text(chrome.i18n.getMessage('initialSetupButtonResetZaxisValue', [self.yaw_fix]));
+
+            console.log('YAW reset to 0 deg, fix: ' + self.yaw_fix + ' deg');
         });
 
         $('#content .backup').click(configuration_backup);
@@ -244,9 +253,12 @@ function tab_initialize_initial_setup() {
             // Update cube
             var cube = $('div#cube');
 
-            cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematics[2] * -1.0) - yaw_fix) + 'deg)');
+            cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematics[2] * -1.0) - self.yaw_fix) + 'deg)');
             $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematics[1] + 'deg)');
             $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematics[0] + 'deg)');
+
+            // Update heading
+            $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
         }
 
         GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);
@@ -255,5 +267,11 @@ function tab_initialize_initial_setup() {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.initial_setup.cleanup = function(callback) {
+    if (callback) callback();
+};

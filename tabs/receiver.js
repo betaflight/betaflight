@@ -1,6 +1,8 @@
-function tab_initialize_receiver() {
-    ga_tracker.sendAppView('Receiver Page');
+tabs.receiver = {};
+tabs.receiver.initialize = function(callback) {
+    GUI.active_tab_ref = this;
     GUI.active_tab = 'receiver';
+    googleAnalytics.sendAppView('Receiver Page');
 
     MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
 
@@ -266,5 +268,11 @@ function tab_initialize_receiver() {
         GUI.interval_add('status_pull', function() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
+
+        if (callback) callback();
     }
-}
+};
+
+tabs.receiver.cleanup = function(callback) {
+    if (callback) callback();
+};
