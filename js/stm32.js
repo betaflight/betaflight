@@ -399,7 +399,6 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             GUI.log('Erasing ...');
 
             if (!$('input.erase_chip').is(':checked')) {
-                // EXPERIMENTAL
                 console.log('Executing local erase (only needed pages)');
 
                 self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
