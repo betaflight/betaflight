@@ -352,9 +352,15 @@ STM32_protocol.prototype.upload_procedure = function(step) {
 
                 if (send_counter++ > 3) {
                     // stop retrying, its too late to get any response from MCU
+                    console.log('STM32 - no response from bootloader, disconnecting');
+                    GUI.log('No reponse from the bootloader, programming: <strong style="color: red">FAILED</strong>');
                     GUI.interval_remove('stm32_initialize_mcu');
+                    GUI.interval_remove('STM32_timeout');
+
+                    // exit
+                    self.upload_procedure(99);
                 }
-            }, 200, true);
+            }, 250, true);
             break;
         case 2:
             // get version of the bootloader and supported commands
