@@ -26,6 +26,9 @@
 
 static volatile uint16_t spi1ErrorCount = 0;
 static volatile uint16_t spi2ErrorCount = 0;
+#ifdef STM32F303xC
+static volatile uint16_t spi3ErrorCount = 0;
+#endif
 
 void initSpi1(void)
 {
@@ -146,6 +149,12 @@ uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
     } else if (instance == SPI2) {
         spi2ErrorCount++;
     }
+#ifdef STM32F303xC
+    else {
+        spi3ErrorCount++;
+        return spi3ErrorCount;
+    }
+#endif
     return -1;
 }
 

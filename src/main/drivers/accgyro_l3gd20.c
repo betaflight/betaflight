@@ -65,10 +65,6 @@ extern int16_t debug[4];
 
 #define BOOT                          ((uint8_t)0x80)
 
-static volatile uint16_t spi1ErrorCount = 0;
-static volatile uint16_t spi2ErrorCount = 0;
-static volatile uint16_t spi3ErrorCount = 0;
-
 #define SPI1_GPIO             GPIOA
 #define SPI1_SCK_PIN          GPIO_Pin_5
 #define SPI1_SCK_PIN_SOURCE   GPIO_PinSource5
@@ -79,20 +75,6 @@ static volatile uint16_t spi3ErrorCount = 0;
 #define SPI1_MOSI_PIN         GPIO_Pin_7
 #define SPI1_MOSI_PIN_SOURCE  GPIO_PinSource7
 #define SPI1_MOSI_CLK         RCC_AHBPeriph_GPIOA
-
-uint32_t spiTimeoutUserCallback(SPI_TypeDef *SPIx)
-{
-    if (SPIx == SPI1) {
-        spi1ErrorCount++;
-        return spi1ErrorCount;
-    } else if (SPIx == SPI2) {
-        spi2ErrorCount++;
-        return spi2ErrorCount;
-    } else {
-        spi3ErrorCount++;
-        return spi3ErrorCount;
-    }
-}
 
 static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 {
@@ -146,29 +128,6 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     SPI_Cmd(SPI1, ENABLE);
 }
 
-static uint8_t spiTransfer(SPI_TypeDef *SPIx, uint8_t data)
-{
-    uint16_t spiTimeout;
-
-    spiTimeout = 0x1000;
-    while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_TXE) == RESET) {
-        if ((spiTimeout--) == 0) {
-            return spiTimeoutUserCallback(SPIx);
-        }
-    }
-
-    SPI_SendData8(SPIx, data);
-
-    spiTimeout = 0x1000;
-    while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET) {
-        if ((spiTimeout--) == 0) {
-            return spiTimeoutUserCallback(SPIx);
-        }
-    }
-
-    return ((uint8_t) SPI_ReceiveData8(SPIx));
-}
-
 void l3gd20GyroInit(void)
 {
 
@@ -176,8 +135,8 @@ void l3gd20GyroInit(void)
 
     GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-    spiTransfer(L3GD20_SPI, CTRL_REG5_ADDR);
-    spiTransfer(L3GD20_SPI, BOOT);
+    spiTransferByte(L3GD20_SPI, CTRL_REG5_ADDR);
+    spiTransferByte(L3GD20_SPI, BOOT);
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
@@ -185,10 +144,10 @@ void l3gd20GyroInit(void)
 
     GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-    spiTransfer(L3GD20_SPI, CTRL_REG1_ADDR);
+    spiTransferByte(L3GD20_SPI, CTRL_REG1_ADDR);
 
-    spiTransfer(L3GD20_SPI, MODE_ACTIVE | OUTPUT_DATARATE_3 | AXES_ENABLE | BANDWIDTH_3);
-    //spiTransfer(L3GD20_SPI, MODE_ACTIVE | OUTPUT_DATARATE_4 | AXES_ENABLE | BANDWIDTH_4);
+    spiTransferByte(L3GD20_SPI, MODE_ACTIVE | OUTPUT_DATARATE_3 | AXES_ENABLE | BANDWIDTH_3);
+    //spiTransferByte(L3GD20_SPI, MODE_ACTIVE | OUTPUT_DATARATE_4 | AXES_ENABLE | BANDWIDTH_4);
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
@@ -196,8 +155,8 @@ void l3gd20GyroInit(void)
 
     GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-    spiTransfer(L3GD20_SPI, CTRL_REG4_ADDR);
-    spiTransfer(L3GD20_SPI, BLOCK_DATA_UPDATE_CONTINUOUS | BLE_MSB | FULLSCALE_2000);
+    spiTransferByte(L3GD20_SPI, CTRL_REG4_ADDR);
+    spiTransferByte(L3GD20_SPI, BLOCK_DATA_UPDATE_CONTINUOUS | BLE_MSB | FULLSCALE_2000);
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
@@ -209,11 +168,11 @@ static void l3gd20GyroRead(int16_t *gyroData)
     uint8_t buf[6];
 
     GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
-    spiTransfer(L3GD20_SPI, OUT_X_L_ADDR | READ_CMD | MULTIPLEBYTE_CMD);
+    spiTransferByte(L3GD20_SPI, OUT_X_L_ADDR | READ_CMD | MULTIPLEBYTE_CMD);
 
     uint8_t index;
     for (index = 0; index < sizeof(buf); index++) {
-        buf[index] = spiTransfer(L3GD20_SPI, DUMMY_BYTE);
+        buf[index] = spiTransferByte(L3GD20_SPI, DUMMY_BYTE);
     }
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
