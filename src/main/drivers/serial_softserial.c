@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -102,7 +103,7 @@ static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
 
     uint8_t mhz = SystemCoreClock / 1000000;
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
-    configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, onSerialTimer);
+    configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, onSerialTimer, NULL);
 }
 
 static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
@@ -123,7 +124,7 @@ static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
 {
     // start bit is usually a FALLING signal
     serialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, inversion == SERIAL_INVERTED ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
-    configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, onSerialRxPinChange);
+    configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, onSerialRxPinChange, NULL);
 }
 
 static void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)

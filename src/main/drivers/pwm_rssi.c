@@ -102,7 +102,7 @@ void pwmRSSIInConfig(uint8_t timerIndex)
     pwmRSSIICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, 0xFFFF, 1);
-    configureTimerCaptureCompareInterrupt(timerHardwarePtr, UNUSED_CALLBACK_REFERENCE, pwmRssiCallback);
+    configureTimerCaptureCompareInterrupt(timerHardwarePtr, UNUSED_CALLBACK_REFERENCE, pwmRssiCallback, NULL);
 }
 
 uint16_t pwmRSSIRead(void)

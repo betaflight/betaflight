@@ -229,7 +229,8 @@ static const uint16_t channels[CC_CHANNELS_PER_TIMER] = {
 typedef struct timerConfig_s {
     TIM_TypeDef *tim;
     uint8_t channel;
-    timerCCCallbackPtr *callback;
+    timerCCCallbackPtr *edgeCallback;
+    timerCCCallbackPtr *overflowCallback;
     uint8_t reference;
 } timerConfig_t;
 
@@ -258,7 +259,12 @@ static uint8_t lookupTimerConfigIndex(TIM_TypeDef *tim, const uint16_t channel)
     return lookupTimerIndex(tim) + (MAX_TIMERS * lookupChannelIndex(channel));
 }
 
-void configureTimerChannelCallback(TIM_TypeDef *tim, uint8_t channel, uint8_t reference, timerCCCallbackPtr *callback)
+void configureTimerChannelCallback(TIM_TypeDef *tim, uint8_t channel, uint8_t reference, timerCCCallbackPtr *edgeCallback)
+{
+    configureTimerChannelCallbacks(tim, channel, reference, edgeCallback, NULL);
+}
+
+void configureTimerChannelCallbacks(TIM_TypeDef *tim, uint8_t channel, uint8_t reference, timerCCCallbackPtr *edgeCallback, timerCCCallbackPtr *overflowCallback)
 {
     assert_param(IS_TIM_CHANNEL(channel));
 
@@ -268,7 +274,8 @@ void configureTimerChannelCallback(TIM_TypeDef *tim, uint8_t channel, uint8_t re
         return;
     }
 
-    timerConfig[timerConfigIndex].callback = callback;
+    timerConfig[timerConfigIndex].edgeCallback = edgeCallback;
+    timerConfig[timerConfigIndex].overflowCallback = overflowCallback;
     timerConfig[timerConfigIndex].channel = channel;
     timerConfig[timerConfigIndex].reference = reference;
 }
@@ -291,10 +298,13 @@ void configureTimerInputCaptureCompareChannel(TIM_TypeDef *tim, const uint8_t ch
     }
 }
 
-void configureTimerCaptureCompareInterrupt(const timerHardware_t *timerHardwarePtr, uint8_t reference, timerCCCallbackPtr *callback)
+void configureTimerCaptureCompareInterrupt(const timerHardware_t *timerHardwarePtr, uint8_t reference, timerCCCallbackPtr *edgeCallback, timerCCCallbackPtr *overflowCallback)
 {
-    configureTimerChannelCallback(timerHardwarePtr->tim, timerHardwarePtr->channel, reference, callback);
+    configureTimerChannelCallbacks(timerHardwarePtr->tim, timerHardwarePtr->channel, reference, edgeCallback, overflowCallback);
     configureTimerInputCaptureCompareChannel(timerHardwarePtr->tim, timerHardwarePtr->channel);
+    if (overflowCallback) {
+        TIM_ITConfig(timerHardwarePtr->tim, TIM_IT_Update, ENABLE);
+    }
 }
 
 void timerNVICConfigure(uint8_t irq)
@@ -342,10 +352,26 @@ static void timCCxHandler(TIM_TypeDef *tim)
 {
     captureCompare_t capture;
     timerConfig_t *timerConfig;
+    uint8_t channel;
+    uint8_t channelIndex;
 
-    uint8_t channelIndex = 0;
+    if (TIM_GetITStatus(tim, TIM_IT_Update) == SET) {
+        TIM_ClearITPendingBit(tim, TIM_IT_Update);
+        capture = tim->ARR;
+
+        for (channelIndex = 0; channelIndex < CC_CHANNELS_PER_TIMER; channelIndex++) {
+            channel = channels[channelIndex];
+            timerConfig = findTimerConfig(tim, channel);
+
+            if (!timerConfig->overflowCallback) {
+                continue;
+            }
+            timerConfig->overflowCallback(timerConfig->reference, capture);
+        }
+    }
+
     for (channelIndex = 0; channelIndex < CC_CHANNELS_PER_TIMER; channelIndex++) {
-        uint8_t channel = channels[channelIndex];
+        channel = channels[channelIndex];
 
         if (channel == TIM_Channel_1 && TIM_GetITStatus(tim, TIM_IT_CC1) == SET) {
             TIM_ClearITPendingBit(tim, TIM_IT_CC1);
@@ -371,10 +397,10 @@ static void timCCxHandler(TIM_TypeDef *tim)
             continue; // avoid uninitialised variable dereference
         }
 
-        if (!timerConfig->callback) {
+        if (!timerConfig->edgeCallback) {
             continue;
         }
-        timerConfig->callback(timerConfig->reference, capture);
+        timerConfig->edgeCallback(timerConfig->reference, capture);
     }
 }
 

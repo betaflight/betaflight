@@ -70,7 +70,7 @@ enum {
     TYPE_S,
 };
 
-#if USABLE_TIMER_CHANNEL_COUNT >= 14
+#if defined(NAZE) || defined(OLIMEXINO) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY)
 static const uint16_t multiPPM[] = {
     PWM1  | (TYPE_IP << 8),     // PPM input
     PWM9  | (TYPE_M << 8),      // Swap to servo if needed
@@ -138,17 +138,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#if USABLE_TIMER_CHANNEL_COUNT == 12
-#ifdef CC3D // XXX HACK while PPM and MOTOR code conflicts.
-static const uint16_t multiPPM[] = {
-    PWM6  | (TYPE_IP << 8),     // PPM input
-    PWM7  | (TYPE_M << 8),      // Swap to servo if needed
-    PWM8  | (TYPE_M << 8),      // Swap to servo if needed
-    PWM9  | (TYPE_M << 8),
-    PWM10 | (TYPE_M << 8),
-    0xFFFF
-};
-#else
+#ifdef CC3D
 static const uint16_t multiPPM[] = {
     PWM1  | (TYPE_IP << 8),     // PPM input
     PWM7  | (TYPE_M << 8),      // Swap to servo if needed
@@ -164,7 +154,6 @@ static const uint16_t multiPPM[] = {
     PWM6  | (TYPE_M << 8),      // Swap to servo if needed
     0xFFFF
 };
-#endif
 static const uint16_t multiPWM[] = {
     PWM1  | (TYPE_IW << 8),     // input #1
     PWM2  | (TYPE_IW << 8),

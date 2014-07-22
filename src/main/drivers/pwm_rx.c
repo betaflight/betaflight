@@ -79,17 +79,35 @@ void resetPPMDataReceivedState(void)
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
 
-static void ppmCallback(uint8_t port, captureCompare_t capture)
+uint32_t largeCounter = 0;
+
+static void ppmOverflowCallback(uint8_t port, captureCompare_t capture)
 {
-    uint16_t diff; // See PPM_TIMER_PERIOD
-    static captureCompare_t now;
-    static captureCompare_t last = 0;
+    largeCounter += capture;
+}
+
+static void ppmEdgeCallback(uint8_t port, captureCompare_t capture)
+{
+    uint32_t diff; // See PPM_TIMER_PERIOD
+    static uint32_t now = 0;
+    static uint32_t last = 0;
 
     static uint8_t chan = 0;
 
     last = now;
     now = capture;
+
+    now += largeCounter;
+
     diff = now - last;
+
+#if 0
+    static uint32_t diffs[20];
+    static uint8_t diffIndex = 0;
+
+    diffIndex = (diffIndex + 1) % 20;
+    diffs[diffIndex] = diff;
+#endif
 
     if (diff > 2700) { // Per http://www.rcgroups.com/forums/showpost.php?p=21996147&postcount=3960 "So, if you use 2.5ms or higher as being the reset for the PPM stream start, you will be fine. I use 2.7ms just to be safe."
         if (chan >= MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID) {
@@ -105,7 +123,7 @@ static void ppmCallback(uint8_t port, captureCompare_t capture)
 
 }
 
-static void pwmCallback(uint8_t port, captureCompare_t capture)
+static void pwmEdgeCallback(uint8_t port, captureCompare_t capture)
 {
     pwmInputPort_t *pwmInputPort = &pwmInputPorts[port];
     const timerHardware_t *timerHardware = pwmInputPort->timerHardware;
@@ -167,7 +185,7 @@ void pwmInConfig(uint8_t timerIndex, uint8_t channel)
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
-    configureTimerCaptureCompareInterrupt(timerHardwarePtr, channel, pwmCallback);
+    configureTimerCaptureCompareInterrupt(timerHardwarePtr, channel, pwmEdgeCallback, NULL);
 }
 
 #define UNUSED_PPM_TIMER_REFERENCE 0
@@ -186,7 +204,7 @@ void ppmInConfig(uint8_t timerIndex)
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
-    configureTimerCaptureCompareInterrupt(timerHardwarePtr, UNUSED_PPM_TIMER_REFERENCE, ppmCallback);
+    configureTimerCaptureCompareInterrupt(timerHardwarePtr, UNUSED_PPM_TIMER_REFERENCE, ppmEdgeCallback, ppmOverflowCallback);
 }
 
 uint16_t pwmRead(uint8_t channel)

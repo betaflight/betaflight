@@ -55,5 +55,6 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 void timerNVICConfigure(uint8_t irq);
 
 void configureTimerInputCaptureCompareChannel(TIM_TypeDef *tim, const uint8_t channel);
-void configureTimerCaptureCompareInterrupt(const timerHardware_t *timerHardwarePtr, uint8_t reference, timerCCCallbackPtr *callback);
-void configureTimerChannelCallback(TIM_TypeDef *tim, uint8_t channel, uint8_t reference, timerCCCallbackPtr *callback);
+void configureTimerCaptureCompareInterrupt(const timerHardware_t *timerHardwarePtr, uint8_t reference, timerCCCallbackPtr *edgeCallback, timerCCCallbackPtr *overflowCallback);
+void configureTimerChannelCallback(TIM_TypeDef *tim, uint8_t channel, uint8_t reference, timerCCCallbackPtr *edgeCallback);
+void configureTimerChannelCallbacks(TIM_TypeDef *tim, uint8_t channel, uint8_t reference, timerCCCallbackPtr *edgeCallback, timerCCCallbackPtr *overflowCallback);
