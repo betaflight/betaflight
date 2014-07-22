@@ -108,9 +108,41 @@ tabs.firmware_flasher.initialize = function(callback) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
                     if (parsed_hex != false) {
                         if (String($('div#port-picker #port').val()) != 'DFU') {
-                            STM32.connect(parsed_hex);
+                            if (String($('div#port-picker #port').val()) != '0') {
+                                var options = {};
+                                var port = String($('div#port-picker #port').val());
+                                var baud;
+
+                                switch (GUI.operating_system) {
+                                    case 'Windows':
+                                    case 'MacOS':
+                                    case 'ChromeOS':
+                                    case 'Linux':
+                                    case 'UNIX':
+                                        baud = 921600;
+                                        break;
+
+                                    default:
+                                        baud = 115200;
+                                }
+
+                                if ($('input.updating').is(':checked')) {
+                                    options.no_reboot = true;
+                                } else {
+                                    options.reboot_baud = parseInt($('div#port-picker #baud').val());
+                                }
+
+                                if ($('input.erase_chip').is(':checked')) {
+                                    options.erase_chip = true;
+                                }
+
+                                STM32.connect(port, baud, parsed_hex, options);
+                            } else {
+                                console.log('Please select valid serial port');
+                                GUI.log('<span style="color: red">Please select valid serial port</span>');
+                            }
                         } else {
-                            STM32DFU.connect(parsed_hex);
+                            STM32DFU.connect(usbDevices.STM32DFU, parsed_hex);
                         }
                     } else {
                         GUI.log(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
