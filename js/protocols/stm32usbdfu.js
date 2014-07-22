@@ -61,7 +61,7 @@ var STM32DFU_protocol = function() {
     };
 };
 
-STM32DFU_protocol.prototype.connect = function(hex) {
+STM32DFU_protocol.prototype.connect = function(device, hex) {
     var self = this;
     self.hex = hex;
 
@@ -74,13 +74,14 @@ STM32DFU_protocol.prototype.connect = function(hex) {
     self.progress_bar_e.val(0);
     self.progress_bar_e.removeClass('valid invalid');
 
-    chrome.usb.getDevices(usbDevices.STM32DFU, function(result) {
+    chrome.usb.getDevices(device, function(result) {
         if (result.length) {
             console.log('USB DFU detected with ID: ' + result[0].device);
 
             self.openDevice(result[0]);
         } else {
-            // TODO: throw some error
+            console.log('USB DFU not found');
+            GUI.log('USB DFU not found');
         }
     });
 };

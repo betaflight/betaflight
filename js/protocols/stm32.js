@@ -2,9 +2,12 @@
     STM32 F103 serial bus seems to properly initialize with quite a huge auto-baud range
     From 921600 down to 1200, i don't recommend getting any lower then that
     Official "specs" are from 115200 to 1200
+
+    popular choices - 921600, 460800, 256000, 230400, 153600, 128000, 115200, 57600, 38400, 28800, 19200
 */
 
 var STM32_protocol = function() {
+    this.options = {};
     this.hex; // ref
     this.verify_hex;
 
@@ -43,77 +46,70 @@ var STM32_protocol = function() {
 };
 
 // no input parameters
-STM32_protocol.prototype.connect = function(hex) {
+STM32_protocol.prototype.connect = function(port, baud, hex, options) {
     var self = this;
     self.hex = hex;
 
-    var selected_port = String($('div#port-picker #port').val());
-    var baud = parseInt($('div#port-picker #baud').val());
+    // we will crunch the options here since doing it inside initialization routine would be too late / redundant
+    self.options = {
+        no_reboot:      false,
+        reboot_baud:    false,
+        erase_chip:     false
+    };
 
-    if (selected_port != '0') {
-        // popular choices - 921600, 460800, 256000, 230400, 153600, 128000, 115200, 57600, 38400, 28800, 19200
-        var flashing_bitrate;
-
-        switch (GUI.operating_system) {
-            case 'Windows':
-            case 'MacOS':
-            case 'ChromeOS':
-            case 'Linux':
-            case 'UNIX':
-                flashing_bitrate = 921600;
-                break;
-
-            default:
-                flashing_bitrate = 115200;
-        }
-
-        if (!$('input.updating').is(':checked')) {
-            serial.connect(selected_port, {bitrate: baud}, function(openInfo) {
-                if (openInfo) {
-                    console.log('Sending ascii "R" to reboot');
-
-                    // we are connected, disabling connect button in the UI
-                    GUI.connect_lock = true;
-
-                    var bufferOut = new ArrayBuffer(1);
-                    var bufferView = new Uint8Array(bufferOut);
-
-                    bufferView[0] = 0x52;
-
-                    serial.send(bufferOut, function() {
-                        serial.disconnect(function(result) {
-                            if (result) {
-                                serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
-                                    if (openInfo) {
-                                        self.initialize();
-                                    } else {
-                                        GUI.log('<span style="color: red">Failed</span> to open serial port');
-                                    }
-                                });
-                            } else {
-                                GUI.connect_lock = false;
-                            }
-                        });
-                    });
-                } else {
-                    GUI.log('<span style="color: red">Failed</span> to open serial port');
-                }
-            });
-        } else {
-            serial.connect(selected_port, {bitrate: flashing_bitrate, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
-                if (openInfo) {
-                    // we are connected, disabling connect button in the UI
-                    GUI.connect_lock = true;
-
-                    self.initialize();
-                } else {
-                    GUI.log('<span style="color: red">Failed</span> to open serial port');
-                }
-            });
-        }
+    if (options.no_reboot) {
+        self.options.no_reboot = true;
     } else {
-        console.log('Please select valid serial port');
-        GUI.log('<span style="color: red">Please select valid serial port</span>');
+        self.options.reboot_baud = options.reboot_baud;
+    }
+
+    if (options.erase_chip) {
+        self.options.erase_chip = true;
+    }
+
+    if (self.options.no_reboot) {
+        serial.connect(port, {bitrate: baud, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
+            if (openInfo) {
+                // we are connected, disabling connect button in the UI
+                GUI.connect_lock = true;
+
+                self.initialize();
+            } else {
+                GUI.log('<span style="color: red">Failed</span> to open serial port');
+            }
+        });
+    } else {
+        serial.connect(port, {bitrate: self.options.reboot_baud}, function(openInfo) {
+            if (openInfo) {
+                console.log('Sending ascii "R" to reboot');
+
+                // we are connected, disabling connect button in the UI
+                GUI.connect_lock = true;
+
+                var bufferOut = new ArrayBuffer(1);
+                var bufferView = new Uint8Array(bufferOut);
+
+                bufferView[0] = 0x52;
+
+                serial.send(bufferOut, function() {
+                    serial.disconnect(function(result) {
+                        if (result) {
+                            serial.connect(port, {bitrate: baud, parityBit: 'even', stopBits: 'one'}, function(openInfo) {
+                                if (openInfo) {
+                                    self.initialize();
+                                } else {
+                                    GUI.log('<span style="color: red">Failed</span> to open serial port');
+                                }
+                            });
+                        } else {
+                            GUI.connect_lock = false;
+                        }
+                    });
+                });
+            } else {
+                GUI.log('<span style="color: red">Failed</span> to open serial port');
+            }
+        });
     }
 };
 
@@ -398,7 +394,21 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             // erase memory
             GUI.log('Erasing ...');
 
-            if (!$('input.erase_chip').is(':checked')) {
+            if (self.options.erase_chip) {
+                console.log('Executing global chip erase');
+
+                self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
+                    if (self.verify_response(self.status.ACK, reply)) {
+                        self.send([0xFF, 0x00], 1, function(reply) {
+                            if (self.verify_response(self.status.ACK, reply)) {
+                                console.log('Erasing: done');
+                                // proceed to next step
+                                self.upload_procedure(5);
+                            }
+                        });
+                    }
+                });
+            } else {
                 console.log('Executing local erase (only needed pages)');
 
                 self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
@@ -417,20 +427,6 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                         buff.push(checksum);
 
                         self.send(buff, 1, function(reply) {
-                            if (self.verify_response(self.status.ACK, reply)) {
-                                console.log('Erasing: done');
-                                // proceed to next step
-                                self.upload_procedure(5);
-                            }
-                        });
-                    }
-                });
-            } else {
-                console.log('Executing global chip erase');
-
-                self.send([self.command.erase, 0xBC], 1, function(reply) { // 0x43 ^ 0xFF
-                    if (self.verify_response(self.status.ACK, reply)) {
-                        self.send([0xFF, 0x00], 1, function(reply) {
                             if (self.verify_response(self.status.ACK, reply)) {
                                 console.log('Erasing: done');
                                 // proceed to next step
