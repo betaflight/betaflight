@@ -425,7 +425,10 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     static int32_t baroAlt_offset = 0;
     float sonarTransition;
 
+#ifdef SONAR
     int16_t tiltAngle;
+#endif
+
 
 
     dTime = currentTime - previousTime;
@@ -442,8 +445,10 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
     BaroAlt = baroCalculateAltitude();
 
+#ifdef SONAR
     tiltAngle = calculateTiltAngle(&inclination);
     sonarAlt = sonarCalculateAltitude(sonarAlt, tiltAngle);
+#endif
 
     if (sonarAlt > 0 && sonarAlt < 200) {
         baroAlt_offset = BaroAlt - sonarAlt;
