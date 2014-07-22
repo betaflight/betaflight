@@ -32,10 +32,6 @@ static volatile uint16_t spi3ErrorCount = 0;
 
 void initSpi1(void)
 {
-#ifdef CC3D
-    GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
-#endif
-
     // Specific to the STM32F103
     // SPI1 Driver
     // PA7    17    SPI1_MOSI
@@ -185,19 +181,7 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
     return ((uint8_t)SPI_I2S_ReceiveData(instance));
 #endif
     }
-/*
-uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in)
-{
-    uint8_t rx;
-    instance->DR;
-    instance->DR = in;
-    while (!(instance->SR & SPI_I2S_FLAG_RXNE));
-    rx = instance->DR;
-    while (!(instance->SR & SPI_I2S_FLAG_TXE));
-    while (instance->SR & SPI_I2S_FLAG_BSY);
-    return rx;
-}
-*/
+
 bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, uint8_t *in, int len)
 {
     uint16_t spiTimeout = 1000;
