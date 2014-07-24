@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="43.828125"
+   height="95"
+   id="svg3971"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="motor-order-custom.svg">
+  <defs
+     id="defs3973" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="2.1016034"
+     inkscape:cx="-9.9340868"
+     inkscape:cy="-13.658844"
+     inkscape:document-units="px"
+     inkscape:current-layer="Custom_Mix"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1167"
+     inkscape:window-height="910"
+     inkscape:window-x="352"
+     inkscape:window-y="126"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata3976">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-353.46478,-451.46461)">
+    <g
+       transform="matrix(1.25,0,0,-1.25,29.893856,1001.973)"
+       id="Custom_Mix"
+       inkscape:label="Custom_Mix">
+      <path
+         d="m 260.98174,427.34421 c -1.41668,2.2916 -2.12501,4.31243 -2.125,6.0625 -10e-6,1.2916 0.34374,2.37493 1.03125,3.25 0.68749,0.87493 1.59374,1.59368 2.71875,2.15625 1.12498,0.56242 2.40623,0.96867 3.84375,1.21875 1.43748,0.24992 2.90623,0.37492 4.40625,0.375 2.87497,-8e-5 5.69789,-0.37508 8.46875,-1.125 2.7708,-0.75007 5.22913,-1.85424 7.375,-3.3125 2.14579,-1.4584 3.88537,-3.28132 5.21875,-5.46875 1.33329,-2.18756 1.99995,-4.73965 2,-7.65625 -5e-5,-1.91672 -0.30213,-3.61464 -0.90625,-5.09375 -0.60421,-1.47922 -1.4063,-2.83338 -2.40625,-4.0625 -1.00004,-1.22922 -2.16671,-2.37505 -3.5,-3.4375 -1.33337,-1.06255 -2.7292,-2.11463 -4.1875,-3.15625 -1.25004,-0.87504 -2.45837,-1.71879 -3.625,-2.53125 -1.1667,-0.81254 -2.20836,-1.65629 -3.125,-2.53125 -0.9167,-0.87504 -1.65628,-1.82295 -2.21875,-2.84375 -0.56253,-1.02087 -0.84378,-2.17712 -0.84375,-3.46875 -3e-5,-1.20836 0.28122,-2.46878 0.84375,-3.78125 0.56247,-1.31253 1.44789,-2.84378 2.65625,-4.59375 -0.95836,-0.66669 -1.90628,-1.18752 -2.84375,-1.5625 -0.93753,-0.37502 -1.84378,-0.56252 -2.71875,-0.5625 -1.20836,-2e-5 -2.27086,0.20831 -3.1875,0.625 -0.91669,0.41664 -1.68752,0.97914 -2.3125,1.6875 -0.62502,0.70831 -1.10418,1.54164 -1.4375,2.5 -0.33335,0.95831 -0.50002,1.97914 -0.5,3.0625 -2e-5,1.79164 0.37498,3.44788 1.125,4.96875 0.74998,1.5208 1.71873,2.93746 2.90625,4.25 1.18748,1.31246 2.54164,2.54163 4.0625,3.6875 1.52081,1.14579 3.05206,2.26037 4.59375,3.34375 1.41664,0.99995 2.80205,1.98954 4.15625,2.96875 1.35413,0.97912 2.55205,1.97912 3.59375,3 1.04163,1.02078 1.87496,2.08328 2.5,3.1875 0.62496,1.10411 0.93746,2.30203 0.9375,3.59375 -4e-5,1.54161 -0.37504,2.86452 -1.125,3.96875 -0.75004,1.1041 -1.73962,1.99994 -2.96875,2.6875 -1.2292,0.68743 -2.64587,1.18743 -4.25,1.5 -1.6042,0.31243 -3.28128,0.46868 -5.03125,0.46875 -5.25002,-7e-5 -9.62502,-1.12507 -13.125,-3.375 z m 16.125,-56.3125 c -3e-5,-2.25 -0.62503,-3.91667 -1.875,-5 -1.25003,-1.08333 -3.06253,-1.625 -5.4375,-1.625 -1.91669,0 -3.39585,0.60417 -4.4375,1.8125 -1.04168,1.20833 -1.56252,2.81249 -1.5625,4.8125 -2e-5,2.37499 0.64582,4.08332 1.9375,5.125 1.29165,1.04165 3.08331,1.56249 5.375,1.5625 1.99997,-10e-6 3.49997,-0.58335 4.5,-1.75 0.99997,-1.16668 1.49997,-2.81251 1.5,-4.9375 z"
+         style="font-size:128px;font-variant:normal;font-weight:normal;font-stretch:normal;writing-mode:lr-tb;fill:#bdbcbc;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Nyala;-inkscape-font-specification:Nyala-Regular"
+         id="MotorOrderGraphic"
+         inkscape:connector-curvature="0"
+         inkscape:label="MotorOrderGraphic" />
+    </g>
+  </g>
+</svg>
