@@ -106,42 +106,34 @@ tabs.initial_setup.initialize = function(callback) {
         }
 
         $('span.model').text(chrome.i18n.getMessage('initialSetupModel', [str]));
-        
+
         // Model Mix Diagram selection
         switch (CONFIG.multiType) {
             case 1: // TRI
-                $(".modelMixDiagram").attr("src","./images/motor_order/tri.svg"); // Change image
-                $(".modelMixDiagram").addClass( 'modelMixTri' ); //Set specific class per model type
+                $(".modelMixDiagram").attr("src","./images/motor_order/tri.svg").addClass('modelMixTri');
                 break;
             case 2: // QUAD +
-                $(".modelMixDiagram").attr("src","./images/motor_order/quadp.svg");
-                $(".modelMixDiagram").addClass( 'modelMixQuadP' );
+                $(".modelMixDiagram").attr("src","./images/motor_order/quadp.svg").addClass('modelMixQuadP');
                 break;
             case 3: // QUAD X
-                $(".modelMixDiagram").attr("src","./images/motor_order/quadx.svg");
-                $(".modelMixDiagram").addClass( 'modelMixQuadX' );
+                $(".modelMixDiagram").attr("src","./images/motor_order/quadx.svg").addClass('modelMixQuadX');
                 break;
             case 6: // Y6
-                $(".modelMixDiagram").attr("src","./images/motor_order/y6.svg");
-                $(".modelMixDiagram").addClass( 'modelMixY6' );
+                $(".modelMixDiagram").attr("src","./images/motor_order/y6.svg").addClass('modelMixY6');
                 break;
             case 7: // HEX 6
-                $(".modelMixDiagram").attr("src","./images/motor_order/hex6p.svg");
-                $(".modelMixDiagram").addClass( 'modelMixHex6P' );
+                $(".modelMixDiagram").attr("src","./images/motor_order/hex6p.svg").addClass('modelMixHex6P');
                 break;
             case 9: // Y4
-                $(".modelMixDiagram").attr("src","./images/motor_order/y4.svg");
-                $(".modelMixDiagram").addClass( 'modelMixY4' );
+                $(".modelMixDiagram").attr("src","./images/motor_order/y4.svg").addClass('modelMixY4');
                 break;
             case 10: // HEX6 X
-                $(".modelMixDiagram").attr("src","./images/motor_order/hex6x.svg");
-                $(".modelMixDiagram").addClass( 'modelMixHex6X' );
+                $(".modelMixDiagram").attr("src","./images/motor_order/hex6x.svg").addClass('modelMixHex6X');
                 break;
             case 11: // OCTO X8
             case 12:
             case 13:
-                $(".modelMixDiagram").attr("src","./images/motor_order/octox.svg");
-                $(".modelMixDiagram").addClass( 'modelMixOctoX' );
+                $(".modelMixDiagram").attr("src","./images/motor_order/octox.svg").addClass('modelMixOctoX');
                 break;
 
             case 4: // BI
@@ -155,13 +147,11 @@ tabs.initial_setup.initialize = function(callback) {
             case 19: // PPM to SERVO
             case 20: // Dualcopter
             case 21: // Singlecopter
-                $(".modelMixDiagram").attr("src","./images/motor_order/custom.svg");
-                $(".modelMixDiagram").addClass( 'modelMixCustom' );
+                $(".modelMixDiagram").attr("src","./images/motor_order/custom.svg").addClass('modelMixCustom');
                 break;
 
-            default: 
-                $(".modelMixDiagram").attr("src","./images/motor_order/custom.svg");
-                $(".modelMixDiagram").addClass( 'modelMixCustom' );
+            default:
+                $(".modelMixDiagram").attr("src","./images/motor_order/custom.svg").addClass('modelMixCustom');
                 break;
         }
 
