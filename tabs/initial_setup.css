@@ -60,6 +60,21 @@
 
         font-weight: bold;
     }
+
+    #interactive_block .modelMixDiagram {
+        position: absolute;
+
+        top: 32px;
+        left: 10px;
+
+        height: 30%; /* interactive_block height set to inherit */
+    }
+
+    #interactive_block .modelMixCustom { /* Position question mark correctly */
+        height: 20%; /* resize question mark */
+        padding-left: 25px;
+    }
+
     #interactive_block .heading {
         float: right;
         height: 15px;

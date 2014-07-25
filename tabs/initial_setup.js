@@ -100,12 +100,72 @@ tabs.initial_setup.initialize = function(callback) {
             case 20: // Dualcopter
                 str = 'Dualcopter';
                 break;
-            case 21: //
+            case 21: // Singlecopter
                 str = 'Singlecopter';
                 break;
         }
 
         $('span.model').text(chrome.i18n.getMessage('initialSetupModel', [str]));
+        
+        // Model Mix Diagram selection
+        switch (CONFIG.multiType) {
+            case 1: // TRI
+                $(".modelMixDiagram").attr("src","./images/motor_order/tri.svg"); // Change image
+                $(".modelMixDiagram").addClass( 'modelMixTri' ); //Set specific class per model type
+                break;
+            case 2: // QUAD +
+                $(".modelMixDiagram").attr("src","./images/motor_order/quadp.svg");
+                $(".modelMixDiagram").addClass( 'modelMixQuadP' );
+                break;
+            case 3: // QUAD X
+                $(".modelMixDiagram").attr("src","./images/motor_order/quadx.svg");
+                $(".modelMixDiagram").addClass( 'modelMixQuadX' );
+                break;
+            case 6: // Y6
+                $(".modelMixDiagram").attr("src","./images/motor_order/y6.svg");
+                $(".modelMixDiagram").addClass( 'modelMixY6' );
+                break;
+            case 7: // HEX 6
+                $(".modelMixDiagram").attr("src","./images/motor_order/hex6p.svg");
+                $(".modelMixDiagram").addClass( 'modelMixHex6P' );
+                break;
+            case 9: // Y4
+                $(".modelMixDiagram").attr("src","./images/motor_order/y4.svg");
+                $(".modelMixDiagram").addClass( 'modelMixY4' );
+                break;
+            case 10: // HEX6 X
+                $(".modelMixDiagram").attr("src","./images/motor_order/hex6x.svg");
+                $(".modelMixDiagram").addClass( 'modelMixHex6X' );
+                break;
+            case 11: // OCTO X8
+            case 12:
+            case 13:
+                $(".modelMixDiagram").attr("src","./images/motor_order/octox.svg");
+                $(".modelMixDiagram").addClass( 'modelMixOctoX' );
+                break;
+
+            case 4: // BI
+            case 5: // GIMBAL
+            case 8: // FLYING_WING
+            case 14: // AIRPLANE
+            case 15: // Heli 120
+            case 16: // Heli 90
+            case 17: // Vtail
+            case 18: // HEX6 H
+            case 19: // PPM to SERVO
+            case 20: // Dualcopter
+            case 21: // Singlecopter
+                $(".modelMixDiagram").attr("src","./images/motor_order/custom.svg");
+                $(".modelMixDiagram").addClass( 'modelMixCustom' );
+                break;
+
+            default: 
+                $(".modelMixDiagram").attr("src","./images/motor_order/custom.svg");
+                $(".modelMixDiagram").addClass( 'modelMixCustom' );
+                break;
+        }
+
+        // Heading
         $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
 
         // UI Hooks
