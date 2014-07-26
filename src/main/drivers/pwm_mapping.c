@@ -267,25 +267,21 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#if defined(STM32F10X_MD)
-#define LED_STRIP_PWM PWM4
+#if defined(STM32F10X_MD) && !defined(CC3D)
+#define LED_STRIP_TIMER TIM3
 #endif
 
-#if defined(STM32F303xC) && !(defined(CHEBUZZF3) || defined(NAZE32PRO))
-#define LED_STRIP_PWM PWM2
+#if defined(CC3D)
+#define LED_STRIP_TIMER TIM2
 #endif
 
-#if defined(CHEBUZZF3)
-#define LED_STRIP_PWM PWM2
+#if defined(STM32F303xC)
+#define LED_STRIP_TIMER TIM16
 #endif
 
-#if defined(NAZE32PRO)
-#define LED_STRIP_PWM PWM13
-#endif
-
-#ifdef LED_STRIP_PWM
+#ifdef LED_STRIP_TIMER
         // skip LED Strip output
-        if (init->useLEDStrip && timerIndex == LED_STRIP_PWM)
+        if (init->useLEDStrip && timerHardware[timerIndex].tim == LED_STRIP_TIMER)
             continue;
 #endif
 
