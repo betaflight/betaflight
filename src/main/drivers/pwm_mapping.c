@@ -272,7 +272,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #if defined(CC3D)
-#define LED_STRIP_TIMER TIM2
+#define LED_STRIP_TIMER TIM3
 #endif
 
 #if defined(STM32F303xC)
