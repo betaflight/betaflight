@@ -134,9 +134,11 @@ uint8_t highestXValueForWest;
 uint8_t lowestXValueForEast;
 
 // timers
+uint32_t nextAnimationUpdateAt = 0;
 uint32_t nextIndicatorFlashAt = 0;
 uint32_t nextBatteryFlashAt = 0;
 
+#define LED_STRIP_20HZ ((1000 * 1000) / 20)
 #define LED_STRIP_10HZ ((1000 * 1000) / 10)
 #define LED_STRIP_5HZ ((1000 * 1000) / 5)
 
@@ -363,6 +365,48 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
     }
 }
 
+static uint8_t frameCounter = 0;
+
+static uint8_t previousRow;
+static uint8_t currentRow;
+static uint8_t nextRow;
+
+static void updateLedAnimationState(void)
+{
+    uint8_t animationFrames = ledGridHeight;
+
+    previousRow = (frameCounter + animationFrames - 1) % animationFrames;
+    currentRow = frameCounter;
+    nextRow = (frameCounter + 1) % animationFrames;
+
+    frameCounter = (frameCounter + 1) % animationFrames;
+}
+
+static void applyLedAnimationLayer(void)
+{
+    const ledConfig_t *ledConfig;
+
+    if (f.ARMED) {
+        return;
+    }
+
+    uint8_t ledIndex;
+    for (ledIndex = 0; ledIndex < WS2811_LED_STRIP_LENGTH; ledIndex++) {
+
+        ledConfig = &ledConfigs[ledIndex];
+
+        if (LED_Y(ledConfig) == previousRow) {
+            setLedColor(ledIndex, &white);
+            setLedBrightness(ledIndex, 50);
+
+        } else if (LED_Y(ledConfig) == currentRow) {
+            setLedColor(ledIndex, &white);
+        } else if (LED_Y(ledConfig) == nextRow) {
+            setLedBrightness(ledIndex, 50);
+        }
+    }
+}
+
 void updateLedStrip(void)
 {
     if (!isWS2811LedStripReady()) {
@@ -371,10 +415,11 @@ void updateLedStrip(void)
 
     uint32_t now = micros();
 
+    bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
     bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
     bool batteryFlashNow = (int32_t)(now - nextBatteryFlashAt) >= 0L;
 
-    if (!(batteryFlashNow || indicatorFlashNow)) {
+    if (!(batteryFlashNow || indicatorFlashNow || animationUpdateNow)) {
         return;
     }
 
@@ -423,12 +468,18 @@ void updateLedStrip(void)
 
     applyLedIndicatorLayer(indicatorFlashState);
 
+    if (animationUpdateNow) {
+        nextAnimationUpdateAt = now + LED_STRIP_20HZ;
+        updateLedAnimationState();
+    }
+
+    applyLedAnimationLayer();
+
     ws2811UpdateStrip();
 }
 
 void determineLedStripDimensions()
 {
-    // TODO iterate over ledConfigs and determine programatically
     ledGridWidth = 0;
     ledGridHeight = 0;
 
@@ -438,11 +489,11 @@ void determineLedStripDimensions()
     for (ledIndex = 0; ledIndex < WS2811_LED_STRIP_LENGTH; ledIndex++) {
         ledConfig = &ledConfigs[ledIndex];
 
-        if (LED_X(ledConfig) > ledGridWidth) {
-            ledGridWidth = LED_X(ledConfig);
+        if (LED_X(ledConfig) >= ledGridWidth) {
+            ledGridWidth = LED_X(ledConfig) + 1;
         }
-        if (LED_Y(ledConfig) > ledGridHeight) {
-            ledGridHeight = LED_X(ledConfig);
+        if (LED_Y(ledConfig) >= ledGridHeight) {
+            ledGridHeight = LED_Y(ledConfig) + 1;
         }
     }
 }

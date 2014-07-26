@@ -49,6 +49,7 @@ void ws2811LedStripDMAEnable(void);
 
 void ws2811UpdateStrip(void);
 void setLedColor(uint16_t index, const rgbColor24bpp_t *color);
+void setLedBrightness(uint16_t index, const uint8_t scalePercent);
 void setStripColor(const rgbColor24bpp_t *color);
 void setStripColors(const rgbColor24bpp_t *colors);
 

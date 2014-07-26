@@ -40,6 +40,16 @@ void setLedColor(uint16_t index, const rgbColor24bpp_t *color)
     ledColorBuffer[index].rgb = color->rgb;
 }
 
+/**
+ * use this after you set the color
+ */
+void setLedBrightness(uint16_t index, const uint8_t scalePercent)
+{
+    ledColorBuffer[index].rgb.r = ((uint16_t)ledColorBuffer[index].rgb.r * scalePercent / 100);
+    ledColorBuffer[index].rgb.g = ((uint16_t)ledColorBuffer[index].rgb.g * scalePercent / 100);
+    ledColorBuffer[index].rgb.b = ((uint16_t)ledColorBuffer[index].rgb.b * scalePercent / 100);
+}
+
 void setStripColor(const rgbColor24bpp_t *color)
 {
     uint16_t index;
