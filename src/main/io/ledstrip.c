@@ -429,8 +429,22 @@ void updateLedStrip(void)
 void determineLedStripDimensions()
 {
     // TODO iterate over ledConfigs and determine programatically
-    ledGridWidth = 12;
-    ledGridHeight = 12;
+    ledGridWidth = 0;
+    ledGridHeight = 0;
+
+    uint8_t ledIndex;
+    const ledConfig_t *ledConfig;
+
+    for (ledIndex = 0; ledIndex < WS2811_LED_STRIP_LENGTH; ledIndex++) {
+        ledConfig = &ledConfigs[ledIndex];
+
+        if (LED_X(ledConfig) > ledGridWidth) {
+            ledGridWidth = LED_X(ledConfig);
+        }
+        if (LED_Y(ledConfig) > ledGridHeight) {
+            ledGridHeight = LED_X(ledConfig);
+        }
+    }
 }
 
 void determineOrientationLimits(void)
