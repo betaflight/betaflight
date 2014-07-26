@@ -194,7 +194,7 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             PTermGYRO = rcCommand[axis];
 
             errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
-            if ((abs(gyroData[axis]) > (640 * 4)) || (axis == FD_YAW && abs(rcCommand[axis]) > 50))
+            if ((abs(gyroData[axis]) > (640 * 4)) || (axis == FD_YAW && abs(rcCommand[axis]) > 100))
                 errorGyroI[axis] = 0;
 
             ITermGYRO = (errorGyroI[axis] / 125 * pidProfile->I8[axis]) / 64;
