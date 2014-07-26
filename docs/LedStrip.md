@@ -12,16 +12,17 @@ supports the following:
 * Flight mode specific color schemes.
 * Low battery warning.
 
+The function and orientation configuration is fixed for now but later it should be able to be set via the UI or CLI..
+
 In the future, if someone codes it, they could be used to show GPS navigation status, thrust levels, RSSI, etc.
 Lots of scope for ideas and improvements.
 
-Likewise, support for more than 10 LEDs is possible, it just requires additional development.  10 was chosen to
-start with due to current draw and RAM usage.
+Likewise, support for more than 28 LEDs is possible, it just requires additional development.
 
 ## Supported hardware
 
-Only strips of 10 WS2812 LEDs are supported currently.  If the strip is longer than 10 leds it does not matter,
-but only the first 10 are used.
+Only strips of 28 WS2812 LEDs are supported currently.  If the strip is longer than 28 leds it does not matter,
+but only the first 28 are used.
 
 WS2812 LEDs require an 800khz signal and precise timings and thus requires the use of a dedicated hardware timer.
 
@@ -37,7 +38,8 @@ WS2812 LED strips generally require a single data line, 5V and GND.
 
 WS2812 LEDs on full brightness can consume quite a bit of current.  It is recommended to verify the current draw and ensure your
 supply can cope with the load.  On a multirotor that uses multiple BEC ESC's you can try use a different BEC to the one the FC
-uses.  e.g. ESC1/BEC1 -> FC, ESC2/BEC2 -> LED strip. 
+uses.  e.g. ESC1/BEC1 -> FC, ESC2/BEC2 -> LED strip.   It's also possible to power one half of the strip from one BEC and the other half
+from another BEC.  Just ensure that the GROUND is the same for all BEC outputs and LEDs.
 
 
 | Target                | Pin | Led Strip |
@@ -52,25 +54,22 @@ can not be used at the same time at Parallel PWM.
 
 ## Positioning
 
-Cut the strip of 10 LED's in half,  the first half goes at the front of the quad, from front left to from right. Position
-the center LED in the middle.  When the strips are cut ensure you reconnect each output to each input with cable where the break is made.
+Cut the strip into 5 sections as per diagram below.  When the strips are cut ensure you reconnect each output to each input with cable where the break is made.
 e.g. connect 5V out to 5V in, GND to GND and Data Out to Data In.
-
-The second half of the strip goes at the back of the aircraft, from back right to back left, again place the center LED in the middle.
 
 Orientation is when viewed with the front of the aircraft facing away from you and viewed from above.
 
-Example LED numbers and positions for a quad.
+LED numbers and positions for a quad.
 
 ```
- 1  2        4  5
-   \           /
-    \    3    / 
-     \ FRONT /
-     /  BACK \
-    /    8    \
-   /           \
-10  9         7  6  
+       17-19  10-12
+20-22 \           / 7-9
+       \  13-16  / 
+        \ FRONT /
+        /  BACK \
+       /         \
+23-25 /           \ 4-6
+       26-28   1-3  
 ```
 
 ## Configuration
@@ -85,7 +84,7 @@ If you enable LED_STRIP feature and the feature is turned off again after a rebo
 
 ## Troubleshooting
 
-On initial power up the first 10 LEDs on the strip will be set to WHITE.  This means you can attach a current meter to verify
+On initial power up the LEDs on the strip will be set to WHITE.  This means you can attach a current meter to verify
 the current draw if your measurement equipment is fast enough.  This also means that you can make sure that each R,G and B LED
 in each LED module on the strip is also functioning.
 
