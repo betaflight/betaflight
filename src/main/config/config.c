@@ -424,7 +424,7 @@ void validateAndFixConfig(void)
     }
 
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
-#if defined(STM32F103_MD)
+#if defined(STM32F10X_MD)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
         // current meter needs the same ports
@@ -435,7 +435,7 @@ void validateAndFixConfig(void)
 #endif
 #endif
 
-#if defined(STM32F103_MD) || defined(CHEBUZZ) || defined(STM32F3DISCOVERY)
+#if defined(STM32F10X_MD) || defined(CHEBUZZ) || defined(STM32F3DISCOVERY)
         // led strip needs the same ports
         featureClear(FEATURE_LED_STRIP);
 #endif
@@ -446,7 +446,7 @@ void validateAndFixConfig(void)
     }
 
 
-#if defined(STM32F103_MD)
+#if defined(STM32F10X_MD)
     // led strip needs the same timer as softserial
     if (feature(FEATURE_SOFTSERIAL)) {
         featureClear(FEATURE_LED_STRIP);
@@ -466,7 +466,7 @@ void validateAndFixConfig(void)
 
 void initEEPROM(void)
 {
-#if defined(STM32F103_MD)
+#if defined(STM32F10X_MD)
 
 #define FLASH_SIZE_REGISTER 0x1FFFF7E0
 
@@ -531,7 +531,7 @@ void writeEEPROM(void)
 #ifdef STM32F3DISCOVERY
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
 #endif
-#ifdef STM32F103_MD
+#ifdef STM32F10X_MD
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 #endif
         for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
