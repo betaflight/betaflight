@@ -27,6 +27,7 @@
 
 #include "drivers/accgyro.h"
 #include "drivers/system.h"
+#include "drivers/pwm_rx.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -243,6 +244,8 @@ static void resetConf(void)
     masterConfig.rxConfig.mincheck = 1100;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rssi_channel = 0;
+
+    masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
     masterConfig.retarded_arm = 0;              // disable arm/disarm on roll left/right
     masterConfig.airplaneConfig.flaps_speed = 0;

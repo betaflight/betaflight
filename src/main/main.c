@@ -35,6 +35,7 @@
 #include "drivers/serial_uart.h"
 #include "drivers/accgyro.h"
 #include "drivers/pwm_mapping.h"
+#include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
 
 #include "flight/flight.h"
@@ -203,6 +204,8 @@ void init(void)
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
     pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
+
+    pwmRxInit(masterConfig.inputFilteringMode);
 
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 

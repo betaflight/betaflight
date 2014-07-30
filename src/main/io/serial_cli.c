@@ -32,6 +32,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/pwm_rx.h"
 #include "flight/flight.h"
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
@@ -167,6 +168,7 @@ const clivalue_t valueTable[] = {
     { "min_check", VAR_UINT16, &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "max_check", VAR_UINT16, &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "rssi_channel", VAR_INT8, &masterConfig.rxConfig.rssi_channel, 0, MAX_SUPPORTED_RC_CHANNEL_COUNT },
+    { "input_filtering_mode", VAR_INT8, &masterConfig.inputFilteringMode, 0, 1 },
 
     { "min_throttle", VAR_UINT16, &masterConfig.escAndServoConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "max_throttle", VAR_UINT16, &masterConfig.escAndServoConfig.maxthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },

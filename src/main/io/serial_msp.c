@@ -31,6 +31,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/pwm_rx.h"
 
 #include "flight/flight.h"
 #include "flight/mixer.h"

@@ -26,4 +26,18 @@ Allows you to use MSP commands as the RC input.  Only 8 channel support to maint
 12 channels via serial supported currently.
 
  
+### Configuration
+
+See the Configuration document some some RX configuration examples.
+
+#### PPM/PWM input filtering.
+
+Hardware input filtering can be enabled if you are experiencing interference on the signal sent via your PWM/PPM RX.
+
+Use the `input_filtering_mode` cli command to select a mode.
+
+| Value | Meaning   |
+| ----- | --------- |
+| 0     | Disabled  |
+| 1     | Enabled   |
 

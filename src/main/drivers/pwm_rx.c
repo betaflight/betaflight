@@ -38,7 +38,11 @@
 #define PWM_PORTS_OR_PPM_CAPTURE_COUNT PWM_INPUT_PORT_COUNT
 #endif
 
-void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity); // from pwm_output.c
+#define INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX 0x03
+
+static inputFilteringMode_e inputFilteringMode;
+
+void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
 
 typedef enum {
     INPUT_MODE_PPM,
@@ -104,6 +108,11 @@ void resetPPMDataReceivedState(void)
 }
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
+
+void pwmRxInit(inputFilteringMode_e initialInputFilteringMode)
+{
+    inputFilteringMode = initialInputFilteringMode;
+}
 
 static void ppmInit(void)
 {
@@ -232,8 +241,6 @@ static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, GPIO_Mode mode)
     gpioInit(gpio, &cfg);
 }
 
-#define INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX 0x03
-
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
@@ -243,7 +250,12 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     TIM_ICInitStructure.TIM_ICPolarity = polarity;
     TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
     TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
-    TIM_ICInitStructure.TIM_ICFilter = INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX;
+
+    if (inputFilteringMode == INPUT_FILTERING_ENABLED) {
+        TIM_ICInitStructure.TIM_ICFilter = INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX;
+    } else {
+        TIM_ICInitStructure.TIM_ICFilter = 0x00;
+    }
 
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }

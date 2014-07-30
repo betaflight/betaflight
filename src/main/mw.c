@@ -32,6 +32,7 @@
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/pwm_rx.h"
 
 #include "flight/flight.h"
 #include "sensors/sensors.h"
