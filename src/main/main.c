@@ -122,6 +122,8 @@ void init(void)
 
     initPrintfSupport();
 
+    initEEPROM();
+
     ensureEEPROMContainsValidData();
     readEEPROM();
 

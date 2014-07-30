@@ -45,6 +45,7 @@ uint32_t featureMask(void);
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
+void initEEPROM(void);
 void resetEEPROM(void);
 void readEEPROM(void);
 void readEEPROMAndNotify(void);

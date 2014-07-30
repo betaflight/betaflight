@@ -73,7 +73,9 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
 #endif
 
-#define FLASH_WRITE_ADDR                (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG)) // use the last flash pages for storagemaster_t masterConfig;      // master config struct with data independent from profiles
+// use the last flash pages for storage
+static uint32_t flashWriteAddress = (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG));
+master_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
 static const uint8_t EEPROM_CONF_VERSION = 72;
@@ -341,7 +343,7 @@ static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
 
 static bool isEEPROMContentValid(void)
 {
-    const master_t *temp = (const master_t *) FLASH_WRITE_ADDR;
+    const master_t *temp = (const master_t *) flashWriteAddress;
     uint8_t checksum = 0;
 
     // check version number
@@ -462,6 +464,19 @@ void validateAndFixConfig(void)
     }
 }
 
+void initEEPROM(void)
+{
+#if defined(STM32F103_MD)
+
+#define FLASH_SIZE_REGISTER 0x1FFFF7E0
+
+    const uint32_t flashSize = *((uint32_t *)FLASH_SIZE_REGISTER) & 0xFFFF;
+
+    // calculate write address based on contents of Flash size register. Use last 2 kbytes for storage
+    flashWriteAddress = 0x08000000 + (FLASH_PAGE_SIZE * (flashSize - 2));
+#endif
+}
+
 void readEEPROM(void)
 {
     // Sanity check
@@ -469,7 +484,7 @@ void readEEPROM(void)
         failureMode(10);
 
     // Read flash
-    memcpy(&masterConfig, (char *) FLASH_WRITE_ADDR, sizeof(master_t));
+    memcpy(&masterConfig, (char *) flashWriteAddress, sizeof(master_t));
     // Copy current profile
     if (masterConfig.current_profile_index > 2) // sanity check
         masterConfig.current_profile_index = 0;
@@ -516,18 +531,18 @@ void writeEEPROM(void)
 #ifdef STM32F3DISCOVERY
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
 #endif
-#ifdef STM32F10X_MD
+#ifdef STM32F103_MD
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 #endif
         for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
             if (wordOffset % FLASH_PAGE_SIZE == 0) {
-                status = FLASH_ErasePage(FLASH_WRITE_ADDR + wordOffset);
+                status = FLASH_ErasePage(flashWriteAddress + wordOffset);
                 if (status != FLASH_COMPLETE) {
                     break;
                 }
             }
 
-            status = FLASH_ProgramWord(FLASH_WRITE_ADDR + wordOffset,
+            status = FLASH_ProgramWord(flashWriteAddress + wordOffset,
                     *(uint32_t *) ((char *) &masterConfig + wordOffset));
             if (status != FLASH_COMPLETE) {
                 break;
