@@ -48,7 +48,7 @@ tabs.auxiliary_configuration.initialize = function(callback) {
 
             var bitIndex = 0;
             var chunks = 1;
-            if (bit_check(CONFIG.capability, 5)) {
+            if (bit_check(CONFIG.capability, 5) && (RC.active_channels - 4) > 4) {
                 chunks = 2;
             }
             var channelsPerChunk = 4;
@@ -76,7 +76,7 @@ tabs.auxiliary_configuration.initialize = function(callback) {
 
             var boxCountFor4AuxChannels = 3 * 4;
             var boxCountPerLine = boxCountFor4AuxChannels;
-            if (bit_check(CONFIG.capability, 5)) {
+            if (bit_check(CONFIG.capability, 5) && (RC.active_channels - 4) > 4) {
                 boxCountPerLine = boxCountFor4AuxChannels * 2;
             }
 
@@ -107,7 +107,7 @@ tabs.auxiliary_configuration.initialize = function(callback) {
                 AUX_val_buffer_out.push(lowByte(AUX_CONFIG_values[i] & 0xFFF));
                 AUX_val_buffer_out.push(highByte(AUX_CONFIG_values[i] & 0xFFF));
             }
-            if (bit_check(CONFIG.capability, 5)) {
+            if (bit_check(CONFIG.capability, 5) && (RC.active_channels - 4) > 4) {
                 for (var i = 0; i < AUX_CONFIG_values.length; i++) {
                     AUX_val_buffer_out.push(lowByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
                     AUX_val_buffer_out.push(highByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
