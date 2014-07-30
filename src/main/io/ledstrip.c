@@ -94,6 +94,49 @@ typedef struct ledConfig_s {
 static uint8_t ledGridWidth;
 static uint8_t ledGridHeight;
 
+#ifdef USE_ALTERNATE_LED_LAYOUT
+static const ledConfig_t ledConfigs[WS2811_LED_STRIP_LENGTH] = {
+        { LED_XY( 1, 14), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+
+        { LED_XY( 0, 13), LED_DIRECTION_WEST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 0, 12), LED_DIRECTION_WEST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+
+        { LED_XY( 0, 11), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+        { LED_XY( 0, 10), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+        { LED_XY( 0,  9), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+        { LED_XY( 0,  8), LED_DIRECTION_WEST  | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 0,  7), LED_DIRECTION_WEST  | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 0,  6), LED_DIRECTION_WEST  | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 0,  5), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+        { LED_XY( 0,  4), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+        { LED_XY( 0,  3), LED_DIRECTION_WEST  | LED_FUNCTION_MODE },
+
+        { LED_XY( 0,  2), LED_DIRECTION_WEST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 0,  1), LED_DIRECTION_WEST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+
+        { LED_XY( 1,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 2,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 3,  0), LED_DIRECTION_NORTH | LED_FUNCTION_MODE | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+
+        { LED_XY( 4,  1), LED_DIRECTION_EAST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 4,  2), LED_DIRECTION_EAST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+
+        { LED_XY( 4,  3), LED_DIRECTION_EAST  | LED_FUNCTION_MODE },
+        { LED_XY( 4,  4), LED_DIRECTION_EAST  | LED_FUNCTION_MODE },
+        { LED_XY( 4,  5), LED_DIRECTION_EAST  | LED_FUNCTION_MODE },
+        { LED_XY( 4,  6), LED_DIRECTION_EAST  | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 4,  7), LED_DIRECTION_EAST  | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 4,  8), LED_DIRECTION_EAST  | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
+        { LED_XY( 4,  9), LED_DIRECTION_EAST  | LED_FUNCTION_MODE },
+        { LED_XY( 4, 10), LED_DIRECTION_EAST  | LED_FUNCTION_MODE },
+        { LED_XY( 4, 11), LED_DIRECTION_EAST  | LED_FUNCTION_MODE },
+
+        { LED_XY( 4, 12), LED_DIRECTION_EAST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+        { LED_XY( 4, 13), LED_DIRECTION_EAST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+
+        { LED_XY( 3, 14), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
+};
+#else
 static const ledConfig_t ledConfigs[WS2811_LED_STRIP_LENGTH] = {
         { LED_XY( 9,  9), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
         { LED_XY(10, 10), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
@@ -128,6 +171,7 @@ static const ledConfig_t ledConfigs[WS2811_LED_STRIP_LENGTH] = {
         { LED_XY( 1, 10), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY },
         { LED_XY( 2,  9), LED_DIRECTION_SOUTH | LED_FUNCTION_MODE | LED_FUNCTION_BATTERY }
 };
+#endif
 
 // grid offsets
 uint8_t highestYValueForNorth;
@@ -239,7 +283,7 @@ void applyQuadrantColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, co
 {
     switch (quadrant) {
         case QUADRANT_NORTH_EAST:
-            if (LED_Y(ledConfig) < highestYValueForNorth && LED_X(ledConfig) >= lowestXValueForEast) {
+            if (LED_Y(ledConfig) <= highestYValueForNorth && LED_X(ledConfig) >= lowestXValueForEast) {
                 setLedColor(ledIndex, color);
             }
             return;
@@ -251,13 +295,13 @@ void applyQuadrantColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, co
             return;
 
         case QUADRANT_SOUTH_WEST:
-            if (LED_Y(ledConfig) >= lowestYValueForSouth && LED_X(ledConfig) < highestXValueForWest) {
+            if (LED_Y(ledConfig) >= lowestYValueForSouth && LED_X(ledConfig) <= highestXValueForWest) {
                 setLedColor(ledIndex, color);
             }
             return;
 
         case QUADRANT_NORTH_WEST:
-            if (LED_Y(ledConfig) < highestYValueForNorth && LED_X(ledConfig) < highestXValueForWest) {
+            if (LED_Y(ledConfig) <= highestYValueForNorth && LED_X(ledConfig) <= highestXValueForWest) {
                 setLedColor(ledIndex, color);
             }
             return;
@@ -503,7 +547,9 @@ void determineLedStripDimensions()
 void determineOrientationLimits(void)
 {
     highestYValueForNorth = (ledGridHeight / 2) - 1;
-    highestYValueForNorth &= ~(1 << 0); // make even
+    if (highestYValueForNorth > 1) { // support small grid (e.g. gridwidth 5)
+        highestYValueForNorth &= ~(1 << 0); // make even
+    }
 
     lowestYValueForSouth = (ledGridHeight / 2) - 1;
     if (lowestYValueForSouth & 1) {
@@ -511,7 +557,9 @@ void determineOrientationLimits(void)
     }
 
     highestXValueForWest = (ledGridWidth / 2) - 1;
-    highestXValueForWest &= ~(1 << 0); // make even
+    if (highestXValueForWest > 1) { // support small grid (e.g. gridwidth 5)
+        highestXValueForWest &= ~(1 << 0); // make even
+    }
 
     lowestXValueForEast = (ledGridWidth / 2) - 1;
     if (lowestXValueForEast & 1) {

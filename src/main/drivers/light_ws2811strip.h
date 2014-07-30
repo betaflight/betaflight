@@ -17,7 +17,11 @@
 
 #pragma once
 
+#ifdef USE_ALTERNATE_LED_LAYOUT
+#define WS2811_LED_STRIP_LENGTH 31
+#else
 #define WS2811_LED_STRIP_LENGTH 28
+#endif
 #define WS2811_BITS_PER_LED 24
 #define WS2811_DELAY_BUFFER_LENGTH 42 // for 50us delay
 
