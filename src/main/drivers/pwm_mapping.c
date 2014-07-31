@@ -203,6 +203,35 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
+#ifdef CJMCU
+static const uint16_t multiPPM[] = {
+    PWM1 | (TYPE_IP << 8), // PPM input
+    PWM2 | (TYPE_M << 8),
+    PWM3 | (TYPE_M << 8),
+    PWM4 | (TYPE_M << 8),
+    PWM5 | (TYPE_M << 8),
+    0xFF
+};
+
+static const uint16_t multiPWM[] = {
+    PWM1 | (TYPE_IP << 8), // PPM input
+    PWM2 | (TYPE_M << 8),
+    PWM3 | (TYPE_M << 8),
+    PWM4 | (TYPE_M << 8),
+    PWM5 | (TYPE_M << 8),
+    0xFF
+};
+
+static const uint16_t airPPM[] = {
+        0xFF
+};
+
+static const uint16_t airPWM[] = {
+        0xFF
+};
+
+#endif
+
 static const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,

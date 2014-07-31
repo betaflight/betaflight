@@ -32,7 +32,7 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D
+VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
@@ -138,9 +138,6 @@ COMMON_SRC	 = build_config.c \
 		   drivers/sound_beeper.c \
 		   drivers/system.c \
 		   io/beeper.c \
-		   io/gps.c \
-		   io/gps_conversion.c \
-		   io/ledstrip.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
 		   io/serial.c \
@@ -148,25 +145,29 @@ COMMON_SRC	 = build_config.c \
 		   io/serial_msp.c \
 		   io/statusindicator.c \
 		   rx/rx.c \
-		   rx/msp.c \
 		   rx/pwm.c \
-		   rx/sbus.c \
-		   rx/sumd.c \
-		   rx/spektrum.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
 		   sensors/acceleration.c \
-		   sensors/barometer.c \
-		   sensors/compass.c \
 		   sensors/gyro.c \
 		   sensors/initialisation.c \
-		   sensors/sonar.c \
+		   $(CMSIS_SRC) \
+		   $(DEVICE_STDPERIPH_SRC)
+
+HIGHEND_SRC  = io/gps.c \
+		   io/gps_conversion.c \
+		   io/ledstrip.c \
+		   rx/msp.c \
+		   rx/sbus.c \
+		   rx/sumd.c \
+		   rx/spektrum.c \
 		   telemetry/telemetry.c \
 		   telemetry/frsky.c \
 		   telemetry/hott.c \
 		   telemetry/msp.c \
-		   $(CMSIS_SRC) \
-		   $(DEVICE_STDPERIPH_SRC)
+		   sensors/sonar.c \
+		   sensors/barometer.c \
+		   sensors/compass.c
 
 NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_adxl345.c \
@@ -196,6 +197,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
+		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
 OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
@@ -215,6 +217,24 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/pwm_rssi.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_softserial.c \
+		   drivers/serial_uart.c \
+		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sound_beeper_stm32f10x.c \
+		   drivers/system_stm32f10x.c \
+		   drivers/timer.c \
+		   $(HIGHEND_SRC) \
+		   $(COMMON_SRC)
+
+CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
+		   drivers/adc.c \
+		   drivers/adc_stm32f10x.c \
+		   drivers/bus_i2c_stm32f10x.c \
+		   drivers/bus_spi.c \
+		   drivers/gpio_stm32f10x.c \
+		   drivers/pwm_mapping.c \
+		   drivers/pwm_output.c \
+		   drivers/pwm_rssi.c \
+		   drivers/pwm_rx.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   drivers/sound_beeper_stm32f10x.c \
@@ -242,6 +262,7 @@ CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
+		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
 STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
@@ -273,6 +294,7 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   vcp/usb_pwr.c
 
 NAZE32PRO_SRC	 = $(STM32F30x_COMMON_SRC) \
+		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
 STM32F3DISCOVERY_COMMON_SRC	 = $(STM32F30x_COMMON_SRC) \
@@ -287,9 +309,11 @@ STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_l3g4200d.c \
+		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
 CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
+		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
 # Search path and source files for the ST stdperiph library
