@@ -58,6 +58,8 @@
 
 #include "platform.h"
 
+#ifdef TELEMETRY
+
 #include "common/axis.h"
 
 #include "drivers/system.h"
@@ -446,3 +448,4 @@ void handleHoTTTelemetry(void)
 uint32_t getHoTTTelemetryProviderBaudRate(void) {
     return HOTT_BAUDRATE;
 }
+#endif

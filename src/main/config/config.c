@@ -383,7 +383,9 @@ void activateConfig(void)
     generateThrottleCurve(&currentProfile.controlRateConfig, &masterConfig.escAndServoConfig);
 
     useGyroConfig(&masterConfig.gyroConfig);
+#ifdef TELEMETRY
     useTelemetryConfig(&masterConfig.telemetryConfig);
+#endif
     setPIDController(currentProfile.pidController);
 #ifdef GPS
     gpsUseProfile(&currentProfile.gpsProfile);

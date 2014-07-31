@@ -350,13 +350,17 @@ functionConstraint_t *getConfiguredFunctionConstraint(serialPortFunction_e funct
             configuredFunctionConstraint.maxBaudRate = configuredFunctionConstraint.minBaudRate;
             break;
 
+#ifdef TELEMETRY
         case FUNCTION_TELEMETRY:
             configuredFunctionConstraint.minBaudRate = getTelemetryProviderBaudRate();
             configuredFunctionConstraint.maxBaudRate = configuredFunctionConstraint.minBaudRate;
             break;
+#endif
+#ifdef SERIAL_RX
         case FUNCTION_SERIAL_RX:
             updateSerialRxFunctionConstraint(&configuredFunctionConstraint);
             break;
+#endif
         case FUNCTION_GPS:
             configuredFunctionConstraint.maxBaudRate = serialConfig->gps_baudrate;
             break;
@@ -501,6 +505,7 @@ serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbac
         case SERIAL_PORT_USART2:
             serialPort = uartOpen(USART2, callback, baudRate, mode, inversion);
             break;
+#ifdef SOFT_SERIAL
         case SERIAL_PORT_SOFTSERIAL1:
             serialPort = openSoftSerial(SOFTSERIAL1, callback, baudRate, inversion);
             serialSetMode(serialPort, mode);
@@ -508,6 +513,9 @@ serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbac
         case SERIAL_PORT_SOFTSERIAL2:
             serialPort = openSoftSerial(SOFTSERIAL2, callback, baudRate, inversion);
             serialSetMode(serialPort, mode);
+            break;
+#endif
+        default:
             break;
     }
 

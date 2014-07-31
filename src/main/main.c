@@ -232,13 +232,17 @@ void init(void)
     }
 #endif
 
+#ifdef LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
         ws2811LedStripInit();
         ledStripInit();
     }
+#endif
 
+#ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY))
         initTelemetry();
+#endif
 
     previousTime = micros();
 

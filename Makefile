@@ -146,9 +146,11 @@ COMMON_SRC	 = build_config.c \
 		   io/statusindicator.c \
 		   rx/rx.c \
 		   rx/pwm.c \
+		   rx/msp.c \
+		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
-		   sensors/acceleration.c \
+		   sensors/compass.c \
 		   sensors/gyro.c \
 		   sensors/initialisation.c \
 		   $(CMSIS_SRC) \
@@ -157,7 +159,6 @@ COMMON_SRC	 = build_config.c \
 HIGHEND_SRC  = io/gps.c \
 		   io/gps_conversion.c \
 		   io/ledstrip.c \
-		   rx/msp.c \
 		   rx/sbus.c \
 		   rx/sumd.c \
 		   rx/spektrum.c \
@@ -166,8 +167,7 @@ HIGHEND_SRC  = io/gps.c \
 		   telemetry/hott.c \
 		   telemetry/msp.c \
 		   sensors/sonar.c \
-		   sensors/barometer.c \
-		   sensors/compass.c
+		   sensors/barometer.c
 
 NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_adxl345.c \
@@ -228,9 +228,11 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
+		   drivers/accgyro_mpu6050.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f10x.c \
+		   drivers/light_led_stm32f10x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rssi.c \

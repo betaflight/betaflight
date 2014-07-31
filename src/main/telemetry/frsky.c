@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#ifdef TELEMETRY
+
 #include "common/maths.h"
 #include "common/axis.h"
 
@@ -383,3 +385,4 @@ void handleFrSkyTelemetry(void)
 uint32_t getFrSkyTelemetryProviderBaudRate(void) {
     return FRSKY_BAUDRATE;
 }
+#endif

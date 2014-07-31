@@ -40,10 +40,15 @@
 #define BEEPER
 #define LED0
 #define LED1
-#define GPS
 
 // #define SOFT_I2C // enable to test software i2c
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
+
+#define GPS
+#define LED_STRIP
+#define TELEMETRY
+#define SOFT_SERIAL
+#define SERIAL_RX

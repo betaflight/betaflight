@@ -25,6 +25,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "platform.h"
+
+#ifdef TELEMETRY
+
 #include "drivers/serial.h"
 #include "telemetry/telemetry.h"
 #include "io/serial_msp.h"
@@ -37,3 +41,4 @@ void handleMSPTelemetry(void)
 {
     sendMspTelemetry();
 }
+#endif

@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef TELEMETRY
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/serial.h"
@@ -186,3 +188,4 @@ void handleTelemetry(void)
         handleMSPTelemetry();
     }
 }
+#endif

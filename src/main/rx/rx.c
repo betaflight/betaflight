@@ -79,6 +79,7 @@ void useRxConfig(rxConfig_t *rxConfigToUse)
     rxConfig = rxConfigToUse;
 }
 
+#ifdef SERIAL_RX
 void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintToUpdate)
 {
     switch (rxConfig->serialrx_provider) {
@@ -94,6 +95,7 @@ void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintTo
             break;
     }
 }
+#endif
 
 void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 {
@@ -106,9 +108,11 @@ void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 
     failsafe = initialFailsafe;
 
+#ifdef SERIAL_RX
     if (feature(FEATURE_RX_SERIAL)) {
         serialRxInit(rxConfig);
     }
+#endif
 
     if (feature(FEATURE_RX_MSP)) {
         rxMspInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
@@ -119,6 +123,7 @@ void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
     }
 }
 
+#ifdef SERIAL_RX
 void serialRxInit(rxConfig_t *rxConfig)
 {
     bool enabled = false;
@@ -154,6 +159,7 @@ bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
     }
     return false;
 }
+#endif
 
 uint8_t calculateChannelRemapping(uint8_t *channelMap, uint8_t channelMapEntryCount, uint8_t channelToRemap)
 {
@@ -171,10 +177,12 @@ void updateRx(void)
 {
     rcDataReceived = false;
 
+#ifdef SERIAL_RX
     // calculate rc stuff from serial-based receivers (spek/sbus)
     if (feature(FEATURE_RX_SERIAL)) {
         rcDataReceived = isSerialRxFrameComplete(rxConfig);
     }
+#endif
 
     if (feature(FEATURE_RX_MSP)) {
         rcDataReceived = rxMspFrameComplete();

@@ -263,7 +263,9 @@ void annexCode(void)
         updateWarningLed(currentTime);
     }
 
+#ifdef TELEMETRY
     checkTelemetryState();
+#endif
 
 #ifdef LEDRING
     if (feature(FEATURE_LED_RING)) {
@@ -642,11 +644,15 @@ void loop(void)
         writeMotors();
     }
 
+#ifdef TELEMETRY
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
         handleTelemetry();
     }
+#endif
 
+#ifdef LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
         updateLedStrip();
     }
+#endif
 }
