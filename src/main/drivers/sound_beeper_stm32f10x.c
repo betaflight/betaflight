@@ -39,8 +39,13 @@ void initBeeperHardware(void)
 
     RCC_APB2PeriphClockCmd(BEEP_PERIPHERAL, ENABLE);
 
+#ifdef NAZE
+    // Hack - naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
+
     if (hse_value == 12000000 && gpio_setup.cfg.mode == Mode_Out_OD)
         gpio_setup.cfg.mode = Mode_Out_PP;
+#endif
+
     gpioInit(gpio_setup.gpio, &gpio_setup.cfg);
 
 #endif
