@@ -36,12 +36,25 @@
 #define DMP_MEM_START_ADDR 0x6E
 #define DMP_MEM_R_W 0x6F
 
-#define MPU_RA_XG_OFFS_TC       0x00    //[7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD#define MPU_RA_YG_OFFS_TC       0x01    //[7] PWR_MODE, [6:1] YG_OFFS_TC, [0] OTP_BNK_VLD#define MPU_RA_ZG_OFFS_TC       0x02    //[7] PWR_MODE, [6:1] ZG_OFFS_TC, [0] OTP_BNK_VLD#define MPU_RA_X_FINE_GAIN      0x03    //[7:0] X_FINE_GAIN#define MPU_RA_Y_FINE_GAIN      0x04    //[7:0] Y_FINE_GAIN#define MPU_RA_Z_FINE_GAIN      0x05    //[7:0] Z_FINE_GAIN#define MPU_RA_XA_OFFS_H        0x06    //[15:0] XA_OFFS#define MPU_RA_XA_OFFS_L_TC     0x07
-#define MPU_RA_YA_OFFS_H        0x08    //[15:0] YA_OFFS#define MPU_RA_YA_OFFS_L_TC     0x09
-#define MPU_RA_ZA_OFFS_H        0x0A    //[15:0] ZA_OFFS#define MPU_RA_ZA_OFFS_L_TC     0x0B
-#define MPU_RA_PRODUCT_ID       0x0C    // Product ID Register#define MPU_RA_XG_OFFS_USRH     0x13    //[15:0] XG_OFFS_USR#define MPU_RA_XG_OFFS_USRL     0x14
-#define MPU_RA_YG_OFFS_USRH     0x15    //[15:0] YG_OFFS_USR#define MPU_RA_YG_OFFS_USRL     0x16
-#define MPU_RA_ZG_OFFS_USRH     0x17    //[15:0] ZG_OFFS_USR#define MPU_RA_ZG_OFFS_USRL     0x18
+#define MPU_RA_XG_OFFS_TC       0x00    //[7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD
+#define MPU_RA_YG_OFFS_TC       0x01    //[7] PWR_MODE, [6:1] YG_OFFS_TC, [0] OTP_BNK_VLD
+#define MPU_RA_ZG_OFFS_TC       0x02    //[7] PWR_MODE, [6:1] ZG_OFFS_TC, [0] OTP_BNK_VLD
+#define MPU_RA_X_FINE_GAIN      0x03    //[7:0] X_FINE_GAIN
+#define MPU_RA_Y_FINE_GAIN      0x04    //[7:0] Y_FINE_GAIN
+#define MPU_RA_Z_FINE_GAIN      0x05    //[7:0] Z_FINE_GAIN
+#define MPU_RA_XA_OFFS_H        0x06    //[15:0] XA_OFFS
+#define MPU_RA_XA_OFFS_L_TC     0x07
+#define MPU_RA_YA_OFFS_H        0x08    //[15:0] YA_OFFS
+#define MPU_RA_YA_OFFS_L_TC     0x09
+#define MPU_RA_ZA_OFFS_H        0x0A    //[15:0] ZA_OFFS
+#define MPU_RA_ZA_OFFS_L_TC     0x0B
+#define MPU_RA_PRODUCT_ID       0x0C    // Product ID Register
+#define MPU_RA_XG_OFFS_USRH     0x13    //[15:0] XG_OFFS_USR
+#define MPU_RA_XG_OFFS_USRL     0x14
+#define MPU_RA_YG_OFFS_USRH     0x15    //[15:0] YG_OFFS_USR
+#define MPU_RA_YG_OFFS_USRL     0x16
+#define MPU_RA_ZG_OFFS_USRH     0x17    //[15:0] ZG_OFFS_USR
+#define MPU_RA_ZG_OFFS_USRL     0x18
 #define MPU_RA_SMPLRT_DIV       0x19
 #define MPU_RA_CONFIG           0x1A
 #define MPU_RA_GYRO_CONFIG      0x1B
@@ -112,7 +125,8 @@
 #define MPU_RA_FIFO_R_W         0x74
 #define MPU_RA_WHO_AM_I         0x75
 
-#define MPU6050_SMPLRT_DIV      0       // 8000Hz
+#define MPU6050_SMPLRT_DIV      0       // 8000Hz
+
 #define MPU6050_LPF_256HZ       0
 #define MPU6050_LPF_188HZ       1
 #define MPU6050_LPF_98HZ        2

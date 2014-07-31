@@ -83,6 +83,14 @@ pidProfile_t *pidProfile;
 barometerConfig_t *barometerConfig;
 accDeadband_t *accDeadband;
 
+void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, accDeadband_t *initialAccDeadband)
+{
+    imuRuntimeConfig = initialImuRuntimeConfig;
+    pidProfile = initialPidProfile;
+    barometerConfig = intialBarometerConfig;
+    accDeadband = initialAccDeadband;
+}
+
 void imuInit()
 {
     smallAngle = lrintf(acc_1G * cosf(RAD * imuRuntimeConfig->small_angle));
@@ -93,14 +101,6 @@ void imuInit()
 void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
     throttleAngleScale = (1800.0f / M_PI) * (900.0f / throttle_correction_angle);
-}
-
-void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, accDeadband_t *initialAccDeadband)
-{
-    imuRuntimeConfig = initialImuRuntimeConfig;
-    pidProfile = initialPidProfile;
-    barometerConfig = intialBarometerConfig;
-    accDeadband = initialAccDeadband;
 }
 
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfiguration)
