@@ -231,6 +231,7 @@ CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
+		   drivers/compass_hmc5883l.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/light_led_stm32f10x.c \
 		   drivers/pwm_mapping.c \

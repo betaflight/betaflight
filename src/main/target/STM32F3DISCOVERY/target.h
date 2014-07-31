@@ -42,6 +42,8 @@
 #define LED0
 #define LED1
 
+#define I2C_DEVICE (I2CDEV_1)
+
 #define SENSORS_SET (SENSOR_ACC)
 
 #define GPS

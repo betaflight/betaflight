@@ -30,6 +30,8 @@
 #define GYRO
 #define ACC
 
+#define I2C_DEVICE (I2CDEV_1)
+
 #define SENSORS_SET (SENSOR_ACC)
 
 #define GPS

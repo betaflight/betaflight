@@ -126,7 +126,7 @@ void systemInit(bool overclock)
 
 #ifndef CC3D
     // Configure the rest of the stuff
-    i2cInit(I2CDEV_2);
+    i2cInit(I2C_DEVICE);
 #endif
 
     // sleep for 100ms

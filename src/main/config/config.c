@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "platform.h"
+
 #include "build_config.h"
 
 #include "common/axis.h"
@@ -56,6 +57,8 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#define BRUSHLESS_MOTORS_PWM_RATE 400
 
 void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse,
@@ -214,6 +217,9 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerConfiguration = MULTITYPE_QUADX;
     featureClearAll();
+#ifdef CJMCU
+    featureSet(FEATURE_RX_PPM);
+#endif
     featureSet(FEATURE_VBAT);
 
     // global settings
@@ -259,7 +265,12 @@ static void resetConf(void)
     // Motor/ESC/Servo
     resetEscAndServoConfig(&masterConfig.escAndServoConfig);
     resetFlight3DConfig(&masterConfig.flight3DConfig);
-    masterConfig.motor_pwm_rate = 400;
+
+#ifdef BRUSHED_MOTORS
+    masterConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
+#else
+    masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+#endif
     masterConfig.servo_pwm_rate = 50;
 
 #ifdef GPS
