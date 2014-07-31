@@ -26,7 +26,7 @@ typedef struct imuRuntimeConfig_s {
     uint8_t acc_unarmedcal;
     float gyro_cmpf_factor;
     float gyro_cmpfm_factor;
-    int16_t small_angle;
+    int8_t small_angle;
 } imuRuntimeConfig_t;
 
 void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, accDeadband_t *initialAccDeadband);
