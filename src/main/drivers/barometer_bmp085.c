@@ -75,7 +75,9 @@ typedef struct {
 #define E_SENSOR_NOT_DETECTED   (char) 0
 #define BMP085_PROM_START__ADDR 0xaa
 #define BMP085_PROM_DATA__LEN   22
-#define BMP085_T_MEASURE        0x2E                // temperature measurent#define BMP085_P_MEASURE        0x34                // pressure measurement#define BMP085_CTRL_MEAS_REG    0xF4
+#define BMP085_T_MEASURE        0x2E                // temperature measurent
+#define BMP085_P_MEASURE        0x34                // pressure measurement
+#define BMP085_CTRL_MEAS_REG    0xF4
 #define BMP085_ADC_OUT_MSB_REG  0xF6
 #define BMP085_ADC_OUT_LSB_REG  0xF7
 #define BMP085_CHIP_ID__POS     0
@@ -96,7 +98,10 @@ typedef struct {
 #define BMP085_GET_BITSLICE(regvar, bitname) (regvar & bitname##__MSK) >> bitname##__POS
 #define BMP085_SET_BITSLICE(regvar, bitname, val) (regvar & ~bitname##__MSK) | ((val<<bitname##__POS)&bitname##__MSK)
 
-#define SMD500_PARAM_MG      3038        //calibration parameter#define SMD500_PARAM_MH     -7357        //calibration parameter#define SMD500_PARAM_MI      3791        //calibration parameter
+#define SMD500_PARAM_MG      3038        //calibration parameter
+#define SMD500_PARAM_MH     -7357        //calibration parameter
+#define SMD500_PARAM_MI      3791        //calibration parameter
+
 static bmp085_t bmp085 = { { 0, } };
 static bool bmp085InitDone = false;
 static uint16_t bmp085_ut;  // static result of temperature measurement

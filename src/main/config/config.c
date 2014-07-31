@@ -76,7 +76,8 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 
 // use the last flash pages for storage
 static uint32_t flashWriteAddress = (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG));
-master_t masterConfig;      // master config struct with data independent from profiles
+
+master_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
 static const uint8_t EEPROM_CONF_VERSION = 73;
@@ -404,7 +405,7 @@ void activateConfig(void)
     imuRuntimeConfig.gyro_cmpfm_factor = masterConfig.gyro_cmpfm_factor;
     imuRuntimeConfig.acc_lpf_factor = currentProfile.acc_lpf_factor;
     imuRuntimeConfig.acc_unarmedcal = currentProfile.acc_unarmedcal;;
-
+    imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
     configureImu(&imuRuntimeConfig, &currentProfile.pidProfile, &currentProfile.barometerConfig, &currentProfile.accDeadband);
 
