@@ -26,7 +26,6 @@
 #include "common/axis.h"
 
 #include "drivers/accgyro.h"
-#include "drivers/light_ledring.h"
 #include "drivers/light_led.h"
 
 #include "drivers/gpio.h"
@@ -266,17 +265,6 @@ void annexCode(void)
 #ifdef TELEMETRY
     checkTelemetryState();
 #endif
-
-#ifdef LEDRING
-    if (feature(FEATURE_LED_RING)) {
-        static uint32_t LEDTime;
-        if ((int32_t)(currentTime - LEDTime) >= 0) {
-            LEDTime = currentTime + 50000;
-            ledringState(f.ARMED, inclination.values.pitchDeciDegrees, inclination.values.rollDeciDegrees, heading);
-        }
-    }
-#endif
-
 
     handleSerial();
 
