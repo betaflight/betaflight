@@ -78,6 +78,11 @@ float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
 static void getEstimatedAttitude(void);
 
+imuRuntimeConfig_t *imuRuntimeConfig;
+pidProfile_t *pidProfile;
+barometerConfig_t *barometerConfig;
+accDeadband_t *accDeadband;
+
 void imuInit()
 {
     smallAngle = lrintf(acc_1G * cosf(RAD * imuRuntimeConfig->small_angle));
@@ -89,11 +94,6 @@ void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
     throttleAngleScale = (1800.0f / M_PI) * (900.0f / throttle_correction_angle);
 }
-
-imuRuntimeConfig_t *imuRuntimeConfig;
-pidProfile_t *pidProfile;
-barometerConfig_t *barometerConfig;
-accDeadband_t *accDeadband;
 
 void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, accDeadband_t *initialAccDeadband)
 {

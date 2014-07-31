@@ -187,7 +187,7 @@ const clivalue_t valueTable[] = {
     { "servo_pwm_rate", VAR_UINT16, &masterConfig.servo_pwm_rate, 50, 498 },
 
     { "retarded_arm", VAR_UINT8, &masterConfig.retarded_arm, 0, 1 },
-    { "small_angle", VAR_UINT8, &masterConfig.small_angle, 0, 90 },
+    { "small_angle", VAR_UINT8, &masterConfig.small_angle, 0, 180 },
 
     { "flaps_speed", VAR_UINT8, &masterConfig.airplaneConfig.flaps_speed, 0, 100 },
 
