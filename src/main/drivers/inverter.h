@@ -15,29 +15,15 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3 // PB3 (LED)
-#define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
-#define LED0
+#pragma once
 
-#define INVERTER_PIN Pin_2 // PB2 (BOOT1) used as inverter select GPIO
-#define INVERTER_GPIO GPIOB
-#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
-#define INVERTER_USART USART1
+#ifdef INVERTER
+#define INVERTER_OFF digitalLo(INVERTER_GPIO, INVERTER_PIN);
+#define INVERTER_ON digitalHi(INVERTER_GPIO, INVERTER_PIN);
+#else
+#define INVERTER_OFF ;
+#define INVERTER_ON ;
+#endif
 
-#define ACC
-#define GYRO
-#define INVERTER
+void initInverter(void);
 
-// #define SOFT_I2C // enable to test software i2c
-// #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
-// #define SOFT_I2C_PB67
-
-#define SENSORS_SET (SENSOR_ACC)
-
-#define GPS
-#define LED_STRIP
-#define TELEMETRY
-#define SOFT_SERIAL
-#define SERIAL_RX
-#define AUTOTUNE

@@ -25,6 +25,9 @@
 
 #include "drivers/system.h"
 
+#include "drivers/gpio.h"
+#include "drivers/inverter.h"
+
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
@@ -57,7 +60,8 @@ void sbusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstrai
 bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     int b;
-    sBusPort = openSerialPort(FUNCTION_SERIAL_RX, sbusDataReceive, SBUS_BAUDRATE, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_NOT_INVERTED);
+
+    sBusPort = openSerialPort(FUNCTION_SERIAL_RX, sbusDataReceive, SBUS_BAUDRATE, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_INVERTED);
 
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
         sbusChannelData[b] = 2 * (rxConfig->midrc - SBUS_OFFSET);

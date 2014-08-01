@@ -32,6 +32,11 @@
 #define BARO_GPIO   GPIOC
 #define BARO_PIN    Pin_13
 
+#define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INVERTER_GPIO GPIOB
+#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
+#define INVERTER_USART USART2
+
 #define GYRO
 #define ACC
 #define MAG
@@ -40,6 +45,7 @@
 #define BEEPER
 #define LED0
 #define LED1
+#define INVERTER
 
 #define I2C_DEVICE (I2CDEV_2)
 

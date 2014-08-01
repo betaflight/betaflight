@@ -184,6 +184,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/gpio_stm32f10x.c \
+		   drivers/inverter.c \
 		   drivers/light_led_stm32f10x.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f10x.c \
@@ -252,6 +253,7 @@ CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f10x.c \
+		   drivers/inverter.c \
 		   drivers/light_led_stm32f10x.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f10x.c \

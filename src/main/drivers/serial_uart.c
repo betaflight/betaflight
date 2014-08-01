@@ -28,6 +28,9 @@
 
 #include "build_config.h"
 
+#include "gpio.h"
+#include "inverter.h"
+
 #include "serial.h"
 #include "serial_uart.h"
 
@@ -63,6 +66,13 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     DMA_InitTypeDef DMA_InitStructure;
 
     uartPort_t *s = NULL;
+
+#ifdef INVERTER
+    if (inversion == SERIAL_INVERTED && USARTx == INVERTER_USART) {
+        // Enable hardware inverter if available.
+        INVERTER_ON;
+    }
+#endif
 
     if (USARTx == USART1) {
         s = serialUSART1(baudRate, mode);

@@ -24,6 +24,7 @@
 #include "gpio.h"
 #include "light_led.h"
 #include "sound_beeper.h"
+#include "inverter.h"
 #include "bus_i2c.h"
 #include "bus_spi.h"
 
@@ -112,6 +113,7 @@ void systemInit(bool overclock)
 
     ledInit();
     beeperInit();
+    initInverter();
 
     // Init cycle counter
     cycleCounterInit();
