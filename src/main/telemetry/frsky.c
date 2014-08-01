@@ -269,7 +269,7 @@ static void sendAmperage(void)
 static void sendFuelLevel(void)
 {
     sendDataHead(ID_FUEL_LEVEL);
-    serialize16((uint16_t)mAhdrawn);
+    serialize16((uint16_t)mAhDrawn);
 }
 
 static void sendHeading(void)
@@ -363,7 +363,8 @@ void handleFrSkyTelemetry(void)
 
         if (feature(FEATURE_VBAT)) {
             sendVoltage();
-            sendVoltageAmp();
+            sendAmperage();
+            sendFuelLevel();
         }
 
 #ifdef GPS
