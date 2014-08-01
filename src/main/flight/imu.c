@@ -406,8 +406,8 @@ int32_t calculateBaroPid(int32_t vel_tmp, float accZ_tmp, float accZ_old)
 
     // I
     errorAltitudeI += (pidProfile->I8[PIDVEL] * error);
-    errorAltitudeI = constrain(errorAltitudeI, -(8196 * 200), (8196 * 200));
-    newBaroPID += errorAltitudeI / 8196;     // I in range +/-200
+    errorAltitudeI = constrain(errorAltitudeI, -(8192 * 200), (8192 * 200));
+    newBaroPID += errorAltitudeI / 8192;     // I in range +/-200
 
     // D
     newBaroPID -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
