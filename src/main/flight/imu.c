@@ -214,9 +214,13 @@ static const float fc_acc = 0.5f / (M_PI * F_CUT_ACCZ);
 void acc_calc(uint32_t deltaT)
 {
     static int32_t accZoffset = 0;
-    static float accz_smooth;
+    static float accz_smooth = 0;
+    float dT;
     fp_angles_t rpy;
     t_fp_vector accel_ned;
+
+    // deltaT is measured in us ticks
+    dT = (float)deltaT * 1e-6f;
 
     // the accel values have to be rotated into the earth frame
     rpy.angles.roll = -(float)anglerad[AI_ROLL];
@@ -238,7 +242,7 @@ void acc_calc(uint32_t deltaT)
     } else
         accel_ned.V.Z -= acc_1G;
 
-    accz_smooth = accz_smooth + (deltaT / (fc_acc + deltaT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
+    accz_smooth = accz_smooth + (dT / (fc_acc + dT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
     // apply Deadband to reduce integration drift and vibration influence
     accSum[X] += applyDeadband(lrintf(accel_ned.V.X), accDeadband->xy);
