@@ -20,6 +20,9 @@
 #include <string.h>
 
 #include "platform.h"
+
+#include "build_config.h"
+
 #include "system.h"
 
 #include "sensors/sensors.h" // FIXME dependency into the main code
@@ -41,6 +44,7 @@ extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 #ifdef CC3D
 void adcInit(drv_adc_config_t *init) {
+    UNUSED(init);
 }
 #else
 void adcInit(drv_adc_config_t *init)

@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "system.h"
 #include "gpio.h"
 
@@ -52,7 +54,9 @@ static void beepInverted(bool onoff)
 
 void systemBeep(bool onoff)
 {
-#ifdef BEEPER
+#ifndef BEEPER
+    UNUSED(onoff);
+#else
     systemBeepPtr(onoff);
 #endif
 }
