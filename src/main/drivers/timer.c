@@ -87,7 +87,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #define MAX_TIMERS 4 // TIM1..TIM4
 
-static const TIM_TypeDef *timers[MAX_TIMERS] = {
+static const TIM_TypeDef const *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4
 };
 
@@ -114,7 +114,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #define MAX_TIMERS 4 // TIM1..TIM4
 
-static const TIM_TypeDef *timers[MAX_TIMERS] = {
+static const TIM_TypeDef const *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4
 };
 
@@ -142,7 +142,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #define MAX_TIMERS 7
 
-static const TIM_TypeDef *timers[MAX_TIMERS] = {
+static const TIM_TypeDef const *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4, TIM8, TIM16, TIM17
 };
 
@@ -179,7 +179,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #define MAX_TIMERS 8
 
-static const TIM_TypeDef *timers[MAX_TIMERS] = {
+static const TIM_TypeDef const *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4, TIM8, TIM15, TIM16, TIM17
 };
 
@@ -210,7 +210,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #define MAX_TIMERS 7
 
-static const TIM_TypeDef *timers[MAX_TIMERS] = {
+static const TIM_TypeDef const *timers[MAX_TIMERS] = {
     TIM1, TIM2, TIM3, TIM4, TIM15, TIM16, TIM17
 };
 
@@ -222,7 +222,7 @@ static const TIM_TypeDef *timers[MAX_TIMERS] = {
 
 
 #define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
-static const uint16_t channels[CC_CHANNELS_PER_TIMER] = {
+static const uint16_t const channels[CC_CHANNELS_PER_TIMER] = {
     TIM_Channel_1, TIM_Channel_2, TIM_Channel_3, TIM_Channel_4
 };
 
