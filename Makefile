@@ -192,6 +192,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rx.c \
+		   drivers/pwm_rssi.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \

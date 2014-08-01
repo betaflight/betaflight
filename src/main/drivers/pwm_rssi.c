@@ -46,6 +46,7 @@ static rssiInputPort_t rssiInputPort;
 
 static void pwmRssiCallback(uint8_t reference, captureCompare_t capture)
 {
+    UNUSED(reference);
     const timerHardware_t *timerHardware = rssiInputPort.timerHardware;
 
     if (rssiInputPort.state == 0) {
