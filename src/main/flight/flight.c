@@ -76,10 +76,12 @@ void resetErrorGyro(void)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
+#ifdef AUTOTUNE
 bool shouldAutotune(void)
 {
     return f.ARMED && f.AUTOTUNE_MODE;
 }
+#endif
 
 static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
@@ -109,9 +111,12 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
             errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #endif
+
+#ifdef AUTOTUNE
             if (shouldAutotune()) {
                 errorAngle = autotune(rcAliasToAngleIndexMap[axis], &inclination, errorAngle);
             }
+#endif
 
             if (f.ANGLE_MODE) {
                 // it's the ANGLE mode - control is angle based, so control loop is needed
@@ -186,9 +191,11 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
 #endif
 
+#ifdef AUTOTUNE
             if (shouldAutotune()) {
                 errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
             }
+#endif
 
             PTermACC = errorAngle * pidProfile->P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
             PTermACC = constrain(PTermACC, -pidProfile->D8[PIDLEVEL] * 5, +pidProfile->D8[PIDLEVEL] * 5);
@@ -259,9 +266,12 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #endif
+
+#ifdef AUTOTUNE
             if (shouldAutotune()) {
                 errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
             }
+#endif
 
             if (!f.ANGLE_MODE) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
                 AngleRateTmp = ((int32_t)(controlRateConfig->rollPitchRate + 27) * rcCommand[axis]) >> 4;

@@ -127,7 +127,6 @@ COMMON_SRC	 = build_config.c \
 		   common/typeconversion.c \
 		   main.c \
 		   mw.c \
-		   flight/autotune.c \
 		   flight/altitudehold.c \
 		   flight/failsafe.c \
 		   flight/flight.c \
@@ -156,7 +155,8 @@ COMMON_SRC	 = build_config.c \
 		   $(CMSIS_SRC) \
 		   $(DEVICE_STDPERIPH_SRC)
 
-HIGHEND_SRC  = io/gps.c \
+HIGHEND_SRC  = flight/autotune.c \
+		   io/gps.c \
 		   io/gps_conversion.c \
 		   io/ledstrip.c \
 		   rx/sbus.c \

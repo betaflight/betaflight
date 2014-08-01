@@ -20,6 +20,10 @@
 #include <string.h>
 #include <math.h>
 
+#include "platform.h"
+
+#ifdef AUTOTUNE
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -384,3 +388,4 @@ bool havePidsBeenUpdatedByAutotune(void)
     return targetAngle != 0;
 }
 
+#endif

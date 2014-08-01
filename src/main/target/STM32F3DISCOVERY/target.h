@@ -51,3 +51,4 @@
 #define TELEMETRY
 #define SOFT_SERIAL
 #define SERIAL_RX
+#define AUTOTUNE

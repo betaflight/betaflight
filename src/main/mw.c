@@ -100,6 +100,8 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
     saveAndReloadCurrentProfileToCurrentProfileSlot();
 }
 
+#ifdef AUTOTUNE
+
 void updateAutotuneState(void)
 {
     static bool landedAfterAutoTuning = false;
@@ -134,6 +136,7 @@ void updateAutotuneState(void)
         landedAfterAutoTuning = true;
     }
 }
+#endif
 
 bool isCalibrating()
 {
@@ -590,7 +593,10 @@ void loop(void)
 #ifdef BARO
         haveProcessedAnnexCodeOnce = true;
 #endif
+
+#ifdef AUTOTUNE
         updateAutotuneState();
+#endif
 
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {
