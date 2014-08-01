@@ -20,6 +20,8 @@
 #include <stdint.h>
 
 #include <platform.h>
+
+#ifdef LED_STRIP
 #include <common/maths.h>
 
 #include "drivers/light_ws2811strip.h"
@@ -522,3 +524,4 @@ void ledStripInit(void)
     determineLedStripDimensions();
     determineOrientationLimits();
 }
+#endif
