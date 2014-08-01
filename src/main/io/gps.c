@@ -1040,15 +1040,6 @@ static uint32_t grab_fields(char *src, uint8_t mult)
     return tmp;
 }
 
-static uint8_t hex_c(uint8_t n)
-{                               // convert '0'..'9','A'..'F' to 0..15
-    n -= '0';
-    if (n > 9)
-        n -= 7;
-    n &= 0x0F;
-    return n;
-}
-
 /* This is a light implementation of a GPS frame decoding
    This should work with most of modern GPS devices configured to output NMEA frames.
    It assumes there are some NMEA GGA frames to decode on the serial bus
@@ -1070,16 +1061,16 @@ static uint8_t hex_c(uint8_t n)
 
 static bool gpsNewFrameNMEA(char c)
 {
-    typedef struct gpsdata_t {
+    typedef struct gpsdata_s {
         int32_t latitude;
         int32_t longitude; 
         uint8_t numSat;
         uint16_t altitude;
         uint16_t speed;
         uint16_t ground_course;
-    };
+    } gpsdata_t;
     
-    static  gpsdata_t gps_Msg;
+    static gpsdata_t gps_Msg;
 
     uint8_t frameOK = 0;
     static uint8_t param = 0, offset = 0, parity = 0;
