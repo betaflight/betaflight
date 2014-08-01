@@ -338,16 +338,15 @@ SIZE		 = arm-none-eabi-size
 ifeq ($(DEBUG),GDB)
 OPTIMIZE	 = -O0
 LTO_FLAGS	 = $(OPTIMIZE)
-SPEC_FLAGS   =
 else
 OPTIMIZE	 = -Os
-LTO_FLAGS	 = $(OPTIMIZE) -flto -fuse-linker-plugin
-SPEC_FLAGS   = --specs=nano.specs
+LTO_FLAGS	 = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif
 
 DEBUG_FLAGS	 = -ggdb3
 
 CFLAGS		 = $(ARCH_FLAGS) \
+		   $(LTO_FLAGS) \
 		   $(addprefix -D,$(OPTIONS)) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		   $(DEBUG_FLAGS) \
@@ -359,24 +358,24 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   -DUSE_STDPERIPH_DRIVER \
 		   $(TARGET_FLAGS) \
 		   -D'__FORKNAME__="$(FORKNAME)"' \
-		   -save-temps=obj \
-		   $(LTO_FLAGS)
+		   -save-temps=obj
+
 
 ASFLAGS		 = $(ARCH_FLAGS) \
 		   -x assembler-with-cpp \
 		   $(addprefix -I,$(INCLUDE_DIRS))
 
-# XXX Map/crossref output?
-LDFLAGS		 = -T$(LD_SCRIPT) \
+LDFLAGS		 = -lm \
+		   -nostartfiles \
+		   --specs=nano.specs \
+		   -lc \
+		   -lnosys \
 		   $(ARCH_FLAGS) \
+		   $(LTO_FLAGS) \
 		   $(DEBUG_FLAGS) \
 		   -static \
-		   -nostartfiles \
 		   -Wl,-gc-sections,-Map,$(TARGET_MAP) \
-		   -lnosys \
-		   -lm \
-		   $(LTO_FLAGS) \
-		   $(SPEC_FLAGS)
+		   -T$(LD_SCRIPT)
 
 ###############################################################################
 # No user-serviceable parts below
