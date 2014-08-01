@@ -113,7 +113,9 @@ void systemInit(bool overclock)
 
     ledInit();
     beeperInit();
+#ifdef INVERTER
     initInverter();
+#endif
 
     // Init cycle counter
     cycleCounterInit();

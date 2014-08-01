@@ -20,13 +20,14 @@
 
 #include "platform.h"
 
+#ifdef INVERTER
+
 #include "gpio.h"
 
 #include "inverter.h"
 
 void initInverter(void)
 {
-#ifdef INVERTER
     struct {
         GPIO_TypeDef *gpio;
         gpio_config_t cfg;
@@ -38,6 +39,6 @@ void initInverter(void)
     RCC_APB2PeriphClockCmd(INVERTER_PERIPHERAL, ENABLE);
 
     gpioInit(gpio_setup.gpio, &gpio_setup.cfg);
+}
 
 #endif
-}
