@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include "platform.h"
+#include "build_config.h"
 
 #include "gpio.h"
 #include "timer.h"
@@ -129,11 +130,13 @@ static void ppmInit(void)
 
 static void ppmOverflowCallback(uint8_t port, captureCompare_t capture)
 {
+    UNUSED(port);
     ppmDev.largeCounter += capture;
 }
 
 static void ppmEdgeCallback(uint8_t port, captureCompare_t capture)
 {
+    UNUSED(port);
     int32_t i;
 
     /* Shift the last measurement out */
@@ -212,12 +215,12 @@ static void ppmEdgeCallback(uint8_t port, captureCompare_t capture)
 static void pwmEdgeCallback(uint8_t port, captureCompare_t capture)
 {
     pwmInputPort_t *pwmInputPort = &pwmInputPorts[port];
-    const timerHardware_t *timerHardware = pwmInputPort->timerHardware;
+    const timerHardware_t *timerHardwarePtr = pwmInputPort->timerHardware;
 
     if (pwmInputPort->state == 0) {
         pwmInputPort->rise = capture;
         pwmInputPort->state = 1;
-        pwmICConfig(timerHardware->tim, timerHardware->channel, TIM_ICPolarity_Falling);
+        pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Falling);
     } else {
         pwmInputPort->fall = capture;
 
@@ -227,7 +230,7 @@ static void pwmEdgeCallback(uint8_t port, captureCompare_t capture)
 
         // switch state
         pwmInputPort->state = 0;
-        pwmICConfig(timerHardware->tim, timerHardware->channel, TIM_ICPolarity_Rising);
+        pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
     }
 }
 
@@ -260,11 +263,9 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }
 
-void pwmInConfig(uint8_t timerIndex, uint8_t channel)
+void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
 {
     pwmInputPort_t *p = &pwmInputPorts[channel];
-
-    const timerHardware_t *timerHardwarePtr = &(timerHardware[timerIndex]);
 
     p->channel = channel;
     p->mode = INPUT_MODE_PWM;
@@ -280,13 +281,11 @@ void pwmInConfig(uint8_t timerIndex, uint8_t channel)
 #define UNUSED_PPM_TIMER_REFERENCE 0
 #define FIRST_PWM_PORT 0
 
-void ppmInConfig(uint8_t timerIndex)
+void ppmInConfig(const timerHardware_t *timerHardwarePtr)
 {
     ppmInit();
 
     pwmInputPort_t *p = &pwmInputPorts[FIRST_PWM_PORT];
-
-    const timerHardware_t *timerHardwarePtr = &(timerHardware[timerIndex]);
 
     p->mode = INPUT_MODE_PPM;
     p->timerHardware = timerHardwarePtr;

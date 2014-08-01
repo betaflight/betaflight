@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
@@ -88,7 +90,7 @@ static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_SOFTSERIAL2, NULL, SCENARIO_UNUSED, FUNCTION_NONE}
 };
 
-const static serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
+static const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_USART1,        9600, 115200,   SPF_NONE | SPF_SUPPORTS_SBUS_MODE },
     {SERIAL_PORT_USART2,        9600, 115200,   SPF_SUPPORTS_CALLBACK | SPF_SUPPORTS_SBUS_MODE},
     {SERIAL_PORT_SOFTSERIAL1,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE},
@@ -319,6 +321,7 @@ void beginSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
 
 void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
 {
+    UNUSED(function);
     serialPortFunction_t *serialPortFunction = findSerialPortFunctionByPort(port);
 
     serialPortFunction->currentFunction = FUNCTION_NONE;
@@ -410,7 +413,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
     return true;
 }
 
-bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier)
+bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier)
 {
     serialPortSearchResult_t *searchResult;
     const functionConstraint_t *functionConstraint;

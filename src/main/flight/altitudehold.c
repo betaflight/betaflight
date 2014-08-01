@@ -26,6 +26,8 @@
 
 #include "drivers/accgyro.h"
 #include "drivers/serial.h"
+#include "drivers/gpio.h"
+#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
 // FIXME remove dependency on currentProfile and masterConfig globals and clean up include file list.

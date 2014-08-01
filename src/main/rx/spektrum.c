@@ -46,7 +46,7 @@ static bool rcFrameComplete = false;
 static bool spekHiRes = false;
 static bool spekDataIncoming = false;
 
-volatile static uint8_t spekFrame[SPEK_FRAME_SIZE];
+static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static void spektrumDataReceive(uint16_t c);
 static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);

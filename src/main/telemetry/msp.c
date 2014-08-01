@@ -27,6 +27,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #ifdef TELEMETRY
 
 #include "drivers/serial.h"
@@ -35,6 +37,7 @@
 
 void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
+    UNUSED(initialTelemetryConfig);
 }
 
 void handleMSPTelemetry(void)

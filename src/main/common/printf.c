@@ -34,6 +34,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "build_config.h"
 
 #include "drivers/serial.h"
 #include "io/serial.h"
@@ -176,6 +177,7 @@ void tfp_sprintf(char *s, char *fmt, ...)
 
 static void _putc(void *p, char c)
 {
+    UNUSED(p);
     serialWrite(printfSerialPort, c);
 }
 

@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "common/axis.h"
 #include "common/typeconversion.h"
 
@@ -32,6 +34,8 @@
 #include "drivers/accgyro.h"
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/gpio.h"
+#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "flight/flight.h"
 #include "flight/mixer.h"
@@ -480,11 +484,13 @@ static void cliCMix(char *cmdline)
 
 static void cliDump(char *cmdline)
 {
-    int i;
+    unsigned int i;
     char buf[16];
     float thr, roll, pitch, yaw;
     uint32_t mask;
     const clivalue_t *setval;
+
+    UNUSED(cmdline);
 
     printf("Current Config: Copy everything below here...\r\n");
 
@@ -648,6 +654,8 @@ static void cliFeature(char *cmdline)
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline)
 {
+    UNUSED(cmdline);
+
     gpsEnablePassthroughResult_e result = gpsEnablePassthrough();
 
     switch (result) {
@@ -668,6 +676,8 @@ static void cliGpsPassthrough(char *cmdline)
 static void cliHelp(char *cmdline)
 {
     uint32_t i = 0;
+
+    UNUSED(cmdline);
 
     cliPrint("Available commands:\r\n");
     for (i = 0; i < CMD_COUNT; i++)
@@ -809,6 +819,8 @@ static void cliReboot(void) {
 
 static void cliSave(char *cmdline)
 {
+    UNUSED(cmdline);
+
     cliPrint("Saving...");
     copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
     writeEEPROM();
@@ -817,6 +829,8 @@ static void cliSave(char *cmdline)
 
 static void cliDefaults(char *cmdline)
 {
+    UNUSED(cmdline);
+
     cliPrint("Resetting to defaults...");
     resetEEPROM();
     cliReboot();
@@ -964,6 +978,8 @@ static void cliStatus(char *cmdline)
     uint8_t i;
     uint32_t mask;
 
+    UNUSED(cmdline);
+
     printf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery)\r\n",
         millis() / 1000, vbat, batteryCellCount);
     mask = sensorsMask();
@@ -987,6 +1003,8 @@ static void cliStatus(char *cmdline)
 
 static void cliVersion(char *cmdline)
 {
+    UNUSED(cmdline);
+
     cliPrint("Afro32 CLI version 2.2 " __DATE__ " / " __TIME__ " - (" __FORKNAME__ ")");
 }
 
@@ -1001,7 +1019,7 @@ void cliProcess(void)
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
-            int i = bufferIndex;
+            uint32_t i = bufferIndex;
             for (cmd = cmdTable; cmd < cmdTable + CMD_COUNT; cmd++) {
                 if (bufferIndex && (strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0))
                     continue;

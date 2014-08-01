@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "drivers/system.h"
 
 #include "drivers/serial.h"
@@ -31,8 +33,9 @@
 
 static bool rxMspFrameDone = false;
 
-static uint16_t rxMspReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t rxMspReadRawRC(rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t chan)
 {
+    UNUSED(rxRuntimeConfigPtr);
     return rcData[chan];
 }
 
@@ -52,6 +55,7 @@ bool rxMspFrameComplete(void)
 
 bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
+    UNUSED(rxConfig);
     rxRuntimeConfig->channelCount = 8; // See MSP_SET_RAW_RC
     if (callback)
         *callback = rxMspReadRawRC;

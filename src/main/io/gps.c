@@ -412,10 +412,10 @@ static void GPS_calc_longitude_scaling(int32_t lat);
 static void GPS_calc_velocity(void);
 static void GPS_calc_location_error(int32_t * target_lat, int32_t * target_lng, int32_t * gps_lat, int32_t * gps_lng);
 static void GPS_calc_poshold(void);
-static void GPS_calc_nav_rate(int max_speed);
+static void GPS_calc_nav_rate(uint16_t max_speed);
 static void GPS_update_crosstrack(void);
 static bool UBLOX_parse_gps(void);
-static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow);
+static uint16_t GPS_calc_desired_speed(uint16_t max_speed, bool _slow);
 
 static int32_t wrap_18000(int32_t error);
 static int32_t wrap_36000(int32_t angle);
@@ -554,7 +554,7 @@ static void gpsNewData(uint16_t c)
     static uint32_t nav_loopTimer;
     uint32_t dist;
     int32_t dir;
-    int16_t speed;
+    uint16_t speed;
 
     if (gpsNewFrame(c)) {
         // new data received and parsed, we're in business
@@ -884,7 +884,7 @@ static void GPS_calc_poshold(void)
 ////////////////////////////////////////////////////////////////////////////////////
 // Calculate the desired nav_lat and nav_lon for distance flying such as RTH
 //
-static void GPS_calc_nav_rate(int max_speed)
+static void GPS_calc_nav_rate(uint16_t max_speed)
 {
     float trig[2];
     float temp;
@@ -938,7 +938,7 @@ static void GPS_update_crosstrack(void)
 //                 |                                        +|+
 //                 |< we should slow to 1.5 m/s as we hit the target
 //
-static int16_t GPS_calc_desired_speed(int16_t max_speed, bool _slow)
+static uint16_t GPS_calc_desired_speed(uint16_t max_speed, bool _slow)
 {
     // max_speed is default 400 or 4m/s
     if (_slow) {

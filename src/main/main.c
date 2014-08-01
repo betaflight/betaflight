@@ -185,7 +185,7 @@ void init(void)
 
 #ifdef STM32F10X_MD
     if (!feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwm_params.useUART2 = doesConfigurationUsePort(&masterConfig.serialConfig, SERIAL_PORT_USART2);
+        pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
     }
 #endif
 

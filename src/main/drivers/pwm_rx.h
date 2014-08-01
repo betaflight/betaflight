@@ -22,8 +22,8 @@ typedef enum {
     INPUT_FILTERING_ENABLED
 } inputFilteringMode_e;
 
-void ppmInConfig(uint8_t timerIndex);
-void pwmInConfig(uint8_t timerIndex, uint8_t channel);
+void ppmInConfig(const timerHardware_t *timerHardwarePtr);
+void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel);
 
 uint16_t pwmRead(uint8_t channel);
 

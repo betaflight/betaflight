@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "build_config.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -177,6 +179,8 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     static int32_t delta1[3], delta2[3];
     int32_t deltaSum;
     int32_t delta;
+
+    UNUSED(controlRateConfig);
 
     // **** PITCH & ROLL & YAW PID ****
     prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]

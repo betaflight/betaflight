@@ -79,7 +79,7 @@ typedef struct airplaneConfig_t {
     uint8_t flaps_speed;                    // airplane mode flaps, 0 = no flaps, > 0 = flap speed, larger = faster
 } airplaneConfig_t;
 
-#define CHANNEL_FORWARDING_DISABLED 0xFF
+#define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
 typedef struct servoParam_t {
     int16_t min;                            // servo min

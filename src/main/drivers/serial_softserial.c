@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "system.h"
 #include "gpio.h"
 #include "timer.h"
@@ -312,6 +314,7 @@ void processRxState(softSerial_t *softSerial)
 
 void onSerialTimer(uint8_t portIndex, captureCompare_t capture)
 {
+    UNUSED(capture);
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
     processTxState(softSerial);
@@ -320,6 +323,8 @@ void onSerialTimer(uint8_t portIndex, captureCompare_t capture)
 
 void onSerialRxPinChange(uint8_t portIndex, captureCompare_t capture)
 {
+    UNUSED(capture);
+
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
     if ((softSerial->port.mode & MODE_RX) == 0) {

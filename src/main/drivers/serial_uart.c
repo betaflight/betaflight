@@ -26,6 +26,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "serial.h"
 #include "serial_uart.h"
 
@@ -57,6 +59,7 @@ static void uartReconfigure(uartPort_t *uartPort)
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion)
 {
+    UNUSED(inversion);
     DMA_InitTypeDef DMA_InitStructure;
 
     uartPort_t *s = NULL;

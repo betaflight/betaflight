@@ -102,7 +102,7 @@ typedef struct {
 #define SMD500_PARAM_MH     -7357        //calibration parameter
 #define SMD500_PARAM_MI      3791        //calibration parameter
 
-static bmp085_t bmp085 = { { 0, } };
+static bmp085_t bmp085;
 static bool bmp085InitDone = false;
 static uint16_t bmp085_ut;  // static result of temperature measurement
 static uint32_t bmp085_up;  // static result of pressure measurement

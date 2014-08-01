@@ -33,6 +33,8 @@
 
 #include "flight/failsafe.h"
 
+#include "drivers/gpio.h"
+#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "rx/pwm.h"
 #include "rx/sbus.h"

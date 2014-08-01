@@ -31,6 +31,8 @@
 #include "drivers/accgyro.h"
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/gpio.h"
+#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
 #include "flight/flight.h"
@@ -911,7 +913,7 @@ static const uint8_t mspTelemetryCommandSequence[] = {
 
 void sendMspTelemetry(void)
 {
-    static int sequenceIndex = 0;
+    static uint32_t sequenceIndex = 0;
 
     cmdMSP = mspTelemetryCommandSequence[sequenceIndex];
     evaluateCommand();

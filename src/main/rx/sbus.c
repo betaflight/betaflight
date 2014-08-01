@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "drivers/system.h"
 
 #include "drivers/serial.h"
@@ -142,6 +144,7 @@ bool sbusFrameComplete(void)
 
 static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
+    UNUSED(rxRuntimeConfig);
     return sbusChannelData[chan] / 2 + SBUS_OFFSET;
 }
 

@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "drivers/system.h"
 
 #include "drivers/serial.h"
@@ -57,6 +59,7 @@ void sumdUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstrai
 
 bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
+    UNUSED(rxConfig);
     sumdPort = openSerialPort(FUNCTION_SERIAL_RX, sumdDataReceive, SUMD_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
     if (callback)
         *callback = sumdReadRawRC;
@@ -131,5 +134,6 @@ bool sumdFrameComplete(void)
 
 static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
+    UNUSED(rxRuntimeConfig);
     return sumdChannelData[chan] / 8;
 }

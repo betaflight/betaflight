@@ -152,7 +152,7 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 
 void applySerialConfigToPortFunctions(serialConfig_t *serialConfig);
 bool isSerialConfigValid(serialConfig_t *serialConfig);
-bool doesConfigurationUsePort(serialConfig_t *serialConfig, serialPortIdentifier_e portIdentifier);
+bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
 bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask);
 
 const serialPortFunctionList_t *getSerialPortFunctionList(void);

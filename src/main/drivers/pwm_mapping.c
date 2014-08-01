@@ -265,6 +265,8 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         if (setup[i] == 0xFFFF) // terminator
             break;
 
+        const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
+
 #ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
         // PWM2 is connected to LED2 on the board and cannot be connected unless you cut LED2_E
         if (timerIndex == PWM2)
@@ -310,7 +312,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #ifdef LED_STRIP_TIMER
         // skip LED Strip output
-        if (init->useLEDStrip && timerHardware[timerIndex].tim == LED_STRIP_TIMER)
+        if (init->useLEDStrip && timerHardwarePtr->tim == LED_STRIP_TIMER)
             continue;
 #endif
 
@@ -353,19 +355,19 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 
         if (type == TYPE_IP) {
-            ppmInConfig(timerIndex);
+            ppmInConfig(timerHardwarePtr);
         } else if (type == TYPE_IW) {
-            pwmInConfig(timerIndex, channelIndex);
+            pwmInConfig(timerHardwarePtr, channelIndex);
             channelIndex++;
         } else if (type == TYPE_M) {
             if (init->motorPwmRate > 500) {
-                pwmBrushedMotorConfig(&timerHardware[timerIndex], pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
+                pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
             } else {
-                pwmBrushlessMotorConfig(&timerHardware[timerIndex], pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
+                pwmBrushlessMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
             }
             pwmOutputConfiguration.motorCount++;
         } else if (type == TYPE_S) {
-            pwmServoConfig(&timerHardware[timerIndex], pwmOutputConfiguration.servoCount, init->servoPwmRate, init->servoCenterPulse);
+            pwmServoConfig(timerHardwarePtr, pwmOutputConfiguration.servoCount, init->servoPwmRate, init->servoCenterPulse);
             pwmOutputConfiguration.servoCount++;
         }
     }
