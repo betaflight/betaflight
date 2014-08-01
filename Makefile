@@ -329,6 +329,7 @@ VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 # Tool names
 CC		 = arm-none-eabi-gcc
 OBJCOPY		 = arm-none-eabi-objcopy
+SIZE		 = arm-none-eabi-size
 
 #
 # Tool options.
@@ -391,6 +392,7 @@ $(TARGET_HEX): $(TARGET_ELF)
 
 $(TARGET_ELF):  $(TARGET_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
+	$(SIZE) $(TARGET_ELF) 
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
