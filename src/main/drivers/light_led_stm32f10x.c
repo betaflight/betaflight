@@ -29,6 +29,7 @@
 
 void ledInit(void)
 {
+#if defined(LED0) || defined(LED1) || defined(LED2)
     uint32_t i;
 
     struct {
@@ -64,5 +65,7 @@ void ledInit(void)
     for (i = 0; i < gpio_count; i++) {
         gpioInit(gpio_setup[i].gpio, &gpio_setup[i].cfg);
     }
+
+#endif
 }
 
