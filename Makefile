@@ -192,7 +192,6 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rx.c \
-		   drivers/pwm_rssi.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
@@ -216,7 +215,6 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
-		   drivers/pwm_rssi.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
@@ -232,13 +230,11 @@ CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/adc_stm32f10x.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/bus_i2c_stm32f10x.c \
-		   drivers/bus_spi.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/light_led_stm32f10x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
-		   drivers/pwm_rssi.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
@@ -260,7 +256,6 @@ CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
-		   drivers/pwm_rssi.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
@@ -282,7 +277,6 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
-		   drivers/pwm_rssi.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f30x.c \
