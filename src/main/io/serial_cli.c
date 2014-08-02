@@ -973,6 +973,7 @@ static void cliGet(char *cmdline)
 {
     uint32_t i;
     const clivalue_t *val;
+    int matchedCommands = 0;
 
     for (i = 0; i < VALUE_COUNT; i++) {
         if (strstr(valueTable[i].name, cmdline)) {
@@ -980,10 +981,16 @@ static void cliGet(char *cmdline)
             printf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
             printf("\r\n");
+
+            matchedCommands++;
         }
     }
 
-	// If we get down here, then the variable was not found
+
+    if (matchedCommands) {
+    	return;
+    }
+
     cliPrint("ERR: Unknown variable name\r\n");
 }
 
