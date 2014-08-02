@@ -355,6 +355,7 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   -DUSE_STDPERIPH_DRIVER \
 		   $(TARGET_FLAGS) \
 		   -D'__FORKNAME__="$(FORKNAME)"' \
+		   -D'__TARGET__="$(TARGET)"' \
 		   -save-temps=obj
 
 
