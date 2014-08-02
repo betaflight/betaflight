@@ -81,6 +81,7 @@ static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
+static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
 static void cliVersion(char *cmdline);
 
@@ -136,6 +137,7 @@ const clicmd_t cmdTable[] = {
     { "dump", "print configurable settings in a pastable form", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
+    { "get", "get variable value", cliGet },
 #ifdef GPS
     { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
 #endif
@@ -963,15 +965,26 @@ static void cliSet(char *cmdline)
         cliPrint("ERR: Unknown variable name\r\n");
     } else {
         // no equals, check for matching variables.
-        for (i = 0; i < VALUE_COUNT; i++) {
-            if (strstr(valueTable[i].name, cmdline)) {
-                val = &valueTable[i];
-                printf("%s = ", valueTable[i].name);
-                cliPrintVar(val, 0);
-                printf("\r\n");
-            }
+    	cliGet(cmdline);
+    }
+}
+
+static void cliGet(char *cmdline)
+{
+    uint32_t i;
+    const clivalue_t *val;
+
+    for (i = 0; i < VALUE_COUNT; i++) {
+        if (strstr(valueTable[i].name, cmdline)) {
+            val = &valueTable[i];
+            printf("%s = ", valueTable[i].name);
+            cliPrintVar(val, 0);
+            printf("\r\n");
         }
     }
+
+	// If we get down here, then the variable was not found
+    cliPrint("ERR: Unknown variable name\r\n");
 }
 
 static void cliStatus(char *cmdline)
