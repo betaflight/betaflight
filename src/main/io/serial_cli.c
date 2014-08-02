@@ -965,38 +965,26 @@ static void cliSet(char *cmdline)
         cliPrint("ERR: Unknown variable name\r\n");
     } else {
         // no equals, check for matching variables.
-        for (i = 0; i < VALUE_COUNT; i++) {
-            if (strstr(valueTable[i].name, cmdline)) {
-                val = &valueTable[i];
-                printf("%s = ", valueTable[i].name);
-                cliPrintVar(val, 0);
-                printf("\r\n");
-            }
-        }
+    	cliGet(cmdline);
     }
 }
 
 static void cliGet(char *cmdline)
 {
     uint32_t i;
-    uint32_t len;
     const clivalue_t *val;
-  	
-    len = strlen(cmdline);
-	
-	// Find the matching variable
-	for (i = 0; i < VALUE_COUNT; i++) {
-		if ((strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0) && (len == strlen(valueTable[i].name))) {
-			val = &valueTable[i];
-			printf("%s = ", valueTable[i].name);
-			cliPrintVar(val, 0);
-			printf("\r\n");
-			return;
-		}
-	}
-	
+
+    for (i = 0; i < VALUE_COUNT; i++) {
+        if (strstr(valueTable[i].name, cmdline)) {
+            val = &valueTable[i];
+            printf("%s = ", valueTable[i].name);
+            cliPrintVar(val, 0);
+            printf("\r\n");
+        }
+    }
+
 	// If we get down here, then the variable was not found
-	printf("Variable '%s' not found.\r\n ", cmdline);
+    cliPrint("ERR: Unknown variable name\r\n");
 }
 
 static void cliStatus(char *cmdline)
