@@ -634,7 +634,7 @@ void changeProfile(uint8_t profileIndex)
     masterConfig.current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
-    blinkLedAndSoundBeeper(2, 40, profileIndex);
+    blinkLedAndSoundBeeper(2, 40, profileIndex + 1);
 }
 
 bool feature(uint32_t mask)
