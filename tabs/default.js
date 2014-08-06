@@ -17,7 +17,7 @@ tabs.default.initialize = function(callback) {
             tabs.firmware_flasher.initialize();
         });
 
-        $('div.welcome a').click(function() {
+        $('div.welcome a, div.sponsors a').click(function() {
             googleAnalytics.sendEvent('ExternalUrls', 'Click', $(this).prop('href'));
         });
 

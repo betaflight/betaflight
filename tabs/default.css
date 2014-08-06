@@ -135,3 +135,26 @@
     .firmware_flasher:hover {
         background-color: #dedcdc;
     }
+    .tab-default .sponsors {
+        margin-top: 10px;
+        border: 1px solid silver;
+    }
+        .tab-default .sponsors .title {
+            line-height: 20px;
+
+            text-align: center;
+            font-weight: bold;
+            color: white;
+
+            border-bottom: 1px solid silver;
+            background-color: #3f4241;
+        }
+        .tab-default .sponsors p {
+            padding: 5px;
+        }
+        .tab-default .sponsors p a {
+            font-weight: bold;
+        }
+        .tab-default .sponsors p a:hover {
+            text-decoration: underline;
+        }
