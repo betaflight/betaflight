@@ -20,9 +20,9 @@
 typedef enum {
     ADC_BATTERY = 0,
     ADC_RSSI = 1,
-    ADC_CURRENT = 2,
-    ADC_EXTERNAL1 = 3,
-    ADC_CHANNEL_MAX = ADC_EXTERNAL1
+    ADC_EXTERNAL1 = 2,
+    ADC_CURRENT = 3,
+    ADC_CHANNEL_MAX = ADC_CURRENT
 } AdcChannel;
 
 #define ADC_CHANNEL_COUNT (ADC_CHANNEL_MAX + 1)

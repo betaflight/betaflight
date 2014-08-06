@@ -234,6 +234,7 @@ void annexCode(void)
         	if (feature(FEATURE_CURRENT_METER)) {
         		updateCurrentMeter(vbatCycleTime);
         	}
+        	vbatCycleTime = 0;
         }
     }
 
