@@ -47,6 +47,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/navigation.h"
 #include "telemetry/telemetry.h"
 
 #include "rx/rx.h"

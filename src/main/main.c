@@ -43,6 +43,7 @@
 
 #include "io/serial.h"
 #include "flight/failsafe.h"
+#include "flight/navigation.h"
 
 #include "rx/rx.h"
 #include "io/gps.h"
@@ -85,7 +86,8 @@ void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers);
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void beepcodeInit(failsafe_t *initialFailsafe);
-void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig, gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
+void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
+void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
 void ledStripInit(void);
@@ -219,7 +221,9 @@ void init(void)
     if (feature(FEATURE_GPS)) {
         gpsInit(
             &masterConfig.serialConfig,
-            &masterConfig.gpsConfig,
+            &masterConfig.gpsConfig
+        );
+        navigationInit(
             &currentProfile.gpsProfile,
             &currentProfile.pidProfile
         );

@@ -156,8 +156,9 @@ COMMON_SRC	 = build_config.c \
 		   $(DEVICE_STDPERIPH_SRC)
 
 HIGHEND_SRC  = flight/autotune.c \
+		   flight/navigation.c \
+		   flight/gps_conversion.c \
 		   io/gps.c \
-		   io/gps_conversion.c \
 		   io/ledstrip.c \
 		   rx/sbus.c \
 		   rx/sumd.c \

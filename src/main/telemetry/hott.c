@@ -73,6 +73,7 @@
 #include "sensors/battery.h"
 
 #include "flight/flight.h"
+#include "flight/navigation.h"
 #include "io/gps.h"
 
 #include "telemetry/telemetry.h"

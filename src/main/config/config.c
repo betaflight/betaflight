@@ -53,6 +53,7 @@
 #include "io/gps.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/navigation.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"

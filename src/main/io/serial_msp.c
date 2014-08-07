@@ -38,6 +38,7 @@
 #include "flight/flight.h"
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
+#include "flight/navigation.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 #include "io/escservo.h"

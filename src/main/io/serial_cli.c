@@ -39,6 +39,7 @@
 #include "drivers/pwm_rx.h"
 #include "flight/flight.h"
 #include "flight/mixer.h"
+#include "flight/navigation.h"
 #include "flight/failsafe.h"
 #include "rx/rx.h"
 #include "io/escservo.h"

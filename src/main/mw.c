@@ -50,6 +50,7 @@
 #include "flight/imu.h"
 #include "flight/autotune.h"
 #include "flight/mixer.h"
+#include "flight/navigation.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
