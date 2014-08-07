@@ -40,6 +40,8 @@
 #define USE_USART1
 #define USE_USART2
 
+#define SERIAL_PORT_COUNT 2
+
 #define I2C_DEVICE (I2CDEV_1)
 
 // #define SOFT_I2C // enable to test software i2c

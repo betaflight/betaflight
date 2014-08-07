@@ -30,6 +30,8 @@
 #define GYRO
 #define ACC
 
+#define SERIAL_PORT_COUNT 5
+
 #define I2C_DEVICE (I2CDEV_1)
 
 #define SENSORS_SET (SENSOR_ACC)

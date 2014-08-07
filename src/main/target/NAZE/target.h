@@ -49,6 +49,9 @@
 
 #define USE_USART1
 #define USE_USART2
+#define USE_SOFT_SERIAL
+#define SERIAL_PORT_COUNT 4
+
 
 #define I2C_DEVICE (I2CDEV_2)
 

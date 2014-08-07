@@ -57,36 +57,31 @@ typedef enum {
 #define SERIAL_PORT_SCENARIO_MAX (SERIAL_PORT_SCENARIO_COUNT - 1)
 extern const serialPortFunctionScenario_e serialPortScenarios[SERIAL_PORT_SCENARIO_COUNT];
 
-
-#ifdef STM32F303xC
-#define SERIAL_PORT_COUNT 5
-
 typedef enum {
     SERIAL_PORT_1 = 0,
     SERIAL_PORT_2,
+#if (SERIAL_PORT_COUNT > 2)
     SERIAL_PORT_3,
     SERIAL_PORT_4,
+#if (SERIAL_PORT_COUNT > 4)
     SERIAL_PORT_5
+#endif
+#endif
 } serialPortIndex_e;
+
+
+#ifdef STM32F303xC
 
 typedef enum {
     SERIAL_PORT_USB_VCP = 0,
     SERIAL_PORT_USART1,
     SERIAL_PORT_USART2,
-    SERIAL_PORT_SOFTSERIAL1,
-    SERIAL_PORT_SOFTSERIAL2
+    SERIAL_PORT_USART3,
+    SERIAL_PORT_USART4
 } serialPortIdentifier_e;
 
+#define SERIAL_PORT_IDENTIFIER_COUNT 5
 #else
-
-#define SERIAL_PORT_COUNT 4
-
-typedef enum {
-    SERIAL_PORT_1 = 0,
-    SERIAL_PORT_2,
-    SERIAL_PORT_3,
-    SERIAL_PORT_4
-} serialPortIndex_e;
 
 typedef enum {
     SERIAL_PORT_USART1 = 0,
@@ -96,6 +91,7 @@ typedef enum {
     SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;
 
+#define SERIAL_PORT_IDENTIFIER_COUNT 5
 #endif
 
 // bitmask
@@ -126,13 +122,7 @@ typedef struct serialPortFunctionList_s {
 } serialPortFunctionList_t;
 
 typedef struct serialConfig_s {
-    uint8_t serial_port_1_scenario;
-    uint8_t serial_port_2_scenario;
-    uint8_t serial_port_3_scenario;
-    uint8_t serial_port_4_scenario;
-#ifdef STM32F303xC
-    uint8_t serial_port_5_scenario;
-#endif
+    uint8_t serial_port_scenario[SERIAL_PORT_COUNT];
     uint32_t msp_baudrate;
     uint32_t cli_baudrate;
     uint32_t gps_baudrate;

@@ -86,7 +86,7 @@ static uint32_t flashWriteAddress = (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * 
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 74;
+static const uint8_t EEPROM_CONF_VERSION = 75;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -191,12 +191,15 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 
 void resetSerialConfig(serialConfig_t *serialConfig)
 {
-    serialConfig->serial_port_1_scenario = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
-    serialConfig->serial_port_2_scenario = lookupScenarioIndex(SCENARIO_GPS_ONLY);
-    serialConfig->serial_port_3_scenario = lookupScenarioIndex(SCENARIO_UNUSED);
-    serialConfig->serial_port_4_scenario = lookupScenarioIndex(SCENARIO_UNUSED);
-#ifdef STM32F303xC
-    serialConfig->serial_port_5_scenario = lookupScenarioIndex(SCENARIO_UNUSED);
+    serialConfig->serial_port_scenario[0] = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
+    serialConfig->serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_GPS_ONLY);
+#if (SERIAL_PORT_COUNT > 2)
+    serialConfig->serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_UNUSED);
+    serialConfig->serial_port_scenario[3] = lookupScenarioIndex(SCENARIO_UNUSED);
+
+#if (SERIAL_PORT_COUNT > 4)
+    serialConfig->serial_port_scenario[4] = lookupScenarioIndex(SCENARIO_UNUSED);
+#endif
 #endif
 
     serialConfig->msp_baudrate = 115200;

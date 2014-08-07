@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef USE_SOFT_SERIAL
+
 #include "build_config.h"
 
 #include "system.h"
@@ -429,3 +431,5 @@ const struct serialPortVTable softSerialVTable[] = {
         softSerialSetMode,
     }
 };
+
+#endif
