@@ -83,6 +83,22 @@ const static serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
 
 #else
 
+#ifdef CC3D
+static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
+    {SERIAL_PORT_USART1,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+    {SERIAL_PORT_USART3,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+    {SERIAL_PORT_SOFTSERIAL1, NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+    {SERIAL_PORT_SOFTSERIAL2, NULL, SCENARIO_UNUSED, FUNCTION_NONE}
+};
+
+static const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
+    {SERIAL_PORT_USART1,        9600, 115200,   SPF_NONE | SPF_SUPPORTS_SBUS_MODE },
+    {SERIAL_PORT_USART3,        9600, 115200,   SPF_SUPPORTS_CALLBACK | SPF_SUPPORTS_SBUS_MODE},
+    {SERIAL_PORT_SOFTSERIAL1,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE},
+    {SERIAL_PORT_SOFTSERIAL2,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE}
+};
+#else
+
 static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_USART1,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
     {SERIAL_PORT_USART2,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
@@ -96,7 +112,7 @@ static const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_SOFTSERIAL1,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE},
     {SERIAL_PORT_SOFTSERIAL2,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE}
 };
-
+#endif
 #endif
 
 const functionConstraint_t functionConstraints[] = {
@@ -459,10 +475,18 @@ void applySerialConfigToPortFunctions(serialConfig_t *serialConfig)
     serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL1)].scenario = serialPortScenarios[serialConfig->serial_port_4_scenario];
     serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL2)].scenario = serialPortScenarios[serialConfig->serial_port_5_scenario];
 #else
+
+#ifdef CC3D
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART1)].scenario = serialPortScenarios[serialConfig->serial_port_1_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART3)].scenario = serialPortScenarios[serialConfig->serial_port_2_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL1)].scenario = serialPortScenarios[serialConfig->serial_port_3_scenario];
+    serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL2)].scenario = serialPortScenarios[serialConfig->serial_port_4_scenario];
+#else
     serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART1)].scenario = serialPortScenarios[serialConfig->serial_port_1_scenario];
     serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_USART2)].scenario = serialPortScenarios[serialConfig->serial_port_2_scenario];
     serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL1)].scenario = serialPortScenarios[serialConfig->serial_port_3_scenario];
     serialPortFunctions[lookupSerialPortFunctionIndexByIdentifier(SERIAL_PORT_SOFTSERIAL2)].scenario = serialPortScenarios[serialConfig->serial_port_4_scenario];
+#endif
 #endif
 }
 
@@ -502,12 +526,21 @@ serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbac
             serialPort = usbVcpOpen();
             break;
 #endif
+#ifdef USE_USART1
         case SERIAL_PORT_USART1:
             serialPort = uartOpen(USART1, callback, baudRate, mode, inversion);
             break;
+#endif
+#ifdef USE_USART2
         case SERIAL_PORT_USART2:
             serialPort = uartOpen(USART2, callback, baudRate, mode, inversion);
             break;
+#endif
+#ifdef USE_USART3
+        case SERIAL_PORT_USART3:
+            serialPort = uartOpen(USART3, callback, baudRate, mode, inversion);
+            break;
+#endif
 #ifdef SOFT_SERIAL
         case SERIAL_PORT_SOFTSERIAL1:
             serialPort = openSoftSerial(SOFTSERIAL1, callback, baudRate, inversion);

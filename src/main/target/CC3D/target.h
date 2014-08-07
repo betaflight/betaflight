@@ -33,6 +33,16 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
+#define USE_USART1
+
+#define USE_USART3
+#define USART3_RX_PIN Pin_11
+#define USART3_TX_PIN Pin_10
+#define USART3_GPIO GPIOB
+#define USART3_APB1_PERIPHERALS RCC_APB1Periph_USART3
+#define USART3_APB2_PERIPHERALS RCC_APB2Periph_GPIOB
+
+
 #define SENSORS_SET (SENSOR_ACC)
 
 #define GPS

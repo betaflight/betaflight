@@ -87,9 +87,11 @@ typedef enum {
     SERIAL_PORT_3,
     SERIAL_PORT_4
 } serialPortIndex_e;
+
 typedef enum {
     SERIAL_PORT_USART1 = 0,
     SERIAL_PORT_USART2,
+    SERIAL_PORT_USART3,
     SERIAL_PORT_SOFTSERIAL1,
     SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;

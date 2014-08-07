@@ -36,6 +36,7 @@
 
 uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode);
 uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode);
+uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode);
 
 static void uartReconfigure(uartPort_t *uartPort)
 {
@@ -76,8 +77,14 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 
     if (USARTx == USART1) {
         s = serialUSART1(baudRate, mode);
+#ifdef USE_USART2
     } else if (USARTx == USART2) {
         s = serialUSART2(baudRate, mode);
+#endif
+#ifdef USE_USART3
+    } else if (USARTx == USART3) {
+        s = serialUSART3(baudRate, mode);
+#endif
     } else {
         return (serialPort_t *)s;
     }
