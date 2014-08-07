@@ -205,12 +205,29 @@ static int serialPortFunctionMostSpecificFirstComparator(const void *aPtr, const
     serialPortFunction_t *a = (serialPortFunction_t *)aPtr;
     serialPortFunction_t *b = (serialPortFunction_t *)bPtr;
 
-    return countBits_uint32(a->scenario) > countBits_uint32(b->scenario);
+    return countBits_uint32(a->scenario) - countBits_uint32(b->scenario);
 }
 
 static void sortSerialPortFunctions(serialPortFunction_t *serialPortFunctions, uint8_t elements)
 {
-    qsort(serialPortFunctions, elements, sizeof(serialPortFunction_t), serialPortFunctionMostSpecificFirstComparator);
+    serialPortFunction_t swap;
+
+    int8_t index1;
+    int8_t index2;
+    int result;
+
+    for (index1 = 0; index1 < (elements - 1); index1++) {
+        for (index2 = 0; index2 < elements - index1 - 1; index2++) {
+
+            result = serialPortFunctionMostSpecificFirstComparator(&serialPortFunctions[index2], &serialPortFunctions[index2 + 1]);
+
+            if (result > 0) {
+                memcpy(&swap, &serialPortFunctions[index1], sizeof(serialPortFunction_t));
+                memcpy(&serialPortFunctions[index1], &serialPortFunctions[index2 + 1], sizeof(serialPortFunction_t));
+                memcpy(&serialPortFunctions[index2 + 1], &swap, sizeof(serialPortFunction_t));
+            }
+        }
+    }
 }
 
 serialPortSearchResult_t *findNextSerialPort(serialPortFunction_e function, const functionConstraint_t *functionConstraint, serialPortSearchResult_t *resultBuffer)
