@@ -464,10 +464,6 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RSSI_ADC);
         // current meter needs the same ports
         featureClear(FEATURE_CURRENT_METER);
-#ifdef SONAR
-        // sonar needs a free PWM port
-        featureClear(FEATURE_SONAR);
-#endif
 #endif
 
 #if defined(STM32F10X_MD) || defined(CHEBUZZ) || defined(STM32F3DISCOVERY)

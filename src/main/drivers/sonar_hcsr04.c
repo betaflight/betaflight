@@ -88,8 +88,8 @@ void hcsr04_init(sonar_config_t config)
     gpio_config_t gpio;
     EXTI_InitTypeDef EXTIInit;
 
-    // enable AFIO for EXTI support - already done is drv_system.c
-    // RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph, ENABLE);
+    // enable AFIO for EXTI support
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
     switch (config) {
         case sonar_pwm56:

@@ -25,6 +25,7 @@
 
 #include "drivers/sonar_hcsr04.h"
 #include "config/runtime_config.h"
+#include "config/config.h"
 
 #include "flight/flight.h"
 
@@ -37,7 +38,13 @@ int32_t sonarAlt = -1;	// in cm , -1 indicate sonar is not in range
 
 void Sonar_init(void)
 {
-    hcsr04_init(sonar_rc78);
+	// If we are using parallel PWM for our receiver, then use motor pins 5 and 6 for sonar, otherwise use rc pins 7 and 8
+	if (feature(FEATURE_RX_PARALLEL_PWM)) {
+		hcsr04_init(sonar_pwm56);
+	} else {
+		hcsr04_init(sonar_rc78);
+	}
+
     sensorsSet(SENSOR_SONAR);
     sonarAlt = 0;
 }
