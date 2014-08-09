@@ -1,3 +1,5 @@
+'use strict';
+
 tabs.default = {};
 tabs.default.initialize = function(callback) {
     GUI.active_tab_ref = this;

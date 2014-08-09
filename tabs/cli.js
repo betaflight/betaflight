@@ -1,3 +1,5 @@
+'use strict';
+
 var CLI_active = false;
 var CLI_valid = false;
 

@@ -1,3 +1,5 @@
+'use strict';
+
 tabs.receiver = {};
 tabs.receiver.initialize = function(callback) {
     GUI.active_tab_ref = this;

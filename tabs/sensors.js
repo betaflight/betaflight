@@ -1,3 +1,5 @@
+'use strict';
+
 tabs.sensors = {};
 tabs.sensors.initialize = function(callback) {
     GUI.active_tab_ref = this;
@@ -102,7 +104,7 @@ tabs.sensors.initialize = function(callback) {
     }
 
     function drawGraph(graphHelpers, data, sampleNumber) {
-        svg = d3.select(graphHelpers.selector);
+        var svg = d3.select(graphHelpers.selector);
 
         if (graphHelpers.dynamicHeightDomain) {
             var limits = [];
