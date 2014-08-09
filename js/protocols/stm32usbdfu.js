@@ -10,6 +10,7 @@
     that being said, it seems that certain level of CLRSTATUS is required before running another type of operation for
     example switching from DNLOAD to UPLOAD, etc, clearning the state so device is in dfuIDLE is highly recommended.
 */
+'use strict';
 
 var STM32DFU_protocol = function() {
     this.hex; // ref
@@ -135,7 +136,7 @@ STM32DFU_protocol.prototype.resetDevice = function(callback) {
     });
 };
 
-STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value, interface, length, data, callback) {
+STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value, _interface, length, data, callback) {
     if (direction == 'in') {
         // data is ignored
         chrome.usb.controlTransfer(this.handle, {
@@ -144,7 +145,7 @@ STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value
             'requestType':  'class',
             'request':      request,
             'value':        value,
-            'index':        interface,
+            'index':        _interface,
             'length':       length
         }, function(result) {
             if (result.resultCode) console.log(result.resultCode);
@@ -168,7 +169,7 @@ STM32DFU_protocol.prototype.controlTransfer = function(direction, request, value
             'requestType':  'class',
             'request':      request,
             'value':        value,
-            'index':        interface,
+            'index':        _interface,
             'data':         arrayBuf
         }, function(result) {
             if (result.resultCode) console.log(result.resultCode);
@@ -296,7 +297,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
             // start
             self.loadAddress(address, write);
 
-            function write() {
+            var write = function () {
                 if (bytes_flashed < self.hex.data[flashing_block].bytes) {
                     var bytes_to_write = ((bytes_flashed + 2048) <= self.hex.data[flashing_block].bytes) ? 2048 : (self.hex.data[flashing_block].bytes - bytes_flashed);
 
@@ -376,7 +377,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                 });
             });
 
-            function read() {
+            var read = function () {
                 if (bytes_verified < self.hex.data[reading_block].bytes) {
                     var bytes_to_read = ((bytes_verified + 2048) <= self.hex.data[reading_block].bytes) ? 2048 : (self.hex.data[reading_block].bytes - bytes_verified);
 
@@ -452,7 +453,7 @@ STM32DFU_protocol.prototype.upload_procedure = function(step) {
                 self.loadAddress(address, leave);
             });
 
-            function leave() {
+            var leave = function () {
                 self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, 0, function() {
                     self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function(data) {
                         self.upload_procedure(99);
