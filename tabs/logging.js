@@ -1,3 +1,5 @@
+'use strict';
+
 var MSP_pass_through = false;
 
 tabs.logging = {};
@@ -11,11 +13,11 @@ tabs.logging.initialize = function(callback) {
     if (configuration_received) {
         MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
 
-        function get_motor_data() {
+        var get_motor_data = function () {
             MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
         }
 
-        function load_html() {
+        var load_html = function () {
             $('#content').load("./tabs/logging.html", process_html);
         }
     } else {
@@ -61,7 +63,7 @@ tabs.logging.initialize = function(callback) {
                             // print header for the csv file
                             print_head();
 
-                            function log_data_poll() {
+                            var log_data_poll = function () {
                                 if (requests) {
                                     // save current data (only after everything is initialized)
                                     crunch_data();

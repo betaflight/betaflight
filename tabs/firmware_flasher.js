@@ -1,5 +1,7 @@
+'use strict';
+
 tabs.firmware_flasher = {};
-tabs.firmware_flasher.initialize = function(callback) {
+tabs.firmware_flasher.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'firmware_flasher';
     googleAnalytics.sendAppView('Firmware Flasher');
@@ -7,13 +9,13 @@ tabs.firmware_flasher.initialize = function(callback) {
     var intel_hex = false; // standard intel hex in string format
     var parsed_hex = false; // parsed raw hex in array format
 
-    $('#content').load("./tabs/firmware_flasher.html", function() {
+    $('#content').load("./tabs/firmware_flasher.html", function () {
         // translate to user-selected language
         localize();
 
         // UI Hooks
-        $('a.load_file').click(function() {
-            chrome.fileSystem.chooseEntry({type: 'openFile', accepts: [{extensions: ['hex']}]}, function(fileEntry) {
+        $('a.load_file').click(function () {
+            chrome.fileSystem.chooseEntry({type: 'openFile', accepts: [{extensions: ['hex']}]}, function (fileEntry) {
                 if (!fileEntry) {
                     // no "valid" file selected/created, aborting
                     console.log('No valid file selected, aborting');
@@ -23,14 +25,14 @@ tabs.firmware_flasher.initialize = function(callback) {
                 // hide github info (if it exists)
                 $('div.git_info').slideUp();
 
-                chrome.fileSystem.getDisplayPath(fileEntry, function(path) {
+                chrome.fileSystem.getDisplayPath(fileEntry, function (path) {
                     console.log('Loading file from: ' + path);
                     $('span.path').html(path);
 
-                    fileEntry.file(function(file) {
+                    fileEntry.file(function (file) {
                         var reader = new FileReader();
 
-                        reader.onprogress = function(e) {
+                        reader.onprogress = function (e) {
                             if (e.total > 1048576) { // 1 MB
                                 // dont allow reading files bigger then 1 MB
                                 console.log('File limit (1 MB) exceeded, aborting');
@@ -44,7 +46,7 @@ tabs.firmware_flasher.initialize = function(callback) {
 
                                 intel_hex = e.target.result;
 
-                                parse_hex(intel_hex, function(data) {
+                                parse_hex(intel_hex, function (data) {
                                     parsed_hex = data;
 
                                     if (parsed_hex) {
@@ -66,11 +68,11 @@ tabs.firmware_flasher.initialize = function(callback) {
             });
         });
 
-        $('a.load_remote_file').click(function() {
-            $.get('https://raw.githubusercontent.com/multiwii/baseflight/master/obj/baseflight.hex', function(data) {
+        $('a.load_remote_file').click(function () {
+            $.get('https://raw.githubusercontent.com/multiwii/baseflight/master/obj/baseflight.hex', function (data) {
                 intel_hex = data;
 
-                parse_hex(intel_hex, function(data) {
+                parse_hex(intel_hex, function (data) {
                     parsed_hex = data;
 
                     if (parsed_hex) {
@@ -84,12 +86,12 @@ tabs.firmware_flasher.initialize = function(callback) {
                         GUI.log(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
                 });
-            }).fail(function() {
+            }).fail(function () {
                 GUI.log(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
                 $('a.flash_firmware').addClass('locked');
             });
 
-            $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function(data) {
+            $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function (data) {
                 var data = data[0];
                 var d = new Date(data.commit.author.date);
                 var date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
@@ -103,7 +105,7 @@ tabs.firmware_flasher.initialize = function(callback) {
             });
         });
 
-        $('a.flash_firmware').click(function() {
+        $('a.flash_firmware').click(function () {
             if (!$(this).hasClass('locked')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
                     if (parsed_hex != false) {
@@ -151,7 +153,7 @@ tabs.firmware_flasher.initialize = function(callback) {
             }
         });
 
-        chrome.storage.local.get('no_reboot_sequence', function(result) {
+        chrome.storage.local.get('no_reboot_sequence', function (result) {
             if (result.no_reboot_sequence) {
                 $('input.updating').prop('checked', true);
                 $('label.flash_on_connect_wrapper').show();
@@ -174,21 +176,21 @@ tabs.firmware_flasher.initialize = function(callback) {
             });
         });
 
-        chrome.storage.local.get('flash_on_connect', function(result) {
+        chrome.storage.local.get('flash_on_connect', function (result) {
             if (result.flash_on_connect) {
                 $('input.flash_on_connect').prop('checked', true);
             } else {
                 $('input.flash_on_connect').prop('checked', false);
             }
 
-            $('input.flash_on_connect').change(function() {
+            $('input.flash_on_connect').change(function () {
                 var status = $(this).is(':checked');
 
                 if (status) {
                     var flashing_port;
 
-                    function start() {
-                        PortHandler.port_detected('flash_next_device', function(result) {
+                    var start = function () {
+                        PortHandler.port_detected('flash_next_device', function (result) {
                             flashing_port = result[0];
                             GUI.log('Detected: <strong>' + flashing_port + '</strong> - triggering flash on connect');
                             console.log('Detected: ' + flashing_port + ' - triggering flash on connect');
@@ -201,8 +203,8 @@ tabs.firmware_flasher.initialize = function(callback) {
                         }, false, true);
                     }
 
-                    function end() {
-                        PortHandler.port_removed('flashed_device_removed', function(result) {
+                    var end = function () {
+                        PortHandler.port_removed('flashed_device_removed', function (result) {
                             for (var i = 0; i < result.length; i++) {
                                 if (result[i] == flashing_port) {
                                     // flashed device removed
@@ -230,7 +232,7 @@ tabs.firmware_flasher.initialize = function(callback) {
             }).change();
         });
 
-        chrome.storage.local.get('erase_chip', function(result) {
+        chrome.storage.local.get('erase_chip', function (result) {
             if (result.erase_chip) {
                 $('input.erase_chip').prop('checked', true);
             } else {
@@ -238,14 +240,14 @@ tabs.firmware_flasher.initialize = function(callback) {
             }
 
             // bind UI hook so the status is saved on change
-            $('input.erase_chip').change(function() {
+            $('input.erase_chip').change(function () {
                 var status = $(this).is(':checked');
 
                 chrome.storage.local.set({'erase_chip': status});
             });
         });
 
-        $(document).keypress(function(e) {
+        $(document).keypress(function (e) {
             if (e.which == 13) { // enter
                 // Trigger regular Flashing sequence
                 $('a.flash_firmware').click();
@@ -253,9 +255,9 @@ tabs.firmware_flasher.initialize = function(callback) {
         });
 
         // back button
-        $('a.back').click(function() {
+        $('a.back').click(function () {
             if (!GUI.connect_lock) { // button disabled while flashing is in progress
-                GUI.tab_switch_cleanup(function() {
+                GUI.tab_switch_cleanup(function () {
                     tabs.default.initialize();
                 });
             } else {
@@ -267,7 +269,7 @@ tabs.firmware_flasher.initialize = function(callback) {
     });
 };
 
-tabs.firmware_flasher.cleanup = function(callback) {
+tabs.firmware_flasher.cleanup = function (callback) {
     PortHandler.flush_callbacks();
 
     // unbind "global" events
