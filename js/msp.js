@@ -160,7 +160,6 @@ MSP.read = function (readInfo) {
 };
 
 MSP.process_data = function(code, message_buffer, message_length) {
-    'use strict';
     var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
 
     switch (code) {
