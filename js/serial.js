@@ -1,3 +1,5 @@
+'use strict';
+
 var serial = {
     connectionId:           -1,
     bitrate:                0,
@@ -25,30 +27,30 @@ var serial = {
                     console.error(info);
                     googleAnalytics.sendException('Serial: ' + info.error, false);
 
+                    function get_status() {
+                        self.getInfo(crunch_status);
+                    }
+
+                    function crunch_status(info) {
+                        if (!info.paused) {
+                            console.log('SERIAL: Connection recovered from last onReceiveError');
+                            googleAnalytics.sendException('Serial: onReceiveError - recovered', false);
+                        } else {
+                            console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
+                            GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+                            googleAnalytics.sendException('Serial: onReceiveError - unrecoverable', false);
+
+                            if (GUI.connected_to || GUI.connecting_to) {
+                                $('a.connect').click();
+                            } else {
+                                self.disconnect();
+                            }
+                        }
+                    }
+
                     switch (info.error) {
                         case 'system_error': // we might be able to recover from this one
                             chrome.serial.setPaused(self.connectionId, false, get_status);
-
-                            function get_status() {
-                                self.getInfo(crunch_status);
-                            }
-
-                            function crunch_status(info) {
-                                if (!info.paused) {
-                                    console.log('SERIAL: Connection recovered from last onReceiveError');
-                                    googleAnalytics.sendException('Serial: onReceiveError - recovered', false);
-                                } else {
-                                    console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
-                                    GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
-                                    googleAnalytics.sendException('Serial: onReceiveError - unrecoverable', false);
-
-                                    if (GUI.connected_to || GUI.connecting_to) {
-                                        $('a.connect').click();
-                                    } else {
-                                        self.disconnect();
-                                    }
-                                }
-                            }
                             break;
                         case 'timeout':
                             // TODO
@@ -125,32 +127,32 @@ var serial = {
         var self = this;
         self.output_buffer.push({'data': data, 'callback': callback});
 
+        function sending() {
+            // store inside separate variables in case array gets destroyed
+            var data = self.output_buffer[0].data;
+            var callback = self.output_buffer[0].callback;
+
+            chrome.serial.send(self.connectionId, data, function(sendInfo) {
+                callback(sendInfo);
+                self.output_buffer.shift();
+
+                self.bytes_sent += sendInfo.bytesSent;
+
+                if (self.output_buffer.length) {
+                    // keep the buffer withing reasonable limits
+                    while (self.output_buffer.length > 500) {
+                        self.output_buffer.pop();
+                    }
+
+                    sending();
+                } else {
+                    self.transmitting = false;
+                }
+            });
+        };
+
         if (!self.transmitting) {
             self.transmitting = true;
-
-            function sending() {
-                // store inside separate variables in case array gets destroyed
-                var data = self.output_buffer[0].data;
-                var callback = self.output_buffer[0].callback;
-
-                chrome.serial.send(self.connectionId, data, function(sendInfo) {
-                    callback(sendInfo);
-                    self.output_buffer.shift();
-
-                    self.bytes_sent += sendInfo.bytesSent;
-
-                    if (self.output_buffer.length) {
-                        // keep the buffer withing reasonable limits
-                        while (self.output_buffer.length > 500) {
-                            self.output_buffer.pop();
-                        }
-
-                        sending();
-                    } else {
-                        self.transmitting = false;
-                    }
-                });
-            };
 
             sending();
         }

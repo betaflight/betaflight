@@ -1,3 +1,5 @@
+'use strict';
+
 var tabs = {}; // filled by individual tab js file
 
 var GUI_control = function() {

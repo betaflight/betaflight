@@ -1,3 +1,5 @@
+'use strict';
+
 var firmware_version_accepted = 2.3;
 
 var CONFIG = {

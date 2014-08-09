@@ -1,3 +1,5 @@
+'use strict';
+
 var PortUsage = {
     previous_received:  0,
     previous_sent:      0,

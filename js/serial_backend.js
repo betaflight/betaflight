@@ -1,3 +1,5 @@
+'use strict';
+
 var configuration_received = false;
 
 $(document).ready(function() {
@@ -44,7 +46,7 @@ $(document).ready(function() {
                     $(this).text(chrome.i18n.getMessage('connect'));
                     $(this).removeClass('active');
 
-                    sensor_status(sensors_detected = 0); // reset active sensor indicators
+                    sensor_status(0); // reset active sensor indicators
                     $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
 
                     // detach listeners and remove element data

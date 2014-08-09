@@ -1,10 +1,12 @@
+'use strict';
+
 var usbDevices = {
     STM32DFU: {'vendorId': 1155, 'productId': 57105}
 };
 var usbPermissions = {permissions: [{'usbDevices': [usbDevices.STM32DFU]}]};
 
 function check_usb_permissions(callback) {
-    chrome.permissions.contains(usbPermissions, function(result) {
+    chrome.permissions.contains(usbPermissions, function (result) {
         if (result) {
             GUI.optional_usb_permissions = true;
         } else {
@@ -15,8 +17,8 @@ function check_usb_permissions(callback) {
             $('div.optional_permissions').show();
 
             // UI hooks
-            document.getElementById("requestOptionalPermissions").addEventListener('click', function() {
-                chrome.permissions.request(usbPermissions, function(result) {
+            document.getElementById("requestOptionalPermissions").addEventListener('click', function () {
+                chrome.permissions.request(usbPermissions, function (result) {
                     if (result) {
                         GUI.log(chrome.i18n.getMessage('usb_permissions_granted'));
                         $('div.optional_permissions').hide();
@@ -27,6 +29,8 @@ function check_usb_permissions(callback) {
             });
         }
 
-        if (callback) callback();
+        if (callback) {
+            callback();
+        }
     });
 }

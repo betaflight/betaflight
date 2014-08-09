@@ -1,3 +1,5 @@
+'use strict';
+
 function localize() {
     var localized = 0;
 

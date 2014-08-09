@@ -1,3 +1,5 @@
+'use strict';
+
 // MSP_codes needs to be re-integrated inside MSP object
 var MSP_codes = {
     MSP_IDENT:              100,
@@ -53,7 +55,7 @@ var MSP_codes = {
 
 var MSP = {
     state:                      0,
-    message_status:             1,
+    message_direction:          1,
     code:                       0,
     message_length_expected:    0,
     message_length_received:    0,
@@ -64,7 +66,7 @@ var MSP = {
     callbacks:                  [],
     packet_error:               0,
 
-    callbacks_cleanup: function() {
+    callbacks_cleanup: function () {
         for (var i = 0; i < this.callbacks.length; i++) {
             clearInterval(this.callbacks[i].timer);
         }
@@ -72,7 +74,7 @@ var MSP = {
         this.callbacks = [];
     },
 
-    disconnect_cleanup: function() {
+    disconnect_cleanup: function () {
         this.state = 0; // reset packet state for "clean" initial entry (this is only required if user hot-disconnects)
         this.packet_error = 0; // reset CRC packet error counter for next session
 
@@ -80,7 +82,7 @@ var MSP = {
     }
 };
 
-MSP.read = function(readInfo) {
+MSP.read = function (readInfo) {
     var data = new Uint8Array(readInfo.data);
 
     for (var i = 0; i < data.length; i++) {
@@ -99,9 +101,9 @@ MSP.read = function(readInfo) {
                 break;
             case 2: // direction (should be >)
                 if (data[i] == 62) { // >
-                    message_status = 1;
-                } else { // unknown
-                    message_status = 0;
+                    this.message_direction = 1;
+                } else { // <
+                    this.message_direction = 0;
                 }
 
                 this.state++;
@@ -156,6 +158,7 @@ MSP.read = function(readInfo) {
 };
 
 MSP.process_data = function(code, message_buffer, message_length) {
+    'use strict';
     var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
 
     switch (code) {
