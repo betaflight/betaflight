@@ -4,6 +4,7 @@
     from multiwii is so horrible, obstructive and non dynamic, not to mention it doesn't make any sense
     that there was just no other way around this then hardcoding/implementing each model separately.
 */
+'use strict';
 
 tabs.servos = {};
 tabs.servos.initialize = function(callback) {

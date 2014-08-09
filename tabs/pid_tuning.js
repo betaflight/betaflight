@@ -1,3 +1,5 @@
+'use strict';
+
 tabs.pid_tuning = {};
 tabs.pid_tuning.initialize = function(callback) {
     GUI.active_tab_ref = this;

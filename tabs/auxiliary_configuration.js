@@ -1,3 +1,5 @@
+'use strict';
+
 // TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
 tabs.auxiliary_configuration = {};
 tabs.auxiliary_configuration.initialize = function(callback) {

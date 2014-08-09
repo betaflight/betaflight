@@ -1,3 +1,5 @@
+'use strict';
+
 tabs.initial_setup = {
     yaw_fix: 0.0
 };
