@@ -1,6 +1,9 @@
+'use strict';
+
 // Get access to the background window object
 // This object is used to pass variables between active page and background page
-chrome.runtime.getBackgroundPage(function(result) {
+var backgroundPage;
+chrome.runtime.getBackgroundPage(function (result) {
     backgroundPage = result;
     backgroundPage.app_window = window;
 });
@@ -9,10 +12,11 @@ chrome.runtime.getBackgroundPage(function(result) {
 var googleAnalyticsService = analytics.getService('ice_cream_app');
 var googleAnalytics = googleAnalyticsService.getTracker(atob("VUEtNTI4MjA5MjAtMQ=="));
 var googleAnalyticsConfig = false;
-googleAnalyticsService.getConfig().addCallback(function(config) {
+googleAnalyticsService.getConfig().addCallback(function (config) {
     googleAnalyticsConfig = config;
 });
-$(document).ready(function() {
+
+$(document).ready(function () {
     googleAnalytics.sendAppView('Application Started');
 
     // translate to user-selected language
@@ -20,7 +24,7 @@ $(document).ready(function() {
 
     // alternative - window.navigator.appVersion.match(/Chrome\/([0-9.]*)/)[1];
     GUI.log('Running - OS: <strong>' + GUI.operating_system + '</strong>, ' +
-        'Chrome: <strong>' + window.navigator.appVersion.replace(/.*Chrome\/([0-9.]*).*/,"$1") + '</strong>, ' +
+        'Chrome: <strong>' + window.navigator.appVersion.replace(/.*Chrome\/([0-9.]*).*/, "$1") + '</strong>, ' +
         'Configurator: <strong>' + chrome.runtime.getManifest().version + '</strong>');
 
     // notification messages for various operating systems
@@ -40,11 +44,10 @@ $(document).ready(function() {
 
     // Tabs
     var ui_tabs = $('#tabs > ul');
-    $('a', ui_tabs).click(function() {
+    $('a', ui_tabs).click(function () {
         if ($(this).parent().hasClass('active') == false && !GUI.tab_switch_in_progress) { // only initialize when the tab isn't already active
-            var self = this;
-            var index = $(self).parent().index();
-            var tab = $(self).parent().prop('class');
+            var self = this,
+                tab = $(self).parent().prop('class');
 
             // if there is no active connection, return
             if (!configuration_received && tab != 'tab_logging') {
@@ -54,7 +57,7 @@ $(document).ready(function() {
 
             GUI.tab_switch_in_progress = true;
 
-            GUI.tab_switch_cleanup(function() {
+            GUI.tab_switch_cleanup(function () {
                 // disable previously active tab highlight
                 $('li', ui_tabs).removeClass('active');
 
@@ -67,6 +70,10 @@ $(document).ready(function() {
 
                 // display loading screen
                 $('#cache .data-loading').clone().appendTo(content);
+
+                function content_ready() {
+                    GUI.tab_switch_in_progress = false;
+                }
 
                 switch (tab) {
                     case 'tab_initial_setup':
@@ -100,10 +107,6 @@ $(document).ready(function() {
                         tabs.logging.initialize(content_ready);
                         break;
                 }
-
-                function content_ready() {
-                    GUI.tab_switch_in_progress = false;
-                }
             });
         }
     });
@@ -111,27 +114,27 @@ $(document).ready(function() {
     tabs.default.initialize();
 
     // options
-    $('a#options').click(function() {
+    $('a#options').click(function () {
         var el = $(this);
 
         if (!el.hasClass('active')) {
             el.addClass('active');
             el.after('<div id="options-window"></div>');
 
-            $('div#options-window').load('./tabs/options.html', function() {
+            $('div#options-window').load('./tabs/options.html', function () {
                 googleAnalytics.sendAppView('Options');
 
                 // translate to user-selected language
                 localize();
 
                 // if notifications are enabled, or wasn't set, check the notifications checkbox
-                chrome.storage.local.get('update_notify', function(result) {
-                    if (typeof result.update_notify === 'undefined' || result.update_notify) {
+                chrome.storage.local.get('update_notify', function (result) {
+                    if (result.update_notify === 'undefined' || result.update_notify) {
                         $('div.notifications input').prop('checked', true);
                     }
                 });
 
-                $('div.notifications input').change(function() {
+                $('div.notifications input').change(function () {
                     var check = $(this).is(':checked');
 
                     chrome.storage.local.set({'update_notify': check});
@@ -142,7 +145,7 @@ $(document).ready(function() {
                     $('div.statistics input').prop('checked', true);
                 }
 
-                $('div.statistics input').change(function() {
+                $('div.statistics input').change(function () {
                     var result = $(this).is(':checked');
                     googleAnalyticsConfig.setTrackingPermitted(result);
                 });
@@ -151,7 +154,7 @@ $(document).ready(function() {
                     if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
                         $(document).unbind('click keyup', close_and_cleanup);
 
-                        $('div#options-window').slideUp(function() {
+                        $('div#options-window').slideUp(function () {
                             el.removeClass('active');
                             $(this).empty().remove();
                         });
@@ -166,16 +169,16 @@ $(document).ready(function() {
     });
 
     // listen to all input change events and adjust the value within limits if necessary
-    $("#content").on('focus', 'input[type="number"]', function() {
-        var element = $(this);
-        var val = element.val();
+    $("#content").on('focus', 'input[type="number"]', function () {
+        var element = $(this),
+            val = element.val();
 
         if (!isNaN(val)) {
             element.data('previousValue', parseFloat(val));
         }
     });
 
-    $("#content").on('keydown', 'input[type="number"]', function(e) {
+    $("#content").on('keydown', 'input[type="number"]', function (e) {
         // whitelist all that we need for numeric control
         var whitelist = [
             96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, // numpad and standard number keypad
@@ -185,24 +188,31 @@ $(document).ready(function() {
             37, 38, 39, 40, 13 // arrows and enter
         ];
 
-        if (whitelist.indexOf(e.keyCode) == -1) e.preventDefault();
+        if (whitelist.indexOf(e.keyCode) == -1) {
+            e.preventDefault();
+        }
     });
 
-    $("#content").on('change', 'input[type="number"]', function() {
-        var element = $(this);
-        var min = parseFloat(element.prop('min'));
-        var max = parseFloat(element.prop('max'));
-        var step = parseFloat(element.prop('step'));
-        var val = parseFloat(element.val());
+    $("#content").on('change', 'input[type="number"]', function () {
+        var element = $(this),
+            min = parseFloat(element.prop('min')),
+            max = parseFloat(element.prop('max')),
+            step = parseFloat(element.prop('step')),
+            val = parseFloat(element.val()),
+            decimal_places;
 
         // only adjust minimal end if bound is set
         if (element.prop('min')) {
-            if (val < min) element.val(min);
+            if (val < min) {
+                element.val(min);
+            }
         }
 
         // only adjust maximal end if bound is set
         if (element.prop('max')) {
-            if (val > max) element.val(max);
+            if (val > max) {
+                element.val(max);
+            }
         }
 
         // if entered value is illegal use previous value instead
@@ -219,7 +229,7 @@ $(document).ready(function() {
 
         // if step is set and is float and value is int, convert to float, keep decimal places in float according to step *experimental*
         if (!isNaN(step) && step % 1 !== 0) {
-            var decimal_places = String(step).split('.')[1].length;
+            decimal_places = String(step).split('.')[1].length;
 
             if (val % 1 === 0) {
                 element.val(val.toFixed(decimal_places));
@@ -243,10 +253,17 @@ function millitime() {
 }
 
 function bytesToSize(bytes) {
-    if (bytes < 1024) return bytes + ' Bytes';
-    else if (bytes < 1048576) return(bytes / 1024).toFixed(3) + ' KB';
-    else if (bytes < 1073741824) return(bytes / 1048576).toFixed(3) + ' MB';
-    else return (bytes / 1073741824).toFixed(3) + ' GB';
+    if (bytes < 1024) {
+        bytes = bytes + ' Bytes';
+    } else if (bytes < 1048576) {
+        bytes = (bytes / 1024).toFixed(3) + ' KB';
+    } else if (bytes < 1073741824) {
+        bytes = (bytes / 1048576).toFixed(3) + ' MB';
+    } else {
+        bytes = (bytes / 1073741824).toFixed(3) + ' GB';
+    }
+
+    return bytes;
 }
 
 /*

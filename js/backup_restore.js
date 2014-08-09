@@ -1,3 +1,5 @@
+'use strict';
+
 function configuration_backup() {
     // request configuration data (one by one)
 

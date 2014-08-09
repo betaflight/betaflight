@@ -1,3 +1,5 @@
+'use strict';
+
 function port_handler() {
     this.main_timeout_reference;
     this.initial_ports = false;
