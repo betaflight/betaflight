@@ -5,6 +5,7 @@
 
     popular choices - 921600, 460800, 256000, 230400, 153600, 128000, 115200, 57600, 38400, 28800, 19200
 */
+'use strict';
 
 var STM32_protocol = function() {
     this.options = {};
@@ -449,7 +450,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
             var bytes_flashed = 0;
             var bytes_flashed_total = 0; // used for progress bar
 
-            function write() {
+            var write = function () {
                 if (bytes_flashed < self.hex.data[flashing_block].bytes) {
                     var bytes_to_write = ((bytes_flashed + 256) <= self.hex.data[flashing_block].bytes) ? 256 : (self.hex.data[flashing_block].bytes - bytes_flashed);
 
@@ -530,7 +531,7 @@ STM32_protocol.prototype.upload_procedure = function(step) {
                 self.verify_hex.push([]);
             }
 
-            function reading() {
+            var reading = function () {
                 if (bytes_verified < self.hex.data[reading_block].bytes) {
                     var bytes_to_read = ((bytes_verified + 256) <= self.hex.data[reading_block].bytes) ? 256 : (self.hex.data[reading_block].bytes - bytes_verified);
 
