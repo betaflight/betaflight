@@ -1,6 +1,12 @@
 'use strict';
 
-var firmware_version_accepted = 2.3;
+var CONFIGURATOR = {
+    'firmwareVersionAccepted': 2.3,
+    'connectionValid': false,
+    'mspPassThrough': false,
+    'cliActive': false,
+    'cliValid': false
+};
 
 var CONFIG = {
     version:       0,

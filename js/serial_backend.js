@@ -1,7 +1,5 @@
 'use strict';
 
-var configuration_received = false;
-
 $(document).ready(function() {
     $('div#port-picker a.connect').click(function() {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
@@ -36,8 +34,8 @@ $(document).ready(function() {
 
                     MSP.disconnect_cleanup();
                     PortUsage.reset();
-                    configuration_received = false; // reset valid config received variable (used to block tabs while not connected properly)
-                    MSP_pass_through = false;
+                    CONFIGURATOR.connectionValid = false;
+                    CONFIGURATOR.mspPassThrough = false;
 
                     // unlock port select & baud
                     $('div#port-picker #port').prop('disabled', false);
@@ -127,10 +125,10 @@ function onOpen(openInfo) {
 
         serial.onReceive.addListener(read_serial);
 
-        if (!MSP_pass_through) {
+        if (!CONFIGURATOR.mspPassThrough) {
             // disconnect after 10 seconds with error if we don't get IDENT data
             GUI.timeout_add('connecting', function() {
-                if (!configuration_received) {
+                if (!CONFIGURATOR.connectionValid) {
                     GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
 
                     $('div#port-picker a.connect').click(); // disconnect
@@ -145,13 +143,13 @@ function onOpen(openInfo) {
 
                     GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
 
-                    if (CONFIG.version >= firmware_version_accepted) {
-                        configuration_received = true;
+                    if (CONFIG.version >= CONFIGURATOR.firmwareVersionAccepted) {
+                        CONFIGURATOR.connectionValid = true;
 
                         $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
                         $('#tabs li a:first').click();
                     } else {
-                        GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [firmware_version_accepted]));
+                        GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.firmwareVersionAccepted]));
                         $('div#port-picker a.connect').click(); // disconnect
                     }
                 });
@@ -184,18 +182,18 @@ function onClosed(result) {
 }
 
 function read_serial(info) {
-    if (!CLI_active && !MSP_pass_through) {
+    if (!CONFIGURATOR.cliActive && !CONFIGURATOR.mspPassThrough) {
         MSP.read(info);
-    } else if (CLI_active) {
-        handle_CLI(info);
-    } else if (MSP_pass_through) { // needs to be verified, might be removed after pass_through is 100% deployed
+    } else if (CONFIGURATOR.cliActive) {
+        tabs.cli.read(info);
+    } else if (CONFIGURATOR.mspPassThrough) {
         MSP.read(info);
     }
 }
 
 function sensor_status(sensors_detected) {
     // initialize variable (if it wasn't)
-    if (typeof sensor_status.previous_sensors_detected == 'undefined') {
+    if (sensor_status.previous_sensors_detected === 'undefined') {
         sensor_status.previous_sensors_detected = 0;
     }
 

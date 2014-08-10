@@ -47,7 +47,7 @@ function configuration_backup() {
         var now = d.getUTCFullYear() + '.' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getHours() + '.' + d.getMinutes();
 
         // create or load the file
-        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'bf_mw_backup_' + now, accepts: accepts}, function(fileEntry) {
+        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'bf_mw_backup_' + now, accepts: accepts}, function (fileEntry) {
             if (!fileEntry) {
                 console.log('No file selected, backup aborted.');
 
@@ -57,14 +57,14 @@ function configuration_backup() {
             chosenFileEntry = fileEntry;
 
             // echo/console log path specified
-            chrome.fileSystem.getDisplayPath(chosenFileEntry, function(path) {
+            chrome.fileSystem.getDisplayPath(chosenFileEntry, function (path) {
                 console.log('Backup file path: ' + path);
             });
 
             // change file entry from read only to read/write
-            chrome.fileSystem.getWritableEntry(chosenFileEntry, function(fileEntryWritable) {
+            chrome.fileSystem.getWritableEntry(chosenFileEntry, function (fileEntryWritable) {
                 // check if file is writable
-                chrome.fileSystem.isWritableEntry(fileEntryWritable, function(isWritable) {
+                chrome.fileSystem.isWritableEntry(fileEntryWritable, function (isWritable) {
                     if (isWritable) {
                         chosenFileEntry = fileEntryWritable;
 
@@ -83,13 +83,13 @@ function configuration_backup() {
                         var serialized_config_object = JSON.stringify(configuration);
                         var blob = new Blob([serialized_config_object], {type: 'text/plain'}); // first parameter for Blob needs to be an array
 
-                        chosenFileEntry.createWriter(function(writer) {
+                        chosenFileEntry.createWriter(function (writer) {
                             writer.onerror = function (e) {
                                 console.error(e);
                             };
 
                             var truncated = false;
-                            writer.onwriteend = function() {
+                            writer.onwriteend = function () {
                                 if (!truncated) {
                                     // onwriteend will be fired again when truncation is finished
                                     truncated = true;
@@ -126,7 +126,7 @@ function configuration_restore() {
     }];
 
     // load up the file
-    chrome.fileSystem.chooseEntry({type: 'openFile', accepts: accepts}, function(fileEntry) {
+    chrome.fileSystem.chooseEntry({type: 'openFile', accepts: accepts}, function (fileEntry) {
         if (!fileEntry) {
             console.log('No file selected, restore aborted.');
 
@@ -136,15 +136,15 @@ function configuration_restore() {
         chosenFileEntry = fileEntry;
 
         // echo/console log path specified
-        chrome.fileSystem.getDisplayPath(chosenFileEntry, function(path) {
+        chrome.fileSystem.getDisplayPath(chosenFileEntry, function (path) {
             console.log('Restore file path: ' + path);
         });
 
         // read contents into variable
-        chosenFileEntry.file(function(file) {
+        chosenFileEntry.file(function (file) {
             var reader = new FileReader();
 
-            reader.onprogress = function(e) {
+            reader.onprogress = function (e) {
                 if (e.total > 1048576) { // 1 MB
                     // dont allow reading files bigger then 1 MB
                     console.log('File limit (1 MB) exceeded, aborting');
@@ -152,7 +152,7 @@ function configuration_restore() {
                 }
             };
 
-            reader.onloadend = function(e) {
+            reader.onloadend = function (e) {
                 if (e.total != 0 && e.total == e.loaded) {
                     console.log('Read SUCCESSFUL');
 
@@ -295,9 +295,9 @@ function configuration_upload() {
         buffer_out[21] = 0; // vbatlevel_crit (unused)
 
         // Send ove the new MISC
-        MSP.send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, function() {
+        MSP.send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, function () {
             // Save changes to EEPROM
-            MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+            MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                 GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
             });
         });
