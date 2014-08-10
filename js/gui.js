@@ -2,7 +2,7 @@
 
 var tabs = {}; // filled by individual tab js file
 
-var GUI_control = function() {
+var GUI_control = function () {
     this.auto_connect = false;
     this.connecting_to = false;
     this.connected_to = false;
@@ -29,7 +29,7 @@ var GUI_control = function() {
 // code = function reference (code to be executed)
 // interval = time interval in miliseconds
 // first = true/false if code should be ran initially before next timer interval hits
-GUI_control.prototype.interval_add = function(name, code, interval, first) {
+GUI_control.prototype.interval_add = function (name, code, interval, first) {
     var data = {'name': name, 'timer': undefined, 'code': code, 'interval': interval, 'fired': 0, 'paused': false};
 
     if (first == true) {
@@ -50,7 +50,7 @@ GUI_control.prototype.interval_add = function(name, code, interval, first) {
 };
 
 // name = string
-GUI_control.prototype.interval_remove = function(name) {
+GUI_control.prototype.interval_remove = function (name) {
     for (var i = 0; i < this.interval_array.length; i++) {
         if (this.interval_array[i].name == name) {
             clearInterval(this.interval_array[i].timer); // stop timer
@@ -65,7 +65,7 @@ GUI_control.prototype.interval_remove = function(name) {
 };
 
 // name = string
-GUI_control.prototype.interval_pause = function(name) {
+GUI_control.prototype.interval_pause = function (name) {
     for (var i = 0; i < this.interval_array.length; i++) {
         if (this.interval_array[i].name == name) {
             clearInterval(this.interval_array[i].timer);
@@ -79,7 +79,7 @@ GUI_control.prototype.interval_pause = function(name) {
 };
 
 // name = string
-GUI_control.prototype.interval_resume = function(name) {
+GUI_control.prototype.interval_resume = function (name) {
     for (var i = 0; i < this.interval_array.length; i++) {
         if (this.interval_array[i].name == name && this.interval_array[i].paused) {
             var obj = this.interval_array[i];
@@ -101,14 +101,14 @@ GUI_control.prototype.interval_resume = function(name) {
 
 // input = array of timers thats meant to be kept, or nothing
 // return = returns timers killed in last call
-GUI_control.prototype.interval_kill_all = function(keep_array) {
+GUI_control.prototype.interval_kill_all = function (keep_array) {
     var self = this;
     var timers_killed = 0;
 
     for (var i = (this.interval_array.length - 1); i >= 0; i--) { // reverse iteration
         var keep = false;
         if (keep_array) { // only run through the array if it exists
-            keep_array.forEach(function(name) {
+            keep_array.forEach(function (name) {
                 if (self.interval_array[i].name == name) {
                     keep = true;
                 }
@@ -130,7 +130,7 @@ GUI_control.prototype.interval_kill_all = function(keep_array) {
 // name = string
 // code = function reference (code to be executed)
 // timeout = timeout in miliseconds
-GUI_control.prototype.timeout_add = function(name, code, timeout) {
+GUI_control.prototype.timeout_add = function (name, code, timeout) {
     var self = this;
     var data = {'name': name, 'timer': undefined, 'timeout': timeout};
 
@@ -149,7 +149,7 @@ GUI_control.prototype.timeout_add = function(name, code, timeout) {
 };
 
 // name = string
-GUI_control.prototype.timeout_remove = function(name) {
+GUI_control.prototype.timeout_remove = function (name) {
     for (var i = 0; i < this.timeout_array.length; i++) {
         if (this.timeout_array[i].name == name) {
             clearTimeout(this.timeout_array[i].timer); // stop timer
@@ -165,7 +165,7 @@ GUI_control.prototype.timeout_remove = function(name) {
 
 // no input paremeters
 // return = returns timers killed in last call
-GUI_control.prototype.timeout_kill_all = function() {
+GUI_control.prototype.timeout_kill_all = function () {
     var timers_killed = 0;
 
     for (var i = 0; i < this.timeout_array.length; i++) {
@@ -180,7 +180,7 @@ GUI_control.prototype.timeout_kill_all = function() {
 };
 
 // message = string
-GUI_control.prototype.log = function(message) {
+GUI_control.prototype.log = function (message) {
     var command_log = $('div#log');
     var d = new Date();
     var time = ((d.getHours() < 10) ? '0' + d.getHours(): d.getHours())
@@ -194,7 +194,7 @@ GUI_control.prototype.log = function(message) {
 // Method is called every time a valid tab change event is received
 // callback = code to run when cleanup is finished
 // default switch doesn't require callback to be set
-GUI_control.prototype.tab_switch_cleanup = function(callback) {
+GUI_control.prototype.tab_switch_cleanup = function (callback) {
     MSP.callbacks_cleanup(); // we don't care about any old data that might or might not arrive
     GUI.interval_kill_all(); // all intervals (mostly data pulling) needs to be removed on tab switch
 

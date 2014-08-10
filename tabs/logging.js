@@ -1,7 +1,5 @@
 'use strict';
 
-var MSP_pass_through = false;
-
 tabs.logging = {};
 tabs.logging.initialize = function(callback) {
     GUI.active_tab_ref = this;
@@ -10,7 +8,7 @@ tabs.logging.initialize = function(callback) {
 
     var requested_properties = [];
 
-    if (configuration_received) {
+    if (CONFIGURATOR.connectionValid) {
         MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
 
         var get_motor_data = function () {
@@ -21,7 +19,7 @@ tabs.logging.initialize = function(callback) {
             $('#content').load("./tabs/logging.html", process_html);
         }
     } else {
-        MSP_pass_through = true;
+        CONFIGURATOR.mspPassThrough = true;
 
         // we will initialize RC.channels array and MOTOR_DATA array manually
         RC.active_channels = 8;
@@ -70,7 +68,7 @@ tabs.logging.initialize = function(callback) {
                                 }
 
                                 // request new
-                                if (!MSP_pass_through) {
+                                if (!CONFIGURATOR.mspPassThrough) {
                                     for (var i = 0; i < requested_properties.length; i++, requests++) {
                                         MSP.send_message(MSP_codes[requested_properties[i]]);
                                     }
@@ -113,7 +111,7 @@ tabs.logging.initialize = function(callback) {
             }
         });
 
-        if (MSP_pass_through) {
+        if (CONFIGURATOR.mspPassThrough) {
             $('a.back').show();
 
             $('a.back').click(function() {
@@ -121,7 +119,7 @@ tabs.logging.initialize = function(callback) {
                     $('a.connect').click();
                 } else {
                     GUI.tab_switch_cleanup(function() {
-                        MSP_pass_through = false;
+                        CONFIGURATOR.mspPassThrough = false;
                         $('#tabs > ul li').removeClass('active');
                         tabs.default.initialize();
                     });
