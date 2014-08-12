@@ -5,13 +5,13 @@ TABS.cli = {
     'sequenceElements': 0
 };
 
-TABS.cli.initialize = function(callback) {
+TABS.cli.initialize = function (callback) {
     var self = this;
     GUI.active_tab_ref = this;
     GUI.active_tab = 'cli';
     googleAnalytics.sendAppView('CLI Page');
 
-    $('#content').load("./tabs/cli.html", function() {
+    $('#content').load("./tabs/cli.html", function () {
         // translate to user-selected language
         localize();
 
@@ -23,7 +23,7 @@ TABS.cli.initialize = function(callback) {
 
         bufView[0] = 0x23; // #
 
-        serial.send(bufferOut, function(writeInfo) {});
+        serial.send(bufferOut, function (writeInfo) {});
 
         var textarea = $('.tab-cli textarea');
 
@@ -44,14 +44,17 @@ TABS.cli.initialize = function(callback) {
             }
         });
 
-        textarea.keyup(function(event) {
-            var keyUp = { 38: true }, keyDown = { 40: true };
+        textarea.keyup(function (event) {
+            var keyUp = {38: true},
+                keyDown = {40: true};
 
-            if (event.keyCode in keyUp)
+            if (event.keyCode in keyUp) {
                 textarea.val(self.history.prev());
+            }
 
-            if (event.keyCode in keyDown)
+            if (event.keyCode in keyDown) {
                 textarea.val(self.history.next());
+            }
         });
 
         // give input element user focus
@@ -160,7 +163,7 @@ TABS.cli.read = function (readInfo) {
     $('.tab-cli .window .wrapper').css('webkitTransform', 'scale(1)');
 };
 
-TABS.cli.cleanup = function(callback) {
+TABS.cli.cleanup = function (callback) {
     var bufferOut = new ArrayBuffer(5);
     var bufView = new Uint8Array(bufferOut);
 
@@ -170,12 +173,12 @@ TABS.cli.cleanup = function(callback) {
     bufView[3] = 0x74; // t
     bufView[4] = 0x0D; // enter
 
-    serial.send(bufferOut, function(writeInfo) {
+    serial.send(bufferOut, function (writeInfo) {
         // we could handle this "nicely", but this will do for now
         // (another approach is however much more complicated):
         // we can setup an interval asking for data lets say every 200ms, when data arrives, callback will be triggered and tab switched
         // we could probably implement this someday
-        GUI.timeout_add('waiting_for_bootup', function() {
+        GUI.timeout_add('waiting_for_bootup', function () {
             CONFIGURATOR.cliActive = false;
             CONFIGURATOR.cliValid = false;
 
