@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.receiver = {};
-TABS.receiver.initialize = function(callback) {
+TABS.receiver.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'receiver';
     googleAnalytics.sendAppView('Receiver Page');
@@ -27,7 +27,7 @@ TABS.receiver.initialize = function(callback) {
         $('.tunings .rate input[name="rate"]').val(RC_tuning.RC_RATE.toFixed(2));
         $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
 
-        chrome.storage.local.get('rx_refresh_rate', function(result) {
+        chrome.storage.local.get('rx_refresh_rate', function (result) {
             if (typeof result.rx_refresh_rate != 'undefined') {
                 $('select[name="rx_refresh_rate"]').val(result.rx_refresh_rate).change();
             } else {
@@ -36,9 +36,9 @@ TABS.receiver.initialize = function(callback) {
         });
 
         // generate bars
-        var bar_names = ['Roll', 'Pitch', 'Yaw', 'Throttle'];
-        var bar_container = $('.tab-receiver .bars');
-        var aux_index = 1;
+        var bar_names = ['Roll', 'Pitch', 'Yaw', 'Throttle'],
+            bar_container = $('.tab-receiver .bars'),
+            aux_index = 1;
 
         for (var i = 0; i < RC.active_channels; i++) {
             var name;
@@ -59,19 +59,19 @@ TABS.receiver.initialize = function(callback) {
         }
 
         var meter_array = [];
-        $('meter', bar_container).each(function() {
+        $('meter', bar_container).each(function () {
             meter_array.push($(this));
         });
 
         var meter_values_array = [];
-        $('.value', bar_container).each(function() {
+        $('.value', bar_container).each(function () {
             meter_values_array.push($(this));
         });
 
         // UI Hooks
         // curves
-        $('.tunings .throttle input').change(function() {
-            setTimeout(function() {
+        $('.tunings .throttle input').change(function () {
+            setTimeout(function () {
                 var mid = parseFloat($('.tunings .throttle input[name="mid"]').val());
                 var expo = parseFloat($('.tunings .throttle input[name="expo"]').val());
 
@@ -98,8 +98,8 @@ TABS.receiver.initialize = function(callback) {
             }, 0); // race condition, that should always trigger after all events are processed
         }).change();
 
-        $('.tunings .rate input').change(function() {
-            setTimeout(function() {
+        $('.tunings .rate input').change(function () {
+            setTimeout(function () {
                 var rate = parseFloat($('.tunings .rate input[name="rate"]').val());
                 var expo = parseFloat($('.tunings .rate input[name="expo"]').val());
 
@@ -118,8 +118,8 @@ TABS.receiver.initialize = function(callback) {
             }, 0); // race condition, that should always trigger after all events are processed
         }).change();
 
-        $('a.refresh').click(function() {
-            MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, function() {
+        $('a.refresh').click(function () {
+            MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, function () {
                 GUI.log(chrome.i18n.getMessage('receiverDataRefreshed'));
 
                 // fill in data from RC_tuning
@@ -135,7 +135,7 @@ TABS.receiver.initialize = function(callback) {
             });
         });
 
-        $('a.update').click(function() {
+        $('a.update').click(function () {
             // catch RC_tuning changes
             RC_tuning.throttle_MID = parseFloat($('.tunings .throttle input[name="mid"]').val());
             RC_tuning.throttle_EXPO = parseFloat($('.tunings .throttle input[name="expo"]').val());
@@ -156,13 +156,13 @@ TABS.receiver.initialize = function(callback) {
             MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
                 });
             }
         });
 
-        $('select[name="rx_refresh_rate"]').change(function() {
+        $('select[name="rx_refresh_rate"]').change(function () {
             var plot_update_rate = parseInt($(this).val(), 10);
 
             // save update rate
@@ -178,12 +178,12 @@ TABS.receiver.initialize = function(callback) {
                 RX_plot_data[i] = [];
             }
 
-            var samples = 0;
-            var svg = d3.select("svg");
+            var samples = 0,
+                svg = d3.select("svg"),
+                RX_plot_e = $('#RX_plot'),
+                margin = {top: 20, right: 0, bottom: 10, left: 40},
+                width, height, widthScale, heightScale;
 
-            var RX_plot_e = $('#RX_plot');
-            var margin = {top: 20, right: 0, bottom: 10, left: 40};
-            var width, height, widthScale, heightScale;
             function update_receiver_plot_size() {
                 width = RX_plot_e.width() - margin.left - margin.right;
                 height = RX_plot_e.height() - margin.top - margin.bottom;
@@ -235,25 +235,25 @@ TABS.receiver.initialize = function(callback) {
                 var xAxis = d3.svg.axis().
                     scale(widthScale).
                     orient("bottom").
-                    tickFormat(function(d) {return d;});
+                    tickFormat(function (d) {return d;});
 
                 var yAxis = d3.svg.axis().
                     scale(heightScale).
                     orient("left").
-                    tickFormat(function(d) {return d;});
+                    tickFormat(function (d) {return d;});
 
                 var line = d3.svg.line().
-                    x(function(d) {return widthScale(d[0]);}).
-                    y(function(d) {return heightScale(d[1]);});
+                    x(function (d) {return widthScale(d[0]);}).
+                    y(function (d) {return heightScale(d[1]);});
 
                 svg.select(".x.grid").call(xGrid);
                 svg.select(".y.grid").call(yGrid);
                 svg.select(".x.axis").call(xAxis);
                 svg.select(".y.axis").call(yAxis);
 
-                var data = svg.select("g.data");
-                var lines = data.selectAll("path").data(RX_plot_data, function(d, i) { return i; });
-                var newLines = lines.enter().append("path").attr("class", "line");
+                var data = svg.select("g.data"),
+                    lines = data.selectAll("path").data(RX_plot_data, function (d, i) {return i;}),
+                    newLines = lines.enter().append("path").attr("class", "line");
                 lines.attr('d', line);
 
                 samples++;
@@ -267,7 +267,7 @@ TABS.receiver.initialize = function(callback) {
         });
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function() {
+        GUI.interval_add('status_pull', function () {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -275,6 +275,6 @@ TABS.receiver.initialize = function(callback) {
     }
 };
 
-TABS.receiver.cleanup = function(callback) {
+TABS.receiver.cleanup = function (callback) {
     if (callback) callback();
 };

@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.pid_tuning = {};
-TABS.pid_tuning.initialize = function(callback) {
+TABS.pid_tuning.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'pid_tuning';
     googleAnalytics.sendAppView('PID Tuning');
@@ -44,7 +44,7 @@ TABS.pid_tuning.initialize = function(callback) {
 
         // Fill in the data from PIDs array
         var i = 0;
-        $('.pid_tuning .ROLL input').each(function() {
+        $('.pid_tuning .ROLL input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[0][i++].toFixed(1));
@@ -59,7 +59,7 @@ TABS.pid_tuning.initialize = function(callback) {
         });
 
         i = 0;
-        $('.pid_tuning .PITCH input').each(function() {
+        $('.pid_tuning .PITCH input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[1][i++].toFixed(1));
@@ -74,7 +74,7 @@ TABS.pid_tuning.initialize = function(callback) {
         });
 
         i = 0;
-        $('.pid_tuning .YAW input').each(function() {
+        $('.pid_tuning .YAW input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[2][i++].toFixed(1));
@@ -89,7 +89,7 @@ TABS.pid_tuning.initialize = function(callback) {
         });
 
         i = 0;
-        $('.pid_tuning .ALT input').each(function() {
+        $('.pid_tuning .ALT input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[3][i++].toFixed(1));
@@ -104,12 +104,12 @@ TABS.pid_tuning.initialize = function(callback) {
         });
 
         i = 0;
-        $('.pid_tuning .Pos input').each(function() {
+        $('.pid_tuning .Pos input').each(function () {
             $(this).val(PIDs[4][i++].toFixed(2));
         });
 
         i = 0;
-        $('.pid_tuning .PosR input').each(function() {
+        $('.pid_tuning .PosR input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[5][i++].toFixed(1));
@@ -124,7 +124,7 @@ TABS.pid_tuning.initialize = function(callback) {
         });
 
         i = 0;
-        $('.pid_tuning .NavR input').each(function() {
+        $('.pid_tuning .NavR input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[6][i++].toFixed(1));
@@ -139,7 +139,7 @@ TABS.pid_tuning.initialize = function(callback) {
         });
 
         i = 0;
-        $('.pid_tuning .LEVEL input').each(function() {
+        $('.pid_tuning .LEVEL input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[7][i++].toFixed(1));
@@ -154,12 +154,12 @@ TABS.pid_tuning.initialize = function(callback) {
         });
 
         i = 0;
-        $('.pid_tuning .MAG input').each(function() {
+        $('.pid_tuning .MAG input').each(function () {
             $(this).val(PIDs[8][i++].toFixed(1));
         });
 
         i = 0;
-        $('.pid_tuning .Vario input').each(function() {
+        $('.pid_tuning .Vario input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[9][i++].toFixed(1));
@@ -182,74 +182,74 @@ TABS.pid_tuning.initialize = function(callback) {
         $('input[name="profile"]').val(CONFIG.profile + 1); // +1 because the range is 0-2
 
         // UI Hooks
-        $('input[name="profile"]').change(function() {
+        $('input[name="profile"]').change(function () {
             var profile = parseInt($(this).val());
-            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function() {
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function () {
                 GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile]));
 
-                GUI.tab_switch_cleanup(function() {
+                GUI.tab_switch_cleanup(function () {
                     TABS.pid_tuning.initialize();
                 });
             });
         });
 
-        $('a.refresh').click(function() {
-            GUI.tab_switch_cleanup(function() {
+        $('a.refresh').click(function () {
+            GUI.tab_switch_cleanup(function () {
                 GUI.log(chrome.i18n.getMessage('pidTuningDataRefreshed'));
 
                 TABS.pid_tuning.initialize();
             });
         });
 
-        $('a.update').click(function() {
+        $('a.update').click(function () {
             // Catch all the changes and stuff the inside PIDs array
             var i = 0;
-            $('table.pid_tuning tr.ROLL input').each(function() {
+            $('table.pid_tuning tr.ROLL input').each(function () {
                 PIDs[0][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.PITCH input').each(function() {
+            $('table.pid_tuning tr.PITCH input').each(function () {
                 PIDs[1][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.YAW input').each(function() {
+            $('table.pid_tuning tr.YAW input').each(function () {
                 PIDs[2][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.ALT input').each(function() {
+            $('table.pid_tuning tr.ALT input').each(function () {
                 PIDs[3][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.Vario input').each(function() {
+            $('table.pid_tuning tr.Vario input').each(function () {
                 PIDs[9][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.Pos input').each(function() {
+            $('table.pid_tuning tr.Pos input').each(function () {
                 PIDs[4][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.PosR input').each(function() {
+            $('table.pid_tuning tr.PosR input').each(function () {
                 PIDs[5][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.NavR input').each(function() {
+            $('table.pid_tuning tr.NavR input').each(function () {
                 PIDs[6][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.LEVEL input').each(function() {
+            $('table.pid_tuning tr.LEVEL input').each(function () {
                 PIDs[7][i++] = parseFloat($(this).val());
             });
 
             i = 0;
-            $('table.pid_tuning tr.MAG input').each(function() {
+            $('table.pid_tuning tr.MAG input').each(function () {
                 PIDs[8][i++] = parseFloat($(this).val());
             });
 
@@ -304,14 +304,14 @@ TABS.pid_tuning.initialize = function(callback) {
             }
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('pidTuningEepromSaved'));
                 });
             }
         });
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function() {
+        GUI.interval_add('status_pull', function () {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -319,6 +319,6 @@ TABS.pid_tuning.initialize = function(callback) {
     }
 };
 
-TABS.pid_tuning.cleanup = function(callback) {
+TABS.pid_tuning.cleanup = function (callback) {
     if (callback) callback();
 }

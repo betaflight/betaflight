@@ -7,7 +7,7 @@
 'use strict';
 
 TABS.servos = {};
-TABS.servos.initialize = function(callback) {
+TABS.servos.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'servos';
     googleAnalytics.sendAppView('Servos');
@@ -111,7 +111,7 @@ TABS.servos.initialize = function(callback) {
             $('div.tab-servos table.fields tr:last').data('info', {'obj': obj});
 
             // UI hooks
-            $('div.tab-servos table.fields tr:last td.channel input').click(function() {
+            $('div.tab-servos table.fields tr:last td.channel input').click(function () {
                 if($(this).is(':checked')) {
                     $(this).parent().parent().find('td.middle input').prop('disabled', true);
                     $(this).parent().parent().find('.channel input').not($(this)).prop('checked', false);
@@ -123,7 +123,7 @@ TABS.servos.initialize = function(callback) {
 
         function servos_update(save_to_eeprom) {
             // update bitfields
-            $('div.tab-servos table.directions tr:not(".main")').each(function() {
+            $('div.tab-servos table.directions tr:not(".main")').each(function () {
                 var info = $('select', this).data('info');
                 var val = parseInt($('select', this).val());
 
@@ -133,7 +133,7 @@ TABS.servos.initialize = function(callback) {
             });
 
             // update the rest
-            $('div.tab-servos table.fields tr:not(".main")').each(function() {
+            $('div.tab-servos table.fields tr:not(".main")').each(function () {
                 var info = $(this).data('info');
 
                 if ($('.middle input', this).is(':disabled')) {
@@ -182,7 +182,7 @@ TABS.servos.initialize = function(callback) {
 
             if (save_to_eeprom) {
                 // Save changes to EEPROM
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('servosEepromSave'));
                 });
             }
@@ -280,14 +280,14 @@ TABS.servos.initialize = function(callback) {
         }
 
         // UI hooks for dynamically generated elements
-        $('table.directions select, table.directions input, table.fields select, table.fields input').change(function() {
+        $('table.directions select, table.directions input, table.fields select, table.fields input').change(function () {
             if ($('div.live input').is(':checked')) {
                 // apply small delay as there seems to be some funky update business going wrong
                 GUI.timeout_add('servos_update', servos_update, 10);
             }
         });
 
-        $('a.update').click(function() {
+        $('a.update').click(function () {
             // standard check for supported_models + custom implementation for feature servo_tilt
             if (supported_models.indexOf(CONFIG.multiType) != -1 || AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
                 servos_update(true);
@@ -295,7 +295,7 @@ TABS.servos.initialize = function(callback) {
         });
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function() {
+        GUI.interval_add('status_pull', function () {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -303,6 +303,6 @@ TABS.servos.initialize = function(callback) {
     }
 };
 
-TABS.servos.cleanup = function(callback) {
+TABS.servos.cleanup = function (callback) {
     if (callback) callback();
 };
