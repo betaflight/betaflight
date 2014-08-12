@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.logging = {};
-TABS.logging.initialize = function(callback) {
+TABS.logging.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'logging';
     googleAnalytics.sendAppView('Logging');
@@ -41,7 +41,7 @@ TABS.logging.initialize = function(callback) {
         // UI hooks
         $('a.log_file').click(prepare_file);
 
-        $('a.logging').click(function() {
+        $('a.logging').click(function () {
             if (GUI.connected_to) {
                 if (fileEntry != null) {
                     var clicks = $(this).data('clicks');
@@ -53,7 +53,7 @@ TABS.logging.initialize = function(callback) {
                         log_buffer = [];
                         requested_properties = [];
 
-                        $('.properties input:checked').each(function() {
+                        $('.properties input:checked').each(function () {
                             requested_properties.push($(this).prop('name'));
                         });
 
@@ -118,7 +118,7 @@ TABS.logging.initialize = function(callback) {
                 if (GUI.connected_to) {
                     $('a.connect').click();
                 } else {
-                    GUI.tab_switch_cleanup(function() {
+                    GUI.tab_switch_cleanup(function () {
                         CONFIGURATOR.mspPassThrough = false;
                         $('#tabs > ul li').removeClass('active');
                         TABS.default.initialize();
@@ -127,9 +127,9 @@ TABS.logging.initialize = function(callback) {
             });
         }
 
-        chrome.storage.local.get('logging_file_entry', function(result) {
+        chrome.storage.local.get('logging_file_entry', function (result) {
             if (result.logging_file_entry) {
-                chrome.fileSystem.restoreEntry(result.logging_file_entry, function(entry) {
+                chrome.fileSystem.restoreEntry(result.logging_file_entry, function (entry) {
                     fileEntry = entry;
                     prepare_writer(true);
                 });
@@ -201,9 +201,10 @@ TABS.logging.initialize = function(callback) {
         append_to_file(head);
     }
 
-    var samples = 0;
-    var requests = 0;
-    var log_buffer = [];
+    var samples = 0,
+        requests = 0,
+        log_buffer = [];
+
     function crunch_data() {
         var sample = millitime();
 
@@ -255,8 +256,8 @@ TABS.logging.initialize = function(callback) {
     }
 
     // IO related methods
-    var fileEntry = null;
-    var fileWriter = null;
+    var fileEntry = null,
+        fileWriter = null;
 
     function prepare_file() {
         // create or load the file
@@ -296,29 +297,29 @@ TABS.logging.initialize = function(callback) {
     }
 
     function prepare_writer(retaining) {
-        fileEntry.createWriter(function(writer) {
+        fileEntry.createWriter(function (writer) {
             fileWriter = writer;
 
-            fileWriter.onerror = function(e) {
+            fileWriter.onerror = function (e) {
                 console.error(e);
 
                 // stop logging if the procedure was/is still running
                 if ($('a.logging').data('clicks')) $('a.logging').click();
             };
 
-            fileWriter.onwriteend = function() {
+            fileWriter.onwriteend = function () {
                 $('.size').text(bytesToSize(fileWriter.length));
             };
 
             if (retaining) {
-                chrome.fileSystem.getDisplayPath(fileEntry, function(path) {
+                chrome.fileSystem.getDisplayPath(fileEntry, function (path) {
                     GUI.log(chrome.i18n.getMessage('loggingAutomaticallyRetained', [path]));
                 });
             }
 
             // update log size in UI on fileWriter creation
             $('.size').text(bytesToSize(fileWriter.length));
-        }, function(e) {
+        }, function (e) {
             // File is not readable or does not exist!
             console.error(e);
 
@@ -337,6 +338,6 @@ TABS.logging.initialize = function(callback) {
     }
 };
 
-TABS.logging.cleanup = function(callback) {
+TABS.logging.cleanup = function (callback) {
     if (callback) callback();
 };

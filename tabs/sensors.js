@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.sensors = {};
-TABS.sensors.initialize = function(callback) {
+TABS.sensors.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'sensors';
     googleAnalytics.sendAppView('Sensor Page');
@@ -88,17 +88,17 @@ TABS.sensors.initialize = function(callback) {
             .scale(helpers.widthScale)
             .ticks(5)
             .orient("bottom")
-            .tickFormat(function(d) {return d;});
+            .tickFormat(function (d) {return d;});
 
         helpers.yAxis = d3.svg.axis()
             .scale(helpers.heightScale)
             .ticks(5)
             .orient("left")
-            .tickFormat(function(d) {return d;});
+            .tickFormat(function (d) {return d;});
 
         helpers.line = d3.svg.line()
-            .x(function(d) { return helpers.widthScale(d[0]); })
-            .y(function(d) { return helpers.heightScale(d[1]); });
+            .x(function (d) {return helpers.widthScale(d[0]);})
+            .y(function (d) {return helpers.heightScale(d[1]);});
 
         return helpers;
     }
@@ -108,7 +108,7 @@ TABS.sensors.initialize = function(callback) {
 
         if (graphHelpers.dynamicHeightDomain) {
             var limits = [];
-            $.each(data, function(idx, datum) {
+            $.each(data, function (idx, datum) {
                 limits.push(datum.min);
                 limits.push(datum.max);
             });
@@ -122,7 +122,7 @@ TABS.sensors.initialize = function(callback) {
         svg.select(".y.axis").call(graphHelpers.yAxis);
 
         var group = svg.select("g.data");
-        var lines = group.selectAll("path").data(data, function(d, i) { return i; });
+        var lines = group.selectAll("path").data(data, function (d, i) {return i;});
         var newLines = lines.enter().append("path").attr("class", "line");
         lines.attr('d', graphHelpers.line);
     }
@@ -180,7 +180,7 @@ TABS.sensors.initialize = function(callback) {
             checkboxes.eq(2).prop('disabled', true);
         }
 
-        $('.tab-sensors .info .checkboxes input').change(function() {
+        $('.tab-sensors .info .checkboxes input').change(function () {
             var enable = $(this).prop('checked');
             var index = $(this).parent().index();
 
@@ -203,7 +203,7 @@ TABS.sensors.initialize = function(callback) {
             }
 
             var checkboxes = [];
-            $('.tab-sensors .info .checkboxes input').each(function() {
+            $('.tab-sensors .info .checkboxes input').each(function () {
                 checkboxes.push($(this).prop('checked'));
             });
 
@@ -212,7 +212,7 @@ TABS.sensors.initialize = function(callback) {
             chrome.storage.local.set({'graphs_enabled': checkboxes});
         });
 
-        chrome.storage.local.get('graphs_enabled', function(result) {
+        chrome.storage.local.get('graphs_enabled', function (result) {
             if (result.graphs_enabled) {
                 var checkboxes = $('.tab-sensors .info .checkboxes input');
                 for (var i = 0; i < result.graphs_enabled.length; i++) {
@@ -227,17 +227,16 @@ TABS.sensors.initialize = function(callback) {
         initSensorData();
 
         // Setup variables
-        var samples_gyro_i = 0;
-        var samples_accel_i = 0;
-        var samples_mag_i = 0;
-        var samples_baro_i = 0;
-        var samples_debug_i = 0;
-
-        var gyro_data = initDataArray(3);
-        var accel_data = initDataArray(3);
-        var mag_data = initDataArray(3);
-        var baro_data = initDataArray(1);
-        var debug_data = [
+        var samples_gyro_i = 0,
+            samples_accel_i = 0,
+            samples_mag_i = 0,
+            samples_baro_i = 0,
+            samples_debug_i = 0,
+            gyro_data = initDataArray(3),
+            accel_data = initDataArray(3),
+            mag_data = initDataArray(3),
+            baro_data = initDataArray(1),
+            debug_data = [
             initDataArray(1),
             initDataArray(1),
             initDataArray(1),
@@ -260,7 +259,7 @@ TABS.sensors.initialize = function(callback) {
             y: [],
             z: [],
         };
-        $('.plot_control .x, .plot_control .y, .plot_control .z').each(function() {
+        $('.plot_control .x, .plot_control .y, .plot_control .z').each(function () {
             var el = $(this);
             if (el.hasClass('x')) {
                 raw_data_text_ements.x.push(el);
@@ -272,7 +271,7 @@ TABS.sensors.initialize = function(callback) {
         });
 
         // set refresh speeds according to configuration saved in storage
-        chrome.storage.local.get('sensor_settings', function(result) {
+        chrome.storage.local.get('sensor_settings', function (result) {
             if (result.sensor_settings) {
                 $('.tab-sensors select[name="gyro_refresh_rate"]').val(result.sensor_settings.rates.gyro);
                 $('.tab-sensors select[name="gyro_scale"]').val(result.sensor_settings.scales.gyro);
@@ -294,7 +293,7 @@ TABS.sensors.initialize = function(callback) {
             }
         });
 
-        $('.tab-sensors .rate select, .tab-sensors .scale select').change(function() {
+        $('.tab-sensors .rate select, .tab-sensors .scale select').change(function () {
             // if any of the select fields change value, all of the select values are grabbed
             // and timers are re-initialized with the new settings
             var rates = {
@@ -327,7 +326,7 @@ TABS.sensors.initialize = function(callback) {
 
             // fetch currently enabled plots
             var checkboxes = [];
-            $('.tab-sensors .info .checkboxes input').each(function() {
+            $('.tab-sensors .info .checkboxes input').each(function () {
                 checkboxes.push($(this).prop('checked'));
             });
 
@@ -406,7 +405,7 @@ TABS.sensors.initialize = function(callback) {
         });
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function() {
+        GUI.interval_add('status_pull', function () {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -414,7 +413,7 @@ TABS.sensors.initialize = function(callback) {
     });
 };
 
-TABS.sensors.cleanup = function(callback) {
+TABS.sensors.cleanup = function (callback) {
     serial.empty_output_buffer();
 
     if (callback) callback();

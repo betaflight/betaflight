@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.motor_outputs = {};
-TABS.motor_outputs.initialize = function(callback) {
+TABS.motor_outputs.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'motor_outputs';
     googleAnalytics.sendAppView('Motor Outputs Page');
@@ -85,17 +85,17 @@ TABS.motor_outputs.initialize = function(callback) {
             .scale(helpers.widthScale)
             .ticks(5)
             .orient("bottom")
-            .tickFormat(function(d) {return d;});
+            .tickFormat(function (d) {return d;});
 
         helpers.yAxis = d3.svg.axis()
             .scale(helpers.heightScale)
             .ticks(5)
             .orient("left")
-            .tickFormat(function(d) {return d;});
+            .tickFormat(function (d) {return d;});
 
         helpers.line = d3.svg.line()
-            .x(function(d) { return helpers.widthScale(d[0]); })
-            .y(function(d) { return helpers.heightScale(d[1]); });
+            .x(function (d) { return helpers.widthScale(d[0]); })
+            .y(function (d) { return helpers.heightScale(d[1]); });
 
         return helpers;
     }
@@ -105,7 +105,7 @@ TABS.motor_outputs.initialize = function(callback) {
 
         if (graphHelpers.dynamicHeightDomain) {
             var limits = [];
-            $.each(data, function(idx, datum) {
+            $.each(data, function (idx, datum) {
                 limits.push(datum.min);
                 limits.push(datum.max);
             });
@@ -119,7 +119,7 @@ TABS.motor_outputs.initialize = function(callback) {
         svg.select(".y.axis").call(graphHelpers.yAxis);
 
         var group = svg.select("g.data");
-        var lines = group.selectAll("path").data(data, function(d, i) { return i; });
+        var lines = group.selectAll("path").data(data, function (d, i) {return i;});
         var newLines = lines.enter().append("path").attr("class", "line");
         lines.attr('d', graphHelpers.line);
     }
@@ -154,7 +154,7 @@ TABS.motor_outputs.initialize = function(callback) {
             y: [],
             z: [],
         };
-        $('.plot_control .x, .plot_control .y, .plot_control .z').each(function() {
+        $('.plot_control .x, .plot_control .y, .plot_control .z').each(function () {
             var el = $(this);
             if (el.hasClass('x')) {
                 raw_data_text_ements.x.push(el);
@@ -166,7 +166,7 @@ TABS.motor_outputs.initialize = function(callback) {
         });
 
         // set refresh speeds according to configuration saved in storage
-        chrome.storage.local.get('motors_tab_accel_settings', function(result) {
+        chrome.storage.local.get('motors_tab_accel_settings', function (result) {
             if (result.motors_tab_accel_settings) {
                 $('.tab-motor_outputs select[name="accel_refresh_rate"]').val(result.motors_tab_accel_settings.rate);
                 $('.tab-motor_outputs select[name="accel_scale"]').val(result.motors_tab_accel_settings.scale);
@@ -179,7 +179,7 @@ TABS.motor_outputs.initialize = function(callback) {
             }
         });
 
-        $('.tab-motor_outputs .rate select, .tab-motor_outputs .scale select').change(function() {
+        $('.tab-motor_outputs .rate select, .tab-motor_outputs .scale select').change(function () {
             var rate = parseInt($('.tab-motor_outputs select[name="accel_refresh_rate"]').val(), 10);
             var scale = parseFloat($('.tab-motor_outputs select[name="accel_scale"]').val());
 
@@ -224,7 +224,7 @@ TABS.motor_outputs.initialize = function(callback) {
             }
         });
 
-        $('a.reset_accel_max').click(function() {
+        $('a.reset_accel_max').click(function () {
             accel_max_read = [0, 0, 0];
             accel_offset_established = false;
         });
@@ -246,7 +246,7 @@ TABS.motor_outputs.initialize = function(callback) {
         $('div.values li:not(:last)').html(MISC.mincommand);
 
         // UI hooks
-        $('div.sliders input:not(.master)').on('input', function() {
+        $('div.sliders input:not(.master)').on('input', function () {
             var index = $(this).index();
 
             $('div.values li').eq(index).html($(this).val());
@@ -264,7 +264,7 @@ TABS.motor_outputs.initialize = function(callback) {
             MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
         });
 
-        $('div.sliders input.master').on('input', function() {
+        $('div.sliders input.master').on('input', function () {
             var val = $(this).val();
 
             $('div.sliders input:not(:disabled, :last)').val(val);
@@ -272,7 +272,7 @@ TABS.motor_outputs.initialize = function(callback) {
             $('div.sliders input:not(:last):first').trigger('input');
         });
 
-        $('div.notice input[type="checkbox"]').change(function() {
+        $('div.notice input[type="checkbox"]').change(function () {
             if ($(this).is(':checked')) {
                 $('div.sliders input').slice(0, number_of_valid_outputs).prop('disabled', false);
 
@@ -373,6 +373,6 @@ TABS.motor_outputs.initialize = function(callback) {
     }
 };
 
-TABS.motor_outputs.cleanup = function(callback) {
+TABS.motor_outputs.cleanup = function (callback) {
     if (callback) callback();
 };
