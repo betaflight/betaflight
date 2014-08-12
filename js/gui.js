@@ -1,6 +1,6 @@
 'use strict';
 
-var tabs = {}; // filled by individual tab js file
+var TABS = {}; // filled by individual tab js file
 
 var GUI_control = function () {
     this.auto_connect = false;

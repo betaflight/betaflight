@@ -1,8 +1,8 @@
 'use strict';
 
 // TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
-tabs.auxiliary_configuration = {};
-tabs.auxiliary_configuration.initialize = function(callback) {
+TABS.auxiliary_configuration = {};
+TABS.auxiliary_configuration.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'auxiliary_configuration';
     googleAnalytics.sendAppView('Auxiliary Configuration');
@@ -157,6 +157,6 @@ tabs.auxiliary_configuration.initialize = function(callback) {
     }
 };
 
-tabs.auxiliary_configuration.cleanup = function(callback) {
+TABS.auxiliary_configuration.cleanup = function(callback) {
     if (callback) callback();
 };

@@ -1,9 +1,9 @@
 'use strict';
 
-tabs.initial_setup = {
+TABS.initial_setup = {
     yaw_fix: 0.0
 };
-tabs.initial_setup.initialize = function(callback) {
+TABS.initial_setup.initialize = function(callback) {
     var self = this;
     GUI.active_tab_ref = this;
     GUI.active_tab = 'initial_setup';
@@ -206,7 +206,7 @@ tabs.initial_setup.initialize = function(callback) {
                 GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
                 GUI.tab_switch_cleanup(function() {
-                    tabs.initial_setup.initialize();
+                    TABS.initial_setup.initialize();
                 });
             });
         });
@@ -324,6 +324,6 @@ tabs.initial_setup.initialize = function(callback) {
     }
 };
 
-tabs.initial_setup.cleanup = function(callback) {
+TABS.initial_setup.cleanup = function(callback) {
     if (callback) callback();
 };

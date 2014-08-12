@@ -77,41 +77,41 @@ $(document).ready(function () {
 
                 switch (tab) {
                     case 'tab_initial_setup':
-                        tabs.initial_setup.initialize(content_ready);
+                        TABS.initial_setup.initialize(content_ready);
                         break;
                     case 'tab_pid_tuning':
-                        tabs.pid_tuning.initialize(content_ready);
+                        TABS.pid_tuning.initialize(content_ready);
                         break;
                     case 'tab_receiver':
-                        tabs.receiver.initialize(content_ready);
+                        TABS.receiver.initialize(content_ready);
                         break;
                     case 'tab_auxiliary_configuration':
-                        tabs.auxiliary_configuration.initialize(content_ready);
+                        TABS.auxiliary_configuration.initialize(content_ready);
                         break;
                     case 'tab_servos':
-                        tabs.servos.initialize(content_ready);
+                        TABS.servos.initialize(content_ready);
                         break;
                     case 'tab_gps':
-                        tabs.gps.initialize(content_ready);
+                        TABS.gps.initialize(content_ready);
                         break;
                     case 'tab_motor_outputs':
-                        tabs.motor_outputs.initialize(content_ready);
+                        TABS.motor_outputs.initialize(content_ready);
                         break;
                     case 'tab_sensors':
-                        tabs.sensors.initialize(content_ready);
+                        TABS.sensors.initialize(content_ready);
                         break;
                     case 'tab_cli':
-                        tabs.cli.initialize(content_ready);
+                        TABS.cli.initialize(content_ready);
                         break;
                     case 'tab_logging':
-                        tabs.logging.initialize(content_ready);
+                        TABS.logging.initialize(content_ready);
                         break;
                 }
             });
         }
     });
 
-    tabs.default.initialize();
+    TABS.default.initialize();
 
     // options
     $('a#options').click(function () {

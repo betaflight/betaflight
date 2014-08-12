@@ -1,7 +1,7 @@
 'use strict';
 
-tabs.firmware_flasher = {};
-tabs.firmware_flasher.initialize = function (callback) {
+TABS.firmware_flasher = {};
+TABS.firmware_flasher.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'firmware_flasher';
     googleAnalytics.sendAppView('Firmware Flasher');
@@ -258,7 +258,7 @@ tabs.firmware_flasher.initialize = function (callback) {
         $('a.back').click(function () {
             if (!GUI.connect_lock) { // button disabled while flashing is in progress
                 GUI.tab_switch_cleanup(function () {
-                    tabs.default.initialize();
+                    TABS.default.initialize();
                 });
             } else {
                 GUI.log(chrome.i18n.getMessage('firmwareFlasherWaitForFinish'));
@@ -269,7 +269,7 @@ tabs.firmware_flasher.initialize = function (callback) {
     });
 };
 
-tabs.firmware_flasher.cleanup = function (callback) {
+TABS.firmware_flasher.cleanup = function (callback) {
     PortHandler.flush_callbacks();
 
     // unbind "global" events

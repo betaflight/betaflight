@@ -1,7 +1,7 @@
 'use strict';
 
-tabs.default = {};
-tabs.default.initialize = function(callback) {
+TABS.default = {};
+TABS.default.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'default';
 
@@ -16,7 +16,7 @@ tabs.default.initialize = function(callback) {
 
         // UI Hooks
         $('a.firmware_flasher').click(function() {
-            tabs.firmware_flasher.initialize();
+            TABS.firmware_flasher.initialize();
         });
 
         $('div.welcome a, div.sponsors a').click(function() {
@@ -27,6 +27,6 @@ tabs.default.initialize = function(callback) {
     });
 };
 
-tabs.default.cleanup = function(callback) {
+TABS.default.cleanup = function(callback) {
     if (callback) callback();
 };
