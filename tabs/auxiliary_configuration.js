@@ -2,7 +2,7 @@
 
 // TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
 TABS.auxiliary_configuration = {};
-TABS.auxiliary_configuration.initialize = function(callback) {
+TABS.auxiliary_configuration.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'auxiliary_configuration';
     googleAnalytics.sendAppView('Auxiliary Configuration');
@@ -62,11 +62,11 @@ TABS.auxiliary_configuration.initialize = function(callback) {
         }
 
         // UI Hooks
-        $('a.update').click(function() {
+        $('a.update').click(function () {
             // catch the input changes
             var main_needle = 0;
             var needle = 0;
-            $('.boxes input').each(function() {
+            $('.boxes input').each(function () {
                 if ($(this).is(':checked')) {
                     AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], needle);
                 } else {
@@ -93,7 +93,7 @@ TABS.auxiliary_configuration.initialize = function(callback) {
             MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('auxiliaryEepromSaved'));
                 });
             }
@@ -149,7 +149,7 @@ TABS.auxiliary_configuration.initialize = function(callback) {
         GUI.interval_add('aux_data_pull', get_rc_data, 50);
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function() {
+        GUI.interval_add('status_pull', function () {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -157,6 +157,6 @@ TABS.auxiliary_configuration.initialize = function(callback) {
     }
 };
 
-TABS.auxiliary_configuration.cleanup = function(callback) {
+TABS.auxiliary_configuration.cleanup = function (callback) {
     if (callback) callback();
 };

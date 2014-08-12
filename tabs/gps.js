@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.gps = {};
-TABS.gps.initialize = function(callback) {
+TABS.gps.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'gps';
     googleAnalytics.sendAppView('GPS Page');
@@ -53,7 +53,7 @@ TABS.gps.initialize = function(callback) {
         GUI.interval_add('gps_pull', get_raw_gps_data, 75, true);
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function() {
+        GUI.interval_add('status_pull', function () {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -61,6 +61,6 @@ TABS.gps.initialize = function(callback) {
     }
 };
 
-TABS.gps.cleanup = function(callback) {
+TABS.gps.cleanup = function (callback) {
     if (callback) callback();
 };

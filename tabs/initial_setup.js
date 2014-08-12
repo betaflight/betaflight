@@ -3,7 +3,8 @@
 TABS.initial_setup = {
     yaw_fix: 0.0
 };
-TABS.initial_setup.initialize = function(callback) {
+
+TABS.initial_setup.initialize = function (callback) {
     var self = this;
     GUI.active_tab_ref = this;
     GUI.active_tab = 'initial_setup';
@@ -137,7 +138,6 @@ TABS.initial_setup.initialize = function(callback) {
             case 13:
                 $(".modelMixDiagram").attr("src","./images/motor_order/octox.svg").addClass('modelMixOctoX');
                 break;
-
             case 4: // BI
             case 5: // GIMBAL
             case 8: // FLYING_WING
@@ -161,7 +161,7 @@ TABS.initial_setup.initialize = function(callback) {
         $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
 
         // UI Hooks
-        $('a.calibrateAccel').click(function() {
+        $('a.calibrateAccel').click(function () {
             var self = $(this);
 
             if (!self.hasClass('calibrating')) {
@@ -170,11 +170,11 @@ TABS.initial_setup.initialize = function(callback) {
                 // During this period MCU won't be able to process any serial commands because its locked in a for/while loop
                 // until this operation finishes, sending more commands through data_poll() will result in serial buffer overflow
                 GUI.interval_pause('initial_setup_data_pull');
-                MSP.send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibStarted'));
                 });
 
-                GUI.timeout_add('button_reset', function() {
+                GUI.timeout_add('button_reset', function () {
                     GUI.interval_resume('initial_setup_data_pull');
 
                     GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibEnded'));
@@ -184,17 +184,17 @@ TABS.initial_setup.initialize = function(callback) {
             }
         });
 
-        $('a.calibrateMag').click(function() {
+        $('a.calibrateMag').click(function () {
             var self = $(this);
 
             if (!self.hasClass('calibrating')) {
                 self.addClass('calibrating');
 
-                MSP.send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupMagCalibStarted'));
                 });
 
-                GUI.timeout_add('button_reset', function() {
+                GUI.timeout_add('button_reset', function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupMagCalibEnded'));
                     self.removeClass('calibrating');
                 }, 30000);
@@ -202,7 +202,7 @@ TABS.initial_setup.initialize = function(callback) {
         });
 
         $('a.resetSettings').click(function() {
-            MSP.send_message(MSP_codes.MSP_RESET_CONF, false, false, function() {
+            MSP.send_message(MSP_codes.MSP_RESET_CONF, false, false, function () {
                 GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
                 GUI.tab_switch_cleanup(function() {
@@ -212,7 +212,7 @@ TABS.initial_setup.initialize = function(callback) {
         });
 
 
-        $('a.update').click(function() {
+        $('a.update').click(function () {
             CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
             CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
 
@@ -265,7 +265,7 @@ TABS.initial_setup.initialize = function(callback) {
             MSP.send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupEepromSaved'));
                 });
             }
@@ -275,7 +275,7 @@ TABS.initial_setup.initialize = function(callback) {
         $('div#interactive_block > a.reset').text(chrome.i18n.getMessage('initialSetupButtonResetZaxisValue', [self.yaw_fix]));
 
         // reset yaw button hook
-        $('div#interactive_block > a.reset').click(function() {
+        $('div#interactive_block > a.reset').click(function () {
             self.yaw_fix = SENSOR_DATA.kinematics[2] * - 1.0;
             $(this).text(chrome.i18n.getMessage('initialSetupButtonResetZaxisValue', [self.yaw_fix]));
 
@@ -316,7 +316,7 @@ TABS.initial_setup.initialize = function(callback) {
         GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function() {
+        GUI.interval_add('status_pull', function () {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -324,6 +324,6 @@ TABS.initial_setup.initialize = function(callback) {
     }
 };
 
-TABS.initial_setup.cleanup = function(callback) {
+TABS.initial_setup.cleanup = function (callback) {
     if (callback) callback();
 };
