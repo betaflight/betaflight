@@ -1,7 +1,7 @@
 'use strict';
 
-tabs.pid_tuning = {};
-tabs.pid_tuning.initialize = function(callback) {
+TABS.pid_tuning = {};
+TABS.pid_tuning.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'pid_tuning';
     googleAnalytics.sendAppView('PID Tuning');
@@ -188,7 +188,7 @@ tabs.pid_tuning.initialize = function(callback) {
                 GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile]));
 
                 GUI.tab_switch_cleanup(function() {
-                    tabs.pid_tuning.initialize();
+                    TABS.pid_tuning.initialize();
                 });
             });
         });
@@ -197,7 +197,7 @@ tabs.pid_tuning.initialize = function(callback) {
             GUI.tab_switch_cleanup(function() {
                 GUI.log(chrome.i18n.getMessage('pidTuningDataRefreshed'));
 
-                tabs.pid_tuning.initialize();
+                TABS.pid_tuning.initialize();
             });
         });
 
@@ -319,6 +319,6 @@ tabs.pid_tuning.initialize = function(callback) {
     }
 };
 
-tabs.pid_tuning.cleanup = function(callback) {
+TABS.pid_tuning.cleanup = function(callback) {
     if (callback) callback();
 }

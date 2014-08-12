@@ -1,11 +1,11 @@
 'use strict';
 
-tabs.cli = {
+TABS.cli = {
     'validateText': "",
     'sequenceElements': 0
 };
 
-tabs.cli.initialize = function(callback) {
+TABS.cli.initialize = function(callback) {
     var self = this;
     GUI.active_tab_ref = this;
     GUI.active_tab = 'cli';
@@ -61,25 +61,25 @@ tabs.cli.initialize = function(callback) {
     });
 };
 
-tabs.cli.history = {
+TABS.cli.history = {
     history: [],
     index:  0
 };
 
-tabs.cli.history.add = function (str) {
+TABS.cli.history.add = function (str) {
     this.history.push(str);
     this.index = this.history.length;
 };
-tabs.cli.history.prev = function () {
+TABS.cli.history.prev = function () {
     if (this.index > 0) this.index -= 1;
     return this.history[this.index];
 };
-tabs.cli.history.next = function () {
+TABS.cli.history.next = function () {
     if (this.index < this.history.length) this.index += 1;
     return this.history[this.index - 1];
 };
 
-tabs.cli.sendSlowly = function (out_arr, i, timeout_needle) {
+TABS.cli.sendSlowly = function (out_arr, i, timeout_needle) {
     GUI.timeout_add('CLI_send_slowly', function () {
         var bufferOut = new ArrayBuffer(out_arr[i].length + 1);
         var bufView = new Uint8Array(bufferOut);
@@ -94,7 +94,7 @@ tabs.cli.sendSlowly = function (out_arr, i, timeout_needle) {
     }, timeout_needle * 5);
 };
 
-tabs.cli.read = function (readInfo) {
+TABS.cli.read = function (readInfo) {
     /*  Some info about handling line feeds and carriage return
 
         line feed = LF = \n = 0x0A = 10
@@ -160,7 +160,7 @@ tabs.cli.read = function (readInfo) {
     $('.tab-cli .window .wrapper').css('webkitTransform', 'scale(1)');
 };
 
-tabs.cli.cleanup = function(callback) {
+TABS.cli.cleanup = function(callback) {
     var bufferOut = new ArrayBuffer(5);
     var bufView = new Uint8Array(bufferOut);
 

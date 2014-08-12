@@ -6,8 +6,8 @@
 */
 'use strict';
 
-tabs.servos = {};
-tabs.servos.initialize = function(callback) {
+TABS.servos = {};
+TABS.servos.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'servos';
     googleAnalytics.sendAppView('Servos');
@@ -310,6 +310,6 @@ tabs.servos.initialize = function(callback) {
     }
 };
 
-tabs.servos.cleanup = function(callback) {
+TABS.servos.cleanup = function(callback) {
     if (callback) callback();
 };

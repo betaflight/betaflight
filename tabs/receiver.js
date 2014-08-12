@@ -1,7 +1,7 @@
 'use strict';
 
-tabs.receiver = {};
-tabs.receiver.initialize = function(callback) {
+TABS.receiver = {};
+TABS.receiver.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'receiver';
     googleAnalytics.sendAppView('Receiver Page');
@@ -275,6 +275,6 @@ tabs.receiver.initialize = function(callback) {
     }
 };
 
-tabs.receiver.cleanup = function(callback) {
+TABS.receiver.cleanup = function(callback) {
     if (callback) callback();
 };

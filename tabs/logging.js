@@ -1,7 +1,7 @@
 'use strict';
 
-tabs.logging = {};
-tabs.logging.initialize = function(callback) {
+TABS.logging = {};
+TABS.logging.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'logging';
     googleAnalytics.sendAppView('Logging');
@@ -9,8 +9,6 @@ tabs.logging.initialize = function(callback) {
     var requested_properties = [];
 
     if (CONFIGURATOR.connectionValid) {
-        MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
-
         var get_motor_data = function () {
             MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
         }
@@ -18,6 +16,8 @@ tabs.logging.initialize = function(callback) {
         var load_html = function () {
             $('#content').load("./tabs/logging.html", process_html);
         }
+
+        MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
     } else {
         CONFIGURATOR.mspPassThrough = true;
 
@@ -121,7 +121,7 @@ tabs.logging.initialize = function(callback) {
                     GUI.tab_switch_cleanup(function() {
                         CONFIGURATOR.mspPassThrough = false;
                         $('#tabs > ul li').removeClass('active');
-                        tabs.default.initialize();
+                        TABS.default.initialize();
                     });
                 }
             });
@@ -337,6 +337,6 @@ tabs.logging.initialize = function(callback) {
     }
 };
 
-tabs.logging.cleanup = function(callback) {
+TABS.logging.cleanup = function(callback) {
     if (callback) callback();
 };

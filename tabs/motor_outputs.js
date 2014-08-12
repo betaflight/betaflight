@@ -1,7 +1,7 @@
 'use strict';
 
-tabs.motor_outputs = {};
-tabs.motor_outputs.initialize = function(callback) {
+TABS.motor_outputs = {};
+TABS.motor_outputs.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'motor_outputs';
     googleAnalytics.sendAppView('Motor Outputs Page');
@@ -373,6 +373,6 @@ tabs.motor_outputs.initialize = function(callback) {
     }
 };
 
-tabs.motor_outputs.cleanup = function(callback) {
+TABS.motor_outputs.cleanup = function(callback) {
     if (callback) callback();
 };

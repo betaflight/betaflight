@@ -1,7 +1,7 @@
 'use strict';
 
-tabs.gps = {};
-tabs.gps.initialize = function(callback) {
+TABS.gps = {};
+TABS.gps.initialize = function(callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'gps';
     googleAnalytics.sendAppView('GPS Page');
@@ -61,6 +61,6 @@ tabs.gps.initialize = function(callback) {
     }
 };
 
-tabs.gps.cleanup = function(callback) {
+TABS.gps.cleanup = function(callback) {
     if (callback) callback();
 };

@@ -51,7 +51,7 @@ $(document).ready(function() {
                     $('#content').empty();
 
                     // load default html
-                    tabs.default.initialize();
+                    TABS.default.initialize();
                 }
 
                 $(this).data("clicks", !clicks);
@@ -185,7 +185,7 @@ function read_serial(info) {
     if (!CONFIGURATOR.cliActive && !CONFIGURATOR.mspPassThrough) {
         MSP.read(info);
     } else if (CONFIGURATOR.cliActive) {
-        tabs.cli.read(info);
+        TABS.cli.read(info);
     } else if (CONFIGURATOR.mspPassThrough) {
         MSP.read(info);
     }
