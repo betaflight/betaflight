@@ -90,6 +90,18 @@ Use either power selector to supply VIN from the serial port adapter sockets, en
 One or both of the power selector jumpers MUST be in the jumper storage position. 
 
 
+Sonar
+
+Inner Middle Bottom Right 
+
+4 Header pins (top to bottom)
+
+1 - VIN
+2 - Trigger
+3 - Echo
+4 - GND
+
+
 Serial IO & Serial Loopback  
 
 Bottom right
