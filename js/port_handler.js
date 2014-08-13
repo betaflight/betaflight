@@ -8,12 +8,12 @@ function port_handler() {
     this.port_removed_callbacks = [];
 }
 
-port_handler.prototype.initialize = function() {
+port_handler.prototype.initialize = function () {
     // start listening, check after 250ms
     this.check();
 };
 
-port_handler.prototype.check = function() {
+port_handler.prototype.check = function () {
     var self = this;
 
     serial.getDevices(function(current_ports) {
@@ -60,7 +60,7 @@ port_handler.prototype.check = function() {
 
             // auto-select last used port (only during initialization)
             if (!self.initial_ports) {
-                chrome.storage.local.get('last_used_port', function(result) {
+                chrome.storage.local.get('last_used_port', function (result) {
                     // if last_used_port was set, we try to select it
                     if (result.last_used_port) {
                         current_ports.forEach(function(port) {
@@ -109,7 +109,7 @@ port_handler.prototype.check = function() {
             if (GUI.auto_connect && !GUI.connecting_to && !GUI.connected_to) {
                 // we need firmware flasher protection over here
                 if (GUI.active_tab != 'firmware_flasher') {
-                    GUI.timeout_add('auto-connect_timeout', function() {
+                    GUI.timeout_add('auto-connect_timeout', function () {
                         $('div#port-picker a.connect').click();
                     }, 50); // small timeout so we won't get any nasty connect errors due to system initializing the bus
                 }
@@ -137,13 +137,13 @@ port_handler.prototype.check = function() {
             check_usb_devices();
         }
 
-        self.main_timeout_reference = setTimeout(function() {
+        self.main_timeout_reference = setTimeout(function () {
             self.check();
         }, 250);
     });
 
     function check_usb_devices() {
-        chrome.usb.getDevices(usbDevices.STM32DFU, function(result) {
+        chrome.usb.getDevices(usbDevices.STM32DFU, function (result) {
             if (result.length) {
                 if (!$("div#port-picker #port [value='DFU']").length) {
                     $('div#port-picker #port').append('<option value="DFU">DFU</option>');
@@ -158,7 +158,7 @@ port_handler.prototype.check = function() {
     }
 };
 
-port_handler.prototype.update_port_select = function(ports) {
+port_handler.prototype.update_port_select = function (ports) {
     $('div#port-picker #port').html(''); // drop previous one
 
     if (ports.length > 0) {
@@ -195,12 +195,12 @@ port_handler.prototype.port_detected = function(name, code, timeout, ignore_time
     return obj;
 };
 
-port_handler.prototype.port_removed = function(name, code, timeout, ignore_timeout) {
+port_handler.prototype.port_removed = function (name, code, timeout, ignore_timeout) {
     var self = this;
     var obj = {'name': name, 'code': code, 'timeout': (timeout) ? timeout : 10000};
 
     if (!ignore_timeout) {
-        obj.timer = setTimeout(function() {
+        obj.timer = setTimeout(function () {
             console.log('PortHandler - timeout - ' + obj.name);
 
             // trigger callback
@@ -221,7 +221,7 @@ port_handler.prototype.port_removed = function(name, code, timeout, ignore_timeo
 };
 
 // accepting single level array with "value" as key
-port_handler.prototype.array_difference = function(firstArray, secondArray) {
+port_handler.prototype.array_difference = function (firstArray, secondArray) {
     var cloneArray = [];
 
     // create hardcopy
@@ -238,7 +238,7 @@ port_handler.prototype.array_difference = function(firstArray, secondArray) {
     return cloneArray;
 };
 
-port_handler.prototype.flush_callbacks = function() {
+port_handler.prototype.flush_callbacks = function () {
     var killed = 0;
 
     for (var i = this.port_detected_callbacks.length - 1; i >= 0; i--) {
