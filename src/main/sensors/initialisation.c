@@ -229,6 +229,9 @@ bool detectGyro(uint16_t gyroLpf)
 
 #ifdef USE_GYRO_SPI_MPU6000
     if (mpu6000SpiGyroDetect(&gyro, gyroLpf)) {
+#ifdef CC3D
+        gyroAlign = CW270_DEG;
+#endif
         return true;
     }
 #endif
@@ -320,6 +323,9 @@ retry:
         case ACC_SPI_MPU6000:
             if (mpu6000SpiAccDetect(&acc)) {
                 accHardware = ACC_SPI_MPU6000;
+#ifdef CC3D
+                accAlign = CW270_DEG;
+#endif
                 if (accHardwareToUse == ACC_SPI_MPU6000)
                     break;
             }
