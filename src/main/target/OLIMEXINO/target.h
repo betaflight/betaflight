@@ -39,6 +39,7 @@
 #define BARO
 #define GYRO
 #define MAG
+#define SONAR
 
 #define USE_USART1
 #define USE_USART2

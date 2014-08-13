@@ -17,10 +17,14 @@
 
 #pragma once
 
-typedef enum {
-    sonar_pwm56,
-    sonar_rc78,
-} sonar_config_t;
+typedef struct sonarHardware_s {
+    uint16_t trigger_pin;
+    uint16_t echo_pin;
+    uint32_t exti_line;
+    uint8_t exti_pin_source;
+    IRQn_Type exti_irqn;
+} sonarHardware_t;
 
-void hcsr04_init(sonar_config_t config);
+void hcsr04_init(const sonarHardware_t *sonarHardware);
+
 void hcsr04_get_distance(volatile int32_t *distance);
