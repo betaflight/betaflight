@@ -116,7 +116,7 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define MSP_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
 #define MSP_SET_HEAD             211    //in message          define a new heading hold direction
 #define MSP_SET_SERVO_CONF       212    //in message          Servo settings
-#define MSP_SET_CHANNEL_FORWARDING 213    //in message          Channel forwarding settings
+#define MSP_SET_CHANNEL_FORWARDING 213  //in message          Channel forwarding settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
 
@@ -186,24 +186,45 @@ static const char pidnames[] =
     "MAG;"
     "VEL;";
 
-static uint8_t checksum, indRX, inBuf[INBUF_SIZE];
-static uint8_t cmdMSP;
+typedef enum {
+    IDLE,
+    HEADER_START,
+    HEADER_M,
+    HEADER_ARROW,
+    HEADER_SIZE,
+    HEADER_CMD,
+} mspState_e;
+
+typedef struct mspPort_s {
+    serialPort_t *port;
+    uint8_t offset;
+    uint8_t dataSize;
+    uint8_t checksum;
+    uint8_t indRX;
+    uint8_t inBuf[INBUF_SIZE];
+    mspState_e c_state;
+    uint8_t cmdMSP;
+} mspPort_t;
+
+static mspPort_t mspPorts[SERIAL_PORT_COUNT];
+
+static mspPort_t *currentPort;
 
 void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
     serialWrite(mspPort, t);
-    checksum ^= t;
+    currentPort->checksum ^= t;
     t = a >> 8;
     serialWrite(mspPort, t);
-    checksum ^= t;
+    currentPort->checksum ^= t;
     t = a >> 16;
     serialWrite(mspPort, t);
-    checksum ^= t;
+    currentPort->checksum ^= t;
     t = a >> 24;
     serialWrite(mspPort, t);
-    checksum ^= t;
+    currentPort->checksum ^= t;
 }
 
 void serialize16(int16_t a)
@@ -211,21 +232,21 @@ void serialize16(int16_t a)
     static uint8_t t;
     t = a;
     serialWrite(mspPort, t);
-    checksum ^= t;
+    currentPort->checksum ^= t;
     t = a >> 8 & 0xff;
     serialWrite(mspPort, t);
-    checksum ^= t;
+    currentPort->checksum ^= t;
 }
 
 void serialize8(uint8_t a)
 {
     serialWrite(mspPort, a);
-    checksum ^= a;
+    currentPort->checksum ^= a;
 }
 
 uint8_t read8(void)
 {
-    return inBuf[indRX++] & 0xff;
+    return currentPort->inBuf[currentPort->indRX++] & 0xff;
 }
 
 uint16_t read16(void)
@@ -247,9 +268,9 @@ void headSerialResponse(uint8_t err, uint8_t s)
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
-    checksum = 0;               // start calculating a new checksum
+    currentPort->checksum = 0;               // start calculating a new checksum
     serialize8(s);
-    serialize8(cmdMSP);
+    serialize8(currentPort->cmdMSP);
 }
 
 void headSerialReply(uint8_t s)
@@ -264,7 +285,7 @@ void headSerialError(uint8_t s)
 
 void tailSerialReply(void)
 {
-    serialize8(checksum);
+    serialize8(currentPort->checksum);
 }
 
 void s_struct(uint8_t *cb, uint8_t siz)
@@ -313,7 +334,7 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
 {
     serialPort_t *port;
 
-    mspPort = NULL; // XXX delete this when adding support for MSP on more than one port.
+    uint8_t portIndex = 0;
     do {
 
         uint32_t baudRate = serialConfig->msp_baudrate;
@@ -332,9 +353,8 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
             }
         } while (!port);
 
-        // XXX delete this when adding support for MSP on more than one port.
-        if (port && !mspPort) {
-            mspPort = port; // just use the first one opened for now
+        if (port) {
+            mspPorts[portIndex++].port = port;
         }
 
     } while (port);
@@ -396,121 +416,20 @@ void mspInit(serialConfig_t *serialConfig)
 
     numberBoxItems = idx;
 
+    memset(mspPorts, 0x00, sizeof(mspPorts));
+
     openAllMSPSerialPorts(serialConfig);
 }
 
-static void evaluateCommand(void)
+static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i, tmp, junk;
 #ifdef GPS
     uint8_t wp_no;
-    int32_t lat = 0, lon = 0, alt = 0;
+    int32_t lat = 0, lon = 0;
 #endif
 
     switch (cmdMSP) {
-    case MSP_SET_RAW_RC:
-        // FIXME need support for more than 8 channels
-        for (i = 0; i < 8; i++)
-            rcData[i] = read16();
-        headSerialReply(0);
-        rxMspFrameRecieve();
-        break;
-    case MSP_SET_ACC_TRIM:
-        currentProfile.accelerometerTrims.values.pitch = read16();
-        currentProfile.accelerometerTrims.values.roll  = read16();
-        headSerialReply(0);
-        break;
-#ifdef GPS
-    case MSP_SET_RAW_GPS:
-        f.GPS_FIX = read8();
-        GPS_numSat = read8();
-        GPS_coord[LAT] = read32();
-        GPS_coord[LON] = read32();
-        GPS_altitude = read16();
-        GPS_speed = read16();
-        GPS_update |= 2;        // New data signalisation to GPS functions
-        headSerialReply(0);
-        break;
-#endif
-    case MSP_SET_PID:
-        if (currentProfile.pidController == 2) {
-            for (i = 0; i < 3; i++) {
-                currentProfile.pidProfile.P_f[i] = (float)read8() / 10.0f;
-                currentProfile.pidProfile.I_f[i] = (float)read8() / 100.0f;
-                currentProfile.pidProfile.D_f[i] = (float)read8() / 1000.0f;
-            }
-            for (i = 3; i < PID_ITEM_COUNT; i++) {
-                if (i == PIDLEVEL) {
-                    currentProfile.pidProfile.A_level = (float)read8() / 10.0f;
-                    currentProfile.pidProfile.H_level = (float)read8() / 10.0f;
-                    read8();
-                } else {
-                    currentProfile.pidProfile.P8[i] = read8();
-                    currentProfile.pidProfile.I8[i] = read8();
-                    currentProfile.pidProfile.D8[i] = read8();
-                }
-            }
-        } else {
-            for (i = 0; i < PID_ITEM_COUNT; i++) {
-                currentProfile.pidProfile.P8[i] = read8();
-                currentProfile.pidProfile.I8[i] = read8();
-                currentProfile.pidProfile.D8[i] = read8();
-            }
-        }
-        headSerialReply(0);
-        break;
-    case MSP_SET_BOX:
-        for (i = 0; i < numberBoxItems; i++)
-            currentProfile.activate[availableBoxes[i]] = read16() & ACTIVATE_MASK;
-        for (i = 0; i < numberBoxItems; i++)
-            currentProfile.activate[availableBoxes[i]] |= (read16() & ACTIVATE_MASK) << 16;
-        headSerialReply(0);
-        break;
-    case MSP_SET_RC_TUNING:
-        currentProfile.controlRateConfig.rcRate8 = read8();
-        currentProfile.controlRateConfig.rcExpo8 = read8();
-        currentProfile.controlRateConfig.rollPitchRate = read8();
-        currentProfile.controlRateConfig.yawRate = read8();
-        currentProfile.dynThrPID = read8();
-        currentProfile.controlRateConfig.thrMid8 = read8();
-        currentProfile.controlRateConfig.thrExpo8 = read8();
-        headSerialReply(0);
-        break;
-    case MSP_SET_MISC:
-        read16(); // powerfailmeter
-        masterConfig.escAndServoConfig.minthrottle = read16();
-        masterConfig.escAndServoConfig.maxthrottle = read16();
-        masterConfig.escAndServoConfig.mincommand = read16();
-        currentProfile.failsafeConfig.failsafe_throttle = read16();
-        read16();
-        read32();
-        currentProfile.mag_declination = read16() * 10;
-        masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
-        masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
-        masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
-        read8();                            // vbatlevel_crit (unused)
-        headSerialReply(0);
-        break;
-    case MSP_SET_MOTOR:
-        for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-            motor_disarmed[i] = read16();
-        headSerialReply(0);
-        break;
-    case MSP_SELECT_SETTING:
-        if (!f.ARMED) {
-            masterConfig.current_profile_index = read8();
-            if (masterConfig.current_profile_index > 2) {
-                masterConfig.current_profile_index = 0;
-            }
-            writeEEPROM();
-            readEEPROM();
-        }
-        headSerialReply(0);
-        break;
-    case MSP_SET_HEAD:
-        magHold = read16();
-        headSerialReply(0);
-        break;
     case MSP_IDENT:
         headSerialReply(7);
         serialize8(MW_VERSION);
@@ -582,32 +501,10 @@ static void evaluateCommand(void)
             serialize8(currentProfile.servoConf[i].rate);
         }
         break;
-    case MSP_SET_SERVO_CONF:
-        headSerialReply(0);
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            currentProfile.servoConf[i].min = read16();
-            currentProfile.servoConf[i].max = read16();
-            // provide temporary support for old clients that try and send a channel index instead of a servo middle
-            uint16_t potentialServoMiddleOrChannelToForward = read16();
-            if (potentialServoMiddleOrChannelToForward < MAX_SUPPORTED_SERVOS) {
-                currentProfile.servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
-            }
-            if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
-                currentProfile.servoConf[i].middle = potentialServoMiddleOrChannelToForward;
-            }
-            currentProfile.servoConf[i].rate = read8();
-        }
-        break;
     case MSP_CHANNEL_FORWARDING:
         headSerialReply(8);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize8(currentProfile.servoConf[i].forwardFromChannel);
-        }
-        break;
-    case MSP_SET_CHANNEL_FORWARDING:
-        headSerialReply(0);
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            currentProfile.servoConf[i].forwardFromChannel = read8();
         }
         break;
     case MSP_MOTOR:
@@ -618,24 +515,6 @@ static void evaluateCommand(void)
         for (i = 0; i < rxRuntimeConfig.channelCount; i++)
             serialize16(rcData[i]);
         break;
-#ifdef GPS
-    case MSP_RAW_GPS:
-        headSerialReply(16);
-        serialize8(f.GPS_FIX);
-        serialize8(GPS_numSat);
-        serialize32(GPS_coord[LAT]);
-        serialize32(GPS_coord[LON]);
-        serialize16(GPS_altitude);
-        serialize16(GPS_speed);
-        serialize16(GPS_ground_course);
-        break;
-    case MSP_COMP_GPS:
-        headSerialReply(5);
-        serialize16(GPS_distanceToHome);
-        serialize16(GPS_directionToHome);
-        serialize8(GPS_update & 1);
-        break;
-#endif
     case MSP_ATTITUDE:
         headSerialReply(6);
         for (i = 0; i < 2; i++)
@@ -735,6 +614,22 @@ static void evaluateCommand(void)
             serialize8(i + 1);
         break;
 #ifdef GPS
+    case MSP_RAW_GPS:
+        headSerialReply(16);
+        serialize8(f.GPS_FIX);
+        serialize8(GPS_numSat);
+        serialize32(GPS_coord[LAT]);
+        serialize32(GPS_coord[LON]);
+        serialize16(GPS_altitude);
+        serialize16(GPS_speed);
+        serialize16(GPS_ground_course);
+        break;
+    case MSP_COMP_GPS:
+        headSerialReply(5);
+        serialize16(GPS_distanceToHome);
+        serialize16(GPS_directionToHome);
+        serialize8(GPS_update & 1);
+        break;
     case MSP_WP:
         wp_no = read8();    // get the wp number
         headSerialReply(18);
@@ -752,6 +647,187 @@ static void evaluateCommand(void)
         serialize16(0);                 // heading  will come here (deg)
         serialize16(0);                 // time to stay (ms) will come here
         serialize8(0);                  // nav flag will come here
+        break;
+    case MSP_GPSSVINFO:
+        headSerialReply(1 + (GPS_numCh * 4));
+        serialize8(GPS_numCh);
+           for (i = 0; i < GPS_numCh; i++){
+               serialize8(GPS_svinfo_chn[i]);
+               serialize8(GPS_svinfo_svid[i]);
+               serialize8(GPS_svinfo_quality[i]);
+               serialize8(GPS_svinfo_cno[i]);
+            }
+        break;
+#endif
+    case MSP_DEBUG:
+        headSerialReply(8);
+        // make use of this crap, output some useful QA statistics
+        //debug[3] = ((hse_value / 1000000) * 1000) + (SystemCoreClock / 1000000);         // XX0YY [crystal clock : core clock]
+        for (i = 0; i < 4; i++)
+            serialize16(debug[i]);      // 4 variables are here for general monitoring purpose
+        break;
+
+    // Additional commands that are not compatible with MultiWii
+    case MSP_ACC_TRIM:
+        headSerialReply(4);
+        serialize16(currentProfile.accelerometerTrims.values.pitch);
+        serialize16(currentProfile.accelerometerTrims.values.roll);
+        break;
+    case MSP_UID:
+        headSerialReply(12);
+        serialize32(U_ID_0);
+        serialize32(U_ID_1);
+        serialize32(U_ID_2);
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
+
+static bool processInCommand(void)
+{
+    uint32_t i;
+#ifdef GPS
+    uint8_t wp_no;
+    int32_t lat = 0, lon = 0, alt = 0;
+#endif
+
+    switch (currentPort->cmdMSP) {
+    case MSP_SELECT_SETTING:
+        if (!f.ARMED) {
+            masterConfig.current_profile_index = read8();
+            if (masterConfig.current_profile_index > 2) {
+                masterConfig.current_profile_index = 0;
+            }
+            writeEEPROM();
+            readEEPROM();
+        }
+        break;
+    case MSP_SET_HEAD:
+        magHold = read16();
+        break;
+    case MSP_SET_RAW_RC:
+        // FIXME need support for more than 8 channels
+        for (i = 0; i < 8; i++)
+            rcData[i] = read16();
+        rxMspFrameRecieve();
+        break;
+    case MSP_SET_ACC_TRIM:
+        currentProfile.accelerometerTrims.values.pitch = read16();
+        currentProfile.accelerometerTrims.values.roll  = read16();
+        break;
+    case MSP_SET_PID:
+        if (currentProfile.pidController == 2) {
+            for (i = 0; i < 3; i++) {
+                currentProfile.pidProfile.P_f[i] = (float)read8() / 10.0f;
+                currentProfile.pidProfile.I_f[i] = (float)read8() / 100.0f;
+                currentProfile.pidProfile.D_f[i] = (float)read8() / 1000.0f;
+            }
+            for (i = 3; i < PID_ITEM_COUNT; i++) {
+                if (i == PIDLEVEL) {
+                    currentProfile.pidProfile.A_level = (float)read8() / 10.0f;
+                    currentProfile.pidProfile.H_level = (float)read8() / 10.0f;
+                    read8();
+                } else {
+                    currentProfile.pidProfile.P8[i] = read8();
+                    currentProfile.pidProfile.I8[i] = read8();
+                    currentProfile.pidProfile.D8[i] = read8();
+                }
+            }
+        } else {
+            for (i = 0; i < PID_ITEM_COUNT; i++) {
+                currentProfile.pidProfile.P8[i] = read8();
+                currentProfile.pidProfile.I8[i] = read8();
+                currentProfile.pidProfile.D8[i] = read8();
+            }
+        }
+        break;
+    case MSP_SET_BOX:
+        for (i = 0; i < numberBoxItems; i++)
+            currentProfile.activate[availableBoxes[i]] = read16() & ACTIVATE_MASK;
+        for (i = 0; i < numberBoxItems; i++)
+            currentProfile.activate[availableBoxes[i]] |= (read16() & ACTIVATE_MASK) << 16;
+        break;
+    case MSP_SET_RC_TUNING:
+        currentProfile.controlRateConfig.rcRate8 = read8();
+        currentProfile.controlRateConfig.rcExpo8 = read8();
+        currentProfile.controlRateConfig.rollPitchRate = read8();
+        currentProfile.controlRateConfig.yawRate = read8();
+        currentProfile.dynThrPID = read8();
+        currentProfile.controlRateConfig.thrMid8 = read8();
+        currentProfile.controlRateConfig.thrExpo8 = read8();
+        break;
+    case MSP_SET_MISC:
+        read16(); // powerfailmeter
+        masterConfig.escAndServoConfig.minthrottle = read16();
+        masterConfig.escAndServoConfig.maxthrottle = read16();
+        masterConfig.escAndServoConfig.mincommand = read16();
+        currentProfile.failsafeConfig.failsafe_throttle = read16();
+        read16();
+        read32();
+        currentProfile.mag_declination = read16() * 10;
+        masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
+        masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
+        masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
+        read8();                            // vbatlevel_crit (unused)
+        break;
+    case MSP_SET_MOTOR:
+        for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
+            motor_disarmed[i] = read16();
+        break;
+    case MSP_SET_SERVO_CONF:
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            currentProfile.servoConf[i].min = read16();
+            currentProfile.servoConf[i].max = read16();
+            // provide temporary support for old clients that try and send a channel index instead of a servo middle
+            uint16_t potentialServoMiddleOrChannelToForward = read16();
+            if (potentialServoMiddleOrChannelToForward < MAX_SUPPORTED_SERVOS) {
+                currentProfile.servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
+            }
+            if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
+                currentProfile.servoConf[i].middle = potentialServoMiddleOrChannelToForward;
+            }
+            currentProfile.servoConf[i].rate = read8();
+        }
+        break;
+    case MSP_SET_CHANNEL_FORWARDING:
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            currentProfile.servoConf[i].forwardFromChannel = read8();
+        }
+        break;
+    case MSP_RESET_CONF:
+        if (!f.ARMED) {
+            resetEEPROM();
+            readEEPROM();
+        }
+        break;
+    case MSP_ACC_CALIBRATION:
+        if (!f.ARMED)
+            accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+        break;
+    case MSP_MAG_CALIBRATION:
+        if (!f.ARMED)
+            f.CALIBRATE_MAG = 1;
+        break;
+    case MSP_EEPROM_WRITE:
+        if (f.ARMED) {
+            headSerialError(0);
+            return true;
+        }
+        copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
+        writeEEPROM();
+        readEEPROM();
+        break;
+#ifdef GPS
+    case MSP_SET_RAW_GPS:
+        f.GPS_FIX = read8();
+        GPS_numSat = read8();
+        GPS_coord[LAT] = read32();
+        GPS_coord[LON] = read32();
+        GPS_altitude = read16();
+        GPS_speed = read16();
+        GPS_update |= 2;        // New data signalisation to GPS functions
         break;
     case MSP_SET_WP:
         wp_no = read8();    //get the wp number
@@ -776,124 +852,70 @@ static void evaluateCommand(void)
             nav_mode = NAV_MODE_WP;
             GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
         }
-        headSerialReply(0);
-        break;
-#endif /* GPS */
-    case MSP_RESET_CONF:
-        if (!f.ARMED) {
-            resetEEPROM();
-            readEEPROM();
-        }
-        headSerialReply(0);
-        break;
-    case MSP_ACC_CALIBRATION:
-        if (!f.ARMED)
-            accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
-        headSerialReply(0);
-        break;
-    case MSP_MAG_CALIBRATION:
-        if (!f.ARMED)
-            f.CALIBRATE_MAG = 1;
-        headSerialReply(0);
-        break;
-    case MSP_EEPROM_WRITE:
-        if (f.ARMED) {
-            headSerialError(0);
-        } else {
-            copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
-            writeEEPROM();
-            readEEPROM();
-            headSerialReply(0);
-        }
-        break;
-    case MSP_DEBUG:
-        headSerialReply(8);
-        // make use of this crap, output some useful QA statistics
-        //debug[3] = ((hse_value / 1000000) * 1000) + (SystemCoreClock / 1000000);         // XX0YY [crystal clock : core clock]
-        for (i = 0; i < 4; i++)
-            serialize16(debug[i]);      // 4 variables are here for general monitoring purpose
-        break;
-
-    // Additional commands that are not compatible with MultiWii
-    case MSP_ACC_TRIM:
-        headSerialReply(4);
-        serialize16(currentProfile.accelerometerTrims.values.pitch);
-        serialize16(currentProfile.accelerometerTrims.values.roll);
-        break;
-    case MSP_UID:
-        headSerialReply(12);
-        serialize32(U_ID_0);
-        serialize32(U_ID_1);
-        serialize32(U_ID_2);
-        break;
-#ifdef GPS
-    case MSP_GPSSVINFO:
-        headSerialReply(1 + (GPS_numCh * 4));
-        serialize8(GPS_numCh);
-           for (i = 0; i < GPS_numCh; i++){
-               serialize8(GPS_svinfo_chn[i]);
-               serialize8(GPS_svinfo_svid[i]);
-               serialize8(GPS_svinfo_quality[i]);
-               serialize8(GPS_svinfo_cno[i]);
-            }
         break;
 #endif
     default:                   // we do not know how to handle the (valid) message, indicate error MSP $M!
-        headSerialError(0);
-        break;
+        return false;
     }
-    tailSerialReply();
+    headSerialReply(0);
+    return true;
 }
 
-void mspProcess(void)
+static void mspProcessPort(void)
 {
     uint8_t c;
-    static uint8_t offset;
-    static uint8_t dataSize;
-    static enum _serial_state {
-        IDLE,
-        HEADER_START,
-        HEADER_M,
-        HEADER_ARROW,
-        HEADER_SIZE,
-        HEADER_CMD,
-    } c_state = IDLE;
 
     while (serialTotalBytesWaiting(mspPort)) {
         c = serialRead(mspPort);
 
-        if (c_state == IDLE) {
-            c_state = (c == '$') ? HEADER_START : IDLE;
-            if (c_state == IDLE && !f.ARMED)
+        if (currentPort->c_state == IDLE) {
+            currentPort->c_state = (c == '$') ? HEADER_START : IDLE;
+            if (currentPort->c_state == IDLE && !f.ARMED)
                 evaluateOtherData(c); // if not armed evaluate all other incoming serial data
-        } else if (c_state == HEADER_START) {
-            c_state = (c == 'M') ? HEADER_M : IDLE;
-        } else if (c_state == HEADER_M) {
-            c_state = (c == '<') ? HEADER_ARROW : IDLE;
-        } else if (c_state == HEADER_ARROW) {
+        } else if (currentPort->c_state == HEADER_START) {
+            currentPort->c_state = (c == 'M') ? HEADER_M : IDLE;
+        } else if (currentPort->c_state == HEADER_M) {
+            currentPort->c_state = (c == '<') ? HEADER_ARROW : IDLE;
+        } else if (currentPort->c_state == HEADER_ARROW) {
             if (c > INBUF_SIZE) {       // now we are expecting the payload size
-                c_state = IDLE;
+                currentPort->c_state = IDLE;
                 continue;
             }
-            dataSize = c;
-            offset = 0;
-            checksum = 0;
-            indRX = 0;
-            checksum ^= c;
-            c_state = HEADER_SIZE;      // the command is to follow
-        } else if (c_state == HEADER_SIZE) {
-            cmdMSP = c;
-            checksum ^= c;
-            c_state = HEADER_CMD;
-        } else if (c_state == HEADER_CMD && offset < dataSize) {
-            checksum ^= c;
-            inBuf[offset++] = c;
-        } else if (c_state == HEADER_CMD && offset >= dataSize) {
-            if (checksum == c) {        // compare calculated and transferred checksum
-                evaluateCommand();      // we got a valid packet, evaluate it
+            currentPort->dataSize = c;
+            currentPort->offset = 0;
+            currentPort->checksum = 0;
+            currentPort->indRX = 0;
+            currentPort->checksum ^= c;
+            currentPort->c_state = HEADER_SIZE;      // the command is to follow
+        } else if (currentPort->c_state == HEADER_SIZE) {
+            currentPort->cmdMSP = c;
+            currentPort->checksum ^= c;
+            currentPort->c_state = HEADER_CMD;
+        } else if (currentPort->c_state == HEADER_CMD && currentPort->offset < currentPort->dataSize) {
+            currentPort->checksum ^= c;
+            currentPort->inBuf[currentPort->offset++] = c;
+        } else if (currentPort->c_state == HEADER_CMD && currentPort->offset >= currentPort->dataSize) {
+            if (currentPort->checksum == c) {        // compare calculated and transferred checksum
+                // we got a valid packet, evaluate it
+                if (!(processOutCommand(currentPort->cmdMSP) || processInCommand())) {
+                    headSerialError(0);
+                }
+                tailSerialReply();
             }
-            c_state = IDLE;
+            currentPort->c_state = IDLE;
         }
+    }
+}
+
+void mspProcess(void) {
+    uint8_t portIndex;
+    for (portIndex = 0; portIndex < SERIAL_PORT_COUNT; portIndex++) {
+        currentPort = &mspPorts[portIndex];
+        if (!currentPort->port) {
+            continue;
+        }
+        mspPort = currentPort->port;
+        mspProcessPort();
     }
 }
 
@@ -916,8 +938,17 @@ void sendMspTelemetry(void)
 {
     static uint32_t sequenceIndex = 0;
 
-    cmdMSP = mspTelemetryCommandSequence[sequenceIndex];
-    evaluateCommand();
+    uint8_t portIndex;
+    for (portIndex = 0; portIndex < SERIAL_PORT_COUNT; portIndex++) {
+        currentPort = &mspPorts[portIndex];
+        if (!currentPort->port) {
+            continue;
+        }
+        mspPort = currentPort->port;
+        processOutCommand(mspTelemetryCommandSequence[sequenceIndex]);
+        tailSerialReply();
+
+    }
 
     sequenceIndex++;
     if (sequenceIndex >= MSP_TELEMETRY_COMMAND_SEQUENCE_ENTRY_COUNT) {

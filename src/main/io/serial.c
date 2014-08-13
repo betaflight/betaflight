@@ -447,6 +447,15 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
         return false;
     }
 
+    uint8_t functionIndex;
+    uint8_t cliPortCount = 0;
+    for (functionIndex = 0; functionIndex < SERIAL_PORT_COUNT; functionIndex++) {
+        if (serialPortFunctions[functionIndex].scenario & FUNCTION_CLI) {
+            if (++cliPortCount > 1) {
+                return false;
+            }
+        }
+    }
     return true;
 }
 
