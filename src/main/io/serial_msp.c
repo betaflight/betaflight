@@ -206,7 +206,7 @@ typedef struct mspPort_s {
     uint8_t cmdMSP;
 } mspPort_t;
 
-static mspPort_t mspPorts[SERIAL_PORT_COUNT];
+static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static mspPort_t *currentPort;
 
@@ -353,7 +353,7 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
             }
         } while (!port);
 
-        if (port) {
+        if (port && portIndex < MAX_MSP_PORT_COUNT) {
             mspPorts[portIndex++].port = port;
         }
 
@@ -909,7 +909,7 @@ static void mspProcessPort(void)
 
 void mspProcess(void) {
     uint8_t portIndex;
-    for (portIndex = 0; portIndex < SERIAL_PORT_COUNT; portIndex++) {
+    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         currentPort = &mspPorts[portIndex];
         if (!currentPort->port) {
             continue;
@@ -939,7 +939,7 @@ void sendMspTelemetry(void)
     static uint32_t sequenceIndex = 0;
 
     uint8_t portIndex;
-    for (portIndex = 0; portIndex < SERIAL_PORT_COUNT; portIndex++) {
+    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         currentPort = &mspPorts[portIndex];
         if (!currentPort->port) {
             continue;

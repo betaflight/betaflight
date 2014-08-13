@@ -449,9 +449,15 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
 
     uint8_t functionIndex;
     uint8_t cliPortCount = 0;
+    uint8_t mspPortCount = 0;
     for (functionIndex = 0; functionIndex < SERIAL_PORT_COUNT; functionIndex++) {
         if (serialPortFunctions[functionIndex].scenario & FUNCTION_CLI) {
             if (++cliPortCount > 1) {
+                return false;
+            }
+        }
+        if (serialPortFunctions[functionIndex].scenario & FUNCTION_MSP) {
+            if (++mspPortCount > MAX_MSP_PORT_COUNT) {
                 return false;
             }
         }

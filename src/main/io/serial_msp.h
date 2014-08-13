@@ -17,5 +17,8 @@
 
 #pragma once
 
+// Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 2 MSP ports.
+#define MAX_MSP_PORT_COUNT 2
+
 void mspProcess(void);
 void sendMspTelemetry(void);
