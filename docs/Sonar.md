@@ -11,7 +11,7 @@ Currently the only supported sensor is the HCSR04 sensor.
 
 ## Connections
 
-### Naze
+### Naze/Flip32+
 
 | Mode          | Trigger       | Echo          | Inline 1k resistors |
 | ------------- | ------------- | ------------- | ------------------- |
