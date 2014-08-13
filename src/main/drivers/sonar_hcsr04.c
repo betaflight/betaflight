@@ -43,7 +43,7 @@ static uint8_t exti_pin_source;
 static IRQn_Type exti_irqn;
 
 static uint32_t last_measurement;
-static volatile int32_t *distance_ptr;
+static volatile int32_t *distance_ptr = 0;
 
 void ECHO_EXTI_IRQHandler(void)
 {
@@ -64,7 +64,9 @@ void ECHO_EXTI_IRQHandler(void)
             if (distance > 300)
                 distance = -1;
 
-            *distance_ptr = distance;
+            if (distance_ptr) {
+                *distance_ptr = distance;
+            }
         }
     }
 
