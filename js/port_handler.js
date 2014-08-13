@@ -1,6 +1,6 @@
 'use strict';
 
-function port_handler() {
+var PortHandler = new function () {
     this.main_timeout_reference;
     this.initial_ports = false;
 
@@ -8,12 +8,12 @@ function port_handler() {
     this.port_removed_callbacks = [];
 }
 
-port_handler.prototype.initialize = function () {
+PortHandler.initialize = function () {
     // start listening, check after 250ms
     this.check();
 };
 
-port_handler.prototype.check = function () {
+PortHandler.check = function () {
     var self = this;
 
     serial.getDevices(function(current_ports) {
@@ -158,7 +158,7 @@ port_handler.prototype.check = function () {
     }
 };
 
-port_handler.prototype.update_port_select = function (ports) {
+PortHandler.update_port_select = function (ports) {
     $('div#port-picker #port').html(''); // drop previous one
 
     if (ports.length > 0) {
@@ -170,7 +170,7 @@ port_handler.prototype.update_port_select = function (ports) {
     }
 };
 
-port_handler.prototype.port_detected = function(name, code, timeout, ignore_timeout) {
+PortHandler.port_detected = function(name, code, timeout, ignore_timeout) {
     var self = this;
     var obj = {'name': name, 'code': code, 'timeout': (timeout) ? timeout : 10000};
 
@@ -195,7 +195,7 @@ port_handler.prototype.port_detected = function(name, code, timeout, ignore_time
     return obj;
 };
 
-port_handler.prototype.port_removed = function (name, code, timeout, ignore_timeout) {
+PortHandler.port_removed = function (name, code, timeout, ignore_timeout) {
     var self = this;
     var obj = {'name': name, 'code': code, 'timeout': (timeout) ? timeout : 10000};
 
@@ -221,7 +221,7 @@ port_handler.prototype.port_removed = function (name, code, timeout, ignore_time
 };
 
 // accepting single level array with "value" as key
-port_handler.prototype.array_difference = function (firstArray, secondArray) {
+PortHandler.array_difference = function (firstArray, secondArray) {
     var cloneArray = [];
 
     // create hardcopy
@@ -238,7 +238,7 @@ port_handler.prototype.array_difference = function (firstArray, secondArray) {
     return cloneArray;
 };
 
-port_handler.prototype.flush_callbacks = function () {
+PortHandler.flush_callbacks = function () {
     var killed = 0;
 
     for (var i = this.port_detected_callbacks.length - 1; i >= 0; i--) {
@@ -257,5 +257,3 @@ port_handler.prototype.flush_callbacks = function () {
 
     return killed;
 };
-
-var PortHandler = new port_handler();
