@@ -129,7 +129,7 @@ $(document).ready(function () {
 
                 // if notifications are enabled, or wasn't set, check the notifications checkbox
                 chrome.storage.local.get('update_notify', function (result) {
-                    if (!result.update_notify || result.update_notify) {
+                    if (result.update_notify === 'undefined' || result.update_notify) {
                         $('div.notifications input').prop('checked', true);
                     }
                 });
