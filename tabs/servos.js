@@ -12,8 +12,6 @@ TABS.servos.initialize = function (callback) {
     GUI.active_tab = 'servos';
     googleAnalytics.sendAppView('Servos');
 
-    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
-
     function get_servo_conf_data() {
         MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_channel_forwarding_data);
     }
@@ -29,6 +27,8 @@ TABS.servos.initialize = function (callback) {
     function load_html() {
         $('#content').load("./tabs/servos.html", process_html);
     }
+
+    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
 
     function process_html() {
         // translate to user-selected language

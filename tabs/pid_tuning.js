@@ -6,9 +6,6 @@ TABS.pid_tuning.initialize = function (callback) {
     GUI.active_tab = 'pid_tuning';
     googleAnalytics.sendAppView('PID Tuning');
 
-    // requesting MSP_STATUS manually because it contains CONFIG.profile
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_names);
-
     function get_pid_names() {
         MSP.send_message(MSP_codes.MSP_PIDNAMES, false, false, get_pid_data);
     }
@@ -24,6 +21,9 @@ TABS.pid_tuning.initialize = function (callback) {
     function load_html() {
         $('#content').load("./tabs/pid_tuning.html", process_html);
     }
+
+    // requesting MSP_STATUS manually because it contains CONFIG.profile
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_names);
 
     function process_html() {
         // translate to user-selected language

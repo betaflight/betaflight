@@ -124,8 +124,6 @@ TABS.motor_outputs.initialize = function (callback) {
         lines.attr('d', graphHelpers.line);
     }
 
-    MSP.send_message(MSP_codes.MSP_MISC, false, false, get_motor_data);
-
     function get_motor_data() {
         MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
     }
@@ -133,6 +131,8 @@ TABS.motor_outputs.initialize = function (callback) {
     function load_html() {
         $('#content').load("./tabs/motor_outputs.html", process_html);
     }
+
+    MSP.send_message(MSP_codes.MSP_MISC, false, false, get_motor_data);
 
     function process_html() {
         // translate to user-selected language

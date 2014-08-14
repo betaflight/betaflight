@@ -7,8 +7,6 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     GUI.active_tab = 'auxiliary_configuration';
     googleAnalytics.sendAppView('Auxiliary Configuration');
 
-    MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
-
     function get_box_data() {
         MSP.send_message(MSP_codes.MSP_BOX, false, false, get_box_ids);
     }
@@ -24,6 +22,8 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     function load_html() {
         $('#content').load("./tabs/auxiliary_configuration.html", process_html);
     }
+
+    MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
 
     function process_html() {
         // generate heads according to RC count
