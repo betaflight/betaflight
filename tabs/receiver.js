@@ -6,8 +6,6 @@ TABS.receiver.initialize = function (callback) {
     GUI.active_tab = 'receiver';
     googleAnalytics.sendAppView('Receiver Page');
 
-    MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
-
     function get_rc_data() {
         MSP.send_message(MSP_codes.MSP_RC, false, false, load_html);
     }
@@ -15,6 +13,8 @@ TABS.receiver.initialize = function (callback) {
     function load_html() {
         $('#content').load("./tabs/receiver.html", process_html);
     }
+
+    MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
 
     function process_html() {
         // translate to user-selected language

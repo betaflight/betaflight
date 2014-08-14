@@ -6,11 +6,11 @@ TABS.gps.initialize = function (callback) {
     GUI.active_tab = 'gps';
     googleAnalytics.sendAppView('GPS Page');
 
-    MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, load_html);
-
     function load_html() {
         $('#content').load("./tabs/gps.html", process_html);
     }
+
+    MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, load_html);
 
     function process_html() {
         // translate to user-selected language

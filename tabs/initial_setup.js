@@ -10,8 +10,6 @@ TABS.initial_setup.initialize = function (callback) {
     GUI.active_tab = 'initial_setup';
     googleAnalytics.sendAppView('Initial Setup');
 
-    MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_ident);
-
     function load_ident() {
         MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_misc_data);
     }
@@ -23,6 +21,8 @@ TABS.initial_setup.initialize = function (callback) {
     function load_html() {
         $('#content').load("./tabs/initial_setup.html", process_html);
     }
+
+    MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_ident);
 
     function process_html() {
         // translate to user-selected language
