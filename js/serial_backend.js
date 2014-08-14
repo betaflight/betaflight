@@ -193,7 +193,7 @@ function read_serial(info) {
 
 function sensor_status(sensors_detected) {
     // initialize variable (if it wasn't)
-    if (sensor_status.previous_sensors_detected === 'undefined') {
+    if (!sensor_status.previous_sensors_detected) {
         sensor_status.previous_sensors_detected = 0;
     }
 
