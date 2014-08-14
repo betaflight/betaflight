@@ -28,7 +28,7 @@ TABS.receiver.initialize = function (callback) {
         $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
 
         chrome.storage.local.get('rx_refresh_rate', function (result) {
-            if (typeof result.rx_refresh_rate != 'undefined') {
+            if (result.rx_refresh_rate) {
                 $('select[name="rx_refresh_rate"]').val(result.rx_refresh_rate).change();
             } else {
                 $('select[name="rx_refresh_rate"]').change(); // start with default value
