@@ -193,8 +193,9 @@ function configuration_upload() {
     // should be reworked in the future, so the same code won't be cloned over !!!
 
     // PID section
-    var PID_buffer_out = new Array();
-    var PID_buffer_needle = 0;
+    var PID_buffer_out = new Array(),
+        PID_buffer_needle = 0;
+
     for (var i = 0; i < PIDs.length; i++) {
         switch (i) {
             case 0:
@@ -220,6 +221,7 @@ function configuration_upload() {
                 PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2] * 1000);
                 break;
         }
+
         PID_buffer_needle += 3;
     }
 
@@ -243,9 +245,9 @@ function configuration_upload() {
 
     function aux() {
         // AUX section
-        var AUX_val_buffer_out = new Array();
+        var AUX_val_buffer_out = new Array(),
+            needle = 0;
 
-        var needle = 0;
         for (var i = 0; i < AUX_CONFIG_values.length; i++) {
             AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
             AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);

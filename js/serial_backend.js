@@ -61,7 +61,7 @@ $(document).ready(function () {
 
     // auto-connect
     chrome.storage.local.get('auto_connect', function (result) {
-        if (!result.auto_connect || result.auto_connect) {
+        if (result.auto_connect === 'undefined' || result.auto_connect) {
             // default or enabled by user
             GUI.auto_connect = true;
 
