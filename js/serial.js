@@ -13,7 +13,7 @@ var serial = {
         var self = this;
 
         chrome.serial.connect(path, options, function(connectionInfo) {
-            if (connectionInfo !== undefined) {
+            if (connectionInfo) {
                 self.connectionId = connectionInfo.connectionId;
                 self.bitrate = connectionInfo.bitrate;
                 self.bytes_received = 0;

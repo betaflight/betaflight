@@ -1,7 +1,7 @@
 'use strict';
 
-$(document).ready(function() {
-    $('div#port-picker a.connect').click(function() {
+$(document).ready(function () {
+    $('div#port-picker a.connect').click(function () {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
             var clicks = $(this).data('clicks');
 
@@ -60,8 +60,8 @@ $(document).ready(function() {
     });
 
     // auto-connect
-    chrome.storage.local.get('auto_connect', function(result) {
-        if (typeof result.auto_connect === 'undefined' || result.auto_connect) {
+    chrome.storage.local.get('auto_connect', function (result) {
+        if (!result.auto_connect || result.auto_connect) {
             // default or enabled by user
             GUI.auto_connect = true;
 
@@ -78,7 +78,7 @@ $(document).ready(function() {
         }
 
         // bind UI hook to auto-connect checkbos
-        $('input.auto_connect').change(function() {
+        $('input.auto_connect').change(function () {
             GUI.auto_connect = $(this).is(':checked');
 
             // update title/tooltip
@@ -111,8 +111,8 @@ function onOpen(openInfo) {
         GUI.log(chrome.i18n.getMessage('serialPortOpened', [openInfo.connectionId]));
 
         // save selected port with chrome.storage if the port differs
-        chrome.storage.local.get('last_used_port', function(result) {
-            if (typeof result.last_used_port != 'undefined') {
+        chrome.storage.local.get('last_used_port', function (result) {
+            if (result.last_used_port) {
                 if (result.last_used_port != GUI.connected_to) {
                     // last used port doesn't match the one found in local db, we will store the new one
                     chrome.storage.local.set({'last_used_port': GUI.connected_to});
@@ -127,7 +127,7 @@ function onOpen(openInfo) {
 
         if (!CONFIGURATOR.mspPassThrough) {
             // disconnect after 10 seconds with error if we don't get IDENT data
-            GUI.timeout_add('connecting', function() {
+            GUI.timeout_add('connecting', function () {
                 if (!CONFIGURATOR.connectionValid) {
                     GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
 
@@ -136,9 +136,9 @@ function onOpen(openInfo) {
             }, 10000);
 
             // request configuration data
-            MSP.send_message(MSP_codes.MSP_UID, false, false, function() {
+            MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
                 GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
-                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function() {
+                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
                     GUI.timeout_remove('connecting'); // kill connecting timer
 
                     GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));

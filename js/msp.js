@@ -59,8 +59,8 @@ var MSP = {
     code:                       0,
     message_length_expected:    0,
     message_length_received:    0,
-    message_buffer:             undefined,
-    message_buffer_uint8_view:  undefined,
+    message_buffer:             null,
+    message_buffer_uint8_view:  null,
     message_checksum:           0,
 
     callbacks:                  [],

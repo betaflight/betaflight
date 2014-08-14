@@ -30,7 +30,7 @@ var GUI_control = function () {
 // interval = time interval in miliseconds
 // first = true/false if code should be ran initially before next timer interval hits
 GUI_control.prototype.interval_add = function (name, code, interval, first) {
-    var data = {'name': name, 'timer': undefined, 'code': code, 'interval': interval, 'fired': 0, 'paused': false};
+    var data = {'name': name, 'timer': null, 'code': code, 'interval': interval, 'fired': 0, 'paused': false};
 
     if (first == true) {
         code(); // execute code
@@ -132,7 +132,7 @@ GUI_control.prototype.interval_kill_all = function (keep_array) {
 // timeout = timeout in miliseconds
 GUI_control.prototype.timeout_add = function (name, code, timeout) {
     var self = this;
-    var data = {'name': name, 'timer': undefined, 'timeout': timeout};
+    var data = {'name': name, 'timer': null, 'timeout': timeout};
 
     // start timer with "cleaning" callback
     data.timer = setTimeout(function() {
