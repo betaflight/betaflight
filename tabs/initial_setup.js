@@ -140,9 +140,13 @@ tabs.initial_setup.initialize = function(callback) {
             case 5: // GIMBAL
             case 8: // FLYING_WING
             case 14: // AIRPLANE
+                $(".modelMixDiagram").attr("src","./images/motor_order/airplane.svg").addClass('modelMixAirplane');
+                break;
             case 15: // Heli 120
             case 16: // Heli 90
             case 17: // Vtail
+                $(".modelMixDiagram").attr("src","./images/motor_order/vtail.svg").addClass('modelMixVtail');
+                break;
             case 18: // HEX6 H
             case 19: // PPM to SERVO
             case 20: // Dualcopter
