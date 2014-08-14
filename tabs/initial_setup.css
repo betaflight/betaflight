@@ -70,6 +70,11 @@
         height: 30%; /* interactive_block height set to inherit */
     }
 
+    #interactive_block .modelMixAirplane { /* Position airplane correctly */
+        height: 35%;
+        padding-left: 0px;
+    }
+
     #interactive_block .modelMixCustom { /* Position question mark correctly */
         height: 20%; /* resize question mark */
         padding-left: 25px;
