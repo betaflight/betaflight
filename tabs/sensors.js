@@ -219,7 +219,7 @@ TABS.sensors.initialize = function (callback) {
                     checkboxes.eq(i).not(':disabled').prop('checked', result.graphs_enabled[i]).change();
                 }
             } else {
-                $('.tab-sensors .info input:lt(4)').prop('checked', true).change();
+                $('.tab-sensors .info input:lt(4):not(:disabled)').prop('checked', true).change();
             }
         });
 
