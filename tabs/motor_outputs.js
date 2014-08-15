@@ -347,6 +347,7 @@ TABS.motor_outputs.initialize = function (callback) {
                 var height = (data * (block_height / full_block_scale));
                 var color = parseInt(data * 0.256);
 
+                $('.motor-' + i).prop('title', MOTOR_DATA[i] + ' us');
                 $('.motor-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
 
@@ -357,6 +358,7 @@ TABS.motor_outputs.initialize = function (callback) {
                 var height = (data * (block_height / 1000));
                 var color = parseInt(data * 0.256);
 
+                $('.servo-' + i).prop('title', SERVO_DATA[i] + ' us');
                 $('.servo-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
         }
