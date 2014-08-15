@@ -17,7 +17,7 @@
         text-decoration: underline;
     }
     .tab-motor_outputs .plot_control dl {
-        padding: 5px 0 0 5px;
+        padding: 5px 5px 0 5px;
         line-height: 22px;
     }
     .tab-motor_outputs .plot_control dt {
@@ -29,8 +29,13 @@
         font-weight: bold;
     }
     .tab-motor_outputs .plot_control dd {
-        margin-left: 20px;
         height: 22px;
+    }
+    .tab-motor_outputs .plot_control select {
+        float: right;
+
+        width: 80px;
+        border: 1px solid silver;
     }
     .tab-motor_outputs .plot_control .x {
         color: #00A8F0;
@@ -43,12 +48,7 @@
     }
     .tab-motor_outputs .plot_control .x, .tab-motor_outputs .plot_control .y, .tab-motor_outputs .plot_control .z {
         text-align: right;
-        margin-right: 25px;
     }
-.tab-motor_outputs select {
-    width: 70px;
-    border: 1px solid silver;
-}
 .tab-motor_outputs svg {
     float: left;
 

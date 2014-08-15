@@ -36,7 +36,7 @@
             background-color: #ececec;
         }
         .tab-sensors .plot_control dl {
-            padding: 5px 0 0 5px;
+            padding: 5px 5px 0 5px;
             line-height: 22px;
         }
         .tab-sensors .plot_control dt {
@@ -51,6 +51,12 @@
             margin-left: 20px;
             height: 22px;
         }
+        .tab-sensors .plot_control select {
+            float: right;
+
+            width: 80px;
+            border: 1px solid silver;
+        }
         .tab-sensors .plot_control .x {
             color: #00A8F0;
         }
@@ -62,12 +68,7 @@
         }
         .tab-sensors .plot_control .x, .tab-sensors .plot_control .y, .tab-sensors .plot_control .z {
             text-align: right;
-            margin-right: 25px;
         }
-    .tab-sensors select {
-        width: 70px;
-        border: 1px solid silver;
-    }
 /* SVG classes*/
 .tab-sensors svg {
     float: left;
