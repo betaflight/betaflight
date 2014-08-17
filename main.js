@@ -44,7 +44,7 @@ $(document).ready(function () {
 
     // check release time to inform people in case they are running old release
     if (CONFIGURATOR.releaseDate < (new Date().getTime() - (86400000 * 60))) { // 1 day = 86400000 miliseconds, * 60 = 2 month window
-        GUI.log('You\'re using an old version of Baseflight - Configurator. Please update so you can benefit from recently added features and bugfixes.');
+        GUI.log('You\'re using an old version of ' + chrome.runtime.getManifest().name + '. Please update so you can benefit from recently added features and bugfixes.');
     }
 
 
