@@ -100,7 +100,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM3/CoreSupport \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
-LD_SCRIPT	 = $(ROOT)/stm32_flash_f103.ld
+LD_SCRIPT	 = $(ROOT)/stm32_flash_f103_128k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
@@ -227,6 +227,10 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
+ifeq ($(TARGET),CJMCU)
+LD_SCRIPT	 = $(ROOT)/stm32_flash_f103_64k.ld
+endif
+
 CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
@@ -244,6 +248,9 @@ CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   $(COMMON_SRC)
+#		   debugtest.c \
+#		   $(CMSIS_SRC) \
+#		   $(DEVICE_STDPERIPH_SRC)
 
 CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_spi_mpu6000.c \
