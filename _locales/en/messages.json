@@ -452,7 +452,7 @@
         "message": "Master"
     },
     "motorsNotice": {
-        "message": "<strong>Motor Test Mode Notice:</strong><br />Moving the sliders will cause the motors to <strong>spin up</strong>.<br />In order to prevent injury <strong style=\"color: red\">remove ALL propellers</strong> before using this feature.<br />If you understand these instructions check the <strong>box</strong> below to <strong style=\"color: green\">enable</strong> motor test.<br /><br /><label>Check: <input type=\"checkbox\" /></label>"
+        "message": "<strong>Motor Test Mode Notice:</strong><br />Moving the sliders will cause the motors to <strong>spin up</strong>.<br />In order to prevent injury <strong style=\"color: red\">remove ALL propellers</strong> before using this feature.<br />If you understand these instructions check the <strong>box</strong> below to <strong style=\"color: green\">enable</strong> motor test.<br /><br /><label><input type=\"checkbox\" /> Check</label>"
     },
 
     "sensorsInfo": {
