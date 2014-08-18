@@ -243,32 +243,44 @@ TABS.motor_outputs.initialize = function (callback) {
         $('div.sliders input').prop('min', MISC.mincommand);
         $('div.sliders input').prop('max', MISC.maxthrottle);
         $('div.sliders input').val(MISC.mincommand);
-        $('div.values li:not(:last)').html(MISC.mincommand);
+        $('div.values li:not(:last)').text(MISC.mincommand);
 
         // UI hooks
+        var buffering_set_motor = [],
+            buffer_delay = false;
         $('div.sliders input:not(.master)').on('input', function () {
-            var index = $(this).index();
+            var index = $(this).index(),
+                buffer = [],
+                i;
 
-            $('div.values li').eq(index).html($(this).val());
+            $('div.values li').eq(index).text($(this).val());
 
-            // send data to mcu
-            var buffer_out = [];
-
-            for (var i = 0; i < 8; i++) {
+            for (i = 0; i < 8; i++) {
                 var val = parseInt($('div.sliders input').eq(i).val());
 
-                buffer_out.push(lowByte(val));
-                buffer_out.push(highByte(val));
+                buffer.push(lowByte(val));
+                buffer.push(highByte(val));
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer_out);
+            buffering_set_motor.push(buffer);
+
+            if (!buffer_delay) {
+                buffer_delay = setTimeout(function () {
+                    buffer = buffering_set_motor.pop();
+
+                    MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer);
+
+                    buffering_set_motor = [];
+                    buffer_delay = false;
+                }, 10);
+            }
         });
 
         $('div.sliders input.master').on('input', function () {
             var val = $(this).val();
 
             $('div.sliders input:not(:disabled, :last)').val(val);
-            $('div.values li:not(:last)').slice(0, number_of_valid_outputs).html(val);
+            $('div.values li:not(:last)').slice(0, number_of_valid_outputs).text(val);
             $('div.sliders input:not(:last):first').trigger('input');
         });
 
