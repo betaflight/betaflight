@@ -854,7 +854,8 @@ static bool processInCommand(void)
         }
         break;
 #endif
-    default:                   // we do not know how to handle the (valid) message, indicate error MSP $M!
+    default:
+        // we do not know how to handle the (valid) message, indicate error MSP $M!
         return false;
     }
     headSerialReply(0);
