@@ -184,7 +184,5 @@
         border: 1px dotted silver;
     }
         .tab-motor_outputs .motor_testing .notice input[type="checkbox"] {
-            margin-left: 5px;
-
             vertical-align: middle;
         }
