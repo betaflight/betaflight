@@ -242,7 +242,7 @@ void processRxChannels(void)
 
     bool shouldCheckPulse = true;
 
-    if (feature(FEATURE_FAILSAFE | FEATURE_RX_PPM)) {
+    if (feature(FEATURE_FAILSAFE) && feature(FEATURE_RX_PPM)) {
         shouldCheckPulse = isPPMDataBeingReceived();
         resetPPMDataReceivedState();
     }
