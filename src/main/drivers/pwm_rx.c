@@ -214,10 +214,7 @@ static void ppmEdgeCallback(uint8_t port, captureCompare_t capture)
     }
 }
 
-static uint8_t pwmChannelsReceived = 0;
-
 #define MAX_MISSED_PWM_EVENTS 10
-#define MAX_MISSED_PWM_EVENT_COUNTER (MAX_MISSED_PWM_EVENTS * PWM_TIMER_PERIOD)
 
 extern uint16_t debug[4];
 static void pwmOverflowCallback(uint8_t port, captureCompare_t capture)
@@ -252,7 +249,6 @@ static void pwmEdgeCallback(uint8_t port, captureCompare_t capture)
         // switch state
         pwmInputPort->state = 0;
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
-        pwmChannelsReceived |= (1 << pwmInputPort->channel);
         pwmInputPort->missedEvents = 0;
     }
 }
