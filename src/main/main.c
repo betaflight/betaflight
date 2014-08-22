@@ -142,7 +142,7 @@ void init(void)
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
     // drop out any sensors that don't seem to work, init all the others. halt if gyro is dead.
-    sensorsOK = sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, currentProfile.mag_declination);
+    sensorsOK = sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, currentProfile->mag_declination);
 
     // production debug output
 #ifdef PROD_DEBUG
@@ -197,7 +197,7 @@ void init(void)
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useServos = isMixerUsingServos();
-    pwm_params.extraServos = currentProfile.gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
+    pwm_params.extraServos = currentProfile->gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
     pwm_params.idlePulse = PULSE_1MS; // standard PWM for brushless ESC (default, overridden below)
@@ -224,8 +224,8 @@ void init(void)
             &masterConfig.gpsConfig
         );
         navigationInit(
-            &currentProfile.gpsProfile,
-            &currentProfile.pidProfile
+            &currentProfile->gpsProfile,
+            &currentProfile->pidProfile
         );
     }
 #endif

@@ -94,7 +94,7 @@ void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
-        saveAndReloadCurrentProfileToCurrentProfileSlot();
+        saveConfigAndNotify();
     }
 
     calibratingA--;
@@ -149,7 +149,7 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
-        saveAndReloadCurrentProfileToCurrentProfileSlot();
+        saveConfigAndNotify();
     }
 
 }

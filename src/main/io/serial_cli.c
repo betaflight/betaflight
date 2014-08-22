@@ -228,20 +228,20 @@ const clivalue_t valueTable[] = {
     { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.sbasMode, 0, SBAS_MODE_MAX },
 
 
-    { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[PIDPOS], 0, 200 },
-    { "gps_pos_i",                  VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[PIDPOS], 0, 200 },
-    { "gps_pos_d",                  VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[PIDPOS], 0, 200 },
-    { "gps_posr_p",                 VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[PIDPOSR], 0, 200 },
-    { "gps_posr_i",                 VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[PIDPOSR], 0, 200 },
-    { "gps_posr_d",                 VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[PIDPOSR], 0, 200 },
-    { "gps_nav_p",                  VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[PIDNAVR], 0, 200 },
-    { "gps_nav_i",                  VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[PIDNAVR], 0, 200 },
-    { "gps_nav_d",                  VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[PIDNAVR], 0, 200 },
-    { "gps_wp_radius",              VAR_UINT16 | PROFILE_VALUE, &currentProfile.gpsProfile.gps_wp_radius, 0, 2000 },
-    { "nav_controls_heading",       VAR_UINT8  | PROFILE_VALUE, &currentProfile.gpsProfile.nav_controls_heading, 0, 1 },
-    { "nav_speed_min",              VAR_UINT16 | PROFILE_VALUE, &currentProfile.gpsProfile.nav_speed_min, 10, 2000 },
-    { "nav_speed_max",              VAR_UINT16 | PROFILE_VALUE, &currentProfile.gpsProfile.nav_speed_max, 10, 2000 },
-    { "nav_slew_rate",              VAR_UINT8  | PROFILE_VALUE, &currentProfile.gpsProfile.nav_slew_rate, 0, 100 },
+    { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDPOS], 0, 200 },
+    { "gps_pos_i",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDPOS], 0, 200 },
+    { "gps_pos_d",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDPOS], 0, 200 },
+    { "gps_posr_p",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDPOSR], 0, 200 },
+    { "gps_posr_i",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDPOSR], 0, 200 },
+    { "gps_posr_d",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDPOSR], 0, 200 },
+    { "gps_nav_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDNAVR], 0, 200 },
+    { "gps_nav_i",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDNAVR], 0, 200 },
+    { "gps_nav_d",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDNAVR], 0, 200 },
+    { "gps_wp_radius",              VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].gpsProfile.gps_wp_radius, 0, 2000 },
+    { "nav_controls_heading",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gpsProfile.nav_controls_heading, 0, 1 },
+    { "nav_speed_min",              VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].gpsProfile.nav_speed_min, 10, 2000 },
+    { "nav_speed_max",              VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].gpsProfile.nav_speed_max, 10, 2000 },
+    { "nav_slew_rate",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gpsProfile.nav_slew_rate, 0, 100 },
 #endif
 
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.serialrx_provider, 0, SERIALRX_PROVIDER_MAX },
@@ -273,88 +273,88 @@ const clivalue_t valueTable[] = {
     { "gyro_cmpf_factor",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_cmpf_factor, 100, 1000 },
     { "gyro_cmpfm_factor",          VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_cmpfm_factor, 100, 1000 },
 
-    { "alt_hold_deadband",          VAR_UINT8  | PROFILE_VALUE, &currentProfile.alt_hold_deadband, 1, 250 },
-    { "alt_hold_fast_change",       VAR_UINT8  | PROFILE_VALUE, &currentProfile.alt_hold_fast_change, 0, 1 },
+    { "alt_hold_deadband",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].alt_hold_deadband, 1, 250 },
+    { "alt_hold_fast_change",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].alt_hold_fast_change, 0, 1 },
 
-    { "throttle_correction_value",  VAR_UINT8  | PROFILE_VALUE, &currentProfile.throttle_correction_value, 0, 150 },
-    { "throttle_correction_angle",  VAR_UINT16 | PROFILE_VALUE, &currentProfile.throttle_correction_angle, 1, 900 },
+    { "throttle_correction_value",  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].throttle_correction_value, 0, 150 },
+    { "throttle_correction_angle",  VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].throttle_correction_angle, 1, 900 },
 
-    { "deadband",                   VAR_UINT8  | PROFILE_VALUE, &currentProfile.deadband, 0, 32 },
-    { "yaw_deadband",               VAR_UINT8  | PROFILE_VALUE, &currentProfile.yaw_deadband, 0, 100 },
+    { "deadband",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].deadband, 0, 32 },
+    { "yaw_deadband",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].yaw_deadband, 0, 100 },
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, -1, 1 },
 
-    { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &currentProfile.mixerConfig.yaw_direction, -1, 1 },
-    { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &currentProfile.mixerConfig.tri_unarmed_servo, 0, 1 },
+    { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.yaw_direction, -1, 1 },
+    { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.tri_unarmed_servo, 0, 1 },
 
-    { "rc_rate",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.controlRateConfig.rcRate8, 0, 250 },
-    { "rc_expo",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.controlRateConfig.rcExpo8, 0, 100 },
-    { "thr_mid",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.controlRateConfig.thrMid8, 0, 100 },
-    { "thr_expo",                   VAR_UINT8  | PROFILE_VALUE, &currentProfile.controlRateConfig.thrExpo8, 0, 100 },
-    { "roll_pitch_rate",            VAR_UINT8  | PROFILE_VALUE, &currentProfile.controlRateConfig.rollPitchRate, 0, 100 },
-    { "yaw_rate",                   VAR_UINT8  | PROFILE_VALUE, &currentProfile.controlRateConfig.yawRate, 0, 100 },
-    { "tpa_rate",                   VAR_UINT8  | PROFILE_VALUE, &currentProfile.dynThrPID, 0, 100},
-    { "tpa_breakpoint",             VAR_UINT16 | PROFILE_VALUE, &currentProfile.tpa_breakpoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
+    { "rc_rate",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.rcRate8, 0, 250 },
+    { "rc_expo",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.rcExpo8, 0, 100 },
+    { "thr_mid",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.thrMid8, 0, 100 },
+    { "thr_expo",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.thrExpo8, 0, 100 },
+    { "roll_pitch_rate",            VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.rollPitchRate, 0, 100 },
+    { "yaw_rate",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.yawRate, 0, 100 },
+    { "tpa_rate",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].dynThrPID, 0, 100},
+    { "tpa_breakpoint",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].tpa_breakpoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
 
-    { "failsafe_delay",             VAR_UINT8  | PROFILE_VALUE, &currentProfile.failsafeConfig.failsafe_delay, 0, 200 },
-    { "failsafe_off_delay",         VAR_UINT8  | PROFILE_VALUE, &currentProfile.failsafeConfig.failsafe_off_delay, 0, 200 },
-    { "failsafe_throttle",          VAR_UINT16 | PROFILE_VALUE, &currentProfile.failsafeConfig.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },
-    { "failsafe_min_usec",          VAR_UINT16 | PROFILE_VALUE, &currentProfile.failsafeConfig.failsafe_min_usec, 100, PWM_RANGE_MAX },
-    { "failsafe_max_usec",          VAR_UINT16 | PROFILE_VALUE, &currentProfile.failsafeConfig.failsafe_max_usec, 100, PWM_RANGE_MAX + (PWM_RANGE_MAX - PWM_RANGE_MIN) },
+    { "failsafe_delay",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_delay, 0, 200 },
+    { "failsafe_off_delay",         VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_off_delay, 0, 200 },
+    { "failsafe_throttle",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_throttle, PWM_RANGE_MIN, PWM_RANGE_MAX },
+    { "failsafe_min_usec",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_min_usec, 100, PWM_RANGE_MAX },
+    { "failsafe_max_usec",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_max_usec, 100, PWM_RANGE_MAX + (PWM_RANGE_MAX - PWM_RANGE_MIN) },
 
-    { "gimbal_flags",               VAR_UINT8  | PROFILE_VALUE, &currentProfile.gimbalConfig.gimbal_flags, 0, 255},
+    { "gimbal_flags",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gimbalConfig.gimbal_flags, 0, 255},
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, 0, 5 },
-    { "acc_lpf_factor",             VAR_UINT8  | PROFILE_VALUE, &currentProfile.acc_lpf_factor, 0, 250 },
-    { "accxy_deadband",             VAR_UINT8  | PROFILE_VALUE, &currentProfile.accDeadband.xy, 0, 100 },
-    { "accz_deadband",              VAR_UINT8  | PROFILE_VALUE, &currentProfile.accDeadband.z, 0, 100 },
-    { "accz_lpf_cutoff",            VAR_FLOAT  | PROFILE_VALUE, &currentProfile.accz_lpf_cutoff, 1, 20 },
-    { "acc_unarmedcal",             VAR_UINT8  | PROFILE_VALUE, &currentProfile.acc_unarmedcal, 0, 1 },
-    { "acc_trim_pitch",             VAR_INT16  | PROFILE_VALUE, &currentProfile.accelerometerTrims.values.pitch, -300, 300 },
-    { "acc_trim_roll",              VAR_INT16  | PROFILE_VALUE, &currentProfile.accelerometerTrims.values.roll, -300, 300 },
+    { "acc_lpf_factor",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].acc_lpf_factor, 0, 250 },
+    { "accxy_deadband",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].accDeadband.xy, 0, 100 },
+    { "accz_deadband",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].accDeadband.z, 0, 100 },
+    { "accz_lpf_cutoff",            VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].accz_lpf_cutoff, 1, 20 },
+    { "acc_unarmedcal",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].acc_unarmedcal, 0, 1 },
+    { "acc_trim_pitch",             VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].accelerometerTrims.values.pitch, -300, 300 },
+    { "acc_trim_roll",              VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].accelerometerTrims.values.roll, -300, 300 },
 
-    { "baro_tab_size",              VAR_UINT8  | PROFILE_VALUE, &currentProfile.barometerConfig.baro_sample_count, 0, BARO_SAMPLE_COUNT_MAX },
-    { "baro_noise_lpf",             VAR_FLOAT  | PROFILE_VALUE, &currentProfile.barometerConfig.baro_noise_lpf, 0, 1 },
-    { "baro_cf_vel",                VAR_FLOAT  | PROFILE_VALUE, &currentProfile.barometerConfig.baro_cf_vel, 0, 1 },
-    { "baro_cf_alt",                VAR_FLOAT  | PROFILE_VALUE, &currentProfile.barometerConfig.baro_cf_alt, 0, 1 },
+    { "baro_tab_size",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_sample_count, 0, BARO_SAMPLE_COUNT_MAX },
+    { "baro_noise_lpf",             VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_noise_lpf, 0, 1 },
+    { "baro_cf_vel",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_cf_vel, 0, 1 },
+    { "baro_cf_alt",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_cf_alt, 0, 1 },
 
-    { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &currentProfile.mag_declination, -18000, 18000 },
+    { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, -18000, 18000 },
 
-    { "pid_controller",             VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidController, 0, 2 },
+    { "pid_controller",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidController, 0, 2 },
 
-    { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[PITCH], 0, 200 },
-    { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[PITCH], 0, 200 },
-    { "d_pitch",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[PITCH], 0, 200 },
-    { "p_roll",                     VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[ROLL], 0, 200 },
-    { "i_roll",                     VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[ROLL], 0, 200 },
-    { "d_roll",                     VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[ROLL], 0, 200 },
-    { "p_yaw",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[YAW], 0, 200 },
-    { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[YAW], 0, 200 },
-    { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[YAW], 0, 200 },
+    { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], 0, 200 },
+    { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], 0, 200 },
+    { "d_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PITCH], 0, 200 },
+    { "p_roll",                     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[ROLL], 0, 200 },
+    { "i_roll",                     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[ROLL], 0, 200 },
+    { "d_roll",                     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[ROLL], 0, 200 },
+    { "p_yaw",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[YAW], 0, 200 },
+    { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[YAW], 0, 200 },
+    { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[YAW], 0, 200 },
 
-    { "p_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.P_f[PITCH], 0, 100 },
-    { "i_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.I_f[PITCH], 0, 100 },
-    { "d_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.D_f[PITCH], 0, 100 },
-    { "p_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.P_f[ROLL], 0, 100 },
-    { "i_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.I_f[ROLL], 0, 100 },
-    { "d_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.D_f[ROLL], 0, 100 },
-    { "p_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.P_f[YAW], 0, 100 },
-    { "i_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.I_f[YAW], 0, 100 },
-    { "d_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.D_f[YAW], 0, 100 },
+    { "p_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P_f[PITCH], 0, 100 },
+    { "i_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I_f[PITCH], 0, 100 },
+    { "d_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D_f[PITCH], 0, 100 },
+    { "p_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P_f[ROLL], 0, 100 },
+    { "i_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I_f[ROLL], 0, 100 },
+    { "d_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D_f[ROLL], 0, 100 },
+    { "p_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P_f[YAW], 0, 100 },
+    { "i_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I_f[YAW], 0, 100 },
+    { "d_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D_f[YAW], 0, 100 },
 
-    { "level_horizon",              VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.H_level, 0, 10 },
-    { "level_angle",                VAR_FLOAT  | PROFILE_VALUE, &currentProfile.pidProfile.A_level, 0, 10 },
+    { "level_horizon",              VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.H_level, 0, 10 },
+    { "level_angle",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.A_level, 0, 10 },
 
-    { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[PIDALT], 0, 200 },
-    { "i_alt",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[PIDALT], 0, 200 },
-    { "d_alt",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[PIDALT], 0, 200 },
+    { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDALT], 0, 200 },
+    { "i_alt",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDALT], 0, 200 },
+    { "d_alt",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDALT], 0, 200 },
 
-    { "p_level",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[PIDLEVEL], 0, 200 },
-    { "i_level",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[PIDLEVEL], 0, 200 },
-    { "d_level",                    VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[PIDLEVEL], 0, 200 },
+    { "p_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDLEVEL], 0, 200 },
+    { "i_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDLEVEL], 0, 200 },
+    { "d_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDLEVEL], 0, 200 },
 
-    { "p_vel",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.P8[PIDVEL], 0, 200 },
-    { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.I8[PIDVEL], 0, 200 },
-    { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &currentProfile.pidProfile.D8[PIDVEL], 0, 200 },
+    { "p_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDVEL], 0, 200 },
+    { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], 0, 200 },
+    { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], 0, 200 },
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
@@ -390,14 +390,14 @@ static void cliAux(char *cmdline)
     if (len == 0) {
         // print out aux channel settings
         for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
-            printf("aux %u %u\r\n", i, currentProfile.activate[i]);
+            printf("aux %u %u\r\n", i, currentProfile->activate[i]);
     } else {
         ptr = cmdline;
         i = atoi(ptr);
         if (i < CHECKBOX_ITEM_COUNT) {
             ptr = strchr(cmdline, ' ');
             val = atoi(ptr);
-            currentProfile.activate[i] = val;
+            currentProfile->activate[i] = val;
         } else {
             printf("Invalid Feature index: must be < %u\r\n", CHECKBOX_ITEM_COUNT);
         }
@@ -874,7 +874,7 @@ static void cliSave(char *cmdline)
     UNUSED(cmdline);
 
     cliPrint("Saving");
-    copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
+    //copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
     writeEEPROM();
     cliReboot();
 }
@@ -904,29 +904,34 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
     int32_t value = 0;
     char buf[8];
 
+    void *ptr = var->ptr;
+    if (var->type & PROFILE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+    }
+
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
-            value = *(uint8_t *)var->ptr;
+            value = *(uint8_t *)ptr;
             break;
 
         case VAR_INT8:
-            value = *(int8_t *)var->ptr;
+            value = *(int8_t *)ptr;
             break;
 
         case VAR_UINT16:
-            value = *(uint16_t *)var->ptr;
+            value = *(uint16_t *)ptr;
             break;
 
         case VAR_INT16:
-            value = *(int16_t *)var->ptr;
+            value = *(int16_t *)ptr;
             break;
 
         case VAR_UINT32:
-            value = *(uint32_t *)var->ptr;
+            value = *(uint32_t *)ptr;
             break;
 
         case VAR_FLOAT:
-            printf("%s", ftoa(*(float *)var->ptr, buf));
+            printf("%s", ftoa(*(float *)ptr, buf));
             if (full) {
                 printf(" %s", ftoa((float)var->min, buf));
                 printf(" %s", ftoa((float)var->max, buf));
@@ -940,23 +945,28 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
+    void *ptr = var->ptr;
+    if (var->type & PROFILE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+    }
+
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
         case VAR_INT8:
-            *(char *)var->ptr = (char)value.int_value;
+            *(char *)ptr = (char)value.int_value;
             break;
 
         case VAR_UINT16:
         case VAR_INT16:
-            *(short *)var->ptr = (short)value.int_value;
+            *(short *)ptr = (short)value.int_value;
             break;
 
         case VAR_UINT32:
-            *(int *)var->ptr = (int)value.int_value;
+            *(int *)ptr = (int)value.int_value;
             break;
 
         case VAR_FLOAT:
-            *(float *)var->ptr = (float)value.float_value;
+            *(float *)ptr = (float)value.float_value;
             break;
     }
 }

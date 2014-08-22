@@ -65,12 +65,12 @@ static void multirotorAltHold(void)
 {
     static uint8_t isAltHoldChanged = 0;
     // multirotor alt hold
-    if (currentProfile.alt_hold_fast_change) {
+    if (currentProfile->alt_hold_fast_change) {
         // rapid alt changes
-        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile.alt_hold_deadband) {
+        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile->alt_hold_deadband) {
             errorVelocityI = 0;
             isAltHoldChanged = 1;
-            rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -currentProfile.alt_hold_deadband : currentProfile.alt_hold_deadband;
+            rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -currentProfile->alt_hold_deadband : currentProfile->alt_hold_deadband;
         } else {
             if (isAltHoldChanged) {
                 AltHold = EstAlt;
@@ -80,7 +80,7 @@ static void multirotorAltHold(void)
         }
     } else {
         // slow alt changes for apfags
-        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile.alt_hold_deadband) {
+        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile->alt_hold_deadband) {
             // set velocity proportional to stick movement +100 throttle gives ~ +50 cm/s
             setVelocity = (rcCommand[THROTTLE] - initialThrottleHold) / 2;
             velocityControl = 1;

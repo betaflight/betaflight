@@ -51,7 +51,7 @@ void readEEPROM(void);
 void readEEPROMAndNotify(void);
 void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
-void saveAndReloadCurrentProfileToCurrentProfileSlot(void);
+void saveConfigAndNotify(void);
 void changeProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
