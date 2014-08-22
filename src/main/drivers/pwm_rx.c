@@ -59,6 +59,8 @@ typedef struct {
     captureCompare_t fall;
     captureCompare_t capture;
 
+    uint8_t missedEvents;
+
     const timerHardware_t *timerHardware;
 } pwmInputPort_t;
 
@@ -212,6 +214,22 @@ static void ppmEdgeCallback(uint8_t port, captureCompare_t capture)
     }
 }
 
+#define MAX_MISSED_PWM_EVENTS 10
+
+extern uint16_t debug[4];
+static void pwmOverflowCallback(uint8_t port, captureCompare_t capture)
+{
+    UNUSED(capture);
+    pwmInputPort_t *pwmInputPort = &pwmInputPorts[port];
+
+    if (++pwmInputPort->missedEvents > MAX_MISSED_PWM_EVENTS) {
+        if (pwmInputPort->state == 0) {
+            captures[pwmInputPort->channel] = PPM_RCVR_TIMEOUT;
+        }
+        pwmInputPort->missedEvents = 0;
+    }
+}
+
 static void pwmEdgeCallback(uint8_t port, captureCompare_t capture)
 {
     pwmInputPort_t *pwmInputPort = &pwmInputPorts[port];
@@ -231,6 +249,7 @@ static void pwmEdgeCallback(uint8_t port, captureCompare_t capture)
         // switch state
         pwmInputPort->state = 0;
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
+        pwmInputPort->missedEvents = 0;
     }
 }
 
@@ -267,6 +286,8 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
 {
     pwmInputPort_t *p = &pwmInputPorts[channel];
 
+    p->state = 0;
+    p->missedEvents = 0;
     p->channel = channel;
     p->mode = INPUT_MODE_PWM;
     p->timerHardware = timerHardwarePtr;
@@ -275,7 +296,7 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
-    configureTimerCaptureCompareInterrupt(timerHardwarePtr, channel, pwmEdgeCallback, NULL);
+    configureTimerCaptureCompareInterrupt(timerHardwarePtr, channel, pwmEdgeCallback, pwmOverflowCallback);
 }
 
 #define UNUSED_PPM_TIMER_REFERENCE 0
