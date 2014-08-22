@@ -81,4 +81,4 @@ typedef struct master_t {
 } master_t;
 
 extern master_t masterConfig;
-extern profile_t currentProfile;
+extern profile_t *currentProfile;

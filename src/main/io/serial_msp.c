@@ -497,16 +497,16 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_SERVO_CONF:
         headSerialReply(56);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            serialize16(currentProfile.servoConf[i].min);
-            serialize16(currentProfile.servoConf[i].max);
-            serialize16(currentProfile.servoConf[i].middle);
-            serialize8(currentProfile.servoConf[i].rate);
+            serialize16(currentProfile->servoConf[i].min);
+            serialize16(currentProfile->servoConf[i].max);
+            serialize16(currentProfile->servoConf[i].middle);
+            serialize8(currentProfile->servoConf[i].rate);
         }
         break;
     case MSP_CHANNEL_FORWARDING:
         headSerialReply(8);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            serialize8(currentProfile.servoConf[i].forwardFromChannel);
+            serialize8(currentProfile->servoConf[i].forwardFromChannel);
         }
         break;
     case MSP_MOTOR:
@@ -540,38 +540,38 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
-        serialize8(currentProfile.controlRateConfig.rcRate8);
-        serialize8(currentProfile.controlRateConfig.rcExpo8);
-        serialize8(currentProfile.controlRateConfig.rollPitchRate);
-        serialize8(currentProfile.controlRateConfig.yawRate);
-        serialize8(currentProfile.dynThrPID);
-        serialize8(currentProfile.controlRateConfig.thrMid8);
-        serialize8(currentProfile.controlRateConfig.thrExpo8);
+        serialize8(currentProfile->controlRateConfig.rcRate8);
+        serialize8(currentProfile->controlRateConfig.rcExpo8);
+        serialize8(currentProfile->controlRateConfig.rollPitchRate);
+        serialize8(currentProfile->controlRateConfig.yawRate);
+        serialize8(currentProfile->dynThrPID);
+        serialize8(currentProfile->controlRateConfig.thrMid8);
+        serialize8(currentProfile->controlRateConfig.thrExpo8);
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
-        if (currentProfile.pidController == 2) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
+        if (currentProfile->pidController == 2) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
             for (i = 0; i < 3; i++) {
-                serialize8(constrain(lrintf(currentProfile.pidProfile.P_f[i] * 10.0f), 0, 250));
-                serialize8(constrain(lrintf(currentProfile.pidProfile.I_f[i] * 100.0f), 0, 250));
-                serialize8(constrain(lrintf(currentProfile.pidProfile.D_f[i] * 1000.0f), 0, 100));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 250));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 250));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 100));
             }
             for (i = 3; i < PID_ITEM_COUNT; i++) {
                 if (i == PIDLEVEL) {
-                    serialize8(constrain(lrintf(currentProfile.pidProfile.A_level * 10.0f), 0, 250));
-                    serialize8(constrain(lrintf(currentProfile.pidProfile.H_level * 10.0f), 0, 250));
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 250));
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 250));
                     serialize8(0);
                 } else {
-                    serialize8(currentProfile.pidProfile.P8[i]);
-                    serialize8(currentProfile.pidProfile.I8[i]);
-                    serialize8(currentProfile.pidProfile.D8[i]);
+                    serialize8(currentProfile->pidProfile.P8[i]);
+                    serialize8(currentProfile->pidProfile.I8[i]);
+                    serialize8(currentProfile->pidProfile.D8[i]);
                 }
             }
         } else {
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                serialize8(currentProfile.pidProfile.P8[i]);
-                serialize8(currentProfile.pidProfile.I8[i]);
-                serialize8(currentProfile.pidProfile.D8[i]);
+                serialize8(currentProfile->pidProfile.P8[i]);
+                serialize8(currentProfile->pidProfile.I8[i]);
+                serialize8(currentProfile->pidProfile.D8[i]);
             }
         }
         break;
@@ -582,9 +582,9 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_BOX:
         headSerialReply(4 * numberBoxItems);
         for (i = 0; i < numberBoxItems; i++)
-            serialize16(currentProfile.activate[availableBoxes[i]] & ACTIVATE_MASK);
+            serialize16(currentProfile->activate[availableBoxes[i]] & ACTIVATE_MASK);
         for (i = 0; i < numberBoxItems; i++)
-            serialize16((currentProfile.activate[availableBoxes[i]] >> 16) & ACTIVATE_MASK);
+            serialize16((currentProfile->activate[availableBoxes[i]] >> 16) & ACTIVATE_MASK);
         break;
     case MSP_BOXNAMES:
         // headSerialReply(sizeof(boxnames) - 1);
@@ -601,10 +601,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.escAndServoConfig.minthrottle);
         serialize16(masterConfig.escAndServoConfig.maxthrottle);
         serialize16(masterConfig.escAndServoConfig.mincommand);
-        serialize16(currentProfile.failsafeConfig.failsafe_throttle);
+        serialize16(currentProfile->failsafeConfig.failsafe_throttle);
         serialize16(0); // plog useless shit
         serialize32(0); // plog useless shit
-        serialize16(currentProfile.mag_declination / 10); // TODO check this shit
+        serialize16(currentProfile->mag_declination / 10); // TODO check this shit
         serialize8(masterConfig.batteryConfig.vbatscale);
         serialize8(masterConfig.batteryConfig.vbatmincellvoltage);
         serialize8(masterConfig.batteryConfig.vbatmaxcellvoltage);
@@ -672,8 +672,8 @@ static bool processOutCommand(uint8_t cmdMSP)
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         headSerialReply(4);
-        serialize16(currentProfile.accelerometerTrims.values.pitch);
-        serialize16(currentProfile.accelerometerTrims.values.roll);
+        serialize16(currentProfile->accelerometerTrims.values.pitch);
+        serialize16(currentProfile->accelerometerTrims.values.roll);
         break;
     case MSP_UID:
         headSerialReply(12);
@@ -716,59 +716,59 @@ static bool processInCommand(void)
         rxMspFrameRecieve();
         break;
     case MSP_SET_ACC_TRIM:
-        currentProfile.accelerometerTrims.values.pitch = read16();
-        currentProfile.accelerometerTrims.values.roll  = read16();
+        currentProfile->accelerometerTrims.values.pitch = read16();
+        currentProfile->accelerometerTrims.values.roll  = read16();
         break;
     case MSP_SET_PID:
-        if (currentProfile.pidController == 2) {
+        if (currentProfile->pidController == 2) {
             for (i = 0; i < 3; i++) {
-                currentProfile.pidProfile.P_f[i] = (float)read8() / 10.0f;
-                currentProfile.pidProfile.I_f[i] = (float)read8() / 100.0f;
-                currentProfile.pidProfile.D_f[i] = (float)read8() / 1000.0f;
+                currentProfile->pidProfile.P_f[i] = (float)read8() / 10.0f;
+                currentProfile->pidProfile.I_f[i] = (float)read8() / 100.0f;
+                currentProfile->pidProfile.D_f[i] = (float)read8() / 1000.0f;
             }
             for (i = 3; i < PID_ITEM_COUNT; i++) {
                 if (i == PIDLEVEL) {
-                    currentProfile.pidProfile.A_level = (float)read8() / 10.0f;
-                    currentProfile.pidProfile.H_level = (float)read8() / 10.0f;
+                    currentProfile->pidProfile.A_level = (float)read8() / 10.0f;
+                    currentProfile->pidProfile.H_level = (float)read8() / 10.0f;
                     read8();
                 } else {
-                    currentProfile.pidProfile.P8[i] = read8();
-                    currentProfile.pidProfile.I8[i] = read8();
-                    currentProfile.pidProfile.D8[i] = read8();
+                    currentProfile->pidProfile.P8[i] = read8();
+                    currentProfile->pidProfile.I8[i] = read8();
+                    currentProfile->pidProfile.D8[i] = read8();
                 }
             }
         } else {
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                currentProfile.pidProfile.P8[i] = read8();
-                currentProfile.pidProfile.I8[i] = read8();
-                currentProfile.pidProfile.D8[i] = read8();
+                currentProfile->pidProfile.P8[i] = read8();
+                currentProfile->pidProfile.I8[i] = read8();
+                currentProfile->pidProfile.D8[i] = read8();
             }
         }
         break;
     case MSP_SET_BOX:
         for (i = 0; i < numberBoxItems; i++)
-            currentProfile.activate[availableBoxes[i]] = read16() & ACTIVATE_MASK;
+            currentProfile->activate[availableBoxes[i]] = read16() & ACTIVATE_MASK;
         for (i = 0; i < numberBoxItems; i++)
-            currentProfile.activate[availableBoxes[i]] |= (read16() & ACTIVATE_MASK) << 16;
+            currentProfile->activate[availableBoxes[i]] |= (read16() & ACTIVATE_MASK) << 16;
         break;
     case MSP_SET_RC_TUNING:
-        currentProfile.controlRateConfig.rcRate8 = read8();
-        currentProfile.controlRateConfig.rcExpo8 = read8();
-        currentProfile.controlRateConfig.rollPitchRate = read8();
-        currentProfile.controlRateConfig.yawRate = read8();
-        currentProfile.dynThrPID = read8();
-        currentProfile.controlRateConfig.thrMid8 = read8();
-        currentProfile.controlRateConfig.thrExpo8 = read8();
+        currentProfile->controlRateConfig.rcRate8 = read8();
+        currentProfile->controlRateConfig.rcExpo8 = read8();
+        currentProfile->controlRateConfig.rollPitchRate = read8();
+        currentProfile->controlRateConfig.yawRate = read8();
+        currentProfile->dynThrPID = read8();
+        currentProfile->controlRateConfig.thrMid8 = read8();
+        currentProfile->controlRateConfig.thrExpo8 = read8();
         break;
     case MSP_SET_MISC:
         read16(); // powerfailmeter
         masterConfig.escAndServoConfig.minthrottle = read16();
         masterConfig.escAndServoConfig.maxthrottle = read16();
         masterConfig.escAndServoConfig.mincommand = read16();
-        currentProfile.failsafeConfig.failsafe_throttle = read16();
+        currentProfile->failsafeConfig.failsafe_throttle = read16();
         read16();
         read32();
-        currentProfile.mag_declination = read16() * 10;
+        currentProfile->mag_declination = read16() * 10;
         masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
         masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
@@ -780,22 +780,22 @@ static bool processInCommand(void)
         break;
     case MSP_SET_SERVO_CONF:
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            currentProfile.servoConf[i].min = read16();
-            currentProfile.servoConf[i].max = read16();
+            currentProfile->servoConf[i].min = read16();
+            currentProfile->servoConf[i].max = read16();
             // provide temporary support for old clients that try and send a channel index instead of a servo middle
             uint16_t potentialServoMiddleOrChannelToForward = read16();
             if (potentialServoMiddleOrChannelToForward < MAX_SUPPORTED_SERVOS) {
-                currentProfile.servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
+                currentProfile->servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
             }
             if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
-                currentProfile.servoConf[i].middle = potentialServoMiddleOrChannelToForward;
+                currentProfile->servoConf[i].middle = potentialServoMiddleOrChannelToForward;
             }
-            currentProfile.servoConf[i].rate = read8();
+            currentProfile->servoConf[i].rate = read8();
         }
         break;
     case MSP_SET_CHANNEL_FORWARDING:
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            currentProfile.servoConf[i].forwardFromChannel = read8();
+            currentProfile->servoConf[i].forwardFromChannel = read8();
         }
         break;
     case MSP_RESET_CONF:
@@ -817,7 +817,7 @@ static bool processInCommand(void)
             headSerialError(0);
             return true;
         }
-        copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
+        //copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
         writeEEPROM();
         readEEPROM();
         break;

@@ -98,7 +98,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
                 magZero->raw[axis] = (magZeroTempMin.raw[axis] + magZeroTempMax.raw[axis]) / 2; // Calculate offsets
             }
 
-            saveAndReloadCurrentProfileToCurrentProfileSlot();
+            saveConfigAndNotify();
         }
     }
 }

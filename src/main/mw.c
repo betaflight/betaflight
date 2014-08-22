@@ -96,10 +96,10 @@ extern pidControllerFuncPtr pid_controller;
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    currentProfile.accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    currentProfile.accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    currentProfile->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    currentProfile->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
-    saveAndReloadCurrentProfileToCurrentProfileSlot();
+    saveConfigAndNotify();
 }
 
 #ifdef AUTOTUNE
@@ -116,12 +116,12 @@ void updateAutotuneState(void)
                     autotuneReset();
                     landedAfterAutoTuning = false;
                 }
-                autotuneBeginNextPhase(&currentProfile.pidProfile, currentProfile.pidController);
+                autotuneBeginNextPhase(&currentProfile->pidProfile, currentProfile->pidController);
                 f.AUTOTUNE_MODE = 1;
                 autoTuneWasUsed = true;
             } else {
                 if (havePidsBeenUpdatedByAutotune()) {
-                    saveAndReloadCurrentProfileToCurrentProfileSlot();
+                    saveConfigAndNotify();
                     autotuneReset();
                 }
             }
@@ -163,22 +163,22 @@ void annexCode(void)
     static int32_t vbatCycleTime = 0;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-    if (rcData[THROTTLE] < currentProfile.tpa_breakpoint) {
+    if (rcData[THROTTLE] < currentProfile->tpa_breakpoint) {
         prop2 = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t)currentProfile.dynThrPID * (rcData[THROTTLE] - currentProfile.tpa_breakpoint) / (2000 - currentProfile.tpa_breakpoint);
+            prop2 = 100 - (uint16_t)currentProfile->dynThrPID * (rcData[THROTTLE] - currentProfile->tpa_breakpoint) / (2000 - currentProfile->tpa_breakpoint);
         } else {
-            prop2 = 100 - currentProfile.dynThrPID;
+            prop2 = 100 - currentProfile->dynThrPID;
         }
     }
 
     for (axis = 0; axis < 3; axis++) {
         tmp = min(abs(rcData[axis] - masterConfig.rxConfig.midrc), 500);
         if (axis == ROLL || axis == PITCH) {
-            if (currentProfile.deadband) {
-                if (tmp > currentProfile.deadband) {
-                    tmp -= currentProfile.deadband;
+            if (currentProfile->deadband) {
+                if (tmp > currentProfile->deadband) {
+                    tmp -= currentProfile->deadband;
                 } else {
                     tmp = 0;
                 }
@@ -186,24 +186,24 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t)currentProfile.controlRateConfig.rollPitchRate * tmp / 500;
+            prop1 = 100 - (uint16_t)currentProfile->controlRateConfig.rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         }
         if (axis == YAW) {
-            if (currentProfile.yaw_deadband) {
-                if (tmp > currentProfile.yaw_deadband) {
-                    tmp -= currentProfile.yaw_deadband;
+            if (currentProfile->yaw_deadband) {
+                if (tmp > currentProfile->yaw_deadband) {
+                    tmp -= currentProfile->yaw_deadband;
                 } else {
                     tmp = 0;
                 }
             }
             rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
-            prop1 = 100 - (uint16_t)currentProfile.controlRateConfig.yawRate * abs(tmp) / 500;
+            prop1 = 100 - (uint16_t)currentProfile->controlRateConfig.yawRate * abs(tmp) / 500;
         }
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
-        dynP8[axis] = (uint16_t)currentProfile.pidProfile.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)currentProfile.pidProfile.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)currentProfile.pidProfile.D8[axis] * prop1 / 100;
+        dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
+        dynI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop1 / 100;
+        dynD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop1 / 100;
 
         if (rcData[axis] < masterConfig.rxConfig.midrc)
             rcCommand[axis] = -rcCommand[axis];
@@ -358,7 +358,7 @@ void updateMagHold(void)
             dif -= 360;
         dif *= -masterConfig.yaw_control_direction;
         if (f.SMALL_ANGLE)
-            rcCommand[YAW] -= dif * currentProfile.pidProfile.P8[PIDMAG] / 30;    // 18 deg
+            rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
     } else
         magHold = heading;
 }
@@ -462,7 +462,7 @@ void processRx(void)
         resetErrorGyro();
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, currentProfile.activate, masterConfig.retarded_arm);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, currentProfile->activate, masterConfig.retarded_arm);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
@@ -488,7 +488,7 @@ void processRx(void)
                 (rcData[AUX5 + i] > 1700) << (3 * i + 2)) << 16;
     }
     for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
-        rcOptions[i] = (auxState & currentProfile.activate[i]) > 0;
+        rcOptions[i] = (auxState & currentProfile->activate[i]) > 0;
 
     if ((rcOptions[BOXANGLE] || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
@@ -585,7 +585,7 @@ void loop(void)
     if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
         loopTime = currentTime + masterConfig.looptime;
 
-        computeIMU(&currentProfile.accelerometerTrims, masterConfig.mixerConfiguration);
+        computeIMU(&currentProfile->accelerometerTrims, masterConfig.mixerConfiguration);
 
         // Measure loop rate just after reading the sensors
         currentTime = micros();
@@ -616,8 +616,8 @@ void loop(void)
 
 #endif
 
-        if (currentProfile.throttle_correction_value && (f.ANGLE_MODE || f.HORIZON_MODE)) {
-            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile.throttle_correction_value);
+        if (currentProfile->throttle_correction_value && (f.ANGLE_MODE || f.HORIZON_MODE)) {
+            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile->throttle_correction_value);
         }
 
 #ifdef GPS
@@ -630,10 +630,10 @@ void loop(void)
 
         // PID - note this is function pointer set by setPIDController()
         pid_controller(
-			&currentProfile.pidProfile,
-			&currentProfile.controlRateConfig,
+			&currentProfile->pidProfile,
+			&currentProfile->controlRateConfig,
 			masterConfig.max_angle_inclination,
-			&currentProfile.accelerometerTrims
+			&currentProfile->accelerometerTrims
         );
 
         mixTable();
