@@ -137,11 +137,13 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 
 #define ACTIVATE_MASK 0xFFF // see
 
-struct box_t {
+typedef struct box_e {
     const uint8_t boxIndex;         // this is from boxnames enum
     const char *boxName;            // GUI-readable box name
     const uint8_t permanentId;      //
-} boxes[] = {
+} box_t;
+
+static const box_t const boxes[] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },
