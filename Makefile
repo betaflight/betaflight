@@ -248,9 +248,6 @@ CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   $(COMMON_SRC)
-#		   debugtest.c \
-#		   $(CMSIS_SRC) \
-#		   $(DEVICE_STDPERIPH_SRC)
 
 CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_spi_mpu6000.c \
