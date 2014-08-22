@@ -210,6 +210,12 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->reboot_character = 'R';
 }
 
+
+static void setProfile(uint8_t profileIndex)
+{
+    currentProfile = &masterConfig.profile[profileIndex];
+}
+
 // Default settings
 static void resetConf(void)
 {
@@ -218,7 +224,7 @@ static void resetConf(void)
 
     // Clear all configuration
     memset(&masterConfig, 0, sizeof(master_t));
-    memset(&currentProfile, 0, sizeof(profile_t));
+    setProfile(0);
 
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerConfiguration = MULTITYPE_QUADX;
@@ -356,9 +362,9 @@ static void resetConf(void)
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         masterConfig.customMixer[i].throttle = 0.0f;
 
-    // copy default config into all 3 profiles
-    for (i = 0; i < 3; i++)
-        memcpy(&masterConfig.profile[i], &currentProfile, sizeof(profile_t));
+    // copy first profile into remaining profile
+    for (i = 1; i < 3; i++)
+        memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
 }
 
 static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
@@ -530,7 +536,7 @@ void readEEPROM(void)
     if (masterConfig.current_profile_index > 2) // sanity check
         masterConfig.current_profile_index = 0;
 
-    currentProfile = &masterConfig.profile[masterConfig.current_profile_index];
+    setProfile(masterConfig.current_profile_index);
 
     validateAndFixConfig();
     activateConfig();

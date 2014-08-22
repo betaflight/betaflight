@@ -817,7 +817,6 @@ static bool processInCommand(void)
             headSerialError(0);
             return true;
         }
-        //copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
         writeEEPROM();
         readEEPROM();
         break;
