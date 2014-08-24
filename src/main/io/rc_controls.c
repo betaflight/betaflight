@@ -41,7 +41,6 @@
 #include "rx/rx.h"
 #include "io/rc_controls.h"
 
-
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
 bool areSticksInApModePosition(uint16_t ap_mode)
@@ -85,16 +84,15 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     // perform actions
     if (activate[BOXARM] > 0) {
 
-        // Arming via ARM BOX
-        if (throttleStatus == THROTTLE_LOW) {
-             if (rcOptions[BOXARM] && ARMING_FLAG(OK_TO_ARM)) {
-                mwArm();
+        if (rcOptions[BOXARM]) {
+            // Arming via ARM BOX
+            if (throttleStatus == THROTTLE_LOW) {
+                if (ARMING_FLAG(OK_TO_ARM)) {
+                    mwArm();
+                }
             }
-        }
-
-        // Disarming via ARM BOX
-        if (!rcOptions[BOXARM]) {
-            ENABLE_ARMING_FLAG(SEEN_BOXARM_OFF);
+        } else {
+            // Disarming via ARM BOX
             if (ARMING_FLAG(ARMED)) {
                 mwDisarm();
             }

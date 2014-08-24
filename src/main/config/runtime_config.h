@@ -48,8 +48,7 @@ extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
 typedef enum {
     OK_TO_ARM       = (1 << 0),
     PREVENT_ARMING  = (1 << 1),
-    SEEN_BOXARM_OFF = (1 << 2),
-    ARMED           = (1 << 3)
+    ARMED           = (1 << 2)
 } armingFlag_e;
 
 extern uint8_t armingFlags;

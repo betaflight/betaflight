@@ -244,7 +244,9 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        ENABLE_ARMING_FLAG(OK_TO_ARM);
+        if (rcOptions[BOXARM] == 0) {
+            ENABLE_ARMING_FLAG(OK_TO_ARM);
+        }
 
         if (isCalibrating()) {
             LED0_TOGGLE;
@@ -252,10 +254,6 @@ void annexCode(void)
         }
 
         if (!STATE(SMALL_ANGLE)) {
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-
-        if (rcOptions[BOXARM] && !ARMING_FLAG(SEEN_BOXARM_OFF)) {
             DISABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -271,6 +269,10 @@ void annexCode(void)
 
         updateWarningLed(currentTime);
     }
+
+#if 0
+    debug[0] = armingFlags;
+#endif
 
 #ifdef TELEMETRY
     checkTelemetryState();
