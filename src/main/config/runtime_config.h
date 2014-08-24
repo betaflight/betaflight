@@ -45,27 +45,51 @@ enum {
 extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
 
 // FIXME some of these are flight modes, some of these are general status indicators
-typedef struct flags_t {
-    uint8_t OK_TO_ARM;
-    uint8_t PREVENT_ARMING;
-    uint8_t ARMED;
-    uint8_t ANGLE_MODE;
-    uint8_t HORIZON_MODE;
-    uint8_t MAG_MODE;
-    uint8_t BARO_MODE;
-    uint8_t GPS_HOME_MODE;
-    uint8_t GPS_HOLD_MODE;
-    uint8_t HEADFREE_MODE;
-    uint8_t PASSTHRU_MODE;
-    uint8_t GPS_FIX;
-    uint8_t GPS_FIX_HOME;
-    uint8_t SMALL_ANGLE;
-    uint8_t CALIBRATE_MAG;
-    uint8_t FIXED_WING;                     // set when in flying_wing or airplane mode. currently used by althold selection code
-    uint8_t AUTOTUNE_MODE;
-} flags_t;
+typedef enum {
+    OK_TO_ARM       = (1 << 0),
+    PREVENT_ARMING  = (1 << 1),
+    SEEN_BOXARM_OFF = (1 << 2),
+    ARMED           = (1 << 3)
+} armingFlag_e;
 
-extern flags_t f;
+extern uint8_t armingFlags;
+
+#define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~(mask))
+#define ENABLE_ARMING_FLAG(mask) (armingFlags |= mask)
+#define ARMING_FLAG(mask) (armingFlags & mask)
+
+typedef enum {
+    ANGLE_MODE      = (1 << 0),
+    HORIZON_MODE    = (1 << 1),
+    MAG_MODE        = (1 << 2),
+    BARO_MODE       = (1 << 3),
+    GPS_HOME_MODE   = (1 << 4),
+    GPS_HOLD_MODE   = (1 << 5),
+    HEADFREE_MODE   = (1 << 6),
+    AUTOTUNE_MODE   = (1 << 7),
+    PASSTHRU_MODE   = (1 << 8),
+} flightModeFlags_e;
+
+extern uint16_t flightModeFlags;
+
+#define DISABLE_FLIGHT_MODE(mask) (flightModeFlags &= ~(mask))
+#define ENABLE_FLIGHT_MODE(mask) (flightModeFlags |= mask)
+#define FLIGHT_MODE(mask) (flightModeFlags & mask)
+
+typedef enum {
+    GPS_FIX_HOME   = (1 << 0),
+    GPS_FIX        = (1 << 1),
+    CALIBRATE_MAG  = (1 << 2),
+    SMALL_ANGLE    = (1 << 3),
+    FIXED_WING     = (1 << 4),                   // set when in flying_wing or airplane mode. currently used by althold selection code
+} stateFlags_t;
+
+#define DISABLE_STATE(mask) (stateFlags &= ~(mask))
+#define ENABLE_STATE(mask) (stateFlags |= mask)
+#define STATE(mask) (stateFlags & mask)
+
+extern uint8_t stateFlags;
+
 
 bool sensors(uint32_t mask);
 void sensorsSet(uint32_t mask);

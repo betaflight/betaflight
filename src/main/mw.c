@@ -110,14 +110,14 @@ void updateAutotuneState(void)
     static bool autoTuneWasUsed = false;
 
     if (rcOptions[BOXAUTOTUNE]) {
-        if (!f.AUTOTUNE_MODE) {
-            if (f.ARMED) {
+        if (!FLIGHT_MODE(AUTOTUNE_MODE)) {
+            if (ARMING_FLAG(ARMED)) {
                 if (isAutotuneIdle() || landedAfterAutoTuning) {
                     autotuneReset();
                     landedAfterAutoTuning = false;
                 }
                 autotuneBeginNextPhase(&currentProfile->pidProfile, currentProfile->pidController);
-                f.AUTOTUNE_MODE = 1;
+                ENABLE_FLIGHT_MODE(AUTOTUNE_MODE);
                 autoTuneWasUsed = true;
             } else {
                 if (havePidsBeenUpdatedByAutotune()) {
@@ -129,12 +129,12 @@ void updateAutotuneState(void)
         return;
     }
 
-    if (f.AUTOTUNE_MODE) {
+    if (FLIGHT_MODE(AUTOTUNE_MODE)) {
         autotuneEndPhase();
-        f.AUTOTUNE_MODE = 0;
+        DISABLE_FLIGHT_MODE(AUTOTUNE_MODE);
     }
 
-    if (!f.ARMED && autoTuneWasUsed) {
+    if (!ARMING_FLAG(ARMED) && autoTuneWasUsed) {
         landedAfterAutoTuning = true;
     }
 }
@@ -214,7 +214,7 @@ void annexCode(void)
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
-    if (f.HEADFREE_MODE) {
+    if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(heading - headFreeModeHold);
         float cosDiff = cosf(radDiff);
         float sinDiff = sinf(radDiff);
@@ -241,25 +241,29 @@ void annexCode(void)
 
     beepcodeUpdateState(batteryWarningEnabled);
 
-    if (f.ARMED) {
+    if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
+        ENABLE_ARMING_FLAG(OK_TO_ARM);
+
         if (isCalibrating()) {
             LED0_TOGGLE;
-            f.OK_TO_ARM = 0;
+            DISABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
-        f.OK_TO_ARM = 1;
+        if (!STATE(SMALL_ANGLE)) {
+            DISABLE_ARMING_FLAG(OK_TO_ARM);
+        }
 
-        if (!f.SMALL_ANGLE) {
-            f.OK_TO_ARM = 0;
+        if (rcOptions[BOXARM] && !ARMING_FLAG(SEEN_BOXARM_OFF)) {
+            DISABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
         if (rcOptions[BOXAUTOTUNE]) {
-            f.OK_TO_ARM = 0;
+            DISABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
-        if (f.OK_TO_ARM) {
+        if (ARMING_FLAG(OK_TO_ARM)) {
             disableWarningLed();
         } else {
             enableWarningLed(currentTime);
@@ -287,24 +291,24 @@ void annexCode(void)
 
 void mwDisarm(void)
 {
-    if (f.ARMED)
-        f.ARMED = 0;
+    if (ARMING_FLAG(ARMED))
+        DISABLE_ARMING_FLAG(ARMED);
 }
 
 void mwArm(void)
 {
-    if (f.OK_TO_ARM) {
-        if (f.ARMED) {
+    if (ARMING_FLAG(OK_TO_ARM)) {
+        if (ARMING_FLAG(ARMED)) {
             return;
         }
-        if (!f.PREVENT_ARMING) {
-            f.ARMED = 1;
+        if (!ARMING_FLAG(PREVENT_ARMING)) {
+            ENABLE_ARMING_FLAG(ARMED);
             headFreeModeHold = heading;
             return;
         }
     }
 
-    if (!f.ARMED) {
+    if (!ARMING_FLAG(ARMED)) {
         blinkLedAndSoundBeeper(2, 255, 1);
     }
 }
@@ -334,7 +338,7 @@ void handleInflightCalibrationStickPosition(void)
 
 void updateInflightCalibrationState(void)
 {
-    if (AccInflightCalibrationArmed && f.ARMED && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !rcOptions[BOXARM]) {   // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
         AccInflightCalibrationArmed = false;
     }
@@ -342,7 +346,7 @@ void updateInflightCalibrationState(void)
         if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
             InflightcalibratingA = 50;
         AccInflightCalibrationActive = true;
-    } else if (AccInflightCalibrationMeasurementDone && !f.ARMED) {
+    } else if (AccInflightCalibrationMeasurementDone && !ARMING_FLAG(ARMED)) {
         AccInflightCalibrationMeasurementDone = false;
         AccInflightCalibrationSavetoEEProm = true;
     }
@@ -350,14 +354,14 @@ void updateInflightCalibrationState(void)
 
 void updateMagHold(void)
 {
-    if (abs(rcCommand[YAW]) < 70 && f.MAG_MODE) {
+    if (abs(rcCommand[YAW]) < 70 && FLIGHT_MODE(MAG_MODE)) {
         int16_t dif = heading - magHold;
         if (dif <= -180)
             dif += 360;
         if (dif >= +180)
             dif -= 360;
         dif *= -masterConfig.yaw_control_direction;
-        if (f.SMALL_ANGLE)
+        if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
     } else
         magHold = heading;
@@ -492,25 +496,25 @@ void processRx(void)
 
     if ((rcOptions[BOXANGLE] || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
-        if (!f.ANGLE_MODE) {
+        if (!FLIGHT_MODE(ANGLE_MODE)) {
             resetErrorAngle();
-            f.ANGLE_MODE = 1;
+            ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
-        f.ANGLE_MODE = 0; // failsafe support
+        DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
     if (rcOptions[BOXHORIZON]) {
-        f.ANGLE_MODE = 0;
-        if (!f.HORIZON_MODE) {
+        DISABLE_FLIGHT_MODE(ANGLE_MODE);
+        if (!FLIGHT_MODE(HORIZON_MODE)) {
             resetErrorAngle();
-            f.HORIZON_MODE = 1;
+            ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {
-        f.HORIZON_MODE = 0;
+        DISABLE_FLIGHT_MODE(HORIZON_MODE);
     }
 
-    if (f.ANGLE_MODE || f.HORIZON_MODE) {
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
     } else {
         LED1_OFF;
@@ -519,19 +523,19 @@ void processRx(void)
 #ifdef  MAG
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (rcOptions[BOXMAG]) {
-            if (!f.MAG_MODE) {
-                f.MAG_MODE = 1;
+            if (!FLIGHT_MODE(MAG_MODE)) {
+                ENABLE_FLIGHT_MODE(MAG_MODE);
                 magHold = heading;
             }
         } else {
-            f.MAG_MODE = 0;
+            DISABLE_FLIGHT_MODE(MAG_MODE);
         }
         if (rcOptions[BOXHEADFREE]) {
-            if (!f.HEADFREE_MODE) {
-                f.HEADFREE_MODE = 1;
+            if (!FLIGHT_MODE(HEADFREE_MODE)) {
+                ENABLE_FLIGHT_MODE(HEADFREE_MODE);
             }
         } else {
-            f.HEADFREE_MODE = 0;
+            DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
         if (rcOptions[BOXHEADADJ]) {
             headFreeModeHold = heading; // acquire new heading
@@ -546,13 +550,13 @@ void processRx(void)
 #endif
 
     if (rcOptions[BOXPASSTHRU]) {
-        f.PASSTHRU_MODE = 1;
+        ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
-        f.PASSTHRU_MODE = 0;
+        DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
     if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE) {
-        f.HEADFREE_MODE = 0;
+        DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 }
 
@@ -609,20 +613,20 @@ void loop(void)
 
 #ifdef BARO
         if (sensors(SENSOR_BARO)) {
-            if (f.BARO_MODE) {
+            if (FLIGHT_MODE(BARO_MODE)) {
                 updateAltHold();
             }
         }
 
 #endif
 
-        if (currentProfile->throttle_correction_value && (f.ANGLE_MODE || f.HORIZON_MODE)) {
+        if (currentProfile->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
             rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile->throttle_correction_value);
         }
 
 #ifdef GPS
         if (sensors(SENSOR_GPS)) {
-            if ((f.GPS_HOME_MODE || f.GPS_HOLD_MODE) && f.GPS_FIX_HOME) {
+            if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
                 updateGpsStateForHomeAndHoldMode();
             }
         }

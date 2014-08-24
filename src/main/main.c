@@ -258,8 +258,8 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
-    f.SMALL_ANGLE = 1;
-    f.PREVENT_ARMING = 0;
+    ENABLE_STATE(SMALL_ANGLE);
+    DISABLE_ARMING_FLAG(PREVENT_ARMING);
 
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly

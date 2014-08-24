@@ -20,7 +20,9 @@
 
 #include "config/runtime_config.h"
 
-flags_t f;
+uint8_t armingFlags = 0;
+uint8_t stateFlags = 0;
+uint16_t flightModeFlags = 0;
 
 // each entry in the array is a bitmask, 3 bits per aux channel (only aux 1 to 4), aux1 is first, each bit corresponds to an rc channel reading
 // bit 1 - stick LOW

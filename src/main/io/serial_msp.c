@@ -466,17 +466,17 @@ static bool processOutCommand(uint8_t cmdMSP)
         // the bits in order, instead of setting the enabled bits based on BOXINDEX. WHERE IS THE FUCKING LOGIC IN THIS, FUCKWADS.
         // Serialize the boxes in the order we delivered them, until multiwii retards fix their shit
         junk = 0;
-        tmp = f.ANGLE_MODE << BOXANGLE |
-            f.HORIZON_MODE << BOXHORIZON |
-            f.BARO_MODE << BOXBARO |
-            f.MAG_MODE << BOXMAG |
-            f.HEADFREE_MODE << BOXHEADFREE |
+        tmp = FLIGHT_MODE(ANGLE_MODE) << BOXANGLE |
+            FLIGHT_MODE(HORIZON_MODE) << BOXHORIZON |
+            FLIGHT_MODE(BARO_MODE) << BOXBARO |
+            FLIGHT_MODE(MAG_MODE) << BOXMAG |
+            FLIGHT_MODE(HEADFREE_MODE) << BOXHEADFREE |
             rcOptions[BOXHEADADJ] << BOXHEADADJ |
             rcOptions[BOXCAMSTAB] << BOXCAMSTAB |
             rcOptions[BOXCAMTRIG] << BOXCAMTRIG |
-            f.GPS_HOME_MODE << BOXGPSHOME |
-            f.GPS_HOLD_MODE << BOXGPSHOLD |
-            f.PASSTHRU_MODE << BOXPASSTHRU |
+            FLIGHT_MODE(GPS_HOME_MODE) << BOXGPSHOME |
+            FLIGHT_MODE(GPS_HOLD_MODE) << BOXGPSHOLD |
+            FLIGHT_MODE(PASSTHRU_MODE) << BOXPASSTHRU |
             rcOptions[BOXBEEPERON] << BOXBEEPERON |
             rcOptions[BOXLEDMAX] << BOXLEDMAX |
             rcOptions[BOXLLIGHTS] << BOXLLIGHTS |
@@ -485,7 +485,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             rcOptions[BOXOSD] << BOXOSD |
             rcOptions[BOXTELEMETRY] << BOXTELEMETRY |
             rcOptions[BOXAUTOTUNE] << BOXAUTOTUNE |
-            f.ARMED << BOXARM;
+            ARMING_FLAG(ARMED) << BOXARM;
         for (i = 0; i < numberBoxItems; i++) {
             int flag = (tmp & (1 << availableBoxes[i]));
             if (flag)
@@ -636,7 +636,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 #ifdef GPS
     case MSP_RAW_GPS:
         headSerialReply(16);
-        serialize8(f.GPS_FIX);
+        serialize8(STATE(GPS_FIX));
         serialize8(GPS_numSat);
         serialize32(GPS_coord[LAT]);
         serialize32(GPS_coord[LON]);
@@ -715,7 +715,7 @@ static bool processInCommand(void)
 
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
-        if (!f.ARMED) {
+        if (!ARMING_FLAG(ARMED)) {
             masterConfig.current_profile_index = read8();
             if (masterConfig.current_profile_index > 2) {
                 masterConfig.current_profile_index = 0;
@@ -817,21 +817,21 @@ static bool processInCommand(void)
         }
         break;
     case MSP_RESET_CONF:
-        if (!f.ARMED) {
+        if (!ARMING_FLAG(ARMED)) {
             resetEEPROM();
             readEEPROM();
         }
         break;
     case MSP_ACC_CALIBRATION:
-        if (!f.ARMED)
+        if (!ARMING_FLAG(ARMED))
             accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
         break;
     case MSP_MAG_CALIBRATION:
-        if (!f.ARMED)
-            f.CALIBRATE_MAG = 1;
+        if (!ARMING_FLAG(ARMED))
+            ENABLE_STATE(CALIBRATE_MAG);
         break;
     case MSP_EEPROM_WRITE:
-        if (f.ARMED) {
+        if (ARMING_FLAG(ARMED)) {
             headSerialError(0);
             return true;
         }
@@ -840,13 +840,17 @@ static bool processInCommand(void)
         break;
 #ifdef GPS
     case MSP_SET_RAW_GPS:
-        f.GPS_FIX = read8();
+        if (read8()) {
+            ENABLE_STATE(GPS_FIX);
+        } else {
+            DISABLE_STATE(GPS_FIX);
+        }
         GPS_numSat = read8();
         GPS_coord[LAT] = read32();
         GPS_coord[LON] = read32();
         GPS_altitude = read16();
         GPS_speed = read16();
-        GPS_update |= 2;        // New data signalisation to GPS functions
+        GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;
     case MSP_SET_WP:
         wp_no = read8();    //get the wp number
@@ -859,8 +863,8 @@ static bool processInCommand(void)
         if (wp_no == 0) {
             GPS_home[LAT] = lat;
             GPS_home[LON] = lon;
-            f.GPS_HOME_MODE = 0;        // with this flag, GPS_set_next_wp will be called in the next loop -- OK with SERIAL GPS / OK with I2C GPS
-            f.GPS_FIX_HOME = 1;
+            DISABLE_FLIGHT_MODE(GPS_HOME_MODE);        // with this flag, GPS_set_next_wp will be called in the next loop -- OK with SERIAL GPS / OK with I2C GPS
+            ENABLE_STATE(GPS_FIX_HOME);
             if (alt != 0)
                 AltHold = alt;          // temporary implementation to test feature with apps
         } else if (wp_no == 16) {       // OK with SERIAL GPS  --  NOK for I2C GPS / needs more code dev in order to inject GPS coord inside I2C GPS
@@ -890,7 +894,7 @@ static void mspProcessPort(void)
 
         if (currentPort->c_state == IDLE) {
             currentPort->c_state = (c == '$') ? HEADER_START : IDLE;
-            if (currentPort->c_state == IDLE && !f.ARMED)
+            if (currentPort->c_state == IDLE && !ARMING_FLAG(ARMED))
                 evaluateOtherData(c); // if not armed evaluate all other incoming serial data
         } else if (currentPort->c_state == HEADER_START) {
             currentPort->c_state = (c == 'M') ? HEADER_M : IDLE;

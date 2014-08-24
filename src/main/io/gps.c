@@ -318,7 +318,7 @@ void gpsThread(void)
             gpsData.lastMessage = millis();
             // TODO - move some / all of these into gpsData
             GPS_numSat = 0;
-            f.GPS_FIX = 0;
+            DISABLE_STATE(GPS_FIX);
             gpsSetState(GPS_INITIALIZING);
             break;
 
@@ -506,7 +506,11 @@ static bool gpsNewFrameNMEA(char c)
                     gps_Msg.longitude *= -1;
                 break;
             case 6:
-                f.GPS_FIX = string[0] > '0';
+                if (string[0] > '0') {
+                    ENABLE_STATE(GPS_FIX);
+                } else {
+                    DISABLE_STATE(GPS_FIX);
+                }
                 break;
             case 7:
                 gps_Msg.numSat = grab_fields(string, 0);
@@ -543,7 +547,7 @@ static bool gpsNewFrameNMEA(char c)
                 switch (gps_frame) {
                 case FRAME_GGA:
                   frameOK = 1;
-                  if (f.GPS_FIX) {
+                  if (STATE(GPS_FIX)) {
                         GPS_coord[LAT] = gps_Msg.latitude;
                         GPS_coord[LON] = gps_Msg.longitude;
                         GPS_numSat = gps_Msg.numSat;
@@ -728,18 +732,22 @@ static bool UBLOX_parse_gps(void)
         GPS_coord[LON] = _buffer.posllh.longitude;
         GPS_coord[LAT] = _buffer.posllh.latitude;
         GPS_altitude = _buffer.posllh.altitude_msl / 10 / 100;  //alt in m
-        f.GPS_FIX = next_fix;
+        if (next_fix) {
+            ENABLE_STATE(GPS_FIX);
+        } else {
+            DISABLE_STATE(GPS_FIX);
+        }
         _new_position = true;
         break;
     case MSG_STATUS:
         next_fix = (_buffer.status.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.status.fix_type == FIX_3D);
         if (!next_fix)
-            f.GPS_FIX = false;
+            DISABLE_STATE(GPS_FIX);
         break;
     case MSG_SOL:
         next_fix = (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.solution.fix_type == FIX_3D);
         if (!next_fix)
-            f.GPS_FIX = false;
+            DISABLE_STATE(GPS_FIX);
         GPS_numSat = _buffer.solution.satellites;
         // GPS_hdop                        = _buffer.solution.position_DOP;
         break;

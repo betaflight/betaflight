@@ -83,16 +83,21 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     rcSticks = stTmp;
 
     // perform actions
-    if (throttleStatus == THROTTLE_LOW) {
-        if (activate[BOXARM] > 0) { // Arming via ARM BOX
-            if (rcOptions[BOXARM] && f.OK_TO_ARM)
-                mwArm();
-        }
-    }
+    if (activate[BOXARM] > 0) {
 
-    if (activate[BOXARM] > 0) { // Disarming via ARM BOX
-        if (!rcOptions[BOXARM] && f.ARMED) {
-            mwDisarm();
+        // Arming via ARM BOX
+        if (throttleStatus == THROTTLE_LOW) {
+             if (rcOptions[BOXARM] && ARMING_FLAG(OK_TO_ARM)) {
+                mwArm();
+            }
+        }
+
+        // Disarming via ARM BOX
+        if (!rcOptions[BOXARM]) {
+            ENABLE_ARMING_FLAG(SEEN_BOXARM_OFF);
+            if (ARMING_FLAG(ARMED)) {
+                mwDisarm();
+            }
         }
     }
 
@@ -100,10 +105,13 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         return;
     }
 
-    if (f.ARMED) {      // actions during armed
+    if (ARMING_FLAG(ARMED)) {
+        // actions during armed
+
         // Disarm on throttle down + yaw
         if (activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE))
             mwDisarm();
+
         // Disarm on roll (only when retarded_arm is enabled)
         if (retarded_arm && activate[BOXARM] == 0 && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO))
             mwDisarm();
@@ -174,7 +182,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
     if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE) {
         // Calibrating Mag
-        f.CALIBRATE_MAG = 1;
+        ENABLE_STATE(CALIBRATE_MAG);
         return;
     }
 

@@ -255,13 +255,13 @@ void onGpsNewData(void)
     uint16_t speed;
 
 
-    if (!(f.GPS_FIX && GPS_numSat >= 5)) {
+    if (!(STATE(GPS_FIX) && GPS_numSat >= 5)) {
         return;
     }
 
-    if (!f.ARMED)
-        f.GPS_FIX_HOME = 0;
-    if (!f.GPS_FIX_HOME && f.ARMED)
+    if (!ARMING_FLAG(ARMED))
+        DISABLE_STATE(GPS_FIX_HOME);
+    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
         GPS_reset_home_position();
     // Apply moving average filter to GPS data
 #if defined(GPS_FILTERING)
@@ -296,7 +296,7 @@ void onGpsNewData(void)
     GPS_distanceToHome = dist / 100;
     GPS_directionToHome = dir / 100;
 
-    if (!f.GPS_FIX_HOME) {      // If we don't have home set, do not display anything
+    if (!STATE(GPS_FIX_HOME)) {      // If we don't have home set, do not display anything
         GPS_distanceToHome = 0;
         GPS_directionToHome = 0;
     }
@@ -304,8 +304,10 @@ void onGpsNewData(void)
     // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
     GPS_calc_velocity();
 
-    if (f.GPS_HOLD_MODE || f.GPS_HOME_MODE) { // ok we are navigating
-        // do gps nav calculations here, these are common for nav and poshold
+    if (FLIGHT_MODE(GPS_HOLD_MODE) || FLIGHT_MODE(GPS_HOME_MODE)) {
+        // we are navigating
+
+        // gps nav calculations, these are common for nav and poshold
         GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_WP[LAT], &GPS_WP[LON], &wp_distance, &target_bearing);
         GPS_calc_location_error(&GPS_WP[LAT], &GPS_WP[LON], &GPS_coord[LAT], &GPS_coord[LON]);
 
@@ -345,13 +347,13 @@ void onGpsNewData(void)
 
 void GPS_reset_home_position(void)
 {
-    if (f.GPS_FIX && GPS_numSat >= 5) {
+    if (STATE(GPS_FIX) && GPS_numSat >= 5) {
         GPS_home[LAT] = GPS_coord[LAT];
         GPS_home[LON] = GPS_coord[LON];
         GPS_calc_longitude_scaling(GPS_coord[LAT]); // need an initial value for distance and bearing calc
         nav_takeoff_bearing = heading;              // save takeoff heading
         // Set ground altitude
-        f.GPS_FIX_HOME = 1;
+        ENABLE_STATE(GPS_FIX_HOME);
     }
 }
 
@@ -648,22 +650,22 @@ void updateGpsWaypointsAndMode(void)
 {
     static uint8_t GPSNavReset = 1;
 
-    if (f.GPS_FIX && GPS_numSat >= 5) {
+    if (STATE(GPS_FIX) && GPS_numSat >= 5) {
         // if both GPS_HOME & GPS_HOLD are checked => GPS_HOME is the priority
         if (rcOptions[BOXGPSHOME]) {
-            if (!f.GPS_HOME_MODE) {
-                f.GPS_HOME_MODE = 1;
-                f.GPS_HOLD_MODE = 0;
+            if (!STATE(GPS_HOME_MODE)) {
+                ENABLE_FLIGHT_MODE(GPS_HOME_MODE);
+                DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
                 GPSNavReset = 0;
                 GPS_set_next_wp(&GPS_home[LAT], &GPS_home[LON]);
                 nav_mode = NAV_MODE_WP;
             }
         } else {
-            f.GPS_HOME_MODE = 0;
+            DISABLE_STATE(GPS_HOME_MODE);
 
             if (rcOptions[BOXGPSHOLD] && areSticksInApModePosition(gpsProfile->ap_mode)) {
-                if (!f.GPS_HOLD_MODE) {
-                    f.GPS_HOLD_MODE = 1;
+                if (!FLIGHT_MODE(GPS_HOLD_MODE)) {
+                    ENABLE_STATE(GPS_HOLD_MODE);
                     GPSNavReset = 0;
                     GPS_hold[LAT] = GPS_coord[LAT];
                     GPS_hold[LON] = GPS_coord[LON];
@@ -671,7 +673,7 @@ void updateGpsWaypointsAndMode(void)
                     nav_mode = NAV_MODE_POSHOLD;
                 }
             } else {
-                f.GPS_HOLD_MODE = 0;
+                DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
                 // both boxes are unselected here, nav is reset if not already done
                 if (GPSNavReset == 0) {
                     GPSNavReset = 1;
@@ -680,8 +682,8 @@ void updateGpsWaypointsAndMode(void)
             }
         }
     } else {
-        f.GPS_HOME_MODE = 0;
-        f.GPS_HOLD_MODE = 0;
+        DISABLE_FLIGHT_MODE(GPS_HOME_MODE);
+        DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
         nav_mode = NAV_MODE_NONE;
     }
 }

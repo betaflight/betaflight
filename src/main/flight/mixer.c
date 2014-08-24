@@ -296,9 +296,9 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
     // set flag that we're on something with wings
     if (currentMixerConfiguration == MULTITYPE_FLYING_WING ||
             currentMixerConfiguration == MULTITYPE_AIRPLANE)
-        f.FIXED_WING = 1;
+        ENABLE_STATE(FIXED_WING);
     else
-        f.FIXED_WING = 0;
+        DISABLE_STATE(FIXED_WING);
 
     mixerResetMotors();
 }
@@ -351,7 +351,7 @@ void writeServos(void)
                 pwmWriteServo(0, servo[5]);
             } else {
                 // otherwise, only move servo when copter is armed
-                if (f.ARMED)
+                if (ARMING_FLAG(ARMED))
                     pwmWriteServo(0, servo[5]);
                 else
                     pwmWriteServo(0, 0); // kill servo signal completely.
@@ -412,7 +412,7 @@ static void airplaneMixer(void)
     int16_t flapperons[2] = { 0, 0 };
     int i;
 
-    if (!f.ARMED)
+    if (!ARMING_FLAG(ARMED))
         servo[7] = escAndServoConfig->mincommand; // Kill throttle when disarmed
     else
         servo[7] = constrain(rcCommand[THROTTLE], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
@@ -435,7 +435,7 @@ static void airplaneMixer(void)
         servo[2] += rxConfig->midrc;
     }
 
-    if (f.PASSTHRU_MODE) {   // Direct passthru from RX
+    if (FLIGHT_MODE(PASSTHRU_MODE)) {   // Direct passthru from RX
         servo[3] = rcCommand[ROLL] + flapperons[0];     // Wing 1
         servo[4] = rcCommand[ROLL] + flapperons[1];     // Wing 2
         servo[5] = rcCommand[YAW];                      // Rudder
@@ -489,12 +489,12 @@ void mixTable(void)
             break;
 
         case MULTITYPE_FLYING_WING:
-            if (!f.ARMED)
+            if (!ARMING_FLAG(ARMED))
                 servo[7] = escAndServoConfig->mincommand;
             else
                 servo[7] = constrain(rcCommand[THROTTLE], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
             motor[0] = servo[7];
-            if (f.PASSTHRU_MODE) {
+            if (FLIGHT_MODE(PASSTHRU_MODE)) {
                 // do not use sensors for correction, simple 2 channel mixing
                 servo[3] = (servoDirection(3, 1) * rcCommand[PITCH]) + (servoDirection(3, 2) * rcCommand[ROLL]);
                 servo[4] = (servoDirection(4, 1) * rcCommand[PITCH]) + (servoDirection(4, 2) * rcCommand[ROLL]);
@@ -587,7 +587,7 @@ void mixTable(void)
                     motor[i] = escAndServoConfig->mincommand;
             }
         }
-        if (!f.ARMED) {
+        if (!ARMING_FLAG(ARMED)) {
             motor[i] = motor_disarmed[i];
         }
     }

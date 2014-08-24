@@ -71,7 +71,7 @@ void beepcodeUpdateState(bool warn_vbat)
     }
     //===================== Beeps for failsafe =====================
     if (feature(FEATURE_FAILSAFE)) {
-        if (failsafe->vTable->shouldForceLanding(f.ARMED)) {
+        if (failsafe->vTable->shouldForceLanding(ARMING_FLAG(ARMED))) {
             warn_failsafe = FAILSAFE_LANDING;
 
             if (failsafe->vTable->shouldHaveCausedLandingByNow()) {
@@ -79,7 +79,7 @@ void beepcodeUpdateState(bool warn_vbat)
             }
         }
 
-        if (failsafe->vTable->hasTimerElapsed() && !f.ARMED) {
+        if (failsafe->vTable->hasTimerElapsed() && !ARMING_FLAG(ARMED)) {
             warn_failsafe = FAILSAFE_FIND_ME;
         }
 
@@ -91,7 +91,7 @@ void beepcodeUpdateState(bool warn_vbat)
 #ifdef GPS
     //===================== GPS fix notification handling =====================
     if (sensors(SENSOR_GPS)) {
-        if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && !f.GPS_FIX) {     // if no fix and gps funtion is activated: do warning beeps
+        if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && !STATE(GPS_FIX)) {     // if no fix and gps funtion is activated: do warning beeps
             warn_noGPSfix = 1;
         } else {
             warn_noGPSfix = 0;
@@ -114,7 +114,7 @@ void beepcodeUpdateState(bool warn_vbat)
         beep_code('S','S','S','M');                 // beeperon
     else if (warn_vbat)
         beep_code('S','M','M','D');
-    else if (f.AUTOTUNE_MODE)
+    else if (FLIGHT_MODE(AUTOTUNE_MODE))
         beep_code('S','M','S','M');
     else if (toggleBeep > 0)
         beep(50);                                   // fast confirmation beep

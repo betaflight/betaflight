@@ -105,7 +105,7 @@ void failsafeAvoidRearm(void)
 {
     // This will prevent the automatic rearm if failsafe shuts it down and prevents
     // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
-    f.PREVENT_ARMING = 1;
+    ENABLE_ARMING_FLAG(PREVENT_ARMING);
 }
 
 void onValidDataReceived(void)
@@ -129,7 +129,7 @@ void updateState(void)
         return;
     }
 
-    if (shouldForceLanding(f.ARMED)) { // Stabilize, and set Throttle to specified level
+    if (shouldForceLanding(ARMING_FLAG(ARMED))) { // Stabilize, and set Throttle to specified level
         failsafeAvoidRearm();
 
         for (i = 0; i < 3; i++) {
@@ -139,7 +139,7 @@ void updateState(void)
         failsafe.events++;
     }
 
-    if (shouldHaveCausedLandingByNow() || !f.ARMED) {
+    if (shouldHaveCausedLandingByNow() || !ARMING_FLAG(ARMED)) {
         mwDisarm();
     }
 }

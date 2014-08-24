@@ -105,7 +105,7 @@ static void fixedWingAltHold()
 
 void updateAltHold(void)
 {
-    if (f.FIXED_WING) {
+    if (STATE(FIXED_WING)) {
         fixedWingAltHold();
     } else {
         multirotorAltHold();
@@ -116,15 +116,15 @@ void updateAltHoldState(void)
 {
     // Baro alt hold activate
     if (rcOptions[BOXBARO]) {
-        if (!f.BARO_MODE) {
-            f.BARO_MODE = 1;
+        if (!FLIGHT_MODE(BARO_MODE)) {
+            ENABLE_FLIGHT_MODE(BARO_MODE);
             AltHold = EstAlt;
             initialThrottleHold = rcCommand[THROTTLE];
             errorVelocityI = 0;
             BaroPID = 0;
         }
     } else {
-        f.BARO_MODE = 0;
+        DISABLE_FLIGHT_MODE(BARO_MODE);
     }
 }
 

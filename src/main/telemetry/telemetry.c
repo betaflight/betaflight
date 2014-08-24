@@ -105,7 +105,7 @@ bool determineNewTelemetryEnabledState(void)
         if (telemetryConfig->telemetry_switch)
             enabled = rcOptions[BOXTELEMETRY];
         else
-            enabled = f.ARMED;
+            enabled = ARMING_FLAG(ARMED);
     }
 
     return enabled;

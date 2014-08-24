@@ -67,14 +67,14 @@ void updateCompass(flightDynamicsTrims_t *magZero)
     hmc5883lRead(magADC);
     alignSensors(magADC, magADC, magAlign);
 
-    if (f.CALIBRATE_MAG) {
+    if (STATE(CALIBRATE_MAG)) {
         tCal = nextUpdateAt;
         for (axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
             magZeroTempMin.raw[axis] = magADC[axis];
             magZeroTempMax.raw[axis] = magADC[axis];
         }
-        f.CALIBRATE_MAG = 0;
+        DISABLE_STATE(CALIBRATE_MAG);
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done

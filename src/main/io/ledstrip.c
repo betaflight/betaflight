@@ -277,7 +277,7 @@ void applyLedModeLayer(void)
 
         if (!(ledConfig->flags & LED_FUNCTION_MODE)) {
             if (ledConfig->flags & LED_FUNCTION_ARM_STATE) {
-                if (!f.ARMED) {
+                if (!ARMING_FLAG(ARMED)) {
                     setLedColor(ledIndex, &green);
                 } else {
                     setLedColor(ledIndex, &blue);
@@ -288,15 +288,15 @@ void applyLedModeLayer(void)
 
         applyDirectionalModeColor(ledIndex, ledConfig, &orientationModeColors);
 
-        if (f.HEADFREE_MODE) {
+        if (FLIGHT_MODE(HEADFREE_MODE)) {
             applyDirectionalModeColor(ledIndex, ledConfig, &headfreeModeColors);
 #ifdef MAG
-        } else if (f.MAG_MODE) {
+        } else if (FLIGHT_MODE(MAG_MODE)) {
             applyDirectionalModeColor(ledIndex, ledConfig, &magModeColors);
 #endif
-        } else if (f.HORIZON_MODE) {
+        } else if (FLIGHT_MODE(HORIZON_MODE)) {
             applyDirectionalModeColor(ledIndex, ledConfig, &horizonModeColors);
-        } else if (f.ANGLE_MODE) {
+        } else if (FLIGHT_MODE(ANGLE_MODE)) {
             applyDirectionalModeColor(ledIndex, ledConfig, &angleModeColors);
         }
     }
@@ -388,7 +388,7 @@ static void applyLedAnimationLayer(void)
 {
     const ledConfig_t *ledConfig;
 
-    if (f.ARMED) {
+    if (ARMING_FLAG(ARMED)) {
         return;
     }
 
