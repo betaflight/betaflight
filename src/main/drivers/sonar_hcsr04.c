@@ -132,7 +132,7 @@ void hcsr04_get_distance(volatile int32_t *distance)
     last_measurement = current_time;
     distance_ptr = distance;
 
-#if 1
+#if 0
     debug[0] = *distance;
 #endif
 
