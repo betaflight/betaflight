@@ -441,6 +441,8 @@ void mspInit(serialConfig_t *serialConfig)
     openAllMSPSerialPorts(serialConfig);
 }
 
+#define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
+
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i, tmp, junk;
@@ -466,17 +468,17 @@ static bool processOutCommand(uint8_t cmdMSP)
         // the bits in order, instead of setting the enabled bits based on BOXINDEX. WHERE IS THE FUCKING LOGIC IN THIS, FUCKWADS.
         // Serialize the boxes in the order we delivered them, until multiwii retards fix their shit
         junk = 0;
-        tmp = FLIGHT_MODE(ANGLE_MODE) << BOXANGLE |
-            FLIGHT_MODE(HORIZON_MODE) << BOXHORIZON |
-            FLIGHT_MODE(BARO_MODE) << BOXBARO |
-            FLIGHT_MODE(MAG_MODE) << BOXMAG |
-            FLIGHT_MODE(HEADFREE_MODE) << BOXHEADFREE |
+        tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
+            IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
+            IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
+            IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
+            IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
             rcOptions[BOXHEADADJ] << BOXHEADADJ |
             rcOptions[BOXCAMSTAB] << BOXCAMSTAB |
             rcOptions[BOXCAMTRIG] << BOXCAMTRIG |
-            FLIGHT_MODE(GPS_HOME_MODE) << BOXGPSHOME |
-            FLIGHT_MODE(GPS_HOLD_MODE) << BOXGPSHOLD |
-            FLIGHT_MODE(PASSTHRU_MODE) << BOXPASSTHRU |
+            IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
+            IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
+            IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
             rcOptions[BOXBEEPERON] << BOXBEEPERON |
             rcOptions[BOXLEDMAX] << BOXLEDMAX |
             rcOptions[BOXLLIGHTS] << BOXLLIGHTS |
