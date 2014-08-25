@@ -48,24 +48,32 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             var line = '<tr class="switches">';
             line += '<td class="name">' + AUX_CONFIG[i] + '</td>';
 
+
+            var switches = '';
+            var auxChannelCount = RC.active_channels - 4;
+            
             var bitIndex = 0;
             var chunks = 1;
-            if (bit_check(CONFIG.capability, 5) && (RC.active_channels - 4) > 4) {
+            if (bit_check(CONFIG.capability, 5) && (auxChannelCount) > 4) {
                 chunks = 2;
             }
+            
+            var channelsRemaining = auxChannelCount;
             var channelsPerChunk = 4;
             for (var chunk = 0; chunk < chunks; chunk++) {
-                for (var j = 0; j < channelsPerChunk * 3; j++) {
-                    if (bit_check(AUX_CONFIG_values[i], bitIndex++)) {
-                        line += '<td><input type="checkbox" checked="checked" /></td>';
-                    } else {
-                        line += '<td><input type="checkbox" /></td>';
+                for (var chunkChannel = 0; chunkChannel < channelsPerChunk && channelsRemaining; chunkChannel++, channelsRemaining--) {
+                    for (var j = 0; j < 3; j++) {
+                        if (bit_check(AUX_CONFIG_values[i], bitIndex++)) {
+                            switches += '<td><input type="checkbox" checked="checked" /></td>';
+                        } else {
+                            switches += '<td><input type="checkbox" /></td>';
+                        }
                     }
                 }
                 bitIndex += 16 - (4 * 3);
             }
             
-            line += '</tr>';
+            line += switches + '</tr>';
 
             $('.boxes > tbody:last').append(line);
         }
@@ -76,9 +84,11 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             var main_needle = 0;
             var needle = 0;
 
+            var auxChannelCount = RC.active_channels - 4;
+
             var boxCountFor4AuxChannels = 3 * 4;
-            var boxCountPerLine = boxCountFor4AuxChannels;
-            if (bit_check(CONFIG.capability, 5) && (RC.active_channels - 4) > 4) {
+            var boxCountPerLine = auxChannelCount * 3;
+            if (bit_check(CONFIG.capability, 5) && (auxChannelCount) > 4) {
                 boxCountPerLine = boxCountFor4AuxChannels * 2;
             }
 
