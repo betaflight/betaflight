@@ -487,7 +487,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             rcOptions[BOXOSD] << BOXOSD |
             rcOptions[BOXTELEMETRY] << BOXTELEMETRY |
             rcOptions[BOXAUTOTUNE] << BOXAUTOTUNE |
-            ARMING_FLAG(ARMED) << BOXARM;
+            IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM;
         for (i = 0; i < numberBoxItems; i++) {
             int flag = (tmp & (1 << availableBoxes[i]));
             if (flag)
