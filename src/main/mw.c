@@ -439,9 +439,6 @@ void executePeriodicTasks(void)
 
 void processRx(void)
 {
-    int i;
-    uint32_t auxState = 0;
-
     calculateRxChannelsAndUpdateFailsafe(currentTime);
 
     // in 3D mode, we need to be able to disarm by switch at any time
@@ -474,30 +471,14 @@ void processRx(void)
         updateInflightCalibrationState();
     }
 
-    // Check AUX switches
+    updateRcOptions(currentProfile->activate);
 
-    // auxState is a bitmask, 3 bits per channel. aux1 is first.
-    // lower 16 bits contain aux 1 to 4, upper 16 bits contain aux 5 to 8
-    //
-    // the three bits are as follows:
-    // bit 1 is SET when the stick is less than 1300
-    // bit 2 is SET when the stick is between 1300 and 1700
-    // bit 3 is SET when the stick is above 1700
-    // if the value is 1300 or 1700 NONE of the three bits are set.
-
-    for (i = 0; i < 4; i++) {
-        auxState |= (rcData[AUX1 + i] < 1300) << (3 * i) |
-                (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) |
-                (rcData[AUX1 + i] > 1700) << (3 * i + 2);
-        auxState |= ((rcData[AUX5 + i] < 1300) << (3 * i) |
-                (1300 < rcData[AUX5 + i] && rcData[AUX5 + i] < 1700) << (3 * i + 1) |
-                (rcData[AUX5 + i] > 1700) << (3 * i + 2)) << 16;
-    }
-    for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
-        rcOptions[i] = (auxState & currentProfile->activate[i]) > 0;
+    bool canUseHorizonMode = true;
 
     if ((rcOptions[BOXANGLE] || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
+    	canUseHorizonMode = false;
+
         if (!FLIGHT_MODE(ANGLE_MODE)) {
             resetErrorAngle();
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
@@ -506,15 +487,17 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
-    if (rcOptions[BOXHORIZON]) {
-        DISABLE_FLIGHT_MODE(ANGLE_MODE);
-        if (!FLIGHT_MODE(HORIZON_MODE)) {
-            resetErrorAngle();
-            ENABLE_FLIGHT_MODE(HORIZON_MODE);
-        }
-    } else {
-        DISABLE_FLIGHT_MODE(HORIZON_MODE);
-    }
+	if (rcOptions[BOXHORIZON] && canUseHorizonMode) {
+
+		DISABLE_FLIGHT_MODE(ANGLE_MODE);
+
+		if (!FLIGHT_MODE(HORIZON_MODE)) {
+			resetErrorAngle();
+			ENABLE_FLIGHT_MODE(HORIZON_MODE);
+		}
+	} else {
+		DISABLE_FLIGHT_MODE(HORIZON_MODE);
+	}
 
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;

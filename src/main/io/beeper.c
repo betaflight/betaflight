@@ -23,6 +23,10 @@
 #include "drivers/system.h"
 #include "flight/failsafe.h"
 #include "sensors/sensors.h"
+
+#include "rx/rx.h"
+#include "io/rc_controls.h"
+
 #include "config/runtime_config.h"
 #include "config/config.h"
 

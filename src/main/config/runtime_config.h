@@ -17,33 +17,6 @@
 
 #pragma once
 
-enum {
-    BOXARM = 0,
-    BOXANGLE,
-    BOXHORIZON,
-    BOXBARO,
-    BOXMAG,
-    BOXHEADFREE,
-    BOXHEADADJ,
-    BOXCAMSTAB,
-    BOXCAMTRIG,
-    BOXGPSHOME,
-    BOXGPSHOLD,
-    BOXPASSTHRU,
-    BOXBEEPERON,
-    BOXLEDMAX,
-    BOXLEDLOW,
-    BOXLLIGHTS,
-    BOXCALIB,
-    BOXGOV,
-    BOXOSD,
-    BOXTELEMETRY,
-    BOXAUTOTUNE,
-    CHECKBOX_ITEM_COUNT
-};
-
-extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
-
 // FIXME some of these are flight modes, some of these are general status indicators
 typedef enum {
     OK_TO_ARM       = (1 << 0),

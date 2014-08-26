@@ -43,6 +43,15 @@
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
+// each entry in the array is a bitmask, 3 bits per aux channel (only aux 1 to 4), aux1 is first, each bit corresponds to an rc channel reading
+// bit 1 - stick LOW
+// bit 2 - stick MIDDLE
+// bit 3 - stick HIGH
+// an option is enabled when ANY channel has an appropriate reading corresponding to the bit.
+// an option is disabled when NO channel has an appropriate reading corresponding to the bit.
+// example: 110000000001 - option is only enabled when AUX1 is LOW or AUX4 is MEDIUM or HIGH.
+uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
+
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
     return abs(rcCommand[ROLL]) < ap_mode && abs(rcCommand[PITCH]) < ap_mode;
@@ -209,4 +218,36 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         rcDelayCommand = 0; // allow autorepetition
         return;
     }
+}
+
+#define MAX_AUX_STATE_CHANNELS 8
+
+void updateRcOptions(uint32_t *activate)
+{
+    // Check AUX switches
+
+    // auxState is a bitmask, 3 bits per channel. aux1 is first.
+    // lower 16 bits contain aux 1 to 4, upper 16 bits contain aux 5 to 8
+    //
+    // the three bits are as follows:
+    // bit 1 is SET when the stick is less than 1300
+    // bit 2 is SET when the stick is between 1300 and 1700
+    // bit 3 is SET when the stick is above 1700
+    // if the value is 1300 or 1700 NONE of the three bits are set.
+
+    int i;
+    uint32_t auxState = 0;
+
+    for (i = 0; i < rxRuntimeConfig.auxChannelCount && i < MAX_AUX_STATE_CHANNELS; i++) {
+    	uint32_t temp = (rcData[AUX1 + i] < 1300) << (3 * i) |
+				(1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) |
+				(rcData[AUX1 + i] > 1700) << (3 * i + 2);
+
+    	if (i >= 4 && i < 8) {
+    		temp <<= 16;
+    	}
+		auxState |= temp;
+    }
+    for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
+        rcOptions[i] = (auxState & activate[i]) > 0;
 }

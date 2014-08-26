@@ -99,6 +99,8 @@ void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintTo
 }
 #endif
 
+#define STICK_CHANNEL_COUNT 4
+
 void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 {
     uint8_t i;
@@ -123,6 +125,8 @@ void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
     if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
         rxPwmInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
+
+    rxRuntimeConfig.auxChannelCount = rxRuntimeConfig.channelCount - STICK_CHANNEL_COUNT;
 }
 
 #ifdef SERIAL_RX
