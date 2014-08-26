@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <math.h>
 
+#include <platform.h>
+
 #include "build_config.h"
 
 #include "common/axis.h"
@@ -32,6 +34,7 @@
 #include "sensors/gyro.h"
 #include "io/rc_controls.h"
 #include "flight/flight.h"
+#include "flight/navigation.h"
 #include "flight/autotune.h"
 #include "io/gps.h"
 
@@ -81,7 +84,7 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 #ifdef AUTOTUNE
 bool shouldAutotune(void)
 {
-    return f.ARMED && f.AUTOTUNE_MODE;
+    return ARMING_FLAG(ARMED) && FLIGHT_MODE(AUTOTUNE_MODE);
 }
 #endif
 
