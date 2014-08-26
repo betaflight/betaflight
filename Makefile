@@ -146,6 +146,9 @@ COMMON_SRC	 = build_config.c \
 		   rx/rx.c \
 		   rx/pwm.c \
 		   rx/msp.c \
+		   rx/sbus.c \
+		   rx/sumd.c \
+		   rx/spektrum.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
@@ -160,9 +163,6 @@ HIGHEND_SRC  = flight/autotune.c \
 		   flight/gps_conversion.c \
 		   io/gps.c \
 		   io/ledstrip.c \
-		   rx/sbus.c \
-		   rx/sumd.c \
-		   rx/spektrum.c \
 		   telemetry/telemetry.c \
 		   telemetry/frsky.c \
 		   telemetry/hott.c \

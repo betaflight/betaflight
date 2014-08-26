@@ -49,3 +49,5 @@
 // #define SOFT_I2C_PB67
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_MAG)
+
+#define SERIAL_RX
