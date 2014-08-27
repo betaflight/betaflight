@@ -22,6 +22,7 @@ enum {
     BOXANGLE,
     BOXHORIZON,
     BOXBARO,
+    // BOXVARIO,
     BOXMAG,
     BOXHEADFREE,
     BOXHEADADJ,
@@ -40,7 +41,7 @@ enum {
     BOXTELEMETRY,
     BOXAUTOTUNE,
     CHECKBOX_ITEM_COUNT
-};
+} boxId_e;
 
 extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
 

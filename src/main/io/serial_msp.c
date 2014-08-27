@@ -139,7 +139,7 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define ACTIVATE_MASK 0xFFF // see
 
 typedef struct box_e {
-    const uint8_t boxIndex;         // this is from boxnames enum
+    const uint8_t boxId;         // see boxId_e
     const char *boxName;            // GUI-readable box name
     const uint8_t permanentId;      //
 } box_t;
@@ -171,9 +171,9 @@ static const box_t const boxes[] = {
 };
 
 // this is calculated at startup based on enabled features.
-static uint8_t availableBoxes[CHECKBOX_ITEM_COUNT];
+static uint8_t activeBoxIds[CHECKBOX_ITEM_COUNT];
 // this is the number of filled indexes in above array
-static uint8_t numberBoxItems = 0;
+static uint8_t activeBoxIdCount = 0;
 // from mixer.c
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
@@ -312,21 +312,41 @@ void serializeNames(const char *s)
         serialize8(*c);
 }
 
+const box_t *findBoxById(uint8_t boxId)
+{
+    uint8_t boxIndex;
+    const box_t *candidate;
+    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+        candidate = &boxes[boxIndex];
+        if (candidate->boxId == boxId) {
+            return candidate;
+        }
+    }
+    return NULL;
+}
+
 void serializeBoxNamesReply(void)
 {
-    int i, idx, j, flag = 1, count = 0, len;
+    int i, id, j, flag = 1, count = 0, len;
+    const box_t *box;
 
 reset:
     // in first run of the loop, we grab total size of junk to be sent
     // then come back and actually send it
-    for (i = 0; i < numberBoxItems; i++) {
-        idx = availableBoxes[i];
-        len = strlen(boxes[idx].boxName);
+    for (i = 0; i < activeBoxIdCount; i++) {
+        id = activeBoxIds[i];
+
+        box = findBoxById(id);
+        if (!box) {
+            continue;
+        }
+
+        len = strlen(box->boxName);
         if (flag) {
             count += len;
         } else {
             for (j = 0; j < len; j++)
-                serialize8(boxes[idx].boxName[j]);
+                serialize8(box->boxName[j]);
         }
     }
 
@@ -386,55 +406,53 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
 
 void mspInit(serialConfig_t *serialConfig)
 {
-    int idx;
-
     // calculate used boxes based on features and fill availableBoxes[] array
-    memset(availableBoxes, 0xFF, sizeof(availableBoxes));
+    memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
 
-    idx = 0;
-    availableBoxes[idx++] = BOXARM;
+    activeBoxIdCount = 0;
+    activeBoxIds[activeBoxIdCount++] = BOXARM;
 
     if (sensors(SENSOR_ACC)) {
-        availableBoxes[idx++] = BOXANGLE;
-        availableBoxes[idx++] = BOXHORIZON;
+        activeBoxIds[activeBoxIdCount++] = BOXANGLE;
+        activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
 
     if (sensors(SENSOR_BARO)) {
-        availableBoxes[idx++] = BOXBARO;
+        activeBoxIds[activeBoxIdCount++] = BOXBARO;
     }
 
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-        availableBoxes[idx++] = BOXMAG;
-        availableBoxes[idx++] = BOXHEADFREE;
-        availableBoxes[idx++] = BOXHEADADJ;
+        activeBoxIds[activeBoxIdCount++] = BOXMAG;
+        activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
+        activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
     }
 
     if (feature(FEATURE_SERVO_TILT))
-        availableBoxes[idx++] = BOXCAMSTAB;
+        activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        availableBoxes[idx++] = BOXGPSHOME;
-        availableBoxes[idx++] = BOXGPSHOLD;
+        activeBoxIds[activeBoxIdCount++] = BOXGPSHOME;
+        activeBoxIds[activeBoxIdCount++] = BOXGPSHOLD;
     }
 #endif
 
     if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE)
-        availableBoxes[idx++] = BOXPASSTHRU;
+        activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
 
-    availableBoxes[idx++] = BOXBEEPERON;
+    activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
-        availableBoxes[idx++] = BOXCALIB;
+        activeBoxIds[activeBoxIdCount++] = BOXCALIB;
 
-    availableBoxes[idx++] = BOXOSD;
+    activeBoxIds[activeBoxIdCount++] = BOXOSD;
 
     if (feature(FEATURE_TELEMETRY && masterConfig.telemetryConfig.telemetry_switch))
-        availableBoxes[idx++] = BOXTELEMETRY;
+        activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
 
-    availableBoxes[idx++] = BOXAUTOTUNE;
-
-    numberBoxItems = idx;
+#ifdef AUTOTUNE
+    activeBoxIds[activeBoxIdCount++] = BOXAUTOTUNE;
+#endif
 
     memset(mspPorts, 0x00, sizeof(mspPorts));
 
@@ -446,6 +464,8 @@ void mspInit(serialConfig_t *serialConfig)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i, tmp, junk;
+
+
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -488,8 +508,8 @@ static bool processOutCommand(uint8_t cmdMSP)
             rcOptions[BOXTELEMETRY] << BOXTELEMETRY |
             rcOptions[BOXAUTOTUNE] << BOXAUTOTUNE |
             IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM;
-        for (i = 0; i < numberBoxItems; i++) {
-            int flag = (tmp & (1 << availableBoxes[i]));
+        for (i = 0; i < activeBoxIdCount; i++) {
+            int flag = (tmp & (1 << activeBoxIds[i]));
             if (flag)
                 junk |= 1 << i;
         }
@@ -600,20 +620,25 @@ static bool processOutCommand(uint8_t cmdMSP)
         serializeNames(pidnames);
         break;
     case MSP_BOX:
-        headSerialReply(4 * numberBoxItems);
-        for (i = 0; i < numberBoxItems; i++)
-            serialize16(currentProfile->activate[availableBoxes[i]] & ACTIVATE_MASK);
-        for (i = 0; i < numberBoxItems; i++)
-            serialize16((currentProfile->activate[availableBoxes[i]] >> 16) & ACTIVATE_MASK);
+        headSerialReply(4 * activeBoxIdCount);
+        for (i = 0; i < activeBoxIdCount; i++)
+            serialize16(currentProfile->activate[activeBoxIds[i]] & ACTIVATE_MASK);
+        for (i = 0; i < activeBoxIdCount; i++)
+            serialize16((currentProfile->activate[activeBoxIds[i]] >> 16) & ACTIVATE_MASK);
         break;
     case MSP_BOXNAMES:
         // headSerialReply(sizeof(boxnames) - 1);
         serializeBoxNamesReply();
         break;
     case MSP_BOXIDS:
-        headSerialReply(numberBoxItems);
-        for (i = 0; i < numberBoxItems; i++)
-            serialize8(availableBoxes[i]);
+        headSerialReply(activeBoxIdCount);
+        for (i = 0; i < activeBoxIdCount; i++) {
+            const box_t *box = findBoxById(activeBoxIds[i]);
+            if (!box) {
+                continue;
+            }
+            serialize8(box->permanentId);
+        }
         break;
     case MSP_MISC:
         headSerialReply(2 * 6 + 4 + 2 + 4);
@@ -766,10 +791,10 @@ static bool processInCommand(void)
         }
         break;
     case MSP_SET_BOX:
-        for (i = 0; i < numberBoxItems; i++)
-            currentProfile->activate[availableBoxes[i]] = read16() & ACTIVATE_MASK;
-        for (i = 0; i < numberBoxItems; i++)
-            currentProfile->activate[availableBoxes[i]] |= (read16() & ACTIVATE_MASK) << 16;
+        for (i = 0; i < activeBoxIdCount; i++)
+            currentProfile->activate[activeBoxIds[i]] = read16() & ACTIVATE_MASK;
+        for (i = 0; i < activeBoxIdCount; i++)
+            currentProfile->activate[activeBoxIds[i]] |= (read16() & ACTIVATE_MASK) << 16;
         break;
     case MSP_SET_RC_TUNING:
         currentProfile->controlRateConfig.rcRate8 = read8();
