@@ -51,11 +51,12 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options) {
     var self = this;
     self.hex = hex;
 
-    // we will crunch the options here since doing it inside initialization routine would be too late / redundant
+    // we will crunch the options here since doing it inside initialization routine would be too late
     self.options = {
         no_reboot:      false,
         reboot_baud:    false,
-        erase_chip:     false
+        erase_chip:     false,
+        flash_slowly:   false
     };
 
     if (options.no_reboot) {
@@ -68,8 +69,12 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options) {
         self.options.erase_chip = true;
     }
 
+    if (options.flash_slowly) {
+        self.options.flash_slowly = true;
+    }
+
     if (self.options.no_reboot) {
-        serial.connect(port, {bitrate: baud, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
+        serial.connect(port, {bitrate: (!self.options.flash_slowly) ? baud : 115200, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
             if (openInfo) {
                 // we are connected, disabling connect button in the UI
                 GUI.connect_lock = true;
@@ -95,7 +100,7 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options) {
                 serial.send(bufferOut, function () {
                     serial.disconnect(function (result) {
                         if (result) {
-                            serial.connect(port, {bitrate: baud, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
+                            serial.connect(port, {bitrate: (!self.options.flash_slowly) ? baud : 115200, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
                                 if (openInfo) {
                                     self.initialize();
                                 } else {

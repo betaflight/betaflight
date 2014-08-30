@@ -530,6 +530,12 @@
     "firmwareFlasherFullChipErase": {
         "message": "Full Chip Erase"
     },
+    "firmwareFlasherFlashSlowly": {
+        "message": "Flash slowly"
+    },
+    "firmwareFlasherFlashSlowlyTitle": {
+        "message": "Use 115200 baudrate for flashing"
+    },
     "firmwareFlasherButtonLoadLocal": {
         "message": "Load Firmware [Local]"
     },

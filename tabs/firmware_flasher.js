@@ -111,9 +111,9 @@ TABS.firmware_flasher.initialize = function (callback) {
                     if (parsed_hex != false) {
                         if (String($('div#port-picker #port').val()) != 'DFU') {
                             if (String($('div#port-picker #port').val()) != '0') {
-                                var options = {};
-                                var port = String($('div#port-picker #port').val());
-                                var baud;
+                                var options = {},
+                                    port = String($('div#port-picker #port').val()),
+                                    baud;
 
                                 switch (GUI.operating_system) {
                                     case 'Windows':
@@ -136,6 +136,10 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                                 if ($('input.erase_chip').is(':checked')) {
                                     options.erase_chip = true;
+                                }
+
+                                if ($('input.flash_slowly').is(':checked')) {
+                                    options.flash_slowly = true;
                                 }
 
                                 STM32.connect(port, baud, parsed_hex, options);
@@ -241,9 +245,20 @@ TABS.firmware_flasher.initialize = function (callback) {
 
             // bind UI hook so the status is saved on change
             $('input.erase_chip').change(function () {
-                var status = $(this).is(':checked');
+                chrome.storage.local.set({'erase_chip': $(this).is(':checked')});
+            });
+        });
 
-                chrome.storage.local.set({'erase_chip': status});
+        chrome.storage.local.get('flash_slowly', function (result) {
+            if (result.flash_slowly) {
+                $('input.flash_slowly').prop('checked', true);
+            } else {
+                $('input.flash_slowly').prop('checked', false);
+            }
+
+            // bind UI hook so the status is saved on change
+            $('input.flash_slowly').change(function () {
+                chrome.storage.local.set({'flash_slowly': $(this).is(':checked')});
             });
         });
 
