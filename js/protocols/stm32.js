@@ -415,16 +415,18 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                 self.send([self.command.erase, 0xBC], 1, function (reply) { // 0x43 ^ 0xFF
                     if (self.verify_response(self.status.ACK, reply)) {
                         // the bootloader receives one byte that contains N, the number of pages to be erased – 1
-                        var max_address = self.hex.data[self.hex.data.length - 1].address + self.hex.data[self.hex.data.length - 1].bytes - 0x8000000;
-                        var erase_pages_n = Math.ceil(max_address / self.page_size);
+                        var max_address = self.hex.data[self.hex.data.length - 1].address + self.hex.data[self.hex.data.length - 1].bytes - 0x8000000,
+                            erase_pages_n = Math.ceil(max_address / self.page_size),
+                            buff = [],
+                            checksum = erase_pages_n - 1;
 
-                        var buff = [];
                         buff.push(erase_pages_n - 1);
-                        var checksum = buff[0];
+
                         for (var i = 0; i < erase_pages_n; i++) {
                             buff.push(i);
                             checksum ^= i;
                         }
+
                         buff.push(checksum);
 
                         self.send(buff, 1, function (reply) {
@@ -443,12 +445,11 @@ STM32_protocol.prototype.upload_procedure = function (step) {
             console.log('Writing data ...');
             GUI.log('Flashing ...');
 
-            var blocks = self.hex.data.length - 1;
-            var flashing_block = 0;
-            var address = self.hex.data[flashing_block].address;
-
-            var bytes_flashed = 0;
-            var bytes_flashed_total = 0; // used for progress bar
+            var blocks = self.hex.data.length - 1,
+                flashing_block = 0,
+                address = self.hex.data[flashing_block].address,
+                bytes_flashed = 0,
+                bytes_flashed_total = 0; // used for progress bar
 
             var write = function () {
                 if (bytes_flashed < self.hex.data[flashing_block].bytes) {
@@ -519,12 +520,11 @@ STM32_protocol.prototype.upload_procedure = function (step) {
             console.log('Verifying data ...');
             GUI.log('Verifying ...');
 
-            var blocks = self.hex.data.length - 1;
-            var reading_block = 0;
-            var address = self.hex.data[reading_block].address;
-
-            var bytes_verified = 0;
-            var bytes_verified_total = 0; // used for progress bar
+            var blocks = self.hex.data.length - 1,
+                reading_block = 0,
+                address = self.hex.data[reading_block].address,
+                bytes_verified = 0,
+                bytes_verified_total = 0; // used for progress bar
 
             // initialize arrays
             for (var i = 0; i <= blocks; i++) {
@@ -623,9 +623,9 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
             self.send([self.command.go, 0xDE], 1, function (reply) { // 0x21 ^ 0xFF
                 if (self.verify_response(self.status.ACK, reply)) {
-                    var gt_address = 0x8000000;
-                    var address = [(gt_address >> 24), (gt_address >> 16), (gt_address >> 8), gt_address];
-                    var address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
+                    var gt_address = 0x8000000,
+                        address = [(gt_address >> 24), (gt_address >> 16), (gt_address >> 8), gt_address],
+                        address_checksum = address[0] ^ address[1] ^ address[2] ^ address[3];
 
                     self.send([address[0], address[1], address[2], address[3], address_checksum], 1, function (reply) {
                         if (self.verify_response(self.status.ACK, reply)) {
