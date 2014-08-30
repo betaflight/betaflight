@@ -519,7 +519,7 @@
         "message": "Progress:"
     },
     "firmwareFlasherNote": {
-        "message": "If you are flashing board with bootloader pins <strong>shorted/connected</strong>, check <strong>No reboot sequence</strong>.<br />If you want configuration data to be wiped, check <strong>Full Chip Erase</strong><br />"
+        "message": "If you are flashing board with bootloader pins <strong>shorted/connected</strong>, check <strong>No reboot sequence</strong>.<br />If you want configuration data to be wiped, check <strong>Full Chip Erase</strong><br />If you are flashing via bluetooth adapter or using external usb to serial adapter, check <strong>Flash slowly</strong><br />"
     },
     "firmwareFlasherNoReboot": {
         "message": "No reboot sequence"
