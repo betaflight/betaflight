@@ -52,7 +52,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('locked');
 
-                                        $('span.progressLabel').text('Loaded Local firmware: (' + parsed_hex.bytes_total + ' bytes)');
+                                        $('span.progressLabel').text('Loaded Local Firmware: (' + parsed_hex.bytes_total + ' bytes)');
                                     } else {
                                         $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                                     }
@@ -77,7 +77,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
                         $('a.flash_firmware').removeClass('locked');
 
-                        $('span.progressLabel').text('Loaded Online firmware: (' + parsed_hex.bytes_total + ' bytes)');
+                        $('span.progressLabel').text('Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)');
                     } else {
                         $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
