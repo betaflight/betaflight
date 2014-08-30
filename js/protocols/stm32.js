@@ -99,6 +99,7 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options) {
                                 if (openInfo) {
                                     self.initialize();
                                 } else {
+                                    GUI.connect_lock = false;
                                     GUI.log('<span style="color: red">Failed</span> to open serial port');
                                 }
                             });
