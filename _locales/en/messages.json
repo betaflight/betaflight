@@ -567,19 +567,16 @@
         "message": "Leave Firmware Flasher"
     },
     "firmwareFlasherFirmwareNotLoaded": {
-        "message": "<span style=\"color: red\">Firmware not loaded</span>"
-    },
-    "firmwareFlasherLocalFirmwareLoaded": {
-        "message": "<span style=\"color: green\">Local Firmware loaded, ready for flashing</span>"
+        "message": "Firmware not loaded"
     },
     "firmwareFlasherHexCorrupted": {
-        "message": "<span style=\"color: red\">HEX file appears to be corrupted</span>"
+        "message": "HEX file appears to be corrupted"
     },
     "firmwareFlasherRemoteFirmwareLoaded": {
         "message": "<span style=\"color: green\">Remote Firmware loaded, ready for flashing</span>"
     },
     "firmwareFlasherFailedToLoadOnlineFirmware": {
-        "message": "<span style=\"color: red\">Failed to load remote firmware</span>"
+        "message": "Failed to load remote firmware"
     },
     "firmwareFlasherWaitForFinish": {
         "message": "You <span style=\"color: red\">can't</span> do this right now, please wait for current operation to finish ..."

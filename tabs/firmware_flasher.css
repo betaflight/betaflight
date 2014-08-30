@@ -1,22 +1,50 @@
 .tab-firmware_flasher .info {
     margin: 0 0 10px 0;
+    position: relative;
 }
-    .tab-firmware_flasher .info strong {
-        margin-right: 5px;
+    .tab-firmware_flasher .info .progressLabel {
+        position: absolute;
+
+        width: 100%;
+        height: 26px;
+
+        top: 0;
+        left: 0;
+
+        text-align: center;
+        line-height: 24px;
+
+        color: white;
+        font-weight: bold;
+
+        /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
     }
     .tab-firmware_flasher .info .progress {
-        width: 25%;
+        width: 100%;
+        height: 26px;
 
         border: 1px solid silver;
     }
-        .tab-firmware_flasher .info .progress::-webkit-progress-value {
-            background-color: #f4af4d;
+        .tab-firmware_flasher .info .progress {
+            -webkit-appearance: none;
         }
+        .tab-firmware_flasher .info .progress::-webkit-progress-bar {
+            background-color: #343434;
+        }
+        .tab-firmware_flasher .info .progress::-webkit-progress-value {
+            background-color: #F86008;
+        }
+            .tab-firmware_flasher .info .progress.valid::-webkit-progress-bar {
+                background-color: #73BE45;
+            }
             .tab-firmware_flasher .info .progress.valid::-webkit-progress-value {
-                background-color: #43c232;
+                background-color: #73BE45;
+            }
+            .tab-firmware_flasher .info .progress.invalid::-webkit-progress-bar {
+                background-color: #A62E32;
             }
             .tab-firmware_flasher .info .progress.invalid::-webkit-progress-value {
-                background-color: #cf2222;
+                background-color: #A62E32;
             }
 .tab-firmware_flasher .note {
     margin-bottom: 10px;

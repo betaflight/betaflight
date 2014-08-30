@@ -145,7 +145,10 @@ STM32_protocol.prototype.initialize = function () {
             self.upload_process_alive = false;
         } else {
             console.log('STM32 - timed out, programming failed ...');
-            GUI.log('STM32 - timed out, programming: <strong style="color: red">FAILED</strong>');
+
+            $('span.progressLabel').text('STM32 - timed out, programming: FAILED');
+            self.progress_bar_e.addClass('invalid');
+
             googleAnalytics.sendEvent('Flashing', 'Programming', 'timeout');
 
             // protocol got stuck, clear timer and disconnect
@@ -225,7 +228,8 @@ STM32_protocol.prototype.send = function (Array, bytes_to_read, callback) {
 STM32_protocol.prototype.verify_response = function (val, data) {
     if (val != data[0]) {
         console.error('STM32 Communication failed, wrong response, expected: ' + val + ' received: ' + data[0]);
-        GUI.log('STM32 Communication <span style="color: red">failed</span>, wrong response, expected: ' + val + ' received: ' + data[0]);
+        $('span.progressLabel').text('STM32 Communication failed, wrong response, expected: ' + val + ' received: ' + data[0]);
+        self.progress_bar_e.addClass('invalid');
 
         // disconnect
         this.upload_procedure(99);
@@ -333,7 +337,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
     switch (step) {
         case 1:
             // initialize serial interface on the MCU side, auto baud rate settings
-            GUI.log('Contacting bootloader ...');
+            $('span.progressLabel').text('Contacting bootloader ...');
 
             var send_counter = 0;
             GUI.interval_add('stm32_initialize_mcu', function () { // 200 ms interval (just in case mcu was already initialized), we need to break the 2 bytes command requirement
@@ -345,8 +349,10 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                         // proceed to next step
                         self.upload_procedure(2);
                     } else {
+                        $('span.progressLabel').text('Communication with bootloader failed');
+                        self.progress_bar_e.addClass('invalid');
+
                         GUI.interval_remove('stm32_initialize_mcu');
-                        GUI.log('Communication with bootloader <span style="color: red">failed</span>');
 
                         // disconnect
                         self.upload_procedure(99);
@@ -356,7 +362,10 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                 if (send_counter++ > 3) {
                     // stop retrying, its too late to get any response from MCU
                     console.log('STM32 - no response from bootloader, disconnecting');
-                    GUI.log('No reponse from the bootloader, programming: <strong style="color: red">FAILED</strong>');
+
+                    $('span.progressLabel').text('No reponse from the bootloader, programming: FAILED');
+                    self.progress_bar_e.addClass('invalid');
+
                     GUI.interval_remove('stm32_initialize_mcu');
                     GUI.interval_remove('STM32_timeout');
 
@@ -399,7 +408,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
             break;
         case 4:
             // erase memory
-            GUI.log('Erasing ...');
+            $('span.progressLabel').text('Erasing ...');
 
             if (self.options.erase_chip) {
                 console.log('Executing global chip erase');
@@ -449,7 +458,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
         case 5:
             // upload
             console.log('Writing data ...');
-            GUI.log('Flashing ...');
+            $('span.progressLabel').text('Flashing ...');
 
             var blocks = self.hex.data.length - 1,
                 flashing_block = 0,
@@ -524,7 +533,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
         case 6:
             // verify
             console.log('Verifying data ...');
-            GUI.log('Verifying ...');
+            $('span.progressLabel').text('Verifying ...');
 
             var blocks = self.hex.data.length - 1,
                 reading_block = 0,
@@ -596,7 +605,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
                         if (verify) {
                             console.log('Programming: SUCCESSFUL');
-                            GUI.log('Programming: <strong style="color: green">SUCCESSFUL</strong>');
+                            $('span.progressLabel').text('Programming: SUCCESSFUL');
                             googleAnalytics.sendEvent('Flashing', 'Programming', 'success');
 
                             // update progress bar
@@ -606,7 +615,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                             self.upload_procedure(7);
                         } else {
                             console.log('Programming: FAILED');
-                            GUI.log('Programming: <strong style="color: red">FAILED</strong>');
+                            $('span.progressLabel').text('Programming: FAILED');
                             googleAnalytics.sendEvent('Flashing', 'Programming', 'fail');
 
                             // update progress bar

@@ -27,7 +27,6 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                 chrome.fileSystem.getDisplayPath(fileEntry, function (path) {
                     console.log('Loading file from: ' + path);
-                    $('span.path').html(path);
 
                     fileEntry.file(function (file) {
                         var reader = new FileReader();
@@ -50,13 +49,12 @@ TABS.firmware_flasher.initialize = function (callback) {
                                     parsed_hex = data;
 
                                     if (parsed_hex) {
-                                        GUI.log(chrome.i18n.getMessage('firmwareFlasherLocalFirmwareLoaded'));
                                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('locked');
 
-                                        $('span.size').html(parsed_hex.bytes_total + ' bytes');
+                                        $('span.progressLabel').text('Loaded Local firmware: (' + parsed_hex.bytes_total + ' bytes)');
                                     } else {
-                                        GUI.log(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
+                                        $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                                     }
                                 });
                             }
@@ -76,18 +74,16 @@ TABS.firmware_flasher.initialize = function (callback) {
                     parsed_hex = data;
 
                     if (parsed_hex) {
-                        GUI.log(chrome.i18n.getMessage('firmwareFlasherRemoteFirmwareLoaded'));
                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
                         $('a.flash_firmware').removeClass('locked');
 
-                        $('span.path').text('Using remote Firmware');
-                        $('span.size').text(parsed_hex.bytes_total + ' bytes');
+                        $('span.progressLabel').text('Loaded Online firmware: (' + parsed_hex.bytes_total + ' bytes)');
                     } else {
-                        GUI.log(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
+                        $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
                 });
             }).fail(function () {
-                GUI.log(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
+                $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
                 $('a.flash_firmware').addClass('locked');
             });
 
@@ -151,7 +147,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                             STM32DFU.connect(usbDevices.STM32DFU, parsed_hex);
                         }
                     } else {
-                        GUI.log(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
+                        $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
                     }
                 }
             }
