@@ -219,7 +219,7 @@ STM32_protocol.prototype.send = function (Array, bytes_to_read, callback) {
 // result = true/false
 STM32_protocol.prototype.verify_response = function (val, data) {
     if (val != data[0]) {
-        console.log('STM32 Communication failed, wrong response, expected: ' + val + ' received: ' + data[0]);
+        console.error('STM32 Communication failed, wrong response, expected: ' + val + ' received: ' + data[0]);
         GUI.log('STM32 Communication <span style="color: red">failed</span>, wrong response, expected: ' + val + ' received: ' + data[0]);
 
         // disconnect
