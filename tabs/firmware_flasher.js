@@ -6,8 +6,8 @@ TABS.firmware_flasher.initialize = function (callback) {
     GUI.active_tab = 'firmware_flasher';
     googleAnalytics.sendAppView('Firmware Flasher');
 
-    var intel_hex = false; // standard intel hex in string format
-    var parsed_hex = false; // parsed raw hex in array format
+    var intel_hex = false, // standard intel hex in string format
+        parsed_hex = false; // parsed raw hex in array format
 
     $('#content').load("./tabs/firmware_flasher.html", function () {
         // translate to user-selected language
@@ -75,9 +75,22 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                     if (parsed_hex) {
                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
+                        $('span.progressLabel').text('Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)');
                         $('a.flash_firmware').removeClass('locked');
 
-                        $('span.progressLabel').text('Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)');
+                        $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function (data) {
+                            var data = data[0],
+                                d = new Date(data.commit.author.date),
+                                date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
+
+                            date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+
+                            $('div.git_info .committer').text(data.commit.author.name);
+                            $('div.git_info .date').text(date);
+                            $('div.git_info .message').text(data.commit.message);
+
+                            $('div.git_info').slideDown();
+                        });
                     } else {
                         $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
@@ -85,19 +98,6 @@ TABS.firmware_flasher.initialize = function (callback) {
             }).fail(function () {
                 $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
                 $('a.flash_firmware').addClass('locked');
-            });
-
-            $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function (data) {
-                var data = data[0];
-                var d = new Date(data.commit.author.date);
-                var date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
-                date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-
-                $('div.git_info .committer').text(data.commit.author.name);
-                $('div.git_info .date').text(date);
-                $('div.git_info .message').text(data.commit.message);
-
-                $('div.git_info').slideDown();
             });
         });
 
