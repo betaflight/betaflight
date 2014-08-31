@@ -1,7 +1,7 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1408379746980, // 08.18.2014 - new Date().getTime()
+    'releaseDate': 1409496670288, // 08.31.2014 - new Date().getTime()
     'firmwareVersionAccepted': 2.3,
     'connectionValid': false,
     'mspPassThrough': false,
