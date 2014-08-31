@@ -363,7 +363,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                     // stop retrying, its too late to get any response from MCU
                     console.log('STM32 - no response from bootloader, disconnecting');
 
-                    $('span.progressLabel').text('No reponse from the bootloader, programming: FAILED');
+                    $('span.progressLabel').text('No response from the bootloader, programming: FAILED');
                     self.progress_bar_e.addClass('invalid');
 
                     GUI.interval_remove('stm32_initialize_mcu');
