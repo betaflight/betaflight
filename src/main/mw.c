@@ -465,7 +465,7 @@ void processRx(void)
         resetErrorGyro();
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, currentProfile->activate, masterConfig.retarded_arm);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, currentProfile->activate, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();

@@ -277,7 +277,8 @@ static void resetConf(void)
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    masterConfig.retarded_arm = 0;              // disable arm/disarm on roll left/right
+    masterConfig.retarded_arm = 0;
+    masterConfig.disarm_kill_switch = 1;
     masterConfig.small_angle = 25;
 
     masterConfig.airplaneConfig.flaps_speed = 0;

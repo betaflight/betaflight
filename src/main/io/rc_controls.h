@@ -91,7 +91,7 @@ extern int16_t rcCommand[4];
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, uint32_t *activate, bool retarded_arm);
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, uint32_t *activate, bool retarded_arm, bool disarm_kill_switch);
 
 
 void updateRcOptions(uint32_t *activate);
