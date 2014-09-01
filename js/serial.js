@@ -30,18 +30,24 @@ var serial = {
                     switch (info.error) {
                         case 'system_error': // we might be able to recover from this one
                             var crunch_status = function (info) {
-                                if (info && !info.paused) {
-                                    console.log('SERIAL: Connection recovered from last onReceiveError');
-                                    googleAnalytics.sendException('Serial: onReceiveError - recovered', false);
-                                } else {
-                                    console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
-                                    GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
-                                    googleAnalytics.sendException('Serial: onReceiveError - unrecoverable', false);
-
-                                    if (GUI.connected_to || GUI.connecting_to) {
-                                        $('a.connect').click();
+                                if (info) {
+                                    if (!info.paused) {
+                                        console.log('SERIAL: Connection recovered from last onReceiveError');
+                                        googleAnalytics.sendException('Serial: onReceiveError - recovered', false);
                                     } else {
-                                        self.disconnect();
+                                        console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
+                                        GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+                                        googleAnalytics.sendException('Serial: onReceiveError - unrecoverable', false);
+
+                                        if (GUI.connected_to || GUI.connecting_to) {
+                                            $('a.connect').click();
+                                        } else {
+                                            self.disconnect();
+                                        }
+                                    }
+                                } else {
+                                    if (chrome.runtime.lastError) {
+                                        console.error(chrome.runtime.lastError.message);
                                     }
                                 }
                             }
