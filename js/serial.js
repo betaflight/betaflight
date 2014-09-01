@@ -30,7 +30,7 @@ var serial = {
                     switch (info.error) {
                         case 'system_error': // we might be able to recover from this one
                             var crunch_status = function (info) {
-                                if (!info.paused) {
+                                if (info && !info.paused) {
                                     console.log('SERIAL: Connection recovered from last onReceiveError');
                                     googleAnalytics.sendException('Serial: onReceiveError - recovered', false);
                                 } else {
