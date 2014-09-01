@@ -296,6 +296,14 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
+
+#ifdef STM32F303xC
+    // If overflow monitoring is enabled on STM32F3 then the IRQ handler TIM1_UP_TIM16_IRQHandler is continually called.
+    if (timerHardwarePtr->tim == TIM1) {
+        configureTimerCaptureCompareInterrupt(timerHardwarePtr, channel, pwmEdgeCallback, NULL);
+        return;
+    }
+#endif
     configureTimerCaptureCompareInterrupt(timerHardwarePtr, channel, pwmEdgeCallback, pwmOverflowCallback);
 }
 
