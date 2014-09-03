@@ -1085,7 +1085,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrint("Cleanflight - " __DATE__ " / " __TIME__ " - (" __TARGET__ ")");
+    cliPrint("Cleanflight/" __TARGET__ " " __DATE__ " / " __TIME__ " (" __REVISION__ ")");
 }
 
 void cliProcess(void)

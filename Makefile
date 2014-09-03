@@ -34,6 +34,8 @@ FORKNAME			 = cleanflight
 
 VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC
 
+REVISION = $(shell git log -1 --format="%h")
+
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
 SRC_DIR		 = $(ROOT)/src/main
@@ -412,6 +414,7 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   $(TARGET_FLAGS) \
 		   -D'__FORKNAME__="$(FORKNAME)"' \
 		   -D'__TARGET__="$(TARGET)"' \
+		   -D'__REVISION__="$(REVISION)"' \
 		   -save-temps=obj
 
 
