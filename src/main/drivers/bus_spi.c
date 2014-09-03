@@ -166,7 +166,7 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 #ifdef STM32F303xC
     SPI_SendData8(instance, data);
 #endif
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
     SPI_I2S_SendData(instance, data);
 #endif
     spiTimeout = 1000;
@@ -177,7 +177,7 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 #ifdef STM32F303xC
     return ((uint8_t)SPI_ReceiveData8(instance));
 #endif
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
     return ((uint8_t)SPI_I2S_ReceiveData(instance));
 #endif
     }
@@ -194,20 +194,20 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, uint8_t *in, int len)
             if ((spiTimeout--) == 0)
                 return spiTimeoutUserCallback(instance);
         }
-#ifdef STM32F303xC
+#ifdef STM32F303
         SPI_I2S_SendData16(instance, b);
 #endif
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
         SPI_I2S_SendData(instance, b);
 #endif
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET) {
             if ((spiTimeout--) == 0)
                 return spiTimeoutUserCallback(instance);
         }
-#ifdef STM32F303xC
+#ifdef STM32F303
         b = SPI_I2S_ReceiveData16(instance);
 #endif
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
         b = SPI_I2S_ReceiveData(instance);
 #endif
         if (out)

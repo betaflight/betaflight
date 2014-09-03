@@ -67,7 +67,7 @@
     TIM4 4 channels
 */
 
-#if (defined(STM32F10X_MD) || defined(NAZE)) && !defined(CC3D)
+#if (defined(STM32F10X) || defined(NAZE)) && !defined(CC3D)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 0, Mode_IPD},          // PWM1
     { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, Mode_IPD},          // PWM2
@@ -122,7 +122,7 @@ static const TIM_TypeDef const *timers[MAX_TIMERS] = {
 #define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
 #endif
 
-#if (defined(STM32F303xC) || defined(STM32F3DISCOVERY)) && !(defined(CHEBUZZF3) || defined(NAZE32PRO))
+#if (defined(STM32F303) || defined(STM32F3DISCOVERY)) && !(defined(CHEBUZZF3) || defined(NAZE32PRO))
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, Mode_AF_PP_PD},             // PWM1 - PA8
     { TIM16, GPIOB, Pin_8, TIM_Channel_1, TIM1_UP_TIM16_IRQn, 0, Mode_AF_PP_PD},      // PWM2 - PB8
@@ -424,7 +424,7 @@ void TIM4_IRQHandler(void)
     timCCxHandler(TIM4);
 }
 
-#if defined(STM32F303xC) || defined(STM32F3DISCOVERY)
+#if defined(STM32F303) || defined(STM32F3DISCOVERY)
 void TIM8_CC_IRQHandler(void)
 {
     timCCxHandler(TIM8);
@@ -467,7 +467,7 @@ void timerInit(void)
 #endif
 
 
-#ifdef STM32F303xC
+#ifdef STM32F303
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource8,  GPIO_AF_6);
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_1);
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_1);

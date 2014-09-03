@@ -17,31 +17,29 @@
 
 #pragma once
 
-#ifdef STM32F303xC
-#include "stm32f30x_conf.h"
-#include "stm32f30x_rcc.h"
-#include "stm32f30x_gpio.h"
-#include "core_cm4.h"
+#define ACC
+#define BARO
+#define GYRO
+#define MAG
+#define SONAR
 
-// Chip Unique ID on F303
-#define U_ID_0 (*(uint32_t*)0x1FFFF7AC)
-#define U_ID_1 (*(uint32_t*)0x1FFFF7B0)
-#define U_ID_2 (*(uint32_t*)0x1FFFF7B4)
+#define USE_USART1
+#define USE_USART2
+#define USE_SOFT_SERIAL
+#define SERIAL_PORT_COUNT 4
 
-#endif
+#define I2C_DEVICE (I2CDEV_2)
 
-#ifdef STM32F10X
+// #define SOFT_I2C // enable to test software i2c
+// #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
+// #define SOFT_I2C_PB67
 
-#include "stm32f10x_conf.h"
-#include "stm32f10x_gpio.h"
-#include "core_cm3.h"
+#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
-// Chip Unique ID on F103
-#define U_ID_0 (*(uint32_t*)0x1FFFF7E8)
-#define U_ID_1 (*(uint32_t*)0x1FFFF7EC)
-#define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
-
-#endif // STM32F10X
-
-#include "target.h"
+#define GPS
+#define LED_STRIP
+#define TELEMETRY
+#define SOFT_SERIAL
+#define SERIAL_RX
+#define AUTOTUNE
 

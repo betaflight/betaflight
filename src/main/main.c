@@ -185,7 +185,7 @@ void init(void)
     else
         pwm_params.airplane = false;
 
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
     if (!feature(FEATURE_RX_PARALLEL_PWM)) {
         pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
     }

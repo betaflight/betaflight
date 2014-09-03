@@ -96,7 +96,7 @@
 #undef USE_GYRO_SPI_MPU6000
 #endif
 
-#if defined(OLIMEXINO)
+#if defined(OLIMEXINO) || defined(EUSTM32F103RC)
 #undef USE_GYRO_L3GD20
 #undef USE_GYRO_L3G4200D
 #undef USE_GYRO_MPU3050

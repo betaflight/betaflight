@@ -32,7 +32,7 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU
+VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC
 
 # Working directories
 ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
@@ -76,13 +76,38 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 LD_SCRIPT	 = $(ROOT)/stm32_flash_f303.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
-DEVICE_FLAGS = -DSTM32F303xC
+DEVICE_FLAGS = -DSTM32F303xC -DSTM32F303
 TARGET_FLAGS = -D$(TARGET)
 ifeq ($(TARGET),CHEBUZZF3)
 # CHEBUZZ is a VARIANT of STM32F3DISCOVERY
 TARGET_FLAGS := $(TARGET_FLAGS) -DSTM32F3DISCOVERY
 endif
 
+
+else ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC))
+
+
+STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
+
+STDPERIPH_SRC = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
+
+# Search path and source files for the CMSIS sources
+VPATH		:= $(VPATH):$(CMSIS_DIR)/CM3/CoreSupport:$(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
+CMSIS_SRC	 = $(notdir $(wildcard $(CMSIS_DIR)/CM3/CoreSupport/*.c \
+			   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x/*.c))
+
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+		   $(STDPERIPH_DIR)/inc \
+		   $(CMSIS_DIR)/CM3/CoreSupport \
+		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
+
+LD_SCRIPT	 = $(ROOT)/stm32_flash_f103_256k.ld
+
+ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
+TARGET_FLAGS = -D$(TARGET) -pedantic
+DEVICE_FLAGS = -DSTM32F10X_HD -DSTM32F10X
+
+DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 else
 
@@ -104,7 +129,7 @@ LD_SCRIPT	 = $(ROOT)/stm32_flash_f103_128k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
-DEVICE_FLAGS = -DSTM32F10X_MD
+DEVICE_FLAGS = -DSTM32F10X_MD -DSTM32F10X
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
@@ -196,6 +221,31 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sound_beeper_stm32f10x.c \
+		   drivers/system_stm32f10x.c \
+		   drivers/timer.c \
+		   $(HIGHEND_SRC) \
+		   $(COMMON_SRC)
+
+EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/adc.c \
+		   drivers/adc_stm32f10x.c \
+		   drivers/barometer_bmp085.c \
+		   drivers/bus_i2c_stm32f10x.c \
+		   drivers/bus_spi.c \
+		   drivers/compass_hmc5883l.c \
+		   drivers/gpio_stm32f10x.c \
+		   drivers/light_led_stm32f10x.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f10x.c \
+		   drivers/pwm_mapping.c \
+		   drivers/pwm_output.c \
+		   drivers/pwm_rx.c \
+		   drivers/serial_softserial.c \
+		   drivers/serial_uart.c \
+		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sonar_hcsr04.c \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \

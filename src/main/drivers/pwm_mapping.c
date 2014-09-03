@@ -69,7 +69,7 @@ enum {
     MAP_TO_SERVO_OUTPUT,
 };
 
-#if defined(NAZE) || defined(OLIMEXINO) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY)
+#if defined(NAZE) || defined(OLIMEXINO) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(EUSTM32F103RC)
 static const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
@@ -277,13 +277,13 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
         // skip UART2 ports
         if (init->useUART2 && (timerIndex == PWM3 || timerIndex == PWM4))
             continue;
 #endif
 
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
         // skip softSerial ports
         if (init->useSoftSerial && (timerIndex == PWM5 || timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8))
             continue;
@@ -302,7 +302,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#if defined(STM32F10X_MD) && !defined(CC3D)
+#if defined(STM32F10X) && !defined(CC3D)
 #define LED_STRIP_TIMER TIM3
 #endif
 
@@ -310,7 +310,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #define LED_STRIP_TIMER TIM3
 #endif
 
-#if defined(STM32F303xC)
+#if defined(STM32F303)
 #define LED_STRIP_TIMER TIM16
 #endif
 
@@ -320,7 +320,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
         // skip ADC for RSSI
         if (init->useRSSIADC && timerIndex == PWM2)
             continue;
@@ -334,7 +334,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             type = 0;
 
         if (init->useServos && !init->airplane) {
-#if defined(STM32F10X_MD) || defined(CHEBUZZF3)
+#if defined(STM32F10X) || defined(CHEBUZZF3)
             // remap PWM9+10 as servos
             if (timerIndex == PWM9 || timerIndex == PWM10)
                 type = MAP_TO_SERVO_OUTPUT;

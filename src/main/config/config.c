@@ -75,9 +75,18 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
 #endif
 
-#ifndef FLASH_PAGE_COUNT
+#ifdef STM32F10X_MD
 #define FLASH_PAGE_COUNT 128
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
+#endif
+
+#ifdef STM32F10X_HD
+#define FLASH_PAGE_COUNT 128
+#define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
+#endif
+
+#ifndef FLASH_PAGE_COUNT
+#error "Flash page count not defined for target."
 #endif
 
 // use the last flash pages for storage
@@ -465,14 +474,14 @@ void validateAndFixConfig(void)
     }
 
     if (feature(FEATURE_CURRENT_METER)) {
-#if defined(STM32F10X_MD)
+#if defined(STM32F10X)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
         // current meter needs the same ports
         featureClear(FEATURE_CURRENT_METER);
 #endif
 
-#if defined(STM32F10X_MD) || defined(CHEBUZZ) || defined(STM32F3DISCOVERY)
+#if defined(STM32F10X) || defined(CHEBUZZ) || defined(STM32F3DISCOVERY)
         // led strip needs the same ports
         featureClear(FEATURE_LED_STRIP);
 #endif
@@ -482,7 +491,7 @@ void validateAndFixConfig(void)
     }
 
 
-#if defined(STM32F10X_MD)
+#if defined(STM32F10X)
     // led strip needs the same timer as softserial
     if (feature(FEATURE_SOFTSERIAL)) {
         featureClear(FEATURE_LED_STRIP);
@@ -513,7 +522,7 @@ void validateAndFixConfig(void)
 
 void initEEPROM(void)
 {
-#if defined(STM32F10X_MD)
+#if defined(STM32F10X)
 
 #define FLASH_SIZE_REGISTER 0x1FFFF7E0
 
@@ -569,10 +578,10 @@ void writeEEPROM(void)
     // write it
     FLASH_Unlock();
     while (attemptsRemaining--) {
-#ifdef STM32F3DISCOVERY
+#ifdef STM32F303
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
 #endif
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
         FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 #endif
         for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {

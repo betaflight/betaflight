@@ -32,7 +32,7 @@
 #ifdef STM32F303xC
 typedef uint32_t captureCompare_t;
 #endif
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
 typedef uint16_t captureCompare_t;
 #endif
 

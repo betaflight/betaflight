@@ -17,7 +17,7 @@
 
 #pragma once
 
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
 typedef enum
 {
     Mode_AIN = 0x0,

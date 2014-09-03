@@ -38,7 +38,7 @@ typedef struct {
     volatile uint32_t *ccr;
 #endif
 
-#ifdef STM32F10X_MD
+#ifdef STM32F10X
     volatile uint16_t *ccr;
 #endif
     uint16_t period;
