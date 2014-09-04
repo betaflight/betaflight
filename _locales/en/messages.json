@@ -566,7 +566,7 @@
         "message": "Warning"
     },
     "firmwareFlasherWarningText": {
-        "message": "Please do not try to flash <strong>non-baseflight</strong> hardware with this firmware flasher (it wont work).<br />Do not <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br />Note: <strong>STM32</strong> bootloader is stored in <strong>ROM</strong>, it cannot be bricked.<br />Note: <strong>Auto-Connect</strong> is always disabled while you are inside firmware flasher.<br />"
+        "message": "Please do not try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher (it wont work).<br />Do not <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br />Note: <strong>STM32</strong> bootloader is stored in <strong>ROM</strong>, it cannot be bricked.<br />Note: <strong>Auto-Connect</strong> is always disabled while you are inside firmware flasher.<br />"
     },
     "firmwareFlasherButtonLeave": {
         "message": "Leave Firmware Flasher"
