@@ -92,12 +92,17 @@ TABS.auxiliary_configuration.initialize = function (callback) {
                 boxCountPerLine = boxCountFor4AuxChannels * 2;
             }
 
+            AUX_CONFIG_values[main_needle] = 0;
             $('.boxes input').each(function () {
+                if (needle == 0) {
+                    AUX_CONFIG_values[main_needle] = 0;
+                }
+
                 var bitIndex = needle;
                 if (bit_check(CONFIG.capability, 5) && needle >= boxCountFor4AuxChannels) {
                     bitIndex += 4; // 0-11 bits for aux 1-4, 16-27 for aux 5-8
                 }
-                
+
                 if ($(this).is(':checked')) {
                     AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], bitIndex);
                 } else {
@@ -119,7 +124,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
                 AUX_val_buffer_out.push(lowByte(AUX_CONFIG_values[i] & 0xFFF));
                 AUX_val_buffer_out.push(highByte(AUX_CONFIG_values[i] & 0xFFF));
             }
-            if (bit_check(CONFIG.capability, 5) && (RC.active_channels - 4) > 4) {
+            if (bit_check(CONFIG.capability, 5) && auxChannelCount > 4) {
                 for (var i = 0; i < AUX_CONFIG_values.length; i++) {
                     AUX_val_buffer_out.push(lowByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
                     AUX_val_buffer_out.push(highByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
