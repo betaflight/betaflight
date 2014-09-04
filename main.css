@@ -44,9 +44,7 @@ input[type="number"]::-webkit-inner-spin-button {
     float: right;
 }
 #main-wrapper {
-    margin: 0 auto 0 auto;
     padding: 5px 5px 0 5px;
-
     height: calc(100% - 5px);
 }
 #port-picker {
