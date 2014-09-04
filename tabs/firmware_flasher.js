@@ -16,9 +16,9 @@ TABS.firmware_flasher.initialize = function (callback) {
         // UI Hooks
         $('a.load_file').click(function () {
             chrome.fileSystem.chooseEntry({type: 'openFile', accepts: [{extensions: ['hex']}]}, function (fileEntry) {
-                if (!fileEntry) {
-                    // no "valid" file selected/created, aborting
-                    console.log('No valid file selected, aborting');
+                if (chrome.runtime.lastError) {
+                    console.error(chrome.runtime.lastError.message);
+
                     return;
                 }
 
@@ -75,7 +75,54 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                     if (parsed_hex) {
                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
-                        $('span.progressLabel').text('Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)');
+                        $('span.progressLabel').html('<a href="#" title="Save Firmware">Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)</a>');
+
+                        $('span.progressLabel a').click(function () {
+                            chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'baseflight', accepts: [{extensions: ['hex']}]}, function (fileEntry) {
+                                if (chrome.runtime.lastError) {
+                                    console.error(chrome.runtime.lastError.message);
+
+                                    return;
+                                }
+
+                                chrome.fileSystem.getDisplayPath(fileEntry, function (path) {
+                                    console.log('Saving firmware to: ' + path);
+
+                                    // check if file is writable
+                                    chrome.fileSystem.isWritableEntry(fileEntry, function (isWritable) {
+                                        if (isWritable) {
+                                            var blob = new Blob([intel_hex], {type: 'text/plain'});
+
+                                            fileEntry.createWriter(function (writer) {
+                                                var truncated = false;
+
+                                                writer.onerror = function (e) {
+                                                    console.error(e);
+                                                };
+
+                                                writer.onwriteend = function() {
+                                                    if (!truncated) {
+                                                        // onwriteend will be fired again when truncation is finished
+                                                        truncated = true;
+                                                        writer.truncate(blob.size);
+
+                                                        return;
+                                                    }
+                                                };
+
+                                                writer.write(blob);
+                                            }, function (e) {
+                                                console.error(e);
+                                            });
+                                        } else {
+                                            console.log('You don\'t have write permissions for this file, sorry.');
+                                            GUI.log('You don\'t have <span style="color: red">write permissions</span> for this file');
+                                        }
+                                    });
+                                });
+                            });
+                        });
+
                         $('a.flash_firmware').removeClass('locked');
 
                         $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function (data) {

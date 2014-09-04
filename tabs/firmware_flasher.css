@@ -19,6 +19,12 @@
 
         /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
     }
+        .tab-firmware_flasher .info .progressLabel a {
+            color: white;
+        }
+        .tab-firmware_flasher .info .progressLabel a:hover {
+            text-decoration: underline;
+        }
     .tab-firmware_flasher .info .progress {
         width: 100%;
         height: 26px;
