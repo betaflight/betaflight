@@ -172,8 +172,8 @@ input[type="number"]::-webkit-inner-spin-button {
     display: none;
     position: fixed;
 
-    right: 10px;
-    top: 32px;
+    right: 30px;
+    top: 15px;
 
     padding: 5px;
 
