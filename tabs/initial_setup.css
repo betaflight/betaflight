@@ -192,8 +192,8 @@
     .tab-initial_setup .acc-trim,
     .tab-initial_setup .magnetometer,
     .tab-initial_setup .info {
-        float: left;
-        display: block;
+        display: inline-block;
+        vertical-align: top;
 
         margin: 0 0 10px 10px;
 
@@ -244,7 +244,7 @@
             line-height: 22px;
         }
         .tab-initial_setup .battery input {
-            width: 60px;
+            width: 58px;
             height: 20px;
             line-height: 20px;
 
