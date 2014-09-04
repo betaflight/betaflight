@@ -116,6 +116,38 @@ input[type="number"]::-webkit-inner-spin-button {
 
         margin: 3px 0 0 5px;
     }
+        .modelPanel .model {
+        float: left;
+        height: 15px;
+        margin: 10px 0 0 10px;
+
+        font-weight: bold;
+    }
+
+.modelPanel {
+    position: relative;
+    width:110px;
+    height: 150px;
+    float: left;
+}
+
+.modelPanel .modelMixDiagram {
+    position: absolute;
+
+    top: 32px;
+    left: 10px;
+}
+
+.modelPanel .modelMixAirplane { /* Position airplane correctly */
+    height: 35%;
+    padding-left: 0px;
+}
+
+.modelPanel .modelMixCustom { /* Position question mark correctly */
+    height: 20%; /* resize question mark */
+    padding-left: 25px;
+}
+
 #sensor-status {
     float: right;
 

@@ -138,6 +138,8 @@ TABS.motor_outputs.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
+        update_model(CONFIG.multiType);
+        
         // Always start with default/empty sensor data array, clean slate all
         initSensorData();
 

@@ -1,3 +1,8 @@
+.wrapper.accelAndModel .wrapper.accel {
+    float: left;
+    width: calc(100% - 110px);
+}
+
 .tab-motor_outputs .plot_control {
     float: right;
 

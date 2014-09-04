@@ -53,33 +53,11 @@
     border: 1px solid silver;
     background-color: white;
 }
-    #interactive_block .model {
-        float: left;
-        height: 15px;
-        margin: 10px 0 0 10px;
 
-        font-weight: bold;
-    }
-
-    #interactive_block .modelMixDiagram {
+    #interactive_block .modelPanel {
         position: absolute;
-
-        top: 32px;
-        left: 10px;
-
-        height: 30%; /* interactive_block height set to inherit */
     }
-
-    #interactive_block .modelMixAirplane { /* Position airplane correctly */
-        height: 35%;
-        padding-left: 0px;
-    }
-
-    #interactive_block .modelMixCustom { /* Position question mark correctly */
-        height: 20%; /* resize question mark */
-        padding-left: 25px;
-    }
-
+    
     #interactive_block .heading {
         float: right;
         height: 15px;
