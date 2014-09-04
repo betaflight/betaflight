@@ -44,16 +44,16 @@ input[type="number"]::-webkit-inner-spin-button {
     float: right;
 }
 #main-wrapper {
-    margin: 10px auto 0 auto;
-    padding: 0 10px 0 10px;
+    margin: 0 auto 0 auto;
+    padding: 5px 5px 0 5px;
 
-    height: calc(100% - 10px); /* - padding */
+    height: calc(100% - 5px);
 }
 #port-picker {
     float: left;
 
-    height: 22px;
-    margin-bottom: 10px;
+    height: 20px;
+    margin-bottom: 5px;
 }
     #port-picker li {
         float: left;
@@ -63,7 +63,7 @@ input[type="number"]::-webkit-inner-spin-button {
         line-height: 20px;
 
         float: left;
-        margin-right: 10px;
+        margin-right: 5px;
 
         border: 1px solid silver;
     }
@@ -191,9 +191,9 @@ input[type="number"]::-webkit-inner-spin-button {
         margin-right: 5px;
     }
 #log {
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 
-    height: 60px;
+    height: 65px;
 
     border: 1px solid silver;
     background-color: white;
@@ -253,10 +253,10 @@ input[type="number"]::-webkit-inner-spin-button {
             background-color: white;
         }
 #content {
-    margin-top: 37px;
+    margin-top: 31px;
     padding: 10px;
 
-    height: calc(100% - 184px); /* - (port picker, log, tab, status bar) */
+    height: calc(100% - 171px); /* - (port picker, log, tab, status bar) */
 
     background-color: white;
 

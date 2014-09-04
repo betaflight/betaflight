@@ -60,7 +60,6 @@
 
         font-weight: bold;
     }
-
     #interactive_block .modelMixDiagram {
         position: absolute;
 
@@ -69,17 +68,14 @@
 
         height: 30%; /* interactive_block height set to inherit */
     }
-
     #interactive_block .modelMixAirplane { /* Position airplane correctly */
         height: 35%;
         padding-left: 0px;
     }
-
     #interactive_block .modelMixCustom { /* Position question mark correctly */
         height: 20%; /* resize question mark */
         padding-left: 25px;
     }
-
     #interactive_block .heading {
         float: right;
         height: 15px;
@@ -244,7 +240,7 @@
             line-height: 22px;
         }
         .tab-initial_setup .battery input {
-            width: 58px;
+            width: 68px;
             height: 20px;
             line-height: 20px;
 
@@ -327,16 +323,16 @@
         .tab-initial_setup .info dt {
             float: left;
 
-            width: 100px;
+            width: 99px;
             height: 20px;
             line-height: 20px;
         }
         .tab-initial_setup .info dd {
-            width: 70px;
+            width: 76px;
             height: 20px;
             line-height: 20px;
 
-            margin-left: 100px;
+            margin-left: 99px;
         }
     .tab-initial_setup .buttons {
         width: calc(100% - 20px);
