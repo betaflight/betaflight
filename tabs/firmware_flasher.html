@@ -1,8 +1,7 @@
 <div class="tab-firmware_flasher">
     <div class="info">
-        <strong i18n="firmwareFlasherPath"></strong><span class="path">empty</span><br />
-        <strong i18n="firmwareFlasherSize"></strong><span class="size">0 bytes</span><br />
-        <strong i18n="firmwareFlasherProgress"></strong><progress class="progress" value="0" min="0" max="100"></progress>
+        <progress class="progress" value="0" min="0" max="100"></progress>
+        <span class="progressLabel">Please load firmware file</span>
     </div>
     <div class="note">
         <p i18n="firmwareFlasherNote">
@@ -20,6 +19,11 @@
         <label>
             <input class="erase_chip" type="checkbox" />
             <span i18n="firmwareFlasherFullChipErase"></span>
+        </label>
+        <div class="clear-both"></div>
+        <label i18n_title="firmwareFlasherFlashSlowlyTitle">
+            <input class="flash_slowly" type="checkbox" />
+            <span i18n="firmwareFlasherFlashSlowly"></span>
         </label>
         <div class="clear-both"></div>
     </div>

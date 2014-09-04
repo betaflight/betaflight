@@ -125,7 +125,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
                     AUX_val_buffer_out.push(highByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
                 }
             }
-            
+
             MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {

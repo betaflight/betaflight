@@ -256,7 +256,7 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
         case 2:
             // full chip erase
             console.log('Executing global chip erase');
-            GUI.log('Erasing ...');
+            $('span.progressLabel').text('Erasing ...');
 
             self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x41], function () {
                 self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
@@ -284,7 +284,7 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
             // upload
             // we dont need to clear the state as we are already using DFU_DNLOAD
             console.log('Writing data ...');
-            GUI.log('Flashing ...');
+            $('span.progressLabel').text('Flashing ...');
 
             var blocks = self.hex.data.length - 1;
             var flashing_block = 0;
@@ -355,7 +355,7 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
         case 5:
             // verify
             console.log('Verifying data ...');
-            GUI.log('Verifying ...');
+            $('span.progressLabel').text('Verifying ...');
 
             var blocks = self.hex.data.length - 1;
             var reading_block = 0;
@@ -422,7 +422,7 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
 
                         if (verify) {
                             console.log('Programming: SUCCESSFUL');
-                            GUI.log('Programming: <strong style="color: green">SUCCESSFUL</strong>');
+                            $('span.progressLabel').text('Programming: SUCCESSFUL');
                             googleAnalytics.sendEvent('Flashing', 'Programming', 'success');
 
                             // update progress bar
@@ -432,7 +432,7 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
                             self.upload_procedure(6);
                         } else {
                             console.log('Programming: FAILED');
-                            GUI.log('Programming: <strong style="color: red">FAILED</strong>');
+                            $('span.progressLabel').text('Programming: FAILED');
                             googleAnalytics.sendEvent('Flashing', 'Programming', 'fail');
 
                             // update progress bar

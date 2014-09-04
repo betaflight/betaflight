@@ -6,8 +6,8 @@ TABS.firmware_flasher.initialize = function (callback) {
     GUI.active_tab = 'firmware_flasher';
     googleAnalytics.sendAppView('Firmware Flasher');
 
-    var intel_hex = false; // standard intel hex in string format
-    var parsed_hex = false; // parsed raw hex in array format
+    var intel_hex = false, // standard intel hex in string format
+        parsed_hex = false; // parsed raw hex in array format
 
     $('#content').load("./tabs/firmware_flasher.html", function () {
         // translate to user-selected language
@@ -27,7 +27,6 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                 chrome.fileSystem.getDisplayPath(fileEntry, function (path) {
                     console.log('Loading file from: ' + path);
-                    $('span.path').html(path);
 
                     fileEntry.file(function (file) {
                         var reader = new FileReader();
@@ -50,13 +49,12 @@ TABS.firmware_flasher.initialize = function (callback) {
                                     parsed_hex = data;
 
                                     if (parsed_hex) {
-                                        GUI.log(chrome.i18n.getMessage('firmwareFlasherLocalFirmwareLoaded'));
                                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('locked');
 
-                                        $('span.size').html(parsed_hex.bytes_total + ' bytes');
+                                        $('span.progressLabel').text('Loaded Local Firmware: (' + parsed_hex.bytes_total + ' bytes)');
                                     } else {
-                                        GUI.log(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
+                                        $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                                     }
                                 });
                             }
@@ -68,40 +66,38 @@ TABS.firmware_flasher.initialize = function (callback) {
             });
         });
 
-        $('a.load_remote_file').click(function() {
-            $.get('https://raw.githubusercontent.com/hydra/cleanflight/master/obj/cleanflight_NAZE.hex', function (data) {
+        $('a.load_remote_file').click(function () {
+            $.get('https://raw.githubusercontent.com/multiwii/baseflight/master/obj/baseflight.hex', function (data) {
                 intel_hex = data;
 
                 parse_hex(intel_hex, function (data) {
                     parsed_hex = data;
 
                     if (parsed_hex) {
-                        GUI.log(chrome.i18n.getMessage('firmwareFlasherRemoteFirmwareLoaded'));
                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
+                        $('span.progressLabel').text('Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)');
                         $('a.flash_firmware').removeClass('locked');
 
-                        $('span.path').text('Using remote Firmware');
-                        $('span.size').text(parsed_hex.bytes_total + ' bytes');
+                        $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function (data) {
+                            var data = data[0],
+                                d = new Date(data.commit.author.date),
+                                date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
+
+                            date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+
+                            $('div.git_info .committer').text(data.commit.author.name);
+                            $('div.git_info .date').text(date);
+                            $('div.git_info .message').text(data.commit.message);
+
+                            $('div.git_info').slideDown();
+                        });
                     } else {
-                        GUI.log(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
+                        $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
                 });
             }).fail(function () {
-                GUI.log(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
+                $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
                 $('a.flash_firmware').addClass('locked');
-            });
-
-            $.get('https://api.github.com/repos/hydra/cleanflight/commits?page=1&per_page=1&path=obj/cleanflight_NAZE.hex', function (data) {
-                var data = data[0];
-                var d = new Date(data.commit.author.date);
-                var date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
-                date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-
-                $('div.git_info .committer').text(data.commit.author.name);
-                $('div.git_info .date').text(date);
-                $('div.git_info .message').text(data.commit.message);
-
-                $('div.git_info').slideDown();
             });
         });
 
@@ -111,9 +107,9 @@ TABS.firmware_flasher.initialize = function (callback) {
                     if (parsed_hex != false) {
                         if (String($('div#port-picker #port').val()) != 'DFU') {
                             if (String($('div#port-picker #port').val()) != '0') {
-                                var options = {};
-                                var port = String($('div#port-picker #port').val());
-                                var baud;
+                                var options = {},
+                                    port = String($('div#port-picker #port').val()),
+                                    baud;
 
                                 switch (GUI.operating_system) {
                                     case 'Windows':
@@ -138,6 +134,10 @@ TABS.firmware_flasher.initialize = function (callback) {
                                     options.erase_chip = true;
                                 }
 
+                                if ($('input.flash_slowly').is(':checked')) {
+                                    options.flash_slowly = true;
+                                }
+
                                 STM32.connect(port, baud, parsed_hex, options);
                             } else {
                                 console.log('Please select valid serial port');
@@ -147,7 +147,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                             STM32DFU.connect(usbDevices.STM32DFU, parsed_hex);
                         }
                     } else {
-                        GUI.log(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
+                        $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFirmwareNotLoaded'));
                     }
                 }
             }
@@ -241,9 +241,20 @@ TABS.firmware_flasher.initialize = function (callback) {
 
             // bind UI hook so the status is saved on change
             $('input.erase_chip').change(function () {
-                var status = $(this).is(':checked');
+                chrome.storage.local.set({'erase_chip': $(this).is(':checked')});
+            });
+        });
 
-                chrome.storage.local.set({'erase_chip': status});
+        chrome.storage.local.get('flash_slowly', function (result) {
+            if (result.flash_slowly) {
+                $('input.flash_slowly').prop('checked', true);
+            } else {
+                $('input.flash_slowly').prop('checked', false);
+            }
+
+            // bind UI hook so the status is saved on change
+            $('input.flash_slowly').change(function () {
+                chrome.storage.local.set({'flash_slowly': $(this).is(':checked')});
             });
         });
 

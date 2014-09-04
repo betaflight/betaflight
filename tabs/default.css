@@ -147,9 +147,6 @@
         background-color: #dedcdc;
     }
     .tab-default .sponsors {
-    	display: none;
-    }
-    .tab-default .sponsors {
         margin-top: 10px;
         border: 1px solid silver;
     }
