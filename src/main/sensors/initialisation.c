@@ -109,6 +109,11 @@
 #undef USE_BARO_MS5611
 #endif
 
+#ifdef EUSTM32F103RC
+#define USE_FAKE_GYRO
+#define USE_FAKE_ACC
+#endif
+
 #ifdef STM32F3DISCOVERY
 #undef USE_ACC_SPI_MPU6000
 #undef USE_GYRO_SPI_MPU6000
@@ -188,11 +193,6 @@ bool fakeAccDetect(acc_t *acc)
 bool detectGyro(uint16_t gyroLpf)
 {
     gyroAlign = ALIGN_DEFAULT;
-#ifdef USE_FAKE_GYRO
-    if (fakeGyroDetect(&gyro, gyroLpf)) {
-        return true;
-    }
-#endif
 
 #ifdef USE_GYRO_MPU6050
     if (mpu6050GyroDetect(&gyro, gyroLpf)) {
@@ -232,6 +232,12 @@ bool detectGyro(uint16_t gyroLpf)
 #ifdef CC3D
         gyroAlign = CW270_DEG;
 #endif
+        return true;
+    }
+#endif
+
+#ifdef USE_FAKE_GYRO
+    if (fakeGyroDetect(&gyro, gyroLpf)) {
         return true;
     }
 #endif
