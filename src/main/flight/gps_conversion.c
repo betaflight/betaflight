@@ -26,9 +26,9 @@
 
 
 #define DIGIT_TO_VAL(_x)    (_x - '0')
-uint32_t GPS_coord_to_degrees(char* coordinateString)
+uint32_t GPS_coord_to_degrees(const char* coordinateString)
 {
-    char *fieldSeparator, *remainingString;
+    const char *fieldSeparator, *remainingString;
     uint8_t degress = 0, minutes = 0;
     uint16_t fractionalMinutes = 0;
     uint8_t digitIndex;

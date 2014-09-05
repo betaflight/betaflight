@@ -403,7 +403,7 @@ bool gpsNewFrame(uint8_t c)
   EOS increased the precision here, even if we think that the gps is not precise enough, with 10e5 precision it has 76cm resolution
   with 10e7 it's around 1 cm now. Increasing it further is irrelevant, since even 1cm resolution is unrealistic, however increased
   resolution also increased precision of nav calculations
-static uint32_t GPS_coord_to_degrees(char *s)
+static uint32_t GPS_coord_to_degrees(char *coordinateString)
 {
     char *p = s, *d = s;
     uint8_t min, deg = 0;

@@ -41,7 +41,7 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/hott.h"
 
-#include "io/gps_conversion.h"
+#include "flight/gps_conversion.h"
 
 
 #include "unittest_macros.h"
@@ -88,8 +88,8 @@ TEST(TelemetryHottTest, UpdateGPSCoordinates2)
 
     // Hampstead Heath, London
     // 51.563886, -0.159960
-    int32_t longitude = GPS_coord_to_degrees("5156.3886");
-    int32_t latitude  = -GPS_coord_to_degrees("015.9960");
+    uint32_t longitude = GPS_coord_to_degrees("5156.3886");
+    uint32_t latitude  = -GPS_coord_to_degrees("015.9960");
 
     // when
     addGPSCoordinates(hottGPSMessage, longitude, latitude);
@@ -131,7 +131,7 @@ TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
     // given
     HOTT_GPS_MSG_t *hottGPSMessage = getGPSMessageForTest();
 
-    f.GPS_FIX = 1;
+    stateFlags = GPS_FIX;
     uint16_t altitudeInMeters = 1;
     GPS_altitude = altitudeInMeters * (1 / 0.1f); // 1 = 0.1m
 
@@ -147,8 +147,10 @@ TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
 
 int16_t debug[4];
 
+uint8_t stateFlags;
+
+
 uint8_t GPS_numSat;
-flags_t f;
 int32_t GPS_coord[2];
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_distanceToHome;        // distance to home point in meters

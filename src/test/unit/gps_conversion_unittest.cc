@@ -18,7 +18,7 @@
 #include <stdint.h>
 
 #include <limits.h>
-#include "io/gps_conversion.h"
+#include "flight/gps_conversion.h"
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
@@ -39,7 +39,7 @@ typedef struct gpsConversionExpectation_s {
 
 TEST(GpsConversionTest, GPSCoordToDegrees_NMEA_Values)
 {
-    gpsConversionExpectation_t gpsConversionExpectations[] = {
+    const gpsConversionExpectation_t gpsConversionExpectations[] = {
         {"0.0", 0},
         {"000.0", 0},
         {"00000.0000", 0},
@@ -59,7 +59,7 @@ TEST(GpsConversionTest, GPSCoordToDegrees_NMEA_Values)
     // expect
 
     for (uint8_t index = 0; index < testIterationCount; index ++) {
-        gpsConversionExpectation_t *expectation = &gpsConversionExpectations[index];
+        const gpsConversionExpectation_t *expectation = &gpsConversionExpectations[index];
         printf("iteration: %d\n", index);
 
         uint32_t result = GPS_coord_to_degrees(expectation->coord);

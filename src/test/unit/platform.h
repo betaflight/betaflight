@@ -18,3 +18,8 @@
 #pragma once
 
 #define BARO
+#define GPS
+#define TELEMETRY
+
+#define SERIAL_PORT_COUNT 4
+

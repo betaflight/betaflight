@@ -84,11 +84,16 @@ TEST(FlightImuTest, IsThrustFacingDownwards)
 
 uint16_t acc_1G;
 int16_t heading;
-flags_t f;
 gyro_t gyro;
 int16_t magADC[XYZ_AXIS_COUNT];
 int32_t BaroAlt;
 int16_t debug[4];
+
+uint8_t stateFlags;
+uint16_t flightModeFlags;
+uint8_t armingFlags;
+
+int32_t sonarAlt;
 
 
 void gyroGetADC(void) {};

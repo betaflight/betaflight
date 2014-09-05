@@ -15,4 +15,4 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-uint32_t GPS_coord_to_degrees(char* s);
+uint32_t GPS_coord_to_degrees(const char* coordinateString);
