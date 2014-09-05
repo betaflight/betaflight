@@ -224,30 +224,38 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
 void updateRcOptions(uint32_t *activate)
 {
-    // Check AUX switches
-
-    // auxState is a bitmask, 3 bits per channel. aux1 is first.
-    // lower 16 bits contain aux 1 to 4, upper 16 bits contain aux 5 to 8
+    // auxState is a bitmask, 3 bits per channel.
+    // lower 16 bits contain aux 4 to 1 (msb to lsb)
+    // upper 16 bits contain aux 8 to 5 (msb to lsb)
     //
     // the three bits are as follows:
     // bit 1 is SET when the stick is less than 1300
     // bit 2 is SET when the stick is between 1300 and 1700
     // bit 3 is SET when the stick is above 1700
+
     // if the value is 1300 or 1700 NONE of the three bits are set.
 
     int i;
     uint32_t auxState = 0;
+    uint8_t shift = 0;
+    int8_t chunkOffset = 0;
 
     for (i = 0; i < rxRuntimeConfig.auxChannelCount && i < MAX_AUX_STATE_CHANNELS; i++) {
-    	uint32_t temp = (rcData[AUX1 + i] < 1300) << (3 * i) |
-				(1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (3 * i + 1) |
-				(rcData[AUX1 + i] > 1700) << (3 * i + 2);
+        if (i > 0 && i % 4 == 0) {
+            chunkOffset -= 4;
+            shift += 16;
+        }
 
-    	if (i >= 4 && i < 8) {
-    		temp <<= 16;
-    	}
-		auxState |= temp;
+        uint8_t bitIndex = 3 * (i + chunkOffset);
+
+        uint32_t temp =
+                (rcData[AUX1 + i] < 1300) << bitIndex |
+                (1300 < rcData[AUX1 + i] && rcData[AUX1 + i] < 1700) << (bitIndex + 1) |
+                (rcData[AUX1 + i] > 1700) << (bitIndex + 2);
+
+        auxState |= temp << shift;
     }
+
     for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
         rcOptions[i] = (auxState & activate[i]) > 0;
 }

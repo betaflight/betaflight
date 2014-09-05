@@ -47,7 +47,7 @@ TEST(RcControlsTest, updateRcOptionsWithAllInputsAtMidde)
     rxRuntimeConfig.auxChannelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
 
     // and
-    for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT; index++) {
+    for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
         rcData[index] = PWM_RANGE_MIDDLE;
     }
 
@@ -55,6 +55,68 @@ TEST(RcControlsTest, updateRcOptionsWithAllInputsAtMidde)
     // and
     uint32_t expectedRcOptions[CHECKBOX_ITEM_COUNT];
     memset(&expectedRcOptions, 0, sizeof(expectedRcOptions));
+
+    // when
+    updateRcOptions(activate);
+
+    // then
+    for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
+        printf("iteration: %d\n", index);
+        EXPECT_EQ(expectedRcOptions[index], rcOptions[index]);
+    }
+}
+
+TEST(RcControlsTest, updateRcOptionsUsingValidAuxConfigurationAndRXValues)
+{
+    // given
+    uint32_t activate[CHECKBOX_ITEM_COUNT];
+    memset(&activate, 0, sizeof(activate));
+    activate[0] = 0b000000000100UL;
+    activate[1] = 0b000000010000UL;
+    activate[2] = 0b000001000000UL;
+    activate[3] = 0b111000000000UL;
+
+    activate[4] = 0b000000000001UL << 16;
+    activate[5] = 0b000000010000UL << 16;
+    activate[6] = 0b000100000000UL << 16;
+    activate[7] = 0b111000000000UL << 16;
+
+    uint8_t index;
+
+    for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
+        rcOptions[index] = 0;
+    }
+
+    // and
+    memset(&rxRuntimeConfig, 0, sizeof(rxRuntimeConfig_t));
+    rxRuntimeConfig.auxChannelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
+
+    // and
+    for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    rcData[AUX1] = PWM_RANGE_MAX;
+    rcData[AUX2] = PWM_RANGE_MIDDLE;
+    rcData[AUX3] = PWM_RANGE_MIN;
+    rcData[AUX4] = PWM_RANGE_MAX;
+    rcData[AUX5] = PWM_RANGE_MIN;
+    rcData[AUX6] = PWM_RANGE_MIDDLE;
+    rcData[AUX7] = PWM_RANGE_MAX;
+    rcData[AUX8] = PWM_RANGE_MIN;
+
+
+    // and
+    uint32_t expectedRcOptions[CHECKBOX_ITEM_COUNT];
+    memset(&expectedRcOptions, 0, sizeof(expectedRcOptions));
+    expectedRcOptions[0] = 1;
+    expectedRcOptions[1] = 1;
+    expectedRcOptions[2] = 1;
+    expectedRcOptions[3] = 1;
+    expectedRcOptions[4] = 1;
+    expectedRcOptions[5] = 1;
+    expectedRcOptions[6] = 1;
+    expectedRcOptions[7] = 1;
 
     // when
     updateRcOptions(activate);
