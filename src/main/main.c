@@ -37,6 +37,7 @@
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
+#include "drivers/display_ug2864hsweg01.h"
 
 #include "flight/flight.h"
 #include "flight/mixer.h"
@@ -91,7 +92,7 @@ void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
 void ledStripInit(void);
-
+void displayInit(void);
 void loop(void);
 
 // FIXME bad naming - this appears to be for some new board that hasn't been made available yet.
@@ -116,6 +117,10 @@ void productionDebug(void)
 }
 #endif
 
+void displayInit(void)
+{
+    ug2864hsweg01InitI2C();
+}
 void init(void)
 {
     uint8_t i;
@@ -295,6 +300,13 @@ int main(void) {
     init();
 
     while (1) {
+#if 1
+        delay(200);
+        displayInit();
+        delay(100);
+        i2c_OLED_set_line(0);
+        i2c_OLED_send_string("TEST");
+#endif
         loop();
         processLoopback();
     }
