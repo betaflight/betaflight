@@ -149,7 +149,7 @@ static const box_t const boxes[] = {
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },
     { BOXBARO, "BARO;", 3 },
-    //{ BOXVARIO, "VARIO;", 4 },
+    { BOXSONAR, "SONAR;", 4 },
     { BOXMAG, "MAG;", 5 },
     { BOXHEADFREE, "HEADFREE;", 6 },
     { BOXHEADADJ, "HEADADJ;", 7 },
@@ -421,6 +421,10 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
     }
 
+	if (feature(FEATURE_SONAR)){
+		activeBoxIds[activeBoxIdCount++] = BOXSONAR;
+	}
+
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         activeBoxIds[activeBoxIdCount++] = BOXMAG;
         activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
@@ -491,6 +495,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
             IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
             IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
+            IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
             IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
             IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
             rcOptions[BOXHEADADJ] << BOXHEADADJ |

@@ -375,10 +375,12 @@ typedef enum {
 #endif
 #ifdef BARO
 	UPDATE_BARO_TASK,
-	CALCULATE_ALTITUDE_TASK,
 #endif
 #ifdef SONAR
 	UPDATE_SONAR_TASK,
+#endif
+#if defined(BARO) || defined(SONAR)
+	CALCULATE_ALTITUDE_TASK,
 #endif
 	UPDATE_GPS_TASK
 } periodicTasks;
@@ -405,9 +407,20 @@ void executePeriodicTasks(void)
             baroUpdate(currentTime);
         }
         break;
+#endif
 
+#if defined(BARO) || defined(SONAR)
     case CALCULATE_ALTITUDE_TASK:
+
+#if defined(BARO) && !defined(SONAR)
         if (sensors(SENSOR_BARO) && isBaroReady()) {
+#endif
+#if defined(BARO) && defined(SONAR)
+        if ((sensors(SENSOR_BARO) && isBaroReady()) || sensors(SENSOR_SONAR)) {
+#endif
+#if !defined(BARO) && defined(SONAR)
+        if (sensors(SENSOR_SONAR)) {
+#endif
             calculateEstimatedAltitude(currentTime);
         }
         break;
@@ -548,7 +561,7 @@ void processRx(void)
 void loop(void)
 {
     static uint32_t loopTime;
-#ifdef BARO
+#if defined(BARO) || defined(SONAR)
     static bool haveProcessedAnnexCodeOnce = false;
 #endif
 
@@ -558,13 +571,23 @@ void loop(void)
         processRx();
 
 #ifdef BARO
-        // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-        if (haveProcessedAnnexCodeOnce) {
-            if (sensors(SENSOR_BARO)) {
-                updateAltHoldState();
-            }
-        }
+	// the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
+	if (haveProcessedAnnexCodeOnce) {
+		if (sensors(SENSOR_BARO)) {
+			updateAltHoldState();
+		}
+	}
 #endif
+
+#ifdef SONAR
+	// the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
+	if (haveProcessedAnnexCodeOnce) {
+		if (sensors(SENSOR_SONAR)) {
+			updateSonarAltHoldState();
+		}
+	}
+#endif
+
     } else {
         // not processing rx this iteration
         executePeriodicTasks();
@@ -582,7 +605,7 @@ void loop(void)
         previousTime = currentTime;
 
         annexCode();
-#ifdef BARO
+#if defined(BARO) || defined(SONAR)
         haveProcessedAnnexCodeOnce = true;
 #endif
 
@@ -596,13 +619,12 @@ void loop(void)
         }
 #endif
 
-#ifdef BARO
-        if (sensors(SENSOR_BARO)) {
-            if (FLIGHT_MODE(BARO_MODE)) {
+#if defined(BARO) || defined(SONAR)
+        if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
+            if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
                 updateAltHold();
             }
         }
-
 #endif
 
         if (currentProfile->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {

@@ -18,4 +18,5 @@
 
 void updateAltHold(void);
 void updateAltHoldState(void);
+void updateSonarAltHoldState(void);
 

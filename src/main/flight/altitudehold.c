@@ -58,7 +58,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#ifdef BARO
+#if defined(BARO) || defined(SONAR)
 static int16_t initialThrottleHold;
 
 static void multirotorAltHold(void)
@@ -79,7 +79,7 @@ static void multirotorAltHold(void)
             rcCommand[THROTTLE] = constrain(initialThrottleHold + BaroPID, masterConfig.escAndServoConfig.minthrottle, masterConfig.escAndServoConfig.maxthrottle);
         }
     } else {
-        // slow alt changes for apfags
+        // slow alt changes, mostly used for aerial photography
         if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile->alt_hold_deadband) {
             // set velocity proportional to stick movement +100 throttle gives ~ +50 cm/s
             setVelocity = (rcCommand[THROTTLE] - initialThrottleHold) / 2;
@@ -126,6 +126,22 @@ void updateAltHoldState(void)
     } else {
         DISABLE_FLIGHT_MODE(BARO_MODE);
     }
+}
+
+void updateSonarAltHoldState(void)
+{
+	// Sonar alt hold activate
+	if (rcOptions[BOXSONAR]) {
+		if (!FLIGHT_MODE(SONAR_MODE)) {
+			ENABLE_FLIGHT_MODE(SONAR_MODE);
+			AltHold = EstAlt;
+			initialThrottleHold = rcCommand[THROTTLE];
+			errorVelocityI = 0;
+			BaroPID = 0;	// TODO: Change naming of BaroPID to "AltPID" as this is used by both sonar and baro
+		}
+	} else {
+		DISABLE_FLIGHT_MODE(SONAR_MODE);
+	}
 }
 
 #endif

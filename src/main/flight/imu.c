@@ -372,7 +372,8 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
     return lrintf(throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f)));
 }
 
-#ifdef BARO
+#if defined(BARO) || defined(SONAR)
+
 // 40hz update rate (20hz LPF on acc)
 #define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
 
@@ -453,6 +454,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
         
     previousTime = currentTime;
 
+#ifdef BARO
     if (!isBaroCalibrationComplete()) {
         performBaroCalibrationCycle();
         vel = 0;
@@ -460,6 +462,10 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     }
 
     BaroAlt = baroCalculateAltitude();
+#else
+	BaroAlt = 0;
+#endif
+
 
 #ifdef SONAR
     tiltAngle = calculateTiltAngle(&inclination);
@@ -496,9 +502,11 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
     accSum_reset();
 
+#ifdef BARO
     if (!isBaroCalibrationComplete()) {
         return;
     }
+#endif
 
     if (sonarAlt > 0 && sonarAlt < 200) {
         // the sonar has the best range

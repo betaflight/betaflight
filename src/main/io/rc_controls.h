@@ -22,7 +22,7 @@ enum {
     BOXANGLE,
     BOXHORIZON,
     BOXBARO,
-    // BOXVARIO,
+    BOXSONAR,
     BOXMAG,
     BOXHEADFREE,
     BOXHEADADJ,
