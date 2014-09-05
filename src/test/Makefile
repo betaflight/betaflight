@@ -33,7 +33,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread -ggdb -O0
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = battery_unittest flight_imu_unittest gps_conversion_unittest telemetry_hott_unittest
+TESTS = battery_unittest flight_imu_unittest gps_conversion_unittest telemetry_hott_unittest rc_controls_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -137,3 +137,19 @@ $(OBJECT_DIR)/telemetry_hott_unittest.o : $(TEST_DIR)/telemetry_hott_unittest.cc
 
 telemetry_hott_unittest :$(OBJECT_DIR)/telemetry/hott.o $(OBJECT_DIR)/telemetry_hott_unittest.o $(OBJECT_DIR)/flight/gps_conversion.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
+
+
+$(OBJECT_DIR)/io/rc_controls.o : $(USER_DIR)/io/rc_controls.c $(USER_DIR)/io/rc_controls.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+
+$(OBJECT_DIR)/rc_controls_unittest.o : $(TEST_DIR)/rc_controls_unittest.cc \
+                     $(USER_DIR)/io/rc_controls.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rc_controls_unittest.cc -o $@
+
+rc_controls_unittest :$(OBJECT_DIR)/io/rc_controls.o $(OBJECT_DIR)/rc_controls_unittest.o $(OBJECT_DIR)/gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
+
