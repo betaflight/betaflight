@@ -1,4 +1,5 @@
 .tab-initial_setup {
+    height: 100%;
 }
     .tab-initial_setup .section {
         clear: both;
@@ -47,8 +48,8 @@
     float: left;
     position: relative;
 
-    height: 280px;
-    width: 400px;
+    height: calc(100% - 142px);
+    width: calc(100% - 522px);
 
     border: 1px solid silver;
     background-color: white;
@@ -107,13 +108,13 @@
         background-color: #dedcdc;
     }
     #perspective {
+        height: calc(100% - 25px);
         -webkit-perspective: 800;
-        -webkit-perspective-origin: 50% 150px; /* 150px = (350px / 2) - 25px */
     }
         #cube {
             position: relative;
-            top: 110px;
-            left: 150px; /* (916px / 2) - 50px */
+            top: calc(50% - 50px); /* - half of height */
+            left: calc(50% - 50px); /* - half of width */
 
             height: 100px;
             width: 100px;
@@ -134,7 +135,7 @@
                 text-align: center;
             }
             #cube .face.one  {
-                width: 100px;
+                width: 100%;
                 height: 200px;
                 line-height: 200px;
 
@@ -144,7 +145,7 @@
                 background-color: purple;
             }
             #cube .face.two {
-                width: 100px;
+                width: 100%;
                 height: 50px;
                 line-height: 50px;
 
@@ -160,7 +161,7 @@
                 background-color: green;
             }
             #cube .face.four {
-                width: 100px;
+                width: 100%;
                 height: 50px;
                 line-height: 50px;
 
@@ -176,13 +177,16 @@
                 background-color: red;
             }
             #cube .face.six {
-                width: 100px;
+                width: 100%;
                 height: 200px;
                 line-height: 200px;
 
                 -webkit-transform: rotateX(90deg) translateZ(100px);
                 background-color: silver;
             }
+    .tab-initial_setup .block_wrapper {
+        font-size: 0;
+    }
     .tab-initial_setup .battery,
     .tab-initial_setup .throttle,
     .tab-initial_setup .acc-trim,
@@ -192,6 +196,8 @@
         vertical-align: top;
 
         margin: 0 0 10px 10px;
+
+        font-size: 12px;
 
         border: 1px solid silver;
     }
