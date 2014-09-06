@@ -67,14 +67,14 @@
         top: 32px;
         left: 10px;
 
-        height: 30%; /* interactive_block height set to inherit */
+        height: 95px;
     }
     #interactive_block .modelMixAirplane { /* Position airplane correctly */
-        height: 35%;
+        height: 115px;
         padding-left: 0px;
     }
     #interactive_block .modelMixCustom { /* Position question mark correctly */
-        height: 20%; /* resize question mark */
+        height: 75px;
         padding-left: 25px;
     }
     #interactive_block .heading {

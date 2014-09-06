@@ -120,6 +120,10 @@ TABS.initial_setup.initialize = function (callback) {
                 str = 'Singlecopter';
                 $('.modelMixDiagram').attr("src", './images/motor_order/custom.svg').addClass('modelMixCustom');
                 break;
+            case 22: // Custom
+                str = 'Custom';
+                $('.modelMixDiagram').attr("src", './images/motor_order/custom.svg').addClass('modelMixCustom');
+                break;
         }
 
         $('span.model').text(chrome.i18n.getMessage('initialSetupModel', [str]));
