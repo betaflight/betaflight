@@ -574,6 +574,10 @@ static void cliDump(char *cmdline)
     }
 
     if (dumpMask & DUMP_MASTER) {
+
+        printf("\r\n# version\r\n");
+        cliVersion(NULL);
+
         printf("\r\n# dump master\r\n");
         printf("\r\n# mixer\r\n");
 
