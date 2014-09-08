@@ -56,7 +56,7 @@ $(document).ready(function () {
                 tab = $(self).parent().prop('class');
 
             // if there is no active connection, return
-            if (!CONFIGURATOR.connectionValid && tab != 'tab_logging') {
+            if (!CONFIGURATOR.connectionValid) {
                 GUI.log('You need to <strong>connect</strong> before you can view any of the tabs');
                 return;
             }

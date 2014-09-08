@@ -35,7 +35,6 @@ $(document).ready(function () {
                     MSP.disconnect_cleanup();
                     PortUsage.reset();
                     CONFIGURATOR.connectionValid = false;
-                    CONFIGURATOR.mspPassThrough = false;
 
                     // unlock port select & baud
                     $('div#port-picker #port').prop('disabled', false);
@@ -125,39 +124,34 @@ function onOpen(openInfo) {
 
         serial.onReceive.addListener(read_serial);
 
-        if (!CONFIGURATOR.mspPassThrough) {
-            // disconnect after 10 seconds with error if we don't get IDENT data
-            GUI.timeout_add('connecting', function () {
-                if (!CONFIGURATOR.connectionValid) {
-                    GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
+        // disconnect after 10 seconds with error if we don't get IDENT data
+        GUI.timeout_add('connecting', function () {
+            if (!CONFIGURATOR.connectionValid) {
+                GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
 
+                $('div#port-picker a.connect').click(); // disconnect
+            }
+        }, 10000);
+
+        // request configuration data
+        MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
+            GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
+            MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                GUI.timeout_remove('connecting'); // kill connecting timer
+
+                GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
+
+                if (CONFIG.version >= CONFIGURATOR.firmwareVersionAccepted) {
+                    CONFIGURATOR.connectionValid = true;
+
+                    $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+                    $('#tabs li a:first').click();
+                } else {
+                    GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.firmwareVersionAccepted]));
                     $('div#port-picker a.connect').click(); // disconnect
                 }
-            }, 10000);
-
-            // request configuration data
-            MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
-                GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
-                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
-                    GUI.timeout_remove('connecting'); // kill connecting timer
-
-                    GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
-
-                    if (CONFIG.version >= CONFIGURATOR.firmwareVersionAccepted) {
-                        CONFIGURATOR.connectionValid = true;
-
-                        $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-                        $('#tabs li a:first').click();
-                    } else {
-                        GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.firmwareVersionAccepted]));
-                        $('div#port-picker a.connect').click(); // disconnect
-                    }
-                });
             });
-        } else {
-            $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-            GUI.log('Connection opened in <strong>pass-through</strong> mode');
-        }
+        });
     } else {
         console.log('Failed to open serial port');
         GUI.log(chrome.i18n.getMessage('serialPortOpenFail'));
@@ -182,12 +176,10 @@ function onClosed(result) {
 }
 
 function read_serial(info) {
-    if (!CONFIGURATOR.cliActive && !CONFIGURATOR.mspPassThrough) {
+    if (!CONFIGURATOR.cliActive) {
         MSP.read(info);
     } else if (CONFIGURATOR.cliActive) {
         TABS.cli.read(info);
-    } else if (CONFIGURATOR.mspPassThrough) {
-        MSP.read(info);
     }
 }
 
