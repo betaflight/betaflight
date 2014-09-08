@@ -95,7 +95,7 @@ static uint32_t flashWriteAddress = (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * 
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t *currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 75;
+static const uint8_t EEPROM_CONF_VERSION = 76;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
