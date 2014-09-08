@@ -75,11 +75,11 @@ chrome.app.runtime.onLaunched.addListener(function () {
 
 chrome.runtime.onInstalled.addListener(function (details) {
     if (details.reason == 'update') {
-        var previousVersionArr = details.previousVersion.split('.');
-        var currentVersionArr = chrome.runtime.getManifest().version.split('.');
+        var previousVersionArr = details.previousVersion.split('.'),
+            currentVersionArr = chrome.runtime.getManifest().version.split('.');
 
         // only fire up notification sequence when one of the major version numbers changed
-        if (currentVersionArr[0] != previousVersionArr[0] || currentVersionArr[1] != previousVersionArr[1]) {
+        if (currentVersionArr[0] > previousVersionArr[0] || currentVersionArr[1] > previousVersionArr[1]) {
             chrome.storage.local.get('update_notify', function (result) {
                 if (result.update_notify === 'undefined' || result.update_notify) {
                     var manifest = chrome.runtime.getManifest();
