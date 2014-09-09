@@ -46,6 +46,7 @@
 #define LED0
 #define LED1
 #define INVERTER
+#define DISPLAY
 
 #define USE_USART1
 #define USE_USART2

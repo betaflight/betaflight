@@ -432,9 +432,11 @@ void executePeriodicTasks(void)
         }
         break;
 #endif
+#ifdef DISPLAY
     case UPDATE_DISPLAY_TASK:
         updateDisplay();
         break;
+#endif
     }
 
     if (periodicTaskIndex >= PERIODIC_TASK_COUNT) {

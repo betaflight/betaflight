@@ -22,6 +22,8 @@
 
 #include "build_config.h"
 
+#ifdef DISPLAY
+
 #include "drivers/system.h"
 #include "drivers/display_ug2864hsweg01.h"
 
@@ -70,3 +72,5 @@ void displayInit(void)
     delay(20);
     ug2864hsweg01InitI2C();
 }
+
+#endif

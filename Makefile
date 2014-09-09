@@ -212,6 +212,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_spi.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/display_ug2864hsweg01.h \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/inverter.c \
 		   drivers/light_led_stm32f10x.c \

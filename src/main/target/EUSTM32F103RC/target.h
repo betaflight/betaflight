@@ -22,6 +22,7 @@
 #define GYRO
 #define MAG
 #define SONAR
+#define DISPLAY
 
 #define USE_USART1
 #define USE_USART2

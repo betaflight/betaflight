@@ -139,7 +139,9 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
+#ifdef DISPLAY
     displayInit();
+#endif
 
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
