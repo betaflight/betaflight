@@ -44,6 +44,7 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 #include "io/beeper.h"
+#include "io/display.h"
 #include "io/escservo.h"
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
@@ -371,19 +372,20 @@ void updateMagHold(void)
 
 typedef enum {
 #ifdef MAG
-	UPDATE_COMPASS_TASK,
+    UPDATE_COMPASS_TASK,
 #endif
 #ifdef BARO
-	UPDATE_BARO_TASK,
-	CALCULATE_ALTITUDE_TASK,
+    UPDATE_BARO_TASK,
+    CALCULATE_ALTITUDE_TASK,
 #endif
 #ifdef SONAR
-	UPDATE_SONAR_TASK,
+    UPDATE_SONAR_TASK,
 #endif
-	UPDATE_GPS_TASK
+    UPDATE_GPS_TASK,
+    UPDATE_DISPLAY_TASK
 } periodicTasks;
 
-#define PERIODIC_TASK_COUNT (UPDATE_GPS_TASK + 1)
+#define PERIODIC_TASK_COUNT (UPDATE_DISPLAY_TASK + 1)
 
 
 void executePeriodicTasks(void)
@@ -430,6 +432,9 @@ void executePeriodicTasks(void)
         }
         break;
 #endif
+    case UPDATE_DISPLAY_TASK:
+        updateDisplay();
+        break;
     }
 
     if (periodicTaskIndex >= PERIODIC_TASK_COUNT) {

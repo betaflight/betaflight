@@ -37,7 +37,6 @@
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
-#include "drivers/display_ug2864hsweg01.h"
 
 #include "flight/flight.h"
 #include "flight/mixer.h"
@@ -117,10 +116,6 @@ void productionDebug(void)
 }
 #endif
 
-void displayInit(void)
-{
-    ug2864hsweg01InitI2C();
-}
 void init(void)
 {
     uint8_t i;
@@ -143,6 +138,8 @@ void init(void)
     adcInit(&adc_params);
 
     initBoardAlignment(&masterConfig.boardAlignment);
+
+    displayInit();
 
     // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
     sensorsSet(SENSORS_SET);
@@ -300,13 +297,6 @@ int main(void) {
     init();
 
     while (1) {
-#if 1
-        delay(200);
-        displayInit();
-        delay(100);
-        i2c_OLED_set_line(0);
-        i2c_OLED_send_string("TEST");
-#endif
         loop();
         processLoopback();
     }

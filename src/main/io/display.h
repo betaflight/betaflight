@@ -15,13 +15,5 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-void ug2864hsweg01InitI2C(void);
-
-void i2c_OLED_set_XY(uint8_t col, uint8_t row);
-void i2c_OLED_set_line(uint8_t row);
-void i2c_OLED_send_char(unsigned char ascii);
-void i2c_OLED_send_string(const char *string);
-void i2c_OLED_clear_display(void);
+void updateDisplay(void);
 

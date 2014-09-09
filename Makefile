@@ -190,6 +190,7 @@ HIGHEND_SRC  = flight/autotune.c \
 		   flight/gps_conversion.c \
 		   io/gps.c \
 		   io/ledstrip.c \
+		   io/display.c \
 		   telemetry/telemetry.c \
 		   telemetry/frsky.c \
 		   telemetry/hott.c \
@@ -231,6 +232,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 
 EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
 		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_l3g4200d.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
 		   drivers/barometer_bmp085.c \

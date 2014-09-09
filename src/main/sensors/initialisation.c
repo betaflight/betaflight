@@ -19,6 +19,9 @@
 #include <string.h>
 
 #include "platform.h"
+
+#include "build_config.h"
+
 #include "common/axis.h"
 
 #include "drivers/accgyro.h"
@@ -112,6 +115,7 @@
 #ifdef EUSTM32F103RC
 #define USE_FAKE_GYRO
 #define USE_FAKE_ACC
+#define USE_GYRO_L3G4200D
 #endif
 
 #ifdef STM32F3DISCOVERY
@@ -165,11 +169,16 @@ extern acc_t acc;
 
 #ifdef USE_FAKE_GYRO
 static void fakeGyroInit(void) {}
-static void fakeGyroRead(int16_t *gyroData) {}
-static void fakeGyroReadTemp(int16_t *tempData) {}
+static void fakeGyroRead(int16_t *gyroData) {
+    UNUSED(gyroData);
+}
+static void fakeGyroReadTemp(int16_t *tempData) {
+    UNUSED(tempData);
+}
 
 bool fakeGyroDetect(gyro_t *gyro, uint16_t lpf)
 {
+    UNUSED(lpf);
     gyro->init = fakeGyroInit;
     gyro->read = fakeGyroRead;
     gyro->temperature = fakeGyroReadTemp;
@@ -179,7 +188,9 @@ bool fakeGyroDetect(gyro_t *gyro, uint16_t lpf)
 
 #ifdef USE_FAKE_ACC
 static void fakeAccInit(void) {}
-static void fakeAccRead(int16_t *accData) {}
+static void fakeAccRead(int16_t *accData) {
+    UNUSED(accData);
+}
 
 bool fakeAccDetect(acc_t *acc)
 {
