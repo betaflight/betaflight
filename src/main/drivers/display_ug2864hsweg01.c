@@ -26,6 +26,11 @@
 
 #include "display_ug2864hsweg01.h"
 
+#define INVERSE_CHAR_FORMAT 0x7f // 0b01111111
+#define NORMAL_CHAR_FORMAT  0x00 // 0b00000000
+
+unsigned char CHAR_FORMAT = NORMAL_CHAR_FORMAT;
+
 static const uint8_t const multiWiiFont[][5] = { // Refer to "Times New Roman" Font Database... 5 x 7 font
         { 0x00, 0x00, 0x00, 0x00, 0x00 }, { 0x00, 0x00, 0x4F, 0x00, 0x00 }, //   (  1)  ! - 0x0021 Exclamation Mark
                 { 0x00, 0x07, 0x00, 0x07, 0x00 }, //   (  2)  " - 0x0022 Quotation Mark
@@ -169,40 +174,46 @@ static void i2c_OLED_send_byte(uint8_t val)
 
 void i2c_OLED_clear_display(void)
 {
-    i2c_OLED_send_cmd(0xa6);              //Set Normal Display
+    i2c_OLED_send_cmd(0xa6);              // Set Normal Display
     i2c_OLED_send_cmd(0xae);              // Display OFF
     i2c_OLED_send_cmd(0x20);              // Set Memory Addressing Mode
     i2c_OLED_send_cmd(0x00);              // Set Memory Addressing Mode to Horizontal addressing mode
     i2c_OLED_send_cmd(0xb0);              // set page address to 0
-    i2c_OLED_send_cmd(0X40);              // Display start line register to 0
+    i2c_OLED_send_cmd(0x40);              // Display start line register to 0
     i2c_OLED_send_cmd(0);                 // Set low col address to 0
     i2c_OLED_send_cmd(0x10);              // Set high col address to 0
-    for(uint16_t i=0; i<1024; i++) {           // fill the display's RAM with graphic... 128*64 pixel picture
-        i2c_OLED_send_byte(0);  // clear
+    for(uint16_t i=0; i<1024; i++) {      // fill the display's RAM with graphic... 128*64 pixel picture
+        i2c_OLED_send_byte(0x00);  // clear
     }
     i2c_OLED_send_cmd(0x81);              // Setup CONTRAST CONTROL, following byte is the contrast Value... always a 2 byte instruction
     i2c_OLED_send_cmd(200);               // Here you can set the brightness 1 = dull, 255 is very bright
     i2c_OLED_send_cmd(0xaf);              // display on
 }
-void i2c_OLED_set_XY(uint8_t col, uint8_t row)
+
+void i2c_OLED_clear_display_quick(void)
 {
-    //  Not used in MW V2.0 but its here anyway!
+    i2c_OLED_send_cmd(0xb0);              // set page address to 0
+    i2c_OLED_send_cmd(0x40);              // Display start line register to 0
+    i2c_OLED_send_cmd(0);                 // Set low col address to 0
+    i2c_OLED_send_cmd(0x10);              // Set high col address to 0
+    for(uint16_t i=0; i<1024; i++) {      // fill the display's RAM with graphic... 128*64 pixel picture
+        i2c_OLED_send_byte(0x00);  // clear
+    }
+}
+
+void i2c_OLED_set_xy(uint8_t col, uint8_t row)
+{
     i2c_OLED_send_cmd(0xb0 + row);                      //set page address
-    i2c_OLED_send_cmd(0x00 + (8 * col & 0x0f));         //set low col address
-    i2c_OLED_send_cmd(0x10 + ((8 * col >> 4) & 0x0f));  //set high col address
+    i2c_OLED_send_cmd(0x00 + ((CHARACTER_WIDTH_TOTAL * col) & 0x0f));         //set low col address
+    i2c_OLED_send_cmd(0x10 + (((CHARACTER_WIDTH_TOTAL * col) >> 4) & 0x0f));  //set high col address
 }
 
 void i2c_OLED_set_line(uint8_t row)
 {
-    // goto the beginning of a single row, compatible with LCD_CONFIG
     i2c_OLED_send_cmd(0xb0 + row); //set page address
     i2c_OLED_send_cmd(0);          //set low col address
     i2c_OLED_send_cmd(0x10);       //set high col address
 }
-
-unsigned char CHAR_FORMAT = 0;      // use to INVERSE characters
-// use INVERSE    CHAR_FORMAT = 0b01111111;
-// use NORMAL     CHAR_FORMAT = 0;
 
 void i2c_OLED_send_char(unsigned char ascii)
 {
@@ -219,15 +230,8 @@ void i2c_OLED_send_char(unsigned char ascii)
 void i2c_OLED_send_string(const char *string)
 {
     // Sends a string of chars until null terminator
-    unsigned char i = 0;
-    uint8_t buffer;
     while (*string) {
-        for (i = 0; i < 5; i++) {
-            buffer = multiWiiFont[(*string) - 32][i];
-            buffer ^= CHAR_FORMAT;
-            i2c_OLED_send_byte((unsigned char) buffer);
-        }
-        i2c_OLED_send_byte(CHAR_FORMAT);    // the gap
+        i2c_OLED_send_char(*string);
         string++;
     }
 }
@@ -238,6 +242,9 @@ void ug2864hsweg01InitI2C(void)
     i2c_OLED_send_cmd(0xa4);          //SET All pixels OFF
 //  i2c_OLED_send_cmd(0xa5);            //SET ALL pixels ON
     delay(50);
+
+//    i2c_OLED_send_cmd(0x8D); // charge pump
+//    i2c_OLED_send_cmd(0x14); // enable
     i2c_OLED_send_cmd(0x20);            //Set Memory Addressing Mode
     i2c_OLED_send_cmd(0x02); //Set Memory Addressing Mode to Page addressing mode(RESET)
 //  i2c_OLED_send_cmd(0xa0);      //colum address 0 mapped to SEG0 (POR)*** wires at bottom

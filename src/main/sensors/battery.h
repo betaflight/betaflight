@@ -42,3 +42,5 @@ void batteryInit(batteryConfig_t *initialBatteryConfig);
 
 void updateCurrentMeter(int32_t lastUpdateAt);
 int32_t currentMeterToCentiamps(uint16_t src);
+
+uint32_t calculateBatteryPercentage(void);

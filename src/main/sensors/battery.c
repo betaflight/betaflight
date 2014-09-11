@@ -109,3 +109,8 @@ void updateCurrentMeter(int32_t lastUpdateAt)
 	mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
 	mAhDrawn = mAhdrawnRaw / (3600 * 100);
 }
+
+uint32_t calculateBatteryPercentage(void)
+{
+    return ((uint32_t)(vbat) * 100) / (batteryConfig->vbatmaxcellvoltage * batteryCellCount);
+}
