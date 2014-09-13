@@ -129,36 +129,48 @@ var serial = {
     },
     send: function (data, callback) {
         var self = this;
-        self.output_buffer.push({'data': data, 'callback': callback});
+        this.output_buffer.push({'data': data, 'callback': callback});
 
-        if (!self.transmitting) {
-            self.transmitting = true;
+        if (!this.transmitting) {
+            this.transmitting = true;
 
-            var sending = function () {
+            var send = function () {
                 // store inside separate variables in case array gets destroyed
                 var data = self.output_buffer[0].data,
                     callback = self.output_buffer[0].callback;
 
                 chrome.serial.send(self.connectionId, data, function (sendInfo) {
-                    callback(sendInfo);
-                    self.output_buffer.shift();
-
+                    // track sent bytes for statistics
                     self.bytes_sent += sendInfo.bytesSent;
 
+                    // fire callback
+                    callback(sendInfo);
+
+                    // remove data for current transmission form the buffer
+                    self.output_buffer.shift();
+
+                    // if there is any data in the queue fire send immediately, otherwise stop trasmitting
                     if (self.output_buffer.length) {
                         // keep the buffer withing reasonable limits
-                        while (self.output_buffer.length > 500) {
-                            self.output_buffer.pop();
+                        if (self.output_buffer.length > 100) {
+                            var counter = 0;
+
+                            while (self.output_buffer.length > 100) {
+                                self.output_buffer.pop();
+                                counter++;
+                            }
+
+                            console.log('SERIAL: Send buffer overflowing, dropped: ' + counter + ' entries');
                         }
 
-                        sending();
+                        send();
                     } else {
                         self.transmitting = false;
                     }
                 });
             };
 
-            sending();
+            send();
         }
     },
     onReceive: {
