@@ -107,83 +107,15 @@
     #interactive_block a.reset:hover {
         background-color: #dedcdc;
     }
-    #perspective {
-        height: calc(100% - 25px);
-        -webkit-perspective: 800;
+    #canvas_wrapper {
+        position: absolute;
+
+        width: 100%;
+        height: 100%;
+
+        top: 0;
+        left: 0;
     }
-        #cube {
-            position: relative;
-            top: calc(50% - 50px); /* - half of height */
-            left: calc(50% - 50px); /* - half of width */
-
-            height: 100px;
-            width: 100px;
-
-            -webkit-transform-style: preserve-3d;
-        }
-            #cubePITCH {
-                -webkit-transform-style: preserve-3d;
-            }
-            #cubeROLL {
-                -webkit-transform-style: preserve-3d;
-            }
-            #cube .face {
-                position: absolute;
-
-                color: white;
-                font-size: 25px;
-                text-align: center;
-            }
-            #cube .face.one  {
-                width: 100%;
-                height: 200px;
-                line-height: 200px;
-
-                font-size: 20px;
-
-                -webkit-transform: rotateX(-90deg) translateZ(-50px);
-                background-color: purple;
-            }
-            #cube .face.two {
-                width: 100%;
-                height: 50px;
-                line-height: 50px;
-
-                -webkit-transform: translateZ(100px);
-                background-color: blue;
-            }
-            #cube .face.three {
-                width: 200px;
-                height: 50px;
-                line-height: 50px;
-
-                -webkit-transform: rotateY(90deg);
-                background-color: green;
-            }
-            #cube .face.four {
-                width: 100%;
-                height: 50px;
-                line-height: 50px;
-
-                -webkit-transform: rotateY(180deg) translateZ(100px);
-                background-color: black;
-            }
-            #cube .face.five {
-                width: 200px;
-                height: 50px;
-                line-height: 50px;
-
-                -webkit-transform: rotateY(-90deg) translateZ(100px);
-                background-color: red;
-            }
-            #cube .face.six {
-                width: 100%;
-                height: 200px;
-                line-height: 200px;
-
-                -webkit-transform: rotateX(90deg) translateZ(100px);
-                background-color: silver;
-            }
     .tab-initial_setup .block_wrapper {
         font-size: 0;
     }

@@ -28,6 +28,9 @@ TABS.initial_setup.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
+        // initialize 3D
+        self.initialize3D();
+
         // Fill in misc stuff
         $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
         $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
@@ -273,15 +276,11 @@ TABS.initial_setup.initialize = function (callback) {
             $('.bat-mah-drawing').text(chrome.i18n.getMessage('initialSetupBatteryAValue', [ANALOG.amperage.toFixed(2)]));
             $('.rssi').text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
 
-            // Update cube
-            var cube = $('div#cube');
-
-            cube.css('-webkit-transform', 'rotateY(' + ((SENSOR_DATA.kinematics[2] * -1.0) - self.yaw_fix) + 'deg)');
-            $('#cubePITCH', cube).css('-webkit-transform', 'rotateX(' + SENSOR_DATA.kinematics[1] + 'deg)');
-            $('#cubeROLL', cube).css('-webkit-transform', 'rotateZ(' + SENSOR_DATA.kinematics[0] + 'deg)');
-
             // Update heading
             $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
+
+            // Update 3D
+            self.render3D();
         }
 
         GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);
@@ -295,6 +294,70 @@ TABS.initial_setup.initialize = function (callback) {
     }
 };
 
+TABS.initial_setup.initialize3D = function () {
+    var self = this;
+    var canvas = $('#canvas');
+    var wrapper = $('#canvas_wrapper');
+
+    var camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
+    var renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
+    var scene = new THREE.Scene();
+
+    // some light
+    var light = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.5);
+    light.position.set(0, 1, 0);
+
+    // flying brick
+    var modelWrapper = new THREE.Object3D();
+    var geometry = new THREE.BoxGeometry(150, 80, 300);
+    var materialArray = [
+        new THREE.MeshLambertMaterial({color: 0xff3333, emissive: 0x962020}), // right
+        new THREE.MeshLambertMaterial({color: 0xff8800, emissive: 0xa45a06}), // left
+        new THREE.MeshLambertMaterial({color: 0xffff33, emissive: 0x9a9a21}), // top
+        new THREE.MeshLambertMaterial({color: 0x33ff33, emissive: 0x1f901f}), // bottom
+        new THREE.MeshLambertMaterial({color: 0x3333ff, emissive: 0x212192}), // back
+        new THREE.MeshLambertMaterial({color: 0x8833ff, emissive: 0x5620a2}), // front
+    ];
+    var materials = new THREE.MeshFaceMaterial(materialArray);
+    var model = new THREE.Mesh(geometry, materials);
+
+    // initialize render size for current canvas size
+    renderer.setSize(wrapper.width(), wrapper.height());
+
+    // move camera away from the model
+    camera.position.z = 500;
+
+    // modelWrapper just adds an extra axis of rotation to avoid gimbal lock withe euler angles
+    modelWrapper.add(model);
+
+    // add camera, model, light to the foreground scene
+    scene.add(camera);
+    scene.add(modelWrapper);
+    scene.add(light);
+
+
+    this.render3D = function () {
+        // compute the changes
+        model.rotation.x = (SENSOR_DATA.kinematics[1] * -1.0) * 0.017453292519943295;
+        modelWrapper.rotation.y = ((SENSOR_DATA.kinematics[2] * -1.0) - self.yaw_fix) * 0.017453292519943295;
+        model.rotation.z = (SENSOR_DATA.kinematics[0] * -1.0) * 0.017453292519943295;
+
+        // draw
+        renderer.render(scene, camera);
+    };
+
+    // handle canvas resize
+    $(window).resize(function () {
+        renderer.setSize(wrapper.width(), wrapper.height());
+        camera.aspect = wrapper.width() / wrapper.height();
+        camera.updateProjectionMatrix();
+
+        self.render3D();
+    });
+};
+
 TABS.initial_setup.cleanup = function (callback) {
+    $(window).unbind('resize');
+
     if (callback) callback();
 };
