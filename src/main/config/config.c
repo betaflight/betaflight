@@ -474,7 +474,7 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RX_PPM);
     }
 
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (feature(FEATURE_RX_PARALLEL_PWM)) {
 #if defined(STM32F10X)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
@@ -527,10 +527,10 @@ void initEEPROM(void)
 
 #define FLASH_SIZE_REGISTER 0x1FFFF7E0
 
-    const uint32_t flashSize = *((uint32_t *)FLASH_SIZE_REGISTER) & 0xFFFF;
+    const uint32_t flashSizeInKB = *((uint32_t *)FLASH_SIZE_REGISTER) & 0xFFFF;
 
     // calculate write address based on contents of Flash size register. Use last 2 kbytes for storage
-    flashWriteAddress = 0x08000000 + (FLASH_PAGE_SIZE * (flashSize - 2));
+    flashWriteAddress = 0x08000000 + (FLASH_PAGE_SIZE * (flashSizeInKB - 2));
 #endif
 }
 
@@ -619,22 +619,6 @@ void ensureEEPROMContainsValidData(void)
 
     resetEEPROM();
 }
-/*
- * This file is part of Cleanflight.
- *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- */
 
 void resetEEPROM(void)
 {
