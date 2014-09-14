@@ -47,7 +47,7 @@ function configuration_backup() {
         var now = d.getUTCFullYear() + '.' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getHours() + '.' + d.getMinutes();
 
         // create or load the file
-        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'bf_mw_backup_' + now, accepts: accepts}, function (fileEntry) {
+        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'cleanflight_config_' + now, accepts: accepts}, function (fileEntry) {
             if (!fileEntry) {
                 console.log('No file selected, backup aborted.');
 
