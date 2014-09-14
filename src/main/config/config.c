@@ -50,6 +50,7 @@
 #include "rx/rx.h"
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
+#include "io/ledstrip.h"
 #include "io/gps.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -97,7 +98,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t *currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 76;
+static const uint8_t EEPROM_CONF_VERSION = 77;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -373,6 +374,8 @@ static void resetConf(void)
     // custom mixer. clear by defaults.
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         masterConfig.customMixer[i].throttle = 0.0f;
+
+    applyDefaultLedStripConfig(masterConfig.ledConfigs);
 
     // copy first profile into remaining profile
     for (i = 1; i < 3; i++)

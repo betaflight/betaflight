@@ -33,7 +33,13 @@ CXXFLAGS += -g -Wall -Wextra -pthread -ggdb -O0
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = battery_unittest flight_imu_unittest gps_conversion_unittest telemetry_hott_unittest rc_controls_unittest
+TESTS = \
+	battery_unittest \
+	flight_imu_unittest \
+	gps_conversion_unittest \
+	telemetry_hott_unittest \
+	rc_controls_unittest \
+	ledstrip_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -150,6 +156,19 @@ $(OBJECT_DIR)/rc_controls_unittest.o : $(TEST_DIR)/rc_controls_unittest.cc \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rc_controls_unittest.cc -o $@
 
 rc_controls_unittest :$(OBJECT_DIR)/io/rc_controls.o $(OBJECT_DIR)/rc_controls_unittest.o $(OBJECT_DIR)/gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/io/ledstrip.o : $(USER_DIR)/io/ledstrip.c $(USER_DIR)/io/ledstrip.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/ledstrip.c -o $@
+
+$(OBJECT_DIR)/ledstrip_unittest.o : $(TEST_DIR)/ledstrip_unittest.cc \
+                     $(USER_DIR)/io/ledstrip.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ledstrip_unittest.cc -o $@
+
+ledstrip_unittest :$(OBJECT_DIR)/io/ledstrip.o $(OBJECT_DIR)/ledstrip_unittest.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 

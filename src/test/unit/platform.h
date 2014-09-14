@@ -20,6 +20,7 @@
 #define BARO
 #define GPS
 #define TELEMETRY
+#define LED_STRIP
 
 #define SERIAL_PORT_COUNT 4
 

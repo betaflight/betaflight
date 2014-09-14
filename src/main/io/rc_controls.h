@@ -17,7 +17,7 @@
 
 #pragma once
 
-enum {
+typedef enum {
     BOXARM = 0,
     BOXANGLE,
     BOXHORIZON,

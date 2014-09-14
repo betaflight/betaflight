@@ -47,6 +47,7 @@
 #include "io/gimbal.h"
 #include "io/rc_controls.h"
 #include "io/serial.h"
+#include "io/ledstrip.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -77,6 +78,7 @@ static void cliGpsPassthrough(char *cmdline);
 #endif
 static void cliHelp(char *cmdline);
 static void cliMap(char *cmdline);
+static void cliLed(char *cmdline);
 static void cliMixer(char *cmdline);
 static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
@@ -143,6 +145,7 @@ const clicmd_t cmdTable[] = {
     { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
 #endif
     { "help", "", cliHelp },
+    { "led", "configure leds", cliLed },
     { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
     { "motor", "get/set motor output value", cliMotor },
@@ -495,6 +498,33 @@ static void cliCMix(char *cmdline)
     }
 }
 
+static void cliLed(char *cmdline)
+{
+    int i;
+    uint8_t len;
+    char *ptr;
+    char ledConfigBuffer[20];
+
+    len = strlen(cmdline);
+    if (len == 0) {
+        for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+            generateLedConfig(i, ledConfigBuffer, sizeof(ledConfigBuffer));
+            printf("led %u %s\r\n", i, ledConfigBuffer);
+        }
+    } else {
+        ptr = cmdline;
+        i = atoi(ptr);
+        if (i < MAX_LED_STRIP_LENGTH) {
+            ptr = strchr(cmdline, ' ');
+            if (!parseLedStripConfig(i, ++ptr)) {
+                printf("Parse error\r\n", MAX_LED_STRIP_LENGTH);
+            }
+        } else {
+            printf("Invalid led index: must be < %u\r\n", MAX_LED_STRIP_LENGTH);
+        }
+    }
+}
+
 static void dumpValues(uint8_t mask)
 {
     uint32_t i;
@@ -591,6 +621,9 @@ static void cliDump(char *cmdline)
             buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
         buf[i] = '\0';
         printf("map %s\r\n", buf);
+
+        printf("\r\n\r\n# led\r\n");
+        cliLed("");
 
         printSectionBreak();
         dumpValues(MASTER_VALUE);

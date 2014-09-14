@@ -65,8 +65,6 @@
 #define GPS
 
 #define LED_STRIP
-//#define USE_ALTERNATE_LED_LAYOUT
-
 #define TELEMETRY
 #define SOFT_SERIAL
 #define SERIAL_RX
