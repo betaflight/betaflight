@@ -1,10 +1,11 @@
 'use strict';
 
 var serial = {
-    connectionId:           -1,
-    bitrate:                0,
-    bytes_received:         0,
-    bytes_sent:             0,
+    connectionId:      -1,
+    bitrate:            0,
+    bytes_received:     0,
+    bytes_sent:         0,
+    failed:             0,
 
     transmitting:   false,
     output_buffer:  [],
@@ -18,6 +19,7 @@ var serial = {
                 self.bitrate = connectionInfo.bitrate;
                 self.bytes_received = 0;
                 self.bytes_sent = 0;
+                self.failed = 0;
 
                 self.onReceive.addListener(function log_bytes_received(info) {
                     self.bytes_received += info.data.byteLength;
@@ -29,32 +31,34 @@ var serial = {
 
                     switch (info.error) {
                         case 'system_error': // we might be able to recover from this one
-                            var crunch_status = function (info) {
-                                if (info) {
-                                    if (!info.paused) {
-                                        console.log('SERIAL: Connection recovered from last onReceiveError');
-                                        googleAnalytics.sendException('Serial: onReceiveError - recovered', false);
-                                    } else {
-                                        console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
-                                        GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
-                                        googleAnalytics.sendException('Serial: onReceiveError - unrecoverable', false);
+                            if (!self.failed++) {
+                                chrome.serial.setPaused(self.connectionId, false, function () {
+                                    self.getInfo(function (info) {
+                                        if (info) {
+                                            if (!info.paused) {
+                                                console.log('SERIAL: Connection recovered from last onReceiveError');
+                                                googleAnalytics.sendException('Serial: onReceiveError - recovered', false);
 
-                                        if (GUI.connected_to || GUI.connecting_to) {
-                                            $('a.connect').click();
+                                                self.failed = 0;
+                                            } else {
+                                                console.log('SERIAL: Connection did not recover from last onReceiveError, disconnecting');
+                                                GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+                                                googleAnalytics.sendException('Serial: onReceiveError - unrecoverable', false);
+
+                                                if (GUI.connected_to || GUI.connecting_to) {
+                                                    $('a.connect').click();
+                                                } else {
+                                                    self.disconnect();
+                                                }
+                                            }
                                         } else {
-                                            self.disconnect();
+                                            if (chrome.runtime.lastError) {
+                                                console.error(chrome.runtime.lastError.message);
+                                            }
                                         }
-                                    }
-                                } else {
-                                    if (chrome.runtime.lastError) {
-                                        console.error(chrome.runtime.lastError.message);
-                                    }
-                                }
+                                    });
+                                });
                             }
-
-                            chrome.serial.setPaused(self.connectionId, false, function () {
-                                self.getInfo(crunch_status);
-                            });
                             break;
                         case 'timeout':
                             // TODO
