@@ -66,8 +66,6 @@
 
 #include "build_config.h"
 
-extern rcReadRawDataPtr rcReadRawFunc;
-
 extern uint32_t previousTime;
 
 #ifdef SOFTSERIAL_LOOPBACK

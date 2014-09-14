@@ -180,7 +180,7 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 #ifdef STM32F10X
     return ((uint8_t)SPI_I2S_ReceiveData(instance));
 #endif
-    }
+}
 
 bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, uint8_t *in, int len)
 {
