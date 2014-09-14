@@ -70,6 +70,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800
 
+#ifndef FLASH_PAGE_COUNT
 #ifdef STM32F303xC
 #define FLASH_PAGE_COUNT 128
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
@@ -84,13 +85,14 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 #define FLASH_PAGE_COUNT 128
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
 #endif
+#endif
 
-#ifndef FLASH_PAGE_COUNT
+#if !defined(FLASH_PAGE_COUNT) || !defined(FLASH_PAGE_SIZE)
 #error "Flash page count not defined for target."
 #endif
 
 // use the last flash pages for storage
-static uint32_t flashWriteAddress = (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG));
+#define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
 
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t *currentProfile;   // profile config struct
@@ -389,7 +391,7 @@ static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
 
 static bool isEEPROMContentValid(void)
 {
-    const master_t *temp = (const master_t *) flashWriteAddress;
+    const master_t *temp = (const master_t *) CONFIG_START_FLASH_ADDRESS;
     uint8_t checksum = 0;
 
     // check version number
@@ -523,15 +525,6 @@ void validateAndFixConfig(void)
 
 void initEEPROM(void)
 {
-#if defined(STM32F10X)
-
-#define FLASH_SIZE_REGISTER 0x1FFFF7E0
-
-    const uint32_t flashSizeInKB = *((uint32_t *)FLASH_SIZE_REGISTER) & 0xFFFF;
-
-    // calculate write address based on contents of Flash size register. Use last 2 kbytes for storage
-    flashWriteAddress = 0x08000000 + (FLASH_PAGE_SIZE * (flashSizeInKB - 2));
-#endif
 }
 
 void readEEPROM(void)
@@ -541,7 +534,7 @@ void readEEPROM(void)
         failureMode(10);
 
     // Read flash
-    memcpy(&masterConfig, (char *) flashWriteAddress, sizeof(master_t));
+    memcpy(&masterConfig, (char *) CONFIG_START_FLASH_ADDRESS, sizeof(master_t));
     // Copy current profile
     if (masterConfig.current_profile_index > 2) // sanity check
         masterConfig.current_profile_index = 0;
@@ -587,13 +580,13 @@ void writeEEPROM(void)
 #endif
         for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
             if (wordOffset % FLASH_PAGE_SIZE == 0) {
-                status = FLASH_ErasePage(flashWriteAddress + wordOffset);
+                status = FLASH_ErasePage(CONFIG_START_FLASH_ADDRESS + wordOffset);
                 if (status != FLASH_COMPLETE) {
                     break;
                 }
             }
 
-            status = FLASH_ProgramWord(flashWriteAddress + wordOffset,
+            status = FLASH_ProgramWord(CONFIG_START_FLASH_ADDRESS + wordOffset,
                     *(uint32_t *) ((char *) &masterConfig + wordOffset));
             if (status != FLASH_COMPLETE) {
                 break;
