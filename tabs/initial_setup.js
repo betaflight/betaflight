@@ -300,7 +300,13 @@ TABS.initial_setup.initialize3D = function () {
     var wrapper = $('#canvas_wrapper');
 
     var camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
-    var renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
+
+    var renderer;
+    if (GUI.operating_system != 'Linux' || GUI.operating_system != 'CrOS') {
+        renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
+    } else {
+        renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
+    }
     var scene = new THREE.Scene();
 
     // some light
@@ -310,13 +316,13 @@ TABS.initial_setup.initialize3D = function () {
     // flying brick
     var modelWrapper = new THREE.Object3D();
     var geometry = new THREE.BoxGeometry(150, 80, 300);
-    var materialArray = [
-        new THREE.MeshLambertMaterial({color: 0xff3333, emissive: 0x962020}), // right
-        new THREE.MeshLambertMaterial({color: 0xff8800, emissive: 0xa45a06}), // left
-        new THREE.MeshLambertMaterial({color: 0xffff33, emissive: 0x9a9a21}), // top
-        new THREE.MeshLambertMaterial({color: 0x33ff33, emissive: 0x1f901f}), // bottom
-        new THREE.MeshLambertMaterial({color: 0x3333ff, emissive: 0x212192}), // back
-        new THREE.MeshLambertMaterial({color: 0x8833ff, emissive: 0x5620a2}), // front
+    var materialArray = [ // overdraw helps remove wireframe when using CanvasRenderer
+        new THREE.MeshLambertMaterial({color: 0xff3333, emissive: 0x962020, overdraw: true}), // right
+        new THREE.MeshLambertMaterial({color: 0xff8800, emissive: 0xa45a06, overdraw: true}), // left
+        new THREE.MeshLambertMaterial({color: 0xffff33, emissive: 0x9a9a21, overdraw: true}), // top
+        new THREE.MeshLambertMaterial({color: 0x33ff33, emissive: 0x1f901f, overdraw: true}), // bottom
+        new THREE.MeshLambertMaterial({color: 0x3333ff, emissive: 0x212192, overdraw: true}), // back
+        new THREE.MeshLambertMaterial({color: 0x8833ff, emissive: 0x5620a2, overdraw: true}), // front
     ];
     var materials = new THREE.MeshFaceMaterial(materialArray);
     var model = new THREE.Mesh(geometry, materials);
