@@ -122,23 +122,23 @@ char a2i(char ch, char **src, int base, int *nump)
  ** Code from http://groups.google.com/group/comp.lang.c/msg/66552ef8b04fe1ab?pli=1
  */
 
-static char *_i2a(unsigned i, char *a, unsigned r)
+static char *_i2a(unsigned i, char *a, unsigned base)
 {
-    if (i / r > 0)
-        a = _i2a(i / r, a, r);
-    *a = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i % r];
+    if (i / base > 0)
+        a = _i2a(i / base, a, base);
+    *a = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i % base];
     return a + 1;
 }
 
-char *itoa(int i, char *a, int r)
+char *itoa(int i, char *a, int base)
 {
-    if ((r < 2) || (r > 36))
-        r = 10;
+    if ((base < 2) || (base > 36))
+        base = 10;
     if (i < 0) {
         *a = '-';
-        *_i2a(-(unsigned) i, a + 1, r) = 0;
+        *_i2a(-(unsigned) i, a + 1, base) = 0;
     } else
-        *_i2a(i, a, r) = 0;
+        *_i2a(i, a, base) = 0;
     return a;
 }
 
