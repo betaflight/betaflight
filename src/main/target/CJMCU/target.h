@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define FLASH_PAGE_COUNT 128
+#define FLASH_PAGE_COUNT 64
 #define FLASH_PAGE_SIZE ((uint16_t)0x400)
 
 #define LED0_GPIO GPIOC
