@@ -46,6 +46,7 @@
 
 #include "io/ledstrip.h"
 
+static bool configured = false;
 static failsafe_t* failsafe;
 
 #if MAX_LED_STRIP_LENGTH > WS2811_LED_STRIP_LENGTH
@@ -644,7 +645,7 @@ static void applyLedAnimationLayer(void)
 
 void updateLedStrip(void)
 {
-    if (!isWS2811LedStripReady()) {
+    if (!(configured && isWS2811LedStripReady())) {
         return;
     }
 
@@ -732,5 +733,6 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, failsafe_t* failsafeToUse)
     ledConfigs = ledConfigsToUse;
     failsafe = failsafeToUse;
     reevalulateLedConfig();
+    configured = true;
 }
 #endif
