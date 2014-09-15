@@ -153,7 +153,7 @@ The default configuration is as follows
 led 0 2,2:ES:IA
 led 1 2,1:E:BF
 led 2 2,0:NE:IA
-led 3 1,0:N:BF
+led 3 1,0:N:F
 led 4 0,0:NW:IA
 led 5 0,1:W:BF
 led 6 0,2:SW:IA
