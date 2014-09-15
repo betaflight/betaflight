@@ -41,7 +41,7 @@ typedef enum {
     LED_DIRECTION_UP         = (1 << 4),
     LED_DIRECTION_DOWN       = (1 << 5),
     LED_FUNCTION_INDICATOR   = (1 << 6),
-    LED_FUNCTION_BATTERY     = (1 << 7),
+    LED_FUNCTION_WARNING     = (1 << 7),
     LED_FUNCTION_FLIGHT_MODE = (1 << 8),
     LED_FUNCTION_ARM_STATE   = (1 << 9)
 } ledFlag_e;

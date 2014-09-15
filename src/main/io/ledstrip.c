@@ -42,8 +42,11 @@
 #include "config/config.h"
 #include "rx/rx.h"
 #include "io/rc_controls.h"
+#include "flight/failsafe.h"
 
 #include "io/ledstrip.h"
+
+static failsafe_t* failsafe;
 
 #if MAX_LED_STRIP_LENGTH > WS2811_LED_STRIP_LENGTH
 #error "Led strip length must match driver"
@@ -74,6 +77,8 @@ const rgbColor24bpp_t red = { LED_RED };
 const rgbColor24bpp_t orange = { LED_ORANGE };
 const rgbColor24bpp_t green = { LED_GREEN };
 const rgbColor24bpp_t blue = { LED_BLUE };
+const rgbColor24bpp_t lightBlue = { LED_LIGHT_BLUE };
+const rgbColor24bpp_t limeGreen = { LED_LIME_GREEN };
 
 
 uint8_t ledGridWidth;
@@ -84,17 +89,17 @@ ledConfig_t *ledConfigs;
 
 const ledConfig_t defaultLedStripConfig[] = {
     { CALCULATE_LED_XY( 2,  2), LED_DIRECTION_SOUTH | LED_DIRECTION_EAST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
-    { CALCULATE_LED_XY( 2,  1), LED_DIRECTION_EAST | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_BATTERY },
+    { CALCULATE_LED_XY( 2,  1), LED_DIRECTION_EAST | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
     { CALCULATE_LED_XY( 2,  0), LED_DIRECTION_NORTH | LED_DIRECTION_EAST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
     { CALCULATE_LED_XY( 1,  0), LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE },
     { CALCULATE_LED_XY( 0,  0), LED_DIRECTION_NORTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
-    { CALCULATE_LED_XY( 0,  1), LED_DIRECTION_WEST | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_BATTERY },
+    { CALCULATE_LED_XY( 0,  1), LED_DIRECTION_WEST | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
     { CALCULATE_LED_XY( 0,  2), LED_DIRECTION_SOUTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
-    { CALCULATE_LED_XY( 1,  2), LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_BATTERY },
-    { CALCULATE_LED_XY( 1,  1), LED_DIRECTION_UP | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_BATTERY },
-    { CALCULATE_LED_XY( 1,  1), LED_DIRECTION_UP | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_BATTERY },
-    { CALCULATE_LED_XY( 1,  1), LED_DIRECTION_DOWN | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_BATTERY },
-    { CALCULATE_LED_XY( 1,  1), LED_DIRECTION_DOWN | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_BATTERY },
+    { CALCULATE_LED_XY( 1,  2), LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
+    { CALCULATE_LED_XY( 1,  1), LED_DIRECTION_UP | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
+    { CALCULATE_LED_XY( 1,  1), LED_DIRECTION_UP | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
+    { CALCULATE_LED_XY( 1,  1), LED_DIRECTION_DOWN | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
+    { CALCULATE_LED_XY( 1,  1), LED_DIRECTION_DOWN | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
 };
 
 
@@ -130,11 +135,11 @@ static const uint8_t directionMappings[DIRECTION_COUNT] = {
     LED_DIRECTION_DOWN
 };
 
-static const char functionCodes[] = { 'I', 'B', 'F', 'A' };
+static const char functionCodes[] = { 'I', 'W', 'F', 'A' };
 #define FUNCTION_COUNT (sizeof(functionCodes) / sizeof(functionCodes[0]))
 static const uint16_t functionMappings[FUNCTION_COUNT] = {
     LED_FUNCTION_INDICATOR,
-    LED_FUNCTION_BATTERY,
+    LED_FUNCTION_WARNING,
     LED_FUNCTION_FLIGHT_MODE,
     LED_FUNCTION_ARM_STATE
 };
@@ -310,7 +315,7 @@ void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSiz
 // timers
 uint32_t nextAnimationUpdateAt = 0;
 uint32_t nextIndicatorFlashAt = 0;
-uint32_t nextBatteryFlashAt = 0;
+uint32_t nextWarningFlashAt = 0;
 
 #define LED_STRIP_20HZ ((1000 * 1000) / 20)
 #define LED_STRIP_10HZ ((1000 * 1000) / 10)
@@ -506,23 +511,45 @@ void applyLedModeLayer(void)
     }
 }
 
-void applyLedLowBatteryLayer(uint8_t batteryFlashState)
+typedef enum {
+    WARNING_FLAG_NONE = 0,
+    WARNING_FLAG_LOW_BATTERY = (1 << 0),
+    WARNING_FLAG_FAILSAFE = (1 << 1)
+} warningFlags_e;
+
+void applyLedWarningLayer(uint8_t warningState, uint8_t warningFlags)
 {
     const ledConfig_t *ledConfig;
+    static uint8_t warningFlashCounter = 0;
+
+    if (warningState) {
+        warningFlashCounter++;
+        warningFlashCounter = warningFlashCounter % 4;
+    }
 
     uint8_t ledIndex;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
         ledConfig = &ledConfigs[ledIndex];
 
-        if (!(ledConfig->flags & LED_FUNCTION_BATTERY)) {
+        if (!(ledConfig->flags & LED_FUNCTION_WARNING)) {
             continue;
         }
 
-        if (batteryFlashState == 0) {
-            setLedColor(ledIndex, &red);
+        if (warningState == 0) {
+            if (warningFlashCounter == 0 && warningFlags & WARNING_FLAG_LOW_BATTERY) {
+                setLedColor(ledIndex, &red);
+            }
+            if (warningFlashCounter > 1 && warningFlags & WARNING_FLAG_FAILSAFE) {
+                setLedColor(ledIndex, &lightBlue);
+            }
         } else {
-            setLedColor(ledIndex, &black);
+            if (warningFlashCounter == 0 && warningFlags & WARNING_FLAG_LOW_BATTERY) {
+                setLedColor(ledIndex, &black);
+            }
+            if (warningFlashCounter > 1 && warningFlags & WARNING_FLAG_FAILSAFE) {
+                setLedColor(ledIndex, &limeGreen);
+            }
         }
     }
 }
@@ -625,15 +652,15 @@ void updateLedStrip(void)
 
     bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
     bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
-    bool batteryFlashNow = (int32_t)(now - nextBatteryFlashAt) >= 0L;
+    bool warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
 
-    if (!(batteryFlashNow || indicatorFlashNow || animationUpdateNow)) {
+    if (!(warningFlashNow || indicatorFlashNow || animationUpdateNow)) {
         return;
     }
 
     static uint8_t indicatorFlashState = 0;
-    static uint8_t batteryFlashState = 0;
-    static bool batteryWarningEnabled = false;
+    static uint8_t warningState = 0;
+    static uint8_t warningFlags;
 
     // LAYER 1
 
@@ -641,21 +668,27 @@ void updateLedStrip(void)
 
     // LAYER 2
 
-    if (batteryFlashNow) {
-        nextBatteryFlashAt = now + LED_STRIP_10HZ;
+    if (warningFlashNow) {
+        nextWarningFlashAt = now + LED_STRIP_10HZ;
 
-        if (batteryFlashState == 0) {
-            batteryFlashState = 1;
+        if (warningState == 0) {
+            warningState = 1;
 
-            batteryWarningEnabled = feature(FEATURE_VBAT) && shouldSoundBatteryAlarm();
+            warningFlags = WARNING_FLAG_NONE;
+            if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
+                warningFlags |= WARNING_FLAG_LOW_BATTERY;
+            }
+            if (failsafe->vTable->hasTimerElapsed()) {
+                warningFlags |= WARNING_FLAG_FAILSAFE;
+            }
+
         } else {
-            batteryFlashState = 0;
-
+            warningState = 0;
         }
     }
 
-    if (batteryWarningEnabled) {
-        applyLedLowBatteryLayer(batteryFlashState);
+    if (warningFlags) {
+        applyLedWarningLayer(warningState, warningFlags);
     }
 
     // LAYER 3
@@ -694,9 +727,10 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
     reevalulateLedConfig();
 }
 
-void ledStripInit(ledConfig_t *ledConfigsToUse)
+void ledStripInit(ledConfig_t *ledConfigsToUse, failsafe_t* failsafeToUse)
 {
     ledConfigs = ledConfigsToUse;
+    failsafe = failsafeToUse;
     reevalulateLedConfig();
 }
 #endif

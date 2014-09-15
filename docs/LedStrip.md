@@ -89,7 +89,7 @@ Note: It is perfectly possible to configure an LED to have all directions `NESWU
 
 `mmm` specifies the modes that should be applied an LED.  Modes are:
 
-* `B` - `B`attery warning.
+* `W` - `W`warnings.
 * `F` - `F`light mode & Orientation
 * `I` - `I`ndicator.
 * `A` - `A`rmed state.
@@ -97,10 +97,10 @@ Note: It is perfectly possible to configure an LED to have all directions `NESWU
 Example:
 
 ```
-led 0 0,15:SD:IAB
-led 1 15,0:ND:IAB
-led 2 0,0:ND:IAB
-led 3 0,15:SD:IAB
+led 0 0,15:SD:IAW
+led 1 15,0:ND:IAW
+led 2 0,0:ND:IAW
+led 3 0,15:SD:IAW
 ```
 
 to erase an led, and to mark the end of the chain, use `0,0::` as the second argument, like this:
@@ -112,9 +112,12 @@ led 4 0,0::
 
 ### Modes
 
-#### Battery Warning
+#### Warning
 
-This mode simply flashes the LED RED when the battery is low if battery monitoring is enabled.
+This mode simply uses the leds to flash when warnings occur.
+
+* Battery warning flashes the LEDs between red and off when the battery is low if battery monitoring is enabled.
+* Failsafe warning flashes the LEDs between light blue and lime green when failsafe is active.
 
 #### Flight Mode & Orientation
 
@@ -151,17 +154,17 @@ Orientation is when viewed with the front of the aircraft facing away from you a
 The default configuration is as follows
 ```
 led 0 2,2:ES:IA
-led 1 2,1:E:BF
+led 1 2,1:E:WF
 led 2 2,0:NE:IA
 led 3 1,0:N:F
 led 4 0,0:NW:IA
-led 5 0,1:W:BF
+led 5 0,1:W:WF
 led 6 0,2:SW:IA
-led 7 1,2:S:BF
-led 8 1,1:U:BF
-led 9 1,1:U:BF
-led 10 1,1:D:BF
-led 11 1,1:D:BF
+led 7 1,2:S:WF
+led 8 1,1:U:WF
+led 9 1,1:U:WF
+led 10 1,1:D:WF
+led 11 1,1:D:WF
 ```
 
 Which translates into the following positions:
@@ -189,21 +192,21 @@ This is the default so that if you don't want to place LEDs top and bottom in th
 
 ```
 15,15:SD:IA
-8,8:E:FB
-8,7:E:FB
+8,8:E:FW
+8,7:E:FW
 15,0:ND:IA
-7,7:N:FB
-8,7:N:FB
+7,7:N:FW
+8,7:N:FW
 0,0:ND:IA
-7,7:W:FB
-7,8:W:FB
+7,7:W:FW
+7,8:W:FW
 0,15:SD:IA
-7,8:S:FB
-8,8:S:FB
-7,7:D:FB
-8,7:D:FB
-7,7:U:FB
-8,7:U:FB
+7,8:S:FW
+8,8:S:FW
+7,7:D:FW
+8,7:D:FW
+7,7:U:FW
+8,7:U:FW
 ```
 
 Which translates into the following positions:
@@ -228,8 +231,8 @@ LEDs 15-16 should be placed facing up, in the middle
 ### Exmple 28 LED config
 
 ```
-9,9:S:FB
-10,10:S:FB
+9,9:S:FW
+10,10:S:FW
 11,11:S:IA
 11,11:E:IA
 10,10:E:F
@@ -240,10 +243,10 @@ LEDs 15-16 should be placed facing up, in the middle
 12,2:N:IA
 11,1:N:F
 10,0:N:F
-7,0:N:FB
-6,0:N:FB
-5,0:N:FB
-4,0:N:FB
+7,0:N:FW
+6,0:N:FW
+5,0:N:FW
+4,0:N:FW
 2,0:N:F
 1,1:N:F
 0,2:N:IA
@@ -254,8 +257,8 @@ LEDs 15-16 should be placed facing up, in the middle
 1,10:W:F
 0,11:W:IA
 0,11:S:IA
-1,10:S:FB
-2,9:S:FB
+1,10:S:FW
+2,9:S:FW
 ```
 
 ```
