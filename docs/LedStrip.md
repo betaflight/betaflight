@@ -98,7 +98,7 @@ Example:
 
 ```
 led 0 0,15:SD:IAB
-led 1 15,0:ND:IA
+led 1 15,0:ND:IAB
 led 2 0,0:ND:IAB
 led 3 0,15:SD:IAB
 ```
