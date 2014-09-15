@@ -159,8 +159,6 @@
 #undef USE_ACC_MMA8452
 #endif
 
-extern uint16_t batteryWarningVoltage;
-extern uint8_t batteryCellCount;
 extern float magneticDeclination;
 
 extern gyro_t gyro;

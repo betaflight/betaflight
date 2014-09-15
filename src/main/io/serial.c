@@ -251,6 +251,13 @@ serialPortSearchResult_t *findNextSerialPort(serialPortFunction_e function, cons
         )) {
             continue;
         }
+
+#if (defined(NAZE) || defined(OLIMEXINO)) && defined(SONAR)
+        if (!feature(FEATURE_RX_PARALLEL_PWM) && (serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2)) {
+            continue;
+        }
+#endif
+
 #endif
 
         if (functionConstraint->requiredSerialPortFeatures != SPF_NONE) {

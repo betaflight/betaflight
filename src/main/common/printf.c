@@ -139,6 +139,7 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va)
                 break;
             case '%':
                 putf(putp, ch);
+                break;
             default:
                 break;
             }

@@ -50,6 +50,7 @@
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "io/gimbal.h"
+#include "io/ledstrip.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 #include "sensors/barometer.h"
@@ -65,8 +66,6 @@
 #include "config/config_master.h"
 
 #include "build_config.h"
-
-extern rcReadRawDataPtr rcReadRawFunc;
 
 extern uint32_t previousTime;
 
@@ -90,8 +89,8 @@ void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
-void ledStripInit(void);
 void displayInit(void);
+void ledStripInit(ledConfig_t *ledConfigsToUse, failsafe_t* failsafeToUse);
 void loop(void);
 
 // FIXME bad naming - this appears to be for some new board that hasn't been made available yet.
@@ -243,7 +242,7 @@ void init(void)
 #ifdef LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
         ws2811LedStripInit();
-        ledStripInit();
+        ledStripInit(masterConfig.ledConfigs, failsafe);
     }
 #endif
 

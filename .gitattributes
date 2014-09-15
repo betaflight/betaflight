@@ -1,0 +1,13 @@
+*.md text
+*.c text
+*.h text
+*.cc text
+*.S text
+*.s text
+*.hex -text
+*.elf -text
+*.ld text
+Makefile text
+*.bat eol=crlf
+*.txt text
+

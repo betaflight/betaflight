@@ -50,6 +50,7 @@
 #include "rx/rx.h"
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
+#include "io/ledstrip.h"
 #include "io/gps.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -70,6 +71,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800
 
+#ifndef FLASH_PAGE_COUNT
 #ifdef STM32F303xC
 #define FLASH_PAGE_COUNT 128
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
@@ -84,18 +86,19 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 #define FLASH_PAGE_COUNT 128
 #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
 #endif
+#endif
 
-#ifndef FLASH_PAGE_COUNT
+#if !defined(FLASH_PAGE_COUNT) || !defined(FLASH_PAGE_SIZE)
 #error "Flash page count not defined for target."
 #endif
 
 // use the last flash pages for storage
-static uint32_t flashWriteAddress = (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG));
+#define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
 
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t *currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 76;
+static const uint8_t EEPROM_CONF_VERSION = 77;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -372,6 +375,10 @@ static void resetConf(void)
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         masterConfig.customMixer[i].throttle = 0.0f;
 
+#ifdef LED_STRIP
+    applyDefaultLedStripConfig(masterConfig.ledConfigs);
+#endif
+
     // copy first profile into remaining profile
     for (i = 1; i < 3; i++)
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
@@ -389,7 +396,7 @@ static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
 
 static bool isEEPROMContentValid(void)
 {
-    const master_t *temp = (const master_t *) flashWriteAddress;
+    const master_t *temp = (const master_t *) CONFIG_START_FLASH_ADDRESS;
     uint8_t checksum = 0;
 
     // check version number
@@ -474,7 +481,7 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RX_PPM);
     }
 
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (feature(FEATURE_RX_PARALLEL_PWM)) {
 #if defined(STM32F10X)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
@@ -523,15 +530,6 @@ void validateAndFixConfig(void)
 
 void initEEPROM(void)
 {
-#if defined(STM32F10X)
-
-#define FLASH_SIZE_REGISTER 0x1FFFF7E0
-
-    const uint32_t flashSize = *((uint32_t *)FLASH_SIZE_REGISTER) & 0xFFFF;
-
-    // calculate write address based on contents of Flash size register. Use last 2 kbytes for storage
-    flashWriteAddress = 0x08000000 + (FLASH_PAGE_SIZE * (flashSize - 2));
-#endif
 }
 
 void readEEPROM(void)
@@ -541,7 +539,7 @@ void readEEPROM(void)
         failureMode(10);
 
     // Read flash
-    memcpy(&masterConfig, (char *) flashWriteAddress, sizeof(master_t));
+    memcpy(&masterConfig, (char *) CONFIG_START_FLASH_ADDRESS, sizeof(master_t));
     // Copy current profile
     if (masterConfig.current_profile_index > 2) // sanity check
         masterConfig.current_profile_index = 0;
@@ -587,13 +585,13 @@ void writeEEPROM(void)
 #endif
         for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
             if (wordOffset % FLASH_PAGE_SIZE == 0) {
-                status = FLASH_ErasePage(flashWriteAddress + wordOffset);
+                status = FLASH_ErasePage(CONFIG_START_FLASH_ADDRESS + wordOffset);
                 if (status != FLASH_COMPLETE) {
                     break;
                 }
             }
 
-            status = FLASH_ProgramWord(flashWriteAddress + wordOffset,
+            status = FLASH_ProgramWord(CONFIG_START_FLASH_ADDRESS + wordOffset,
                     *(uint32_t *) ((char *) &masterConfig + wordOffset));
             if (status != FLASH_COMPLETE) {
                 break;
@@ -619,22 +617,6 @@ void ensureEEPROMContainsValidData(void)
 
     resetEEPROM();
 }
-/*
- * This file is part of Cleanflight.
- *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- */
 
 void resetEEPROM(void)
 {

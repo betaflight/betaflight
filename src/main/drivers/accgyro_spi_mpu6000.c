@@ -302,6 +302,7 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
             break;
         case 5:
             mpuLowPassFilter = BITS_DLPF_CFG_5HZ;
+            break;
         case 0:
             mpuLowPassFilter = BITS_DLPF_CFG_2100HZ_NOLPF;
             break;

@@ -18,6 +18,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -44,6 +45,7 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/serial.h"
+#include "io/ledstrip.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
