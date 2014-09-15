@@ -375,7 +375,9 @@ static void resetConf(void)
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         masterConfig.customMixer[i].throttle = 0.0f;
 
+#ifdef LED_STRIP
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
+#endif
 
     // copy first profile into remaining profile
     for (i = 1; i < 3; i++)

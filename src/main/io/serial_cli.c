@@ -500,6 +500,9 @@ static void cliCMix(char *cmdline)
 
 static void cliLed(char *cmdline)
 {
+#ifndef LED_STRIP
+    UNUSED(cmdline);
+#else
     int i;
     uint8_t len;
     char *ptr;
@@ -523,6 +526,7 @@ static void cliLed(char *cmdline)
             printf("Invalid led index: must be < %u\r\n", MAX_LED_STRIP_LENGTH);
         }
     }
+#endif
 }
 
 static void dumpValues(uint8_t mask)
@@ -622,9 +626,10 @@ static void cliDump(char *cmdline)
         buf[i] = '\0';
         printf("map %s\r\n", buf);
 
+#ifdef LED_STRIP
         printf("\r\n\r\n# led\r\n");
         cliLed("");
-
+#endif
         printSectionBreak();
         dumpValues(MASTER_VALUE);
     }
