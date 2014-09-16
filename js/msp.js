@@ -398,19 +398,6 @@ MSP.process_data = function(code, message_buffer, message_length) {
             break;
         case MSP_codes.MSP_RESET_CONF:
             console.log('Settings Reset');
-
-            // With new flight software settings in place, we have to re-pull
-            // latest values
-            MSP.send_message(MSP_codes.MSP_IDENT);
-            MSP.send_message(MSP_codes.MSP_STATUS);
-            MSP.send_message(MSP_codes.MSP_PID);
-            MSP.send_message(MSP_codes.MSP_RC_TUNING);
-            MSP.send_message(MSP_codes.MSP_BOXNAMES);
-            MSP.send_message(MSP_codes.MSP_BOX);
-
-            // baseflight specific
-            MSP.send_message(MSP_codes.MSP_UID);
-            MSP.send_message(MSP_codes.MSP_ACC_TRIM);
             break;
         case MSP_codes.MSP_SELECT_SETTING:
             console.log('Profile selected');
