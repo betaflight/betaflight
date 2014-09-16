@@ -164,9 +164,10 @@ TABS.initial_setup.initialize = function (callback) {
 
                 function reboot() {
                     GUI.log(chrome.i18n.getMessage('initialSetupEepromSaved'));
-                    GUI.tab_switch_cleanup();
 
-                    MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
+                    GUI.tab_switch_cleanup(function() {
+                        MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
+                    });
                 }
 
                 function reinitialize() {
