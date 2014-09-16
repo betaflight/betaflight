@@ -103,21 +103,6 @@ var ANALOG = {
 };
 
 var MISC = {
-    PowerTrigger1:      0, // intPowerTrigger1 (aka useless trash)
-    minthrottle:        0,
-    maxthrottle:        0,
-    mincommand:         0,
-    failsafe_throttle:  0,
-    plog0:              0, // plog useless shit
-    plog1:              0, // plog useless shit
-    mag_declination:    0, // not checked
-    vbatscale:          0,
-    vbatmincellvoltage: 0,
-    vbatmaxcellvoltage: 0,
-    empty:              0 // unknown
-};
-
-var MISCV2 = { // TODO temporary, will figure out a better solution in the future
     midrc:              0,
     minthrottle:        0,
     maxthrottle:        0,
