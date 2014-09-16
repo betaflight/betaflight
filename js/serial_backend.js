@@ -238,6 +238,10 @@ function lowByte(num) {
     return 0x00FF & num;
 }
 
+function specificByte(num, pos) {
+    return 0x000000FF & (num >> (8 * pos));
+}
+
 function bit_check(num, bit) {
     return ((num >> bit) % 2 != 0);
 }
