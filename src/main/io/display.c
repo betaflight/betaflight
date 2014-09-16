@@ -54,16 +54,25 @@ uint32_t nextPageAt = 0;
 char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT];
 
 typedef enum {
+    PAGE_ARMED,
     PAGE_BATTERY,
     PAGE_SENSORS
 } pageId_e;
 
 const char* pageTitles[] = {
+    "ARMED",
     "BATTERY",
     "SENSORS"
 };
 
 #define PAGE_COUNT (PAGE_SENSORS + 1)
+
+const uint8_t cyclePageIds[] = {
+    PAGE_BATTERY,
+    PAGE_SENSORS
+};
+
+#define CYCLE_PAGE_ID_COUNT (sizeof(cyclePageIds) / sizeof(cyclePageIds[0]))
 
 static const char* tickerCharacters = "|/-\\";
 #define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
@@ -71,6 +80,7 @@ static const char* tickerCharacters = "|/-\\";
 typedef struct pageState_s {
     bool pageChanging;
     pageId_e pageId;
+    uint8_t cycleIndex;
 } pageState_t;
 
 static pageState_t pageState;
@@ -131,6 +141,10 @@ void handlePageChange(void)
     showTitle();
 }
 
+void showArmedPage(void)
+{
+}
+
 void showBatteryPage(void)
 {
     tfp_sprintf(lineBuffer, "volts: %d.%d, cells: %d", vbat / 10, vbat % 10, batteryCellCount);
@@ -170,6 +184,7 @@ void showSensorsPage(void)
 void updateDisplay(void)
 {
     uint32_t now = micros();
+    static uint8_t previousArmedState = 0;
 
     bool updateNow = (int32_t)(now - nextDisplayUpdateAt) >= 0L;
     if (!updateNow) {
@@ -178,19 +193,34 @@ void updateDisplay(void)
 
     nextDisplayUpdateAt = now + DISPLAY_UPDATE_FREQUENCY;
 
-    if (ARMING_FLAG(ARMED)) {
-        return;
+    bool armedState = ARMING_FLAG(ARMED) ? true : false;
+    bool armedStateChanged = armedState != previousArmedState;
+    previousArmedState = armedState;
+
+    if (armedState) {
+        if (!armedStateChanged) {
+            return;
+        }
+        pageState.pageId = PAGE_ARMED;
+        pageState.pageChanging = true;
+    } else {
+        if (armedStateChanged) {
+            nextPageAt = now;
+            pageState.cycleIndex = CYCLE_PAGE_ID_COUNT;
+        }
+        pageState.pageChanging = (int32_t)(now - nextPageAt) >= 0L;
+        if (pageState.pageChanging) {
+            nextPageAt = now + PAGE_CYCLE_FREQUENCY;
+            pageState.cycleIndex++;
+            pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
+            pageState.pageId = cyclePageIds[pageState.cycleIndex];
+        }
     }
 
-    pageState.pageChanging = (int32_t)(now - nextPageAt) >= 0L;
-    if (pageState.pageChanging) {
-        nextPageAt = now + PAGE_CYCLE_FREQUENCY;
-        pageState.pageId++;
-        pageState.pageId = pageState.pageId % PAGE_COUNT;
 
+    if (pageState.pageChanging) {
         handlePageChange();
     }
-
 
     switch(pageState.pageId) {
         case PAGE_BATTERY:
@@ -199,9 +229,13 @@ void updateDisplay(void)
         case PAGE_SENSORS:
             showSensorsPage();
             break;
+        case PAGE_ARMED:
+            showArmedPage();
+            break;
     }
-
-    updateTicker();
+    if (!armedState) {
+        updateTicker();
+    }
 }
 
 

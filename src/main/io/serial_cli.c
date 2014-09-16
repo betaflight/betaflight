@@ -99,7 +99,7 @@ uint8_t cliMode = 0;
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
 
-// sync this with MultiType enum from mw.h
+// sync this with mutiType_e
 static const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
@@ -109,15 +109,15 @@ static const char * const mixerNames[] = {
     "CUSTOM", NULL
 };
 
-// sync this with AvailableFeatures enum from board.h
+// sync this with features_e
 static const char * const featureNames[] = {
     "RX_PPM", "VBAT", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
-    "RX_MSP", "RSSI_ADC", "LED_STRIP", NULL
+    "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", NULL
 };
 
-// sync this with AvailableSensors enum from board.h
+// sync this with sensors_e
 static const char * const sensorNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
 };

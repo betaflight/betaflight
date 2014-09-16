@@ -434,7 +434,9 @@ void executePeriodicTasks(void)
 #endif
 #ifdef DISPLAY
     case UPDATE_DISPLAY_TASK:
-        updateDisplay();
+        if (feature(FEATURE_DISPLAY)) {
+            updateDisplay();
+        }
         break;
 #endif
     }

@@ -29,7 +29,7 @@ typedef enum {
     SENSOR_SONAR = 1 << 4,
     SENSOR_GPS = 1 << 5,
     SENSOR_GPSMAG = 1 << 6,
-} AvailableSensors;
+} sensors_e;
 
 typedef enum {
     ALIGN_DEFAULT = 0,                                      // driver-provided alignment
