@@ -50,7 +50,14 @@ var MSP_codes = {
     MSP_UID:                160, // Unique device ID
     MSP_ACC_TRIM:           240, // get acc angle trim values
     MSP_SET_ACC_TRIM:       239, // set acc angle trim values
-    MSP_GPSSVINFO:          164  // get Signal Strength (only U-Blox)
+    MSP_GPSSVINFO:          164, // get Signal Strength (only U-Blox)
+
+    // Additional private MSP for baseflight configurator (yes thats us \o/)
+    MSP_RCMAP:              64, // get channel map (also returns number of channels total)
+    MSP_SET_RCMAP:          65, // set rc map, numchannels to set comes from MSP_RCMAP
+    MSP_CONFIG:             66, // baseflight-specific settings that aren't covered elsewhere
+    MSP_SET_CONFIG:         67, // baseflight-specific settings save
+    MSP_SET_REBOOT:         68  // reboot settings
 };
 
 var MSP = {
@@ -447,6 +454,17 @@ MSP.process_data = function(code, message_buffer, message_length) {
                     needle += 4;
                 }
             }
+            break;
+        // Additional private MSP for baseflight configurator
+        case MSP_codes.MSP_RCMAP:
+            break;
+        case MSP_codes.MSP_SET_RCMAP:
+            break;
+        case MSP_codes.MSP_CONFIG:
+            break;
+        case MSP_codes.MSP_SET_CONFIG:
+            break;
+        case MSP_codes.MSP_SET_REBOOT:
             break;
 
         default:
