@@ -143,23 +143,13 @@ TABS.receiver.initialize = function (callback) {
             RC_tuning.RC_RATE = parseFloat($('.tunings .rate input[name="rate"]').val());
             RC_tuning.RC_EXPO = parseFloat($('.tunings .rate input[name="expo"]').val());
 
-            var RC_tuning_buffer_out = new Array();
-            RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100, 10);
-            RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100, 10);
-            RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100, 10);
-            RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100, 10);
-            RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100, 10);
-            RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100, 10);
-            RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100, 10);
-
-            // Send over the RC_tuning changes
-            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
-
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
                 });
             }
+
+            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch('RC_tuning'), false, save_to_eeprom);
         });
 
         $('select[name="rx_refresh_rate"]').change(function () {

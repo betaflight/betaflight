@@ -187,86 +187,19 @@ function configuration_restore() {
 }
 
 function configuration_upload() {
-    // this "cloned" function contains all the upload sequences for the respective array/objects
-    // that are currently scattered in separate tabs (ergo - pid_tuning.js/initial_setup.js/etc)
-    // for current purposes, this approach works, but its not really "valid" and this approach
-    // should be reworked in the future, so the same code won't be cloned over !!!
-
-    // PID section
-    var PID_buffer_out = new Array(),
-        PID_buffer_needle = 0;
-
-    for (var i = 0; i < PIDs.length; i++) {
-        switch (i) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 8:
-            case 9:
-                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 10);
-                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 1000);
-                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2]);
-                break;
-            case 4:
-                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 100);
-                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 100);
-                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2]);
-                break;
-            case 5:
-            case 6:
-                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 10);
-                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 100);
-                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2] * 1000);
-                break;
-        }
-
-        PID_buffer_needle += 3;
-    }
-
     // Send over the PID changes
-    MSP.send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, false, rc_tuning);
+    MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch('PIDs'), false, rc_tuning);
 
-    function rc_tuning() {
-        // RC Tuning section
-        var RC_tuning_buffer_out = new Array();
-        RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
-        RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100);
-        RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100);
-        RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100);
-        RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100);
-        RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100);
-        RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
-
-        // Send over the RC_tuning changes
-        MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, aux);
+    function rc_tuning() { // Send over the RC_tuning changes
+        MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch('RC_tuning'), false, aux);
     }
 
-    function aux() {
-        // AUX section
-        var AUX_val_buffer_out = new Array(),
-            needle = 0;
-
-        for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-            AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
-            AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
-        }
-
-        // Send over the AUX changes
-        MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, trim);
+    function aux() { // Send over the AUX changes
+        MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch('AUX_CONFIG_values'), false, trim);
     }
 
-    // Trim section
-    function trim() {
-        var buffer_out = new Array();
-        buffer_out[0] = lowByte(CONFIG.accelerometerTrims[0]);
-        buffer_out[1] = highByte(CONFIG.accelerometerTrims[0]);
-        buffer_out[2] = lowByte(CONFIG.accelerometerTrims[1]);
-        buffer_out[3] = highByte(CONFIG.accelerometerTrims[1]);
-
-        // Send over the new trims
-        MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out, false, misc);
+    function trim() { // Send over the new trims
+        MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch('accelerometerTrims'), false, misc);
     }
 
     function misc() {

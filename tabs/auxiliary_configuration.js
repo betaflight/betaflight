@@ -64,8 +64,9 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         // UI Hooks
         $('a.update').click(function () {
             // catch the input changes
-            var main_needle = 0;
-            var needle = 0;
+            var main_needle = 0,
+                needle = 0;
+
             $('.boxes input').each(function () {
                 if ($(this).is(':checked')) {
                     AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], needle);
@@ -77,26 +78,17 @@ TABS.auxiliary_configuration.initialize = function (callback) {
 
                 if (needle >= (RC.active_channels - 4) * 3) { // 1 aux * 3 checkboxes, 4 AUX = 12 bits per line
                     main_needle++;
-
                     needle = 0;
                 }
             });
-
-            // send over data
-            // current code will only handle 4 AUX as the variable length is 16bits
-            var AUX_val_buffer_out = [];
-            for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                AUX_val_buffer_out.push(lowByte(AUX_CONFIG_values[i]));
-                AUX_val_buffer_out.push(highByte(AUX_CONFIG_values[i]));
-            }
-
-            MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);
 
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('auxiliaryEepromSaved'));
                 });
             }
+
+            MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch('AUX_CONFIG_values'), false, save_to_eeprom);
         });
 
         // val = channel value

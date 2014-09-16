@@ -577,6 +577,55 @@ MSP.crunch = function (name) {
             buffer.push(specificByte(BF_CONFIG.board_align_yaw, 0));
             buffer.push(specificByte(BF_CONFIG.board_align_yaw, 1));
             break;
+        case 'PIDs':
+            for (var i = 0; i < PIDs.length; i++) {
+                switch (i) {
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 7:
+                    case 8:
+                    case 9:
+                        buffer.push(parseInt(PIDs[i][0] * 10));
+                        buffer.push(parseInt(PIDs[i][1] * 1000));
+                        buffer.push(parseInt(PIDs[i][2]));
+                        break;
+                    case 4:
+                        buffer.push(parseInt(PIDs[i][0] * 100));
+                        buffer.push(parseInt(PIDs[i][1] * 100));
+                        buffer.push(parseInt(PIDs[i][2]));
+                        break;
+                    case 5:
+                    case 6:
+                        buffer.push(parseInt(PIDs[i][0] * 10));
+                        buffer.push(parseInt(PIDs[i][1] * 100));
+                        buffer.push(parseInt(PIDs[i][2] * 1000));
+                        break;
+                }
+            }
+            break;
+        case 'RC_tuning':
+            buffer.push(parseInt(RC_tuning.RC_RATE * 100));
+            buffer.push(parseInt(RC_tuning.RC_EXPO * 100));
+            buffer.push(parseInt(RC_tuning.roll_pitch_rate * 100));
+            buffer.push(parseInt(RC_tuning.yaw_rate * 100));
+            buffer.push(parseInt(RC_tuning.dynamic_THR_PID * 100));
+            buffer.push(parseInt(RC_tuning.throttle_MID * 100));
+            buffer.push(parseInt(RC_tuning.throttle_EXPO * 100));
+            break;
+        case 'AUX_CONFIG_values':
+            for (var i = 0; i < AUX_CONFIG_values.length; i++) {
+                buffer.push(lowByte(AUX_CONFIG_values[i]));
+                buffer.push(highByte(AUX_CONFIG_values[i]));
+            }
+            break;
+        case 'accelerometerTrims':
+            buffer.push(lowByte(CONFIG.accelerometerTrims[0]));
+            buffer.push(highByte(CONFIG.accelerometerTrims[0]));
+            buffer.push(lowByte(CONFIG.accelerometerTrims[1]));
+            buffer.push(highByte(CONFIG.accelerometerTrims[1]));
+            break;
 
         default:
             return false;
