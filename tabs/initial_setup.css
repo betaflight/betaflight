@@ -1,3 +1,14 @@
+/* temporary styles that are used during compatibility period */
+.tab-initial_setup .CAP_BASEFLIGHT_CONFIG,
+.tab-initial_setup .COMPATIBILITY {
+    display: none;
+    height: calc(100% - 142px);
+}
+.tab-initial_setup .CAP_BASEFLIGHT_CONFIG #interactive_block {
+    width: calc(100% - 411px);
+}
+/* temporary styles end*/
+
 .tab-initial_setup {
     height: 100%;
 }
@@ -48,7 +59,7 @@
     float: left;
     position: relative;
 
-    height: calc(100% - 142px);
+    height: 100%;
     width: calc(100% - 522px);
 
     border: 1px solid silver;
@@ -119,6 +130,55 @@
     .tab-initial_setup .block_wrapper {
         font-size: 0;
     }
+
+.tab-initial_setup .block {
+    float: left;
+    display: block;
+
+    margin-left: 10px;
+
+    border: 1px solid silver;
+}
+.tab-initial_setup .block .head {
+    display: block;
+
+    text-align: center;
+    line-height: 20px;
+    font-weight: bold;
+
+    border-bottom: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-initial_setup .mixer {
+    width: 200px;
+}
+.tab-initial_setup .mixer .preview {
+    display: block;
+
+    width: 200px;
+    height: 140px;
+
+    margin: 5px 0 5px 0;
+}
+.tab-initial_setup .mixer select {
+    display: block;
+
+    padding-left: 5px;
+
+    width: 100%;
+    height: 20px;
+    line-height: 20px;
+
+    font-weight: bold;
+
+    border-top: 1px solid silver;
+}
+.tab-initial_setup .block .info {
+    width: 200px;
+}
+
+
+
     .tab-initial_setup .battery,
     .tab-initial_setup .throttle,
     .tab-initial_setup .acc-trim,
