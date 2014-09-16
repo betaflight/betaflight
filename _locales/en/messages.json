@@ -31,6 +31,13 @@
     "autoConnectDisabled": {
         "message": "Auto-Connect: Disabled - User needs to select the correct serial port and click \"Connect\" button on its own"
     },
+    "deviceRebooting": {
+        "message": "Device - <span style=\"color: red\">Rebooting</span>"
+    },
+    "deviceReady": {
+        "message": "Device - <span style=\"color: green\">Ready</span>"
+    },
+
 
     "tab1": {
         "message": "Initial Setup"
@@ -183,6 +190,9 @@
     },
     "initialSetupButtonResetZaxisValue": {
         "message": "Reset Z axis, offset: $1 deg"
+    },
+    "initialSetupMixerHead": {
+        "message": "Mixer Type"
     },
     "initialSetupThrottleHead": {
         "message": "Throttle Settings"
