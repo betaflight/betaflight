@@ -23,11 +23,23 @@ var CONFIG = {
     accelerometerTrims: [0, 0]
 };
 
+var BF_CONFIG = {
+    mixerConfiguration: 0,
+    features:           0,
+    serialrx_type:      0,
+    board_align_roll:   0,
+    board_align_pitch:  0,
+    board_align_yaw:    0
+    // TBD
+};
+
 var PID_names = [];
 var PIDs = new Array(10);
 for (var i = 0; i < 10; i++) {
     PIDs[i] = new Array(3);
 }
+
+var RC_MAP = [];
 
 // defaults
 // roll, pitch, yaw, throttle, aux 1, ... aux n
@@ -103,4 +115,22 @@ var MISC = {
     vbatmincellvoltage: 0,
     vbatmaxcellvoltage: 0,
     empty:              0 // unknown
+};
+
+var MISCV2 = { // TODO temporary, will figure out a better solution in the future
+    midrc:              0,
+    minthrottle:        0,
+    maxthrottle:        0,
+    mincommand:         0,
+    failsafe_throttle:  0,
+    gps_type:           0,
+    gps_baudrate:       0,
+    gps_ubx_sbas:       0,
+    placeholder1:       0,
+    placeholder2:       0,
+    mag_declination:    0, // not checked
+    vbatscale:          0,
+    vbatmincellvoltage: 0,
+    vbatmaxcellvoltage: 0,
+    placeholder3:       0
 };

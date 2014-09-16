@@ -457,14 +457,29 @@ MSP.process_data = function(code, message_buffer, message_length) {
             break;
         // Additional private MSP for baseflight configurator
         case MSP_codes.MSP_RCMAP:
+            var channelLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+
+            RC_MAP = []; // empty the array as new data is coming in
+
+            for (var i = 0; i < data.byteLength; i++) {
+                RC_MAP.push(channelLetters[data.getUint8(i)]);
+            }
             break;
         case MSP_codes.MSP_SET_RCMAP:
+            console.log('RCMAP Updated');
             break;
         case MSP_codes.MSP_CONFIG:
+            BF_CONFIG.mixerConfiguration = data.getUint8(0);
+            BF_CONFIG.features = data.getUint32(1, 1);
+            BF_CONFIG.serialrx_type = data.getUint8(5);
+            BF_CONFIG.board_align_roll = data.getInt16(6, 1);
+            BF_CONFIG.board_align_pitch = data.getInt16(8, 1);
+            BF_CONFIG.board_align_yaw = data.getInt16(10, 1);
             break;
         case MSP_codes.MSP_SET_CONFIG:
             break;
         case MSP_codes.MSP_SET_REBOOT:
+            console.log('Reboot request accepted');
             break;
 
         default:
