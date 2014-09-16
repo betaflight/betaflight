@@ -2,9 +2,23 @@
 
 Cleanflight supports displays to provide information to you about your aircraft and cleanflight state.
 
+When the aircraft is armed the display does not update so flight is not affected.  When disarmed the display
+cycles between various pages.
+
+There is currently no way to change the information on the pages, the list of pages or the time between pages - Code submissions via pull-requests are welcomed!
+
 ##Supported Hardware
 
 At this time no other displays are supported other than the SSD1306 / UG-2864HSWEG01.
+
+## Configuration
+
+From the CLI enable the `DISPLAY` feature
+
+```
+feature DISPLAY
+```
+
 
 ### SSD1306 OLED displays
 
@@ -52,5 +66,4 @@ There are diagrams in the Wiring directory.
 
 Connect +5v, Ground, I2C SDA and I2C SCL from the flight controller to the display.
 
-
-
+On Naze32 rev 5 boards the SDA and SCL pins are underneath the board.
