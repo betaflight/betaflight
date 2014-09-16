@@ -570,4 +570,30 @@ MSP.send_message = function(code, data, callback_sent, callback_msp) {
     });
 
     return true;
-}
+};
+
+MSP.crunch = function (name) {
+    var buffer = [];
+
+    switch (name) {
+        case 'BF_CONFIG':
+            buffer.push(BF_CONFIG.mixerConfiguration);
+            buffer.push(specificByte(BF_CONFIG.features, 0));
+            buffer.push(specificByte(BF_CONFIG.features, 1));
+            buffer.push(specificByte(BF_CONFIG.features, 2));
+            buffer.push(specificByte(BF_CONFIG.features, 3));
+            buffer.push(BF_CONFIG.serialrx_type);
+            buffer.push(specificByte(BF_CONFIG.board_align_roll, 0));
+            buffer.push(specificByte(BF_CONFIG.board_align_roll, 1));
+            buffer.push(specificByte(BF_CONFIG.board_align_pitch, 0));
+            buffer.push(specificByte(BF_CONFIG.board_align_pitch, 1));
+            buffer.push(specificByte(BF_CONFIG.board_align_yaw, 0));
+            buffer.push(specificByte(BF_CONFIG.board_align_yaw, 1));
+            break;
+
+        default:
+            return false;
+    }
+
+    return buffer;
+};
