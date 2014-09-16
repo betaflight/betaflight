@@ -476,7 +476,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.s
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(ASFLAGS) $< 
-$(OBJECT_DIR)/$(TARGET)/%.o): %.S
+$(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(ASFLAGS) $< 
