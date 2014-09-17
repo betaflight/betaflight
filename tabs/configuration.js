@@ -94,21 +94,21 @@ TABS.configuration.initialize = function (callback) {
 
         // generate features
         var featureNames = [
-            'PPM - Disable PWM input and enable PPM input',
-            'VBAT',
-            'INFLIGHT_ACC_CAL',
-            'SERIALRX',
-            'MOTOR_STOP',
-            'SERVO_TILT',
-            'SOFTSERIAL',
-            'LED_RING',
-            'GPS',
-            'FAILSAFE',
-            'SONAR',
-            'TELEMETRY',
-            'POWERMETER',
-            'VARIO',
-            '3D'
+            'Enable PPM input (and disable PWM input)',
+            'Enable Battery voltage monitoring',
+            'Enable in-flight level calibration',
+            'Enable Serial-based receiver (SPEKSAT, SBUS, SUMD)',
+            'Don\'t spin the motors when armed',
+            'Enable servo gimbal',
+            'Enable 3rd serial port',
+            'Enable LED ring support',
+            'Enable GPS (PPM or 3rd serial port required)',
+            'Enable failsafe settings on PPM/PWM signal loss',
+            'Enable sonar',
+            'Enable FrSky- compatible telemetry output',
+            'Enable battery current monitoring',
+            'Enable VARIO',
+            'Enable 3D mode (for use with reversible ESCs)'
         ];
 
         var features_e = $('.features');
