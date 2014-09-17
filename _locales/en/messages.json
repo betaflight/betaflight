@@ -39,34 +39,37 @@
     },
 
 
-    "tab1": {
-        "message": "Initial Setup"
+    "tabSetup": {
+        "message": "Setup"
     },
-    "tab2": {
+    "tabConfiguration": {
+        "message": "Configuration"
+    },
+    "tabPidTuning": {
         "message": "PID Tuning"
     },
-    "tab3": {
+    "tabReceiver": {
         "message": "Receiver"
     },
-    "tab4": {
+    "tabModeSelection": {
         "message": "Mode Selection"
     },
-    "tab5": {
+    "tabServos": {
         "message": "Servos"
     },
-    "tab6": {
+    "tabGPS": {
         "message": "GPS"
     },
-    "tab7": {
+    "tabMotorTesting": {
         "message": "Motor Testing"
     },
-    "tab8": {
+    "tabRawSensorData": {
         "message": "Raw Sensor Data"
     },
-    "tab9": {
+    "tabCLI": {
         "message": "CLI"
     },
-    "tab10": {
+    "tabLogging": {
         "message": "Logging"
     },
 

@@ -8,7 +8,7 @@ TABS.initial_setup.initialize = function (callback) {
     var self = this;
     GUI.active_tab_ref = this;
     GUI.active_tab = 'initial_setup';
-    googleAnalytics.sendAppView('Initial Setup');
+    googleAnalytics.sendAppView('Setup');
 
     function load_ident() {
         MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);

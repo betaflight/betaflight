@@ -88,6 +88,9 @@ $(document).ready(function () {
                     case 'tab_initial_setup':
                         TABS.initial_setup.initialize(content_ready);
                         break;
+                    case 'tab_configuration':
+                        TABS.configuration.initialize(content_ready);
+                        break;
                     case 'tab_pid_tuning':
                         TABS.pid_tuning.initialize(content_ready);
                         break;
