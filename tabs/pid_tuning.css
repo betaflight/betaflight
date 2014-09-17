@@ -28,11 +28,10 @@
     .tab-pid_tuning table input {
         display: block;
 
-        width: calc(100% - 10px);
+        width: 100%;
         height: 20px;
         line-height: 20px;
 
-        padding: 0 5px 0 5px;
         text-align: right;
     }
     .tab-pid_tuning .profile {
@@ -55,12 +54,10 @@
         .tab-pid_tuning .profile input {
             display: block;
 
-            width: calc(100% - 10px);
+            width: 100%;
             height: 20px;
 
             line-height: 20px;
-
-            padding: 0 5px 0 5px;
             text-align: right;
         }
     .tab-pid_tuning .pid_tuning {

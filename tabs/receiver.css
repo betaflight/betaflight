@@ -95,11 +95,10 @@
         background-color: #ececec;
     }
     .tab-receiver .tunings table input {
-        width: 116px;
+        width: 100%;
         height: 20px;
-        line-height: 20px;
 
-        padding: 0 5px 0 5px;
+        line-height: 20px;
         text-align: right;
     }
     .tab-receiver .curves {

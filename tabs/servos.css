@@ -55,10 +55,8 @@
     .tab-servos table input[type="number"] {
         display: block;
 
-        width: calc(100% - 5px);
+        width: 100%;
         height: 20px;
-
-        padding-right: 5px;
 
         line-height: 20px;
 
