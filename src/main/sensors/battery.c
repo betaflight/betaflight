@@ -112,5 +112,5 @@ void updateCurrentMeter(int32_t lastUpdateAt)
 
 uint32_t calculateBatteryPercentage(void)
 {
-    return ((uint32_t)(vbat) * 100) / (batteryConfig->vbatmaxcellvoltage * batteryCellCount);
+    return (((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount);
 }
