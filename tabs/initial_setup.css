@@ -41,6 +41,12 @@
             cursor: default;
             background-color: #c1c1c1;
         }
+        .tab-initial_setup .section a.disabled {
+            background-color: #c1c1c1;
+        }
+        .tab-initial_setup .section a.disabled:hover {
+            cursor: default;
+        }
             .tab-initial_setup .section a.backup {
                 width: 80px;
                 margin-right: 10px;

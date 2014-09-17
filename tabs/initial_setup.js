@@ -225,15 +225,6 @@ TABS.initial_setup.initialize = function (callback) {
                 CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
                 CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
 
-                var buffer_out = new Array();
-                buffer_out[0] = lowByte(CONFIG.accelerometerTrims[0]);
-                buffer_out[1] = highByte(CONFIG.accelerometerTrims[0]);
-                buffer_out[2] = lowByte(CONFIG.accelerometerTrims[1]);
-                buffer_out[3] = highByte(CONFIG.accelerometerTrims[1]);
-
-                // Send over the new trims
-                MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out);
-
                 MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
                 MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
                 MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
@@ -245,40 +236,23 @@ TABS.initial_setup.initialize = function (callback) {
 
                 MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val()) * 10;
 
-                // we also have to fill the unsupported bytes
-                var buffer_out = new Array();
-                buffer_out[0] = 0; // powerfailmeter
-                buffer_out[1] = 0;
-                buffer_out[2] = lowByte(MISC.minthrottle);
-                buffer_out[3] = highByte(MISC.minthrottle);
-                buffer_out[4] = lowByte(MISC.maxthrottle);
-                buffer_out[5] = highByte(MISC.maxthrottle);
-                buffer_out[6] = lowByte(MISC.mincommand);
-                buffer_out[7] = highByte(MISC.mincommand);
-                buffer_out[8] = lowByte(MISC.failsafe_throttle);
-                buffer_out[9] = highByte(MISC.failsafe_throttle);
-                buffer_out[10] = 0;
-                buffer_out[11] = 0;
-                buffer_out[12] = 0;
-                buffer_out[13] = 0;
-                buffer_out[14] = 0;
-                buffer_out[15] = 0;
-                buffer_out[16] = lowByte(MISC.mag_declination);
-                buffer_out[17] = highByte(MISC.mag_declination);
-                buffer_out[18] = MISC.vbatscale;
-                buffer_out[19] = MISC.vbatmincellvoltage;
-                buffer_out[20] = MISC.vbatmaxcellvoltage;
-                buffer_out[21] = 0; // vbatlevel_crit (unused)
-
-                // Send over new misc
-                MSP.send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, save_to_eeprom);
-
                 function save_to_eeprom() {
                     MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                         GUI.log(chrome.i18n.getMessage('initialSetupEepromSaved'));
                     });
                 }
+
+                // Send over the new trims
+                MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM));
+
+                // Send over new misc
+                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_to_eeprom);
             });
+        }
+
+        // check if we have magnetometer
+        if (!bit_check(CONFIG.activeSensors, 2)) {
+            $('a.calibrateMag').addClass('disabled');
         }
 
         // UI Hooks
@@ -308,7 +282,7 @@ TABS.initial_setup.initialize = function (callback) {
         $('a.calibrateMag').click(function () {
             var self = $(this);
 
-            if (!self.hasClass('calibrating')) {
+            if (!self.hasClass('calibrating') && !self.hasClass('disabled')) {
                 self.addClass('calibrating');
 
                 MSP.send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function () {
