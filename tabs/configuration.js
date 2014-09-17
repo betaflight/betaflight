@@ -119,6 +119,69 @@ TABS.configuration.initialize = function (callback) {
             features_e.append(element);
         }
 
+        // generate GPS
+        var gpsTypes = [
+            'NMEA',
+            'UBLOX',
+            'MTK_NMEA',
+            'MTK_BINARY',
+            'MAG_BINARY'
+        ];
+
+        var gpsBauds = [
+            '115200',
+            '57600',
+            '38400',
+            '19200',
+            '9600'
+        ];
+
+        var gpsSbas = [
+            'Auto-detect',
+            'European EGNOS',
+            'North American WAAS',
+            'Japanese MSAS',
+            'Indian GAGAN'
+        ];
+
+        var gps_type_e = $('select.gps_type');
+        for (var i = 0; i < gpsTypes.length; i++) {
+            gps_type_e.append('<option value="' + i + '">' + gpsTypes[i] + '</option>');
+        }
+
+        gps_type_e.change(function () {
+            var val = parseInt($(this).val());
+
+            MISC.gps_type = val;
+        });
+
+        var gps_baudrate_e = $('select.gps_baudrate');
+        for (var i = 0; i < gpsBauds.length; i++) {
+            gps_baudrate_e.append('<option value="' + i + '">' + gpsBauds[i] + '</option>');
+        }
+
+        gps_baudrate_e.change(function () {
+            var val = parseInt($(this).val());
+
+            MISC.gps_baudrate = val;
+        });
+
+        var gps_ubx_sbas_e = $('select.gps_ubx_sbas');
+        for (var i = 0; i < gpsSbas.length; i++) {
+            gps_ubx_sbas_e.append('<option value="' + i + '">' + gpsSbas[i] + '</option>');
+        }
+
+        gps_ubx_sbas_e.change(function () {
+            var val = parseInt($(this).val());
+
+            MISC.gps_ubx_sbas = val;
+        });
+
+        // select current gps configuration
+        gps_type_e.val(MISC.gps_type);
+        gps_baudrate_e.val(MISC.gps_baudrate);
+        gps_ubx_sbas_e.val(MISC.gps_ubx_sbas);
+
         // generate serial RX
         var serialRXtypes = [
             'SPEKTRUM1024',
@@ -129,10 +192,10 @@ TABS.configuration.initialize = function (callback) {
 
         var serialRX_e = $('select.serialRX');
         for (var i = 0; i < serialRXtypes.length; i++) {
-            serialRX_e.append('<option value="' + (i) + '">' + serialRXtypes[i] + '</option>');
+            serialRX_e.append('<option value="' + i + '">' + serialRXtypes[i] + '</option>');
         }
 
-        serialRX_e.change(function() {
+        serialRX_e.change(function () {
             var val = parseInt($(this).val());
 
             BF_CONFIG.serialrx_type = val;

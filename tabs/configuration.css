@@ -73,6 +73,22 @@
     margin-left: 10px;
     line-height: 20px;
 }
+.tab-configuration .gps .line {
+    clear: left;
+}
+.tab-configuration .gps select {
+    float: left;
+
+    width: 100px;
+    height: 20px;
+
+    margin: 0 10px 5px 0;
+
+    border: 1px solid silver;
+}
+.tab-configuration .gps span {
+    line-height: 20px;
+}
 .tab-configuration .serialRX {
     width: 125px;
 

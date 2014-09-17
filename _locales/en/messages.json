@@ -354,6 +354,15 @@
     "configurationGPS": {
         "message": "GPS"
     },
+    "configurationGPStype": {
+        "message": "Type"
+    },
+    "configurationGPSbaudrate": {
+        "message": "Baudrate"
+    },
+    "configurationGPSubxSbas": {
+        "message": "Ground Assistance Type"
+    },
     "configurationSerialRX": {
         "message": "Serial Receiver"
     },
