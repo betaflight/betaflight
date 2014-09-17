@@ -125,8 +125,8 @@ TABS.configuration.initialize = function (callback) {
         $('input[name="board_align_yaw"]').val(BF_CONFIG.board_align_yaw);
 
         // fill accel trims
-        $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
         $('input[name="roll"]').val(CONFIG.accelerometerTrims[1]);
+        $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
 
         // fill magnetometer
         $('input[name="mag_declination"]').val(MISC.mag_declination / 10);
@@ -162,8 +162,8 @@ TABS.configuration.initialize = function (callback) {
             BF_CONFIG.board_align_pitch = parseInt($('input[name="board_align_pitch"]').val());
             BF_CONFIG.board_align_yaw = parseInt($('input[name="board_align_yaw"]').val());
 
-            CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
             CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
+            CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
             MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val()) * 10;
 
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());

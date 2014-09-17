@@ -71,6 +71,7 @@
 }
 .tab-configuration .number span {
     margin-left: 10px;
+    line-height: 20px;
 }
 .tab-configuration .buttons {
     position: fixed;

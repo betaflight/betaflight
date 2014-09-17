@@ -303,8 +303,26 @@
     "configurationBoardAlignment": {
         "message": "Board Alignment"
     },
+    "configurationBoardAlignmentRoll": {
+        "message": "Roll Adjustment [deg]"
+    },
+    "configurationBoardAlignmentPitch": {
+        "message": "Pitch Adjustment [deg]"
+    },
+    "configurationBoardAlignmentYaw": {
+        "message": "Yaw Adjustment [deg]"
+    },
     "configurationAccelTrimMagDec": {
         "message": "Accelerometer & Magnetometer"
+    },
+    "configurationAccelTrimRoll": {
+        "message": "Accelerometer Roll Trim"
+    },
+    "configurationAccelTrimPitch": {
+        "message": "Accelerometer Pitch Trim"
+    },
+    "configurationMagDeclination": {
+        "message": "Magnetometer Declination [deg]"
     },
     "configurationThrottle": {
         "message": "Throttle"
