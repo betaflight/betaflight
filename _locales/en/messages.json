@@ -300,6 +300,12 @@
     "configurationFeatures": {
         "message": "Features"
     },
+    "configurationBoardAlignment": {
+        "message": "Board Alignment"
+    },
+    "configurationAccelTrimMagDec": {
+        "message": "Accelerometer & Magnetometer"
+    },
     "configurationThrottle": {
         "message": "Throttle"
     },

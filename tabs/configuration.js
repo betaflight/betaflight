@@ -119,13 +119,25 @@ TABS.configuration.initialize = function (callback) {
             features_e.append(element);
         }
 
-        // fill throttle data
+        // fill board alignment
+        $('input[name="board_align_roll"]').val(BF_CONFIG.board_align_roll);
+        $('input[name="board_align_pitch"]').val(BF_CONFIG.board_align_pitch);
+        $('input[name="board_align_yaw"]').val(BF_CONFIG.board_align_yaw);
+
+        // fill accel trims
+        $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
+        $('input[name="roll"]').val(CONFIG.accelerometerTrims[1]);
+
+        // fill magnetometer
+        $('input[name="mag_declination"]').val(MISC.mag_declination / 10);
+
+        // fill throttle
         $('input[name="minthrottle"]').val(MISC.minthrottle);
         $('input[name="maxthrottle"]').val(MISC.maxthrottle);
         $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
         $('input[name="mincommand"]').val(MISC.mincommand);
 
-        // fill battery data
+        // fill battery
         $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
         $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
         $('input[name="voltagescale"]').val(MISC.vbatscale);
@@ -146,14 +158,22 @@ TABS.configuration.initialize = function (callback) {
 
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound
-            MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
-            MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
-            MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
+            BF_CONFIG.board_align_roll = parseInt($('input[name="board_align_roll"]').val());
+            BF_CONFIG.board_align_pitch = parseInt($('input[name="board_align_pitch"]').val());
+            BF_CONFIG.board_align_yaw = parseInt($('input[name="board_align_yaw"]').val());
+
+            CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
+            CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
+            MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val()) * 10;
 
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
             MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
             MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
             MISC.mincommand = parseInt($('input[name="mincommand"]').val());
+
+            MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
+            MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
+            MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
 
             function save_misc() {
                 MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_acc_trim);
