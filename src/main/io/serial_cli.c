@@ -1189,14 +1189,16 @@ void cliProcess(void)
             cliPrint("\r\n");
             cliBuffer[bufferIndex] = 0; // null terminate
 
-            target.name = cliBuffer;
-            target.param = NULL;
+            if (cliBuffer[0] != '#') {
+                target.name = cliBuffer;
+                target.param = NULL;
 
-            cmd = bsearch(&target, cmdTable, CMD_COUNT, sizeof cmdTable[0], cliCompare);
-            if (cmd)
-                cmd->func(cliBuffer + strlen(cmd->name) + 1);
-            else
-                cliPrint("Unknown command, try 'help'");
+                cmd = bsearch(&target, cmdTable, CMD_COUNT, sizeof cmdTable[0], cliCompare);
+                if (cmd)
+                    cmd->func(cliBuffer + strlen(cmd->name) + 1);
+                else
+                    cliPrint("Unknown command, try 'help'");
+            }
 
             memset(cliBuffer, 0, sizeof(cliBuffer));
             bufferIndex = 0;
@@ -1204,6 +1206,7 @@ void cliProcess(void)
             // 'exit' will reset this flag, so we don't need to print prompt again
             if (!cliMode)
                 return;
+
             cliPrompt();
         } else if (c == 127) {
             // backspace
