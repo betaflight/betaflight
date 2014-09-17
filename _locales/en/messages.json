@@ -342,8 +342,8 @@
     "configurationThrottleMinimumCommand": {
         "message": "Minimum Command"
     },
-    "configurationBattery": {
-        "message": "Battery"
+    "configurationBatteryCurrent": {
+        "message": "Battery & Current"
     },
     "configurationBatteryMinimum": {
         "message": "Minimum Cell Voltage"
