@@ -218,6 +218,7 @@ TABS.configuration.initialize = function (callback) {
 
         // fill throttle
         $('input[name="minthrottle"]').val(MISC.minthrottle);
+        $('input[name="midthrottle"]').val(MISC.midrc);
         $('input[name="maxthrottle"]').val(MISC.maxthrottle);
         $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
         $('input[name="mincommand"]').val(MISC.mincommand);
@@ -252,6 +253,7 @@ TABS.configuration.initialize = function (callback) {
             MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val()) * 10;
 
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
+            MISC.midrc = parseInt($('input[name="midthrottle"]').val());
             MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
             MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
             MISC.mincommand = parseInt($('input[name="mincommand"]').val());

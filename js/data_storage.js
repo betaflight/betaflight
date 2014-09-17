@@ -24,12 +24,13 @@ var CONFIG = {
 };
 
 var BF_CONFIG = {
-    mixerConfiguration: 0,
-    features:           0,
-    serialrx_type:      0,
-    board_align_roll:   0,
-    board_align_pitch:  0,
-    board_align_yaw:    0
+    mixerConfiguration:     0,
+    features:               0,
+    serialrx_type:          0,
+    board_align_roll:       0,
+    board_align_pitch:      0,
+    board_align_yaw:        0,
+    multiwiicurrentoutput:  0
     // TBD
 };
 

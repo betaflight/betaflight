@@ -330,6 +330,9 @@
     "configurationThrottleMinimum": {
         "message": "Minimum Throttle"
     },
+    "configurationThrottleMid": {
+        "message": "Middle Throttle [RC inputs center value]"
+    },
     "configurationThrottleMaximum": {
         "message": "Maximum Throttle"
     },
