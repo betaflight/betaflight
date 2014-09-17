@@ -47,6 +47,27 @@ TABS.configuration.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
+        // index references
+        var featureNames = [
+            'PPM',
+            'VBAT',
+            'INFLIGHT_ACC_CAL',
+            'SERIALRX',
+            'MOTOR_STOP',
+            'SERVO_TILT',
+            'SOFTSERIAL',
+            'LED_RING',
+            'GPS',
+            'FAILSAFE',
+            'SONAR',
+            'TELEMETRY',
+            'POWERMETER',
+            'VARIO',
+            '3D'
+        ];
+
+        var RCMAPlLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+
         console.log('all ready');
 
         if (callback) callback();

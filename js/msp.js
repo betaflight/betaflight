@@ -447,12 +447,10 @@ MSP.process_data = function(code, message_buffer, message_length) {
             break;
         // Additional private MSP for baseflight configurator
         case MSP_codes.MSP_RCMAP:
-            var channelLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
-
             RC_MAP = []; // empty the array as new data is coming in
 
             for (var i = 0; i < data.byteLength; i++) {
-                RC_MAP.push(channelLetters[data.getUint8(i)]);
+                RC_MAP.push(data.getUint8(i));
             }
             break;
         case MSP_codes.MSP_SET_RCMAP:
