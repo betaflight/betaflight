@@ -300,8 +300,11 @@
     "configurationFeatures": {
         "message": "Features"
     },
-    "configurationThrottleAndRC": {
-        "message": "Throttle & RC"
+    "configurationThrottle": {
+        "message": "Throttle"
+    },
+    "configurationBattery": {
+        "message": "Battery"
     },
     "configurationEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"

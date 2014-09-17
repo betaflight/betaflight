@@ -22,17 +22,8 @@ a:hover {
     text-decoration: none;
 }
 input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-
-    display: block;
     opacity: 1; /* required for chromium 33+ beta */
-
-    width: 15px;
-
-    background-image: url('../images/arrows.png');
-    background-repeat: no-repeat;
-
-    border-left: 1px solid silver;
+    margin-left: 5px;
 }
 .clear-both {
     clear: both;

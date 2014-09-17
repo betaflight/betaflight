@@ -1,17 +1,71 @@
 <div class="tab-configuration">
-    <div class="groupTitle" i18n="configurationMixer"></div>
-    <select class="mixerList" size="6">
-        <!-- mixer list generated here -->
-    </select>
-    <div class="mixerPreview">
-        <img src="./images/motor_order/custom.svg" />
+    <div class="leftWrapper">
+        <div class="groupTitle" i18n="configurationMixer"></div>
+        <select class="mixerList" size="10">
+            <!-- mixer list generated here -->
+        </select>
+        <div class="mixerPreview">
+            <img src="./images/motor_order/custom.svg" />
+        </div>
+        <div class="clear-both"></div>
+    </div>
+    <div class="rightWrapper">
+        <div class="groupTitle" i18n="configurationFeatures"></div>
+        <dl class="features">
+            <!-- feature list generated here -->
+        </dl>
     </div>
     <div class="clear-both"></div>
-    <div class="groupTitle" i18n="configurationFeatures"></div>
-    <dl class="features">
-        <!-- feature list generated here -->
-    </dl>
-    <div class="groupTitle" i18n="configurationThrottleAndRC"></div>
+    <div class="leftWrapper">
+        <div class="groupTitle" i18n="configurationThrottle"></div>
+        <div class="number">
+            <label>
+                <input type="number" name="minthrottle" min="0" max="2000" />
+                <span></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="maxthrottle" min="0" max="2000" />
+                <span></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="failsafe_throttle" min="1000" max="2000" />
+                <span></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="mincommand" min="0" max="2000" />
+                <span></span>
+            </label>
+        </div>
+    </div>
+    <div class="rightWrapper">
+        <div class="groupTitle" i18n="configurationBattery"></div>
+        <div class="number">
+            <label>
+                <input type="number" name="mincellvoltage" step="0.1" min="1" max="5" />
+                <span></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="maxcellvoltage" step="0.1" min="1" max="5" />
+                <span></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="voltagescale" step="1" min="10" max="200" />
+                <span></span>
+            </label>
+        </div>
+    </div>
+    <div class="clear-both"></div>
+
     <div class="buttons">
         <a class="save" href="#" i18n="configurationButtonSave"></a>
     </div>

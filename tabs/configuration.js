@@ -119,6 +119,17 @@ TABS.configuration.initialize = function (callback) {
             features_e.append(element);
         }
 
+        // fill throttle data
+        $('input[name="minthrottle"]').val(MISC.minthrottle);
+        $('input[name="maxthrottle"]').val(MISC.maxthrottle);
+        $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
+        $('input[name="mincommand"]').val(MISC.mincommand);
+
+        // fill battery data
+        $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
+        $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
+        $('input[name="voltagescale"]').val(MISC.vbatscale);
+
 
         // UI hooks
         $('input', features_e).change(function () {
@@ -134,6 +145,24 @@ TABS.configuration.initialize = function (callback) {
         });
 
         $('a.save').click(function () {
+            // gather data that doesn't have automatic change event bound
+            MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
+            MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
+            MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
+
+            MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
+            MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
+            MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
+            MISC.mincommand = parseInt($('input[name="mincommand"]').val());
+
+            function save_misc() {
+                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_acc_trim);
+            }
+
+            function save_acc_trim() {
+                MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false, save_to_eeprom);
+            }
+
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
             }
@@ -155,7 +184,7 @@ TABS.configuration.initialize = function (callback) {
                 });
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_to_eeprom);
+            MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_misc);
         });
 
         // status data pulled via separate timer with static speed

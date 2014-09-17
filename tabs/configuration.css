@@ -3,33 +3,43 @@
 }
 .tab-configuration .groupTitle {
     padding: 0 0 5px 0;
-    margin: 10px 0 10px 0;
+    margin: 0 0 10px 0;
 
     font-size: 16px;
 
     border-bottom: 1px solid #dddddd;
 }
-.tab-configuration .groupTitle:nth-of-type(1){
-    margin-top: 0;
+.tab-configuration .leftWrapper {
+    float: left;
+    width: 50%;
+
+    margin: 0 0 10px 0;
+}
+.tab-configuration .rightWrapper {
+    float: left;
+
+    width: calc(50% - 10px);
+    margin: 0 0 10px 10px;
 }
 .tab-configuration .mixerList {
     float: left;
 
-    height: 100px;
+    width: 120px;
+    height: 250px;
 
     border: 1px solid silver;
 }
 .tab-configuration .mixerPreview {
     float: left;
 
-    width: 100px;
-    height: 100px;
-
-    margin: 0 0 0 15px;
+    width: calc(100% - 120px);
+    height: 150px;
 }
 .tab-configuration .mixerPreview img {
     width: 100%;
     height: 100%;
+
+    margin-top: 60px;
 }
 .tab-configuration dl.features dt {
     float: left;
@@ -46,6 +56,21 @@
     height: 18px;
 
     line-height: 18px;
+}
+.tab-configuration .number {
+    margin-bottom: 5px;
+}
+.tab-configuration .number input {
+    width: 60px;
+    height: 20px;
+    line-height: 20px;
+
+    text-align: right;
+
+    border: 1px solid silver;
+}
+.tab-configuration .number span {
+    margin-left: 10px;
 }
 .tab-configuration .buttons {
     position: fixed;
