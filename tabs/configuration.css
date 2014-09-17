@@ -73,6 +73,11 @@
     margin-left: 10px;
     line-height: 20px;
 }
+.tab-configuration .serialRX {
+    width: 125px;
+
+    border: 1px solid silver;
+}
 .tab-configuration .buttons {
     position: fixed;
 

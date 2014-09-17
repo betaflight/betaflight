@@ -342,7 +342,6 @@
     "configurationBattery": {
         "message": "Battery"
     },
-
     "configurationBatteryMinimum": {
         "message": "Minimum Cell Voltage"
     },
@@ -352,8 +351,12 @@
     "configurationBatteryScale": {
         "message": "Voltage Scale"
     },
-
-
+    "configurationGPS": {
+        "message": "GPS"
+    },
+    "configurationSerialRX": {
+        "message": "Serial Receiver"
+    },
     "configurationEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
     },

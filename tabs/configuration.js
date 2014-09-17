@@ -89,7 +89,7 @@ TABS.configuration.initialize = function (callback) {
             $('.mixerPreview img').attr('src', './images/motor_order/' + mixerList[val - 1].image + '.svg');
         });
 
-        // select current configuration
+        // select current mixer configuration
         mixer_list_e.val(BF_CONFIG.mixerConfiguration).change();
 
         // generate features
@@ -118,6 +118,28 @@ TABS.configuration.initialize = function (callback) {
 
             features_e.append(element);
         }
+
+        // generate serial RX
+        var serialRXtypes = [
+            'SPEKTRUM1024',
+            'SPEKTRUM2048',
+            'SBUS',
+            'SUMD'
+        ];
+
+        var serialRX_e = $('select.serialRX');
+        for (var i = 0; i < serialRXtypes.length; i++) {
+            serialRX_e.append('<option value="' + (i) + '">' + serialRXtypes[i] + '</option>');
+        }
+
+        serialRX_e.change(function() {
+            var val = parseInt($(this).val());
+
+            BF_CONFIG.serialrx_type = val;
+        });
+
+        // select current serial RX type
+        serialRX_e.val(BF_CONFIG.serialrx_type);
 
         // fill board alignment
         $('input[name="board_align_roll"]').val(BF_CONFIG.board_align_roll);
