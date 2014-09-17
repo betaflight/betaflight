@@ -227,6 +227,7 @@ TABS.configuration.initialize = function (callback) {
         $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
         $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
         $('input[name="voltagescale"]').val(MISC.vbatscale);
+        $('input[name="multiwiicurrentoutput"]').prop('checked', BF_CONFIG.multiwiicurrentoutput);
 
 
         // UI hooks
@@ -261,6 +262,7 @@ TABS.configuration.initialize = function (callback) {
             MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
             MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
             MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
+            BF_CONFIG.multiwiicurrentoutput = ~~$('input[name="multiwiicurrentoutput"]').is(':checked'); // ~~ boolean to decimal conversion
 
             function save_misc() {
                 MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_acc_trim);

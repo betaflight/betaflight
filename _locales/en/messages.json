@@ -354,6 +354,9 @@
     "configurationBatteryScale": {
         "message": "Voltage Scale"
     },
+    "configurationBatteryMultiwiiCurrent": {
+        "message": "Enable support for legacy Multiwii MSP current output"
+    },
     "configurationGPS": {
         "message": "GPS"
     },
