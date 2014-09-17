@@ -1,2 +1,57 @@
 .tab-configuration {
+    position: relative;
+}
+.tab-configuration .groupTitle {
+    padding: 0 0 5px 0;
+    margin: 0 0 10px 0;
+
+    font-size: 16px;
+
+    border-bottom: 1px solid #dddddd;
+}
+.tab-configuration .hugeWhitespace {
+    height: 100px;
+}
+.tab-configuration dl.features {
+}
+.tab-configuration dl.features dt {
+    float: left;
+
+    width: 10px;
+    height: 18px;
+    line-height: 18px;
+}
+.tab-configuration dl.features dt input {
+    margin-top: 2px;
+}
+.tab-configuration dl.features dd {
+    margin: 0 0 0 20px;
+    height: 18px;
+
+    line-height: 18px;
+}
+
+.tab-configuration .buttons {
+    position: fixed;
+
+    width: calc(100% - 20px);
+    bottom: 10px;
+}
+.tab-configuration .save {
+    display: block;
+    float: right;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-configuration .save:hover {
+    background-color: #dedcdc;
 }

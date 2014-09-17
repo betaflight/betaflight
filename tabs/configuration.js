@@ -48,8 +48,10 @@ TABS.configuration.initialize = function (callback) {
         localize();
 
         // index references
+        var RCMAPlLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+
         var featureNames = [
-            'PPM',
+            'PPM - Disable PWM input and enable PPM input',
             'VBAT',
             'INFLIGHT_ACC_CAL',
             'SERIALRX',
@@ -66,13 +68,61 @@ TABS.configuration.initialize = function (callback) {
             '3D'
         ];
 
-        var RCMAPlLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+        // generate features
+        var features_e = $('.features');
+        for (var i = 0; i < featureNames.length; i++) {
+            var element = $('<dt><input id="feature-' + i + '" type="checkbox" /></dt><dd><label for="feature-' + i + '">' + featureNames[i] + '</label></dd>');
+            element.find('input').attr('checked', bit_check(BF_CONFIG.features, i));
 
-        console.log('all ready');
+            features_e.append(element);
+        }
+
+
+        // UI hooks
+        $('input', features_e).change(function () {
+            var element = $(this),
+                index = $('input', features_e).index(element),
+                state = element.is(':checked');
+
+            if (state) {
+                BF_CONFIG.features = bit_set(BF_CONFIG.features, index);
+            } else {
+                BF_CONFIG.features = bit_clear(BF_CONFIG.features, index);
+            }
+        });
+
+        $('a.save').click(function () {
+            function save_to_eeprom() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+            }
+
+            function reboot() {
+                GUI.log(chrome.i18n.getMessage('configurationEepromSaved'));
+
+                GUI.tab_switch_cleanup(function() {
+                    MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
+                });
+            }
+
+            function reinitialize() {
+                GUI.log(chrome.i18n.getMessage('deviceRebooting'));
+
+                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                    GUI.log(chrome.i18n.getMessage('deviceReady'));
+                    TABS.configuration.initialize();
+                });
+            }
+
+            MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_to_eeprom);
+        });
+
+        // status data pulled via separate timer with static speed
+        GUI.interval_add('status_pull', function status_pull () {
+            MSP.send_message(MSP_codes.MSP_STATUS);
+        }, 250, true);
 
         if (callback) callback();
     }
-
 };
 
 TABS.configuration.cleanup = function (callback) {

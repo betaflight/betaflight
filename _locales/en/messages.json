@@ -294,6 +294,19 @@
         "message": "EEPROM <span style=\"color: green\">saved</span>"
     },
 
+    "configurationMixer": {
+        "message": "Mixer"
+    },
+    "configurationFeatures": {
+        "message": "Features"
+    },
+    "configurationEepromSaved": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
+    },
+    "configurationButtonSave": {
+        "message": "Save"
+    },
+
     "pidTuningName": {
         "message": "Name"
     },
