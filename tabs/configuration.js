@@ -50,6 +50,49 @@ TABS.configuration.initialize = function (callback) {
         // index references
         var RCMAPlLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
 
+        // generate mixer
+        var mixerList = [
+            {name: 'Tricopter', image: 'tri'},
+            {name: 'Quad +', image: 'quadp'},
+            {name: 'Quad X', image: 'quadx'},
+            {name: 'Bicopter', image: 'custom'},
+            {name: 'Gimbal', image: 'custom'},
+            {name: 'Y 6', image: 'y6'},
+            {name: 'HEX 6', image: 'hex6p'},
+            {name: 'Flying Wing', image: 'custom'},
+            {name: 'Y 4', image: 'y4'},
+            {name: 'HEX 6 X', image: 'hex6x'},
+            {name: 'OCTO X8', image: 'octox'},
+            {name: 'OCTO Flat +', image: 'octox'},
+            {name: 'OCTO Flat X', image: 'octox'},
+            {name: 'Airplane', image: 'airplane'},
+            {name: 'Heli 120', image: 'custom'},
+            {name: 'Heli 90', image: 'custom'},
+            {name: 'Vtail 4', image: 'vtail'},
+            {name: 'Hex 6 H', image: 'custom'},
+            {name: 'PPM to SERVO', image: 'custom'},
+            {name: 'Dualcopter', image: 'custom'},
+            {name: 'Singlecopter', image: 'custom'},
+            {name: 'Custom', image: 'custom'}
+        ];
+
+        var mixer_list_e = $('select.mixerList');
+        for (var i = 0; i < mixerList.length; i++) {
+            mixer_list_e.append('<option value="' + (i + 1) + '">' + mixerList[i].name + '</option>');
+        }
+
+        mixer_list_e.change(function () {
+            var val = parseInt($(this).val());
+
+            BF_CONFIG.mixerConfiguration = val;
+
+            $('.mixerPreview img').attr('src', './images/motor_order/' + mixerList[val - 1].image + '.svg');
+        });
+
+        // select current configuration
+        mixer_list_e.val(BF_CONFIG.mixerConfiguration).change();
+
+        // generate features
         var featureNames = [
             'PPM - Disable PWM input and enable PPM input',
             'VBAT',
@@ -68,7 +111,6 @@ TABS.configuration.initialize = function (callback) {
             '3D'
         ];
 
-        // generate features
         var features_e = $('.features');
         for (var i = 0; i < featureNames.length; i++) {
             var element = $('<dt><input id="feature-' + i + '" type="checkbox" /></dt><dd><label for="feature-' + i + '">' + featureNames[i] + '</label></dd>');

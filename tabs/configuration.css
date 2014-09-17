@@ -3,16 +3,33 @@
 }
 .tab-configuration .groupTitle {
     padding: 0 0 5px 0;
-    margin: 0 0 10px 0;
+    margin: 10px 0 10px 0;
 
     font-size: 16px;
 
     border-bottom: 1px solid #dddddd;
 }
-.tab-configuration .hugeWhitespace {
-    height: 100px;
+.tab-configuration .groupTitle:nth-of-type(1){
+    margin-top: 0;
 }
-.tab-configuration dl.features {
+.tab-configuration .mixerList {
+    float: left;
+
+    height: 100px;
+
+    border: 1px solid silver;
+}
+.tab-configuration .mixerPreview {
+    float: left;
+
+    width: 100px;
+    height: 100px;
+
+    margin: 0 0 0 15px;
+}
+.tab-configuration .mixerPreview img {
+    width: 100%;
+    height: 100%;
 }
 .tab-configuration dl.features dt {
     float: left;
@@ -30,7 +47,6 @@
 
     line-height: 18px;
 }
-
 .tab-configuration .buttons {
     position: fixed;
 
