@@ -88,7 +88,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
                 });
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch('AUX_CONFIG_values'), false, save_to_eeprom);
+            MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch(MSP_codes.MSP_SET_BOX), false, save_to_eeprom);
         });
 
         // val = channel value

@@ -43,11 +43,11 @@ function configuration_backup() {
         }];
 
         // generate timestamp for the backup file
-        var d = new Date();
-        var now = d.getUTCFullYear() + '.' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getHours() + '.' + d.getMinutes();
+        var d = new Date(),
+            now = d.getUTCFullYear() + '.' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getHours() + '.' + d.getMinutes();
 
         // create or load the file
-        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'bf_mw_backup_' + now, accepts: accepts}, function (fileEntry) {
+        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'baseflight_backup_' + now, accepts: accepts}, function (fileEntry) {
             if (!fileEntry) {
                 console.log('No file selected, backup aborted.');
 
@@ -187,54 +187,28 @@ function configuration_restore() {
 }
 
 function configuration_upload() {
-    // Send over the PID changes
-    MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch('PIDs'), false, rc_tuning);
-
     function rc_tuning() { // Send over the RC_tuning changes
-        MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch('RC_tuning'), false, aux);
+        MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, aux);
     }
 
     function aux() { // Send over the AUX changes
-        MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch('AUX_CONFIG_values'), false, trim);
+        MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch(MSP_codes.MSP_SET_BOX), false, trim);
     }
 
     function trim() { // Send over the new trims
-        MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch('accelerometerTrims'), false, misc);
+        MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false, misc);
     }
 
-    function misc() {
-        // MISC
-        // we also have to fill the unsupported bytes
-        var buffer_out = new Array();
-        buffer_out[0] = 0; // powerfailmeter
-        buffer_out[1] = 0;
-        buffer_out[2] = lowByte(MISC.minthrottle);
-        buffer_out[3] = highByte(MISC.minthrottle);
-        buffer_out[4] = lowByte(MISC.maxthrottle);
-        buffer_out[5] = highByte(MISC.maxthrottle);
-        buffer_out[6] = lowByte(MISC.mincommand);
-        buffer_out[7] = highByte(MISC.mincommand);
-        buffer_out[8] = lowByte(MISC.failsafe_throttle);
-        buffer_out[9] = highByte(MISC.failsafe_throttle);
-        buffer_out[10] = 0;
-        buffer_out[11] = 0;
-        buffer_out[12] = 0;
-        buffer_out[13] = 0;
-        buffer_out[14] = 0;
-        buffer_out[15] = 0;
-        buffer_out[16] = lowByte(MISC.mag_declination);
-        buffer_out[17] = highByte(MISC.mag_declination);
-        buffer_out[18] = MISC.vbatscale;
-        buffer_out[19] = MISC.vbatmincellvoltage;
-        buffer_out[20] = MISC.vbatmaxcellvoltage;
-        buffer_out[21] = 0; // vbatlevel_crit (unused)
+    function misc() { // Send ove the new MISC
+        MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_eeprom);
+    }
 
-        // Send ove the new MISC
-        MSP.send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, function () {
-            // Save changes to EEPROM
-            MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
-            });
+    function save_eeprom() {
+        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+            GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
         });
     }
+
+    // Send over the PID changes
+    MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, rc_tuning);
 }

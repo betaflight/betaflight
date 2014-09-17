@@ -149,7 +149,7 @@ TABS.receiver.initialize = function (callback) {
                 });
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch('RC_tuning'), false, save_to_eeprom);
+            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_to_eeprom);
         });
 
         $('select[name="rx_refresh_rate"]').change(function () {

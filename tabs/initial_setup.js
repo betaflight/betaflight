@@ -109,7 +109,7 @@ TABS.initial_setup.initialize = function (callback) {
                     });
                 }
 
-                MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch('BF_CONFIG'), false, save_to_eeprom); // TODO reply byte is missing on the firmware side so this is where it fails
+                MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_to_eeprom);
             });
         } else {
             // old stuff

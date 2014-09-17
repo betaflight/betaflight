@@ -259,7 +259,7 @@ TABS.pid_tuning.initialize = function (callback) {
             RC_tuning.dynamic_THR_PID = parseFloat($('.rate-tpa input[name="tpa"]').val());
 
             function send_rc_tuning_changes() {
-                MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch('RC_tuning'), false, save_to_eeprom);
+                MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_to_eeprom);
             }
 
             function save_to_eeprom() {
@@ -268,7 +268,7 @@ TABS.pid_tuning.initialize = function (callback) {
                 });
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch('PIDs'), false, send_rc_tuning_changes);
+            MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, send_rc_tuning_changes);
         });
 
         // status data pulled via separate timer with static speed

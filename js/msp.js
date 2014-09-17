@@ -559,11 +559,11 @@ MSP.send_message = function(code, data, callback_sent, callback_msp) {
     return true;
 };
 
-MSP.crunch = function (name) {
+MSP.crunch = function (code) {
     var buffer = [];
 
-    switch (name) {
-        case 'BF_CONFIG':
+    switch (code) {
+        case MSP_codes.MSP_SET_CONFIG:
             buffer.push(BF_CONFIG.mixerConfiguration);
             buffer.push(specificByte(BF_CONFIG.features, 0));
             buffer.push(specificByte(BF_CONFIG.features, 1));
@@ -577,7 +577,7 @@ MSP.crunch = function (name) {
             buffer.push(specificByte(BF_CONFIG.board_align_yaw, 0));
             buffer.push(specificByte(BF_CONFIG.board_align_yaw, 1));
             break;
-        case 'PIDs':
+        case MSP_codes.MSP_SET_PID:
             for (var i = 0; i < PIDs.length; i++) {
                 switch (i) {
                     case 0:
@@ -605,7 +605,7 @@ MSP.crunch = function (name) {
                 }
             }
             break;
-        case 'RC_tuning':
+        case MSP_codes.MSP_SET_RC_TUNING:
             buffer.push(parseInt(RC_tuning.RC_RATE * 100));
             buffer.push(parseInt(RC_tuning.RC_EXPO * 100));
             buffer.push(parseInt(RC_tuning.roll_pitch_rate * 100));
@@ -614,17 +614,41 @@ MSP.crunch = function (name) {
             buffer.push(parseInt(RC_tuning.throttle_MID * 100));
             buffer.push(parseInt(RC_tuning.throttle_EXPO * 100));
             break;
-        case 'AUX_CONFIG_values':
+        case MSP_codes.MSP_SET_BOX:
             for (var i = 0; i < AUX_CONFIG_values.length; i++) {
                 buffer.push(lowByte(AUX_CONFIG_values[i]));
                 buffer.push(highByte(AUX_CONFIG_values[i]));
             }
             break;
-        case 'accelerometerTrims':
+        case MSP_codes.MSP_SET_ACC_TRIM:
             buffer.push(lowByte(CONFIG.accelerometerTrims[0]));
             buffer.push(highByte(CONFIG.accelerometerTrims[0]));
             buffer.push(lowByte(CONFIG.accelerometerTrims[1]));
             buffer.push(highByte(CONFIG.accelerometerTrims[1]));
+            break;
+        case MSP_codes.MSP_SET_MISC:
+            buffer.push(lowByte(MISC.midrc));
+            buffer.push(highByte(MISC.midrc));
+            buffer.push(lowByte(MISC.minthrottle));
+            buffer.push(highByte(MISC.minthrottle));
+            buffer.push(lowByte(MISC.maxthrottle));
+            buffer.push(highByte(MISC.maxthrottle));
+            buffer.push(lowByte(MISC.mincommand));
+            buffer.push(highByte(MISC.mincommand));
+            buffer.push(lowByte(MISC.failsafe_throttle));
+            buffer.push(highByte(MISC.failsafe_throttle));
+            buffer.push(MISC.gps_type);
+            buffer.push(MISC.gps_baudrate);
+            buffer.push(MISC.gps_ubx_sbas);
+            buffer.push(MISC.placeholder1);
+            buffer.push(lowByte(MISC.placeholder2));
+            buffer.push(highByte(MISC.placeholder2));
+            buffer.push(lowByte(MISC.mag_declination));
+            buffer.push(highByte(MISC.mag_declination));
+            buffer.push(MISC.vbatscale);
+            buffer.push(MISC.vbatmincellvoltage);
+            buffer.push(MISC.vbatmaxcellvoltage);
+            buffer.push(MISC.placeholder3);
             break;
 
         default:
