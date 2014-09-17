@@ -327,9 +327,33 @@
     "configurationThrottle": {
         "message": "Throttle"
     },
+    "configurationThrottleMinimum": {
+        "message": "Minimum Throttle"
+    },
+    "configurationThrottleMaximum": {
+        "message": "Maximum Throttle"
+    },
+    "configurationThrottleFailsafe": {
+        "message": "Failsafe Throttle"
+    },
+    "configurationThrottleMinimumCommand": {
+        "message": "Minimum Command"
+    },
     "configurationBattery": {
         "message": "Battery"
     },
+
+    "configurationBatteryMinimum": {
+        "message": "Minimum Cell Voltage"
+    },
+    "configurationBatteryMaximum": {
+        "message": "Maximum Cell Voltage"
+    },
+    "configurationBatteryScale": {
+        "message": "Voltage Scale"
+    },
+
+
     "configurationEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
     },
