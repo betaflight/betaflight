@@ -48,3 +48,4 @@ void devPush(stdev_t *dev, float x);
 float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
+int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax);

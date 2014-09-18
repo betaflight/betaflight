@@ -43,7 +43,8 @@ typedef enum {
     LED_FUNCTION_INDICATOR   = (1 << 6),
     LED_FUNCTION_WARNING     = (1 << 7),
     LED_FUNCTION_FLIGHT_MODE = (1 << 8),
-    LED_FUNCTION_ARM_STATE   = (1 << 9)
+    LED_FUNCTION_ARM_STATE   = (1 << 9),
+    LED_FUNCTION_THROTTLE    = (1 << 10)
 } ledFlag_e;
 
 typedef struct ledConfig_s {
