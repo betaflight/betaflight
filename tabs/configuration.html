@@ -99,8 +99,8 @@
         </div>
     </div>
     <div class="clear-both"></div>
-    <div class="leftWrapper battery">
-        <div class="groupTitle" i18n="configurationBatteryCurrent"></div>
+    <div class="leftWrapper">
+        <div class="groupTitle" i18n="configurationBatteryVoltage"></div>
         <div class="number">
             <label>
                 <input type="number" name="mincellvoltage" step="0.1" min="1" max="5" />
@@ -119,6 +119,21 @@
                 <span i18n="configurationBatteryScale"></span>
             </label>
         </div>
+    </div>
+    <div class="rightWrapper current">
+        <div class="groupTitle" i18n="configurationCurrent"></div>
+        <div class="number">
+            <label>
+                <input type="number" name="currentscale" step="1" min="1" max="1000" />
+                <span i18n="configurationCurrentScale"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="currentoffset" step="1" min="1" max="1000" />
+                <span i18n="configurationCurrentOffset"></span>
+            </label>
+        </div>
         <div class="checkbox">
             <label>
                 <div>
@@ -128,7 +143,8 @@
             </label>
         </div>
     </div>
-    <div class="rightWrapper">
+    <div class="clear-both"></div>
+    <div class="leftWrapper">
         <div class="groupTitle" i18n="configurationBoardAlignment"></div>
         <div class="number">
             <label>

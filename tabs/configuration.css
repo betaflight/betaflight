@@ -94,18 +94,18 @@
 
     border: 1px solid silver;
 }
-.tab-configuration .battery .checkbox {
+.tab-configuration .current .checkbox {
     margin-top: 2px;
 }
-.tab-configuration .battery .checkbox div {
+.tab-configuration .current .checkbox div {
     float: left;
     width: 60px;
 }
-.tab-configuration .battery .checkbox div input {
+.tab-configuration .current .checkbox div input {
     display: block;
     margin: 2px auto 0 auto;
 }
-.tab-configuration .battery .checkbox span {
+.tab-configuration .current .checkbox span {
     margin-left: 15px;
 }
 .tab-configuration .buttons {

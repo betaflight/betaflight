@@ -219,6 +219,10 @@ TABS.configuration.initialize = function (callback) {
         $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
         $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
         $('input[name="voltagescale"]').val(MISC.vbatscale);
+
+        // fill current
+        $('input[name="currentscale"]').val(BF_CONFIG.currentscale);
+        $('input[name="currentoffset"]').val(BF_CONFIG.currentoffset);
         $('input[name="multiwiicurrentoutput"]').prop('checked', MISC.multiwiicurrentoutput);
 
 
@@ -254,6 +258,9 @@ TABS.configuration.initialize = function (callback) {
             MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
             MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
             MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
+
+            BF_CONFIG.currentscale = parseInt($('input[name="currentscale"]').val());
+            BF_CONFIG.currentoffset = parseInt($('input[name="currentoffset"]').val());
             MISC.multiwiicurrentoutput = ~~$('input[name="multiwiicurrentoutput"]').is(':checked'); // ~~ boolean to decimal conversion
 
             function save_misc() {

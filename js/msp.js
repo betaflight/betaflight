@@ -463,6 +463,8 @@ MSP.process_data = function(code, message_buffer, message_length) {
             BF_CONFIG.board_align_roll = data.getInt16(6, 1);
             BF_CONFIG.board_align_pitch = data.getInt16(8, 1);
             BF_CONFIG.board_align_yaw = data.getInt16(10, 1);
+            BF_CONFIG.currentscale = data.getUint16(12, 1);
+            BF_CONFIG.currentoffset = data.getUint16(14, 1);
             break;
         case MSP_codes.MSP_SET_CONFIG:
             break;
@@ -574,6 +576,10 @@ MSP.crunch = function (code) {
             buffer.push(specificByte(BF_CONFIG.board_align_pitch, 1));
             buffer.push(specificByte(BF_CONFIG.board_align_yaw, 0));
             buffer.push(specificByte(BF_CONFIG.board_align_yaw, 1));
+            buffer.push(lowByte(BF_CONFIG.currentscale));
+            buffer.push(highByte(BF_CONFIG.currentscale));
+            buffer.push(lowByte(BF_CONFIG.currentoffset));
+            buffer.push(highByte(BF_CONFIG.currentoffset));
             break;
         case MSP_codes.MSP_SET_PID:
             for (var i = 0; i < PIDs.length; i++) {
