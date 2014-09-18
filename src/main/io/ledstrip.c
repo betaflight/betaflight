@@ -27,6 +27,8 @@
 
 #ifdef LED_STRIP
 
+#include <common/color.h>
+
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -34,7 +36,6 @@
 #include <common/maths.h>
 #include <common/printf.h>
 #include <common/typeconversion.h>
-
 
 #include "sensors/battery.h"
 
@@ -55,31 +56,30 @@ static failsafe_t* failsafe;
 
 //#define USE_LED_ANIMATION
 
-#define LED_WHITE   {255, 255, 255}
-#define LED_BLACK   {0,   0,   0  }
+//                          H    S    V
+#define LED_WHITE        {  0, 255, 255}
+#define LED_BLACK        {  0,   0,   0}
+#define LED_RED          {  0,   0, 255}
+#define LED_ORANGE       { 30,   0, 255}
+#define LED_YELLOW       { 60,   0, 255}
+#define LED_LIME_GREEN   { 90,   0, 255}
+#define LED_GREEN        {120,   0, 255}
+#define LED_CYAN         {180,   0, 255}
+#define LED_LIGHT_BLUE   {210,   0, 255}
+#define LED_BLUE         {240,   0, 255}
+#define LED_DARK_MAGENTA {300,   0, 128}
+#define LED_PINK         {300,   0, 255}
+#define LED_DARK_VIOLET  {270,   0, 255}
+#define LED_DEEP_PINK    {330,   0, 255}
 
-#define LED_RED          {255, 0,   0  }
-#define LED_ORANGE       {255, 128, 0  }
-#define LED_YELLOW       {255, 255, 0  }
-#define LED_LIME_GREEN   {128, 255, 0  }
-#define LED_CYAN         {0,   255, 255}
-#define LED_GREEN        {0,   255, 0  }
-#define LED_LIGHT_BLUE   {0,   128, 255}
-#define LED_BLUE         {0,   0,   255}
-#define LED_DARK_MAGENTA {128, 0,   128}
-#define LED_PINK         {255, 0,   255}
-#define LED_DARK_VIOLET  {128, 0,   255}
-#define LED_DEEP_PINK    {255, 0,   128}
-
-const rgbColor24bpp_t black = { LED_BLACK };
-const rgbColor24bpp_t white = { LED_WHITE };
-
-const rgbColor24bpp_t red = { LED_RED };
-const rgbColor24bpp_t orange = { LED_ORANGE };
-const rgbColor24bpp_t green = { LED_GREEN };
-const rgbColor24bpp_t blue = { LED_BLUE };
-const rgbColor24bpp_t lightBlue = { LED_LIGHT_BLUE };
-const rgbColor24bpp_t limeGreen = { LED_LIME_GREEN };
+const hsvColor_t hsv_black = LED_BLACK;
+const hsvColor_t hsv_white = LED_WHITE;
+const hsvColor_t hsv_red = LED_RED;
+const hsvColor_t hsv_orange = LED_ORANGE;
+const hsvColor_t hsv_green = LED_GREEN;
+const hsvColor_t hsv_blue = LED_BLUE;
+const hsvColor_t hsv_lightBlue = LED_LIGHT_BLUE;
+const hsvColor_t hsv_limeGreen = LED_LIME_GREEN;
 
 
 uint8_t ledGridWidth;
@@ -325,82 +325,82 @@ uint32_t nextWarningFlashAt = 0;
 #define LED_DIRECTION_COUNT 6
 
 struct modeColors_s {
-    rgbColor24bpp_t north;
-    rgbColor24bpp_t east;
-    rgbColor24bpp_t south;
-    rgbColor24bpp_t west;
-    rgbColor24bpp_t up;
-    rgbColor24bpp_t down;
+    hsvColor_t north;
+    hsvColor_t east;
+    hsvColor_t south;
+    hsvColor_t west;
+    hsvColor_t up;
+    hsvColor_t down;
 };
 
 typedef union {
-    rgbColor24bpp_t raw[LED_DIRECTION_COUNT];
+    hsvColor_t raw[LED_DIRECTION_COUNT];
     struct modeColors_s colors;
 } modeColors_t;
 
 static const modeColors_t orientationModeColors = {
     .raw = {
-        {LED_WHITE},
-        {LED_DARK_VIOLET},
-        {LED_RED},
-        {LED_DEEP_PINK},
-        {LED_BLUE},
-        {LED_ORANGE}
+        LED_WHITE,
+        LED_DARK_VIOLET,
+        LED_RED,
+        LED_DEEP_PINK,
+        LED_BLUE,
+        LED_ORANGE
     }
 };
 
 static const modeColors_t headfreeModeColors = {
     .raw = {
-        {LED_LIME_GREEN},
-        {LED_DARK_VIOLET},
-        {LED_ORANGE},
-        {LED_DEEP_PINK},
-        {LED_BLUE},
-        {LED_ORANGE}
+        LED_LIME_GREEN,
+        LED_DARK_VIOLET,
+        LED_ORANGE,
+        LED_DEEP_PINK,
+        LED_BLUE,
+        LED_ORANGE
     }
 };
 
 static const modeColors_t horizonModeColors = {
     .raw = {
-        {LED_BLUE},
-        {LED_DARK_VIOLET},
-        {LED_YELLOW},
-        {LED_DEEP_PINK},
-        {LED_BLUE},
-        {LED_ORANGE}
+        LED_BLUE,
+        LED_DARK_VIOLET,
+        LED_YELLOW,
+        LED_DEEP_PINK,
+        LED_BLUE,
+        LED_ORANGE
     }
 };
 
 static const modeColors_t angleModeColors = {
     .raw = {
-        {LED_CYAN},
-        {LED_DARK_VIOLET},
-        {LED_YELLOW},
-        {LED_DEEP_PINK},
-        {LED_BLUE},
-        {LED_ORANGE}
+        LED_CYAN,
+        LED_DARK_VIOLET,
+        LED_YELLOW,
+        LED_DEEP_PINK,
+        LED_BLUE,
+        LED_ORANGE
     }
 };
 
 static const modeColors_t magModeColors = {
     .raw = {
-        {LED_PINK},
-        {LED_DARK_VIOLET},
-        {LED_ORANGE},
-        {LED_DEEP_PINK},
-        {LED_BLUE},
-        {LED_ORANGE}
+        LED_PINK,
+        LED_DARK_VIOLET,
+        LED_ORANGE,
+        LED_DEEP_PINK,
+        LED_BLUE,
+        LED_ORANGE
     }
 };
 
 static const modeColors_t baroModeColors = {
     .raw = {
-        {LED_LIGHT_BLUE},
-        {LED_DARK_VIOLET},
-        {LED_RED},
-        {LED_DEEP_PINK},
-        {LED_BLUE},
-        {LED_ORANGE}
+        LED_LIGHT_BLUE,
+        LED_DARK_VIOLET,
+        LED_RED,
+        LED_DEEP_PINK,
+        LED_BLUE,
+        LED_ORANGE
     }
 };
 
@@ -408,28 +408,28 @@ void applyDirectionalModeColor(const uint8_t ledIndex, const ledConfig_t *ledCon
 {
     // apply up/down colors regardless of quadrant.
     if ((ledConfig->flags & LED_DIRECTION_UP)) {
-        setLedColor(ledIndex, &modeColors->colors.up);
+        setLedHsv(ledIndex, &modeColors->colors.up);
     }
 
     if ((ledConfig->flags & LED_DIRECTION_DOWN)) {
-        setLedColor(ledIndex, &modeColors->colors.down);
+        setLedHsv(ledIndex, &modeColors->colors.down);
     }
 
     // override with n/e/s/w colors to each n/s e/w half - bail at first match.
     if ((ledConfig->flags & LED_DIRECTION_WEST) && GET_LED_X(ledConfig) <= highestXValueForWest) {
-        setLedColor(ledIndex, &modeColors->colors.west);
+        setLedHsv(ledIndex, &modeColors->colors.west);
     }
 
     if ((ledConfig->flags & LED_DIRECTION_EAST) && GET_LED_X(ledConfig) >= lowestXValueForEast) {
-        setLedColor(ledIndex, &modeColors->colors.east);
+        setLedHsv(ledIndex, &modeColors->colors.east);
     }
 
     if ((ledConfig->flags & LED_DIRECTION_NORTH) && GET_LED_Y(ledConfig) <= highestYValueForNorth) {
-        setLedColor(ledIndex, &modeColors->colors.north);
+        setLedHsv(ledIndex, &modeColors->colors.north);
     }
 
     if ((ledConfig->flags & LED_DIRECTION_SOUTH) && GET_LED_Y(ledConfig) >= lowestYValueForSouth) {
-        setLedColor(ledIndex, &modeColors->colors.south);
+        setLedHsv(ledIndex, &modeColors->colors.south);
     }
 
 }
@@ -441,30 +441,30 @@ typedef enum {
     QUADRANT_NORTH_WEST
 } quadrant_e;
 
-void applyQuadrantColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, const quadrant_e quadrant, const rgbColor24bpp_t *color)
+void applyQuadrantColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, const quadrant_e quadrant, const hsvColor_t *color)
 {
     switch (quadrant) {
         case QUADRANT_NORTH_EAST:
             if (GET_LED_Y(ledConfig) <= highestYValueForNorth && GET_LED_X(ledConfig) >= lowestXValueForEast) {
-                setLedColor(ledIndex, color);
+                setLedHsv(ledIndex, color);
             }
             return;
 
         case QUADRANT_SOUTH_EAST:
             if (GET_LED_Y(ledConfig) >= lowestYValueForSouth && GET_LED_X(ledConfig) >= lowestXValueForEast) {
-                setLedColor(ledIndex, color);
+                setLedHsv(ledIndex, color);
             }
             return;
 
         case QUADRANT_SOUTH_WEST:
             if (GET_LED_Y(ledConfig) >= lowestYValueForSouth && GET_LED_X(ledConfig) <= highestXValueForWest) {
-                setLedColor(ledIndex, color);
+                setLedHsv(ledIndex, color);
             }
             return;
 
         case QUADRANT_NORTH_WEST:
             if (GET_LED_Y(ledConfig) <= highestYValueForNorth && GET_LED_X(ledConfig) <= highestXValueForWest) {
-                setLedColor(ledIndex, color);
+                setLedHsv(ledIndex, color);
             }
             return;
     }
@@ -479,14 +479,14 @@ void applyLedModeLayer(void)
 
         ledConfig = &ledConfigs[ledIndex];
 
-        setLedColor(ledIndex, &black);
+        setLedHsv(ledIndex, &hsv_black);
 
         if (!(ledConfig->flags & LED_FUNCTION_FLIGHT_MODE)) {
             if (ledConfig->flags & LED_FUNCTION_ARM_STATE) {
                 if (!ARMING_FLAG(ARMED)) {
-                    setLedColor(ledIndex, &green);
+                    setLedHsv(ledIndex, &hsv_green);
                 } else {
-                    setLedColor(ledIndex, &blue);
+                    setLedHsv(ledIndex, &hsv_blue);
                 }
             }
             continue;
@@ -539,17 +539,17 @@ void applyLedWarningLayer(uint8_t warningState, uint8_t warningFlags)
 
         if (warningState == 0) {
             if (warningFlashCounter == 0 && warningFlags & WARNING_FLAG_LOW_BATTERY) {
-                setLedColor(ledIndex, &red);
+                setLedHsv(ledIndex, &hsv_red);
             }
             if (warningFlashCounter > 1 && warningFlags & WARNING_FLAG_FAILSAFE) {
-                setLedColor(ledIndex, &lightBlue);
+                setLedHsv(ledIndex, &hsv_lightBlue);
             }
         } else {
             if (warningFlashCounter == 0 && warningFlags & WARNING_FLAG_LOW_BATTERY) {
-                setLedColor(ledIndex, &black);
+                setLedHsv(ledIndex, &hsv_black);
             }
             if (warningFlashCounter > 1 && warningFlags & WARNING_FLAG_FAILSAFE) {
-                setLedColor(ledIndex, &limeGreen);
+                setLedHsv(ledIndex, &hsv_limeGreen);
             }
         }
     }
@@ -558,13 +558,13 @@ void applyLedWarningLayer(uint8_t warningState, uint8_t warningFlags)
 void applyLedIndicatorLayer(uint8_t indicatorFlashState)
 {
     const ledConfig_t *ledConfig;
-    static const rgbColor24bpp_t *flashColor;
+    static const hsvColor_t *flashColor;
 
 
     if (indicatorFlashState == 0) {
-        flashColor = &orange;
+        flashColor = &hsv_orange;
     } else {
-        flashColor = &black;
+        flashColor = &hsv_black;
     }
 
 
@@ -631,11 +631,11 @@ static void applyLedAnimationLayer(void)
         ledConfig = &ledConfigs[ledIndex];
 
         if (GET_LED_Y(ledConfig) == previousRow) {
-            setLedColor(ledIndex, &white);
+            setLedHsv(ledIndex, &white);
             setLedBrightness(ledIndex, 50);
 
         } else if (GET_LED_Y(ledConfig) == currentRow) {
-            setLedColor(ledIndex, &white);
+            setLedHsv(ledIndex, &white);
         } else if (GET_LED_Y(ledConfig) == nextRow) {
             setLedBrightness(ledIndex, 50);
         }

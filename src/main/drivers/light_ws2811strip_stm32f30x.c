@@ -22,6 +22,7 @@
 
 #include "gpio.h"
 
+#include "common/color.h"
 #include "drivers/light_ws2811strip.h"
 
 #define WS2811_GPIO   GPIOB
@@ -105,7 +106,7 @@ void ws2811LedStripHardwareInit(void)
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    setStripColor(&white);
+    setStripColor(&hsv_white);
     ws2811UpdateStrip();
 }
 

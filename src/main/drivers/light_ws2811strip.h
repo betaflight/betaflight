@@ -23,41 +23,24 @@
 
 #define WS2811_DMA_BUFFER_SIZE (WS2811_BITS_PER_LED * WS2811_LED_STRIP_LENGTH + WS2811_DELAY_BUFFER_LENGTH)   // number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes)
 
-typedef enum {
-    CC_RED = 0,
-    CC_GREEN,
-    CC_BLUE
-} colorComponent_e;
-
-#define COLOR_COMPONENT_COUNT (CC_BLUE + 1)
-
-struct rgbColor24bpp_s {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-};
-
-typedef union {
-    struct rgbColor24bpp_s rgb;
-    uint8_t raw[COLOR_COMPONENT_COUNT];
-} rgbColor24bpp_t;
-
 void ws2811LedStripInit(void);
 
 void ws2811LedStripHardwareInit(void);
 void ws2811LedStripDMAEnable(void);
 
 void ws2811UpdateStrip(void);
-void setLedColor(uint16_t index, const rgbColor24bpp_t *color);
-void setLedBrightness(uint16_t index, const uint8_t scalePercent);
-void setStripColor(const rgbColor24bpp_t *color);
-void setStripColors(const rgbColor24bpp_t *colors);
+
+void setLedHsv(uint16_t index, const hsvColor_t *color);
+void scaleLedValue(uint16_t index, const uint8_t scalePercent);
+void setLedValue(uint16_t index, const uint8_t value);
+
+void setStripColor(const hsvColor_t *color);
+void setStripColors(const hsvColor_t *colors);
 
 bool isWS2811LedStripReady(void);
 
 extern uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 extern volatile uint8_t ws2811LedDataTransferInProgress;
 
-extern const rgbColor24bpp_t black;
-extern const rgbColor24bpp_t white;
-extern const rgbColor24bpp_t orange;
+extern const hsvColor_t hsv_white;
+extern const hsvColor_t hsv_black;

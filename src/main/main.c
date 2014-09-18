@@ -23,6 +23,7 @@
 #include "platform.h"
 
 #include "common/axis.h"
+#include "common/color.h"
 
 #include "drivers/system.h"
 #include "drivers/gpio.h"
