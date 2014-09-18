@@ -150,9 +150,7 @@ TABS.configuration.initialize = function (callback) {
         }
 
         gps_type_e.change(function () {
-            var val = parseInt($(this).val());
-
-            MISC.gps_type = val;
+            MISC.gps_type = parseInt($(this).val());
         });
 
         var gps_baudrate_e = $('select.gps_baudrate');
@@ -161,9 +159,7 @@ TABS.configuration.initialize = function (callback) {
         }
 
         gps_baudrate_e.change(function () {
-            var val = parseInt($(this).val());
-
-            MISC.gps_baudrate = val;
+            MISC.gps_baudrate = parseInt($(this).val());
         });
 
         var gps_ubx_sbas_e = $('select.gps_ubx_sbas');
@@ -172,9 +168,7 @@ TABS.configuration.initialize = function (callback) {
         }
 
         gps_ubx_sbas_e.change(function () {
-            var val = parseInt($(this).val());
-
-            MISC.gps_ubx_sbas = val;
+            MISC.gps_ubx_sbas = parseInt($(this).val());
         });
 
         // select current gps configuration
@@ -196,9 +190,7 @@ TABS.configuration.initialize = function (callback) {
         }
 
         serialRX_e.change(function () {
-            var val = parseInt($(this).val());
-
-            BF_CONFIG.serialrx_type = val;
+            BF_CONFIG.serialrx_type = parseInt($(this).val());
         });
 
         // select current serial RX type
