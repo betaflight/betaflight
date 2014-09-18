@@ -144,6 +144,11 @@ typedef struct modeColorIndexes_s {
 } modeColorIndexes_t;
 
 
+// Note, the color index used for the mode colors below refer to the default colors.
+// if the colors are reconfigured the index is still valid but the displayed color might
+// be different.
+// See colors[] and defaultColors[] and applyDefaultColors[]
+
 static const modeColorIndexes_t orientationModeColors = {
         COLOR_WHITE,
         COLOR_DARK_VIOLET,
