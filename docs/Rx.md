@@ -30,11 +30,20 @@ Allows you to use MSP commands as the RC input.  Only 8 channel support to maint
 
 See the Configuration document some some RX configuration examples.
 
+For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` cli setting as follows.
+
+| Serial RX Provider | Value |
+| ------------------ | ----- |
+| SPEKTRUM1024       | 0     |
+| SPEKTRUM2048       | 1     |
+| SBUS               | 2     |
+| SUMD               | 3     |
+
 #### PPM/PWM input filtering.
 
 Hardware input filtering can be enabled if you are experiencing interference on the signal sent via your PWM/PPM RX.
 
-Use the `input_filtering_mode` cli command to select a mode.
+Use the `input_filtering_mode` cli setting to select a mode.
 
 | Value | Meaning   |
 | ----- | --------- |
