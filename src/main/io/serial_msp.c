@@ -25,8 +25,9 @@
 
 #include "platform.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
+#include "common/color.h"
+#include "common/maths.h"
 
 #include "drivers/system.h"
 #include "drivers/accgyro.h"

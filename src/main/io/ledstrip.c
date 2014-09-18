@@ -47,39 +47,156 @@
 
 #include "io/ledstrip.h"
 
-static bool configured = false;
+static bool ledStripInitialised = false;
 static failsafe_t* failsafe;
 
 #if MAX_LED_STRIP_LENGTH > WS2811_LED_STRIP_LENGTH
 #error "Led strip length must match driver"
 #endif
 
+static hsvColor_t *colors;
+
 //#define USE_LED_ANIMATION
 
 //                          H    S    V
-#define LED_WHITE        {  0, 255, 255}
 #define LED_BLACK        {  0,   0,   0}
+#define LED_WHITE        {  0, 255, 255}
 #define LED_RED          {  0,   0, 255}
 #define LED_ORANGE       { 30,   0, 255}
 #define LED_YELLOW       { 60,   0, 255}
 #define LED_LIME_GREEN   { 90,   0, 255}
 #define LED_GREEN        {120,   0, 255}
+#define LED_MINT_GREEN   {150,   0, 255}
 #define LED_CYAN         {180,   0, 255}
 #define LED_LIGHT_BLUE   {210,   0, 255}
 #define LED_BLUE         {240,   0, 255}
-#define LED_DARK_MAGENTA {300,   0, 128}
-#define LED_PINK         {300,   0, 255}
 #define LED_DARK_VIOLET  {270,   0, 255}
+#define LED_MAGENTA      {300,   0, 255}
 #define LED_DEEP_PINK    {330,   0, 255}
 
-const hsvColor_t hsv_black = LED_BLACK;
-const hsvColor_t hsv_white = LED_WHITE;
-const hsvColor_t hsv_red = LED_RED;
-const hsvColor_t hsv_orange = LED_ORANGE;
-const hsvColor_t hsv_green = LED_GREEN;
-const hsvColor_t hsv_blue = LED_BLUE;
-const hsvColor_t hsv_lightBlue = LED_LIGHT_BLUE;
-const hsvColor_t hsv_limeGreen = LED_LIME_GREEN;
+const hsvColor_t hsv_black       = LED_BLACK;
+const hsvColor_t hsv_white       = LED_WHITE;
+const hsvColor_t hsv_red         = LED_RED;
+const hsvColor_t hsv_orange      = LED_ORANGE;
+const hsvColor_t hsv_yellow      = LED_YELLOW;
+const hsvColor_t hsv_limeGreen   = LED_LIME_GREEN;
+const hsvColor_t hsv_green       = LED_GREEN;
+const hsvColor_t hsv_mintGreen   = LED_MINT_GREEN;
+const hsvColor_t hsv_cyan        = LED_CYAN;
+const hsvColor_t hsv_lightBlue   = LED_LIGHT_BLUE;
+const hsvColor_t hsv_blue        = LED_BLUE;
+const hsvColor_t hsv_darkViolet  = LED_DARK_VIOLET;
+const hsvColor_t hsv_magenta     = LED_MAGENTA;
+const hsvColor_t hsv_deepPink    = LED_DEEP_PINK;
+
+#define LED_DIRECTION_COUNT 6
+
+const hsvColor_t * const defaultColors[] = {
+        &hsv_black,
+        &hsv_white,
+        &hsv_red,
+        &hsv_orange,
+        &hsv_yellow,
+        &hsv_limeGreen,
+        &hsv_green,
+        &hsv_mintGreen,
+        &hsv_cyan,
+        &hsv_lightBlue,
+        &hsv_blue,
+        &hsv_darkViolet,
+        &hsv_magenta,
+        &hsv_deepPink
+};
+
+typedef enum {
+    COLOR_BLACK = 0,
+    COLOR_WHITE,
+    COLOR_RED,
+    COLOR_ORANGE,
+    COLOR_YELLOW,
+    COLOR_LIME_GREEN,
+    COLOR_GREEN,
+    COLOR_MINT_GREEN,
+    COLOR_CYAN,
+    COLOR_LIGHT_BLUE,
+    COLOR_BLUE,
+    COLOR_DARK_VIOLET,
+    COLOR_MAGENTA,
+    COLOR_DEEP_PINK,
+} colorIds;
+
+typedef enum {
+    DIRECTION_NORTH = 0,
+    DIRECTION_EAST,
+    DIRECTION_SOUTH,
+    DIRECTION_WEST,
+    DIRECTION_UP,
+    DIRECTION_DOWN
+} directionId_e;
+
+typedef struct modeColorIndexes_s {
+    uint8_t north;
+    uint8_t east;
+    uint8_t south;
+    uint8_t west;
+    uint8_t up;
+    uint8_t down;
+} modeColorIndexes_t;
+
+
+static const modeColorIndexes_t orientationModeColors = {
+        COLOR_WHITE,
+        COLOR_DARK_VIOLET,
+        COLOR_RED,
+        COLOR_DEEP_PINK,
+        COLOR_BLUE,
+        COLOR_ORANGE
+};
+
+static const modeColorIndexes_t headfreeModeColors = {
+        COLOR_LIME_GREEN,
+        COLOR_DARK_VIOLET,
+        COLOR_ORANGE,
+        COLOR_DEEP_PINK,
+        COLOR_BLUE,
+        COLOR_ORANGE
+};
+
+static const modeColorIndexes_t horizonModeColors = {
+        COLOR_BLUE,
+        COLOR_DARK_VIOLET,
+        COLOR_YELLOW,
+        COLOR_DEEP_PINK,
+        COLOR_BLUE,
+        COLOR_ORANGE
+};
+
+static const modeColorIndexes_t angleModeColors = {
+        COLOR_CYAN,
+        COLOR_DARK_VIOLET,
+        COLOR_YELLOW,
+        COLOR_DEEP_PINK,
+        COLOR_BLUE,
+        COLOR_ORANGE
+};
+
+static const modeColorIndexes_t magModeColors = {
+        COLOR_MINT_GREEN,
+        COLOR_DARK_VIOLET,
+        COLOR_ORANGE,
+        COLOR_DEEP_PINK,
+        COLOR_BLUE,
+        COLOR_ORANGE
+};
+
+static const modeColorIndexes_t baroModeColors = {
+        COLOR_LIGHT_BLUE,
+        COLOR_DARK_VIOLET,
+        COLOR_RED,
+        COLOR_DEEP_PINK,
+        COLOR_BLUE,
+        COLOR_ORANGE
+};
 
 
 uint8_t ledGridWidth;
@@ -323,114 +440,32 @@ uint32_t nextWarningFlashAt = 0;
 #define LED_STRIP_10HZ ((1000 * 1000) / 10)
 #define LED_STRIP_5HZ ((1000 * 1000) / 5)
 
-#define LED_DIRECTION_COUNT 6
-
-struct modeColors_s {
-    hsvColor_t north;
-    hsvColor_t east;
-    hsvColor_t south;
-    hsvColor_t west;
-    hsvColor_t up;
-    hsvColor_t down;
-};
-
-typedef union {
-    hsvColor_t raw[LED_DIRECTION_COUNT];
-    struct modeColors_s colors;
-} modeColors_t;
-
-static const modeColors_t orientationModeColors = {
-    .raw = {
-        LED_WHITE,
-        LED_DARK_VIOLET,
-        LED_RED,
-        LED_DEEP_PINK,
-        LED_BLUE,
-        LED_ORANGE
-    }
-};
-
-static const modeColors_t headfreeModeColors = {
-    .raw = {
-        LED_LIME_GREEN,
-        LED_DARK_VIOLET,
-        LED_ORANGE,
-        LED_DEEP_PINK,
-        LED_BLUE,
-        LED_ORANGE
-    }
-};
-
-static const modeColors_t horizonModeColors = {
-    .raw = {
-        LED_BLUE,
-        LED_DARK_VIOLET,
-        LED_YELLOW,
-        LED_DEEP_PINK,
-        LED_BLUE,
-        LED_ORANGE
-    }
-};
-
-static const modeColors_t angleModeColors = {
-    .raw = {
-        LED_CYAN,
-        LED_DARK_VIOLET,
-        LED_YELLOW,
-        LED_DEEP_PINK,
-        LED_BLUE,
-        LED_ORANGE
-    }
-};
-
-static const modeColors_t magModeColors = {
-    .raw = {
-        LED_PINK,
-        LED_DARK_VIOLET,
-        LED_ORANGE,
-        LED_DEEP_PINK,
-        LED_BLUE,
-        LED_ORANGE
-    }
-};
-
-static const modeColors_t baroModeColors = {
-    .raw = {
-        LED_LIGHT_BLUE,
-        LED_DARK_VIOLET,
-        LED_RED,
-        LED_DEEP_PINK,
-        LED_BLUE,
-        LED_ORANGE
-    }
-};
-
-void applyDirectionalModeColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, const modeColors_t *modeColors)
+void applyDirectionalModeColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, const modeColorIndexes_t *modeColors)
 {
     // apply up/down colors regardless of quadrant.
     if ((ledConfig->flags & LED_DIRECTION_UP)) {
-        setLedHsv(ledIndex, &modeColors->colors.up);
+        setLedHsv(ledIndex, &colors[modeColors->up]);
     }
 
     if ((ledConfig->flags & LED_DIRECTION_DOWN)) {
-        setLedHsv(ledIndex, &modeColors->colors.down);
+        setLedHsv(ledIndex, &colors[modeColors->down]);
     }
 
     // override with n/e/s/w colors to each n/s e/w half - bail at first match.
     if ((ledConfig->flags & LED_DIRECTION_WEST) && GET_LED_X(ledConfig) <= highestXValueForWest) {
-        setLedHsv(ledIndex, &modeColors->colors.west);
+        setLedHsv(ledIndex, &colors[modeColors->west]);
     }
 
     if ((ledConfig->flags & LED_DIRECTION_EAST) && GET_LED_X(ledConfig) >= lowestXValueForEast) {
-        setLedHsv(ledIndex, &modeColors->colors.east);
+        setLedHsv(ledIndex, &colors[modeColors->east]);
     }
 
     if ((ledConfig->flags & LED_DIRECTION_NORTH) && GET_LED_Y(ledConfig) <= highestYValueForNorth) {
-        setLedHsv(ledIndex, &modeColors->colors.north);
+        setLedHsv(ledIndex, &colors[modeColors->north]);
     }
 
     if ((ledConfig->flags & LED_DIRECTION_SOUTH) && GET_LED_Y(ledConfig) >= lowestYValueForSouth) {
-        setLedHsv(ledIndex, &modeColors->colors.south);
+        setLedHsv(ledIndex, &colors[modeColors->south]);
     }
 
 }
@@ -661,7 +696,7 @@ static void applyLedAnimationLayer(void)
 
 void updateLedStrip(void)
 {
-    if (!(configured && isWS2811LedStripReady())) {
+    if (!(ledStripInitialised && isWS2811LedStripReady())) {
         return;
     }
 
@@ -738,18 +773,29 @@ void updateLedStrip(void)
     ws2811UpdateStrip();
 }
 
+void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount)
+{
+    memset(colors, 0, colorCount * sizeof(colors));
+    for (uint8_t colorIndex = 0; colorIndex < colorCount && colorIndex < (sizeof(defaultColors) / sizeof(defaultColors[0])); colorIndex++) {
+        *colors++ = *defaultColors[colorIndex];
+    }
+}
+
 void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     memset(ledConfigs, 0, MAX_LED_STRIP_LENGTH * sizeof(ledConfig_t));
     memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
+
     reevalulateLedConfig();
 }
 
-void ledStripInit(ledConfig_t *ledConfigsToUse, failsafe_t* failsafeToUse)
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse)
 {
     ledConfigs = ledConfigsToUse;
+    colors = colorsToUse;
     failsafe = failsafeToUse;
+
     reevalulateLedConfig();
-    configured = true;
+    ledStripInitialised = true;
 }
 #endif
