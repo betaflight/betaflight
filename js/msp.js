@@ -638,7 +638,7 @@ MSP.crunch = function (code) {
             buffer.push(MISC.gps_type);
             buffer.push(MISC.gps_baudrate);
             buffer.push(MISC.gps_ubx_sbas);
-            buffer.push(MISC.placeholder1);
+            buffer.push(MISC.multiwiicurrentoutput);
             buffer.push(lowByte(MISC.placeholder2));
             buffer.push(highByte(MISC.placeholder2));
             buffer.push(lowByte(MISC.mag_declination));

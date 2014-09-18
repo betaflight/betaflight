@@ -29,8 +29,7 @@ var BF_CONFIG = {
     serialrx_type:          0,
     board_align_roll:       0,
     board_align_pitch:      0,
-    board_align_yaw:        0,
-    multiwiicurrentoutput:  0
+    board_align_yaw:        0
     // TBD
 };
 
@@ -104,19 +103,19 @@ var ANALOG = {
 };
 
 var MISC = {
-    midrc:              0,
-    minthrottle:        0,
-    maxthrottle:        0,
-    mincommand:         0,
-    failsafe_throttle:  0,
-    gps_type:           0,
-    gps_baudrate:       0,
-    gps_ubx_sbas:       0,
-    placeholder1:       0,
-    placeholder2:       0,
-    mag_declination:    0, // not checked
-    vbatscale:          0,
-    vbatmincellvoltage: 0,
-    vbatmaxcellvoltage: 0,
-    placeholder3:       0
+    midrc:                  0,
+    minthrottle:            0,
+    maxthrottle:            0,
+    mincommand:             0,
+    failsafe_throttle:      0,
+    gps_type:               0,
+    gps_baudrate:           0,
+    gps_ubx_sbas:           0,
+    multiwiicurrentoutput:  0,
+    placeholder2:           0,
+    mag_declination:        0, // not checked
+    vbatscale:              0,
+    vbatmincellvoltage:     0,
+    vbatmaxcellvoltage:     0,
+    placeholder3:           0
 };
