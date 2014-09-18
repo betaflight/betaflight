@@ -24,6 +24,7 @@
 
 #include "common/maths.h"
 #include "common/axis.h"
+#include "common/color.h"
 
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"

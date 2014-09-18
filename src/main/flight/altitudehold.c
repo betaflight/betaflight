@@ -33,6 +33,8 @@
 
 // FIXME remove dependency on currentProfile and masterConfig globals and clean up include file list.
 
+#include "common/color.h"
+
 #include "flight/flight.h"
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"

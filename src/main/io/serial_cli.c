@@ -28,6 +28,7 @@
 #include "build_config.h"
 
 #include "common/axis.h"
+#include "common/color.h"
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"

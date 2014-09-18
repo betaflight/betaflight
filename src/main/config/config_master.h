@@ -74,7 +74,10 @@ typedef struct master_t {
 
     telemetryConfig_t telemetryConfig;
 
+#ifdef LED_STRIP
     ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
+    hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
+#endif
 
     profile_t profile[3];                   // 3 separate profiles
     uint8_t current_profile_index;          // currently loaded profile

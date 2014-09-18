@@ -91,7 +91,7 @@ void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
 void displayInit(void);
-void ledStripInit(ledConfig_t *ledConfigsToUse, failsafe_t* failsafeToUse);
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse);
 void loop(void);
 
 // FIXME bad naming - this appears to be for some new board that hasn't been made available yet.
@@ -245,7 +245,7 @@ void init(void)
 #ifdef LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
         ws2811LedStripInit();
-        ledStripInit(masterConfig.ledConfigs, failsafe);
+        ledStripInit(masterConfig.ledConfigs, masterConfig.colors, failsafe);
     }
 #endif
 

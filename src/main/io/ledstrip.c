@@ -54,6 +54,8 @@ static failsafe_t* failsafe;
 #error "Led strip length must match driver"
 #endif
 
+static hsvColor_t *colors;
+
 //#define USE_LED_ANIMATION
 
 //                          H    S    V
@@ -89,10 +91,6 @@ const hsvColor_t hsv_deepPink    = LED_DEEP_PINK;
 
 #define LED_DIRECTION_COUNT 6
 
-#define CONFIGURABLE_COLOR_COUNT 16
-
-hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
-
 const hsvColor_t * const defaultColors[] = {
         &hsv_black,
         &hsv_white,
@@ -109,8 +107,6 @@ const hsvColor_t * const defaultColors[] = {
         &hsv_magenta,
         &hsv_deepPink
 };
-
-
 
 typedef enum {
     COLOR_BLACK = 0,
@@ -760,12 +756,11 @@ void updateLedStrip(void)
     ws2811UpdateStrip();
 }
 
-void applyDefaultColors()
+void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount)
 {
-    hsvColor_t *colorConfig = colors;
-    memset(colorConfig, 0, CONFIGURABLE_COLOR_COUNT * sizeof(colorConfig));
-    for (uint8_t colorIndex = 0; colorIndex < CONFIGURABLE_COLOR_COUNT && colorIndex < (sizeof(defaultColors) / sizeof(defaultColors[0])); colorIndex++) {
-        *colorConfig++ = *defaultColors[colorIndex];
+    memset(colors, 0, colorCount * sizeof(colors));
+    for (uint8_t colorIndex = 0; colorIndex < colorCount && colorIndex < (sizeof(defaultColors) / sizeof(defaultColors[0])); colorIndex++) {
+        *colors++ = *defaultColors[colorIndex];
     }
 }
 
@@ -777,12 +772,11 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
     reevalulateLedConfig();
 }
 
-void ledStripInit(ledConfig_t *ledConfigsToUse, failsafe_t* failsafeToUse)
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse)
 {
     ledConfigs = ledConfigsToUse;
+    colors = colorsToUse;
     failsafe = failsafeToUse;
-
-    applyDefaultColors();
 
     reevalulateLedConfig();
     ledStripInitialised = true;

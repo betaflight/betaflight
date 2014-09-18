@@ -23,6 +23,7 @@
 
 #include "build_config.h"
 
+#include "common/color.h"
 #include "common/axis.h"
 #include "flight/flight.h"
 
@@ -98,7 +99,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t *currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 78;
+static const uint8_t EEPROM_CONF_VERSION = 79;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -376,6 +377,7 @@ static void resetConf(void)
         masterConfig.customMixer[i].throttle = 0.0f;
 
 #ifdef LED_STRIP
+    applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
 #endif
 
