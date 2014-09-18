@@ -165,19 +165,19 @@
         "message": "Calibrate Accelerometer"
     },
     "initialSetupCalibrateAccelText": {
-        "message": "Place board or frame on <strong style=\"color: green\">leveled</strong> surface, proceed with calibration, ensure platform is <strong style=\"color: red\">not</strong> moving during calibration period."
+        "message": "Place board or frame on <strong>leveled</strong> surface, proceed with calibration, ensure platform is not moving during calibration period"
     },
     "initialSetupButtonCalibrateMag": {
         "message": "Calibrate Magnetometer"
     },
     "initialSetupCalibrateMagText": {
-        "message": "Move multirotor atleast <strong>360</strong> degrees on all axis of rotation. You have <strong style=\"color: red\">30 seconds</strong> to perform this task."
+        "message": "Move multirotor atleast <strong>360</strong> degrees on all axis of rotation, you have 30 seconds to perform this task"
     },
     "initialSetupButtonReset": {
         "message": "Reset Settings"
     },
     "initialSetupResetText": {
-        "message": "Restore <span style=\"color: red\">all</span> settings to <strong>default</strong>."
+        "message": "Restore settings to <strong>default</strong>"
     },
     "initialSetupButtonBackup": {
         "message": "Backup"
@@ -186,7 +186,7 @@
         "message": "Restore"
     },
     "initialSetupBackupRestoreText": {
-        "message": "<strong>Backup</strong> your configuration in case of an accident. (<strong>CLI</strong> settings are <strong style=\"color: red\">not</strong> included)."
+        "message": "<strong>Backup</strong> your configuration in case of an accident, <strong>CLI</strong> settings are not included"
     },
     "initialSetupButtonResetZaxis": {
         "message": "Reset Z axis, offset: 0 deg"

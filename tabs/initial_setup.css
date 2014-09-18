@@ -81,9 +81,12 @@
         .tab-initial_setup .section p {
             margin-left: 180px;
 
-            padding: 5px;
+            padding: 0 0 0 5px;
 
-            border: 1px dotted silver;
+            height: 25px;
+            line-height: 25px;
+
+            border-bottom: 1px solid #e5e5e5;
         }
 #interactive_block {
     float: left;
