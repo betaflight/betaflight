@@ -19,6 +19,7 @@
 
 #include <limits.h>
 
+#include "common/color.h"
 #include "common/axis.h"
 #include "flight/flight.h"
 
@@ -290,18 +291,27 @@ uint16_t flightModeFlags = 0;
 int16_t rcCommand[4];
 
 void ws2811UpdateStrip(void) {}
-void setLedColor(uint16_t index, const rgbColor24bpp_t *color) {
+
+void setLedValue(uint16_t index, const uint8_t value) {
+    UNUSED(index);
+    UNUSED(value);
+}
+
+void setLedHsv(uint16_t index, const hsvColor_t *color) {
     UNUSED(index);
     UNUSED(color);
 }
-void setLedBrightness(uint16_t index, const uint8_t scalePercent) {
+
+void scaleLedValue(uint16_t index, const uint8_t scalePercent) {
     UNUSED(index);
     UNUSED(scalePercent);
 }
-void setStripColor(const rgbColor24bpp_t *color) {
+
+void setStripColor(const hsvColor_t *color) {
     UNUSED(color);
 }
-void setStripColors(const rgbColor24bpp_t *colors) {
+
+void setStripColors(const hsvColor_t *colors) {
     UNUSED(colors);
 }
 
