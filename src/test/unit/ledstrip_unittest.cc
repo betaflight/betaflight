@@ -286,6 +286,51 @@ TEST(LedStripTest, smallestGrid)
 
  */
 
+hsvColor_t testColors[CONFIGURABLE_COLOR_COUNT];
+
+extern hsvColor_t *colors;
+
+#define TEST_COLOR_COUNT 4
+
+TEST(ColorTest, parseColor)
+{
+    // given
+    colors = testColors;
+    memset(colors, 0, sizeof(colors) * CONFIGURABLE_COLOR_COUNT);
+
+    // and
+    const hsvColor_t expectedColors[TEST_COLOR_COUNT] = {
+            //  H    S    V
+            {   0,   0,   0 },
+            {   1,   1,   1 },
+            { 360, 255, 255 },
+            { 333,  22,   1 }
+    };
+
+    char *testColors[TEST_COLOR_COUNT] = {
+            "0,0,0",
+            "1,1,1",
+            "360,255,255",
+            "333,22,1"
+    };
+
+    // when
+    for (uint8_t index = 0; index < TEST_COLOR_COUNT; index++) {
+        printf("parse iteration: %d\n", index);
+        parseColor(index, testColors[index]);
+    }
+
+    // then
+
+    for (uint8_t index = 0; index < TEST_COLOR_COUNT; index++) {
+        printf("iteration: %d\n", index);
+
+        EXPECT_EQ(expectedColors[index].h, colors[index].h);
+        EXPECT_EQ(expectedColors[index].s, colors[index].s);
+        EXPECT_EQ(expectedColors[index].v, colors[index].v);
+    }
+}
+
 uint8_t armingFlags = 0;
 uint16_t flightModeFlags = 0;
 int16_t rcCommand[4];

@@ -37,16 +37,20 @@ typedef union {
     uint8_t raw[RGB_COLOR_COMPONENT_COUNT];
 } rgbColor24bpp_t;
 
+#define HSV_HUE_MAX 359
+#define HSV_SATURATION_MAX 255
+#define HSV_VALUE_MAX 255
+
 typedef enum {
-    HSV_RED = 0,
-    HSV_GREEN,
-    HSV_BLUE
+    HSV_HUE = 0,
+    HSV_SATURATION,
+    HSV_VALUE
 } hsvColorComponent_e;
 
-#define HSV_COLOR_COMPONENT_COUNT (HSV_BLUE + 1)
+#define HSV_COLOR_COMPONENT_COUNT (HSV_VALUE + 1)
 
 typedef struct hsvColor_s {
-    uint16_t h; // 0 - 360
+    uint16_t h; // 0 - 359
     uint8_t s; // 0 - 255
     uint8_t v; // 0 - 255
 } hsvColor_t;

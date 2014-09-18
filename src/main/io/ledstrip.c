@@ -54,7 +54,7 @@ static failsafe_t* failsafe;
 #error "Led strip length must match driver"
 #endif
 
-static hsvColor_t *colors;
+hsvColor_t *colors;
 
 //#define USE_LED_ANIMATION
 
@@ -754,6 +754,57 @@ void updateLedStrip(void)
     applyLedAnimationLayer();
 #endif
     ws2811UpdateStrip();
+}
+
+bool parseColor(uint8_t index, char *colorConfig)
+{
+    char *remainingCharacters = colorConfig;
+
+    hsvColor_t *color = &colors[index];
+
+    bool ok = true;
+
+    uint8_t componentIndex;
+    for (componentIndex = 0; ok && componentIndex < HSV_COLOR_COMPONENT_COUNT; componentIndex++) {
+        uint16_t val = atoi(remainingCharacters);
+        switch (componentIndex) {
+            case HSV_HUE:
+                if (val > HSV_HUE_MAX) {
+                    ok = false;
+                    continue;
+                }
+                colors[index].h = val;
+                break;
+            case HSV_SATURATION:
+                if (val > HSV_SATURATION_MAX) {
+                    ok = false;
+                    continue;
+                }
+                colors[index].s = (uint8_t)val;
+                break;
+            case HSV_VALUE:
+                if (val > HSV_VALUE_MAX) {
+                    ok = false;
+                    continue;
+                }
+                colors[index].v = (uint8_t)val;
+                break;
+        }
+        remainingCharacters = strstr(remainingCharacters, ",");
+        if (remainingCharacters) {
+            remainingCharacters++;
+        } else {
+            if (componentIndex < 2) {
+                ok = false;
+            }
+        }
+    }
+
+    if (!ok) {
+        memset(color, 0, sizeof(hsvColor_t));
+    }
+
+    return ok;
 }
 
 void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount)

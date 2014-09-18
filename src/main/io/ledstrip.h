@@ -58,6 +58,9 @@ extern uint8_t ledCount;
 
 bool parseLedStripConfig(uint8_t ledIndex, const char *config);
 void updateLedStrip(void);
-void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount);
+
 void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
 void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSize);
+
+bool parseColor(uint8_t index, char *colorConfig);
+void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount);

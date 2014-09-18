@@ -80,6 +80,7 @@ static void cliGpsPassthrough(char *cmdline);
 static void cliHelp(char *cmdline);
 static void cliMap(char *cmdline);
 static void cliLed(char *cmdline);
+static void cliColor(char *cmdline);
 static void cliMixer(char *cmdline);
 static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
@@ -137,6 +138,9 @@ typedef struct {
 const clicmd_t cmdTable[] = {
     { "aux", "feature_name auxflag or blank for list", cliAux },
     { "cmix", "design custom mixer", cliCMix },
+#ifdef LED_STRIP
+    { "color", "configure colors", cliColor },
+#endif
     { "defaults", "reset to defaults and reboot", cliDefaults },
     { "dump", "print configurable settings in a pastable form", cliDump },
     { "exit", "", cliExit },
@@ -146,7 +150,9 @@ const clicmd_t cmdTable[] = {
     { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
 #endif
     { "help", "", cliHelp },
+#ifdef LED_STRIP
     { "led", "configure leds", cliLed },
+#endif
     { "map", "mapping of rc channel order", cliMap },
     { "mixer", "mixer name or list", cliMixer },
     { "motor", "get/set motor output value", cliMotor },
@@ -530,6 +536,35 @@ static void cliLed(char *cmdline)
 #endif
 }
 
+static void cliColor(char *cmdline)
+{
+#ifndef LED_STRIP
+    UNUSED(cmdline);
+#else
+    int i;
+    uint8_t len;
+    char *ptr;
+
+    len = strlen(cmdline);
+    if (len == 0) {
+        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+            printf("color %u %d,%u,%u\r\n", i, masterConfig.colors[i].h, masterConfig.colors[i].s, masterConfig.colors[i].v);
+        }
+    } else {
+        ptr = cmdline;
+        i = atoi(ptr);
+        if (i < CONFIGURABLE_COLOR_COUNT) {
+            ptr = strchr(cmdline, ' ');
+            if (!parseColor(i, ++ptr)) {
+                printf("Parse error\r\n", CONFIGURABLE_COLOR_COUNT);
+            }
+        } else {
+            printf("Invalid color index: must be < %u\r\n", CONFIGURABLE_COLOR_COUNT);
+        }
+    }
+#endif
+}
+
 static void dumpValues(uint8_t mask)
 {
     uint32_t i;
@@ -634,6 +669,9 @@ static void cliDump(char *cmdline)
 #ifdef LED_STRIP
         printf("\r\n\r\n# led\r\n");
         cliLed("");
+
+        printf("\r\n\r\n# color\r\n");
+        cliColor("");
 #endif
         printSectionBreak();
         dumpValues(MASTER_VALUE);
