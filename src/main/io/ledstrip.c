@@ -136,13 +136,14 @@ static const uint8_t directionMappings[DIRECTION_COUNT] = {
     LED_DIRECTION_DOWN
 };
 
-static const char functionCodes[] = { 'I', 'W', 'F', 'A' };
+static const char functionCodes[] = { 'I', 'W', 'F', 'A', 'T' };
 #define FUNCTION_COUNT (sizeof(functionCodes) / sizeof(functionCodes[0]))
 static const uint16_t functionMappings[FUNCTION_COUNT] = {
     LED_FUNCTION_INDICATOR,
     LED_FUNCTION_WARNING,
     LED_FUNCTION_FLIGHT_MODE,
-    LED_FUNCTION_ARM_STATE
+    LED_FUNCTION_ARM_STATE,
+    LED_FUNCTION_THROTTLE
 };
 
 // grid offsets
@@ -599,6 +600,21 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
     }
 }
 
+void applyLedThrottleLayer()
+{
+    const ledConfig_t *ledConfig;
+
+    uint8_t ledIndex;
+    for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+    	ledConfig = &ledConfigs[ledIndex];
+    	if(ledConfig->flags & LED_FUNCTION_THROTTLE) {
+    	    int hue = scaleRange(rcCommand[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, hsv_lightBlue.h, hsv_red.h);
+    	    hsvColor_t color = {hue , 0 , 255};
+    	    setLedHsv(ledIndex, &color);
+    	}
+    }
+}
+
 static uint8_t frameCounter = 0;
 
 static uint8_t previousRow;
@@ -666,6 +682,7 @@ void updateLedStrip(void)
     // LAYER 1
 
     applyLedModeLayer();
+    applyLedThrottleLayer();
 
     // LAYER 2
 
