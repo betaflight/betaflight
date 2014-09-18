@@ -5,7 +5,31 @@
     height: calc(100% - 142px);
 }
 .tab-initial_setup .CAP_BASEFLIGHT_CONFIG #interactive_block {
-    width: calc(100% - 411px);
+    width: calc(100% - 199px);
+}
+.tab-initial_setup .CAP_BASEFLIGHT_CONFIG .gps {
+    width: 185px;
+}
+.tab-initial_setup .CAP_BASEFLIGHT_CONFIG .gps .fields {
+    padding: 5px 5px 3px 5px;
+}
+.tab-initial_setup .CAP_BASEFLIGHT_CONFIG .gps dt {
+    float: left;
+
+    width: 85px;
+    height: 20px;
+
+    margin-bottom: 2px;
+
+    line-height: 20px;
+}
+.tab-initial_setup .CAP_BASEFLIGHT_CONFIG .gps dd {
+    height: 20px;
+
+    margin-left: 85px;
+    margin-bottom: 2px;
+
+    line-height: 20px;
 }
 /* temporary styles end*/
 
@@ -182,9 +206,6 @@
 .tab-initial_setup .block .info {
     width: 200px;
 }
-
-
-
     .tab-initial_setup .battery,
     .tab-initial_setup .throttle,
     .tab-initial_setup .acc-trim,

@@ -266,6 +266,9 @@
     "initialSetupRSSIValue": {
         "message": "$1 %"
     },
+    "initialSetupGPSHead": {
+        "message": "GPS"
+    },
     "initialSetupButtonSave": {
         "message": "Save"
     },

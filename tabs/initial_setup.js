@@ -257,23 +257,35 @@ TABS.initial_setup.initialize = function (callback) {
         $('#content .restore').click(configuration_restore);
 
         // data pulling functions used inside interval timer
+        // this stuff will be reworked when compatibility period ends, to make the pulling more efficient
         function get_analog_data() {
-            MSP.send_message(MSP_codes.MSP_ANALOG, false, false, get_attitude_data);
+            MSP.send_message(MSP_codes.MSP_ANALOG, false, false, get_gps_data);
+        }
+
+        function get_gps_data() {
+            MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, get_attitude_data);
         }
 
         function get_attitude_data() {
             MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, update_ui);
         }
 
+        // in future update selectors will be moved outside to specific variables to increase performance
         function update_ui() {
+            // Update heading
+            $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
+
             // Update voltage indicator
             $('.bat-voltage').text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
             $('.bat-mah-drawn').text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.mAhdrawn]));
             $('.bat-mah-drawing').text(chrome.i18n.getMessage('initialSetupBatteryAValue', [ANALOG.amperage.toFixed(2)]));
             $('.rssi').text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
 
-            // Update heading
-            $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
+            // Update gps
+            $('.gpsFix').html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
+            $('.gpsSats').text(GPS_DATA.numSat);
+            $('.gpsLat').text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
+            $('.gpsLon').text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
 
             // Update 3D
             self.render3D();
