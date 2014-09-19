@@ -624,6 +624,11 @@ MSP.crunch = function (code) {
                 buffer.push(highByte(AUX_CONFIG_values[i]));
             }
             break;
+        case MSP_codes.MSP_SET_RCMAP:
+            for (var i = 0; i < RC_MAP.length; i++) {
+                buffer.push(RC_MAP[i]);
+            }
+            break;
         case MSP_codes.MSP_SET_ACC_TRIM:
             buffer.push(lowByte(CONFIG.accelerometerTrims[0]));
             buffer.push(highByte(CONFIG.accelerometerTrims[0]));
