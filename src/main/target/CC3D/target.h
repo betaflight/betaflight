@@ -29,6 +29,11 @@
 #define GYRO
 #define INVERTER
 
+#define BEEP_GPIO GPIOA
+#define BEEP_PIN Pin_15 // PA15 (Beeper)
+#define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
+
+
 // #define SOFT_I2C // enable to test software i2c
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67

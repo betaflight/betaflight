@@ -20,3 +20,16 @@ Example of a known-working buzzer.
 
 http://www.rapidonline.com/Audio-Visual/Hcm1205x-Miniature-Buzzer-5v-35-0055
 
+## Connections
+
+### Naze32
+
+Connect a supported buzzer directly to the BUZZ pins.  Observe polarity.
+
+### CC3D
+
+Buzzer support on the CC3D requires that a buzzer circuit be created to which the input is PA15.
+PA15 is unused and not connected according to the CC3D Revision A schematic.
+Connecting to PA15 requires careful soldering.
+
+See the CC3D - buzzer circuir.pdf for details.
