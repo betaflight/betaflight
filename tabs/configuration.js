@@ -91,26 +91,26 @@ TABS.configuration.initialize = function (callback) {
 
         // generate features
         var featureNames = [
-            'Enable PPM input (and disable PWM input)',
-            'Enable Battery voltage monitoring',
-            'Enable in-flight level calibration',
-            'Enable Serial-based receiver (SPEKSAT, SBUS, SUMD)',
-            'Don\'t spin the motors when armed',
-            'Enable servo gimbal',
-            'Enable 3rd serial port',
-            'Enable LED ring support',
-            'Enable GPS (PPM or 3rd serial port required)',
-            'Enable failsafe settings on PPM/PWM signal loss',
-            'Enable sonar',
-            'Enable FrSky- compatible telemetry output',
-            'Enable battery current monitoring',
-            'Enable VARIO',
-            'Enable 3D mode (for use with reversible ESCs)'
+            {name: 'PPM', description: 'Enable PPM input (and disable PWM input)'},
+            {name: 'VBAT', description: 'Enable Battery voltage monitoring'},
+            {name: 'INFLIGHT_ACC_CAL', description: 'Enable in-flight level calibration'},
+            {name: 'SERIALRX', description: 'Enable Serial-based receiver (SPEKSAT, SBUS, SUMD)'},
+            {name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
+            {name: 'SERVO_TILT', description: 'Enable servo gimbal'},
+            {name: 'SOFTSERIAL', description: 'Enable 3rd serial port'},
+            {name: 'LED_RING', description: 'Enable LED ring support'},
+            {name: 'GPS', description: 'Enable GPS (PPM or 3rd serial port required)'},
+            {name: 'FAILSAFE', description: 'Enable failsafe settings on PPM/PWM signal loss'},
+            {name: 'SONAR', description: 'Enable sonar'},
+            {name: 'TELEMETRY', description: 'Enable FrSky- compatible telemetry output'},
+            {name: 'POWERMETER', description: 'Enable battery current monitoring'},
+            {name: 'VARIO', description: 'Enable VARIO'},
+            {name: '3D', description: 'Enable 3D mode (for use with reversible ESCs)'}
         ];
 
         var features_e = $('.features');
         for (var i = 0; i < featureNames.length; i++) {
-            var element = $('<dt><input id="feature-' + i + '" type="checkbox" /></dt><dd><label for="feature-' + i + '">' + featureNames[i] + '</label></dd>');
+            var element = $('<dt><input id="feature-' + i + '" title="' + featureNames[i].name + '" type="checkbox" /></dt><dd><label for="feature-' + i + '">' + featureNames[i].description + '</label></dd>');
             element.find('input').attr('checked', bit_check(BF_CONFIG.features, i));
 
             features_e.append(element);
