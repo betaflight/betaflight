@@ -47,9 +47,6 @@ TABS.configuration.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-        // index references
-        var RCMAPlLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
-
         // generate mixer
         var mixerList = [
             {name: 'Tricopter', image: 'tri'},

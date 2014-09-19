@@ -7,7 +7,16 @@ TABS.receiver.initialize = function (callback) {
     googleAnalytics.sendAppView('Receiver Page');
 
     function get_rc_data() {
-        MSP.send_message(MSP_codes.MSP_RC, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_RC, false, false, get_rc_map);
+    }
+
+    function get_rc_map() {
+        // TODO remove this after compatibility period
+        if (bit_check(CONFIG.capability, 30)) {
+            MSP.send_message(MSP_codes.MSP_RCMAP, false, false, load_html);
+        } else {
+            load_html();
+        }
     }
 
     function load_html() {
@@ -67,6 +76,66 @@ TABS.receiver.initialize = function (callback) {
         $('.value', bar_container).each(function () {
             meter_values_array.push($(this));
         });
+
+        // handle rcmap
+        if (bit_check(CONFIG.capability, 30)) {
+            var RCMAPlLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+
+            var strBuffer = '';
+            for (var i = 0; i < RC_MAP.length; i++) {
+                strBuffer += RCMAPlLetters[RC_MAP[i]];
+            }
+
+            // set current value
+            $('input[name="rcmap"]').val(strBuffer);
+
+            // validation / filter
+            var last_valid = strBuffer;
+
+            $('input[name="rcmap"]').on('input', function () {
+                var val = $(this).val();
+
+                // limit length to max 8
+                if (val.length > 8) {
+                    val = val.substr(0, 8);
+                }
+
+                $(this).val(val);
+            });
+
+            $('input[name="rcmap"]').focusout(function () {
+                var val = $(this).val();
+                var strBuffer = val.split('');
+                var duplicityBuffer = [];
+
+                if (val.length != 8) {
+                    $(this).val(last_valid);
+                    return false;
+                }
+
+                // check if characters inside are all valid, also check for duplicity
+                for (var i = 0; i < val.length; i++) {
+                    if (RCMAPlLetters.indexOf(strBuffer[i]) < 0) {
+                        $(this).val(last_valid);
+                        return false;
+                    }
+
+                    if (duplicityBuffer.indexOf(strBuffer[i]) < 0) {
+                        duplicityBuffer.push(strBuffer[i]);
+                    } else {
+                        $(this).val(last_valid);
+                        return false;
+                    }
+                }
+            });
+
+            // handle helper
+            $('select[name="rcmap_helper"]').change(function () {
+                $('input[name="rcmap"]').val($(this).val());
+            });
+        } else {
+            $('.rcmap_wrapper').hide();
+        }
 
         // UI Hooks
         // curves
@@ -143,13 +212,28 @@ TABS.receiver.initialize = function (callback) {
             RC_tuning.RC_RATE = parseFloat($('.tunings .rate input[name="rate"]').val());
             RC_tuning.RC_EXPO = parseFloat($('.tunings .rate input[name="expo"]').val());
 
+            // catch rc map
+            var strBuffer = $('input[name="rcmap"]').val().split('');
+
+            for (var i = 0; i < RC_MAP.length; i++) {
+                RC_MAP[i] = RCMAPlLetters.indexOf(strBuffer[i]);
+            }
+
+            function save_rc_map() {
+                MSP.send_message(MSP_codes.MSP_SET_RCMAP, MSP.crunch(MSP_codes.MSP_SET_RCMAP), false, save_to_eeprom);
+            }
+
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
                 });
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_to_eeprom);
+            if (bit_check(CONFIG.capability, 30)) {
+                MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_rc_map);
+            } else {
+                MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_to_eeprom);
+            }
         });
 
         $('select[name="rx_refresh_rate"]').change(function () {

@@ -443,6 +443,9 @@
     "receiverRcExpo": {
         "message": "RC Expo"
     },
+    "receiverChannelMap": {
+        "message": "Channel Map"
+    },
     "receiverRefreshRateTitle": {
         "message": "Graph refresh rate"
     },
