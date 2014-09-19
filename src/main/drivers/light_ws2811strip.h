@@ -31,6 +31,8 @@ void ws2811LedStripDMAEnable(void);
 void ws2811UpdateStrip(void);
 
 void setLedHsv(uint16_t index, const hsvColor_t *color);
+void getLedHsv(uint16_t index, hsvColor_t *color);
+
 void scaleLedValue(uint16_t index, const uint8_t scalePercent);
 void setLedValue(uint16_t index, const uint8_t value);
 

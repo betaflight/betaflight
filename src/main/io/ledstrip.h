@@ -65,3 +65,4 @@ void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSiz
 
 bool parseColor(uint8_t index, char *colorConfig);
 void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount);
+

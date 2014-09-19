@@ -42,6 +42,11 @@ void setLedHsv(uint16_t index, const hsvColor_t *color)
     ledColorBuffer[index] = *color;
 }
 
+void getLedHsv(uint16_t index, hsvColor_t *color)
+{
+    *color = ledColorBuffer[index];
+}
+
 void setLedValue(uint16_t index, const uint8_t value)
 {
     ledColorBuffer[index].v = value;

@@ -643,15 +643,21 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
 void applyLedThrottleLayer()
 {
     const ledConfig_t *ledConfig;
+    hsvColor_t color;
 
     uint8_t ledIndex;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-    	ledConfig = &ledConfigs[ledIndex];
-    	if(ledConfig->flags & LED_FUNCTION_THROTTLE) {
-    	    int hue = scaleRange(rcCommand[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, hsv_lightBlue.h, hsv_red.h);
-    	    hsvColor_t color = {hue , 0 , 255};
-    	    setLedHsv(ledIndex, &color);
-    	}
+        ledConfig = &ledConfigs[ledIndex];
+        if(!(ledConfig->flags & LED_FUNCTION_THROTTLE)) {
+            continue;
+        }
+
+        getLedHsv(ledIndex, &color);
+
+        int scaled = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, -60, +60);
+        scaled += HSV_HUE_MAX;
+        color.h = scaled % HSV_HUE_MAX;
+        setLedHsv(ledIndex, &color);
     }
 }
 
