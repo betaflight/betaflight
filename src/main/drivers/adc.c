@@ -32,7 +32,7 @@ extern int16_t debug[4];
 
 uint16_t adcGetChannel(uint8_t channel)
 {
-#if 0
+#if DEBUG_ADC_CHANNELS
     if (adcConfig[0].enabled) {
         debug[0] = adcValues[adcConfig[0].dmaIndex];
     }

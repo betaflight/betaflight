@@ -33,22 +33,24 @@
 
 // Driver for STM32F103CB onboard ADC
 //
+// Naze32
 // Battery Voltage (VBAT) is connected to PA4 (ADC1_IN4) with 10k:1k divider
 // RSSI ADC uses CH2 (PA1, ADC1_IN1)
 // Current ADC uses CH8 (PB1, ADC1_IN9)
 //
 // NAZE rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
+//
+// CC3D Only one ADC channel supported currently, for battery on S5_IN/PA0
 
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
-#ifdef CC3D
-void adcInit(drv_adc_config_t *init) {
-    UNUSED(init);
-}
-#else
 void adcInit(drv_adc_config_t *init)
 {
+#ifdef CC3D
+    UNUSED(init);
+#endif
+
     ADC_InitTypeDef adc;
     DMA_InitTypeDef dma;
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -59,10 +61,19 @@ void adcInit(drv_adc_config_t *init)
     memset(&adcConfig, 0, sizeof(adcConfig));
 
     GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_4;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AIN;
 
+#ifdef CC3D
+    UNUSED(init);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_0;
+    adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
+    adcConfig[ADC_BATTERY].enabled = true;
+    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+#else
     // configure always-present battery index (ADC4)
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_4;
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_4;
     adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
     adcConfig[ADC_BATTERY].enabled = true;
@@ -109,6 +120,7 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_CURRENT].enabled = true;
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;
     }
+#endif // !CC3D
 
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
@@ -156,4 +168,3 @@ void adcInit(drv_adc_config_t *init)
 
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 }
-#endif

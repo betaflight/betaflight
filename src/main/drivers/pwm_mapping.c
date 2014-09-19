@@ -326,6 +326,11 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
+#ifdef CC3D
+        if (init->useVbat && timerIndex == PWM5) {
+            continue;
+        }
+#endif
         // hacks to allow current functionality
         if (type == MAP_TO_PWM_INPUT && !init->useParallelPWM)
             type = 0;
