@@ -139,7 +139,13 @@ function onOpen(openInfo) {
             MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
                 GUI.timeout_remove('connecting'); // kill connecting timer
 
-                GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
+                // silencing firmware shoutout, since nobody cares anyway
+                // GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
+
+                if (!bit_check(CONFIG.capability, 30)) {
+                    GUI.log('Configurator detected that you are running an old version of the firmware and will operate in compatibility mode,\
+                        to enjoy all of the recently implemented features, please <strong>update</strong> your firmware.');
+                }
 
                 if (CONFIG.version >= CONFIGURATOR.firmwareVersionAccepted) {
                     CONFIGURATOR.connectionValid = true;
