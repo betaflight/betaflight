@@ -98,9 +98,8 @@ TABS.receiver.initialize = function (callback) {
                 // limit length to max 8
                 if (val.length > 8) {
                     val = val.substr(0, 8);
+                    $(this).val(val);
                 }
-
-                $(this).val(val);
             });
 
             $('input[name="rcmap"]').focusout(function () {
