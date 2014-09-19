@@ -79,18 +79,21 @@ TABS.receiver.initialize = function (callback) {
 
         // handle rcmap
         if (bit_check(CONFIG.capability, 30)) {
-            var RCMAPlLetters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+            var RC_MAP_Letters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
 
-            var strBuffer = '';
+            var strBuffer = [];
             for (var i = 0; i < RC_MAP.length; i++) {
-                strBuffer += RCMAPlLetters[RC_MAP[i]];
+                strBuffer[RC_MAP[i]] = RC_MAP_Letters[i];
             }
 
+            // reconstruct
+            var str = strBuffer.join('');
+
             // set current value
-            $('input[name="rcmap"]').val(strBuffer);
+            $('input[name="rcmap"]').val(str);
 
             // validation / filter
-            var last_valid = strBuffer;
+            var last_valid = str;
 
             $('input[name="rcmap"]').on('input', function () {
                 var val = $(this).val();
@@ -114,7 +117,7 @@ TABS.receiver.initialize = function (callback) {
 
                 // check if characters inside are all valid, also check for duplicity
                 for (var i = 0; i < val.length; i++) {
-                    if (RCMAPlLetters.indexOf(strBuffer[i]) < 0) {
+                    if (RC_MAP_Letters.indexOf(strBuffer[i]) < 0) {
                         $(this).val(last_valid);
                         return false;
                     }
@@ -212,10 +215,11 @@ TABS.receiver.initialize = function (callback) {
             RC_tuning.RC_EXPO = parseFloat($('.tunings .rate input[name="expo"]').val());
 
             // catch rc map
+            var RC_MAP_Letters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
             var strBuffer = $('input[name="rcmap"]').val().split('');
 
             for (var i = 0; i < RC_MAP.length; i++) {
-                RC_MAP[i] = RCMAPlLetters.indexOf(strBuffer[i]);
+                RC_MAP[i] = strBuffer.indexOf(RC_MAP_Letters[i]);
             }
 
             function save_rc_map() {
