@@ -78,11 +78,11 @@ TABS.initial_setup.initialize = function (callback) {
                     break;
                 case 2: // QUAD +
                     str = 'Quad +';
-                    $('.modelMixDiagram').attr('src', './images/motor_order/quadp.svg').addClass('modelMixQuadP');
+                    $('.modelMixDiagram').attr('src', './images/motor_order/quad_p.svg').addClass('modelMixQuadP');
                     break;
                 case 3: // QUAD X
                     str = 'Quad X';
-                    $('.modelMixDiagram').attr('src', './images/motor_order/quadx.svg').addClass('modelMixQuadX');
+                    $('.modelMixDiagram').attr('src', './images/motor_order/quad_x.svg').addClass('modelMixQuadX');
                     break;
                 case 4: // BI
                     str = 'BI';
@@ -96,7 +96,7 @@ TABS.initial_setup.initialize = function (callback) {
                     break;
                 case 7: // HEX 6
                     str = 'HEX 6';
-                    $('.modelMixDiagram').attr('src', './images/motor_order/hex6p.svg').addClass('modelMixHex6P');
+                    $('.modelMixDiagram').attr('src', './images/motor_order/hex_p.svg').addClass('modelMixHex6P');
                     break;
                 case 8: // FLYING_WING
                     str = 'Flying Wing';
@@ -107,13 +107,13 @@ TABS.initial_setup.initialize = function (callback) {
                     break;
                 case 10: // HEX6 X
                     str = 'HEX6 X';
-                    $('.modelMixDiagram').attr('src', './images/motor_order/hex6x.svg').addClass('modelMixHex6X');
+                    $('.modelMixDiagram').attr('src', './images/motor_order/hex_x.svg').addClass('modelMixHex6X');
                     break;
                 case 11: // OCTO X8
                 case 12:
                 case 13:
                     str = 'OCTO X8';
-                    $('.modelMixDiagram').attr('src', './images/motor_order/octox.svg').addClass('modelMixOctoX');
+                    $('.modelMixDiagram').attr('src', './images/motor_order/octo_flat_x.svg').addClass('modelMixOctoX');
                     break;
                 case 14: // AIRPLANE
                     str = 'Airplane';
@@ -127,7 +127,7 @@ TABS.initial_setup.initialize = function (callback) {
                     break;
                 case 17: // Vtail
                     str = 'Vtail';
-                    $('.modelMixDiagram').attr('src', './images/motor_order/vtail.svg').addClass('modelMixVtail');
+                    $('.modelMixDiagram').attr('src', './images/motor_order/vtail_quad.svg').addClass('modelMixVtail');
                     break;
                 case 18: // HEX6 H
                     str = 'HEX6 H';
