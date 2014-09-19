@@ -93,6 +93,7 @@ Note: It is perfectly possible to configure an LED to have all directions `NESWU
 * `F` - `F`light mode & Orientation
 * `I` - `I`ndicator.
 * `A` - `A`rmed state.
+* `T` - `T`hrust state.
 
 Example:
 
@@ -141,6 +142,12 @@ This mode flashes LEDs that correspond to roll and pitch stick positions.  i.e. 
 This mode toggles LEDs between green and blue when disarmed and armed, respectively.
 
 Note: Armed State cannot be used with Flight Mode.
+
+#### Thrust state
+
+This mode fades the LED current LED color to the previous/next color in the HSB color space depending on throttle stick position.  When the
+throttle is in the middle position the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and throttle at
+the same time.
 
 ## Positioning
 
@@ -231,34 +238,39 @@ LEDs 15-16 should be placed facing up, in the middle
 ### Exmple 28 LED config
 
 ```
-9,9:S:FW
-10,10:S:FW
-11,11:S:IA
-11,11:E:IA
-10,10:E:F
-9,9:E:F
-10,5:S:F
-11,4:S:F
-12,3:S:IA
-12,2:N:IA
-11,1:N:F
-10,0:N:F
-7,0:N:FW
-6,0:N:FW
-5,0:N:FW
-4,0:N:FW
-2,0:N:F
-1,1:N:F
-0,2:N:IA
-0,3:W:IA
-1,4:W:F
-2,5:W:F
-2,9:W:F
-1,10:W:F
-0,11:W:IA
-0,11:S:IA
-1,10:S:FW
-2,9:S:FW
+#right rear cluster
+led 0 9,9:S:FWT
+led 1 10,10:S:FWT
+led 2 11,11:S:IA
+led 3 11,11:E:IA
+led 4 10,10:E:AT
+led 5 9,9:E:AT
+# right front cluster
+led 6 10,5:S:F
+led 7 11,4:S:F
+led 8 12,3:S:IA
+led 9 12,2:N:IA
+led 10 11,1:N:F
+led 11 10,0:N:F
+# center front cluster
+led 12 7,0:N:FW
+led 13 6,0:N:FW
+led 14 5,0:N:FW
+led 15 4,0:N:FW
+# left front cluster
+led 16 2,0:N:F
+led 17 1,1:N:F
+led 18 0,2:N:IA
+led 19 0,3:W:IA
+led 20 1,4:W:F
+led 21 2,5:W:F
+# left rear cluster
+led 22 2,9:W:AT
+led 23 1,10:W:AT
+led 24 0,11:W:IA
+led 25 0,11:S:IA
+led 26 1,10:S:FWT
+led 27 2,9:S:FWT
 ```
 
 ```
