@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2014.  All rights reserved.  Used with permission for Baseflight Configurator -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1 Basic//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-basic.dtd" [
+	<!ENTITY st0 "fill:#ED1C24;">
+	<!ENTITY st1 "font-family:'ArialMT';">
+	<!ENTITY st2 "font-size:18;">
+	<!ENTITY st3 "fill:none;stroke:#8D198F;stroke-width:3;stroke-linecap:round;stroke-miterlimit:10;">
+]>
+<svg version="1.1" baseProfile="basic"
+	 id="hex6x-mix" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="124.26px"
+	 height="112.78px" viewBox="6.64 7.57 124.26 112.78" xml:space="preserve">
+<g id="M6">
+	<path id="path5486" style="&st3;" d="M35.48,78.97c8.29-5.27,10.74-16.27,5.46-24.56c-5.27-8.29-16.27-10.74-24.56-5.46
+		C8.09,54.22,5.65,65.21,10.92,73.5C16.19,81.79,27.19,84.24,35.48,78.97z"/>
+	<path id="path5490" style="&st3;" d="M20.93,81.03l-3.4-10.42"/>
+	<path id="path5494" style="&st3;" d="M20.93,81.03l-10.86,2.54"/>
+	<text transform="matrix(1 0 0 1 20.9268 70.3843)" style="&st1; &st2;">6</text>
+</g>
+<g id="M5">
+	<path id="path5450" style="&st3;" d="M118.95,80.16c-8.95,4.06-19.49,0.1-23.55-8.85c-4.06-8.95-0.1-19.49,8.85-23.55
+		c8.95-4.06,19.49-0.1,23.55,8.85C131.86,65.56,127.9,76.11,118.95,80.16z"/>
+	<path id="path5454" style="&st3;" d="M116.23,81.14l10.78,1.96"/>
+	<path id="path5458" style="&st3;" d="M116.23,81.14l2.92-10.75"/>
+	<text transform="matrix(1 0 0 1 106.5947 70.3843)" style="&st1; &st2;">5</text>
+</g>
+<g id="M4">
+	<path id="path5426" style="&st3;" d="M65.14,26.86c0,9.82-7.96,17.79-17.79,17.79s-17.79-7.96-17.79-17.79
+		c0-9.83,7.96-17.79,17.79-17.79S65.14,17.03,65.14,26.86z"/>
+	<path id="path5430" style="&st3;" d="M34.83,14.21l-10.47,3.23"/>
+	<path id="path5434" style="&st3;" d="M34.83,14.21l2.37,10.9"/>
+	<text transform="matrix(1 0 0 1 42.25 33.3042)" style="&st1; &st2;">4</text>
+</g>
+<g id="M3">
+	<path id="path5474" style="&st3;" d="M44.74,83.45c9.72-1.44,18.77,5.27,20.21,14.99c1.44,9.72-5.27,18.77-14.99,20.21
+		c-9.72,1.44-18.76-5.27-20.21-14.99C28.31,93.94,35.02,84.9,44.74,83.45z"/>
+	<path id="path5478" style="&st3;" d="M30.24,105.93l-3.31,10.44"/>
+	<path id="path5482" style="&st3;" d="M30.24,105.93l10.3,4.26"/>
+	<text transform="matrix(1 0 0 1 42.3423 107.5034)" style="&st1; &st2;">3</text>
+</g>
+<g id="M2">
+	<path id="path5438" style="&st3;" d="M72.4,26.86c0,9.82,7.96,17.79,17.79,17.79s17.79-7.97,17.79-17.79
+		c0-9.83-7.96-17.79-17.79-17.79S72.4,17.04,72.4,26.86L72.4,26.86z"/>
+	<path id="path5442" style="&st3;" d="M103.28,14.82l-2.32,10.7"/>
+	<path id="path5446" style="&st3;" d="M103.28,14.82l10.65,3.28"/>
+	<text transform="matrix(1 0 0 1 85.1807 33.3042)" style="&st1; &st2;">2</text>
+</g>
+<g id="M1">
+	<path id="path5462" style="&st3;" d="M98.65,85.4c-8.64-4.67-19.44-1.46-24.11,7.19c-4.67,8.64-1.46,19.44,7.19,24.11
+		c8.64,4.68,19.44,1.46,24.11-7.18C110.51,100.86,107.29,90.07,98.65,85.4z"/>
+	<path id="path5466" style="&st3;" d="M107.52,105l-10,4.5"/>
+	<path id="path5470" style="&st3;" d="M107.52,105l3.69,10.52"/>
+	<text transform="matrix(1 0 0 1 85.1826 107.5034)" style="&st1; &st2;">1</text>
+</g>
+<polygon id="Front_Arrow" style="&st0;" points="77.33,67.34 67.98,51.15 58.63,67.34 65.53,67.34 65.53,76.99 70.53,76.99 
+	70.53,67.34 "/>
+</svg>
