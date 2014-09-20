@@ -68,6 +68,9 @@
 
 #include "build_config.h"
 
+#ifdef DEBUG_SECTION_TIMES
+uint32_t sectionTimes[2][4];
+#endif
 extern uint32_t previousTime;
 
 #ifdef SOFTSERIAL_LOOPBACK

@@ -20,9 +20,40 @@
 #define UNUSED(x) (void)(x)
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
+#ifdef UNIT_TEST
+#define STATIC_UNIT_TESTED // make visible to unit test
+#define UNIT_TESTED
+#else
+#define STATIC_UNIT_TESTED static
+#define UNIT_TESTED
+#endif
+
 //#define SOFT_I2C // enable to test software i2c
 
 #ifndef __CC_ARM
 #define REQUIRE_CC_ARM_PRINTF_SUPPORT
 #define REQUIRE_PRINTF_LONG_SUPPORT
 #endif
+
+extern int16_t debug[4];
+
+#ifdef DEBUG_SECTION_TIMES
+extern uint32_t sectionTimes[2][4];
+
+#define TIME_SECTION_BEGIN(index) { \
+    extern uint32_t sectionTimes[2][4]; \
+    sectionTimes[0][index] = micros(); \
+}
+
+#define TIME_SECTION_END(index) { \
+    extern uint32_t sectionTimes[2][4]; \
+    sectionTimes[1][index] = micros(); \
+    debug[index] = sectionTimes[1][index] - sectionTimes[0][index]; \
+}
+#else
+
+#define TIME_SECTION_BEGIN(index) {}
+#define TIME_SECTION_END(index) {}
+
+#endif
+

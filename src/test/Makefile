@@ -29,7 +29,7 @@ OBJECT_DIR = ../../obj/test
 CPPFLAGS += -isystem $(GTEST_DIR)/inc
 
 # Flags passed to the C++ compiler.
-CXXFLAGS += -g -Wall -Wextra -pthread -ggdb -O0
+CXXFLAGS += -g -Wall -Wextra -pthread -ggdb -O0 -DUNIT_TEST
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
@@ -39,7 +39,8 @@ TESTS = \
 	gps_conversion_unittest \
 	telemetry_hott_unittest \
 	rc_controls_unittest \
-	ledstrip_unittest
+	ledstrip_unittest \
+	ws2811_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -169,6 +170,20 @@ $(OBJECT_DIR)/ledstrip_unittest.o : $(TEST_DIR)/ledstrip_unittest.cc \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ledstrip_unittest.cc -o $@
 
 ledstrip_unittest :$(OBJECT_DIR)/io/ledstrip.o $(OBJECT_DIR)/ledstrip_unittest.o $(OBJECT_DIR)/gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
+
+
+$(OBJECT_DIR)/drivers/light_ws2811strip.o : $(USER_DIR)/drivers/light_ws2811strip.c $(USER_DIR)/drivers/light_ws2811strip.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/light_ws2811strip.c -o $@
+
+$(OBJECT_DIR)/ws2811_unittest.o : $(TEST_DIR)/ws2811_unittest.cc \
+                     $(USER_DIR)/drivers/light_ws2811strip.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ws2811_unittest.cc -o $@
+
+ws2811_unittest :$(OBJECT_DIR)/drivers/light_ws2811strip.o $(OBJECT_DIR)/ws2811_unittest.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 

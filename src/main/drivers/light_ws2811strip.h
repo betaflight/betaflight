@@ -21,7 +21,12 @@
 #define WS2811_BITS_PER_LED 24
 #define WS2811_DELAY_BUFFER_LENGTH 42 // for 50us delay
 
-#define WS2811_DMA_BUFFER_SIZE (WS2811_BITS_PER_LED * WS2811_LED_STRIP_LENGTH + WS2811_DELAY_BUFFER_LENGTH)   // number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes)
+#define WS2811_DATA_BUFFER_SIZE (WS2811_BITS_PER_LED * WS2811_LED_STRIP_LENGTH)
+
+#define WS2811_DMA_BUFFER_SIZE (WS2811_DATA_BUFFER_SIZE + WS2811_DELAY_BUFFER_LENGTH)   // number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes)
+
+#define BIT_COMPARE_1 17 // timer compare value for logical 1
+#define BIT_COMPARE_0 9  // timer compare value for logical 0
 
 void ws2811LedStripInit(void);
 

@@ -725,8 +725,11 @@ void updateLedStrip(void)
     static uint8_t warningState = 0;
     static uint8_t warningFlags;
 
+    TIME_SECTION_BEGIN(3);
+
     // LAYER 1
 
+    TIME_SECTION_BEGIN(0);
     applyLedModeLayer();
     applyLedThrottleLayer();
 
@@ -781,7 +784,14 @@ void updateLedStrip(void)
 #ifdef USE_LED_ANIMATION
     applyLedAnimationLayer();
 #endif
+    TIME_SECTION_END(0);
+
+    TIME_SECTION_BEGIN(2);
     ws2811UpdateStrip();
+    TIME_SECTION_END(2);
+
+    TIME_SECTION_END(3);
+
 }
 
 bool parseColor(uint8_t index, char *colorConfig)
