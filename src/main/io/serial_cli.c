@@ -79,8 +79,10 @@ static void cliGpsPassthrough(char *cmdline);
 #endif
 static void cliHelp(char *cmdline);
 static void cliMap(char *cmdline);
+#ifdef LED_STRIP
 static void cliLed(char *cmdline);
 static void cliColor(char *cmdline);
+#endif
 static void cliMixer(char *cmdline);
 static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
@@ -505,11 +507,9 @@ static void cliCMix(char *cmdline)
     }
 }
 
+#ifdef LED_STRIP
 static void cliLed(char *cmdline)
 {
-#ifndef LED_STRIP
-    UNUSED(cmdline);
-#else
     int i;
     uint8_t len;
     char *ptr;
@@ -533,14 +533,10 @@ static void cliLed(char *cmdline)
             printf("Invalid led index: must be < %u\r\n", MAX_LED_STRIP_LENGTH);
         }
     }
-#endif
 }
 
 static void cliColor(char *cmdline)
 {
-#ifndef LED_STRIP
-    UNUSED(cmdline);
-#else
     int i;
     uint8_t len;
     char *ptr;
@@ -562,8 +558,8 @@ static void cliColor(char *cmdline)
             printf("Invalid color index: must be < %u\r\n", CONFIGURABLE_COLOR_COUNT);
         }
     }
-#endif
 }
+#endif
 
 static void dumpValues(uint8_t mask)
 {
