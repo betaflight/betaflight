@@ -675,6 +675,10 @@ static void cliDump(char *cmdline)
 
     if (dumpMask & DUMP_PROFILE) {
         printf("\r\n# dump profile\r\n");
+
+        printf("\r\n# profile\r\n");
+        cliProfile("");
+
         printf("\r\n# aux\r\n");
 
         cliAux("");
@@ -928,7 +932,7 @@ static void cliProfile(char *cmdline)
 
     len = strlen(cmdline);
     if (len == 0) {
-        printf("Current profile: %d\r\n", masterConfig.current_profile_index);
+        printf("profile %d\r\n", masterConfig.current_profile_index);
         return;
     } else {
         i = atoi(cmdline);
