@@ -40,6 +40,7 @@
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
 #include "rx/sumd.h"
+#include "rx/sumh.h"
 #include "rx/msp.h"
 
 #include "rx/rx.h"
@@ -51,6 +52,7 @@ void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
@@ -94,6 +96,9 @@ void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintTo
             break;
         case SERIALRX_SUMD:
             sumdUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
+            break;
+        case SERIALRX_SUMH:
+            sumhUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
             break;
     }
 }
@@ -144,6 +149,9 @@ void serialRxInit(rxConfig_t *rxConfig)
         case SERIALRX_SUMD:
             enabled = sumdInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+        case SERIALRX_SUMH:
+            enabled = sumhInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            break;
     }
 
     if (!enabled) {
@@ -162,6 +170,8 @@ bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
             return sbusFrameComplete();
         case SERIALRX_SUMD:
             return sumdFrameComplete();
+        case SERIALRX_SUMH:
+            return sumhFrameComplete();
     }
     return false;
 }

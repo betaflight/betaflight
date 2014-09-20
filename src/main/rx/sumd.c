@@ -43,12 +43,11 @@
 #define SUMD_BAUDRATE 115200
 
 static bool sumdFrameDone = false;
+static uint32_t sumdChannels[SUMD_MAX_CHANNEL];
+static serialPort_t *sumdPort;
+
 static void sumdDataReceive(uint16_t c);
 static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-static uint32_t sumdChannelData[SUMD_MAX_CHANNEL];
-
-static serialPort_t *sumdPort;
 
 void sumdUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
 {
@@ -70,7 +69,7 @@ bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
 }
 
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
-static uint8_t sumdChannels;
+static uint8_t sumdChannelCount;
 
 // Receive ISR callback
 static void sumdDataReceive(uint16_t c)
@@ -91,11 +90,11 @@ static void sumdDataReceive(uint16_t c)
             sumdFrameDone = false; // lazy main loop didnt fetch the stuff
     }
     if (sumdIndex == 2)
-        sumdChannels = (uint8_t)c;
+        sumdChannelCount = (uint8_t)c;
     if (sumdIndex < SUMD_BUFFSIZE)
         sumd[sumdIndex] = (uint8_t)c;
     sumdIndex++;
-    if (sumdIndex == sumdChannels * 2 + 5) {
+    if (sumdIndex == sumdChannelCount * 2 + 5) {
         sumdIndex = 0;
         sumdFrameDone = true;
     }
@@ -120,11 +119,11 @@ bool sumdFrameComplete(void)
         return false;
     }
 
-    if (sumdChannels > SUMD_MAX_CHANNEL)
-        sumdChannels = SUMD_MAX_CHANNEL;
+    if (sumdChannelCount > SUMD_MAX_CHANNEL)
+        sumdChannelCount = SUMD_MAX_CHANNEL;
 
-    for (channelIndex = 0; channelIndex < sumdChannels; channelIndex++) {
-        sumdChannelData[channelIndex] = (
+    for (channelIndex = 0; channelIndex < sumdChannelCount; channelIndex++) {
+        sumdChannels[channelIndex] = (
             (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
             sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]
         );
@@ -135,5 +134,5 @@ bool sumdFrameComplete(void)
 static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
-    return sumdChannelData[chan] / 8;
+    return sumdChannels[chan] / 8;
 }
