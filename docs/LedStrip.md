@@ -262,8 +262,8 @@ led 16 2,0:N:F
 led 17 1,1:N:F
 led 18 0,2:N:IA
 led 19 0,3:W:IA
-led 20 1,4:W:F
-led 21 2,5:W:F
+led 20 1,4:S:F
+led 21 2,5:S:F
 # left rear cluster
 led 22 2,9:W:AT
 led 23 1,10:W:AT
