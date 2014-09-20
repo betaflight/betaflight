@@ -316,7 +316,7 @@ TABS.firmware_flasher.initialize = function (callback) {
         $('a.back').click(function () {
             if (!GUI.connect_lock) { // button disabled while flashing is in progress
                 GUI.tab_switch_cleanup(function () {
-                    TABS.default.initialize();
+                    TABS.landing.initialize();
                 });
             } else {
                 GUI.log(chrome.i18n.getMessage('firmwareFlasherWaitForFinish'));

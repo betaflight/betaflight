@@ -1,13 +1,13 @@
 'use strict';
 
-TABS.initial_setup = {
+TABS.setup = {
     yaw_fix: 0.0
 };
 
-TABS.initial_setup.initialize = function (callback) {
+TABS.setup.initialize = function (callback) {
     var self = this;
     GUI.active_tab_ref = this;
-    GUI.active_tab = 'initial_setup';
+    GUI.active_tab = 'setup';
     googleAnalytics.sendAppView('Setup');
 
     function load_ident() {
@@ -27,7 +27,7 @@ TABS.initial_setup.initialize = function (callback) {
     }
 
     function load_html() {
-        $('#content').load("./tabs/initial_setup.html", process_html);
+        $('#content').load("./tabs/setup.html", process_html);
     }
 
     MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_ident);
@@ -199,13 +199,13 @@ TABS.initial_setup.initialize = function (callback) {
 
                 // During this period MCU won't be able to process any serial commands because its locked in a for/while loop
                 // until this operation finishes, sending more commands through data_poll() will result in serial buffer overflow
-                GUI.interval_pause('initial_setup_data_pull');
+                GUI.interval_pause('setup_data_pull');
                 MSP.send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibStarted'));
                 });
 
                 GUI.timeout_add('button_reset', function () {
-                    GUI.interval_resume('initial_setup_data_pull');
+                    GUI.interval_resume('setup_data_pull');
 
                     GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibEnded'));
 
@@ -236,7 +236,7 @@ TABS.initial_setup.initialize = function (callback) {
                 GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
                 GUI.tab_switch_cleanup(function() {
-                    TABS.initial_setup.initialize();
+                    TABS.setup.initialize();
                 });
             });
         });
@@ -291,7 +291,7 @@ TABS.initial_setup.initialize = function (callback) {
             self.render3D();
         }
 
-        GUI.interval_add('initial_setup_data_pull', get_analog_data, 50, true);
+        GUI.interval_add('setup_data_pull', get_analog_data, 50, true);
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull () {
@@ -302,7 +302,7 @@ TABS.initial_setup.initialize = function (callback) {
     }
 };
 
-TABS.initial_setup.initialize3D = function (compatibility) {
+TABS.setup.initialize3D = function (compatibility) {
     var self = this;
 
     if (compatibility) {
@@ -376,7 +376,7 @@ TABS.initial_setup.initialize3D = function (compatibility) {
     });
 };
 
-TABS.initial_setup.cleanup = function (callback) {
+TABS.setup.cleanup = function (callback) {
     $(window).unbind('resize');
 
     if (callback) callback();

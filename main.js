@@ -85,8 +85,8 @@ $(document).ready(function () {
                 }
 
                 switch (tab) {
-                    case 'tab_initial_setup':
-                        TABS.initial_setup.initialize(content_ready);
+                    case 'tab_setup':
+                        TABS.setup.initialize(content_ready);
                         break;
                     case 'tab_configuration':
                         TABS.configuration.initialize(content_ready);
@@ -112,18 +112,21 @@ $(document).ready(function () {
                     case 'tab_sensors':
                         TABS.sensors.initialize(content_ready);
                         break;
-                    case 'tab_cli':
-                        TABS.cli.initialize(content_ready);
-                        break;
                     case 'tab_logging':
                         TABS.logging.initialize(content_ready);
                         break;
+                    case 'tab_cli':
+                        TABS.cli.initialize(content_ready);
+                        break;
+
+                    default:
+                        console.log('Tab not found');
                 }
             });
         }
     });
 
-    TABS.default.initialize();
+    TABS.landing.initialize();
 
     // options
     $('a#options').click(function () {

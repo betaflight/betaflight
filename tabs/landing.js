@@ -1,11 +1,11 @@
 'use strict';
 
-TABS.default = {};
-TABS.default.initialize = function (callback) {
+TABS.landing = {};
+TABS.landing.initialize = function (callback) {
     GUI.active_tab_ref = this;
-    GUI.active_tab = 'default';
+    GUI.active_tab = 'landing';
 
-    $('#content').load("./tabs/default.html", function () {
+    $('#content').load("./tabs/landing.html", function () {
         //check_usb_permissions(); // temporary enabled in dev branch, should be commented out untill DFU support goes live
 
         // translate to user-selected language
@@ -27,6 +27,6 @@ TABS.default.initialize = function (callback) {
     });
 };
 
-TABS.default.cleanup = function (callback) {
+TABS.landing.cleanup = function (callback) {
     if (callback) callback();
 };

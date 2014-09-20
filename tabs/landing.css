@@ -1,0 +1,160 @@
+.tab-landing .left {
+    width: 60%;
+}
+.tab-landing .right {
+    float: left;
+
+    margin-left: 10px;
+
+    width: calc(40% - 10px);
+}
+.tab-landing .optional_permissions {
+    display: none;
+
+    margin-bottom: 10px;
+
+    border: 1px solid silver;
+}
+.tab-landing .optional_permissions .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #cd4c4c;
+}
+.tab-landing .optional_permissions p {
+    padding: 5px;
+}
+.tab-landing .optional_permissions a {
+    display: block;
+    float: left;
+
+    height: 28px;
+    line-height: 28px;
+
+    margin: 0 0 5px 5px;
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-landing .optional_permissions a:hover {
+    background-color: #dedcdc;
+}
+.welcome {
+    margin-bottom: 10px;
+
+    padding: 5px;
+
+    border: 1px solid silver;
+}
+.welcome a {
+    font-weight: bold;
+}
+.welcome a:hover {
+    text-decoration: underline;
+}
+.changelog {
+    margin: 0 0 10px 0;
+
+    border: 1px solid silver;
+}
+.changelog .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+.changelog .wrapper {
+    height: 150px;
+
+    padding: 5px;
+
+    overflow-y: scroll;
+    overflow-x: hidden;
+
+    -webkit-user-select: text;
+}
+.changelog .wrapper span {
+    font-weight: bold;
+}
+.changelog .wrapper p {
+    margin-bottom: 5px;
+}
+.donate {
+    padding: 0 0 5px 0;
+
+    border: 1px solid silver;
+}
+.donate .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+.donate p {
+    padding: 5px;
+}
+.donate a {
+    display: block;
+
+    width: 74px;
+    height: 21px;
+
+    margin: auto;
+}
+.firmware_flasher {
+    display: block;
+    float: right;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.firmware_flasher:hover {
+    background-color: #dedcdc;
+}
+.tab-landing .sponsors {
+    margin-top: 10px;
+    border: 1px solid silver;
+}
+.tab-landing .sponsors .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+.tab-landing .sponsors p {
+    padding: 5px;
+}
+.tab-landing .sponsors p a {
+    font-weight: bold;
+}
+.tab-landing .sponsors p a:hover {
+    text-decoration: underline;
+}

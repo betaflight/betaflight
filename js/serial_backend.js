@@ -50,7 +50,7 @@ $(document).ready(function () {
                     $('#content').empty();
 
                     // load default html
-                    TABS.default.initialize();
+                    TABS.landing.initialize();
                 }
 
                 $(this).data("clicks", !clicks);
