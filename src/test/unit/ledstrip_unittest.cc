@@ -19,6 +19,8 @@
 
 #include <limits.h>
 
+#include "build_config.h"
+
 #include "common/color.h"
 #include "common/axis.h"
 #include "flight/flight.h"
@@ -27,8 +29,11 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
+#include "rx/rx.h"
+
 #include "drivers/light_ws2811strip.h"
 #include "io/ledstrip.h"
+
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
@@ -303,14 +308,14 @@ TEST(ColorTest, parseColor)
             //  H    S    V
             {   0,   0,   0 },
             {   1,   1,   1 },
-            { 360, 255, 255 },
+            { 359, 255, 255 },
             { 333,  22,   1 }
     };
 
     char *testColors[TEST_COLOR_COUNT] = {
             "0,0,0",
             "1,1,1",
-            "360,255,255",
+            "359,255,255",
             "333,22,1"
     };
 
@@ -334,6 +339,8 @@ TEST(ColorTest, parseColor)
 uint8_t armingFlags = 0;
 uint16_t flightModeFlags = 0;
 int16_t rcCommand[4];
+int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+
 
 void ws2811UpdateStrip(void) {}
 
@@ -346,6 +353,12 @@ void setLedHsv(uint16_t index, const hsvColor_t *color) {
     UNUSED(index);
     UNUSED(color);
 }
+
+void getLedHsv(uint16_t index, hsvColor_t *color) {
+    UNUSED(index);
+    UNUSED(color);
+}
+
 
 void scaleLedValue(uint16_t index, const uint8_t scalePercent) {
     UNUSED(index);
@@ -375,4 +388,14 @@ bool feature(uint32_t mask) {
     return false;
 }
 
-void tfp_sprintf(char *, char*, ...) { };
+void tfp_sprintf(char *, char*, ...) { }
+
+int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
+    UNUSED(x);
+    UNUSED(srcMin);
+    UNUSED(srcMax);
+    UNUSED(destMin);
+    UNUSED(destMax);
+
+    return 0;
+}
