@@ -5,50 +5,50 @@
 
     border: 1px solid silver;
 }
-    .tab-motor_outputs .plot_control .title {
-        line-height: 20px;
-        font-weight: bold;
-        text-align: center;
+.tab-motor_outputs .plot_control .title {
+    line-height: 20px;
+    font-weight: bold;
+    text-align: center;
 
-        border-bottom: 1px solid silver;
-        background-color: #ececec;
-    }
-    .tab-motor_outputs .plot_control .title a:hover {
-        text-decoration: underline;
-    }
-    .tab-motor_outputs .plot_control dl {
-        padding: 5px 5px 0 5px;
-        line-height: 22px;
-    }
-    .tab-motor_outputs .plot_control dt {
-        float: left;
+    border-bottom: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-motor_outputs .plot_control .title a:hover {
+    text-decoration: underline;
+}
+.tab-motor_outputs .plot_control dl {
+    padding: 5px 5px 0 5px;
+    line-height: 22px;
+}
+.tab-motor_outputs .plot_control dt {
+    float: left;
 
-        width: 60px;
-        height: 22px;
+    width: 60px;
+    height: 22px;
 
-        font-weight: bold;
-    }
-    .tab-motor_outputs .plot_control dd {
-        height: 22px;
-    }
-    .tab-motor_outputs .plot_control select {
-        float: right;
+    font-weight: bold;
+}
+.tab-motor_outputs .plot_control dd {
+    height: 22px;
+}
+.tab-motor_outputs .plot_control select {
+    float: right;
 
-        width: 80px;
-        border: 1px solid silver;
-    }
-    .tab-motor_outputs .plot_control .x {
-        color: #00A8F0;
-    }
-    .tab-motor_outputs .plot_control .y {
-        color: #C0D800;
-    }
-    .tab-motor_outputs .plot_control .z {
-        color: #CB4B4B;
-    }
-    .tab-motor_outputs .plot_control .x, .tab-motor_outputs .plot_control .y, .tab-motor_outputs .plot_control .z {
-        text-align: right;
-    }
+    width: 80px;
+    border: 1px solid silver;
+}
+.tab-motor_outputs .plot_control .x {
+    color: #00A8F0;
+}
+.tab-motor_outputs .plot_control .y {
+    color: #C0D800;
+}
+.tab-motor_outputs .plot_control .z {
+    color: #CB4B4B;
+}
+.tab-motor_outputs .plot_control .x, .tab-motor_outputs .plot_control .y, .tab-motor_outputs .plot_control .z {
+    text-align: right;
+}
 .tab-motor_outputs svg {
     float: left;
 
@@ -104,24 +104,24 @@
 .tab-motor_outputs .titles {
     height: 20px;
 }
-    .tab-motor_outputs .titles li {
-        float: left;
+.tab-motor_outputs .titles li {
+    float: left;
 
-        width: calc((100% / 9) - 10px);
-        margin-right: 10px;
+    width: calc((100% / 9) - 10px);
+    margin-right: 10px;
 
-        text-align: center;
-    }
-    .tab-motor_outputs .servos .titles li {
-        float: right;
+    text-align: center;
+}
+.tab-motor_outputs .servos .titles li {
+    float: right;
 
-        width: calc((100% / 8) - 10px);
+    width: calc((100% / 8) - 10px);
 
-        margin: 0 0 0 10px;
-    }
-    .tab-motor_outputs .titles .active {
-        color: green;
-    }
+    margin: 0 0 0 10px;
+}
+.tab-motor_outputs .titles .active {
+    color: green;
+}
 .tab-motor_outputs .m-block {
     float: left;
 
@@ -149,40 +149,40 @@
     display: none;
     margin-top: 15px;
 }
-    .tab-motor_outputs .motor_testing .left {
-        width: calc(50% - 50px);
-    }
-        .tab-motor_outputs .motor_testing .sliders input {
-            -webkit-appearance: slider-vertical;
+.tab-motor_outputs .motor_testing .left {
+    width: calc(50% - 50px);
+}
+.tab-motor_outputs .motor_testing .sliders input {
+    -webkit-appearance: slider-vertical;
 
-            width: calc((100% / 9) - 13px);
-            height: 100px;
+    width: calc((100% / 9) - 13px);
+    height: 100px;
 
-            margin-right: 10px;
-        }
-        .tab-motor_outputs .motor_testing .sliders input:first-child {
-            /* margin-left: 2px; */ /* seems to vary depending on chrome version O.o */
-        }
-    .tab-motor_outputs .motor_testing .values {
-        margin-top: 5px;
-    }
-        .tab-motor_outputs .motor_testing .values li {
-            float: left;
+    margin-right: 10px;
+}
+.tab-motor_outputs .motor_testing .sliders input:first-child {
+    /* margin-left: 2px; */ /* seems to vary depending on chrome version O.o */
+}
+.tab-motor_outputs .motor_testing .values {
+    margin-top: 5px;
+}
+.tab-motor_outputs .motor_testing .values li {
+    float: left;
 
-            width: calc((100% / 9) - 10px);
-            margin-right: 10px;
+    width: calc((100% / 9) - 10px);
+    margin-right: 10px;
 
-            text-align: center;
-        }
-    .tab-motor_outputs .motor_testing .notice {
-        float: right;
+    text-align: center;
+}
+.tab-motor_outputs .motor_testing .notice {
+    float: right;
 
-        width: calc(50% - 22px);
+    width: calc(50% - 22px);
 
-        padding: 5px;
+    padding: 5px;
 
-        border: 1px dotted silver;
-    }
-        .tab-motor_outputs .motor_testing .notice input[type="checkbox"] {
-            vertical-align: middle;
-        }
+    border: 1px dotted silver;
+}
+.tab-motor_outputs .motor_testing .notice input[type="checkbox"] {
+    vertical-align: middle;
+}

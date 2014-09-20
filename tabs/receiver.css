@@ -1,238 +1,237 @@
 .tab-receiver {
 }
-    .tab-receiver input[type="number"]::-webkit-inner-spin-button {
-        border: 0;
-    }
-    .tab-receiver .bars {
-        float: left;
-        width: 45%;
+.tab-receiver input[type="number"]::-webkit-inner-spin-button {
+    border: 0;
+}
+.tab-receiver .bars {
+    float: left;
+    width: 45%;
 
-        font-weight: bold;
-    }
-    .tab-receiver .bars ul {
-        margin-bottom: 5px;
-    }
-        .tab-receiver .bars ul:nth-of-type(1) {
-            color: #00A8F0;
-        }
-        .tab-receiver .bars ul:nth-of-type(2) {
-            color: #C0D800;
-        }
-        .tab-receiver .bars ul:nth-of-type(3) {
-            color: #f8921a;
-        }
-        .tab-receiver .bars ul:nth-of-type(4) {
-            color: #f02525;
-        }
-        .tab-receiver .bars ul:nth-of-type(5) {
-            color: #9440ED;
-        }
-        .tab-receiver .bars ul:nth-of-type(6) {
-            color: #45147a;
-        }
-        .tab-receiver .bars ul:nth-of-type(7) {
-            color: #cf7a26;
-        }
-        .tab-receiver .bars ul:nth-of-type(8) {
-            color: #147a66;
-        }
-        .tab-receiver .bars ul:nth-of-type(9) {
-            color: #0609a9;
-        }
-        .tab-receiver .bars ul:nth-of-type(10) {
-            color: #7a1445;
-        }
-        .tab-receiver .bars ul:nth-of-type(11) {
-            color: #267acf;
-        }
-        .tab-receiver .bars ul:nth-of-type(12) {
-            color: #7a6614;
-        }
-    .tab-receiver .bars li {
-        float: left;
+    font-weight: bold;
+}
+.tab-receiver .bars ul {
+    margin-bottom: 5px;
+}
+.tab-receiver .bars ul:nth-of-type(1) {
+    color: #00A8F0;
+}
+.tab-receiver .bars ul:nth-of-type(2) {
+    color: #C0D800;
+}
+.tab-receiver .bars ul:nth-of-type(3) {
+    color: #f8921a;
+}
+.tab-receiver .bars ul:nth-of-type(4) {
+    color: #f02525;
+}
+.tab-receiver .bars ul:nth-of-type(5) {
+    color: #9440ED;
+}
+.tab-receiver .bars ul:nth-of-type(6) {
+    color: #45147a;
+}
+.tab-receiver .bars ul:nth-of-type(7) {
+    color: #cf7a26;
+}
+.tab-receiver .bars ul:nth-of-type(8) {
+    color: #147a66;
+}
+.tab-receiver .bars ul:nth-of-type(9) {
+    color: #0609a9;
+}
+.tab-receiver .bars ul:nth-of-type(10) {
+    color: #7a1445;
+}
+.tab-receiver .bars ul:nth-of-type(11) {
+    color: #267acf;
+}
+.tab-receiver .bars ul:nth-of-type(12) {
+    color: #7a6614;
+}
+.tab-receiver .bars li {
+    float: left;
 
-        height: 22px;
-        line-height: 20px;
-    }
-    .tab-receiver .bars .name {
-        width: 60px;
-    }
-    .tab-receiver .bars .meter {
-        width: 70%;
-    }
-        .tab-receiver .bars .meter meter {
-            margin-top: 4px;
+    height: 22px;
+    line-height: 20px;
+}
+.tab-receiver .bars .name {
+    width: 60px;
+}
+.tab-receiver .bars .meter {
+    width: 70%;
+}
+.tab-receiver .bars .meter meter {
+    margin-top: 4px;
 
-            width: 100%;
-            height: 14px;
+    width: 100%;
+    height: 14px;
 
-            border: 1px solid silver;
-        }
-    .tab-receiver .bars .value {
-        width: 50px;
-        margin-left: 10px;
-    }
-    .tab-receiver .tunings {
-        float: right;
-    }
-    .tab-receiver .tunings table {
-        border-collapse: collapse;
-    }
-    .tab-receiver .tunings .throttle {
-        margin-bottom: 10px;
-    }
-    .tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
-        padding: 4px;
-        border: 1px solid #8b8b8b;
-    }
-    .tab-receiver .tunings table th {
-        width: 118px;
-    }
-    .tab-receiver .tunings table td {
-        padding: 1px;
-    }
-    .tab-receiver .tunings table tr:nth-child(odd) {
-        background-color: #ececec;
-    }
-    .tab-receiver .tunings table input {
-        width: 100%;
-        height: 20px;
+    border: 1px solid silver;
+}
+.tab-receiver .bars .value {
+    width: 50px;
+    margin-left: 10px;
+}
+.tab-receiver .tunings {
+    float: right;
+}
+.tab-receiver .tunings table {
+    border-collapse: collapse;
+}
+.tab-receiver .tunings .throttle {
+    margin-bottom: 10px;
+}
+.tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
+    padding: 4px;
+    border: 1px solid #8b8b8b;
+}
+.tab-receiver .tunings table th {
+    width: 118px;
+}
+.tab-receiver .tunings table td {
+    padding: 1px;
+}
+.tab-receiver .tunings table tr:nth-child(odd) {
+    background-color: #ececec;
+}
+.tab-receiver .tunings table input {
+    width: 100%;
+    height: 20px;
 
-        line-height: 20px;
-        text-align: right;
-    }
-    .tab-receiver .rcmap_wrapper {
-        float: right;
-        position: relative;
+    line-height: 20px;
+    text-align: right;
+}
+.tab-receiver .rcmap_wrapper {
+    float: right;
+    position: relative;
 
-        width: 126px;
+    width: 126px;
 
-        margin: 10px 0 0 0;
+    margin: 10px 0 0 0;
 
-        border: 1px solid #8b8b8b;
-    }
-    .tab-receiver .rcmap_wrapper .head {
-        height: 15px;
-        padding: 4px;
+    border: 1px solid #8b8b8b;
+}
+.tab-receiver .rcmap_wrapper .head {
+    height: 15px;
+    padding: 4px;
 
-        text-align: center;
-        font-weight: bold;
+    text-align: center;
+    font-weight: bold;
 
-        border-bottom: 1px solid #8b8b8b;
-        background-color: #ececec;
-    }
-    .tab-receiver .hybrid_element input {
-        position: absolute;
+    border-bottom: 1px solid #8b8b8b;
+    background-color: #ececec;
+}
+.tab-receiver .hybrid_element input {
+    position: absolute;
 
-        padding-left: 5px;
+    padding-left: 5px;
 
-        width: calc(100% - 24px);
-        height: 22px;
+    width: calc(100% - 24px);
+    height: 22px;
 
-        z-index: 2;
-    }
-    .tab-receiver .hybrid_element select {
-        width: 100%;
-        height: 22px;
+    z-index: 2;
+}
+.tab-receiver .hybrid_element select {
+    width: 100%;
+    height: 22px;
 
-        z-index: 1;
-    }
-    .tab-receiver .curves {
-        float: right;
-    }
-    .tab-receiver .throttle_curve {
-        margin: 0 10px 10px 0;
+    z-index: 1;
+}
+.tab-receiver .curves {
+    float: right;
+}
+.tab-receiver .throttle_curve {
+    margin: 0 10px 10px 0;
 
-        width: 220px;
-        height: 58px;
+    width: 220px;
+    height: 58px;
 
-        border: 1px solid silver;
-    }
-    .tab-receiver .pitch_roll_curve {
-        margin: 0 10px 0 0;
+    border: 1px solid silver;
+}
+.tab-receiver .pitch_roll_curve {
+    margin: 0 10px 0 0;
 
-        width: 220px;
-        height: 58px;
+    width: 220px;
+    height: 58px;
 
-        border: 1px solid silver;
-    }
-    .tab-receiver select[name="rx_refresh_rate"] {
-        float: right;
+    border: 1px solid silver;
+}
+.tab-receiver select[name="rx_refresh_rate"] {
+    float: right;
 
-        border: 1px solid silver;
-    }
-    .tab-receiver #RX_plot {
-        width: 100%;
-        height: 200px;
-    }
-        .tab-receiver #RX_plot .line:nth-child(1) {
-            stroke: #00A8F0;
-        }
-        .tab-receiver #RX_plot .line:nth-child(2) {
-            stroke: #C0D800;
-        }
-        .tab-receiver #RX_plot .line:nth-child(3) {
-            stroke: #f8921a;
-        }
-        .tab-receiver #RX_plot .line:nth-child(4) {
-            stroke: #f02525;
-        }
-        .tab-receiver #RX_plot .line:nth-child(5) {
-            stroke: #9440ED;
-        }
-        .tab-receiver #RX_plot .line:nth-child(6) {
-            stroke: #45147A;
-        }
-        .tab-receiver #RX_plot .line:nth-child(7) {
-            stroke: #CF7A26;
-        }
-        .tab-receiver #RX_plot .line:nth-child(8) {
-            stroke: #147A66;
-        }
-        .tab-receiver #RX_plot .line:nth-child(9) {
-            stroke: #0609a9;
-        }
-        .tab-receiver #RX_plot .line:nth-child(10) {
-            stroke: #7a1445;
-        }
-        .tab-receiver #RX_plot .line:nth-child(11) {
-            stroke: #267acf;
-        }
-        .tab-receiver #RX_plot .line:nth-child(12) {
-            stroke: #7a6614;
-        }
-    .tab-receiver .buttons {
-        width: calc(100% - 20px);
+    border: 1px solid silver;
+}
+.tab-receiver #RX_plot {
+    width: 100%;
+    height: 200px;
+}
+.tab-receiver #RX_plot .line:nth-child(1) {
+    stroke: #00A8F0;
+}
+.tab-receiver #RX_plot .line:nth-child(2) {
+    stroke: #C0D800;
+}
+.tab-receiver #RX_plot .line:nth-child(3) {
+    stroke: #f8921a;
+}
+.tab-receiver #RX_plot .line:nth-child(4) {
+    stroke: #f02525;
+}
+.tab-receiver #RX_plot .line:nth-child(5) {
+    stroke: #9440ED;
+}
+.tab-receiver #RX_plot .line:nth-child(6) {
+    stroke: #45147A;
+}
+.tab-receiver #RX_plot .line:nth-child(7) {
+    stroke: #CF7A26;
+}
+.tab-receiver #RX_plot .line:nth-child(8) {
+    stroke: #147A66;
+}
+.tab-receiver #RX_plot .line:nth-child(9) {
+    stroke: #0609a9;
+}
+.tab-receiver #RX_plot .line:nth-child(10) {
+    stroke: #7a1445;
+}
+.tab-receiver #RX_plot .line:nth-child(11) {
+    stroke: #267acf;
+}
+.tab-receiver #RX_plot .line:nth-child(12) {
+    stroke: #7a6614;
+}
+.tab-receiver .buttons {
+    width: calc(100% - 20px);
 
-        position: absolute;
-        bottom: 10px;
-    }
-    .tab-receiver .update,
-    .tab-receiver .refresh {
-        display: block;
-        float: right;
+    position: absolute;
+    bottom: 10px;
+}
+.tab-receiver .update,
+.tab-receiver .refresh {
+    display: block;
+    float: right;
 
-        margin-top: 22px;
+    margin-top: 22px;
 
-        height: 28px;
-        line-height: 28px;
+    height: 28px;
+    line-height: 28px;
 
-        padding: 0 15px 0 15px;
+    padding: 0 15px 0 15px;
 
-        text-align: center;
-        font-weight: bold;
+    text-align: center;
+    font-weight: bold;
 
-        border: 1px solid silver;
-        background-color: #ececec;
-    }
-    .tab-receiver .refresh {
-        margin-right: 10px;
-    }
-    .tab-receiver .update:hover,
-    .tab-receiver .refresh:hover {
-        background-color: #dedcdc;
-    }
-
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-receiver .refresh {
+    margin-right: 10px;
+}
+.tab-receiver .update:hover,
+.tab-receiver .refresh:hover {
+    background-color: #dedcdc;
+}
 /* SVG classes*/
 .tab-receiver .grid .tick {
     stroke: silver;

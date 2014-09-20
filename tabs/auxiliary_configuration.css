@@ -1,66 +1,66 @@
 .tab-auxiliary_configuration {
 }
-    .tab-auxiliary_configuration .boxes {
-        width: 100%;
-        border-collapse: collapse;
-    }
-        .tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {
-            line-height: 22px;
-            text-align: center;
+.tab-auxiliary_configuration .boxes {
+    width: 100%;
+    border-collapse: collapse;
+}
+.tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {
+    line-height: 22px;
+    text-align: center;
 
-            border: 1px solid #8b8b8b;
-        }
-        .tab-auxiliary_configuration .boxes .heads {
-            background-color: #ececec;
-        }
-        .tab-auxiliary_configuration .boxes .main {
-            background-color: #ececec;
-        }
-        .tab-auxiliary_configuration .boxes .name {
-            text-align: center;
-        }
-        .tab-auxiliary_configuration .boxes .on {
-            color: white;
-            background-color: #0d8b13;
-        }
-        .tab-auxiliary_configuration .boxes .off {
-            color: white;
-            background-color: #be2222;
-        }
-        .tab-auxiliary_configuration .boxes td input {
-            position: absolute;
+    border: 1px solid #8b8b8b;
+}
+.tab-auxiliary_configuration .boxes .heads {
+    background-color: #ececec;
+}
+.tab-auxiliary_configuration .boxes .main {
+    background-color: #ececec;
+}
+.tab-auxiliary_configuration .boxes .name {
+    text-align: center;
+}
+.tab-auxiliary_configuration .boxes .on {
+    color: white;
+    background-color: #0d8b13;
+}
+.tab-auxiliary_configuration .boxes .off {
+    color: white;
+    background-color: #be2222;
+}
+.tab-auxiliary_configuration .boxes td input {
+    position: absolute;
 
-            margin-top: -6px;
-            margin-left: -6px;
-        }
-        .tab-auxiliary_configuration .boxes .switches:nth-child(odd) {
-            background-color: #ececec;
-        }
-        .tab-auxiliary_configuration .boxes .heads th:first-child {
-            border: 0;
-            background-color: white;
-        }
-    .tab-auxiliary_configuration .buttons {
-        width: calc(100% - 20px);
+    margin-top: -6px;
+    margin-left: -6px;
+}
+.tab-auxiliary_configuration .boxes .switches:nth-child(odd) {
+    background-color: #ececec;
+}
+.tab-auxiliary_configuration .boxes .heads th:first-child {
+    border: 0;
+    background-color: white;
+}
+.tab-auxiliary_configuration .buttons {
+    width: calc(100% - 20px);
 
-        position: absolute;
-        bottom: 10px;
-    }
-    .tab-auxiliary_configuration .update {
-        display: block;
-        float: right;
+    position: absolute;
+    bottom: 10px;
+}
+.tab-auxiliary_configuration .update {
+    display: block;
+    float: right;
 
-        height: 28px;
-        line-height: 28px;
+    height: 28px;
+    line-height: 28px;
 
-        padding: 0 15px 0 15px;
+    padding: 0 15px 0 15px;
 
-        text-align: center;
-        font-weight: bold;
+    text-align: center;
+    font-weight: bold;
 
-        border: 1px solid silver;
-        background-color: #ececec;
-    }
-    .tab-auxiliary_configuration .update:hover {
-        background-color: #dedcdc;
-    }
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-auxiliary_configuration .update:hover {
+    background-color: #dedcdc;
+}

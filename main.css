@@ -44,67 +44,67 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 20px;
     margin-bottom: 5px;
 }
-    #port-picker li {
-        float: left;
-    }
-    #port-picker select {
-        height: 20px;
-        line-height: 20px;
+#port-picker li {
+    float: left;
+}
+#port-picker select {
+    height: 20px;
+    line-height: 20px;
 
-        float: left;
-        margin-right: 5px;
+    float: left;
+    margin-right: 5px;
 
-        border: 1px solid silver;
-    }
-    #port-picker #port {
-        width: 120px;
-    }
-    #port-picker #baud {
-        width: 80px;
-    }
-    #port-picker #delay {
-        width: 60px;
-    }
-    #port-picker a {
-        float: left;
+    border: 1px solid silver;
+}
+#port-picker #port {
+    width: 120px;
+}
+#port-picker #baud {
+    width: 80px;
+}
+#port-picker #delay {
+    width: 60px;
+}
+#port-picker a {
+    float: left;
 
-        display: block;
+    display: block;
 
-        width: 80px;
-        height: 18px;
-        border: 1px solid silver;
+    width: 80px;
+    height: 18px;
+    border: 1px solid silver;
 
-        line-height: 18px;
-        text-align: center;
-    }
-    #port-picker a.connect {
-        margin-right: 10px;
+    line-height: 18px;
+    text-align: center;
+}
+#port-picker a.connect {
+    margin-right: 10px;
 
-        background-color: #be2222;
-        color: white;
+    background-color: #be2222;
+    color: white;
 
-        font-weight: bold;
-    }
-        #port-picker a.connect:hover {
-            text-decoration: none;
-            background-color: #ea3131;
-        }
-    #port-picker a.connect.active {
-        background-color: #0fab16;
-    }
-        #port-picker a.connect.active:hover {
-            background-color: #13d81d;
-        }
-    #port-picker input.auto_connect {
-        float: left;
+    font-weight: bold;
+}
+#port-picker a.connect:hover {
+    text-decoration: none;
+    background-color: #ea3131;
+}
+#port-picker a.connect.active {
+    background-color: #0fab16;
+}
+#port-picker a.connect.active:hover {
+    background-color: #13d81d;
+}
+#port-picker input.auto_connect {
+    float: left;
 
-        margin-top: 4px;
-    }
-    #port-picker span.auto_connect {
-        float: left;
+    margin-top: 4px;
+}
+#port-picker span.auto_connect {
+    float: left;
 
-        margin: 3px 0 0 5px;
-    }
+    margin: 3px 0 0 5px;
+}
 #sensor-status {
     float: right;
 
@@ -113,28 +113,28 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 22px;
     line-height: 22px;
 }
-    #sensor-status li {
-        float: left;
+#sensor-status li {
+    float: left;
 
-        padding: 0 12px 0 12px;
+    padding: 0 12px 0 12px;
 
-        height: 18px;
-        line-height: 18px;
+    height: 18px;
+    line-height: 18px;
 
-        color: white;
-        text-align: center;
+    color: white;
+    text-align: center;
 
-        border: 1px solid #c0c0c0;
-        border-right: 0;
+    border: 1px solid #c0c0c0;
+    border-right: 0;
 
-        background-color: #901515;
-    }
-    #sensor-status li:last-child {
-        border-right: 1px solid #c0c0c0;
-    }
-    #sensor-status .on {
-        background-color: #076b0c;
-    }
+    background-color: #901515;
+}
+#sensor-status li:last-child {
+    border-right: 1px solid #c0c0c0;
+}
+#sensor-status .on {
+    background-color: #076b0c;
+}
 #options {
     float: right;
 
@@ -145,20 +145,20 @@ input[type="number"]::-webkit-inner-spin-button {
 
     opacity: 0.6;
 }
-    #options:before {
-        font-family: icons;
-        content: '\e600';
-        font-size: 18px;
-    }
-    #options:hover {
-        opacity: 0.70;
-    }
-    #options.active {
-        opacity: 0.70;
-    }
-    #options.active:hover {
-        opacity: 0.85;
-    }
+#options:before {
+    font-family: icons;
+    content: '\e600';
+    font-size: 18px;
+}
+#options:hover {
+    opacity: 0.70;
+}
+#options.active {
+    opacity: 0.70;
+}
+#options.active:hover {
+    opacity: 0.85;
+}
 #options-window {
     display: none;
     position: fixed;
@@ -173,12 +173,12 @@ input[type="number"]::-webkit-inner-spin-button {
     border: 1px solid silver;
     background-color: white;
 }
-    #options-window input {
-        float: left;
+#options-window input {
+    float: left;
 
-        margin-top: 3px;
-        margin-right: 5px;
-    }
+    margin-top: 3px;
+    margin-right: 5px;
+}
 #log {
     margin-bottom: 4px;
 
@@ -189,17 +189,17 @@ input[type="number"]::-webkit-inner-spin-button {
 
     overflow-y: scroll;
 }
-    #log .wrapper {
-        padding: 5px;
+#log .wrapper {
+    padding: 5px;
 
-        -webkit-user-select: text;
-    }
-    #log a {
-        font-weight: bold;
-    }
-    #log a:hover {
-        text-decoration: underline;
-    }
+    -webkit-user-select: text;
+}
+#log a {
+    font-weight: bold;
+}
+#log a:hover {
+    text-decoration: underline;
+}
 #tabs {
     position: absolute;
     margin-top: 1px;
@@ -208,39 +208,39 @@ input[type="number"]::-webkit-inner-spin-button {
 
     font-weight: bold;
 }
-    #tabs li {
-        float: left;
-        margin-right: 5px;
+#tabs li {
+    float: left;
+    margin-right: 5px;
 
-        border: 1px solid #848484;
-        border-bottom: 0;
-    }
-        #tabs li a {
-            display: block;
+    border: 1px solid #848484;
+    border-bottom: 0;
+}
+#tabs li a {
+    display: block;
 
-            height: 15px;
+    height: 15px;
 
-            padding: 5px;
-            padding-left: 8px;
-            padding-right: 8px;
+    padding: 5px;
+    padding-left: 8px;
+    padding-right: 8px;
 
-            background-color: #d0d0d0;
-        }
-        #tabs li a:hover {
-            text-decoration: none;
-            background-color: #acacac;
-        }
-        #tabs li.active {
-        }
-        #tabs li.active a {
-            height: 16px;
+    background-color: #d0d0d0;
+}
+#tabs li a:hover {
+    text-decoration: none;
+    background-color: #acacac;
+}
+#tabs li.active {
+}
+#tabs li.active a {
+    height: 16px;
 
-            background-color: white;
-        }
-        #tabs li.active a:hover {
-            cursor: default;
-            background-color: white;
-        }
+    background-color: white;
+}
+#tabs li.active a:hover {
+    cursor: default;
+    background-color: white;
+}
 #content {
     margin-top: 31px;
     padding: 10px;
@@ -270,14 +270,14 @@ input[type="number"]::-webkit-inner-spin-button {
     border-top: 1px solid #7d7d79;
     background-color: #bfbeb5;
 }
-    #status-bar div {
-        float: left;
+#status-bar div {
+    float: left;
 
-        padding-right: 10px;
-        margin-right: 10px;
+    padding-right: 10px;
+    margin-right: 10px;
 
-        border-right: 1px solid #7d7d79;
-    }
+    border-right: 1px solid #7d7d79;
+}
 #cache {
     display: none;
 }
@@ -289,7 +289,6 @@ input[type="number"]::-webkit-inner-spin-button {
     background-repeat: no-repeat;
     background-position: center 45%;
 }
-
 .data-loading p {
     position: relative;
     top: calc(45% + 45px);
