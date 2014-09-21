@@ -24,6 +24,7 @@
 #include <ctype.h>
 
 #include "platform.h"
+#include "version.h"
 
 #include "build_config.h"
 
@@ -1167,7 +1168,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrint("Cleanflight/" __TARGET__ " " __DATE__ " / " __TIME__ " (" __REVISION__ ")");
+    printf("Cleanflight/%s" __DATE__ " / " __TIME__ " (%s)", targetName, shortGitRevision);
 }
 
 void cliProcess(void)

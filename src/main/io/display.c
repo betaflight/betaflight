@@ -21,11 +21,13 @@
 #include <string.h>
 
 #include "platform.h"
+#include "version.h"
 
 #include "build_config.h"
 
 #include "drivers/serial.h"
 #include "common/printf.h"
+#include "common/maths.h"
 
 #ifdef DISPLAY
 
@@ -39,6 +41,8 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
+#include "rx/rx.h"
+
 #include "config/runtime_config.h"
 
 #include "display.h"
@@ -48,28 +52,34 @@
 #define DISPLAY_UPDATE_FREQUENCY (MILLISECONDS_IN_A_SECOND / 10)
 #define PAGE_CYCLE_FREQUENCY (MILLISECONDS_IN_A_SECOND * 5)
 
-uint32_t nextDisplayUpdateAt = 0;
-uint32_t nextPageAt = 0;
+static uint32_t nextDisplayUpdateAt = 0;
 
-char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT];
+static rxConfig_t *rxConfig;
+
+static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT];
 
 typedef enum {
+    PAGE_WELCOME,
     PAGE_ARMED,
     PAGE_BATTERY,
-    PAGE_SENSORS
+    PAGE_SENSORS,
+    PAGE_RX,
 } pageId_e;
 
 const char* pageTitles[] = {
+    "CLEANFLIGHT",
     "ARMED",
     "BATTERY",
-    "SENSORS"
+    "SENSORS",
+    "RX"
 };
 
-#define PAGE_COUNT (PAGE_SENSORS + 1)
+#define PAGE_COUNT (PAGE_RX + 1)
 
 const uint8_t cyclePageIds[] = {
     PAGE_BATTERY,
-    PAGE_SENSORS
+    PAGE_SENSORS,
+    PAGE_RX
 };
 
 #define CYCLE_PAGE_ID_COUNT (sizeof(cyclePageIds) / sizeof(cyclePageIds[0]))
@@ -77,16 +87,33 @@ const uint8_t cyclePageIds[] = {
 static const char* tickerCharacters = "|/-\\";
 #define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
 
+typedef enum {
+    PAGE_STATE_FLAG_NONE = 0,
+    PAGE_STATE_FLAG_CYCLE_ENABLED = (1 << 0),
+    PAGE_STATE_FLAG_FORCE_PAGE_CHANGE = (1 << 1)
+} pageFlags_e;
+
 typedef struct pageState_s {
     bool pageChanging;
     pageId_e pageId;
+    pageId_e pageIdBeforeArming;
+    uint8_t pageFlags;
     uint8_t cycleIndex;
+    uint32_t nextPageAt;
 } pageState_t;
 
 static pageState_t pageState;
 
 void LCDprint(uint8_t i) {
    i2c_OLED_send_char(i);
+}
+
+void padLineBuffer(void)
+{
+    uint8_t length = strlen(lineBuffer);
+    while (length < sizeof(lineBuffer) - 1) {
+        lineBuffer[length++] = ' ';
+    }
 }
 
 // LCDbar(n,v) : draw a bar graph - n number of chars for width, v value in % to display
@@ -141,15 +168,55 @@ void handlePageChange(void)
     showTitle();
 }
 
+void drawRxChannel(uint8_t channelIndex, uint8_t width)
+{
+    uint32_t percentage;
+
+    LCDprint(rcChannelLetters[channelIndex]);
+
+    percentage = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
+    drawHorizonalPercentageBar(width - 1, percentage);
+}
+
+void showRxPage(void)
+{
+
+    for (uint8_t channelIndex = 0; channelIndex < 8; channelIndex += 2) {
+        i2c_OLED_set_line((channelIndex / 2) + 1);
+
+        uint8_t width = SCREEN_CHARACTER_COLUMN_COUNT / 2;
+
+        drawRxChannel(channelIndex, width);
+
+        if (width * 2 != SCREEN_CHARACTER_COLUMN_COUNT) {
+            LCDprint(' ');
+        }
+
+        drawRxChannel(channelIndex + 1, width);
+    }
+}
+
+void showWelcomePage(void)
+{
+    tfp_sprintf(lineBuffer, "Rev: %s", shortGitRevision);
+    i2c_OLED_set_line(1);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Target: %s", targetName);
+    i2c_OLED_set_line(2);
+    i2c_OLED_send_string(lineBuffer);
+}
+
 void showArmedPage(void)
 {
 }
 
 void showBatteryPage(void)
 {
-    tfp_sprintf(lineBuffer, "volts: %d.%d, cells: %d", vbat / 10, vbat % 10, batteryCellCount);
+    tfp_sprintf(lineBuffer, "Volts: %d.%d, Cells: %d", vbat / 10, vbat % 10, batteryCellCount);
     i2c_OLED_set_line(1);
     i2c_OLED_send_string(lineBuffer);
+    padLineBuffer();
 
     uint32_t batteryPercentage = calculateBatteryPercentage();
     i2c_OLED_set_line(2);
@@ -161,20 +228,23 @@ void showSensorsPage(void)
     uint8_t rowIndex = 1;
 
     i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(   "         X    Y    Z");
+    i2c_OLED_send_string("        X     Y     Z");
     if (sensors(SENSOR_ACC)) {
-        tfp_sprintf(lineBuffer, "Acc : %4d %4d %4d", accSmooth[X], accSmooth[Y], accSmooth[Z]);
+        tfp_sprintf(lineBuffer, "A = %5d %5d %5d", accSmooth[X], accSmooth[Y], accSmooth[Z]);
+        padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
     if (sensors(SENSOR_GYRO)) {
-        tfp_sprintf(lineBuffer, "Gryo: %4d %4d %4d", gyroADC[X], gyroADC[Y], gyroADC[Z]);
+        tfp_sprintf(lineBuffer, "G = %5d %5d %5d", gyroADC[X], gyroADC[Y], gyroADC[Z]);
+        padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-        tfp_sprintf(lineBuffer, "Comp: %4d %4d %4d", magADC[X], magADC[Y], magADC[Z]);
+        tfp_sprintf(lineBuffer, "M = %5d %5d %5d", magADC[X], magADC[Y], magADC[Z]);
+        padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
@@ -201,36 +271,44 @@ void updateDisplay(void)
         if (!armedStateChanged) {
             return;
         }
+        pageState.pageIdBeforeArming = pageState.pageId;
         pageState.pageId = PAGE_ARMED;
         pageState.pageChanging = true;
     } else {
         if (armedStateChanged) {
-            nextPageAt = now;
-            pageState.cycleIndex = CYCLE_PAGE_ID_COUNT;
+            pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+            pageState.pageId = pageState.pageIdBeforeArming;
         }
-        pageState.pageChanging = (int32_t)(now - nextPageAt) >= 0L;
-        if (pageState.pageChanging) {
-            nextPageAt = now + PAGE_CYCLE_FREQUENCY;
+
+        pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) || ((int32_t)(now - pageState.nextPageAt) >= 0L);
+        if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
+            pageState.nextPageAt = now + PAGE_CYCLE_FREQUENCY;
             pageState.cycleIndex++;
             pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
             pageState.pageId = cyclePageIds[pageState.cycleIndex];
         }
     }
 
-
     if (pageState.pageChanging) {
         handlePageChange();
+        pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
     }
 
     switch(pageState.pageId) {
+        case PAGE_WELCOME:
+            showWelcomePage();
+            break;
+        case PAGE_ARMED:
+            showArmedPage();
+            break;
         case PAGE_BATTERY:
             showBatteryPage();
             break;
         case PAGE_SENSORS:
             showSensorsPage();
             break;
-        case PAGE_ARMED:
-            showArmedPage();
+        case PAGE_RX:
+            showRxPage();
             break;
     }
     if (!armedState) {
@@ -238,12 +316,31 @@ void updateDisplay(void)
     }
 }
 
-
-void displayInit(void)
+void displayInit(rxConfig_t *rxConfigToUse)
 {
     delay(20);
     ug2864hsweg01InitI2C();
+
+    rxConfig = rxConfigToUse;
+
     memset(&pageState, 0, sizeof(pageState));
+    pageState.pageId = PAGE_WELCOME;
+
+    updateDisplay();
+
+    displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
+}
+
+void displaySetNextPageChangeAt(uint32_t futureMicros) {
+    pageState.nextPageAt = futureMicros;
+}
+
+void displayEnablePageCycling(void) {
+    pageState.pageFlags |= PAGE_STATE_FLAG_CYCLE_ENABLED;
+}
+
+void displayDisablePageCycling(void) {
+    pageState.pageFlags &= ~PAGE_STATE_FLAG_CYCLE_ENABLED;
 }
 
 #endif

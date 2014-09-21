@@ -15,8 +15,5 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void updateDisplay(void);
-
-void displayEnablePageCycling(void);
-void displayDisablePageCycling(void);
-void displaySetNextPageChangeAt(uint32_t futureMicros);
+char *targetName = __TARGET__;
+char *shortGitRevision = __REVISION__;

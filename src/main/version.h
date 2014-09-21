@@ -17,3 +17,5 @@
 
 #define  MW_VERSION  230
 
+extern char* targetName;
+extern char* shortGitRevision;

@@ -52,6 +52,7 @@
 #include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
+#include "io/display.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 #include "sensors/barometer.h"
@@ -93,7 +94,7 @@ void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
-void displayInit(void);
+void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse);
 void loop(void);
 
@@ -144,7 +145,7 @@ void init(void)
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
-        displayInit();
+        displayInit(&masterConfig.rxConfig);
     }
 #endif
 
@@ -285,6 +286,12 @@ void init(void)
     // Check battery type/voltage
     if (feature(FEATURE_VBAT))
         batteryInit(&masterConfig.batteryConfig);
+
+#ifdef DISPLAY
+    if (feature(FEATURE_DISPLAY)) {
+        displayEnablePageCycling();
+    }
+#endif
 }
 
 #ifdef SOFTSERIAL_LOOPBACK
