@@ -146,6 +146,9 @@ var MSP = {
                     this.message_length_received = 0;
                     this.state = 0;
                     break;
+
+                default:
+                    console.log('Unknown state detected: ' + this.state);
             }
         }
     },
