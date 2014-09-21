@@ -282,7 +282,7 @@ static void sendAmperage(void)
 static void sendFuelLevel(void)
 {
     sendDataHead(ID_FUEL_LEVEL);
-    serialize16((uint16_t)mAhDrawn);
+    serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
 }
 
 static void sendHeading(void)
