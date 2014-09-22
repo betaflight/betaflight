@@ -11,42 +11,7 @@
 }
 .tab-receiver .bars ul {
     margin-bottom: 5px;
-}
-.tab-receiver .bars ul:nth-of-type(1) {
-    color: #00A8F0;
-}
-.tab-receiver .bars ul:nth-of-type(2) {
-    color: #C0D800;
-}
-.tab-receiver .bars ul:nth-of-type(3) {
-    color: #f8921a;
-}
-.tab-receiver .bars ul:nth-of-type(4) {
-    color: #f02525;
-}
-.tab-receiver .bars ul:nth-of-type(5) {
-    color: #9440ED;
-}
-.tab-receiver .bars ul:nth-of-type(6) {
-    color: #45147a;
-}
-.tab-receiver .bars ul:nth-of-type(7) {
-    color: #cf7a26;
-}
-.tab-receiver .bars ul:nth-of-type(8) {
-    color: #147a66;
-}
-.tab-receiver .bars ul:nth-of-type(9) {
-    color: #0609a9;
-}
-.tab-receiver .bars ul:nth-of-type(10) {
-    color: #7a1445;
-}
-.tab-receiver .bars ul:nth-of-type(11) {
-    color: #267acf;
-}
-.tab-receiver .bars ul:nth-of-type(12) {
-    color: #7a6614;
+    clear: left;
 }
 .tab-receiver .bars li {
     float: left;
@@ -54,23 +19,77 @@
     height: 22px;
     line-height: 20px;
 }
+.tab-receiver .bars ul:nth-of-type(1) meter::-webkit-meter-optimum-value {
+    background: #00A8F0;
+}
+.tab-receiver .bars ul:nth-of-type(2) meter::-webkit-meter-optimum-value {
+    background: #C0D800;
+}
+.tab-receiver .bars ul:nth-of-type(3) meter::-webkit-meter-optimum-value {
+    background: #f8921a;
+}
+.tab-receiver .bars ul:nth-of-type(4) meter::-webkit-meter-optimum-value {
+    background: #f02525;
+}
+.tab-receiver .bars ul:nth-of-type(5) meter::-webkit-meter-optimum-value {
+    background: #9440ED;
+}
+.tab-receiver .bars ul:nth-of-type(6) meter::-webkit-meter-optimum-value {
+    background: #45147a;
+}
+.tab-receiver .bars ul:nth-of-type(7) meter::-webkit-meter-optimum-value {
+    background: #cf7a26;
+}
+.tab-receiver .bars ul:nth-of-type(8) meter::-webkit-meter-optimum-value {
+    background: #147a66;
+}
+.tab-receiver .bars ul:nth-of-type(9) meter::-webkit-meter-optimum-value {
+    background: #0609a9;
+}
+.tab-receiver .bars ul:nth-of-type(10) meter::-webkit-meter-optimum-value {
+    background: #7a1445;
+}
+.tab-receiver .bars ul:nth-of-type(11) meter::-webkit-meter-optimum-value {
+    background: #267acf;
+}
+.tab-receiver .bars ul:nth-of-type(12) meter::-webkit-meter-optimum-value {
+    background: #7a6614;
+}
 .tab-receiver .bars .name {
-    width: 60px;
+    padding: 0 10px 0 0;
+
+    width: 40px;
+
+    text-align: right;
 }
 .tab-receiver .bars .meter {
-    width: 70%;
+    position: relative;
+    width: calc(100% - 50px);
 }
 .tab-receiver .bars .meter meter {
-    margin-top: 4px;
+    -webkit-appearance: none;
+
+    margin-top: 2px;
 
     width: 100%;
-    height: 14px;
+    height: 17px; /* border doesn't count here */
 
     border: 1px solid silver;
 }
+.tab-receiver .bars .meter meter::-webkit-meter-bar {
+    background: #f4f4f4;
+}
 .tab-receiver .bars .value {
+    position: absolute;
+
+    margin-top: 2px;
+    left: calc(50% - 25px);
     width: 50px;
-    margin-left: 10px;
+
+    text-align: center;
+    line-height: 16px;
+    color: white;
+    text-shadow: 0px 0px 2px #000000;
 }
 .tab-receiver .tunings {
     float: right;

@@ -127,13 +127,13 @@ input[type="number"]::-webkit-inner-spin-button {
     border: 1px solid #c0c0c0;
     border-right: 0;
 
-    background-color: #901515;
+    background-color: #e32424;
 }
 #sensor-status li:last-child {
     border-right: 1px solid #c0c0c0;
 }
 #sensor-status .on {
-    background-color: #076b0c;
+    background-color: #b8cf02;
 }
 #options {
     float: right;

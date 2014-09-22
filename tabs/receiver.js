@@ -60,10 +60,11 @@ TABS.receiver.initialize = function (callback) {
             bar_container.append('\
                 <ul>\
                     <li class="name">' + name + '</li>\
-                    <li class="meter"><meter min="800" max="2200"></meter></li>\
-                    <li class="value"></li>\
+                    <li class="meter">\
+                        <span class="value"></span>\
+                        <meter min="800" max="2200"></meter>\
+                    </li>\
                 </ul>\
-                <div class="clear-both"></div>\
             ');
         }
 
@@ -296,7 +297,7 @@ TABS.receiver.initialize = function (callback) {
                 // update bars with latest data
                 for (var i = 0; i < RC.active_channels; i++) {
                     meter_array[i].val(RC.channels[i]);
-                    meter_values_array[i].text('[ ' + RC.channels[i] + ' ]');
+                    meter_values_array[i].text(RC.channels[i]);
                 }
 
                 // push latest data to the main array
