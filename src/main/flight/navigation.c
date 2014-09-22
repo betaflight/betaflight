@@ -665,7 +665,7 @@ void updateGpsWaypointsAndMode(void)
 
             if (rcOptions[BOXGPSHOLD] && areSticksInApModePosition(gpsProfile->ap_mode)) {
                 if (!FLIGHT_MODE(GPS_HOLD_MODE)) {
-                    ENABLE_STATE(GPS_HOLD_MODE);
+                    ENABLE_FLIGHT_MODE(GPS_HOLD_MODE);
                     GPSNavReset = 0;
                     GPS_hold[LAT] = GPS_coord[LAT];
                     GPS_hold[LON] = GPS_coord[LON];
