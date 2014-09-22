@@ -48,9 +48,13 @@ function configuration_backup() {
 
         // create or load the file
         chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'baseflight_backup_' + now, accepts: accepts}, function (fileEntry) {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError.message);
+                return;
+            }
+
             if (!fileEntry) {
                 console.log('No file selected, backup aborted.');
-
                 return;
             }
 
@@ -127,9 +131,13 @@ function configuration_restore() {
 
     // load up the file
     chrome.fileSystem.chooseEntry({type: 'openFile', accepts: accepts}, function (fileEntry) {
+        if (chrome.runtime.lastError) {
+            console.error(chrome.runtime.lastError.message);
+            return;
+        }
+
         if (!fileEntry) {
             console.log('No file selected, restore aborted.');
-
             return;
         }
 
