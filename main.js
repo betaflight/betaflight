@@ -220,6 +220,7 @@ $(document).ready(function () {
         if (element.prop('min')) {
             if (val < min) {
                 element.val(min);
+                val = min;
             }
         }
 
@@ -227,18 +228,21 @@ $(document).ready(function () {
         if (element.prop('max')) {
             if (val > max) {
                 element.val(max);
+                val = max;
             }
         }
 
         // if entered value is illegal use previous value instead
         if (isNaN(val)) {
             element.val(element.data('previousValue'));
+            val = element.data('previousValue');
         }
 
         // if step is not set or step is int and value is float use previous value instead
         if (isNaN(step) || step % 1 === 0) {
             if (val % 1 !== 0) {
                 element.val(element.data('previousValue'));
+                val = element.data('previousValue');
             }
         }
 
