@@ -106,9 +106,9 @@ TABS.receiver.initialize = function (callback) {
             });
 
             $('input[name="rcmap"]').focusout(function () {
-                var val = $(this).val();
-                var strBuffer = val.split('');
-                var duplicityBuffer = [];
+                var val = $(this).val(),
+                    strBuffer = val.split(''),
+                    duplicityBuffer = [];
 
                 if (val.length != 8) {
                     $(this).val(last_valid);
@@ -141,53 +141,72 @@ TABS.receiver.initialize = function (callback) {
 
         // UI Hooks
         // curves
-        $('.tunings .throttle input').change(function () {
-            setTimeout(function () {
-                var mid = parseFloat($('.tunings .throttle input[name="mid"]').val());
-                var expo = parseFloat($('.tunings .throttle input[name="expo"]').val());
+        $('.tunings .throttle input').on('input', function () {
+            var throttleMidE = $('.tunings .throttle input[name="mid"]'),
+                throttleExpoE = $('.tunings .throttle input[name="expo"]'),
+                mid = parseFloat(throttleMidE.val()),
+                expo = parseFloat(throttleExpoE.val()),
+                throttle_curve = $('.throttle_curve canvas').get(0),
+                context = throttle_curve.getContext("2d");
 
-                var throttle_curve = $('.throttle_curve canvas').get(0);
-                var context = throttle_curve.getContext("2d");
-                context.clearRect(0, 0, 220, 58);
+            // built in validation that executes before global validation
+            if (mid >= parseFloat(throttleMidE.prop('min')) &&
+                mid <= parseFloat(throttleMidE.prop('max')) &&
+                expo >= parseFloat(throttleExpoE.prop('min')) &&
+                expo <= parseFloat(throttleExpoE.prop('max'))) {
+                // continue
+            } else {
+                return false;
+            }
 
-                // math magic by englishman
-                var midx = 220 * mid;
-                var midxl = midx * 0.5;
-                var midxr = (((220 - midx) * 0.5) + midx);
-                var midy = 58 - (midx * (58 / 220));
-                var midyl = 58 - ((58 - midy) * 0.5 *(expo + 1));
-                var midyr = (midy / 2) * (expo + 1);
+            // math magic by englishman
+            var midx = 220 * mid,
+                midxl = midx * 0.5,
+                midxr = (((220 - midx) * 0.5) + midx),
+                midy = 58 - (midx * (58 / 220)),
+                midyl = 58 - ((58 - midy) * 0.5 *(expo + 1)),
+                midyr = (midy / 2) * (expo + 1);
 
-                context.beginPath();
-                context.moveTo(0, 58);
-                context.quadraticCurveTo(midxl, midyl, midx, midy);
-                context.moveTo(midx, midy);
-                context.quadraticCurveTo(midxr, midyr, 220, 0);
+            // draw
+            context.clearRect(0, 0, 220, 58);
+            context.beginPath();
+            context.moveTo(0, 58);
+            context.quadraticCurveTo(midxl, midyl, midx, midy);
+            context.moveTo(midx, midy);
+            context.quadraticCurveTo(midxr, midyr, 220, 0);
+            context.lineWidth = 2;
+            context.stroke();
+        }).trigger('input');
 
-                context.lineWidth = 2;
-                context.stroke();
-            }, 0); // race condition, that should always trigger after all events are processed
-        }).change();
+        $('.tunings .rate input').on('input', function () {
+            var rateE = $('.tunings .rate input[name="rate"]'),
+                expoE = $('.tunings .rate input[name="expo"]'),
+                rate = parseFloat(rateE.val()),
+                expo = parseFloat(expoE.val()),
+                pitch_roll_curve = $('.pitch_roll_curve canvas').get(0),
+                context = pitch_roll_curve.getContext("2d");
 
-        $('.tunings .rate input').change(function () {
-            setTimeout(function () {
-                var rate = parseFloat($('.tunings .rate input[name="rate"]').val());
-                var expo = parseFloat($('.tunings .rate input[name="expo"]').val());
+            // built in validation that executes before global validation
+            if (rate >= parseFloat(rateE.prop('min')) &&
+                rate <= parseFloat(rateE.prop('max')) &&
+                expo >= parseFloat(expoE.prop('min')) &&
+                expo <= parseFloat(expoE.prop('max'))) {
+                // continue
+            } else {
+                return false;
+            }
 
-                var pitch_roll_curve = $('.pitch_roll_curve canvas').get(0);
-                var context = pitch_roll_curve.getContext("2d");
-                context.clearRect(0, 0, 220, 58);
+            // math magic by englishman
+            var ratey = 58 * rate;
 
-                // math magic by englishman
-                var ratey = 58 * rate;
-
-                context.beginPath();
-                context.moveTo(0, 58);
-                context.quadraticCurveTo(110, 58 - ((ratey / 2) * (1 - expo)), 220, 58 - ratey);
-                context.lineWidth = 2;
-                context.stroke();
-            }, 0); // race condition, that should always trigger after all events are processed
-        }).change();
+            // draw
+            context.clearRect(0, 0, 220, 58);
+            context.beginPath();
+            context.moveTo(0, 58);
+            context.quadraticCurveTo(110, 58 - ((ratey / 2) * (1 - expo)), 220, 58 - ratey);
+            context.lineWidth = 2;
+            context.stroke();
+        }).trigger('input');
 
         $('a.refresh').click(function () {
             MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, function () {
