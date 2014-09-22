@@ -141,7 +141,7 @@ TABS.receiver.initialize = function (callback) {
 
         // UI Hooks
         // curves
-        $('.tunings .throttle input').on('input', function () {
+        $('.tunings .throttle input').on('input change', function () {
             var throttleMidE = $('.tunings .throttle input[name="mid"]'),
                 throttleExpoE = $('.tunings .throttle input[name="expo"]'),
                 mid = parseFloat(throttleMidE.val()),
@@ -156,7 +156,7 @@ TABS.receiver.initialize = function (callback) {
                 expo <= parseFloat(throttleExpoE.prop('max'))) {
                 // continue
             } else {
-                return false;
+                return;
             }
 
             // math magic by englishman
@@ -178,7 +178,7 @@ TABS.receiver.initialize = function (callback) {
             context.stroke();
         }).trigger('input');
 
-        $('.tunings .rate input').on('input', function () {
+        $('.tunings .rate input').on('input change', function () {
             var rateE = $('.tunings .rate input[name="rate"]'),
                 expoE = $('.tunings .rate input[name="expo"]'),
                 rate = parseFloat(rateE.val()),
@@ -193,7 +193,7 @@ TABS.receiver.initialize = function (callback) {
                 expo <= parseFloat(expoE.prop('max'))) {
                 // continue
             } else {
-                return false;
+                return;
             }
 
             // math magic by englishman
