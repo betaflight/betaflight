@@ -56,7 +56,7 @@ static uint32_t nextDisplayUpdateAt = 0;
 
 static rxConfig_t *rxConfig;
 
-static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT];
+static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 
 typedef enum {
     PAGE_WELCOME,
@@ -248,7 +248,7 @@ void showSensorsPage(void)
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
-    #endif
+#endif
 }
 
 void updateDisplay(void)
