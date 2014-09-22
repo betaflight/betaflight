@@ -315,8 +315,9 @@ TABS.setup.initialize3D = function (compatibility) {
 
     var camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
 
+    // we really need to find a reliable way of detecting WebGL support, since we are getting mixed results on linux/cros/macos
     var renderer;
-    if (GUI.operating_system != 'Linux' || GUI.operating_system != 'CrOS') {
+    if (GUI.operating_system == 'Windows') {
         renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
     } else {
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
