@@ -51,14 +51,11 @@
     border-bottom: 1px solid #8b8b8b;
     background-color: #ececec;
 }
-.tab-pid_tuning .profile input {
-    display: block;
-
+.tab-pid_tuning .profile select {
     width: 100%;
+    padding-left: calc(100% - 35px);
     height: 20px;
-
     line-height: 20px;
-    text-align: right;
 }
 .tab-pid_tuning .pid_tuning {
     width: 60%;

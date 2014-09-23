@@ -179,13 +179,13 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
 
         // Fill in currently selected profile
-        $('input[name="profile"]').val(CONFIG.profile + 1); // +1 because the range is 0-2
+        $('select[name="profile"]').val(CONFIG.profile);
 
         // UI Hooks
-        $('input[name="profile"]').change(function () {
+        $('select[name="profile"]').change(function () {
             var profile = parseInt($(this).val());
-            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile - 1], false, function () {
-                GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile]));
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile], false, function () {
+                GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile + 1]));
 
                 GUI.tab_switch_cleanup(function () {
                     TABS.pid_tuning.initialize();
