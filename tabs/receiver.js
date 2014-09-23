@@ -61,22 +61,43 @@ TABS.receiver.initialize = function (callback) {
                 <ul>\
                     <li class="name">' + name + '</li>\
                     <li class="meter">\
-                        <span class="value"></span>\
-                        <meter min="800" max="2200"></meter>\
+                        <div class="meter-bar">\
+                            <div class="label"></div>\
+                            <div class="fill">\
+                                <div class="label"></div>\
+                            </div>\
+                        </div>\
                     </li>\
                 </ul>\
             ');
         }
 
-        var meter_array = [];
-        $('meter', bar_container).each(function () {
-            meter_array.push($(this));
+        // we could probably use min and max throttle for the range, will see
+        var meter_scale = {
+            'min': 800,
+            'max': 2200
+        };
+
+        var meter_fill_array = [];
+        $('.meter .fill', bar_container).each(function () {
+            meter_fill_array.push($(this));
         });
 
-        var meter_values_array = [];
-        $('.value', bar_container).each(function () {
-            meter_values_array.push($(this));
+        var meter_label_array = [];
+        $('.meter', bar_container).each(function () {
+            meter_label_array.push($('.label' , this));
         });
+
+        // correct inner label margin on window resize (i don't know how we could do this in css)
+        $(window).resize(function () {
+            var containerWidth = $('.meter:first', bar_container).width(),
+                labelWidth = $('.meter .label:first', bar_container).width(),
+                margin = (containerWidth / 2) - (labelWidth / 2);
+
+            for (var i = 0; i < meter_label_array.length; i++) {
+                meter_label_array[i].css('margin-left', margin);
+            }
+        }).resize(); // trigger so labels get correctly aligned on creation
 
         // handle rcmap
         if (bit_check(CONFIG.capability, 30)) {
@@ -296,8 +317,8 @@ TABS.receiver.initialize = function (callback) {
             function update_ui() {
                 // update bars with latest data
                 for (var i = 0; i < RC.active_channels; i++) {
-                    meter_array[i].val(RC.channels[i]);
-                    meter_values_array[i].text(RC.channels[i]);
+                    meter_fill_array[i].css('width', (RC.channels[i] - meter_scale.min) / (meter_scale.max - meter_scale.min) * 100 + '%');
+                    meter_label_array[i].text(RC.channels[i]);
                 }
 
                 // push latest data to the main array
@@ -377,5 +398,7 @@ TABS.receiver.initialize = function (callback) {
 };
 
 TABS.receiver.cleanup = function (callback) {
+    $(window).unbind('resize');
+
     if (callback) callback();
 };

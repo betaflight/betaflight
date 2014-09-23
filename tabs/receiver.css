@@ -19,42 +19,6 @@
     height: 22px;
     line-height: 20px;
 }
-.tab-receiver .bars ul:nth-of-type(1) meter::-webkit-meter-optimum-value {
-    background: #00A8F0;
-}
-.tab-receiver .bars ul:nth-of-type(2) meter::-webkit-meter-optimum-value {
-    background: #C0D800;
-}
-.tab-receiver .bars ul:nth-of-type(3) meter::-webkit-meter-optimum-value {
-    background: #f8921a;
-}
-.tab-receiver .bars ul:nth-of-type(4) meter::-webkit-meter-optimum-value {
-    background: #f02525;
-}
-.tab-receiver .bars ul:nth-of-type(5) meter::-webkit-meter-optimum-value {
-    background: #9440ED;
-}
-.tab-receiver .bars ul:nth-of-type(6) meter::-webkit-meter-optimum-value {
-    background: #45147a;
-}
-.tab-receiver .bars ul:nth-of-type(7) meter::-webkit-meter-optimum-value {
-    background: #cf7a26;
-}
-.tab-receiver .bars ul:nth-of-type(8) meter::-webkit-meter-optimum-value {
-    background: #147a66;
-}
-.tab-receiver .bars ul:nth-of-type(9) meter::-webkit-meter-optimum-value {
-    background: #0609a9;
-}
-.tab-receiver .bars ul:nth-of-type(10) meter::-webkit-meter-optimum-value {
-    background: #7a1445;
-}
-.tab-receiver .bars ul:nth-of-type(11) meter::-webkit-meter-optimum-value {
-    background: #267acf;
-}
-.tab-receiver .bars ul:nth-of-type(12) meter::-webkit-meter-optimum-value {
-    background: #7a6614;
-}
 .tab-receiver .bars .name {
     padding: 0 10px 0 0;
 
@@ -63,33 +27,75 @@
     text-align: right;
 }
 .tab-receiver .bars .meter {
-    position: relative;
     width: calc(100% - 50px);
 }
-.tab-receiver .bars .meter meter {
-    -webkit-appearance: none;
-
+.tab-receiver .bars .meter-bar {
+    position: relative;
     margin-top: 2px;
 
     width: 100%;
-    height: 17px; /* border doesn't count here */
+    height: 15px;
 
     border: 1px solid silver;
+    background-color: #f4f4f4;
 }
-.tab-receiver .bars .meter meter::-webkit-meter-bar {
-    background: #f4f4f4;
-}
-.tab-receiver .bars .value {
+.tab-receiver .bars .meter-bar .label {
     position: absolute;
 
-    margin-top: 2px;
-    left: calc(50% - 25px);
     width: 50px;
+    height: 15px;
+    line-height: 15px;
 
     text-align: center;
-    line-height: 16px;
+    color: #474747;
+}
+.tab-receiver .bars .meter-bar .fill {
+    position: relative;
+    overflow: hidden;
+
+    width: 50%;
+    height: 15px;
+
+    background-color: green;
+}
+.tab-receiver .bars .meter-bar .fill .label {
     color: white;
-    text-shadow: 0px 0px 2px #000000;
+}
+.tab-receiver .bars ul:nth-of-type(1) .fill {
+    background-color: #00A8F0;
+}
+.tab-receiver .bars ul:nth-of-type(2) .fill {
+    background-color: #C0D800;
+}
+.tab-receiver .bars ul:nth-of-type(3) .fill {
+    background-color: #f8921a;
+}
+.tab-receiver .bars ul:nth-of-type(4) .fill {
+    background-color: #f02525;
+}
+.tab-receiver .bars ul:nth-of-type(5) .fill {
+    background-color: #9440ED;
+}
+.tab-receiver .bars ul:nth-of-type(6) .fill {
+    background-color: #45147a;
+}
+.tab-receiver .bars ul:nth-of-type(7) .fill {
+    background-color: #cf7a26;
+}
+.tab-receiver .bars ul:nth-of-type(8) .fill {
+    background-color: #147a66;
+}
+.tab-receiver .bars ul:nth-of-type(9) .fill {
+    background-color: #0609a9;
+}
+.tab-receiver .bars ul:nth-of-type(10) .fill {
+    background-color: #7a1445;
+}
+.tab-receiver .bars ul:nth-of-type(11) .fill {
+    background-color: #267acf;
+}
+.tab-receiver .bars ul:nth-of-type(12) .fill {
+    background-color: #7a6614;
 }
 .tab-receiver .tunings {
     float: right;
