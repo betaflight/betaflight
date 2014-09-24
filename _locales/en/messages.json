@@ -446,6 +446,9 @@
     "receiverChannelMap": {
         "message": "Channel Map"
     },
+    "receiverRssiAux": {
+        "message": "RSSI on AUX"
+    },
     "receiverRefreshRateTitle": {
         "message": "Graph refresh rate"
     },

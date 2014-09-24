@@ -6,6 +6,11 @@ TABS.receiver.initialize = function (callback) {
     GUI.active_tab = 'receiver';
     googleAnalytics.sendAppView('Receiver Page');
 
+
+    function get_misc_data() {
+        MSP.send_message(MSP_codes.MSP_MISC, false, false, get_rc_data);
+    }
+
     function get_rc_data() {
         MSP.send_message(MSP_codes.MSP_RC, false, false, get_rc_map);
     }
@@ -23,7 +28,7 @@ TABS.receiver.initialize = function (callback) {
         $('#content').load("./tabs/receiver.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
+    MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_misc_data);
 
     function process_html() {
         // translate to user-selected language
@@ -99,7 +104,7 @@ TABS.receiver.initialize = function (callback) {
             }
         }).resize(); // trigger so labels get correctly aligned on creation
 
-        // handle rcmap
+        // handle rcmap & rssi aux channel
         if (bit_check(CONFIG.capability, 30)) {
             var RC_MAP_Letters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
 
@@ -154,12 +159,15 @@ TABS.receiver.initialize = function (callback) {
             });
 
             // handle helper
-            // TODO fix this
+            $('select[name="rcmap_helper"]').val(0); // go out of bounds
             $('select[name="rcmap_helper"]').change(function () {
                 $('input[name="rcmap"]').val($(this).val());
             });
+
+            // rssi aux
+            $('select[name="rssi_aux_channel"]').val(MISC.rssi_aux_channel);
         } else {
-            $('.rcmap_wrapper').hide();
+            $('.rcmap_wrapper, .rssi_aux_wrapper').hide();
         }
 
         // UI Hooks
@@ -268,8 +276,15 @@ TABS.receiver.initialize = function (callback) {
                 RC_MAP[i] = strBuffer.indexOf(RC_MAP_Letters[i]);
             }
 
+            // catch rssi aux
+            MISC.rssi_aux_channel = parseInt($('select[name="rssi_aux_channel"]').val());
+
             function save_rc_map() {
-                MSP.send_message(MSP_codes.MSP_SET_RCMAP, MSP.crunch(MSP_codes.MSP_SET_RCMAP), false, save_to_eeprom);
+                MSP.send_message(MSP_codes.MSP_SET_RCMAP, MSP.crunch(MSP_codes.MSP_SET_RCMAP), false, save_misc);
+            }
+
+            function save_misc() {
+                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_to_eeprom);
             }
 
             function save_to_eeprom() {

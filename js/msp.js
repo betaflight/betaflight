@@ -444,7 +444,7 @@ var MSP = {
                 }
                 break;
             case MSP_codes.MSP_SET_RCMAP:
-                console.log('RCMAP Updated');
+                console.log('RCMAP saved');
                 break;
             case MSP_codes.MSP_CONFIG:
                 BF_CONFIG.mixerConfiguration = data.getUint8(0);
