@@ -303,25 +303,28 @@ TABS.setup.initialize = function (callback) {
 };
 
 TABS.setup.initialize3D = function (compatibility) {
-    var self = this;
+    var self = this,
+        canvas, wrapper, renderer, camera;
 
     if (compatibility) {
-        var canvas = $('.COMPATIBILITY #canvas');
-        var wrapper = $('.COMPATIBILITY #canvas_wrapper');
+        canvas = $('.COMPATIBILITY #canvas');
+        wrapper = $('.COMPATIBILITY #canvas_wrapper');
     } else {
-        var canvas = $('.CAP_BASEFLIGHT_CONFIG #canvas');
-        var wrapper = $('.CAP_BASEFLIGHT_CONFIG #canvas_wrapper');
+        canvas = $('.CAP_BASEFLIGHT_CONFIG #canvas');
+        wrapper = $('.CAP_BASEFLIGHT_CONFIG #canvas_wrapper');
     }
 
-    var camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
-
-    // we really need to find a reliable way of detecting WebGL support, since we are getting mixed results on linux/cros/macos
-    var renderer;
-    if (GUI.operating_system == 'Windows') {
+    if (window.WebGLRenderingContext && (canvas.get(0).getContext('webgl') || canvas.get(0).getContext('experimental-webgl'))) {
         renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
     } else {
+        // fallback to CanvasRenderer
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
     }
+
+    // stacionary camera
+    camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
+
+    // setup scene
     var scene = new THREE.Scene();
 
     // some light
@@ -331,6 +334,7 @@ TABS.setup.initialize3D = function (compatibility) {
     // flying brick
     var modelWrapper = new THREE.Object3D();
     var geometry = new THREE.BoxGeometry(150, 80, 300);
+
     var materialArray = [ // overdraw helps remove wireframe when using CanvasRenderer
         new THREE.MeshLambertMaterial({color: 0xff3333, emissive: 0x962020, overdraw: true}), // right
         new THREE.MeshLambertMaterial({color: 0xff8800, emissive: 0xa45a06, overdraw: true}), // left
@@ -339,6 +343,7 @@ TABS.setup.initialize3D = function (compatibility) {
         new THREE.MeshLambertMaterial({color: 0x3333ff, emissive: 0x212192, overdraw: true}), // back
         new THREE.MeshLambertMaterial({color: 0x8833ff, emissive: 0x5620a2, overdraw: true}), // front
     ];
+
     var materials = new THREE.MeshFaceMaterial(materialArray);
     var model = new THREE.Mesh(geometry, materials);
 
@@ -355,7 +360,6 @@ TABS.setup.initialize3D = function (compatibility) {
     scene.add(camera);
     scene.add(modelWrapper);
     scene.add(light);
-
 
     this.render3D = function () {
         // compute the changes
