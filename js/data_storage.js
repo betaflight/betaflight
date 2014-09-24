@@ -114,6 +114,7 @@ var MISC = {
     gps_baudrate:           0,
     gps_ubx_sbas:           0,
     multiwiicurrentoutput:  0,
+    rssi_aux_channel:       0,
     placeholder2:           0,
     mag_declination:        0, // not checked
     vbatscale:              0,

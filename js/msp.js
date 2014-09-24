@@ -297,8 +297,9 @@ var MSP = {
                 MISC.gps_type = data.getUint8(10);
                 MISC.gps_baudrate = data.getUint8(11);
                 MISC.gps_ubx_sbas = data.getUint8(12);
-                MISC.placeholder1 = data.getUint8(13);
-                MISC.placeholder2 = data.getUint16(14, 1);
+                MISC.multiwiicurrentoutput = data.getUint8(13);
+                MISC.rssi_aux_channel = data.getUint8(14);
+                MISC.placeholder2 = data.getUint8(15);
                 MISC.mag_declination = data.getInt16(16, 1); // -18000-18000
                 MISC.vbatscale = data.getUint8(18, 1); // 10-200
                 MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
@@ -651,8 +652,8 @@ MSP.crunch = function (code) {
             buffer.push(MISC.gps_baudrate);
             buffer.push(MISC.gps_ubx_sbas);
             buffer.push(MISC.multiwiicurrentoutput);
-            buffer.push(lowByte(MISC.placeholder2));
-            buffer.push(highByte(MISC.placeholder2));
+            buffer.push(MISC.rssi_aux_channel);
+            buffer.push(MISC.placeholder2);
             buffer.push(lowByte(MISC.mag_declination));
             buffer.push(highByte(MISC.mag_declination));
             buffer.push(MISC.vbatscale);
