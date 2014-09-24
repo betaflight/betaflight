@@ -139,22 +139,31 @@ function onOpen(openInfo) {
             MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
                 GUI.timeout_remove('connecting'); // kill connecting timer
 
-                // silencing firmware shoutout, since nobody cares anyway
-                // GUI.log(chrome.i18n.getMessage('firmwareVersion', [CONFIG.version]));
+                // TODO clean / remove this after compatibility period is over
 
                 if (!bit_check(CONFIG.capability, 30)) {
                     GUI.log('Configurator detected that you are running an old version of the firmware and will operate in compatibility mode,\
                         to enjoy all of the recently implemented features, please <strong>update</strong> your firmware.');
-                }
 
-                if (CONFIG.version >= CONFIGURATOR.firmwareVersionAccepted) {
-                    CONFIGURATOR.connectionValid = true;
+                    if (CONFIG.version >= CONFIGURATOR.firmwareVersionAccepted) {
+                        CONFIGURATOR.connectionValid = true;
 
-                    $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-                    $('#tabs li a:first').click();
+                        $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+                        $('#tabs li a:first').click();
+                    } else {
+                        GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.firmwareVersionAccepted]));
+                        $('div#port-picker a.connect').click(); // disconnect
+                    }
                 } else {
-                    GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.firmwareVersionAccepted]));
-                    $('div#port-picker a.connect').click(); // disconnect
+                    MSP.send_message(MSP_codes.MSP_BUILDINFO, false, false, function () {
+                        GUI.log('Running firmware released on: <strong>' + CONFIG.buildInfo + '</strong>');
+
+                        // continue as usually
+                        CONFIGURATOR.connectionValid = true;
+
+                        $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+                        $('#tabs li a:first').click();
+                    });
                 }
             });
         });

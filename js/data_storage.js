@@ -10,6 +10,7 @@ var CONFIGURATOR = {
 
 var CONFIG = {
     version:       0,
+    buildInfo:     '',
     multiType:     0,
     msp_version:   0,
     capability:    0,

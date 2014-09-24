@@ -462,8 +462,13 @@ var MSP = {
                 console.log('Reboot request accepted');
                 break;
             case MSP_codes.MSP_BUILDINFO:
-                console.log('Build info received');
-                // TODO implement this
+                var buff = [];
+
+                for (var i = 0; i < data.byteLength; i++) {
+                    buff.push(data.getUint8(i));
+                }
+
+                CONFIG.buildInfo = String.fromCharCode.apply(null, buff);
                 break;
 
             default:
