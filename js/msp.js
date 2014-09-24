@@ -57,7 +57,8 @@ var MSP_codes = {
     MSP_SET_RCMAP:          65, // set rc map, numchannels to set comes from MSP_RCMAP
     MSP_CONFIG:             66, // baseflight-specific settings that aren't covered elsewhere
     MSP_SET_CONFIG:         67, // baseflight-specific settings save
-    MSP_SET_REBOOT:         68  // reboot settings
+    MSP_SET_REBOOT:         68, // reboot settings
+    MSP_BUILDINFO:          69  // build date as well as some space for future expansion
 };
 
 var MSP = {
@@ -459,6 +460,10 @@ var MSP = {
                 break;
             case MSP_codes.MSP_SET_REBOOT:
                 console.log('Reboot request accepted');
+                break;
+            case MSP_codes.MSP_BUILDINFO:
+                console.log('Build info received');
+                // TODO implement this
                 break;
 
             default:

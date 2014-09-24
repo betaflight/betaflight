@@ -154,6 +154,7 @@ TABS.receiver.initialize = function (callback) {
             });
 
             // handle helper
+            // TODO fix this
             $('select[name="rcmap_helper"]').change(function () {
                 $('input[name="rcmap"]').val($(this).val());
             });
