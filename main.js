@@ -50,6 +50,8 @@ $(document).ready(function () {
         GUI.log('You\'re using an old version of ' + chrome.runtime.getManifest().name + '. Please update so you can benefit from recently added features and bugfixes.');
     }
 
+    // log library versions in console to make version tracking easier
+    console.log('Libraries: jQuery - ' + $.fn.jquery + ', d3 - ' + d3.version + ', three.js - ' + THREE.REVISION);
 
     // Tabs
     var ui_tabs = $('#tabs > ul');
