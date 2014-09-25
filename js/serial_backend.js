@@ -156,6 +156,7 @@ function onOpen(openInfo) {
                     }
                 } else {
                     MSP.send_message(MSP_codes.MSP_BUILDINFO, false, false, function () {
+                        googleAnalytics.sendEvent('Firmware', 'Using', CONFIG.buildInfo);
                         GUI.log('Running firmware released on: <strong>' + CONFIG.buildInfo + '</strong>');
 
                         // continue as usually
