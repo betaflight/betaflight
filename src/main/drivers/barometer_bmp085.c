@@ -116,6 +116,25 @@ static int32_t bmp085_get_temperature(uint32_t ut);
 static int32_t bmp085_get_pressure(uint32_t up);
 static void bmp085_calculate(int32_t *pressure, int32_t *temperature);
 
+#define BMP085_OFF                  digitalLo(BARO_GPIO, BARO_PIN);
+#define BMP085_ON                   digitalHi(BARO_GPIO, BARO_PIN);
+
+void bmp085Disable(void)
+{
+
+    if (hse_value != 12000000) {
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+
+        // PC13 (BMP085's XCLR reset input, which we use to disable it). Only needed when running at 8MHz
+        gpio_config_t gpio;
+        gpio.pin = Pin_13;
+        gpio.speed = Speed_2MHz;
+        gpio.mode = Mode_Out_PP;
+        gpioInit(GPIOC, &gpio);
+    }
+    BMP085_OFF;
+}
+
 bool bmp085Detect(baro_t *baro)
 {
     uint8_t data;

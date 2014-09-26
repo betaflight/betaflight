@@ -390,6 +390,9 @@ retry:
 static void detectBaro()
 {
 #ifdef BARO
+#ifdef USE_BARO_BMP085
+    bmp085Disable();
+#endif
 #ifdef USE_BARO_MS5611
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
     if (ms5611Detect(&baro)) {
