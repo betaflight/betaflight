@@ -40,6 +40,7 @@ typedef enum {
     HEADFREE_MODE   = (1 << 6),
     AUTOTUNE_MODE   = (1 << 7),
     PASSTHRU_MODE   = (1 << 8),
+    SONAR_MODE      = (1 << 9),
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;

@@ -406,8 +406,8 @@ static void detectBaro()
         return;
     }
 #endif
-    sensorsClear(SENSOR_BARO);
 #endif
+    sensorsClear(SENSOR_BARO);
 }
 
 void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)

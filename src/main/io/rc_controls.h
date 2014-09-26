@@ -40,6 +40,7 @@ typedef enum {
     BOXOSD,
     BOXTELEMETRY,
     BOXAUTOTUNE,
+    BOXSONAR,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
