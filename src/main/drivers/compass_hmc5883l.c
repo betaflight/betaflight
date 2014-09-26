@@ -69,14 +69,14 @@
  *             GN2 |  GN1 |  GN0 |   Mag Input   | Gain       | Output Range
  *                 |      |      |  Range[Ga]    | [LSB/mGa]  |
  *            ------------------------------------------------------
- *              0  |  0   |  0   |  ±0.88Ga      |   1370     | 0xF800?0x07FF (-2048:2047)
- *              0  |  0   |  1   |  ±1.3Ga (def) |   1090     | 0xF800?0x07FF (-2048:2047)
- *              0  |  1   |  0   |  ±1.9Ga       |   820      | 0xF800?0x07FF (-2048:2047)
- *              0  |  1   |  1   |  ±2.5Ga       |   660      | 0xF800?0x07FF (-2048:2047)
- *              1  |  0   |  0   |  ±4.0Ga       |   440      | 0xF800?0x07FF (-2048:2047)
- *              1  |  0   |  1   |  ±4.7Ga       |   390      | 0xF800?0x07FF (-2048:2047)
- *              1  |  1   |  0   |  ±5.6Ga       |   330      | 0xF800?0x07FF (-2048:2047)
- *              1  |  1   |  1   |  ±8.1Ga       |   230      | 0xF800?0x07FF (-2048:2047)
+ *              0  |  0   |  0   |  ï¿½0.88Ga      |   1370     | 0xF800?0x07FF (-2048:2047)
+ *              0  |  0   |  1   |  ï¿½1.3Ga (def) |   1090     | 0xF800?0x07FF (-2048:2047)
+ *              0  |  1   |  0   |  ï¿½1.9Ga       |   820      | 0xF800?0x07FF (-2048:2047)
+ *              0  |  1   |  1   |  ï¿½2.5Ga       |   660      | 0xF800?0x07FF (-2048:2047)
+ *              1  |  0   |  0   |  ï¿½4.0Ga       |   440      | 0xF800?0x07FF (-2048:2047)
+ *              1  |  0   |  1   |  ï¿½4.7Ga       |   390      | 0xF800?0x07FF (-2048:2047)
+ *              1  |  1   |  0   |  ï¿½5.6Ga       |   330      | 0xF800?0x07FF (-2048:2047)
+ *              1  |  1   |  1   |  ï¿½8.1Ga       |   230      | 0xF800?0x07FF (-2048:2047)
  *                               |Not recommended|
  *
  * 4:0 CRB4-CRB: 0 This bit must be cleared for correct operation.
@@ -124,13 +124,13 @@ bool hmc5883lDetect(void)
 
 void hmc5883lInit(void)
 {
-    gpio_config_t gpio;
     int16_t magADC[3];
     int i;
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
 
 #ifdef NAZE
+    gpio_config_t gpio;
     if (hse_value == 8000000) {
         RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
         // PB12 - MAG_DRDY output on rev4 hardware
