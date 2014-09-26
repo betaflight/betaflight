@@ -1,22 +1,33 @@
 #!/bin/bash
 
-
-
-doc_files=( 'oasdf ne' 'two' 'three' )
-for i in "${doc_files[@]}"
-do
-	echo $i
-done
-
-exit;
-
 filename=Manual
+doc_files=( 'Configuration.md'
+	'Board - CC3D.md'
+	'Board - Naze32.md'
+	'Rx.md'
+	'Serial.md'
+	'Failsafe.md'
+	'Battery.md'
+	'Gps.md'
+	'Rssi.md'
+	'Telemetry.md'
+	'LedStrip.md'
+	'Display.md'
+	'Buzzer.md'
+	'Sonar.md'
+	'Autotune.md'
+	'Migrating from baseflight.md')
+
 if which gimli >/dev/null; then
 	echo "Building ${filename}.pdf"
-	find docs -name "*.md" -exec cat {} > ${filename}.md \;
-	mv ${filename}.md docs
 	pushd . >/dev/null
 	cd docs
+	
+	rm -f ${filename}.md
+	for i in "${doc_files[@]}"
+	do
+		cat "$i" >> ${filename}.md
+	done
 	rm -f ${filename}.pdf
 	gimli -f ${filename}.md
 	rm ${filename}.md 
