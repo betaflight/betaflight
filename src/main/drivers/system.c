@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "gpio.h"
 #include "light_led.h"
 #include "sound_beeper.h"
@@ -78,6 +80,7 @@ void systemInit(bool overclock)
 {
 
 #ifdef STM32F303
+    UNUSED(overclock);
     // start fpu
     SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
 #endif
