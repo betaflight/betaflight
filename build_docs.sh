@@ -1,5 +1,15 @@
 #!/bin/bash
 
+
+
+doc_files=( 'oasdf ne' 'two' 'three' )
+for i in "${doc_files[@]}"
+do
+	echo $i
+done
+
+exit;
+
 filename=Manual
 if which gimli >/dev/null; then
 	echo "Building ${filename}.pdf"
