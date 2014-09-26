@@ -60,10 +60,13 @@ or other display corruption.
 
 More can be read about this procedure here: http://www.multiwii.com/forum/viewtopic.php?f=6&t=2705&start=10
 
-There are diagrams in the Wiring directory.
+![Crius CO-16 Diagram](Wiring/Crius CO-16 OLED diagram.png)
+![Crius CO-16 Modification](Wiring/Crius CO-16 OLED modifications.jpg)
 
 ## Connections
 
 Connect +5v, Ground, I2C SDA and I2C SCL from the flight controller to the display.
 
 On Naze32 rev 5 boards the SDA and SCL pins are underneath the board.
+
+
