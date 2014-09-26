@@ -855,8 +855,14 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsaf
     ledConfigs = ledConfigsToUse;
     colors = colorsToUse;
     failsafe = failsafeToUse;
+    ledStripInitialised = false;
+}
 
+void ledStripEnable(void)
+{
     reevalulateLedConfig();
     ledStripInitialised = true;
+
+    ws2811LedStripInit();
 }
 #endif

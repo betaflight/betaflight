@@ -28,7 +28,6 @@
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
-#include "drivers/light_ws2811strip.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/timer.h"
 #include "drivers/serial.h"
@@ -248,9 +247,10 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
+    ledStripInit(masterConfig.ledConfigs, masterConfig.colors, failsafe);
+
     if (feature(FEATURE_LED_STRIP)) {
-        ws2811LedStripInit();
-        ledStripInit(masterConfig.ledConfigs, masterConfig.colors, failsafe);
+        ledStripEnable();
     }
 #endif
 
