@@ -33,7 +33,7 @@ if which gimli >/dev/null; then
 	rm ${filename}.md 
 	popd >/dev/null
 else
-    echo -e "\nFAILED"
+	echo -e "\nFAILED"
 	echo "Install Gimli to build the PDF documentation"
 	echo -e "https://github.com/walle/gimli\n"
 	exit 1
