@@ -67,7 +67,7 @@
     TIM4 4 channels
 */
 
-#if (defined(STM32F10X) || defined(NAZE)) && !defined(CC3D)
+#if defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 0, Mode_IPD},          // PWM1
     { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, Mode_IPD},          // PWM2
@@ -95,7 +95,7 @@ static const TIM_TypeDef const *timers[MAX_TIMERS] = {
 #define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
 #endif
 
-#if defined(CC3D)
+#ifdef CC3D
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM4, GPIOB, Pin_6, TIM_Channel_1, TIM4_IRQn, 0, Mode_IPD}, // S1_IN
     { TIM3, GPIOB, Pin_5, TIM_Channel_2, TIM3_IRQn, 0, Mode_IPD}, // S2_IN - GPIO_PartialRemap_TIM3
@@ -122,22 +122,22 @@ static const TIM_TypeDef const *timers[MAX_TIMERS] = {
 #define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
 #endif
 
-#if (defined(STM32F303) || defined(STM32F3DISCOVERY)) && !(defined(CHEBUZZF3) || defined(NAZE32PRO))
+#if defined(STM32F3DISCOVERY) && !(defined(CHEBUZZF3))
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, Mode_AF_PP_PD},             // PWM1 - PA8
-    { TIM16, GPIOB, Pin_8, TIM_Channel_1, TIM1_UP_TIM16_IRQn, 0, Mode_AF_PP_PD},      // PWM2 - PB8
-    { TIM17, GPIOB, Pin_9, TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, Mode_AF_PP_PD}, // PWM3 - PB9
-    { TIM8, GPIOC, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, 1, Mode_AF_PP_PD},             // PWM4 - PC6
-    { TIM8, GPIOC, Pin_7, TIM_Channel_2, TIM8_CC_IRQn, 1, Mode_AF_PP_PD},             // PWM5 - PC7
-    { TIM8, GPIOC, Pin_8, TIM_Channel_3, TIM8_CC_IRQn, 1, Mode_AF_PP_PD},             // PWM6 - PC8
-    { TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn, 0, Mode_AF_PP_PD},                // PWM7 - PB1
-    { TIM3, GPIOA, Pin_4, TIM_Channel_2, TIM3_IRQn, 0, Mode_AF_PP_PD},                // PWM8 - PA2
-    { TIM4, GPIOD, Pin_12, TIM_Channel_1, TIM4_IRQn, 0, Mode_AF_PP},                  // PWM9 - PD12
-    { TIM4, GPIOD, Pin_13, TIM_Channel_2, TIM4_IRQn, 0, Mode_AF_PP},                  // PWM10 - PD13
-    { TIM4, GPIOD, Pin_14, TIM_Channel_3, TIM4_IRQn, 0, Mode_AF_PP},                  // PWM11 - PD14
-    { TIM4, GPIOD, Pin_15, TIM_Channel_4, TIM4_IRQn, 0, Mode_AF_PP},                  // PWM12 - PD15
-    { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, Mode_AF_PP},                   // PWM13 - PA1
-    { TIM2, GPIOA, Pin_2, TIM_Channel_3, TIM2_IRQn, 0, Mode_AF_PP}                    // PWM14 - PA2
+    { TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, Mode_AF_PP_PD, GPIO_PinSource8, GPIO_AF_6},             // PWM1 - PA8
+    { TIM16, GPIOB, Pin_8, TIM_Channel_1, TIM1_UP_TIM16_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource8, GPIO_AF_1},      // PWM2 - PB8
+    { TIM17, GPIOB, Pin_9, TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource9, GPIO_AF_1}, // PWM3 - PB9
+    { TIM8, GPIOC, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, 1, Mode_AF_PP_PD, GPIO_PinSource6, GPIO_AF_4},             // PWM4 - PC6
+    { TIM8, GPIOC, Pin_7, TIM_Channel_2, TIM8_CC_IRQn, 1, Mode_AF_PP_PD, GPIO_PinSource7, GPIO_AF_4},             // PWM5 - PC7
+    { TIM8, GPIOC, Pin_8, TIM_Channel_3, TIM8_CC_IRQn, 1, Mode_AF_PP_PD, GPIO_PinSource8, GPIO_AF_4},             // PWM6 - PC8
+    { TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource1, GPIO_AF_2},                // PWM7 - PB1
+    { TIM3, GPIOA, Pin_4, TIM_Channel_2, TIM3_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource4, GPIO_AF_2},                // PWM8 - PA2
+    { TIM4, GPIOD, Pin_12, TIM_Channel_1, TIM4_IRQn, 0, Mode_AF_PP, GPIO_PinSource12, GPIO_AF_2},                  // PWM9 - PD12
+    { TIM4, GPIOD, Pin_13, TIM_Channel_2, TIM4_IRQn, 0, Mode_AF_PP, GPIO_PinSource13, GPIO_AF_2},                  // PWM10 - PD13
+    { TIM4, GPIOD, Pin_14, TIM_Channel_3, TIM4_IRQn, 0, Mode_AF_PP, GPIO_PinSource14, GPIO_AF_2},                  // PWM11 - PD14
+    { TIM4, GPIOD, Pin_15, TIM_Channel_4, TIM4_IRQn, 0, Mode_AF_PP, GPIO_PinSource15, GPIO_AF_2},                  // PWM12 - PD15
+    { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1},                   // PWM13 - PA1
+    { TIM2, GPIOA, Pin_2, TIM_Channel_3, TIM2_IRQn, 0, Mode_AF_PP, GPIO_PinSource2, GPIO_AF_1}                    // PWM14 - PA2
 };
 
 #define MAX_TIMERS 7
@@ -152,29 +152,29 @@ static const TIM_TypeDef const *timers[MAX_TIMERS] = {
 
 #endif
 
-#if defined(CHEBUZZF3)
+#ifdef CHEBUZZF3
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // INPUTS CH1-8
-    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn, 1, Mode_AF_PP_PD},            // PWM1 - PA8
-    { TIM16, GPIOB, Pin_8,  TIM_Channel_1, TIM1_UP_TIM16_IRQn, 0, Mode_AF_PP_PD},      // PWM2 - PB8
-    { TIM17, GPIOB, Pin_9,  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, Mode_AF_PP_PD}, // PWM3 - PB9
-    { TIM8,  GPIOC, Pin_6,  TIM_Channel_1, TIM8_CC_IRQn, 1, Mode_AF_PP_PD},            // PWM4 - PC6
-    { TIM8,  GPIOC, Pin_7,  TIM_Channel_2, TIM8_CC_IRQn, 1, Mode_AF_PP_PD},            // PWM5 - PC7
-    { TIM8,  GPIOC, Pin_8,  TIM_Channel_3, TIM8_CC_IRQn, 1, Mode_AF_PP_PD},            // PWM6 - PC8
-    { TIM15, GPIOF, Pin_9,  TIM_Channel_1, TIM1_BRK_TIM15_IRQn, 0, Mode_AF_PP_PD},     // PWM7 - PF9
-    { TIM15, GPIOF, Pin_10, TIM_Channel_2, TIM1_BRK_TIM15_IRQn, 0, Mode_AF_PP_PD},     // PWM8 - PF10
+    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn,            1, Mode_AF_PP_PD, GPIO_PinSource8, GPIO_AF_6}, // PWM1 - PA8
+    { TIM16, GPIOB, Pin_8,  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP_PD, GPIO_PinSource8, GPIO_AF_1}, // PWM2 - PB8
+    { TIM17, GPIOB, Pin_9,  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource9, GPIO_AF_1}, // PWM3 - PB9
+    { TIM8,  GPIOC, Pin_6,  TIM_Channel_1, TIM8_CC_IRQn,            1, Mode_AF_PP_PD, GPIO_PinSource6, GPIO_AF_4}, // PWM4 - PC6
+    { TIM8,  GPIOC, Pin_7,  TIM_Channel_2, TIM8_CC_IRQn,            1, Mode_AF_PP_PD, GPIO_PinSource7, GPIO_AF_4}, // PWM5 - PC7
+    { TIM8,  GPIOC, Pin_8,  TIM_Channel_3, TIM8_CC_IRQn,            1, Mode_AF_PP_PD, GPIO_PinSource8, GPIO_AF_4}, // PWM6 - PC8
+    { TIM15, GPIOF, Pin_9,  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     0, Mode_AF_PP_PD, GPIO_PinSource9, GPIO_AF_3}, // PWM7 - PF9
+    { TIM15, GPIOF, Pin_10, TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     0, Mode_AF_PP_PD, GPIO_PinSource10, GPIO_AF_3}, // PWM8 - PF10
 
     // OUTPUTS CH1-10
-    { TIM4,  GPIOD, Pin_12, TIM_Channel_1, TIM4_IRQn, 0, Mode_AF_PP},                  // PWM9 - PD12
-    { TIM4,  GPIOD, Pin_13, TIM_Channel_2, TIM4_IRQn, 0, Mode_AF_PP},                  // PWM10 - PD13
-    { TIM4,  GPIOD, Pin_14, TIM_Channel_3, TIM4_IRQn, 0, Mode_AF_PP},                  // PWM11 - PD14
-    { TIM4,  GPIOD, Pin_15, TIM_Channel_4, TIM4_IRQn, 0, Mode_AF_PP},                  // PWM12 - PD15
-    { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn, 0, Mode_AF_PP},                  // PWM13 - PA1
-    { TIM2,  GPIOA, Pin_2,  TIM_Channel_3, TIM2_IRQn, 0, Mode_AF_PP},                  // PWM14 - PA2
-    { TIM2,  GPIOA, Pin_3,  TIM_Channel_4, TIM2_IRQn, 0, Mode_AF_PP},                  // PWM15 - PA3
-    { TIM3,  GPIOB, Pin_0,  TIM_Channel_3, TIM3_IRQn, 0, Mode_AF_PP},                  // PWM16 - PB0
-    { TIM3,  GPIOB, Pin_1,  TIM_Channel_4, TIM3_IRQn, 0, Mode_AF_PP},                  // PWM17 - PB1
-    { TIM3,  GPIOA, Pin_4,  TIM_Channel_2, TIM3_IRQn, 0, Mode_AF_PP}                   // PWM18 - PA4
+    { TIM4,  GPIOD, Pin_12, TIM_Channel_1, TIM4_IRQn,               0, Mode_AF_PP, GPIO_PinSource12, GPIO_AF_2},    // PWM9 - PD12
+    { TIM4,  GPIOD, Pin_13, TIM_Channel_2, TIM4_IRQn,               0, Mode_AF_PP, GPIO_PinSource13, GPIO_AF_2},    // PWM10 - PD13
+    { TIM4,  GPIOD, Pin_14, TIM_Channel_3, TIM4_IRQn,               0, Mode_AF_PP, GPIO_PinSource14, GPIO_AF_2},    // PWM11 - PD14
+    { TIM4,  GPIOD, Pin_15, TIM_Channel_4, TIM4_IRQn,               0, Mode_AF_PP, GPIO_PinSource15, GPIO_AF_2},    // PWM12 - PD15
+    { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1},    // PWM13 - PA1
+    { TIM2,  GPIOA, Pin_2,  TIM_Channel_3, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource2, GPIO_AF_1},    // PWM14 - PA2
+    { TIM2,  GPIOA, Pin_3,  TIM_Channel_4, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource3, GPIO_AF_1},    // PWM15 - PA3
+    { TIM3,  GPIOB, Pin_0,  TIM_Channel_3, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_2},    // PWM16 - PB0
+    { TIM3,  GPIOB, Pin_1,  TIM_Channel_4, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_2},    // PWM17 - PB1
+    { TIM3,  GPIOA, Pin_4,  TIM_Channel_2, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource4, GPIO_AF_2}     // PWM18 - PA4
 };
 
 #define MAX_TIMERS 8
@@ -191,21 +191,21 @@ static const TIM_TypeDef const *timers[MAX_TIMERS] = {
 
 #ifdef NAZE32PRO
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn, 0, Mode_AF_PP_PD}, // PA8 - AF6
-    { TIM1,  GPIOA, Pin_9,  TIM_Channel_2, TIM1_CC_IRQn, 0, Mode_AF_PP_PD}, // PA9 - AF6
-    { TIM1,  GPIOA, Pin_10, TIM_Channel_3, TIM1_CC_IRQn, 0, Mode_AF_PP_PD}, // PA10 - AF6
-    { TIM3,  GPIOB, Pin_4,  TIM_Channel_1, TIM3_IRQn,    0, Mode_AF_PP_PD}, // PB3 - AF2
-    { TIM4,  GPIOB, Pin_6,  TIM_Channel_1, TIM4_IRQn,    0, Mode_AF_PP_PD}, // PB6 - AF2 - not working yet
-    { TIM4,  GPIOB, Pin_7,  TIM_Channel_2, TIM4_IRQn,    0, Mode_AF_PP_PD}, // PB7 - AF2 - not working yet
-    { TIM4,  GPIOB, Pin_8,  TIM_Channel_3, TIM4_IRQn,    0, Mode_AF_PP_PD}, // PB8 - AF2
-    { TIM4,  GPIOB, Pin_9,  TIM_Channel_4, TIM4_IRQn,    0, Mode_AF_PP_PD}, // PB9 - AF2
+    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource8,  GPIO_AF6}, // PA8 - AF6
+    { TIM1,  GPIOA, Pin_9,  TIM_Channel_2, TIM1_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource9,  GPIO_AF6}, // PA9 - AF6
+    { TIM1,  GPIOA, Pin_10, TIM_Channel_3, TIM1_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource10, GPIO_AF6}, // PA10 - AF6
+    { TIM3,  GPIOB, Pin_4,  TIM_Channel_1, TIM3_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource4,  GPIO_AF2}, // PB4 - AF2
+    { TIM4,  GPIOB, Pin_6,  TIM_Channel_1, TIM4_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource6,  GPIO_AF2}, // PB6 - AF2 - not working yet
+    { TIM4,  GPIOB, Pin_7,  TIM_Channel_2, TIM4_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource7,  GPIO_AF2}, // PB7 - AF2 - not working yet
+    { TIM4,  GPIOB, Pin_8,  TIM_Channel_3, TIM4_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource8,  GPIO_AF2}, // PB8 - AF2
+    { TIM4,  GPIOB, Pin_9,  TIM_Channel_4, TIM4_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource9,  GPIO_AF2}, // PB9 - AF2
 
-    { TIM2,  GPIOA, Pin_0,  TIM_Channel_1, TIM2_IRQn,               1, Mode_AF_PP}, // PA0 - untested
-    { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               1, Mode_AF_PP}, // PA1 - untested
-    { TIM15, GPIOA, Pin_2,  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP}, // PA2 - untested
-    { TIM15, GPIOA, Pin_3,  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP}, // PA3 - untested
-    { TIM16, GPIOA, Pin_6,  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP}, // PA6 - untested
-    { TIM17, GPIOA, Pin_7,  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP}, // PA7 - untested
+    { TIM2,  GPIOA, Pin_0,  TIM_Channel_1, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF2}, // PA0 - untested
+    { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource1, GPIO_AF2}, // PA1 - untested
+    { TIM15, GPIOA, Pin_2,  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP, GPIO_PinSource2, GPIO_AF9}, // PA2 - untested
+    { TIM15, GPIOA, Pin_3,  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP, GPIO_PinSource3, GPIO_AF9}, // PA3 - untested
+    { TIM16, GPIOA, Pin_6,  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF1}, // PA6 - untested
+    { TIM17, GPIOA, Pin_7,  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF1}, // PA7 - untested
 };
 
 #define MAX_TIMERS 7
@@ -466,37 +466,19 @@ void timerInit(void)
     RCC_AHBPeriphClockCmd(TIMER_AHB_PERIPHERALS, ENABLE);
 #endif
 
-
-#ifdef STM32F303
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource8,  GPIO_AF_6);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_1);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_1);
-    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6,  GPIO_AF_4);
-    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7,  GPIO_AF_4);
-    GPIO_PinAFConfig(GPIOC, GPIO_PinSource8,  GPIO_AF_4);
-#ifdef CHEBUZZF3
-    GPIO_PinAFConfig(GPIOF, GPIO_PinSource9,  GPIO_AF_3);
-    GPIO_PinAFConfig(GPIOF, GPIO_PinSource10, GPIO_AF_3);
+#ifdef STM32F303xC
+    for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
+        const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
+        GPIO_PinAFConfig(timerHardwarePtr->gpio, (uint16_t)timerHardwarePtr->gpioPinSource, timerHardwarePtr->alternateFunction);
+    }
 #endif
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource15, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource1,  GPIO_AF_1);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource2,  GPIO_AF_1);
 
+#if 0
+#if defined(STMF3DISCOVERY) || defined(NAZE32PRO)
+    // FIXME move these where they are needed.
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource0, GPIO_AF_2);
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_2);
+#endif
 #endif
 
-#ifdef NAZE32PRO
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9,  GPIO_AF_6);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_6);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource4,  GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource6,  GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource7,  GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_2);
-    GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,  GPIO_AF_2);
-#endif
 }
