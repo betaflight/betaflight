@@ -3,7 +3,7 @@
 
 Cleanflight is configured primarilty using the Cleanflight Configurator GUI.
 
-Both the command line interface and gui are accessible by the connecting to a serial port on the target,
+Both the command line interface and gui are accessible by connecting to a serial port on the target,
 be it a USB virtual serial port, physical hardware UART port or a softserial port.
 
 The GUI cannot currently configure all aspects of the system, the CLI must be used to enable or configure
