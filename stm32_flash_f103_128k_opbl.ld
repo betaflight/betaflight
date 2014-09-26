@@ -22,7 +22,8 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Specify the memory areas. Flash is limited for last 2K for configuration storage */
 MEMORY
 {
-  FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 126K /* last 2kb used for config storage */
+  FLASH (rx)      : ORIGIN = 0x08003000, LENGTH = 126K - 0x03000 /* last 2kb used for config storage first 12k for OP Bootloader*/
+
   RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 20K
   MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
