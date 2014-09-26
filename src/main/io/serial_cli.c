@@ -1168,7 +1168,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("Cleanflight/%s" __DATE__ " / " __TIME__ " (%s)", targetName, shortGitRevision);
+    printf("Cleanflight/%s " __DATE__ " / " __TIME__ " (%s)", targetName, shortGitRevision);
 }
 
 void cliProcess(void)
