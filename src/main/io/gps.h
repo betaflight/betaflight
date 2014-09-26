@@ -89,6 +89,7 @@ extern gpsData_t gpsData;
 extern int32_t GPS_coord[2];               // LAT/LON
 
 extern uint8_t GPS_numSat;
+extern uint16_t GPS_hdop;                  // GPS signal quality
 extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update
 
 extern uint16_t GPS_altitude;              // altitude in 0.1m
