@@ -9,8 +9,6 @@ The PDF manual generation uses the Gimli for the conversion. It can be installed
     sudo gem1.8 install gimli
 ```
 
-
-
 ##Configuration
 All markdown files need to be registered in the ```build_manual.sh``` file individually by modifying the ```doc_files``` variable / array:
 ```bash
@@ -20,5 +18,6 @@ doc_files=( 'Configuration.md'
 	'...'
 )
 ```
+
 ##Restritions
 As the conversion via Gimli will not respect embedded image's DPI settings, the diemnsions of the image will be defined by the physical resolution in pixels. As a rule of thumb one should not embedd images wider than 600px in the markdown files.
