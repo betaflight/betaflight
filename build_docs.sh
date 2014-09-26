@@ -1,11 +1,16 @@
 #!/bin/bash
 
-
+filename=Manual
 if which gimli >/dev/null; then
-	find docs -name "*.md" -exec cat {} > documentation.md \;
-	gimli -f documentation.md
-	mv documentation.pdf docs
-	rm documentation.md    
+	echo "Building ${filename}.pdf"
+	find docs -name "*.md" -exec cat {} > ${filename}.md \;
+	mv ${filename}.md docs
+	pushd . >/dev/null
+	cd docs
+	rm -f ${filename}.pdf
+	gimli -f ${filename}.md
+	rm ${filename}.md 
+	popd >/dev/null
 else
     echo -e "\nFAILED"
 	echo "Install Gimli to build the PDF documentation"

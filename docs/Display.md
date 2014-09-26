@@ -60,7 +60,7 @@ or other display corruption.
 
 More can be read about this procedure here: http://www.multiwii.com/forum/viewtopic.php?f=6&t=2705&start=10
 
-![Crius CO-16 Diagram](Wiring/Crius CO-16 OLED diagram.jpg)
+![Crius CO-16 Diagram](Wiring/Crius CO-16 OLED diagram.png)
 ![Crius CO-16 Modification](Wiring/Crius CO-16 OLED modifications.jpg)
 
 ## Connections
