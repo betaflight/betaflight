@@ -629,10 +629,10 @@ void loop(void)
 
         // PID - note this is function pointer set by setPIDController()
         pid_controller(
-			&currentProfile->pidProfile,
-			&currentProfile->controlRateConfig,
-			masterConfig.max_angle_inclination,
-			&currentProfile->accelerometerTrims
+            &currentProfile->pidProfile,
+            &currentProfile->controlRateConfig,
+            masterConfig.max_angle_inclination,
+            &currentProfile->accelerometerTrims
         );
 
         mixTable();
