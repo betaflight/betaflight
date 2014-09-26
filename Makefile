@@ -312,7 +312,6 @@ CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
-		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/inverter.c \

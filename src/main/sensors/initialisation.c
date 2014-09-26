@@ -60,20 +60,45 @@
 
 // Use these to help with porting to new boards
 //#define USE_FAKE_GYRO
+#ifdef USE_I2C
 #define USE_GYRO_L3G4200D
 #define USE_GYRO_L3GD20
 #define USE_GYRO_MPU6050
-#define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_MPU3050
+#endif
+#define USE_GYRO_SPI_MPU6000
+
 //#define USE_FAKE_ACC
+#ifdef USE_I2C
 #define USE_ACC_ADXL345
 #define USE_ACC_BMA280
 #define USE_ACC_MMA8452
 #define USE_ACC_LSM303DLHC
 #define USE_ACC_MPU6050
+#endif
 #define USE_ACC_SPI_MPU6000
+
+#ifdef USE_I2C
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
+#endif
+
+#ifdef MASSIVEF3
+#define USE_FAKE_GYRO
+#define USE_FAKE_ACC
+#undef USE_GYRO_MPU6050
+#undef USE_ACC_MPU6050
+#undef USE_ACC_ADXL345
+#undef USE_ACC_BMA280
+#undef USE_ACC_MMA8452
+#undef USE_ACC_LSM303DLHC
+#undef USE_ACC_SPI_MPU6000
+#undef USE_GYRO_L3G4200D
+#undef USE_GYRO_MPU3050
+#undef USE_GYRO_SPI_MPU6000
+#undef USE_GYRO_L3GD20
+#undef USE_BARO_BMP085
+#endif
 
 #ifdef NAZE
 #undef USE_ACC_LSM303DLHC

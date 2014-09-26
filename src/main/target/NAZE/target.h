@@ -53,7 +53,7 @@
 #define USE_SOFT_SERIAL
 #define SERIAL_PORT_COUNT 4
 
-
+#define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
 // #define SOFT_I2C // enable to test software i2c

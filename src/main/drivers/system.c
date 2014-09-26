@@ -131,7 +131,7 @@ void systemInit(bool overclock)
     spiInit(SPI2);
 #endif
 
-#ifndef CC3D
+#ifdef USE_I2C
     // Configure the rest of the stuff
     i2cInit(I2C_DEVICE);
 #endif

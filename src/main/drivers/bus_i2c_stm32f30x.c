@@ -162,6 +162,7 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
 
 void i2cInit(I2CDevice index)
 {
+    UNUSED(index);
     i2cInitPort(I2C1); // FIXME hard coded to use I2C1 for now
 }
 
