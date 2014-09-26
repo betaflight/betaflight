@@ -345,7 +345,6 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/pwm_rx.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f30x.c \
-		   drivers/serial_softserial.c \
 		   drivers/serial_usb_vcp.c \
 		   drivers/sound_beeper_stm32f30x.c \
 		   drivers/system_stm32f30x.c \

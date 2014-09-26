@@ -62,9 +62,11 @@ typedef enum {
     SERIAL_PORT_2,
 #if (SERIAL_PORT_COUNT > 2)
     SERIAL_PORT_3,
+#if (SERIAL_PORT_COUNT > 3)
     SERIAL_PORT_4,
 #if (SERIAL_PORT_COUNT > 4)
     SERIAL_PORT_5
+#endif
 #endif
 #endif
 } serialPortIndex_e;

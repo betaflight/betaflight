@@ -208,10 +208,11 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_GPS_ONLY);
 #if (SERIAL_PORT_COUNT > 2)
     serialConfig->serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_UNUSED);
+#if (SERIAL_PORT_COUNT > 3)
     serialConfig->serial_port_scenario[3] = lookupScenarioIndex(SCENARIO_UNUSED);
-
 #if (SERIAL_PORT_COUNT > 4)
     serialConfig->serial_port_scenario[4] = lookupScenarioIndex(SCENARIO_UNUSED);
+#endif
 #endif
 #endif
 

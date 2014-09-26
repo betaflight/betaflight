@@ -69,16 +69,20 @@ static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_USB_VCP,     NULL, SCENARIO_UNUSED, FUNCTION_NONE},
     {SERIAL_PORT_USART1,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
     {SERIAL_PORT_USART2,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+#if (SERIAL_PORT_COUNT > 3)
     {SERIAL_PORT_USART3,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
-    {SERIAL_PORT_USART4,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+    {SERIAL_PORT_USART4,      NULL, SCENARIO_UNUSED, FUNCTION_NONE}
+#endif
 };
 
 static const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_USB_VCP,       9600,   115200,   SPF_NONE },
     {SERIAL_PORT_USART1,        9600,   115200,   SPF_NONE | SPF_SUPPORTS_SBUS_MODE },
     {SERIAL_PORT_USART2,        9600,   115200,   SPF_SUPPORTS_CALLBACK | SPF_SUPPORTS_SBUS_MODE},
+#if (SERIAL_PORT_COUNT > 3)
     {SERIAL_PORT_USART3,        9600,   19200,    SPF_SUPPORTS_CALLBACK},
     {SERIAL_PORT_USART4,        9600,   19200,    SPF_SUPPORTS_CALLBACK}
+#endif
 };
 
 #else
@@ -553,7 +557,7 @@ serialPort_t *openSerialPort(serialPortFunction_e function, serialReceiveCallbac
 
     serialPortIdentifier_e identifier = serialPortConstraint->identifier;
     switch(identifier) {
-#ifdef STM32F303xC
+#ifdef USE_VCP
         case SERIAL_PORT_USB_VCP:
             serialPort = usbVcpOpen();
             break;
