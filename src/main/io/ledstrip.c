@@ -580,23 +580,23 @@ void applyLedWarningLayer(uint8_t warningState, uint8_t warningFlags)
         }
 
         if (warningState == 0) {
-            if (warningFlashCounter == 0 && warningFlags & WARNING_FLAG_ARMING_DISABLED) {
+            if (warningFlashCounter == 0 && (warningFlags & WARNING_FLAG_ARMING_DISABLED)) {
                 setLedHsv(ledIndex, &hsv_yellow);
             }
-            if (warningFlashCounter == 1 && warningFlags & WARNING_FLAG_LOW_BATTERY) {
+            if (warningFlashCounter == 1 && (warningFlags & WARNING_FLAG_LOW_BATTERY)) {
                 setLedHsv(ledIndex, &hsv_red);
             }
-            if (warningFlashCounter > 1 && warningFlags & WARNING_FLAG_FAILSAFE) {
+            if (warningFlashCounter > 1 && (warningFlags & WARNING_FLAG_FAILSAFE)) {
                 setLedHsv(ledIndex, &hsv_lightBlue);
             }
         } else {
-            if (warningFlashCounter == 0 && warningFlags & WARNING_FLAG_ARMING_DISABLED) {
+            if (warningFlashCounter == 0 && (warningFlags & WARNING_FLAG_ARMING_DISABLED)) {
                 setLedHsv(ledIndex, &hsv_black);
             }
-            if (warningFlashCounter == 1 && warningFlags & WARNING_FLAG_LOW_BATTERY) {
+            if (warningFlashCounter == 1 && (warningFlags & WARNING_FLAG_LOW_BATTERY)) {
                 setLedHsv(ledIndex, &hsv_black);
             }
-            if (warningFlashCounter > 1 && warningFlags & WARNING_FLAG_FAILSAFE) {
+            if (warningFlashCounter > 1 && (warningFlags & WARNING_FLAG_FAILSAFE)) {
                 setLedHsv(ledIndex, &hsv_limeGreen);
             }
         }
