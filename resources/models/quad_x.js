@@ -2,7 +2,7 @@
 
 	"metadata" :
 	{
-		"license"         : "Copyright Corey Schiller 2014.  All rights reserved.  Used with permission for Baseflight Configurator"
+		"license"       : "Copyright Corey Schiller 2014.  All rights reserved.  Used with permission for Baseflight Configurator",
 		"formatVersion" : 3.1,
 		"generatedBy"   : "Blender 2.7 Exporter",
 		"vertices"      : 2735,
