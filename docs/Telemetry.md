@@ -75,6 +75,3 @@ Note: The softserial ports are not listed as 5V tolerant in the STM32F103xx data
 MSP Telemetry simply transmitts MSP packets in sequence to any MSP device attached to the telemetry port.  It rotates though a fixes sequence of command responses.
 
 It is transmit only, it can work at any supported baud rate.
-
-MSP telemetry is currently only output on serial ports that are set to MSP, NOT telemetry.
-This will likely change in the future so that the MSP telemetry uses ports configured as telemetry just like the other providers do.
