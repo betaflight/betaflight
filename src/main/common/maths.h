@@ -40,6 +40,8 @@ typedef struct stdev_t
     int m_n;
 } stdev_t;
 
+int32_t applyDeadband(int32_t value, int32_t deadband);
+
 int constrain(int amt, int low, int high);
 float constrainf(float amt, float low, float high);
 
@@ -48,4 +50,5 @@ void devPush(stdev_t *dev, float x);
 float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
+
 int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax);

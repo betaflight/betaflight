@@ -20,6 +20,18 @@
 
 #include "maths.h"
 
+int32_t applyDeadband(int32_t value, int32_t deadband)
+{
+    if (abs(value) < deadband) {
+        value = 0;
+    } else if (value > 0) {
+        value -= deadband;
+    } else if (value < 0) {
+        value += deadband;
+    }
+    return value;
+}
+
 int constrain(int amt, int low, int high)
 {
     if (amt < low)

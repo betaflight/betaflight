@@ -632,7 +632,7 @@ void loop(void)
 #if defined(BARO) || defined(SONAR)
         if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
             if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-                updateAltHold();
+                applyAltHold();
             }
         }
 #endif

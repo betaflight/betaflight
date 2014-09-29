@@ -54,6 +54,7 @@
 #include "io/ledstrip.h"
 #include "io/gps.h"
 #include "flight/failsafe.h"
+#include "flight/altitudehold.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 
@@ -453,7 +454,8 @@ void activateConfig(void)
     imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
-    configureImu(&imuRuntimeConfig, &currentProfile->pidProfile, &currentProfile->barometerConfig, &currentProfile->accDeadband);
+    configureImu(&imuRuntimeConfig, &currentProfile->pidProfile, &currentProfile->accDeadband);
+    configureAltitudeHold(&currentProfile->pidProfile, &currentProfile->barometerConfig);
 
     calculateThrottleAngleScale(currentProfile->throttle_correction_angle);
     calculateAccZLowPassFilterRCTimeConstant(currentProfile->accz_lpf_cutoff);
