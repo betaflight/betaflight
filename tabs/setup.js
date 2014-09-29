@@ -327,8 +327,6 @@ TABS.setup.initialize3D = function (compatibility) {
     // load the model including materials
     loader = new THREE.JSONLoader();
     loader.load('./resources/models/quad_x.js', function (geometry, materials) {
-        geometry.center();
-
         model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
         model.scale.set(10, 10, 10);
 
