@@ -304,7 +304,7 @@ TABS.setup.initialize = function (callback) {
 
 TABS.setup.initialize3D = function (compatibility) {
     var self = this,
-        canvas, wrapper, renderer, camera;
+        loader, canvas, wrapper, renderer, camera, scene, light, light2, modelWrapper, model;
 
     if (compatibility) {
         canvas = $('.COMPATIBILITY #canvas');
@@ -321,45 +321,43 @@ TABS.setup.initialize3D = function (compatibility) {
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
     }
 
+    // modelWrapper just adds an extra axis of rotation to avoid gimbal lock withe euler angles
+    modelWrapper = new THREE.Object3D()
+
+    // load the model including materials
+    loader = new THREE.JSONLoader();
+    loader.load('./resources/models/quad_x.js', function (geometry, materials) {
+        geometry.center();
+
+        model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+        model.scale.set(10, 10, 10);
+
+        modelWrapper.add(model);
+        scene.add(modelWrapper);
+    });
+
     // stacionary camera
     camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
 
     // setup scene
-    var scene = new THREE.Scene();
+    scene = new THREE.Scene();
 
     // some light
-    var light = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.5);
-    light.position.set(0, 1, 0);
-
-    // flying brick
-    var modelWrapper = new THREE.Object3D();
-    var geometry = new THREE.BoxGeometry(150, 80, 300);
-
-    var materialArray = [ // overdraw helps remove wireframe when using CanvasRenderer
-        new THREE.MeshLambertMaterial({color: 0xff3333, emissive: 0x962020, overdraw: true}), // right
-        new THREE.MeshLambertMaterial({color: 0xff8800, emissive: 0xa45a06, overdraw: true}), // left
-        new THREE.MeshLambertMaterial({color: 0xffff33, emissive: 0x9a9a21, overdraw: true}), // top
-        new THREE.MeshLambertMaterial({color: 0x33ff33, emissive: 0x1f901f, overdraw: true}), // bottom
-        new THREE.MeshLambertMaterial({color: 0x3333ff, emissive: 0x212192, overdraw: true}), // back
-        new THREE.MeshLambertMaterial({color: 0x8833ff, emissive: 0x5620a2, overdraw: true}), // front
-    ];
-
-    var materials = new THREE.MeshFaceMaterial(materialArray);
-    var model = new THREE.Mesh(geometry, materials);
+    light = new THREE.AmbientLight(0x404040);
+    light2 = new THREE.DirectionalLight(new THREE.Color(1, 1, 1), 1.5);
+    light2.position.set(0, 1, 0);
 
     // initialize render size for current canvas size
     renderer.setSize(wrapper.width(), wrapper.height());
 
     // move camera away from the model
-    camera.position.z = 500;
-
-    // modelWrapper just adds an extra axis of rotation to avoid gimbal lock withe euler angles
-    modelWrapper.add(model);
+    camera.position.z = 125;
 
     // add camera, model, light to the foreground scene
+    scene.add(light);
+    scene.add(light2);
     scene.add(camera);
     scene.add(modelWrapper);
-    scene.add(light);
 
     this.render3D = function () {
         // compute the changes
