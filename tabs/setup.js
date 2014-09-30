@@ -304,7 +304,8 @@ TABS.setup.initialize = function (callback) {
 
 TABS.setup.initialize3D = function (compatibility) {
     var self = this,
-        loader, canvas, wrapper, renderer, camera, scene, light, light2, modelWrapper, model;
+        loader, canvas, wrapper, renderer, camera, scene, light, light2, modelWrapper, model, model_file,
+        fallback = false;
 
     if (compatibility) {
         canvas = $('.COMPATIBILITY #canvas');
@@ -317,19 +318,27 @@ TABS.setup.initialize3D = function (compatibility) {
     if (window.WebGLRenderingContext && (canvas.get(0).getContext('webgl') || canvas.get(0).getContext('experimental-webgl'))) {
         renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
     } else {
-        // fallback to CanvasRenderer
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
+        fallback = true;
     }
 
     // modelWrapper just adds an extra axis of rotation to avoid gimbal lock withe euler angles
     modelWrapper = new THREE.Object3D()
 
     // load the model including materials
+    if (!fallback) {
+        // array of supported models will go here in the future
+        model_file = 'quad_x';
+    } else {
+        model_file = 'fallback';
+    }
+
     loader = new THREE.JSONLoader();
-    loader.load('./resources/models/quad_x.js', function (geometry, materials) {
-        // enable overdraw in case we use canvas renderer
-        for (var i = 0; i < materials.length; i++) {
-            materials[i].overdraw = true;
+    loader.load('./resources/models/' + model_file + '.js', function (geometry, materials) {
+        if (fallback) { // enable overdraw in case we use canvas renderer
+            for (var i = 0; i < materials.length; i++) {
+                materials[i].overdraw = true;
+            }
         }
 
         model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
