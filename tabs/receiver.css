@@ -172,6 +172,9 @@
     border-bottom: 1px solid #8b8b8b;
     background-color: #ececec;
 }
+.tab-receiver .rcmap_wrapper .head span {
+    border-bottom: 1px dashed silver;
+}
 .tab-receiver .hybrid_element input {
     position: absolute;
 

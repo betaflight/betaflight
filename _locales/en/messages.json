@@ -446,6 +446,9 @@
     "receiverChannelMap": {
         "message": "Channel Map"
     },
+    "receiverChannelMapTitle": {
+        "message": "You can define your own channel map by clicking inside the box"
+    },
     "receiverRssiAux": {
         "message": "RSSI on AUX"
     },
