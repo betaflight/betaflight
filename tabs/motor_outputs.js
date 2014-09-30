@@ -6,6 +6,16 @@ TABS.motor_outputs.initialize = function (callback) {
     GUI.active_tab = 'motor_outputs';
     googleAnalytics.sendAppView('Motor Outputs Page');
 
+    function get_motor_data() {
+        MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
+    }
+
+    function load_html() {
+        $('#content').load("./tabs/motor_outputs.html", process_html);
+    }
+
+    MSP.send_message(MSP_codes.MSP_MISC, false, false, get_motor_data);
+
     function initSensorData() {
         for (var i = 0; i < 3; i++) {
             SENSOR_DATA.accelerometer[i] = 0;
@@ -124,16 +134,6 @@ TABS.motor_outputs.initialize = function (callback) {
         lines.attr('d', graphHelpers.line);
     }
 
-    function get_motor_data() {
-        MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
-    }
-
-    function load_html() {
-        $('#content').load("./tabs/motor_outputs.html", process_html);
-    }
-
-    MSP.send_message(MSP_codes.MSP_MISC, false, false, get_motor_data);
-
     function process_html() {
         // translate to user-selected language
         localize();
@@ -154,6 +154,7 @@ TABS.motor_outputs.initialize = function (callback) {
             y: [],
             z: [],
         };
+
         $('.plot_control .x, .plot_control .y, .plot_control .z').each(function () {
             var el = $(this);
             if (el.hasClass('x')) {
@@ -236,9 +237,31 @@ TABS.motor_outputs.initialize = function (callback) {
 
         var number_of_valid_outputs = (MOTOR_DATA.indexOf(0) > -1) ? MOTOR_DATA.indexOf(0) : 8;
 
-        $('input.min').val(MISC.mincommand);
-        $('input.max').val(MISC.maxthrottle);
+        var motors_wrapper = $('.motors .bar-wrapper');
+        var servos_wrapper = $('.servos .bar-wrapper');
+        for (var i = 0; i < 8; i++) {
+            motors_wrapper.append('\
+                <div class="m-block motor-' + i + '">\
+                    <div class="label"></div>\
+                    <div class="indicator">\
+                        <div class="label">\
+                            <div class="label"></div>\
+                        </div>\
+                    </div>\
+                </div>\
+            ');
 
+            servos_wrapper.append('\
+                <div class="m-block servo-' + i + '">\
+                    <div class="label"></div>\
+                    <div class="indicator">\
+                        <div class="label">\
+                            <div class="label"></div>\
+                        </div>\
+                    </div>\
+                </div>\
+            ');
+        }
 
         $('div.sliders input').prop('min', MISC.mincommand);
         $('div.sliders input').prop('max', MISC.maxthrottle);
@@ -354,23 +377,21 @@ TABS.motor_outputs.initialize = function (callback) {
             var block_height = $('div.m-block:first').height();
 
             for (var i = 0; i < MOTOR_DATA.length; i++) {
-                var data = MOTOR_DATA[i] - MISC.mincommand;
-                var margin_top = block_height - (data * (block_height / full_block_scale));
-                var height = (data * (block_height / full_block_scale));
-                var color = parseInt(data * 0.256);
+                var data = MOTOR_DATA[i] - MISC.mincommand,
+                    margin_top = block_height - (data * (block_height / full_block_scale)),
+                    height = (data * (block_height / full_block_scale)),
+                    color = parseInt(data * 0.256);
 
-                $('.motor-' + i).prop('title', MOTOR_DATA[i] + ' us');
                 $('.motor-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
 
             // servo indicators are still using old (not flexible block scale), it will be changed in the future accordingly
             for (var i = 0; i < SERVO_DATA.length; i++) {
-                var data = SERVO_DATA[i] - 1000;
-                var margin_top = block_height - (data * (block_height / 1000));
-                var height = (data * (block_height / 1000));
-                var color = parseInt(data * 0.256);
+                var data = SERVO_DATA[i] - 1000,
+                    margin_top = block_height - (data * (block_height / 1000)),
+                    height = (data * (block_height / 1000)),
+                    color = parseInt(data * 0.256);
 
-                $('.servo-' + i).prop('title', SERVO_DATA[i] + ' us');
                 $('.servo-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
         }
