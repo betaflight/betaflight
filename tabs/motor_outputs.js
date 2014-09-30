@@ -242,10 +242,12 @@ TABS.motor_outputs.initialize = function (callback) {
         for (var i = 0; i < 8; i++) {
             motors_wrapper.append('\
                 <div class="m-block motor-' + i + '">\
-                    <div class="label"></div>\
-                    <div class="indicator">\
-                        <div class="label">\
-                            <div class="label"></div>\
+                    <div class="meter-bar">\
+                        <div class="label"></div>\
+                        <div class="indicator">\
+                            <div class="label">\
+                                <div class="label"></div>\
+                            </div>\
                         </div>\
                     </div>\
                 </div>\
@@ -253,10 +255,12 @@ TABS.motor_outputs.initialize = function (callback) {
 
             servos_wrapper.append('\
                 <div class="m-block servo-' + i + '">\
-                    <div class="label"></div>\
-                    <div class="indicator">\
-                        <div class="label">\
-                            <div class="label"></div>\
+                    <div class="meter-bar">\
+                        <div class="label"></div>\
+                        <div class="indicator">\
+                            <div class="label">\
+                                <div class="label"></div>\
+                            </div>\
                         </div>\
                     </div>\
                 </div>\
@@ -382,6 +386,7 @@ TABS.motor_outputs.initialize = function (callback) {
                     height = (data * (block_height / full_block_scale)),
                     color = parseInt(data * 0.256);
 
+                $('.motor-' + i + ' .label').text(MOTOR_DATA[i]);
                 $('.motor-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
 
@@ -392,6 +397,7 @@ TABS.motor_outputs.initialize = function (callback) {
                     height = (data * (block_height / 1000)),
                     color = parseInt(data * 0.256);
 
+                $('.servo-' + i + ' .label').text(SERVO_DATA[i]);
                 $('.servo-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
         }

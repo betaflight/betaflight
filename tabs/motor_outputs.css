@@ -130,8 +130,28 @@
 
     margin-right: 10px;
 
+    text-align: center;
+
     border: 1px solid silver;
-    background-color: #e9e9e9;
+    background-color: #f4f4f4;
+}
+.tab-motor_outputs .m-block .meter-bar {
+    position: relative;
+
+    width: 100%;
+    height: 100px;
+}
+.tab-motor_outputs .m-block .label {
+    position: absolute;
+    width: 100%;
+    bottom: 45px;
+
+    text-align: center;
+    font-weight: bold;
+    color: #474747;
+}
+.tab-motor_outputs .m-block .indicator .label {
+    color: white;
 }
 .tab-motor_outputs .servos .m-block {
     float: right;
@@ -141,9 +161,12 @@
     margin: 0 0 0 10px;
 }
 .tab-motor_outputs .indicator {
-    float: left;
+    position: absolute;
+    overflow: hidden;
 
     width: 100%;
+
+    text-align: center;
 }
 .tab-motor_outputs .motor_testing {
     display: none;
