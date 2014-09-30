@@ -327,6 +327,11 @@ TABS.setup.initialize3D = function (compatibility) {
     // load the model including materials
     loader = new THREE.JSONLoader();
     loader.load('./resources/models/quad_x.js', function (geometry, materials) {
+        // enable overdraw in case we use canvas renderer
+        for (var i = 0; i < materials.length; i++) {
+            materials[i].overdraw = true;
+        }
+
         model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
         model.scale.set(10, 10, 10);
 
