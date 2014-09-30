@@ -142,12 +142,12 @@ TABS.motor_outputs.initialize = function (callback) {
         initSensorData();
 
         // Setup variables
-        var samples_accel_i = 0,
-            accel_data = initDataArray(3),
-            accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-2, 2]),
-            accel_max_read = [0, 0, 0],
-            accel_offset = [0, 0, 0],
-            accel_offset_established = false;
+        var samples_accel_i = 0;
+        var accel_data = initDataArray(3);
+        var accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-2, 2]);
+        var accel_max_read = [0, 0, 0];
+        var accel_offset = [0, 0, 0];
+        var accel_offset_established = false;
 
         var raw_data_text_ements = {
             x: [],
@@ -237,9 +237,8 @@ TABS.motor_outputs.initialize = function (callback) {
 
         var number_of_valid_outputs = (MOTOR_DATA.indexOf(0) > -1) ? MOTOR_DATA.indexOf(0) : 8;
 
-        var motors_wrapper = $('.motors .bar-wrapper'),
-            servos_wrapper = $('.servos .bar-wrapper');
-
+        var motors_wrapper = $('.motors .bar-wrapper');
+        var servos_wrapper = $('.servos .bar-wrapper');
         for (var i = 0; i < 8; i++) {
             motors_wrapper.append('\
                 <div class="m-block motor-' + i + '">\
@@ -387,8 +386,8 @@ TABS.motor_outputs.initialize = function (callback) {
                     height = (data * (block_height / full_block_scale)),
                     color = parseInt(data * 0.256);
 
-                $('.motor-' + i + ' .label', motors_wrapper).text(MOTOR_DATA[i]);
-                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
+                $('.motor-' + i + ' .label').text(MOTOR_DATA[i]);
+                $('.motor-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
 
             // servo indicators are still using old (not flexible block scale), it will be changed in the future accordingly
@@ -398,8 +397,8 @@ TABS.motor_outputs.initialize = function (callback) {
                     height = (data * (block_height / 1000)),
                     color = parseInt(data * 0.256);
 
-                $('.servo-' + i + ' .label', servos_wrapper).text(SERVO_DATA[i]);
-                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
+                $('.servo-' + i + ' .label').text(SERVO_DATA[i]);
+                $('.servo-' + i + ' .indicator').css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
             }
         }
 
