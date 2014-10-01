@@ -13,6 +13,8 @@
 'use strict';
 
 function start_app() {
+    var applicationStartTime = new Date().getTime();
+
     chrome.app.window.create('main.html', {
         id: 'main-window',
         frame: 'chrome',
@@ -21,21 +23,23 @@ function start_app() {
             minHeight: 632
         }
     }, function (createdWindow) {
-        createdWindow.onClosed.addListener(function () {
-            // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference
-            // allowing us to automatically close the port when application shut down
+        createdWindow.contentWindow.addEventListener('load', function () {
+            createdWindow.contentWindow.catch_startup_time(applicationStartTime);
+        });
 
-            // save connectionId in separate variable before app_window is destroyed
-            var connectionId = app_window.serial.connectionId;
-            var valid_connection = app_window.CONFIGURATOR.connectionValid;
-            var mincommand = app_window.MISC.mincommand;
+        createdWindow.onClosed.addListener(function () {
+            // autoamtically close the port when application closes
+            // save connectionId in separate variable before createdWindow.contentWindow is destroyed
+            var connectionId = createdWindow.contentWindow.serial.connectionId,
+                valid_connection = createdWindow.contentWindow.CONFIGURATOR.connectionValid,
+                mincommand = createdWindow.contentWindow.MISC.mincommand;
 
             if (connectionId > 0 && valid_connection) {
                 // code below is handmade MSP message (without pretty JS wrapper), it behaves exactly like MSP.send_message
                 // reset motors to default (mincommand)
-                var bufferOut = new ArrayBuffer(22);
-                var bufView = new Uint8Array(bufferOut);
-                var checksum = 0;
+                var bufferOut = new ArrayBuffer(22),
+                    bufView = new Uint8Array(bufferOut),
+                    checksum = 0;
 
                 bufView[0] = 36; // $
                 bufView[1] = 77; // M
