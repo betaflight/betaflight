@@ -2,7 +2,8 @@
 
 TABS.pid_tuning = {};
 TABS.pid_tuning.initialize = function (callback) {
-    GUI.active_tab_ref = this;
+    var self = this;
+
     GUI.active_tab = 'pid_tuning';
     googleAnalytics.sendAppView('PID Tuning');
 
@@ -272,7 +273,7 @@ TABS.pid_tuning.initialize = function (callback) {
         });
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function () {
+        GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 

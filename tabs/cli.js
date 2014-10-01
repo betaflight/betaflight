@@ -7,7 +7,7 @@ TABS.cli = {
 
 TABS.cli.initialize = function (callback) {
     var self = this;
-    GUI.active_tab_ref = this;
+
     GUI.active_tab = 'cli';
     googleAnalytics.sendAppView('CLI Page');
 

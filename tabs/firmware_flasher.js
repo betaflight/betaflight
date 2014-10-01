@@ -2,7 +2,8 @@
 
 TABS.firmware_flasher = {};
 TABS.firmware_flasher.initialize = function (callback) {
-    GUI.active_tab_ref = this;
+    var self = this;
+
     GUI.active_tab = 'firmware_flasher';
     googleAnalytics.sendAppView('Firmware Flasher');
 

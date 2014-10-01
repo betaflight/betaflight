@@ -4,7 +4,7 @@ TABS.configuration = {};
 
 TABS.configuration.initialize = function (callback) {
     var self = this;
-    GUI.active_tab_ref = this;
+
     GUI.active_tab = 'configuration';
     googleAnalytics.sendAppView('Configuration');
 
@@ -293,7 +293,7 @@ TABS.configuration.initialize = function (callback) {
         });
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function status_pull () {
+        GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 

@@ -3,7 +3,8 @@
 // TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
 TABS.auxiliary_configuration = {};
 TABS.auxiliary_configuration.initialize = function (callback) {
-    GUI.active_tab_ref = this;
+    var self = this;
+
     GUI.active_tab = 'auxiliary_configuration';
     googleAnalytics.sendAppView('Auxiliary Configuration');
 
@@ -141,7 +142,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         GUI.interval_add('aux_data_pull', get_rc_data, 50);
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function () {
+        GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 

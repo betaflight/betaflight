@@ -2,7 +2,8 @@
 
 TABS.logging = {};
 TABS.logging.initialize = function (callback) {
-    GUI.active_tab_ref = this;
+    var self = this;
+
     GUI.active_tab = 'logging';
     googleAnalytics.sendAppView('Logging');
 

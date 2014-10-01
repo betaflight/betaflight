@@ -17,8 +17,6 @@ googleAnalyticsService.getConfig().addCallback(function (config) {
 });
 
 $(document).ready(function () {
-    googleAnalytics.sendAppView('Application Started');
-
     // translate to user-selected language
     localize();
 
