@@ -128,7 +128,7 @@ STM32_protocol.prototype.initialize = function () {
     self.receive_buffer = [];
     self.verify_hex = [];
 
-    self.upload_time_start = microtime();
+    self.upload_time_start = millitime();
     self.upload_process_alive = false;
 
     // reset progress bar to initial state
@@ -655,7 +655,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
             // disconnect
             GUI.interval_remove('STM32_timeout'); // stop STM32 timeout timer (everything is finished now)
 
-            console.log('Script finished after: ' + (microtime() - self.upload_time_start).toFixed(4) + ' seconds');
+            console.log('Script finished after: ' + ((millitime() - self.upload_time_start) / 1000) + ' seconds');
 
             // close connection
             serial.disconnect(function (result) {
