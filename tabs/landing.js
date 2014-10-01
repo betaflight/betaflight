@@ -4,8 +4,10 @@ TABS.landing = {};
 TABS.landing.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'landing';
-    googleAnalytics.sendAppView('Landing Page');
+    if (GUI.active_tab != 'landing') {
+        GUI.active_tab = 'landing';
+        googleAnalytics.sendAppView('Landing Page');
+    }
 
     $('#content').load("./tabs/landing.html", function () {
         //check_usb_permissions(); // temporary enabled in dev branch, should be commented out untill DFU support goes live

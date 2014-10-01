@@ -4,8 +4,10 @@ TABS.logging = {};
 TABS.logging.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'logging';
-    googleAnalytics.sendAppView('Logging');
+    if (GUI.active_tab != 'logging') {
+        GUI.active_tab = 'logging';
+        googleAnalytics.sendAppView('Logging');
+    }
 
     var requested_properties = [],
         samples = 0,

@@ -5,9 +5,10 @@ TABS.configuration = {};
 TABS.configuration.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'configuration';
-    googleAnalytics.sendAppView('Configuration');
-
+    if (GUI.active_tab != 'configuration') {
+        GUI.active_tab = 'configuration';
+        googleAnalytics.sendAppView('Configuration');
+    }
 
     function check_compatibility() {
         if (bit_check(CONFIG.capability, 30)) {
@@ -283,10 +284,12 @@ TABS.configuration.initialize = function (callback) {
             function reinitialize() {
                 GUI.log(chrome.i18n.getMessage('deviceRebooting'));
 
-                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
-                    GUI.log(chrome.i18n.getMessage('deviceReady'));
-                    TABS.configuration.initialize();
-                });
+                GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
+                    MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                        GUI.log(chrome.i18n.getMessage('deviceReady'));
+                        TABS.configuration.initialize();
+                    });
+                }, 1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
             }
 
             MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_misc);

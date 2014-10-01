@@ -4,8 +4,10 @@ TABS.firmware_flasher = {};
 TABS.firmware_flasher.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'firmware_flasher';
-    googleAnalytics.sendAppView('Firmware Flasher');
+    if (GUI.active_tab != 'firmware_flasher') {
+        GUI.active_tab = 'firmware_flasher';
+        googleAnalytics.sendAppView('Firmware Flasher');
+    }
 
     var intel_hex = false, // standard intel hex in string format
         parsed_hex = false; // parsed raw hex in array format

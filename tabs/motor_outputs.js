@@ -4,8 +4,10 @@ TABS.motor_outputs = {};
 TABS.motor_outputs.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'motor_outputs';
-    googleAnalytics.sendAppView('Motor Outputs Page');
+    if (GUI.active_tab != 'motor_outputs') {
+        GUI.active_tab = 'motor_outputs';
+        googleAnalytics.sendAppView('Motor Outputs Page');
+    }
 
     function get_motor_data() {
         MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);

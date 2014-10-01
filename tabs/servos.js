@@ -10,8 +10,10 @@ TABS.servos = {};
 TABS.servos.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'servos';
-    googleAnalytics.sendAppView('Servos');
+    if (GUI.active_tab != 'servos') {
+        GUI.active_tab = 'servos';
+        googleAnalytics.sendAppView('Servos');
+    }
 
     function get_servo_conf_data() {
         MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_boxnames_data);

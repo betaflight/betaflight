@@ -4,8 +4,10 @@ TABS.pid_tuning = {};
 TABS.pid_tuning.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'pid_tuning';
-    googleAnalytics.sendAppView('PID Tuning');
+    if (GUI.active_tab != 'pid_tuning') {
+        GUI.active_tab = 'pid_tuning';
+        googleAnalytics.sendAppView('PID Tuning');
+    }
 
     function get_pid_names() {
         MSP.send_message(MSP_codes.MSP_PIDNAMES, false, false, get_pid_data);

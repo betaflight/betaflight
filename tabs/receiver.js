@@ -4,9 +4,10 @@ TABS.receiver = {};
 TABS.receiver.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'receiver';
-    googleAnalytics.sendAppView('Receiver Page');
-
+    if (GUI.active_tab != 'receiver') {
+        GUI.active_tab = 'receiver';
+        googleAnalytics.sendAppView('Receiver Page');
+    }
 
     function get_misc_data() {
         MSP.send_message(MSP_codes.MSP_MISC, false, false, get_rc_data);

@@ -4,8 +4,10 @@ TABS.sensors = {};
 TABS.sensors.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'sensors';
-    googleAnalytics.sendAppView('Sensor Page');
+    if (GUI.active_tab != 'sensors') {
+        GUI.active_tab = 'sensors';
+        googleAnalytics.sendAppView('Sensor Page');
+    }
 
     function initSensorData(){
         for (var i = 0; i < 3; i++) {

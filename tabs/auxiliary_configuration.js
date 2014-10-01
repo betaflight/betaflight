@@ -5,8 +5,10 @@ TABS.auxiliary_configuration = {};
 TABS.auxiliary_configuration.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'auxiliary_configuration';
-    googleAnalytics.sendAppView('Auxiliary Configuration');
+    if (GUI.active_tab != 'auxiliary_configuration') {
+        GUI.active_tab = 'auxiliary_configuration';
+        googleAnalytics.sendAppView('Auxiliary Configuration');
+    }
 
     function get_box_data() {
         MSP.send_message(MSP_codes.MSP_BOX, false, false, get_box_ids);

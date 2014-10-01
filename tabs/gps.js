@@ -4,8 +4,10 @@ TABS.gps = {};
 TABS.gps.initialize = function (callback) {
     var self = this;
 
-    GUI.active_tab = 'gps';
-    googleAnalytics.sendAppView('GPS Page');
+    if (GUI.active_tab != 'gps') {
+        GUI.active_tab = 'gps';
+        googleAnalytics.sendAppView('GPS Page');
+    }
 
     function load_html() {
         $('#content').load("./tabs/gps.html", process_html);
