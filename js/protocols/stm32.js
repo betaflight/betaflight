@@ -8,7 +8,9 @@
 'use strict';
 
 var STM32_protocol = function () {
+    this.baud;
     this.options = {};
+    this.callback; // ref
     this.hex; // ref
     this.verify_hex;
 
@@ -47,9 +49,11 @@ var STM32_protocol = function () {
 };
 
 // no input parameters
-STM32_protocol.prototype.connect = function (port, baud, hex, options) {
+STM32_protocol.prototype.connect = function (port, baud, hex, options, callback) {
     var self = this;
     self.hex = hex;
+    self.baud = baud;
+    self.callback = callback;
 
     // we will crunch the options here since doing it inside initialization routine would be too late
     self.options = {
@@ -71,10 +75,11 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options) {
 
     if (options.flash_slowly) {
         self.options.flash_slowly = true;
+        self.baud = 115200;
     }
 
     if (self.options.no_reboot) {
-        serial.connect(port, {bitrate: (!self.options.flash_slowly) ? baud : 115200, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
+        serial.connect(port, {bitrate: self.baud, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
             if (openInfo) {
                 // we are connected, disabling connect button in the UI
                 GUI.connect_lock = true;
@@ -100,7 +105,7 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options) {
                 serial.send(bufferOut, function () {
                     serial.disconnect(function (result) {
                         if (result) {
-                            serial.connect(port, {bitrate: (!self.options.flash_slowly) ? baud : 115200, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
+                            serial.connect(port, {bitrate: self.baud, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
                                 if (openInfo) {
                                     self.initialize();
                                 } else {
@@ -128,7 +133,7 @@ STM32_protocol.prototype.initialize = function () {
     self.receive_buffer = [];
     self.verify_hex = [];
 
-    self.upload_time_start = millitime();
+    self.upload_time_start = new Date().getTime();
     self.upload_process_alive = false;
 
     // reset progress bar to initial state
@@ -655,8 +660,6 @@ STM32_protocol.prototype.upload_procedure = function (step) {
             // disconnect
             GUI.interval_remove('STM32_timeout'); // stop STM32 timeout timer (everything is finished now)
 
-            console.log('Script finished after: ' + ((millitime() - self.upload_time_start) / 1000) + ' seconds');
-
             // close connection
             serial.disconnect(function (result) {
                 if (result) { // All went as expected
@@ -667,6 +670,13 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
                 // unlocking connect button
                 GUI.connect_lock = false;
+
+                // handle timing
+                var timeSpent = new Date().getTime() - self.upload_time_start;
+
+                console.log('Script finished after: ' + (timeSpent / 1000) + ' seconds');
+
+                if (self.callback) callback();
             });
             break;
     }
