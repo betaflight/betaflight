@@ -67,7 +67,7 @@ TABS.firmware_flasher.initialize = function (callback) {
         });
 
         $('a.load_remote_file').click(function () {
-            $.get('https://raw.githubusercontent.com/hydra/cleanflight/master/obj/cleanflight_NAZE.hex', function (data) {
+            $.get('https://raw.githubusercontent.com/cleanflight/cleanflight/master/obj/cleanflight_NAZE.hex', function (data) {
                 intel_hex = data;
 
                 parse_hex(intel_hex, function (data) {
@@ -78,7 +78,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                         $('span.progressLabel').text('Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)');
                         $('a.flash_firmware').removeClass('locked');
 
-                        $.get('https://api.github.com/repos/hydra/cleanflight/commits?page=1&per_page=1&path=obj/cleanflight_NAZE.hex', function (data) {
+                        $.get('https://api.github.com/repos/cleanflight/cleanflight/commits?page=1&per_page=1&path=obj/cleanflight_NAZE.hex', function (data) {
                             var data = data[0],
                                 d = new Date(data.commit.author.date),
                                 date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
