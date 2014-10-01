@@ -22,6 +22,10 @@ How to use
 -----------
 You can find the Baseflight - Configurator icon in your application tab "Apps"
 
+WebGL
+-----
+Make sure Settings -> System -> "User hardware acceleration when available" is checked to achieve the best performance
+
 Linux users
 -----------
 1. Dont forget to add your user into dialout group "sudo usermod -aG dialout YOUR_USERNAME" for serial access

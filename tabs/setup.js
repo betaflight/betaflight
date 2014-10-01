@@ -337,13 +337,13 @@ TABS.setup.initialize3D = function (compatibility) {
 
     loader = new THREE.JSONLoader();
     loader.load('./resources/models/' + model_file + '.js', function (geometry, materials) {
-        if (fallback) { // enable overdraw in case we use canvas renderer
-            for (var i = 0; i < materials.length; i++) {
-                materials[i].overdraw = true;
-            }
+        if (!fallback) {
+            model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+        } else {
+            materials = THREE.ImageUtils.loadTexture('./resources/textures/fallback_texture.png');
+            model = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({map: materials, overdraw: true}));
         }
 
-        model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
         model.scale.set(10, 10, 10);
 
         modelWrapper.add(model);
