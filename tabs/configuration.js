@@ -84,7 +84,7 @@ TABS.configuration.initialize = function (callback) {
 
             BF_CONFIG.mixerConfiguration = val;
 
-            $('.mixerPreview img').attr('src', './images/motor_order/' + mixerList[val - 1].image + '.svg');
+            $('.mixerPreview img').attr('src', './resources/motor_order/' + mixerList[val - 1].image + '.svg');
         });
 
         // select current mixer configuration
