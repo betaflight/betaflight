@@ -317,7 +317,11 @@ TABS.setup.initialize3D = function (compatibility) {
         wrapper = $('.CAP_BASEFLIGHT_CONFIG #canvas_wrapper');
     }
 
-    if (window.WebGLRenderingContext && (canvas.get(0).getContext('webgl') || canvas.get(0).getContext('experimental-webgl'))) {
+    // webgl capability detector
+    // it would seem the webgl "enabling" through advanced settings will be ignored in the future
+    // and webgl will be supported if gpu supports it by default (canary 40.0.2175.0), keep an eye on this one
+    var detector_canvas = document.createElement('canvas');
+    if (window.WebGLRenderingContext && (detector_canvas.getContext('webgl') || detector_canvas.getContext('experimental-webgl'))) {
         renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
     } else {
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});

@@ -40,6 +40,16 @@ $(document).ready(function () {
         GUI.log('You\'re using an old version of ' + chrome.runtime.getManifest().name + '. Please update so you can benefit from recently added features and bugfixes.');
     }
 
+    // log webgl capability
+    // it would seem the webgl "enabling" through advanced settings will be ignored in the future
+    // and webgl will be supported if gpu supports it by default (canary 40.0.2175.0), keep an eye on this one
+    var canvas = document.createElement('canvas');
+    if (window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))) {
+        googleAnalytics.sendEvent('Capability', 'WebGL', 'true');
+    } else {
+        googleAnalytics.sendEvent('Capability', 'WebGL', 'false');
+    }
+
     // log library versions in console to make version tracking easier
     console.log('Libraries: jQuery - ' + $.fn.jquery + ', d3 - ' + d3.version + ', three.js - ' + THREE.REVISION);
 
