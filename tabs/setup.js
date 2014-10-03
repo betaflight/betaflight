@@ -332,9 +332,33 @@ TABS.setup.initialize3D = function (compatibility) {
     modelWrapper = new THREE.Object3D()
 
     // load the model including materials
+    var models = [
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x',
+        'quad_x'
+    ];
+
     if (!fallback) {
-        // array of supported models will go here in the future
-        model_file = 'quad_x';
+        model_file = models[CONFIG.multiType - 1];
     } else {
         model_file = 'fallback';
     }
