@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "minimum_chrome_version": "36",
-    "version": "0.53.2",
+    "version": "0.53.3",
 
     "author": "cTn",
     "name": "Baseflight - Configurator",

@@ -1,7 +1,7 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1412016413051, // new Date().getTime() - 09.29.2014
+    'releaseDate': 1412546773959, // new Date().getTime() - 10.06.2014
     'firmwareVersionAccepted': 2.3,
     'connectionValid': false,
     'cliActive': false,
