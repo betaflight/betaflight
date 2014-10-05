@@ -386,8 +386,8 @@ TABS.motor_outputs.initialize = function (callback) {
 
             for (var i = 0; i < MOTOR_DATA.length; i++) {
                 var data = MOTOR_DATA[i] - MISC.mincommand,
-                    margin_top = block_height - (data * (block_height / full_block_scale)),
-                    height = (data * (block_height / full_block_scale)),
+                    margin_top = block_height - (data * (block_height / full_block_scale)).clamp(0, block_height),
+                    height = (data * (block_height / full_block_scale)).clamp(0, block_height),
                     color = parseInt(data * 0.256);
 
                 $('.motor-' + i + ' .label', motors_wrapper).text(MOTOR_DATA[i]);
@@ -397,8 +397,8 @@ TABS.motor_outputs.initialize = function (callback) {
             // servo indicators are still using old (not flexible block scale), it will be changed in the future accordingly
             for (var i = 0; i < SERVO_DATA.length; i++) {
                 var data = SERVO_DATA[i] - 1000,
-                    margin_top = block_height - (data * (block_height / 1000)),
-                    height = (data * (block_height / 1000)),
+                    margin_top = block_height - (data * (block_height / 1000)).clamp(0, block_height),
+                    height = (data * (block_height / 1000)).clamp(0, block_height),
                     color = parseInt(data * 0.256);
 
                 $('.servo-' + i + ' .label', servos_wrapper).text(SERVO_DATA[i]);

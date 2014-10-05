@@ -335,7 +335,7 @@ TABS.receiver.initialize = function (callback) {
             function update_ui() {
                 // update bars with latest data
                 for (var i = 0; i < RC.active_channels; i++) {
-                    meter_fill_array[i].css('width', (RC.channels[i] - meter_scale.min) / (meter_scale.max - meter_scale.min) * 100 + '%');
+                    meter_fill_array[i].css('width', ((RC.channels[i] - meter_scale.min) / (meter_scale.max - meter_scale.min) * 100).clamp(0, 100) + '%');
                     meter_label_array[i].text(RC.channels[i]);
                 }
 
