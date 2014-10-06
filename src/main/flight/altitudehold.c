@@ -66,7 +66,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#if defined(BARO) || defined(SONAR)
 
 barometerConfig_t *barometerConfig;
 pidProfile_t *pidProfile;
@@ -77,6 +76,7 @@ void configureAltitudeHold(pidProfile_t *initialPidProfile, barometerConfig_t *i
     barometerConfig = intialBarometerConfig;
 }
 
+#if defined(BARO) || defined(SONAR)
 
 static int16_t initialThrottleHold;
 
