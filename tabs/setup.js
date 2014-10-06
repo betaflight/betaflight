@@ -233,11 +233,11 @@ TABS.setup.initialize = function (callback) {
             }
         });
 
-        $('a.resetSettings').click(function() {
+        $('a.resetSettings').click(function () {
             MSP.send_message(MSP_codes.MSP_RESET_CONF, false, false, function () {
                 GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
-                GUI.tab_switch_cleanup(function() {
+                GUI.tab_switch_cleanup(function () {
                     TABS.setup.initialize();
                 });
             });
@@ -254,9 +254,24 @@ TABS.setup.initialize = function (callback) {
             console.log('YAW reset to 0 deg, fix: ' + self.yaw_fix + ' deg');
         });
 
-        $('#content .backup').click(configuration_backup);
+        $('#content .backup').click(function () {
+            configuration_backup(function () {
+                GUI.log(chrome.i18n.getMessage('initialSetupBackupSuccess'));
+                googleAnalytics.sendEvent('Configuration', 'Backup', 'true');
+            });
+        });
 
-        $('#content .restore').click(configuration_restore);
+        $('#content .restore').click(function () {
+            configuration_restore(function () {
+                GUI.log(chrome.i18n.getMessage('initialSetupRestoreSuccess'));
+                googleAnalytics.sendEvent('Configuration', 'Restore', 'true');
+
+                // get latest settings
+                GUI.tab_switch_cleanup(function () {
+                    TABS.setup.initialize();
+                });
+            });
+        });
 
         // data pulling functions used inside interval timer
         // this stuff will be reworked when compatibility period ends, to make the pulling more efficient

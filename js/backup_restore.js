@@ -1,8 +1,7 @@
 'use strict';
 
-function configuration_backup() {
+function configuration_backup(callback) {
     // request configuration data (one by one)
-
     function get_ident_data() {
         MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_status_data);
     }
@@ -108,6 +107,7 @@ function configuration_backup() {
                                 }
 
                                 console.log('Write SUCCESSFUL');
+                                if (callback) callback();
                             };
 
                             writer.write(blob);
@@ -127,7 +127,7 @@ function configuration_backup() {
     get_ident_data();
 }
 
-function configuration_restore() {
+function configuration_restore(callback) {
     var chosenFileEntry = null;
 
     var accepts = [{
@@ -178,7 +178,7 @@ function configuration_restore() {
                         return;
                     }
 
-                    configuration_upload(deserialized_configuration_object);
+                    configuration_upload(deserialized_configuration_object, callback);
                 }
             };
 
@@ -187,7 +187,7 @@ function configuration_restore() {
     });
 }
 
-function configuration_upload(configuration) {
+function configuration_upload(configuration, callback) {
     // check if all attributes that we will be saving exist inside the configuration object
     var validate = [
         'PID',
@@ -199,7 +199,7 @@ function configuration_upload(configuration) {
     ];
 
     for (var i = 0; i < validate.length; i++) {
-        if (typeof (configuration[i]) === 'undefined') {
+        if (typeof (configuration[validate[i]]) === 'undefined') {
             GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
             return;
         }
@@ -236,6 +236,7 @@ function configuration_upload(configuration) {
     function save_eeprom() {
         MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
             GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
+            if (callback) callback();
         });
     }
 

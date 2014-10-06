@@ -191,6 +191,12 @@
     "initialSetupBackupRestoreText": {
         "message": "<strong>Backup</strong> your configuration in case of an accident, <strong>CLI</strong> settings are not included"
     },
+    "initialSetupBackupSuccess": {
+        "message": "Backup saved <span style=\"color: green\">successfully</span>"
+    },
+    "initialSetupRestoreSuccess": {
+        "message": "Configuration restored <span style=\"color: green\">successfully</span>"
+    },
     "initialSetupButtonResetZaxis": {
         "message": "Reset Z axis, offset: 0 deg"
     },
