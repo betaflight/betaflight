@@ -671,6 +671,20 @@ MSP.crunch = function (code) {
             buffer.push(MISC.vbatmaxcellvoltage);
             buffer.push(MISC.placeholder3);
             break;
+        case MSP_codes.MSP_SET_SERVO_CONF:
+            for (var i = 0; i < SERVO_CONFIG.length; i++) {
+                buffer.push(lowByte(SERVO_CONFIG[i].min));
+                buffer.push(highByte(SERVO_CONFIG[i].min));
+
+                buffer.push(lowByte(SERVO_CONFIG[i].max));
+                buffer.push(highByte(SERVO_CONFIG[i].max));
+
+                buffer.push(lowByte(SERVO_CONFIG[i].middle));
+                buffer.push(highByte(SERVO_CONFIG[i].middle));
+
+                buffer.push(lowByte(SERVO_CONFIG[i].rate));
+            }
+            break;
 
         default:
             return false;

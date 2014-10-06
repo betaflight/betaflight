@@ -164,31 +164,14 @@ TABS.servos.initialize = function (callback) {
                 }
             });
 
-            // send settings over to mcu
-            var buffer_out = [];
-
-            var needle = 0;
-            for (var i = 0; i < SERVO_CONFIG.length; i++) {
-                buffer_out[needle++] = lowByte(SERVO_CONFIG[i].min);
-                buffer_out[needle++] = highByte(SERVO_CONFIG[i].min);
-
-                buffer_out[needle++] = lowByte(SERVO_CONFIG[i].max);
-                buffer_out[needle++] = highByte(SERVO_CONFIG[i].max);
-
-                buffer_out[needle++] = lowByte(SERVO_CONFIG[i].middle);
-                buffer_out[needle++] = highByte(SERVO_CONFIG[i].middle);
-
-                buffer_out[needle++] = lowByte(SERVO_CONFIG[i].rate);
-            }
-
-            MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, buffer_out);
-
-            if (save_to_eeprom) {
-                // Save changes to EEPROM
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                    GUI.log(chrome.i18n.getMessage('servosEepromSave'));
-                });
-            }
+            MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, MSP.crunch(MSP_codes.MSP_SET_SERVO_CONF), false, function () {
+                if (save_to_eeprom) {
+                    // Save changes to EEPROM
+                    MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                        GUI.log(chrome.i18n.getMessage('servosEepromSave'));
+                    });
+                }
+            });
         }
 
         // drop previous table

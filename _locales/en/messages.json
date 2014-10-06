@@ -38,6 +38,9 @@
         "message": "Device - <span style=\"color: green\">Ready</span>"
     },
 
+    "backupFileIncompatible": {
+        "message": "Backup file provided was generated for older version of configurator and is incompatible with this version of configurator. Sorry"
+    },
 
     "tabSetup": {
         "message": "Setup"

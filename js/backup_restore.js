@@ -32,7 +32,11 @@ function configuration_backup() {
     }
 
     function get_misc_data() {
-        MSP.send_message(MSP_codes.MSP_MISC, false, false, backup);
+        MSP.send_message(MSP_codes.MSP_MISC, false, false, get_servo_config_data);
+    }
+
+    function get_servo_config_data() {
+        MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, backup);
     }
 
     function backup() {
@@ -80,7 +84,8 @@ function configuration_backup() {
                             'AUX_val': AUX_CONFIG_values,
                             'RC': RC_tuning,
                             'AccelTrim': CONFIG.accelerometerTrims,
-                            'MISC': MISC
+                            'MISC': MISC,
+                            'SERVO_CONFIG': SERVO_CONFIG
                         };
 
                         // crunch the config object
@@ -173,19 +178,7 @@ function configuration_restore() {
                         return;
                     }
 
-                    // replacing "old configuration" with configuration from backup file
-                    var configuration = deserialized_configuration_object;
-
-                    // some configuration.VERSION code goes here? will see
-
-                    PIDs = configuration.PID;
-                    AUX_CONFIG_values = configuration.AUX_val;
-                    RC_tuning = configuration.RC;
-                    CONFIG.accelerometerTrims = configuration.AccelTrim;
-                    MISC = configuration.MISC;
-
-                    // all of the arrays/objects are set, upload changes
-                    configuration_upload();
+                    configuration_upload(deserialized_configuration_object);
                 }
             };
 
@@ -194,7 +187,32 @@ function configuration_restore() {
     });
 }
 
-function configuration_upload() {
+function configuration_upload(configuration) {
+    // check if all attributes that we will be saving exist inside the configuration object
+    var validate = [
+        'PID',
+        'AUX_val',
+        'RC',
+        'AccelTrim',
+        'MISC',
+        'SERVO_CONFIG'
+    ];
+
+    for (var i = 0; i < validate.length; i++) {
+        if (typeof (configuration[i]) === 'undefined') {
+            GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
+            return;
+        }
+    }
+
+    // replace data
+    PIDs = configuration.PID;
+    AUX_CONFIG_values = configuration.AUX_val;
+    RC_tuning = configuration.RC;
+    CONFIG.accelerometerTrims = configuration.AccelTrim;
+    MISC = configuration.MISC;
+    SERVO_CONFIG = configuration.SERVO_CONFIG;
+
     function rc_tuning() { // Send over the RC_tuning changes
         MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, aux);
     }
@@ -208,7 +226,11 @@ function configuration_upload() {
     }
 
     function misc() { // Send ove the new MISC
-        MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_eeprom);
+        MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, servo_conf);
+    }
+
+    function servo_conf() { // send over the new SERVO_CONF
+        MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, MSP.crunch(MSP_codes.MSP_SET_SERVO_CONF), false, save_eeprom);
     }
 
     function save_eeprom() {
