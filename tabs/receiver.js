@@ -96,7 +96,7 @@ TABS.receiver.initialize = function (callback) {
         });
 
         // correct inner label margin on window resize (i don't know how we could do this in css)
-        $(window).resize(function () {
+        self.resize = function () {
             var containerWidth = $('.meter:first', bar_container).width(),
                 labelWidth = $('.meter .label:first', bar_container).width(),
                 margin = (containerWidth / 2) - (labelWidth / 2);
@@ -104,7 +104,9 @@ TABS.receiver.initialize = function (callback) {
             for (var i = 0; i < meter_label_array.length; i++) {
                 meter_label_array[i].css('margin-left', margin);
             }
-        }).resize(); // trigger so labels get correctly aligned on creation
+        };
+
+        $(window).on('resize', self.resize).resize(); // trigger so labels get correctly aligned on creation
 
         // handle rcmap & rssi aux channel
         if (bit_check(CONFIG.capability, 30)) {
@@ -416,7 +418,7 @@ TABS.receiver.initialize = function (callback) {
 };
 
 TABS.receiver.cleanup = function (callback) {
-    $(window).unbind('resize');
+    $(window).off('resize', this.resize);
 
     if (callback) callback();
 };

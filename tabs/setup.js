@@ -427,17 +427,19 @@ TABS.setup.initialize3D = function (compatibility) {
     };
 
     // handle canvas resize
-    $(window).resize(function () {
+    this.resize3D = function () {
         renderer.setSize(wrapper.width(), wrapper.height());
         camera.aspect = wrapper.width() / wrapper.height();
         camera.updateProjectionMatrix();
 
         self.render3D();
-    });
+    };
+
+    $(window).on('resize', this.resize3D);
 };
 
 TABS.setup.cleanup = function (callback) {
-    $(window).unbind('resize');
+    $(window).off('resize', this.resize3D);
 
     if (callback) callback();
 };
