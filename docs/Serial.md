@@ -93,6 +93,7 @@ feature -RX_PARALLEL_PWM
 feature RX_SERIAL
 feature TELEMETRY
 feature SOFTSERIAL
+set serial_port_1_scenario = 5
 set serial_port_2_scenario = 3
 set serial_port_3_scenario = 4
 save
@@ -110,6 +111,8 @@ feature RX_PPM
 feature TELEMETRY
 feature GPS
 feature SOFTSERIAL
+set serial_port_1_scenario = 5
+set serial_port_2_scenario = 2
 set serial_port_3_scenario = 4
 save
 ```
@@ -143,6 +146,7 @@ e) HoTT Telemetry via UART2
 feature -RX_PARALLEL_PWM
 feature RX_PPM
 feature TELEMETRY
+set serial_port_1_scenario = 5
 set serial_port_2_scenario = 4
 set telemetry_provider = 1
 ```
