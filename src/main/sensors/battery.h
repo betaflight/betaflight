@@ -17,6 +17,10 @@
 
 #pragma once
 
+#define VBAT_SCALE_DEFAULT 110
+#define VBAT_SCALE_MIN 0
+#define VBAT_SCALE_MAX 255
+
 typedef struct batteryConfig_s {
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
     uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)

@@ -25,6 +25,7 @@
 typedef struct batteryAdcToVoltageExpectation_s {
     uint16_t adcReading;
     uint16_t expectedVoltageInDeciVoltSteps;
+    uint8_t scale;
 } batteryAdcToVoltageExpectation_t;
 
 #define ELEVEN_TO_ONE_VOLTAGE_DIVIDER 110 // (10k:1k) * 10 for 0.1V
@@ -34,17 +35,18 @@ TEST(BatteryTest, BatteryADCToVoltage)
     // given
 
     batteryConfig_t batteryConfig;
-    batteryConfig.vbatscale = ELEVEN_TO_ONE_VOLTAGE_DIVIDER;
 
     batteryInit(&batteryConfig);
 
     batteryAdcToVoltageExpectation_t batteryAdcToVoltageExpectations[] = {
-            {1420, 125},
-            {1430, 126},
-            {1440, 127},
-            {1890, 167},
-            {1900, 168},
-            {1910, 169}
+            {1420, 125, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1430, 126, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1440, 127, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1890, 167, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1900, 168, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1910, 169, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {   0,   0, VBAT_SCALE_MAX},
+            {4096, 841, VBAT_SCALE_MAX}
     };
     uint8_t testIterationCount = sizeof(batteryAdcToVoltageExpectations) / sizeof(batteryAdcToVoltageExpectation_t);
 
@@ -52,7 +54,11 @@ TEST(BatteryTest, BatteryADCToVoltage)
 
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToVoltageExpectation_t *batteryAdcToVoltageExpectation = &batteryAdcToVoltageExpectations[index];
-        printf("adcReading: %d\n", batteryAdcToVoltageExpectation->adcReading);
+        batteryConfig.vbatscale = batteryAdcToVoltageExpectation->scale;
+        printf("adcReading: %d, vbatscale: %d\n",
+                batteryAdcToVoltageExpectation->adcReading,
+                batteryAdcToVoltageExpectation->scale
+        );
 
         uint16_t pointOneVoltSteps = batteryAdcToVoltage(batteryAdcToVoltageExpectation->adcReading);
 

@@ -267,7 +267,7 @@ static void resetConf(void)
     masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
-    masterConfig.batteryConfig.vbatscale = 110;
+    masterConfig.batteryConfig.vbatscale = VBAT_SCALE_DEFAULT;
     masterConfig.batteryConfig.vbatmaxcellvoltage = 43;
     masterConfig.batteryConfig.vbatmincellvoltage = 33;
     masterConfig.batteryConfig.currentMeterOffset = 0;
