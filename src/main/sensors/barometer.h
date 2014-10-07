@@ -27,6 +27,7 @@ typedef struct barometerConfig_s {
 } barometerConfig_t;
 
 extern int32_t BaroAlt;
+extern int32_t baroTemperature;             // Use temperature for telemetry
 
 #ifdef BARO
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse);
