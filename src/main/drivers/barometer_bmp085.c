@@ -116,12 +116,16 @@ static int32_t bmp085_get_temperature(uint32_t ut);
 static int32_t bmp085_get_pressure(uint32_t up);
 static void bmp085_calculate(int32_t *pressure, int32_t *temperature);
 
+#ifdef BARO_PIN
 #define BMP085_OFF                  digitalLo(BARO_GPIO, BARO_PIN);
 #define BMP085_ON                   digitalHi(BARO_GPIO, BARO_PIN);
+#else
+#define BMP085_OFF
+#define BMP085_ON
+#endif
 
 void bmp085Disable(void)
 {
-
     if (hse_value != 12000000) {
         RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 
@@ -215,7 +219,7 @@ static int32_t bmp085_get_temperature(uint32_t ut)
     x1 = (((int32_t) ut - (int32_t) bmp085.cal_param.ac6) * (int32_t) bmp085.cal_param.ac5) >> 15;
     x2 = ((int32_t) bmp085.cal_param.mc << 11) / (x1 + bmp085.cal_param.md);
     bmp085.param_b5 = x1 + x2;
-    temperature = ((bmp085.param_b5 * 10 + 8) >> 4);  // temperature in 0.01°C (make same as MS5611)
+    temperature = ((bmp085.param_b5 * 10 + 8) >> 4);  // temperature in 0.01 C (make same as MS5611)
 
     return temperature;
 }
