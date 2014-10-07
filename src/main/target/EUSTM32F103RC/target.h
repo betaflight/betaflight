@@ -17,6 +17,9 @@
 
 #pragma once
 
+#define BARO_GPIO   GPIOC
+#define BARO_PIN    Pin_13
+
 #define ACC
 #define BARO
 #define GYRO
