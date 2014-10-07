@@ -12,7 +12,7 @@
 */
 'use strict';
 
-function start_app() {
+function startApplication() {
     var applicationStartTime = new Date().getTime();
 
     chrome.app.window.create('main.html', {
@@ -73,9 +73,7 @@ function start_app() {
     });
 }
 
-chrome.app.runtime.onLaunched.addListener(function () {
-    start_app();
-});
+chrome.app.runtime.onLaunched.addListener(startApplication);
 
 chrome.runtime.onInstalled.addListener(function (details) {
     if (details.reason == 'update') {
@@ -107,6 +105,6 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 chrome.notifications.onButtonClicked.addListener(function (notificationId, buttonIndex) {
     if (notificationId == 'baseflight_update') {
-        start_app();
+        startApplication();
     }
 });

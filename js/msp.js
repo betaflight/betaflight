@@ -540,16 +540,16 @@ var MSP = {
         }
 
         var obj = {'code': code, 'callback': (callback_msp) ? callback_msp : false};
-        obj.timer = setInterval(function() {
+        obj.timer = setInterval(function () {
             console.log('MSP data request timed-out: ' + code);
 
-            serial.send(bufferOut, function(sendInfo) {});
+            serial.send(bufferOut, false);
         }, 1000); // we should be able to define timeout in the future
 
         MSP.callbacks.push(obj);
 
-        serial.send(bufferOut, function(sendInfo) {
-            if (sendInfo.bytesSent > 0) {
+        serial.send(bufferOut, function (sendInfo) {
+            if (sendInfo.bytesSent == bufferOut.length) {
                 if (callback_sent) callback_sent();
             }
         });
