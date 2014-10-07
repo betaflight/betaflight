@@ -49,6 +49,7 @@ OBJECT_DIR	 = $(ROOT)/obj/main
 BIN_DIR		 = $(ROOT)/obj
 CMSIS_DIR	 = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS = $(SRC_DIR)
+LINKER_DIR   = $(ROOT)/src/main/target
 
 # Search path for sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
@@ -81,7 +82,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x \
 		   $(ROOT)/src/main/vcp
 
-LD_SCRIPT	 = $(ROOT)/stm32_flash_f303_256k.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_256k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS = -DSTM32F303xC -DSTM32F303
@@ -114,7 +115,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM3/CoreSupport \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
-LD_SCRIPT	 = $(ROOT)/stm32_flash_f103_256k.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_256k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
@@ -138,7 +139,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM3/CoreSupport \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
-LD_SCRIPT	 = $(ROOT)/stm32_flash_f103_128k.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_128k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
@@ -298,12 +299,12 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(COMMON_SRC)
 
 ifeq ($(TARGET),CJMCU)
-LD_SCRIPT	 = $(ROOT)/stm32_flash_f103_64k.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_64k.ld
 endif
 
 ifeq ($(OPBL),yes)
 ifneq ($(filter $(TARGET),$(OPBL_VALID_TARGETS)),)
-LD_SCRIPT	 = $(ROOT)/stm32_flash_f103_128k_opbl.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_128k_opbl.ld
 .DEFAULT_GOAL := binary
 else
 $(error OPBL specified with a unsupported target)
@@ -404,7 +405,7 @@ MASSIVEF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 		   $(COMMON_SRC)
 		   
 ifeq ($(TARGET),MASSIVEF3)
-LD_SCRIPT	 = $(ROOT)/stm32_flash_f303_128k.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_128k.ld
 endif
 		   
 
