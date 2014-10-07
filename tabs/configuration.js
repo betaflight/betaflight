@@ -2,7 +2,7 @@
 
 TABS.configuration = {};
 
-TABS.configuration.initialize = function (callback) {
+TABS.configuration.initialize = function (callback, scrollPosition) {
     var self = this;
 
     if (GUI.active_tab != 'configuration') {
@@ -194,6 +194,11 @@ TABS.configuration.initialize = function (callback) {
         // select current serial RX type
         serialRX_e.val(BF_CONFIG.serialrx_type);
 
+        // for some odd reason chrome 38+ changes scroll according to the touched select element
+        // i am guessing this is a bug, since this wasn't happening on 37
+        // code below is a temporary fix, which we will be able to remove in the future (hopefully)
+        $('#content').scrollTop((scrollPosition) ? scrollPosition : 0);
+
         // fill board alignment
         $('input[name="board_align_roll"]').val(BF_CONFIG.board_align_roll);
         $('input[name="board_align_pitch"]').val(BF_CONFIG.board_align_pitch);
@@ -287,7 +292,7 @@ TABS.configuration.initialize = function (callback) {
                 GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
                     MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
                         GUI.log(chrome.i18n.getMessage('deviceReady'));
-                        TABS.configuration.initialize();
+                        TABS.configuration.initialize(false, $('#content').scrollTop());
                     });
                 }, 1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
             }
