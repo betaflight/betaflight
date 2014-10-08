@@ -35,6 +35,8 @@
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
+#include "rx/rx.h"
+#include "io/rc_controls.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -100,6 +102,13 @@ extern int16_t telemTemperature1; // FIXME dependency on mw.c
 
 #define ID_VERT_SPEED         0x30 //opentx vario
 
+#define GPS_BAD_QUALITY       300
+#define GPS_MAX_HDOP_VAL      9999
+#define DELAY_FOR_BARO_INITIALISATION (5 * 1000) //5s
+#define BLADE_NUMBER_DIVIDER  5 //Should set 12 blades in Taranis
+
+static uint32_t lastCycleTime = 0;
+static uint8_t cycleNum = 0;
 static void sendDataHead(uint8_t id)
 {
     serialWrite(frskyPort, PROTOCOL_HEADER);
@@ -151,12 +160,68 @@ static void sendBaro(void)
     serialize16(abs(BaroAlt % 100));
 }
 
+static void sendGpsAltitude(void)
+{
+    uint16_t altitude = GPS_altitude;
+    //Send real GPS altitude only if it's reliable (there's a GPS fix)
+    if( !STATE(GPS_FIX) ) {
+        altitude = 0;
+    }
+    sendDataHead(ID_GPS_ALTIDUTE_BP);
+    serialize16(altitude);
+    sendDataHead(ID_GPS_ALTIDUTE_AP);
+    serialize16(0);
+}
+
+
+static void sendRpm(void)
+{
+    sendDataHead(ID_RPM);
+    if( ARMING_FLAG(ARMED) ) {
+        serialize16(rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER);
+    } else {
+        serialize16((telemetryConfig->batterySize / BLADE_NUMBER_DIVIDER));  
+    }
+    
+}
 static void sendTemperature1(void)
 {
     sendDataHead(ID_TEMPRATURE1);
+	#ifdef BARO
+    serialize16((baroTemperature + 50)/ 100); //Airmamaf
+    #else
     serialize16(telemTemperature1 / 10);
+    #endif
 }
 
+static void sendTemperature2(void)
+{
+    uint16_t satellite = GPS_numSat;
+    //Send instead Num sat and quality GPS
+    if( GPS_hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8) ) {//Every 1s
+        satellite = constrain(GPS_hdop, 0, GPS_MAX_HDOP_VAL);
+    }
+    sendDataHead(ID_TEMPRATURE2);
+
+    if( telemetryConfig->frsky_unit == FRSKY_UNIT_METRICS ) {
+        serialize16(satellite);
+    } else {
+        float tmp = (satellite - 32) / 1.8;
+        //Round the value
+        tmp += (tmp < 0) ? -0.5 : 0.5;
+        serialize16(tmp);
+    }
+}
+static void sendSpeed(void)
+{
+    if( STATE(GPS_FIX) ) {      
+        //Speed should be sent in m/s (GPS speed is in cm/s)
+        sendDataHead(ID_GPS_SPEED_BP);
+        serialize16((GPS_speed * 0.01 + 0.5));
+        sendDataHead(ID_GPS_SPEED_AP);
+        serialize16(0); //Not dipslayed
+    }
+}
 static void sendTime(void)
 {
     uint32_t seconds = millis() / 1000;
@@ -180,28 +245,49 @@ static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
     absgps = (absgps - deg * 10000000) * 60;        // absgps = Minutes left * 10^7
     min    = absgps / 10000000;                     // minutes left
 
-    result->dddmm = deg * 100 + min;
+	if( telemetryConfig->frsky_coordinate_format == FRSKY_FORMAT_DMS ) {
+        result->dddmm = deg * 100 + min;
+    } else {
+        result->dddmm = deg * 60 + min;    
+    }
+
     result->mmmm  = (absgps - min * 10000000) / 1000;
 }
 
 static void sendGPS(void)
 {
+	int32_t localGPS_coord[2] = {0,0}; 
+	// Don't set dummy GPS data, if we already had a GPS fix
+	// it can be usefull to keep last valid coordinates
+	static uint8_t gpsFixOccured = 0;
+	 
+    //Dummy data if no 3D fix, this way we can display heading in Taranis
+    if( STATE(GPS_FIX) || gpsFixOccured == 1 ) {
+        localGPS_coord[LAT] = GPS_coord[LAT];
+        localGPS_coord[LON] = GPS_coord[LON];
+        gpsFixOccured = 1;
+    } else {
+        // Send dummy GPS Data in order to display compass value
+        localGPS_coord[LAT] = (telemetryConfig->gpsNoFixLat * 10000000);
+        localGPS_coord[LON] = (telemetryConfig->gpsNoFixLon * 10000000);
+    }  
+    
     gpsCoordinateDDDMMmmmm_t coordinate;
-    GPStoDDDMM_MMMM(GPS_coord[LAT], &coordinate);
+    GPStoDDDMM_MMMM(localGPS_coord[LAT], &coordinate);
     sendDataHead(ID_LATITUDE_BP);
     serialize16(coordinate.dddmm);
     sendDataHead(ID_LATITUDE_AP);
     serialize16(coordinate.mmmm);
     sendDataHead(ID_N_S);
-    serialize16(GPS_coord[LAT] < 0 ? 'S' : 'N');
+    serialize16(localGPS_coord[LAT] < 0 ? 'S' : 'N');
 
-    GPStoDDDMM_MMMM(GPS_coord[LON], &coordinate);
+    GPStoDDDMM_MMMM(localGPS_coord[LON], &coordinate);
     sendDataHead(ID_LONGITUDE_BP);
     serialize16(coordinate.dddmm);
     sendDataHead(ID_LONGITUDE_AP);
     serialize16(coordinate.mmmm);
     sendDataHead(ID_E_W);
-    serialize16(GPS_coord[LON] < 0 ? 'W' : 'E');
+    serialize16(localGPS_coord[LON] < 0 ? 'W' : 'E');
 }
 #endif
 
@@ -281,8 +367,15 @@ static void sendAmperage(void)
 
 static void sendFuelLevel(void)
 {
+	uint16_t batterySize = telemetryConfig->batterySize;
+    
     sendDataHead(ID_FUEL_LEVEL);
-    serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
+    
+    if( batterySize > 0 ) {
+        serialize16((uint16_t)constrain((batterySize - constrain(mAhDrawn, 0, 0xFFFF)) * 100.0 / batterySize , 0, 100));
+    } else {
+        serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
+    }
 }
 
 static void sendHeading(void)
@@ -331,8 +424,6 @@ void configureFrSkyTelemetryPort(void)
     }
 }
 
-static uint32_t lastCycleTime = 0;
-static uint8_t cycleNum = 0;
 
 bool canSendFrSkyTelemetry(void)
 {
@@ -366,13 +457,16 @@ void handleFrSkyTelemetry(void)
     sendTelemetryTail();
 
     if ((cycleNum % 4) == 0) {      // Sent every 500ms
-        sendBaro();
+		if( lastCycleTime > DELAY_FOR_BARO_INITIALISATION ) { //Allow 5s to boot correctly
+            sendBaro();
+        }
         sendHeading();
         sendTelemetryTail();
     }
 
     if ((cycleNum % 8) == 0) {      // Sent every 1s
         sendTemperature1();
+		sendRpm();
 
         if (feature(FEATURE_VBAT)) {
             sendVoltage();
@@ -382,10 +476,17 @@ void handleFrSkyTelemetry(void)
         }
 
 #ifdef GPS
-        if (sensors(SENSOR_GPS))
-            sendGPS();
+        if (sensors(SENSOR_GPS)) {
+			sendSpeed(); 
+        	sendGpsAltitude(); 
+			sendTemperature2();
+		}
 #endif
 
+		// Send GPS information to display compass information
+	    if( (telemetryConfig->gpsNoFixLat != 0 && telemetryConfig->gpsNoFixLon != 0) || sensors(SENSOR_GPS) ) {
+	        sendGPS(); 
+	    }
         sendTelemetryTail();
     }
 
