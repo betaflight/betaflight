@@ -148,7 +148,7 @@ var serial = {
                     self.bytes_sent += sendInfo.bytesSent;
 
                     // fire callback
-                    callback(sendInfo);
+                    if (callback) callback(sendInfo);
 
                     // remove data for current transmission form the buffer
                     self.output_buffer.shift();
