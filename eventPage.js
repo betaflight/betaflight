@@ -1,14 +1,5 @@
 /*
     If an id is also specified and a window with a matching id has been shown before, the remembered bounds of the window will be used instead.
-
-    Size calculation for innerBounds seems to be faulty, app was designed for 960x625
-
-    Bug was confirmed on Windows 7
-    OSX seems to be unaffected
-    Linux and cros is unknown
-
-    I am using arbitrary dimensions which fixes the Windows 7 problem, hopefully it will get resolved in future release so other OSs won't have to
-    use bigger dimensions by default.
 */
 'use strict';
 
@@ -19,8 +10,8 @@ function startApplication() {
         id: 'main-window',
         frame: 'chrome',
         innerBounds: {
-            minWidth: 974,
-            minHeight: 632
+            minWidth: 960,
+            minHeight: 625
         }
     }, function (createdWindow) {
         createdWindow.contentWindow.addEventListener('load', function () {
