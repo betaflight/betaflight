@@ -539,7 +539,7 @@ var MSP = {
             }
         }
 
-        var obj = {'code': code, 'callback': (callback_msp) ? callback_msp : false};
+        var obj = {'code': code, 'requestBuffer': bufferOut, 'callback': (callback_msp) ? callback_msp : false};
         obj.timer = setInterval(function () {
             console.log('MSP data request timed-out: ' + code);
 
