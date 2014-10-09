@@ -1,6 +1,6 @@
 {
     "manifest_version": 2,
-    "minimum_chrome_version": "36",
+    "minimum_chrome_version": "38",
     "version": "0.54.2",
 
     "author": "cTn",
