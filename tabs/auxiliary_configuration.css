@@ -1,66 +1,156 @@
 .tab-auxiliary_configuration {
 }
-    .tab-auxiliary_configuration .boxes {
-        width: 100%;
-        border-collapse: collapse;
-    }
-        .tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {
-            line-height: 22px;
-            text-align: center;
 
-            border: 1px solid #8b8b8b;
-        }
-        .tab-auxiliary_configuration .boxes .heads {
-            background-color: #ececec;
-        }
-        .tab-auxiliary_configuration .boxes .main {
-            background-color: #ececec;
-        }
-        .tab-auxiliary_configuration .boxes .name {
-            text-align: center;
-        }
-        .tab-auxiliary_configuration .boxes .on {
-            color: white;
-            background-color: #0d8b13;
-        }
-        .tab-auxiliary_configuration .boxes .off {
-            color: white;
-            background-color: #be2222;
-        }
-        .tab-auxiliary_configuration .boxes td input {
-            position: absolute;
+.tab-auxiliary_configuration .help {
+    padding: 10px;
+    background-color: #ffcb18;
+    margin-bottom: 10px;
+}
 
-            margin-top: -6px;
-            margin-left: -6px;
-        }
-        .tab-auxiliary_configuration .boxes .switches:nth-child(odd) {
-            background-color: #ececec;
-        }
-        .tab-auxiliary_configuration .boxes .heads th:first-child {
-            border: 0;
-            background-color: white;
-        }
-    .tab-auxiliary_configuration .buttons {
-        width: calc(100% - 20px);
+#templates {
+    display: none;
+}
 
-        position: absolute;
-        bottom: 10px;
-    }
-    .tab-auxiliary_configuration .update {
-        display: block;
-        float: right;
+.tab-auxiliary_configuration .modes {
+    width: 100%;
+    border-spacing: 0px;
+}
 
-        height: 28px;
-        line-height: 28px;
+.tab-auxiliary_configuration .mode {
+    background-color: #ececec;
+    vertical-align: top;
+}
 
-        padding: 0 15px 0 15px;
+.tab-auxiliary_configuration .mode:nth-child(odd) {
+    background-color: #ffffff;
+}
 
-        text-align: center;
-        font-weight: bold;
+.tab-auxiliary_configuration .mode .name {
+    min-height: 50px;
+    padding: 5px 0px;
+}
 
-        border: 1px solid silver;
-        background-color: #ececec;
-    }
-    .tab-auxiliary_configuration .update:hover {
-        background-color: #dedcdc;
-    }
+.tab-auxiliary_configuration .mode.on .info {
+    background-color: #0fab16;
+    color: white;
+}
+
+.tab-auxiliary_configuration .mode.off .info {
+    background-color: #ab150f;
+    color: white;
+}
+
+.tab-auxiliary_configuration .mode .info {
+    text-align: center;
+    width: 10%;
+    position: relative;
+}
+ 
+.tab-auxiliary_configuration .mode .info .name {   
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.tab-auxiliary_configuration .mode .info .buttons {
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+}
+
+.tab-auxiliary_configuration .mode .info .buttons a {
+    padding: 2px 5px;
+}
+
+.tab-auxiliary_configuration .ranges {
+    margin: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-right: 2px;
+}
+
+.tab-auxiliary_configuration .range {
+    position: relative;
+    height: 70px;
+    padding-top: 8px;
+    padding-left: 10px;
+}
+
+.tab-auxiliary_configuration .range > .buttons {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+.tab-auxiliary_configuration .range > .buttons .a {
+    padding: 2px;
+}
+
+.tab-auxiliary_configuration .range:nth-child(odd) {
+}
+
+.tab-auxiliary_configuration .mode .range .channelInfo {
+    display: inline-block;
+    float: left;
+    max-width: 100px;
+    text-align: center;
+}
+
+.tab-auxiliary_configuration .mode .range .channelInfo .limits {
+    padding: 10px 0px;    
+}
+
+.tab-auxiliary_configuration .range .channel {
+    outline: 1px solid silver;
+}
+
+.tab-auxiliary_configuration .range .marker {
+    position: absolute;
+    left: 50%;
+    top: 27px;
+    background-color: #0fab16;
+    height: 13px;
+    width: 6px;
+    outline: 1px solid #0fab16;
+    margin-left: -3px;
+}
+
+.tab-auxiliary_configuration .range .channel-slider {
+    display: inline-block;
+    float: right;
+    width: 85%;
+    margin-right: 35px;
+}
+
+.tab-auxiliary_configuration .channel-slider {
+}
+
+.tab-auxiliary_configuration .channel-slider .noUi-connect {
+    background: #0fab16;
+}
+
+.tab-auxiliary_configuration > .buttons {
+    width: calc(100% - 20px);
+
+    margin-top: 10px;
+    bottom: 10px;
+}
+
+.tab-auxiliary_configuration > .buttons a {
+    float: right;
+    height: 28px;
+    line-height: 28px;
+    padding: 0 15px 0 15px;
+    display: block;
+}
+
+.tab-auxiliary_configuration .buttons a {
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+
+.tab-auxiliary_configuration .buttons a:hover {
+    background-color: #dedcdc;
+}

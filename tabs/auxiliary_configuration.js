@@ -6,7 +6,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'auxiliary_configuration';
     googleAnalytics.sendAppView('Auxiliary Configuration');
-
+    
     function get_box_data() {
         MSP.send_message(MSP_codes.MSP_BOX, false, false, get_box_ids);
     }
@@ -25,7 +25,111 @@ TABS.auxiliary_configuration.initialize = function (callback) {
 
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
 
+    function createMode(modeIndex) {
+        var modeTemplate = $('#templates .mode');
+        var newMode = modeTemplate.clone();
+        
+        var modeName = AUX_CONFIG[modeIndex];
+        $(newMode).attr('id', 'mode-' + modeIndex);
+        $(newMode).find('.name').text(modeName);
+        
+        $(newMode).data('index', modeIndex);
+        
+        $(newMode).find('.name').data('modeElement', newMode);
+        $(newMode).find('a.addRange').data('modeElement', newMode);
+
+        return newMode; 
+    }
+    
+    function configureRangeTemplate(auxChannelCount) {
+
+        var rangeTemplate = $('#templates .range');
+        
+        var channelList = $(rangeTemplate).find('.channel');
+        var channelOptionTemplate = $(channelList).find('option');
+        channelOptionTemplate.remove();
+        for (var channelIndex = 0; channelIndex < auxChannelCount; channelIndex++) {
+            var channelOption = channelOptionTemplate.clone();
+            channelOption.text('AUX ' + (channelIndex + 1));
+            channelOption.val(channelIndex);
+            channelList.append(channelOption);
+        }
+        channelList.select(0);
+    }
+    
+    function addRangeToMode(modeElement) {
+
+        var modeIndex = $(modeElement).data('index');
+
+        var channel_range = {
+                'min': [  900 ],
+                'max': [ 2100 ]
+            };
+
+        var rangeIndex = $(modeElement).find('.range').length;
+        
+        var range = $('#templates .range').clone();
+        range.attr('id', 'mode-' + modeIndex + '-range-' + rangeIndex);
+        modeElement.find('.ranges').append(range);
+        
+        $(range).find('.channel-slider').noUiSlider({
+            start: [ 1400, 1600 ],
+            behaviour: 'snap-drag',
+            step: 25,
+            connect: true,
+            range: channel_range,
+            format: wNumb({
+                decimals: 0,
+            })
+        });
+
+        var elementName =  '#mode-' + modeIndex + '-range-' + rangeIndex;
+        $(elementName + ' .channel-slider').Link('lower').to($(elementName + ' .lowerLimitValue'));
+        $(elementName + ' .channel-slider').Link('upper').to($(elementName + ' .upperLimitValue'));
+
+        $(range).find(".pips-channel-range").noUiSlider_pips({
+            mode: 'values',
+            values: [900, 1000, 1200, 1400, 1500, 1600, 1800, 2000, 2100],
+            density: 4,
+            stepped: true
+        });
+        
+        $(range).find('.deleteRange').data('rangeElement', range);
+
+        $(range).find('a.deleteRange').click(function () {
+            var rangeElement = $(this).data('rangeElement');
+            rangeElement.remove();
+        });
+
+    }
+    
     function process_html() {
+        
+        $('.boxes').hide();
+
+        var auxChannelCount = RC.active_channels - 4;
+        
+
+
+        configureRangeTemplate(auxChannelCount);
+        
+                
+        var modeTableBodyElement = $('.tab-auxiliary_configuration .modes tbody') 
+        for (var modeIndex = 0; modeIndex < AUX_CONFIG.length; modeIndex++) {
+            
+            var newMode = createMode(modeIndex);
+            modeTableBodyElement.append(newMode);
+
+            if (AUX_CONFIG_values[modeIndex] > 0) {
+                $('.mode .name').eq(modeIndex).data('modeElement').addClass('off');
+            }
+        }
+
+        $('a.addRange').click(function () {
+            var modeElement = $(this).data('modeElement');
+            addRangeToMode(modeElement);
+        });
+        
         // generate heads according to RC count
         var table_head = $('table.boxes .heads');
         var main_head = $('table.boxes .main');
@@ -79,57 +183,16 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         }
 
         // UI Hooks
-        $('a.update').click(function () {
-            // catch the input changes
-            var main_needle = 0;
-            var needle = 0;
+        $('a.save').click(function () {
 
-            var auxChannelCount = RC.active_channels - 4;
+            // TODO update internal data structures based on current UI elements
+            
+            // TODO send data to FC
 
-            var boxCountFor4AuxChannels = 3 * 4;
-            var boxCountPerLine = auxChannelCount * 3;
-            if (bit_check(CONFIG.capability, 5) && (auxChannelCount) > 4) {
-                boxCountPerLine = boxCountFor4AuxChannels * 2;
-            }
-
-            AUX_CONFIG_values[main_needle] = 0;
-            $('.boxes input').each(function () {
-                if (needle == 0) {
-                    AUX_CONFIG_values[main_needle] = 0;
-                }
-
-                var bitIndex = needle;
-                if (bit_check(CONFIG.capability, 5) && needle >= boxCountFor4AuxChannels) {
-                    bitIndex += 4; // 0-11 bits for aux 1-4, 16-27 for aux 5-8
-                }
-
-                if ($(this).is(':checked')) {
-                    AUX_CONFIG_values[main_needle] = bit_set(AUX_CONFIG_values[main_needle], bitIndex);
-                } else {
-                    AUX_CONFIG_values[main_needle] = bit_clear(AUX_CONFIG_values[main_needle], bitIndex);
-                }
-
-                needle++;
-
-                if (needle >= boxCountPerLine) {
-                    main_needle++;
-                    needle = 0;
-                }
-            });
-
-            // send over data
-            // current code will only handle 4 AUX as the variable length is 16bits
+            /* snippets of old code that might be useful...
             var AUX_val_buffer_out = [];
-            for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                AUX_val_buffer_out.push(lowByte(AUX_CONFIG_values[i] & 0xFFF));
-                AUX_val_buffer_out.push(highByte(AUX_CONFIG_values[i] & 0xFFF));
-            }
-            if (bit_check(CONFIG.capability, 5) && auxChannelCount > 4) {
-                for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-                    AUX_val_buffer_out.push(lowByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
-                    AUX_val_buffer_out.push(highByte((AUX_CONFIG_values[i] >> 16) & 0xFFF));
-                }
-            }
+            AUX_val_buffer_out.push(lowByte(0xFFFF));
+            AUX_val_buffer_out.push(highByte(0xFFFF));
 
             MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);
 
@@ -138,25 +201,27 @@ TABS.auxiliary_configuration.initialize = function (callback) {
                     GUI.log(chrome.i18n.getMessage('auxiliaryEepromSaved'));
                 });
             }
+            */
         });
 
-        // val = channel value
-        // aux_num = position of corresponding aux channel in the html table
-        var switches_e = $('table.boxes .switches');
-        function box_highlight(aux_num, val) {
-            var pos = 0; // < 1300
-
-            if (val > 1300 && val < 1700) {
-                pos = 1;
-            } else if (val > 1700) {
-                pos = 2;
+       
+        function box_highlight(auxChannelIndex, channelPosition) {
+            if (channelPosition < 900) {
+                channelPosition = 900;
+            } else if (channelPosition > 2100) {
+                channelPosition = 2100;
             }
-
-            var highlight_column = (aux_num * 3) + pos + 2; // +2 to skip name column and index starting on 1 instead of 0
-            var erase_columns = (aux_num * 3) + 2;
-
-            $('td:nth-child(n+' + erase_columns + '):nth-child(-n+' + (erase_columns + 2) + ')', switches_e).css('background-color', 'transparent');
-            $('td:nth-child(' + highlight_column + ')', switches_e).css('background-color', 'orange');
+            var percentage = (channelPosition - 900) / (2100-900) * 100;
+            
+            $('.modes .ranges .range').each( function () {
+                var auxChannelCandidateIndex = $(this).find('.channel').val();
+                if (auxChannelCandidateIndex != auxChannelIndex) {
+                    return;
+                }
+                
+                $(this).find('.marker').css('left', percentage + '%');
+            });
+            
         }
 
         // data pulling functions used inside interval timer
@@ -166,19 +231,20 @@ TABS.auxiliary_configuration.initialize = function (callback) {
 
         function update_ui() {
             for (var i = 0; i < AUX_CONFIG.length; i++) {
-                if (bit_check(CONFIG.mode, i)) {
-                    $('td.name').eq(i).addClass('on').removeClass('off');
-                } else {
-                    $('td.name').eq(i).removeClass('on').removeClass('off');
-
-                    if (AUX_CONFIG_values[i] > 0) {
-                        $('td.name').eq(i).addClass('off');
-                    }
+                if (AUX_CONFIG_values[i] == 0) {
+                    continue;
                 }
-
+                
+                if (bit_check(CONFIG.mode, i)) {
+                    $('.mode .name').eq(i).data('modeElement').addClass('on').removeClass('off');
+                } else {
+                    $('.mode .name').eq(i).data('modeElement').removeClass('on').addClass('off');
+                }
             }
 
-            for (var i = 0; i < (RC.active_channels - 4); i++) {
+            var auxChannelCount = RC.active_channels - 4;
+
+            for (var i = 0; i < (auxChannelCount); i++) {
                 box_highlight(i, RC.channels[i + 4]);
             }           
         }
