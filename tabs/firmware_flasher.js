@@ -131,9 +131,12 @@ TABS.firmware_flasher.initialize = function (callback) {
                         $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function (data) {
                             var data = data[0],
                                 d = new Date(data.commit.author.date),
-                                date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate() + 1)).slice(-2) + '.' + d.getFullYear();
+                                offset = d.getTimezoneOffset() / 60,
+                                date;
 
+                            date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate())).slice(-2) + '.' + d.getFullYear();
                             date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+                            date += (offset > 0) ? ' GMT+' + offset : ' GMT' + offset;
 
                             $('div.git_info .committer').text(data.commit.author.name);
                             $('div.git_info .date').text(date);
