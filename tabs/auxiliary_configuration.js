@@ -57,7 +57,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         channelList.select(0);
     }
     
-    function addRangeToMode(modeElement) {
+    function addRangeToMode(modeElement, auxChannelIndex) {
 
         var modeIndex = $(modeElement).data('index');
 
@@ -100,6 +100,8 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             var rangeElement = $(this).data('rangeElement');
             rangeElement.remove();
         });
+        
+        $(range).find('.channel').val(auxChannelIndex);
 
     }
     
@@ -108,12 +110,9 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         $('.boxes').hide();
 
         var auxChannelCount = RC.active_channels - 4;
-        
-
 
         configureRangeTemplate(auxChannelCount);
-        
-                
+
         var modeTableBodyElement = $('.tab-auxiliary_configuration .modes tbody') 
         for (var modeIndex = 0; modeIndex < AUX_CONFIG.length; modeIndex++) {
             
@@ -125,9 +124,28 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             }
         }
 
+        function findFirstUnusedChannel(modeElement) {
+            var auxChannelIndexCandidates = [];
+            for (var auxChannelIndex = 0; auxChannelIndex < auxChannelCount; auxChannelIndex++) {
+                auxChannelIndexCandidates.push(auxChannelIndex);
+            }
+            
+            $(modeElement).find('.channel').each( function() {
+                var valueToRemove = $(this).val();
+                auxChannelIndexCandidates = auxChannelIndexCandidates.filter(function(item) {
+                    return item != valueToRemove;
+                });
+            });
+            
+            return auxChannelIndexCandidates[0];
+        }
+        
         $('a.addRange').click(function () {
             var modeElement = $(this).data('modeElement');
-            addRangeToMode(modeElement);
+            
+            var firstUnusedChannel = findFirstUnusedChannel(modeElement);
+            
+            addRangeToMode(modeElement, firstUnusedChannel);
         });
         
         // generate heads according to RC count
