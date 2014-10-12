@@ -52,10 +52,10 @@ function configuration_backup(callback) {
                         query();
                     } else {
                         configuration.profiles.push({
-                            'PID': jQuery.merge([], PIDs),
+                            'PID': jQuery.extend(true, [], PIDs),
                             'RC': jQuery.extend(true, {}, RC_tuning),
-                            'AccTrim': jQuery.merge([], CONFIG.accelerometerTrims),
-                            'ServoConfig': jQuery.merge([], SERVO_CONFIG)
+                            'AccTrim': jQuery.extend(true, [], CONFIG.accelerometerTrims),
+                            'ServoConfig': jQuery.extend(true, [], SERVO_CONFIG)
                         });
 
                         codeKey = 0;
@@ -83,10 +83,10 @@ function configuration_backup(callback) {
                     query();
                 });
             } else {
-                configuration.AUX = AUX_CONFIG_values;
-                configuration.MISC = MISC;
-                configuration.RCMAP = RC_MAP;
-                configuration.BF_CONFIG = BF_CONFIG;
+                configuration.AUX = jQuery.extend(true, [], AUX_CONFIG_values);
+                configuration.MISC = jQuery.extend(true, {}, MISC);
+                configuration.RCMAP = jQuery.extend(true, [], RC_MAP);
+                configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
 
                 save();
             }
