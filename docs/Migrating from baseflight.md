@@ -24,7 +24,7 @@ Once you've done this for the first profile, save the config.  Then verify your 
 When you've verified the first profile is OK repeat for the other profiles.
 
 It's also advisable to take screenshots of your AUX settings from baseflight configurator and then after re-applying the settings
-verify your aux config is correct - some changes were made and some aux settings are not backwards compatible.
+verify your aux config is correct - aux settings are not backwards compatible.
 
 ## CLI command differences from baseflight
 
