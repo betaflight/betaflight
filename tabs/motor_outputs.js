@@ -233,11 +233,6 @@ TABS.motor_outputs.initialize = function (callback) {
             accel_offset_established = false;
         });
 
-        // if CAP_DYNBALANCE is true
-        if (bit_check(CONFIG.capability, 2)) {
-            $('div.motor_testing').show();
-        }
-
         var number_of_valid_outputs = (MOTOR_DATA.indexOf(0) > -1) ? MOTOR_DATA.indexOf(0) : 8;
 
         var motors_wrapper = $('.motors .bar-wrapper'),

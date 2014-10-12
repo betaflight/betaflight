@@ -2,7 +2,7 @@
 
 var CONFIGURATOR = {
     'releaseDate': 1412546773959, // new Date().getTime() - 10.06.2014
-    'firmwareVersionAccepted': 2.3,
+    'firmwareVersionAccepted': 2.31,
     'connectionValid': false,
     'cliActive': false,
     'cliValid': false
