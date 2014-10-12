@@ -105,6 +105,7 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
 #define MSP_CHANNEL_FORWARDING   123    //out message         Returns channel forwarding settings
+#define MSP_MODE_RANGES          124    //out message         Returns all mode ranges
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -122,6 +123,7 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define MSP_SET_CHANNEL_FORWARDING 213  //in message          Channel forwarding settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
+#define MSP_SET_MODE_RANGE       216    //in message          Sets a single mode range
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -633,6 +635,16 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(sizeof(pidnames) - 1);
         serializeNames(pidnames);
         break;
+    case MSP_MODE_RANGES:
+        headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
+        for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            serialize8(mac->modeId);
+            serialize8(mac->auxChannelIndex);
+            serialize8(mac->rangeStartStep);
+            serialize8(mac->rangeEndStep);
+        }
+        break;
     // FIXME provide backward compatible solution?  what what version of MSP? 6pos? would only work if all step values are on 6pos boundaries
     /*
     case MSP_BOX:
@@ -805,6 +817,18 @@ static bool processInCommand(void)
                 currentProfile->pidProfile.I8[i] = read8();
                 currentProfile->pidProfile.D8[i] = read8();
             }
+        }
+        break;
+    case MSP_SET_MODE_RANGE:
+        i = read8();
+        if (i > 0 && i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            mac->modeId = read8();
+            mac->auxChannelIndex = read8();
+            mac->rangeStartStep = read8();
+            mac->rangeEndStep = read8();
+        } else {
+            headSerialError(0);
         }
         break;
     // FIXME provide backward compatible solution?  what what version of MSP? 6pos? would only work if all step values are on 6pos boundaries
