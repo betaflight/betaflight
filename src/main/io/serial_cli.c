@@ -29,6 +29,7 @@
 #include "build_config.h"
 
 #include "common/axis.h"
+#include "common/maths.h"
 #include "common/color.h"
 #include "common/typeconversion.h"
 
@@ -396,7 +397,7 @@ static int cliCompare(const void *a, const void *b)
 
 static void cliAux(char *cmdline)
 {
-    int i = 0;
+    int i, val = 0;
     uint8_t len;
     char *ptr;
 
@@ -405,7 +406,7 @@ static void cliAux(char *cmdline)
         // print out aux channel settings
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
-            printf("aux %u %u\r\n",
+            printf("aux %u %u %u %u %u\r\n",
                 i,
                 mac->modeId,
                 mac->auxChannelIndex,
@@ -415,10 +416,47 @@ static void cliAux(char *cmdline)
         }
     } else {
         ptr = cmdline;
-        i = atoi(ptr);
+        i = atoi(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            ptr = strchr(cmdline, ' ');
-            // FIXME implement setting currentProfile->modeActivationConditions based on remaining string
+            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            uint8_t validArgumentCount = 0;
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                val = atoi(++ptr);
+                if (val >= 0 && val < CHECKBOX_ITEM_COUNT) {
+                    mac->modeId = val;
+                    validArgumentCount++;
+                }
+            }
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                val = atoi(++ptr);
+                if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
+                    mac->auxChannelIndex = val;
+                    validArgumentCount++;
+                }
+            }
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                val = atoi(++ptr);
+                val = CHANNEL_VALUE_TO_STEP(val);
+                if (val >= MIN_MODE_RANGE_STEP && val < MAX_MODE_RANGE_STEP) {
+                    mac->rangeStartStep = val;
+                    validArgumentCount++;
+                }
+            }
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                val = atoi(++ptr);
+                val = CHANNEL_VALUE_TO_STEP(val);
+                if (val >= MIN_MODE_RANGE_STEP && val < MAX_MODE_RANGE_STEP) {
+                    mac->rangeEndStep = val;
+                    validArgumentCount++;
+                }
+            }
+            if (validArgumentCount != 4) {
+                memset(mac, 0, sizeof(modeActivationCondition_t));
+            }
         } else {
             printf("index: must be < %u\r\n", MAX_MODE_ACTIVATION_CONDITION_COUNT);
         }

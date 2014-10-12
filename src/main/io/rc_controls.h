@@ -95,6 +95,9 @@ typedef enum {
 #define MODE_STEP_TO_CHANNEL_VALUE(step) (CHANNEL_RANGE_MIN + 25 * step)
 #define CHANNEL_VALUE_TO_STEP(channelValue) ((constrain(channelValue, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX) - CHANNEL_RANGE_MIN) / 25)
 
+#define MIN_MODE_RANGE_STEP 0
+#define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
+
 typedef struct modeActivationCondition_s {
     boxId_e modeId;
     uint8_t auxChannelIndex;
