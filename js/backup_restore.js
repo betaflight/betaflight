@@ -73,7 +73,7 @@ function configuration_backup() {
                             'firmware_version': CONFIG.version,
                             'configurator_version': chrome.runtime.getManifest().version,
                             'PID': PIDs,
-                            'AUX_val': AUX_CONFIG_values,
+                            //'AUX_val': AUX_CONFIG_values,
                             'RC': RC_tuning,
                             'AccelTrim': CONFIG.accelerometerTrims,
                             'MISC': MISC
@@ -171,7 +171,7 @@ function configuration_restore() {
                     // some configuration.VERSION code goes here? will see
 
                     PIDs = configuration.PID;
-                    AUX_CONFIG_values = configuration.AUX_val;
+                    //AUX_CONFIG_values = configuration.AUX_val;
                     RC_tuning = configuration.RC;
                     CONFIG.accelerometerTrims = configuration.AccelTrim;
                     MISC = configuration.MISC;
@@ -244,6 +244,7 @@ function configuration_upload() {
     }
 
     function aux() {
+        /*
         // AUX section
         var AUX_val_buffer_out = new Array(),
             needle = 0;
@@ -255,6 +256,7 @@ function configuration_upload() {
 
         // Send over the AUX changes
         MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, trim);
+        */
     }
 
     // Trim section
