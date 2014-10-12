@@ -24,6 +24,7 @@ var MSP_codes = {
     MSP_BOXIDS:             119,
     MSP_SERVO_CONF:         120,
     MSP_CHANNEL_FORWARDING: 123,
+    MSP_MODE_RANGES:        124,
 
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -40,6 +41,7 @@ var MSP_codes = {
     MSP_SET_SERVO_CONF:     212,
     MSP_SET_CHANNEL_FORWARDING: 213,
     MSP_SET_MOTOR:          214,
+    MSP_SET_MODE_RANGE:     216,
 
     // MSP_BIND:               240,
 
@@ -287,25 +289,23 @@ MSP.process_data = function(code, message_buffer, message_length) {
                 }
             }
             break;
-        case MSP_codes.MSP_BOX:
-            AUX_CONFIG_values = []; // empty the array as new data is coming in
+        case MSP_codes.MSP_MODE_RANGES:
+            MODE_RANGES = []; // empty the array as new data is coming in
 
-            var boxItems = data.byteLength / 2; // AUX 1-4, 2 bytes per boxItem
-            if (bit_check(CONFIG.capability, 5)) {
-                boxItems = data.byteLength / 4; // AUX 1-8, 2 bytes per boxItem for AUX 1-4 followed by 2 bytes per boxItem for AUX 5-8
-            }
-            // fill in current data
-            var offset = 0;
+            var modeRangeCount = data.byteLength / 4; // 4 bytes per item.
             
-            for (var i = 0; offset < data.byteLength && i < boxItems; offset += 2, i ++) { // + 2 because uint16_t = 2 bytes
-                AUX_CONFIG_values.push(data.getUint16(offset, 1));
+            var offset = 0;
+            for (var i = 0; offset < data.byteLength && i < modeRangeCount; i++) {
+                var modeRange = {
+                    id: data.getUint8(offset++, 1),
+                    auxChannelIndex: data.getUint8(offset++, 1),
+                    range: {
+                        start: 900 + (data.getUint8(offset++, 1) * 25),
+                        end: 900 + (data.getUint8(offset++, 1) * 25)
+                    }
+                };
+                MODE_RANGES.push(modeRange);
             }
-            if (bit_check(CONFIG.capability, 5)) {
-                for (var i = 0; offset < data.byteLength && i < boxItems; offset += 2, i++) { // + 2 because uint16_t = 2 bytes
-                    AUX_CONFIG_values[i] |= (data.getUint16(offset, 1) << 16);
-                }
-            }
-           
             break;
         case MSP_codes.MSP_MISC: // 22 bytes
             MISC.PowerTrigger1 = data.getInt16(0, 1);
@@ -389,6 +389,9 @@ MSP.process_data = function(code, message_buffer, message_length) {
             break;
         case MSP_codes.MSP_SET_PID:
             console.log('PID settings saved');
+            break;
+        case MSP_codes.MSP_SET_MODE_RANGE:
+            console.log('Mode range saved');
             break;
         case MSP_codes.MSP_SET_BOX:
             console.log('AUX Configuration saved');

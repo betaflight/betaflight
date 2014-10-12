@@ -7,8 +7,8 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     GUI.active_tab = 'auxiliary_configuration';
     googleAnalytics.sendAppView('Auxiliary Configuration');
     
-    function get_box_data() {
-        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_box_ids);
+    function get_mode_ranges() {
+        MSP.send_message(MSP_codes.MSP_MODE_RANGES, false, false, get_box_ids);
     }
 
     function get_box_ids() {
@@ -23,9 +23,9 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         $('#content').load("./tabs/auxiliary_configuration.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
+    MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_mode_ranges);
 
-    function createMode(modeIndex) {
+    function createMode(modeIndex, modeId) {
         var modeTemplate = $('#templates .mode');
         var newMode = modeTemplate.clone();
         
@@ -34,6 +34,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         $(newMode).find('.name').text(modeName);
         
         $(newMode).data('index', modeIndex);
+        $(newMode).data('id', modeId);
         
         $(newMode).find('.name').data('modeElement', newMode);
         $(newMode).find('a.addRange').data('modeElement', newMode);
@@ -57,14 +58,18 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         channelList.select(0);
     }
     
-    function addRangeToMode(modeElement, auxChannelIndex) {
-
+    function addRangeToMode(modeElement, auxChannelIndex, range) {
         var modeIndex = $(modeElement).data('index');
 
         var channel_range = {
                 'min': [  900 ],
                 'max': [ 2100 ]
             };
+        
+        var rangeValues = [1400, 1600];
+        if (range != undefined) {
+            rangeValues = [range.start, range.end];
+        }
 
         var rangeIndex = $(modeElement).find('.range').length;
         
@@ -73,7 +78,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         modeElement.find('.ranges').append(range);
         
         $(range).find('.channel-slider').noUiSlider({
-            start: [ 1400, 1600 ],
+            start: rangeValues,
             behaviour: 'snap-drag',
             step: 25,
             connect: true,
@@ -116,12 +121,33 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         var modeTableBodyElement = $('.tab-auxiliary_configuration .modes tbody') 
         for (var modeIndex = 0; modeIndex < AUX_CONFIG.length; modeIndex++) {
             
-            var newMode = createMode(modeIndex);
+            var modeId = AUX_CONFIG_IDS[modeIndex];
+            var newMode = createMode(modeIndex, modeId);
             modeTableBodyElement.append(newMode);
 
+            // FIXME check mode ranges to see if each ID is used, it's used add the 'off' class to the corresponding mode element
+            /*
             if (AUX_CONFIG_values[modeIndex] > 0) {
                 $('.mode .name').eq(modeIndex).data('modeElement').addClass('off');
             }
+            */
+            
+            // generate ranges from the supplied AUX names and MODE_RANGE data
+            for (var modeRangeIndex = 0; modeRangeIndex < MODE_RANGES.length; modeRangeIndex++) {
+                var modeRange = MODE_RANGES[modeRangeIndex];
+                
+                if (modeRange.id != modeId) {
+                    continue;
+                }
+                
+                var range = modeRange.range;
+                if (!(range.start < range.end)) {
+                    continue; // invalid!
+                }
+                
+                addRangeToMode(newMode, modeRange.auxChannelIndex, range)
+            }
+
         }
 
         function findFirstUnusedChannel(modeElement) {
@@ -147,79 +173,86 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             
             addRangeToMode(modeElement, firstUnusedChannel);
         });
-        
-        // generate heads according to RC count
-        var table_head = $('table.boxes .heads');
-        var main_head = $('table.boxes .main');
-        for (var i = 0; i < (RC.active_channels - 4); i++) {
-            table_head.append('<th colspan="3">AUX ' + (i + 1) + '</th>');
-
-            // 3 columns per aux channel (this might be requested to change to 6 in the future, so watch out)
-            main_head.append('\
-                <th i18n="auxiliaryLow"></th>\
-                <th i18n="auxiliaryMed"></th>\
-                <th i18n="auxiliaryHigh"></th>\
-            ');
-        }
-
+                
         // translate to user-selected language
         localize();
-
-        // generate table from the supplied AUX names and AUX data
-        for (var i = 0; i < AUX_CONFIG.length; i++) {
-            var line = '<tr class="switches">';
-            line += '<td class="name">' + AUX_CONFIG[i] + '</td>';
-
-
-            var switches = '';
-            var auxChannelCount = RC.active_channels - 4;
-            
-            var bitIndex = 0;
-            var chunks = 1;
-            if (bit_check(CONFIG.capability, 5) && (auxChannelCount) > 4) {
-                chunks = 2;
-            }
-            
-            var channelsRemaining = auxChannelCount;
-            var channelsPerChunk = 4;
-            for (var chunk = 0; chunk < chunks; chunk++) {
-                for (var chunkChannel = 0; chunkChannel < channelsPerChunk && channelsRemaining; chunkChannel++, channelsRemaining--) {
-                    for (var j = 0; j < 3; j++) {
-                        if (bit_check(AUX_CONFIG_values[i], bitIndex++)) {
-                            switches += '<td><input type="checkbox" checked="checked" /></td>';
-                        } else {
-                            switches += '<td><input type="checkbox" /></td>';
-                        }
-                    }
-                }
-                bitIndex += 16 - (4 * 3);
-            }
-            
-            line += switches + '</tr>';
-
-            $('.boxes > tbody:last').append(line);
-        }
 
         // UI Hooks
         $('a.save').click(function () {
 
-            // TODO update internal data structures based on current UI elements
+            // update internal data structures based on current UI elements
             
-            // TODO send data to FC
+            // we must send this many back to the FC - overwrite all of the old ones to be sure.
+            var requiredModesRangeCount = MODE_RANGES.length;
+            
+            MODE_RANGES = [];
+            
+            $('.modes .mode').each(function () {
+                //var _this = this;
+                var modeElement = $(this);
+                var modeId = modeElement.data('id');
+                
+                $(modeElement).find('.range').each(function() {
+                    
+                    var rangeValues = $(this).find('.channel-slider').val();
+                    var modeRange = {
+                        id: modeId,
+                        auxChannelIndex: parseInt($(this).find('.channel').val()),
+                        range: {
+                            start: rangeValues[0],
+                            end: rangeValues[1]
+                        }
+                    };
+                    MODE_RANGES.push(modeRange);
+                });
+            });
+            
+            for (var modeRangeIndex = MODE_RANGES.length; modeRangeIndex < requiredModesRangeCount; modeRangeIndex++) {
+                var defaultModeRange = {
+                    id: 0,
+                    auxChannelIndex: 0,
+                    range: {
+                        start: 900,
+                        end: 900
+                    }
+                };
+                MODE_RANGES.push(defaultModeRange);
+            }
+           
+            // send data to FC
 
-            /* snippets of old code that might be useful...
-            var AUX_val_buffer_out = [];
-            AUX_val_buffer_out.push(lowByte(0xFFFF));
-            AUX_val_buffer_out.push(highByte(0xFFFF));
+            var nextFunction = send_next_mode_range; 
+                
+            var modeRangeIndex = 0;
 
-            MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, save_to_eeprom);
+            send_next_mode_range();
+
+            
+            function send_next_mode_range() {
+                
+                var modeRange = MODE_RANGES[modeRangeIndex];
+                                
+                var AUX_val_buffer_out = [];
+                AUX_val_buffer_out.push(modeRangeIndex);
+                AUX_val_buffer_out.push(modeRange.id);
+                AUX_val_buffer_out.push(modeRange.auxChannelIndex);
+                AUX_val_buffer_out.push((modeRange.range.start - 900) / 25);
+                AUX_val_buffer_out.push((modeRange.range.end - 900) / 25);
+                
+                // prepare for next iteration
+                modeRangeIndex++;
+                if (modeRangeIndex == requiredModesRangeCount) {
+                    nextFunction = save_to_eeprom;
+                
+                }
+                MSP.send_message(MSP_codes.MSP_SET_MODE_RANGE, AUX_val_buffer_out, false, nextFunction);
+            }
 
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('auxiliaryEepromSaved'));
                 });
             }
-            */
         });
 
        
@@ -249,9 +282,12 @@ TABS.auxiliary_configuration.initialize = function (callback) {
 
         function update_ui() {
             for (var i = 0; i < AUX_CONFIG.length; i++) {
+                // FIXME if the mode is unused, skip it
+                /*
                 if (AUX_CONFIG_values[i] == 0) {
                     continue;
                 }
+                */
                 
                 if (bit_check(CONFIG.mode, i)) {
                     $('.mode .name').eq(i).data('modeElement').addClass('on').removeClass('off');
