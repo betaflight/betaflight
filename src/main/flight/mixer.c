@@ -532,7 +532,7 @@ void mixTable(void)
         servo[0] = determineServoMiddleOrForwardFromChannel(0);
         servo[1] = determineServoMiddleOrForwardFromChannel(1);
 
-        if (rcOptions[BOXCAMSTAB]) {
+        if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
             if (gimbalConfig->gimbal_flags & GIMBAL_MIXTILT) {
                 servo[0] -= (-(int32_t)servoConf[0].rate) * inclination.values.pitchDeciDegrees / 50 - (int32_t)servoConf[1].rate * inclination.values.rollDeciDegrees / 50;
                 servo[1] += (-(int32_t)servoConf[0].rate) * inclination.values.pitchDeciDegrees / 50 + (int32_t)servoConf[1].rate * inclination.values.rollDeciDegrees / 50;

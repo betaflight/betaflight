@@ -44,7 +44,9 @@ typedef enum {
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
-extern uint8_t rcOptions[CHECKBOX_ITEM_COUNT];
+extern uint32_t rcModeActivationMask;
+
+#define IS_RC_MODE_ACTIVE(modeId) ((1 << modeId) & rcModeActivationMask)
 
 typedef enum rc_alias {
     ROLL = 0,
@@ -79,6 +81,33 @@ typedef enum {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
+#define MAX_MODE_ACTIVATION_CONDITION_COUNT 40
+// 40 is enough for 1 mode for each position of 11 * 3 position switches and a 6 pos switch.
+// however, that is unlikely because you don't define the 'off' positions, so for a 3 position
+// switch it's normal that only 2 values would be configured.
+// this leaves plenty of 'slots' free for cases where you enable multiple modes for a switch
+// position (like gps rth + horizon + baro + beeper)
+
+
+#define MODE_STEP_TO_CHANNEL_VALUE(step) (900 + 25 * step)
+#define CHANNEL_VALUE_TO_STEP(channelValue) (constrain(channelValue, 900, 2100) - 900 / 25)
+
+typedef struct modeActivationCondition_s {
+    boxId_e modeId;
+    uint8_t auxChannelIndex;
+
+    // steps are 25 apart
+    // a value of 0 corresponds to a channel value of 900 or less
+    // a value of 47 corresponds to a channel value of 2100 or more
+    // 48 steps between 900 and 1200
+    uint8_t rangeStartStep;
+    uint8_t rangeEndStep;
+} modeActivationCondition_t;
+
+// sizeof(modeActivationCondition_t) * MAX_MODE_ACTIVATION_COUNT  = 4 * 40 = 160 bytes
+// sizeof(uint32_t) * CHECKBOX_ITEM_COUNT = 4 * 21 = 84
+
+
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
     uint8_t rcExpo8;
@@ -92,8 +121,8 @@ extern int16_t rcCommand[4];
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, uint32_t *activate, bool retarded_arm, bool disarm_kill_switch);
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, modeActivationCondition_t *modeActivationConditions, bool retarded_arm, bool disarm_kill_switch);
 
 
-void updateRcOptions(uint32_t *activate);
+void updateRcOptions(modeActivationCondition_t *modeActivationConditions);
 

@@ -146,6 +146,7 @@ typedef struct box_e {
     const uint8_t permanentId;      //
 } box_t;
 
+// FIXME remove ;'s
 static const box_t const boxes[] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
@@ -505,20 +506,20 @@ static bool processOutCommand(uint8_t cmdMSP)
             IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
             IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
             IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
-            rcOptions[BOXHEADADJ] << BOXHEADADJ |
-            rcOptions[BOXCAMSTAB] << BOXCAMSTAB |
-            rcOptions[BOXCAMTRIG] << BOXCAMTRIG |
+            IS_RC_MODE_ACTIVE(BOXHEADADJ) << BOXHEADADJ |
+            IS_RC_MODE_ACTIVE(BOXCAMSTAB) << BOXCAMSTAB |
+            IS_RC_MODE_ACTIVE(BOXCAMTRIG) << BOXCAMTRIG |
             IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
             IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
             IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
-            rcOptions[BOXBEEPERON] << BOXBEEPERON |
-            rcOptions[BOXLEDMAX] << BOXLEDMAX |
-            rcOptions[BOXLLIGHTS] << BOXLLIGHTS |
-            rcOptions[BOXCALIB] << BOXCALIB |
-            rcOptions[BOXGOV] << BOXGOV |
-            rcOptions[BOXOSD] << BOXOSD |
-            rcOptions[BOXTELEMETRY] << BOXTELEMETRY |
-            rcOptions[BOXAUTOTUNE] << BOXAUTOTUNE |
+            IS_RC_MODE_ACTIVE(BOXBEEPERON) << BOXBEEPERON |
+            IS_RC_MODE_ACTIVE(BOXLEDMAX) << BOXLEDMAX |
+            IS_RC_MODE_ACTIVE(BOXLLIGHTS) << BOXLLIGHTS |
+            IS_RC_MODE_ACTIVE(BOXCALIB) << BOXCALIB |
+            IS_RC_MODE_ACTIVE(BOXGOV) << BOXGOV |
+            IS_RC_MODE_ACTIVE(BOXOSD) << BOXOSD |
+            IS_RC_MODE_ACTIVE(BOXTELEMETRY) << BOXTELEMETRY |
+            IS_RC_MODE_ACTIVE(BOXAUTOTUNE) << BOXAUTOTUNE |
             IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
             IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM;
         for (i = 0; i < activeBoxIdCount; i++) {
@@ -632,6 +633,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(sizeof(pidnames) - 1);
         serializeNames(pidnames);
         break;
+    // FIXME provide backward compatible solution?  what what version of MSP? 6pos? would only work if all step values are on 6pos boundaries
+    /*
     case MSP_BOX:
         headSerialReply(4 * activeBoxIdCount);
         for (i = 0; i < activeBoxIdCount; i++)
@@ -639,6 +642,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         for (i = 0; i < activeBoxIdCount; i++)
             serialize16((currentProfile->activate[activeBoxIds[i]] >> 16) & ACTIVATE_MASK);
         break;
+    */
     case MSP_BOXNAMES:
         // headSerialReply(sizeof(boxnames) - 1);
         serializeBoxNamesReply();
@@ -803,12 +807,15 @@ static bool processInCommand(void)
             }
         }
         break;
+    // FIXME provide backward compatible solution?  what what version of MSP? 6pos? would only work if all step values are on 6pos boundaries
+    /*
     case MSP_SET_BOX:
         for (i = 0; i < activeBoxIdCount; i++)
             currentProfile->activate[activeBoxIds[i]] = read16() & ACTIVATE_MASK;
         for (i = 0; i < activeBoxIdCount; i++)
             currentProfile->activate[activeBoxIds[i]] |= (read16() & ACTIVATE_MASK) << 16;
         break;
+    */
     case MSP_SET_RC_TUNING:
         currentProfile->controlRateConfig.rcRate8 = read8();
         currentProfile->controlRateConfig.rcExpo8 = read8();

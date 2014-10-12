@@ -68,7 +68,7 @@ void beepcodeUpdateState(bool warn_vbat)
     static failsafeBeeperWarnings_e warn_failsafe = FAILSAFE_IDLE;
 
     //=====================  BeeperOn via rcOptions =====================
-    if (rcOptions[BOXBEEPERON]) {       // unconditional beeper on via AUXn switch
+    if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {       // unconditional beeper on via AUXn switch
         beeperOnBox = 1;
     } else {
         beeperOnBox = 0;
@@ -95,7 +95,7 @@ void beepcodeUpdateState(bool warn_vbat)
 #ifdef GPS
     //===================== GPS fix notification handling =====================
     if (sensors(SENSOR_GPS)) {
-        if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && !STATE(GPS_FIX)) {     // if no fix and gps funtion is activated: do warning beeps
+        if ((IS_RC_MODE_ACTIVE(BOXGPSHOME) || IS_RC_MODE_ACTIVE(BOXGPSHOLD)) && !STATE(GPS_FIX)) {     // if no fix and gps funtion is activated: do warning beeps
             warn_noGPSfix = 1;
         } else {
             warn_noGPSfix = 0;

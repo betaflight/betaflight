@@ -106,7 +106,7 @@ bool determineNewTelemetryEnabledState(void)
 
     if (telemetryPortIsShared) {
         if (telemetryConfig->telemetry_switch)
-            enabled = rcOptions[BOXTELEMETRY];
+            enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
         else
             enabled = ARMING_FLAG(ARMED);
     }

@@ -139,7 +139,7 @@ typedef struct {
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
-    { "aux", "feature_name auxflag or blank for list", cliAux },
+    { "aux", "show/set aux settings", cliAux },
     { "cmix", "design custom mixer", cliCMix },
 #ifdef LED_STRIP
     { "color", "configure colors", cliColor },
@@ -396,24 +396,31 @@ static int cliCompare(const void *a, const void *b)
 
 static void cliAux(char *cmdline)
 {
-    int i, val = 0;
+    int i = 0;
     uint8_t len;
     char *ptr;
 
     len = strlen(cmdline);
     if (len == 0) {
         // print out aux channel settings
-        for (i = 0; i < CHECKBOX_ITEM_COUNT; i++)
-            printf("aux %u %u\r\n", i, currentProfile->activate[i]);
+        for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            printf("aux %u %u\r\n",
+                i,
+                mac->modeId,
+                mac->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(mac->rangeStartStep),
+                MODE_STEP_TO_CHANNEL_VALUE(mac->rangeEndStep)
+            );
+        }
     } else {
         ptr = cmdline;
         i = atoi(ptr);
-        if (i < CHECKBOX_ITEM_COUNT) {
+        if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             ptr = strchr(cmdline, ' ');
-            val = atoi(ptr);
-            currentProfile->activate[i] = val;
+            // FIXME implement setting currentProfile->modeActivationConditions based on remaining string
         } else {
-            printf("Invalid Feature index: must be < %u\r\n", CHECKBOX_ITEM_COUNT);
+            printf("index: must be < %u\r\n", MAX_MODE_ACTIVATION_CONDITION_COUNT);
         }
     }
 }
