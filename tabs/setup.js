@@ -35,7 +35,7 @@ TABS.setup.initialize = function (callback) {
         localize();
 
         // initialize 3D
-        self.initialize3D(false);
+        self.initialize3D();
 
         // set heading in interactive block
         $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
@@ -175,13 +175,8 @@ TABS.setup.initialize3D = function (compatibility) {
         loader, canvas, wrapper, renderer, camera, scene, light, light2, modelWrapper, model, model_file,
         fallback = false;
 
-    if (compatibility) {
-        canvas = $('.COMPATIBILITY #canvas');
-        wrapper = $('.COMPATIBILITY #canvas_wrapper');
-    } else {
-        canvas = $('.CAP_BASEFLIGHT_CONFIG #canvas');
-        wrapper = $('.CAP_BASEFLIGHT_CONFIG #canvas_wrapper');
-    }
+    canvas = $('.CAP_BASEFLIGHT_CONFIG #canvas');
+    wrapper = $('.CAP_BASEFLIGHT_CONFIG #canvas_wrapper');
 
     // webgl capability detector
     // it would seem the webgl "enabling" through advanced settings will be ignored in the future

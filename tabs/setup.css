@@ -1,33 +1,5 @@
-/* requires cleanup  */
 .tab-setup .CAP_BASEFLIGHT_CONFIG {
     height: calc(100% - 138px);
-}
-.tab-setup #interactive_block {
-    width: calc(100% - 199px);
-}
-.tab-setup .gps {
-    width: 185px;
-}
-.tab-setup .gps .fields {
-    padding: 5px 5px 3px 5px;
-}
-.tab-setup .gps dt {
-    float: left;
-
-    width: 85px;
-    height: 20px;
-
-    margin-bottom: 2px;
-
-    line-height: 20px;
-}
-.tab-setup .gps dd {
-    height: 20px;
-
-    margin-left: 85px;
-    margin-bottom: 2px;
-
-    line-height: 20px;
 }
 .tab-setup {
     height: 100%;
@@ -84,24 +56,24 @@
 
     border-bottom: 1px solid #e5e5e5;
 }
-#interactive_block {
+.tab-setup #interactive_block {
     float: left;
     position: relative;
 
     height: 100%;
-    width: calc(100% - 522px);
+    width: calc(100% - 199px);
 
     border: 1px solid silver;
     background-color: white;
 }
-#interactive_block .heading {
+.tab-setup #interactive_block .heading {
     float: right;
     height: 15px;
 
     margin: 10px 10px 0 0;
     font-weight: bold;
 }
-#interactive_block a.reset {
+.tab-setup #interactive_block a.reset {
     position: absolute;
     display: block;
 
@@ -121,10 +93,10 @@
 
     z-index: 100;
 }
-#interactive_block a.reset:hover {
+.tab-setup #interactive_block a.reset:hover {
     background-color: #dedcdc;
 }
-#canvas_wrapper {
+.tab-setup #canvas_wrapper {
     position: absolute;
 
     width: 100%;
@@ -154,35 +126,55 @@
     border-bottom: 1px solid silver;
     background-color: #ececec;
 }
-.tab-setup .block .info {
-    width: 200px;
-}
-.tab-setup .info {
+.tab-setup .block.info {
     display: inline-block;
+    margin-bottom: 10px;
+
     vertical-align: top;
-
-    margin: 0 0 10px 10px;
-
     font-size: 12px;
 
     border: 1px solid silver;
 }
-.tab-setup .info .fields {
+.tab-setup .block.info .fields {
     padding: 5px 5px 3px 5px;
 }
-.tab-setup .info dt {
+.tab-setup .block.info dt {
     float: left;
 
     width: 99px;
     height: 20px;
     line-height: 20px;
 }
-.tab-setup .info dd {
+.tab-setup .block.info dd {
     width: 76px;
     height: 20px;
     line-height: 20px;
 
     margin-left: 99px;
+}
+.tab-setup .block.gps {
+    width: 185px;
+}
+.tab-setup .block.gps .fields {
+    padding: 5px 5px 3px 5px;
+}
+.tab-setup .block.gps dt {
+    float: left;
+
+    width: 85px;
+    height: 20px;
+
+    margin-bottom: 2px;
+
+    line-height: 20px;
+}
+.tab-setup .block.gps dd {
+    height: 20px;
+
+    margin-left: 85px;
+    margin-bottom: 2px;
+
+    line-height: 20px;
 }
 .tab-setup .buttons {
     width: calc(100% - 20px);
