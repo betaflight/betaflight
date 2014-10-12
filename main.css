@@ -261,7 +261,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
     bottom: 0px;
 
-    width: 100%;
+    width: calc(100% - 20px);
     height: 20px;
     line-height: 20px;
 
@@ -277,6 +277,13 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-right: 10px;
 
     border-right: 1px solid #7d7d79;
+}
+#status-bar .version {
+    float: right;
+
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
 #cache {
     display: none;

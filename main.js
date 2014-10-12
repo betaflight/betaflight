@@ -17,6 +17,8 @@ $(document).ready(function () {
         'Chrome: <strong>' + window.navigator.appVersion.replace(/.*Chrome\/([0-9.]*).*/, "$1") + '</strong>, ' +
         'Configurator: <strong>' + chrome.runtime.getManifest().version + '</strong>');
 
+    $('#status-bar .version').text(chrome.runtime.getManifest().version);
+
     // notification messages for various operating systems
     switch (GUI.operating_system) {
         case 'Windows':
