@@ -233,18 +233,6 @@ void updateRcOptions(modeActivationCondition_t *modeActivationConditions)
     rcModeActivationMask = 0; // FIXME implement, use rcData & modeActivationConditions
 
     uint8_t index;
-    uint8_t auxChannelSteps[MAX_AUX_CHANNEL_COUNT];
-    for (index = 0; index < MAX_AUX_CHANNEL_COUNT; index++) {
-        uint16_t channelValue = rcData[index + NON_AUX_CHANNEL_COUNT];
-        uint16_t normalizedChannelValue = (constrain(channelValue, 900, 2100) - 900);
-
-        auxChannelSteps[index] = normalizedChannelValue / 25;
-
-        if (normalizedChannelValue > 0 && normalizedChannelValue % 25 == 0) {
-            auxChannelSteps[index]--;
-        }
-        printf("%d\n", auxChannelSteps[index]);
-    }
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
@@ -254,9 +242,9 @@ void updateRcOptions(modeActivationCondition_t *modeActivationConditions)
             continue;
         }
 
-        uint8_t auxChannelStep = auxChannelSteps[modeActivationCondition->auxChannelIndex];
-        if (auxChannelStep >= modeActivationCondition->rangeStartStep &&
-                auxChannelStep < modeActivationCondition->rangeEndStep) {
+        uint16_t channelValue = constrain(rcData[modeActivationCondition->auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
+        if (channelValue >= 900 + (modeActivationCondition->rangeStartStep * 25) &&
+                channelValue < 900 + (modeActivationCondition->rangeEndStep * 25)) {
             ACTIVATE_RC_MODE(modeActivationCondition->modeId);
         }
     }

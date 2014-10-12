@@ -133,9 +133,9 @@ TEST(RcControlsTest, updateRcOptionsUsingValidAuxConfigurationAndRXValues)
     rcData[AUX2] = PWM_RANGE_MIDDLE;
     rcData[AUX3] = PWM_RANGE_MIN;
     rcData[AUX4] = PWM_RANGE_MAX;
-    rcData[AUX5] = 899;
-    rcData[AUX6] = 2101;
-    rcData[AUX7] = 925;
+    rcData[AUX5] = 899; // value lower that range minimum should be treated the same as the lowest range value
+    rcData[AUX6] = 2101; // value higher than the range maximum should be treated the same as the highest range value
+    rcData[AUX7] = 950; // value equal to range step upper boundary should not activate the mode
 
     // and
     uint32_t expectedMask = 0;

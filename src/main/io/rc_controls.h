@@ -89,9 +89,11 @@ typedef enum {
 // this leaves plenty of 'slots' free for cases where you enable multiple modes for a switch
 // position (like gps rth + horizon + baro + beeper)
 
+#define CHANNEL_RANGE_MIN 900
+#define CHANNEL_RANGE_MAX 2100
 
-#define MODE_STEP_TO_CHANNEL_VALUE(step) (900 + 25 * step)
-#define CHANNEL_VALUE_TO_STEP(channelValue) ((constrain(channelValue, 900, 2100) - 900) / 25)
+#define MODE_STEP_TO_CHANNEL_VALUE(step) (CHANNEL_RANGE_MIN + 25 * step)
+#define CHANNEL_VALUE_TO_STEP(channelValue) ((constrain(channelValue, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX) - CHANNEL_RANGE_MIN) / 25)
 
 typedef struct modeActivationCondition_s {
     boxId_e modeId;
