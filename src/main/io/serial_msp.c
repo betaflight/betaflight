@@ -149,7 +149,7 @@ typedef struct box_e {
 } box_t;
 
 // FIXME remove ;'s
-static const box_t const boxes[] = {
+static const box_t const boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },
@@ -318,7 +318,7 @@ void serializeNames(const char *s)
         serialize8(*c);
 }
 
-const box_t *findBoxById(uint8_t boxId)
+const box_t *findBoxByActiveBoxId(uint8_t boxId)
 {
     uint8_t boxIndex;
     const box_t *candidate;
@@ -333,16 +333,16 @@ const box_t *findBoxById(uint8_t boxId)
 
 void serializeBoxNamesReply(void)
 {
-    int i, id, j, flag = 1, count = 0, len;
+    int i, activeBoxId, j, flag = 1, count = 0, len;
     const box_t *box;
 
 reset:
     // in first run of the loop, we grab total size of junk to be sent
     // then come back and actually send it
     for (i = 0; i < activeBoxIdCount; i++) {
-        id = activeBoxIds[i];
+        activeBoxId = activeBoxIds[i];
 
-        box = findBoxById(id);
+        box = findBoxByActiveBoxId(activeBoxId);
         if (!box) {
             continue;
         }
@@ -639,7 +639,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
-            serialize8(mac->modeId);
+            const box_t *box = &boxes[mac->modeId];
+            serialize8(box->permanentId);
             serialize8(mac->auxChannelIndex);
             serialize8(mac->rangeStartStep);
             serialize8(mac->rangeEndStep);
@@ -662,7 +663,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_BOXIDS:
         headSerialReply(activeBoxIdCount);
         for (i = 0; i < activeBoxIdCount; i++) {
-            const box_t *box = findBoxById(activeBoxIds[i]);
+            const box_t *box = findBoxByActiveBoxId(activeBoxIds[i]);
             if (!box) {
                 continue;
             }
@@ -823,10 +824,16 @@ static bool processInCommand(void)
         i = read8();
         if (i > 0 && i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
-            mac->modeId = read8();
-            mac->auxChannelIndex = read8();
-            mac->rangeStartStep = read8();
-            mac->rangeEndStep = read8();
+            i = read8();
+            const box_t *box = findBoxByActiveBoxId(i);
+            if (box) {
+                mac->modeId = box->boxId;
+                mac->auxChannelIndex = read8();
+                mac->rangeStartStep = read8();
+                mac->rangeEndStep = read8();
+            } else {
+                headSerialError(0);
+            }
         } else {
             headSerialError(0);
         }
