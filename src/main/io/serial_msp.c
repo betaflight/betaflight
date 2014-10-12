@@ -822,7 +822,7 @@ static bool processInCommand(void)
         break;
     case MSP_SET_MODE_RANGE:
         i = read8();
-        if (i > 0 && i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
+        if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
             i = read8();
             const box_t *box = findBoxByActiveBoxId(i);
