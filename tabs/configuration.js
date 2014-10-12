@@ -10,18 +10,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         googleAnalytics.sendAppView('Configuration');
     }
 
-    function check_compatibility() {
-        if (bit_check(CONFIG.capability, 30)) {
-            // new stuff supported, continue fetching configuration data
-            load_config();
-        } else {
-            // old version, deny access
-            $('#content').text('We are sorry, but advanced configuration is only available for boards with latest firmware, please update');
-
-            if (callback) callback();
-        }
-    }
-
     function load_config() {
         MSP.send_message(MSP_codes.MSP_CONFIG, false, false, load_rc_map);
     }
@@ -42,7 +30,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('#content').load("./tabs/configuration.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_IDENT, false, false, check_compatibility);
+    MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
 
     function process_html() {
         // translate to user-selected language

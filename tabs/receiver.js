@@ -18,12 +18,7 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function get_rc_map() {
-        // TODO remove this after compatibility period
-        if (bit_check(CONFIG.capability, 30)) {
-            MSP.send_message(MSP_codes.MSP_RCMAP, false, false, load_html);
-        } else {
-            load_html();
-        }
+        MSP.send_message(MSP_codes.MSP_RCMAP, false, false, load_html);
     }
 
     function load_html() {
@@ -109,70 +104,66 @@ TABS.receiver.initialize = function (callback) {
         $(window).on('resize', self.resize).resize(); // trigger so labels get correctly aligned on creation
 
         // handle rcmap & rssi aux channel
-        if (bit_check(CONFIG.capability, 30)) {
-            var RC_MAP_Letters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+        var RC_MAP_Letters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
 
-            var strBuffer = [];
-            for (var i = 0; i < RC_MAP.length; i++) {
-                strBuffer[RC_MAP[i]] = RC_MAP_Letters[i];
+        var strBuffer = [];
+        for (var i = 0; i < RC_MAP.length; i++) {
+            strBuffer[RC_MAP[i]] = RC_MAP_Letters[i];
+        }
+
+        // reconstruct
+        var str = strBuffer.join('');
+
+        // set current value
+        $('input[name="rcmap"]').val(str);
+
+        // validation / filter
+        var last_valid = str;
+
+        $('input[name="rcmap"]').on('input', function () {
+            var val = $(this).val();
+
+            // limit length to max 8
+            if (val.length > 8) {
+                val = val.substr(0, 8);
+                $(this).val(val);
+            }
+        });
+
+        $('input[name="rcmap"]').focusout(function () {
+            var val = $(this).val(),
+                strBuffer = val.split(''),
+                duplicityBuffer = [];
+
+            if (val.length != 8) {
+                $(this).val(last_valid);
+                return false;
             }
 
-            // reconstruct
-            var str = strBuffer.join('');
-
-            // set current value
-            $('input[name="rcmap"]').val(str);
-
-            // validation / filter
-            var last_valid = str;
-
-            $('input[name="rcmap"]').on('input', function () {
-                var val = $(this).val();
-
-                // limit length to max 8
-                if (val.length > 8) {
-                    val = val.substr(0, 8);
-                    $(this).val(val);
-                }
-            });
-
-            $('input[name="rcmap"]').focusout(function () {
-                var val = $(this).val(),
-                    strBuffer = val.split(''),
-                    duplicityBuffer = [];
-
-                if (val.length != 8) {
+            // check if characters inside are all valid, also check for duplicity
+            for (var i = 0; i < val.length; i++) {
+                if (RC_MAP_Letters.indexOf(strBuffer[i]) < 0) {
                     $(this).val(last_valid);
                     return false;
                 }
 
-                // check if characters inside are all valid, also check for duplicity
-                for (var i = 0; i < val.length; i++) {
-                    if (RC_MAP_Letters.indexOf(strBuffer[i]) < 0) {
-                        $(this).val(last_valid);
-                        return false;
-                    }
-
-                    if (duplicityBuffer.indexOf(strBuffer[i]) < 0) {
-                        duplicityBuffer.push(strBuffer[i]);
-                    } else {
-                        $(this).val(last_valid);
-                        return false;
-                    }
+                if (duplicityBuffer.indexOf(strBuffer[i]) < 0) {
+                    duplicityBuffer.push(strBuffer[i]);
+                } else {
+                    $(this).val(last_valid);
+                    return false;
                 }
-            });
+            }
+        });
 
-            // handle helper
-            $('select[name="rcmap_helper"]').val(0); // go out of bounds
-            $('select[name="rcmap_helper"]').change(function () {
-                $('input[name="rcmap"]').val($(this).val());
-            });
+        // handle helper
+        $('select[name="rcmap_helper"]').val(0); // go out of bounds
+        $('select[name="rcmap_helper"]').change(function () {
+            $('input[name="rcmap"]').val($(this).val());
+        });
 
-            // rssi aux
-            $('select[name="rssi_aux_channel"]').val(MISC.rssi_aux_channel);
-        } else {
-            $('.rcmap_wrapper, .rssi_aux_wrapper').hide();
-        }
+        // rssi aux
+        $('select[name="rssi_aux_channel"]').val(MISC.rssi_aux_channel);
 
         // UI Hooks
         // curves
@@ -297,11 +288,7 @@ TABS.receiver.initialize = function (callback) {
                 });
             }
 
-            if (bit_check(CONFIG.capability, 30)) {
-                MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_rc_map);
-            } else {
-                MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_to_eeprom);
-            }
+            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_rc_map);
         });
 
         $('select[name="rx_refresh_rate"]').change(function () {

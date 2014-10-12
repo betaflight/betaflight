@@ -1,19 +1,17 @@
-/* temporary styles that are used during compatibility period */
-.tab-setup .CAP_BASEFLIGHT_CONFIG,
-.tab-setup .COMPATIBILITY {
-    display: none;
+/* requires cleanup  */
+.tab-setup .CAP_BASEFLIGHT_CONFIG {
     height: calc(100% - 138px);
 }
-.tab-setup .CAP_BASEFLIGHT_CONFIG #interactive_block {
+.tab-setup #interactive_block {
     width: calc(100% - 199px);
 }
-.tab-setup .CAP_BASEFLIGHT_CONFIG .gps {
+.tab-setup .gps {
     width: 185px;
 }
-.tab-setup .CAP_BASEFLIGHT_CONFIG .gps .fields {
+.tab-setup .gps .fields {
     padding: 5px 5px 3px 5px;
 }
-.tab-setup .CAP_BASEFLIGHT_CONFIG .gps dt {
+.tab-setup .gps dt {
     float: left;
 
     width: 85px;
@@ -23,7 +21,7 @@
 
     line-height: 20px;
 }
-.tab-setup .CAP_BASEFLIGHT_CONFIG .gps dd {
+.tab-setup .gps dd {
     height: 20px;
 
     margin-left: 85px;
@@ -31,7 +29,6 @@
 
     line-height: 20px;
 }
-/* temporary styles end*/
 .tab-setup {
     height: 100%;
 }
@@ -97,29 +94,6 @@
     border: 1px solid silver;
     background-color: white;
 }
-#interactive_block .model {
-    float: left;
-    height: 15px;
-    margin: 10px 0 0 10px;
-
-    font-weight: bold;
-}
-#interactive_block .modelMixDiagram {
-    position: absolute;
-
-    top: 32px;
-    left: 10px;
-
-    height: 95px;
-}
-#interactive_block .modelMixAirplane { /* Position airplane correctly */
-    height: 115px;
-    padding-left: 0px;
-}
-#interactive_block .modelMixCustom { /* Position question mark correctly */
-    height: 75px;
-    padding-left: 25px;
-}
 #interactive_block .heading {
     float: right;
     height: 15px;
@@ -180,37 +154,9 @@
     border-bottom: 1px solid silver;
     background-color: #ececec;
 }
-.tab-setup .mixer {
-    width: 200px;
-}
-.tab-setup .mixer .preview {
-    display: block;
-
-    width: 200px;
-    height: 140px;
-
-    margin: 5px 0 5px 0;
-}
-.tab-setup .mixer select {
-    display: block;
-
-    padding-left: 5px;
-
-    width: 100%;
-    height: 20px;
-    line-height: 20px;
-
-    font-weight: bold;
-
-    border-top: 1px solid silver;
-}
 .tab-setup .block .info {
     width: 200px;
 }
-.tab-setup .battery,
-.tab-setup .throttle,
-.tab-setup .acc-trim,
-.tab-setup .magnetometer,
 .tab-setup .info {
     display: inline-block;
     vertical-align: top;
@@ -221,130 +167,8 @@
 
     border: 1px solid silver;
 }
-.tab-setup .battery .head,
-.tab-setup .throttle .head,
-.tab-setup .acc-trim .head,
-.tab-setup .magnetometer .head,
-.tab-setup .info .head {
-    display: block;
-
-    text-align: center;
-    line-height: 20px;
-    font-weight: bold;
-
-    border-bottom: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-setup .battery .fields,
-.tab-setup .throttle .fields,
-.tab-setup .magnetometer .fields,
 .tab-setup .info .fields {
     padding: 5px 5px 3px 5px;
-}
-.tab-setup .acc-trim .fields {
-    padding: 5px 5px 3px 5px;
-}
-.tab-setup .magnetometer .fields {
-    padding: 5px 5px 5px 5px;
-}
-.tab-setup .battery dt {
-    float: left;
-
-    width: 105px;
-    height: 22px;
-
-    margin-bottom: 2px;
-
-    line-height: 22px;
-}
-.tab-setup .battery dd {
-    height: 22px;
-
-    margin-left: 105px;
-    margin-bottom: 2px;
-
-    line-height: 22px;
-}
-.tab-setup .battery input {
-    width: 68px;
-    height: 20px;
-    line-height: 20px;
-
-    border: 1px solid silver;
-    text-align: center;
-}
-.tab-setup .throttle dt {
-    float: left;
-
-    width: 90px;
-    height: 22px;
-
-    margin-bottom: 2px;
-
-    line-height: 22px;
-}
-.tab-setup .throttle dd {
-    height: 22px;
-
-    margin-left: 90px;
-    margin-bottom: 2px;
-
-    line-height: 22px;
-}
-.tab-setup .throttle input {
-    width: 60px;
-    height: 20px;
-    line-height: 20px;
-
-    border: 1px solid silver;
-    text-align: center;
-}
-.tab-setup .acc-trim dt {
-    float: left;
-
-    width: 65px;
-    height: 22px;
-    line-height: 22px;
-
-    margin-bottom: 2px;
-}
-.tab-setup .acc-trim dd {
-    height: 22px;
-
-    margin-left: 65px;
-    margin-bottom: 2px;
-}
-.tab-setup .acc-trim input {
-    width: 60px;
-    height: 20px;
-    line-height: 20px;
-
-    border: 1px solid silver;
-    text-align: center;
-}
-.tab-setup .magnetometer dt {
-    float: left;
-
-    width: 90px;
-    height: 20px;
-    line-height: 22px;
-
-    margin-bottom: 2px;
-}
-.tab-setup .magnetometer dd {
-    height: 20px;
-    line-height: 22px;
-
-    margin-left: 90px;
-    margin-bottom: 2px;
-}
-.tab-setup .magnetometer input {
-    width: 60px;
-    height: 20px;
-    line-height: 20px;
-
-    border: 1px solid silver;
-    text-align: center;
 }
 .tab-setup .info dt {
     float: left;

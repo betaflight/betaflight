@@ -17,11 +17,7 @@ TABS.setup.initialize = function (callback) {
     }
 
     function load_config() {
-        if (bit_check(CONFIG.capability, 30)) {
-            MSP.send_message(MSP_codes.MSP_CONFIG, false, false, load_misc_data);
-        } else {
-            load_misc_data();
-        }
+        MSP.send_message(MSP_codes.MSP_CONFIG, false, false, load_misc_data);
     }
 
     function load_misc_data() {
@@ -38,154 +34,11 @@ TABS.setup.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-        // if CAP_BASEFLIGHT_CONFIG (30)
-        if (bit_check(CONFIG.capability, 30)) {
-            // current stuff, this will become default when the compatibility period ends
-            $('.CAP_BASEFLIGHT_CONFIG').show();
+        // initialize 3D
+        self.initialize3D(false);
 
-            // initialize 3D
-            self.initialize3D(false);
-
-            // set heading in interactive block
-            $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
-        } else {
-            // old stuff
-            $('.COMPATIBILITY').show();
-
-            // initialize 3D
-            self.initialize3D(true);
-
-            // Fill in misc stuff
-            $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
-            $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
-            $('input[name="voltagescale"]').val(MISC.vbatscale);
-
-            $('input[name="minthrottle"]').val(MISC.minthrottle);
-            $('input[name="maxthrottle"]').val(MISC.maxthrottle);
-            $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
-            $('input[name="mincommand"]').val(MISC.mincommand);
-
-            $('input[name="mag_declination"]').val(MISC.mag_declination / 10);
-
-            // Fill in the accel trimms from CONFIG object
-            $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
-            $('input[name="roll"]').val(CONFIG.accelerometerTrims[1]);
-
-            // Display multiType and motor diagram (if such exist)
-            var str;
-            switch (CONFIG.multiType) {
-                case 1: // TRI
-                    str = 'TRI';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/tri.svg').addClass('modelMixTri');
-                    break;
-                case 2: // QUAD +
-                    str = 'Quad +';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/quad_p.svg').addClass('modelMixQuadP');
-                    break;
-                case 3: // QUAD X
-                    str = 'Quad X';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/quad_x.svg').addClass('modelMixQuadX');
-                    break;
-                case 4: // BI
-                    str = 'BI';
-                    break;
-                case 5: // GIMBAL
-                    str = 'Gimbal';
-                    break;
-                case 6: // Y6
-                    str = 'Y6';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/y6.svg').addClass('modelMixY6');
-                    break;
-                case 7: // HEX 6
-                    str = 'HEX 6';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/hex_p.svg').addClass('modelMixHex6P');
-                    break;
-                case 8: // FLYING_WING
-                    str = 'Flying Wing';
-                    break;
-                case 9: // Y4
-                    str = 'Y4';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/y4.svg').addClass('modelMixY4');
-                    break;
-                case 10: // HEX6 X
-                    str = 'HEX6 X';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/hex_x.svg').addClass('modelMixHex6X');
-                    break;
-                case 11: // OCTO X8
-                case 12:
-                case 13:
-                    str = 'OCTO X8';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/octo_flat_x.svg').addClass('modelMixOctoX');
-                    break;
-                case 14: // AIRPLANE
-                    str = 'Airplane';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/airplane.svg').addClass('modelMixAirplane');
-                    break;
-                case 15: // Heli 120
-                    str = 'Heli 120';
-                    break;
-                case 16: // Heli 90
-                    str = 'Heli 90';
-                    break;
-                case 17: // Vtail
-                    str = 'Vtail';
-                    $('.modelMixDiagram').attr('src', './resources/motor_order/vtail_quad.svg').addClass('modelMixVtail');
-                    break;
-                case 18: // HEX6 H
-                    str = 'HEX6 H';
-                    $('.modelMixDiagram').attr("src", './resources/motor_order/custom.svg').addClass('modelMixCustom');
-                    break;
-                case 19: // PPM to SERVO
-                    str = 'PPM to SERVO';
-                    $('.modelMixDiagram').attr("src", './resources/motor_order/custom.svg').addClass('modelMixCustom');
-                    break;
-                case 20: // Dualcopter
-                    str = 'Dualcopter';
-                    $('.modelMixDiagram').attr("src", './resources/motor_order/custom.svg').addClass('modelMixCustom');
-                    break;
-                case 21: // Singlecopter
-                    str = 'Singlecopter';
-                    $('.modelMixDiagram').attr("src", './resources/motor_order/custom.svg').addClass('modelMixCustom');
-                    break;
-                case 22: // Custom
-                    str = 'Custom';
-                    $('.modelMixDiagram').attr("src", './resources/motor_order/custom.svg').addClass('modelMixCustom');
-                    break;
-            }
-
-            $('span.model').text(chrome.i18n.getMessage('initialSetupModel', [str]));
-
-            // Heading
-            $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
-
-            $('a.update').click(function () {
-                CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
-                CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
-
-                MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val()) * 10;
-                MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val()) * 10;
-                MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
-
-                MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
-                MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
-                MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
-                MISC.mincommand = parseInt($('input[name="mincommand"]').val());
-
-                MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val()) * 10;
-
-                function save_to_eeprom() {
-                    MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                        GUI.log(chrome.i18n.getMessage('initialSetupEepromSaved'));
-                    });
-                }
-
-                // Send over the new trims
-                MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM));
-
-                // Send over new misc
-                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_to_eeprom);
-            });
-        }
+        // set heading in interactive block
+        $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
 
         // check if we have magnetometer
         if (!bit_check(CONFIG.activeSensors, 2)) {
