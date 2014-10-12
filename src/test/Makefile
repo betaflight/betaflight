@@ -29,7 +29,7 @@ OBJECT_DIR = ../../obj/test
 CPPFLAGS += -isystem $(GTEST_DIR)/inc
 
 # Flags passed to the C++ compiler.
-CXXFLAGS += -g -Wall -Wextra -pthread -ggdb -O0 -DUNIT_TEST
+CXXFLAGS += -g -Wall -Wextra -pthread -ggdb3 -O0 -DUNIT_TEST
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.

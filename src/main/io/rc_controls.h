@@ -47,6 +47,7 @@ typedef enum {
 extern uint32_t rcModeActivationMask;
 
 #define IS_RC_MODE_ACTIVE(modeId) ((1 << modeId) & rcModeActivationMask)
+#define ACTIVATE_RC_MODE(modeId) (rcModeActivationMask |= (1 << modeId))
 
 typedef enum rc_alias {
     ROLL = 0,
@@ -90,7 +91,7 @@ typedef enum {
 
 
 #define MODE_STEP_TO_CHANNEL_VALUE(step) (900 + 25 * step)
-#define CHANNEL_VALUE_TO_STEP(channelValue) (constrain(channelValue, 900, 2100) - 900 / 25)
+#define CHANNEL_VALUE_TO_STEP(channelValue) ((constrain(channelValue, 900, 2100) - 900) / 25)
 
 typedef struct modeActivationCondition_s {
     boxId_e modeId;
@@ -98,7 +99,7 @@ typedef struct modeActivationCondition_s {
 
     // steps are 25 apart
     // a value of 0 corresponds to a channel value of 900 or less
-    // a value of 47 corresponds to a channel value of 2100 or more
+    // a value of 48 corresponds to a channel value of 2100 or more
     // 48 steps between 900 and 1200
     uint8_t rangeStartStep;
     uint8_t rangeEndStep;

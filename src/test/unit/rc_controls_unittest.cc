@@ -27,71 +27,104 @@
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-
-#define NON_AUX_CHANNEL_COUNT 4
+int constrain(int amt, int low, int high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}
 
 TEST(RcControlsTest, updateRcOptionsWithAllInputsAtMidde)
 {
     // given
-    uint32_t activate[CHECKBOX_ITEM_COUNT];
-    memset(&activate, 0, sizeof(activate));
+    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+    memset(&modeActivationConditions, 0, sizeof(modeActivationConditions));
 
-    uint8_t index;
-
-    for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
-        rcOptions[index] = 0;
-    }
+    // and
+    rcModeActivationMask = 0;
 
     // and
     memset(&rxRuntimeConfig, 0, sizeof(rxRuntimeConfig_t));
     rxRuntimeConfig.auxChannelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
 
     // and
+    uint8_t index;
     for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
         rcData[index] = PWM_RANGE_MIDDLE;
     }
 
-
-    // and
-    uint32_t expectedRcOptions[CHECKBOX_ITEM_COUNT];
-    memset(&expectedRcOptions, 0, sizeof(expectedRcOptions));
-
     // when
-    updateRcOptions(activate);
+    updateRcOptions(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
         printf("iteration: %d\n", index);
-        EXPECT_EQ(expectedRcOptions[index], rcOptions[index]);
+        EXPECT_EQ(false, IS_RC_MODE_ACTIVE(index));
     }
 }
 
 TEST(RcControlsTest, updateRcOptionsUsingValidAuxConfigurationAndRXValues)
 {
     // given
-    uint32_t activate[CHECKBOX_ITEM_COUNT];
-    memset(&activate, 0, sizeof(activate));
-    activate[0] = 0b000000000100UL;
-    activate[1] = 0b000000010000UL;
-    activate[2] = 0b000001000000UL;
-    activate[3] = 0b111000000000UL;
+    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+    memset(&modeActivationConditions, 0, sizeof(modeActivationConditions));
 
-    activate[4] = 0b000000000001UL << 16;
-    activate[5] = 0b000000010000UL << 16;
-    activate[6] = 0b000100000000UL << 16;
-    activate[7] = 0b111000000000UL << 16;
+    modeActivationConditions[0].modeId = (boxId_e)0;
+    modeActivationConditions[0].auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditions[0].rangeStartStep = CHANNEL_VALUE_TO_STEP(1700);
+    modeActivationConditions[0].rangeEndStep = CHANNEL_VALUE_TO_STEP(2100);
 
-    uint8_t index;
+    modeActivationConditions[1].modeId = (boxId_e)1;
+    modeActivationConditions[1].auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditions[1].rangeStartStep = CHANNEL_VALUE_TO_STEP(1300);
+    modeActivationConditions[1].rangeEndStep = CHANNEL_VALUE_TO_STEP(1700);
 
-    for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
-        rcOptions[index] = 0;
-    }
+    modeActivationConditions[2].modeId = (boxId_e)2;
+    modeActivationConditions[2].auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditions[2].rangeStartStep = CHANNEL_VALUE_TO_STEP(900);
+    modeActivationConditions[2].rangeEndStep = CHANNEL_VALUE_TO_STEP(1200);
+
+    modeActivationConditions[3].modeId = (boxId_e)3;
+    modeActivationConditions[3].auxChannelIndex = AUX4 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditions[3].rangeStartStep = CHANNEL_VALUE_TO_STEP(900);
+    modeActivationConditions[3].rangeEndStep = CHANNEL_VALUE_TO_STEP(2100);
+
+    modeActivationConditions[4].modeId = (boxId_e)4;
+    modeActivationConditions[4].auxChannelIndex = AUX5 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditions[4].rangeStartStep = CHANNEL_VALUE_TO_STEP(900);
+    modeActivationConditions[4].rangeEndStep = CHANNEL_VALUE_TO_STEP(925);
+
+    EXPECT_EQ(0, modeActivationConditions[4].rangeStartStep);
+    EXPECT_EQ(1, modeActivationConditions[4].rangeEndStep);
+
+    modeActivationConditions[5].modeId = (boxId_e)5;
+    modeActivationConditions[5].auxChannelIndex = AUX6 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditions[5].rangeStartStep = CHANNEL_VALUE_TO_STEP(2075);
+    modeActivationConditions[5].rangeEndStep = CHANNEL_VALUE_TO_STEP(2100);
+
+    EXPECT_EQ(47, modeActivationConditions[5].rangeStartStep);
+    EXPECT_EQ(48, modeActivationConditions[5].rangeEndStep);
+
+    modeActivationConditions[6].modeId = (boxId_e)6;
+    modeActivationConditions[6].auxChannelIndex = AUX7 - NON_AUX_CHANNEL_COUNT;
+    modeActivationConditions[6].rangeStartStep = CHANNEL_VALUE_TO_STEP(925);
+    modeActivationConditions[6].rangeEndStep = CHANNEL_VALUE_TO_STEP(950);
+
+    EXPECT_EQ(1, modeActivationConditions[6].rangeStartStep);
+    EXPECT_EQ(2, modeActivationConditions[6].rangeEndStep);
+
+    // and
+    rcModeActivationMask = 0;
 
     // and
     memset(&rxRuntimeConfig, 0, sizeof(rxRuntimeConfig_t));
     rxRuntimeConfig.auxChannelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
 
     // and
+    uint8_t index;
     for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
         rcData[index] = PWM_RANGE_MIDDLE;
     }
@@ -100,35 +133,31 @@ TEST(RcControlsTest, updateRcOptionsUsingValidAuxConfigurationAndRXValues)
     rcData[AUX2] = PWM_RANGE_MIDDLE;
     rcData[AUX3] = PWM_RANGE_MIN;
     rcData[AUX4] = PWM_RANGE_MAX;
-    rcData[AUX5] = PWM_RANGE_MIN;
-    rcData[AUX6] = PWM_RANGE_MIDDLE;
-    rcData[AUX7] = PWM_RANGE_MAX;
-    rcData[AUX8] = PWM_RANGE_MIN;
-
+    rcData[AUX5] = 899;
+    rcData[AUX6] = 2101;
+    rcData[AUX7] = 925;
 
     // and
-    uint32_t expectedRcOptions[CHECKBOX_ITEM_COUNT];
-    memset(&expectedRcOptions, 0, sizeof(expectedRcOptions));
-    expectedRcOptions[0] = 1;
-    expectedRcOptions[1] = 1;
-    expectedRcOptions[2] = 1;
-    expectedRcOptions[3] = 1;
-    expectedRcOptions[4] = 1;
-    expectedRcOptions[5] = 1;
-    expectedRcOptions[6] = 1;
-    expectedRcOptions[7] = 1;
+    uint32_t expectedMask = 0;
+    expectedMask |= (1 << 0);
+    expectedMask |= (1 << 1);
+    expectedMask |= (1 << 2);
+    expectedMask |= (1 << 3);
+    expectedMask |= (1 << 4);
+    expectedMask |= (1 << 5);
+    expectedMask |= (0 << 6);
 
     // when
-    updateRcOptions(activate);
+    updateRcOptions(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
         printf("iteration: %d\n", index);
-        EXPECT_EQ(expectedRcOptions[index], rcOptions[index]);
+        EXPECT_EQ(expectedMask & (1 << index), rcModeActivationMask & (1 << index));
     }
 }
 
-void changeProfile(uint8_t profileIndex) {}
+void changeProfile(uint8_t) {}
 void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}

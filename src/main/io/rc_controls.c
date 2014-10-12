@@ -225,9 +225,39 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     }
 }
 
-#define MAX_AUX_STATE_CHANNELS 8
+#define MAX_AUX_CHANNEL_COUNT (MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT)
 
+#include <stdio.h>
 void updateRcOptions(modeActivationCondition_t *modeActivationConditions)
 {
     rcModeActivationMask = 0; // FIXME implement, use rcData & modeActivationConditions
+
+    uint8_t index;
+    uint8_t auxChannelSteps[MAX_AUX_CHANNEL_COUNT];
+    for (index = 0; index < MAX_AUX_CHANNEL_COUNT; index++) {
+        uint16_t channelValue = rcData[index + NON_AUX_CHANNEL_COUNT];
+        uint16_t normalizedChannelValue = (constrain(channelValue, 900, 2100) - 900);
+
+        auxChannelSteps[index] = normalizedChannelValue / 25;
+
+        if (normalizedChannelValue > 0 && normalizedChannelValue % 25 == 0) {
+            auxChannelSteps[index]--;
+        }
+        printf("%d\n", auxChannelSteps[index]);
+    }
+
+    for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
+        modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
+
+        if (modeActivationCondition->rangeStartStep == modeActivationCondition->rangeEndStep) {
+            printf("skipping %d\n", index);
+            continue;
+        }
+
+        uint8_t auxChannelStep = auxChannelSteps[modeActivationCondition->auxChannelIndex];
+        if (auxChannelStep >= modeActivationCondition->rangeStartStep &&
+                auxChannelStep < modeActivationCondition->rangeEndStep) {
+            ACTIVATE_RC_MODE(modeActivationCondition->modeId);
+        }
+    }
 }
