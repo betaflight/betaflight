@@ -22,6 +22,7 @@ function configuration_backup(callback) {
     ];
 
     var configuration = {
+        'generatedBy': chrome.runtime.getManifest().version,
         'profiles': []
     };
 
@@ -59,11 +60,12 @@ function configuration_backup(callback) {
 
                         codeKey = 0;
                         fetchingProfile++;
-                        query();
+
+                        MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [fetchingProfile], false, query);
                     }
                 });
             } else {
-                MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_unique_data);
+                MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [activeProfile], false, fetch_unique_data);
             }
         }
 
