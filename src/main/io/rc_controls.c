@@ -225,10 +225,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     }
 }
 
-#define MAX_AUX_CHANNEL_COUNT (MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT)
-
-#define IS_MODE_RANGE_USABLE(modeActivationCondition) (modeActivationCondition->rangeStartStep < modeActivationCondition->rangeEndStep)
-
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
 {
     rcModeActivationMask = 0; // FIXME implement, use rcData & modeActivationConditions

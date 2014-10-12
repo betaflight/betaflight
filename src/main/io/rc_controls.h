@@ -110,9 +110,7 @@ typedef struct modeActivationCondition_s {
     uint8_t rangeEndStep;
 } modeActivationCondition_t;
 
-// sizeof(modeActivationCondition_t) * MAX_MODE_ACTIVATION_COUNT  = 4 * 40 = 160 bytes
-// sizeof(uint32_t) * CHECKBOX_ITEM_COUNT = 4 * 21 = 84
-
+#define IS_MODE_RANGE_USABLE(modeActivationCondition) (modeActivationCondition->rangeStartStep < modeActivationCondition->rangeEndStep)
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
