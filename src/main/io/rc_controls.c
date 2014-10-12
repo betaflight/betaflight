@@ -41,6 +41,8 @@
 #include "rx/rx.h"
 #include "io/rc_controls.h"
 
+static bool isUsingSticksToArm = true;
+
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
@@ -62,7 +64,7 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
 
 
 
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, modeActivationCondition_t *modeActivationConditions, bool retarded_arm, bool disarm_kill_switch)
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
@@ -84,8 +86,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     } else
         rcDelayCommand = 0;
     rcSticks = stTmp;
-
-    bool isUsingSticksToArm = true; // FIXME calculate from modeActivationConditions // FIXME this calculation only needs to be done after loading a profile
 
     // perform actions
     if (!isUsingSticksToArm) {
@@ -227,8 +227,9 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
 #define MAX_AUX_CHANNEL_COUNT (MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT)
 
-#include <stdio.h>
-void updateRcOptions(modeActivationCondition_t *modeActivationConditions)
+#define IS_MODE_RANGE_USABLE(modeActivationCondition) (modeActivationCondition->rangeStartStep < modeActivationCondition->rangeEndStep)
+
+void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
 {
     rcModeActivationMask = 0; // FIXME implement, use rcData & modeActivationConditions
 
@@ -237,8 +238,7 @@ void updateRcOptions(modeActivationCondition_t *modeActivationConditions)
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
 
-        if (modeActivationCondition->rangeStartStep == modeActivationCondition->rangeEndStep) {
-            printf("skipping %d\n", index);
+        if (!IS_MODE_RANGE_USABLE(modeActivationCondition)) {
             continue;
         }
 
@@ -246,6 +246,19 @@ void updateRcOptions(modeActivationCondition_t *modeActivationConditions)
         if (channelValue >= 900 + (modeActivationCondition->rangeStartStep * 25) &&
                 channelValue < 900 + (modeActivationCondition->rangeEndStep * 25)) {
             ACTIVATE_RC_MODE(modeActivationCondition->modeId);
+        }
+    }
+}
+
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions)
+{
+    uint8_t index;
+
+    for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
+        modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
+        if (modeActivationCondition->modeId == BOXARM && IS_MODE_RANGE_USABLE(modeActivationCondition)) {
+            isUsingSticksToArm = false;
+            break;
         }
     }
 }

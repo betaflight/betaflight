@@ -37,7 +37,7 @@ int constrain(int amt, int low, int high)
         return amt;
 }
 
-TEST(RcControlsTest, updateRcOptionsWithAllInputsAtMidde)
+TEST(RcControlsTest, updateActivatedModesWithAllInputsAtMidde)
 {
     // given
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
@@ -57,7 +57,7 @@ TEST(RcControlsTest, updateRcOptionsWithAllInputsAtMidde)
     }
 
     // when
-    updateRcOptions(modeActivationConditions);
+    updateActivatedModes(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
@@ -66,7 +66,7 @@ TEST(RcControlsTest, updateRcOptionsWithAllInputsAtMidde)
     }
 }
 
-TEST(RcControlsTest, updateRcOptionsUsingValidAuxConfigurationAndRXValues)
+TEST(RcControlsTest, updateActivatedModesUsingValidAuxConfigurationAndRXValues)
 {
     // given
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
@@ -148,7 +148,7 @@ TEST(RcControlsTest, updateRcOptionsUsingValidAuxConfigurationAndRXValues)
     expectedMask |= (0 << 6);
 
     // when
-    updateRcOptions(modeActivationConditions);
+    updateActivatedModes(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {

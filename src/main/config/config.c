@@ -426,6 +426,7 @@ void activateConfig(void)
 
     generatePitchCurve(&currentProfile->controlRateConfig);
     generateThrottleCurve(&currentProfile->controlRateConfig, &masterConfig.escAndServoConfig);
+    useRcControlsConfig(currentProfile->modeActivationConditions);
 
     useGyroConfig(&masterConfig.gyroConfig);
 #ifdef TELEMETRY

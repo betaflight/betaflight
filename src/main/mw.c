@@ -488,13 +488,13 @@ void processRx(void)
         resetErrorGyro();
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, currentProfile->modeActivationConditions, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
     }
 
-    updateRcOptions(currentProfile->modeActivationConditions);
+    updateActivatedModes(currentProfile->modeActivationConditions);
 
     bool canUseHorizonMode = true;
 
