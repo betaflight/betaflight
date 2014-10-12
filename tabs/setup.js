@@ -267,9 +267,7 @@ TABS.setup.initialize = function (callback) {
                 googleAnalytics.sendEvent('Configuration', 'Restore', 'true');
 
                 // get latest settings
-                GUI.tab_switch_cleanup(function () {
-                    TABS.setup.initialize();
-                });
+                TABS.setup.initialize();
             });
         });
 

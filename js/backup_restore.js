@@ -14,7 +14,6 @@ function configuration_backup(callback) {
     ];
 
     var uniqueData = [
-        MSP_codes.MSP_BOXNAMES,
         MSP_codes.MSP_BOX,
         MSP_codes.MSP_MISC,
         MSP_codes.MSP_RCMAP,
@@ -230,63 +229,157 @@ function configuration_restore(callback) {
     });
 
     function configuration_upload(configuration, callback) {
-        // TODO implement this
+        function compareVersions(generated, required) {
 
-        /*
-        // check if all attributes that we will be saving exist inside the configuration object
-        var validate = [
-            'PID',
-            'AUX_val',
-            'RC',
-            'AccelTrim',
-            'MISC',
-            'SERVO_CONFIG'
-        ];
+            var a = generated.split('.');
+            var b = required.split('.');
 
-        for (var i = 0; i < validate.length; i++) {
-            if (typeof (configuration[validate[i]]) === 'undefined') {
-                GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
-                return;
+            for (var i = 0; i < a.length; ++i) {
+                a[i] = Number(a[i]);
+            }
+            for (var i = 0; i < b.length; ++i) {
+                b[i] = Number(b[i]);
+            }
+            if (a.length == 2) {
+                a[2] = 0;
+            }
+
+            if (a[0] > b[0]) return true;
+            if (a[0] < b[0]) return false;
+
+            if (a[1] > b[1]) return true;
+            if (a[1] < b[1]) return false;
+
+            if (a[2] > b[2]) return true;
+            if (a[2] < b[2]) return false;
+
+            return true;
+        }
+
+        function upload() {
+            var activeProfile = null,
+                profilesN = 3;
+
+            var profileSpecificData = [
+                MSP_codes.MSP_SET_PID,
+                MSP_codes.MSP_SET_RC_TUNING,
+                MSP_codes.MSP_SET_ACC_TRIM,
+                MSP_codes.MSP_SET_SERVO_CONF
+            ];
+
+            var uniqueData = [
+                MSP_codes.MSP_SET_BOX,
+                MSP_codes.MSP_SET_MISC,
+                MSP_codes.MSP_SET_RCMAP,
+                MSP_codes.MSP_SET_CONFIG
+            ];
+
+            MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
+                activeProfile = CONFIG.profile;
+                select_profile();
+            });
+
+            function select_profile() {
+                if (activeProfile > 0) {
+                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, upload_specific_data);
+                } else {
+                    upload_specific_data();
+                }
+            }
+
+            function upload_specific_data() {
+                var savingProfile = 0,
+                    codeKey = 0;
+
+                function load_objects(profile) {
+                    PIDs = configuration.profiles[profile].PID;
+                    RC_tuning = configuration.profiles[profile].RC;
+                    CONFIG.accelerometerTrims = configuration.profiles[profile].AccTrim;
+                    SERVO_CONFIG = configuration.profiles[profile].ServoConfig;
+                }
+
+                function query() {
+                    MSP.send_message(profileSpecificData[codeKey], MSP.crunch(profileSpecificData[codeKey]), false, function () {
+                        codeKey++;
+
+                        if (codeKey < profileSpecificData.length) {
+                            query();
+                        } else {
+                            codeKey = 0;
+                            savingProfile++;
+
+                            if (savingProfile < profilesN) {
+                                load_objects(savingProfile);
+
+                                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [savingProfile], false, query);
+                                });
+                            } else {
+                                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [activeProfile], false, upload_unique_data);
+                                });
+                            }
+                        }
+                    });
+                }
+
+                // start uploading
+                load_objects(0);
+                query();
+            }
+
+            function upload_unique_data() {
+                var codeKey = 0;
+
+                function load_objects() {
+                    AUX_CONFIG_values = configuration.AUX;
+                    MISC = configuration.MISC;
+                    RC_MAP = configuration.RCMAP;
+                    BF_CONFIG = configuration.BF_CONFIG;
+                }
+
+                function query() {
+                    if (codeKey < uniqueData.length) {
+                        MSP.send_message(uniqueData[codeKey], MSP.crunch(uniqueData[codeKey]), false, function () {
+                            codeKey++;
+                            query();
+                        });
+                    } else {
+                        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+                    }
+                }
+
+                // start uploading
+                load_objects();
+                query();
+            }
+
+            function reboot() {
+                GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
+
+                GUI.tab_switch_cleanup(function() {
+                    MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
+                });
+            }
+
+            function reinitialize() {
+                GUI.log(chrome.i18n.getMessage('deviceRebooting'));
+
+                GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
+                    MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                        GUI.log(chrome.i18n.getMessage('deviceReady'));
+
+                        if (callback) callback();
+                    });
+                }, 1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
             }
         }
 
-        // replace data
-        PIDs = configuration.PID;
-        AUX_CONFIG_values = configuration.AUX_val;
-        RC_tuning = configuration.RC;
-        CONFIG.accelerometerTrims = configuration.AccelTrim;
-        MISC = configuration.MISC;
-        SERVO_CONFIG = configuration.SERVO_CONFIG;
-
-        function rc_tuning() { // Send over the RC_tuning changes
-            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, aux);
+        // validate
+        if (typeof configuration.generatedBy !== 'undefined' && compareVersions(configuration.generatedBy, '0.55')) {
+            upload();
+        } else {
+            GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
         }
-
-        function aux() { // Send over the AUX changes
-            MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch(MSP_codes.MSP_SET_BOX), false, trim);
-        }
-
-        function trim() { // Send over the new trims
-            MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false, misc);
-        }
-
-        function misc() { // Send ove the new MISC
-            MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, servo_conf);
-        }
-
-        function servo_conf() { // send over the new SERVO_CONF
-            MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, MSP.crunch(MSP_codes.MSP_SET_SERVO_CONF), false, save_eeprom);
-        }
-
-        function save_eeprom() {
-            MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
-                if (callback) callback();
-            });
-        }
-
-        // Send over the PID changes
-        MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, rc_tuning);
-        */
     }
 }
