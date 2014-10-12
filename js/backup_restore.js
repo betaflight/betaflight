@@ -1,44 +1,100 @@
 'use strict';
 
+// code below is highly experimental, although it runs fine on latest firmware
+// the data inside nested objects needs to be verified if deep copy works properly
 function configuration_backup(callback) {
-    // request configuration data (one by one)
-    function get_ident_data() {
-        MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_status_data);
+    var activeProfile = null,
+        profilesN = 3;
+
+    var profileSpecificData = [
+        MSP_codes.MSP_PID,
+        MSP_codes.MSP_RC_TUNING,
+        MSP_codes.MSP_ACC_TRIM,
+        MSP_codes.MSP_SERVO_CONF
+    ];
+
+    var uniqueData = [
+        MSP_codes.MSP_BOXNAMES,
+        MSP_codes.MSP_BOX,
+        MSP_codes.MSP_MISC,
+        MSP_codes.MSP_RCMAP,
+        MSP_codes.MSP_CONFIG
+    ];
+
+    var configuration = {
+        'profiles': []
+    };
+
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
+        activeProfile = CONFIG.profile;
+        select_profile();
+    });
+
+    function select_profile() {
+        if (activeProfile > 0) {
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_specific_data);
+        } else {
+            fetch_specific_data();
+        }
     }
 
-    function get_status_data() {
-        MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_data);
+    function fetch_specific_data() {
+        var fetchingProfile = 0,
+            codeKey = 0;
+
+        function query() {
+            if (fetchingProfile < profilesN) {
+                MSP.send_message(profileSpecificData[codeKey], false, false, function () {
+                    codeKey++;
+
+                    if (codeKey < profileSpecificData.length) {
+                        query();
+                    } else {
+                        configuration.profiles.push({
+                            'PID': jQuery.merge([], PIDs),
+                            'RC': jQuery.extend(true, {}, RC_tuning),
+                            'AccTrim': jQuery.merge([], CONFIG.accelerometerTrims),
+                            'ServoConfig': jQuery.merge([], SERVO_CONFIG)
+                        });
+
+                        codeKey = 0;
+                        fetchingProfile++;
+                        query();
+                    }
+                });
+            } else {
+                MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_unique_data);
+            }
+        }
+
+        // start fetching
+        query();
     }
 
-    function get_pid_data() {
-        MSP.send_message(MSP_codes.MSP_PID, false, false, get_rc_tuning_data);
+    function fetch_unique_data() {
+        var codeKey = 0;
+
+        function query() {
+            if (codeKey < uniqueData.length) {
+                MSP.send_message(uniqueData[codeKey], false, false, function () {
+                    codeKey++;
+                    query();
+                });
+            } else {
+                configuration.AUX = AUX_CONFIG_values;
+                configuration.MISC = MISC;
+                configuration.RCMAP = RC_MAP;
+                configuration.BF_CONFIG = BF_CONFIG;
+
+                save();
+            }
+        }
+
+        // start fetching
+        query();
     }
 
-    function get_rc_tuning_data() {
-        MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_box_names_data);
-    }
-
-    function get_box_names_data() {
-        MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
-    }
-
-    function get_box_data() {
-        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_acc_trim_data);
-    }
-
-    function get_acc_trim_data() {
-        MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, get_misc_data);
-    }
-
-    function get_misc_data() {
-        MSP.send_message(MSP_codes.MSP_MISC, false, false, get_servo_config_data);
-    }
-
-    function get_servo_config_data() {
-        MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, backup);
-    }
-
-    function backup() {
+    function save() {
         var chosenFileEntry = null;
 
         var accepts = [{
@@ -75,18 +131,6 @@ function configuration_backup(callback) {
                     if (isWritable) {
                         chosenFileEntry = fileEntryWritable;
 
-                        // create config object that will be used to store all downloaded data
-                        var configuration = {
-                            'firmware_version': CONFIG.version,
-                            'configurator_version': chrome.runtime.getManifest().version,
-                            'PID': PIDs,
-                            'AUX_val': AUX_CONFIG_values,
-                            'RC': RC_tuning,
-                            'AccelTrim': CONFIG.accelerometerTrims,
-                            'MISC': MISC,
-                            'SERVO_CONFIG': SERVO_CONFIG
-                        };
-
                         // crunch the config object
                         var serialized_config_object = JSON.stringify(configuration);
                         var blob = new Blob([serialized_config_object], {type: 'text/plain'}); // first parameter for Blob needs to be an array
@@ -122,9 +166,6 @@ function configuration_backup(callback) {
             });
         });
     }
-
-    // begin fetching latest data
-    get_ident_data();
 }
 
 function configuration_restore(callback) {
@@ -185,61 +226,65 @@ function configuration_restore(callback) {
             reader.readAsText(file);
         });
     });
-}
 
-function configuration_upload(configuration, callback) {
-    // check if all attributes that we will be saving exist inside the configuration object
-    var validate = [
-        'PID',
-        'AUX_val',
-        'RC',
-        'AccelTrim',
-        'MISC',
-        'SERVO_CONFIG'
-    ];
+    function configuration_upload(configuration, callback) {
+        // TODO implement this
 
-    for (var i = 0; i < validate.length; i++) {
-        if (typeof (configuration[validate[i]]) === 'undefined') {
-            GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
-            return;
+        /*
+        // check if all attributes that we will be saving exist inside the configuration object
+        var validate = [
+            'PID',
+            'AUX_val',
+            'RC',
+            'AccelTrim',
+            'MISC',
+            'SERVO_CONFIG'
+        ];
+
+        for (var i = 0; i < validate.length; i++) {
+            if (typeof (configuration[validate[i]]) === 'undefined') {
+                GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
+                return;
+            }
         }
+
+        // replace data
+        PIDs = configuration.PID;
+        AUX_CONFIG_values = configuration.AUX_val;
+        RC_tuning = configuration.RC;
+        CONFIG.accelerometerTrims = configuration.AccelTrim;
+        MISC = configuration.MISC;
+        SERVO_CONFIG = configuration.SERVO_CONFIG;
+
+        function rc_tuning() { // Send over the RC_tuning changes
+            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, aux);
+        }
+
+        function aux() { // Send over the AUX changes
+            MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch(MSP_codes.MSP_SET_BOX), false, trim);
+        }
+
+        function trim() { // Send over the new trims
+            MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false, misc);
+        }
+
+        function misc() { // Send ove the new MISC
+            MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, servo_conf);
+        }
+
+        function servo_conf() { // send over the new SERVO_CONF
+            MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, MSP.crunch(MSP_codes.MSP_SET_SERVO_CONF), false, save_eeprom);
+        }
+
+        function save_eeprom() {
+            MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
+                if (callback) callback();
+            });
+        }
+
+        // Send over the PID changes
+        MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, rc_tuning);
+        */
     }
-
-    // replace data
-    PIDs = configuration.PID;
-    AUX_CONFIG_values = configuration.AUX_val;
-    RC_tuning = configuration.RC;
-    CONFIG.accelerometerTrims = configuration.AccelTrim;
-    MISC = configuration.MISC;
-    SERVO_CONFIG = configuration.SERVO_CONFIG;
-
-    function rc_tuning() { // Send over the RC_tuning changes
-        MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, aux);
-    }
-
-    function aux() { // Send over the AUX changes
-        MSP.send_message(MSP_codes.MSP_SET_BOX, MSP.crunch(MSP_codes.MSP_SET_BOX), false, trim);
-    }
-
-    function trim() { // Send over the new trims
-        MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false, misc);
-    }
-
-    function misc() { // Send ove the new MISC
-        MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, servo_conf);
-    }
-
-    function servo_conf() { // send over the new SERVO_CONF
-        MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, MSP.crunch(MSP_codes.MSP_SET_SERVO_CONF), false, save_eeprom);
-    }
-
-    function save_eeprom() {
-        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-            GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
-            if (callback) callback();
-        });
-    }
-
-    // Send over the PID changes
-    MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, rc_tuning);
 }
