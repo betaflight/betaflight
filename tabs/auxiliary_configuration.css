@@ -12,9 +12,7 @@
     background: #ffcb18;
 }
 
-.tab-auxiliary_configuration .mode.on .info,
-.tab-auxiliary_configuration .range.on .range .marker,
-.tab-auxiliary_configuration .range.on .channel-slider .noUi-connect {
+.tab-auxiliary_configuration .mode.on .info {
     background: #61B665;
 }
 
@@ -22,9 +20,7 @@
     background: #BAE2BC;
     }
 
-.tab-auxiliary_configuration .mode.off .info,
-.tab-auxiliary_configuration .range.off .range .marker,
-.tab-auxiliary_configuration .range.off .channel-slider .noUi-connect {
+.tab-auxiliary_configuration .mode.off .info {
     background: #E86969;
 }
 
