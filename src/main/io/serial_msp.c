@@ -76,11 +76,19 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 // Multiwii Serial Protocol 0
 #define MSP_VERSION              0
 #define CAP_PLATFORM_32BIT          ((uint32_t)1 << 31)
+#define CAP_BASEFLIGHT_CONFIG       ((uint32_t)1 << 30)
+#define CAP_CLEANFLIGHT_CONFIG      ((uint32_t)1 << 29)
 #define CAP_DYNBALANCE              ((uint32_t)1 << 2)
 #define CAP_FLAPS                   ((uint32_t)1 << 3)
 #define CAP_CHANNEL_FORWARDING      ((uint32_t)1 << 4)
-#define CAP_ACTIVATE_AUX1_TO_AUX8   ((uint32_t)1 << 5)
 
+// MSP commands for Cleanflight original features
+#define MSP_CHANNEL_FORWARDING     32    //out message         Returns channel forwarding settings
+#define MSP_SET_CHANNEL_FORWARDING 33    //in message          Channel forwarding settings
+#define MSP_MODE_RANGES            34    //out message         Returns all mode ranges
+#define MSP_SET_MODE_RANGE         35    //in message          Sets a single mode range
+
+// Multiwii MSP commands
 #define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
 #define MSP_RAW_IMU              102    //out message         9 DOF
@@ -104,8 +112,6 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define MSP_SERVO_CONF           120    //out message         Servo settings
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
-#define MSP_CHANNEL_FORWARDING   123    //out message         Returns channel forwarding settings
-#define MSP_MODE_RANGES          124    //out message         Returns all mode ranges
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -120,10 +126,8 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define MSP_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
 #define MSP_SET_HEAD             211    //in message          define a new heading hold direction
 #define MSP_SET_SERVO_CONF       212    //in message          Servo settings
-#define MSP_SET_CHANNEL_FORWARDING 213  //in message          Channel forwarding settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
-#define MSP_SET_MODE_RANGE       216    //in message          Sets a single mode range
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -501,7 +505,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(MW_VERSION);
         serialize8(masterConfig.mixerConfiguration); // type of multicopter
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
-        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING | CAP_ACTIVATE_AUX1_TO_AUX8); // "capability"
+        serialize32(CAP_PLATFORM_32BIT | CAP_CLEANFLIGHT_CONFIG | CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
         break;
     case MSP_STATUS:
         headSerialReply(11);
