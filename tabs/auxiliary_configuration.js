@@ -1,6 +1,5 @@
 'use strict';
 
-// TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
 TABS.auxiliary_configuration = {};
 TABS.auxiliary_configuration.initialize = function (callback) {
     GUI.active_tab_ref = this;
@@ -124,13 +123,6 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             var modeId = AUX_CONFIG_IDS[modeIndex];
             var newMode = createMode(modeIndex, modeId);
             modeTableBodyElement.append(newMode);
-
-            // FIXME check mode ranges to see if each ID is used, it's used add the 'off' class to the corresponding mode element
-            /*
-            if (AUX_CONFIG_values[modeIndex] > 0) {
-                $('.mode .name').eq(modeIndex).data('modeElement').addClass('off');
-            }
-            */
             
             // generate ranges from the supplied AUX names and MODE_RANGE data
             for (var modeRangeIndex = 0; modeRangeIndex < MODE_RANGES.length; modeRangeIndex++) {
@@ -282,12 +274,12 @@ TABS.auxiliary_configuration.initialize = function (callback) {
 
         function update_ui() {
             for (var i = 0; i < AUX_CONFIG.length; i++) {
-                // FIXME if the mode is unused, skip it
-                /*
-                if (AUX_CONFIG_values[i] == 0) {
+                var modeElement = $('#mode-' + i); 
+                if (modeElement.find(' .range').length == 0) {
+                    // if the mode is unused, skip it
+                    modeElement.removeClass('off').removeClass('on');
                     continue;
                 }
-                */
                 
                 if (bit_check(CONFIG.mode, i)) {
                     $('.mode .name').eq(i).data('modeElement').addClass('on').removeClass('off');
