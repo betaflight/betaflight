@@ -318,13 +318,26 @@ void serializeNames(const char *s)
         serialize8(*c);
 }
 
-const box_t *findBoxByActiveBoxId(uint8_t boxId)
+const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
     uint8_t boxIndex;
     const box_t *candidate;
     for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
         candidate = &boxes[boxIndex];
-        if (candidate->boxId == boxId) {
+        if (candidate->boxId == activeBoxId) {
+            return candidate;
+        }
+    }
+    return NULL;
+}
+
+const box_t *findBoxByPermenantId(uint8_t permenantId)
+{
+    uint8_t boxIndex;
+    const box_t *candidate;
+    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+        candidate = &boxes[boxIndex];
+        if (candidate->permanentId == permenantId) {
             return candidate;
         }
     }
@@ -825,7 +838,7 @@ static bool processInCommand(void)
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
             i = read8();
-            const box_t *box = findBoxByActiveBoxId(i);
+            const box_t *box = findBoxByPermenantId(i);
             if (box) {
                 mac->modeId = box->boxId;
                 mac->auxChannelIndex = read8();
