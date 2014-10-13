@@ -29,8 +29,16 @@
 #define BEEP_PIN Pin_15 // PA15 (Beeper)
 #define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
 
+#define MPU6000_CS_GPIO       GPIOA
+#define MPU6000_CS_PIN        GPIO_Pin_4
+#define MPU6000_SPI_INSTANCE  SPI1
+
 #define ACC
+#define USE_ACC_SPI_MPU6000
+
 #define GYRO
+#define USE_GYRO_SPI_MPU6000
+
 #define INVERTER
 #define BEEPER
 
@@ -44,6 +52,8 @@
 #define USART3_APB2_PERIPHERALS RCC_APB2Periph_GPIOB
 
 #define SERIAL_PORT_COUNT 2
+
+#define USE_SPI
 
 #define SENSORS_SET (SENSOR_ACC)
 

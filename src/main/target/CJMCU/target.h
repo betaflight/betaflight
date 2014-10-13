@@ -33,8 +33,13 @@
 #define LED2
 #define LED2_PERIPHERAL RCC_APB2Periph_GPIOC
 
+
 #define ACC
+#define USE_ACC_MPU6050
+
 #define GYRO
+#define USE_GYRO_MPU6050
+
 #define MAG
 
 #define BRUSHED_MOTORS

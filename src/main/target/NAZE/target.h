@@ -37,10 +37,30 @@
 #define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
 #define INVERTER_USART USART2
 
+// SPI2
+// PB15 28 SPI2_MOSI
+// PB14 27 SPI2_MISO
+// PB13 26 SPI2_SCK
+// PB12 25 SPI2_NSS
+
+#define MPU6500_CS_GPIO       GPIOB
+#define MPU6500_CS_PIN        GPIO_Pin_12
+#define MPU6500_SPI_INSTANCE  SPI2
+
 #define GYRO
+#define USE_GYRO_MPU6050
+
 #define ACC
-#define MAG
+#define USE_ACC_ADXL345
+#define USE_ACC_BMA280
+#define USE_ACC_MMA8452
+#define USE_ACC_MPU6050
+
 #define BARO
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+
+#define MAG
 #define SONAR
 #define BEEPER
 #define LED0
@@ -55,6 +75,12 @@
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
+
+#define USE_SPI
+
+
+
+
 
 // #define SOFT_I2C // enable to test software i2c
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)

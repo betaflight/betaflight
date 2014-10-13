@@ -32,13 +32,12 @@
 #include "drivers/accgyro_mma845x.h"
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
-#ifdef STM32F3DISCOVERY
+
 #include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
-#endif
-#ifdef CC3D
+
 #include "drivers/accgyro_spi_mpu6000.h"
-#endif
+#include "drivers/accgyro_spi_mpu6500.h"
 
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
@@ -56,133 +55,6 @@
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/sonar.h"
-
-
-// Use these to help with porting to new boards
-//#define USE_FAKE_GYRO
-#ifdef USE_I2C
-#define USE_GYRO_L3G4200D
-#define USE_GYRO_L3GD20
-#define USE_GYRO_MPU6050
-#define USE_GYRO_MPU3050
-#endif
-#define USE_GYRO_SPI_MPU6000
-
-//#define USE_FAKE_ACC
-#ifdef USE_I2C
-#define USE_ACC_ADXL345
-#define USE_ACC_BMA280
-#define USE_ACC_MMA8452
-#define USE_ACC_LSM303DLHC
-#define USE_ACC_MPU6050
-#endif
-#define USE_ACC_SPI_MPU6000
-
-#ifdef USE_I2C
-#define USE_BARO_MS5611
-#define USE_BARO_BMP085
-#endif
-
-#ifdef MASSIVEF3
-#define USE_FAKE_GYRO
-#define USE_FAKE_ACC
-#undef USE_GYRO_MPU6050
-#undef USE_ACC_MPU6050
-#undef USE_ACC_ADXL345
-#undef USE_ACC_BMA280
-#undef USE_ACC_MMA8452
-#undef USE_ACC_LSM303DLHC
-#undef USE_ACC_SPI_MPU6000
-#undef USE_GYRO_L3G4200D
-#undef USE_GYRO_MPU3050
-#undef USE_GYRO_SPI_MPU6000
-#undef USE_GYRO_L3GD20
-#undef USE_BARO_BMP085
-#endif
-
-#ifdef NAZE
-#undef USE_ACC_LSM303DLHC
-#undef USE_ACC_SPI_MPU6000
-#undef USE_GYRO_SPI_MPU6000
-#undef USE_GYRO_L3GD20
-#endif
-
-#ifdef NAZE32PRO
-#define USE_FAKE_ACC
-#define USE_FAKE_GYRO
-#undef USE_ACC_LSM303DLHC
-#undef USE_ACC_ADXL345
-#undef USE_ACC_BMA280
-#undef USE_ACC_MMA8452
-#undef USE_ACC_LSM303DLHC
-#undef USE_ACC_MPU6050
-#undef USE_ACC_SPI_MPU6000
-#undef USE_GYRO_L3G4200D
-#undef USE_GYRO_L3GD20
-#undef USE_GYRO_MPU3050
-#undef USE_GYRO_MPU6050
-#undef USE_GYRO_SPI_MPU6000
-#endif
-
-#if defined(OLIMEXINO) || defined(EUSTM32F103RC)
-#undef USE_GYRO_L3GD20
-#undef USE_GYRO_L3G4200D
-#undef USE_GYRO_MPU3050
-#undef USE_GYRO_SPI_MPU6000
-#undef USE_ACC_LSM303DLHC
-#undef USE_ACC_BMA280
-#undef USE_ACC_MMA8452
-#undef USE_ACC_ADXL345
-#undef USE_ACC_SPI_MPU6000
-#undef USE_BARO_MS5611
-#endif
-
-#ifdef EUSTM32F103RC
-#define USE_FAKE_GYRO
-#define USE_FAKE_ACC
-#define USE_GYRO_L3G4200D
-#endif
-
-#ifdef STM32F3DISCOVERY
-#undef USE_ACC_SPI_MPU6000
-#undef USE_GYRO_SPI_MPU6000
-#endif
-
-#ifdef CHEBUZZF3
-#undef USE_GYRO_L3G4200D
-#undef USE_GYRO_MPU6050
-#undef USE_GYRO_MPU3050
-#undef USE_GYRO_SPI_MPU6000
-#undef USE_ACC_ADXL345
-#undef USE_ACC_BMA280
-#undef USE_ACC_MPU6050
-#undef USE_ACC_MMA8452
-#undef USE_ACC_SPI_MPU6000
-#endif
-
-#ifdef CC3D
-#undef USE_GYRO_L3GD20
-#undef USE_GYRO_L3G4200D
-#undef USE_GYRO_MPU6050
-#undef USE_GYRO_MPU3050
-#undef USE_ACC_LSM303DLHC
-#undef USE_ACC_ADXL345
-#undef USE_ACC_BMA280
-#undef USE_ACC_MPU6050
-#undef USE_ACC_MMA8452
-#endif
-
-#ifdef CJMCU
-#undef USE_GYRO_SPI_MPU6000
-#undef USE_GYRO_L3GD20
-#undef USE_GYRO_L3G4200D
-#undef USE_GYRO_MPU3050
-#undef USE_ACC_LSM303DLHC
-#undef USE_ACC_SPI_MPU6000
-#undef USE_ACC_ADXL345
-#undef USE_ACC_BMA280
-#undef USE_ACC_MMA8452
-#endif
 
 extern float magneticDeclination;
 
@@ -268,6 +140,21 @@ bool detectGyro(uint16_t gyroLpf)
 #endif
         return true;
     }
+#endif
+
+#ifdef USE_GYRO_SPI_MPU6500
+#ifdef NAZE
+    // TODO only enable if NAZE32_SP is detected
+    if (false && mpu6500SpiGyroDetect(&gyro, gyroLpf)) {
+        gyroAlign = CW0_DEG;
+        return true;
+    }
+#else
+    if (mpu6500SpiGyroDetect(&gyro, gyroLpf)) {
+        gyroAlign = CW0_DEG;
+        return true;
+    }
+#endif
 #endif
 
 #ifdef USE_FAKE_GYRO
@@ -359,7 +246,7 @@ retry:
             }
             ; // fallthrough
 #endif
-#ifdef USE_GYRO_SPI_MPU6000
+#ifdef USE_ACC_SPI_MPU6000
         case ACC_SPI_MPU6000:
             if (mpu6000SpiAccDetect(&acc)) {
                 accHardware = ACC_SPI_MPU6000;
@@ -367,6 +254,23 @@ retry:
                 accAlign = CW270_DEG;
 #endif
                 if (accHardwareToUse == ACC_SPI_MPU6000)
+                    break;
+            }
+            ; // fallthrough
+#endif
+#ifdef USE_ACC_SPI_MPU6500
+        case ACC_SPI_MPU6500:
+#ifdef NAZE
+            // TODO only enable if NAZE32_SP is detected
+            if (false && mpu6500SpiAccDetect(&acc)) {
+#else
+            if (mpu6500SpiAccDetect(&acc)) {
+#endif
+                accHardware = ACC_SPI_MPU6500;
+#ifdef NAZE
+                accAlign = CW0_DEG;
+#endif
+                if (accHardwareToUse == ACC_SPI_MPU6500)
                     break;
             }
             ; // fallthrough

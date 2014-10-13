@@ -38,6 +38,11 @@
 
 #define GYRO
 #define ACC
+
+#define BARO
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+
 #define BEEPER
 #define LED0
 #define LED1

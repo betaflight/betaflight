@@ -119,14 +119,6 @@
 #define MPU6000_REV_D9 0x59
 #define MPU6000_REV_D10 0x5A
 
-#ifdef CC3D
-
-#define MPU6000_CS_GPIO       GPIOA
-#define MPU6000_CS_PIN        GPIO_Pin_4
-
-#define MPU6000_SPI_INSTANCE SPI1
-#endif
-
 #define DISABLE_MPU6000       GPIO_SetBits(MPU6000_CS_GPIO,   MPU6000_CS_PIN)
 #define ENABLE_MPU6000        GPIO_ResetBits(MPU6000_CS_GPIO, MPU6000_CS_PIN)
 

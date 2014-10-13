@@ -220,6 +220,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_mma845x.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
 		   drivers/barometer_bmp085.c \
@@ -247,11 +248,18 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(COMMON_SRC)
 
 EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
-		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_adxl345.c \
+		   drivers/accgyro_bma280.c \
 		   drivers/accgyro_l3g4200d.c \
+		   drivers/accgyro_mma845x.c \
+		   drivers/accgyro_mpu3050.c \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_spi_mpu6000.c \
+		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
 		   drivers/barometer_bmp085.c \
+		   drivers/barometer_ms5611.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/compass_hmc5883l.c \

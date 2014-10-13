@@ -131,7 +131,7 @@ void systemInit(bool overclock)
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
 
-#ifdef CC3D
+#ifdef USE_SPI
     spiInit(SPI1);
     spiInit(SPI2);
 #endif

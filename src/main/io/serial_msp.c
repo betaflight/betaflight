@@ -88,7 +88,7 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define MSP_MODE_RANGES            34    //out message         Returns all mode ranges
 #define MSP_SET_MODE_RANGE         35    //in message          Sets a single mode range
 
-// Multiwii MSP commands
+//
 #define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
 #define MSP_RAW_IMU              102    //out message         9 DOF
