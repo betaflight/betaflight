@@ -15,7 +15,7 @@
 .tab-auxiliary_configuration .mode.on .info,
 .tab-auxiliary_configuration .range.on .range .marker,
 .tab-auxiliary_configuration .range.on .channel-slider .noUi-connect {
-    background: #0fab16;
+    background: #61B665;
 }
 
 .tab-auxiliary_configuration .mode.on:nth-child(odd) .info {
@@ -25,11 +25,11 @@
 .tab-auxiliary_configuration .mode.off .info,
 .tab-auxiliary_configuration .range.off .range .marker,
 .tab-auxiliary_configuration .range.off .channel-slider .noUi-connect {
-    background: #ab150f;
+    background: #E86969;
 }
 
 .tab-auxiliary_configuration .mode.off:nth-child(odd) .info {
-    background: rgb(231, 196, 195);
+    background: #E7AEAE;
 }
 
 #templates {
