@@ -1,20 +1,10 @@
 <div class="tab-auxiliary_configuration">
     <div class="help">
-    <p>Use ranges to define the switches on your transmitter and corresponding mode assignments.  A receiver channel that gives a reading between a range min/max will activate the mode.  Remember to save your settings using the Save button.</p>
+    <p i18n="auxiliaryHelp"></p>
     </div>
     <table class="modes">
         <tbody>
         </tbody>
-    </table>
-    <!-- templates -->
-
-    <table class="boxes">
-        <tr class="heads">
-            <th style="width: 18%"></th>
-        </tr>
-        <tr class="main">
-            <th i18n="auxiliaryName"></th>
-        </tr>
     </table>
     <div class="buttons">
         <a class="save" href="#" i18n="auxiliaryButtonSave"></a>
@@ -26,9 +16,9 @@
         <tbody>
             <tr class="mode">
                 <td class="info">
-                    <p class="name">ARM</p>
+                    <p class="name"></p>
                     <div class="buttons">
-                        <a class="addRange" href="#">Add Range</a>
+                        <a class="addRange" href="#" i18n="auxiliaryAddRange"></a>
                     </div>
                 </td>
                 <td class="ranges">
@@ -43,8 +33,8 @@
                 <option value=""></option>
             </select>
             <div class="limits">
-                <p class="lowerLimit">Min: <span class="lowerLimitValue"></span></p>
-                <p class="upperLimit">Max: <span class="upperLimitValue"></span></p>
+                <p class="lowerLimit"><span i18n="auxiliaryMin"></span>: <span class="lowerLimitValue"></span></p>
+                <p class="upperLimit"><span i18n="auxiliaryMax"></span>: <span class="upperLimitValue"></span></p>
             </div>
         </div>
         <div class="channel-slider pips-channel-range">
