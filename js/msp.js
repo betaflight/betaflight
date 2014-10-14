@@ -2,6 +2,14 @@
 
 // MSP_codes needs to be re-integrated inside MSP object
 var MSP_codes = {
+    
+    // MSP commands for Cleanflight original features
+    MSP_CHANNEL_FORWARDING:     32,
+    MSP_SET_CHANNEL_FORWARDING: 33,
+    MSP_MODE_RANGES:            34,
+    MSP_SET_MODE_RANGE:         35,
+
+    // Multiwii MSP commands
     MSP_IDENT:              100,
     MSP_STATUS:             101,
     MSP_RAW_IMU:            102,
@@ -23,8 +31,6 @@ var MSP_codes = {
     MSP_WP:                 118,
     MSP_BOXIDS:             119,
     MSP_SERVO_CONF:         120,
-    MSP_CHANNEL_FORWARDING: 123,
-    MSP_MODE_RANGES:        124,
 
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -39,9 +45,7 @@ var MSP_codes = {
     MSP_SELECT_SETTING:     210,
     MSP_SET_HEAD:           211,
     MSP_SET_SERVO_CONF:     212,
-    MSP_SET_CHANNEL_FORWARDING: 213,
     MSP_SET_MOTOR:          214,
-    MSP_SET_MODE_RANGE:     216,
 
     // MSP_BIND:               240,
 
