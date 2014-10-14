@@ -150,12 +150,6 @@
     "defaultDonateText": {
         "message": "This utility is fully <strong>open source</strong> and is available free of charge to all <strong>cleanflight</strong> users.<br />If you found the cleanflight or cleanflight configurator useful, please consider <strong>supporting</strong> its development by donating."
     },
-    "defaultDonateConfiguratorText": {
-        "message": "Configurator"
-    },
-    "defaultDonateFirmwareText": {
-        "message": "Cleanflight"
-    },
     "initialSetupButtonCalibrateAccel": {
         "message": "Calibrate Accelerometer"
     },
