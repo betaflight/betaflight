@@ -191,6 +191,14 @@ void init(void)
 
     adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
     adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
+    adc_params.enableExternal1 = false;
+#ifdef OLIMEXINO
+    adc_params.enableExternal1 = true;
+#endif
+#ifdef NAZE
+    // optional ADC5 input on rev.5 hardware
+    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
+#endif
 
     adcInit(&adc_params);
 

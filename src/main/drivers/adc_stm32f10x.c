@@ -88,26 +88,25 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
     }
 
+    if (init->enableExternal1) {
 #ifdef OLIMEXINO
-    GPIO_InitStructure.GPIO_Pin   |= GPIO_Pin_5;
-
-    adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
-    adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
-    adcConfig[ADC_EXTERNAL1].enabled = true;
-    adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
-#endif
-
-#ifdef NAZE
-    // optional ADC5 input on rev.5 hardware
-    if (hse_value == 12000000) {
         GPIO_InitStructure.GPIO_Pin   |= GPIO_Pin_5;
 
         adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
         adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_EXTERNAL1].enabled = true;
         adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
-    }
 #endif
+
+#ifdef NAZE
+        GPIO_InitStructure.GPIO_Pin   |= GPIO_Pin_5;
+
+        adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
+        adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
+        adcConfig[ADC_EXTERNAL1].enabled = true;
+        adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
+#endif
+    }
 
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 

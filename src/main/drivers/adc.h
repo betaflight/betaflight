@@ -37,6 +37,7 @@ typedef struct adc_config_t {
 typedef struct drv_adc_config_t {
     bool enableRSSI;
     bool enableCurrentMeter;
+    bool enableExternal1;
 } drv_adc_config_t;
 
 void adcInit(drv_adc_config_t *init);
