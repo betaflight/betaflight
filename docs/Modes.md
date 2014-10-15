@@ -36,6 +36,28 @@ In this mode, the "head" of the multicopter is always pointing to the same direc
 
 With this mode is easier to control the multicopter, even fly it with the physical head towards you since the controls always respond the same. This is a friendly mode to new users of multicopters and can prevent losing the control when you don't know the head direction. 
 
+## GPS Return To Home
+
+WORK-IN-PROGRESS.  This mode is not reliable yet, please share your experiences with the developers.
+
+In this mode the aircraft attempts to return to the GPS position recorded when the aircraft was armed.
+
+This mode should be enabled in conjunction with Angle or Horizion modes and an Altitude hold mode.
+
+Requires a 3D GPS fix and minimum of 5 satallites in view.
+
+## GPS Position Hold
+
+WORK-IN-PROGRESS.  This mode is not reliable yet, please share your experiences with the developers.
+
+In this mode the aircraft attempts to stay at the same GPS position, as recorded when the mode is enabled.
+
+Disabling and re-enabling the mode will reset the GPS hold position.
+
+This mode should be enabled in conjunction with Angle or Horizion modes and an Altitude hold mode.
+
+Requires a 3D GPS fix and minimum of 5 satallites in view.
+
 ## Auxillary Configuration
 
 Spare auxillary receiver channels can be used to enable/disable modes.  Some modes can only be enabled this way.
