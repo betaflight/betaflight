@@ -84,10 +84,6 @@ bool mma8452Detect(acc_t *acc)
     bool ack = false;
     uint8_t sig = 0;
 
-    // Not supported with this frequency
-    if (hse_value == 12000000)
-        return false;
-
     ack = i2cRead(MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
     if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
         return false;

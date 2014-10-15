@@ -219,16 +219,15 @@ retry:
             acc_params.dataRate = 800; // unused currently
 #ifdef NAZE
             if (hardwareRevision < NAZE32_REV5 && adxl345Detect(&acc_params, &acc)) {
-                accHardware = ACC_ADXL345;
                 accAlign = CW270_DEG;
-            }
 #else
             if (adxl345Detect(&acc_params, &acc)) {
-                accHardware = ACC_ADXL345;
-            }
 #endif
-            if (accHardwareToUse == ACC_ADXL345)
-                break;
+                accHardware = ACC_ADXL345;
+                accHardware = ACC_ADXL345;
+                if (accHardwareToUse == ACC_ADXL345)
+                    break;
+            }
             ; // fallthrough
 #endif
 #ifdef USE_ACC_MPU6050
@@ -245,11 +244,14 @@ retry:
 #endif
 #ifdef USE_ACC_MMA8452
         case ACC_MMA8452: // MMA8452
-            if (mma8452Detect(&acc)) {
-                accHardware = ACC_MMA8452;
 #ifdef NAZE
+            // Not supported with this frequency
+            if (hardwareRevision < NAZE32_REV5 && mma8452Detect(&acc)) {
                 accAlign = CW90_DEG;
+#else
+            if (mma8452Detect(&acc)) {
 #endif
+                accHardware = ACC_MMA8452;
                 if (accHardwareToUse == ACC_MMA8452)
                     break;
             }
