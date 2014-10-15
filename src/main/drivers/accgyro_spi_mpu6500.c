@@ -31,22 +31,6 @@
 #include "accgyro.h"
 #include "accgyro_spi_mpu6500.h"
 
-// MPU6500 (WHO_AM_I 0x70) on SPI bus
-
-#define MPU6500_RA_WHOAMI                   (0x75)
-#define MPU6500_RA_ACCEL_XOUT_H             (0x3B)
-#define MPU6500_RA_GYRO_XOUT_H              (0x43)
-#define MPU6500_RA_BANK_SEL                 (0x6D)
-#define MPU6500_RA_MEM_RW                   (0x6F)
-#define MPU6500_RA_GYRO_CFG                 (0x1B)
-#define MPU6500_RA_PWR_MGMT_1               (0x6B)
-#define MPU6500_RA_ACCEL_CFG                (0x1C)
-#define MPU6500_RA_LPF                      (0x1A)
-#define MPU6500_RA_RATE_DIV                 (0x19)
-
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-#define BIT_RESET                           (0x80)
-
 enum lpf_e {
     INV_FILTER_256HZ_NOLPF2 = 0,
     INV_FILTER_188HZ,
@@ -192,7 +176,7 @@ static void mpu6500GyroInit(void)
     }
 #endif
 
-    mpu6500WriteRegister(MPU6500_RA_PWR_MGMT_1, BIT_RESET);
+    mpu6500WriteRegister(MPU6500_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
     mpu6500WriteRegister(MPU6500_RA_PWR_MGMT_1, 0);
     delay(100);

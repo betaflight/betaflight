@@ -27,8 +27,6 @@
 #include "light_led.h"
 #include "sound_beeper.h"
 #include "inverter.h"
-#include "bus_i2c.h"
-#include "bus_spi.h"
 
 #include "system.h"
 
@@ -36,15 +34,6 @@
 static volatile uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
-
-#ifdef STM32F303xC
-// from system_stm32f30x.c
-void SetSysClock(void);
-#endif
-#ifdef STM32F10X
-// from system_stm32f10x.c
-void SetSysClock(bool overclock);
-#endif
 
 static void cycleCounterInit(void)
 {
@@ -76,23 +65,8 @@ uint32_t millis(void)
     return sysTickUptime;
 }
 
-void systemInit(bool overclock)
+void systemInit(void)
 {
-
-#ifdef STM32F303
-    UNUSED(overclock);
-    // start fpu
-    SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
-#endif
-
-#ifdef STM32F303xC
-    SetSysClock();
-#endif
-#ifdef STM32F10X
-    // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
-    // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(overclock);
-#endif
 #ifdef CC3D
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
     extern void *isr_vector_table_base;
@@ -130,16 +104,6 @@ void systemInit(bool overclock)
 
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
-
-#ifdef USE_SPI
-    spiInit(SPI1);
-    spiInit(SPI2);
-#endif
-
-#ifdef USE_I2C
-    // Configure the rest of the stuff
-    i2cInit(I2C_DEVICE);
-#endif
 
     // sleep for 100ms
     delay(100);

@@ -37,6 +37,8 @@
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
 
 #include "flight/flight.h"
 #include "flight/mixer.h"
@@ -65,6 +67,10 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+
+#ifdef NAZE
+#include "target/NAZE/hardware_revision.h"
+#endif
 
 #include "build_config.h"
 
@@ -96,6 +102,16 @@ void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse);
 void loop(void);
+
+
+#ifdef STM32F303xC
+// from system_stm32f30x.c
+void SetSysClock(void);
+#endif
+#ifdef STM32F10X
+// from system_stm32f10x.c
+void SetSysClock(bool overclock);
+#endif
 
 // FIXME bad naming - this appears to be for some new board that hasn't been made available yet.
 #ifdef PROD_DEBUG
@@ -133,7 +149,45 @@ void init(void)
     ensureEEPROMContainsValidData();
     readEEPROM();
 
-    systemInit(masterConfig.emf_avoidance);
+#ifdef STM32F303
+    // start fpu
+    SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
+#endif
+
+#ifdef STM32F303xC
+    SetSysClock();
+#endif
+#ifdef STM32F10X
+    // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
+    // Configure the Flash Latency cycles and enable prefetch buffer
+    SetSysClock(masterConfig.emf_avoidance);
+#endif
+
+#ifdef NAZE
+    detectHardwareRevision();
+#endif
+
+    systemInit();
+
+#ifdef USE_SPI
+    spiInit(SPI1);
+    spiInit(SPI2);
+#endif
+
+#ifdef NAZE
+    updateHardwareRevision();
+#endif
+
+#ifdef USE_I2C
+#ifdef NAZE
+    if (hardwareRevision != NAZE32_SP) {
+        i2cInit(I2C_DEVICE);
+    }
+#else
+    // Configure the rest of the stuff
+    i2cInit(I2C_DEVICE);
+#endif
+#endif
 
     adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
     adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);

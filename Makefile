@@ -244,6 +244,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
+		   hardware_revision.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 

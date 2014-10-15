@@ -15,21 +15,14 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+typedef enum nazeHardwareRevision_t {
+    UNKNOWN = 0,
+    NAZE32, // Naze32 and compatible with 8MHz HSE
+    NAZE32_REV5, // Naze32 and compatible with 12MHz HSE
+    NAZE32_SP // Naze32 w/Sensor Platforms
+} nazeHardwareRevision_e;
 
-void systemInit(void);
-void delayMicroseconds(uint32_t us);
-void delay(uint32_t ms);
+extern uint8_t hardwareRevision;
 
-uint32_t micros(void);
-uint32_t millis(void);
-
-// failure
-void failureMode(uint8_t mode);
-
-// bootloader/IAP
-void systemReset(bool toBootloader);
-
-void enableGPIOPowerUsageAndNoiseReductions(void);
-// current crystal frequency - 8 or 12MHz
-extern uint32_t hse_value;
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);

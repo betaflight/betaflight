@@ -43,9 +43,16 @@
 // PB13 26 SPI2_SCK
 // PB12 25 SPI2_NSS
 
-#define MPU6500_CS_GPIO       GPIOB
-#define MPU6500_CS_PIN        GPIO_Pin_12
-#define MPU6500_SPI_INSTANCE  SPI2
+#define USE_SPI
+#define USE_SPI_DEVICE_2
+
+#define NAZE_SPI_INSTANCE     SPI2
+#define NAZE_SPI_CS_GPIO      GPIOB
+#define NAZE_SPI_CS_PIN       GPIO_Pin_12
+
+#define MPU6500_CS_GPIO       NAZE_SPI_CS_GPIO
+#define MPU6500_CS_PIN        NAZE_SPI_CS_PIN
+#define MPU6500_SPI_INSTANCE  NAZE_SPI_INSTANCE
 
 #define GYRO
 #define USE_GYRO_MPU6050
@@ -75,8 +82,6 @@
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
-
-#define USE_SPI
 
 
 

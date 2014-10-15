@@ -54,6 +54,9 @@
 #define SERIAL_PORT_COUNT 2
 
 #define USE_SPI
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+
 
 #define SENSORS_SET (SENSOR_ACC)
 
