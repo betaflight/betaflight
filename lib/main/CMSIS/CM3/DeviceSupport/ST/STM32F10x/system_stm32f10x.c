@@ -118,8 +118,7 @@ void SetSysClock(bool overclock)
             // we're on internal RC
             clocksrc = SRC_HSI;
         } else {
-            // We're fucked
-            while(1);
+            while(1); // Unable to continue.
         }
     }
 
