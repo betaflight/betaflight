@@ -56,6 +56,10 @@
 #include "sensors/compass.h"
 #include "sensors/sonar.h"
 
+#ifdef NAZE
+#include "hardware_revision.h"
+#endif
+
 extern float magneticDeclination;
 
 extern gyro_t gyro;
@@ -191,12 +195,16 @@ retry:
         case ACC_ADXL345: // ADXL345
             acc_params.useFifo = false;
             acc_params.dataRate = 800; // unused currently
+#ifdef NAZE
+            if (hardwareRevision < NAZE32_REV5 && adxl345Detect(&acc_params, &acc)) {
+                accHardware = ACC_ADXL345;
+                accAlign = CW270_DEG;
+            }
+#else
             if (adxl345Detect(&acc_params, &acc)) {
                 accHardware = ACC_ADXL345;
-#ifdef NAZE
-                accAlign = CW270_DEG;
-#endif
             }
+#endif
             if (accHardwareToUse == ACC_ADXL345)
                 break;
             ; // fallthrough

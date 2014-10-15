@@ -65,10 +65,6 @@ bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
     bool ack = false;
     uint8_t sig = 0;
 
-    // Not supported with this frequency
-    if (hse_value == 12000000)
-        return false;
-
     ack = i2cRead(ADXL345_ADDRESS, 0x00, 1, &sig);
     if (!ack || sig != 0xE5)
         return false;
