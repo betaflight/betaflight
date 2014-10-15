@@ -20,20 +20,19 @@
 
 #include <platform.h>
 
+#include "build_config.h"
+
 #include "barometer.h"
 
 #include "gpio.h"
 #include "system.h"
 #include "bus_i2c.h"
 
+#include "barometer_bmp085.h"
+
 // BMP085, Standard address 0x77
 static bool convDone = false;
 static uint16_t convOverrun = 0;
-
-#ifdef BARO_GPIO
-#define BARO_OFF                 digitalLo(BARO_GPIO, BARO_PIN);
-#define BARO_ON                  digitalHi(BARO_GPIO, BARO_PIN);
-#endif
 
 // EXTI14 for BMP085 End of Conversion Interrupt
 void EXTI15_10_IRQHandler(void)
@@ -116,74 +115,72 @@ static int32_t bmp085_get_temperature(uint32_t ut);
 static int32_t bmp085_get_pressure(uint32_t up);
 static void bmp085_calculate(int32_t *pressure, int32_t *temperature);
 
-#ifdef BARO_PIN
-#define BMP085_OFF                  digitalLo(BARO_GPIO, BARO_PIN);
-#define BMP085_ON                   digitalHi(BARO_GPIO, BARO_PIN);
+#ifdef BARO_XCLR_PIN
+#define BMP085_OFF                  digitalLo(BARO_XCLR_GPIO, BARO_XCLR_PIN);
+#define BMP085_ON                   digitalHi(BARO_XCLR_GPIO, BARO_XCLR_PIN);
 #else
 #define BMP085_OFF
 #define BMP085_ON
 #endif
 
-void bmp085Disable(void)
-{
-    if (hse_value != 12000000) {
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+void bmp085InitXCLRGpio(const bmp085Config_t *config) {
+    gpio_config_t gpio;
 
-        // PC13 (BMP085's XCLR reset input, which we use to disable it). Only needed when running at 8MHz
-        gpio_config_t gpio;
-        gpio.pin = Pin_13;
-        gpio.speed = Speed_2MHz;
-        gpio.mode = Mode_Out_PP;
-        gpioInit(GPIOC, &gpio);
-    }
+    RCC_APB2PeriphClockCmd(config->gpioAPB2Peripherals, ENABLE);
+
+    // PC13, PC14 (Barometer XCLR reset output, EOC input)
+    gpio.pin = config->xclrGpioPin;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_Out_PP;
+    gpioInit(config->xclrGpioPort, &gpio);
+}
+
+void bmp085Disable(const bmp085Config_t *config)
+{
+    bmp085InitXCLRGpio(config);
     BMP085_OFF;
 }
 
-bool bmp085Detect(baro_t *baro)
+bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 {
     uint8_t data;
-
-    // Not supported with this frequency
-    if (hse_value == 12000000)
-        return false;
 
     if (bmp085InitDone)
         return true;
 
-#if defined(BARO) && defined(BARO_GPIO)
-    EXTI_InitTypeDef EXTI_InitStructure;
-    NVIC_InitTypeDef NVIC_InitStructure;
-    gpio_config_t gpio;
+#if defined(BARO) && defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
+    if (config) {
+        EXTI_InitTypeDef EXTI_InitStructure;
+        NVIC_InitTypeDef NVIC_InitStructure;
+        gpio_config_t gpio;
 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+        bmp085InitXCLRGpio(config);
 
-    // PC13, PC14 (Barometer XCLR reset output, EOC input)
-    gpio.pin = Pin_13;
-    gpio.speed = Speed_2MHz;
-    gpio.mode = Mode_Out_PP;
-    gpioInit(GPIOC, &gpio);
-    gpio.pin = Pin_14;
-    gpio.mode = Mode_IN_FLOATING;
-    gpioInit(GPIOC, &gpio);
-    BARO_ON;
+        gpio.pin = config->eocGpioPin;
+        gpio.mode = Mode_IN_FLOATING;
+        gpioInit(config->eocGpioPort, &gpio);
+        BMP085_ON;
 
-    // EXTI interrupt for barometer EOC
-    gpioExtiLineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource14);
-    EXTI_InitStructure.EXTI_Line = EXTI_Line14;
-    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTI_InitStructure);
+        // EXTI interrupt for barometer EOC
+        gpioExtiLineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource14);
+        EXTI_InitStructure.EXTI_Line = EXTI_Line14;
+        EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+        EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+        EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+        EXTI_Init(&EXTI_InitStructure);
 
-    // Enable and set EXTI10-15 Interrupt to the lowest priority
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
-    delay(20); // datasheet says 10ms, we'll be careful and do 20. this is after ms5611 driver kills us, so longer the better.
+        // Enable and set EXTI10-15 Interrupt to the lowest priority
+        NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
+        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStructure);
+    }
+#else
+    UNUSED(config);
 #endif
+
+    delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
     i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
@@ -205,9 +202,8 @@ bool bmp085Detect(baro_t *baro)
         return true;
     }
 
-#if defined(BARO) && defined(BARO_GPIO)
-    BARO_OFF;
-#endif
+    BMP085_OFF;
+
     return false;
 }
 

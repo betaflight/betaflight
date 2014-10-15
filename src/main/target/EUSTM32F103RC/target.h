@@ -17,9 +17,6 @@
 
 #pragma once
 
-#define BARO_GPIO   GPIOC
-#define BARO_PIN    Pin_13
-
 #define MPU6000_CS_GPIO       GPIOB
 #define MPU6000_CS_PIN        GPIO_Pin_12
 #define MPU6000_SPI_INSTANCE  SPI2

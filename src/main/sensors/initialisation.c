@@ -323,20 +323,40 @@ retry:
 
 static void detectBaro()
 {
-#ifdef BARO
-#ifdef USE_BARO_BMP085
-    bmp085Disable();
-#endif
-#ifdef USE_BARO_MS5611
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
+
+    #ifdef BARO
+#ifdef USE_BARO_BMP085
+
+    const bmp085Config_t *bmp085Config = NULL;
+
+#if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
+    static const bmp085Config_t defaultBMP085Config = {
+            .gpioAPB2Peripherals = BARO_APB2_PERIPHERALS,
+            .xclrGpioPin = BARO_XCLR_PIN,
+            .xclrGpioPort = BARO_XCLR_GPIO,
+            .eocGpioPin = BARO_EOC_PIN,
+            .eocGpioPort = BARO_EOC_GPIO
+    };
+    bmp085Config = &defaultBMP085Config;
+#endif
+
+#ifdef NAZE
+    if (hardwareRevision == NAZE32) {
+        bmp085Disable(bmp085Config);
+    }
+#endif
+
+#endif
+
+#ifdef USE_BARO_MS5611
     if (ms5611Detect(&baro)) {
         return;
     }
 #endif
 
 #ifdef USE_BARO_BMP085
-    // ms5611 disables BMP085, and tries to initialize + check PROM crc. if this works, we have a baro
-    if (bmp085Detect(&baro)) {
+    if (bmp085Detect(bmp085Config, &baro)) {
         return;
     }
 #endif

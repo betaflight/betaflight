@@ -33,8 +33,6 @@
 
 
 #define BEEPER_INVERTED
-#define BARO_GPIO   GPIOC
-#define BARO_PIN    Pin_13
 
 #define GYRO
 #define ACC
