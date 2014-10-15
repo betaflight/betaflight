@@ -122,29 +122,25 @@ bool hmc5883lDetect(void)
     return true;
 }
 
-void hmc5883lInit(void)
+void hmc5883lInit(hmc5883Config_t *hmc5883Config)
 {
     int16_t magADC[3];
     int i;
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
 
-#ifdef NAZE
     gpio_config_t gpio;
-    if (hse_value == 8000000) {
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-        // PB12 - MAG_DRDY output on rev4 hardware
-        gpio.pin = Pin_12;
+
+    if (hmc5883Config) {
+        if (hmc5883Config->gpioAPB2Peripherals) {
+            RCC_APB2PeriphClockCmd(hmc5883Config->gpioAPB2Peripherals, ENABLE);
+        }
+
+        gpio.pin = hmc5883Config->gpioPin;
         gpio.speed = Speed_2MHz;
         gpio.mode = Mode_IN_FLOATING;
-        gpioInit(GPIOB, &gpio);
-    } else if (hse_value == 12000000) {
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-        // PC14 - MAG_DRDY output on rev5 hardware
-        gpio.pin = Pin_14;
-        gpioInit(GPIOC, &gpio);
+        gpioInit(hmc5883Config->gpioPort, &gpio);
     }
-#endif
 
     delay(50);
     i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias

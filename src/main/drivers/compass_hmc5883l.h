@@ -17,6 +17,12 @@
 
 #pragma once
 
-bool hmc5883lDetect();
-void hmc5883lInit(void);
+typedef struct hmc5883Config_s {
+    uint32_t gpioAPB2Peripherals;
+    uint16_t gpioPin;
+    GPIO_TypeDef *gpioPort;
+} hmc5883Config_t;
+
+bool hmc5883lDetect(void);
+void hmc5883lInit(hmc5883Config_t *hmc5883Config);
 void hmc5883lRead(int16_t *magData);

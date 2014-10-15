@@ -34,6 +34,10 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
+#ifdef NAZE
+#include "hardware_revision.h"
+#endif
+
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
 int16_t magADC[XYZ_AXIS_COUNT];
@@ -45,7 +49,27 @@ void compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
-    hmc5883lInit();
+
+    hmc5883Config_t *hmc5883Config = 0;
+#ifdef NAZE
+    hmc5883Config_t nazeHmc5883Config;
+
+    if (hardwareRevision < NAZE32_REV5) {
+        nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOB;
+        nazeHmc5883Config.gpioPin = Pin_12;
+        nazeHmc5883Config.gpioPort = GPIOB;
+    } else {
+        nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOC;
+        nazeHmc5883Config.gpioPin = Pin_14;
+        nazeHmc5883Config.gpioPort = GPIOC;
+    }
+
+    hmc5883Config = &nazeHmc5883Config;
+#endif
+
+    hmc5883lInit(hmc5883Config);
+
+
     LED1_OFF;
     magInit = 1;
 }
