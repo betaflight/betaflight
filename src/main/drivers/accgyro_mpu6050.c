@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -128,35 +129,36 @@
 #define MPU6050_SMPLRT_DIV      0       // 8000Hz
 
 enum lpf_e {
-INV_FILTER_256HZ_NOLPF2 = 0,
-INV_FILTER_188HZ,
-INV_FILTER_98HZ,
-INV_FILTER_42HZ,
-INV_FILTER_20HZ,
-INV_FILTER_10HZ,
-INV_FILTER_5HZ,
-INV_FILTER_2100HZ_NOLPF,
-NUM_FILTER
+    INV_FILTER_256HZ_NOLPF2 = 0,
+    INV_FILTER_188HZ,
+    INV_FILTER_98HZ,
+    INV_FILTER_42HZ,
+    INV_FILTER_20HZ,
+    INV_FILTER_10HZ,
+    INV_FILTER_5HZ,
+    INV_FILTER_2100HZ_NOLPF,
+    NUM_FILTER
 };
 enum gyro_fsr_e {
-INV_FSR_250DPS = 0,
-INV_FSR_500DPS,
-INV_FSR_1000DPS,
-INV_FSR_2000DPS,
-NUM_GYRO_FSR
+    INV_FSR_250DPS = 0,
+    INV_FSR_500DPS,
+    INV_FSR_1000DPS,
+    INV_FSR_2000DPS,
+    NUM_GYRO_FSR
 };
 enum clock_sel_e {
-INV_CLK_INTERNAL = 0,
-INV_CLK_PLL,
-NUM_CLK
+    INV_CLK_INTERNAL = 0,
+    INV_CLK_PLL,
+    NUM_CLK
 };
 enum accel_fsr_e {
-INV_FSR_2G = 0,
-INV_FSR_4G,
-INV_FSR_8G,
-INV_FSR_16G,
-NUM_ACCEL_FSR
+    INV_FSR_2G = 0,
+    INV_FSR_4G,
+    INV_FSR_8G,
+    INV_FSR_16G,
+    NUM_ACCEL_FSR
 };
+
 static uint8_t mpuLowPassFilter = INV_FILTER_42HZ;
 static void mpu6050AccInit(void);
 static void mpu6050AccRead(int16_t *accData);
@@ -169,6 +171,21 @@ typedef enum {
 } mpu6050Resolution_e;
 
 static mpu6050Resolution_e mpuAccelTrim;
+
+static mpu6050Config_t *config = NULL;
+
+void mpu6050GpioInit(void) {
+    gpio_config_t gpio;
+
+    if (config->gpioAPB2Peripherals) {
+        RCC_APB2PeriphClockCmd(config->gpioAPB2Peripherals, ENABLE);
+    }
+
+    gpio.pin = config->gpioPin;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_IN_FLOATING;
+    gpioInit(config->gpioPort, &gpio);
+}
 
 static bool mpu6050Detect(void)
 {
@@ -192,11 +209,13 @@ static bool mpu6050Detect(void)
     return true;
 }
 
-bool mpu6050AccDetect(acc_t *acc)
+bool mpu6050AccDetect(mpu6050Config_t *configToUse, acc_t *acc)
 {
     uint8_t readBuffer[6];
     uint8_t revision;
     uint8_t productId;
+
+    config = configToUse;
 
     if (!mpu6050Detect()) {
         return false;
@@ -236,11 +255,14 @@ bool mpu6050AccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6050GyroDetect(gyro_t *gyro, uint16_t lpf)
+bool mpu6050GyroDetect(mpu6050Config_t *configToUse, gyro_t *gyro, uint16_t lpf)
 {
+    config = configToUse;
+
     if (!mpu6050Detect()) {
         return false;
     }
+
 
     gyro->init = mpu6050GyroInit;
     gyro->read = mpu6050GyroRead;
@@ -266,6 +288,11 @@ bool mpu6050GyroDetect(gyro_t *gyro, uint16_t lpf)
 
 static void mpu6050AccInit(void)
 {
+    if (config) {
+        mpu6050GpioInit();
+        config = NULL; // avoid re-initialisation of GPIO;
+    }
+
     switch (mpuAccelTrim) {
         case MPU_6050_HALF_RESOLUTION:
             acc_1G = 256 * 8;
@@ -288,16 +315,10 @@ static void mpu6050AccRead(int16_t *accData)
 
 static void mpu6050GyroInit(void)
 {
-    gpio_config_t gpio;
-
-    // MPU_INT output on rev4/5 hardware (PB13, PC13)
-    gpio.pin = Pin_13;
-    gpio.speed = Speed_2MHz;
-    gpio.mode = Mode_IN_FLOATING;
-    if (hse_value == 8000000)
-        gpioInit(GPIOB, &gpio);
-    else if (hse_value == 12000000)
-        gpioInit(GPIOC, &gpio);
+    if (config) {
+        mpu6050GpioInit();
+        config = NULL; // avoid re-initialisation of GPIO;
+    }
 
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(100);

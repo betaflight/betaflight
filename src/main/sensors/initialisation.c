@@ -44,6 +44,7 @@
 #include "drivers/barometer_ms5611.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/sonar_hcsr04.h"
+#include "drivers/gpio.h"
 #include "drivers/system.h"
 
 #include "flight/flight.h"
@@ -65,6 +66,27 @@ extern float magneticDeclination;
 extern gyro_t gyro;
 extern baro_t baro;
 extern acc_t acc;
+
+mpu6050Config_t *generateMPU6050Config(void)
+{
+#ifdef NAZE
+    static mpu6050Config_t nazeMPU6050Config;
+
+    // MPU_INT output on rev4/5 hardware (PB13, PC13)
+    nazeMPU6050Config.gpioPin = Pin_13;
+
+
+    if (hardwareRevision < NAZE32_REV5) {
+        nazeMPU6050Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOB;
+        nazeMPU6050Config.gpioPort = GPIOB;
+    } else {
+        nazeMPU6050Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOC;
+        nazeMPU6050Config.gpioPort = GPIOC;
+    }
+    return &nazeMPU6050Config;
+#endif
+    return NULL;
+}
 
 #ifdef USE_FAKE_GYRO
 static void fakeGyroInit(void) {}
@@ -105,7 +127,7 @@ bool detectGyro(uint16_t gyroLpf)
     gyroAlign = ALIGN_DEFAULT;
 
 #ifdef USE_GYRO_MPU6050
-    if (mpu6050GyroDetect(&gyro, gyroLpf)) {
+    if (mpu6050GyroDetect(generateMPU6050Config(), &gyro, gyroLpf)) {
 #ifdef NAZE
         gyroAlign = CW0_DEG;
 #endif
@@ -211,7 +233,7 @@ retry:
 #endif
 #ifdef USE_ACC_MPU6050
         case ACC_MPU6050: // MPU6050
-            if (mpu6050AccDetect(&acc)) {
+            if (mpu6050AccDetect(generateMPU6050Config(), &acc)) {
                 accHardware = ACC_MPU6050;
 #ifdef NAZE
                 accAlign = CW0_DEG;
