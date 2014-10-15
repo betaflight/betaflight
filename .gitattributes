@@ -1,0 +1,9 @@
+LICENSE text
+*.md text
+*.js text
+*.json text
+*.html text
+*.css text
+*.txt text
+*.png -crlf -diff
+*.svg -crlf -diff
