@@ -4,11 +4,10 @@
 *.cc text
 *.S text
 *.s text
-*.hex -text
-*.elf -text
+*.hex -crlf -diff
+*.elf -crlf -diff
 *.ld text
 Makefile text
 *.bat eol=crlf
 *.txt text
 *.sh text
-
