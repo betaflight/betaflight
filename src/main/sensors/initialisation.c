@@ -170,8 +170,7 @@ bool detectGyro(uint16_t gyroLpf)
 
 #ifdef USE_GYRO_SPI_MPU6500
 #ifdef NAZE
-    // TODO only enable if NAZE32_SP is detected
-    if (false && mpu6500SpiGyroDetect(&gyro, gyroLpf)) {
+    if (hardwareRevision == NAZE32_SP && mpu6500SpiGyroDetect(&gyro, gyroLpf)) {
         gyroAlign = CW0_DEG;
         return true;
     }
@@ -293,8 +292,7 @@ retry:
 #ifdef USE_ACC_SPI_MPU6500
         case ACC_SPI_MPU6500:
 #ifdef NAZE
-            // TODO only enable if NAZE32_SP is detected
-            if (false && mpu6500SpiAccDetect(&acc)) {
+            if (hardwareRevision == NAZE32_SP && mpu6500SpiAccDetect(&acc)) {
 #else
             if (mpu6500SpiAccDetect(&acc)) {
 #endif
