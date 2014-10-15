@@ -4,7 +4,7 @@ Clean-code version of baseflight flight-controller - flight controllers are used
 
 This fork differs from baseflight in that it attempts to use modern software development practices which result in:
 
-1. greater reliability through code robustness. 
+1. greater reliability through code robustness and automated testing. 
 2. easier maintainance through code cleanliness.
 3. easier to develop new features. 
 4. easier to re-use code though code de-coupling and modularisation.
