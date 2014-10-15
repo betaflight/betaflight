@@ -39,6 +39,10 @@
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
+#include "drivers/gpio.h"
+#include "drivers/light_led.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/inverter.h"
 
 #include "flight/flight.h"
 #include "flight/mixer.h"
@@ -168,6 +172,34 @@ void init(void)
 #endif
 
     systemInit();
+
+    delay(100);
+
+    ledInit();
+
+#ifdef BEEPER
+    beeperConfig_t beeperConfig = {
+        .gpioMode = Mode_Out_OD,
+        .gpioPin = BEEP_PIN,
+        .gpioPort = BEEP_GPIO,
+        .gpioPeripheral = BEEP_PERIPHERAL,
+        .isInverted = false
+    };
+#ifdef NAZE
+    if (hardwareRevision >= NAZE32_REV5) {
+        // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
+        beeperConfig.gpioMode = Mode_Out_PP;
+        beeperConfig.isInverted = true;
+    }
+#endif
+
+    beeperInit(&beeperConfig);
+#endif
+
+#ifdef INVERTER
+    initInverter();
+#endif
+
 
 #ifdef USE_SPI
     spiInit(SPI1);

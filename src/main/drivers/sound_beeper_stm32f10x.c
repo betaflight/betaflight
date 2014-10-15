@@ -26,27 +26,17 @@
 
 #include "sound_beeper.h"
 
-void initBeeperHardware(void)
+void initBeeperHardware(beeperConfig_t *config)
 {
 #ifdef BEEPER
-    struct {
-        GPIO_TypeDef *gpio;
-        gpio_config_t cfg;
-    } gpio_setup = {
-        .gpio = BEEP_GPIO,
-        .cfg = { BEEP_PIN, Mode_Out_OD, Speed_2MHz }
+    gpio_config_t gpioConfig = {
+        config->gpioPin,
+        config->gpioMode,
+        Speed_2MHz
     };
 
-    RCC_APB2PeriphClockCmd(BEEP_PERIPHERAL, ENABLE);
+    RCC_APB2PeriphClockCmd(config->gpioPeripheral, ENABLE);
 
-#ifdef NAZE
-    // Hack - naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-
-    if (hse_value == 12000000 && gpio_setup.cfg.mode == Mode_Out_OD)
-        gpio_setup.cfg.mode = Mode_Out_PP;
-#endif
-
-    gpioInit(gpio_setup.gpio, &gpio_setup.cfg);
-
+    gpioInit(config->gpioPort, &gpioConfig);
 #endif
 }

@@ -19,6 +19,8 @@
 #include "stdint.h"
 
 #include "platform.h"
+
+#include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "flight/failsafe.h"

@@ -25,20 +25,17 @@
 
 #include "sound_beeper.h"
 
-void initBeeperHardware(void)
+void initBeeperHardware(beeperConfig_t *config)
 {
 #ifdef BEEPER
-    struct {
-        GPIO_TypeDef *gpio;
-        gpio_config_t cfg;
-    } gpio_setup = {
-        .gpio = BEEP_GPIO,
-        .cfg = { BEEP_PIN, Mode_Out_OD, Speed_2MHz }
+    gpio_config_t gpioConfig = {
+        config->gpioPin,
+        config->gpioMode,
+        Speed_2MHz
     };
 
-    RCC_AHBPeriphClockCmd(BEEP_PERIPHERAL, ENABLE);
+    RCC_AHBPeriphClockCmd(config->gpioPeripheral, ENABLE);
 
-    gpioInit(gpio_setup.gpio, &gpio_setup.cfg);
-
+    gpioInit(config->gpioPort, &gpioConfig);
 #endif
 }

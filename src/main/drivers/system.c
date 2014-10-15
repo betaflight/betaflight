@@ -26,7 +26,6 @@
 #include "gpio.h"
 #include "light_led.h"
 #include "sound_beeper.h"
-#include "inverter.h"
 
 #include "system.h"
 
@@ -93,20 +92,11 @@ void systemInit(void)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
 #endif
 
-    ledInit();
-    beeperInit();
-#ifdef INVERTER
-    initInverter();
-#endif
-
     // Init cycle counter
     cycleCounterInit();
 
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
-
-    // sleep for 100ms
-    delay(100);
 }
 
 #if 1
@@ -158,7 +148,7 @@ void failureMode(uint8_t mode)
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(475 * mode - 2);
-        BEEP_ON
+        BEEP_ON;
         delay(25);
         BEEP_OFF;
     }

@@ -17,17 +17,25 @@
 
 #pragma once
 
-#ifdef BEEP_GPIO
-#define BEEP_TOGGLE              digitalToggle(BEEP_GPIO, BEEP_PIN);
-#define BEEP_OFF                 systemBeep(false);
-#define BEEP_ON                  systemBeep(true);
+#ifdef BEEPER
+#define BEEP_TOGGLE              digitalToggle(BEEP_GPIO, BEEP_PIN)
+#define BEEP_OFF                 systemBeep(false)
+#define BEEP_ON                  systemBeep(true)
 #else
-#define BEEP_TOGGLE              ;
-#define BEEP_OFF                 ;
-#define BEEP_ON                  ;
+#define BEEP_TOGGLE
+#define BEEP_OFF
+#define BEEP_ON
 #endif
 
-void systemBeep(bool onoff);
-void beeperInit(void);
+typedef struct beeperConfig_s {
+    uint32_t gpioPeripheral;
+    uint16_t gpioPin;
+    GPIO_TypeDef *gpioPort;
+    GPIO_Mode gpioMode;
+    bool isInverted;
+} beeperConfig_t;
 
-void initBeeperHardware(void);
+void systemBeep(bool onoff);
+void beeperInit(beeperConfig_t *beeperConfig);
+
+void initBeeperHardware(beeperConfig_t *config);
