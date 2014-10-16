@@ -172,19 +172,19 @@ typedef enum {
 
 static mpu6050Resolution_e mpuAccelTrim;
 
-static mpu6050Config_t *config = NULL;
+static const mpu6050Config_t *mpu6050Config = NULL;
 
 void mpu6050GpioInit(void) {
     gpio_config_t gpio;
 
-    if (config->gpioAPB2Peripherals) {
-        RCC_APB2PeriphClockCmd(config->gpioAPB2Peripherals, ENABLE);
+    if (mpu6050Config->gpioAPB2Peripherals) {
+        RCC_APB2PeriphClockCmd(mpu6050Config->gpioAPB2Peripherals, ENABLE);
     }
 
-    gpio.pin = config->gpioPin;
+    gpio.pin = mpu6050Config->gpioPin;
     gpio.speed = Speed_2MHz;
     gpio.mode = Mode_IN_FLOATING;
-    gpioInit(config->gpioPort, &gpio);
+    gpioInit(mpu6050Config->gpioPort, &gpio);
 }
 
 static bool mpu6050Detect(void)
@@ -209,13 +209,13 @@ static bool mpu6050Detect(void)
     return true;
 }
 
-bool mpu6050AccDetect(mpu6050Config_t *configToUse, acc_t *acc)
+bool mpu6050AccDetect(const mpu6050Config_t *configToUse, acc_t *acc)
 {
     uint8_t readBuffer[6];
     uint8_t revision;
     uint8_t productId;
 
-    config = configToUse;
+    mpu6050Config = configToUse;
 
     if (!mpu6050Detect()) {
         return false;
@@ -255,9 +255,9 @@ bool mpu6050AccDetect(mpu6050Config_t *configToUse, acc_t *acc)
     return true;
 }
 
-bool mpu6050GyroDetect(mpu6050Config_t *configToUse, gyro_t *gyro, uint16_t lpf)
+bool mpu6050GyroDetect(const mpu6050Config_t *configToUse, gyro_t *gyro, uint16_t lpf)
 {
-    config = configToUse;
+    mpu6050Config = configToUse;
 
     if (!mpu6050Detect()) {
         return false;
@@ -288,9 +288,9 @@ bool mpu6050GyroDetect(mpu6050Config_t *configToUse, gyro_t *gyro, uint16_t lpf)
 
 static void mpu6050AccInit(void)
 {
-    if (config) {
+    if (mpu6050Config) {
         mpu6050GpioInit();
-        config = NULL; // avoid re-initialisation of GPIO;
+        mpu6050Config = NULL; // avoid re-initialisation of GPIO;
     }
 
     switch (mpuAccelTrim) {
@@ -315,9 +315,9 @@ static void mpu6050AccRead(int16_t *accData)
 
 static void mpu6050GyroInit(void)
 {
-    if (config) {
+    if (mpu6050Config) {
         mpu6050GpioInit();
-        config = NULL; // avoid re-initialisation of GPIO;
+        mpu6050Config = NULL; // avoid re-initialisation of GPIO;
     }
 
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1

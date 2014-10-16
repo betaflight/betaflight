@@ -23,7 +23,7 @@ typedef struct mpu6050Config_s {
     GPIO_TypeDef *gpioPort;
 } mpu6050Config_t;
 
-bool mpu6050AccDetect(mpu6050Config_t *config,acc_t *acc);
-bool mpu6050GyroDetect(mpu6050Config_t *config, gyro_t *gyro, uint16_t lpf);
+bool mpu6050AccDetect(const mpu6050Config_t *config,acc_t *acc);
+bool mpu6050GyroDetect(const mpu6050Config_t *config, gyro_t *gyro, uint16_t lpf);
 void mpu6050DmpLoop(void);
 void mpu6050DmpResetFifo(void);
