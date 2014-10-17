@@ -18,3 +18,4 @@
 char *targetName = __TARGET__;
 char *shortGitRevision = __REVISION__;
 char *buildDate = __DATE__;
+char *buildTime = __TIME__;

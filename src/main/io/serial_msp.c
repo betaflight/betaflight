@@ -64,6 +64,9 @@
 #include "config/config_master.h"
 
 #include "version.h"
+#ifdef NAZE
+#include "hardware_revision.h"
+#endif
 
 #include "serial_msp.h"
 
@@ -73,16 +76,97 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern int16_t debug[4]; // FIXME dependency on mw.c
 
-// Multiwii Serial Protocol 0
-#define MSP_VERSION              0
+/**
+ * MSP Guidelines, emphasis is used to clarify.
+ *
+ * Each FlightController (FC, Server) MUST change the API version when any MSP command is added, deleted, or changed.
+ *
+ * If you fork the FC source code and release your own version, you MUST change the Flight Controller Identifier.
+ *
+ * NEVER release a modified copy of this code that shares the same Flight controller IDENT and API version
+ * if the API doesn't match EXACTLY.
+ *
+ * Consumers of the API (API clients) SHOULD first attempt to get a response from the MSP_API_VERSION command.
+ * If no response is obtained then client MAY try the legacy MSP_IDENT command.
+ *
+ * API consumers should ALWAYS handle communication failures gracefully and attempt to continue
+ * without the information if possible.  Clients MAY log/display a suitable message.
+ *
+ * API clients should NOT attempt any communication if they can't handle the API MAJOR VERSION.
+ *
+ * API clients SHOULD attempt communication if the API MINOR VERSION has increased from the time
+ * the API client was written and handle command failures gracefully.  Clients MAY disable
+ * functionality that depends on the commands while still leaving other functionality intact.
+ * Clients SHOULD operate in READ-ONLY mode and SHOULD present a warning to the user to state
+ * that the newer version may cause problems before using API command that change FC state.
+ *
+ * It is for this reason that each MSP command should be specific as possible, such that changes
+ * to commands break as little functionality as possible.
+ *
+ * API client authors MAY use a compatibility matrix/table that when determining if they can support
+ * a given command from a given flight controller at a given api version level.
+ *
+ * Developers MUST NOT create new MSP commands that do more than one thing.
+ *
+ * Failure to follow these guidelines will likely invoke the wrath of developers trying to write tools
+ * that use the API and the users of those tools.
+ */
+
+#define MSP_PROTOCOL_VERSION                0
+
+#define API_VERSION_MAJOR                   1 // increment when major changes are made
+#define API_VERSION_MINOR                   0 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+
+#define API_VERSION_LENGTH                  2
+
+#define MULTIWII_IDENTIFIER "MWII";
+#define CLEANFLIGHT_IDENTIFIER "CLFL"
+#define BASEFLIGHT_IDENTIFIER "BAFL";
+
+#define FLIGHT_CONTROLLER_IDENTIFIER_LENGTH 4
+static const char *flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+
+#define FLIGHT_CONTROLLER_VERSION_LENGTH    3
+#define FLIGHT_CONTROLLER_VERSION_MASK      0xFFF
+
+const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
+#define BOARD_IDENTIFIER_LENGTH             4 // 4 UPPER CASE alpha numeric characters that identify the board being used.
+#define BOARD_HARDWARE_REVISION_LENGTH      2
+
+// These are baseflight specific flags but they are useless now since MW 2.3 uses the upper 4 bits for the navigation version.
 #define CAP_PLATFORM_32BIT          ((uint32_t)1 << 31)
 #define CAP_BASEFLIGHT_CONFIG       ((uint32_t)1 << 30)
-#define CAP_CLEANFLIGHT_CONFIG      ((uint32_t)1 << 29)
+
+// MW 2.3 stores NAVI_VERSION in the top 4 bits of the capability mask.
+#define CAP_NAVI_VERSION_BIT_4_MSB  ((uint32_t)1 << 31)
+#define CAP_NAVI_VERSION_BIT_3      ((uint32_t)1 << 30)
+#define CAP_NAVI_VERSION_BIT_2      ((uint32_t)1 << 29)
+#define CAP_NAVI_VERSION_BIT_1_LSB  ((uint32_t)1 << 28)
+
 #define CAP_DYNBALANCE              ((uint32_t)1 << 2)
 #define CAP_FLAPS                   ((uint32_t)1 << 3)
-#define CAP_CHANNEL_FORWARDING      ((uint32_t)1 << 4)
+#define CAP_NAVCAP                  ((uint32_t)1 << 4)
+#define CAP_EXTAUX                  ((uint32_t)1 << 5)
 
+/**
+ * Returns MSP protocol version
+ * API version
+ * Flight Controller Identifier
+ * Flight Controller build version (major, minor, patchlevel)
+ * Board Identifier
+ * Board Hardware Revision
+ * Build Date - "MMM DD YYYY" MMM = Jan/Feb/...
+ * Build Time - "HH:MM:SS"
+ * SCM reference length
+ * SCM reference (git revision, svn commit id)
+ * Additional FC information length
+ * Additional FC information (as decided by the FC, for FC specific tools to use as required)
+ **/
+#define MSP_API_VERSION                 1    //out message
+
+//
 // MSP commands for Cleanflight original features
+//
 #define MSP_CHANNEL_FORWARDING          32    //out message         Returns channel forwarding settings
 #define MSP_SET_CHANNEL_FORWARDING      33    //in message          Channel forwarding settings
 
@@ -113,8 +197,9 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define MSP_RSSI_CONFIG                 50
 #define MSP_SET_RSSI_CONFIG             51
 
-
+//
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
+//
 #define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)
 #define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
 
@@ -123,10 +208,18 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 //#define MSP_SET_CONFIG                67 //in message baseflight-specific settings save
 
 #define MSP_REBOOT                      68 //in message reboot settings
-#define MSP_BUILD_INFO                  69 //out message build date as well as some space for future expansion
 
+// DEPRECATED - Use MSP_API_VERSION instead
+//#define MSP_BUILD_INFO                  69 //out message build date as well as some space for future expansion
+
+//
 // Multwii original MSP commands
+//
+
+// DEPRECATED - See MSP_API_VERSION and MSP_MIXER
 #define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
+
+
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
 #define MSP_RAW_IMU              102    //out message         9 DOF
 #define MSP_SERVO                103    //out message         8 servos
@@ -538,20 +631,68 @@ static bool processOutCommand(uint8_t cmdMSP)
 #endif
 
     switch (cmdMSP) {
+    case MSP_API_VERSION:
+        // the components of this command are in an order such that future changes could be made to it without breaking clients.
+        // i.e. most important first.
+        headSerialReply(
+            1 + // protocol version length
+            API_VERSION_LENGTH +
+            FLIGHT_CONTROLLER_IDENTIFIER_LENGTH +
+            FLIGHT_CONTROLLER_VERSION_LENGTH +
+            BOARD_IDENTIFIER_LENGTH +
+            BOARD_HARDWARE_REVISION_LENGTH +
+            BUILD_DATE_LENGTH +
+            BUILD_TIME_LENGTH +
+            1 + // scm reference length
+            GIT_SHORT_REVISION_LENGTH +
+            1 // additional FC specific length
+            // no addition FC specific data yet.
+        );
+        serialize8(MSP_PROTOCOL_VERSION);
+
+        serialize8(API_VERSION_MAJOR);
+        serialize8(API_VERSION_MINOR);
+
+        for (i = 0; i < FLIGHT_CONTROLLER_IDENTIFIER_LENGTH; i++) {
+            serialize8(flightControllerIdentifier[i]);
+        }
+
+        serialize8(FC_VERSION_MAJOR);
+        serialize8(FC_VERSION_MINOR);
+        serialize8(FC_VERSION_PATCH_LEVEL);
+
+        for (i = 0; i < BOARD_IDENTIFIER_LENGTH; i++) {
+            serialize8(boardIdentifier[i]);
+        }
+#ifdef NAZE
+        serialize16(hardwareRevision);
+#else
+        serialize16(0); // No other build targets currently have hardware revision detection.
+#endif
+
+        for (i = 0; i < BUILD_DATE_LENGTH; i++) {
+            serialize8(buildDate[i]);
+        }
+        for (i = 0; i < BUILD_TIME_LENGTH; i++) {
+            serialize8(buildTime[i]);
+        }
+
+        serialize8(GIT_SHORT_REVISION_LENGTH);
+        for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
+            serialize8(shortGitRevision[i]);
+        }
+        serialize8(0); // No flight controller specific information to follow.
+        break;
+
+    // DEPRECATED - Use MSP_API_VERSION
     case MSP_IDENT:
         headSerialReply(7);
         serialize8(MW_VERSION);
         serialize8(masterConfig.mixerConfiguration); // type of multicopter
-        serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
-        serialize32(CAP_PLATFORM_32BIT | CAP_CLEANFLIGHT_CONFIG | CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
+        serialize8(MSP_PROTOCOL_VERSION);
+        serialize32(CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0)); // "capability"
         break;
-    case MSP_BUILD_INFO:
-        headSerialReply(BUILD_DATE_LENGTH + (sizeof(uint32_t) * 2));
-        for (i = 0; i < BUILD_DATE_LENGTH; i++)
-        serialize8(buildDate[i]);
-        serialize32(0); // future exp
-        serialize32(0); // future exp
-        break;
+
     case MSP_STATUS:
         headSerialReply(11);
         serialize16(cycleTime);

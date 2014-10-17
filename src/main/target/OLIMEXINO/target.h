@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define TARGET_BOARD_IDENTIFIER "OLI1" // Olimexino
+
 //#define OLIMEXINO_UNCUT_LED1_E_JUMPER
 //#define OLIMEXINO_UNCUT_LED2_E_JUMPER
 
