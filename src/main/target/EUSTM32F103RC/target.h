@@ -32,7 +32,7 @@
 #define USE_ACC_MMA8452
 #define USE_ACC_MPU3050
 #define USE_ACC_MPU6050
-#define USE_ACC_SPI_MPU6000
+//#define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
 
 #define GYRO
