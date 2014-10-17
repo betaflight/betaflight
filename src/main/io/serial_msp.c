@@ -98,12 +98,12 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
  * the API client was written and handle command failures gracefully.  Clients MAY disable
  * functionality that depends on the commands while still leaving other functionality intact.
  * Clients SHOULD operate in READ-ONLY mode and SHOULD present a warning to the user to state
- * that the newer version may cause problems before using API command that change FC state.
+ * that the newer API version may cause problems before using API commands that change FC state.
  *
  * It is for this reason that each MSP command should be specific as possible, such that changes
  * to commands break as little functionality as possible.
  *
- * API client authors MAY use a compatibility matrix/table that when determining if they can support
+ * API client authors MAY use a compatibility matrix/table when determining if they can support
  * a given command from a given flight controller at a given api version level.
  *
  * Developers MUST NOT create new MSP commands that do more than one thing.
