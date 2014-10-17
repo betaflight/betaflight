@@ -642,6 +642,6 @@ void evaluateOtherData(uint8_t sr)
     if (sr == '#')
         cliProcess();
     else if (sr == serialConfig->reboot_character)
-        systemReset(true);      // reboot to bootloader
+        systemResetToBootloader();
 }
 

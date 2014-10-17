@@ -83,12 +83,49 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 #define CAP_CHANNEL_FORWARDING      ((uint32_t)1 << 4)
 
 // MSP commands for Cleanflight original features
-#define MSP_CHANNEL_FORWARDING     32    //out message         Returns channel forwarding settings
-#define MSP_SET_CHANNEL_FORWARDING 33    //in message          Channel forwarding settings
-#define MSP_MODE_RANGES            34    //out message         Returns all mode ranges
-#define MSP_SET_MODE_RANGE         35    //in message          Sets a single mode range
+#define MSP_CHANNEL_FORWARDING          32    //out message         Returns channel forwarding settings
+#define MSP_SET_CHANNEL_FORWARDING      33    //in message          Channel forwarding settings
 
-//
+#define MSP_MODE_RANGES                 34    //out message         Returns all mode ranges
+#define MSP_SET_MODE_RANGE              35    //in message          Sets a single mode range
+
+#define MSP_FEATURE                     36
+#define MSP_SET_FEATURE                 37
+
+#define MSP_BOARD_ALIGNMENT             38
+#define MSP_SET_BOARD_ALIGNMENT         39
+
+#define MSP_CURRENT_METER_CONFIG        40
+#define MSP_SET_CURRENT_METER_CONFIG    41
+
+#define MSP_MIXER                       42
+#define MSP_SET_MIXER                   43
+
+#define MSP_RX_CONFIG                   44
+#define MSP_SET_RX_CONFIG               45
+
+#define MSP_LED_COLORS                  46
+#define MSP_SET_LED_COLORS              47
+
+#define MSP_LED_STRIP_CONFIG            48
+#define MSP_SET_LED_STRIP_CONFIG        49
+
+#define MSP_RSSI_CONFIG                 50
+#define MSP_SET_RSSI_CONFIG             51
+
+
+// Baseflight MSP commands (if enabled they exist in Cleanflight)
+#define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)
+#define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
+
+// DO NOT IMPLEMENT "MSP_CONFIG" and MSP_SET_CONFIG in Cleanflight, isolated commands already exist
+//#define MSP_CONFIG                    66 //out message baseflight-specific settings that aren't covered elsewhere
+//#define MSP_SET_CONFIG                67 //in message baseflight-specific settings save
+
+#define MSP_REBOOT                      68 //in message reboot settings
+#define MSP_BUILD_INFO                  69 //out message build date as well as some space for future expansion
+
+// Multwii original MSP commands
 #define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
 #define MSP_RAW_IMU              102    //out message         9 DOF
@@ -144,8 +181,6 @@ extern int16_t debug[4]; // FIXME dependency on mw.c
 
 #define INBUF_SIZE 64
 
-#define ACTIVATE_MASK 0xFFF // see
-
 typedef struct box_e {
     const uint8_t boxId;         // see boxId_e
     const char *boxName;            // GUI-readable box name
@@ -186,6 +221,9 @@ static uint8_t activeBoxIds[CHECKBOX_ITEM_COUNT];
 static uint8_t activeBoxIdCount = 0;
 // from mixer.c
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+
+// cause reboot after MSP processing complete
+static bool isRebootScheduled = false;
 
 static const char pidnames[] =
     "ROLL;"
@@ -507,6 +545,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(MSP_VERSION);            // MultiWii Serial Protocol Version
         serialize32(CAP_PLATFORM_32BIT | CAP_CLEANFLIGHT_CONFIG | CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0) | CAP_CHANNEL_FORWARDING); // "capability"
         break;
+    case MSP_BUILD_INFO:
+        headSerialReply(BUILD_DATE_LENGTH + (sizeof(uint32_t) * 2));
+        for (i = 0; i < BUILD_DATE_LENGTH; i++)
+        serialize8(buildDate[i]);
+        serialize32(0); // future exp
+        serialize32(0); // future exp
+        break;
     case MSP_STATUS:
         headSerialReply(11);
         serialize16(cycleTime);
@@ -663,16 +708,6 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(mac->rangeEndStep);
         }
         break;
-    // FIXME provide backward compatible solution?  what what version of MSP? 6pos? would only work if all step values are on 6pos boundaries
-    /*
-    case MSP_BOX:
-        headSerialReply(4 * activeBoxIdCount);
-        for (i = 0; i < activeBoxIdCount; i++)
-            serialize16(currentProfile->activate[activeBoxIds[i]] & ACTIVATE_MASK);
-        for (i = 0; i < activeBoxIdCount; i++)
-            serialize16((currentProfile->activate[activeBoxIds[i]] >> 16) & ACTIVATE_MASK);
-        break;
-    */
     case MSP_BOXNAMES:
         // headSerialReply(sizeof(boxnames) - 1);
         serializeBoxNamesReply();
@@ -767,12 +802,78 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->accelerometerTrims.values.pitch);
         serialize16(currentProfile->accelerometerTrims.values.roll);
         break;
+
     case MSP_UID:
         headSerialReply(12);
         serialize32(U_ID_0);
         serialize32(U_ID_1);
         serialize32(U_ID_2);
         break;
+
+    case MSP_FEATURE:
+        headSerialReply(4);
+        serialize32(featureMask());
+        break;
+
+    case MSP_BOARD_ALIGNMENT:
+        headSerialReply(3);
+        serialize16(masterConfig.boardAlignment.rollDegrees);
+        serialize16(masterConfig.boardAlignment.pitchDegrees);
+        serialize16(masterConfig.boardAlignment.yawDegrees);
+        break;
+
+    case MSP_CURRENT_METER_CONFIG:
+        headSerialReply(4);
+        serialize16(masterConfig.batteryConfig.currentMeterScale);
+        serialize16(masterConfig.batteryConfig.currentMeterOffset);
+        break;
+
+    case MSP_MIXER:
+        headSerialReply(1);
+        serialize8(masterConfig.mixerConfiguration);
+        break;
+
+    case MSP_RX_CONFIG:
+        headSerialReply(7);
+        serialize8(masterConfig.rxConfig.serialrx_provider);
+        serialize16(masterConfig.rxConfig.maxcheck);
+        serialize16(masterConfig.rxConfig.midrc);
+        serialize16(masterConfig.rxConfig.mincheck);
+
+    case MSP_RSSI_CONFIG:
+        headSerialReply(1);
+        serialize8(masterConfig.rxConfig.rssi_channel);
+        break;
+
+    case MSP_RX_MAP:
+        headSerialReply(MAX_MAPPABLE_RX_INPUTS);
+        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
+            serialize8(masterConfig.rxConfig.rcmap[i]);
+        break;
+
+#ifdef LED_STRIP
+    case MSP_LED_COLORS:
+        headSerialReply(CONFIGURABLE_COLOR_COUNT * 4);
+        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+            hsvColor_t *color = &masterConfig.colors[i];
+            serialize16(color->h);
+            serialize8(color->s);
+            serialize8(color->v);
+        }
+        break;
+
+    case MSP_LED_STRIP_CONFIG:
+        headSerialReply(MAX_LED_STRIP_LENGTH * 4);
+        for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
+            serialize16((ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
+            serialize8(GET_LED_X(ledConfig));
+            serialize8(GET_LED_Y(ledConfig));
+        }
+        break;
+#endif
+
     default:
         return false;
     }
@@ -855,15 +956,6 @@ static bool processInCommand(void)
             headSerialError(0);
         }
         break;
-    // FIXME provide backward compatible solution?  what what version of MSP? 6pos? would only work if all step values are on 6pos boundaries
-    /*
-    case MSP_SET_BOX:
-        for (i = 0; i < activeBoxIdCount; i++)
-            currentProfile->activate[activeBoxIds[i]] = read16() & ACTIVATE_MASK;
-        for (i = 0; i < activeBoxIdCount; i++)
-            currentProfile->activate[activeBoxIds[i]] |= (read16() & ACTIVATE_MASK) << 16;
-        break;
-    */
     case MSP_SET_RC_TUNING:
         currentProfile->controlRateConfig.rcRate8 = read8();
         currentProfile->controlRateConfig.rcExpo8 = read8();
@@ -972,6 +1064,88 @@ static bool processInCommand(void)
         }
         break;
 #endif
+    case MSP_SET_FEATURE:
+        headSerialReply(0);
+        featureClearAll();
+        featureSet(read32()); // features bitmap
+        break;
+
+    case MSP_SET_BOARD_ALIGNMENT:
+        headSerialReply(0);
+        masterConfig.boardAlignment.rollDegrees = read16();
+        masterConfig.boardAlignment.pitchDegrees = read16();
+        masterConfig.boardAlignment.yawDegrees = read16();
+        break;
+
+    case MSP_SET_CURRENT_METER_CONFIG:
+        headSerialReply(0);
+        masterConfig.batteryConfig.currentMeterScale = read16();
+        masterConfig.batteryConfig.currentMeterOffset = read16();
+        break;
+
+    case MSP_SET_MIXER:
+        headSerialReply(0);
+        masterConfig.mixerConfiguration = read8();
+        break;
+
+    case MSP_SET_RX_CONFIG:
+        headSerialReply(0);
+        masterConfig.rxConfig.serialrx_provider = read8();
+        masterConfig.rxConfig.maxcheck = read16();
+        masterConfig.rxConfig.midrc = read16();
+        masterConfig.rxConfig.mincheck = read16();
+        break;
+
+    case MSP_SET_RSSI_CONFIG:
+        headSerialReply(0);
+        masterConfig.rxConfig.rssi_channel = read8();
+        break;
+
+
+    case MSP_SET_RX_MAP:
+        headSerialReply(0);
+        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+            masterConfig.rxConfig.rcmap[i] = read8();
+        }
+        break;
+
+#ifdef LED_STRIP
+    case MSP_SET_LED_COLORS:
+        headSerialReply(0);
+        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+            hsvColor_t *color = &masterConfig.colors[i];
+            color->h = read16();
+            color->s = read8();
+            color->v = read8();
+        }
+        break;
+
+    case MSP_SET_LED_STRIP_CONFIG:
+        headSerialReply(MAX_LED_STRIP_LENGTH * 6);
+        for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            uint16_t mask;
+            // currently we're storing directions and functions in a uint16 (flags)
+            // the msp uses 2 x uint16_t to cater for future expansion
+            mask = read16();
+            ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
+
+            mask = read16();
+            ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
+
+            mask = read8();
+            ledConfig->xy = CALCULATE_LED_X(mask);
+
+            mask = read8();
+            ledConfig->xy |= CALCULATE_LED_Y(mask);
+        }
+        break;
+#endif
+    case MSP_REBOOT:
+        headSerialReply(0);
+        isRebootScheduled = true;
+        break;
+
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return false;
@@ -1045,6 +1219,10 @@ void mspProcess(void)
 
         setCurrentPort(candidatePort);
         mspProcessPort();
+
+        if (isRebootScheduled) {
+            systemReset();
+        }
     }
 }
 

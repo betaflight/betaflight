@@ -28,7 +28,8 @@ uint32_t millis(void);
 void failureMode(uint8_t mode);
 
 // bootloader/IAP
-void systemReset(bool toBootloader);
+void systemReset(void);
+void systemResetToBootloader(void);
 
 void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz

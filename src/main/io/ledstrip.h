@@ -47,6 +47,12 @@ typedef enum {
     LED_FUNCTION_THROTTLE    = (1 << 10)
 } ledFlag_e;
 
+#define LED_DIRECTION_BIT_OFFSET 0
+#define LED_DIRECTION_MASK 0x3F
+#define LED_FUNCTION_BIT_OFFSET 6
+#define LED_FUNCTION_MASK 0x7C0
+
+
 typedef struct ledConfig_s {
     uint8_t xy; // see LED_X/Y_MASK defines
     uint16_t flags; // see ledFlag_e

@@ -17,3 +17,4 @@
 
 char *targetName = __TARGET__;
 char *shortGitRevision = __REVISION__;
+char *buildDate = __DATE__;

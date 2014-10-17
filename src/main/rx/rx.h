@@ -56,8 +56,10 @@ extern const char rcChannelLetters[];
 
 extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
 
+#define MAX_MAPPABLE_RX_INPUTS 8
+
 typedef struct rxConfig_s {
-    uint8_t rcmap[8];                       // mapping of radio channels to internal RPYTA+ order
+    uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end

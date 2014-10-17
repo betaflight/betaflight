@@ -994,7 +994,7 @@ static void cliProfile(char *cmdline)
 static void cliReboot(void) {
     cliPrint("\r\nRebooting");
     waitForSerialPortToFinishTransmitting(cliPort);
-    systemReset(false);
+    systemReset();
 }
 
 static void cliSave(char *cmdline)

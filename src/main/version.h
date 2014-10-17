@@ -19,3 +19,6 @@
 
 extern char* targetName;
 extern char* shortGitRevision;
+
+#define BUILD_DATE_LENGTH 11
+extern char* buildDate;  // "MMM DD YYYY" MMM = Jan/Feb/...
