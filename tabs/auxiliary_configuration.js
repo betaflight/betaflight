@@ -65,7 +65,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
                 'max': [ 2100 ]
             };
         
-        var rangeValues = [1400, 1600];
+        var rangeValues = [1300, 1700]; // matches MultiWii default values for the old checkbox MID range.
         if (range != undefined) {
             rangeValues = [range.start, range.end];
         }
