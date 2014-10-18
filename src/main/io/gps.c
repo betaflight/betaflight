@@ -255,7 +255,10 @@ void gpsInitUblox(void)
             if (gpsData.messageState == GPS_MESSAGE_STATE_INIT) {
 
                 if (gpsData.state_position < sizeof(ubloxInit)) {
-                    serialWrite(gpsPort, ubloxInit[gpsData.state_position]);
+					//Either use specific config file for GPS or let dynamically upload config
+					if( gpsConfig->gpsAutoConfig == GPS_AUTOCONFIG_ON ) {
+                        serialWrite(gpsPort, ubloxInit[gpsData.state_position]);
+                    }
                     gpsData.state_position++;
                 } else {
                     gpsData.state_position = 0;
@@ -265,7 +268,10 @@ void gpsInitUblox(void)
 
             if (gpsData.messageState == GPS_MESSAGE_STATE_SBAS) {
                 if (gpsData.state_position < UBLOX_SBAS_MESSAGE_LENGTH) {
-                    serialWrite(gpsPort, ubloxSbas[gpsConfig->sbasMode].message[gpsData.state_position]);
+					//Either use specific config file for GPS or let dynamically upload config
+					if( gpsConfig->gpsAutoConfig == GPS_AUTOCONFIG_ON ) {
+                       serialWrite(gpsPort, ubloxSbas[gpsConfig->sbasMode].message[gpsData.state_position]);
+                    }
                     gpsData.state_position++;
                 } else {
                     gpsData.messageState++;

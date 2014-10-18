@@ -32,10 +32,24 @@ typedef enum {
     TELEMETRY_PROVIDER_MAX = TELEMETRY_PROVIDER_MSP
 } telemetryProvider_e;
 
+typedef enum {
+    FRSKY_FORMAT_DMS = 0,
+    FRSKY_FORMAT_NMEA
+} frskyGpsCoordFormat_e;
+
+typedef enum {
+    FRSKY_UNIT_METRICS = 0,
+    FRSKY_UNIT_IMPERIALS
+} frskyUnit_e;
 typedef struct telemetryConfig_s {
     telemetryProvider_e telemetry_provider;
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     serialInversion_e frsky_inversion;
+	float gpsNoFixLat;   
+    float gpsNoFixLon;  
+    frskyGpsCoordFormat_e frsky_coordinate_format;   
+    frskyUnit_e frsky_unit; 
+    uint16_t batterySize;
 } telemetryConfig_t;
 
 void checkTelemetryState(void);

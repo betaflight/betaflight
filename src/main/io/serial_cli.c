@@ -241,6 +241,7 @@ const clivalue_t valueTable[] = {
 
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.provider, 0, GPS_PROVIDER_MAX },
     { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.sbasMode, 0, SBAS_MODE_MAX },
+	{ "gps_auto_config",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.gpsAutoConfig, 0, GPS_AUTOCONFIG_OFF },
 
 
     { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDPOS], 0, 200 },
@@ -264,6 +265,11 @@ const clivalue_t valueTable[] = {
     { "telemetry_provider",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_switch, 0, 1 },
     { "frsky_inversion",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.frsky_inversion, 0, 1 },
+    { "frsky_default_lat",          VAR_FLOAT  | MASTER_VALUE,  &masterConfig.telemetryConfig.gpsNoFixLat, -90.0, 90.0 },
+    { "frsky_default_lon",          VAR_FLOAT  | MASTER_VALUE,  &masterConfig.telemetryConfig.gpsNoFixLon, -180.0, 180.0 },
+    { "frsky_coordinates_format",   VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.frsky_coordinate_format, 0, FRSKY_FORMAT_NMEA },
+    { "frsky_unit",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.frsky_unit, 0, FRSKY_UNIT_IMPERIALS },
+    { "frsky_battery_size",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.telemetryConfig.batterySize, 0, 20000 },
 
     { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatscale, VBAT_SCALE_MIN, VBAT_SCALE_MAX },
     { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50 },

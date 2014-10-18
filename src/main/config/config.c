@@ -201,6 +201,11 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
     telemetryConfig->frsky_inversion = SERIAL_NOT_INVERTED;
     telemetryConfig->telemetry_switch = 0;
+	telemetryConfig->gpsNoFixLat = 0;
+    telemetryConfig->gpsNoFixLon = 0;
+    telemetryConfig->frsky_coordinate_format = FRSKY_FORMAT_DMS;
+    telemetryConfig->frsky_unit = FRSKY_UNIT_METRICS;
+    telemetryConfig->batterySize = 0;
 }
 
 void resetSerialConfig(serialConfig_t *serialConfig)
@@ -305,6 +310,7 @@ static void resetConf(void)
     // gps/nav stuff
     masterConfig.gpsConfig.provider = GPS_NMEA;
     masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
+    masterConfig.gpsConfig.gpsAutoConfig = GPS_AUTOCONFIG_ON;
 #endif
 
     resetSerialConfig(&masterConfig.serialConfig);
