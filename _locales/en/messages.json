@@ -75,7 +75,7 @@
     "serialPortClosedFail": {
         "message": "<span style=\"color: red\">Failed</span> to close serial port"
     },
-
+    
     "noConfigurationReceived": {
         "message": "No configuration received within <span style=\"color: red\">10 seconds</span>, communication <span style=\"color: red\">failed</span>"
     },
@@ -84,6 +84,9 @@
     },
     "firmwareVersion": {
         "message": "Firmware Version: <strong>$1</strong>"
+    },
+    "apiVersionReceived": {
+        "message": "MultiWii API version <span style=\"color: green\">received</span> - <strong>$1</strong>"
     },
     "uniqueDeviceIdReceived": {
         "message": "Unique device ID <span style=\"color: green\">received</span> - <strong>0x$1</strong>"

@@ -2,6 +2,7 @@
 
 // MSP_codes needs to be re-integrated inside MSP object
 var MSP_codes = {
+    MSP_API_VERSION:            1,
     
     // MSP commands for Cleanflight original features
     MSP_CHANNEL_FORWARDING:     32,
@@ -169,6 +170,15 @@ MSP.process_data = function(code, message_buffer, message_length) {
     var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
 
     switch (code) {
+        case MSP_codes.MSP_API_VERSION:
+            CONFIG.apiVersion = data.getUint8(1) + '.' + data.getUint8(2);
+            var identifier = '';
+            for (i = 0; i < 4; i++) {
+                identifier += String.fromCharCode(data.getUint8(3 + i));
+            }
+            CONFIG.flightControllerIdentifier = identifier;
+            CONFIG.flightControllerVersion = data.getUint8(7) + '.' + data.getUint8(8) + '.' + data.getUint8(9);
+            break;
         case MSP_codes.MSP_IDENT:
             CONFIG.version = parseFloat((data.getUint8(0) / 100).toFixed(2));
             CONFIG.multiType = data.getUint8(1);

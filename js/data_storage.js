@@ -10,6 +10,9 @@ var CONFIGURATOR = {
 };
 
 var CONFIG = {
+    apiVersion:    0,
+    flightControllerIdentifier: '',
+    flightControllerVersion: '',
     version:       0,
     multiType:     0,
     msp_version:   0,
