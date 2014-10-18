@@ -20,6 +20,8 @@
 #define LAT 0
 #define LON 1
 
+#define GPS_DEGREES_DIVIDER 10000000L
+
 typedef enum {
     GPS_NMEA = 0,
     GPS_UBLOX
@@ -54,7 +56,7 @@ typedef enum {
 typedef struct gpsConfig_s {
     gpsProvider_e provider;
     sbasMode_e sbasMode;
-	gpsAutoConfig_e gpsAutoConfig;
+    gpsAutoConfig_e gpsAutoConfig;
 } gpsConfig_t;
 
 typedef enum {

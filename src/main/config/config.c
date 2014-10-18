@@ -201,8 +201,8 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
     telemetryConfig->frsky_inversion = SERIAL_NOT_INVERTED;
     telemetryConfig->telemetry_switch = 0;
-	telemetryConfig->gpsNoFixLat = 0;
-    telemetryConfig->gpsNoFixLon = 0;
+    telemetryConfig->gpsNoFixLatitude = 0;
+    telemetryConfig->gpsNoFixLongitude = 0;
     telemetryConfig->frsky_coordinate_format = FRSKY_FORMAT_DMS;
     telemetryConfig->frsky_unit = FRSKY_UNIT_METRICS;
     telemetryConfig->batterySize = 0;
