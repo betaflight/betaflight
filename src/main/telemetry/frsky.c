@@ -16,7 +16,8 @@
  */
 
 /*
- * FrSky Telemetry implementation by silpstream @ rcgroups
+ * Initial FrSky Telemetry implementation by silpstream @ rcgroups.
+ * Addition protocol work by airmamaf @ github.
  */
 #include <stdbool.h>
 #include <stdint.h>
