@@ -46,6 +46,14 @@ For 2 and 3 use the cli command as follows:
 set frsky_inversion = 1
 ```
 
+### Notes
+
+RPM shows throttle output when armed.
+RPM shows when diarmed.
+TEMP2 shows Satallite Signal Quality when GPS is enabled.
+
+RPM requires that the 'blades' setting is set to 12 on your receiver/display - tested with Taranis/OpenTX.
+
 ## HoTT telemetry
 
 HoTT telemetry can be used when the TX and RX pins of a serial port are connected using a diode and a single wire to the T port on a HoTT receiver.
