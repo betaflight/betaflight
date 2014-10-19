@@ -283,10 +283,16 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
+#ifdef CC3D
+        // skip SoftSerial port
+        if (init->useSoftSerial && (timerIndex == PWM3 || timerIndex == PWM4))
+            continue;
+else
 #ifdef STM32F10X
         // skip softSerial ports
         if (init->useSoftSerial && (timerIndex == PWM5 || timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8))
             continue;
+#endif
 #endif
 
 #ifdef CHEBUZZF3

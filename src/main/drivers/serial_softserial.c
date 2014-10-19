@@ -32,6 +32,13 @@
 #include "serial.h"
 #include "serial_softserial.h"
 
+#if defined(CC3D)
+#define SOFT_SERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
+#define SOFT_SERIAL_1_TIMER_TX_HARDWARE 3 // PWM 4
+#define SOFT_SERIAL_2_TIMER_RX_HARDWARE 2 // PWM 3
+#define SOFT_SERIAL_2_TIMER_TX_HARDWARE 3 // PWM 4
+#else
+
 #if defined(STM32F10X) || defined(CHEBUZZF3)
 #define SOFT_SERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFT_SERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
@@ -44,6 +51,7 @@
 #define SOFT_SERIAL_1_TIMER_TX_HARDWARE 9 // PWM 10
 #define SOFT_SERIAL_2_TIMER_RX_HARDWARE 10 // PWM 11
 #define SOFT_SERIAL_2_TIMER_TX_HARDWARE 11 // PWM 12
+#endif
 #endif
 
 #define RX_TOTAL_BITS 10
