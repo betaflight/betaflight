@@ -16,6 +16,19 @@ TABS.firmware_flasher.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
+        function parse_hex(str, callback) {
+            // parsing hex in different thread
+            var worker = new Worker('./js/workers/hex_parser.js');
+
+            // "callback"
+            worker.onmessage = function (event) {
+                callback(event.data);
+            };
+
+            // send data/string over for processing
+            worker.postMessage(str);
+        }
+
         // UI Hooks
         $('a.load_file').click(function () {
             chrome.fileSystem.chooseEntry({type: 'openFile', accepts: [{extensions: ['hex']}]}, function (fileEntry) {
@@ -341,16 +354,3 @@ TABS.firmware_flasher.cleanup = function (callback) {
 
     if (callback) callback();
 };
-
-function parse_hex(str, callback) {
-    // parsing hex in different thread
-    var worker = new Worker('./js/workers/hex_parser.js');
-
-    // "callback"
-    worker.onmessage = function (event) {
-        callback(event.data);
-    };
-
-    // send data/string over for processing
-    worker.postMessage(str);
-}
