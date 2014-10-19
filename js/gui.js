@@ -6,6 +6,7 @@ var GUI_control = function () {
     this.auto_connect = false;
     this.connecting_to = false;
     this.connected_to = false;
+    this.connect_lock = false;
     this.active_tab;
     this.tab_switch_in_progress = false;
     this.operating_system;
