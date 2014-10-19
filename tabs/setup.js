@@ -124,47 +124,44 @@ TABS.setup.initialize = function (callback) {
             });
         });
 
-        // data pulling functions used inside interval timer
-        // this stuff will be reworked when compatibility period ends, to make the pulling more efficient
-        function get_analog_data() {
-            MSP.send_message(MSP_codes.MSP_ANALOG, false, false, get_gps_data);
-        }
+        // cached elements
+        var bat_voltage_e = $('.bat-voltage'),
+            bat_mah_drawn_e = $('.bat-mah-drawn'),
+            bat_mah_drawing_e = $('.bat-mah-drawing'),
+            rssi_e = $('.rssi'),
+            gpsFix_e = $('.gpsFix'),
+            gpsSats_e = $('.gpsSats'),
+            gpsLat_e = $('.gpsLat'),
+            gpsLon_e = $('.gpsLon'),
+            heading_e = $('span.heading');
 
-        function get_gps_data() {
-            MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, get_attitude_data);
-        }
+        function get_slow_data() {
+            MSP.send_message(MSP_codes.MSP_ANALOG, false, false, function () {
+                bat_voltage_e.text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
+                bat_mah_drawn_e.text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.mAhdrawn]));
+                bat_mah_drawing_e.text(chrome.i18n.getMessage('initialSetupBatteryAValue', [ANALOG.amperage.toFixed(2)]));
+                rssi_e.text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
+            });
 
-        function get_attitude_data() {
-            MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, update_ui);
-        }
+            MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, function () {
+                gpsFix_e.html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
+                gpsSats_e.text(GPS_DATA.numSat);
+                gpsLat_e.text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
+                gpsLon_e.text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
+            });
 
-        // in future update selectors will be moved outside to specific variables to increase performance
-        function update_ui() {
-            // Update heading
-            $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
-
-            // Update voltage indicator
-            $('.bat-voltage').text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
-            $('.bat-mah-drawn').text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.mAhdrawn]));
-            $('.bat-mah-drawing').text(chrome.i18n.getMessage('initialSetupBatteryAValue', [ANALOG.amperage.toFixed(2)]));
-            $('.rssi').text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
-
-            // Update gps
-            $('.gpsFix').html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
-            $('.gpsSats').text(GPS_DATA.numSat);
-            $('.gpsLat').text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
-            $('.gpsLon').text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
-
-            // Update 3D
-            self.render3D();
-        }
-
-        GUI.interval_add('setup_data_pull', get_analog_data, 50, true);
-
-        // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
-        }, 250, true);
+        }
+
+        function get_fast_data() {
+            MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, function () {
+                heading_e.text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
+                self.render3D();
+            });
+        }
+
+        GUI.interval_add('setup_data_pull_fast', get_fast_data, 33, true); // 30 fps
+        GUI.interval_add('setup_data_pull_slow', get_slow_data, 250, true); // 4 fps
 
         if (callback) callback();
     }
