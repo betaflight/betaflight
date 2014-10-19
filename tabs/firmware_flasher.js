@@ -253,43 +253,28 @@ TABS.firmware_flasher.initialize = function (callback) {
                 var status = $(this).is(':checked');
 
                 if (status) {
-                    var flashing_port;
+                    var catch_new_port = function () {
+                        PortHandler.port_detected('flash_detected_device', function (result) {
+                            var port = result[0];
 
-                    var start = function () {
-                        PortHandler.port_detected('flash_next_device', function (result) {
-                            flashing_port = result[0];
-                            GUI.log('Detected: <strong>' + flashing_port + '</strong> - triggering flash on connect');
-                            console.log('Detected: ' + flashing_port + ' - triggering flash on connect');
+                            if (!GUI.connect_lock) {
+                                GUI.log('Detected: <strong>' + port + '</strong> - triggering flash on connect');
+                                console.log('Detected: ' + port + ' - triggering flash on connect');
 
-                            // Trigger regular Flashing sequence
-                            $('a.flash_firmware').click();
-
-                            // Detect port removal to create a new callback
-                            end();
-                        }, false, true);
-                    }
-
-                    var end = function () {
-                        PortHandler.port_removed('flashed_device_removed', function (result) {
-                            for (var i = 0; i < result.length; i++) {
-                                if (result[i] == flashing_port) {
-                                    // flashed device removed
-                                    GUI.log('Removed: <strong>' + flashing_port + '</strong> - ready for next device');
-                                    console.log('Removed: ' + flashing_port + ' - ready for next device');
-
-                                    flashing_port = false;
-                                    start();
-
-                                    return;
-                                }
+                                // Trigger regular Flashing sequence
+                                GUI.timeout_add('initialization_timeout', function () {
+                                    $('a.flash_firmware').click();
+                                }, 100); // timeout so bus have time to initialize after being detected by the system
+                            } else {
+                                GUI.log('Detected <strong>' + port + '</strong> - previous device still flashing, please replug to try again');
                             }
 
-                            // different device removed, we need to retry
-                            end();
+                            // Since current port_detected request was consumed, create new one
+                            catch_new_port();
                         }, false, true);
-                    }
+                    };
 
-                    start();
+                    catch_new_port();
                 } else {
                     PortHandler.flush_callbacks();
                 }
