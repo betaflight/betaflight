@@ -3,10 +3,9 @@
 $(document).ready(function () {
     $('div#port-picker a.connect').click(function () {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
-            var clicks = $(this).data('clicks');
-
-            var selected_port = String($('div#port-picker #port').val());
-            var selected_baud = parseInt($('div#port-picker #baud').val());
+            var clicks = $(this).data('clicks'),
+                selected_port = String($('div#port-picker #port').val()),
+                selected_baud = parseInt($('div#port-picker #baud').val());
 
             if (selected_port != '0' && selected_port != 'DFU') {
                 if (!clicks) {
@@ -27,24 +26,27 @@ $(document).ready(function () {
                     serial.disconnect(onClosed);
 
                     GUI.connected_to = false;
+                    CONFIGURATOR.connectionValid = false;
+                    MSP.disconnect_cleanup();
+                    PortUsage.reset();
 
                     // Reset various UI elements
                     $('span.i2c-error').text(0);
                     $('span.cycle-time').text(0);
 
-                    MSP.disconnect_cleanup();
-                    PortUsage.reset();
-                    CONFIGURATOR.connectionValid = false;
-
                     // unlock port select & baud
                     $('div#port-picker #port').prop('disabled', false);
                     if (!GUI.auto_connect) $('div#port-picker #baud').prop('disabled', false);
 
+                    // reset connect / disconnect button
                     $(this).text(chrome.i18n.getMessage('connect'));
                     $(this).removeClass('active');
 
-                    sensor_status(0); // reset active sensor indicators
-                    $('#tabs > ul li').removeClass('active'); // de-select any selected tabs
+                    // reset active sensor indicators
+                    sensor_status(0);
+
+                    // de-select any selected tabs
+                    $('#tabs > ul li').removeClass('active');
 
                     // detach listeners and remove element data
                     $('#content').empty();
