@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define SOFT_SERIAL_BUFFER_SIZE 256
+#define SOFTSERIAL_BUFFER_SIZE 256
 
 typedef enum {
     SOFTSERIAL1 = 0,
@@ -28,10 +28,10 @@ typedef struct softSerial_s {
     serialPort_t     port;
 
     const timerHardware_t *rxTimerHardware;
-    volatile uint8_t rxBuffer[SOFT_SERIAL_BUFFER_SIZE];
+    volatile uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
 
     const timerHardware_t *txTimerHardware;
-    volatile uint8_t txBuffer[SOFT_SERIAL_BUFFER_SIZE];
+    volatile uint8_t txBuffer[SOFTSERIAL_BUFFER_SIZE];
     
     uint8_t          isSearchingForStartBit;
     uint8_t          rxBitIndex;

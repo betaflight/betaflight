@@ -82,7 +82,8 @@
 
 #define USE_USART1
 #define USE_USART2
-#define USE_SOFT_SERIAL
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT 4
 
 #define USE_I2C
@@ -103,6 +104,5 @@
 
 #define LED_STRIP
 #define TELEMETRY
-#define SOFT_SERIAL
 #define SERIAL_RX
 #define AUTOTUNE

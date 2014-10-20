@@ -64,7 +64,6 @@ void adcInit(drv_adc_config_t *init)
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AIN;
 
 #ifdef CC3D
-    UNUSED(init);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_0;
     adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
