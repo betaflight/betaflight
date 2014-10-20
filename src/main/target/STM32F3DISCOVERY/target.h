@@ -58,6 +58,7 @@
 
 #define GPS
 #define LED_STRIP
+#define LED_STRIP_TIMER TIM16
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE

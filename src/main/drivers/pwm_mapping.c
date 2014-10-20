@@ -283,41 +283,13 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef CC3D
-        // skip SoftSerial port
-        if (init->useSoftSerial && (timerIndex == PWM3 || timerIndex == PWM4))
-            continue;
-else
-#ifdef STM32F10X
-        // skip softSerial ports
-        if (init->useSoftSerial && (timerIndex == PWM5 || timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8))
+#ifdef SOFTSERIAL1_TIMER
+        if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL1_TIMER)
             continue;
 #endif
-#endif
-
-#ifdef CHEBUZZF3
-        // skip softSerial ports
-        // PWM4 can no-longer be used since it uses the same timer as PWM5 and PWM6
-        if (init->useSoftSerial && (timerIndex == PWM4 || timerIndex == PWM5 || timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8))
+#ifdef SOFTSERIAL2_TIMER
+        if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL2_TIMER)
             continue;
-#endif
-
-#if defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3)
-        // skip softSerial ports
-        if (init->useSoftSerial && (timerIndex == PWM9 || timerIndex == PWM10 || timerIndex == PWM11 || timerIndex == PWM12))
-            continue;
-#endif
-
-#if defined(STM32F10X) && !defined(CC3D)
-#define LED_STRIP_TIMER TIM3
-#endif
-
-#if defined(CC3D)
-#define LED_STRIP_TIMER TIM3
-#endif
-
-#if defined(STM32F303)
-#define LED_STRIP_TIMER TIM16
 #endif
 
 #ifdef LED_STRIP_TIMER

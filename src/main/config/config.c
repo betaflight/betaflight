@@ -511,9 +511,21 @@ void validateAndFixConfig(void)
     }
 
 
-#if defined(STM32F10X)
-    // led strip needs the same timer as softserial
-    if (feature(FEATURE_SOFTSERIAL)) {
+#if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
+    if (feature(FEATURE_SOFTSERIAL) && (
+#ifdef USE_SOFTSERIAL1
+            (LED_STRIP_TIMER == SOFTSERIAL_1_TIMER)
+#else
+            0
+#endif
+            ||
+#ifdef USE_SOFTSERIAL2
+            (LED_STRIP_TIMER == SOFTSERIAL_2_TIMER)
+#else
+            0
+#endif
+    )) {
+        // led strip needs the same timer as softserial
         featureClear(FEATURE_LED_STRIP);
     }
 #endif

@@ -32,30 +32,15 @@
 #include "serial.h"
 #include "serial_softserial.h"
 
-#if defined(CC3D)
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 3 // PWM 4
-#else
-
-#if defined(STM32F10X) || defined(CHEBUZZF3)
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
-#endif
-
-#if defined(STM32F303) && !defined(CHEBUZZF3)
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 8 // PWM 9
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 9 // PWM 10
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 10 // PWM 11
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 11 // PWM 12
-#endif
-#endif
-
 #define RX_TOTAL_BITS 10
 #define TX_TOTAL_BITS 10
 
+#if defined(USE_SOFTSERIAL1) && defined(USE_SOFTSERIAL2)
 #define MAX_SOFTSERIAL_PORTS 2
+#else
+#define MAX_SOFTSERIAL_PORTS 1
+#endif
+
 softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 
 void onSerialTimer(uint8_t portIndex, captureCompare_t capture);
