@@ -225,9 +225,11 @@ const clivalue_t valueTable[] = {
     { "serial_port_2_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[1], 0, SERIAL_PORT_SCENARIO_MAX },
 #if (SERIAL_PORT_COUNT > 2)
     { "serial_port_3_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[2], 0, SERIAL_PORT_SCENARIO_MAX },
+#if !defined(CC3D)
     { "serial_port_4_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[3], 0, SERIAL_PORT_SCENARIO_MAX },
 #if (SERIAL_PORT_COUNT > 4)
     { "serial_port_5_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[4], 0, SERIAL_PORT_SCENARIO_MAX },
+#endif
 #endif
 #endif
 
