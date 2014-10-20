@@ -346,8 +346,7 @@ static void hottCheckSerialData(uint32_t currentMicros) {
 
     static bool lookingForRequest = true;
 
-    //uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
-    uint8_t bytesWaiting = 2; // because of an issue in reading the Hott request
+    uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
 
     if (bytesWaiting <= 1) {
         return;
@@ -372,10 +371,8 @@ static void hottCheckSerialData(uint32_t currentMicros) {
         lookingForRequest = true;
     }
 
-    //uint8_t requestId = serialRead(hottPort);
-    //uint8_t address = serialRead(hottPort);
-    uint8_t requestId = HOTT_BINARY_MODE_REQUEST_ID;
-    uint8_t address = HOTT_TELEMETRY_EAM_SENSOR_ID;
+    uint8_t requestId = serialRead(hottPort);
+    uint8_t address = serialRead(hottPort);
 
     if (requestId == HOTT_BINARY_MODE_REQUEST_ID) {
         processBinaryModeRequest(address);
