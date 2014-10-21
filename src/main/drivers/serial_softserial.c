@@ -369,7 +369,7 @@ uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
 
     softSerial_t *s = (softSerial_t *)instance;
 
-    return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.txBufferSize - 1);
+    return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.rxBufferSize - 1);
 }
 
 uint8_t softSerialReadByte(serialPort_t *instance)
