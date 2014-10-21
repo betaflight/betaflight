@@ -217,6 +217,20 @@ static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
     hottEAMMessage->batt1_voltage_H = vbat >> 8;
 }
 
+static inline void hottEAMUpdateCurrentMeter(HOTT_EAM_MSG_t *hottEAMMessage)
+{
+	int32_t amp = amperage / 10;
+	hottEAMMessage->current_L = amp & 0xFF;
+    hottEAMMessage->current_H = amp >> 8;
+}
+
+static inline void hottEAMUpdateBatteryDrawnCapacity(HOTT_EAM_MSG_t *hottEAMMessage)
+{
+	int32_t mAh = mAhDrawn / 10;
+	hottEAMMessage->batt_cap_L = mAh & 0xFF;
+    hottEAMMessage->batt_cap_H = mAh >> 8;
+}
+
 void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     // Reset alarms
@@ -224,6 +238,8 @@ void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
     hottEAMMessage->alarm_invers1 = 0x0;
 
     hottEAMUpdateBattery(hottEAMMessage);
+    hottEAMUpdateCurrentMeter(hottEAMMessage);
+    hottEAMUpdateBatteryDrawnCapacity(hottEAMMessage);
 }
 
 static void hottSerialWrite(uint8_t c)
@@ -354,19 +370,20 @@ static void hottCheckSerialData(uint32_t currentMicros)
 {
     static bool lookingForRequest = true;
 
-    uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
+    //uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
+    uint8_t bytesWaiting = 2; // because of an issue in reading the Hott request
 
-    if (useSoftserialRxFailureWorkaround) {
+    //if (useSoftserialRxFailureWorkaround) {
         // FIXME The 0x80 is being read as 0x00 - softserial timing/syncronisation problem somewhere.
-        if (!bytesWaiting) {
-            return;
-        }
+        //if (!bytesWaiting) {
+            //return;
+        //}
 
-        uint8_t incomingByte = serialRead(hottPort);
-        processBinaryModeRequest(incomingByte);
+        //uint8_t incomingByte = serialRead(hottPort);
+        //processBinaryModeRequest(incomingByte);
 
-        return;
-    }
+        //return;
+    //}
 
     if (bytesWaiting <= 1) {
         return;
@@ -391,8 +408,10 @@ static void hottCheckSerialData(uint32_t currentMicros)
         lookingForRequest = true;
     }
 
-    uint8_t requestId = serialRead(hottPort);
-    uint8_t address = serialRead(hottPort);
+    //uint8_t requestId = serialRead(hottPort);
+    //uint8_t address = serialRead(hottPort);
+    uint8_t requestId = HOTT_BINARY_MODE_REQUEST_ID;
+    uint8_t address = HOTT_TELEMETRY_EAM_SENSOR_ID;
 
     if (requestId == HOTT_BINARY_MODE_REQUEST_ID) {
         processBinaryModeRequest(address);
