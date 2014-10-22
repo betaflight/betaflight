@@ -27,6 +27,8 @@
 #include "config/config.h"
 #include "config/runtime_config.h"
 
+#include "drivers/system.h"
+
 #include "flight/flight.h"
 
 #include "drivers/accgyro.h"
@@ -39,7 +41,9 @@
 #include "mw.h"
 
 #include "rx/rx.h"
+#include "io/escservo.h"
 #include "io/rc_controls.h"
+#include "io/rc_curves.h"
 
 static bool isUsingSticksToArm = true;
 
@@ -243,6 +247,92 @@ void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
                 channelValue < 900 + (modeActivationCondition->rangeEndStep * 25)) {
             ACTIVATE_RC_MODE(modeActivationCondition->modeId);
         }
+    }
+}
+
+uint32_t adjustmentFunctionStateMask = 0;
+
+#define MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentFunction) adjustmentFunctionStateMask |= (1 << (adjustmentFunction - ADJUSTMENT_INDEX_OFFSET))
+#define MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentFunction) adjustmentFunctionStateMask &= ~(1 << (adjustmentFunction - ADJUSTMENT_INDEX_OFFSET))
+
+#define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentFunction) (adjustmentFunctionStateMask & (1 << (adjustmentFunction - ADJUSTMENT_INDEX_OFFSET)))
+
+typedef struct adjustmentConfig_s {
+    uint8_t auxChannelIndex;
+    uint8_t adjustmentFunction;
+    uint8_t step;
+} adjustmentConfig_t;
+
+static adjustmentConfig_t adjustmentConfigs[1] = {
+    {
+        .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+        .adjustmentFunction = ADJUSTMENT_RC_RATE,
+        .step = 1
+    }
+};
+
+
+void applyAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int step) {
+    int newValue;
+
+    switch(adjustmentFunction) {
+        case ADJUSTMENT_RC_RATE:
+            newValue = (int)controlRateConfig->rcRate8 + step;
+            controlRateConfig->rcRate8 = constrain(newValue, 0, 250); // FIXME magic numbers repeated in serial_cli.c
+            generatePitchRollCurve(controlRateConfig);
+        break;
+        default:
+            break;
+    };
+}
+
+#define RESET_FREQUENCY_2HZ (1000 / 2)
+
+void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
+{
+    uint8_t adjustmentIndex;
+    static uint32_t timeoutAt = 0;
+
+    uint32_t now = millis();
+    int32_t signedDiff = now - timeoutAt;
+    bool canResetReadyStates = signedDiff >= 0L;
+
+    if (canResetReadyStates) {
+        timeoutAt = now + RESET_FREQUENCY_2HZ;
+    }
+
+    for (adjustmentIndex = 0; adjustmentIndex < ADJUSTMENT_COUNT; adjustmentIndex++) {
+        adjustmentConfig_t * adjustmentConfig = &adjustmentConfigs[adjustmentIndex];
+
+        uint8_t adjustmentFunction = adjustmentConfig->adjustmentFunction;
+        if (adjustmentFunction == ADJUSTMENT_NONE) {
+            continue;
+        }
+
+        if (canResetReadyStates) {
+            MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentFunction);
+        }
+
+        uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentConfig->auxChannelIndex;
+
+        int step;
+        if (rcData[channelIndex] > rxConfig->maxcheck) {
+            step = adjustmentConfig->step;
+        } else if (rcData[channelIndex] < rxConfig->mincheck) {
+            step = 0 - adjustmentConfig->step;
+        } else {
+            // returning the switch to the middle immediately resets the ready state
+            MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentFunction);
+            timeoutAt = now + RESET_FREQUENCY_2HZ;
+            continue;
+        }
+
+        if (IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentFunction)) {
+            continue;
+        }
+
+        MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentFunction);
+        applyAdjustment(controlRateConfig, adjustmentFunction, step);
     }
 }
 

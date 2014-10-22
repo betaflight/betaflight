@@ -127,6 +127,19 @@ bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch);
 
-
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
+
+
+typedef enum {
+    ADJUSTMENT_NONE = 0,
+    ADJUSTMENT_RC_RATE
+} adjustmentFunction_e;
+
+#define ADJUSTMENT_COUNT 1
+
+#define ADJUSTMENT_INDEX_OFFSET 1
+
+void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
+
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);
+

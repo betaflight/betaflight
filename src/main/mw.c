@@ -496,6 +496,8 @@ void processRx(void)
 
     updateActivatedModes(currentProfile->modeActivationConditions);
 
+    processRcAdjustments(&currentProfile->controlRateConfig, &masterConfig.rxConfig);
+
     bool canUseHorizonMode = true;
 
     if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {

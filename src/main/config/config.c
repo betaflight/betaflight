@@ -430,7 +430,7 @@ void activateConfig(void)
 {
     static imuRuntimeConfig_t imuRuntimeConfig;
 
-    generatePitchCurve(&currentProfile->controlRateConfig);
+    generatePitchRollCurve(&currentProfile->controlRateConfig);
     generateThrottleCurve(&currentProfile->controlRateConfig, &masterConfig.escAndServoConfig);
     useRcControlsConfig(currentProfile->modeActivationConditions);
 

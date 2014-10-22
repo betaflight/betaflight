@@ -157,6 +157,221 @@ TEST(RcControlsTest, updateActivatedModesUsingValidAuxConfigurationAndRXValues)
     }
 }
 
+enum {
+    COUNTER_GENERATE_PITCH_ROLL_CURVE = 0
+};
+#define CALL_COUNT_ITEM_COUNT 1
+
+static int callCounts[CALL_COUNT_ITEM_COUNT];
+
+#define CALL_COUNTER(item) (callCounts[item])
+
+void generatePitchRollCurve(controlRateConfig_t *) {
+    callCounts[COUNTER_GENERATE_PITCH_ROLL_CURVE]++;
+}
+
+void resetCallCounters(void) {
+    memset(&callCounts, 0, sizeof(callCounts));
+}
+
+uint32_t fixedMillis = 0;
+
+uint32_t millis(void) {
+    return fixedMillis;
+}
+
+#define DEFAULT_MIN_CHECK 1100
+#define DEFAULT_MAX_CHECK 1900
+
+rxConfig_t rxConfig;
+
+extern uint32_t adjustmentFunctionStateMask;
+
+TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
+{
+    // given
+    controlRateConfig_t controlRateConfig = {
+            .rcRate8 = 90,
+            .rcExpo8 = 0,
+            .thrMid8 = 0,
+            .thrExpo8 = 0,
+            .rollPitchRate = 0,
+            .yawRate = 0,
+    };
+
+    // and
+    memset(&rxConfig, 0, sizeof (rxConfig));
+    rxConfig.mincheck = DEFAULT_MIN_CHECK;
+    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+
+    // and
+    uint8_t index;
+    for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    // and
+    resetCallCounters();
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(controlRateConfig.rcRate8, 90);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 0);
+    EXPECT_EQ(adjustmentFunctionStateMask, 0);
+}
+
+TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
+{
+    // given
+    controlRateConfig_t controlRateConfig = {
+            .rcRate8 = 90,
+            .rcExpo8 = 0,
+            .thrMid8 = 0,
+            .thrExpo8 = 0,
+            .rollPitchRate = 0,
+            .yawRate = 0,
+    };
+
+    // and
+    memset(&rxConfig, 0, sizeof (rxConfig));
+    rxConfig.mincheck = DEFAULT_MIN_CHECK;
+    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+
+    // and
+    uint8_t index;
+    for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    // and
+    resetCallCounters();
+
+    // and
+    rcData[AUX3] = PWM_RANGE_MAX;
+
+    // and
+    uint32_t expectedAdjustmentFunctionStateMask =
+            (1 << (ADJUSTMENT_RC_RATE - ADJUSTMENT_INDEX_OFFSET));
+
+    // and
+    fixedMillis = 496;
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(controlRateConfig.rcRate8, 91);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 1);
+    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+
+
+    //
+    // now pretend a short amount of time has passed, but not enough time to allow the value to have been increased
+    //
+
+    // given
+    fixedMillis = 497;
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    EXPECT_EQ(controlRateConfig.rcRate8, 91);
+    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+
+
+    //
+    // moving the switch back to the middle should immediately reset the state flag without increasing the value
+    //
+
+
+    // given
+    rcData[AUX3] = PWM_RANGE_MIDDLE;
+
+    // and
+    fixedMillis = 498;
+
+    // and
+    expectedAdjustmentFunctionStateMask = adjustmentFunctionStateMask &
+            ~(1 << (ADJUSTMENT_RC_RATE - ADJUSTMENT_INDEX_OFFSET));
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    EXPECT_EQ(controlRateConfig.rcRate8, 91);
+    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+
+
+    //
+    // flipping the switch again, before the state reset would have occurred, allows the value to be increased again
+
+    // given
+    rcData[AUX3] = PWM_RANGE_MAX;
+
+    // and
+    expectedAdjustmentFunctionStateMask =
+            (1 << (ADJUSTMENT_RC_RATE - ADJUSTMENT_INDEX_OFFSET));
+
+    // and
+    fixedMillis = 499;
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(controlRateConfig.rcRate8, 92);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 2);
+    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+
+    //
+    // leaving the switch up, after the original timer would have reset the state should now NOT cause
+    // the rate to increase, it should only increase after another 500ms from when the state was reset.
+    //
+
+    // given
+    fixedMillis = 500;
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(controlRateConfig.rcRate8, 92);
+    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+
+    //
+    // should still not be able to be increased
+    //
+
+    // given
+    fixedMillis = 997;
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(controlRateConfig.rcRate8, 92);
+    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+
+    //
+    // 500ms has now passed since the switch was returned to the middle, now that
+    // switch is still in the UP position after the timer has elapses it should
+    // be increased again.
+    //
+
+    // given
+    fixedMillis = 998;
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(controlRateConfig.rcRate8, 93);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 3);
+    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+
+}
+
 void changeProfile(uint8_t) {}
 void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}
