@@ -316,9 +316,9 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
         uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentConfig->auxChannelIndex;
 
         int step;
-        if (rcData[channelIndex] > rxConfig->maxcheck) {
+        if (rcData[channelIndex] > rxConfig->midrc + 200) {
             step = adjustmentConfig->step;
-        } else if (rcData[channelIndex] < rxConfig->mincheck) {
+        } else if (rcData[channelIndex] < rxConfig->midrc - 200) {
             step = 0 - adjustmentConfig->step;
         } else {
             // returning the switch to the middle immediately resets the ready state
