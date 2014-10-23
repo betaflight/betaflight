@@ -43,7 +43,7 @@ OPBL_VALID_TARGETS = CC3D
 REVISION = $(shell git log -1 --format="%h")
 
 # Working directories
-ROOT		 = $(dir $(lastword $(MAKEFILE_LIST)))
+ROOT		 := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 SRC_DIR		 = $(ROOT)/src/main
 OBJECT_DIR	 = $(ROOT)/obj/main
 BIN_DIR		 = $(ROOT)/obj
@@ -412,11 +412,10 @@ CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 MASSIVEF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
-		   
+
 ifeq ($(TARGET),MASSIVEF3)
 LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_128k.ld
 endif
-		   
 
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
@@ -459,12 +458,13 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   -D'__FORKNAME__="$(FORKNAME)"' \
 		   -D'__TARGET__="$(TARGET)"' \
 		   -D'__REVISION__="$(REVISION)"' \
-		   -save-temps=obj
-
+		   -save-temps=obj \
+		   -MD
 
 ASFLAGS		 = $(ARCH_FLAGS) \
 		   -x assembler-with-cpp \
-		   $(addprefix -I,$(INCLUDE_DIRS))
+		   $(addprefix -I,$(INCLUDE_DIRS)) \
+		  -MD
 
 LDFLAGS		 = -lm \
 		   -nostartfiles \
@@ -493,7 +493,8 @@ TARGET_BIN	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).bin
 TARGET_HEX	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).hex
 TARGET_ELF	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
 TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
-TARGET_MAP   = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
+TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
+TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
@@ -518,7 +519,8 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $< 
+	@$(CC) -c -o $@ $(ASFLAGS) $<
+
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
@@ -552,3 +554,9 @@ help:
 	@echo ""
 	@echo "Valid TARGET values are: $(VALID_TARGETS)"
 	@echo ""
+
+# rebuild everything when makefile changes
+$(TARGET_OBJS) : Makefile
+
+# include auto-generated dependencies
+-include $(TARGET_DEPS)
