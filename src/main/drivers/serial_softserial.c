@@ -25,6 +25,7 @@
 
 #include "build_config.h"
 
+#include "nvic.h"
 #include "system.h"
 #include "gpio.h"
 #include "timer.h"

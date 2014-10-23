@@ -27,6 +27,7 @@
 #include "gpio.h"
 #include "system.h"
 #include "bus_i2c.h"
+#include "nvic.h"
 
 #include "barometer_bmp085.h"
 
@@ -171,8 +172,8 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 
         // Enable and set EXTI10-15 Interrupt to the lowest priority
         NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
-        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
-        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = BARO_EXTIRQ_PRIORITY;
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = BARO_EXTIRQ_SUBPRIORITY;
         NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStructure);
     }
