@@ -270,10 +270,16 @@ void configureHoTTTelemetryPort(void)
         // FIXME only need to do this if the port is shared
         previousPortMode = hottPort->mode;
         previousBaudRate = hottPort->baudRate;
-
-        if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL1 || hottPort->identifier == SERIAL_PORT_SOFTSERIAL2) {
+#ifdef USE_SOFTSERIAL1
+        if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL1) {
             useSoftserialRxFailureWorkaround = true;
         }
+#endif
+#ifdef USE_SOFTSERIAL2
+        if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL2) {
+            useSoftserialRxFailureWorkaround = true;
+        }
+#endif
     }
 }
 
