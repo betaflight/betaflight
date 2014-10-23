@@ -190,8 +190,7 @@ void annexCode(void)
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
             prop1 = 100 - (uint16_t)currentProfile->controlRateConfig.rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
-        }
-        if (axis == YAW) {
+        } else if (axis == YAW) {
             if (currentProfile->yaw_deadband) {
                 if (tmp > currentProfile->yaw_deadband) {
                     tmp -= currentProfile->yaw_deadband;

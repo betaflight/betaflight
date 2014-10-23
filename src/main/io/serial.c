@@ -218,19 +218,16 @@ static void sortSerialPortFunctions(serialPortFunction_t *serialPortFunctions, u
 {
     serialPortFunction_t swap;
 
-    int8_t index1;
-    int8_t index2;
-    int result;
-
+    int index1;
+    int index2;
+    
+    // bubble-sort array (TODO - port selection can be implemented as repeated minimum search with bitmask marking used elements)
     for (index1 = 0; index1 < (elements - 1); index1++) {
         for (index2 = 0; index2 < elements - index1 - 1; index2++) {
-
-            result = serialPortFunctionMostSpecificFirstComparator(&serialPortFunctions[index2], &serialPortFunctions[index2 + 1]);
-
-            if (result > 0) {
-                memcpy(&swap, &serialPortFunctions[index1], sizeof(serialPortFunction_t));
-                memcpy(&serialPortFunctions[index1], &serialPortFunctions[index2 + 1], sizeof(serialPortFunction_t));
-                memcpy(&serialPortFunctions[index2 + 1], &swap, sizeof(serialPortFunction_t));
+            if(serialPortFunctionMostSpecificFirstComparator(&serialPortFunctions[index2], &serialPortFunctions[index2 + 1]) > 0) {
+                swap=serialPortFunctions[index2];
+                serialPortFunctions[index2] = serialPortFunctions[index2 + 1];
+                serialPortFunctions[index2 + 1] = swap;
             }
         }
     }
@@ -259,7 +256,7 @@ serialPortSearchResult_t *findNextSerialPort(serialPortFunction_e function, cons
         }
 
 #if (defined(NAZE) || defined(OLIMEXINO)) && defined(SONAR)
-        if (!feature(FEATURE_RX_PARALLEL_PWM) && (serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2)) {
+        if (feature(FEATURE_SONAR) && !feature(FEATURE_RX_PARALLEL_PWM) && (serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2)) {
             continue;
         }
 #endif

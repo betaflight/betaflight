@@ -1391,19 +1391,21 @@ void mspSetTelemetryPort(serialPort_t *serialPort)
     mspPort_t *matchedPort = NULL;
 
     // find existing telemetry port
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT && !matchedPort; portIndex++) {
+    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         candidatePort = &mspPorts[portIndex];
         if (candidatePort->mspPortUsage == FOR_TELEMETRY) {
             matchedPort = candidatePort;
+            break;
         }
     }
 
     if (!matchedPort) {
         // find unused port
-        for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT && !matchedPort; portIndex++) {
+        for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
             candidatePort = &mspPorts[portIndex];
             if (candidatePort->mspPortUsage == UNUSED_PORT) {
                 matchedPort = candidatePort;
+                break;
             }
         }
     }

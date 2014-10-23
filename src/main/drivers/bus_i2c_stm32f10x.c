@@ -195,6 +195,7 @@ static void i2c_er_handler(void)
         I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                        // disable the RXNE/TXE interrupt - prevent the ISR tailchaining onto the ER (hopefully)
         if (!(SR1Register & 0x0200) && !(I2Cx->CR1 & 0x0200)) {         // if we dont have an ARLO error, ensure sending of a stop
             if (I2Cx->CR1 & 0x0100) {                                   // We are currently trying to send a start, this is very bad as start, stop will hang the peripheral
+                // TODO - busy waiting in highest priority IRQ. Maybe only set flag and handle it from main loop
                 while (I2Cx->CR1 & 0x0100) { ; }                        // wait for any start to finish sending
                 I2C_GenerateSTOP(I2Cx, ENABLE);                         // send stop to finalise bus transaction
                 while (I2Cx->CR1 & 0x0200) { ; }                        // wait for stop to finish sending
@@ -281,6 +282,7 @@ void i2c_ev_handler(void)
                 subaddress_sent = 1;                                    // this is set back to zero upon completion of the current task
             }
         }
+        // TODO - busy waiting in ISR
         // we must wait for the start to clear, otherwise we get constant BTF
         while (I2Cx->CR1 & 0x0100) { ; }
     } else if (SReg_1 & 0x0040) {                                       // Byte received - EV7

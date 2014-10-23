@@ -106,10 +106,10 @@ typedef struct
     GPIO_Speed speed;
 } gpio_config_t;
 
-#define digitalHi(p, i)     { p->BSRR = i; }
-#define digitalLo(p, i)     { p->BRR = i; }
-#define digitalToggle(p, i) { p->ODR ^= i; }
-#define digitalIn(p, i)     (p->IDR & i)
+static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRR = i; }
+static inline void digitalLo(GPIO_TypeDef *p, uint16_t i)     { p->BRR = i; }
+static inline void digitalToggle(GPIO_TypeDef *p, uint16_t i) { p->ODR ^= i; }
+static inline uint16_t digitalIn(GPIO_TypeDef *p, uint16_t i) {return p->IDR & i; }
 
 void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config);
 void gpioExtiLineConfig(uint8_t portsrc, uint8_t pinsrc);
