@@ -135,10 +135,11 @@ void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
 
 typedef enum {
     ADJUSTMENT_NONE = 0,
-    ADJUSTMENT_RC_RATE
+    ADJUSTMENT_RC_RATE,
+    ADJUSTMENT_PITCH_ROLL_RATE
 } adjustmentFunction_e;
 
-#define ADJUSTMENT_FUNCTION_COUNT 2
+#define ADJUSTMENT_FUNCTION_COUNT 3
 
 typedef struct adjustmentConfig_s {
     uint8_t adjustmentFunction;
