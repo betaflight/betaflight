@@ -275,6 +275,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
         .step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_YAW_RATE,
+        .step = 1
     }
 
 };
@@ -328,6 +332,10 @@ void applyAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentF
         case ADJUSTMENT_PITCH_ROLL_RATE:
             newValue = (int)controlRateConfig->rollPitchRate + delta;
             controlRateConfig->rollPitchRate = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            break;
+        case ADJUSTMENT_YAW_RATE:
+            newValue = (int)controlRateConfig->yawRate + delta;
+            controlRateConfig->yawRate = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             break;
         default:
             break;
