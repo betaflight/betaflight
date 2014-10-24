@@ -177,6 +177,10 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         return;
     }
 
+    if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_HI) {
+        saveConfigAndNotify();
+    }
+
     if (isUsingSticksToArm) {
 
         if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
