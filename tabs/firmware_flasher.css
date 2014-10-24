@@ -53,17 +53,13 @@
                 background-color: #A62E32;
             }
 .tab-firmware_flasher .note {
+    position: relative;
+
     margin-bottom: 10px;
     padding: 5px;
 
     border: 1px dotted silver;
 }
-    .tab-firmware_flasher .note p {
-        margin-bottom: 5px;
-    }
-    .tab-firmware_flasher .note label {
-        float: left;
-    }
     .tab-firmware_flasher .note label input {
         float: left;
         margin-top: 2px;
@@ -71,6 +67,13 @@
     .tab-firmware_flasher .note label span {
         font-weight: bold;
         margin-left: 6px;
+    }
+    .tab-firmware_flasher .note .description {
+        position: absolute;
+        left: 200px;
+
+        font-style: italic;
+        color: #818181;
     }
     .tab-firmware_flasher .note .flash_on_connect_wrapper {
         display: none;

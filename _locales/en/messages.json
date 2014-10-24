@@ -649,29 +649,35 @@
     "firmwareFlasherLoadFirmwareFile": {
         "message": "Please load firmware file"
     },
-    "firmwareFlasherNote": {
-        "message": "If you are flashing board with bootloader pins <strong>shorted/connected</strong>, check <strong>No reboot sequence</strong>.<br />If you want configuration data to be wiped, check <strong>Full Chip Erase</strong><br />If you are flashing via bluetooth adapter or using external usb to serial adapter, check <strong>Flash slowly</strong><br />"
-    },
     "firmwareFlasherNoReboot": {
         "message": "No reboot sequence"
+    },
+    "firmwareFlasherNoRebootDescription": {
+        "message": "Check if you are flashing board with bootloader pins shorted"
     },
     "firmwareFlasherFlashOnConnect": {
         "message": "Flash on connect"
     },
+    "firmwareFlasherFlashOnConnectDescription": {
+        "message": "Attempt to flash the board automatically (triggered by newly detected serial port)"
+    },
     "firmwareFlasherFullChipErase": {
         "message": "Full Chip Erase"
+    },
+    "firmwareFlasherFullChipEraseDescription": {
+        "message": "Wipes all configuration data currently stored on the board"
     },
     "firmwareFlasherFlashDevelopmentFirmware": {
         "message": "Use Development Firmware"
     },
-    "firmwareFlasherFlashDevelopmentFirmwareTitle": {
+    "firmwareFlasherFlashDevelopmentFirmwareDescription": {
         "message": "Flash most recent (untested) development firmware"
     },
     "firmwareFlasherFlashSlowly": {
         "message": "Flash slowly"
     },
-    "firmwareFlasherFlashSlowlyTitle": {
-        "message": "Use 115200 baudrate for flashing"
+    "firmwareFlasherFlashSlowlyDescription": {
+        "message": "Use 115200 baudrate for flashing (useful for flashing via bluetooth)"
     },
     "firmwareFlasherButtonLoadLocal": {
         "message": "Load Firmware [Local]"

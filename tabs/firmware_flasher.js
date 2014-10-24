@@ -267,7 +267,7 @@ TABS.firmware_flasher.initialize = function (callback) {
         chrome.storage.local.get('no_reboot_sequence', function (result) {
             if (result.no_reboot_sequence) {
                 $('input.updating').prop('checked', true);
-                $('label.flash_on_connect_wrapper').show();
+                $('.flash_on_connect_wrapper').show();
             } else {
                 $('input.updating').prop('checked', false);
             }
@@ -277,10 +277,10 @@ TABS.firmware_flasher.initialize = function (callback) {
                 var status = $(this).is(':checked');
 
                 if (status) {
-                    $('label.flash_on_connect_wrapper').show();
+                    $('.flash_on_connect_wrapper').show();
                 } else {
                     $('input.flash_on_connect').prop('checked', false).change();
-                    $('label.flash_on_connect_wrapper').hide();
+                    $('.flash_on_connect_wrapper').hide();
                 }
 
                 chrome.storage.local.set({'no_reboot_sequence': status});
