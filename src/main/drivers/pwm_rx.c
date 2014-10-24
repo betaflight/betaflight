@@ -23,6 +23,7 @@
 #include "platform.h"
 #include "build_config.h"
 
+#include "nvic.h"
 #include "gpio.h"
 #include "timer.h"
 
@@ -39,6 +40,7 @@
 #define PWM_PORTS_OR_PPM_CAPTURE_COUNT PWM_INPUT_PORT_COUNT
 #endif
 
+// TODO - change to timer cloks ticks
 #define INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX 0x03
 
 static inputFilteringMode_e inputFilteringMode;

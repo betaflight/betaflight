@@ -26,6 +26,7 @@
 #include "gpio.h"
 #include "light_led.h"
 #include "sound_beeper.h"
+#include "nvic.h"
 
 #include "system.h"
 
@@ -73,7 +74,7 @@ void systemInit(void)
     NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
 #endif
     // Configure NVIC preempt/priority groups
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+    NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING);
 
 #ifdef STM32F10X
     // Turn on clocks for stuff we use

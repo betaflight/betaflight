@@ -27,6 +27,7 @@
 #include "system.h"
 
 #include "bus_i2c.h"
+#include "nvic.h"
 
 #ifndef SOFT_I2C
 
@@ -342,14 +343,15 @@ void i2cInit(I2CDevice index)
 
     // I2C ER Interrupt
     nvic.NVIC_IRQChannel = i2cHardwareMap[index].er_irq;
-    nvic.NVIC_IRQChannelPreemptionPriority = 0;
-    nvic.NVIC_IRQChannelSubPriority = 0;
+    nvic.NVIC_IRQChannelPreemptionPriority = I2C_ER_IRQ_PRIORITY;
+    nvic.NVIC_IRQChannelSubPriority = I2C_ER_IRQ_SUBPRIORITY;
     nvic.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&nvic);
 
     // I2C EV Interrupt
     nvic.NVIC_IRQChannel = i2cHardwareMap[index].ev_irq;
-    nvic.NVIC_IRQChannelPreemptionPriority = 0;
+    nvic.NVIC_IRQChannelPreemptionPriority = I2C_EV_IRQ_PRIORITY;
+    nvic.NVIC_IRQChannelSubPriority = I2C_EV_IRQ_SUBPRIORITY;
     NVIC_Init(&nvic);
 }
 

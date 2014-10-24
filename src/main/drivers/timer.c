@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "nvic.h"
 
 #include "gpio.h"
 #include "system.h"
@@ -312,8 +313,8 @@ void timerNVICConfigure(uint8_t irq)
     NVIC_InitTypeDef NVIC_InitStructure;
 
     NVIC_InitStructure.NVIC_IRQChannel = irq;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = TIMER_IRQ_PRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = TIMER_IRQ_SUBPRIORITY;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
