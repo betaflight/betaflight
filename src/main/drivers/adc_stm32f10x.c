@@ -69,6 +69,14 @@ void adcInit(drv_adc_config_t *init)
     adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
     adcConfig[ADC_BATTERY].enabled = true;
     adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
+
+    if (init->enableCurrentMeter) {
+        GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1;
+        adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_1;
+        adcConfig[ADC_CURRENT].dmaIndex = configuredAdcChannels++;
+        adcConfig[ADC_CURRENT].enabled = true;
+        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;
+    }
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 #else
     // configure always-present battery index (ADC4)
