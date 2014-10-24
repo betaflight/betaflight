@@ -376,20 +376,19 @@ static void hottCheckSerialData(uint32_t currentMicros)
 {
     static bool lookingForRequest = true;
 
-    //uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
-    uint8_t bytesWaiting = 2; // because of an issue in reading the Hott request
+    uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
 
-    //if (useSoftserialRxFailureWorkaround) {
+    if (useSoftserialRxFailureWorkaround) {
         // FIXME The 0x80 is being read as 0x00 - softserial timing/syncronisation problem somewhere.
-        //if (!bytesWaiting) {
-            //return;
-        //}
+        if (!bytesWaiting) {
+            return;
+        }
 
-        //uint8_t incomingByte = serialRead(hottPort);
-        //processBinaryModeRequest(incomingByte);
+        uint8_t incomingByte = serialRead(hottPort);
+        processBinaryModeRequest(incomingByte);
 
-        //return;
-    //}
+        return;
+    }
 
     if (bytesWaiting <= 1) {
         return;
@@ -414,10 +413,8 @@ static void hottCheckSerialData(uint32_t currentMicros)
         lookingForRequest = true;
     }
 
-    //uint8_t requestId = serialRead(hottPort);
-    //uint8_t address = serialRead(hottPort);
-    uint8_t requestId = HOTT_BINARY_MODE_REQUEST_ID;
-    uint8_t address = HOTT_TELEMETRY_EAM_SENSOR_ID;
+    uint8_t requestId = serialRead(hottPort);
+    uint8_t address = serialRead(hottPort);
 
     if (requestId == HOTT_BINARY_MODE_REQUEST_ID) {
         processBinaryModeRequest(address);
