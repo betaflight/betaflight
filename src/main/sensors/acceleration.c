@@ -130,8 +130,8 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
         if (InflightcalibratingA == 1) {
             AccInflightCalibrationActive = false;
             AccInflightCalibrationMeasurementDone = true;
-            queueConfirmationBeep(2); // beeper to indicatiing the end of calibration
-            // recover saved values to maintain current flight behavior until new values are transferred
+            queueConfirmationBeep(5); // beeper to indicating the end of calibration
+            // recover saved values to maintain current flight behaviour until new values are transferred
             accelerationTrims->raw[FD_ROLL] = accZero_saved[FD_ROLL];
             accelerationTrims->raw[FD_PITCH] = accZero_saved[FD_PITCH];
             accelerationTrims->raw[FD_YAW] = accZero_saved[FD_YAW];
@@ -141,17 +141,16 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
         InflightcalibratingA--;
     }
     // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-    if (AccInflightCalibrationSavetoEEProm) {      // the copter is landed, disarmed and the combo has been done again
+    if (AccInflightCalibrationSavetoEEProm) {      // the aircraft is landed, disarmed and the combo has been done again
         AccInflightCalibrationSavetoEEProm = false;
         accelerationTrims->raw[FD_ROLL] = b[FD_ROLL] / 50;
         accelerationTrims->raw[FD_PITCH] = b[FD_PITCH] / 50;
-        accelerationTrims->raw[FD_YAW] = b[FD_YAW] / 50 - acc_1G;    // for nunchuk 200=1G
+        accelerationTrims->raw[FD_YAW] = b[FD_YAW] / 50 - acc_1G;    // for nunchuck 200=1G
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
         saveConfigAndNotify();
     }
-
 }
 
 void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)

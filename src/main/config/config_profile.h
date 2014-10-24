@@ -44,6 +44,8 @@ typedef struct profile_s {
 
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
+    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
+
     // Radio/ESC-related configuration
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
     uint8_t yaw_deadband;                   // introduce a deadband around the stick center for yaw axis. Must be greater than zero.

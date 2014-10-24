@@ -70,6 +70,7 @@ void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse,
         escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse,
         airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfig, gimbalConfig_t *gimbalConfigToUse);
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800
 
@@ -100,7 +101,7 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
 master_t masterConfig;      // master config struct with data independent from profiles
 profile_t *currentProfile;   // profile config struct
 
-static const uint8_t EEPROM_CONF_VERSION = 82;
+static const uint8_t EEPROM_CONF_VERSION = 83;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -430,9 +431,9 @@ void activateConfig(void)
 {
     static imuRuntimeConfig_t imuRuntimeConfig;
 
-    generatePitchCurve(&currentProfile->controlRateConfig);
+    generatePitchRollCurve(&currentProfile->controlRateConfig);
     generateThrottleCurve(&currentProfile->controlRateConfig, &masterConfig.escAndServoConfig);
-    useRcControlsConfig(currentProfile->modeActivationConditions);
+    useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
 
     useGyroConfig(&masterConfig.gyroConfig);
 #ifdef TELEMETRY

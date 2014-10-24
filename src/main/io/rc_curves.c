@@ -28,7 +28,7 @@ int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & R
 int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 
 
-void generatePitchCurve(controlRateConfig_t *controlRateConfig)
+void generatePitchRollCurve(controlRateConfig_t *controlRateConfig)
 {
     uint8_t i;
 

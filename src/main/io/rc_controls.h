@@ -98,19 +98,22 @@ typedef enum {
 #define MIN_MODE_RANGE_STEP 0
 #define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
 
+// steps are 25 apart
+// a value of 0 corresponds to a channel value of 900 or less
+// a value of 48 corresponds to a channel value of 2100 or more
+// 48 steps between 900 and 1200
+typedef struct channelRange_s {
+    uint8_t startStep;
+    uint8_t endStep;
+} channelRange_t;
+
 typedef struct modeActivationCondition_s {
     boxId_e modeId;
     uint8_t auxChannelIndex;
-
-    // steps are 25 apart
-    // a value of 0 corresponds to a channel value of 900 or less
-    // a value of 48 corresponds to a channel value of 2100 or more
-    // 48 steps between 900 and 1200
-    uint8_t rangeStartStep;
-    uint8_t rangeEndStep;
+    channelRange_t range;
 } modeActivationCondition_t;
 
-#define IS_MODE_RANGE_USABLE(modeActivationCondition) (modeActivationCondition->rangeStartStep < modeActivationCondition->rangeEndStep)
+#define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
@@ -127,6 +130,50 @@ bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch);
 
-
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);
+
+
+typedef enum {
+    ADJUSTMENT_NONE = 0,
+    ADJUSTMENT_RC_RATE,
+    ADJUSTMENT_RC_EXPO,
+    ADJUSTMENT_THROTTLE_EXPO,
+    ADJUSTMENT_PITCH_ROLL_RATE,
+    ADJUSTMENT_YAW_RATE,
+    ADJUSTMENT_PITCH_ROLL_P,
+    ADJUSTMENT_PITCH_ROLL_I,
+    ADJUSTMENT_PITCH_ROLL_D,
+    ADJUSTMENT_YAW_P,
+    ADJUSTMENT_YAW_I,
+    ADJUSTMENT_YAW_D,
+} adjustmentFunction_e;
+
+#define ADJUSTMENT_FUNCTION_COUNT 12
+
+typedef struct adjustmentConfig_s {
+    uint8_t adjustmentFunction;
+    uint8_t step;
+} adjustmentConfig_t;
+
+typedef struct adjustmentRange_s {
+    // when aux channel is in range...
+    uint8_t auxChannelIndex;
+    channelRange_t range;
+
+    // ..then apply the adjustment function to the auxSwitchChannel ...
+    uint8_t adjustmentFunction;
+    uint8_t auxSwitchChannelIndex;
+
+    // ... via slot
+    uint8_t adjustmentIndex;
+} adjustmentRange_t;
+
+#define ADJUSTMENT_INDEX_OFFSET 1
+
+#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
+#define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
+
+void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
+void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
+void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
+

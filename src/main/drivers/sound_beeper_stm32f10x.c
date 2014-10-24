@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "system.h"
 #include "gpio.h"
 
@@ -28,7 +30,9 @@
 
 void initBeeperHardware(beeperConfig_t *config)
 {
-#ifdef BEEPER
+#ifndef BEEPER
+    UNUSED(config);
+#else
     gpio_config_t gpioConfig = {
         config->gpioPin,
         config->gpioMode,

@@ -332,9 +332,9 @@ void handleInflightCalibrationStickPosition(void)
     } else {
         AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
         if (AccInflightCalibrationArmed) {
-            queueConfirmationBeep(2);
+            queueConfirmationBeep(4);
         } else {
-            queueConfirmationBeep(3);
+            queueConfirmationBeep(6);
         }
     }
 }
@@ -494,6 +494,9 @@ void processRx(void)
     }
 
     updateActivatedModes(currentProfile->modeActivationConditions);
+
+    updateAdjustmentStates(currentProfile->adjustmentRanges);
+    processRcAdjustments(&currentProfile->controlRateConfig, &masterConfig.rxConfig);
 
     bool canUseHorizonMode = true;
 
