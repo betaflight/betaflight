@@ -287,8 +287,9 @@ void init(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-
+#ifdef STM32F10X
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+#endif
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
