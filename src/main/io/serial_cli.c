@@ -71,6 +71,7 @@
 // we unset this on 'exit'
 extern uint8_t cliMode;
 static void cliAux(char *cmdline);
+static void cliAdjustmentRange(char *cmdline);
 static void cliCMix(char *cmdline);
 static void cliDefaults(char *cmdline);
 static void cliDump(char *cmdLine);
@@ -141,6 +142,7 @@ typedef struct {
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
     { "aux", "show/set aux settings", cliAux },
+    { "adjrange", "show/set adjustment ranges settings", cliAdjustmentRange },
     { "cmix", "design custom mixer", cliCMix },
 #ifdef LED_STRIP
     { "color", "configure colors", cliColor },
@@ -403,6 +405,30 @@ static int cliCompare(const void *a, const void *b)
     return strncasecmp(ca->name, cb->name, strlen(cb->name));
 }
 
+static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
+{
+    int val;
+    ptr = strchr(ptr, ' ');
+    if (ptr) {
+        val = atoi(++ptr);
+        val = CHANNEL_VALUE_TO_STEP(val);
+        if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
+            range->startStep = val;
+            (*validArgumentCount)++;
+        }
+    }
+    ptr = strchr(ptr, ' ');
+    if (ptr) {
+        val = atoi(++ptr);
+        val = CHANNEL_VALUE_TO_STEP(val);
+        if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
+            range->endStep = val;
+            (*validArgumentCount)++;
+        }
+    }
+    return ptr;
+}
+
 static void cliAux(char *cmdline)
 {
     int i, val = 0;
@@ -444,29 +470,75 @@ static void cliAux(char *cmdline)
                     validArgumentCount++;
                 }
             }
-            ptr = strchr(ptr, ' ');
-            if (ptr) {
-                val = atoi(++ptr);
-                val = CHANNEL_VALUE_TO_STEP(val);
-                if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
-                    mac->range.startStep = val;
-                    validArgumentCount++;
-                }
-            }
-            ptr = strchr(ptr, ' ');
-            if (ptr) {
-                val = atoi(++ptr);
-                val = CHANNEL_VALUE_TO_STEP(val);
-                if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
-                    mac->range.endStep = val;
-                    validArgumentCount++;
-                }
-            }
+            ptr = processChannelRangeArgs(ptr, &mac->range, &validArgumentCount);
+
             if (validArgumentCount != 4) {
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
         } else {
             printf("index: must be < %u\r\n", MAX_MODE_ACTIVATION_CONDITION_COUNT);
+        }
+    }
+}
+
+
+static void cliAdjustmentRange(char *cmdline)
+{
+    int i, val = 0;
+    uint8_t len;
+    char *ptr;
+
+    len = strlen(cmdline);
+    if (len == 0) {
+        // print out adjustment ranges channel settings
+        for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
+            adjustmentRange_t *ar = &currentProfile->adjustmentRanges[i];
+            printf("adjrange %u %u %u %u %u %u\r\n",
+                i,
+                ar->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
+                ar->adjustmentFunction,
+                ar->auxSwitchChannelIndex
+            );
+        }
+    } else {
+        ptr = cmdline;
+        i = atoi(ptr++);
+        if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
+            adjustmentRange_t *ar = &currentProfile->adjustmentRanges[i];
+            uint8_t validArgumentCount = 0;
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                val = atoi(++ptr);
+                if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
+                    ar->auxChannelIndex = val;
+                    validArgumentCount++;
+                }
+            }
+            ptr = processChannelRangeArgs(ptr, &ar->range, &validArgumentCount);
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                val = atoi(++ptr);
+                if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
+                    ar->adjustmentFunction = val;
+                    validArgumentCount++;
+                }
+            }
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                val = atoi(++ptr);
+                if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
+                    ar->auxSwitchChannelIndex = val;
+                    validArgumentCount++;
+                }
+            }
+
+            if (validArgumentCount != 5) {
+                memset(ar, 0, sizeof(adjustmentRange_t));
+            }
+        } else {
+            printf("index: must be < %u\r\n", MAX_ADJUSTMENT_RANGE_COUNT);
         }
     }
 }
@@ -736,6 +808,10 @@ static void cliDump(char *cmdline)
         printf("\r\n# aux\r\n");
 
         cliAux("");
+
+        printf("\r\n# adjrange\r\n");
+
+        cliAdjustmentRange("");
 
         printSectionBreak();
 

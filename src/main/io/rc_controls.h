@@ -138,15 +138,26 @@ typedef enum {
     ADJUSTMENT_RC_RATE
 } adjustmentFunction_e;
 
+#define ADJUSTMENT_FUNCTION_COUNT 2
+
 typedef struct adjustmentConfig_s {
     uint8_t adjustmentFunction;
     uint8_t step;
 } adjustmentConfig_t;
 
+typedef struct adjustmentRange_s {
+    // when aux channel is in range...
+    uint8_t auxChannelIndex;
+    channelRange_t range;
 
-#define ADJUSTMENT_COUNT 1
+    // ..then apply the adjustment function to the auxSwitchChannel
+    uint8_t adjustmentFunction;
+    uint8_t auxSwitchChannelIndex;
+} adjustmentRange_t;
 
 #define ADJUSTMENT_INDEX_OFFSET 1
+
+#define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
 
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);

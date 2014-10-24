@@ -318,7 +318,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
     uint8_t adjustmentIndex;
     uint32_t now = millis();
 
-    for (adjustmentIndex = 0; adjustmentIndex < ADJUSTMENT_COUNT; adjustmentIndex++) {
+    for (adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENTS; adjustmentIndex++) {
         adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
 
         uint8_t adjustmentFunction = adjustmentState->adjustmentFunction;
