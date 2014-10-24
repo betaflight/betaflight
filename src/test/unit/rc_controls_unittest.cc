@@ -22,6 +22,7 @@
 #include "flight/flight.h"
 
 #include "rx/rx.h"
+#include "io/escservo.h"
 #include "io/rc_controls.h"
 
 #include "unittest_macros.h"
@@ -392,6 +393,8 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 
 }
 
+void saveConfigAndNotify(void) {}
+void generateThrottleCurve(controlRateConfig_t *, escAndServoConfig_t *) {}
 void changeProfile(uint8_t) {}
 void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}
