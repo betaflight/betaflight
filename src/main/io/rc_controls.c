@@ -261,13 +261,15 @@ typedef struct adjustmentConfig_s {
     uint8_t auxChannelIndex;
     uint8_t adjustmentFunction;
     uint8_t step;
+    uint32_t timeoutAt;
 } adjustmentConfig_t;
 
 static adjustmentConfig_t adjustmentConfigs[1] = {
     {
         .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
         .adjustmentFunction = ADJUSTMENT_RC_RATE,
-        .step = 1
+        .step = 1,
+        .timeoutAt = 0
     }
 };
 
@@ -291,27 +293,24 @@ void applyAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentF
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
 {
     uint8_t adjustmentIndex;
-    static uint32_t timeoutAt = 0;
-
     uint32_t now = millis();
-    int32_t signedDiff = now - timeoutAt;
-    bool canResetReadyStates = signedDiff >= 0L;
-
-    if (canResetReadyStates) {
-        timeoutAt = now + RESET_FREQUENCY_2HZ;
-    }
 
     for (adjustmentIndex = 0; adjustmentIndex < ADJUSTMENT_COUNT; adjustmentIndex++) {
-        adjustmentConfig_t * adjustmentConfig = &adjustmentConfigs[adjustmentIndex];
+        adjustmentConfig_t *adjustmentConfig = &adjustmentConfigs[adjustmentIndex];
 
         uint8_t adjustmentFunction = adjustmentConfig->adjustmentFunction;
         if (adjustmentFunction == ADJUSTMENT_NONE) {
             continue;
         }
 
+        int32_t signedDiff = now - adjustmentConfig->timeoutAt;
+        bool canResetReadyStates = signedDiff >= 0L;
+
         if (canResetReadyStates) {
+            adjustmentConfig->timeoutAt = now + RESET_FREQUENCY_2HZ;
             MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentFunction);
         }
+
 
         uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentConfig->auxChannelIndex;
 
@@ -323,7 +322,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
         } else {
             // returning the switch to the middle immediately resets the ready state
             MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentFunction);
-            timeoutAt = now + RESET_FREQUENCY_2HZ;
+            adjustmentConfig->timeoutAt = now + RESET_FREQUENCY_2HZ;
             continue;
         }
 
