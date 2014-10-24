@@ -47,6 +47,7 @@
 #include "io/rc_curves.h"
 
 static escAndServoConfig_t *escAndServoConfig;
+static pidProfile_t *pidProfile;
 
 static bool isUsingSticksToArm = true;
 
@@ -289,8 +290,31 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
     {
         .adjustmentFunction = ADJUSTMENT_YAW_RATE,
         .step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
+        .step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
+        .step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
+        .step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_YAW_P,
+        .step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_YAW_I,
+        .step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_YAW_D,
+        .step = 1
     }
-
 };
 
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
@@ -351,6 +375,36 @@ void applyAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentF
         case ADJUSTMENT_YAW_RATE:
             newValue = (int)controlRateConfig->yawRate + delta;
             controlRateConfig->yawRate = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            break;
+        case ADJUSTMENT_PITCH_ROLL_P:
+            newValue = (int)pidProfile->P8[PIDPITCH] + delta;
+            pidProfile->P8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            newValue = (int)pidProfile->P8[PIDROLL] + delta;
+            pidProfile->P8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            break;
+        case ADJUSTMENT_PITCH_ROLL_I:
+            newValue = (int)pidProfile->I8[PIDPITCH] + delta;
+            pidProfile->I8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            newValue = (int)pidProfile->I8[PIDROLL] + delta;
+            pidProfile->I8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            break;
+        case ADJUSTMENT_PITCH_ROLL_D:
+            newValue = (int)pidProfile->D8[PIDPITCH] + delta;
+            pidProfile->D8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            newValue = (int)pidProfile->D8[PIDROLL] + delta;
+            pidProfile->D8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            break;
+        case ADJUSTMENT_YAW_P:
+            newValue = (int)pidProfile->P8[PIDYAW] + delta;
+            pidProfile->P8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            break;
+        case ADJUSTMENT_YAW_I:
+            newValue = (int)pidProfile->I8[PIDYAW] + delta;
+            pidProfile->I8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            break;
+        case ADJUSTMENT_YAW_D:
+            newValue = (int)pidProfile->D8[PIDYAW] + delta;
+            pidProfile->D8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             break;
         default:
             break;
@@ -420,11 +474,12 @@ void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges)
     }
 }
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse)
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse)
 {
     uint8_t index;
 
     escAndServoConfig = escAndServoConfigToUse;
+    pidProfile = pidProfileToUse;
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];

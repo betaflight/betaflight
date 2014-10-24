@@ -140,9 +140,15 @@ typedef enum {
     ADJUSTMENT_THROTTLE_EXPO,
     ADJUSTMENT_PITCH_ROLL_RATE,
     ADJUSTMENT_YAW_RATE,
+    ADJUSTMENT_PITCH_ROLL_P,
+    ADJUSTMENT_PITCH_ROLL_I,
+    ADJUSTMENT_PITCH_ROLL_D,
+    ADJUSTMENT_YAW_P,
+    ADJUSTMENT_YAW_I,
+    ADJUSTMENT_YAW_D,
 } adjustmentFunction_e;
 
-#define ADJUSTMENT_FUNCTION_COUNT 6
+#define ADJUSTMENT_FUNCTION_COUNT 12
 
 typedef struct adjustmentConfig_s {
     uint8_t adjustmentFunction;
