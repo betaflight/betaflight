@@ -46,6 +46,8 @@
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
 
+static escAndServoConfig_t *escAndServoConfig;
+
 static bool isUsingSticksToArm = true;
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
@@ -273,6 +275,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .step = 1
     },
     {
+        .adjustmentFunction = ADJUSTMENT_THROTTLE_EXPO,
+        .step = 1
+    },
+    {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
         .step = 1
     },
@@ -328,6 +334,11 @@ void applyAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentF
             newValue = (int)controlRateConfig->rcExpo8 + delta;
             controlRateConfig->rcExpo8 = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             generatePitchRollCurve(controlRateConfig);
+            break;
+        case ADJUSTMENT_THROTTLE_EXPO:
+            newValue = (int)controlRateConfig->thrExpo8 + delta;
+            controlRateConfig->thrExpo8 = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            generateThrottleCurve(controlRateConfig, escAndServoConfig);
             break;
         case ADJUSTMENT_PITCH_ROLL_RATE:
             newValue = (int)controlRateConfig->rollPitchRate + delta;
@@ -405,9 +416,11 @@ void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges)
     }
 }
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions)
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse)
 {
     uint8_t index;
+
+    escAndServoConfig = escAndServoConfigToUse;
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
