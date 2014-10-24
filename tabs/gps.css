@@ -9,10 +9,10 @@
 
     border: 1px solid silver;
 }
-    .tab-gps .GPS_info table {
-        padding: 5px;
-        line-height: 18px;
-    }
+.tab-gps .GPS_info table {
+    padding: 5px;
+    line-height: 18px;
+}
 .tab-gps .GPS_signal_strength {
     float: left;
 
@@ -22,10 +22,10 @@
 
     border: 1px solid silver;
 }
-    .tab-gps .GPS_signal_strength table {
-        padding: 5px;
-        line-height: 18px;
-    }
+.tab-gps .GPS_signal_strength table {
+    padding: 5px;
+    line-height: 18px;
+}
 .tab-gps .GPS_info .head,
 .tab-gps .GPS_signal_strength .head {
     display: block;
