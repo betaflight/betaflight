@@ -135,10 +135,17 @@ typedef enum {
     ADJUSTMENT_RC_RATE
 } adjustmentFunction_e;
 
+typedef struct adjustmentConfig_s {
+    uint8_t adjustmentFunction;
+    uint8_t step;
+} adjustmentConfig_t;
+
+
 #define ADJUSTMENT_COUNT 1
 
 #define ADJUSTMENT_INDEX_OFFSET 1
 
+void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);

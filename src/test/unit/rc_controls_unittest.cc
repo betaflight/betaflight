@@ -187,6 +187,10 @@ rxConfig_t rxConfig;
 
 extern uint8_t adjustmentStateMask;
 
+static const adjustmentConfig_t rateAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_RC_RATE,
+    .step = 1
+};
 TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
 {
     // given
@@ -204,6 +208,8 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
     rxConfig.mincheck = DEFAULT_MIN_CHECK;
     rxConfig.maxcheck = DEFAULT_MAX_CHECK;
     rxConfig.midrc = 1500;
+
+    configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
     uint8_t index;
@@ -240,6 +246,9 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     rxConfig.mincheck = DEFAULT_MIN_CHECK;
     rxConfig.maxcheck = DEFAULT_MAX_CHECK;
     rxConfig.midrc = 1500;
+
+    // and
+    configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
     uint8_t index;
