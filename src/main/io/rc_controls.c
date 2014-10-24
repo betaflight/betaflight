@@ -250,12 +250,12 @@ void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
     }
 }
 
-uint32_t adjustmentFunctionStateMask = 0;
+uint8_t adjustmentStateMask = 0;
 
-#define MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentFunction) adjustmentFunctionStateMask |= (1 << (adjustmentFunction - ADJUSTMENT_INDEX_OFFSET))
-#define MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentFunction) adjustmentFunctionStateMask &= ~(1 << (adjustmentFunction - ADJUSTMENT_INDEX_OFFSET))
+#define MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex) adjustmentStateMask |= (1 << adjustmentIndex)
+#define MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex) adjustmentStateMask &= ~(1 << adjustmentIndex)
 
-#define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentFunction) (adjustmentFunctionStateMask & (1 << (adjustmentFunction - ADJUSTMENT_INDEX_OFFSET)))
+#define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex) (adjustmentStateMask & (1 << adjustmentIndex))
 
 typedef struct adjustmentConfig_s {
     uint8_t auxChannelIndex;
@@ -308,7 +308,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
 
         if (canResetReadyStates) {
             adjustmentConfig->timeoutAt = now + RESET_FREQUENCY_2HZ;
-            MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentFunction);
+            MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
         }
 
 
@@ -321,16 +321,16 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
             step = 0 - adjustmentConfig->step;
         } else {
             // returning the switch to the middle immediately resets the ready state
-            MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentFunction);
+            MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
             adjustmentConfig->timeoutAt = now + RESET_FREQUENCY_2HZ;
             continue;
         }
 
-        if (IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentFunction)) {
+        if (IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex)) {
             continue;
         }
 
-        MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentFunction);
+        MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
         applyAdjustment(controlRateConfig, adjustmentFunction, step);
     }
 }

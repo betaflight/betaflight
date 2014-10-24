@@ -185,7 +185,7 @@ uint32_t millis(void) {
 
 rxConfig_t rxConfig;
 
-extern uint32_t adjustmentFunctionStateMask;
+extern uint8_t adjustmentStateMask;
 
 TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
 {
@@ -220,7 +220,7 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 90);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 0);
-    EXPECT_EQ(adjustmentFunctionStateMask, 0);
+    EXPECT_EQ(adjustmentStateMask, 0);
 }
 
 TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
@@ -254,8 +254,8 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     rcData[AUX3] = PWM_RANGE_MAX;
 
     // and
-    uint32_t expectedAdjustmentFunctionStateMask =
-            (1 << (ADJUSTMENT_RC_RATE - ADJUSTMENT_INDEX_OFFSET));
+    uint8_t expectedAdjustmentStateMask =
+            (1 << 0);
 
     // and
     fixedMillis = 496;
@@ -266,7 +266,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 1);
-    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
 
     //
@@ -280,7 +280,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
-    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
 
     //
@@ -295,14 +295,14 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     fixedMillis = 498;
 
     // and
-    expectedAdjustmentFunctionStateMask = adjustmentFunctionStateMask &
-            ~(1 << (ADJUSTMENT_RC_RATE - ADJUSTMENT_INDEX_OFFSET));
+    expectedAdjustmentStateMask = adjustmentStateMask &
+            ~(1 << 0);
 
     // when
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
-    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
 
     //
@@ -312,8 +312,8 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     rcData[AUX3] = PWM_RANGE_MAX;
 
     // and
-    expectedAdjustmentFunctionStateMask =
-            (1 << (ADJUSTMENT_RC_RATE - ADJUSTMENT_INDEX_OFFSET));
+    expectedAdjustmentStateMask =
+            (1 << 0);
 
     // and
     fixedMillis = 499;
@@ -324,7 +324,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 2);
-    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     //
     // leaving the switch up, after the original timer would have reset the state should now NOT cause
@@ -339,7 +339,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
-    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     //
     // should still not be able to be increased
@@ -353,7 +353,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
-    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     //
     // 500ms has now passed since the switch was returned to the middle, now that
@@ -370,7 +370,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 93);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 3);
-    EXPECT_EQ(adjustmentFunctionStateMask, expectedAdjustmentFunctionStateMask);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
 }
 
