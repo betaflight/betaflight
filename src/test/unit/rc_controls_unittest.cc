@@ -203,6 +203,7 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
     memset(&rxConfig, 0, sizeof (rxConfig));
     rxConfig.mincheck = DEFAULT_MIN_CHECK;
     rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig.midrc = 1500;
 
     // and
     uint8_t index;
@@ -238,6 +239,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     memset(&rxConfig, 0, sizeof (rxConfig));
     rxConfig.mincheck = DEFAULT_MIN_CHECK;
     rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig.midrc = 1500;
 
     // and
     uint8_t index;
