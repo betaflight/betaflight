@@ -141,8 +141,8 @@ typedef struct {
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
-    { "aux", "show/set aux settings", cliAux },
     { "adjrange", "show/set adjustment ranges settings", cliAdjustmentRange },
+    { "aux", "show/set aux settings", cliAux },
     { "cmix", "design custom mixer", cliCMix },
 #ifdef LED_STRIP
     { "color", "configure colors", cliColor },
