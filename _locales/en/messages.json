@@ -646,6 +646,9 @@
     "firmwareFlasherProgress": {
         "message": "Progress:"
     },
+    "firmwareFlasherLoadFirmwareFile": {
+        "message": "Please load firmware file"
+    },
     "firmwareFlasherNote": {
         "message": "If you are flashing board with bootloader pins <strong>shorted/connected</strong>, check <strong>No reboot sequence</strong>.<br />If you want configuration data to be wiped, check <strong>Full Chip Erase</strong><br />If you are flashing via bluetooth adapter or using external usb to serial adapter, check <strong>Flash slowly</strong><br />"
     },
@@ -657,6 +660,12 @@
     },
     "firmwareFlasherFullChipErase": {
         "message": "Full Chip Erase"
+    },
+    "firmwareFlasherFlashDevelopmentFirmware": {
+        "message": "Use Development Firmware"
+    },
+    "firmwareFlasherFlashDevelopmentFirmwareTitle": {
+        "message": "Flash most recent (untested) development firmware"
     },
     "firmwareFlasherFlashSlowly": {
         "message": "Flash slowly"

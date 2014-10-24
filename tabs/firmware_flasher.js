@@ -83,66 +83,28 @@ TABS.firmware_flasher.initialize = function (callback) {
         });
 
         $('a.load_remote_file').click(function () {
-            $.get('https://raw.githubusercontent.com/multiwii/baseflight/master/obj/baseflight.hex', function (data) {
+            function process_hex(data, development) {
                 intel_hex = data;
 
                 parse_hex(intel_hex, function (data) {
                     parsed_hex = data;
 
                     if (parsed_hex) {
+                        var url;
+
                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
-                        $('span.progressLabel').html('<a href="#" title="Save Firmware">Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)</a>');
-
-                        $('span.progressLabel a').click(function () {
-                            chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'baseflight', accepts: [{extensions: ['hex']}]}, function (fileEntry) {
-                                if (chrome.runtime.lastError) {
-                                    console.error(chrome.runtime.lastError.message);
-
-                                    return;
-                                }
-
-                                chrome.fileSystem.getDisplayPath(fileEntry, function (path) {
-                                    console.log('Saving firmware to: ' + path);
-
-                                    // check if file is writable
-                                    chrome.fileSystem.isWritableEntry(fileEntry, function (isWritable) {
-                                        if (isWritable) {
-                                            var blob = new Blob([intel_hex], {type: 'text/plain'});
-
-                                            fileEntry.createWriter(function (writer) {
-                                                var truncated = false;
-
-                                                writer.onerror = function (e) {
-                                                    console.error(e);
-                                                };
-
-                                                writer.onwriteend = function() {
-                                                    if (!truncated) {
-                                                        // onwriteend will be fired again when truncation is finished
-                                                        truncated = true;
-                                                        writer.truncate(blob.size);
-
-                                                        return;
-                                                    }
-                                                };
-
-                                                writer.write(blob);
-                                            }, function (e) {
-                                                console.error(e);
-                                            });
-                                        } else {
-                                            console.log('You don\'t have write permissions for this file, sorry.');
-                                            GUI.log('You don\'t have <span style="color: red">write permissions</span> for this file');
-                                        }
-                                    });
-                                });
-                            });
-                        });
+                        $('span.progressLabel').html('<a class="save_firmware" href="#" title="Save Firmware">Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)</a>');
 
                         $('a.flash_firmware').removeClass('locked');
 
-                        $.get('https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex', function (data) {
-                            var data = data[0],
+                        if (!development) {
+                            url = 'https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex';
+                        } else {
+                            url = 'https://api.github.com/repos/multiwii/baseflight/commits/' + development.commit;
+                        }
+
+                        $.get(url, function (data) {
+                            var data = (development) ? data : data[0],
                                 d = new Date(data.commit.author.date),
                                 offset = d.getTimezoneOffset() / 60,
                                 date;
@@ -161,10 +123,48 @@ TABS.firmware_flasher.initialize = function (callback) {
                         $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
                 });
-            }).fail(function () {
-                $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
+            }
+
+            function failed_to_load() {
+                $('span.progressLabel').text('failed');
                 $('a.flash_firmware').addClass('locked');
-            });
+            }
+
+            if (!$('input.flash_development_firmware').is(':checked')) {
+                $.get('https://raw.githubusercontent.com/multiwii/baseflight/master/obj/baseflight.hex', function (data) {
+                    process_hex(data, false);
+                }).fail(failed_to_load);
+            } else {
+                $.get('http://firmware.baseflight.net/listing.json', function (data) {
+                    var filter = [],
+                        time = 0,
+                        obj = null;
+
+                    // filter out what we need
+                    for (var i = 0; i < data.length; i++) {
+                        if (data[i].target == 'naze') {
+                            filter.push(data[i]);
+                        }
+                    }
+
+                    if (filter.length > 1) {
+                        for (var i = 0; i < filter.length; i++) {
+                            if (time < filter[i].time) {
+                                time = filter[i].time;
+                                obj = filter[i];
+                            }
+                        }
+                    } else {
+                        obj = filter[0];
+                    }
+
+
+                    $.get('http://firmware.baseflight.net/' + obj.file, function (data) {
+                        process_hex(data, obj);
+                    }).fail(failed_to_load);
+
+                }).fail(failed_to_load);
+            }
         });
 
         $('a.flash_firmware').click(function () {
@@ -217,6 +217,51 @@ TABS.firmware_flasher.initialize = function (callback) {
                     }
                 }
             }
+        });
+
+        $(document).on('click', 'span.progressLabel a.save_firmware', function () {
+            chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'baseflight', accepts: [{extensions: ['hex']}]}, function (fileEntry) {
+                if (chrome.runtime.lastError) {
+                    console.error(chrome.runtime.lastError.message);
+                    return;
+                }
+
+                chrome.fileSystem.getDisplayPath(fileEntry, function (path) {
+                    console.log('Saving firmware to: ' + path);
+
+                    // check if file is writable
+                    chrome.fileSystem.isWritableEntry(fileEntry, function (isWritable) {
+                        if (isWritable) {
+                            var blob = new Blob([intel_hex], {type: 'text/plain'});
+
+                            fileEntry.createWriter(function (writer) {
+                                var truncated = false;
+
+                                writer.onerror = function (e) {
+                                    console.error(e);
+                                };
+
+                                writer.onwriteend = function() {
+                                    if (!truncated) {
+                                        // onwriteend will be fired again when truncation is finished
+                                        truncated = true;
+                                        writer.truncate(blob.size);
+
+                                        return;
+                                    }
+                                };
+
+                                writer.write(blob);
+                            }, function (e) {
+                                console.error(e);
+                            });
+                        } else {
+                            console.log('You don\'t have write permissions for this file, sorry.');
+                            GUI.log('You don\'t have <span style="color: red">write permissions</span> for this file');
+                        }
+                    });
+                });
+            });
         });
 
         chrome.storage.local.get('no_reboot_sequence', function (result) {
@@ -296,6 +341,24 @@ TABS.firmware_flasher.initialize = function (callback) {
             });
         });
 
+        chrome.storage.local.get('flash_development_firmware', function (result) {
+            if (result.flash_development_firmware) {
+                $('input.flash_development_firmware').prop('checked', true);
+            } else {
+                $('input.flash_development_firmware').prop('checked', false);
+            }
+
+            // bind UI hook so the status is saved on change
+            $('input.flash_development_firmware').change(function () {
+                // hide github info (if it exists)
+                $('a.flash_firmware').addClass('locked');
+                $('div.git_info').slideUp();
+                $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherLoadFirmwareFile'));
+
+                chrome.storage.local.set({'flash_development_firmware': $(this).is(':checked')});
+            });
+        });
+
         chrome.storage.local.get('flash_slowly', function (result) {
             if (result.flash_slowly) {
                 $('input.flash_slowly').prop('checked', true);
@@ -336,6 +399,7 @@ TABS.firmware_flasher.cleanup = function (callback) {
 
     // unbind "global" events
     $(document).unbind('keypress');
+    $(document).off('click', 'span.progressLabel a');
 
     if (callback) callback();
 };

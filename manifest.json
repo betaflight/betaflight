@@ -23,6 +23,7 @@
         "https://www.google-analytics.com/",
         "https://*.github.com/",
         "https://*.githubusercontent.com/",
+        "http://*.baseflight.net/",
         "serial",
         "usb",
         "storage",
