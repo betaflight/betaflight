@@ -34,11 +34,10 @@
 
 #include "io/beeper.h"
 
-#define DOUBLE_PAUSE_DURATION_MILLIS (LONG_PAUSE_DURATION_MILLIS * 2)
 #define LONG_PAUSE_DURATION_MILLIS 200
+#define DOUBLE_PAUSE_DURATION_MILLIS (LONG_PAUSE_DURATION_MILLIS * 2)
 #define SHORT_PAUSE_DURATION_MILLIS (LONG_PAUSE_DURATION_MILLIS / 4)
 #define MEDIUM_PAUSE_DURATION_MILLIS (LONG_PAUSE_DURATION_MILLIS / 2)
-
 #define SHORT_CONFIRMATION_BEEP_DURATION_MILLIS (SHORT_PAUSE_DURATION_MILLIS / 2)
 
 static uint8_t beeperIsOn = 0, beepDone = 0;
@@ -123,7 +122,7 @@ void beepcodeUpdateState(bool warn_vbat)
     else if (FLIGHT_MODE(AUTOTUNE_MODE))
         beep_code('S','M','S','M');
     else if (toggleBeep > 0)
-        beep(50);                                   // fast confirmation beep
+        beep(SHORT_CONFIRMATION_BEEP_DURATION_MILLIS);  // fast confirmation beep
     else {
         beeperIsOn = 0;
         BEEP_OFF;

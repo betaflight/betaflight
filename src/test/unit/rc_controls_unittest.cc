@@ -158,7 +158,8 @@ TEST(RcControlsTest, updateActivatedModesUsingValidAuxConfigurationAndRXValues)
 }
 
 enum {
-    COUNTER_GENERATE_PITCH_ROLL_CURVE = 0
+    COUNTER_GENERATE_PITCH_ROLL_CURVE = 0,
+    COUNTER_QUEUE_CONFIRMATION_BEEP
 };
 #define CALL_COUNT_ITEM_COUNT 1
 
@@ -170,6 +171,9 @@ void generatePitchRollCurve(controlRateConfig_t *) {
     callCounts[COUNTER_GENERATE_PITCH_ROLL_CURVE]++;
 }
 
+void queueConfirmationBeep(uint8_t) {
+    callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]++;
+}
 void resetCallCounters(void) {
     memset(&callCounts, 0, sizeof(callCounts));
 }
@@ -191,6 +195,7 @@ static const adjustmentConfig_t rateAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_RC_RATE,
     .step = 1
 };
+
 TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
 {
     // given
@@ -226,6 +231,7 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 90);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 0);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 0);
     EXPECT_EQ(adjustmentStateMask, 0);
 }
 
@@ -275,6 +281,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 1);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 1);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
 
@@ -333,6 +340,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 2);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 2);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     //
@@ -379,6 +387,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 93);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 3);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 3);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
 }

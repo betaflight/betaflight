@@ -38,6 +38,7 @@
 #include "sensors/acceleration.h"
 
 #include "io/gps.h"
+#include "io/beeper.h"
 #include "mw.h"
 
 #include "rx/rx.h"
@@ -294,6 +295,11 @@ void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmen
 void applyAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
     int newValue;
 
+    if (delta > 0) {
+        queueConfirmationBeep(2);
+    } else {
+        queueConfirmationBeep(1);
+    }
     switch(adjustmentFunction) {
         case ADJUSTMENT_RC_RATE:
             newValue = (int)controlRateConfig->rcRate8 + delta;
