@@ -496,6 +496,7 @@ void processRx(void)
 
     updateActivatedModes(currentProfile->modeActivationConditions);
 
+    updateAdjustmentStates(currentProfile->adjustmentRanges);
     processRcAdjustments(&currentProfile->controlRateConfig, &masterConfig.rxConfig);
 
     bool canUseHorizonMode = true;

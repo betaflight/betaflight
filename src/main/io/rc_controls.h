@@ -113,7 +113,7 @@ typedef struct modeActivationCondition_s {
     channelRange_t range;
 } modeActivationCondition_t;
 
-#define IS_MODE_RANGE_USABLE(modeActivationCondition) (modeActivationCondition->range.startStep < modeActivationCondition->range.endStep)
+#define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
@@ -150,16 +150,21 @@ typedef struct adjustmentRange_s {
     uint8_t auxChannelIndex;
     channelRange_t range;
 
-    // ..then apply the adjustment function to the auxSwitchChannel
+    // ..then apply the adjustment function to the auxSwitchChannel ...
     uint8_t adjustmentFunction;
     uint8_t auxSwitchChannelIndex;
+
+    // ... via slot
+    uint8_t adjustmentIndex;
 } adjustmentRange_t;
 
 #define ADJUSTMENT_INDEX_OFFSET 1
 
+#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
 #define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
 
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
+void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);

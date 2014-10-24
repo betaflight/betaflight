@@ -230,22 +230,26 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     }
 }
 
+bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range) {
+    if (!IS_RANGE_USABLE(range)) {
+        return false;
+    }
+
+    uint16_t channelValue = constrain(rcData[auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
+    return (channelValue >= 900 + (range->startStep * 25) &&
+            channelValue < 900 + (range->endStep * 25));
+}
+
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
 {
-    rcModeActivationMask = 0; // FIXME implement, use rcData & modeActivationConditions
+    rcModeActivationMask = 0;
 
     uint8_t index;
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
 
-        if (!IS_MODE_RANGE_USABLE(modeActivationCondition)) {
-            continue;
-        }
-
-        uint16_t channelValue = constrain(rcData[modeActivationCondition->auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
-        if (channelValue >= 900 + (modeActivationCondition->range.startStep * 25) &&
-                channelValue < 900 + (modeActivationCondition->range.endStep * 25)) {
+        if (isRangeActive(modeActivationCondition->auxChannelIndex, &modeActivationCondition->range)) {
             ACTIVATE_RC_MODE(modeActivationCondition->modeId);
         }
     }
@@ -258,16 +262,15 @@ uint8_t adjustmentStateMask = 0;
 
 #define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex) (adjustmentStateMask & (1 << adjustmentIndex))
 
-static const adjustmentConfig_t defaultAdjustmentConfigs[] = {
+// sync with adjustmentFunction_e
+static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COUNT - 1] = {
     {
         .adjustmentFunction = ADJUSTMENT_RC_RATE,
         .step = 1
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_NONE,
-        .step = 0
     }
 };
+
+#define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
 
 
 typedef struct adjustmentState_s {
@@ -277,14 +280,16 @@ typedef struct adjustmentState_s {
     uint32_t timeoutAt;
 } adjustmentState_t;
 
-#define MAX_SIMULTANEOUS_ADJUSTMENTS 2
+static adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-static adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENTS];
-
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
+void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
     adjustmentState_t *adjustmentState = &adjustmentStates[index];
 
-    adjustmentState->auxChannelIndex = auxChannelIndex;
+    if (adjustmentState->adjustmentFunction == adjustmentConfig->adjustmentFunction) {
+        // already configured
+        return;
+    }
+    adjustmentState->auxChannelIndex = auxSwitchChannelIndex;
     adjustmentState->adjustmentFunction = adjustmentConfig->adjustmentFunction;
     adjustmentState->step = adjustmentConfig->step;
     adjustmentState->timeoutAt = 0;
@@ -318,7 +323,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
     uint8_t adjustmentIndex;
     uint32_t now = millis();
 
-    for (adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENTS; adjustmentIndex++) {
+    for (adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
         adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
 
         uint8_t adjustmentFunction = adjustmentState->adjustmentFunction;
@@ -358,18 +363,31 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
     }
 }
 
+void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges)
+{
+    uint8_t index;
+
+    for (index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
+        adjustmentRange_t *adjustmentRange = &adjustmentRanges[index];
+
+        if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
+
+            const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
+
+            configureAdjustment(adjustmentRange->adjustmentIndex, adjustmentRange->auxSwitchChannelIndex, adjustmentConfig);
+        }
+    }
+}
+
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions)
 {
     uint8_t index;
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
-        if (modeActivationCondition->modeId == BOXARM && IS_MODE_RANGE_USABLE(modeActivationCondition)) {
+        if (modeActivationCondition->modeId == BOXARM && IS_RANGE_USABLE(&modeActivationCondition->range)) {
             isUsingSticksToArm = false;
             break;
         }
     }
-
-    configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &defaultAdjustmentConfigs[0]);
-    configureAdjustment(1, AUX4 - NON_AUX_CHANNEL_COUNT, &defaultAdjustmentConfigs[1]);
 }

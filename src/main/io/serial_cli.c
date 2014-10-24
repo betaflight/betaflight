@@ -493,8 +493,9 @@ static void cliAdjustmentRange(char *cmdline)
         // print out adjustment ranges channel settings
         for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             adjustmentRange_t *ar = &currentProfile->adjustmentRanges[i];
-            printf("adjrange %u %u %u %u %u %u\r\n",
+            printf("adjrange %u %u %u %u %u %u %u\r\n",
                 i,
+                ar->adjustmentIndex,
                 ar->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
                 MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
@@ -508,6 +509,14 @@ static void cliAdjustmentRange(char *cmdline)
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = &currentProfile->adjustmentRanges[i];
             uint8_t validArgumentCount = 0;
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                val = atoi(++ptr);
+                if (val >= 0 && val < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
+                    ar->adjustmentIndex = val;
+                    validArgumentCount++;
+                }
+            }
             ptr = strchr(ptr, ' ');
             if (ptr) {
                 val = atoi(++ptr);
@@ -534,7 +543,7 @@ static void cliAdjustmentRange(char *cmdline)
                 }
             }
 
-            if (validArgumentCount != 5) {
+            if (validArgumentCount != 6) {
                 memset(ar, 0, sizeof(adjustmentRange_t));
             }
         } else {
