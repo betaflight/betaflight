@@ -244,8 +244,8 @@ void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
         }
 
         uint16_t channelValue = constrain(rcData[modeActivationCondition->auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
-        if (channelValue >= 900 + (modeActivationCondition->rangeStartStep * 25) &&
-                channelValue < 900 + (modeActivationCondition->rangeEndStep * 25)) {
+        if (channelValue >= 900 + (modeActivationCondition->range.startStep * 25) &&
+                channelValue < 900 + (modeActivationCondition->range.endStep * 25)) {
             ACTIVATE_RC_MODE(modeActivationCondition->modeId);
         }
     }

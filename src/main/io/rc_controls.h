@@ -98,19 +98,22 @@ typedef enum {
 #define MIN_MODE_RANGE_STEP 0
 #define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
 
+// steps are 25 apart
+// a value of 0 corresponds to a channel value of 900 or less
+// a value of 48 corresponds to a channel value of 2100 or more
+// 48 steps between 900 and 1200
+typedef struct channelRange_s {
+    uint8_t startStep;
+    uint8_t endStep;
+} channelRange_t;
+
 typedef struct modeActivationCondition_s {
     boxId_e modeId;
     uint8_t auxChannelIndex;
-
-    // steps are 25 apart
-    // a value of 0 corresponds to a channel value of 900 or less
-    // a value of 48 corresponds to a channel value of 2100 or more
-    // 48 steps between 900 and 1200
-    uint8_t rangeStartStep;
-    uint8_t rangeEndStep;
+    channelRange_t range;
 } modeActivationCondition_t;
 
-#define IS_MODE_RANGE_USABLE(modeActivationCondition) (modeActivationCondition->rangeStartStep < modeActivationCondition->rangeEndStep)
+#define IS_MODE_RANGE_USABLE(modeActivationCondition) (modeActivationCondition->range.startStep < modeActivationCondition->range.endStep)
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;

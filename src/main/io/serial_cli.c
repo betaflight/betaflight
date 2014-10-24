@@ -418,8 +418,8 @@ static void cliAux(char *cmdline)
                 i,
                 mac->modeId,
                 mac->auxChannelIndex,
-                MODE_STEP_TO_CHANNEL_VALUE(mac->rangeStartStep),
-                MODE_STEP_TO_CHANNEL_VALUE(mac->rangeEndStep)
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep)
             );
         }
     } else {
@@ -449,7 +449,7 @@ static void cliAux(char *cmdline)
                 val = atoi(++ptr);
                 val = CHANNEL_VALUE_TO_STEP(val);
                 if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
-                    mac->rangeStartStep = val;
+                    mac->range.startStep = val;
                     validArgumentCount++;
                 }
             }
@@ -458,7 +458,7 @@ static void cliAux(char *cmdline)
                 val = atoi(++ptr);
                 val = CHANNEL_VALUE_TO_STEP(val);
                 if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
-                    mac->rangeEndStep = val;
+                    mac->range.endStep = val;
                     validArgumentCount++;
                 }
             }

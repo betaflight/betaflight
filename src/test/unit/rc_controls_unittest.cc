@@ -74,47 +74,47 @@ TEST(RcControlsTest, updateActivatedModesUsingValidAuxConfigurationAndRXValues)
 
     modeActivationConditions[0].modeId = (boxId_e)0;
     modeActivationConditions[0].auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
-    modeActivationConditions[0].rangeStartStep = CHANNEL_VALUE_TO_STEP(1700);
-    modeActivationConditions[0].rangeEndStep = CHANNEL_VALUE_TO_STEP(2100);
+    modeActivationConditions[0].range.startStep = CHANNEL_VALUE_TO_STEP(1700);
+    modeActivationConditions[0].range.endStep = CHANNEL_VALUE_TO_STEP(2100);
 
     modeActivationConditions[1].modeId = (boxId_e)1;
     modeActivationConditions[1].auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT;
-    modeActivationConditions[1].rangeStartStep = CHANNEL_VALUE_TO_STEP(1300);
-    modeActivationConditions[1].rangeEndStep = CHANNEL_VALUE_TO_STEP(1700);
+    modeActivationConditions[1].range.startStep = CHANNEL_VALUE_TO_STEP(1300);
+    modeActivationConditions[1].range.endStep = CHANNEL_VALUE_TO_STEP(1700);
 
     modeActivationConditions[2].modeId = (boxId_e)2;
     modeActivationConditions[2].auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
-    modeActivationConditions[2].rangeStartStep = CHANNEL_VALUE_TO_STEP(900);
-    modeActivationConditions[2].rangeEndStep = CHANNEL_VALUE_TO_STEP(1200);
+    modeActivationConditions[2].range.startStep = CHANNEL_VALUE_TO_STEP(900);
+    modeActivationConditions[2].range.endStep = CHANNEL_VALUE_TO_STEP(1200);
 
     modeActivationConditions[3].modeId = (boxId_e)3;
     modeActivationConditions[3].auxChannelIndex = AUX4 - NON_AUX_CHANNEL_COUNT;
-    modeActivationConditions[3].rangeStartStep = CHANNEL_VALUE_TO_STEP(900);
-    modeActivationConditions[3].rangeEndStep = CHANNEL_VALUE_TO_STEP(2100);
+    modeActivationConditions[3].range.startStep = CHANNEL_VALUE_TO_STEP(900);
+    modeActivationConditions[3].range.endStep = CHANNEL_VALUE_TO_STEP(2100);
 
     modeActivationConditions[4].modeId = (boxId_e)4;
     modeActivationConditions[4].auxChannelIndex = AUX5 - NON_AUX_CHANNEL_COUNT;
-    modeActivationConditions[4].rangeStartStep = CHANNEL_VALUE_TO_STEP(900);
-    modeActivationConditions[4].rangeEndStep = CHANNEL_VALUE_TO_STEP(925);
+    modeActivationConditions[4].range.startStep = CHANNEL_VALUE_TO_STEP(900);
+    modeActivationConditions[4].range.endStep = CHANNEL_VALUE_TO_STEP(925);
 
-    EXPECT_EQ(0, modeActivationConditions[4].rangeStartStep);
-    EXPECT_EQ(1, modeActivationConditions[4].rangeEndStep);
+    EXPECT_EQ(0, modeActivationConditions[4].range.startStep);
+    EXPECT_EQ(1, modeActivationConditions[4].range.endStep);
 
     modeActivationConditions[5].modeId = (boxId_e)5;
     modeActivationConditions[5].auxChannelIndex = AUX6 - NON_AUX_CHANNEL_COUNT;
-    modeActivationConditions[5].rangeStartStep = CHANNEL_VALUE_TO_STEP(2075);
-    modeActivationConditions[5].rangeEndStep = CHANNEL_VALUE_TO_STEP(2100);
+    modeActivationConditions[5].range.startStep = CHANNEL_VALUE_TO_STEP(2075);
+    modeActivationConditions[5].range.endStep = CHANNEL_VALUE_TO_STEP(2100);
 
-    EXPECT_EQ(47, modeActivationConditions[5].rangeStartStep);
-    EXPECT_EQ(48, modeActivationConditions[5].rangeEndStep);
+    EXPECT_EQ(47, modeActivationConditions[5].range.startStep);
+    EXPECT_EQ(48, modeActivationConditions[5].range.endStep);
 
     modeActivationConditions[6].modeId = (boxId_e)6;
     modeActivationConditions[6].auxChannelIndex = AUX7 - NON_AUX_CHANNEL_COUNT;
-    modeActivationConditions[6].rangeStartStep = CHANNEL_VALUE_TO_STEP(925);
-    modeActivationConditions[6].rangeEndStep = CHANNEL_VALUE_TO_STEP(950);
+    modeActivationConditions[6].range.startStep = CHANNEL_VALUE_TO_STEP(925);
+    modeActivationConditions[6].range.endStep = CHANNEL_VALUE_TO_STEP(950);
 
-    EXPECT_EQ(1, modeActivationConditions[6].rangeStartStep);
-    EXPECT_EQ(2, modeActivationConditions[6].rangeEndStep);
+    EXPECT_EQ(1, modeActivationConditions[6].range.startStep);
+    EXPECT_EQ(2, modeActivationConditions[6].range.endStep);
 
     // and
     rcModeActivationMask = 0;
