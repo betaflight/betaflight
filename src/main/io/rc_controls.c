@@ -269,6 +269,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .step = 1
     },
     {
+        .adjustmentFunction = ADJUSTMENT_RC_EXPO,
+        .step = 1
+    },
+    {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
         .step = 1
     }
@@ -316,6 +320,11 @@ void applyAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentF
             controlRateConfig->rcRate8 = constrain(newValue, 0, 250); // FIXME magic numbers repeated in serial_cli.c
             generatePitchRollCurve(controlRateConfig);
         break;
+        case ADJUSTMENT_RC_EXPO:
+            newValue = (int)controlRateConfig->rcExpo8 + delta;
+            controlRateConfig->rcExpo8 = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            generatePitchRollCurve(controlRateConfig);
+            break;
         case ADJUSTMENT_PITCH_ROLL_RATE:
             newValue = (int)controlRateConfig->rollPitchRate + delta;
             controlRateConfig->rollPitchRate = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
