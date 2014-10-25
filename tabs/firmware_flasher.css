@@ -52,30 +52,32 @@
 .tab-firmware_flasher .info .progress.invalid::-webkit-progress-value {
     background-color: #A62E32;
 }
-.tab-firmware_flasher .note {
+.tab-firmware_flasher .options {
     position: relative;
 
     margin-bottom: 10px;
     padding: 5px;
 
+    line-height: 18px;
+
     border: 1px dotted silver;
 }
-.tab-firmware_flasher .note label input {
+.tab-firmware_flasher .options label input {
     float: left;
     margin-top: 2px;
 }
-.tab-firmware_flasher .note label span {
+.tab-firmware_flasher .options label span {
     font-weight: bold;
     margin-left: 6px;
 }
-.tab-firmware_flasher .note .description {
+.tab-firmware_flasher .options .description {
     position: absolute;
     left: 200px;
 
     font-style: italic;
     color: #818181;
 }
-.tab-firmware_flasher .note .flash_on_connect_wrapper {
+.tab-firmware_flasher .options .flash_on_connect_wrapper {
     display: none;
 }
 .tab-firmware_flasher .git_info {
