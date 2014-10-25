@@ -37,7 +37,10 @@ A single 2/3/4/5/6/x position switches can be used to make one 3 position switch
 
 Any combination of switches and pots can be used.  So you could have 6 POS switch.
 
-Settings can be saved when disarmed using stick positions: Throttle Low, Yaw Low, Pitch Low, Roll High)
+Settings are not saved automatically, connect a GUI, refresh and save or save using stick position when disarmed.
+Powering off without saving will discard the adjustments.
+
+Settings can be saved when disarmed using stick positions: Throttle Low, Yaw Left, Pitch Low, Roll Right.
 
 ## Adjustment switches
 
