@@ -27,6 +27,7 @@ Power Connections
 
 Motor Connections
 In standard QUADX configuration, the motors are mapped:
+
 | Cleanflight | CMJCU  |
 | ----------- | ------ |
 | Motor 1     | Motor3 |
@@ -48,6 +49,7 @@ If you have wired as above, Motor1/Motor2 on the board will be forward.
 # Connecting a Serial-USB Adapter
 
 You will need a USB -> Serial UART adapter. Connect:
+
 | Adapter           | CMJCU                      |
 | ----------------- | -------------------------- |
 | Either 3.3v OR 5v | The correct 3.3v OR 5v pin |
