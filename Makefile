@@ -459,12 +459,12 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   -D'__TARGET__="$(TARGET)"' \
 		   -D'__REVISION__="$(REVISION)"' \
 		   -save-temps=obj \
-		   -MD
+		   -MMD
 
 ASFLAGS		 = $(ARCH_FLAGS) \
 		   -x assembler-with-cpp \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
-		  -MD
+		  -MMD
 
 LDFLAGS		 = -lm \
 		   -nostartfiles \
