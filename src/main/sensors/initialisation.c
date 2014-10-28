@@ -393,6 +393,16 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     detectAcc(accHardwareToUse);
     detectBaro();
 
+#ifdef MAG
+    if (hmc5883lDetect()) {
+#ifdef NAZE
+        magAlign = CW180_DEG;
+#endif
+    } else {
+        sensorsClear(SENSOR_MAG);
+    }
+#endif
+
     reconfigureAlignment(sensorAlignmentConfig);
 
     // Now time to init things, acc first
@@ -400,14 +410,6 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init();
-
-#ifdef MAG
-    if (hmc5883lDetect()) {
-        magAlign = CW180_DEG; // default NAZE alignment
-    } else {
-        sensorsClear(SENSOR_MAG);
-    }
-#endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (sensors(SENSOR_MAG)) {
