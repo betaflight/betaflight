@@ -8,25 +8,36 @@ This board does not have an onboard USB-Serial converter, so an external adapter
 # Pins
 
 RX Connections
- * PA0 - Channel 1
- * PA1 - Channel 2
- * PA2 - Channel 3
- * PA3 - Channel 4
- * VCC - +3.3v
- * GND - Ground
+
+| Pin Label | Description |
+| --------- | ----------- |
+| PA0       | Channel 1   |
+| PA1       | Channel 2   |
+| PA2       | Channel 3   |
+| PA3       | Channel 4   |
+| VCC       | Power +3.3v |
+| GND       | Ground      |
 
 Serial Connections
- * TX1 - Transmit
- * RX1 - Receive
- * GND - Ground
- * 3V3 - 3.3v
- * 5V  - +5v
+
+| Pin Label | Description     |
+| --------- | --------------- |
+| TX1       | Serial Transmit |
+| RX1       | Serial Receive  |
+| GND       | Ground          |
+| 3V3       | Power +3.3v     |
+| 5V        | Power +5v       |
 
 Power Connections
- * Power +/- - 1 cell 3.7v
+
+| Pin Label | Description             |
+| --------- | ----------------------- |
+| Power +   | Power - 1 Cell 3.7v Max |
+| Power -   | Ground                  |
 
 Motor Connections
 In standard QUADX configuration, the motors are mapped:
+
 | Cleanflight | CMJCU  |
 | ----------- | ------ |
 | Motor 1     | Motor3 |
@@ -48,6 +59,7 @@ If you have wired as above, Motor1/Motor2 on the board will be forward.
 # Connecting a Serial-USB Adapter
 
 You will need a USB -> Serial UART adapter. Connect:
+
 | Adapter           | CMJCU                      |
 | ----------------- | -------------------------- |
 | Either 3.3v OR 5v | The correct 3.3v OR 5v pin |
@@ -81,7 +93,7 @@ To flash the board:
 
 # Helpful Hints
 
- * If you are only using a 4 channel RX, in the auxilary configuration tab, you can add a "Horrizon" mode range around 1500 
+ * If you are only using a 4 channel RX, in the auxiliary configuration tab, you can add a "Horizon" mode range around 1500 
  for one of the the AUX channels which will result in it being always on
  * Enabling the feature MOTOR_STOP helps with crashes so it doesn't try to keep spinning on its back
  * When the power runs low, the quad will start jumping around a bit, if the flight behaviour seems strange, check your batteries charge
