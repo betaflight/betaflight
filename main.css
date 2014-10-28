@@ -138,17 +138,14 @@ input[type="number"]::-webkit-inner-spin-button {
 #options {
     float: right;
 
-    margin-top: 1px;
-
     width: 20px;
     height: 20px;
 
+    background-image: url('./images/ic_settings_24px.svg');
+
+    background-position: -1px -1px;
+
     opacity: 0.6;
-}
-#options:before {
-    font-family: icons;
-    content: '\e600';
-    font-size: 18px;
 }
 #options:hover {
     opacity: 0.70;
@@ -302,9 +299,4 @@ input[type="number"]::-webkit-inner-spin-button {
 
     text-align: center;
     font-weight: bold;
-}
-
-@font-face {
-    font-family: 'icons';
-    src: url('./images/icons/icomoon.woff');
 }
