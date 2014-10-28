@@ -169,22 +169,16 @@ void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.baudRate = baudRate;
-#ifndef STM32F303xC // FIXME this doesnt seem to work, for now re-open the port from scratch, perhaps clearing some uart flags may help?
     uartReconfigure(uartPort);
-#else
-    uartOpen(uartPort->USARTx, uartPort->port.callback, uartPort->port.baudRate, uartPort->port.mode, uartPort->port.inversion);
-#endif
+    USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
 void uartSetMode(serialPort_t *instance, portMode_t mode)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.mode = mode;
-#ifndef STM32F303xC // FIXME this doesnt seem to work, for now re-open the port from scratch, perhaps clearing some uart flags may help?
     uartReconfigure(uartPort);
-#else
-    uartOpen(uartPort->USARTx, uartPort->port.callback, uartPort->port.baudRate, uartPort->port.mode, uartPort->port.inversion);
-#endif
+    USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
 void uartStartTxDMA(uartPort_t *s)
