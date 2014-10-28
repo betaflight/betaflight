@@ -372,6 +372,8 @@ void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
     serialPortFunction_t *serialPortFunction = findSerialPortFunctionByPort(port);
 
     serialPortFunction->currentFunction = FUNCTION_NONE;
+    serialPortFunction->scenario = SCENARIO_UNUSED;
+    serialPortFunction->port = NULL;
 }
 
 functionConstraint_t *getConfiguredFunctionConstraint(serialPortFunction_e function)
