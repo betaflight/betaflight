@@ -21,7 +21,7 @@ does not use the USB socket at all.
 | 2     | USART3       | FLEX PORT      |                                          |
 | 3     | SoftSerial   | RC connector   | pins 5 and 6 (Rx and Tx respectively)    |
 
-The Softserial port is available only for Softserial PPM configuration. The transmission data rate is limited to 19200 bds.
+The Softserial port is not available when RX_PARALLEL_PWM is used. The transmission data rate is limited to 19200 baud.
 
 To connect the GUI to the flight controller you need additional hardware attached to the USART1 serial port (by default).
 
