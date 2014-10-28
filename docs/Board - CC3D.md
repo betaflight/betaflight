@@ -19,8 +19,9 @@ does not use the USB socket at all.
 | ----- | ------------ | -------------- | -----------------------------------------|
 | 1     | USART1       | MAIN PORT      | Has a hardware inverter for SBUS         |
 | 2     | USART3       | FLEX PORT      |                                          |
+| 3     | SoftSerial   | RC connector   | pins 5 and 6 (Rx and Tx respectively)    |
 
-Software serial is not supported yet due to timer and pin configuration mappings.
+The Softserial port is available only for Softserial PPM configuration. The transmission data rate is limited to 19200 bds.
 
 To connect the GUI to the flight controller you need additional hardware attached to the USART1 serial port (by default).
 
