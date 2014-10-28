@@ -142,16 +142,16 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 20px;
 
     background-image: url('./images/ic_settings_24px.svg');
-
     background-position: -1px -1px;
+    background-repeat: no-repeat;
 
     opacity: 0.6;
 }
 #options:hover {
-    opacity: 0.70;
+    opacity: 0.7;
 }
 #options.active {
-    opacity: 0.70;
+    opacity: 0.7;
 }
 #options.active:hover {
     opacity: 0.85;
