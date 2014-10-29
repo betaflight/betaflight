@@ -603,6 +603,8 @@ void applyLedWarningLayer(uint8_t warningState, uint8_t warningFlags)
     }
 }
 
+#define INDICATOR_DEADBAND 25
+
 void applyLedIndicatorLayer(uint8_t indicatorFlashState)
 {
     const ledConfig_t *ledConfig;
@@ -625,22 +627,22 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
             continue;
         }
 
-        if (rcCommand[ROLL] > 50) {
+        if (rcCommand[ROLL] > INDICATOR_DEADBAND) {
             applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_EAST, flashColor);
             applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_EAST, flashColor);
         }
 
-        if (rcCommand[ROLL] < -50) {
+        if (rcCommand[ROLL] < -INDICATOR_DEADBAND) {
             applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_WEST, flashColor);
             applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_WEST, flashColor);
         }
 
-        if (rcCommand[PITCH] > 50) {
+        if (rcCommand[PITCH] > INDICATOR_DEADBAND) {
             applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_EAST, flashColor);
             applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_WEST, flashColor);
         }
 
-        if (rcCommand[PITCH] < -50) {
+        if (rcCommand[PITCH] < -INDICATOR_DEADBAND) {
             applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_EAST, flashColor);
             applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_WEST, flashColor);
         }
