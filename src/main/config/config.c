@@ -424,7 +424,7 @@ static void resetConf(void)
     }
 
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
-        masterConfig.profile[i].default_rateProfile_index = i % MAX_CONTROL_RATE_PROFILE_COUNT;
+        masterConfig.profile[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
     }
 }
 
@@ -610,10 +610,10 @@ void readEEPROM(void)
 
     setProfile(masterConfig.current_profile_index);
 
-    if (currentProfile->default_rateProfile_index > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
-        currentProfile->default_rateProfile_index = 0;
+    if (currentProfile->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
+        currentProfile->defaultRateProfileIndex = 0;
 
-    setControlRateProfile(currentProfile->default_rateProfile_index);
+    setControlRateProfile(currentProfile->defaultRateProfileIndex);
 
     validateAndFixConfig();
     activateConfig();
