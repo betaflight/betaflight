@@ -799,13 +799,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
-        serialize8(currentProfile->controlRateConfig.rcRate8);
-        serialize8(currentProfile->controlRateConfig.rcExpo8);
-        serialize8(currentProfile->controlRateConfig.rollPitchRate);
-        serialize8(currentProfile->controlRateConfig.yawRate);
-        serialize8(currentProfile->dynThrPID);
-        serialize8(currentProfile->controlRateConfig.thrMid8);
-        serialize8(currentProfile->controlRateConfig.thrExpo8);
+        serialize8(currentControlRateProfile->rcRate8);
+        serialize8(currentControlRateProfile->rcExpo8);
+        serialize8(currentControlRateProfile->rollPitchRate);
+        serialize8(currentControlRateProfile->yawRate);
+        serialize8(currentControlRateProfile->dynThrPID);
+        serialize8(currentControlRateProfile->thrMid8);
+        serialize8(currentControlRateProfile->thrExpo8);
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
@@ -1098,13 +1098,13 @@ static bool processInCommand(void)
         }
         break;
     case MSP_SET_RC_TUNING:
-        currentProfile->controlRateConfig.rcRate8 = read8();
-        currentProfile->controlRateConfig.rcExpo8 = read8();
-        currentProfile->controlRateConfig.rollPitchRate = read8();
-        currentProfile->controlRateConfig.yawRate = read8();
-        currentProfile->dynThrPID = read8();
-        currentProfile->controlRateConfig.thrMid8 = read8();
-        currentProfile->controlRateConfig.thrExpo8 = read8();
+        currentControlRateProfile->rcRate8 = read8();
+        currentControlRateProfile->rcExpo8 = read8();
+        currentControlRateProfile->rollPitchRate = read8();
+        currentControlRateProfile->yawRate = read8();
+        currentControlRateProfile->dynThrPID = read8();
+        currentControlRateProfile->thrMid8 = read8();
+        currentControlRateProfile->thrExpo8 = read8();
         break;
     case MSP_SET_MISC:
         read16(); // powerfailmeter

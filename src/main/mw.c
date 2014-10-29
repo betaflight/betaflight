@@ -165,13 +165,13 @@ void annexCode(void)
     static int32_t vbatCycleTime = 0;
 
     // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-    if (rcData[THROTTLE] < currentProfile->tpa_breakpoint) {
+    if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop2 = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t)currentProfile->dynThrPID * (rcData[THROTTLE] - currentProfile->tpa_breakpoint) / (2000 - currentProfile->tpa_breakpoint);
+            prop2 = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
         } else {
-            prop2 = 100 - currentProfile->dynThrPID;
+            prop2 = 100 - currentControlRateProfile->dynThrPID;
         }
     }
 
@@ -188,7 +188,7 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t)currentProfile->controlRateConfig.rollPitchRate * tmp / 500;
+            prop1 = 100 - (uint16_t)currentControlRateProfile->rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         } else if (axis == YAW) {
             if (currentProfile->yaw_deadband) {
@@ -199,7 +199,7 @@ void annexCode(void)
                 }
             }
             rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
-            prop1 = 100 - (uint16_t)currentProfile->controlRateConfig.yawRate * abs(tmp) / 500;
+            prop1 = 100 - (uint16_t)currentControlRateProfile->yawRate * abs(tmp) / 500;
         }
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
         dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
@@ -495,8 +495,10 @@ void processRx(void)
 
     updateActivatedModes(currentProfile->modeActivationConditions);
 
-    updateAdjustmentStates(currentProfile->adjustmentRanges);
-    processRcAdjustments(&currentProfile->controlRateConfig, &masterConfig.rxConfig);
+    if (!cliMode) {
+        updateAdjustmentStates(currentProfile->adjustmentRanges);
+        processRcAdjustments(currentControlRateProfile, &masterConfig.rxConfig);
+    }
 
     bool canUseHorizonMode = true;
 
@@ -654,7 +656,7 @@ void loop(void)
         // PID - note this is function pointer set by setPIDController()
         pid_controller(
             &currentProfile->pidProfile,
-            &currentProfile->controlRateConfig,
+            currentControlRateProfile,
             masterConfig.max_angle_inclination,
             &currentProfile->accelerometerTrims
         );

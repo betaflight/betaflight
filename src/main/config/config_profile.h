@@ -22,10 +22,7 @@ typedef struct profile_s {
 
     pidProfile_t pidProfile;
 
-    controlRateConfig_t controlRateConfig;
-
-    uint8_t dynThrPID;
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
+    uint8_t default_rateProfile_index;
 
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.

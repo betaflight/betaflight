@@ -162,9 +162,10 @@ TEST(RcControlsTest, updateActivatedModesUsingValidAuxConfigurationAndRXValues)
 
 enum {
     COUNTER_GENERATE_PITCH_ROLL_CURVE = 0,
-    COUNTER_QUEUE_CONFIRMATION_BEEP
+    COUNTER_QUEUE_CONFIRMATION_BEEP,
+    COUNTER_CHANGE_CONTROL_RATE_PROFILE
 };
-#define CALL_COUNT_ITEM_COUNT 2
+#define CALL_COUNT_ITEM_COUNT 3
 
 static int callCounts[CALL_COUNT_ITEM_COUNT];
 
@@ -178,18 +179,27 @@ void generatePitchRollCurve(controlRateConfig_t *) {
 void queueConfirmationBeep(uint8_t) {
     callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]++;
 }
+
+void changeControlRateProfile(uint8_t) {
+    callCounts[COUNTER_CHANGE_CONTROL_RATE_PROFILE]++;
+}
+
 }
 
 void resetCallCounters(void) {
     memset(&callCounts, 0, sizeof(callCounts));
 }
 
-uint32_t fixedMillis = 0;
+uint32_t fixedMillis;
 
 extern "C" {
 uint32_t millis(void) {
     return fixedMillis;
 }
+}
+
+void resetMillis(void) {
+    fixedMillis = 0;
 }
 
 #define DEFAULT_MIN_CHECK 1100
@@ -216,6 +226,8 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
             .thrExpo8 = 0,
             .rollPitchRate = 0,
             .yawRate = 0,
+            .dynThrPID = 0,
+            .tpa_breakpoint = 0
     };
 
     // and
@@ -224,6 +236,7 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
     rxConfig.maxcheck = DEFAULT_MAX_CHECK;
     rxConfig.midrc = 1500;
 
+    adjustmentStateMask = 0;
     memset(&adjustmentStates, 0, sizeof(adjustmentStates));
     configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
@@ -235,6 +248,7 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
 
     // and
     resetCallCounters();
+    resetMillis();
 
     // when
     processRcAdjustments(&controlRateConfig, &rxConfig);
@@ -256,6 +270,8 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
             .thrExpo8 = 0,
             .rollPitchRate = 0,
             .yawRate = 0,
+            .dynThrPID = 0,
+            .tpa_breakpoint = 0
     };
 
     // and
@@ -265,6 +281,8 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     rxConfig.midrc = 1500;
 
     // and
+    adjustmentStateMask = 0;
+    memset(&adjustmentStates, 0, sizeof(adjustmentStates));
     configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
@@ -275,6 +293,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 
     // and
     resetCallCounters();
+    resetMillis();
 
     // and
     rcData[AUX3] = PWM_RANGE_MAX;
@@ -400,7 +419,64 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 3);
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 3);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
+}
 
+static const adjustmentConfig_t rateProfileAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
+    .mode = ADJUSTMENT_MODE_SELECT,
+    .data = { 3 }
+};
+
+TEST(RcControlsTest, processRcRateProfileAdjustments)
+{
+    // given
+    controlRateConfig_t controlRateConfig = {
+            .rcRate8 = 90,
+            .rcExpo8 = 0,
+            .thrMid8 = 0,
+            .thrExpo8 = 0,
+            .rollPitchRate = 0,
+            .yawRate = 0,
+            .dynThrPID = 0,
+            .tpa_breakpoint = 0
+    };
+
+    // and
+    memset(&rxConfig, 0, sizeof (rxConfig));
+    rxConfig.mincheck = DEFAULT_MIN_CHECK;
+    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig.midrc = 1500;
+
+    adjustmentStateMask = 0;
+    memset(&adjustmentStates, 0, sizeof(adjustmentStates));
+
+    int adjustmentIndex = 3;
+    configureAdjustment(adjustmentIndex, AUX4 - NON_AUX_CHANNEL_COUNT, &rateProfileAdjustmentConfig);
+
+    // and
+    uint8_t index;
+    for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    // and
+    resetCallCounters();
+    resetMillis();
+
+    // and
+    rcData[AUX4] = PWM_RANGE_MAX;
+
+    // and
+    uint8_t expectedAdjustmentStateMask =
+            (1 << adjustmentIndex);
+
+    // when
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 1);
+    EXPECT_EQ(CALL_COUNTER(COUNTER_CHANGE_CONTROL_RATE_PROFILE), 1);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 }
 
 extern "C" {
@@ -415,6 +491,9 @@ void mwArm(void) {}
 void feature(uint32_t) {}
 void sensors(uint32_t) {}
 void mwDisarm(void) {}
+uint8_t getCurrentControlRateProfile(void) {
+    return 0;
+}
 
 uint8_t armingFlags = 0;
 int16_t heading;

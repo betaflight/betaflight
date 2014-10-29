@@ -92,8 +92,8 @@ The adjustment is made when the adjustment channel is in the high or low positio
 
 ### Adjustment function
 
-| Value | Adjustment |
-| ----- | ---------- |
+| Value | Adjustment | Notes |
+| ----- | ---------- |------ |
 | 0     | None |
 | 1     | RC RATE |
 | 2     | RC_EXPO |
@@ -106,6 +106,7 @@ The adjustment is made when the adjustment channel is in the high or low positio
 | 9     | YAW_P |
 | 10    | YAW_I |
 | 11    | YAW_D |
+| 12    | RATE_PROFILE | Switch between 3 rate profiles using a 3 position switch. |
 
 ## Examples
 
@@ -172,3 +173,17 @@ explained:
 * configure adjrange 8 to use adjustment slot 3 (2) so that when aux2
 (1) in the range 1850-2100 then use adjustment Yaw D (11) when aux 4
 (3) is in the appropriate position.
+
+### Example 4 - Use a single 3 position switch to change between 3 different rate profiles
+
+adjrange 11 3 3 900 2100 12 3
+
+explained:
+
+* configure adjrange 11 to use adjustment slot 4 (3) so that when aux4
+(3) in the range 900-2100 then use adjustment Rate Profile (12) when aux 4
+(3) is in the appropriate position.
+
+When the switch is low, rate profile 0 is selcted.
+When the switch is medium, rate profile 1 is selcted.
+When the switch is high, rate profile 2 is selcted.

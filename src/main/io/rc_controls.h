@@ -122,6 +122,8 @@ typedef struct controlRateConfig_s {
     uint8_t thrExpo8;
     uint8_t rollPitchRate;
     uint8_t yawRate;
+    uint8_t dynThrPID;
+    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
 } controlRateConfig_t;
 
 extern int16_t rcCommand[4];

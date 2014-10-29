@@ -418,6 +418,20 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
     };
 }
 
+void changeControlRateProfile(uint8_t profileIndex);
+
+void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position) {
+
+    queueConfirmationBeep(position + 1);
+    switch(adjustmentFunction) {
+        case ADJUSTMENT_RATE_PROFILE:
+            if (getCurrentControlRateProfile() != position) {
+                changeControlRateProfile(position);
+            }
+            break;
+    }
+}
+
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
@@ -463,9 +477,14 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
                 continue;
             }
 
-            MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
             applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+        } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
+            uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
+            uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
+
+            applySelectAdjustment(adjustmentFunction, position);
         }
+        MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
     }
 }
 

@@ -89,6 +89,7 @@ static void cliColor(char *cmdline);
 static void cliMixer(char *cmdline);
 static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
+static void cliRateProfile(char *cmdline);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
@@ -163,6 +164,7 @@ const clicmd_t cmdTable[] = {
     { "mixer", "mixer name or list", cliMixer },
     { "motor", "get/set motor output value", cliMotor },
     { "profile", "index (0 to 2)", cliProfile },
+    { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
     { "set", "name=value or blank or * for list", cliSet },
     { "status", "show system status", cliStatus },
@@ -179,15 +181,16 @@ typedef enum {
     VAR_FLOAT = (1 << 5),
 
     MASTER_VALUE = (1 << 6),
-    PROFILE_VALUE = (1 << 7)
+    PROFILE_VALUE = (1 << 7),
+    CONTROL_RATE_VALUE = (1 << 8)
 } cliValueFlag_e;
 
 #define VALUE_TYPE_MASK (VAR_UINT8 | VAR_INT8 | VAR_UINT16 | VAR_INT16 | VAR_UINT32 | VAR_FLOAT)
-#define SECTION_MASK (MASTER_VALUE | PROFILE_VALUE)
+#define SECTION_MASK (MASTER_VALUE | PROFILE_VALUE | CONTROL_RATE_VALUE)
 
 typedef struct {
     const char *name;
-    const uint8_t type; // cliValueFlag_e - specify one of each from VALUE_TYPE_MASK and SECTION_MASK
+    const uint16_t type; // cliValueFlag_e - specify one of each from VALUE_TYPE_MASK and SECTION_MASK
     void *ptr;
     const int32_t min;
     const int32_t max;
@@ -221,7 +224,7 @@ const clivalue_t valueTable[] = {
 
     { "flaps_speed",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.airplaneConfig.flaps_speed, 0, 100 },
 
-    { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE | MASTER_VALUE,  &masterConfig.fixedwing_althold_dir, -1, 1 },
+    { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &masterConfig.fixedwing_althold_dir, -1, 1 },
 
     { "serial_port_1_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[0], 0, SERIAL_PORT_SCENARIO_MAX },
     { "serial_port_2_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[1], 0, SERIAL_PORT_SCENARIO_MAX },
@@ -311,14 +314,15 @@ const clivalue_t valueTable[] = {
     { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.yaw_direction, -1, 1 },
     { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.tri_unarmed_servo, 0, 1 },
 
-    { "rc_rate",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.rcRate8, 0, 250 },
-    { "rc_expo",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.rcExpo8, 0, 100 },
-    { "thr_mid",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.thrMid8, 0, 100 },
-    { "thr_expo",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.thrExpo8, 0, 100 },
-    { "roll_pitch_rate",            VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.rollPitchRate, 0, 100 },
-    { "yaw_rate",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateConfig.yawRate, 0, 100 },
-    { "tpa_rate",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].dynThrPID, 0, 100},
-    { "tpa_breakpoint",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].tpa_breakpoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
+    { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE , &masterConfig.profile[0].default_rateProfile_index, 0, MAX_CONTROL_RATE_PROFILE_COUNT - 1 },
+    { "rc_rate",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcRate8, 0, 250 },
+    { "rc_expo",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcExpo8, 0, 100 },
+    { "thr_mid",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].thrMid8, 0, 100 },
+    { "thr_expo",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].thrExpo8, 0, 100 },
+    { "roll_pitch_rate",            VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rollPitchRate, 0, 100 },
+    { "yaw_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].yawRate, 0, 100 },
+    { "tpa_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].dynThrPID, 0, 100},
+    { "tpa_breakpoint",             VAR_UINT16 | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].tpa_breakpoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
 
     { "failsafe_delay",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_delay, 0, 200 },
     { "failsafe_off_delay",         VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_off_delay, 0, 200 },
@@ -696,7 +700,7 @@ static void cliColor(char *cmdline)
 }
 #endif
 
-static void dumpValues(uint8_t mask)
+static void dumpValues(uint16_t mask)
 {
     uint32_t i;
     const clivalue_t *value;
@@ -715,10 +719,11 @@ static void dumpValues(uint8_t mask)
 
 typedef enum {
     DUMP_MASTER = (1 << 0),
-    DUMP_PROFILE = (1 << 1)
+    DUMP_PROFILE = (1 << 1),
+    DUMP_CONTROL_RATE_PROFILE = (1 << 2)
 } dumpFlags_e;
 
-#define DUMP_ALL (DUMP_MASTER | DUMP_PROFILE)
+#define DUMP_ALL (DUMP_MASTER | DUMP_PROFILE | DUMP_CONTROL_RATE_PROFILE)
 
 
 static const char* const sectionBreak = "\r\n";
@@ -738,6 +743,9 @@ static void cliDump(char *cmdline)
     }
     if (strcasecmp(cmdline, "profile") == 0) {
         dumpMask = DUMP_PROFILE; // only
+    }
+    if (strcasecmp(cmdline, "rates") == 0) {
+        dumpMask = DUMP_CONTROL_RATE_PROFILE; // only
     }
 
     if (dumpMask & DUMP_MASTER) {
@@ -825,6 +833,17 @@ static void cliDump(char *cmdline)
         printSectionBreak();
 
         dumpValues(PROFILE_VALUE);
+    }
+
+    if (dumpMask & DUMP_CONTROL_RATE_PROFILE) {
+        printf("\r\n# dump rates\r\n");
+
+        printf("\r\n# rateprofile\r\n");
+        cliRateProfile("");
+
+        printSectionBreak();
+
+        dumpValues(CONTROL_RATE_VALUE);
     }
 }
 
@@ -1075,11 +1094,29 @@ static void cliProfile(char *cmdline)
         return;
     } else {
         i = atoi(cmdline);
-        if (i >= 0 && i <= 2) {
+        if (i >= 0 && i < MAX_PROFILE_COUNT) {
             masterConfig.current_profile_index = i;
             writeEEPROM();
             readEEPROM();
             cliProfile("");
+        }
+    }
+}
+
+static void cliRateProfile(char *cmdline)
+{
+    uint8_t len;
+    int i;
+
+    len = strlen(cmdline);
+    if (len == 0) {
+        printf("rateprofile %d\r\n", getCurrentControlRateProfile());
+        return;
+    } else {
+        i = atoi(cmdline);
+        if (i >= 0 && i < MAX_CONTROL_RATE_PROFILE_COUNT) {
+            changeControlRateProfile(i);
+            cliRateProfile("");
         }
     }
 }
@@ -1129,6 +1166,9 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
     if (var->type & PROFILE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
+    if (var->type & CONTROL_RATE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
+    }
 
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
@@ -1169,6 +1209,9 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
     void *ptr = var->ptr;
     if (var->type & PROFILE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+    }
+    if (var->type & CONTROL_RATE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
     }
 
     switch (var->type & VALUE_TYPE_MASK) {

@@ -17,6 +17,10 @@
 
 #pragma once
 
+#define MAX_PROFILE_COUNT 3
+#define MAX_CONTROL_RATE_PROFILE_COUNT 3
+
+
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,
@@ -54,6 +58,9 @@ void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 void saveConfigAndNotify(void);
 void changeProfile(uint8_t profileIndex);
+
+uint8_t getCurrentControlRateProfile(void);
+void changeControlRateProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
 

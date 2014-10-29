@@ -79,8 +79,10 @@ typedef struct master_t {
     hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
 #endif
 
-    profile_t profile[3];                   // 3 separate profiles
-    uint8_t current_profile_index;          // currently loaded profile
+    profile_t profile[MAX_PROFILE_COUNT];
+    uint8_t current_profile_index;
+    controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
+
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
@@ -88,3 +90,4 @@ typedef struct master_t {
 
 extern master_t masterConfig;
 extern profile_t *currentProfile;
+extern controlRateConfig_t *currentControlRateProfile;
