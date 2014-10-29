@@ -146,13 +146,33 @@ typedef enum {
     ADJUSTMENT_YAW_P,
     ADJUSTMENT_YAW_I,
     ADJUSTMENT_YAW_D,
+    ADJUSTMENT_RATE_PROFILE
 } adjustmentFunction_e;
 
-#define ADJUSTMENT_FUNCTION_COUNT 12
+#define ADJUSTMENT_FUNCTION_COUNT 13
+
+typedef enum {
+    ADJUSTMENT_MODE_STEP,
+    ADJUSTMENT_MODE_SELECT
+} adjustmentMode_e;
+
+typedef struct adjustmentStepConfig_s {
+    uint8_t step;
+} adjustmentStepConfig_t;
+
+typedef struct adjustmentSelectConfig_s {
+    uint8_t switchPositions;
+} adjustmentSelectConfig_t;
+
+typedef union adjustmentConfig_u {
+    adjustmentStepConfig_t stepConfig;
+    adjustmentSelectConfig_t selectConfig;
+} adjustmentData_t;
 
 typedef struct adjustmentConfig_s {
     uint8_t adjustmentFunction;
-    uint8_t step;
+    uint8_t mode;
+    adjustmentData_t data;
 } adjustmentConfig_t;
 
 typedef struct adjustmentRange_s {
@@ -170,7 +190,14 @@ typedef struct adjustmentRange_s {
 
 #define ADJUSTMENT_INDEX_OFFSET 1
 
+typedef struct adjustmentState_s {
+    uint8_t auxChannelIndex;
+    const adjustmentConfig_t *config;
+    uint32_t timeoutAt;
+} adjustmentState_t;
+
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
+
 #define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
 
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);

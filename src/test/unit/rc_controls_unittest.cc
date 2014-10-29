@@ -17,17 +17,18 @@
 #include <stdint.h>
 
 #include <limits.h>
+extern "C" {
+    #include "common/axis.h"
+    #include "flight/flight.h"
 
-#include "common/axis.h"
-#include "flight/flight.h"
-
-#include "rx/rx.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-
+    #include "rx/rx.h"
+    #include "io/escservo.h"
+    #include "io/rc_controls.h"
+}
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+extern "C" {
 int constrain(int amt, int low, int high)
 {
     if (amt < low)
@@ -36,6 +37,7 @@ int constrain(int amt, int low, int high)
         return high;
     else
         return amt;
+}
 }
 
 TEST(RcControlsTest, updateActivatedModesWithAllInputsAtMidde)
@@ -168,6 +170,7 @@ static int callCounts[CALL_COUNT_ITEM_COUNT];
 
 #define CALL_COUNTER(item) (callCounts[item])
 
+extern "C" {
 void generatePitchRollCurve(controlRateConfig_t *) {
     callCounts[COUNTER_GENERATE_PITCH_ROLL_CURVE]++;
 }
@@ -175,14 +178,18 @@ void generatePitchRollCurve(controlRateConfig_t *) {
 void queueConfirmationBeep(uint8_t) {
     callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]++;
 }
+}
+
 void resetCallCounters(void) {
     memset(&callCounts, 0, sizeof(callCounts));
 }
 
 uint32_t fixedMillis = 0;
 
+extern "C" {
 uint32_t millis(void) {
     return fixedMillis;
+}
 }
 
 #define DEFAULT_MIN_CHECK 1100
@@ -191,10 +198,12 @@ uint32_t millis(void) {
 rxConfig_t rxConfig;
 
 extern uint8_t adjustmentStateMask;
+extern adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
 static const adjustmentConfig_t rateAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_RC_RATE,
-    .step = 1
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { 1 }
 };
 
 TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
@@ -215,6 +224,7 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
     rxConfig.maxcheck = DEFAULT_MAX_CHECK;
     rxConfig.midrc = 1500;
 
+    memset(&adjustmentStates, 0, sizeof(adjustmentStates));
     configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
@@ -393,6 +403,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 
 }
 
+extern "C" {
 void saveConfigAndNotify(void) {}
 void generateThrottleCurve(controlRateConfig_t *, escAndServoConfig_t *) {}
 void changeProfile(uint8_t) {}
@@ -410,3 +421,4 @@ int16_t heading;
 uint8_t stateFlags = 0;
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 rxRuntimeConfig_t rxRuntimeConfig;
+}

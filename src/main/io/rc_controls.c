@@ -273,78 +273,85 @@ uint8_t adjustmentStateMask = 0;
 static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COUNT - 1] = {
     {
         .adjustmentFunction = ADJUSTMENT_RC_RATE,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_RC_EXPO,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_THROTTLE_EXPO,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_YAW_RATE,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_YAW_P,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_YAW_I,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
     },
     {
         .adjustmentFunction = ADJUSTMENT_YAW_D,
-        .step = 1
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data.selectConfig.switchPositions = 3
     }
 };
 
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
 
-
-typedef struct adjustmentState_s {
-    uint8_t auxChannelIndex;
-    uint8_t adjustmentFunction;
-    uint8_t step;
-    uint32_t timeoutAt;
-} adjustmentState_t;
-
-static adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
+adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
 void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
     adjustmentState_t *adjustmentState = &adjustmentStates[index];
 
-    if (adjustmentState->adjustmentFunction == adjustmentConfig->adjustmentFunction) {
+    if (adjustmentState->config == adjustmentConfig) {
         // already configured
         return;
     }
     adjustmentState->auxChannelIndex = auxSwitchChannelIndex;
-    adjustmentState->adjustmentFunction = adjustmentConfig->adjustmentFunction;
-    adjustmentState->step = adjustmentConfig->step;
+    adjustmentState->config = adjustmentConfig;
     adjustmentState->timeoutAt = 0;
 
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
 
-void applyAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
+void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
     int newValue;
 
     if (delta > 0) {
@@ -421,7 +428,10 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
     for (adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
         adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
 
-        uint8_t adjustmentFunction = adjustmentState->adjustmentFunction;
+        if (!adjustmentState->config) {
+            continue;
+        }
+        uint8_t adjustmentFunction = adjustmentState->config->adjustmentFunction;
         if (adjustmentFunction == ADJUSTMENT_NONE) {
             continue;
         }
@@ -437,24 +447,25 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
 
         uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentState->auxChannelIndex;
 
-        int delta;
-        if (rcData[channelIndex] > rxConfig->midrc + 200) {
-            delta = adjustmentState->step;
-        } else if (rcData[channelIndex] < rxConfig->midrc - 200) {
-            delta = 0 - adjustmentState->step;
-        } else {
-            // returning the switch to the middle immediately resets the ready state
-            MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
-            adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
-            continue;
-        }
+        if (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) {
+            int delta;
+            if (rcData[channelIndex] > rxConfig->midrc + 200) {
+                delta = adjustmentState->config->data.stepConfig.step;
+            } else if (rcData[channelIndex] < rxConfig->midrc - 200) {
+                delta = 0 - adjustmentState->config->data.stepConfig.step;
+            } else {
+                // returning the switch to the middle immediately resets the ready state
+                MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
+                adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
+                continue;
+            }
+            if (IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex)) {
+                continue;
+            }
 
-        if (IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex)) {
-            continue;
+            MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
+            applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
         }
-
-        MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
-        applyAdjustment(controlRateConfig, adjustmentFunction, delta);
     }
 }
 

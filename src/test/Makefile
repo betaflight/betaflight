@@ -140,7 +140,7 @@ $(OBJECT_DIR)/telemetry/hott.o : $(USER_DIR)/telemetry/hott.c $(USER_DIR)/teleme
 $(OBJECT_DIR)/telemetry_hott_unittest.o : $(TEST_DIR)/telemetry_hott_unittest.cc \
                      $(USER_DIR)/telemetry/hott.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_hott_unittest.cc -o $@
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_hott_unittest.cc -o $@
 
 telemetry_hott_unittest :$(OBJECT_DIR)/telemetry/hott.o $(OBJECT_DIR)/telemetry_hott_unittest.o $(OBJECT_DIR)/flight/gps_conversion.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
@@ -149,7 +149,7 @@ telemetry_hott_unittest :$(OBJECT_DIR)/telemetry/hott.o $(OBJECT_DIR)/telemetry_
 
 $(OBJECT_DIR)/io/rc_controls.o : $(USER_DIR)/io/rc_controls.c $(USER_DIR)/io/rc_controls.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
 
 $(OBJECT_DIR)/rc_controls_unittest.o : $(TEST_DIR)/rc_controls_unittest.cc \
                      $(USER_DIR)/io/rc_controls.h $(GTEST_HEADERS)
@@ -167,7 +167,7 @@ $(OBJECT_DIR)/io/ledstrip.o : $(USER_DIR)/io/ledstrip.c $(USER_DIR)/io/ledstrip.
 $(OBJECT_DIR)/ledstrip_unittest.o : $(TEST_DIR)/ledstrip_unittest.cc \
                      $(USER_DIR)/io/ledstrip.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ledstrip_unittest.cc -o $@
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ledstrip_unittest.cc -o $@
 
 ledstrip_unittest :$(OBJECT_DIR)/io/ledstrip.o $(OBJECT_DIR)/ledstrip_unittest.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
@@ -176,7 +176,7 @@ ledstrip_unittest :$(OBJECT_DIR)/io/ledstrip.o $(OBJECT_DIR)/ledstrip_unittest.o
 
 $(OBJECT_DIR)/drivers/light_ws2811strip.o : $(USER_DIR)/drivers/light_ws2811strip.c $(USER_DIR)/drivers/light_ws2811strip.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/light_ws2811strip.c -o $@
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/light_ws2811strip.c -o $@
 
 $(OBJECT_DIR)/ws2811_unittest.o : $(TEST_DIR)/ws2811_unittest.cc \
                      $(USER_DIR)/drivers/light_ws2811strip.h $(GTEST_HEADERS)
