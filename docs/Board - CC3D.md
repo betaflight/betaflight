@@ -11,7 +11,22 @@ The board has a USB port directly connected to the processor.  Other boards like
 have an on-board USB to uart adapter which connect to the processor's serial port instead.
 
 Currently there is no support for virtual com port functionality on the CC3D which means that cleanflight
-does not use the USB socket at all.
+does not currently use the USB socket at all.
+
+# Pinouts
+
+The 8 pin RC_Input connector has the following pinouts.
+
+| Pin | Function | Notes |
+| --- | ---------| ------|
+| 1   | Ground | |
+| 2   | +5V | |
+| 3   | PPM Input | Enable `feature RX_PPM` | 
+| 4   | Unused | |
+| 5   | Softserial1 RX | Enable `feature SOFTSERIAL` |
+| 6   | Softserial1 TX | Enable `feature SOFTSERIAL` |
+| 7   | Battery Voltage sensor | Enable `feature VBAT`. Connect to main battery using a voltage divider, 0v-3.3v input |
+| 8   | Current | Enable `feature CURRENT_METER`.  Connect to the output of a current sensor, 0v-3.3v input |
 
 # Serial Ports
 
@@ -19,7 +34,7 @@ does not use the USB socket at all.
 | ----- | ------------ | -------------- | -----------------------------------------|
 | 1     | USART1       | MAIN PORT      | Has a hardware inverter for SBUS         |
 | 2     | USART3       | FLEX PORT      |                                          |
-| 3     | SoftSerial   | RC connector   | pins 5 and 6 (Rx and Tx respectively)    |
+| 3     | SoftSerial   | RC connector   | Pins 5 and 6 (Rx and Tx respectively)    |
 
 The Softserial port is not available when RX_PARALLEL_PWM is used. The transmission data rate is limited to 19200 baud.
 
