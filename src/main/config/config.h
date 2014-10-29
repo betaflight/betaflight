@@ -57,6 +57,8 @@ void readEEPROMAndNotify(void);
 void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 void saveConfigAndNotify(void);
+
+uint8_t getCurrentProfile(void);
 void changeProfile(uint8_t profileIndex);
 
 uint8_t getCurrentControlRateProfile(void);

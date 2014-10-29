@@ -100,6 +100,8 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
+
+static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
 static const uint8_t EEPROM_CONF_VERSION = 84;
@@ -244,12 +246,15 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
 
 }
 
+uint8_t getCurrentProfile(void)
+{
+    return masterConfig.current_profile_index;
+}
+
 static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
 }
-
-static uint8_t currentControlRateProfileIndex = 0;
 
 uint8_t getCurrentControlRateProfile(void)
 {

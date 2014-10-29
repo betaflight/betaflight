@@ -1090,7 +1090,7 @@ static void cliProfile(char *cmdline)
 
     len = strlen(cmdline);
     if (len == 0) {
-        printf("profile %d\r\n", masterConfig.current_profile_index);
+        printf("profile %d\r\n", getCurrentProfile());
         return;
     } else {
         i = atoi(cmdline);
