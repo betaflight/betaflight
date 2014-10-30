@@ -276,6 +276,7 @@ static void resetConf(void)
     // Clear all configuration
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
+    setControlRateProfile(0);
 
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerConfiguration = MULTITYPE_QUADX;
