@@ -1,11 +1,11 @@
-.tab-motor_outputs .plot_control {
+.tab-motors .plot_control {
     float: right;
 
     width: 158px;
 
     border: 1px solid silver;
 }
-.tab-motor_outputs .plot_control .title {
+.tab-motors .plot_control .title {
     line-height: 20px;
     font-weight: bold;
     text-align: center;
@@ -13,14 +13,14 @@
     border-bottom: 1px solid silver;
     background-color: #ececec;
 }
-.tab-motor_outputs .plot_control .title a:hover {
+.tab-motors .plot_control .title a:hover {
     text-decoration: underline;
 }
-.tab-motor_outputs .plot_control dl {
+.tab-motors .plot_control dl {
     padding: 5px 5px 0 5px;
     line-height: 22px;
 }
-.tab-motor_outputs .plot_control dt {
+.tab-motors .plot_control dt {
     float: left;
 
     width: 60px;
@@ -28,28 +28,28 @@
 
     font-weight: bold;
 }
-.tab-motor_outputs .plot_control dd {
+.tab-motors .plot_control dd {
     height: 22px;
 }
-.tab-motor_outputs .plot_control select {
+.tab-motors .plot_control select {
     float: right;
 
     width: 80px;
     border: 1px solid silver;
 }
-.tab-motor_outputs .plot_control .x {
+.tab-motors .plot_control .x {
     color: #00A8F0;
 }
-.tab-motor_outputs .plot_control .y {
+.tab-motors .plot_control .y {
     color: #C0D800;
 }
-.tab-motor_outputs .plot_control .z {
+.tab-motors .plot_control .z {
     color: #CB4B4B;
 }
-.tab-motor_outputs .plot_control .x, .tab-motor_outputs .plot_control .y, .tab-motor_outputs .plot_control .z {
+.tab-motors .plot_control .x, .tab-motors .plot_control .y, .tab-motors .plot_control .z {
     text-align: right;
 }
-.tab-motor_outputs svg {
+.tab-motors svg {
     float: left;
 
     width: calc(100% - 168px); /* - (plot control, margin)*/
@@ -57,54 +57,54 @@
 
     margin-bottom: 10px;
 }
-.tab-motor_outputs .grid .tick {
+.tab-motors .grid .tick {
     stroke: silver;
     stroke-width: 1px;
     shape-rendering: crispEdges;
 }
-.tab-motor_outputs .grid path {
+.tab-motors .grid path {
     stroke-width: 0;
 }
-.tab-motor_outputs .data .line {
+.tab-motors .data .line {
     stroke-width: 2px;
     fill: none;
 }
-.tab-motor_outputs .axis path, .tab-motor_outputs .axis line {
+.tab-motors .axis path, .tab-motors .axis line {
     fill: none;
     stroke: #000000;
     stroke-width: 1px;
     shape-rendering: crispEdges;
 }
-.tab-motor_outputs .line:nth-child(1) {
+.tab-motors .line:nth-child(1) {
     stroke: #00A8F0;
 }
-.tab-motor_outputs .line:nth-child(2) {
+.tab-motors .line:nth-child(2) {
     stroke: #C0D800;
 }
-.tab-motor_outputs .line:nth-child(3) {
+.tab-motors .line:nth-child(3) {
     stroke: #CB4B4B;
 }
 
-.tab-motor_outputs .left.motors {
+.tab-motors .left.motors {
     float: left;
 
     width: calc(50% - 50px);
 }
-.tab-motor_outputs .right.servos {
+.tab-motors .right.servos {
     float: right;
 
     width: 50%;
 }
-.tab-motor_outputs .title {
+.tab-motors .title {
     padding-bottom: 2px;
 
     text-align: center;
     font-weight: bold;
 }
-.tab-motor_outputs .titles {
+.tab-motors .titles {
     height: 20px;
 }
-.tab-motor_outputs .titles li {
+.tab-motors .titles li {
     float: left;
 
     width: calc((100% / 9) - 10px);
@@ -112,17 +112,17 @@
 
     text-align: center;
 }
-.tab-motor_outputs .servos .titles li {
+.tab-motors .servos .titles li {
     float: right;
 
     width: calc((100% / 8) - 10px);
 
     margin: 0 0 0 10px;
 }
-.tab-motor_outputs .titles .active {
+.tab-motors .titles .active {
     color: green;
 }
-.tab-motor_outputs .m-block {
+.tab-motors .m-block {
     float: left;
 
     width: calc((100% / 9) - 12px);
@@ -135,13 +135,13 @@
     border: 1px solid silver;
     background-color: #f4f4f4;
 }
-.tab-motor_outputs .m-block .meter-bar {
+.tab-motors .m-block .meter-bar {
     position: relative;
 
     width: 100%;
     height: 100px;
 }
-.tab-motor_outputs .m-block .label {
+.tab-motors .m-block .label {
     position: absolute;
     width: 100%;
     bottom: 45px;
@@ -150,17 +150,17 @@
     font-weight: bold;
     color: #474747;
 }
-.tab-motor_outputs .m-block .indicator .label {
+.tab-motors .m-block .indicator .label {
     color: white;
 }
-.tab-motor_outputs .servos .m-block {
+.tab-motors .servos .m-block {
     float: right;
 
     width: calc((100% / 8) - 12px);
 
     margin: 0 0 0 10px;
 }
-.tab-motor_outputs .indicator {
+.tab-motors .indicator {
     position: absolute;
     overflow: hidden;
 
@@ -168,13 +168,13 @@
 
     text-align: center;
 }
-.tab-motor_outputs .motor_testing {
+.tab-motors .motor_testing {
     margin-top: 15px;
 }
-.tab-motor_outputs .motor_testing .left {
+.tab-motors .motor_testing .left {
     width: calc(50% - 50px);
 }
-.tab-motor_outputs .motor_testing .sliders input {
+.tab-motors .motor_testing .sliders input {
     -webkit-appearance: slider-vertical;
 
     width: calc((100% / 9) - 13px);
@@ -182,13 +182,13 @@
 
     margin-right: 10px;
 }
-.tab-motor_outputs .motor_testing .sliders input:first-child {
+.tab-motors .motor_testing .sliders input:first-child {
     /* margin-left: 2px; */ /* seems to vary depending on chrome version O.o */
 }
-.tab-motor_outputs .motor_testing .values {
+.tab-motors .motor_testing .values {
     margin-top: 5px;
 }
-.tab-motor_outputs .motor_testing .values li {
+.tab-motors .motor_testing .values li {
     float: left;
 
     width: calc((100% / 9) - 10px);
@@ -196,7 +196,7 @@
 
     text-align: center;
 }
-.tab-motor_outputs .motor_testing .notice {
+.tab-motors .motor_testing .notice {
     float: right;
 
     width: calc(50% - 22px);
@@ -205,6 +205,6 @@
 
     border: 1px dotted silver;
 }
-.tab-motor_outputs .motor_testing .notice input[type="checkbox"] {
+.tab-motors .motor_testing .notice input[type="checkbox"] {
     vertical-align: middle;
 }

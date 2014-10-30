@@ -172,20 +172,20 @@ TABS.motors.initialize = function (callback) {
         // set refresh speeds according to configuration saved in storage
         chrome.storage.local.get('motors_tab_accel_settings', function (result) {
             if (result.motors_tab_accel_settings) {
-                $('.tab-motor_outputs select[name="accel_refresh_rate"]').val(result.motors_tab_accel_settings.rate);
-                $('.tab-motor_outputs select[name="accel_scale"]').val(result.motors_tab_accel_settings.scale);
+                $('.tab-motors select[name="accel_refresh_rate"]').val(result.motors_tab_accel_settings.rate);
+                $('.tab-motors select[name="accel_scale"]').val(result.motors_tab_accel_settings.scale);
 
                 // start polling data by triggering refresh rate change event
-                $('.tab-motor_outputs .rate select:first').change();
+                $('.tab-motors .rate select:first').change();
             } else {
                 // start polling immediatly (as there is no configuration saved in the storage)
-                $('.tab-motor_outputs .rate select:first').change();
+                $('.tab-motors .rate select:first').change();
             }
         });
 
-        $('.tab-motor_outputs .rate select, .tab-motor_outputs .scale select').change(function () {
-            var rate = parseInt($('.tab-motor_outputs select[name="accel_refresh_rate"]').val(), 10);
-            var scale = parseFloat($('.tab-motor_outputs select[name="accel_scale"]').val());
+        $('.tab-motors .rate select, .tab-motors .scale select').change(function () {
+            var rate = parseInt($('.tab-motors select[name="accel_refresh_rate"]').val(), 10);
+            var scale = parseFloat($('.tab-motors select[name="accel_scale"]').val());
 
             // store current/latest refresh rates in the storage
             chrome.storage.local.set({'motors_tab_accel_settings': {'rate': rate, 'scale': scale}});

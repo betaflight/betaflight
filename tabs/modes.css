@@ -1,52 +1,50 @@
-.tab-auxiliary_configuration {
-}
-.tab-auxiliary_configuration .boxes {
+.tab-modes .boxes {
     width: 100%;
     border-collapse: collapse;
 }
-.tab-auxiliary_configuration .boxes th, .tab-auxiliary_configuration .boxes td {
+.tab-modes .boxes th, .tab-modes .boxes td {
     line-height: 22px;
     text-align: center;
 
     border: 1px solid #8b8b8b;
 }
-.tab-auxiliary_configuration .boxes .heads {
+.tab-modes .boxes .heads {
     background-color: #ececec;
 }
-.tab-auxiliary_configuration .boxes .main {
+.tab-modes .boxes .main {
     background-color: #ececec;
 }
-.tab-auxiliary_configuration .boxes .name {
+.tab-modes .boxes .name {
     text-align: center;
 }
-.tab-auxiliary_configuration .boxes .on {
+.tab-modes .boxes .on {
     color: white;
     background-color: #0d8b13;
 }
-.tab-auxiliary_configuration .boxes .off {
+.tab-modes .boxes .off {
     color: white;
     background-color: #be2222;
 }
-.tab-auxiliary_configuration .boxes td input {
+.tab-modes .boxes td input {
     position: absolute;
 
     margin-top: -6px;
     margin-left: -6px;
 }
-.tab-auxiliary_configuration .boxes .switches:nth-child(odd) {
+.tab-modes .boxes .switches:nth-child(odd) {
     background-color: #ececec;
 }
-.tab-auxiliary_configuration .boxes .heads th:first-child {
+.tab-modes .boxes .heads th:first-child {
     border: 0;
     background-color: white;
 }
-.tab-auxiliary_configuration .buttons {
+.tab-modes .buttons {
     width: calc(100% - 20px);
 
     position: absolute;
     bottom: 10px;
 }
-.tab-auxiliary_configuration .update {
+.tab-modes .update {
     display: block;
     float: right;
 
@@ -61,6 +59,6 @@
     border: 1px solid silver;
     background-color: #ececec;
 }
-.tab-auxiliary_configuration .update:hover {
+.tab-modes .update:hover {
     background-color: #dedcdc;
 }
