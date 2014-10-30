@@ -1,13 +1,12 @@
 'use strict';
 
-// TODO: rework box_highlight & update_ui to accept flexible amount of aux channels
-TABS.auxiliary_configuration = {};
-TABS.auxiliary_configuration.initialize = function (callback) {
+TABS.modes = {};
+TABS.modes.initialize = function (callback) {
     var self = this;
 
-    if (GUI.active_tab != 'auxiliary_configuration') {
-        GUI.active_tab = 'auxiliary_configuration';
-        googleAnalytics.sendAppView('Auxiliary Configuration');
+    if (GUI.active_tab != 'modes') {
+        GUI.active_tab = 'modes';
+        googleAnalytics.sendAppView('Modes');
     }
 
     function get_box_data() {
@@ -23,7 +22,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     }
 
     function load_html() {
-        $('#content').load("./tabs/auxiliary_configuration.html", process_html);
+        $('#content').load("./tabs/modes.html", process_html);
     }
 
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
@@ -152,6 +151,6 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     }
 };
 
-TABS.auxiliary_configuration.cleanup = function (callback) {
+TABS.modes.cleanup = function (callback) {
     if (callback) callback();
 };

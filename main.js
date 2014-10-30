@@ -101,8 +101,8 @@ $(document).ready(function () {
                     case 'tab_receiver':
                         TABS.receiver.initialize(content_ready);
                         break;
-                    case 'tab_auxiliary_configuration':
-                        TABS.auxiliary_configuration.initialize(content_ready);
+                    case 'tab_modes':
+                        TABS.modes.initialize(content_ready);
                         break;
                     case 'tab_servos':
                         TABS.servos.initialize(content_ready);
@@ -110,8 +110,8 @@ $(document).ready(function () {
                     case 'tab_gps':
                         TABS.gps.initialize(content_ready);
                         break;
-                    case 'tab_motor_outputs':
-                        TABS.motor_outputs.initialize(content_ready);
+                    case 'tab_motors':
+                        TABS.motors.initialize(content_ready);
                         break;
                     case 'tab_sensors':
                         TABS.sensors.initialize(content_ready);

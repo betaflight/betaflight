@@ -1,11 +1,11 @@
 'use strict';
 
-TABS.motor_outputs = {};
-TABS.motor_outputs.initialize = function (callback) {
+TABS.motors = {};
+TABS.motors.initialize = function (callback) {
     var self = this;
 
-    if (GUI.active_tab != 'motor_outputs') {
-        GUI.active_tab = 'motor_outputs';
+    if (GUI.active_tab != 'motors') {
+        GUI.active_tab = 'motors';
         googleAnalytics.sendAppView('Motors');
     }
 
@@ -14,7 +14,7 @@ TABS.motor_outputs.initialize = function (callback) {
     }
 
     function load_html() {
-        $('#content').load("./tabs/motor_outputs.html", process_html);
+        $('#content').load("./tabs/motors.html", process_html);
     }
 
     MSP.send_message(MSP_codes.MSP_MISC, false, false, get_motor_data);
@@ -413,6 +413,6 @@ TABS.motor_outputs.initialize = function (callback) {
     }
 };
 
-TABS.motor_outputs.cleanup = function (callback) {
+TABS.motors.cleanup = function (callback) {
     if (callback) callback();
 };
