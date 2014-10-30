@@ -6,7 +6,7 @@ TABS.landing.initialize = function (callback) {
 
     if (GUI.active_tab != 'landing') {
         GUI.active_tab = 'landing';
-        googleAnalytics.sendAppView('Landing Page');
+        googleAnalytics.sendAppView('Landing');
     }
 
     $('#content').load("./tabs/landing.html", function () {

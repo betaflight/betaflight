@@ -6,7 +6,7 @@ TABS.motor_outputs.initialize = function (callback) {
 
     if (GUI.active_tab != 'motor_outputs') {
         GUI.active_tab = 'motor_outputs';
-        googleAnalytics.sendAppView('Motor Outputs Page');
+        googleAnalytics.sendAppView('Motors');
     }
 
     function get_motor_data() {

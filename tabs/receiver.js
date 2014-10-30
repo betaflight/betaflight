@@ -6,7 +6,7 @@ TABS.receiver.initialize = function (callback) {
 
     if (GUI.active_tab != 'receiver') {
         GUI.active_tab = 'receiver';
-        googleAnalytics.sendAppView('Receiver Page');
+        googleAnalytics.sendAppView('Receiver');
     }
 
     function get_misc_data() {
