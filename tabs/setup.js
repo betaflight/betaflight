@@ -191,16 +191,16 @@ TABS.setup.initialize3D = function (compatibility) {
 
     // load the model including materials
     var models = [
+        'tricopter',
         'quad_x',
         'quad_x',
         'quad_x',
         'quad_x',
+        'y6',
+        'hex_plus',
         'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
+        'y4',
+        'hex_x',
         'quad_x',
         'quad_x',
         'quad_x',
