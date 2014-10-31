@@ -230,9 +230,8 @@ function configuration_restore(callback) {
 
     function configuration_upload(configuration, callback) {
         function compareVersions(generated, required) {
-
-            var a = generated.split('.');
-            var b = required.split('.');
+            var a = generated.split('.'),
+                b = required.split('.');
 
             for (var i = 0; i < a.length; ++i) {
                 a[i] = Number(a[i]);
@@ -376,7 +375,7 @@ function configuration_restore(callback) {
         }
 
         // validate
-        if (typeof configuration.generatedBy !== 'undefined' && compareVersions(configuration.generatedBy, '0.55')) {
+        if (typeof configuration.generatedBy !== 'undefined' && compareVersions(configuration.generatedBy, CONFIGURATOR.backupFileMinVersionAccepted)) {
             upload();
         } else {
             GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));

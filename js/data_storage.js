@@ -1,8 +1,9 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1412546773959, // new Date().getTime() - 10.06.2014
+    'releaseDate': 1414750389509, // new Date().getTime() - 10.31.2014
     'firmwareVersionAccepted': 2.31,
+    'backupFileMinVersionAccepted': '0.55', // chrome.runtime.getManifest().version is stored as string, so does this one
     'connectionValid': false,
     'cliActive': false,
     'cliValid': false
@@ -19,7 +20,6 @@ var CONFIG = {
     activeSensors: 0,
     mode:          0,
     profile:       0,
-
     uid:           [0, 0, 0],
     accelerometerTrims: [0, 0]
 };
@@ -33,7 +33,6 @@ var BF_CONFIG = {
     board_align_yaw:        0,
     currentscale:           0,
     currentoffset:          0
-    // TBD
 };
 
 var PID_names = [];
