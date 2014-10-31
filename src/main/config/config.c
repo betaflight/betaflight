@@ -214,8 +214,13 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 
 void resetSerialConfig(serialConfig_t *serialConfig)
 {
+#ifdef SWAP_SERIAL_PORT_1_AND_2_DEFAULTS
+    serialConfig->serial_port_scenario[0] = lookupScenarioIndex(SCENARIO_UNUSED);
+    serialConfig->serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
+#else
     serialConfig->serial_port_scenario[0] = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
     serialConfig->serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_UNUSED);
+#endif
 #if (SERIAL_PORT_COUNT > 2)
     serialConfig->serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_UNUSED);
 #if (SERIAL_PORT_COUNT > 3)
