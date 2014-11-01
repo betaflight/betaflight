@@ -213,7 +213,7 @@ extern adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 static const adjustmentConfig_t rateAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_RC_RATE,
     .mode = ADJUSTMENT_MODE_STEP,
-    .data = { 1 }
+    .data = { { 1 } }
 };
 
 TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
@@ -424,7 +424,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 static const adjustmentConfig_t rateProfileAdjustmentConfig = {
     .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
     .mode = ADJUSTMENT_MODE_SELECT,
-    .data = { 3 }
+    .data = { { 3 } }
 };
 
 TEST(RcControlsTest, processRcRateProfileAdjustments)
