@@ -63,7 +63,9 @@ void systemBeep(bool onoff)
 
 void beeperInit(beeperConfig_t *config)
 {
-#ifdef BEEPER
+#ifndef BEEPER
+    UNUSED(config);
+#else
     initBeeperHardware(config);
     if (config->isInverted)
         systemBeepPtr = beepInverted;
