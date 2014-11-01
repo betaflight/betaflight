@@ -121,7 +121,7 @@ flight_imu_unittest : $(OBJECT_DIR)/flight/imu.o $(OBJECT_DIR)/flight_imu_unitte
 
 $(OBJECT_DIR)/flight/gps_conversion.o : $(USER_DIR)/flight/gps_conversion.c $(USER_DIR)/flight/gps_conversion.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/gps_conversion.c -o $@
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/gps_conversion.c -o $@
 
 $(OBJECT_DIR)/gps_conversion_unittest.o : $(TEST_DIR)/gps_conversion_unittest.cc \
                      $(USER_DIR)/flight/gps_conversion.h $(GTEST_HEADERS)
@@ -135,12 +135,12 @@ gps_conversion_unittest : $(OBJECT_DIR)/flight/gps_conversion.o $(OBJECT_DIR)/gp
 
 $(OBJECT_DIR)/telemetry/hott.o : $(USER_DIR)/telemetry/hott.c $(USER_DIR)/telemetry/hott.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/hott.c -o $@
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/hott.c -o $@
 
 $(OBJECT_DIR)/telemetry_hott_unittest.o : $(TEST_DIR)/telemetry_hott_unittest.cc \
                      $(USER_DIR)/telemetry/hott.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_hott_unittest.cc -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_hott_unittest.cc -o $@
 
 telemetry_hott_unittest :$(OBJECT_DIR)/telemetry/hott.o $(OBJECT_DIR)/telemetry_hott_unittest.o $(OBJECT_DIR)/flight/gps_conversion.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
