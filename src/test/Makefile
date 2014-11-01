@@ -93,7 +93,7 @@ TEST_CFLAGS	 = $(addprefix -I,$(TEST_INCLUDE_DIRS))
 
 $(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
 
 $(OBJECT_DIR)/battery_unittest.o : $(TEST_DIR)/battery_unittest.cc \
                      $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)

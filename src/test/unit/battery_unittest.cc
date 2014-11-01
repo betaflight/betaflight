@@ -17,7 +17,10 @@
 #include <stdint.h>
 
 #include <limits.h>
-#include "sensors/battery.h"
+
+extern "C" {
+    #include "sensors/battery.h"
+}
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
@@ -68,6 +71,8 @@ TEST(BatteryTest, BatteryADCToVoltage)
 
 // STUBS
 
+extern "C" {
+
 uint16_t adcGetChannel(uint8_t channel)
 {
     UNUSED(channel);
@@ -78,4 +83,5 @@ void delay(uint32_t ms)
 {
     UNUSED(ms);
     return;
+}
 }
