@@ -22,20 +22,23 @@
 
 #define BARO
 
-#include "common/axis.h"
-#include "flight/flight.h"
+extern "C" {
+    #include "common/axis.h"
+    #include "flight/flight.h"
+    #include "flight/altitudehold.h"
 
-#include "sensors/sensors.h"
-#include "drivers/accgyro.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
+    #include "sensors/sensors.h"
+    #include "drivers/accgyro.h"
+    #include "sensors/gyro.h"
+    #include "sensors/compass.h"
+    #include "sensors/acceleration.h"
+    #include "sensors/barometer.h"
 
-#include "config/runtime_config.h"
+    #include "config/runtime_config.h"
 
-#include "flight/mixer.h"
-#include "flight/imu.h"
+    #include "flight/mixer.h"
+    #include "flight/imu.h"
+}
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
@@ -44,7 +47,9 @@
 #define UPWARDS_THRUST false
 
 
-bool isThrustFacingDownwards(rollAndPitchInclination_t *inclinations);
+extern "C" {
+    bool isThrustFacingDownwards(rollAndPitchInclination_t *inclinations);
+}
 
 typedef struct inclinationExpectation_s {
     rollAndPitchInclination_t inclination;
@@ -82,6 +87,8 @@ TEST(FlightImuTest, IsThrustFacingDownwards)
 
 // STUBS
 
+extern "C" {
+
 uint16_t acc_1G;
 int16_t heading;
 gyro_t gyro;
@@ -117,4 +124,6 @@ int constrain(int amt, int low, int high)
     UNUSED(low);
     UNUSED(high);
     return 0;
+}
+
 }

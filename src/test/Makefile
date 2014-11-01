@@ -105,17 +105,20 @@ battery_unittest : $(OBJECT_DIR)/sensors/battery.o $(OBJECT_DIR)/battery_unittes
 
 
 
+$(OBJECT_DIR)/flight/altitudehold.o : $(USER_DIR)/flight/altitudehold.c $(USER_DIR)/flight/altitudehold.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/altitudehold.c -o $@
 
 $(OBJECT_DIR)/flight/imu.o : $(USER_DIR)/flight/imu.c $(USER_DIR)/flight/imu.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/imu.c -o $@
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/imu.c -o $@
 
 $(OBJECT_DIR)/flight_imu_unittest.o : $(TEST_DIR)/flight_imu_unittest.cc \
                      $(USER_DIR)/flight/imu.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_imu_unittest.cc -o $@
 
-flight_imu_unittest : $(OBJECT_DIR)/flight/imu.o $(OBJECT_DIR)/flight_imu_unittest.o $(OBJECT_DIR)/gtest_main.a
+flight_imu_unittest : $(OBJECT_DIR)/flight/imu.o $(OBJECT_DIR)/flight/altitudehold.o $(OBJECT_DIR)/flight_imu_unittest.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
