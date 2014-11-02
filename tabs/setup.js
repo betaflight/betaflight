@@ -222,7 +222,7 @@ TABS.setup.initialize3D = function (compatibility) {
     }
 
     loader = new THREE.JSONLoader();
-    loader.load('./resources/models/' + model_file + '.js', function (geometry, materials) {
+    loader.load('./resources/models/' + model_file + '.json', function (geometry, materials) {
         if (!fallback) {
             model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
         } else {
