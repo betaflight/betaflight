@@ -87,7 +87,7 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
 
         if (isOnFinalGyroCalibrationCycle()) {
             float dev = devStandardDeviation(&var[axis]);
-            // check deviation and startover if idiot was moving the model
+            // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && dev > gyroMovementCalibrationThreshold) {
                 gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
                 return;
