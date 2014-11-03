@@ -54,18 +54,8 @@ float accVelScale;
 
 int16_t smallAngle = 0;
 
-int32_t EstAlt;                // in cm
-int32_t AltHold;
-int32_t setVelocity = 0;
-uint8_t velocityControl = 0;
-int32_t errorVelocityI = 0;
-
-int32_t vario = 0;                      // variometer in cm/s
-
 float throttleAngleScale;
 float fc_acc;
-
-int32_t altHoldThrottleAdjustment = 0;
 
 float magneticDeclination = 0.0f;       // calculated at startup from config
 float gyroScaleRad;

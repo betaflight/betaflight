@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "common/maths.h"
 
 #include "platform.h"
 
@@ -29,51 +28,48 @@
 #include "common/axis.h"
 
 #include "drivers/accgyro.h"
-#include "drivers/serial.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-
-// FIXME remove dependency on currentProfile and masterConfig globals and clean up include file list.
-
-#include "common/color.h"
 
 #include "flight/flight.h"
+
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
-#include "sensors/battery.h"
-#include "sensors/boardalignment.h"
-#include "sensors/gyro.h"
 #include "sensors/sonar.h"
 
-#include "io/escservo.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/serial.h"
-#include "io/ledstrip.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation.h"
-#include "telemetry/telemetry.h"
+#include "flight/imu.h"
 
 #include "rx/rx.h"
 #include "io/rc_controls.h"
+#include "io/escservo.h"
 
 #include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+
+int32_t setVelocity = 0;
+uint8_t velocityControl = 0;
+int32_t errorVelocityI = 0;
+int32_t altHoldThrottleAdjustment = 0;
+int32_t AltHold;
+int32_t EstAlt;                // in cm
+int32_t vario = 0;                      // variometer in cm/s
 
 
 barometerConfig_t *barometerConfig;
 pidProfile_t *pidProfile;
+rcControlsConfig_t *rcControlsConfig;
+escAndServoConfig_t *escAndServoConfig;
 
-void configureAltitudeHold(pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig)
+void configureAltitudeHold(
+        pidProfile_t *initialPidProfile,
+        barometerConfig_t *intialBarometerConfig,
+        rcControlsConfig_t *initialRcControlsConfig,
+        escAndServoConfig_t *initialEscAndServoConfig
+)
 {
     pidProfile = initialPidProfile;
     barometerConfig = intialBarometerConfig;
+    rcControlsConfig = initialRcControlsConfig;
+    escAndServoConfig = initialEscAndServoConfig;
 }
 
 #if defined(BARO) || defined(SONAR)
@@ -90,22 +86,22 @@ static void applyMultirotorAltHold(void)
 {
     static uint8_t isAltHoldChanged = 0;
     // multirotor alt hold
-    if (currentProfile->alt_hold_fast_change) {
+    if (rcControlsConfig->alt_hold_fast_change) {
         // rapid alt changes
-        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile->alt_hold_deadband) {
+        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > rcControlsConfig->alt_hold_deadband) {
             errorVelocityI = 0;
             isAltHoldChanged = 1;
-            rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -currentProfile->alt_hold_deadband : currentProfile->alt_hold_deadband;
+            rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -rcControlsConfig->alt_hold_deadband : rcControlsConfig->alt_hold_deadband;
         } else {
             if (isAltHoldChanged) {
                 AltHold = EstAlt;
                 isAltHoldChanged = 0;
             }
-            rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, masterConfig.escAndServoConfig.minthrottle, masterConfig.escAndServoConfig.maxthrottle);
+            rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
         }
     } else {
         // slow alt changes, mostly used for aerial photography
-        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > currentProfile->alt_hold_deadband) {
+        if (abs(rcCommand[THROTTLE] - initialThrottleHold) > rcControlsConfig->alt_hold_deadband) {
             // set velocity proportional to stick movement +100 throttle gives ~ +50 cm/s
             setVelocity = (rcCommand[THROTTLE] - initialThrottleHold) / 2;
             velocityControl = 1;
@@ -115,23 +111,23 @@ static void applyMultirotorAltHold(void)
             velocityControl = 0;
             isAltHoldChanged = 0;
         }
-        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, masterConfig.escAndServoConfig.minthrottle, masterConfig.escAndServoConfig.maxthrottle);
+        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
     }
 }
 
-static void applyFixedWingAltHold()
+static void applyFixedWingAltHold(airplaneConfig_t *airplaneConfig)
 {
     // handle fixedwing-related althold. UNTESTED! and probably wrong
     // most likely need to check changes on pitch channel and 'reset' althold similar to
     // how throttle does it on multirotor
 
-    rcCommand[PITCH] += altHoldThrottleAdjustment * masterConfig.fixedwing_althold_dir;
+    rcCommand[PITCH] += altHoldThrottleAdjustment * airplaneConfig->fixedwing_althold_dir;
 }
 
-void applyAltHold(void)
+void applyAltHold(airplaneConfig_t *airplaneConfig)
 {
     if (STATE(FIXED_WING)) {
-        applyFixedWingAltHold();
+        applyFixedWingAltHold(airplaneConfig);
     } else {
         applyMultirotorAltHold();
     }

@@ -129,7 +129,6 @@ extern int16_t axisPID[XYZ_AXIS_COUNT];
 
 extern int16_t heading, magHold;
 
-extern int32_t EstAlt;
 extern int32_t AltHold;
 extern int32_t EstAlt;
 extern int32_t vario;

@@ -15,9 +15,14 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void configureAltitudeHold(pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig);
+//extern int32_t errorVelocityI;
+//extern int32_t altHoldThrottleAdjustment;
+//extern uint8_t velocityControl;
+//extern int32_t setVelocity;
 
-void applyAltHold(void);
+
+void configureAltitudeHold(pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, rcControlsConfig_t *initialRcControlsConfig, escAndServoConfig_t *initialEscAndServoConfig);
+void applyAltHold(airplaneConfig_t *airplaneConfig);
 void updateAltHoldState(void);
 void updateSonarAltHoldState(void);
 

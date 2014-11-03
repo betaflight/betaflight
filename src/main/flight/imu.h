@@ -17,10 +17,6 @@
 
 #pragma once
 
-extern int32_t errorVelocityI;
-extern uint8_t velocityControl;
-extern int32_t setVelocity;
-extern int32_t altHoldThrottleAdjustment;
 extern int16_t throttleAngleCorrection;
 extern uint32_t accTimeSum;
 extern int accSumCount;

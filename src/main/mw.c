@@ -47,11 +47,14 @@
 #include "io/beeper.h"
 #include "io/display.h"
 #include "io/escservo.h"
+#include "rx/rx.h"
+#include "io/rc_controls.h"
+#include "io/rc_curves.h"
+#include "flight/mixer.h"
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/autotune.h"
-#include "flight/mixer.h"
 #include "flight/navigation.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -59,9 +62,6 @@
 #include "io/serial_cli.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
-#include "rx/rx.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
 #include "rx/msp.h"
 #include "telemetry/telemetry.h"
 
@@ -178,9 +178,9 @@ void annexCode(void)
     for (axis = 0; axis < 3; axis++) {
         tmp = min(abs(rcData[axis] - masterConfig.rxConfig.midrc), 500);
         if (axis == ROLL || axis == PITCH) {
-            if (currentProfile->deadband) {
-                if (tmp > currentProfile->deadband) {
-                    tmp -= currentProfile->deadband;
+            if (currentProfile->rcControlsConfig.deadband) {
+                if (tmp > currentProfile->rcControlsConfig.deadband) {
+                    tmp -= currentProfile->rcControlsConfig.deadband;
                 } else {
                     tmp = 0;
                 }
@@ -191,9 +191,9 @@ void annexCode(void)
             prop1 = 100 - (uint16_t)currentControlRateProfile->rollPitchRate * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         } else if (axis == YAW) {
-            if (currentProfile->yaw_deadband) {
-                if (tmp > currentProfile->yaw_deadband) {
-                    tmp -= currentProfile->yaw_deadband;
+            if (currentProfile->rcControlsConfig.yaw_deadband) {
+                if (tmp > currentProfile->rcControlsConfig.yaw_deadband) {
+                    tmp -= currentProfile->rcControlsConfig.yaw_deadband;
                 } else {
                     tmp = 0;
                 }
@@ -636,7 +636,7 @@ void loop(void)
 #if defined(BARO) || defined(SONAR)
         if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
             if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-                applyAltHold();
+                applyAltHold(&masterConfig.airplaneConfig);
             }
         }
 #endif

@@ -248,7 +248,13 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 0;
     controlRateConfig->tpa_breakpoint = 1500;
+}
 
+void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
+    rcControlsConfig->deadband = 0;
+    rcControlsConfig->yaw_deadband = 0;
+    rcControlsConfig->alt_hold_deadband = 40;
+    rcControlsConfig->alt_hold_fast_change = 1;
 }
 
 uint8_t getCurrentProfile(void)
@@ -330,7 +336,7 @@ static void resetConf(void)
     masterConfig.small_angle = 25;
 
     masterConfig.airplaneConfig.flaps_speed = 0;
-    masterConfig.fixedwing_althold_dir = 1;
+    masterConfig.airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
     resetEscAndServoConfig(&masterConfig.escAndServoConfig);
@@ -377,10 +383,9 @@ static void resetConf(void)
 
     // Radio
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
-    currentProfile->deadband = 0;
-    currentProfile->yaw_deadband = 0;
-    currentProfile->alt_hold_deadband = 40;
-    currentProfile->alt_hold_fast_change = 1;
+
+    resetRcControlsConfig(&currentProfile->rcControlsConfig);
+
     currentProfile->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     currentProfile->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
@@ -508,7 +513,7 @@ void activateConfig(void)
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
     configureImu(&imuRuntimeConfig, &currentProfile->pidProfile, &currentProfile->accDeadband);
-    configureAltitudeHold(&currentProfile->pidProfile, &currentProfile->barometerConfig);
+    configureAltitudeHold(&currentProfile->pidProfile, &currentProfile->barometerConfig, &currentProfile->rcControlsConfig, &masterConfig.escAndServoConfig);
 
     calculateThrottleAngleScale(currentProfile->throttle_correction_angle);
     calculateAccZLowPassFilterRCTimeConstant(currentProfile->accz_lpf_cutoff);

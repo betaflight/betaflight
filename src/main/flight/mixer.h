@@ -77,6 +77,7 @@ typedef struct flight3DConfig_s {
 
 typedef struct airplaneConfig_t {
     uint8_t flaps_speed;                    // airplane mode flaps, 0 = no flaps, > 0 = flap speed, larger = faster
+    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
 } airplaneConfig_t;
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
