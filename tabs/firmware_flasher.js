@@ -142,7 +142,7 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                     // filter out what we need
                     for (var i = 0; i < data.length; i++) {
-                        if (data[i].target == 'naze') {
+                        if (data[i].target == 'NAZE') {
                             filter.push(data[i]);
                         }
                     }
