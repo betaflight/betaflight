@@ -126,7 +126,7 @@ TABS.firmware_flasher.initialize = function (callback) {
             }
 
             function failed_to_load() {
-                $('span.progressLabel').text('failed');
+                $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
                 $('a.flash_firmware').addClass('locked');
             }
 
@@ -157,7 +157,6 @@ TABS.firmware_flasher.initialize = function (callback) {
                     } else {
                         obj = filter[0];
                     }
-
 
                     $.get('http://firmware.baseflight.net/' + obj.file, function (data) {
                         process_hex(data, obj);
