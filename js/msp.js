@@ -301,7 +301,7 @@ var MSP = {
                 MISC.multiwiicurrentoutput = data.getUint8(13);
                 MISC.rssi_aux_channel = data.getUint8(14);
                 MISC.placeholder2 = data.getUint8(15);
-                MISC.mag_declination = data.getInt16(16, 1); // -18000-18000
+                MISC.mag_declination = data.getInt16(16, 1) / 10; // -18000-18000
                 MISC.vbatscale = data.getUint8(18, 1); // 10-200
                 MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
                 MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
@@ -664,11 +664,11 @@ MSP.crunch = function (code) {
             buffer.push(MISC.multiwiicurrentoutput);
             buffer.push(MISC.rssi_aux_channel);
             buffer.push(MISC.placeholder2);
-            buffer.push(lowByte(MISC.mag_declination));
-            buffer.push(highByte(MISC.mag_declination));
+            buffer.push(lowByte(MISC.mag_declination * 10));
+            buffer.push(highByte(MISC.mag_declination * 10));
             buffer.push(MISC.vbatscale);
-            buffer.push(MISC.vbatmincellvoltage);
-            buffer.push(MISC.vbatmaxcellvoltage);
+            buffer.push(MISC.vbatmincellvoltage * 10);
+            buffer.push(MISC.vbatmaxcellvoltage * 10);
             buffer.push(MISC.placeholder3);
             break;
         case MSP_codes.MSP_SET_SERVO_CONF:
