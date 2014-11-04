@@ -210,6 +210,7 @@ HIGHEND_SRC  = flight/autotune.c \
 		   telemetry/frsky.c \
 		   telemetry/hott.c \
 		   telemetry/msp.c \
+           telemetry/smartport.c \
 		   sensors/sonar.c \
 		   sensors/barometer.c
 

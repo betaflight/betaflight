@@ -38,7 +38,10 @@
 
 #include "config/config.h"
 
-uint32_t getTelemetryProviderBaudRate(void);
+#ifdef TELEMETRY
+#include "telemetry/telemetry.h"
+#endif
+
 void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintToUpdate);
 
 void mspInit(serialConfig_t *serialConfig);
@@ -122,12 +125,13 @@ static const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
 #endif
 
 const functionConstraint_t functionConstraints[] = {
-        { FUNCTION_CLI,             9600, 115200, NO_AUTOBAUD, SPF_NONE },
-        { FUNCTION_GPS,             9600, 115200, AUTOBAUD,    SPF_NONE },
-        { FUNCTION_GPS_PASSTHROUGH, 9600, 115200, NO_AUTOBAUD, SPF_NONE },
-        { FUNCTION_MSP,             9600, 115200, NO_AUTOBAUD, SPF_NONE },
-        { FUNCTION_SERIAL_RX,       9600, 115200, NO_AUTOBAUD, SPF_SUPPORTS_SBUS_MODE | SPF_SUPPORTS_CALLBACK },
-        { FUNCTION_TELEMETRY,       9600, 19200,  NO_AUTOBAUD, SPF_NONE }
+        { FUNCTION_CLI,                 9600,  115200, NO_AUTOBAUD, SPF_NONE },
+        { FUNCTION_GPS,                 9600,  115200, AUTOBAUD,    SPF_NONE },
+        { FUNCTION_GPS_PASSTHROUGH,     9600,  115200, NO_AUTOBAUD, SPF_NONE },
+        { FUNCTION_MSP,                 9600,  115200, NO_AUTOBAUD, SPF_NONE },
+        { FUNCTION_SERIAL_RX,           9600,  115200, NO_AUTOBAUD, SPF_SUPPORTS_SBUS_MODE | SPF_SUPPORTS_CALLBACK },
+        { FUNCTION_TELEMETRY,           9600,  19200,  NO_AUTOBAUD, SPF_NONE },
+        { FUNCTION_SMARTPORT_TELEMETRY, 57600, 57600,  NO_AUTOBAUD, SPF_SUPPORTS_BIDIR_MODE }
 };
 
 #define FUNCTION_CONSTRAINT_COUNT (sizeof(functionConstraints) / sizeof(functionConstraint_t))
@@ -403,6 +407,7 @@ functionConstraint_t *getConfiguredFunctionConstraint(serialPortFunction_e funct
 
 #ifdef TELEMETRY
         case FUNCTION_TELEMETRY:
+        case FUNCTION_SMARTPORT_TELEMETRY:
             configuredFunctionConstraint.minBaudRate = getTelemetryProviderBaudRate();
             configuredFunctionConstraint.maxBaudRate = configuredFunctionConstraint.minBaudRate;
             break;
@@ -454,6 +459,11 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
 
     functionConstraint = getConfiguredFunctionConstraint(FUNCTION_TELEMETRY);
     searchResult = findSerialPort(FUNCTION_TELEMETRY, functionConstraint);
+    // TODO check explicitly for SmartPort config
+    if (!searchResult) {
+        functionConstraint = getConfiguredFunctionConstraint(FUNCTION_SMARTPORT_TELEMETRY);
+        searchResult = findSerialPort(FUNCTION_SMARTPORT_TELEMETRY, functionConstraint);
+    }
     if (feature(FEATURE_TELEMETRY) && !searchResult) {
         return false;
     }
@@ -627,8 +637,15 @@ void serialInit(serialConfig_t *initialSerialConfig)
     serialConfig = initialSerialConfig;
     applySerialConfigToPortFunctions(serialConfig);
 
-    mspInit(serialConfig);
-    cliInit(serialConfig);
+#ifdef TELEMETRY
+    if (telemetryAllowsOtherSerial(FUNCTION_MSP))
+#endif
+        mspInit(serialConfig);
+
+#ifdef TELEMETRY
+    if (telemetryAllowsOtherSerial(FUNCTION_CLI))
+#endif
+        cliInit(serialConfig);
 }
 
 void handleSerial(void)
@@ -639,7 +656,10 @@ void handleSerial(void)
         return;
     }
 
-    mspProcess();
+#ifdef TELEMETRY
+    if (telemetryAllowsOtherSerial(FUNCTION_MSP))
+#endif
+        mspProcess();
 }
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)

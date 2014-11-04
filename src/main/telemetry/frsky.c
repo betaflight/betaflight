@@ -420,7 +420,7 @@ void configureFrSkyTelemetryPort(void)
         serialSetMode(frskyPort, FRSKY_INITIAL_PORT_MODE);
         beginSerialPortFunction(frskyPort, FUNCTION_TELEMETRY);
     } else {
-        frskyPort = openSerialPort(FUNCTION_TELEMETRY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig->frsky_inversion);
+        frskyPort = openSerialPort(FUNCTION_TELEMETRY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig->telemetry_inversion);
 
         // FIXME only need these values to reset the port if the port is shared
         previousPortMode = frskyPort->mode;

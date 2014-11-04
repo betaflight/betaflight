@@ -203,7 +203,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
     telemetryConfig->telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
-    telemetryConfig->frsky_inversion = SERIAL_NOT_INVERTED;
+    telemetryConfig->telemetry_inversion = SERIAL_NOT_INVERTED;
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
