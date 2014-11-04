@@ -195,15 +195,15 @@ void USB_Interrupts_Config(void)
 
     /* Enable the USB interrupt */
     NVIC_InitStructure.NVIC_IRQChannel = USB_LP_CAN1_RX0_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = USB_IRQ_PRIORITY;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = USB_IRQ_SUBPRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_USB);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_USB);
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
     /* Enable the USB Wake-up interrupt */
     NVIC_InitStructure.NVIC_IRQChannel = USBWakeUp_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = USB_WUP_IRQ_PRIORITY;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = USB_WUP_IRQ_SUBPRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_USB_WUP);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_USB_WUP);
     NVIC_Init(&NVIC_InitStructure);
 }
 

@@ -343,15 +343,15 @@ void i2cInit(I2CDevice index)
 
     // I2C ER Interrupt
     nvic.NVIC_IRQChannel = i2cHardwareMap[index].er_irq;
-    nvic.NVIC_IRQChannelPreemptionPriority = I2C_ER_IRQ_PRIORITY;
-    nvic.NVIC_IRQChannelSubPriority = I2C_ER_IRQ_SUBPRIORITY;
+    nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER);
+    nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER);
     nvic.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&nvic);
 
     // I2C EV Interrupt
     nvic.NVIC_IRQChannel = i2cHardwareMap[index].ev_irq;
-    nvic.NVIC_IRQChannelPreemptionPriority = I2C_EV_IRQ_PRIORITY;
-    nvic.NVIC_IRQChannelSubPriority = I2C_EV_IRQ_SUBPRIORITY;
+    nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV);
+    nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV);
     NVIC_Init(&nvic);
 }
 
