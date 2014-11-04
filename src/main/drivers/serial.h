@@ -27,6 +27,7 @@ typedef enum portMode_t {
     MODE_TX = 1 << 1,
     MODE_RXTX = MODE_RX | MODE_TX,
     MODE_SBUS = 1 << 2,
+    MODE_BIDIR = 1 << 3,
 } portMode_t;
 
 typedef void (*serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app

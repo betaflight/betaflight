@@ -116,7 +116,8 @@ typedef enum {
     SPF_NONE                   = 0,
     SPF_SUPPORTS_CALLBACK      = (1 << 0),
     SPF_SUPPORTS_SBUS_MODE     = (1 << 1),
-    SPF_IS_SOFTWARE_INVERTABLE = (1 << 2)
+    SPF_SUPPORTS_BIDIR_MODE    = (1 << 2),
+    SPF_IS_SOFTWARE_INVERTABLE = (1 << 3)
 } serialPortFeature_t;
 
 typedef struct serialPortConstraint_s {

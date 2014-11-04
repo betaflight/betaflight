@@ -106,6 +106,13 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
         GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
     }
 
+    if (mode & MODE_BIDIR) {
+        GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+    }
+
     // DMA TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART1_TXDMA);
@@ -173,6 +180,13 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     if (mode & MODE_RX) {
         GPIO_InitStructure.GPIO_Pin = UART2_RX_PIN;
         GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
+    }
+
+    if (mode & MODE_BIDIR) {
+        GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, GPIO_AF_7);
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
     }
 

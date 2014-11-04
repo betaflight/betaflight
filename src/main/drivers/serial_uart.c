@@ -59,6 +59,8 @@ static void uartReconfigure(uartPort_t *uartPort)
         USART_InitStructure.USART_Mode |= USART_Mode_Rx;
     if (uartPort->port.mode & MODE_TX)
         USART_InitStructure.USART_Mode |= USART_Mode_Tx;
+    if (uartPort->port.mode & MODE_BIDIR)
+        USART_InitStructure.USART_Mode |= USART_Mode_Tx | USART_Mode_Rx;
 
     USART_Init(uartPort->USARTx, &USART_InitStructure);
     USART_Cmd(uartPort->USARTx, ENABLE);
@@ -111,7 +113,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
  
     // Receive DMA or IRQ
     DMA_InitTypeDef DMA_InitStructure;
-    if (mode & MODE_RX) {
+    if ((mode & MODE_RX) || (mode & MODE_BIDIR)) {
         if (s->rxDMAChannel) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_PeripheralBaseAddr = s->rxDMAPeripheralBaseAddr;
@@ -138,7 +140,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     }
 
     // Transmit DMA or IRQ
-    if (mode & MODE_TX) {
+    if ((mode & MODE_TX) || (mode & MODE_BIDIR)) {
         if (s->txDMAChannel) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_PeripheralBaseAddr = s->txDMAPeripheralBaseAddr;
@@ -164,6 +166,11 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     }
 
     USART_Cmd(s->USARTx, ENABLE);
+
+    if (mode & MODE_BIDIR)
+        USART_HalfDuplexCmd(s->USARTx, ENABLE);
+    else
+        USART_HalfDuplexCmd(s->USARTx, DISABLE);
 
     return (serialPort_t *)s;
 }
