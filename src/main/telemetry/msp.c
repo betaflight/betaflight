@@ -33,8 +33,8 @@
 
 #include "drivers/serial.h"
 #include "telemetry/telemetry.h"
-#include "io/serial_msp.h"
 #include "io/serial.h"
+#include "io/serial_msp.h"
 
 static telemetryConfig_t *telemetryConfig;
 

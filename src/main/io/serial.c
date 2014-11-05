@@ -32,10 +32,10 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_usb_vcp.h"
 
+#include "io/serial.h"
 #include "serial_cli.h"
 #include "serial_msp.h"
 
-#include "io/serial.h"
 #include "config/config.h"
 
 uint32_t getTelemetryProviderBaudRate(void);
@@ -372,7 +372,6 @@ void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function)
     serialPortFunction_t *serialPortFunction = findSerialPortFunctionByPort(port);
 
     serialPortFunction->currentFunction = FUNCTION_NONE;
-    serialPortFunction->scenario = SCENARIO_UNUSED;
     serialPortFunction->port = NULL;
 }
 

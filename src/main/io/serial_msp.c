@@ -615,7 +615,11 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXSONAR;
     }
 
+    mspReset(serialConfig);
+}
 
+void mspReset(serialConfig_t *serialConfig)
+{
     memset(mspPorts, 0x00, sizeof(mspPorts));
 
     openAllMSPSerialPorts(serialConfig);

@@ -41,6 +41,7 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode);
 static void uartReconfigure(uartPort_t *uartPort)
 {
     USART_InitTypeDef USART_InitStructure;
+    USART_Cmd(uartPort->USARTx, DISABLE);
 
     USART_InitStructure.USART_BaudRate = uartPort->port.baudRate;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -59,6 +60,7 @@ static void uartReconfigure(uartPort_t *uartPort)
         USART_InitStructure.USART_Mode |= USART_Mode_Tx;
 
     USART_Init(uartPort->USARTx, &USART_InitStructure);
+    USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion)
@@ -170,7 +172,6 @@ void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.baudRate = baudRate;
     uartReconfigure(uartPort);
-    USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
 void uartSetMode(serialPort_t *instance, portMode_t mode)
@@ -178,7 +179,6 @@ void uartSetMode(serialPort_t *instance, portMode_t mode)
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.mode = mode;
     uartReconfigure(uartPort);
-    USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
 void uartStartTxDMA(uartPort_t *s)

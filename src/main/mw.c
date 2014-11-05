@@ -59,8 +59,9 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/serial_cli.h"
 #include "io/serial.h"
+#include "io/serial_cli.h"
+#include "io/serial_msp.h"
 #include "io/statusindicator.h"
 #include "rx/msp.h"
 #include "telemetry/telemetry.h"
@@ -294,8 +295,17 @@ void annexCode(void)
 
 void mwDisarm(void)
 {
-    if (ARMING_FLAG(ARMED))
+    if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
+
+#ifdef TELEMETRY
+        // the telemetry state must be checked immediately so that shared serial ports are released.
+        checkTelemetryState();
+        if (isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP)) {
+            mspReset(&masterConfig.serialConfig);
+        }
+#endif
+    }
 }
 
 void mwArm(void)
