@@ -283,12 +283,12 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef SOFTSERIAL1_TIMER
-        if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL1_TIMER)
+#ifdef SOFTSERIAL_1_TIMER
+        if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL_1_TIMER)
             continue;
 #endif
-#ifdef SOFTSERIAL2_TIMER
-        if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL2_TIMER)
+#ifdef SOFTSERIAL_2_TIMER
+        if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL_2_TIMER)
             continue;
 #endif
 
