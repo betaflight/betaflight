@@ -13,9 +13,13 @@ have an on-board USB to uart adapter which connect to the processor's serial por
 Currently there is no support for virtual com port functionality on the CC3D which means that cleanflight
 does not currently use the USB socket at all.
 
+The board cannot current be used for hexacopters/octocopters.
+
+Tricopter & Airplane support is untested, please report success failure if you try it. 
+
 # Pinouts
 
-The 8 pin RC_Input connector has the following pinouts.
+The 8 pin RC_Input connector has the following pinouts when used in RX_PPM/RX_SERIAL mode
 
 | Pin | Function | Notes |
 | --- | ---------| ------|
@@ -27,6 +31,41 @@ The 8 pin RC_Input connector has the following pinouts.
 | 6   | Softserial1 TX | Enable `feature SOFTSERIAL` |
 | 7   | Battery Voltage sensor | Enable `feature VBAT`. Connect to main battery using a voltage divider, 0v-3.3v input |
 | 8   | Current | Enable `feature CURRENT_METER`.  Connect to the output of a current sensor, 0v-3.3v input |
+
+The 6 pin RC_Output connector has the following pinouts when used in RX_PPM/RX_SERIAL mode
+
+| Pin | Function  | Notes |
+| --- | ----------| ------|
+| 1   | MOTOR 1   |       |
+| 2   | MOTOR 2   |       |
+| 3   | MOTOR 3   |       |
+| 4   | MOTOR 4   |       |
+| 5   | Led Strip |       |
+| 5   | Unused    |       |
+
+The 8 pin RC_Input connector has the following pinouts when used in RX_PARALLEL_PWM mode
+
+| Pin | Function | Notes |
+| --- | ---------| ------|
+| 1   | Ground   | |
+| 2   | +5V      | |
+| 3   | Unused   | | 
+| 4   | CH1      | |
+| 5   | CH2      | |
+| 6   | CH3      | |
+| 7   | CH4      | |
+| 3   | Unused   | | 
+
+The 6 pin RC_Output connector has the following pinouts when used in RX_PARALLEL_PWM mode
+
+| Pin | Function | Notes |
+| --- | ---------| ------|
+| 1   | MOTOR 1  |       |
+| 2   | MOTOR 2  |       |
+| 3   | MOTOR 3  |       |
+| 4   | MOTOR 4  |       |
+| 5   | Unused   |       |
+| 5   | Unused   |       |
 
 # Serial Ports
 

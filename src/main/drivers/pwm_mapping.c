@@ -347,6 +347,18 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
         }
 
+#ifdef CC3D
+        if (init->useParallelPWM) {
+            if ((type == MAP_TO_SERVO_OUTPUT || type == MAP_TO_MOTOR_OUTPUT) && (timerHardwarePtr->tim == TIM2 || timerHardwarePtr->tim == TIM3)) {
+                continue;
+            }
+            if (type == MAP_TO_PWM_INPUT && timerHardwarePtr->tim == TIM4) {
+                continue;
+            }
+
+        }
+#endif
+
         if (type == MAP_TO_PPM_INPUT) {
             ppmInConfig(timerHardwarePtr);
         } else if (type == MAP_TO_PWM_INPUT) {
