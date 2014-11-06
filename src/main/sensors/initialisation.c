@@ -312,10 +312,10 @@ retry:
             ; // prevent compiler error
     }
 
-    // Found anything? Check if user fucked up or ACC is really missing.
+    // Found anything? Check if error or ACC is really missing.
     if (accHardware == ACC_DEFAULT) {
         if (accHardwareToUse > ACC_DEFAULT) {
-            // Nothing was found and we have a forced sensor type. Stupid user probably chose a sensor that isn't present.
+            // Nothing was found and we have a forced sensor that isn't present.
             accHardwareToUse = ACC_DEFAULT;
             goto retry;
         } else {
