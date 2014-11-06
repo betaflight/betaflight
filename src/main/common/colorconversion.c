@@ -39,7 +39,7 @@ rgbColor24bpp_t* hsvToRgb24(const hsvColor_t* c)
         r.rgb.b = val;
     } else {
 
-        base = ((255- sat) * val) >> 8;
+        base = ((255 - sat) * val) >> 8;
 
         switch (hue / 60) {
             case 0:

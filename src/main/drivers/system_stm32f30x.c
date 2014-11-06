@@ -57,7 +57,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 
     gpio.mode = Mode_AIN;
 
-    gpio.pin = Pin_All & ~(Pin_13|Pin_14|Pin_15);  // Leave JTAG pins alone
+    gpio.pin = Pin_All & ~(Pin_13 | Pin_14 | Pin_15);  // Leave JTAG pins alone
     gpioInit(GPIOA, &gpio);
 
     gpio.pin = Pin_All;

@@ -9,8 +9,8 @@
   *                - Set the initial SP
   *                - Set the initial PC == Reset_Handler,
   *                - Set the vector table entries with the exceptions ISR address
-  *                - Configure the clock system and the external SRAM mounted on 
-  *                  STM3230C-EVAL board to be used as data memory (optional, 
+  *                - Configure the clock system and the external SRAM mounted on
+  *                  STM3230C-EVAL board to be used as data memory (optional,
   *                  to be enabled by user)
   *                - Branches to main in the C library (which eventually
   *                  calls main()).
@@ -27,15 +27,15 @@
   *
   *        http://www.st.com/software_license_agreement_liberty_v2
   *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   * See the License for the specific language governing permissions and
   * limitations under the License.
   *
   ******************************************************************************
   */
-    
+
   .syntax unified
   .cpu cortex-m4
   .fpu softvfp
@@ -44,10 +44,10 @@
 .global  g_pfnVectors
 .global  Default_Handler
 
-/* start address for the initialization values of the .data section. 
+/* start address for the initialization values of the .data section.
 defined in linker script */
 .word  _sidata
-/* start address for the .data section. defined in linker script */  
+/* start address for the .data section. defined in linker script */
 .word  _sdata
 /* end address for the .data section. defined in linker script */
 .word  _edata
@@ -61,7 +61,7 @@ defined in linker script */
  * @brief  This is the code that gets called when the processor first
  *          starts execution following a reset event. Only the absolutely
  *          necessary set is performed, after which the application
- *          supplied main() routine is called. 
+ *          supplied main() routine is called.
  * @param  None
  * @retval : None
 */
@@ -69,9 +69,9 @@ defined in linker script */
     .section  .text.Reset_Handler
   .weak  Reset_Handler
   .type  Reset_Handler, %function
-Reset_Handler:  
+Reset_Handler:
 
-/* Copy the data segment initializers from flash to SRAM */  
+/* Copy the data segment initializers from flash to SRAM */
   movs  r1, #0
   b  LoopCopyDataInit
 
@@ -80,7 +80,7 @@ CopyDataInit:
   ldr  r3, [r3, r1]
   str  r3, [r0, r1]
   adds  r1, r1, #4
-    
+
 LoopCopyDataInit:
   ldr  r0, =_sdata
   ldr  r3, =_edata
@@ -89,11 +89,11 @@ LoopCopyDataInit:
   bcc  CopyDataInit
   ldr  r2, =_sbss
   b  LoopFillZerobss
-/* Zero fill the bss segment. */  
+/* Zero fill the bss segment. */
 FillZerobss:
   movs  r3, #0
   str  r3, [r2], #4
-    
+
 LoopFillZerobss:
   ldr  r3, = _ebss
   cmp  r2, r3
@@ -103,15 +103,15 @@ LoopFillZerobss:
   bl  SystemInit
 /* Call the application's entry point.*/
   bl  main
-  bx  lr    
+  bx  lr
 .size  Reset_Handler, .-Reset_Handler
 
 /**
- * @brief  This is the code that gets called when the processor receives an 
+ * @brief  This is the code that gets called when the processor receives an
  *         unexpected interrupt.  This simply enters an infinite loop, preserving
  *         the system state for examination by a debugger.
- * @param  None     
- * @retval None       
+ * @param  None
+ * @retval None
 */
     .section  .text.Default_Handler,"ax",%progbits
 Default_Handler:
@@ -123,13 +123,13 @@ Infinite_Loop:
 * The minimal vector table for a Cortex M4. Note that the proper constructs
 * must be placed on this to ensure that it ends up at physical address
 * 0x0000.0000.
-* 
+*
 *******************************************************************************/
    .section  .isr_vector,"a",%progbits
   .type  g_pfnVectors, %object
   .size  g_pfnVectors, .-g_pfnVectors
-    
-    
+
+
 g_pfnVectors:
 	.word	_estack
 	.word	Reset_Handler
@@ -440,26 +440,26 @@ g_pfnVectors:
 	.thumb_set DMA2_Channel5_IRQHandler,Default_Handler
 
 	.weak	ADC4_IRQHandler
-	.thumb_set ADC4_IRQHandler,Default_Handler	
-	
+	.thumb_set ADC4_IRQHandler,Default_Handler
+
 	.weak	COMP1_2_3_IRQHandler
 	.thumb_set COMP1_2_3_IRQHandler,Default_Handler
-	
+
 	.weak	COMP4_5_6_IRQHandler
 	.thumb_set COMP4_5_6_IRQHandler,Default_Handler
-	
+
 	.weak	COMP7_IRQHandler
-	.thumb_set COMP7_IRQHandler,Default_Handler	
-	
+	.thumb_set COMP7_IRQHandler,Default_Handler
+
 	.weak	USB_HP_IRQHandler
 	.thumb_set USB_HP_IRQHandler,Default_Handler
-	
+
 	.weak	USB_LP_IRQHandler
 	.thumb_set USB_LP_IRQHandler,Default_Handler
-	
+
 	.weak	USBWakeUp_RMP_IRQHandler
 	.thumb_set USBWakeUp_RMP_IRQHandler,Default_Handler
-	
+
 	.weak	FPU_IRQHandler
 	.thumb_set FPU_IRQHandler,Default_Handler
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

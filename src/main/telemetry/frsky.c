@@ -181,7 +181,7 @@ static void sendThrottleOrBatterySizeAsRpm(void)
     if (ARMING_FLAG(ARMED)) {
         serialize16(rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER);
     } else {
-        serialize16((telemetryConfig->batterySize / BLADE_NUMBER_DIVIDER));  
+        serialize16((telemetryConfig->batterySize / BLADE_NUMBER_DIVIDER));
     }
 
 }
@@ -252,7 +252,7 @@ static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
     if (telemetryConfig->frsky_coordinate_format == FRSKY_FORMAT_DMS) {
         result->dddmm = deg * 100 + min;
     } else {
-        result->dddmm = deg * 60 + min;    
+        result->dddmm = deg * 60 + min;
     }
 
     result->mmmm  = (absgps - min * GPS_DEGREES_DIVIDER) / 1000;
@@ -274,7 +274,7 @@ static void sendGPS(void)
         // Send dummy GPS Data in order to display compass value
         localGPS_coord[LAT] = (telemetryConfig->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
         localGPS_coord[LON] = (telemetryConfig->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
-    }  
+    }
 
     gpsCoordinateDDDMMmmmm_t coordinate;
     GPStoDDDMM_MMMM(localGPS_coord[LAT], &coordinate);

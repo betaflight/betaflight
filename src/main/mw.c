@@ -159,7 +159,7 @@ bool isCalibrating()
 void annexCode(void)
 {
     int32_t tmp, tmp2;
-    int32_t axis, prop1, prop2;
+    int32_t axis, prop1 = 0, prop2;
 
     static uint8_t batteryWarningEnabled = false;
     static uint8_t vbatTimer = 0;

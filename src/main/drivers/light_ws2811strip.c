@@ -106,7 +106,7 @@ STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(rgbColor24bpp_t *color)
 STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue)
 {
     uint8_t bitIndex;
-    
+
     for (bitIndex = 0; bitIndex < 8; bitIndex++)
     {
         if ((componentValue << bitIndex) & 0x80 )    // data sent MSB first, j = 0 is MSB j = 7 is LSB

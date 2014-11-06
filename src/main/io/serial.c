@@ -220,12 +220,12 @@ static void sortSerialPortFunctions(serialPortFunction_t *serialPortFunctions, u
 
     int index1;
     int index2;
-    
+
     // bubble-sort array (TODO - port selection can be implemented as repeated minimum search with bitmask marking used elements)
     for (index1 = 0; index1 < (elements - 1); index1++) {
         for (index2 = 0; index2 < elements - index1 - 1; index2++) {
             if(serialPortFunctionMostSpecificFirstComparator(&serialPortFunctions[index2], &serialPortFunctions[index2 + 1]) > 0) {
-                swap=serialPortFunctions[index2];
+                swap = serialPortFunctions[index2];
                 serialPortFunctions[index2] = serialPortFunctions[index2 + 1];
                 serialPortFunctions[index2 + 1] = swap;
             }
