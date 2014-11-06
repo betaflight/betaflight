@@ -21,12 +21,12 @@ Tricopter & Airplane support is untested, please report success failure if you t
 
 The 8 pin RC_Input connector has the following pinouts when used in RX_PPM/RX_SERIAL mode
 
-| Pin | Function | Notes |
-| --- | ---------| ------|
-| 1   | Ground | |
-| 2   | +5V | |
-| 3   | PPM Input | Enable `feature RX_PPM` | 
-| 4   | Unused | |
+| Pin | Function  | Notes                            |
+| --- | --------- | -------------------------------- |
+| 1   | Ground    |                                  |
+| 2   | +5V       |                                  |
+| 3   | PPM Input | Enable `feature RX_PPM`          | 
+| 4   | Unused    |                                  |
 | 5   | Softserial1 RX | Enable `feature SOFTSERIAL` |
 | 6   | Softserial1 TX | Enable `feature SOFTSERIAL` |
 | 7   | Battery Voltage sensor | Enable `feature VBAT`. Connect to main battery using a voltage divider, 0v-3.3v input |
@@ -41,20 +41,20 @@ The 6 pin RC_Output connector has the following pinouts when used in RX_PPM/RX_S
 | 3   | MOTOR 3   |       |
 | 4   | MOTOR 4   |       |
 | 5   | Led Strip |       |
-| 5   | Unused    |       |
+| 6   | Unused    |       |
 
 The 8 pin RC_Input connector has the following pinouts when used in RX_PARALLEL_PWM mode
 
 | Pin | Function | Notes |
 | --- | ---------| ------|
-| 1   | Ground   | |
-| 2   | +5V      | |
-| 3   | Unused   | | 
-| 4   | CH1      | |
-| 5   | CH2      | |
-| 6   | CH3      | |
-| 7   | CH4      | |
-| 3   | Unused   | | 
+| 1   | Ground   |       |
+| 2   | +5V      |       |
+| 3   | Unused   |       | 
+| 4   | CH1      |       |
+| 5   | CH2      |       |
+| 6   | CH3      |       |
+| 7   | CH4      |       |
+| 3   | Unused   |       |
 
 The 6 pin RC_Output connector has the following pinouts when used in RX_PARALLEL_PWM mode
 
@@ -65,7 +65,7 @@ The 6 pin RC_Output connector has the following pinouts when used in RX_PARALLEL
 | 3   | MOTOR 3  |       |
 | 4   | MOTOR 4  |       |
 | 5   | Unused   |       |
-| 5   | Unused   |       |
+| 6   | Unused   |       |
 
 # Serial Ports
 
