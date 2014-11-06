@@ -347,7 +347,7 @@ void updateRSSIPWM(void)
 }
 
 #define RSSI_ADC_SAMPLE_COUNT 16
-#define RSSI_SCALE (0xFFF / 100.0f)
+//#define RSSI_SCALE (0xFFF / 100.0f)
 
 void updateRSSIADC(uint32_t currentTime)
 {
@@ -362,7 +362,7 @@ void updateRSSIADC(uint32_t currentTime)
 
     int16_t adcRssiMean = 0;
     uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
-    uint8_t rssiPercentage = adcRssiSample / RSSI_SCALE;
+    uint8_t rssiPercentage = adcRssiSample / rxConfig->rssi_scale;
 
     adcRssiSampleIndex = (adcRssiSampleIndex + 1) % RSSI_ADC_SAMPLE_COUNT;
 

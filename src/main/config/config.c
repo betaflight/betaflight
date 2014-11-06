@@ -328,6 +328,7 @@ static void resetConf(void)
     masterConfig.rxConfig.mincheck = 1100;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rssi_channel = 0;
+    masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
