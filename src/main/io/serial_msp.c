@@ -709,9 +709,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(0);
 #endif
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-        // OK, so you waste all the fucking time to have BOXNAMES and BOXINDEXES etc, and then you go ahead and serialize enabled shit simply by stuffing all
-        // the bits in order, instead of setting the enabled bits based on BOXINDEX. WHERE IS THE FUCKING LOGIC IN THIS, FUCKWADS.
-        // Serialize the boxes in the order we delivered them, until multiwii retards fix their shit
+        // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
+        // Requires new Multiwii protocol version to fix
+        // It would be preferable to setting the enabled bits based on BOXINDEX.
         junk = 0;
         tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
             IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |

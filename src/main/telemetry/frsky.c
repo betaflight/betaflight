@@ -320,7 +320,7 @@ static void sendVoltage(void)
     uint16_t payload;
 
     /*
-     * Note: Fuck the pdf. Format for Voltage Data for single cells is like this:
+     * Format for Voltage Data for single cells is like this:
      *
      *  llll llll cccc hhhh
      *  l: Low voltage bits

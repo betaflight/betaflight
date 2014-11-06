@@ -862,7 +862,7 @@ static void cliExit(char *cmdline)
     *cliBuffer = '\0';
     bufferIndex = 0;
     cliMode = 0;
-    // incase some idiot leaves a motor running during motortest, clear it here
+    // incase a motor was left running during motortest, clear it here
     mixerResetMotors();
     // save and reboot... I think this makes the most sense - otherwise config changes can be out of sync, maybe just need to applyConfig and return?
 #if 1
