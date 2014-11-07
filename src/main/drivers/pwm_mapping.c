@@ -305,16 +305,21 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef CC3D
-        if (init->useVbat && timerIndex == PWM5) {
+        if (init->useVbat && timerIndex == Vbat_TIMER) {
+            continue;
+        }
+#endif
+#ifdef CC3D
+        if (init->useCurrentMeterADC && timerIndex == CurrentMeter_TIMER) {
+            continue;
+        }
+#endif
+#ifdef CC3D
+        if (init->useRSSIADC && timerIndex == RSSI_TIMER) {
             continue;
         }
 #endif
 
-#ifdef CC3D
-        if (init->useCurrentMeterADC && timerIndex == PWM6) {
-            continue;
-        }
-#endif
         // hacks to allow current functionality
         if (type == MAP_TO_PWM_INPUT && !init->useParallelPWM)
             type = 0;

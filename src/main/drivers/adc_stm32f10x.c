@@ -70,14 +70,6 @@ void adcInit(drv_adc_config_t *init)
     adcConfig[ADC_BATTERY].enabled = true;
     adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
 
-    if (init->enableCurrentMeter) {
-        GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1;
-        adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_1;
-        adcConfig[ADC_CURRENT].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_CURRENT].enabled = true;
-        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;
-    }
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
 #else
     // configure always-present battery index (ADC4)
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_4;
@@ -86,19 +78,9 @@ void adcInit(drv_adc_config_t *init)
     adcConfig[ADC_BATTERY].enabled = true;
     adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
 
-    if (init->enableRSSI) {
-        GPIO_InitStructure.GPIO_Pin   |= GPIO_Pin_1;
-
-        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_1;
-        adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_RSSI].enabled = true;
-        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
-    }
-
     if (init->enableExternal1) {
 #ifdef OLIMEXINO
         GPIO_InitStructure.GPIO_Pin   |= GPIO_Pin_5;
-
         adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
         adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_EXTERNAL1].enabled = true;
@@ -107,12 +89,20 @@ void adcInit(drv_adc_config_t *init)
 
 #ifdef NAZE
         GPIO_InitStructure.GPIO_Pin   |= GPIO_Pin_5;
-
         adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_5;
         adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_EXTERNAL1].enabled = true;
         adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
 #endif
+    }
+#endif // !CC3D
+
+    if (init->enableRSSI) {
+        GPIO_InitStructure.GPIO_Pin   |= GPIO_Pin_1;
+        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_1;
+        adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
+        adcConfig[ADC_RSSI].enabled = true;
+        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
     }
 
     GPIO_Init(GPIOA, &GPIO_InitStructure);
@@ -120,13 +110,11 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableCurrentMeter) {
         GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1;
         GPIO_Init(GPIOB, &GPIO_InitStructure);
-
         adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_9;
         adcConfig[ADC_CURRENT].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_CURRENT].enabled = true;
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;
     }
-#endif // !CC3D
 
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
