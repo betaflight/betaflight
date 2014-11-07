@@ -32,7 +32,7 @@ typedef struct softSerial_s {
 
     const timerHardware_t *txTimerHardware;
     volatile uint8_t txBuffer[SOFTSERIAL_BUFFER_SIZE];
-    
+
     uint8_t          isSearchingForStartBit;
     uint8_t          rxBitIndex;
     uint8_t          rxLastLeadingEdgeAtBitIndex;
@@ -48,6 +48,9 @@ typedef struct softSerial_s {
     uint16_t         receiveErrors;
 
     uint8_t          softSerialPortIndex;
+
+    timerCCHandlerRec_t timerCb;
+    timerCCHandlerRec_t edgeCb;
 } softSerial_t;
 
 extern timerHardware_t* serialTimerHardware;

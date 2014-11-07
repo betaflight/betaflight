@@ -24,6 +24,8 @@
 
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/atomic.h"
+#include "drivers/nvic.h"
 
 #include "drivers/system.h"
 #include "drivers/gpio.h"
@@ -175,6 +177,8 @@ void init(void)
 
     delay(100);
 
+    timerInit();  // timer must be initialized before any channel is allocated
+
     ledInit();
 
 #ifdef BEEPER
@@ -277,8 +281,6 @@ void init(void)
         compassInit();
 #endif
 
-    timerInit();
-
     serialInit(&masterConfig.serialConfig);
 
     memset(&pwm_params, 0, sizeof(pwm_params));
@@ -359,6 +361,10 @@ void init(void)
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
+
+    // start all timers
+    // TODO - not implemented yet
+    timerStart();
 
     ENABLE_STATE(SMALL_ANGLE);
     DISABLE_ARMING_FLAG(PREVENT_ARMING);

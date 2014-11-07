@@ -4,7 +4,7 @@
   * @author    MCD Application Team
   * @version   V1.0.0
   * @date      04-Spetember-2012
-  * @brief     STM32F30x Devices vector table for RIDE7 toolchain. 
+  * @brief     STM32F30x Devices vector table for RIDE7 toolchain.
   *            This module performs:
   *                - Set the initial SP
   *                - Set the initial PC == Reset_Handler,
