@@ -62,7 +62,7 @@ USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 STDPERIPH_SRC = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 
-EXCLUDES= stm32f30x_crc.c \
+EXCLUDES	= stm32f30x_crc.c \
 		stm32f30x_can.c
 
 STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))

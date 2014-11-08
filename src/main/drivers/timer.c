@@ -210,12 +210,12 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #define USED_TIMER_COUNT BITCOUNT(USED_TIMERS)
 #define CC_CHANNELS_PER_TIMER 4              // TIM_Channel_1..4
 
-#define TIM_IT_CCx(ch) (TIM_IT_CC1<<((ch)/4))
+#define TIM_IT_CCx(ch) (TIM_IT_CC1 << ((ch) / 4))
 
 typedef struct timerConfig_s {
-    timerCCHandlerRec_t* edgeCallback[CC_CHANNELS_PER_TIMER];
-    timerOvrHandlerRec_t* overflowCallback[CC_CHANNELS_PER_TIMER];
-    timerOvrHandlerRec_t* overflowCallbackActive; // null-terminated linkded list of active overflow callbacks
+    timerCCHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
+    timerOvrHandlerRec_t *overflowCallback[CC_CHANNELS_PER_TIMER];
+    timerOvrHandlerRec_t *overflowCallbackActive; // null-terminated linkded list of active overflow callbacks
 } timerConfig_t;
 timerConfig_t timerConfig[USED_TIMER_COUNT];
 
@@ -230,7 +230,7 @@ typedef struct {
 timerInfo_t timerInfo[USED_TIMER_COUNT];
 
 // return index of timer in timer table. Lowest timer has index 0
-#define TIMER_INDEX(i) BITCOUNT((TIM_N(i)-1)&USED_TIMERS)
+#define TIMER_INDEX(i) BITCOUNT((TIM_N(i) - 1) & USED_TIMERS)
 
 static uint8_t lookupTimerIndex(const TIM_TypeDef *tim)
 {
@@ -264,7 +264,7 @@ static uint8_t lookupTimerIndex(const TIM_TypeDef *tim)
 #if USED_TIMERS & TIM_N(17)
         _CASE(17);
 #endif
-    default:  return -1;  // make sure final index is out of range
+    default:  return ~1;  // make sure final index is out of range
     }
 #undef _CASE
 #undef _CASE_
@@ -302,7 +302,7 @@ TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 
 static inline uint8_t lookupChannelIndex(const uint16_t channel)
 {
-    return channel>>2;
+    return channel >> 2;
 }
 
 void timerNVICConfigure(uint8_t irq)
@@ -340,7 +340,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     timerNVICConfigure(timerHardwarePtr->irq);
 }
 
-// allocate and configure timer channel. Timer priority is set to highest priority of channels
+// allocate and configure timer channel. Timer priority is set to highest priority of its channels
 void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority)
 {
     unsigned channel = timHw - timerHardware;
@@ -516,7 +516,7 @@ void timerChConfigIC(const timerHardware_t* timHw, bool polarityRising, unsigned
 }
 
 // configure dual channel input channel for capture
-// polarity is for first Low channel (capture order is always Lo - Hi)
+// polarity is for Low channel (capture order is always Lo - Hi)
 void timerChConfigICDual(const timerHardware_t* timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
@@ -605,7 +605,9 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t* timerConfig)
     unsigned tim_status;
     tim_status = tim->SR & tim->DIER;
 #if 1
-    while(tim_status) {                 // flags will be cleared by reading CCR in dual capture, make sure we call handler correctly
+    while(tim_status) {
+        // flags will be cleared by reading CCR in dual capture, make sure we call handler correctly
+        // currrent order is highest bit first. Code should not rely on specific order (it will introduce race conditions anyway)
         unsigned bit = __builtin_clz(tim_status);
         unsigned mask = ~(0x80000000 >> bit);
         tim->SR = mask;
@@ -700,6 +702,11 @@ _TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
 #endif
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
+# if defined(STM32F10X_XL)
+_TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);
+# else  // f10x_hd, f30x
+_TIM_IRQ_HANDLER(TIM8_UP_IRQHandler, 8);
+# endif
 #endif
 #if USED_TIMERS & TIM_N(15)
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQHandler, 15);
