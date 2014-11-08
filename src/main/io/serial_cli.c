@@ -90,6 +90,7 @@ static void cliMixer(char *cmdline);
 static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
+static void cliReboot(void);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
@@ -858,18 +859,14 @@ static void cliEnter(void)
 
 static void cliExit(char *cmdline)
 {
-    cliPrint("\r\nLeaving CLI mode\r\n");
+    UNUSED(cmdline);
+    cliPrint("\r\nLeaving CLI mode, unsaved changes lost.\r\n");
     *cliBuffer = '\0';
     bufferIndex = 0;
     cliMode = 0;
     // incase a motor was left running during motortest, clear it here
     mixerResetMotors();
-    // save and reboot... I think this makes the most sense - otherwise config changes can be out of sync, maybe just need to applyConfig and return?
-#if 1
-    cliSave(cmdline);
-#else
-    releaseSerialPort(cliPort, FUNCTION_CLI);
-#endif
+    cliReboot();
 }
 
 static void cliFeature(char *cmdline)
