@@ -561,6 +561,18 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
     UNUSED(serialPortFunctionList);
 }
 
+void mspReleasePortIfAllocated(serialPort_t *serialPort)
+{
+    uint8_t portIndex;
+    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t *candidateMspPort = &mspPorts[portIndex++];
+        if (candidateMspPort->port == serialPort) {
+            endSerialPortFunction(serialPort, FUNCTION_MSP);
+            memset(candidateMspPort, 0, sizeof(mspPort_t));
+        }
+    }
+}
+
 void mspInit(serialConfig_t *serialConfig)
 {
     // calculate used boxes based on features and fill availableBoxes[] array

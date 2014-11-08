@@ -513,6 +513,17 @@ bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t fun
     return result->portFunction->scenario & functionMask;
 }
 
+serialPort_t *findSharedSerialPort(serialPortFunction_e functionToUse, uint16_t functionMask)
+{
+    functionConstraint_t *functionConstraint = getConfiguredFunctionConstraint(functionToUse);
+    serialPortSearchResult_t *result = findSerialPort(functionToUse, functionConstraint);
+
+    if (result->portFunction->scenario & functionMask) {
+        return result->portFunction->port;
+    }
+    return NULL;
+}
+
 void applySerialConfigToPortFunctions(serialConfig_t *serialConfig)
 {
     uint32_t portIndex = 0, serialPortIdentifier;
