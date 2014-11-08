@@ -35,10 +35,9 @@
 #include "rx/rx.h"
 #include "rx/sbus.h"
 
-#define SBUS_MAX_CHANNEL 12
+#define SBUS_MAX_CHANNEL 16
 #define SBUS_FRAME_SIZE 25
 #define SBUS_SYNCBYTE 0x0F
-#define SBUS_OFFSET 988
 
 #define SBUS_BAUDRATE 100000
 
@@ -64,7 +63,7 @@ bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
     sBusPort = openSerialPort(FUNCTION_SERIAL_RX, sbusDataReceive, SBUS_BAUDRATE, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_INVERTED);
 
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
-        sbusChannelData[b] = 2 * (rxConfig->midrc - SBUS_OFFSET);
+        sbusChannelData[b] = (1.6f * rxConfig->midrc) - 1408;
     if (callback)
         *callback = sbusReadRawRC;
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
@@ -85,6 +84,10 @@ struct sbus_dat {
     unsigned int chan9 : 11;
     unsigned int chan10 : 11;
     unsigned int chan11 : 11;
+    unsigned int chan12 : 11;
+    unsigned int chan13 : 11;
+    unsigned int chan14 : 11;
+    unsigned int chan15 : 11;
 } __attribute__ ((__packed__));
 
 typedef union {
@@ -127,7 +130,7 @@ bool sbusFrameComplete(void)
         return false;
     }
     sbusFrameDone = false;
-    if ((sbus.in[22] >> 3) & 0x0001) {
+    if ((sbus.in[SBUS_FRAME_SIZE - 3] >> 3) & 0x0001) {
         // internal failsafe enabled and rx failsafe flag set
         return false;
     }
@@ -143,12 +146,17 @@ bool sbusFrameComplete(void)
     sbusChannelData[9] = sbus.msg.chan9;
     sbusChannelData[10] = sbus.msg.chan10;
     sbusChannelData[11] = sbus.msg.chan11;
+    sbusChannelData[12] = sbus.msg.chan12;
+    sbusChannelData[13] = sbus.msg.chan13;
+    sbusChannelData[14] = sbus.msg.chan14;
+    sbusChannelData[15] = sbus.msg.chan15;
     return true;
 }
 
 static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
-    return sbusChannelData[chan] / 2 + SBUS_OFFSET;
+    // Linear fitting values read from OpenTX-ppmus and comparing with values received by X4R
+    // http://www.wolframalpha.com/input/?i=linear+fit+%7B173%2C+988%7D%2C+%7B1812%2C+2012%7D%2C+%7B993%2C+1500%7D
+    return (0.625f * sbusChannelData[chan]) + 880;
 }
-

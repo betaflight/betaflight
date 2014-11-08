@@ -299,10 +299,12 @@ void mwDisarm(void)
         DISABLE_ARMING_FLAG(ARMED);
 
 #ifdef TELEMETRY
-        // the telemetry state must be checked immediately so that shared serial ports are released.
-        checkTelemetryState();
-        if (isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP)) {
-            mspReset(&masterConfig.serialConfig);
+        if (feature(FEATURE_TELEMETRY)) {
+            // the telemetry state must be checked immediately so that shared serial ports are released.
+            checkTelemetryState();
+            if (isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP)) {
+                mspAllocateSerialPorts(&masterConfig.serialConfig);
+            }
         }
 #endif
     }
@@ -317,6 +319,15 @@ void mwArm(void)
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
             headFreeModeHold = heading;
+
+#ifdef TELEMETRY
+            if (feature(FEATURE_TELEMETRY)) {
+                serialPort_t *sharedTelemetryAndMspPort = findSharedSerialPort(FUNCTION_TELEMETRY, FUNCTION_MSP);
+                if (sharedTelemetryAndMspPort) {
+                    mspReleasePortIfAllocated(sharedTelemetryAndMspPort);
+                }
+            }
+#endif
             return;
         }
     }

@@ -90,6 +90,7 @@ static void cliMixer(char *cmdline);
 static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
+static void cliReboot(void);
 static void cliSave(char *cmdline);
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
@@ -332,7 +333,7 @@ const clivalue_t valueTable[] = {
 
     { "gimbal_flags",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gimbalConfig.gimbal_flags, 0, 255},
 
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, 0, 5 },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, 0, ACC_NONE },
     { "acc_lpf_factor",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].acc_lpf_factor, 0, 250 },
     { "accxy_deadband",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].accDeadband.xy, 0, 100 },
     { "accz_deadband",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].accDeadband.z, 0, 100 },
@@ -858,18 +859,14 @@ static void cliEnter(void)
 
 static void cliExit(char *cmdline)
 {
-    cliPrint("\r\nLeaving CLI mode\r\n");
+    UNUSED(cmdline);
+    cliPrint("\r\nLeaving CLI mode, unsaved changes lost.\r\n");
     *cliBuffer = '\0';
     bufferIndex = 0;
     cliMode = 0;
     // incase a motor was left running during motortest, clear it here
     mixerResetMotors();
-    // save and reboot... I think this makes the most sense - otherwise config changes can be out of sync, maybe just need to applyConfig and return?
-#if 1
-    cliSave(cmdline);
-#else
-    releaseSerialPort(cliPort, FUNCTION_CLI);
-#endif
+    cliReboot();
 }
 
 static void cliFeature(char *cmdline)

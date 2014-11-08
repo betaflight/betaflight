@@ -161,6 +161,7 @@ void applySerialConfigToPortFunctions(serialConfig_t *serialConfig);
 bool isSerialConfigValid(serialConfig_t *serialConfig);
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
 bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask);
+serialPort_t *findSharedSerialPort(serialPortFunction_e functionToUse, uint16_t functionMask);
 
 const serialPortFunctionList_t *getSerialPortFunctionList(void);
 
