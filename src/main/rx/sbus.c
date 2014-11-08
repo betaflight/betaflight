@@ -35,7 +35,7 @@
 #include "rx/rx.h"
 #include "rx/sbus.h"
 
-#define SBUS_MAX_CHANNEL 12
+#define SBUS_MAX_CHANNEL 16
 #define SBUS_FRAME_SIZE 25
 #define SBUS_SYNCBYTE 0x0F
 #define SBUS_OFFSET 988
@@ -85,6 +85,10 @@ struct sbus_dat {
     unsigned int chan9 : 11;
     unsigned int chan10 : 11;
     unsigned int chan11 : 11;
+    unsigned int chan12 : 11;
+    unsigned int chan13 : 11;
+    unsigned int chan14 : 11;
+    unsigned int chan15 : 11;
 } __attribute__ ((__packed__));
 
 typedef union {
@@ -127,7 +131,7 @@ bool sbusFrameComplete(void)
         return false;
     }
     sbusFrameDone = false;
-    if ((sbus.in[22] >> 3) & 0x0001) {
+    if ((sbus.in[SBUS_FRAME_SIZE - 3] >> 3) & 0x0001) {
         // internal failsafe enabled and rx failsafe flag set
         return false;
     }
@@ -143,6 +147,10 @@ bool sbusFrameComplete(void)
     sbusChannelData[9] = sbus.msg.chan9;
     sbusChannelData[10] = sbus.msg.chan10;
     sbusChannelData[11] = sbus.msg.chan11;
+    sbusChannelData[12] = sbus.msg.chan12;
+    sbusChannelData[13] = sbus.msg.chan13;
+    sbusChannelData[14] = sbus.msg.chan14;
+    sbusChannelData[15] = sbus.msg.chan15;
     return true;
 }
 
