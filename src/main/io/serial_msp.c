@@ -525,12 +525,17 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, ms
 // This rate is chosen since softserial supports it.
 #define MSP_FALLBACK_BAUDRATE 19200
 
-static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
+void mspAllocateSerialPorts(serialConfig_t *serialConfig)
 {
     serialPort_t *port;
 
-    uint8_t portIndex = 0;
-    do {
+    uint8_t portIndex;
+
+    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t *mspPort = &mspPorts[portIndex];
+        if (mspPort->mspPortUsage != UNUSED_PORT) {
+            continue;
+        }
 
         uint32_t baudRate = serialConfig->msp_baudrate;
 
@@ -549,12 +554,12 @@ static void openAllMSPSerialPorts(serialConfig_t *serialConfig)
         } while (!port);
 
         if (port && portIndex < MAX_MSP_PORT_COUNT) {
-            mspPort_t *newMspPort = &mspPorts[portIndex++];
-
-            resetMspPort(newMspPort, port, FOR_GENERAL_MSP);
+            resetMspPort(mspPort, port, FOR_GENERAL_MSP);
         }
-
-    } while (port);
+        if (!port) {
+            break;
+        }
+    }
 
     // XXX this function might help with adding support for MSP on more than one port, if not delete it.
     const serialPortFunctionList_t *serialPortFunctionList = getSerialPortFunctionList();
@@ -565,7 +570,7 @@ void mspReleasePortIfAllocated(serialPort_t *serialPort)
 {
     uint8_t portIndex;
     for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        mspPort_t *candidateMspPort = &mspPorts[portIndex++];
+        mspPort_t *candidateMspPort = &mspPorts[portIndex];
         if (candidateMspPort->port == serialPort) {
             endSerialPortFunction(serialPort, FUNCTION_MSP);
             memset(candidateMspPort, 0, sizeof(mspPort_t));
@@ -627,14 +632,8 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXSONAR;
     }
 
-    mspReset(serialConfig);
-}
-
-void mspReset(serialConfig_t *serialConfig)
-{
     memset(mspPorts, 0x00, sizeof(mspPorts));
-
-    openAllMSPSerialPorts(serialConfig);
+    mspAllocateSerialPorts(serialConfig);
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)

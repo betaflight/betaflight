@@ -303,7 +303,7 @@ void mwDisarm(void)
             // the telemetry state must be checked immediately so that shared serial ports are released.
             checkTelemetryState();
             if (isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP)) {
-                mspReset(&masterConfig.serialConfig);
+                mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
         }
 #endif
