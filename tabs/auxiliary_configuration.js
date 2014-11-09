@@ -25,7 +25,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_mode_ranges);
 
     function createMode(modeIndex, modeId) {
-        var modeTemplate = $('#templates .mode');
+        var modeTemplate = $('#tab-auxiliary_configuration-templates .mode');
         var newMode = modeTemplate.clone();
         
         var modeName = AUX_CONFIG[modeIndex];
@@ -43,7 +43,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     
     function configureRangeTemplate(auxChannelCount) {
 
-        var rangeTemplate = $('#templates .range');
+        var rangeTemplate = $('#tab-auxiliary_configuration-templates .range');
         
         var channelList = $(rangeTemplate).find('.channel');
         var channelOptionTemplate = $(channelList).find('option');
@@ -54,7 +54,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             channelOption.val(channelIndex);
             channelList.append(channelOption);
         }
-        channelList.select(0);
+        channelList.val(0);
     }
     
     function addRangeToMode(modeElement, auxChannelIndex, range) {
@@ -72,11 +72,11 @@ TABS.auxiliary_configuration.initialize = function (callback) {
 
         var rangeIndex = $(modeElement).find('.range').length;
         
-        var range = $('#templates .range').clone();
-        range.attr('id', 'mode-' + modeIndex + '-range-' + rangeIndex);
+        var rangeElement = $('#tab-auxiliary_configuration-templates .range').clone();
+        rangeElement.attr('id', 'mode-' + modeIndex + '-range-' + rangeIndex);
         modeElement.find('.ranges').append(range);
         
-        $(range).find('.channel-slider').noUiSlider({
+        $(rangeElement).find('.channel-slider').noUiSlider({
             start: rangeValues,
             behaviour: 'snap-drag',
             step: 25,
@@ -91,7 +91,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         $(elementName + ' .channel-slider').Link('lower').to($(elementName + ' .lowerLimitValue'));
         $(elementName + ' .channel-slider').Link('upper').to($(elementName + ' .upperLimitValue'));
 
-        $(range).find(".pips-channel-range").noUiSlider_pips({
+        $(rangeElement).find(".pips-channel-range").noUiSlider_pips({
             mode: 'values',
             values: [900, 1000, 1200, 1400, 1500, 1600, 1800, 2000, 2100],
             density: 4,
@@ -110,8 +110,6 @@ TABS.auxiliary_configuration.initialize = function (callback) {
     }
     
     function process_html() {
-        
-        $('.boxes').hide();
 
         var auxChannelCount = RC.active_channels - 4;
 
@@ -180,7 +178,6 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             MODE_RANGES = [];
             
             $('.modes .mode').each(function () {
-                //var _this = this;
                 var modeElement = $(this);
                 var modeId = modeElement.data('id');
                 
@@ -210,8 +207,10 @@ TABS.auxiliary_configuration.initialize = function (callback) {
                 };
                 MODE_RANGES.push(defaultModeRange);
             }
-           
+
+            //
             // send data to FC
+            //
 
             var nextFunction = send_next_mode_range; 
                 

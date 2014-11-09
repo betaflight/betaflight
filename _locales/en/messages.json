@@ -36,30 +36,33 @@
         "message": "Initial Setup"
     },
     "tab2": {
-        "message": "PID Tuning"
+        "message": "PID"
     },
     "tab3": {
         "message": "Receiver"
     },
     "tab4": {
-        "message": "Auxiliary Configuration"
+        "message": "Auxiliary"
     },
     "tab5": {
-        "message": "Servos"
+        "message": "Adjustments"
     },
     "tab6": {
-        "message": "GPS"
+        "message": "Servos"
     },
     "tab7": {
-        "message": "Motor Testing"
+        "message": "GPS"
     },
     "tab8": {
-        "message": "Raw Sensor Data"
+        "message": "Motors"
     },
     "tab9": {
-        "message": "CLI"
+        "message": "Sensors"
     },
     "tab10": {
+        "message": "CLI"
+    },
+    "tab11": {
         "message": "Logging"
     },
 
@@ -369,6 +372,101 @@
     "auxiliaryEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
     },
+
+    "adjustmentsHelp": {
+        "message": "Configure adjustment switches.  See the 'in-flight adjustments' section of the manual for details.  The changes that adjustment functions make are not saved automatically.  There are 4 slots.  Each switch used to concurrently make adjustments requires exclusive use of a slot."
+    },
+    "adjustmentsExamples": {
+        "message": "Examples"
+    },
+    "adjustmentsExample1": {
+        "message": "Use Slot 1 and a 3POS switch on AUX1 to select between Pitch/Roll P, I and D and another 3POS switch on AUX2 to increase or decrease the value when held up or down."
+    },
+    "adjustmentsExample2": {
+        "message": "Use Slot 2 and a 3POS switch on AUX4 to select enable Rate Profile Selection via the same 3POS switch on the same channel."
+    },
+    "adjustmentsColumnEnable": {
+        "message": "If enabled"
+    },
+    "adjustmentsColumnUsingSlot": {
+        "message": "using slot"
+    },
+    "adjustmentsColumnWhenChannel": {
+        "message": "when channel"
+    },
+    "adjustmentsColumnIsInRange": {
+        "message": "is in range"
+    },
+    "adjustmentsColumnThenApplyFunction": {
+        "message": "then apply"
+    },
+    "adjustmentsColumnViaChannel": {
+        "message": "via channel"
+    },
+    "adjustmentsSlot0": {
+        "message": "Slot 1"
+    },
+    "adjustmentsSlot1": {
+        "message": "Slot 2"
+    },
+    "adjustmentsSlot2": {
+        "message": "Slot 3"
+    },
+    "adjustmentsSlot3": {
+        "message": "Slot 4"
+    },
+    "adjustmentsMin": {
+        "message": "Min"
+    },
+    "adjustmentsMax": {
+        "message": "Max"
+    },
+    "adjustmentsFunction0": {
+        "message": "No changes"
+    },
+    "adjustmentsFunction1": {
+        "message": "RC Rate Adjustment"
+    },
+    "adjustmentsFunction2": {
+        "message": "RC Expo Adjustment"
+    },
+    "adjustmentsFunction3": {
+        "message": "Throttle Expo Adjustment"
+    },
+    "adjustmentsFunction4": {
+        "message": "Pitch & Roll Rate Adjustment"
+    },
+    "adjustmentsFunction5": {
+        "message": "Yaw Rate Adjustment"
+    },
+    "adjustmentsFunction6": {
+        "message": "Pitch P Adjustment"
+    },
+    "adjustmentsFunction7": {
+        "message": "Pitch I Adjustment"
+    },
+    "adjustmentsFunction8": {
+        "message": "Pitch D Adjustment"
+    },
+    "adjustmentsFunction9": {
+        "message": "Yaw P Adjustment"
+    },
+    "adjustmentsFunction10": {
+        "message": "Yaw I Adjustment"
+    },
+    "adjustmentsFunction11": {
+        "message": "Yaw D Adjustment"
+    },
+    "adjustmentsFunction12": {
+        "message": "Rate Profile Selection"
+    },
+    "adjustmentsSave": {
+        "message": "Save"
+    },
+    "adjustmentsEepromSaved": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
+    },
+    
 
     "servosModel": {
         "message": "Model:"

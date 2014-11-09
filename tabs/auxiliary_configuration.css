@@ -18,7 +18,7 @@
 
 .tab-auxiliary_configuration .mode.on:nth-child(odd) .info {
     background: #BAE2BC;
-    }
+}
 
 .tab-auxiliary_configuration .mode.off .info {
     background: #E86969;
@@ -28,7 +28,7 @@
     background: #E7AEAE;
 }
 
-#templates {
+#tab-auxiliary_configuration-templates {
     display: none;
 }
 

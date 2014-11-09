@@ -54,6 +54,7 @@ var AUX_CONFIG = [];
 var AUX_CONFIG_IDS = [];
 
 var MODE_RANGES = [];
+var ADJUSTMENT_RANGES = [];
 
 var SERVO_CONFIG = [];
 

@@ -9,6 +9,9 @@ var MSP_codes = {
     MSP_SET_CHANNEL_FORWARDING: 33,
     MSP_MODE_RANGES:            34,
     MSP_SET_MODE_RANGE:         35,
+    MSP_ADJUSTMENT_RANGES:      52,
+    MSP_SET_ADJUSTMENT_RANGE:   53,
+
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -321,6 +324,26 @@ MSP.process_data = function(code, message_buffer, message_length) {
                 MODE_RANGES.push(modeRange);
             }
             break;
+        case MSP_codes.MSP_ADJUSTMENT_RANGES:
+            ADJUSTMENT_RANGES = []; // empty the array as new data is coming in
+
+            var adjustmentRangeCount = data.byteLength / 6; // 6 bytes per item.
+            
+            var offset = 0;
+            for (var i = 0; offset < data.byteLength && i < adjustmentRangeCount; i++) {
+                var adjustmentRange = {
+                    slotIndex: data.getUint8(offset++, 1),
+                    auxChannelIndex: data.getUint8(offset++, 1),
+                    range: {
+                        start: 900 + (data.getUint8(offset++, 1) * 25),
+                        end: 900 + (data.getUint8(offset++, 1) * 25)
+                    },
+                    adjustmentFunction: data.getUint8(offset++, 1),
+                    auxSwitchChannelIndex: data.getUint8(offset++, 1)
+                };
+                ADJUSTMENT_RANGES.push(adjustmentRange);
+            }
+            break;
         case MSP_codes.MSP_MISC: // 22 bytes
             MISC.PowerTrigger1 = data.getInt16(0, 1);
             MISC.minthrottle = data.getUint16(2, 1); // 0-2000
@@ -406,6 +429,9 @@ MSP.process_data = function(code, message_buffer, message_length) {
             break;
         case MSP_codes.MSP_SET_MODE_RANGE:
             console.log('Mode range saved');
+            break;
+        case MSP_codes.MSP_SET_ADJUSTMENT_RANGE:
+            console.log('Adjustment range saved');
             break;
         case MSP_codes.MSP_SET_BOX:
             console.log('AUX Configuration saved');

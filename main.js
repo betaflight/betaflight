@@ -94,6 +94,9 @@ $(document).ready(function () {
                     case 'tab_auxiliary_configuration':
                         TABS.auxiliary_configuration.initialize(content_ready);
                         break;
+                    case 'tab_adjustments':
+                        TABS.adjustments.initialize(content_ready);
+                        break;
                     case 'tab_servos':
                         TABS.servos.initialize(content_ready);
                         break;
