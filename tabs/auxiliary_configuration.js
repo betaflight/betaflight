@@ -74,7 +74,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
         
         var rangeElement = $('#tab-auxiliary_configuration-templates .range').clone();
         rangeElement.attr('id', 'mode-' + modeIndex + '-range-' + rangeIndex);
-        modeElement.find('.ranges').append(range);
+        modeElement.find('.ranges').append(rangeElement);
         
         $(rangeElement).find('.channel-slider').noUiSlider({
             start: rangeValues,
@@ -98,14 +98,14 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             stepped: true
         });
         
-        $(range).find('.deleteRange').data('rangeElement', range);
+        $(rangeElement).find('.deleteRange').data('rangeElement', rangeElement);
 
-        $(range).find('a.deleteRange').click(function () {
+        $(rangeElement).find('a.deleteRange').click(function () {
             var rangeElement = $(this).data('rangeElement');
             rangeElement.remove();
         });
         
-        $(range).find('.channel').val(auxChannelIndex);
+        $(rangeElement).find('.channel').val(auxChannelIndex);
 
     }
     
@@ -253,6 +253,9 @@ TABS.auxiliary_configuration.initialize = function (callback) {
             } else if (channelPosition > 2100) {
                 channelPosition = 2100;
             }
+        }
+        
+        function update_marker(auxChannelIndex, channelPosition) {
             var percentage = (channelPosition - 900) / (2100-900) * 100;
             
             $('.modes .ranges .range').each( function () {
@@ -263,7 +266,6 @@ TABS.auxiliary_configuration.initialize = function (callback) {
                 
                 $(this).find('.marker').css('left', percentage + '%');
             });
-            
         }
 
         // data pulling functions used inside interval timer
@@ -291,6 +293,7 @@ TABS.auxiliary_configuration.initialize = function (callback) {
 
             for (var i = 0; i < (auxChannelCount); i++) {
                 box_highlight(i, RC.channels[i + 4]);
+                update_marker(i, RC.channels[i + 4]);
             }           
         }
 
