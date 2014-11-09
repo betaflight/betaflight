@@ -85,7 +85,8 @@ TABS.adjustments.initialize = function (callback) {
                 'max': [ 2100 ]
             };
         
-        var rangeValues = [900, 2100]; // select the full range by default
+        var defaultRangeValues = [1300, 1700];
+        var rangeValues = defaultRangeValues;
         if (adjustmentRange.range != undefined) {
             rangeValues = [adjustmentRange.range.start, adjustmentRange.range.end];
         }
@@ -125,6 +126,12 @@ TABS.adjustments.initialize = function (callback) {
             if ($(this).prop("checked")) { 
                 $(adjustmentElement).find(':input').prop("disabled", false);
                 $(adjustmentElement).find('.channel-slider').removeAttr("disabled");
+                var rangeElement = $(adjustmentElement).find('.range .channel-slider');
+                var range = $(rangeElement).val();
+                if (range[0] == range[1]) {
+                    var defaultRangeValues = [1300, 1700];
+                    $(rangeElement).val(defaultRangeValues);
+                }
             } else {
                 $(adjustmentElement).find(':input').prop("disabled", true);
                 $(adjustmentElement).find('.channel-slider').attr("disabled", "disabled");
@@ -238,12 +245,35 @@ TABS.adjustments.initialize = function (callback) {
 
         });
 
+        function update_marker(auxChannelIndex, channelPosition) {
+            if (channelPosition < 900) {
+                channelPosition = 900;
+            } else if (channelPosition > 2100) {
+                channelPosition = 2100;
+            }
+            var percentage = (channelPosition - 900) / (2100-900) * 100;
+            
+            $('.adjustments .adjustment').each( function () {
+                var auxChannelCandidateIndex = $(this).find('.channel').val();
+                if (auxChannelCandidateIndex != auxChannelIndex) {
+                    return;
+                }
+                
+                $(this).find('.range .marker').css('left', percentage + '%');
+            });
+        }
+
         // data pulling functions used inside interval timer
         function get_rc_data() {
             MSP.send_message(MSP_codes.MSP_RC, false, false, update_ui);
         }
 
         function update_ui() {
+            var auxChannelCount = RC.active_channels - 4;
+
+            for (var auxChannelIndex = 0; auxChannelIndex < auxChannelCount; auxChannelIndex++) {
+                update_marker(auxChannelIndex, RC.channels[auxChannelIndex + 4]);
+            }           
         }
 
         // update ui instantly on first load
