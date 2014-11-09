@@ -7,12 +7,11 @@ It allows you to configure the Cleanflight software running on any supported cle
 
 Cleanflight is available here:
 
-https://github.com/hydra/cleanflight
+https://github.com/cleanflight/cleanflight
 
 Authors
 -------
-ctn - primary author and maintainer of Baseflight configurator.
-Dominic Clifton/hydra - maintainer of the Cleanflight fork. 
+Dominic Clifton/hydra - maintainer of the Cleanflight firmware and configurator. 
 
 This configurator is the only configurator for cleanflight specific features, it will likely require that you run the latest firmware on the flight controller,
 if you are experiencing any problems please make sure you are running the latest version of firmware.
@@ -61,3 +60,6 @@ Developers
 ----------
 We accept clean and reasonable patches, submit them!
 
+Credits
+-------
+ctn - primary author and maintainer of Baseflight configurator from which this project was forked.
