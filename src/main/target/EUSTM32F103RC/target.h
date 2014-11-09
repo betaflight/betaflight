@@ -19,6 +19,11 @@
 
 #define TARGET_BOARD_IDENTIFIER "EUF1"
 
+#define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INVERTER_GPIO GPIOB
+#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
+#define INVERTER_USART USART2
+
 #define MPU6000_CS_GPIO       GPIOB
 #define MPU6000_CS_PIN        GPIO_Pin_12
 #define MPU6000_SPI_INSTANCE  SPI2
@@ -53,6 +58,7 @@
 #define MAG
 #define SONAR
 #define DISPLAY
+#define INVERTER
 
 #define USE_USART1
 #define USE_USART2
