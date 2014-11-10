@@ -29,6 +29,52 @@ TABS.firmware_flasher.initialize = function (callback) {
             worker.postMessage(str);
         }
 
+        // Fetch Releases
+        $.get('http://firmware.baseflight.net/listing.json', function (data) {
+            var releases = [],
+                releases_e = $('select[name="release"]').empty(),
+                d, date, offset;
+
+            // filter out what we need
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].target == 'NAZE') {
+                    releases.push(data[i]);
+                }
+            }
+
+            // reorder the array by time
+            releases.sort(function (a, b) {
+                return b.time - a.time;
+            });
+
+            // reorder the array by release flag TODO needs to be tested
+            releases.sort(function (a, b) {
+                if (a.release < b.release) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            });
+
+            // populate select
+            for (var i = 0; i < releases.length; i++) {
+                d = new Date(releases[i].time * 1000);
+                date = ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate())).slice(-2) + '.' + d.getFullYear();
+                date += ' - ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+
+                var element = $('<option value="' + i + '">' + (((releases[i].release) ? 'Stable' : 'Dev') + ' ' + date) + '</option>').data('obj', releases[i]);
+                releases_e.append(element);
+            }
+
+            // bind events
+            $('select[name="release"]').change(function() {
+                // hide github info (if it exists)
+                $('div.git_info').slideUp();
+            });
+        }).fail(function () {
+            // Failed to load release list, offline?
+        });
+
         // UI Hooks
         $('a.load_file').click(function () {
             chrome.fileSystem.chooseEntry({type: 'openFile', accepts: [{extensions: ['hex']}]}, function (fileEntry) {
@@ -83,7 +129,7 @@ TABS.firmware_flasher.initialize = function (callback) {
         });
 
         $('a.load_remote_file').click(function () {
-            function process_hex(data, development) {
+            function process_hex(data, obj) {
                 intel_hex = data;
 
                 parse_hex(intel_hex, function (data) {
@@ -97,14 +143,8 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                         $('a.flash_firmware').removeClass('locked');
 
-                        if (!development) {
-                            url = 'https://api.github.com/repos/multiwii/baseflight/commits?page=1&per_page=1&path=obj/baseflight.hex';
-                        } else {
-                            url = 'https://api.github.com/repos/multiwii/baseflight/commits/' + development.commit;
-                        }
-
-                        $.get(url, function (data) {
-                            var data = (development) ? data : data[0],
+                        $.get('https://api.github.com/repos/multiwii/baseflight/commits/' + obj.commit, function (data) {
+                            var data = data,
                                 d = new Date(data.commit.author.date),
                                 offset = d.getTimezoneOffset() / 60,
                                 date;
@@ -115,6 +155,7 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                             $('div.git_info .committer').text(data.commit.author.name);
                             $('div.git_info .date').text(date);
+                            $('div.git_info .hash').text(data.sha.slice(-7)).prop('href', 'https://github.com/multiwii/baseflight/commit/' + data.sha);
                             $('div.git_info .message').text(data.commit.message);
 
                             $('div.git_info').slideDown();
@@ -130,40 +171,10 @@ TABS.firmware_flasher.initialize = function (callback) {
                 $('a.flash_firmware').addClass('locked');
             }
 
-            if (!$('input.flash_development_firmware').is(':checked')) {
-                $.get('https://raw.githubusercontent.com/multiwii/baseflight/master/obj/baseflight.hex', function (data) {
-                    process_hex(data, false);
-                }).fail(failed_to_load);
-            } else {
-                $.get('http://firmware.baseflight.net/listing.json', function (data) {
-                    var filter = [],
-                        time = 0,
-                        obj = null;
-
-                    // filter out what we need
-                    for (var i = 0; i < data.length; i++) {
-                        if (data[i].target == 'NAZE') {
-                            filter.push(data[i]);
-                        }
-                    }
-
-                    if (filter.length > 1) {
-                        for (var i = 0; i < filter.length; i++) {
-                            if (time < filter[i].time) {
-                                time = filter[i].time;
-                                obj = filter[i];
-                            }
-                        }
-                    } else {
-                        obj = filter[0];
-                    }
-
-                    $.get('http://firmware.baseflight.net/' + obj.file, function (data) {
-                        process_hex(data, obj);
-                    }).fail(failed_to_load);
-
-                }).fail(failed_to_load);
-            }
+            var obj = $('select[name="release"] option:selected').data('obj');
+            $.get('http://firmware.baseflight.net/' + obj.file, function (data) {
+                process_hex(data, obj);
+            }).fail(failed_to_load);
         });
 
         $('a.flash_firmware').click(function () {
@@ -337,24 +348,6 @@ TABS.firmware_flasher.initialize = function (callback) {
             // bind UI hook so the status is saved on change
             $('input.erase_chip').change(function () {
                 chrome.storage.local.set({'erase_chip': $(this).is(':checked')});
-            });
-        });
-
-        chrome.storage.local.get('flash_development_firmware', function (result) {
-            if (result.flash_development_firmware) {
-                $('input.flash_development_firmware').prop('checked', true);
-            } else {
-                $('input.flash_development_firmware').prop('checked', false);
-            }
-
-            // bind UI hook so the status is saved on change
-            $('input.flash_development_firmware').change(function () {
-                // hide github info (if it exists)
-                $('a.flash_firmware').addClass('locked');
-                $('div.git_info').slideUp();
-                $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherLoadFirmwareFile'));
-
-                chrome.storage.local.set({'flash_development_firmware': $(this).is(':checked')});
             });
         });
 

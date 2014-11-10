@@ -4,6 +4,12 @@
         <span class="progressLabel" i18n="firmwareFlasherLoadFirmwareFile"></span>
     </div>
     <div class="options">
+        <div class="option releases">
+            <select name="release">
+                <option value="0">Offline</option>
+            </select>
+            <span class="description" i18n="firmwareFlasherOnlineReleasesDescription"></span>
+        </div>
         <div class="option">
             <label>
                 <input class="updating" type="checkbox" />
@@ -27,13 +33,6 @@
         </div>
         <div class="option">
             <label>
-                <input class="flash_development_firmware" type="checkbox" />
-                <span i18n="firmwareFlasherFlashDevelopmentFirmware"></span>
-            </label>
-            <span class="description" i18n="firmwareFlasherFlashDevelopmentFirmwareDescription"></span>
-        </div>
-        <div class="option">
-            <label>
                 <input class="flash_slowly" type="checkbox" />
                 <span i18n="firmwareFlasherFlashSlowly"></span>
             </label>
@@ -44,6 +43,7 @@
     <div class="git_info">
         <div class="title" i18n="firmwareFlasherGithubInfoHead"></div>
         <p>
+            <strong i18n="firmwareFlasherHash"></strong> <a i18n_title="firmwareFlasherUrl" class="hash" href="#" target="_blank"></a><br />
             <strong i18n="firmwareFlasherCommiter"></strong> <span class="committer"></span><br />
             <strong i18n="firmwareFlasherDate"></strong> <span class="date"></span><br />
             <strong i18n="firmwareFlasherMessage"></strong> <span class="message"></span>

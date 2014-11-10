@@ -652,6 +652,9 @@
     "firmwareFlasherNoReboot": {
         "message": "No reboot sequence"
     },
+    "firmwareFlasherOnlineReleasesDescription": {
+        "message": "Available online firmware releases"
+    },
     "firmwareFlasherNoRebootDescription": {
         "message": "Check if you are flashing board with bootloader pins shorted"
     },
@@ -696,6 +699,12 @@
     },
     "firmwareFlasherDate": {
         "message": "Date:"
+    },
+    "firmwareFlasherHash": {
+        "message": "Hash:"
+    },
+    "firmwareFlasherUrl": {
+        "message": "Go to GitHub to review this commit..."
     },
     "firmwareFlasherMessage": {
         "message": "Message:"
