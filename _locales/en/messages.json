@@ -566,7 +566,7 @@
     },
 
     "cliInfo": {
-        "message": "<span style=\"color: red\">Note</span>: Leaving CLI tab or pressing Disconnect will <strong>automatically</strong> send \"<strong>exit</strong>\" to the board, which will make the controller save all the changes and <span style=\"color: red\">restart</span>."
+        "message": "<span style=\"color: red\">Note</span>: Leaving CLI tab or pressing Disconnect will <strong>automatically</strong> send \"<strong>exit</strong>\" to the board.  With the latest firmware this will make the controller <span style=\"color: red\">restart</span> and unsaved changes will be <span style=\"color: red\">lost</span>."
     },
     "cliInputPlaceholder": {
         "message": "Write your command here"
