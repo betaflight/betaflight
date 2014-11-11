@@ -337,7 +337,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         // synchronise bit counter
         // FIXME this reduces functionality somewhat as receiving breaks concurrent transmission on all ports because
         // the next callback to the onSerialTimer will happen too early causing transmission errors.
-        TIM_SetCounter(softSerial->rxTimerHardware->tim, 0);
+        TIM_SetCounter(softSerial->rxTimerHardware->tim, softSerial->rxTimerHardware->tim->ARR / 2);
         if (softSerial->isTransmittingData) {
             softSerial->transmissionErrors++;
         }
