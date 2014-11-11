@@ -141,6 +141,9 @@ STM32_protocol.prototype.initialize = function () {
     self.progress_bar_e.val(0);
     self.progress_bar_e.removeClass('valid invalid');
 
+    // lock some UI elements TODO needs rework
+    $('select[name="release"]').prop('disabled', true);
+
     serial.onReceive.addListener(function (info) {
         self.read(info);
     });
@@ -670,6 +673,9 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
                 // unlocking connect button
                 GUI.connect_lock = false;
+
+                // unlock some UI elements TODO needs rework
+                $('select[name="release"]').prop('disabled', false);
 
                 // handle timing
                 var timeSpent = new Date().getTime() - self.upload_time_start;

@@ -68,11 +68,15 @@ TABS.firmware_flasher.initialize = function (callback) {
 
             // bind events
             $('select[name="release"]').change(function() {
-                // hide github info (if it exists)
-                $('div.git_info').slideUp();
+                if (!GUI.connect_lock) {
+                    $('.progress').val(0).removeClass('valid invalid');
+                    $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherLoadFirmwareFile'));
+                    $('div.git_info').slideUp();
+                    $('a.flash_firmware').addClass('locked');
+                }
             });
         }).fail(function () {
-            // Failed to load release list, offline?
+            $('select[name="release"]').empty().append('<option value="0">Offline</option>')
         });
 
         // UI Hooks
@@ -155,7 +159,7 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                             $('div.git_info .committer').text(data.commit.author.name);
                             $('div.git_info .date').text(date);
-                            $('div.git_info .hash').text(data.sha.slice(-7)).prop('href', 'https://github.com/multiwii/baseflight/commit/' + data.sha);
+                            $('div.git_info .hash').text(data.sha.slice(0, 7)).prop('href', 'https://github.com/multiwii/baseflight/commit/' + data.sha);
                             $('div.git_info .message').text(data.commit.message);
 
                             $('div.git_info').slideDown();
@@ -172,9 +176,14 @@ TABS.firmware_flasher.initialize = function (callback) {
             }
 
             var obj = $('select[name="release"] option:selected').data('obj');
-            $.get('http://firmware.baseflight.net/' + obj.file, function (data) {
-                process_hex(data, obj);
-            }).fail(failed_to_load);
+
+            if (obj) { // undefined while list is loading or while running offline
+                $.get('http://firmware.baseflight.net/' + obj.file, function (data) {
+                    process_hex(data, obj);
+                }).fail(failed_to_load);
+            } else {
+                $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
+            }
         });
 
         $('a.flash_firmware').click(function () {
