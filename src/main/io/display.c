@@ -67,6 +67,7 @@ typedef enum {
     PAGE_SENSORS,
     PAGE_RX,
     PAGE_PROFILE,
+    PAGE_DEBUG
 } pageId_e;
 
 const char* pageTitles[] = {
@@ -75,13 +76,15 @@ const char* pageTitles[] = {
     "BATTERY",
     "SENSORS",
     "RX",
-    "PROFILE"
+    "PROFILE",
+    "DEBUG"
 };
 
 #define PAGE_COUNT (PAGE_RX + 1)
 
 const uint8_t cyclePageIds[] = {
     PAGE_PROFILE,
+    PAGE_DEBUG,
     PAGE_BATTERY,
     PAGE_SENSORS,
     PAGE_RX
@@ -267,6 +270,20 @@ void showSensorsPage(void)
 #endif
 }
 
+#define PAGE_TITLE_LINE_COUNT 1
+
+void showDebugPage(void)
+{
+    uint8_t rowIndex;
+
+    for (rowIndex = 0; rowIndex < 4; rowIndex++) {
+        tfp_sprintf(lineBuffer, "%d = %5d", rowIndex, debug[rowIndex]);
+        padLineBuffer();
+        i2c_OLED_set_line(rowIndex + PAGE_TITLE_LINE_COUNT);
+        i2c_OLED_send_string(lineBuffer);
+    }
+}
+
 void updateDisplay(void)
 {
     uint32_t now = micros();
@@ -328,6 +345,9 @@ void updateDisplay(void)
             break;
         case PAGE_PROFILE:
             showProfilePage();
+            break;
+        case PAGE_DEBUG:
+            showDebugPage();
             break;
     }
     if (!armedState) {
