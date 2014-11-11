@@ -25,6 +25,9 @@
 
 #include "build_config.h"
 
+#include "common/utils.h"
+#include "common/atomic.h"
+
 #include "nvic.h"
 #include "system.h"
 #include "gpio.h"
@@ -44,8 +47,8 @@
 
 softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 
-void onSerialTimer(uint8_t portIndex, captureCompare_t capture);
-void onSerialRxPinChange(uint8_t portIndex, captureCompare_t capture);
+void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
+void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 
 void setTxSignal(softSerial_t *softSerial, uint8_t state)
 {
@@ -88,7 +91,7 @@ static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
         timerPeriod = clock / baud;
         if (isTimerPeriodTooLarge(timerPeriod)) {
             if (clock > 1) {
-                clock = clock / 2;
+                clock = clock / 2;   // this is wrong - mhz stays the same ... This will double baudrate until ok (but minimum baudrate is < 1200)
             } else {
                 // TODO unable to continue, unable to determine clock and timerPeriods for the given baud
             }
@@ -98,7 +101,8 @@ static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
 
     uint8_t mhz = SystemCoreClock / 1000000;
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
-    configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, onSerialTimer, NULL);
+    timerChCCHandlerInit(&softSerialPorts[reference].timerCb, onSerialTimer);
+    timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].timerCb, NULL);
 }
 
 static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
@@ -119,7 +123,8 @@ static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
 {
     // start bit is usually a FALLING signal
     serialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, inversion == SERIAL_INVERTED ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
-    configureTimerCaptureCompareInterrupt(timerHardwarePtr, reference, onSerialRxPinChange, NULL);
+    timerChCCHandlerInit(&softSerialPorts[reference].edgeCb, onSerialRxPinChange);
+    timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].edgeCb, NULL);
 }
 
 static void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)
@@ -309,20 +314,20 @@ void processRxState(softSerial_t *softSerial)
     }
 }
 
-void onSerialTimer(uint8_t portIndex, captureCompare_t capture)
+void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
-    softSerial_t *softSerial = &(softSerialPorts[portIndex]);
+    softSerial_t *softSerial = container_of(cbRec, softSerial_t, timerCb);
 
     processTxState(softSerial);
     processRxState(softSerial);
 }
 
-void onSerialRxPinChange(uint8_t portIndex, captureCompare_t capture)
+void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
 
-    softSerial_t *softSerial = &(softSerialPorts[portIndex]);
+    softSerial_t *softSerial = container_of(cbRec, softSerial_t, edgeCb);
 
     if ((softSerial->port.mode & MODE_RX) == 0) {
         return;
@@ -332,7 +337,7 @@ void onSerialRxPinChange(uint8_t portIndex, captureCompare_t capture)
         // synchronise bit counter
         // FIXME this reduces functionality somewhat as receiving breaks concurrent transmission on all ports because
         // the next callback to the onSerialTimer will happen too early causing transmission errors.
-        TIM_SetCounter(softSerial->rxTimerHardware->tim, 0);
+        TIM_SetCounter(softSerial->rxTimerHardware->tim, softSerial->rxTimerHardware->tim->ARR / 2);
         if (softSerial->isTransmittingData) {
             softSerial->transmissionErrors++;
         }

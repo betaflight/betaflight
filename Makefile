@@ -8,7 +8,7 @@
 # Makefile for building the cleanflight firmware.
 #
 # Invoke this with 'make help' to see the list of supported targets.
-# 
+#
 
 ###############################################################################
 # Things that the user might override on the commandline
@@ -48,8 +48,8 @@ SRC_DIR		 = $(ROOT)/src/main
 OBJECT_DIR	 = $(ROOT)/obj/main
 BIN_DIR		 = $(ROOT)/obj
 CMSIS_DIR	 = $(ROOT)/lib/main/CMSIS
-INCLUDE_DIRS = $(SRC_DIR)
-LINKER_DIR   = $(ROOT)/src/main/target
+INCLUDE_DIRS	 = $(SRC_DIR)
+LINKER_DIR	 = $(ROOT)/src/main/target
 
 # Search path for sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
@@ -57,12 +57,12 @@ VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO MASSIVEF3))
 
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
-USBFS_DIR		= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
+USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 
 USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 STDPERIPH_SRC = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 
-EXCLUDES = stm32f30x_crc.c \
+EXCLUDES	= stm32f30x_crc.c \
 		stm32f30x_can.c
 
 STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
@@ -244,6 +244,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
+		   drivers/timer_stm32f10x.c \
 		   hardware_revision.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
@@ -280,6 +281,7 @@ EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
+		   drivers/timer_stm32f10x.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
@@ -307,6 +309,7 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
+		   drivers/timer_stm32f10x.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
@@ -339,6 +342,7 @@ CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
+		   drivers/timer_stm32f10x.c \
 		   $(COMMON_SRC)
 
 CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
@@ -360,6 +364,7 @@ CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
+		   drivers/timer_stm32f10x.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
@@ -381,6 +386,7 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/sound_beeper_stm32f30x.c \
 		   drivers/system_stm32f30x.c \
 		   drivers/timer.c \
+		   drivers/timer_stm32f30x.c \
 		   vcp/hw_config.c \
 		   vcp/stm32_it.c \
 		   vcp/usb_desc.c \
@@ -527,7 +533,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.s
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $< 
+	@$(CC) -c -o $@ $(ASFLAGS) $<
 
 clean:
 	rm -f $(TARGET_BIN) $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
