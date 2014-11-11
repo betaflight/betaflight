@@ -1,6 +1,6 @@
 # Serial
 
-Cleanflight has enhanced serial port flexibility but configuration is slightly more complex as a result.
+Cleanflight has enhanced serial port flexibility and configuration is slightly more complex as a result.
 
 Cleanflight has the concept of a function (MSP, GPS, Serial RX, etc) and a port (VCP, UARTx, SoftSerial x).
 Not all functions can be used on all ports due to hardware pin mapping, conflicting features, hardware and software
@@ -58,48 +58,38 @@ e.g. to use GPS enable the GPS feature.
 
 All examples assume default configuration (via cli `defaults` command)
 
-a) GPS and FrSky TELEMETRY (when armed)
+a) Parallel PWM, GPS and FrSky TELEMETRY (when armed)
 
 - TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
 - GPS on UART2
 
 ```
+feature RX_PARALLEL_PWM
 feature TELEMETRY
 feature GPS
+set serial_port_2_scenario = 2
 save
 ```
 
-b) RX SERIAL and FrSky TELEMETRY (when armed)
-
-- TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
-- RX SERIAL on UART2
-
-```
-feature -RX_PARALLEL_PWM
-feature RX_SERIAL
-feature TELEMETRY
-set serial_port_2_scenario = 3
-save
-```
-
-b) RX SERIAL and FrSky TELEMETRY via softserial
+b) Graupner SumD RX SERIAL and HoTT TELEMETRY via Softserial
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - RX SERIAL on UART2
-- TELEMETRY on SOFTSERIAL1
-
+- HoTT Telemetry on SOFTSERIAL1
 ```
 feature -RX_PARALLEL_PWM
 feature RX_SERIAL
 feature TELEMETRY
-feature SOFTSERIAL
+feature SOFTSERIAL 
 set serial_port_1_scenario = 5
+set serialrx_provider = 3
 set serial_port_2_scenario = 3
+set telemetry_provider = 1
 set serial_port_3_scenario = 4
 save
 ```
 
-c) GPS and FrSky TELEMETRY via softserial
+c) PPM RX, GPS and FrSky TELEMETRY via softserial
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - GPS on UART2
@@ -137,7 +127,7 @@ set gps_passthrough_baudrate = 19200
 save
 ```
 
-e) HoTT Telemetry via UART2
+e) PPX RX, HoTT Telemetry via UART2
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - HoTT telemetry on UART2
@@ -151,7 +141,7 @@ set serial_port_2_scenario = 4
 set telemetry_provider = 1
 ```
 
-f) GPS, HoTT Telemetry via SoftSerial 1
+f) PPM RX, GPS, HoTT Telemetry via SoftSerial 1
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - GPS on UART2
@@ -163,8 +153,34 @@ feature RX_PPM
 feature TELEMETRY
 feature GPS
 feature SOFTSERIAL
+set serial_port_2_scenario = 2
 set serial_port_3_scenario = 4
 set telemetry_provider = 1
 save
 ```
 
+g) SBus RX SERIAL 
+
+- TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
+- RX SERIAL on UART2
+
+```
+feature -RX_PARALLEL_PWM
+feature RX_SERIAL
+set serialrx_provider = 2
+set serial_port_2_scenario = 3
+save
+```
+
+h) Spektrum RX SERIAL 
+
+- TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
+- RX SERIAL on UART2
+
+```
+feature -RX_PARALLEL_PWM
+feature RX_SERIAL
+set serialrx_provider = 0
+set serial_port_2_scenario = 3
+save
+```
