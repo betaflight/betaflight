@@ -36,7 +36,7 @@ To make configuration easier common usage scenarios are listed below.
 
 ```
 0   UNUSED
-1   MSP, CLI, TELEMETRY, GPS-PASSTHROUGH
+1   MSP, CLI, TELEMETRY, SMARTPORT TELEMETRY, GPS-PASSTHROUGH
 2   GPS ONLY
 3   RX SERIAL ONLY
 4   TELEMETRY ONLY
@@ -44,6 +44,7 @@ To make configuration easier common usage scenarios are listed below.
 6   CLI ONLY
 7   GPS-PASSTHROUGH ONLY
 8   MSP ONLY
+9   SMARTPORT TELEMETRY ONLY
 ```
 
 ### Contraints
