@@ -131,7 +131,7 @@ const uint16_t frSkyDataIdTable[] = {
 #define SMARTPORT_SERVICE_DELAY_MS 5 // telemetry requests comes in at roughly 12 ms intervals, keep this under that
 #define SMARTPORT_NOT_CONNECTED_TIMEOUT_MS 7000
 
-static serialPort_t *mySerPort;
+static serialPort_t *smartPortSerialPort; // The 'SmartPort'(tm) Port.
 static telemetryConfig_t *telemetryConfig;
 static portMode_t previousPortMode;
 static uint32_t previousBaudRate;
@@ -168,11 +168,11 @@ static void smartPortSendByte(uint8_t c, uint16_t *crcp)
 {
     // smart port escape sequence
     if (c == 0x7D || c == 0x7E) {
-        serialWrite(mySerPort, 0x7D);
+        serialWrite(smartPortSerialPort, 0x7D);
         c ^= 0x20;
     }
 
-    serialWrite(mySerPort, c);
+    serialWrite(smartPortSerialPort, c);
 
     if (crcp == NULL)
         return;
@@ -216,17 +216,17 @@ void freeSmartPortTelemetryPort(void)
         return;
 
     if (isTelemetryPortShared()) {
-        endSerialPortFunction(mySerPort, FUNCTION_SMARTPORT_TELEMETRY);
+        endSerialPortFunction(smartPortSerialPort, FUNCTION_SMARTPORT_TELEMETRY);
         smartPortState = SPSTATE_DEINITIALIZED;
         serialInit(&masterConfig.serialConfig);
     }
     else {
-        serialSetMode(mySerPort, previousPortMode);
-        serialSetBaudRate(mySerPort, previousBaudRate);
-        endSerialPortFunction(mySerPort, FUNCTION_SMARTPORT_TELEMETRY);
+        serialSetMode(smartPortSerialPort, previousPortMode);
+        serialSetBaudRate(smartPortSerialPort, previousBaudRate);
+        endSerialPortFunction(smartPortSerialPort, FUNCTION_SMARTPORT_TELEMETRY);
         smartPortState = SPSTATE_DEINITIALIZED;
     }
-    mySerPort = NULL;
+    smartPortSerialPort = NULL;
 }
 
 void configureSmartPortTelemetryPort(void)
@@ -236,23 +236,23 @@ void configureSmartPortTelemetryPort(void)
         return;
     }
 
-    mySerPort = findOpenSerialPort(FUNCTION_SMARTPORT_TELEMETRY);
-    if (mySerPort) {
-        previousPortMode = mySerPort->mode;
-        previousBaudRate = mySerPort->baudRate;
+    smartPortSerialPort = findOpenSerialPort(FUNCTION_SMARTPORT_TELEMETRY);
+    if (smartPortSerialPort) {
+        previousPortMode = smartPortSerialPort->mode;
+        previousBaudRate = smartPortSerialPort->baudRate;
 
-        //waitForSerialPortToFinishTransmitting(mySerPort); // FIXME locks up the system
+        //waitForSerialPortToFinishTransmitting(smartPortPort); // FIXME locks up the system
 
-        serialSetBaudRate(mySerPort, SMARTPORT_BAUD);
-        serialSetMode(mySerPort, SMARTPORT_UART_MODE);
-        beginSerialPortFunction(mySerPort, FUNCTION_SMARTPORT_TELEMETRY);
+        serialSetBaudRate(smartPortSerialPort, SMARTPORT_BAUD);
+        serialSetMode(smartPortSerialPort, SMARTPORT_UART_MODE);
+        beginSerialPortFunction(smartPortSerialPort, FUNCTION_SMARTPORT_TELEMETRY);
     } else {
-        mySerPort = openSerialPort(FUNCTION_SMARTPORT_TELEMETRY, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, telemetryConfig->telemetry_inversion);
+        smartPortSerialPort = openSerialPort(FUNCTION_SMARTPORT_TELEMETRY, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, telemetryConfig->telemetry_inversion);
 
-        if (mySerPort) {
+        if (smartPortSerialPort) {
             smartPortState = SPSTATE_INITIALIZED;
-            previousPortMode = mySerPort->mode;
-            previousBaudRate = mySerPort->baudRate;
+            previousPortMode = smartPortSerialPort->mode;
+            previousBaudRate = smartPortSerialPort->baudRate;
         }
         else {
             // failed, resume MSP and CLI
@@ -289,8 +289,8 @@ void handleSmartPortTelemetry(void)
     if (!canSendSmartPortTelemetry())
         return;
 
-    while (serialTotalBytesWaiting(mySerPort) > 0) {
-        uint8_t c = serialRead(mySerPort);
+    while (serialTotalBytesWaiting(smartPortSerialPort) > 0) {
+        uint8_t c = serialRead(smartPortSerialPort);
         smartPortDataReceive(c);
     }
 
@@ -302,7 +302,7 @@ void handleSmartPortTelemetry(void)
         return;
     }
 
-    // limit the rate at which we send responses, we don't want to affect flight characteristics (but USART1 is using DMA so I doubt it matters)
+    // limit the rate at which we send responses, we don't want to affect flight characteristics
     if ((now - smartPortLastServiceTime) < SMARTPORT_SERVICE_DELAY_MS)
         return;
 

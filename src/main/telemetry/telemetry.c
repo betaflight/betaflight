@@ -97,7 +97,11 @@ bool canUseTelemetryWithCurrentConfiguration(void)
 
 void initTelemetry()
 {
-    telemetryPortIsShared = isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP) | isSerialPortFunctionShared(FUNCTION_SMARTPORT_TELEMETRY, FUNCTION_MSP);
+    if (isTelemetryProviderSmartPort()) {
+        telemetryPortIsShared = isSerialPortFunctionShared(FUNCTION_SMARTPORT_TELEMETRY, FUNCTION_MSP);
+    } else {
+        telemetryPortIsShared = isSerialPortFunctionShared(FUNCTION_TELEMETRY, FUNCTION_MSP);
+    }
     isTelemetryConfigurationValid = canUseTelemetryWithCurrentConfiguration();
 
     if (isTelemetryProviderFrSky()) {

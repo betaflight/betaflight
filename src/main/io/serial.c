@@ -61,7 +61,8 @@ const serialPortFunctionScenario_e serialPortScenarios[SERIAL_PORT_SCENARIO_COUN
     SCENARIO_MSP_CLI_GPS_PASTHROUGH,
     SCENARIO_CLI_ONLY,
     SCENARIO_GPS_PASSTHROUGH_ONLY,
-    SCENARIO_MSP_ONLY
+    SCENARIO_MSP_ONLY,
+    SCENARIO_SMARTPORT_TELEMETRY_ONLY
 };
 
 static serialConfig_t *serialConfig;

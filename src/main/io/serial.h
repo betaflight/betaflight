@@ -55,7 +55,7 @@ typedef enum {
     SCENARIO_SMARTPORT_TELEMETRY_ONLY           = FUNCTION_SMARTPORT_TELEMETRY
 } serialPortFunctionScenario_e;
 
-#define SERIAL_PORT_SCENARIO_COUNT 9
+#define SERIAL_PORT_SCENARIO_COUNT 10
 #define SERIAL_PORT_SCENARIO_MAX (SERIAL_PORT_SCENARIO_COUNT - 1)
 extern const serialPortFunctionScenario_e serialPortScenarios[SERIAL_PORT_SCENARIO_COUNT];
 
