@@ -135,7 +135,7 @@ static serialPort_t *mySerPort;
 static telemetryConfig_t *telemetryConfig;
 static portMode_t previousPortMode;
 static uint32_t previousBaudRate;
-extern void serialInit(serialConfig_t *); // from main.c
+extern void serialInit(serialConfig_t *); // from main.c // FIXME remove this dependency
 
 char smartPortState = SPSTATE_UNINITIALIZED;
 static uint8_t smartPortHasRequest = 0;
