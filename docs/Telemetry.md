@@ -10,7 +10,7 @@ Telemetry is enabled using the 'TELEMETRY` feature.
 feature TELEMETRY
 ```
 
-Three telemetry providers are currently supported, FrSky (the default), Graupner HoTT V4 and MultiWii Serial Protocol (MSP)
+Multiple telemetry providers are currently supported, FrSky (the default), Graupner HoTT V4, SmartPort (S.Port) and MultiWii Serial Protocol (MSP)
 
 Use the `telemetry_provider` cli command to select one.
 
@@ -19,6 +19,7 @@ Use the `telemetry_provider` cli command to select one.
 | 0     | FrSky (Default) |
 | 1     | HoTT            |
 | 2     | MSP             |
+| 3     | SmartPort       |
 
 Example:
 
@@ -43,7 +44,7 @@ For 1, just connect your inverter to a usart or software serial port.
 For 2 and 3 use the cli command as follows:
 
 ```
-set frsky_inversion = 1
+set telemetry_inversion = 1
 ```
 
 ### Notes
@@ -83,3 +84,13 @@ Note: The softserial ports are not listed as 5V tolerant in the STM32F103xx data
 MSP Telemetry simply transmitts MSP packets in sequence to any MSP device attached to the telemetry port.  It rotates though a fixes sequence of command responses.
 
 It is transmit only, it can work at any supported baud rate.
+
+## SmartPort (S.Port)
+
+Smartport is a telemetry system used by newer FrSky transmitters and receivers such as the Taranis/XJR and X8R, X6R and X4R(SB).
+
+Smartport telemetry is currently experimental, more information can be found here: https://github.com/frank26080115/cleanflight/wiki/Using-Smart-Port
+
+In time this documentation will be updated with further details.
+
+
