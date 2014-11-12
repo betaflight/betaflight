@@ -128,8 +128,7 @@ bool determineNewTelemetryEnabledState(void)
             if (isSmartPortTimedOut()) {
                 enabled = false;
             }
-        }
-        else {
+        } else {
             if (telemetryConfig->telemetry_switch)
                 enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
             else
