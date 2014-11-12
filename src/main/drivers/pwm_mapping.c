@@ -209,7 +209,7 @@ static const uint16_t multiPPM[] = {
     PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFF
+    0xFFFF
 };
 
 static const uint16_t multiPWM[] = {
@@ -223,15 +223,15 @@ static const uint16_t multiPWM[] = {
     PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFF
+    0xFFFF
 };
 
 static const uint16_t airPPM[] = {
-        0xFF
+        0xFFFF
 };
 
 static const uint16_t airPWM[] = {
-        0xFF
+        0xFFFF
 };
 
 #endif
