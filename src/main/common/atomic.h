@@ -84,7 +84,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // this macro can be used only ONCE PER LINE, but multiple uses per block are fine
 
 #if (__GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ > 8)))
-# warn "Please verify that ATOMIC_BARRIER works as intended"
+#warning "Please verify that ATOMIC_BARRIER works as intended"
 // increment version number is BARRIER works
 // TODO - use flag to disable ATOMIC_BARRIER and use full barrier instead
 // you should check that local variable scope with cleanup spans entire block
