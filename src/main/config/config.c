@@ -282,6 +282,10 @@ uint8_t getCurrentControlRateProfile(void)
     return currentControlRateProfileIndex;
 }
 
+controlRateConfig_t *getControlRateConfig(uint8_t profileIndex) {
+    return &masterConfig.controlRateProfiles[profileIndex];
+}
+
 static void setControlRateProfile(uint8_t profileIndex)
 {
     currentControlRateProfileIndex = profileIndex;

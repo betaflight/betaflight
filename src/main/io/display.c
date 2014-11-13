@@ -42,12 +42,15 @@
 #include "sensors/compass.h"
 
 #include "rx/rx.h"
+#include "io/rc_controls.h"
 
 #include "config/runtime_config.h"
 
 #include "config/config.h"
 
 #include "display.h"
+
+controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
 //#define ENABLE_DEBUG_OLED_PAGE
 
@@ -199,6 +202,9 @@ void drawRxChannel(uint8_t channelIndex, uint8_t width)
     drawHorizonalPercentageBar(width - 1, percentage);
 }
 
+#define HALF_SCREEN_CHARACTER_COLUMN_COUNT (SCREEN_CHARACTER_COLUMN_COUNT / 2)
+#define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
+
 #define RX_CHANNELS_PER_PAGE_COUNT 14
 void showRxPage(void)
 {
@@ -206,19 +212,17 @@ void showRxPage(void)
     for (uint8_t channelIndex = 0; channelIndex < rxRuntimeConfig.channelCount && channelIndex < RX_CHANNELS_PER_PAGE_COUNT; channelIndex += 2) {
         i2c_OLED_set_line((channelIndex / 2) + PAGE_TITLE_LINE_COUNT);
 
-        uint8_t width = SCREEN_CHARACTER_COLUMN_COUNT / 2;
-
-        drawRxChannel(channelIndex, width);
+        drawRxChannel(channelIndex, HALF_SCREEN_CHARACTER_COLUMN_COUNT);
 
         if (channelIndex >= rxRuntimeConfig.channelCount) {
             continue;
         }
 
-        if (width * 2 != SCREEN_CHARACTER_COLUMN_COUNT) {
+        if (IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD) {
             LCDprint(' ');
         }
 
-        drawRxChannel(channelIndex + PAGE_TITLE_LINE_COUNT, width);
+        drawRxChannel(channelIndex + PAGE_TITLE_LINE_COUNT, HALF_SCREEN_CHARACTER_COLUMN_COUNT);
     }
 }
 
@@ -239,13 +243,39 @@ void showArmedPage(void)
 
 void showProfilePage(void)
 {
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
+
     tfp_sprintf(lineBuffer, "Profile: %d", getCurrentProfile());
-    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 0);
+    i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Rate profile: %d", getCurrentControlRateProfile());
-    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 1);
+    uint8_t currentRateProfileIndex = getCurrentControlRateProfile();
+    tfp_sprintf(lineBuffer, "Rate profile: %d", currentRateProfileIndex);
+    i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
+
+    controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
+
+    tfp_sprintf(lineBuffer, "RC Expo: %d", controlRateConfig->rcExpo8);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "RC Rate: %d", controlRateConfig->rcRate8);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "R&P Rate: %d", controlRateConfig->rollPitchRate);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Yaw Rate: %d", controlRateConfig->yawRate);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
 }
 
 void showBatteryPage(void)
@@ -253,10 +283,10 @@ void showBatteryPage(void)
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
     if (feature(FEATURE_VBAT)) {
-        tfp_sprintf(lineBuffer, "Volts: %d.%d, Cells: %d", vbat / 10, vbat % 10, batteryCellCount);
+        tfp_sprintf(lineBuffer, "Volts: %d.%1d Cells: %d", vbat / 10, vbat % 10, batteryCellCount);
+        padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
-        padLineBuffer();
 
         uint8_t batteryPercentage = calculateBatteryPercentage();
         i2c_OLED_set_line(rowIndex++);
@@ -264,10 +294,10 @@ void showBatteryPage(void)
     }
 
     if (feature(FEATURE_CURRENT_METER)) {
-        tfp_sprintf(lineBuffer, "Amps: %d.%d, mAh: %d", amperage / 100, amperage % 100, mAhDrawn);
+        tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", amperage / 100, amperage % 100, mAhDrawn);
+        padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
-        padLineBuffer();
 
         uint8_t capacityPercentage = calculateBatteryCapacityRemainingPercentage();
         i2c_OLED_set_line(rowIndex++);
