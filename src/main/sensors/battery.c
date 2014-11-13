@@ -18,6 +18,8 @@
 #include "stdbool.h"
 #include "stdint.h"
 
+#include "common/maths.h"
+
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
@@ -32,7 +34,7 @@ uint8_t vbat = 0;                   // battery voltage in 0.1V steps
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
-static batteryConfig_t *batteryConfig;
+batteryConfig_t *batteryConfig;
 
 uint16_t batteryAdcToVoltage(uint16_t src)
 {
@@ -110,7 +112,14 @@ void updateCurrentMeter(int32_t lastUpdateAt)
 	mAhDrawn = mAhdrawnRaw / (3600 * 100);
 }
 
-uint32_t calculateBatteryPercentage(void)
+uint8_t calculateBatteryPercentage(void)
 {
     return (((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount);
+}
+
+uint8_t calculateBatteryCapacityRemainingPercentage(void)
+{
+    uint16_t batteryCapacity = batteryConfig->batteryCapacity;
+
+    return constrain((batteryCapacity - constrain(mAhDrawn, 0, 0xFFFF)) * 100.0 / batteryCapacity , 0, 100);
 }

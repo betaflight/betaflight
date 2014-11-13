@@ -31,6 +31,7 @@ typedef struct batteryConfig_s {
 
     // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
     uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
+    uint16_t batteryCapacity;               // mAh
 } batteryConfig_t;
 
 extern uint8_t vbat;
@@ -47,4 +48,5 @@ void batteryInit(batteryConfig_t *initialBatteryConfig);
 void updateCurrentMeter(int32_t lastUpdateAt);
 int32_t currentMeterToCentiamps(uint16_t src);
 
-uint32_t calculateBatteryPercentage(void);
+uint8_t calculateBatteryPercentage(void);
+uint8_t calculateBatteryCapacityRemainingPercentage(void);

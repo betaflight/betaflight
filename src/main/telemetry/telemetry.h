@@ -50,7 +50,6 @@ typedef struct telemetryConfig_s {
     float gpsNoFixLongitude;  
     frskyGpsCoordFormat_e frsky_coordinate_format;   
     frskyUnit_e frsky_unit; 
-    uint16_t batterySize;
 } telemetryConfig_t;
 
 void checkTelemetryState(void);

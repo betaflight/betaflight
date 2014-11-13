@@ -49,6 +49,8 @@
 
 #include "display.h"
 
+//#define ENABLE_DEBUG_OLED_PAGE
+
 #define MILLISECONDS_IN_A_SECOND (1000 * 1000)
 
 #define DISPLAY_UPDATE_FREQUENCY (MILLISECONDS_IN_A_SECOND / 10)
@@ -58,6 +60,8 @@ static uint32_t nextDisplayUpdateAt = 0;
 
 static rxConfig_t *rxConfig;
 
+#define PAGE_TITLE_LINE_COUNT 1
+
 static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 
 typedef enum {
@@ -66,8 +70,11 @@ typedef enum {
     PAGE_BATTERY,
     PAGE_SENSORS,
     PAGE_RX,
-    PAGE_PROFILE,
+    PAGE_PROFILE
+#ifdef ENABLE_DEBUG_OLED_PAGE
+    ,
     PAGE_DEBUG
+#endif
 } pageId_e;
 
 const char* pageTitles[] = {
@@ -76,18 +83,24 @@ const char* pageTitles[] = {
     "BATTERY",
     "SENSORS",
     "RX",
-    "PROFILE",
+    "PROFILE"
+#ifdef ENABLE_DEBUG_OLED_PAGE
+    ,
     "DEBUG"
+#endif
 };
 
 #define PAGE_COUNT (PAGE_RX + 1)
 
 const uint8_t cyclePageIds[] = {
     PAGE_PROFILE,
-    PAGE_DEBUG,
+    PAGE_RX,
     PAGE_BATTERY,
-    PAGE_SENSORS,
-    PAGE_RX
+    PAGE_SENSORS
+#ifdef ENABLE_DEBUG_OLED_PAGE
+    ,
+    PAGE_DEBUG,
+#endif
 };
 
 #define CYCLE_PAGE_ID_COUNT (sizeof(cyclePageIds) / sizeof(cyclePageIds[0]))
@@ -186,32 +199,37 @@ void drawRxChannel(uint8_t channelIndex, uint8_t width)
     drawHorizonalPercentageBar(width - 1, percentage);
 }
 
+#define RX_CHANNELS_PER_PAGE_COUNT 14
 void showRxPage(void)
 {
 
-    for (uint8_t channelIndex = 0; channelIndex < 8; channelIndex += 2) {
-        i2c_OLED_set_line((channelIndex / 2) + 1);
+    for (uint8_t channelIndex = 0; channelIndex < rxRuntimeConfig.channelCount && channelIndex < RX_CHANNELS_PER_PAGE_COUNT; channelIndex += 2) {
+        i2c_OLED_set_line((channelIndex / 2) + PAGE_TITLE_LINE_COUNT);
 
         uint8_t width = SCREEN_CHARACTER_COLUMN_COUNT / 2;
 
         drawRxChannel(channelIndex, width);
 
+        if (channelIndex >= rxRuntimeConfig.channelCount) {
+            continue;
+        }
+
         if (width * 2 != SCREEN_CHARACTER_COLUMN_COUNT) {
             LCDprint(' ');
         }
 
-        drawRxChannel(channelIndex + 1, width);
+        drawRxChannel(channelIndex + PAGE_TITLE_LINE_COUNT, width);
     }
 }
 
 void showWelcomePage(void)
 {
     tfp_sprintf(lineBuffer, "Rev: %s", shortGitRevision);
-    i2c_OLED_set_line(1);
+    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 0);
     i2c_OLED_send_string(lineBuffer);
 
     tfp_sprintf(lineBuffer, "Target: %s", targetName);
-    i2c_OLED_set_line(2);
+    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 1);
     i2c_OLED_send_string(lineBuffer);
 }
 
@@ -222,29 +240,44 @@ void showArmedPage(void)
 void showProfilePage(void)
 {
     tfp_sprintf(lineBuffer, "Profile: %d", getCurrentProfile());
-    i2c_OLED_set_line(1);
+    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 0);
     i2c_OLED_send_string(lineBuffer);
 
     tfp_sprintf(lineBuffer, "Rate profile: %d", getCurrentControlRateProfile());
-    i2c_OLED_set_line(2);
+    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 1);
     i2c_OLED_send_string(lineBuffer);
 }
 
 void showBatteryPage(void)
 {
-    tfp_sprintf(lineBuffer, "Volts: %d.%d, Cells: %d", vbat / 10, vbat % 10, batteryCellCount);
-    i2c_OLED_set_line(1);
-    i2c_OLED_send_string(lineBuffer);
-    padLineBuffer();
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    uint32_t batteryPercentage = calculateBatteryPercentage();
-    i2c_OLED_set_line(2);
-    drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, batteryPercentage);
+    if (feature(FEATURE_VBAT)) {
+        tfp_sprintf(lineBuffer, "Volts: %d.%d, Cells: %d", vbat / 10, vbat % 10, batteryCellCount);
+        i2c_OLED_set_line(rowIndex++);
+        i2c_OLED_send_string(lineBuffer);
+        padLineBuffer();
+
+        uint8_t batteryPercentage = calculateBatteryPercentage();
+        i2c_OLED_set_line(rowIndex++);
+        drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, batteryPercentage);
+    }
+
+    if (feature(FEATURE_CURRENT_METER)) {
+        tfp_sprintf(lineBuffer, "Amps: %d.%d, mAh: %d", amperage / 100, amperage % 100, mAhDrawn);
+        i2c_OLED_set_line(rowIndex++);
+        i2c_OLED_send_string(lineBuffer);
+        padLineBuffer();
+
+        uint8_t capacityPercentage = calculateBatteryCapacityRemainingPercentage();
+        i2c_OLED_set_line(rowIndex++);
+        drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, capacityPercentage);
+    }
 }
 
 void showSensorsPage(void)
 {
-    uint8_t rowIndex = 1;
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string("        X     Y     Z");
@@ -270,7 +303,7 @@ void showSensorsPage(void)
 #endif
 }
 
-#define PAGE_TITLE_LINE_COUNT 1
+#ifdef ENABLE_DEBUG_OLED_PAGE
 
 void showDebugPage(void)
 {
@@ -283,6 +316,7 @@ void showDebugPage(void)
         i2c_OLED_send_string(lineBuffer);
     }
 }
+#endif
 
 void updateDisplay(void)
 {
@@ -346,9 +380,11 @@ void updateDisplay(void)
         case PAGE_PROFILE:
             showProfilePage();
             break;
+#ifdef ENABLE_DEBUG_OLED_PAGE
         case PAGE_DEBUG:
             showDebugPage();
             break;
+#endif
     }
     if (!armedState) {
         updateTicker();

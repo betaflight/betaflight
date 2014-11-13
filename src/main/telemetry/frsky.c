@@ -58,6 +58,8 @@ static serialPort_t *frskyPort;
 
 static telemetryConfig_t *telemetryConfig;
 
+extern batteryConfig_t *batteryConfig;
+
 extern int16_t telemTemperature1; // FIXME dependency on mw.c
 
 #define CYCLETIME             125
@@ -181,7 +183,7 @@ static void sendThrottleOrBatterySizeAsRpm(void)
     if (ARMING_FLAG(ARMED)) {
         serialize16(rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER);
     } else {
-        serialize16((telemetryConfig->batterySize / BLADE_NUMBER_DIVIDER));
+        serialize16((batteryConfig->batteryCapacity / BLADE_NUMBER_DIVIDER));
     }
 
 }
@@ -371,12 +373,10 @@ static void sendAmperage(void)
 
 static void sendFuelLevel(void)
 {
-    uint16_t batterySize = telemetryConfig->batterySize;
-
     sendDataHead(ID_FUEL_LEVEL);
 
-    if (batterySize > 0) {
-        serialize16((uint16_t)constrain((batterySize - constrain(mAhDrawn, 0, 0xFFFF)) * 100.0 / batterySize , 0, 100));
+    if (batteryConfig->batteryCapacity > 0) {
+        serialize16((uint16_t)calculateBatteryCapacityRemainingPercentage());
     } else {
         serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
     }

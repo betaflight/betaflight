@@ -40,7 +40,7 @@ Note: When battery monitoring is enabled on the CC3D RC5 can no-longer be used f
 
 Enable the `VBAT` feature.
 
-Configure min/max cell voltages using the following CLI commands:
+Configure min/max cell voltages using the following CLI setting:
 
 `vbat_scale` - adjust this to match battery voltage to reported value.
 
@@ -55,3 +55,28 @@ set vbat_scale = 110
 set vbat_max_cell_voltage = 43
 set vbat_min_cell_voltage = 33
 ```
+
+# Current Monitoring
+
+Current monitoring (Amperage) is supported by connecting a current meter to the appropriate current meter ADC input (See Board documentation).
+
+When enabled Amps, mAh used and capacity remaining calculated and used by the telemetry and OLED display subsystems.
+
+## Configuration
+
+Enable current monitoring using the cli command
+
+```
+feature CURRENT_METER
+```
+
+Configure capacity using the `battery_capacity` setting, it takes a value in mAh.
+
+The current meter may need to be configured so that the value read at the ADC input matches actual current draw.  Just like you need a voltmeter to correctly calibrate your voltage reading you also need an ammeter to calibrate your current sensor.
+
+Use the following settings to adjust calibrtion. 
+
+`current_meter_scale`
+`current_meter_offset`
+
+If you're using an OSD that expects the multiwii current meter output value then set `multiwii_current_meter_output` to `1`.

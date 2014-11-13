@@ -56,7 +56,7 @@ bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
 
 bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
-const char rcChannelLetters[] = "AERT1234";
+const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 uint16_t rssi;                  // range: [0;1023]
 
