@@ -287,9 +287,8 @@ led 27 2,9:S:FWT
 All LEDs should face outwards from the chassis in this configuration.
 
 Note:
-This configuration is specifically designed for the Alien Spider AQ50D PRO 250mm frame.
+This configuration is specifically designed for the [Alien Spider AQ50D PRO 250mm frame](http://www.goodluckbuy.com/alien-spider-aq50d-pro-250mm-mini-quadcopter-carbon-fiber-micro-multicopter-frame.html).
 
-http://www.goodluckbuy.com/alien-spider-aq50d-pro-250mm-mini-quadcopter-carbon-fiber-micro-multicopter-frame.html
 
 ## Troubleshooting
 
