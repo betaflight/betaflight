@@ -14,10 +14,14 @@ See the Board specific sections for details of the serial ports available on the
 
 ## GUI
 
+![Cleanflight Gui](cleanflight-gui.png)
+
 The GUI tool is the preferred way of configuration.  The GUI tool also includes a terminal which
 can be used to interact with the CLI.
 
-https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
+[Cleanflight Configurator on Chrome store](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
+
+
 
 ## CLI
 
@@ -25,7 +29,7 @@ Cleanflight can also be configured by a command line interface.
 
 The CLI can be accessed via the GUI tool or by sending a single '#' character to the main serial port.
 
-To exit the CLI without saving power off the flight controller.
+To exit the CLI without saving power off the flight controller or type in 'exit'.
 
 To see a list of commands type in 'help' and press return.
 
