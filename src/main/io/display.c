@@ -128,6 +128,10 @@ typedef struct pageState_s {
 
 static pageState_t pageState;
 
+void resetDisplay(void) {
+    ug2864hsweg01InitI2C();
+}
+
 void LCDprint(uint8_t i) {
    i2c_OLED_send_char(i);
 }
@@ -188,6 +192,11 @@ void showTitle()
 
 void handlePageChange(void)
 {
+    // Some OLED displays do not respond on the first initialisation so refresh the display
+    // when the page changes in the hopes the hardware responds.  This also allows the
+    // user to power off/on the display or connect it while powered.
+    resetDisplay();
+
     i2c_OLED_clear_display_quick();
     showTitle();
 }
@@ -379,7 +388,6 @@ void updateDisplay(void)
 
         pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) || ((int32_t)(now - pageState.nextPageAt) >= 0L);
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
-            pageState.nextPageAt = now + PAGE_CYCLE_FREQUENCY;
             pageState.cycleIndex++;
             pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
             pageState.pageId = cyclePageIds[pageState.cycleIndex];
@@ -389,6 +397,7 @@ void updateDisplay(void)
     if (pageState.pageChanging) {
         handlePageChange();
         pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+        pageState.nextPageAt = now + PAGE_CYCLE_FREQUENCY;
     }
 
     switch(pageState.pageId) {
@@ -423,8 +432,9 @@ void updateDisplay(void)
 
 void displayInit(rxConfig_t *rxConfigToUse)
 {
-    delay(20);
-    ug2864hsweg01InitI2C();
+    delay(200);
+    resetDisplay();
+    delay(200);
 
     rxConfig = rxConfigToUse;
 
