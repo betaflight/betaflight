@@ -212,6 +212,7 @@ TABS.setup.initialize3D = function (compatibility) {
         'quad_x',
         'quad_x',
         'quad_x',
+        'quad_x',
         'quad_x'
     ];
 
