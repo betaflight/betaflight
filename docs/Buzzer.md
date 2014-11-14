@@ -16,15 +16,17 @@ This means the buzzer must be able to generate it's own tone simply by having po
 
 Buzzers that need an analogue or PWM signal do not work and will make clicking noises or no sound at all.
 
-Example of a known-working buzzer.
+Examples of a known-working buzzers.
 
-http://www.rapidonline.com/Audio-Visual/Hcm1205x-Miniature-Buzzer-5v-35-0055
+ * [Hcm1205x Miniature Buzzer 5v](http://www.rapidonline.com/Audio-Visual/Hcm1205x-Miniature-Buzzer-5v-35-0055)
+ * [5V Electromagnetic Active Buzzer Continuous Beep](http://www.banggood.com/10Pcs-5V-Electromagnetic-Active-Buzzer-Continuous-Beep-Continuously-p-943524.html)
+ 
 
 ## Connections
 
 ### Naze32
 
-Connect a supported buzzer directly to the BUZZ pins.  Observe polarity.
+Connect a supported buzzer directly to the BUZZ pins. Observe polarity.
 
 ### CC3D
 
@@ -32,4 +34,4 @@ Buzzer support on the CC3D requires that a buzzer circuit be created to which th
 PA15 is unused and not connected according to the CC3D Revision A schematic.
 Connecting to PA15 requires careful soldering.
 
-See the CC3D - buzzer circuir.pdf for details.
+See the [CC3D - buzzer circuir.pdf](Wiring/CC3D - buzzer circuir.pdf) for details.
