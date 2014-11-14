@@ -18,7 +18,7 @@ All targets support battery voltage monitoring unless status.
 
 ## Connections
 
-When dealing with batteries ALWAYS CHECK POLARITY!
+When dealing with batteries **ALWAYS CHECK POLARITY!**
 
 Measure expected voltages first and then connect to flight controller, connecting to the flight controller with
 incorrect voltage or reversed polarity will likely fry your flight controller.
