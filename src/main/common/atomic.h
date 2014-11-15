@@ -28,7 +28,7 @@ __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_nb(uint32_t 
 
 __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint32_t basePri)
 {
-   __ASM volatile ("\tMSR basepri_max\n, %0" : : "r" (basePri) );
+   __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
 }
 
 __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX(uint32_t basePri)
