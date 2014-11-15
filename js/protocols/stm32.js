@@ -505,13 +505,13 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
                                     self.send(array_out, 1, function (reply) {
                                         if (self.verify_response(self.status.ACK, reply)) {
-                                            // update progress bar
-                                            self.progress_bar_e.val(bytes_flashed_total / (self.hex.bytes_total * 2) * 100);
-
                                             // flash another page
                                             write();
                                         }
                                     });
+
+                                    // update progress bar
+                                    self.progress_bar_e.val(Math.round(bytes_flashed_total / (self.hex.bytes_total * 2) * 100));
                                 }
                             });
                         }
@@ -580,14 +580,14 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                                                 bytes_verified += bytes_to_read;
                                                 bytes_verified_total += bytes_to_read;
 
-                                                // update progress bar
-                                                self.progress_bar_e.val((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100);
-
                                                 // verify another page
                                                 reading();
                                             });
                                         }
                                     });
+
+                                    // update progress bar
+                                    self.progress_bar_e.val(Math.round((self.hex.bytes_total + bytes_verified_total) / (self.hex.bytes_total * 2) * 100));
                                 }
                             });
                         }
@@ -665,10 +665,6 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
             // close connection
             serial.disconnect(function (result) {
-                if (result) { // All went as expected
-                } else { // Something went wrong
-                }
-
                 PortUsage.reset();
 
                 // unlocking connect button
@@ -682,7 +678,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
                 console.log('Script finished after: ' + (timeSpent / 1000) + ' seconds');
 
-                if (self.callback) callback();
+                if (self.callback) self.callback();
             });
             break;
     }

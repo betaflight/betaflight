@@ -474,7 +474,7 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
 
             console.log('Script finished after: ' + (timeSpent / 1000) + ' seconds');
 
-            if (self.callback) callback();
+            if (self.callback) self.callback();
             break;
     }
 };
