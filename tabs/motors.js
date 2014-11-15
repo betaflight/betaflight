@@ -155,7 +155,7 @@ TABS.motors.initialize = function (callback) {
         var raw_data_text_ements = {
             x: [],
             y: [],
-            z: [],
+            z: []
         };
 
         $('.plot_control .x, .plot_control .y, .plot_control .z').each(function () {
@@ -211,7 +211,7 @@ TABS.motors.initialize = function (callback) {
                 var accel_with_offset = [
                     accel_offset[0] + SENSOR_DATA.accelerometer[0],
                     accel_offset[1] + SENSOR_DATA.accelerometer[1],
-                    accel_offset[2] + SENSOR_DATA.accelerometer[2],
+                    accel_offset[2] + SENSOR_DATA.accelerometer[2]
                 ];
 
                 updateGraphHelperSize(accelHelpers);

@@ -260,7 +260,7 @@ TABS.sensors.initialize = function (callback) {
         var raw_data_text_ements = {
             x: [],
             y: [],
-            z: [],
+            z: []
         };
         $('.plot_control .x, .plot_control .y, .plot_control .z').each(function () {
             var el = $(this);
