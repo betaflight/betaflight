@@ -42,18 +42,17 @@ TABS.firmware_flasher.initialize = function (callback) {
                 }
             }
 
-            // reorder the array by time
+            // reorder the array by time, TODO needs more testing
             releases.sort(function (a, b) {
-                return b.time - a.time;
-            });
-
-            // reorder the array by release flag TODO needs to be tested
-            releases.sort(function (a, b) {
-                if (a.release < b.release) {
+                // stable releases always go first
+                if (a.release > b.release) {
+                    return -1;
+                } else if (a.release < b.release) {
                     return 1;
-                } else {
-                    return 0;
                 }
+
+                // sort by time
+                return b.time - a.time;
             });
 
             // populate select
