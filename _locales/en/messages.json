@@ -149,7 +149,7 @@
         "message": "Request Optional Permissions"
     },
     "defaultWelcomeText": {
-        "message": "Welcome to <strong>Baseflight - Configurator</strong>, utility designed to simplify updating, configuring and tuning of your flight controller.<br />Application supports complete family of Baseflight hardware (acro naze, naze32, naze32pro and afromini).<br /><br />&bull; Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com/\" target=\"_blank\">here</a><br />"
+        "message": "Welcome to <strong>Baseflight - Configurator</strong>, utility designed to simplify updating, configuring and tuning of your flight controller.<br />Application supports complete family of Baseflight hardware (acro naze, naze32, naze32pro and afromini).<br /><br />&bull; <strong>Baseflight</strong> wiki can be found <a href=\"https://github.com/multiwii/baseflight/wiki\" title=\"www.github.com\" target=\"_blank\">here</a><br />&bull; Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"www.silabs.com\" target=\"_blank\">here</a><br />"
     },
     "defaultChangelogHead": {
         "message": "Configurator - Changelog"
