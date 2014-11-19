@@ -59,7 +59,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             {name: 'PPM to SERVO', image: 'custom'},
             {name: 'Dualcopter', image: 'custom'},
             {name: 'Singlecopter', image: 'custom'},
-            {name: 'A-tail Quad', image: 'custom'},
+            {name: 'A-tail Quad', image: 'atail_quad'},
             {name: 'Custom', image: 'custom'}
         ];
 
