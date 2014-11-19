@@ -190,7 +190,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
     if (gpsConfig->provider == GPS_NMEA)
-        mode = MODE_RX;
+        mode &= ~MODE_TX;
 
     // no callback - buffer will be consumed in gpsThread()
     gpsPort = openSerialPort(FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrate, mode, SERIAL_NOT_INVERTED);
@@ -870,6 +870,8 @@ gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
             return GPS_PASSTHROUGH_NO_SERIAL_PORT;
         }
     }
+    if(!(gpsPort->mode & MODE_TX))
+        serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
     LED0_OFF;
     LED1_OFF;
