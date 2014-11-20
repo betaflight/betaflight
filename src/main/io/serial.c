@@ -268,10 +268,8 @@ serialPortSearchResult_t *findNextSerialPort(serialPortFunction_e function, cons
 
 #endif
 
-        if (functionConstraint->requiredSerialPortFeatures != SPF_NONE) {
-            if (!(serialPortConstraint->feature & functionConstraint->requiredSerialPortFeatures)) {
-                continue;
-            }
+        if ((serialPortConstraint->feature & functionConstraint->requiredSerialPortFeatures) != functionConstraint->requiredSerialPortFeatures) {
+            continue;
         }
 
         if (functionConstraint->minBaudRate < serialPortConstraint->minBaudRate || functionConstraint->maxBaudRate > serialPortConstraint->maxBaudRate) {
