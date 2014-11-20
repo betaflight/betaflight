@@ -193,7 +193,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
     addGPSCoordinates(hottGPSMessage, GPS_coord[LAT], GPS_coord[LON]);
 
     // GPS Speed in km/h
-    uint16_t speed = (GPS_speed / 100) * 36; // 0->1m/s * 0->36 = km/h
+    uint16_t speed = (GPS_speed * 36) / 100; // 0->1m/s * 0->36 = km/h
     hottGPSMessage->gps_speed_L = speed & 0x00FF;
     hottGPSMessage->gps_speed_H = speed >> 8;
 
