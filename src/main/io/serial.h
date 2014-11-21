@@ -87,16 +87,15 @@ typedef enum {
 #define SERIAL_PORT_IDENTIFIER_COUNT 5
 #else
 
-#ifdef CCD3
+#ifdef CC3D
 
 typedef enum {
-    SERIAL_PORT_USART1,
+    SERIAL_PORT_USART1 = 0,
     SERIAL_PORT_USART3,
     SERIAL_PORT_SOFTSERIAL1,
-    SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;
 
-#define SERIAL_PORT_IDENTIFIER_COUNT 4
+#define SERIAL_PORT_IDENTIFIER_COUNT 3
 #else
 
 typedef enum {

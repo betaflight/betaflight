@@ -252,6 +252,12 @@ serialPortSearchResult_t *findNextSerialPort(serialPortFunction_e function, cons
         uint8_t serialPortIndex = lookupSerialPortIndexByIdentifier(serialPortFunction->identifier);
         const serialPortConstraint_t *serialPortConstraint = &serialPortConstraints[serialPortIndex];
 
+#if defined(CC3D)
+        if (!feature(FEATURE_SOFTSERIAL) && (
+                serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL1)) {
+            continue;
+        }
+#else
 #if defined(USE_SOFTSERIAL1) ||(defined(USE_SOFTSERIAL2))
         if (!feature(FEATURE_SOFTSERIAL) && (
                 serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL1 ||
@@ -259,13 +265,12 @@ serialPortSearchResult_t *findNextSerialPort(serialPortFunction_e function, cons
         )) {
             continue;
         }
-
+#endif
 #if (defined(NAZE) || defined(OLIMEXINO)) && defined(SONAR)
         if (feature(FEATURE_SONAR) && !feature(FEATURE_RX_PARALLEL_PWM) && (serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2)) {
             continue;
         }
 #endif
-
 #endif
 
         if (functionConstraint->requiredSerialPortFeatures != SPF_NONE) {
