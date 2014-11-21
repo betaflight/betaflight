@@ -1,11 +1,12 @@
 'use strict';
 
 var serial = {
-    connectionId:      -1,
-    bitrate:            0,
-    bytes_received:     0,
-    bytes_sent:         0,
-    failed:             0,
+    connectionId:   -1,
+    canceled:        false,
+    bitrate:         0,
+    bytes_received:  0,
+    bytes_sent:      0,
+    failed:          0,
 
     transmitting:   false,
     output_buffer:  [],
@@ -14,7 +15,7 @@ var serial = {
         var self = this;
 
         chrome.serial.connect(path, options, function (connectionInfo) {
-            if (connectionInfo) {
+            if (connectionInfo && !self.canceled) {
                 self.connectionId = connectionInfo.connectionId;
                 self.bitrate = connectionInfo.bitrate;
                 self.bytes_received = 0;
@@ -75,6 +76,24 @@ var serial = {
                 console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', Baud: ' + connectionInfo.bitrate);
 
                 if (callback) callback(connectionInfo);
+            } else if (connectionInfo && self.canceled) {
+                // connection opened, but this connect sequence was canceled
+                // we will disconnect without triggering any callbacks
+                self.connectionId = connectionInfo.connectionId;
+                console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', but request was canceled, disconnecting');
+
+                // some bluetooth dongles/dongle drivers really doesn't like to be closed instantly, adding a small delay
+                setTimeout(function initialization() {
+                    self.canceled = false;
+                    self.disconnect(function resetUI() {
+                        if (callback) callback(false);
+                    });
+                }, 150);
+            } else if (self.canceled) {
+                // connection didn't open and sequence was canceled, so we will do nothing
+                console.log('SERIAL: Connection didn\'t open and request was canceled');
+                self.canceled = false;
+                if (callback) callback(false);
             } else {
                 console.log('SERIAL: Failed to open serial port');
                 googleAnalytics.sendException('Serial: FailedToOpen', false);
@@ -85,32 +104,36 @@ var serial = {
     disconnect: function (callback) {
         var self = this;
 
-        self.empty_output_buffer();
+        if (self.connectionId > -1) {
+            self.empty_output_buffer();
 
-        // remove listeners
-        for (var i = (self.onReceive.listeners.length - 1); i >= 0; i--) {
-            self.onReceive.removeListener(self.onReceive.listeners[i]);
-        }
-
-        for (var i = (self.onReceiveError.listeners.length - 1); i >= 0; i--) {
-            self.onReceiveError.removeListener(self.onReceiveError.listeners[i]);
-        }
-
-        chrome.serial.disconnect(this.connectionId, function (result) {
-            if (result) {
-                console.log('SERIAL: Connection with ID: ' + self.connectionId + ' closed');
-            } else {
-                console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed');
-                googleAnalytics.sendException('Serial: FailedToClose', false);
+            // remove listeners
+            for (var i = (self.onReceive.listeners.length - 1); i >= 0; i--) {
+                self.onReceive.removeListener(self.onReceive.listeners[i]);
             }
 
-            console.log('SERIAL: Statistics - Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
+            for (var i = (self.onReceiveError.listeners.length - 1); i >= 0; i--) {
+                self.onReceiveError.removeListener(self.onReceiveError.listeners[i]);
+            }
 
-            self.connectionId = -1;
-            self.bitrate = 0;
+            chrome.serial.disconnect(this.connectionId, function (result) {
+                if (result) {
+                    console.log('SERIAL: Connection with ID: ' + self.connectionId + ' closed, Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
+                } else {
+                    console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed, Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
+                    googleAnalytics.sendException('Serial: FailedToClose', false);
+                }
 
-            if (callback) callback(result);
-        });
+                self.connectionId = -1;
+                self.bitrate = 0;
+
+                if (callback) callback(result);
+            });
+        } else {
+            // connection wasn't opened, so we won't try to close anything
+            // instead we will rise canceled flag which will prevent connect from continueing further after being canceled
+            self.canceled = true;
+        }
     },
     getDevices: function (callback) {
         chrome.serial.getDevices(function (devices_array) {
