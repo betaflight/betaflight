@@ -2,7 +2,7 @@
 
 ## Procedure
 
-First ensure your main flight battery is disconnected or your props are off!
+**First ensure your main flight battery is disconnected or your props are off!**
 
 Before flashing with cleanflight, dump your configs for each profile via the CLI and save to a text file.
 

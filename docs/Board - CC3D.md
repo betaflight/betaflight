@@ -5,7 +5,7 @@ auto-piloting.  It only has one sensor, the MPU6000 SPI based Accelerometer/Gyro
 It also features a 16mbit SPI based EEPROM chip.  It has 6 ports labelled as inputs (one pin each)
 and 6 ports labelled as motor/servo outputs (3 pins each).
 
-If issues are found with this board please report via the github issue tracker.
+If issues are found with this board please report via the [github issue tracker](https://github.com/cleanflight/cleanflight/issues).
 
 The board has a USB port directly connected to the processor.  Other boards like the Naze and Flip32
 have an on-board USB to uart adapter which connect to the processor's serial port instead.
@@ -13,7 +13,7 @@ have an on-board USB to uart adapter which connect to the processor's serial por
 Currently there is no support for virtual com port functionality on the CC3D which means that cleanflight
 does not currently use the USB socket at all.
 
-The board cannot current be used for hexacopters/octocopters.
+The board cannot currently be used for hexacopters/octocopters.
 
 Tricopter & Airplane support is untested, please report success failure if you try it. 
 

@@ -15,37 +15,25 @@ You may find a momentary switch more suitable than a toggle switch.
 
 Turn off the autotune switch.  If the autotune switch is on while not armed the warning LED will flash and you cannot arm.
 
-Launch the multirotor.
+1. Launch the multirotor.
 
-Turn on/hold the autotune switch on your transmitter.
+1. Turn on/hold the autotune switch on your transmitter. Observe roll left/right.  A beep code will sound on the beeper.
 
-Observe roll left/right.  A beep code will sound on the beeper.
+1. Turn off/release the switch while still flying to stop this phase of tuning. PID settings will have been updated for ROLL/YAW.
 
-Turn off/release the switch while still flying to stop this phase of tuning.
+1. Turn on/hold the switch again. Observe pitch forwards/backwards.  A beep code will sound on the beeper.
 
-PID settings will have been updated for ROLL/YAW.
+1. Turn off/release the switch while still flying to stop this phase of tuning. PID settings will have been updated for PITCH/YAW.
 
-Turn on/hold the switch again.
+1. PIDS are updated, fly and see if it's better.
 
-Observe pitch forwards/backwards.  A beep code will sound on the beeper.
+1. If it's worse, flip the switch again to restore previous pids that were present prior to arming.
 
-Turn off/release the switch while still flying to stop this phase of tuning.
+1. Land.
 
-PID settings will have been updated for PITCH/YAW.
+1. Verify results via an app while power still applied if desired. Cutting the power will loose the unsaved pids.
 
-PIDS are updated, fly and see if it's better.
-
-If it's worse, flip the switch again to restore previous pids that were present prior to arming.
-
-Land.
-
-Verify results via an app while power still applied if desired.
-
-Cutting the power will loose the unsaved pids.
-
-If you're happy with the pids then while disarmed flip the autotune switch again to save all settings then flip it back so you can arm again.
-
-A beeper will sound indicating the settings are saved.
+1. If you're happy with the pids then while disarmed flip the autotune switch again to save all settings then flip it back so you can arm again. A beeper will sound indicating the settings are saved.
 
 
 # References
