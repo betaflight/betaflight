@@ -211,7 +211,7 @@ static void sendSatalliteSignalQualityAsTemperature2(void)
     } else {
         float tmp = (satellite - 32) / 1.8;
         //Round the value
-        tmp += (tmp < 0) ? -0.5 : 0.5;
+        tmp += (tmp < 0) ? -0.5f : 0.5f;
         serialize16(tmp);
     }
 }

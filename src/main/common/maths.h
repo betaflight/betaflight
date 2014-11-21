@@ -21,9 +21,11 @@
 #define sq(x) ((x)*(x))
 #endif
 
-#ifndef M_PI
+#ifdef M_PI
+// M_PI should be float, but previous definition may be double
+# undef M_PI
+#endif
 #define M_PI       3.14159265358979323846f
-#endif /* M_PI */
 
 #define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
 #define RAD    (M_PI / 180.0f)
