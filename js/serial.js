@@ -5,8 +5,8 @@ var serial = {
     openRequested:   false,
     openCanceled:    false,
     bitrate:         0,
-    bytesReceived:  0,
-    bytesSent:      0,
+    bytesReceived:   0,
+    bytesSent:       0,
     failed:          0,
 
     transmitting:   false,
