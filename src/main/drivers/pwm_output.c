@@ -27,6 +27,8 @@
 
 #include "flight/failsafe.h" // FIXME dependency into the main code from a driver
 
+#include "config/config.h" // FIXME dependency into the main code from a driver
+
 #include "pwm_mapping.h"
 
 #include "pwm_output.h"
@@ -35,6 +37,7 @@ typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function poi
 
 typedef struct {
     volatile timCCR_t *ccr;
+    volatile timCNT_t *cnt;
     uint16_t period;
     pwmWriteFuncPtr pwmWritePtr;
 } pwmOutputPort_t;
@@ -43,6 +46,7 @@ static pwmOutputPort_t pwmOutputPorts[MAX_PWM_OUTPUT_PORTS];
 
 static pwmOutputPort_t *motors[MAX_PWM_MOTORS];
 static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
+static volatile uint16_t* lastCounterPtr;
 
 #define PWM_BRUSHED_TIMER_MHZ 8
 
@@ -116,6 +120,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
             break;
     }
     p->period = period;
+    p->cnt = &timerHardware->tim->CNT;
 
     return p;
 }
@@ -127,13 +132,30 @@ static void pwmWriteBrushed(uint8_t index, uint16_t value)
 
 static void pwmWriteStandard(uint8_t index, uint16_t value)
 {
-    *motors[index]->ccr = value;
+	*motors[index]->ccr = value;
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
     if (motors[index] && index < MAX_MOTORS)
         motors[index]->pwmWritePtr(index, value);
+}
+
+void pwmFinishedWritingMotors(uint8_t numberMotors)
+{
+	uint8_t index;
+
+	if(feature(FEATURE_ONESHOT125)){
+
+		for(index = 0; index < numberMotors; index++){
+			// Set the counter to overflow if it's the first motor to output, or if we change timers
+			if((index == 0) || (motors[index]->cnt != lastCounterPtr)){
+				lastCounterPtr = motors[index]->cnt;
+
+				*motors[index]->cnt = 0xfffe;
+			}
+		}
+	}
 }
 
 void pwmWriteServo(uint8_t index, uint16_t value)
@@ -154,7 +176,13 @@ void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIn
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse)
 {
 	uint32_t hz = PWM_TIMER_MHZ * 1000000;
-	motors[motorIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, hz / motorPwmRate, idlePulse);
+
+	if(feature(FEATURE_ONESHOT125)){
+		motors[motorIndex] = pwmOutConfig(timerHardware, ONESHOT125_TIMER_MHZ, 0xFFFF, idlePulse);
+	} else {
+		motors[motorIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, hz / motorPwmRate, idlePulse);
+	}
+
 	motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
 }
 
