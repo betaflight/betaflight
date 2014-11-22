@@ -25,7 +25,7 @@ function startApplication() {
                 valid_connection = createdWindow.contentWindow.CONFIGURATOR.connectionValid,
                 mincommand = createdWindow.contentWindow.MISC.mincommand;
 
-            if (connectionId > 0 && valid_connection) {
+            if (connectionId && valid_connection) {
                 // code below is handmade MSP message (without pretty JS wrapper), it behaves exactly like MSP.send_message
                 // reset motors to default (mincommand)
                 var bufferOut = new ArrayBuffer(22),
@@ -55,7 +55,7 @@ function startApplication() {
                         console.log('SERIAL: Connection closed - ' + result);
                     });
                 });
-            } else if (connectionId > 0) {
+            } else if (connectionId) {
                 chrome.serial.disconnect(connectionId, function (result) {
                     console.log('SERIAL: Connection closed - ' + result);
                 });

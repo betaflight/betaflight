@@ -1,29 +1,36 @@
 'use strict';
 
 var serial = {
-    connectionId:   -1,
-    canceled:        false,
+    connectionId:    false,
+    openRequested:   false,
+    openCanceled:    false,
     bitrate:         0,
-    bytes_received:  0,
-    bytes_sent:      0,
+    bytesReceived:  0,
+    bytesSent:      0,
     failed:          0,
 
     transmitting:   false,
-    output_buffer:  [],
+    outputBuffer:  [],
 
     connect: function (path, options, callback) {
         var self = this;
+        self.openRequested = true;
 
         chrome.serial.connect(path, options, function (connectionInfo) {
-            if (connectionInfo && !self.canceled) {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError.message);
+            }
+
+            if (connectionInfo && !self.openCanceled) {
                 self.connectionId = connectionInfo.connectionId;
                 self.bitrate = connectionInfo.bitrate;
-                self.bytes_received = 0;
-                self.bytes_sent = 0;
+                self.bytesReceived = 0;
+                self.bytesSent = 0;
                 self.failed = 0;
+                self.openRequested = false;
 
-                self.onReceive.addListener(function log_bytes_received(info) {
-                    self.bytes_received += info.data.byteLength;
+                self.onReceive.addListener(function log_bytesReceived(info) {
+                    self.bytesReceived += info.data.byteLength;
                 });
 
                 self.onReceiveError.addListener(function watch_for_on_receive_errors(info) {
@@ -76,7 +83,7 @@ var serial = {
                 console.log('SERIAL: Connection opened with ID: ' + connectionInfo.connectionId + ', Baud: ' + connectionInfo.bitrate);
 
                 if (callback) callback(connectionInfo);
-            } else if (connectionInfo && self.canceled) {
+            } else if (connectionInfo && self.openCanceled) {
                 // connection opened, but this connect sequence was canceled
                 // we will disconnect without triggering any callbacks
                 self.connectionId = connectionInfo.connectionId;
@@ -84,17 +91,20 @@ var serial = {
 
                 // some bluetooth dongles/dongle drivers really doesn't like to be closed instantly, adding a small delay
                 setTimeout(function initialization() {
-                    self.canceled = false;
+                    self.openRequested = false;
+                    self.openCanceled = false;
                     self.disconnect(function resetUI() {
                         if (callback) callback(false);
                     });
                 }, 150);
-            } else if (self.canceled) {
+            } else if (self.openCanceled) {
                 // connection didn't open and sequence was canceled, so we will do nothing
                 console.log('SERIAL: Connection didn\'t open and request was canceled');
-                self.canceled = false;
+                self.openRequested = false;
+                self.openCanceled = false;
                 if (callback) callback(false);
             } else {
+                self.openRequested = false;
                 console.log('SERIAL: Failed to open serial port');
                 googleAnalytics.sendException('Serial: FailedToOpen', false);
                 if (callback) callback(false);
@@ -104,8 +114,8 @@ var serial = {
     disconnect: function (callback) {
         var self = this;
 
-        if (self.connectionId > -1) {
-            self.empty_output_buffer();
+        if (self.connectionId) {
+            self.empty_outputBuffer();
 
             // remove listeners
             for (var i = (self.onReceive.listeners.length - 1); i >= 0; i--) {
@@ -117,14 +127,18 @@ var serial = {
             }
 
             chrome.serial.disconnect(this.connectionId, function (result) {
+                if (chrome.runtime.lastError) {
+                    console.error(chrome.runtime.lastError.message);
+                }
+
                 if (result) {
-                    console.log('SERIAL: Connection with ID: ' + self.connectionId + ' closed, Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
+                    console.log('SERIAL: Connection with ID: ' + self.connectionId + ' closed, Sent: ' + self.bytesSent + ' bytes, Received: ' + self.bytesReceived + ' bytes');
                 } else {
-                    console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed, Sent: ' + self.bytes_sent + ' bytes, Received: ' + self.bytes_received + ' bytes');
+                    console.log('SERIAL: Failed to close connection with ID: ' + self.connectionId + ' closed, Sent: ' + self.bytesSent + ' bytes, Received: ' + self.bytesReceived + ' bytes');
                     googleAnalytics.sendException('Serial: FailedToClose', false);
                 }
 
-                self.connectionId = -1;
+                self.connectionId = false;
                 self.bitrate = 0;
 
                 if (callback) callback(result);
@@ -132,7 +146,7 @@ var serial = {
         } else {
             // connection wasn't opened, so we won't try to close anything
             // instead we will rise canceled flag which will prevent connect from continueing further after being canceled
-            self.canceled = true;
+            self.openCanceled = true;
         }
     },
     getDevices: function (callback) {
@@ -156,47 +170,46 @@ var serial = {
     },
     send: function (data, callback) {
         var self = this;
-        this.output_buffer.push({'data': data, 'callback': callback});
+        this.outputBuffer.push({'data': data, 'callback': callback});
+
+        function send() {
+            // store inside separate variables in case array gets destroyed
+            var data = self.outputBuffer[0].data,
+                callback = self.outputBuffer[0].callback;
+
+            chrome.serial.send(self.connectionId, data, function (sendInfo) {
+                // track sent bytes for statistics
+                self.bytesSent += sendInfo.bytesSent;
+
+                // fire callback
+                if (callback) callback(sendInfo);
+
+                // remove data for current transmission form the buffer
+                self.outputBuffer.shift();
+
+                // if there is any data in the queue fire send immediately, otherwise stop trasmitting
+                if (self.outputBuffer.length) {
+                    // keep the buffer withing reasonable limits
+                    if (self.outputBuffer.length > 100) {
+                        var counter = 0;
+
+                        while (self.outputBuffer.length > 100) {
+                            self.outputBuffer.pop();
+                            counter++;
+                        }
+
+                        console.log('SERIAL: Send buffer overflowing, dropped: ' + counter + ' entries');
+                    }
+
+                    send();
+                } else {
+                    self.transmitting = false;
+                }
+            });
+        }
 
         if (!this.transmitting) {
             this.transmitting = true;
-
-            var send = function () {
-                // store inside separate variables in case array gets destroyed
-                var data = self.output_buffer[0].data,
-                    callback = self.output_buffer[0].callback;
-
-                chrome.serial.send(self.connectionId, data, function (sendInfo) {
-                    // track sent bytes for statistics
-                    self.bytes_sent += sendInfo.bytesSent;
-
-                    // fire callback
-                    if (callback) callback(sendInfo);
-
-                    // remove data for current transmission form the buffer
-                    self.output_buffer.shift();
-
-                    // if there is any data in the queue fire send immediately, otherwise stop trasmitting
-                    if (self.output_buffer.length) {
-                        // keep the buffer withing reasonable limits
-                        if (self.output_buffer.length > 100) {
-                            var counter = 0;
-
-                            while (self.output_buffer.length > 100) {
-                                self.output_buffer.pop();
-                                counter++;
-                            }
-
-                            console.log('SERIAL: Send buffer overflowing, dropped: ' + counter + ' entries');
-                        }
-
-                        send();
-                    } else {
-                        self.transmitting = false;
-                    }
-                });
-            };
-
             send();
         }
     },
@@ -236,8 +249,8 @@ var serial = {
             }
         }
     },
-    empty_output_buffer: function () {
-        this.output_buffer = [];
+    empty_outputBuffer: function () {
+        this.outputBuffer = [];
         this.transmitting = false;
     }
 };
