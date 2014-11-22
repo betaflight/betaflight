@@ -34,8 +34,8 @@ $(document).ready(function () {
         // handle window resize
         var resizeHandler = function () {
             self.element.css({
-                'top': (window.innerHeight - dialog.height()) / 3,
-                'left': (window.innerWidth - dialog.width()) / 2
+                'top': (window.innerHeight - self.element.height()) / 3,
+                'left': (window.innerWidth - self.element.width()) / 2
             });
         };
 
