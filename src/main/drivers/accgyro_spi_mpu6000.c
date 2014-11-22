@@ -38,6 +38,8 @@
 #include "accgyro.h"
 #include "accgyro_spi_mpu6000.h"
 
+static bool mpuSpi6000InitDone = false;
+
 // Registers
 #define MPU6000_PRODUCT_ID      	0x0C
 #define MPU6000_SMPLRT_DIV	    	0x19
@@ -154,25 +156,26 @@ bool mpu6000SpiDetect(void)
 {
     uint8_t in;
 
+    if (mpuSpi6000InitDone) {
+        return true;
+    }
+
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
+
+    mpu6000WriteRegister(MPU6000_PWR_MGMT_1, BIT_H_RESET);
+    delay(150);
 
     mpu6000ReadRegister(MPU6000_WHOAMI, &in, 1);
     if (in != MPU6000_WHO_AM_I_CONST)
         return false;
 
-    return true;
-#if 0
-    // FIXME this isn't working, not debugged yet.
-    uint8_t product;
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
-
-    mpu6000ReadRegister(MPU6000_PRODUCT_ID, &product, 1);
+    mpu6000ReadRegister(MPU6000_PRODUCT_ID, &in, 1);
 
     /* look for a product ID we recognise */
 
     // verify product revision
-    switch (product) {
+    switch (in) {
         case MPU6000ES_REV_C4:
         case MPU6000ES_REV_C5:
         case MPU6000_REV_C4:
@@ -189,14 +192,11 @@ bool mpu6000SpiDetect(void)
     }
 
     return false;
-#endif
 }
-
-static bool initDone = false;
 
 void mpu6000AccAndGyroInit() {
 
-    if (initDone) {
+    if (mpuSpi6000InitDone) {
         return;
     }
 
@@ -233,7 +233,7 @@ void mpu6000AccAndGyroInit() {
     mpu6000WriteRegister(MPU6000_GYRO_CONFIG, BITS_FS_2000DPS);
     delayMicroseconds(1);
 
-    initDone = true;
+    mpuSpi6000InitDone = true;
 }
 
 bool mpu6000SpiAccDetect(acc_t *acc)
