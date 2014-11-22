@@ -560,45 +560,64 @@ typedef enum {
     WARNING_FLAG_ARMING_DISABLED = (1 << 2)
 } warningFlags_e;
 
-void applyLedWarningLayer(uint8_t warningState, uint8_t warningFlags)
+static uint8_t warningFlags = WARNING_FLAG_NONE;
+
+void applyLedWarningLayer(uint8_t updateNow)
 {
     const ledConfig_t *ledConfig;
+    uint8_t ledIndex;
     static uint8_t warningFlashCounter = 0;
 
-    if (warningState) {
-        warningFlashCounter++;
-        warningFlashCounter = warningFlashCounter % 4;
+    debug[0] = warningFlashCounter;
+
+
+    if (updateNow && warningFlashCounter == 0) {
+        warningFlags = WARNING_FLAG_NONE;
+        if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
+            warningFlags |= WARNING_FLAG_LOW_BATTERY;
+        }
+        if (failsafe->vTable->hasTimerElapsed()) {
+            warningFlags |= WARNING_FLAG_FAILSAFE;
+        }
+        if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM)) {
+            warningFlags |= WARNING_FLAG_ARMING_DISABLED;
+        }
     }
 
-    uint8_t ledIndex;
-    for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+    if (warningFlags || warningFlashCounter > 0) {
+        const hsvColor_t *warningColor = &hsv_black;
 
-        ledConfig = &ledConfigs[ledIndex];
-
-        if (!(ledConfig->flags & LED_FUNCTION_WARNING)) {
-            continue;
+        if ((warningFlashCounter & 1) == 0) {
+            if (warningFlashCounter < 4 && (warningFlags & WARNING_FLAG_ARMING_DISABLED)) {
+                warningColor = &hsv_green;
+            }
+            if (warningFlashCounter >= 4 && warningFlashCounter < 12 && (warningFlags & WARNING_FLAG_LOW_BATTERY)) {
+                warningColor = &hsv_red;
+            }
+            if (warningFlashCounter >= 12 && warningFlashCounter < 16 && (warningFlags & WARNING_FLAG_FAILSAFE)) {
+                warningColor = &hsv_yellow;
+            }
+        }  else {
+            if (warningFlashCounter >= 12 && warningFlashCounter < 16 && (warningFlags & WARNING_FLAG_FAILSAFE)) {
+                warningColor = &hsv_blue;
+            }
         }
 
-        if (warningState == 0) {
-            if (warningFlashCounter == 0 && (warningFlags & WARNING_FLAG_ARMING_DISABLED)) {
-                setLedHsv(ledIndex, &hsv_yellow);
+        for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+
+            ledConfig = &ledConfigs[ledIndex];
+
+            if (!(ledConfig->flags & LED_FUNCTION_WARNING)) {
+                continue;
             }
-            if (warningFlashCounter == 1 && (warningFlags & WARNING_FLAG_LOW_BATTERY)) {
-                setLedHsv(ledIndex, &hsv_red);
-            }
-            if (warningFlashCounter > 1 && (warningFlags & WARNING_FLAG_FAILSAFE)) {
-                setLedHsv(ledIndex, &hsv_lightBlue);
-            }
-        } else {
-            if (warningFlashCounter == 0 && (warningFlags & WARNING_FLAG_ARMING_DISABLED)) {
-                setLedHsv(ledIndex, &hsv_black);
-            }
-            if (warningFlashCounter == 1 && (warningFlags & WARNING_FLAG_LOW_BATTERY)) {
-                setLedHsv(ledIndex, &hsv_black);
-            }
-            if (warningFlashCounter > 1 && (warningFlags & WARNING_FLAG_FAILSAFE)) {
-                setLedHsv(ledIndex, &hsv_limeGreen);
-            }
+            setLedHsv(ledIndex, warningColor);
+        }
+    }
+
+    if (updateNow && (warningFlags || warningFlashCounter)) {
+        warningFlashCounter++;
+        if (warningFlashCounter == 20) {
+            warningFlashCounter = 0;
         }
     }
 }
@@ -731,8 +750,6 @@ void updateLedStrip(void)
     }
 
     static uint8_t indicatorFlashState = 0;
-    static uint8_t warningState = 0;
-    static uint8_t warningFlags;
 
     // LAYER 1
     applyLedModeLayer();
@@ -742,29 +759,8 @@ void updateLedStrip(void)
 
     if (warningFlashNow) {
         nextWarningFlashAt = now + LED_STRIP_10HZ;
-
-        if (warningState == 0) {
-            warningState = 1;
-
-            warningFlags = WARNING_FLAG_NONE;
-            if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
-                warningFlags |= WARNING_FLAG_LOW_BATTERY;
-            }
-            if (failsafe->vTable->hasTimerElapsed()) {
-                warningFlags |= WARNING_FLAG_FAILSAFE;
-            }
-            if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM)) {
-                warningFlags |= WARNING_FLAG_ARMING_DISABLED;
-            }
-
-        } else {
-            warningState = 0;
-        }
     }
-
-    if (warningFlags) {
-        applyLedWarningLayer(warningState, warningFlags);
-    }
+    applyLedWarningLayer(warningFlashNow);
 
     // LAYER 3
 

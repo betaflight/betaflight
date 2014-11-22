@@ -117,8 +117,13 @@ led 4 0,0::
 
 This mode simply uses the leds to flash when warnings occur.
 
-* Battery warning flashes the LEDs between red and off when the battery is low if battery monitoring is enabled.
-* Failsafe warning flashes the LEDs between light blue and lime green when failsafe is active.
+| Warning | Led Pattern | Notes |
+|---------|-------------|-------|
+| Arm-lock enabled | flash between green and off | occurs calibration or when unarmed and the aircraft is tilted too much |
+| Low Battery | flash red and off | battery monitoring must be enabled.  May trigger temporarily under high-throttle due to voltage drop |
+| Failsafe | flash between light blue and yellow | Failsafe must be enabled |
+
+Flash patterns appear in order, so that it's clear which warnings are enabled.
 
 #### Flight Mode & Orientation
 
