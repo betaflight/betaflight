@@ -73,7 +73,7 @@ The 6 pin RC_Output connector has the following pinouts when used in RX_PARALLEL
 | ----- | ------------ | -------------- | -----------------------------------------|
 | 1     | USART1       | MAIN PORT      | Has a hardware inverter for SBUS         |
 | 2     | USART3       | FLEX PORT      |                                          |
-| 3     | SoftSerial   | RC connector   | Pins 5 and 6 (Rx and Tx respectively)    |
+| 3     | SoftSerial   | RC connector   | Pins 4 and 5 (Tx and Rx respectively)    |
 
 The Softserial port is not available when RX_PARALLEL_PWM is used. The transmission data rate is limited to 19200 baud.
 
