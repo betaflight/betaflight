@@ -8,8 +8,8 @@ if found please report via the [github issue tracker](https://github.com/cleanfl
 
 | Value | Identifier   | RX        | TX                 | Notes                                                                                       |
 | ----- | ------------ | --------- | ------------------ | ------------------------------------------------------------------------------------------- |
-| 1     | USART1       | RX  / PA9 | TX  / PA10 / TELEM | TELEM output is always inverted (for FrSky). Internally connected to USB port via CP2102 IC |
-| 2     | USART2       | RC3 / PA2 | RC4 / PA3          |                                                                                             |
+| 1     | USART1       | RX  / PA10 | TX  / PA9 / TELEM | TELEM output is always inverted (for FrSky). Internally connected to USB port via CP2102 IC |
+| 2     | USART2       | RC4 / PA3 | RC3 / PA2          |                                                                                             |
 | 3     | SoftSerial 1 | RC5 / PA6 | RC6 / PA7          |                                                                                             |
 | 4     | SoftSerial 2 | RC7 / PB0 | RC8 / PB1          |                                                                                             |
 
