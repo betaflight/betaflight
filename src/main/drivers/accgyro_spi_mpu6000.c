@@ -155,7 +155,7 @@ void mpu6000SpiAccInit(void)
 bool mpu6000SpiDetect(void)
 {
     uint8_t in;
-
+    uint8_t attemptsRemaining = 5;
     if (mpuSpi6000InitDone) {
         return true;
     }
@@ -163,11 +163,18 @@ bool mpu6000SpiDetect(void)
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
 
     mpu6000WriteRegister(MPU6000_PWR_MGMT_1, BIT_H_RESET);
-    delay(150);
 
-    mpu6000ReadRegister(MPU6000_WHOAMI, &in, 1);
-    if (in != MPU6000_WHO_AM_I_CONST)
-        return false;
+    do {
+        delay(150);
+
+        mpu6000ReadRegister(MPU6000_WHOAMI, &in, 1);
+        if (in == MPU6000_WHO_AM_I_CONST) {
+            break;
+        }
+        if (!attemptsRemaining) {
+            return false;
+        }
+    } while (attemptsRemaining--);
 
 
     mpu6000ReadRegister(MPU6000_PRODUCT_ID, &in, 1);
