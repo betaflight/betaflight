@@ -19,7 +19,7 @@ $(document).ready(function () {
         this.element = $('<div />').prop('id', 'dialog').addClass(identifier).load(content, function () {
             // position the dialog
             self.element.css({
-                'top': (window.innerHeight - self.element.height()) / 3,
+                'top': window.innerHeight / 3,
                 'left': (window.innerWidth - self.element.width()) / 2
             });
 
@@ -34,7 +34,7 @@ $(document).ready(function () {
         // handle window resize
         var resizeHandler = function () {
             self.element.css({
-                'top': (window.innerHeight - self.element.height()) / 3,
+                'top': window.innerHeight / 3,
                 'left': (window.innerWidth - self.element.width()) / 2
             });
         };
