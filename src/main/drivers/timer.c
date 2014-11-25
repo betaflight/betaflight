@@ -381,7 +381,7 @@ void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *
 
 // update overflow callback list
 // some synchronization mechanism is neccesary to avoid disturbing other channels (BASEPRI used now)
-static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, TIM_TypeDef* tim) {
+static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, TIM_TypeDef *tim) {
     timerOvrHandlerRec_t **chain = &cfg->overflowCallbackActive;
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         for(int i = 0; i < CC_CHANNELS_PER_TIMER; i++)
@@ -396,7 +396,7 @@ static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, TIM_TypeDef* tim) {
 }
 
 // config edge and overflow callback for channel. Try to avoid overflowCallback, it is a bit expensive
-void timerChConfigCallbacks(const timerHardware_t* timHw, timerCCHandlerRec_t *edgeCallback, timerOvrHandlerRec_t *overflowCallback)
+void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *edgeCallback, timerOvrHandlerRec_t *overflowCallback)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -418,7 +418,7 @@ void timerChConfigCallbacks(const timerHardware_t* timHw, timerCCHandlerRec_t *e
 // configure callbacks for pair of channels (1+2 or 3+4).
 // Hi(2,4) and Lo(1,3) callbacks are specified, it is not important which timHw channel is used.
 // This is intended for dual capture mode (each channel handles one transition)
-void timerChConfigCallbacksDual(const timerHardware_t* timHw, timerCCHandlerRec_t *edgeCallbackLo, timerCCHandlerRec_t *edgeCallbackHi, timerOvrHandlerRec_t *overflowCallback)
+void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerCCHandlerRec_t *edgeCallbackLo, timerCCHandlerRec_t *edgeCallbackHi, timerOvrHandlerRec_t *overflowCallback)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -453,24 +453,24 @@ void timerChConfigCallbacksDual(const timerHardware_t* timHw, timerCCHandlerRec_
 }
 
 // enable/disable IRQ for low channel in dual configuration
-void timerChITConfigDualLo(const timerHardware_t* timHw, FunctionalState newState) {
+void timerChITConfigDualLo(const timerHardware_t *timHw, FunctionalState newState) {
     TIM_ITConfig(timHw->tim, TIM_IT_CCx(timHw->channel&~TIM_Channel_2), newState);
 }
 
 // enable or disable IRQ
-void timerChITConfig(const timerHardware_t* timHw, FunctionalState newState)
+void timerChITConfig(const timerHardware_t *timHw, FunctionalState newState)
 {
     TIM_ITConfig(timHw->tim, TIM_IT_CCx(timHw->channel), newState);
 }
 
 // clear Compare/Capture flag for channel
-void timerChClearCCFlag(const timerHardware_t* timHw)
+void timerChClearCCFlag(const timerHardware_t *timHw)
 {
     TIM_ClearFlag(timHw->tim, TIM_IT_CCx(timHw->channel));
 }
 
 // configure timer channel GPIO mode
-void timerChConfigGPIO(const timerHardware_t* timHw, GPIO_Mode mode)
+void timerChConfigGPIO(const timerHardware_t *timHw, GPIO_Mode mode)
 {
     gpio_config_t cfg;
 
@@ -501,7 +501,7 @@ static unsigned getFilter(unsigned ticks)
 }
 
 // Configure input captupre
-void timerChConfigIC(const timerHardware_t* timHw, bool polarityRising, unsigned inputFilterTicks)
+void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
 
@@ -517,7 +517,7 @@ void timerChConfigIC(const timerHardware_t* timHw, bool polarityRising, unsigned
 
 // configure dual channel input channel for capture
 // polarity is for Low channel (capture order is always Lo - Hi)
-void timerChConfigICDual(const timerHardware_t* timHw, bool polarityRising, unsigned inputFilterTicks)
+void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
     bool directRising = (timHw->channel & TIM_Channel_2) ? !polarityRising : polarityRising;
@@ -537,9 +537,7 @@ void timerChConfigICDual(const timerHardware_t* timHw, bool polarityRising, unsi
     TIM_ICInit(timHw->tim, &TIM_ICInitStructure);
 }
 
-
-
-void timerChICPolarity(const timerHardware_t* timHw, bool polarityRising)
+void timerChICPolarity(const timerHardware_t *timHw, bool polarityRising)
 {
     timCCER_t tmpccer = timHw->tim->CCER;
     tmpccer &= ~(TIM_CCER_CC1P << timHw->channel);
@@ -547,19 +545,19 @@ void timerChICPolarity(const timerHardware_t* timHw, bool polarityRising)
     timHw->tim->CCER = tmpccer;
 }
 
-volatile timCCR_t* timerChCCRHi(const timerHardware_t* timHw)
+volatile timCCR_t* timerChCCRHi(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel | TIM_Channel_2));
 }
 
-volatile timCCR_t* timerChCCRLo(const timerHardware_t* timHw)
+volatile timCCR_t* timerChCCRLo(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel & ~TIM_Channel_2));
 }
 
 
 
-volatile timCCR_t* timerChCCR(const timerHardware_t* timHw)
+volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + timHw->channel);
 }
@@ -599,7 +597,7 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
 
 
 
-static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t* timerConfig)
+static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 {
     uint16_t capture;
     unsigned tim_status;

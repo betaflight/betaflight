@@ -110,7 +110,6 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 
     uartReconfigure(s);
 
- 
     // Receive DMA or IRQ
     DMA_InitTypeDef DMA_InitStructure;
     if ((mode & MODE_RX) || (mode & MODE_BIDIR)) {

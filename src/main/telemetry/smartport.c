@@ -351,7 +351,7 @@ void handleSmartPortTelemetry(void)
                     tmpui = 0;
                     // the same ID is sent twice, one for longitude, one for latitude
                     // the MSB of the sent uint32_t helps FrSky keep track
-                    // the even/odd bit of our counter helps us keep track                    
+                    // the even/odd bit of our counter helps us keep track
                     if (smartPortIdCnt & 1) {
                         tmpui = tmpi = GPS_coord[LON];
                         if (tmpi < 0) {
