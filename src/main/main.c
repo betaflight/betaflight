@@ -41,9 +41,6 @@
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/sound_beeper.h"
 #include "drivers/inverter.h"
 
 #include "flight/flight.h"
