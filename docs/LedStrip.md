@@ -33,6 +33,14 @@ Not all WS2812 ICs use the same timings, some batches use different timings.
 
 It could be possible to be able to specify the timings required via CLI if users request it.
 
+### Tested Hardware
+
+* [Adafruit NeoPixel Jewel 7](https://www.adafruit.com/products/2226) (preliminary testing)
+  * Measured current consumption in all white mode ~ 350 mA.
+  * Fits well under motors on mini 250 quads.
+* [Adafruit NeoPixel Stick](https://www.adafruit.com/products/1426)
+  * Not tested just yet, assumed to work as well as NeoPixel Jewel 7.
+
 ## Connections
 
 WS2812 LED strips generally require a single data line, 5V and GND.
