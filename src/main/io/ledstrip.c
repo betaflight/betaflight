@@ -568,9 +568,6 @@ void applyLedWarningLayer(uint8_t updateNow)
     uint8_t ledIndex;
     static uint8_t warningFlashCounter = 0;
 
-    debug[0] = warningFlashCounter;
-
-
     if (updateNow && warningFlashCounter == 0) {
         warningFlags = WARNING_FLAG_NONE;
         if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {

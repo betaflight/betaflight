@@ -178,9 +178,9 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
         return errorAngle;
     }
 
-    debug[0] = 0;
 
-#if 0
+#ifdef DEBUG_AUTOTUNE
+    debug[0] = 0;
     debug[1] = inclination->rawAngles[angleIndex];
 #endif
 
@@ -193,7 +193,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
         currentAngle = DECIDEGREES_TO_DEGREES(-inclination->raw[angleIndex]);
     }
 
-#if 1
+#ifdef DEBUG_AUTOTUNE
     debug[1] = DEGREES_TO_DECIDEGREES(currentAngle);
     debug[2] = DEGREES_TO_DECIDEGREES(targetAngle);
 #endif
@@ -253,7 +253,9 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
 
             if (secondPeakAngle > targetAngleAtPeak) {
                 // overshot
+#ifdef DEBUG_AUTOTUNE
                 debug[0] = 1;
+#endif
 
 #ifdef PREFER_HIGH_GAIN_SOLUTION
                 if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION_ANGLE) {
@@ -269,8 +271,9 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
 #endif
             } else {
                 // undershot
+#ifdef DEBUG_AUTOTUNE
                 debug[0] = 2;
-
+#endif
                 if (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION_ANGLE) {
                     // we have too much oscillation
                     pid.d *= AUTOTUNE_DECREASE_MULTIPLIER;

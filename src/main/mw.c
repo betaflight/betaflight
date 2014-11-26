@@ -272,10 +272,6 @@ void annexCode(void)
         updateWarningLed(currentTime);
     }
 
-#if 0
-    debug[0] = armingFlags;
-#endif
-
 #ifdef TELEMETRY
     checkTelemetryState();
 #endif
