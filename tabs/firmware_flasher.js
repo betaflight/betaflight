@@ -58,7 +58,7 @@ TABS.firmware_flasher.initialize = function (callback) {
             // populate select
             for (var i = 0; i < releases.length; i++) {
                 d = new Date(releases[i].time * 1000);
-                date = ('0' + (d.getDate())).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + d.getFullYear();
+                date = d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate())).slice(-2);
                 date += ' - ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
 
                 var element = $('<option value="' + i + '">' + (((releases[i].release) ? 'Stable' : 'Dev') + ' ' + date) + '</option>').data('obj', releases[i]);
@@ -152,7 +152,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                                 offset = d.getTimezoneOffset() / 60,
                                 date;
 
-                            date = ('0' + (d.getDate())).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + d.getFullYear();
+                            date = d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate())).slice(-2);
                             date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
                             date += (offset > 0) ? ' GMT+' + offset : ' GMT' + offset;
 
