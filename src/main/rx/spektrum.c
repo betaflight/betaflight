@@ -21,11 +21,14 @@
 
 #include "platform.h"
 
+#include "drivers/gpio.h"
 #include "drivers/system.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
+
+#include "config/config.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -39,6 +42,8 @@
 #define SPEK_FRAME_SIZE 16
 
 #define SPEKTRUM_BAUDRATE 115200
+
+#define BKP_SOFTRESET (0x50F7B007)
 
 static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
@@ -137,4 +142,74 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
         data = 988 + spekChannelData[chan];          // 1024 mode
 
     return data;
+}
+
+uint32_t rccReadBkpDr(void)
+{
+    return *((uint16_t *)BKP_BASE + 0x04) | *((uint16_t *)BKP_BASE + 0x08) << 16;
+}
+
+/* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
+ * Function must be called immediately after startup so that we don't miss satellite bind window.
+ * Known parameters. Tested with DSMX satellite and DX8 radio. Framerate (11ms or 22ms) must be selected from TX.
+ * 9 = DSMX 11ms / DSMX 22ms
+ * 5 = DSM2 11ms 2048 / DSM2 22ms 1024
+ */
+void spektrumBind(rxConfig_t *rxConfig)
+{
+    int i;
+    gpio_config_t gpio;
+    GPIO_TypeDef *spekBindPort;
+    uint16_t spekBindPin;
+
+#ifdef HARDWARE_BIND_PLUG
+    // Check status of bind plug and exit if not active
+    GPIO_TypeDef *hwBindPort;
+    uint16_t hwBindPin;
+
+    hwBindPort = GPIOB;
+    hwBindPin = Pin_5;
+    gpio.speed = Speed_2MHz;
+    gpio.pin = hwBindPin;
+    gpio.mode = Mode_IPU;
+    gpioInit(hwBindPort, &gpio);
+    if (digitalIn(hwBindPort, hwBindPin))
+        return;
+#endif
+
+    // USART2, PA3
+    spekBindPort = GPIOA;
+    spekBindPin = Pin_3;
+
+    // don't try to bind if: here after soft reset or bind flag is out of range
+    if (rccReadBkpDr() == BKP_SOFTRESET || rxConfig->spektrum_sat_bind == 0 || rxConfig->spektrum_sat_bind > 10)
+        return;
+
+    gpio.speed = Speed_2MHz;
+    gpio.pin = spekBindPin;
+    gpio.mode = Mode_Out_OD;
+    gpioInit(spekBindPort, &gpio);
+    // RX line, set high
+    digitalHi(spekBindPort, spekBindPin);
+    // Bind window is around 20-140ms after powerup
+    delay(60);
+
+    for (i = 0; i < rxConfig->spektrum_sat_bind; i++) {
+        // RX line, drive low for 120us
+        digitalLo(spekBindPort, spekBindPin);
+        delayMicroseconds(120);
+        // RX line, drive high for 120us
+        digitalHi(spekBindPort, spekBindPin);
+        delayMicroseconds(120);
+    }
+
+#ifndef HARDWARE_BIND_PLUG
+    // If we came here as a result of hard  reset (power up, with mcfg.spektrum_sat_bind set), then reset it back to zero and write config
+    // Don't reset if hardware bind plug is present
+    if (rccReadBkpDr() != BKP_SOFTRESET) {
+    	rxConfig->spektrum_sat_bind = 0;
+        writeEEPROM(1, true);
+    }
+#endif
+
 }

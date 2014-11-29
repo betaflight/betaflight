@@ -105,7 +105,7 @@ void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse);
 void loop(void);
-
+void spektrumBind(rxConfig_t *rxConfig);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -149,6 +149,19 @@ void init(void)
 #endif
 
     systemInit();
+
+    // Spektrum sattelite bind - ported from Baseflight
+    if (feature(FEATURE_RX_MSP)) {
+        switch (masterConfig.rxConfig.serialrx_provider) {
+            case SERIALRX_SPEKTRUM1024:
+            case SERIALRX_SPEKTRUM2048:
+                // Spektrum satellite binding if enabled on startup.
+                // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
+                // The rest of Spektrum initialization will happen later - via spektrumInit()
+                spektrumBind(&masterConfig.rxConfig);
+                break;
+        }
+    }
 
     delay(100);
 

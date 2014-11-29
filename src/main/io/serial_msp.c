@@ -1013,6 +1013,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_RX_CONFIG:
         headSerialReply(7);
         serialize8(masterConfig.rxConfig.serialrx_provider);
+        serialize8(masterConfig.rxConfig.spektrum_sat_bind);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
         serialize16(masterConfig.rxConfig.mincheck);
@@ -1288,6 +1289,7 @@ static bool processInCommand(void)
     case MSP_SET_RX_CONFIG:
         headSerialReply(0);
         masterConfig.rxConfig.serialrx_provider = read8();
+        masterConfig.rxConfig.spektrum_sat_bind = read8();
         masterConfig.rxConfig.maxcheck = read16();
         masterConfig.rxConfig.midrc = read16();
         masterConfig.rxConfig.mincheck = read16();

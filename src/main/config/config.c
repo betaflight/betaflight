@@ -334,6 +334,7 @@ static void resetConf(void)
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 
     masterConfig.rxConfig.serialrx_provider = 0;
+    masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.midrc = 1500;
     masterConfig.rxConfig.mincheck = 1100;
     masterConfig.rxConfig.maxcheck = 1900;
