@@ -441,6 +441,7 @@ static void resetConf(void)
     featureSet(FEATURE_MOTOR_STOP);
     masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
     masterConfig.rxConfig.serialrx_provider = 1;
+    masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     currentControlRateProfile->rcRate8 = 130;
