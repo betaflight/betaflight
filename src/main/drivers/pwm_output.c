@@ -148,12 +148,22 @@ void pwmFinishedWritingMotors(uint8_t numberMotors)
 	if(feature(FEATURE_ONESHOT125)){
 
 		for(index = 0; index < numberMotors; index++){
-			// Set the counter to overflow if it's the first motor to output, or if we change timers
+			// Force the counter to overflow if it's the first motor to output, or if we change timers
 			if((index == 0) || (motors[index]->cnt != lastCounterPtr)){
 				lastCounterPtr = motors[index]->cnt;
 
 				*motors[index]->cnt = 0xfffe;
 			}
+		}
+
+		// Wait until the timers have overflowed (should take less than 0.125 uS)
+		while(*motors[numberMotors - 1]->cnt >= 0xfffe){
+		}
+
+		// Set the compare register to 0, which stops the output pulsing if the timer overflows before the main loop completes again.
+		// This compare register will be set to the output value on the next main loop.
+		for(index = 0; index < numberMotors; index++){
+			*motors[index]->ccr = 0;
 		}
 	}
 }
