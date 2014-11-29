@@ -151,6 +151,7 @@ uint32_t rccReadBkpDr(void)
 
 /* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
  * Function must be called immediately after startup so that we don't miss satellite bind window.
+ * It will only work for USART2, PA3 pin.
  * Known parameters. Tested with DSMX satellite and DX8 radio. Framerate (11ms or 22ms) must be selected from TX.
  * 9 = DSMX 11ms / DSMX 22ms
  * 5 = DSM2 11ms 2048 / DSM2 22ms 1024
@@ -173,6 +174,7 @@ void spektrumBind(rxConfig_t *rxConfig)
     gpio.pin = hwBindPin;
     gpio.mode = Mode_IPU;
     gpioInit(hwBindPort, &gpio);
+    delayMicroseconds(10);  // allow configuration to settle
     if (digitalIn(hwBindPort, hwBindPin))
         return;
 #endif
