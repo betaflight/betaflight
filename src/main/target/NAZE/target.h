@@ -111,3 +111,8 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
+
+    // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
+#ifdef ALIENWII32
+#define BRUSHED_MOTORS
+#endif

@@ -435,6 +435,20 @@ static void resetConf(void)
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
 #endif
 
+    // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
+#ifdef ALIENWII32
+    featureSet(FEATURE_RX_MSP);
+    featureSet(FEATURE_MOTOR_STOP);
+    masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+    masterConfig.rxConfig.serialrx_provider = 1;
+    masterConfig.escAndServoConfig.minthrottle = 1000;
+    masterConfig.escAndServoConfig.maxthrottle = 2000;
+    currentControlRateProfile->rcRate8 = 130;
+    currentControlRateProfile->rollPitchRate = 20;
+    currentControlRateProfile->yawRate = 60;
+    parseRcChannels("TAER1234", &masterConfig.rxConfig);
+#endif
+
     // copy first profile into remaining profile
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
