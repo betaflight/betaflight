@@ -444,6 +444,7 @@ static void resetConf(void)
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
+    masterConfig.motor_pwm_rate = 32000;
     currentControlRateProfile->rcRate8 = 130;
     currentControlRateProfile->rollPitchRate = 20;
     currentControlRateProfile->yawRate = 60;
