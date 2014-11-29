@@ -1,7 +1,7 @@
 'use strict';
 
 $(document).ready(function () {
-    function Dialog(identifier, content, customJS) {
+    function Dialog(identifier, content, handler) {
         var self = this;
 
         this.block = $('<div />').css({
@@ -26,7 +26,7 @@ $(document).ready(function () {
             // display content
             self.element.fadeIn(100);
 
-            if (customJS) customJS(this);
+            if (handler) handler(self);
         });
 
         $('body').append(this.element);
