@@ -114,7 +114,7 @@ $(document).ready(function () {
 
                             if (stage == 2) {
                                 if ($(this).hasClass('yes')) {
-                                    window.open('https://github.com/multiwii/baseflight-configurator/issues');
+                                    window.open('https://chrome.google.com/webstore/detail/baseflight-configurator/mppkgnedeapfejgfimkdoninnofofigk/support');
                                     data.refused = new Date().getTime();
                                     googleAnalytics.sendEvent('Review', 'Submits Bug Ticket', true);
                                 } else {
