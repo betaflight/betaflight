@@ -437,7 +437,7 @@ static void resetConf(void)
 
     // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
 #ifdef ALIENWII32
-    featureSet(FEATURE_RX_MSP);
+    featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
     masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
     masterConfig.rxConfig.serialrx_provider = 1;
