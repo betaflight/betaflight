@@ -79,7 +79,7 @@ $(document).ready(function () {
             }
 
             if ((data.firstStart + 604800000) < new Date().getTime()) {
-                if (data.refused == 0 || (data.refused + 604800000) < new Date().getTime()) {
+                if ((data.refused == 0 || (data.refused + 604800000) < new Date().getTime()) && !data.reviewed) { // needs verifying
                     var dialog = new Dialog('review', './tabs/review.html', function () {
                         localize();
 
