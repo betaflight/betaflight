@@ -30,7 +30,7 @@ The 8 pin RC_Input connector has the following pinouts when used in RX_PPM/RX_SE
 | 5   | Softserial1 RX | Enable `feature SOFTSERIAL` |
 | 6   | Current   | Enable `feature CURRENT_METER`.  Connect to the output of a current sensor, 0v-3.3v input |
 | 7   | Battery Voltage sensor | Enable `feature VBAT`. Connect to main battery using a voltage divider, 0v-3.3v input |
-| 8   | RSSI      | Enable `feature RSSI_ADC`.  Connect to the output of a PPM-RSSI conditioner, 0v-3.3v input |
+| 8   | RSSI      | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input |
 
 The 6 pin RC_Output connector has the following pinouts when used in RX_PPM/RX_SERIAL mode
 

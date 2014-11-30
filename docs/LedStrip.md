@@ -62,6 +62,14 @@ Since RC5 is also used for SoftSerial on the Naze/Olimexino it means that you ca
 Additionally, since RC5 is also used for Parallel PWM RC input on both the Naze, Chebuzz and STM32F3Discovery targets, led strips
 can not be used at the same time at Parallel PWM.
 
+Ensure that your 5V supply is not too high, if the voltage at the input to the LED strip is to high then the LEDs may not light; The
+problem occurs because of the difference in voltage between the data signal and the power signal.
+
+If you are using an BEC from an ESC to for the 5v supply check the output is as close to 5v as possible.
+
+It was observed that a 5.4v supply from a BEC was fine for powering the FC and other devices but the LED strip would not light until
+the voltage was reduced, this was acheived by placing an IN4007 diode between the BEC 5v output and the 5V input pin of the LED strip.
+  
 
 ## Configuration
 

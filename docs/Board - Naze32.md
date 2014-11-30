@@ -16,3 +16,23 @@ if found please report via the [github issue tracker](https://github.com/cleanfl
 * You cannot use USART1/TX/TX/TELEM pins at the same time. 
 * You may encounter flashing problems if you have something connected to the RX/TX pins.  Try disconnecting RX/TX.
 
+# Pinouts
+
+The 10 pin Input connector has the following pinouts when used in RX_PPM/RX_SERIAL mode
+
+| Pin | Identifier | Function       | Notes                            |
+| --- | ---------- | -------------- | -------------------------------- |
+| 1   | N/A        | Ground         |                                  |
+| 2   | Circle     | +5V            |                                  |
+| 3   | 1          | PPM Input      | Enable `feature RX_PPM`          | 
+| 4   | 2          | RSSI_ADC       | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input | 
+| 5   | 3          | Uart 2 TX      |                                  | 
+| 6   | 3          | Uart 2 RX      |                                  | 
+| 7   | 5          | Softserial1 TX | Enable `feature SOFTSERIAL`      |
+|     |            | Led Strip      | Enable `feature LED_STRIP`.      |
+| 8   | 6          | Softserial1 RX | Enable `feature SOFTSERIAL`      |
+| 9   | 7          | Softserial2 TX | Enable `feature SOFTSERIAL`      |
+| 10  | 8          | Softserial2 RX | Enable `feature SOFTSERIAL`      |
+|     |            | Current        | Enable `feature CURRENT_METER`.  Connect to the output of a current sensor, 0v-3.3v input |
+
+
