@@ -37,7 +37,7 @@ typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function poi
 
 typedef struct {
     volatile timCCR_t *ccr;
-    volatile timCNT_t *cnt;
+    volatile TIM_TypeDef *tim;
     uint16_t period;
     pwmWriteFuncPtr pwmWritePtr;
 } pwmOutputPort_t;
@@ -46,7 +46,6 @@ static pwmOutputPort_t pwmOutputPorts[MAX_PWM_OUTPUT_PORTS];
 
 static pwmOutputPort_t *motors[MAX_PWM_MOTORS];
 static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
-static volatile uint16_t* lastCounterPtr;
 
 #define PWM_BRUSHED_TIMER_MHZ 8
 
@@ -120,7 +119,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
             break;
     }
     p->period = period;
-    p->cnt = &timerHardware->tim->CNT;
+    p->tim = timerHardware->tim;
 
     return p;
 }
@@ -144,20 +143,20 @@ void pwmWriteMotor(uint8_t index, uint16_t value)
 void pwmFinishedWritingMotors(uint8_t numberMotors)
 {
 	uint8_t index;
+	volatile TIM_TypeDef *lastTimerPtr = NULL;
+
 
 	if(feature(FEATURE_ONESHOT125)){
 
 		for(index = 0; index < numberMotors; index++){
-			// Force the counter to overflow if it's the first motor to output, or if we change timers
-			if((index == 0) || (motors[index]->cnt != lastCounterPtr)){
-				lastCounterPtr = motors[index]->cnt;
 
-				*motors[index]->cnt = 0xfffe;
+			// Force the timer to overflow if it's the first motor to output, or if we change timers
+			if(motors[index]->tim != lastTimerPtr){
+				lastTimerPtr = motors[index]->tim;
+
+				// Force an overflow by setting the UG bit
+				motors[index]->tim->EGR |= 0x0001;
 			}
-		}
-
-		// Wait until the timers have overflowed (should take less than 0.125 uS)
-		while(*motors[numberMotors - 1]->cnt >= 0xfffe){
 		}
 
 		// Set the compare register to 0, which stops the output pulsing if the timer overflows before the main loop completes again.
