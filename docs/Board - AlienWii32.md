@@ -1,8 +1,8 @@
 # Board - AlienWii32
 
-The AlienWii32 is actually in prototype stage only a few sample exist. There is some more field testing ongoing. The information below is preliminary an will be updated as needed.
+The AlienWii32 is actually in prototype stage only a few samples exist. There is some more field testing ongoing. The information below is preliminary an will be updated as needed.
 
-Here are the Hardware specifications:
+Here are the hardware specifications:
 
 - STM32F103CBT6 MCU
 - MPU6050 accelerometer/gyro sensor unit
@@ -17,8 +17,6 @@ Here are the Hardware specifications:
 - dimensions: 30x32mm
 - direct operation from an single cell lipoly battery
 
-*  Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol wit default settings. Changes can be done as usual via CLI or the Cleanflight configurator.
+*  Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings. Changes can be done as usual via CLI or the Cleanflight configurator.
 
-The pin layout is similar as the NAZE32 or the related clones. The hardware bind pin is connected to pin 41 (PB5). The AlienWii32 firmware will be build with TARGET=NAZE and OTIONS="AlienWii32".
-The firmware image will come with alternative default settings which will give a plug and play experience. There is no computer need to get this into the air with an smAL quadcopter.
-anyhow to use this in an Hexa- or Octocopter or to do some more tuning additional CLI changes are required as usual.
+The pin layout is very similar as the NAZE32 or the related clones (MW32, Flip32 etc). The hardware bind pin is connected to pin 41 (PB5). The AlienWii32 firmware will be build with TARGET=NAZE and OPTIONS="AlienWii32". The firmware image will come with alternative default settings which will give the user an plug and play experience. There is no computer need to get this into the air with an smal quadcopter. Anyhow to use this in an Hexa- or Octocopter or to do some more tuning additional CLI changes are required as usual.
