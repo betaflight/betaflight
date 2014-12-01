@@ -154,8 +154,7 @@ void pwmFinishedWritingMotors(uint8_t numberMotors)
 			if(motors[index]->tim != lastTimerPtr){
 				lastTimerPtr = motors[index]->tim;
 
-				// Force an overflow by setting the UG bit
-				motors[index]->tim->EGR |= 0x0001;
+				timerForceOverflow(motors[index]->tim);
 			}
 		}
 
