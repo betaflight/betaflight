@@ -60,6 +60,7 @@
 #define MPU6500_SPI_INSTANCE  NAZE_SPI_INSTANCE
 
 #define GYRO
+#define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
 
 #define ACC
