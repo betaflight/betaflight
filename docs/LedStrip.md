@@ -38,8 +38,8 @@ It could be possible to be able to specify the timings required via CLI if users
 * [Adafruit NeoPixel Jewel 7](https://www.adafruit.com/products/2226) (preliminary testing)
   * Measured current consumption in all white mode ~ 350 mA.
   * Fits well under motors on mini 250 quads.
-* [Adafruit NeoPixel Stick](https://www.adafruit.com/products/1426)
-  * Not tested just yet, assumed to work as well as NeoPixel Jewel 7.
+* [Adafruit NeoPixel Stick](https://www.adafruit.com/products/1426) (works well)
+  * Measured current consumption in all white mode ~ 350 mA.
 
 ## Connections
 
