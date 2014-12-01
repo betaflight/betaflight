@@ -179,7 +179,6 @@ void spektrumBind(rxConfig_t *rxConfig)
         return;
 #endif
 
-    // USART2, PA3
     spekBindPort = BIND_PORT;
     spekBindPin = BIND_PIN;
 
