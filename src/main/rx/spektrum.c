@@ -43,8 +43,6 @@
 
 #define SPEKTRUM_BAUDRATE 115200
 
-#define BKP_SOFTRESET (0x50F7B007)
-
 static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
@@ -144,6 +142,9 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
     return data;
 }
 
+#ifdef SPEKTRUM_BIND
+#define BKP_SOFTRESET (0x50F7B007)
+
 uint32_t rccReadBkpDr(void)
 {
     return *((uint16_t *)BKP_BASE + 0x04) | *((uint16_t *)BKP_BASE + 0x08) << 16;
@@ -151,7 +152,6 @@ uint32_t rccReadBkpDr(void)
 
 /* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
  * Function must be called immediately after startup so that we don't miss satellite bind window.
- * It will only work for USART2, PA3 pin.
  * Known parameters. Tested with DSMX satellite and DX8 radio. Framerate (11ms or 22ms) must be selected from TX.
  * 9 = DSMX 11ms / DSMX 22ms
  * 5 = DSM2 11ms 2048 / DSM2 22ms 1024
@@ -168,8 +168,8 @@ void spektrumBind(rxConfig_t *rxConfig)
     GPIO_TypeDef *hwBindPort;
     uint16_t hwBindPin;
 
-    hwBindPort = GPIOB;
-    hwBindPin = Pin_5;
+    hwBindPort = BINDPLUG_PORT;
+    hwBindPin = BINDPLUG_PIN;
     gpio.speed = Speed_2MHz;
     gpio.pin = hwBindPin;
     gpio.mode = Mode_IPU;
@@ -180,8 +180,8 @@ void spektrumBind(rxConfig_t *rxConfig)
 #endif
 
     // USART2, PA3
-    spekBindPort = GPIOA;
-    spekBindPin = Pin_3;
+    spekBindPort = BIND_PORT;
+    spekBindPin = BIND_PIN;
 
     // don't try to bind if: here after soft reset or bind flag is out of range
     if (rccReadBkpDr() == BKP_SOFTRESET || rxConfig->spektrum_sat_bind == 0 || rxConfig->spektrum_sat_bind > 10)
@@ -215,3 +215,4 @@ void spektrumBind(rxConfig_t *rxConfig)
 #endif
 
 }
+#endif

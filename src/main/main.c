@@ -150,6 +150,7 @@ void init(void)
 
     systemInit();
 
+#ifdef SPEKTRUM_BIND
     // Spektrum sattelite bind - ported from Baseflight
     if (feature(FEATURE_RX_SERIAL)) {
         switch (masterConfig.rxConfig.serialrx_provider) {
@@ -162,6 +163,7 @@ void init(void)
                 break;
         }
     }
+#endif
 
     delay(100);
 
