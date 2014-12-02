@@ -2,17 +2,17 @@
 
 Spektrum bind with hardware bind plug support.
  
-## The Spektrum bind code is actually only enabled for the NAZE target. The following parameters can be used to enable and configure this for other targets after more testing:
+### The Spektrum bind code is actually only enabled for the NAZE, NAZE32PRO, CJMCU, CC3D targets. The following parameters can be used to enable and configure this for other targets after more testing:
 
-  #define SPEKTRUM_BIND          Enables the Spektrum bind code
-  #define BIND_PORT  GPIOA       Defines the port for the bind pin
-  #define BIND_PIN   Pin_3       Defines the bind pin (the satellite receiver is connected to)
+    SPEKTRUM_BIND          Enables the Spektrum bind code
+    BIND_PORT  GPIOA       Defines the port for the bind pin
+    BIND_PIN   Pin_3       Defines the bind pin (the satellite receiver is connected to)
 
 This is to activate the Hardware bind pug feature
 
-  #define HARDWARE_BIND_PLUG     Enables the hardware bind plug feature
-  #define BINDPLUG_PORT  GPIOB   Defines the port for the hardware bind plug
-  #define BINDPLUG_PIN   Pin_5   Defines the hardware bind plug pin
+    HARDWARE_BIND_PLUG     Enables the hardware bind plug feature
+    BINDPLUG_PORT  GPIOB   Defines the port for the hardware bind plug
+    BINDPLUG_PIN   Pin_5   Defines the hardware bind plug pin
 
 ## Hardware
 
@@ -36,4 +36,4 @@ http://wiki.openpilot.org/display/Doc/Spektrum+Satellite
 
 ### Supported Hardware
 
-all NAZE targets (NAZE32, MW32, Flip32, AlienWii32 with hardware bind plug)
+NAZE, NAZE32PRO, CJMCU, CC3D targets (AlienWii32 with hardware bind plug)
