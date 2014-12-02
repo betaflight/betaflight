@@ -2,7 +2,9 @@
 
 Spektrum bind with hardware bind plug support.
  
-### The Spektrum bind code is actually only enabled for the NAZE, NAZE32PRO, CJMCU, CC3D targets. The following parameters can be used to enable and configure this for other targets after more testing:
+### The Spektrum bind code is actually only enabled for the NAZE, NAZE32PRO, CJMCU, CC3D targets.
+
+The following parameters can be used to enable and configure this for other targets after more testing:
 
     SPEKTRUM_BIND          Enables the Spektrum bind code
     BIND_PORT  GPIOA       Defines the port for the bind pin
