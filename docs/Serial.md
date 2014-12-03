@@ -187,3 +187,22 @@ set serialrx_provider = 0
 set serial_port_2_scenario = 3
 save
 ```
+
+i) MSP via USART1 and SoftSerial 1 
+
+- TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
+- MSP on SPFTSERIAL1
+- Both ports will be at 19200 (limited by softserial)
+- USART2 can still be used for GPS/SerialRX/Telemetry, etc.
+
+```
+feature -RX_PARALLEL_PWM
+feature RC_PPM
+feature SOFTSERIAL
+set serial_port_1_scenario = 1
+set serial_port_3_scenario = 8
+set msp_baudrate = 19200
+set cli_baudrate = 19200
+set gps_passthrough_baudrate = 19200
+save
+```
