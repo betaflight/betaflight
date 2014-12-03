@@ -161,7 +161,7 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
     ppmDev.currentTime += ppmDev.largeCounter;
 
     // Divide by 8 if Oneshot125 is active and this is a CC3D board
-	ppmDev.currentTime = ppmDev.currentTime >> ppmCountShift;
+    ppmDev.currentTime = ppmDev.currentTime >> ppmCountShift;
 
     /* Capture computation */
     ppmDev.deltaTime    = ppmDev.currentTime - ppmDev.previousTime;
@@ -331,9 +331,9 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
 
     timerConfigure(timerHardwarePtr, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
 
-	if((timerHardwarePtr->tim == TIM4) && (feature(FEATURE_ONESHOT125))){
-		ppmCountShift = 3;	// Divide by 8 if the timer is running at 8 MHz
-	}
+    if((timerHardwarePtr->tim == TIM4) && (feature(FEATURE_ONESHOT125))){
+        ppmCountShift = 3;	// Divide by 8 if the timer is running at 8 MHz
+    }
 
 
     timerChCCHandlerInit(&self->edgeCb, ppmEdgeCallback);

@@ -806,12 +806,13 @@ void timerStart(void)
  **/
 void timerForceOverflow(volatile TIM_TypeDef *tim)
 {
-	ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-		// Save the current count so that PPM reading will work on the same timer that was forced to overflow
-		uint8_t timerIndex = lookupTimerIndex((const TIM_TypeDef *)tim);
-		timerConfig[timerIndex].forcedOverflowTimerValue = tim->CNT + 1;
+    uint8_t timerIndex = lookupTimerIndex((const TIM_TypeDef *)tim);
 
-		// Force an overflow by setting the UG bit
-		tim->EGR |= TIM_EGR_UG;
-	}
+    ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+        // Save the current count so that PPM reading will work on the same timer that was forced to overflow
+        timerConfig[timerIndex].forcedOverflowTimerValue = tim->CNT + 1;
+
+        // Force an overflow by setting the UG bit
+        tim->EGR |= TIM_EGR_UG;
+    }
 }
