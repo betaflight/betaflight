@@ -143,13 +143,6 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
 }
 
 #ifdef SPEKTRUM_BIND
-#define BKP_SOFTRESET (0x50F7B007)
-
-uint32_t rccReadBkpDr(void)
-{
-    return *((uint16_t *)BKP_BASE + 0x04) | *((uint16_t *)BKP_BASE + 0x08) << 16;
-}
-
 /* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
  * Function must be called immediately after startup so that we don't miss satellite bind window.
  * Known parameters. Tested with DSMX satellite and DX8 radio. Framerate (11ms or 22ms) must be selected from TX.
@@ -182,8 +175,8 @@ void spektrumBind(rxConfig_t *rxConfig)
     spekBindPort = BIND_PORT;
     spekBindPin = BIND_PIN;
 
-    // don't try to bind if: here after soft reset or bind flag is out of range
-    if (rccReadBkpDr() == BKP_SOFTRESET || rxConfig->spektrum_sat_bind == 0 || rxConfig->spektrum_sat_bind > 10)
+    // don't try to bind if: bind flag is out of range
+    if (rxConfig->spektrum_sat_bind == 0 || rxConfig->spektrum_sat_bind > 10)
         return;
 
     gpio.speed = Speed_2MHz;
@@ -203,15 +196,5 @@ void spektrumBind(rxConfig_t *rxConfig)
         digitalHi(spekBindPort, spekBindPin);
         delayMicroseconds(120);
     }
-
-#ifndef HARDWARE_BIND_PLUG
-    // If we came here as a result of hard  reset (power up, with mcfg.spektrum_sat_bind set), then reset it back to zero and write config
-    // Don't reset if hardware bind plug is present
-    if (rccReadBkpDr() != BKP_SOFTRESET) {
-    	rxConfig->spektrum_sat_bind = 0;
-        writeEEPROM(1, true);
-    }
-#endif
-
 }
 #endif
