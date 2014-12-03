@@ -4,7 +4,9 @@ Spektrum bind with hardware bind plug support.
  
 ### The Spektrum bind code is actually only enabled for the NAZE, NAZE32PRO, CJMCU, CC3D targets.
 
-The following parameters can be used to enable and configure this for other targets after more testing:
+## Configure the bind code
+
+The following parameters can be used to enable and configure this in the related target.h file:
 
     SPEKTRUM_BIND          Enables the Spektrum bind code
     BIND_PORT  GPIOA       Defines the port for the bind pin
@@ -18,11 +20,11 @@ This is to activate the Hardware bind pug feature
 
 ## Hardware
 
-The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. This is done automatically if the AlienWii32 firmware is build. The bind plug is expected between pin 41 (PB5 STM32F103CBT6) and ground. The bind code will actually work for USART2 (PA3 STM32F103CBT6).
+The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienWii32 firmware is build. The hardware bind plug is expected between the bind pin and ground. 
 
 ## Function
 
-If the bind plug is set the bind mode will be permanently activated during the firmware start-up. The spektrum_sat_bind CLI parameter is defining the number of bind impulses (1-10) send to the satellite receiver. Please refer to the table below. If there is no hardware bind plug present and the spektrum_sat_bind parameter is set the bind code will be executed one time only after the next start of the firmware (hardware reset or power on). The spektrum_sat_bind parameter will be reset to 0 when done. The bind code will not be executed during an soft rest of the MCU. Please refer to the satellite receiver documentation for more details of the specific receiver in bind mode. Usually the bind mode will be indicated with some flashing LED’s. The Bind plug should be always removed for normal flying.
+The bind code will actually work for NAZE, NAZE32PRO, CJMCU targets (USART2) and CC3D target (USART3, flex port). The spektrum_sat_bind CLI parameter is defining the number of bind impulses (1-10) send to the satellite receiver. If it will set to 0 bind will be disabled in any case. Please refer to the table below. If the hardware bind plug is configured the bind mode will only be activated if spektrum_sat_bind is set to a value between 1 and 10 and the plug is set during the firmware start-up. The bind plug should be always removed for normal flying. If no hardware bind plug is used the spektrum_sat_bind parameter should be reset to 0 manually after the bind is succefuly done. Please refer to the satellite receiver documentation for more details of the specific receiver in bind mode. Usually the bind mode will be indicated with some flashing LED’s.
 
 ## Table with spektrum_sat_bind parameter value
 
