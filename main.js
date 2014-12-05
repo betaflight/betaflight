@@ -214,7 +214,7 @@ $(document).ready(function () {
         }
     });
 
-    $("#content").on('change', 'input[type="number"]', function () {
+    $("#content").on('input', 'input[type="number"]', function () {
         var element = $(this),
             min = parseFloat(element.prop('min')),
             max = parseFloat(element.prop('max')),
