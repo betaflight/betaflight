@@ -115,7 +115,7 @@ var serial = {
         var self = this;
 
         if (self.connectionId) {
-            self.empty_outputBuffer();
+            self.emptyOutputBuffer();
 
             // remove listeners
             for (var i = (self.onReceive.listeners.length - 1); i >= 0; i--) {
@@ -249,7 +249,7 @@ var serial = {
             }
         }
     },
-    empty_outputBuffer: function () {
+    emptyOutputBuffer: function () {
         this.outputBuffer = [];
         this.transmitting = false;
     }
