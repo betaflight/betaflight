@@ -17,6 +17,6 @@ Here are the hardware specifications:
 - dimensions: 30x32mm
 - direct operation from an single cell lipoly battery
 
-*  Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings. Changes can be done as usual via CLI or the Cleanflight configurator.
+*  Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings. Changes can be done as usual via CLI or the Cleanflight configurator. Deltang receivers in serial mode will work like any other Spektrum satellite receiver (10bit, 22ms) only the bind process will be different. 
 
-The pin layout is very similar as the NAZE32 or the related clones (MW32, Flip32 etc). The hardware bind pin is connected to pin 41 (PB5). The AlienWii32 firmware will be build with TARGET=NAZE and OPTIONS="AlienWii32". The firmware image will come with alternative default settings which will give the user an plug and play experience. There is no computer need to get this into the air with an smal quadcopter. Anyhow to use this in an Hexa- or Octocopter or to do some more tuning additional CLI changes are required as usual.
+The pin layout is very similar as the NAZE32 or the related clones (MW32, Flip32, etc.). The hardware bind pin is connected to pin 41 (PB5). The AlienWii32 firmware will be build with TARGET=NAZE and OPTIONS="AlienWii32". The firmware image will come with alternative default settings which will give the user an plug and play experience. There is no computer need to get this into the air with an smal quadcopter. For the bind mode DSM2, 11bit, 22ms is preset. Anyhow to use this in an Hexa- or Octocopter or to do some more tuning additional CLI changes are required as usual.
