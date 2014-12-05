@@ -531,28 +531,38 @@ var MSP = {
             bufView[5] = bufView[3] ^ bufView[4]; // checksum
         }
 
-        // utilizing callback/timeout system for all commands
+        // dev version 0.57 code below got recently changed due to the fact that queueing same MSP codes was unsupported
+        // and was causing trouble while backup/restoring configurations
+        // watch out if the recent change create any inconsistencies and then adjust accordingly
+        var obj = {'code': code, 'requestBuffer': bufferOut, 'callback': (callback_msp) ? callback_msp : false, 'timer': false};
+
+        var requestExists = false;
         for (var i = 0; i < MSP.callbacks.length; i++) {
             if (MSP.callbacks[i].code == code) {
-                // request already exist
-                return false; // skips the code below
+                // request already exist, we will just attach
+                requestExists = true;
+                break;
             }
         }
 
-        var obj = {'code': code, 'requestBuffer': bufferOut, 'callback': (callback_msp) ? callback_msp : false};
-        obj.timer = setInterval(function () {
-            console.log('MSP data request timed-out: ' + code);
+        if (!requestExists) {
+            obj.timer = setInterval(function () {
+                console.log('MSP data request timed-out: ' + code);
 
-            serial.send(bufferOut, false);
-        }, 1000); // we should be able to define timeout in the future
+                serial.send(bufferOut, false);
+            }, 1000); // we should be able to define timeout in the future
+        }
 
         MSP.callbacks.push(obj);
 
-        serial.send(bufferOut, function (sendInfo) {
-            if (sendInfo.bytesSent == bufferOut.length) {
-                if (callback_sent) callback_sent();
-            }
-        });
+        // always send messages with data payload (even when there is a message already in the queue)
+        if (data || !requestExists) {
+            serial.send(bufferOut, function (sendInfo) {
+                if (sendInfo.bytesSent == bufferOut.length) {
+                    if (callback_sent) callback_sent();
+                }
+            });
+        }
 
         return true;
     },
