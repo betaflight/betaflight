@@ -67,3 +67,9 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     gpioInit(GPIOE, &gpio);
     gpioInit(GPIOF, &gpio);
 }
+
+bool isMPUSoftReset(void)
+{
+    // not implemented yet for STM32F3xx
+    return false;
+}

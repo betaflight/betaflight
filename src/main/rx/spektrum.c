@@ -175,8 +175,8 @@ void spektrumBind(rxConfig_t *rxConfig)
     spekBindPort = BIND_PORT;
     spekBindPin = BIND_PIN;
 
-    // don't try to bind if: bind flag is out of range
-    if (rxConfig->spektrum_sat_bind == 0 || rxConfig->spektrum_sat_bind > 10)
+    // don't try to bind if: here after soft reset or bind flag is out of range
+    if (isMPUSoftReset() || rxConfig->spektrum_sat_bind == 0 || rxConfig->spektrum_sat_bind > 10)
         return;
 
     gpio.speed = Speed_2MHz;
@@ -196,5 +196,15 @@ void spektrumBind(rxConfig_t *rxConfig)
         digitalHi(spekBindPort, spekBindPin);
         delayMicroseconds(120);
     }
+
+#ifndef HARDWARE_BIND_PLUG
+    // If we came here as a result of hard  reset (power up, with mcfg.spektrum_sat_bind set), then reset it back to zero and write config
+    // Don't reset if hardware bind plug is present
+    if (!isMPUSoftReset()) {
+        rxConfig->spektrum_sat_bind = 0;
+        writeEEPROM(1, true);
+    }
+#endif
+
 }
 #endif
