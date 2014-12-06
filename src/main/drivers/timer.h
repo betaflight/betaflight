@@ -117,7 +117,7 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
 
 void timerInit(void);
 void timerStart(void);
-void timerForceOverflow(volatile TIM_TypeDef *tim);
+void timerForceOverflow(TIM_TypeDef *tim);
 
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
 

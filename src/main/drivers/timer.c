@@ -772,7 +772,7 @@ void timerStart(void)
  * @param TIM_Typedef *tim The timer to overflow
  * @return void
  **/
-void timerForceOverflow(volatile TIM_TypeDef *tim)
+void timerForceOverflow(TIM_TypeDef *tim)
 {
     uint8_t timerIndex = lookupTimerIndex((const TIM_TypeDef *)tim);
 
