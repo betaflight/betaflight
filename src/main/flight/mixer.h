@@ -58,7 +58,7 @@ typedef struct motorMixer_t {
 
 // Custom mixer configuration
 typedef struct mixer_t {
-    uint8_t numberMotor;
+    uint8_t motorCount;
     uint8_t useServo;
     const motorMixer_t *motor;
 } mixer_t;

@@ -27,8 +27,6 @@
 
 #include "flight/failsafe.h" // FIXME dependency into the main code from a driver
 
-#include "config/config.h" // FIXME dependency into the main code from a driver
-
 #include "pwm_mapping.h"
 
 #include "pwm_output.h"
@@ -37,7 +35,7 @@ typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function poi
 
 typedef struct {
     volatile timCCR_t *ccr;
-    volatile TIM_TypeDef *tim;
+    TIM_TypeDef *tim;
     uint16_t period;
     pwmWriteFuncPtr pwmWritePtr;
 } pwmOutputPort_t;
@@ -140,29 +138,23 @@ void pwmWriteMotor(uint8_t index, uint16_t value)
         motors[index]->pwmWritePtr(index, value);
 }
 
-void pwmFinishedWritingMotors(uint8_t numberMotors)
+void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
     uint8_t index;
-    volatile TIM_TypeDef *lastTimerPtr = NULL;
+    TIM_TypeDef *lastTimerPtr = NULL;
 
+    for(index = 0; index < motorCount; index++){
 
-    if(feature(FEATURE_ONESHOT125)){
+        // Force the timer to overflow if it's the first motor to output, or if we change timers
+        if(motors[index]->tim != lastTimerPtr){
+            lastTimerPtr = motors[index]->tim;
 
-        for(index = 0; index < numberMotors; index++){
-
-            // Force the timer to overflow if it's the first motor to output, or if we change timers
-            if(motors[index]->tim != lastTimerPtr){
-                lastTimerPtr = motors[index]->tim;
-
-                timerForceOverflow(motors[index]->tim);
-            }
+            timerForceOverflow(motors[index]->tim);
         }
 
         // Set the compare register to 0, which stops the output pulsing if the timer overflows before the main loop completes again.
         // This compare register will be set to the output value on the next main loop.
-        for(index = 0; index < numberMotors; index++){
-            *motors[index]->ccr = 0;
-        }
+        *motors[index]->ccr = 0;
     }
 }
 
@@ -183,13 +175,13 @@ void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIn
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse)
 {
     uint32_t hz = PWM_TIMER_MHZ * 1000000;
+    motors[motorIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, hz / motorPwmRate, idlePulse);
+    motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
+}
 
-    if(feature(FEATURE_ONESHOT125)){
-        motors[motorIndex] = pwmOutConfig(timerHardware, ONESHOT125_TIMER_MHZ, 0xFFFF, idlePulse);
-    } else {
-        motors[motorIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, hz / motorPwmRate, idlePulse);
-    }
-
+void pwmOneshotMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t idlePulse)
+{
+    motors[motorIndex] = pwmOutConfig(timerHardware, ONESHOT125_TIMER_MHZ, 0xFFFF, idlePulse);
     motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
 }
 

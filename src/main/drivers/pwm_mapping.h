@@ -45,6 +45,7 @@ typedef struct drv_pwm_config_t {
     bool useUART2;
 #endif
     bool useVbat;
+    bool useOneshot;
     bool useSoftSerial;
     bool useLEDStrip;
     bool useServos;
