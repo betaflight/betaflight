@@ -42,7 +42,7 @@
 
 #define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
-static uint8_t numberMotor = 0;
+static uint8_t motorCount = 0;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 int16_t servo[MAX_SUPPORTED_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
@@ -271,21 +271,21 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
             if (customMixers[i].throttle == 0.0f)
                 break;
             currentMixer[i] = customMixers[i];
-            numberMotor++;
+            motorCount++;
         }
     } else {
-        numberMotor = mixers[currentMixerConfiguration].numberMotor;
+        motorCount = mixers[currentMixerConfiguration].motorCount;
         // copy motor-based mixers
         if (mixers[currentMixerConfiguration].motor) {
-            for (i = 0; i < numberMotor; i++)
+            for (i = 0; i < motorCount; i++)
                 currentMixer[i] = mixers[currentMixerConfiguration].motor[i];
         }
     }
 
     // in 3D mode, mixer gain has to be halved
     if (feature(FEATURE_3D)) {
-        if (numberMotor > 1) {
-            for (i = 0; i < numberMotor; i++) {
+        if (motorCount > 1) {
+            for (i = 0; i < motorCount; i++) {
                 currentMixer[i].pitch *= 0.5f;
                 currentMixer[i].roll *= 0.5f;
                 currentMixer[i].yaw *= 0.5f;
@@ -323,7 +323,7 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 
     // do we have anything here to begin with?
     if (mixers[index].motor != NULL) {
-        for (i = 0; i < mixers[index].numberMotor; i++)
+        for (i = 0; i < mixers[index].motorCount; i++)
             customMixers[i] = mixers[index].motor[i];
     }
 }
@@ -393,8 +393,13 @@ void writeMotors(void)
 {
     uint8_t i;
 
-    for (i = 0; i < numberMotor; i++)
+    for (i = 0; i < motorCount; i++)
         pwmWriteMotor(i, motor[i]);
+
+
+    if (feature(FEATURE_ONESHOT125)) {
+        pwmCompleteOneshotMotorUpdate(motorCount);
+    }
 }
 
 void writeAllMotors(int16_t mc)
@@ -402,7 +407,7 @@ void writeAllMotors(int16_t mc)
     uint8_t i;
 
     // Sends commands to all motors
-    for (i = 0; i < numberMotor; i++)
+    for (i = 0; i < motorCount; i++)
         motor[i] = mc;
     writeMotors();
 }
@@ -458,14 +463,14 @@ void mixTable(void)
     int16_t maxMotor;
     uint32_t i;
 
-    if (numberMotor > 3) {
+    if (motorCount > 3) {
         // prevent "yaw jump" during yaw correction
         axisPID[YAW] = constrain(axisPID[YAW], -100 - abs(rcCommand[YAW]), +100 + abs(rcCommand[YAW]));
     }
 
     // motors for non-servo mixes
-    if (numberMotor > 1)
-        for (i = 0; i < numberMotor; i++)
+    if (motorCount > 1)
+        for (i = 0; i < motorCount; i++)
             motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + -mixerConfig->yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
 
     // airplane / servo mixes
@@ -566,10 +571,10 @@ void mixTable(void)
     }
 
     maxMotor = motor[0];
-    for (i = 1; i < numberMotor; i++)
+    for (i = 1; i < motorCount; i++)
         if (motor[i] > maxMotor)
             maxMotor = motor[i];
-    for (i = 0; i < numberMotor; i++) {
+    for (i = 0; i < motorCount; i++) {
         if (maxMotor > escAndServoConfig->maxthrottle)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
             motor[i] -= maxMotor - escAndServoConfig->maxthrottle;
         if (feature(FEATURE_3D)) {

@@ -184,6 +184,7 @@ typedef struct timerConfig_s {
     timerCCHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallbackActive; // null-terminated linkded list of active overflow callbacks
+	uint32_t forcedOverflowTimerValue;
 } timerConfig_t;
 timerConfig_t timerConfig[USED_TIMER_COUNT];
 
@@ -580,7 +581,14 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
         tim_status &= mask;
         switch(bit) {
         case __builtin_clz(TIM_IT_Update):
-            capture = tim->ARR;
+
+        	if(timerConfig->forcedOverflowTimerValue != 0){
+        		capture = timerConfig->forcedOverflowTimerValue - 1;
+        		timerConfig->forcedOverflowTimerValue = 0;
+        	} else {
+        		capture = tim->ARR;
+        	}
+
             timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
             while(cb) {
                 cb->fn(cb, capture);
@@ -756,4 +764,23 @@ void timerStart(void)
         }
     }
 #endif
+}
+
+/**
+ * Force an overflow for a given timer.
+ * Saves the current value of the counter in the relevant timerConfig's forcedOverflowTimerValue variable.
+ * @param TIM_Typedef *tim The timer to overflow
+ * @return void
+ **/
+void timerForceOverflow(volatile TIM_TypeDef *tim)
+{
+    uint8_t timerIndex = lookupTimerIndex((const TIM_TypeDef *)tim);
+
+    ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+        // Save the current count so that PPM reading will work on the same timer that was forced to overflow
+        timerConfig[timerIndex].forcedOverflowTimerValue = tim->CNT + 1;
+
+        // Force an overflow by setting the UG bit
+        tim->EGR |= TIM_EGR_UG;
+    }
 }

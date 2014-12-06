@@ -34,6 +34,7 @@
 #define MAX_INPUTS  8
 
 #define PWM_TIMER_MHZ 1
+#define ONESHOT125_TIMER_MHZ 8
 
 typedef struct drv_pwm_config_t {
     bool useParallelPWM;
@@ -44,6 +45,7 @@ typedef struct drv_pwm_config_t {
     bool useUART2;
 #endif
     bool useVbat;
+    bool useOneshot;
     bool useSoftSerial;
     bool useLEDStrip;
     bool useServos;
