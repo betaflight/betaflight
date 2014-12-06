@@ -24,7 +24,6 @@
 #include "build_config.h"
 
 #include "common/utils.h"
-#include "config/config.h"
 
 #include "system.h"
 
@@ -317,6 +316,13 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
 #define UNUSED_PPM_TIMER_REFERENCE 0
 #define FIRST_PWM_PORT 0
 
+void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer)
+{
+    if (timerHardwarePtr->tim == sharedPwmTimer) {
+        ppmCountShift = 3;  // Divide by 8 if the timer is running at 8 MHz
+    }
+}
+
 void ppmInConfig(const timerHardware_t *timerHardwarePtr)
 {
     ppmInit();
@@ -330,11 +336,6 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
-
-    if((timerHardwarePtr->tim == TIM4) && (feature(FEATURE_ONESHOT125))){
-        ppmCountShift = 3;	// Divide by 8 if the timer is running at 8 MHz
-    }
-
 
     timerChCCHandlerInit(&self->edgeCb, ppmEdgeCallback);
     timerChOvrHandlerInit(&self->overflowCb, ppmOverflowCallback);

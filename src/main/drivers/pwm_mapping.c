@@ -365,6 +365,11 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
+#ifdef CC3D
+            if (init->useOneshot) {
+                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM4);
+            }
+#endif
             ppmInConfig(timerHardwarePtr);
         } else if (type == MAP_TO_PWM_INPUT) {
             pwmInConfig(timerHardwarePtr, channelIndex);
