@@ -25,7 +25,7 @@ TABS.cli.initialize = function (callback) {
 
         bufView[0] = 0x23; // #
 
-        serial.send(bufferOut, function (writeInfo) {});
+        serial.send(bufferOut);
 
         var textarea = $('.tab-cli textarea');
 
@@ -95,7 +95,7 @@ TABS.cli.sendSlowly = function (out_arr, i, timeout_needle) {
 
         bufView[out_arr[i].length] = 0x0D; // enter (\n)
 
-        serial.send(bufferOut, function (writeInfo) {});
+        serial.send(bufferOut);
     }, timeout_needle * 5);
 };
 
