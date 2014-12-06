@@ -395,6 +395,8 @@ void writeMotors(void)
 
     for (i = 0; i < numberMotor; i++)
         pwmWriteMotor(i, motor[i]);
+
+    pwmFinishedWritingMotors(numberMotor);
 }
 
 void writeAllMotors(int16_t mc)
