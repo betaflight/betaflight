@@ -53,8 +53,8 @@ The 8 pin RC_Input connector has the following pinouts when used in RX_PARALLEL_
 | 4   | CH1      |       |
 | 5   | CH2      |       |
 | 6   | CH3      |       |
-| 7   | CH4      |       |
-| 3   | Unused   |       |
+| 7   | CH4/Battery Voltage sensor      | CH4 if battery voltage sensor is disabled |
+| 8   | CH5/CH4  | CH4 if battery voltage monitor is enabled|
 
 The 6 pin RC_Output connector has the following pinouts when used in RX_PARALLEL_PWM mode
 
