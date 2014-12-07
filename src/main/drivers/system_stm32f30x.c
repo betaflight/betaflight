@@ -70,6 +70,8 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 
 bool isMPUSoftReset(void)
 {
-    // not implemented yet for STM32F3xx
-    return false;
+    if (RCC->CSR & RCC_CSR_SFTRSTF)
+        return true;
+    else
+        return false;
 }
