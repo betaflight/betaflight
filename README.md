@@ -34,6 +34,7 @@ Linux users
 Licensing
 ---------
 Baseflight Configurator is licensed under GPL V3, with the following exceptions:
+
 1. You can't publish any iteration of the application in the chrome web store.
 2. Artwork (Image files, 3D model files, etc...) requires authors permission to be used outside of this project.
 
