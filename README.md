@@ -31,6 +31,12 @@ Linux users
 1. Dont forget to add your user into dialout group "sudo usermod -aG dialout YOUR_USERNAME" for serial access
 2. If you have 3D model animation problems, Enable "Override software rendering list" in chrome flags chrome://flags/#ignore-gpu-blacklist
 
+Licensing
+---------
+Baseflight Configurator is licensed under GPL V3, with the following exceptions:
+1. You can't publish any iteration of the application in the chrome web store.
+2. Artwork (Image files, 3D model files, etc...) requires authors permission to be used outside of this project.
+
 Developers
 ----------
 We accept clean and reasonable patches, always target the <strong>"development"</strong> branch for the pull requests
