@@ -20,11 +20,11 @@ This is to activate the hardware bind plug feature
 
 ## Hardware
 
-The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienWii32 firmware is build. The hardware bind plug is expected between the bind pin and ground. 
+The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienWii32 firmware is build. The hardware bind plug is expected between the defined bind pin and ground. 
 
 ## Function
 
-The bind code will actually work for NAZE, NAZE32PRO, CJMCU targets (USART2) and CC3D target (USART3, flex port). The spektrum_sat_bind CLI parameter is defining the number of bind impulses (1-10) send to the satellite receiver. If it will set to 0 bind will be disabled in any case. Please refer to the table below. If the hardware bind plug is configured the bind mode will only be activated if spektrum_sat_bind is set to a value between 1 and 10 and the plug is set during the firmware start-up. The bind plug should be always removed for normal flying. If no hardware bind plug is used the spektrum_sat_bind parameter should be reset to 0 manually after the bind is succefuly done. Please refer to the satellite receiver documentation for more details of the specific receiver in bind mode. Usually the bind mode will be indicated with some flashing LED’s.
+The bind code will actually work for NAZE, NAZE32PRO, CJMCU targets (USART2) and CC3D target (USART3, flex port). The spektrum_sat_bind CLI parameter is defining the number of bind impulses (1-10) send to the satellite receiver. Setting spektrum_sat_bind to zero will disable the bind mode in any case. The bind mode will not be activated after an software reset. Please refer to the table below for the different possible values. If the hardware bind plug is configured the bind mode will only be activated if the plug is set during the firmware start-up. The bind plug should be always removed for normal flying. If no hardware bind plug is used the spektrum_sat_bind parameter will trigger the bind process during the next hardware reset and will be automatically disabled after this. Please refer to the satellite receiver documentation for more details of the specific receiver in bind mode. Usually the bind mode will be indicated with some flashing LEDs.
 
 ## Table with spektrum_sat_bind parameter value
 
