@@ -65,6 +65,7 @@
 #include "io/statusindicator.h"
 #include "rx/msp.h"
 #include "telemetry/telemetry.h"
+#include "blackbox/blackbox.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -303,6 +304,15 @@ void mwDisarm(void)
             }
         }
 #endif
+
+#ifdef BLACKBOX
+        if (feature(FEATURE_BLACKBOX)) {
+        	finishBlackbox();
+            if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
+                mspAllocateSerialPorts(&masterConfig.serialConfig);
+            }
+        }
+#endif
     }
 }
 
@@ -322,6 +332,16 @@ void mwArm(void)
                 if (sharedTelemetryAndMspPort) {
                     mspReleasePortIfAllocated(sharedTelemetryAndMspPort);
                 }
+            }
+#endif
+
+#ifdef BLACKBOX
+            if (feature(FEATURE_BLACKBOX)) {
+                serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
+                if (sharedBlackboxAndMspPort) {
+                    mspReleasePortIfAllocated(sharedBlackboxAndMspPort);
+                }
+            	startBlackbox();
             }
 #endif
             return;
@@ -681,6 +701,12 @@ void loop(void)
         mixTable();
         writeServos();
         writeMotors();
+
+#ifdef BLACKBOX
+	    if (!cliMode && feature(FEATURE_BLACKBOX)) {
+	        handleBlackbox();
+	    }
+#endif
     }
 
 #ifdef TELEMETRY

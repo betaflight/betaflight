@@ -64,6 +64,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "telemetry/telemetry.h"
+#include "blackbox/blackbox.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "config/runtime_config.h"
@@ -321,6 +322,10 @@ void init(void)
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY))
         initTelemetry();
+#endif
+
+#ifdef BLACKBOX
+    initBlackbox();
 #endif
 
     previousTime = micros();

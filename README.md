@@ -1,66 +1,54 @@
-# Cleanflight
+# Blackbox flight data recorder port for Cleanflight
 
-Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
+![Rendered flight log frame](http://i.imgur.com/FBphB8c.jpg)
 
-This fork differs from baseflight in that it attempts to use modern software development practices which result in:
+WARNING - This firmware is experimental, and may cause your craft to suddenly fall out of the sky. This port to
+Cleanflight has only had 3 test flights! No warranty is offered: if your craft breaks, you get to keep both pieces.
 
-1. greater reliability through code robustness and automated testing. 
-2. easier maintainance through code cleanliness.
-3. easier to develop new features. 
-4. easier to re-use code though code de-coupling and modularisation.
+## Introduction
+This is a modified version of Cleanflight which adds a flight data recorder function ("Blackbox"). Flight data
+information is transmitted over the flight controller's serial port on every control loop iteration to an external
+logging device to be recorded.
 
-The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediately raise an issue so it can be fixed, or better yet submit a pull request.
+After your flight, you can process the resulting logs on your computer to either turn them into CSV (comma-separated
+values) or render your flight log as a video.
 
-## Additional Features
+This is a port of my Blackbox feature for Baseflight, so please follow the instructions there for usage details (just
+use the Cleanflight firmware from this repository instead of the Baseflight firmware):
 
-Cleanflight also has additional features not found in baseflight.  Since the primary maintainer of baseflight also sells hardware there is no incentive for baseflight to support the target platforms and features that Cleanflight now provides.
+https://github.com/thenickdude/blackbox
 
-For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documenation.
+Instructions which are specific to Cleanflight are included here.
 
-http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
+## Installation of firmware
+Before installing the new firmware onto your Naze32, back up your configuration: Connect to your flight controller
+using the [Cleanflight Configurator][] , open up the CLI tab and enter "dump" into the box at the bottom and press enter.
+Copy all of the text that results and paste it into a text document somewhere for safe-keeping.
 
+Click the disconnect button, then on the main page choose the Firmware Flasher option. Tick the box for "Full Chip
+Erase" (warning, this will erase all your settings!). Click the "Load firmware (local)" button, and select the file `cleanflight_NAZE.hex`
+from the `obj/` directory. Click the "Flash Firmware" button and wait for it to complete.
 
-## Documentation
+Now you need to reload your configuration: Go to the CLI tab and paste in the dump that you saved earlier and press
+enter, it should execute and restore your settings.
 
-There is some documentation here: https://github.com/hydra/cleanflight/tree/master/docs 
+Before you leave the CLI tab, enable the Blackbox feature by typing in `feature BLACKBOX` and pressing enter. You also
+need to assign the Blackbox to one of [your serial ports][]. Because it requires a 115200 baud port, the best choice on the
+Naze32 to use is serial_port_1, which is the two-pin Tx/Rx header in the centre of the board.
 
-If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
+Use `set serial_port_1_scenario=10` to switch the port to Blackbox-only, or `set serial_port_1_scenario=11` to switch it
+to MSP, CLI, Blackbox and GPS Passthrough (probably the most useful configuration, since this is the port connected to
+USB and you'll still want to access the CLI over it).
 
-## IRC Support and Developers Channel
+Enter `save`. Your configuration should be saved and the flight controller will reboot. You're ready to go!
 
-There's a dedicated IRC channel here:
+If you ever need to disable the Blackbox (say, for example, to switch to using the serial port for an OSD instead), you
+can either reflash the stock firmware using the Configurator, or you can just turn off the Blackbox feature
+by entering `feature -BLACKBOX` on the CLI tab.
 
-irc://irc.freenode.net/#cleanflight
+[your serial ports]: https://github.com/cleanflight/cleanflight/blob/master/docs/Serial.md
+[Cleanflight Configurator]: https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en
 
-If you are using windows and don't have an IRC client installed then take a look at HydraIRC - here: http://hydrairc.com/
+## License
 
-## Videos
-
-
-There is a dedicated Cleanflight youtube channel which has progress update videos, flight demonstrations, instrutions and other related videos.
-
-https://www.youtube.com/playlist?list=PL6H1fAj_XUNVBEcp8vbMH2DrllZAGWkt8
-
-Please subscribe and '+1' the videos if you find them useful.
-
-## Configuration Tool
-
-To configure Cleanflight you should use the Cleanlight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
-
-https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
-
-The source for it is here:
-
-https://github.com/hydra/cleanflight-configurator
-
-## Contributing
-
-Before making any contributions, take a note of the https://github.com/multiwii/baseflight/wiki/CodingStyle
-
-For this fork it is also advised to read about clean code, here are some useful links:
-
-* http://cleancoders.com/
-* http://en.wikipedia.org/wiki/SOLID_%28object-oriented_design%29
-* http://en.wikipedia.org/wiki/Code_smell
-* http://en.wikipedia.org/wiki/Code_refactoring
-* http://www.amazon.co.uk/Working-Effectively-Legacy-Robert-Martin/dp/0131177052
+This project is licensed under GPLv3.

@@ -42,6 +42,11 @@ extern uint16_t cycleTime;
 
 int16_t heading, magHold;
 int16_t axisPID[3];
+
+#ifdef BLACKBOX
+int32_t axisP[3], axisI[3], axisD[3];
+#endif
+
 uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 static int32_t errorGyroI[3] = { 0, 0, 0 };
@@ -243,6 +248,12 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         delta1[axis] = delta;
         DTerm = (deltaSum * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
+
+#ifdef BLACKBOX
+		axisP[axis] = PTerm;
+		axisI[axis] = ITerm;
+		axisD[axis] = -DTerm;
+#endif
     }
 }
 
@@ -326,6 +337,12 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
+
+#ifdef BLACKBOX
+		axisP[axis] = PTerm;
+		axisI[axis] = ITerm;
+		axisD[axis] = DTerm;
+#endif
     }
 }
 
