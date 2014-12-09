@@ -43,23 +43,32 @@
 //#define USE_USART3_RX_DMA
 //#define USE_USART3_TX_DMA
 
-#define UART1_TX_PIN GPIO_Pin_9  // PA9
-#define UART1_RX_PIN GPIO_Pin_10 // PA10
-#define UART1_GPIO GPIOA
-#define UART1_TX_PINSOURCE GPIO_PinSource9
-#define UART1_RX_PINSOURCE GPIO_PinSource10
+#ifndef UART1_GPIO
+#define UART1_TX_PIN        GPIO_Pin_9  // PA9
+#define UART1_RX_PIN        GPIO_Pin_10 // PA10
+#define UART1_GPIO          GPIOA
+#define UART1_GPIO_AF       GPIO_AF_7
+#define UART1_TX_PINSOURCE  GPIO_PinSource9
+#define UART1_RX_PINSOURCE  GPIO_PinSource10
+#endif
 
+#ifndef UART2_GPIO
 #define UART2_TX_PIN        GPIO_Pin_5 // PD5
 #define UART2_RX_PIN        GPIO_Pin_6 // PD6
 #define UART2_GPIO          GPIOD
+#define UART2_GPIO_AF       GPIO_AF_7
 #define UART2_TX_PINSOURCE  GPIO_PinSource5
 #define UART2_RX_PINSOURCE  GPIO_PinSource6
+#endif
 
+#ifndef UART3_GPIO
 #define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
 #define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
+#define UART2_GPIO_AF       GPIO_AF_7
 #define UART3_GPIO          GPIOB
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
+#endif
 
 static uartPort_t uartPort1;
 static uartPort_t uartPort2;
@@ -105,20 +114,20 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 
     if (mode & MODE_TX) {
         GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
         GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
     }
 
     if (mode & MODE_RX) {
         GPIO_InitStructure.GPIO_Pin = UART1_RX_PIN;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, UART1_GPIO_AF);
         GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
     }
 
     if (mode & MODE_BIDIR) {
         GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
         GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
         GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
     }
 
@@ -182,20 +191,20 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 
     if (mode & MODE_TX) {
         GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
     }
 
     if (mode & MODE_RX) {
         GPIO_InitStructure.GPIO_Pin = UART2_RX_PIN;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, UART2_GPIO_AF);
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
     }
 
     if (mode & MODE_BIDIR) {
         GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
         GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
     }
 
