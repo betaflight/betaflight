@@ -212,6 +212,29 @@ static const char * const blackboxHeaderFields[] = {
 		ENCODING(SIGNED_VB)
 };
 
+/**
+ * Additional fields to tack on to those above for tricopters (to record tail servo position)
+ */
+static const char * const blackboxAdditionalFieldsTricopter[] = {
+	//Field I name
+		"servo[5]",
+
+	//Field I signed
+		"0",
+
+	//Field I predictor
+		PREDICT(1500),
+
+    //Field I encoding:
+		ENCODING(SIGNED_VB),
+
+	//Field P predictor:
+		PREDICT(PREVIOUS),
+
+    //Field P encoding:
+		ENCODING(SIGNED_VB)
+};
+
 static const char blackboxGpsHeader[] =
 	"H Field G name:"
 		"GPS_numSat,GPS_coord[0],GPS_coord[1],GPS_altitude,GPS_speed\n"
@@ -270,6 +293,10 @@ static blackbox_values_t blackboxHistoryRing[3];
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
 static blackbox_values_t* blackboxHistory[3];
 
+static int isTricopter()
+{
+	return masterConfig.mixerConfiguration == MULTITYPE_TRI;
+}
 
 static void blackboxWrite(uint8_t value)
 {
@@ -425,6 +452,9 @@ static void writeIntraframe(void)
 	for (x = 1; x < motorCount; x++)
 		writeSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
 
+	if (isTricopter())
+		writeSignedVB(blackboxHistory[0]->servo[5] - 1500);
+
 	//Rotate our history buffers:
 
 	//The current state becomes the new "before" state
@@ -480,6 +510,9 @@ static void writeInterframe(void)
 
 	for (x = 0; x < motorCount; x++)
 		writeSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
+
+	if (isTricopter())
+		writeSignedVB(blackboxCurrent->servo[5] - blackboxLast->servo[5]);
 
 	//Rotate our history buffers
 	blackboxHistory[2] = blackboxHistory[1];
@@ -576,10 +609,43 @@ static void writeGPSFrame()
 	gpsHistory.GPS_coord[1] = GPS_coord[1];
 }
 
+/**
+ * Fill the current state of the blackbox using values read from the flight controller
+ */
+static void loadBlackboxState(void)
+{
+	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
+	int i;
+
+	blackboxCurrent->time = currentTime;
+
+	for (i = 0; i < 3; i++)
+		blackboxCurrent->axisP[i] = axisP[i];
+	for (i = 0; i < 3; i++)
+		blackboxCurrent->axisI[i] = axisI[i];
+	for (i = 0; i < 3; i++)
+		blackboxCurrent->axisD[i] = axisD[i];
+
+	for (i = 0; i < 4; i++)
+		blackboxCurrent->rcCommand[i] = rcCommand[i];
+
+	for (i = 0; i < 3; i++)
+		blackboxCurrent->gyroData[i] = gyroData[i];
+
+	for (i = 0; i < 3; i++)
+		blackboxCurrent->accSmooth[i] = accSmooth[i];
+
+	for (i = 0; i < motorCount; i++)
+		blackboxCurrent->motor[i] = motor[i];
+
+	//Tail servo for tricopters
+	blackboxCurrent->servo[5] = servo[5];
+}
+
 void handleBlackbox(void)
 {
 	int i;
-	blackbox_values_t *blackboxCurrent;
+	const char *additionalHeader;
 	const int SERIAL_CHUNK_SIZE = 16;
 	static int charXmitIndex = 0;
 	int motorsToRemove, endIndex;
@@ -607,8 +673,10 @@ void handleBlackbox(void)
 		break;
 		case BLACKBOX_STATE_SEND_FIELDINFO:
 			/*
-			 * Once again, chunking up the data so we don't exceed our datarate. This time we're removing the excess field defs
-			 * for motors we don't have.
+			 * Send information about the fields we're recording to the log.
+			 *
+			 * Once again, we're chunking up the data so we don't exceed our datarate. This time we're trimming the
+			 * excess field defs off the end of the header for motors we don't have.
 			 */
 			motorsToRemove = 8 - motorCount;
 
@@ -618,7 +686,16 @@ void handleBlackbox(void)
 				for (i = charXmitIndex; i < charXmitIndex + SERIAL_CHUNK_SIZE && i < endIndex; i++)
 					blackboxWrite(blackboxHeaderFields[headerXmitIndex][i]);
 
+				// Did we complete this line?
 				if (i == endIndex) {
+					if (isTricopter()) {
+						//Add fields to the end for the tail servo
+						blackboxWrite(',');
+
+						for (additionalHeader = blackboxAdditionalFieldsTricopter[headerXmitIndex]; *additionalHeader; additionalHeader++)
+							blackboxWrite(*additionalHeader);
+					}
+
 					blackboxWrite('\n');
 					headerXmitIndex++;
 					charXmitIndex = 0;
@@ -626,6 +703,8 @@ void handleBlackbox(void)
 					charXmitIndex = i;
 				}
 			} else {
+				//Completed sending field information
+
 				if (feature(FEATURE_GPS)) {
 					blackboxState = BLACKBOX_STATE_SEND_GPS_HEADERS;
 				} else {
@@ -678,29 +757,8 @@ void handleBlackbox(void)
 			headerXmitIndex++;
 		break;
 		case BLACKBOX_STATE_RUNNING:
-        	// Copy current system values into the blackbox to be written out
-			blackboxCurrent = blackboxHistory[0];
-
-        	blackboxCurrent->time = currentTime;
-
-        	for (i = 0; i < motorCount; i++)
-        		blackboxCurrent->motor[i] = motor[i];
-
-        	for (i = 0; i < 3; i++)
-        		blackboxCurrent->axisP[i] = axisP[i];
-        	for (i = 0; i < 3; i++)
-        		blackboxCurrent->axisI[i] = axisI[i];
-        	for (i = 0; i < 3; i++)
-        		blackboxCurrent->axisD[i] = axisD[i];
-
-        	for (i = 0; i < 4; i++)
-        		blackboxCurrent->rcCommand[i] = rcCommand[i];
-
-        	for (i = 0; i < 3; i++)
-        		blackboxCurrent->gyroData[i] = gyroData[i];
-
-        	for (i = 0; i < 3; i++)
-        		blackboxCurrent->accSmooth[i] = accSmooth[i];
+        	// Copy current system values into the blackbox
+        	loadBlackboxState();
 
 			// Write a keyframe every 32 frames so we can resynchronise upon missing frames
 			int blackboxIntercycleIndex = blackboxIteration % 32;

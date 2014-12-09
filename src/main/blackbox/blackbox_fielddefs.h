@@ -41,6 +41,9 @@
 //Predict this GPS co-ordinate is the GPS home co-ordinate (or no prediction if that coordinate is not set)
 #define FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD     7
 
+//Predict 1500
+#define FLIGHT_LOG_FIELD_PREDICTOR_1500           8
+
 
 #define FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB       0
 #define FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB     1
