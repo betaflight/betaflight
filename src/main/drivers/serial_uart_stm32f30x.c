@@ -40,6 +40,8 @@
 #define USE_USART1_RX_DMA
 //#define USE_USART2_RX_DMA
 //#define USE_USART2_TX_DMA
+//#define USE_USART3_RX_DMA
+//#define USE_USART3_TX_DMA
 
 #define UART1_TX_PIN GPIO_Pin_9  // PA9
 #define UART1_RX_PIN GPIO_Pin_10 // PA10
@@ -56,8 +58,8 @@
 #define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
 #define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
 #define UART3_GPIO          GPIOB
-#define UART3_TX_PINSOURCE  GPIO_PinSource5
-#define UART3_RX_PINSOURCE  GPIO_PinSource6
+#define UART3_TX_PINSOURCE  GPIO_PinSource10
+#define UART3_RX_PINSOURCE  GPIO_PinSource11
 
 static uartPort_t uartPort1;
 static uartPort_t uartPort2;
