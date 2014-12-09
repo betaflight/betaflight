@@ -53,8 +53,15 @@
 #define UART2_TX_PINSOURCE  GPIO_PinSource5
 #define UART2_RX_PINSOURCE  GPIO_PinSource6
 
+#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
+#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
+#define UART3_GPIO          GPIOB
+#define UART3_TX_PINSOURCE  GPIO_PinSource5
+#define UART3_RX_PINSOURCE  GPIO_PinSource6
+
 static uartPort_t uartPort1;
 static uartPort_t uartPort2;
+static uartPort_t uartPort3;
 
 void uartStartTxDMA(uartPort_t *s);
 
@@ -210,6 +217,85 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     return s;
 }
 
+uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode)
+{
+    uartPort_t *s;
+    static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
+    static volatile uint8_t tx3Buffer[UART3_TX_BUFFER_SIZE];
+    NVIC_InitTypeDef NVIC_InitStructure;
+    GPIO_InitTypeDef  GPIO_InitStructure;
+
+    s = &uartPort3;
+    s->port.vTable = uartVTable;
+
+    s->port.baudRate = baudRate;
+
+    s->port.rxBufferSize = UART3_RX_BUFFER_SIZE;
+    s->port.txBufferSize = UART3_TX_BUFFER_SIZE;
+    s->port.rxBuffer = rx3Buffer;
+    s->port.txBuffer = tx3Buffer;
+
+    s->USARTx = USART3;
+
+#ifdef USE_USART3_RX_DMA
+    s->rxDMAChannel = DMA1_Channel3;
+    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
+#endif
+#ifdef USE_USART3_TX_DMA
+    s->txDMAChannel = DMA1_Channel2;
+    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
+#endif
+
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+
+#if defined(USE_USART3_TX_DMA) || defined(USE_USART3_RX_DMA)
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+#endif
+
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+
+    if (mode & MODE_TX) {
+        GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
+        GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+    }
+
+    if (mode & MODE_RX) {
+        GPIO_InitStructure.GPIO_Pin = UART3_RX_PIN;
+        GPIO_PinAFConfig(UART3_GPIO, UART3_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+    }
+
+    if (mode & MODE_BIDIR) {
+        GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+        GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+    }
+
+#ifdef USE_USART3_TX_DMA
+    // DMA TX Interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART3_TXDMA);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART3_TXDMA);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
+
+#ifndef USE_USART3_RX_DMA
+    NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART3_RXDMA);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART3_RXDMA);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
+
+    return s;
+}
+
 static void handleUsartTxDma(uartPort_t *s)
 {
     DMA_Cmd(s->txDMAChannel, DISABLE);
@@ -235,6 +321,15 @@ void DMA1_Channel7_IRQHandler(void)
     uartPort_t *s = &uartPort2;
     DMA_ClearITPendingBit(DMA1_IT_TC7);
     DMA_Cmd(DMA1_Channel7, DISABLE);
+    handleUsartTxDma(s);
+}
+
+// USART3 Tx DMA Handler
+void DMA1_Channel2_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort3;
+    DMA_ClearITPendingBit(DMA1_IT_TC2);
+    DMA_Cmd(DMA1_Channel2, DISABLE);
     handleUsartTxDma(s);
 }
 
@@ -276,6 +371,13 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort2;
+
+    usartIrqHandler(s);
+}
+
+void USART3_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort3;
 
     usartIrqHandler(s);
 }
