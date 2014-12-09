@@ -305,7 +305,7 @@ var MSP = {
                 MISC.vbatscale = data.getUint8(18, 1); // 10-200
                 MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
                 MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
-                MISC.placeholder3 = data.getUint8(21, 1);
+                MISC.vbatwarningcellvoltage = data.getUint8(21, 1) / 10; // 10-50
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
@@ -679,7 +679,7 @@ MSP.crunch = function (code) {
             buffer.push(MISC.vbatscale);
             buffer.push(MISC.vbatmincellvoltage * 10);
             buffer.push(MISC.vbatmaxcellvoltage * 10);
-            buffer.push(MISC.placeholder3);
+            buffer.push(MISC.vbatwarningcellvoltage * 10);
             break;
         case MSP_codes.MSP_SET_SERVO_CONF:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
