@@ -233,6 +233,41 @@ static const uint16_t airPPM[] = {
 static const uint16_t airPWM[] = {
         0xFFFF
 };
+#endif
+
+#ifdef SPARKY
+static const uint16_t multiPPM[] = {
+#if 1
+    0xFFFF
+#else
+    PWM13 | (MAP_TO_PPM_INPUT << 8), // PPM input
+    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM8  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM10 | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM11 | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM12 | (MAP_TO_SERVO_OUTPUT << 8),
+    0xFFFF
+#endif
+};
+
+static const uint16_t multiPWM[] = {
+        0xFFFF
+};
+
+static const uint16_t airPPM[] = {
+        0xFFFF
+};
+
+static const uint16_t airPWM[] = {
+        0xFFFF
+};
 
 #endif
 
@@ -334,7 +369,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if (defined(STM32F303xC) || defined(STM32F3DISCOVERY)) && !defined(CHEBUZZF3)
+#if defined(NAZE32PRO) || (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
             // remap PWM 5+6 or 9+10 as servos - softserial pin pairs require timer ports that use the same timer
             if (init->useSoftSerial) {
                 if (timerIndex == PWM5 || timerIndex == PWM6)

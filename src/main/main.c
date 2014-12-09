@@ -200,6 +200,7 @@ void init(void)
 #endif
 #endif
 
+#if !defined(SPARKY)
     adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
     adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
     adc_params.enableExternal1 = false;
@@ -212,6 +213,8 @@ void init(void)
 #endif
 
     adcInit(&adc_params);
+#endif
+
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
