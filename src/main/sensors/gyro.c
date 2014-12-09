@@ -109,6 +109,8 @@ static void applyGyroZero(void)
 
 void gyroGetADC(void)
 {
+    // FIXME When gyro.read() fails due to i2c or other error gyroZero is continually re-applied to gyroADC resulting in a old reading that gets worse over time.
+
     // range: +/- 8192; +/- 2000 deg/sec
     gyro.read(gyroADC);
     alignSensors(gyroADC, gyroADC, gyroAlign);
