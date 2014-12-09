@@ -52,6 +52,13 @@
 #define UART1_TX_PINSOURCE  GPIO_PinSource6
 #define UART1_RX_PINSOURCE  GPIO_PinSource7
 
+#define UART2_TX_PIN        GPIO_Pin_2 // PA2 - Clashes with PWM6 input.
+#define UART2_RX_PIN        GPIO_Pin_3 // PA3
+#define UART2_GPIO          GPIOA
+#define UART2_GPIO_AF       GPIO_AF_7
+#define UART2_TX_PINSOURCE  GPIO_PinSource2
+#define UART2_RX_PINSOURCE  GPIO_PinSource3
+
 // Note: PA5 and PA0 are N/C on the sparky - potentially use for ADC or LED STRIP?
 
 #define USE_I2C
@@ -70,4 +77,6 @@
 
 
 #define SENSORS_SET (SENSOR_ACC)
+
+#define SERIAL_RX
 
