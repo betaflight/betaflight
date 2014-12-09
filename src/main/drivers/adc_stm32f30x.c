@@ -69,11 +69,11 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableRSSI) {
         GPIO_InitStructure.GPIO_Pin |= GPIO_Pin_2;
 
-		adcConfig[ADC_RSSI].adcChannel = ADC_Channel_8;
-		adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
-		adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
-		adcConfig[ADC_RSSI].enabled = true;
-		adcChannelCount++;
+        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_8;
+        adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
+        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
+        adcConfig[ADC_RSSI].enabled = true;
+        adcChannelCount++;
     }
 
     adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_9;
