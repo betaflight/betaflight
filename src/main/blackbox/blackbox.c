@@ -195,7 +195,7 @@ static const char * const blackboxHeaderFields[] = {
 		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","
 		/* PIDs: */
 		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(TAG2_3S32) "," ENCODING(TAG2_3S32) ","  ENCODING(TAG2_3S32) ","
 		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
 		/* rcCommand[0..3] */
 		ENCODING(TAG8_4S16) "," ENCODING(TAG8_4S16) ","  ENCODING(TAG8_4S16) ","
@@ -340,15 +340,134 @@ static void writeSignedVB(int32_t value)
 	writeUnsignedVB((uint32_t)((value << 1) ^ (value >> 31)));
 }
 
-#define FIELD_ZERO  0
-#define FIELD_4BIT  1
-#define FIELD_8BIT  2
-#define FIELD_16BIT 3
+/**
+ * Write a 2 bit tag followed by 3 signed fields of 2, 4, 6 or 32 bits
+ */
+static void writeTag2_3S32(int32_t *values) {
+	static const int NUM_FIELDS = 3;
+
+	//Need to be enums rather than const ints if we want to switch on them (due to being C)
+	enum { BITS_2  = 0};
+	enum { BITS_4  = 1};
+	enum { BITS_6  = 2};
+	enum { BITS_32 = 3};
+
+	enum { BYTES_1  = 0};
+	enum { BYTES_2  = 1};
+	enum { BYTES_3  = 2};
+	enum { BYTES_4  = 3};
+
+	int x;
+	int selector = BITS_2, selector2;
+
+	/*
+	 * Find out how many bits the largest value requires to encode, and use it to choose one of the packing schemes
+	 * below:
+	 *
+	 * Selector possibilities
+	 *
+	 * 2 bits per field  ss11 2233,
+	 * 4 bits per field  ss00 1111 2222 3333
+	 * 6 bits per field  ss11 1111 0022 2222 0033 3333
+	 * 32 bits per field sstt tttt followed by fields of various byte counts
+	 */
+	for (x = 0; x < NUM_FIELDS; x++) {
+		//Require more than 6 bits?
+		if (values[x] >= 32 || values[x] < -32) {
+			selector = BITS_32;
+			break;
+		}
+
+		//Require more than 4 bits?
+		if (values[x] >= 8 || values[x] < -8) {
+			 if (selector < BITS_6)
+				 selector = BITS_6;
+		} else if (values[x] >= 2 || values[x] < -2) { //Require more than 2 bits?
+			if (selector < BITS_4)
+				selector = BITS_4;
+		}
+	}
+
+	switch (selector) {
+		case BITS_2:
+			blackboxWrite((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03));
+		break;
+		case BITS_4:
+			blackboxWrite((selector << 6) | (values[0] & 0x0F));
+			blackboxWrite((values[1] << 4) | (values[2] & 0x0F));
+		break;
+		case BITS_6:
+			blackboxWrite((selector << 6) | (values[0] & 0x3F));
+			blackboxWrite((uint8_t)values[1]);
+			blackboxWrite((uint8_t)values[2]);
+		break;
+		case BITS_32:
+			/*
+			 * Do another round to compute a selector for each field, assuming that they are at least 8 bits each
+			 *
+			 * Selector2 field possibilities
+			 * 0 - 8 bits
+			 * 1 - 16 bits
+			 * 2 - 24 bits
+			 * 3 - 32 bits
+			 */
+			selector2 = 0;
+
+			//Encode in reverse order so the first field is in the low bits:
+			for (x = NUM_FIELDS - 1; x >= 0; x--) {
+				selector2 <<= 2;
+
+				if (values[x] < 128 && values[x] >= -128)
+					selector2 |= BYTES_1;
+				else if (values[x] < 32768 && values[x] >= -32768)
+					selector2 |= BYTES_2;
+				else if (values[x] < 8388608 && values[x] >= -8388608)
+					selector2 |= BYTES_3;
+				else
+					selector2 |= BYTES_4;
+			}
+
+			//Write the selectors
+			blackboxWrite((selector << 6) | selector2);
+
+			//And now the values according to the selectors we picked for them
+			for (x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
+				switch (selector2 & 0x03) {
+					case BYTES_1:
+						blackboxWrite(values[x]);
+					break;
+					case BYTES_2:
+						blackboxWrite(values[x]);
+						blackboxWrite(values[x] >> 8);
+					break;
+					case BYTES_3:
+						blackboxWrite(values[x]);
+						blackboxWrite(values[x] >> 8);
+						blackboxWrite(values[x] >> 16);
+					break;
+					case BYTES_4:
+						blackboxWrite(values[x]);
+						blackboxWrite(values[x] >> 8);
+						blackboxWrite(values[x] >> 16);
+						blackboxWrite(values[x] >> 24);
+					break;
+				}
+			}
+		break;
+	}
+}
 
 /**
  * Write an 8-bit selector followed by four signed fields of size 0, 4, 8 or 16 bits.
  */
 static void writeTag8_4S16(int32_t *values) {
+
+	//Need to be enums rather than const ints if we want to switch on them (due to being C)
+	enum { FIELD_ZERO  = 0};
+	enum { FIELD_4BIT  = 1};
+	enum { FIELD_8BIT  = 2};
+	enum { FIELD_16BIT = 3};
+
 	uint8_t selector;
 	int x;
 
@@ -468,7 +587,7 @@ static void writeIntraframe(void)
 static void writeInterframe(void)
 {
 	int x;
-	int32_t rcDeltas[4];
+	int32_t deltas[4];
 
 	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
 	blackbox_values_t *blackboxLast = blackboxHistory[1];
@@ -487,19 +606,25 @@ static void writeInterframe(void)
 		writeSignedVB(blackboxCurrent->axisP[x] - blackboxLast->axisP[x]);
 
 	for (x = 0; x < 3; x++)
-		writeSignedVB(blackboxCurrent->axisI[x] - blackboxLast->axisI[x]);
+		deltas[x] = blackboxCurrent->axisI[x] - blackboxLast->axisI[x];
 
+	/* 
+	 * The PID I field changes very slowly, most of the time +-2, so use an encoding
+	 * that can pack all three fields into one byte in that situation.
+	 */
+	writeTag2_3S32(deltas);
+	
 	for (x = 0; x < 3; x++)
 		writeSignedVB(blackboxCurrent->axisD[x] - blackboxLast->axisD[x]);
 
 	for (x = 0; x < 4; x++)
-		rcDeltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
+		deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
 
 	/*
-	 * RC tends to stay the same or very small for many frames at a time, so use an encoding that
+	 * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
 	 * can pack multiple values per byte:
 	 */
-	writeTag8_4S16(rcDeltas);
+	writeTag8_4S16(deltas);
 
 	//Since gyros, accs and motors are noisy, base the prediction on the average of the history:
 	for (x = 0; x < 3; x++)
@@ -729,26 +854,38 @@ void handleBlackbox(void)
 					blackboxPrintf("H Firmware type:Cleanflight\n");
 				break;
 				case 1:
-					blackboxPrintf("H Firmware revision:%s\n", shortGitRevision);
+					// Pause to allow more time for previous to transmit (it exceeds our chunk size)
 				break;
 				case 2:
-					blackboxPrintf("H Firmware date:%s %s\n", buildDate, buildTime);
+					blackboxPrintf("H Firmware revision:%s\n", shortGitRevision);
 				break;
 				case 3:
-					blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
+					// Pause to allow more time for previous to transmit
 				break;
 				case 4:
-					blackboxPrintf("H minthrottle:%d\n", masterConfig.escAndServoConfig.minthrottle);
+					blackboxPrintf("H Firmware date:%s %s\n", buildDate, buildTime);
 				break;
 				case 5:
-					blackboxPrintf("H maxthrottle:%d\n", masterConfig.escAndServoConfig.maxthrottle);
+					// Pause to allow more time for previous to transmit
 				break;
 				case 6:
+					blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
+				break;
+				case 7:
+					blackboxPrintf("H minthrottle:%d\n", masterConfig.escAndServoConfig.minthrottle);
+				break;
+				case 8:
+					blackboxPrintf("H maxthrottle:%d\n", masterConfig.escAndServoConfig.maxthrottle);
+				break;
+				case 9:
 					floatConvert.f = gyro.scale;
 					blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
 				break;
-				case 7:
+				case 10:
 					blackboxPrintf("H acc_1G:%u\n", acc_1G);
+				break;
+				case 11:
+					// One more pause for good luck
 				break;
 				default:
 					blackboxState = BLACKBOX_STATE_RUNNING;
