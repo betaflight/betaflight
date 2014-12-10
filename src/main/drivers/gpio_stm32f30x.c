@@ -47,7 +47,7 @@ void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config)
         if (config->pin & pinMask) {
 
             GPIO_InitStructure.GPIO_Pin =  pinMask;
-            GPIO_InitStructure.GPIO_Mode = (config->mode >> MODE_OFFSET) & MODE_MASK;
+            GPIO_InitStructure.GPIO_Mode = (config->mode & MODE_MASK) >> MODE_OFFSET;
 
             GPIOSpeed_TypeDef speed = GPIO_Speed_10MHz;
             switch (config->speed) {
@@ -63,8 +63,8 @@ void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config)
             }
 
             GPIO_InitStructure.GPIO_Speed = speed;
-            GPIO_InitStructure.GPIO_OType = (config->mode >> OUTPUT_OFFSET) & OUTPUT_MASK;
-            GPIO_InitStructure.GPIO_PuPd = (config->mode >> PUPD_OFFSET) & PUPD_MASK;
+            GPIO_InitStructure.GPIO_OType = (config->mode & OUTPUT_MASK) >> OUTPUT_OFFSET;
+            GPIO_InitStructure.GPIO_PuPd = (config->mode & PUPD_MASK) >> PUPD_OFFSET;
             GPIO_Init(gpio, &GPIO_InitStructure);
         }
     }
