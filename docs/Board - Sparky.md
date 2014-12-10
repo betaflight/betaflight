@@ -27,7 +27,7 @@ Tested with revision 1 board.
 
 ## Via USART1
 
-Short the bootloader pads and flash using configurator via USART1.
+Short the bootloader pads and flash using configurator or the st flashloader tool via USART1.
 Unshort bootloader pads after flashing.
 
 ## Via SWD
@@ -36,6 +36,10 @@ On the bottom of the board there is an SWD header socket onto switch a JST-SH co
 Once you have SWD connected you can use the st-link or j-link tools to flash a binary.
 
 See Sparky schematic for CONN2 pinouts.
+
+## TauLabs bootloader
+
+Flashing cleanflight will erase the TauLabs bootloader, this is not a problem and can easily be restored using the st flashloader tool.
 
 # Serial Ports
 
