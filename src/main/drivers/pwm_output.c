@@ -97,6 +97,8 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
 
     configTimeBase(timerHardware->tim, period, mhz);
     pwmGPIOConfig(timerHardware->gpio, timerHardware->pin, Mode_AF_PP);
+
+
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value);
     if (timerHardware->outputEnable)
         TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);

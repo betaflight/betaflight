@@ -237,10 +237,22 @@ static const uint16_t airPWM[] = {
 
 #ifdef SPARKY
 static const uint16_t multiPPM[] = {
-#if 1
+    PWM11 | (MAP_TO_PPM_INPUT << 8), // PPM input
+
+    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM15
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM15
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM2
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM2
     0xFFFF
-#else
-    PWM13 | (MAP_TO_PPM_INPUT << 8), // PPM input
+};
+
+static const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -248,25 +260,18 @@ static const uint16_t multiPPM[] = {
     PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM8  | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM10 | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM11 | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM12 | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
     0xFFFF
-#endif
-};
-
-static const uint16_t multiPWM[] = {
-        0xFFFF
 };
 
 static const uint16_t airPPM[] = {
-        0xFFFF
+    0xFFFF
 };
 
 static const uint16_t airPWM[] = {
-        0xFFFF
+    0xFFFF
 };
 
 #endif
@@ -357,15 +362,21 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
         // hacks to allow current functionality
         if (type == MAP_TO_PWM_INPUT && !init->useParallelPWM)
-            type = 0;
+            continue;
 
         if (type == MAP_TO_PPM_INPUT && !init->usePPM)
-            type = 0;
+            continue;
 
         if (init->useServos && !init->airplane) {
-#if defined(STM32F10X) || defined(CHEBUZZF3)
+#if defined(NAZE)
             // remap PWM9+10 as servos
-            if (timerIndex == PWM9 || timerIndex == PWM10)
+            if ((timerIndex == PWM9 || timerIndex == PWM10) && timerHardwarePtr->tim == TIM1)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(SPARKY)
+            // remap PWM1+2 as servos
+            if ((timerIndex == PWM1 || timerIndex == PWM2) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
@@ -389,6 +400,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #ifdef CC3D
         if (init->useParallelPWM) {
+            // Skip PWM inputs that conflict with timers used outputs.
             if ((type == MAP_TO_SERVO_OUTPUT || type == MAP_TO_MOTOR_OUTPUT) && (timerHardwarePtr->tim == TIM2 || timerHardwarePtr->tim == TIM3)) {
                 continue;
             }

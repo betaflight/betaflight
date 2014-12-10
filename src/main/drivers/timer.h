@@ -18,7 +18,7 @@
 #pragma once
 
 #ifdef SPARKY
-#define USABLE_TIMER_CHANNEL_COUNT 13
+#define USABLE_TIMER_CHANNEL_COUNT 11
 #endif
 
 #ifdef CHEBUZZF3
