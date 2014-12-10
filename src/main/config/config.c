@@ -306,7 +306,7 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerConfiguration = MULTITYPE_QUADX;
     featureClearAll();
-#ifdef CJMCU
+#if defined(CJMCU) || defined(SPARKY)
     featureSet(FEATURE_RX_PPM);
 #endif
     featureSet(FEATURE_VBAT);
