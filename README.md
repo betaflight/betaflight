@@ -13,7 +13,31 @@ The MultiWii software, from which baseflight originated, violates many good soft
 
 ## Additional Features
 
-Cleanflight also has additional features not found in baseflight.  Since the primary maintainer of baseflight also sells hardware there is no incentive for baseflight to support the target platforms and features that Cleanflight now provides.
+Cleanflight also has additional features not found in baseflight.
+
+* Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
+* OneShot ESC support.
+* Support for additional targets that use the STM32F3 processors (baseflight only supports STM32F1).
+* Support for the TauLabs Sparky board (~$35 STM32F303 I2C sensors, based board with acc/gyro/compass and baro!)
+* Support for the OpenPilot CC3D board. (~$20 STM32F103 board, SPI acc/gyro)
+* Support for the CJMCU nano quadcopter board.
+* Support for developer breakout boards: (Port103R, EUSTM32F103RC, Olimexino, STM32F3Discovery).
+* Support for more than 8 RC channels - (e.g. 16 Channels via FrSky X4RSB SBus).
+* Support for N-Position switches via flexible channel ranges - not just 3 like baseflight or 3/6 in MultiWii
+* Lux's new PID (uses float values internally, resistant to looptime variation).
+* Simultaneous Bluetooth configuration and OSD.
+* Better PWM and PPM input and failsafe detection than baseflight.
+* Better FrSky Telemetry than baseflight.
+* MSP Telemetry.
+* RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
+* Autotune - ported from BradWii, experimental - feedback welcomed.
+* OLED Displays - Display information on: Battery voltage, profile, rate profile, version, sensors, RC, etc.
+* In-flight manual PID tuning and rate adjustment.
+* Rate profiles and in-flight selection of them.
+* Graupner PPM failsafe.
+* Graupner HoTT telemetry.
+* Configurable serial port scenarios for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
++ more many minor bug fixes.
 
 For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documenation.
 
@@ -22,7 +46,7 @@ http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
 
 ## Documentation
 
-There is some documentation here: https://github.com/hydra/cleanflight/tree/master/docs 
+There is lots of documentation here: https://github.com/hydra/cleanflight/tree/master/docs 
 
 If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
 
