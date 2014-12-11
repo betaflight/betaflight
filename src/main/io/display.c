@@ -41,6 +41,9 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
+#include "io/gps.h"
+#include "flight/navigation.h"
+
 #include "rx/rx.h"
 #include "io/rc_controls.h"
 
@@ -73,7 +76,8 @@ typedef enum {
     PAGE_BATTERY,
     PAGE_SENSORS,
     PAGE_RX,
-    PAGE_PROFILE
+    PAGE_PROFILE,
+    PAGE_GPS
 #ifdef ENABLE_DEBUG_OLED_PAGE
     ,
     PAGE_DEBUG
@@ -86,7 +90,8 @@ const char* pageTitles[] = {
     "BATTERY",
     "SENSORS",
     "RX",
-    "PROFILE"
+    "PROFILE",
+    "GPS"
 #ifdef ENABLE_DEBUG_OLED_PAGE
     ,
     "DEBUG"
@@ -97,6 +102,7 @@ const char* pageTitles[] = {
 
 const uint8_t cyclePageIds[] = {
     PAGE_PROFILE,
+    PAGE_GPS,
     PAGE_RX,
     PAGE_BATTERY,
     PAGE_SENSORS
@@ -287,6 +293,36 @@ void showProfilePage(void)
 
 }
 
+void showGpsPage() {
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
+
+    char fixChar = STATE(GPS_FIX) ? 'Y' : 'N';
+    tfp_sprintf(lineBuffer, "Satellites: %d Fix: %c", GPS_numSat, fixChar);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Errors: %d", gpsData.errors);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Lat: %d, Lon: %d", GPS_coord[LAT] / GPS_DEGREES_DIVIDER, GPS_coord[LON] / GPS_DEGREES_DIVIDER);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Msg Delta: %d", gpsData.lastMessage - gpsData.lastLastMessage);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Angles: P:%d, R:%d", GPS_angle[PITCH], GPS_angle[ROLL]);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+}
+
 void showBatteryPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
@@ -386,7 +422,8 @@ void updateDisplay(void)
             pageState.pageId = pageState.pageIdBeforeArming;
         }
 
-        pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) || ((int32_t)(now - pageState.nextPageAt) >= 0L);
+        pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) ||
+                (((int32_t)(now - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE)));
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
             pageState.cycleIndex++;
             pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
@@ -419,6 +456,9 @@ void updateDisplay(void)
         case PAGE_PROFILE:
             showProfilePage();
             break;
+        case PAGE_GPS:
+            showGpsPage();
+            break;
 #ifdef ENABLE_DEBUG_OLED_PAGE
         case PAGE_DEBUG:
             showDebugPage();
@@ -444,6 +484,12 @@ void displayInit(rxConfig_t *rxConfigToUse)
     updateDisplay();
 
     displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
+}
+
+void displayShowFixedPage(void) {
+    pageState.pageId = PAGE_GPS;
+    pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+    displayDisablePageCycling();
 }
 
 void displaySetNextPageChangeAt(uint32_t futureMicros) {

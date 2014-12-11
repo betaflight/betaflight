@@ -360,7 +360,8 @@ void init(void)
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
-        displayEnablePageCycling();
+        //displayEnablePageCycling();
+        displayShowFixedPage();
     }
 #endif
 }

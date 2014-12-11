@@ -17,6 +17,8 @@
 
 void updateDisplay(void);
 
+void displayShowFixedPage(void);
+
 void displayEnablePageCycling(void);
 void displayDisablePageCycling(void);
 void displaySetNextPageChangeAt(uint32_t futureMicros);
