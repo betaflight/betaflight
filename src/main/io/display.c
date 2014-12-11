@@ -321,6 +321,11 @@ void showGpsPage() {
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "%d cm/s, gc: %d", GPS_speed, GPS_ground_course);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
 }
 
 void showBatteryPage(void)

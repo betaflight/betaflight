@@ -179,6 +179,9 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
         }
     }
 
+    // clear error counter
+    gpsData.errors = 0;
+
     gpsConfig = initialGpsConfig;
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
@@ -297,9 +300,6 @@ void gpsInitHardware(void)
             gpsInitUblox();
             break;
     }
-
-    // clear error counter
-    gpsData.errors = 0;
 }
 
 void gpsThread(void)
