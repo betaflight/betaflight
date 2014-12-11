@@ -685,6 +685,7 @@ void updateGpsWaypointsAndMode(void)
         DISABLE_FLIGHT_MODE(GPS_HOME_MODE);
         DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
         nav_mode = NAV_MODE_NONE;
+        GPS_reset_nav();
     }
 }
 #endif
