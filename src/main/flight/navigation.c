@@ -246,12 +246,24 @@ static int32_t nav_bearing;
 // saves the bearing at takeof (1deg = 1) used to rotate to takeoff direction when arrives at home
 static int16_t nav_takeoff_bearing;
 
+void GPS_calculateDistanceAndDirectionToHome(void)
+{
+    if (STATE(GPS_FIX_HOME)) {      // If we don't have home set, do not display anything
+        uint32_t dist;
+        int32_t dir;
+        GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_home[LAT], &GPS_home[LON], &dist, &dir);
+        GPS_distanceToHome = dist / 100;
+        GPS_directionToHome = dir / 100;
+    } else {
+        GPS_distanceToHome = 0;
+        GPS_directionToHome = 0;
+    }
+}
+
 void onGpsNewData(void)
 {
     int axis;
     static uint32_t nav_loopTimer;
-    uint32_t dist;
-    int32_t dir;
     uint16_t speed;
 
 
@@ -261,8 +273,10 @@ void onGpsNewData(void)
 
     if (!ARMING_FLAG(ARMED))
         DISABLE_STATE(GPS_FIX_HOME);
+
     if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
         GPS_reset_home_position();
+
     // Apply moving average filter to GPS data
 #if defined(GPS_FILTERING)
     GPS_filter_index = (GPS_filter_index + 1) % GPS_FILTER_VECTOR_LENGTH;
@@ -284,22 +298,17 @@ void onGpsNewData(void)
         }
     }
 #endif
-    // dTnav calculation
+
+    //
+    // Calculate time delta for navigation loop, range 0-1.0f, in seconds
+    //
     // Time for calculating x,y speed and navigation pids
     dTnav = (float)(millis() - nav_loopTimer) / 1000.0f;
     nav_loopTimer = millis();
     // prevent runup from bad GPS
     dTnav = min(dTnav, 1.0f);
 
-    // calculate distance and bearings for gui and other stuff continously - From home to copter
-    GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_home[LAT], &GPS_home[LON], &dist, &dir);
-    GPS_distanceToHome = dist / 100;
-    GPS_directionToHome = dir / 100;
-
-    if (!STATE(GPS_FIX_HOME)) {      // If we don't have home set, do not display anything
-        GPS_distanceToHome = 0;
-        GPS_directionToHome = 0;
-    }
+    GPS_calculateDistanceAndDirectionToHome();
 
     // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
     GPS_calc_velocity();
@@ -467,15 +476,15 @@ static void GPS_distance_cm_bearing(int32_t * lat1, int32_t * lon1, int32_t * la
 static void GPS_calc_velocity(void)
 {
     static int16_t speed_old[2] = { 0, 0 };
-    static int32_t last[2] = { 0, 0 };
+    static int32_t last_coord[2] = { 0, 0 };
     static uint8_t init = 0;
-    // y_GPS_speed positve = Up
-    // x_GPS_speed positve = Right
+    // y_GPS_speed positive = Up
+    // x_GPS_speed positive = Right
 
     if (init) {
         float tmp = 1.0f / dTnav;
-        actual_speed[GPS_X] = (float)(GPS_coord[LON] - last[LON]) * GPS_scaleLonDown * tmp;
-        actual_speed[GPS_Y] = (float)(GPS_coord[LAT] - last[LAT]) * tmp;
+        actual_speed[GPS_X] = (float)(GPS_coord[LON] - last_coord[LON]) * GPS_scaleLonDown * tmp;
+        actual_speed[GPS_Y] = (float)(GPS_coord[LAT] - last_coord[LAT]) * tmp;
 
         actual_speed[GPS_X] = (actual_speed[GPS_X] + speed_old[GPS_X]) / 2;
         actual_speed[GPS_Y] = (actual_speed[GPS_Y] + speed_old[GPS_Y]) / 2;
@@ -485,8 +494,8 @@ static void GPS_calc_velocity(void)
     }
     init = 1;
 
-    last[LON] = GPS_coord[LON];
-    last[LAT] = GPS_coord[LAT];
+    last_coord[LON] = GPS_coord[LON];
+    last_coord[LAT] = GPS_coord[LAT];
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
