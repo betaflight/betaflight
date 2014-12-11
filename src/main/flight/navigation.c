@@ -657,7 +657,7 @@ void updateGpsStateForHomeAndHoldMode(void)
 
 void updateGpsWaypointsAndMode(void)
 {
-    static uint8_t GPSNavReset = 1;
+    static bool resetNavNow = false;
 
     if (STATE(GPS_FIX) && GPS_numSat >= 5) {
         // if both GPS_HOME & GPS_HOLD are checked => GPS_HOME is the priority
@@ -665,7 +665,7 @@ void updateGpsWaypointsAndMode(void)
             if (!FLIGHT_MODE(GPS_HOME_MODE)) {
                 ENABLE_FLIGHT_MODE(GPS_HOME_MODE);
                 DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
-                GPSNavReset = 0;
+                resetNavNow = true;
                 GPS_set_next_wp(&GPS_home[LAT], &GPS_home[LON]);
                 nav_mode = NAV_MODE_WP;
             }
@@ -675,7 +675,7 @@ void updateGpsWaypointsAndMode(void)
             if (IS_RC_MODE_ACTIVE(BOXGPSHOLD) && areSticksInApModePosition(gpsProfile->ap_mode)) {
                 if (!FLIGHT_MODE(GPS_HOLD_MODE)) {
                     ENABLE_FLIGHT_MODE(GPS_HOLD_MODE);
-                    GPSNavReset = 0;
+                    resetNavNow = true;
                     GPS_hold[LAT] = GPS_coord[LAT];
                     GPS_hold[LON] = GPS_coord[LON];
                     GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
@@ -683,18 +683,20 @@ void updateGpsWaypointsAndMode(void)
                 }
             } else {
                 DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
-                // both boxes are unselected here, nav is reset if not already done
-                if (GPSNavReset == 0) {
-                    GPSNavReset = 1;
-                    GPS_reset_nav();
-                }
             }
         }
     } else {
         DISABLE_FLIGHT_MODE(GPS_HOME_MODE);
         DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
         nav_mode = NAV_MODE_NONE;
-        GPS_reset_nav();
+        resetNavNow = true;
     }
+
+    if (resetNavNow) {
+        GPS_reset_nav();
+        resetNavNow = false;
+    }
+
 }
+
 #endif
