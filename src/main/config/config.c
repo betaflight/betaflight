@@ -104,7 +104,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 85;
+static const uint8_t EEPROM_CONF_VERSION = 86;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -364,7 +364,8 @@ static void resetConf(void)
     // gps/nav stuff
     masterConfig.gpsConfig.provider = GPS_NMEA;
     masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
-    masterConfig.gpsConfig.gpsAutoConfig = GPS_AUTOCONFIG_ON;
+    masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
+    masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
 #endif
 
     resetSerialConfig(&masterConfig.serialConfig);

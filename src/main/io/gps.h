@@ -48,15 +48,22 @@ typedef enum {
 } gpsBaudRate_e;
 
 typedef enum {
-    GPS_AUTOCONFIG_ON = 0,
-    GPS_AUTOCONFIG_OFF
+    GPS_AUTOCONFIG_OFF = 0,
+    GPS_AUTOCONFIG_ON,
 } gpsAutoConfig_e;
+
+typedef enum {
+    GPS_AUTOBAUD_OFF = 0,
+    GPS_AUTOBAUD_ON
+} gpsAutoBaud_e;
+
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
 typedef struct gpsConfig_s {
     gpsProvider_e provider;
     sbasMode_e sbasMode;
-    gpsAutoConfig_e gpsAutoConfig;
+    gpsAutoConfig_e autoConfig;
+    gpsAutoBaud_e autoBaud;
 } gpsConfig_t;
 
 typedef enum {
@@ -95,6 +102,7 @@ typedef struct gpsData_t {
 extern gpsData_t gpsData;
 extern int32_t GPS_coord[2];               // LAT/LON
 
+extern char gpsPacketLog[16];
 extern uint8_t GPS_numSat;
 extern uint16_t GPS_hdop;                  // GPS signal quality
 extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update

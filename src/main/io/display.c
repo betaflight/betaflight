@@ -302,11 +302,6 @@ void showGpsPage() {
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Errors: %d", gpsData.errors);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
-
     tfp_sprintf(lineBuffer, "Lat: %d, Lon: %d", GPS_coord[LAT] / GPS_DEGREES_DIVIDER, GPS_coord[LON] / GPS_DEGREES_DIVIDER);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
@@ -317,12 +312,24 @@ void showGpsPage() {
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
+#ifdef GPS_PH_DEBUG
     tfp_sprintf(lineBuffer, "Angles: P:%d, R:%d", GPS_angle[PITCH], GPS_angle[ROLL]);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
+#endif
 
     tfp_sprintf(lineBuffer, "%d cm/s, gc: %d", GPS_speed, GPS_ground_course);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Errors: %d", gpsData.errors);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "%16s", gpsPacketLog);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
@@ -475,6 +482,12 @@ void updateDisplay(void)
     }
 }
 
+void displaySetPage(pageId_e pageId)
+{
+    pageState.pageId = pageId;
+    pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+}
+
 void displayInit(rxConfig_t *rxConfigToUse)
 {
     delay(200);
@@ -484,29 +497,32 @@ void displayInit(rxConfig_t *rxConfigToUse)
     rxConfig = rxConfigToUse;
 
     memset(&pageState, 0, sizeof(pageState));
-    pageState.pageId = PAGE_WELCOME;
+    displaySetPage(PAGE_WELCOME);
 
     updateDisplay();
 
     displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
 }
 
-void displayShowFixedPage(void) {
-    pageState.pageId = PAGE_GPS;
-    pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+void displayShowFixedPage(void)
+{
+    displaySetPage(PAGE_GPS);
     displayDisablePageCycling();
 }
 
-void displaySetNextPageChangeAt(uint32_t futureMicros) {
+void displaySetNextPageChangeAt(uint32_t futureMicros)
+{
     pageState.nextPageAt = futureMicros;
 }
 
-void displayEnablePageCycling(void) {
+void displayEnablePageCycling(void)
+{
     pageState.pageFlags |= PAGE_STATE_FLAG_CYCLE_ENABLED;
     pageState.cycleIndex = CYCLE_PAGE_ID_COUNT - 1; // start at first page
 }
 
-void displayDisablePageCycling(void) {
+void displayDisablePageCycling(void)
+{
     pageState.pageFlags &= ~PAGE_STATE_FLAG_CYCLE_ENABLED;
 }
 
