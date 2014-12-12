@@ -48,6 +48,10 @@
 
 #include "io/gps.h"
 
+// FIXME quick hack to allow usage of the display in gps passthough mode.
+void updateDisplay(void);
+
+
 #ifdef GPS
 
 extern int16_t debug[4];
@@ -905,15 +909,18 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             break;
         case 8:
             _step = 0;
-            if (_ck_b != data)
+            if (_ck_b != data) {
                 break;              // bad checksum
+            }
 
-            if (_skip_packet)
+            if (_skip_packet) {
                 break;
+            }
 
-            if (UBLOX_parse_gps())
+            if (UBLOX_parse_gps()) {
                 parsed = true;
-    }                           //end switch
+            }
+    }
     return parsed;
 }
 
@@ -937,10 +944,13 @@ gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
     LED0_OFF;
     LED1_OFF;
 
+    char c;
     while(1) {
         if (serialTotalBytesWaiting(gpsPort)) {
             LED0_ON;
-            serialWrite(gpsPassthroughPort, serialRead(gpsPort));
+            c = serialRead(gpsPort);
+            gpsNewData(c);
+            serialWrite(gpsPassthroughPort, c);
             LED0_OFF;
         }
         if (serialTotalBytesWaiting(gpsPassthroughPort)) {
@@ -948,6 +958,10 @@ gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
             serialWrite(gpsPort, serialRead(gpsPassthroughPort));
             LED1_OFF;
         }
+        if (feature(FEATURE_DISPLAY)) {
+            updateDisplay();
+        }
+
     }
     return GPS_PASSTHROUGH_ENABLED;
 }
