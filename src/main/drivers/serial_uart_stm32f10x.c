@@ -58,8 +58,7 @@ void usartIrqCallback(uartPort_t *s)
         if (s->port.callback) {
             s->port.callback(s->USARTx->DR);
         } else {
-            s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->DR;
-            s->port.rxBufferHead++;
+            s->port.rxBuffer[s->port.rxBufferHead++] = s->USARTx->DR;
             if (s->port.rxBufferHead >= s->port.rxBufferSize) {
                 s->port.rxBufferHead = 0;
             }
@@ -67,8 +66,7 @@ void usartIrqCallback(uartPort_t *s)
     }
     if (SR & USART_FLAG_TXE) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
-            s->USARTx->DR = s->port.txBuffer[s->port.txBufferTail];
-            s->port.txBufferTail++;
+            s->USARTx->DR = s->port.txBuffer[s->port.txBufferTail++];
             if (s->port.txBufferTail >= s->port.txBufferSize) {
                 s->port.txBufferTail = 0;
             }

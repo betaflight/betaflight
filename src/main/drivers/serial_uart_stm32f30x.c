@@ -352,8 +352,7 @@ void usartIrqHandler(uartPort_t *s)
         if (s->port.callback) {
             s->port.callback(s->USARTx->RDR);
         } else {
-            s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->RDR;
-            s->port.rxBufferHead++;
+            s->port.rxBuffer[s->port.rxBufferHead++] = s->USARTx->RDR;
             if (s->port.rxBufferHead >= s->port.rxBufferSize) {
                 s->port.rxBufferHead = 0;
             }
@@ -362,8 +361,7 @@ void usartIrqHandler(uartPort_t *s)
 
     if (!s->txDMAChannel && (ISR & USART_FLAG_TXE)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
-            USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
-            s->port.txBufferTail++;
+            USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail++]);
             if (s->port.txBufferTail >= s->port.txBufferSize) {
                 s->port.txBufferTail = 0;
             }
