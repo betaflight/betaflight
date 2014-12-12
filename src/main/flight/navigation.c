@@ -445,16 +445,19 @@ static bool check_missed_wp(void)
     return (abs(temp) > 10000); // we passed the waypoint by 100 degrees
 }
 
+#define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS 1.113195f
+#define TAN_89_99_DEGREES 5729.57795f
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Get distance between two points in cm
 // Get bearing from pos1 to pos2, returns an 1deg = 100 precision
-static void GPS_distance_cm_bearing(int32_t * lat1, int32_t * lon1, int32_t * lat2, int32_t * lon2, uint32_t * dist, int32_t * bearing)
+static void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing)
 {
-    float dLat = *lat2 - *lat1; // difference of latitude in 1/10 000 000 degrees
-    float dLon = (float)(*lon2 - *lon1) * GPS_scaleLonDown;
-    *dist = sqrtf(sq(dLat) + sq(dLon)) * 1.113195f;
+    float dLat = *destinationLat2 - *currentLat1; // difference of latitude in 1/10 000 000 degrees
+    float dLon = (float)(*destinationLon2 - *currentLon1) * GPS_scaleLonDown;
+    *dist = sqrtf(sq(dLat) + sq(dLon)) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS;
 
-    *bearing = 9000.0f + atan2f(-dLat, dLon) * 5729.57795f;      // Convert the output radians to 100xdeg
+    *bearing = 9000.0f + atan2f(-dLat, dLon) * TAN_89_99_DEGREES;      // Convert the output radians to 100xdeg
     if (*bearing < 0)
         *bearing += 36000;
 }
