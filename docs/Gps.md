@@ -65,7 +65,7 @@ Navigate to PRT (Ports)
 Set `Target` to `1 - Uart 1`
 Set `Protocol In` to `0+1+2`
 Set `Protocol Out` to `0+1`
-Set `Buadrate` to `11200`
+Set `Buadrate` to `115200`
 Press `Send`
 
 This will immediatly "break" communication to the GPS. Since you haven't saved the new baudrate setting to the non-volatile memory you need to change the baudrate you communicate to the GPS without resetting the GPS. So `Disconnect`, Change baud rate to match, then `Connect`. 
@@ -93,9 +93,15 @@ Click `Send`.
 
 This will cause the GPS receive to send the require messages out 10 times a second.  If your GPS receiver cannot be set to use `100`ms try `200`ms (5hz) - this is less precise.
 
-Next change the mode, click `NAV5 (Navigation 5)` in the Configuration View
+Next change the mode, click `NAV5 (Navigation 5)` in the Configuration View.
 
 Set to `Dynamic Model` to `airborne <1g` and click `Send`.
+
+Next change the SBAS settings.  Click `SBAS (SBAS Settings)` in the Configuration View.
+
+Set `Subsystem` to `Enabled`.
+Set `PRN Codes` to `Auto-Scan`.
+Click `Send`.
 
 Finally, we need to save the configuration.
 
