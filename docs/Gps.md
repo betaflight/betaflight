@@ -12,6 +12,8 @@ Enable the GPS from the CLI as follows:
 4) connect your GPS to a serial port that supports GPS and set an approprate `serial_port_x_scenario` to `2`. where `x` is a serial port number.
 5) `save`.
 
+Note:  GPS packet loss has been observed at 115200.  Try using 57600 if you experience this.
+
 For the last step check the Board documentation for pins and port numbers and check the Serial documentation for details on serial port scenarios where you will also find some example configurations. 
 
 ### GPS Provider
@@ -65,7 +67,7 @@ Navigate to PRT (Ports)
 Set `Target` to `1 - Uart 1`
 Set `Protocol In` to `0+1+2`
 Set `Protocol Out` to `0+1`
-Set `Buadrate` to `115200`
+Set `Buadrate` to `57600` `115200`
 Press `Send`
 
 This will immediatly "break" communication to the GPS. Since you haven't saved the new baudrate setting to the non-volatile memory you need to change the baudrate you communicate to the GPS without resetting the GPS. So `Disconnect`, Change baud rate to match, then `Connect`. 
