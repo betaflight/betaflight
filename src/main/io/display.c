@@ -302,29 +302,29 @@ void showGpsPage() {
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Lat: %d, Lon: %d", GPS_coord[LAT] / GPS_DEGREES_DIVIDER, GPS_coord[LON] / GPS_DEGREES_DIVIDER);
+    tfp_sprintf(lineBuffer, "Lat: %d Lon: %d", GPS_coord[LAT] / GPS_DEGREES_DIVIDER, GPS_coord[LON] / GPS_DEGREES_DIVIDER);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Msg Delta: %d", gpsData.lastMessage - gpsData.lastLastMessage);
+    tfp_sprintf(lineBuffer, "Spd: %d cm/s GC: %d", GPS_speed, GPS_ground_course);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
 #ifdef GPS_PH_DEBUG
-    tfp_sprintf(lineBuffer, "Angles: P:%d, R:%d", GPS_angle[PITCH], GPS_angle[ROLL]);
+    tfp_sprintf(lineBuffer, "Angles: P:%d R:%d", GPS_angle[PITCH], GPS_angle[ROLL]);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 #endif
 
-    tfp_sprintf(lineBuffer, "%d cm/s, gc: %d", GPS_speed, GPS_ground_course);
+    tfp_sprintf(lineBuffer, "RX: %d Delta: %d", GPS_packetCount, gpsData.lastMessage - gpsData.lastLastMessage);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Errors: %d", gpsData.errors);
+    tfp_sprintf(lineBuffer, "ERRs: %d TOs: %d", gpsData.errors, gpsData.timeouts);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);

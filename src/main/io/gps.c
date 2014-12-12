@@ -56,10 +56,13 @@ void updateDisplay(void);
 
 extern int16_t debug[4];
 
-#define LOG_NMEA_GGA 'g'
-#define LOG_NMEA_RMC 'r'
 
-#define LOG_UBLOX_SOL 'O'
+#define LOG_ERROR        '?'
+#define LOG_IGNORED      '!'
+#define LOG_SKIPPED      '>'
+#define LOG_NMEA_GGA     'g'
+#define LOG_NMEA_RMC     'r'
+#define LOG_UBLOX_SOL    'O'
 #define LOG_UBLOX_STATUS 'S'
 #define LOG_UBLOX_SVINFO 'I'
 #define LOG_UBLOX_POSLLH 'P'
@@ -74,6 +77,7 @@ int32_t GPS_coord[2];               // LAT/LON
 
 uint8_t GPS_numSat;
 uint16_t GPS_hdop = 9999;           // Compute GPS quality signal
+uint32_t GPS_packetCount = 0;
 uint8_t GPS_update = 0;             // it's a binary toggle to distinct a GPS position update
 
 uint16_t GPS_altitude;              // altitude in 0.1m
@@ -170,6 +174,16 @@ enum {
 
 gpsData_t gpsData;
 
+
+static void shiftPacketLog(void)
+{
+    uint32_t i;
+
+    for (i = sizeof(gpsPacketLog) - 1; i > 0 ; i--) {
+        gpsPacketLog[i] = gpsPacketLog[i-1];
+    }
+}
+
 static void gpsNewData(uint16_t c);
 static bool gpsNewFrameNMEA(char c);
 static bool gpsNewFrameUBLOX(uint8_t data);
@@ -196,8 +210,8 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
         }
     }
 
-    // clear error counter
     gpsData.errors = 0;
+    gpsData.timeouts = 0;
 
     memset(gpsPacketLog, 0x00, sizeof(gpsPacketLog));
 
@@ -207,7 +221,6 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
     gpsSetState(GPS_UNKNOWN);
 
     gpsData.lastMessage = millis();
-    gpsData.errors = 0;
 
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
@@ -349,7 +362,7 @@ void gpsThread(void)
             break;
 
         case GPS_LOST_COMMUNICATION:
-            gpsData.errors++;
+            gpsData.timeouts++;
             if (gpsConfig->autoBaud) {
                 // try another rate
                 gpsData.baudrateIndex++;
@@ -410,7 +423,7 @@ bool gpsNewFrame(uint8_t c)
 
 
 /* This is a light implementation of a GPS frame decoding
-   This should work with most of modern GPS devices configured to output NMEA frames.
+   This should work with most of modern GPS devices configured to output 5 frames.
    It assumes there are some NMEA GGA frames to decode on the serial bus
    Now verifies checksum correctly before applying data
 
@@ -582,10 +595,11 @@ static bool gpsNewFrameNMEA(char c)
     case '\r':
     case '\n':
         if (checksum_param) {   //parity checksum
+            shiftPacketLog();
             uint8_t checksum = 16 * ((string[0] >= 'A') ? string[0] - 'A' + 10 : string[0] - '0') + ((string[1] >= 'A') ? string[1] - 'A' + 10 : string[1] - '0');
             if (checksum == parity) {
-                *gpsPacketLogChar = '?';
-
+                *gpsPacketLogChar = LOG_IGNORED;
+                GPS_packetCount++;
                 switch (gps_frame) {
                 case FRAME_GGA:
                   *gpsPacketLogChar = LOG_NMEA_GGA;
@@ -603,6 +617,8 @@ static bool gpsNewFrameNMEA(char c)
                     GPS_ground_course = gps_Msg.ground_course;
                     break;
                 } // end switch
+            } else {
+                *gpsPacketLogChar = LOG_ERROR;
             }
         }
         checksum_param = 0;
@@ -789,10 +805,7 @@ static bool UBLOX_parse_gps(void)
 {
     uint32_t i;
 
-    for (i = sizeof(gpsPacketLog) - 1; i > 0 ; i--) {
-        gpsPacketLog[i] = gpsPacketLog[i-1];
-    }
-    *gpsPacketLogChar = '?';
+    *gpsPacketLogChar = LOG_IGNORED;
 
     switch (_msg_id) {
     case MSG_POSLLH:
@@ -859,16 +872,18 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     bool parsed = false;
 
     switch (_step) {
-        case 1: // Sync char 2 (0x62)
-            if (PREAMBLE2 == data) {
-                _step++;
+        case 0: // Sync char 1 (0xB5)
+            if (PREAMBLE1 == data) {
                 _skip_packet = false;
+                _step++;
+            }
+            break;
+        case 1: // Sync char 2 (0x62)
+            if (PREAMBLE2 != data) {
+                _step = 0;
                 break;
             }
-            _step = 0;
-        case 0: // Sync char 1 (0xB5)
-            if (PREAMBLE1 == data)
-                _step++;
+            _step++;
             break;
         case 2: // Class
             _step++;
@@ -899,21 +914,32 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             if (_payload_counter < UBLOX_PAYLOAD_SIZE) {
                 _buffer.bytes[_payload_counter] = data;
             }
-            if (++_payload_counter == _payload_length)
+            if (++_payload_counter >= _payload_length) {
                 _step++;
+            }
             break;
         case 7:
             _step++;
-            if (_ck_a != data)
-                _step = 0;          // bad checksum
+            if (_ck_a != data) {
+                _skip_packet = true;          // bad checksum
+                gpsData.errors++;
+            }
             break;
         case 8:
             _step = 0;
+
+            shiftPacketLog();
+
             if (_ck_b != data) {
+                *gpsPacketLogChar = LOG_ERROR;
+                gpsData.errors++;
                 break;              // bad checksum
             }
 
+            GPS_packetCount++;
+
             if (_skip_packet) {
+                *gpsPacketLogChar = LOG_SKIPPED;
                 break;
             }
 
