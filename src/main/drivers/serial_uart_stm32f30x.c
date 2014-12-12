@@ -353,14 +353,20 @@ void usartIrqHandler(uartPort_t *s)
             s->port.callback(s->USARTx->RDR);
         } else {
             s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->RDR;
-            s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
+            s->port.rxBufferHead++;
+            if (s->port.rxBufferHead >= s->port.rxBufferSize) {
+                s->port.rxBufferHead = 0;
+            }
         }
     }
 
     if (!s->txDMAChannel && (ISR & USART_FLAG_TXE)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
             USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
-            s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
+            s->port.txBufferTail++;
+            if (s->port.txBufferTail >= s->port.txBufferSize) {
+                s->port.txBufferTail = 0;
+            }
         } else {
             USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
         }
