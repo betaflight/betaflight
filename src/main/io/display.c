@@ -329,7 +329,7 @@ void showGpsPage() {
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "%16s", gpsPacketLog);
+    strncpy(lineBuffer, gpsPacketLog, GPS_PACKET_LOG_ENTRY_COUNT);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);

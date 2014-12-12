@@ -61,8 +61,7 @@ extern int16_t debug[4];
 #define LOG_UBLOX_POSLLH 'P'
 #define LOG_UBLOX_VELNED 'V'
 
-
-char gpsPacketLog[16];
+char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
 // GPS
@@ -730,6 +729,7 @@ static uint8_t _ck_a;
 static uint8_t _ck_b;
 
 // State machine state
+static bool _skip_packet;
 static uint8_t _step;
 static uint8_t _msg_id;
 static uint16_t _payload_length;
@@ -744,6 +744,23 @@ static bool _new_position;
 // do we have new speed information?
 static bool _new_speed;
 
+// Example packet sizes from UBlox u-center from a Glonass capable GPS receiver.
+//15:17:55  R -> UBX NAV-STATUS,  Size  24,  'Navigation Status'
+//15:17:55  R -> UBX NAV-POSLLH,  Size  36,  'Geodetic Position'
+//15:17:55  R -> UBX NAV-VELNED,  Size  44,  'Velocity in WGS 84'
+//15:17:55  R -> UBX NAV-CLOCK,  Size  28,  'Clock Status'
+//15:17:55  R -> UBX NAV-AOPSTATUS,  Size  24,  'AOP Status'
+//15:17:55  R -> UBX 03-09,  Size 208,  'Unknown'
+//15:17:55  R -> UBX 03-10,  Size 336,  'Unknown'
+//15:17:55  R -> UBX NAV-SOL,  Size  60,  'Navigation Solution'
+//15:17:55  R -> UBX NAV,  Size 100,  'Navigation'
+//15:17:55  R -> UBX NAV-SVINFO,  Size 328,  'Satellite Status and Information'
+
+// from the UBlox6 document, the largest payout we receive i the NAV-SVINFO and the payload size
+// is calculated as 8 + 12*numCh.  numCh in the case of a Glonass receiver is 28.
+#define UBLOX_PAYLOAD_SIZE 344
+
+
 // Receive buffer
 static union {
     ubx_nav_posllh posllh;
@@ -751,7 +768,7 @@ static union {
     ubx_nav_solution solution;
     ubx_nav_velned velned;
     ubx_nav_svinfo svinfo;
-    uint8_t bytes[200];
+    uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
 
 void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
@@ -841,6 +858,7 @@ static bool gpsNewFrameUBLOX(uint8_t data)
         case 1: // Sync char 2 (0x62)
             if (PREAMBLE2 == data) {
                 _step++;
+                _skip_packet = false;
                 break;
             }
             _step = 0;
@@ -867,15 +885,14 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             _step++;
             _ck_b += (_ck_a += data);       // checksum byte
             _payload_length += (uint16_t)(data << 8);
-            if (_payload_length > 512) {
-                _payload_length = 0;
-                _step = 0;
+            if (_payload_length > UBLOX_PAYLOAD_SIZE) {
+                _skip_packet = true;
             }
             _payload_counter = 0;   // prepare to receive payload
             break;
         case 6:
             _ck_b += (_ck_a += data);       // checksum byte
-            if (_payload_counter < sizeof(_buffer)) {
+            if (_payload_counter < UBLOX_PAYLOAD_SIZE) {
                 _buffer.bytes[_payload_counter] = data;
             }
             if (++_payload_counter == _payload_length)
@@ -890,6 +907,10 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             _step = 0;
             if (_ck_b != data)
                 break;              // bad checksum
+
+            if (_skip_packet)
+                break;
+
             if (UBLOX_parse_gps())
                 parsed = true;
     }                           //end switch
@@ -898,9 +919,6 @@ static bool gpsNewFrameUBLOX(uint8_t data)
 
 gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
 {
-    if (gpsData.state != GPS_RECEIVING_DATA)
-        return GPS_PASSTHROUGH_NO_GPS;
-
     serialPort_t *gpsPassthroughPort = findOpenSerialPort(FUNCTION_GPS_PASSTHROUGH);
     if (gpsPassthroughPort) {
 

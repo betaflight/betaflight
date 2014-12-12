@@ -68,7 +68,6 @@ typedef struct gpsConfig_s {
 
 typedef enum {
     GPS_PASSTHROUGH_ENABLED = 1,
-    GPS_PASSTHROUGH_NO_GPS,
     GPS_PASSTHROUGH_NO_SERIAL_PORT
 } gpsEnablePassthroughResult_e;
 
@@ -99,10 +98,12 @@ typedef struct gpsData_t {
     gpsMessageState_e messageState;
 } gpsData_t;
 
+#define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
+extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
+
 extern gpsData_t gpsData;
 extern int32_t GPS_coord[2];               // LAT/LON
 
-extern char gpsPacketLog[16];
 extern uint8_t GPS_numSat;
 extern uint16_t GPS_hdop;                  // GPS signal quality
 extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update

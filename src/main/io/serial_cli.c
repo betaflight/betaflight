@@ -949,10 +949,6 @@ static void cliGpsPassthrough(char *cmdline)
     gpsEnablePassthroughResult_e result = gpsEnablePassthrough();
 
     switch (result) {
-        case GPS_PASSTHROUGH_NO_GPS:
-            cliPrint("Error: Enable and plug in GPS first\r\n");
-            break;
-
         case GPS_PASSTHROUGH_NO_SERIAL_PORT:
             cliPrint("Error: Enable and plug in GPS first\r\n");
             break;
