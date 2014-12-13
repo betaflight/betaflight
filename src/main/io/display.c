@@ -312,13 +312,6 @@ void showGpsPage() {
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-#ifdef GPS_PH_DEBUG
-    tfp_sprintf(lineBuffer, "Angles: P:%d R:%d", GPS_angle[PITCH], GPS_angle[ROLL]);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
-#endif
-
     tfp_sprintf(lineBuffer, "RX: %d Delta: %d", GPS_packetCount, gpsData.lastMessage - gpsData.lastLastMessage);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
@@ -333,6 +326,20 @@ void showGpsPage() {
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
+
+#ifdef GPS_PH_DEBUG
+    tfp_sprintf(lineBuffer, "Angles: P:%d R:%d", GPS_angle[PITCH], GPS_angle[ROLL]);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+#endif
+
+#if 0
+    tfp_sprintf(lineBuffer, "%d %d %d %d", debug[0], debug[1], debug[2], debug[3]);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+#endif
 }
 
 void showBatteryPage(void)
