@@ -469,7 +469,11 @@ void updateDisplay(void)
             break;
 #ifdef GPS
         case PAGE_GPS:
-            showGpsPage();
+            if (feature(FEATURE_GPS)) {
+                showGpsPage();
+            } else {
+                pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+            }
             break;
 #endif
 #ifdef ENABLE_DEBUG_OLED_PAGE
