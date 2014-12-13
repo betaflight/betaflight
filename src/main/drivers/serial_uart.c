@@ -206,17 +206,18 @@ uint8_t uartTotalBytesWaiting(serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t*)instance;
     if (s->rxDMAChannel) {
-        if (s->rxDMAChannel->CNDTR > s->rxDMAPos) {
-            return s->rxDMAChannel->CNDTR - s->rxDMAPos;
+        uint32_t rxDMAHead = s->rxDMAChannel->CNDTR;
+        if (s->port.rxBufferSize + rxDMAHead - s->rxDMAPos >= s->port.rxBufferSize) {
+            return rxDMAHead - s->rxDMAPos;
         } else {
-            return s->rxDMAPos - s->rxDMAChannel->CNDTR;
+            return s->port.rxBufferSize + rxDMAHead - s->rxDMAPos;
         }
     }
 
-    if (s->port.rxBufferHead > s->port.rxBufferTail) {
+    if (s->port.rxBufferSize + s->port.rxBufferHead - s->port.rxBufferTail >= s->port.rxBufferSize) {
         return s->port.rxBufferHead - s->port.rxBufferTail;
     } else {
-        return s->port.rxBufferTail - s->port.rxBufferHead;
+        return s->port.rxBufferSize + s->port.rxBufferHead - s->port.rxBufferTail;
     }
 }
 
@@ -239,9 +240,11 @@ uint8_t uartRead(serialPort_t *instance)
         if (--s->rxDMAPos == 0)
             s->rxDMAPos = s->port.rxBufferSize;
     } else {
-        ch = s->port.rxBuffer[s->port.rxBufferTail++];
-        if (s->port.rxBufferTail >= s->port.rxBufferSize) {
+        ch = s->port.rxBuffer[s->port.rxBufferTail];
+        if (s->port.rxBufferTail + 1 >= s->port.rxBufferSize) {
             s->port.rxBufferTail = 0;
+        } else {
+            s->port.rxBufferTail++;
         }
     }
 
