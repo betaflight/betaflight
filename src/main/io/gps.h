@@ -89,7 +89,7 @@ typedef enum {
 typedef struct gpsData_t {
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
     uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
-    uint32_t errors;                     // gps error counter - crc error/lost of data/sync etc..
+    uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
     uint32_t lastMessage;           // last time valid GPS data was received (millis)
     uint32_t lastLastMessage;       // last-last valid GPS message. Used to calculate delta.
@@ -117,6 +117,10 @@ extern uint8_t GPS_svinfo_chn[16];         // Channel number
 extern uint8_t GPS_svinfo_svid[16];        // Satellite ID
 extern uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
 extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
+
+#define GPS_DBHZ_MIN 0
+#define GPS_DBHZ_MAX 55
+
 
 void gpsThread(void);
 bool gpsNewFrame(uint8_t c);

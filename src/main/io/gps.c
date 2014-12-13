@@ -709,7 +709,7 @@ typedef struct {
     uint8_t svid;               // Satellite ID
     uint8_t flags;              // Bitmask
     uint8_t quality;            // Bitfield
-    uint8_t cno;                // Carrier to Noise Ratio (Signal Strength)
+    uint8_t cno;                // Carrier to Noise Ratio (Signal Strength) // dbHz, 0-55.
     uint8_t elev;               // Elevation in integer degrees
     int16_t azim;               // Azimuth in integer degrees
     int32_t prRes;              // Pseudo range residual in centimetres
