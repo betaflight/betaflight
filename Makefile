@@ -266,7 +266,7 @@ EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/compass_hmc5883l.c \
-		   drivers/display_ug2864hsweg01.h \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/inverter.c \
 		   drivers/light_led_stm32f10x.c \
@@ -424,6 +424,7 @@ MASSIVEF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 		   $(COMMON_SRC)
 
 SPARKY_SRC	 = $(STM32F30x_COMMON_SRC) \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu9150.c \
 		   drivers/barometer_ms5611.c \
 		   $(HIGHEND_SRC) \

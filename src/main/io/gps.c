@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "common/maths.h"
 
 #include "drivers/system.h"
@@ -908,6 +910,9 @@ static bool gpsNewFrameUBLOX(uint8_t data)
                 _skip_packet = true;
             }
             _payload_counter = 0;   // prepare to receive payload
+            if (_payload_length == 0) {
+                _step = 7;
+            }
             break;
         case 6:
             _ck_b += (_ck_a += data);       // checksum byte
