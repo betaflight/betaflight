@@ -254,9 +254,11 @@ uint8_t uartRead(serialPort_t *instance)
 void uartWrite(serialPort_t *instance, uint8_t ch)
 {
     uartPort_t *s = (uartPort_t *)instance;
-    s->port.txBuffer[s->port.txBufferHead++] = ch;
-    if (s->port.txBufferHead >= s->port.txBufferSize) {
+    s->port.txBuffer[s->port.txBufferHead] = ch;
+    if (s->port.txBufferHead + 1 >= s->port.txBufferSize) {
         s->port.txBufferHead = 0;
+    } else {
+        s->port.txBufferHead++;
     }
 
     if (s->txDMAChannel) {
