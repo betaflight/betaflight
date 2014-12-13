@@ -990,9 +990,11 @@ gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
             serialWrite(gpsPort, serialRead(gpsPassthroughPort));
             LED1_OFF;
         }
+#ifdef DISPLAY
         if (feature(FEATURE_DISPLAY)) {
             updateDisplay();
         }
+#endif
 
     }
     return GPS_PASSTHROUGH_ENABLED;
