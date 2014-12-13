@@ -41,8 +41,10 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
+#ifdef GPS
 #include "io/gps.h"
 #include "flight/navigation.h"
+#endif
 
 #include "rx/rx.h"
 #include "io/rc_controls.h"
@@ -76,11 +78,12 @@ const char* pageTitles[] = {
     "BATTERY",
     "SENSORS",
     "RX",
-    "PROFILE",
-    "GPS"
+    "PROFILE"
+#ifdef GPS
+    ,"GPS"
+#endif
 #ifdef ENABLE_DEBUG_OLED_PAGE
-    ,
-    "DEBUG"
+    ,"DEBUG"
 #endif
 };
 
@@ -88,13 +91,14 @@ const char* pageTitles[] = {
 
 const uint8_t cyclePageIds[] = {
     PAGE_PROFILE,
+#ifdef GPS
     PAGE_GPS,
+#endif
     PAGE_RX,
     PAGE_BATTERY,
     PAGE_SENSORS
 #ifdef ENABLE_DEBUG_OLED_PAGE
-    ,
-    PAGE_DEBUG,
+    ,PAGE_DEBUG,
 #endif
 };
 
@@ -279,6 +283,7 @@ void showProfilePage(void)
 
 }
 
+#ifdef GPS
 void showGpsPage() {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
@@ -327,6 +332,7 @@ void showGpsPage() {
     i2c_OLED_send_string(lineBuffer);
 #endif
 }
+#endif
 
 void showBatteryPage(void)
 {
@@ -461,9 +467,11 @@ void updateDisplay(void)
         case PAGE_PROFILE:
             showProfilePage();
             break;
+#ifdef GPS
         case PAGE_GPS:
             showGpsPage();
             break;
+#endif
 #ifdef ENABLE_DEBUG_OLED_PAGE
         case PAGE_DEBUG:
             showDebugPage();
