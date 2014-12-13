@@ -400,7 +400,6 @@ typedef enum {
 #if defined(BARO) || defined(SONAR)
     CALCULATE_ALTITUDE_TASK,
 #endif
-    UPDATE_GPS_TASK,
     UPDATE_DISPLAY_TASK
 } periodicTasks;
 
@@ -441,17 +440,6 @@ void executePeriodicTasks(void)
         if (sensors(SENSOR_SONAR)) {
 #endif
             calculateEstimatedAltitude(currentTime);
-        }
-        break;
-#endif
-
-#ifdef GPS
-    case UPDATE_GPS_TASK:
-        // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-        // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
-        // change this based on available hardware
-        if (feature(FEATURE_GPS)) {
-            gpsThread();
         }
         break;
 #endif
@@ -622,6 +610,13 @@ void loop(void)
     } else {
         // not processing rx this iteration
         executePeriodicTasks();
+
+        // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
+        // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
+        // change this based on available hardware
+        if (feature(FEATURE_GPS)) {
+            gpsThread();
+        }
     }
 
     currentTime = micros();
