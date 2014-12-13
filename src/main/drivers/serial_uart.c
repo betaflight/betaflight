@@ -205,10 +205,18 @@ void uartStartTxDMA(uartPort_t *s)
 uint8_t uartTotalBytesWaiting(serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t*)instance;
-    if (s->rxDMAChannel)
-        return (s->rxDMAChannel->CNDTR - s->rxDMAPos) & (s->port.txBufferSize - 1);
-    else {
-        return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.txBufferSize - 1);
+    if (s->rxDMAChannel) {
+        if (s->rxDMAChannel->CNDTR > s->rxDMAPos) {
+            return s->rxDMAChannel->CNDTR - s->rxDMAPos;
+        } else {
+            return s->rxDMAPos - s->rxDMAChannel->CNDTR;
+        }
+    }
+
+    if (s->port.rxBufferHead > s->port.rxBufferTail) {
+        return s->port.rxBufferHead - s->port.rxBufferTail;
+    } else {
+        return s->port.rxBufferTail - s->port.rxBufferHead;
     }
 }
 
@@ -231,8 +239,10 @@ uint8_t uartRead(serialPort_t *instance)
         if (--s->rxDMAPos == 0)
             s->rxDMAPos = s->port.rxBufferSize;
     } else {
-        ch = s->port.rxBuffer[s->port.rxBufferTail];
-        s->port.rxBufferTail = (s->port.rxBufferTail + 1) % s->port.rxBufferSize;
+        ch = s->port.rxBuffer[s->port.rxBufferTail++];
+        if (s->port.rxBufferTail >= s->port.rxBufferSize) {
+            s->port.rxBufferTail = 0;
+        }
     }
 
     return ch;
@@ -241,8 +251,10 @@ uint8_t uartRead(serialPort_t *instance)
 void uartWrite(serialPort_t *instance, uint8_t ch)
 {
     uartPort_t *s = (uartPort_t *)instance;
-    s->port.txBuffer[s->port.txBufferHead] = ch;
-    s->port.txBufferHead = (s->port.txBufferHead + 1) % s->port.txBufferSize;
+    s->port.txBuffer[s->port.txBufferHead++] = ch;
+    if (s->port.txBufferHead >= s->port.txBufferSize) {
+        s->port.txBufferHead = 0;
+    }
 
     if (s->txDMAChannel) {
         if (!(s->txDMAChannel->CCR & 1))

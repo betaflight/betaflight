@@ -17,8 +17,7 @@
 
 #pragma once
 
-// FIXME since serial ports can be used for any function these buffer sizes probably need normalising.
-// Code is optimal when buffer sizes are powers of 2 due to use of % and / operators.
+// Since serial ports can be used for any function these buffer sizes probably need normalising.
 #define UART1_RX_BUFFER_SIZE    256
 #define UART1_TX_BUFFER_SIZE    192
 #define UART2_RX_BUFFER_SIZE    256
