@@ -207,14 +207,14 @@ uint8_t uartTotalBytesWaiting(serialPort_t *instance)
     uartPort_t *s = (uartPort_t*)instance;
     if (s->rxDMAChannel) {
         uint32_t rxDMAHead = s->rxDMAChannel->CNDTR;
-        if (s->port.rxBufferSize + rxDMAHead - s->rxDMAPos >= s->port.rxBufferSize) {
+        if (rxDMAHead >= s->rxDMAPos) {
             return rxDMAHead - s->rxDMAPos;
         } else {
             return s->port.rxBufferSize + rxDMAHead - s->rxDMAPos;
         }
     }
 
-    if (s->port.rxBufferSize + s->port.rxBufferHead - s->port.rxBufferTail >= s->port.rxBufferSize) {
+    if (s->port.rxBufferHead >= s->port.rxBufferTail) {
         return s->port.rxBufferHead - s->port.rxBufferTail;
     } else {
         return s->port.rxBufferSize + s->port.rxBufferHead - s->port.rxBufferTail;
