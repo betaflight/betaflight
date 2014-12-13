@@ -81,9 +81,12 @@ Next, to ensure the FC doesn't waste time processing messages it does not need y
     NAV-SOL
     NAV-VELNED
     NAV-TIMEUTC
+
+The above messages should each be enabled with a rate of `1`.
+
     NAV-SVINFO
 
-The above messages should each be enabled with a rate of '1`.
+The above messages should each be enabled with a rate of `5` to reduce bandwidth and load on the FC.
 
 When changing message target and rates remember to click `Send` after changing each message.
 
