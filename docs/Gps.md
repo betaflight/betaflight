@@ -14,7 +14,8 @@ Enable the GPS from the CLI as follows:
 
 Note:  GPS packet loss has been observed at 115200.  Try using 57600 if you experience this.
 
-For the last step check the Board documentation for pins and port numbers and check the Serial documentation for details on serial port scenarios where you will also find some example configurations. 
+For the connections step check the Board documentation for pins and port numbers and check the Serial documentation for details on serial port scenarios where you will also find some example configurations.
+ 
 
 ### GPS Provider
 
@@ -24,6 +25,14 @@ Set the `gps_provider` appropriately.
 | ----- | -------- |
 | 0     | NMEA     |
 | 1     | UBLOX    |
+
+### GPS Auto configuration
+
+When using UBLOX it is a good idea to use GPS auto configuration so your FC gets the GPS messages it needs.
+
+Enable GPS auto configuration as follows `set gps_auto_config=1`.
+
+If you are not using GPS auto configuration then ensure your GPS receiver sends out the correct messages at the right frequency.  See below for manual UBlox settings.
 
 ### SBAS
 
@@ -100,7 +109,7 @@ This will cause the GPS receive to send the require messages out 10 times a seco
 
 Next change the mode, click `NAV5 (Navigation 5)` in the Configuration View.
 
-Set to `Dynamic Model` to `airborne <1g` and click `Send`.
+Set to `Dynamic Model` to `Pedestrian` and click `Send`.
 
 Next change the SBAS settings.  Click `SBAS (SBAS Settings)` in the Configuration View.
 
@@ -113,3 +122,13 @@ Finally, we need to save the configuration.
 Click `CFG (Configuration` in the Configuration View.
 
 Select `Save current configuration` and click `Send`.
+
+### UBlox Navigation model
+
+Cleanflight will use `Pedestrian` when gps auto config is used.
+
+From the UBlox documentation:
+
+* Pedestrian - Applications with low acceleration and speed, e.g. how a pedestrian would move. Low acceleration assumed. MAX Altitude [m]: 9000, MAX Velocity [m/s]: 30, MAX Vertical, Velocity [m/s]: 20, Sanity check type: Altitude and Velocity, Max Position Deviation: Small.
+* Portable - Applications with low acceleration, e.g. portable devices. Suitable for most situations. MAX Altitude [m]: 12000, MAX Velocity [m/s]: 310, MAX Vertical Velocity [m/s]: 50, Sanity check type: Altitude and Velocity, Max Position Deviation: Medium.
+* Airbourne < 1G - Used for applications with a higher dynamic range and vertical acceleration than a passenger car. No 2D position fixes supported. MAX Altitude [m]: 50000, MAX Velocity [m/s]: 100, MAX Vertical Velocity [m/s]: 100, Sanity check type: Altitude, Max Position Deviation: Large
