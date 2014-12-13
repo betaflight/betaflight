@@ -70,20 +70,6 @@ static rxConfig_t *rxConfig;
 
 static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 
-typedef enum {
-    PAGE_WELCOME,
-    PAGE_ARMED,
-    PAGE_BATTERY,
-    PAGE_SENSORS,
-    PAGE_RX,
-    PAGE_PROFILE,
-    PAGE_GPS
-#ifdef ENABLE_DEBUG_OLED_PAGE
-    ,
-    PAGE_DEBUG
-#endif
-} pageId_e;
-
 const char* pageTitles[] = {
     "CLEANFLIGHT",
     "ARMED",
@@ -442,7 +428,7 @@ void updateDisplay(void)
         }
 
         pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) ||
-                (((int32_t)(now - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE)));
+                (((int32_t)(now - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
             pageState.cycleIndex++;
             pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
@@ -511,9 +497,9 @@ void displayInit(rxConfig_t *rxConfigToUse)
     displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
 }
 
-void displayShowFixedPage(void)
+void displayShowFixedPage(pageId_e pageId)
 {
-    displaySetPage(PAGE_GPS);
+    displaySetPage(pageId);
     displayDisablePageCycling();
 }
 
