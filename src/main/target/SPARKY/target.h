@@ -79,4 +79,6 @@
 #define SENSORS_SET (SENSOR_ACC)
 
 #define SERIAL_RX
+#define GPS
+#define DISPLAY
 
