@@ -50,5 +50,6 @@ Flashing cleanflight will erase the TauLabs bootloader, this is not a problem an
 | 3     | USART2       | RX / PA3  | PWM6 / PA2 | On RX is on INPUT header.  Best port for Serial RX input. |
 | 4     | USART3       | RX / PB11 | TX / PB10  | RX/TX is on one end of the 6-pin header about the PWM outputs. |
 
-USB VSP *can* be used at the same time as other serial ports (unlike Naze32).
+USB VCP *can* be used at the same time as other serial ports (unlike Naze32).
+
 
