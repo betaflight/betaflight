@@ -5,7 +5,6 @@
 
 download the Setup*.exe from https://www.cygwin.com/
 
-
 ![Cygwin Installation](assets/001.cygwin_dl.png)
 
 Execute the download Setup and step through the installation  wizard (no need to customize the settings here). Stop at the  "Select Packages" Screen and select the following Packages
@@ -73,17 +72,16 @@ cd cleanflight
 make TARGET=NAZE
 ```
 
+![GIT Checkout](assets/013.compile.png)
+
 within few moments you should have your binary ready:
 
-```(...)
+```bash
+(...)
 arm-none-eabi-size ./obj/main/cleanflight_NAZE.elf
    text    data     bss     dec     hex filename
   95388     308   10980  106676   1a0b4 ./obj/main/cleanflight_NAZE.elf
-arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/cleanflight_NAZE.elf obj/cleanflight_NAZE.hex```
+arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/cleanflight_NAZE.elf obj/cleanflight_NAZE.hex
+```
 
-![GIT Checkout](assets/013.compile.png)
-
-
-
-
-
+You can use the Cleanflight-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
