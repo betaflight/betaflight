@@ -85,3 +85,15 @@ arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/cleanflight_NAZE.el
 ```
 
 You can use the Cleanflight-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
+
+## Updating and rebuilding
+
+Navigate to the local cleanflight repository and use the following steps to pull the latest changes and rebuild your version of cleanflight:
+
+```bash
+cd /cygdrive/c/dev/cleanflight
+git reset --hard
+git pull
+make clean TARGET=NAZE
+make
+```
