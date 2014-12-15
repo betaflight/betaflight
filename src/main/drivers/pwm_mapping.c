@@ -28,7 +28,6 @@
 #include "pwm_output.h"
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
-#include "config/config.h"
 /*
     Configuration maps
 
