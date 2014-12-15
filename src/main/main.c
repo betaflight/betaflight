@@ -269,6 +269,7 @@ void init(void)
     pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER);
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
+    pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.extraServos = currentProfile->gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
