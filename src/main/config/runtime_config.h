@@ -27,8 +27,8 @@ typedef enum {
 extern uint8_t armingFlags;
 
 #define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~(mask))
-#define ENABLE_ARMING_FLAG(mask) (armingFlags |= mask)
-#define ARMING_FLAG(mask) (armingFlags & mask)
+#define ENABLE_ARMING_FLAG(mask) (armingFlags |= (mask))
+#define ARMING_FLAG(mask) (armingFlags & (mask))
 
 typedef enum {
     ANGLE_MODE      = (1 << 0),
@@ -46,8 +46,8 @@ typedef enum {
 extern uint16_t flightModeFlags;
 
 #define DISABLE_FLIGHT_MODE(mask) (flightModeFlags &= ~(mask))
-#define ENABLE_FLIGHT_MODE(mask) (flightModeFlags |= mask)
-#define FLIGHT_MODE(mask) (flightModeFlags & mask)
+#define ENABLE_FLIGHT_MODE(mask) (flightModeFlags |= (mask))
+#define FLIGHT_MODE(mask) (flightModeFlags & (mask))
 
 typedef enum {
     GPS_FIX_HOME   = (1 << 0),
@@ -58,8 +58,8 @@ typedef enum {
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))
-#define ENABLE_STATE(mask) (stateFlags |= mask)
-#define STATE(mask) (stateFlags & mask)
+#define ENABLE_STATE(mask) (stateFlags |= (mask))
+#define STATE(mask) (stateFlags & (mask))
 
 extern uint8_t stateFlags;
 

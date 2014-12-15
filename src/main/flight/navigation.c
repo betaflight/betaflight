@@ -660,46 +660,73 @@ void updateGpsStateForHomeAndHoldMode(void)
 
 void updateGpsWaypointsAndMode(void)
 {
-    static bool resetNavNow = false;
+    bool resetNavNow = false;
 
     if (STATE(GPS_FIX) && GPS_numSat >= 5) {
-        // if both GPS_HOME & GPS_HOLD are checked => GPS_HOME is the priority
+
+        //
+        // process HOME mode
+        //
+        // HOME mode takes priority over HOLD mode.
+
         if (IS_RC_MODE_ACTIVE(BOXGPSHOME)) {
             if (!FLIGHT_MODE(GPS_HOME_MODE)) {
+
+                // Transition to HOME mode
                 ENABLE_FLIGHT_MODE(GPS_HOME_MODE);
                 DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
-                resetNavNow = true;
                 GPS_set_next_wp(&GPS_home[LAT], &GPS_home[LON]);
                 nav_mode = NAV_MODE_WP;
+                resetNavNow = true;
             }
         } else {
-            DISABLE_FLIGHT_MODE(GPS_HOME_MODE);
+            if (FLIGHT_MODE(GPS_HOME_MODE)) {
+
+                // Transition from HOME mode
+                DISABLE_FLIGHT_MODE(GPS_HOME_MODE);
+                nav_mode = NAV_MODE_NONE;
+                resetNavNow = true;
+            }
+
+            //
+            // process HOLD mode
+            //
 
             if (IS_RC_MODE_ACTIVE(BOXGPSHOLD) && areSticksInApModePosition(gpsProfile->ap_mode)) {
                 if (!FLIGHT_MODE(GPS_HOLD_MODE)) {
+
+                    // Transition to HOLD mode
                     ENABLE_FLIGHT_MODE(GPS_HOLD_MODE);
-                    resetNavNow = true;
                     GPS_hold[LAT] = GPS_coord[LAT];
                     GPS_hold[LON] = GPS_coord[LON];
                     GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
                     nav_mode = NAV_MODE_POSHOLD;
+                    resetNavNow = true;
                 }
             } else {
-                DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
+                if (FLIGHT_MODE(GPS_HOLD_MODE)) {
+
+                    // Transition from HOLD mode
+                    DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
+                    nav_mode = NAV_MODE_NONE;
+                    resetNavNow = true;
+                }
             }
         }
     } else {
-        DISABLE_FLIGHT_MODE(GPS_HOME_MODE);
-        DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
-        nav_mode = NAV_MODE_NONE;
-        resetNavNow = true;
+        if (FLIGHT_MODE(GPS_HOLD_MODE | GPS_HOME_MODE)) {
+
+            // Transition from HOME or HOLD mode
+            DISABLE_FLIGHT_MODE(GPS_HOME_MODE);
+            DISABLE_FLIGHT_MODE(GPS_HOLD_MODE);
+            nav_mode = NAV_MODE_NONE;
+            resetNavNow = true;
+        }
     }
 
     if (resetNavNow) {
         GPS_reset_nav();
-        resetNavNow = false;
     }
-
 }
 
 #endif
