@@ -11,7 +11,8 @@ env:
   - TARGET=SPARKY
   - TARGET=STM32F3DISCOVERY
 language: c
-compiler: gcc
+compiler: arm-none-eabi-gcc
 before_install: sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sudo apt-get update
 install: sudo apt-get install build-essential gcc-arm-none-eabi git
-script: make
+before_script: $CC --version
+script: make -j2
