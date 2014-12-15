@@ -1,0 +1,5 @@
+language: c
+compiler: gcc
+before_install: sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sudo apt-get update
+install: sudo apt-get install build-essential gcc-arm-none-eabi git
+script: make -j4
