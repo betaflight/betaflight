@@ -22,6 +22,21 @@ Allows you to use MSP commands as the RC input.  Only 8 channel support to maint
 
 16 channels via serial currently supported.
 
+## XBus
+
+The firmware currently supports the MODE B version of the XBus protocol.
+Make sure to set your TX to use "MODE B" for XBUS in the TX menus!
+See here for info on JR's XBus protocol: http://www.jrpropo.com/english/propo/XBus/
+
+Tested hardware: JR XG14 + RG731BX with NAZE32 (rev4)
+With the current CLI configuration:
+ `set serialrx_provider=5`
+ `set serial_port_2_scenario=3`
+ `feature RX_SERIAL`
+  
+This will set the FW to use serial RX, with XBUS_MODE_B as provider and finally the scenario to be used for serial port 2. 
+Please note that your config may vary depending on hw used.
+
 ### OpenTX configuration
 
 If using OpenTX set the transmitter module to D16 mode and select CH1-16 on the transmitter before binding to allow reception
@@ -53,6 +68,8 @@ For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` cli setting as 
 | SBUS               | 2     |
 | SUMD               | 3     |
 | SUMH               | 4     |
+| XBUS_MODE_B        | 5     |
+
 
 #### PPM/PWM input filtering.
 
