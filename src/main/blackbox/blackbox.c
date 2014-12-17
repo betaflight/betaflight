@@ -77,11 +77,7 @@
 
 #define BLACKBOX_BAUDRATE 115200
 #define BLACKBOX_INITIAL_PORT_MODE MODE_TX
-
-static const char blackboxHeader[] =
-	"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-	"H Blackbox version:1\n"
-	"H Data version:1\n";
+#define BLACKBOX_I_INTERVAL 32
 
 // Some macros to make writing FLIGHT_LOG_FIELD_PREDICTOR_* constants shorter:
 #define STR_HELPER(x) #x
@@ -92,6 +88,12 @@ static const char blackboxHeader[] =
 
 #define PREDICT(x) STR(CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x))
 #define ENCODING(x) STR(CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x))
+
+static const char blackboxHeader[] =
+	"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
+	"H Blackbox version:1\n"
+	"H Data version:1\n"
+	"H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
 
 /* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
 static const char * const blackboxHeaderFields[] = {
@@ -288,10 +290,10 @@ static uint32_t previousBaudRate;
 static gpsState_t gpsHistory;
 
 // Keep a history of length 2, plus a buffer for MW to store the new values into
-static blackbox_values_t blackboxHistoryRing[3];
+static blackboxValues_t blackboxHistoryRing[3];
 
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
-static blackbox_values_t* blackboxHistory[3];
+static blackboxValues_t* blackboxHistory[3];
 
 static int isTricopter()
 {
@@ -536,7 +538,7 @@ static void writeTag8_4S16(int32_t *values) {
 
 static void writeIntraframe(void)
 {
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
 	int x;
 
 	blackboxWrite('I');
@@ -589,8 +591,8 @@ static void writeInterframe(void)
 	int x;
 	int32_t deltas[4];
 
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
-	blackbox_values_t *blackboxLast = blackboxHistory[1];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxLast = blackboxHistory[1];
 
 	blackboxWrite('P');
 
@@ -645,6 +647,28 @@ static void writeInterframe(void)
 	blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
 }
 
+static int gcd(int num, int denom)
+{
+	if (denom == 0)
+		return num;
+	return gcd(denom, num % denom);
+}
+
+static void validateBlackboxConfig()
+{
+	int div;
+
+	if (masterConfig.blackbox_rate_num >= masterConfig.blackbox_rate_denom) {
+		masterConfig.blackbox_rate_num = 1;
+		masterConfig.blackbox_rate_denom = 1;
+	} else {
+		div = gcd(masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+
+		masterConfig.blackbox_rate_num /= div;
+		masterConfig.blackbox_rate_denom /= div;
+	}
+}
+
 static void configureBlackboxPort(void)
 {
 	blackboxPort = findOpenSerialPort(FUNCTION_BLACKBOX);
@@ -676,6 +700,8 @@ static void releaseBlackboxPort(void)
 void startBlackbox(void)
 {
 	if (blackboxState == BLACKBOX_STATE_STOPPED) {
+		validateBlackboxConfig();
+
 		configureBlackboxPort();
 
 		if (!blackboxPort) {
@@ -739,7 +765,7 @@ static void writeGPSFrame()
  */
 static void loadBlackboxState(void)
 {
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
 	int i;
 
 	blackboxCurrent->time = currentTime;
@@ -774,6 +800,8 @@ void handleBlackbox(void)
 	const int SERIAL_CHUNK_SIZE = 16;
 	static int charXmitIndex = 0;
 	int motorsToRemove, endIndex;
+	int blackboxIntercycleIndex, blackboxIntracycleIndex;
+
 	union floatConvert_t {
 		float f;
 		uint32_t u;
@@ -894,17 +922,19 @@ void handleBlackbox(void)
 			headerXmitIndex++;
 		break;
 		case BLACKBOX_STATE_RUNNING:
-        	// Copy current system values into the blackbox
-        	loadBlackboxState();
-
 			// Write a keyframe every 32 frames so we can resynchronise upon missing frames
-			int blackboxIntercycleIndex = blackboxIteration % 32;
-			int blackboxIntracycleIndex = blackboxIteration / 32;
+			blackboxIntercycleIndex = blackboxIteration % BLACKBOX_I_INTERVAL;
+			blackboxIntracycleIndex = blackboxIteration / BLACKBOX_I_INTERVAL;
 
-			if (blackboxIntercycleIndex == 0)
+			if (blackboxIntercycleIndex == 0) {
+	        	// Copy current system values into the blackbox
+	        	loadBlackboxState();
 				writeIntraframe();
-			else {
-				writeInterframe();
+			} else {
+				if ((blackboxIntercycleIndex + masterConfig.blackbox_rate_num - 1) % masterConfig.blackbox_rate_denom < masterConfig.blackbox_rate_num) {
+		        	loadBlackboxState();
+		        	writeInterframe();
+		        }
 
 				if (feature(FEATURE_GPS)) {
 					/*
@@ -915,7 +945,7 @@ void handleBlackbox(void)
 					 * still be interpreted correctly.
 					 */
 					if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
-						|| (blackboxIntercycleIndex == 15 && blackboxIntracycleIndex % 128 == 0)) {
+						|| (blackboxIntercycleIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIntracycleIndex % 128 == 0)) {
 
 						writeGPSHomeFrame();
 						writeGPSFrame();
@@ -934,7 +964,7 @@ void handleBlackbox(void)
 	}
 }
 
-bool canUseBlackboxWithCurrentConfiguration(void)
+static bool canUseBlackboxWithCurrentConfiguration(void)
 {
     if (!feature(FEATURE_BLACKBOX))
         return false;

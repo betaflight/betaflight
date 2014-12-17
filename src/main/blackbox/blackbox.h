@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-typedef struct blackbox_values_t {
+typedef struct blackboxValues_t {
 	uint32_t time;
 
 	int32_t axisP[3], axisI[3], axisD[3];
@@ -29,7 +29,7 @@ typedef struct blackbox_values_t {
 	int16_t accSmooth[3];
 	int16_t motor[MAX_SUPPORTED_MOTORS];
 	int16_t servo[MAX_SUPPORTED_SERVOS];
-} blackbox_values_t;
+} blackboxValues_t;
 
 void initBlackbox(void);
 void handleBlackbox(void);

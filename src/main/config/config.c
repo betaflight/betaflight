@@ -435,6 +435,11 @@ static void resetConf(void)
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
 #endif
 
+#ifdef BLACKBOX
+    masterConfig.blackbox_rate_num = 1;
+    masterConfig.blackbox_rate_denom = 1;
+#endif
+
     // copy first profile into remaining profile
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
