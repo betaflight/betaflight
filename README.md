@@ -2,8 +2,8 @@
 
 ![Rendered flight log frame](http://i.imgur.com/FBphB8c.jpg)
 
-WARNING - This firmware is experimental, and may cause your craft to suddenly fall out of the sky. This port to
-Cleanflight has only had 3 test flights! No warranty is offered: if your craft breaks, you get to keep both pieces.
+WARNING - This firmware is experimental, and may cause your craft to suddenly fall out of the sky. No warranty is
+offered: if your craft breaks, you get to keep both pieces.
 
 ## Introduction
 This is a modified version of Cleanflight which adds a flight data recorder function ("Blackbox"). Flight data
@@ -18,7 +18,8 @@ use the Cleanflight firmware from this repository instead of the Baseflight firm
 
 https://github.com/thenickdude/blackbox
 
-Instructions which are specific to Cleanflight are included here.
+You will also find the tools to turn your logs into CSV logs or PNG image files. Instructions which are specific to
+Cleanflight are included here.
 
 ## Installation of firmware
 Before installing the new firmware onto your Naze32, back up your configuration: Connect to your flight controller
