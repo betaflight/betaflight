@@ -151,7 +151,6 @@ void init(void)
     systemInit();
 
 #ifdef SPEKTRUM_BIND
-    // Spektrum sattelite bind - ported from Baseflight
     if (feature(FEATURE_RX_SERIAL)) {
         switch (masterConfig.rxConfig.serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
