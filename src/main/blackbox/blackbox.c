@@ -658,7 +658,8 @@ static void validateBlackboxConfig()
 {
 	int div;
 
-	if (masterConfig.blackbox_rate_num >= masterConfig.blackbox_rate_denom) {
+	if (masterConfig.blackbox_rate_num == 0 || masterConfig.blackbox_rate_denom == 0
+			|| masterConfig.blackbox_rate_num >= masterConfig.blackbox_rate_denom) {
 		masterConfig.blackbox_rate_num = 1;
 		masterConfig.blackbox_rate_denom = 1;
 	} else {
