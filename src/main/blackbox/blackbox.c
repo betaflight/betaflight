@@ -92,7 +92,7 @@
 static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
     "H Blackbox version:1\n"
-    "H Data version:1\n"
+    "H Data version:2\n"
     "H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
 
 /* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
@@ -349,15 +349,19 @@ static void writeTag2_3S32(int32_t *values) {
     static const int NUM_FIELDS = 3;
 
     //Need to be enums rather than const ints if we want to switch on them (due to being C)
-    enum { BITS_2  = 0};
-    enum { BITS_4  = 1};
-    enum { BITS_6  = 2};
-    enum { BITS_32 = 3};
+    enum {
+        BITS_2  = 0,
+        BITS_4  = 1,
+        BITS_6  = 2,
+        BITS_32 = 3
+    };
 
-    enum { BYTES_1  = 0};
-    enum { BYTES_2  = 1};
-    enum { BYTES_3  = 2};
-    enum { BYTES_4  = 3};
+    enum {
+        BYTES_1  = 0,
+        BYTES_2  = 1,
+        BYTES_3  = 2,
+        BYTES_4  = 3
+    };
 
     int x;
     int selector = BITS_2, selector2;
@@ -465,37 +469,16 @@ static void writeTag2_3S32(int32_t *values) {
 static void writeTag8_4S16(int32_t *values) {
 
     //Need to be enums rather than const ints if we want to switch on them (due to being C)
-    enum { FIELD_ZERO  = 0};
-    enum { FIELD_4BIT  = 1};
-    enum { FIELD_8BIT  = 2};
-    enum { FIELD_16BIT = 3};
-
-    uint8_t selector;
-    int x;
-
-    /*
-     * 4-bit fields can only be combined with their paired neighbor (there are two pairs), so choose a
-     * larger encoding if that's not possible.
-     */
-    const uint8_t rcSelectorCleanup[16] = {
-    //          Output selectors     <- Input selectors
-        FIELD_ZERO << 2 | FIELD_ZERO,   // zero, zero
-        FIELD_ZERO << 2 | FIELD_8BIT,   // zero, 4-bit
-        FIELD_ZERO << 2 | FIELD_8BIT,   // zero, 8-bit
-        FIELD_ZERO << 2 | FIELD_16BIT,  // zero, 16-bit
-        FIELD_8BIT << 2 | FIELD_ZERO,   // 4-bit, zero
-        FIELD_4BIT << 2 | FIELD_4BIT,   // 4-bit, 4-bit
-        FIELD_8BIT << 2 | FIELD_8BIT,   // 4-bit, 8-bit
-        FIELD_8BIT << 2 | FIELD_16BIT,  // 4-bit, 16-bit
-        FIELD_8BIT << 2 | FIELD_ZERO,   // 8-bit, zero
-        FIELD_8BIT << 2 | FIELD_8BIT,   // 8-bit, 4-bit
-        FIELD_8BIT << 2 | FIELD_8BIT,   // 8-bit, 8-bit
-        FIELD_8BIT << 2 | FIELD_16BIT,  // 8-bit, 16-bit
-        FIELD_16BIT << 2 | FIELD_ZERO,  // 16-bit, zero
-        FIELD_16BIT << 2 | FIELD_8BIT,  // 16-bit, 4-bit
-        FIELD_16BIT << 2 | FIELD_8BIT,  // 16-bit, 8-bit
-        FIELD_16BIT << 2 | FIELD_16BIT, // 16-bit, 16-bit
+    enum {
+        FIELD_ZERO  = 0,
+        FIELD_4BIT  = 1,
+        FIELD_8BIT  = 2,
+        FIELD_16BIT = 3
     };
+
+    uint8_t selector, buffer;
+    int nibbleIndex;
+    int x;
 
     selector = 0;
     //Encode in reverse order so the first field is in the low bits:
@@ -504,36 +487,62 @@ static void writeTag8_4S16(int32_t *values) {
 
         if (values[x] == 0)
             selector |= FIELD_ZERO;
-        else if (values[x] <= 7 && values[x] >= -8)
+        else if (values[x] < 8 && values[x] >= -8)
             selector |= FIELD_4BIT;
-        else if (values[x] <= 127 && values[x] >= -128)
+        else if (values[x] < 128 && values[x] >= -128)
             selector |= FIELD_8BIT;
         else
             selector |= FIELD_16BIT;
     }
 
-    selector = rcSelectorCleanup[selector & 0x0F] | (rcSelectorCleanup[selector >> 4] << 4);
-
     blackboxWrite(selector);
 
+    nibbleIndex = 0;
+    buffer = 0;
     for (x = 0; x < 4; x++, selector >>= 2) {
         switch (selector & 0x03) {
+            case FIELD_ZERO:
+                //No-op
+            break;
             case FIELD_4BIT:
-                blackboxWrite((values[x] & 0x0F) | (values[x + 1] << 4));
-
-                //We write two selector fields:
-                x++;
-                selector >>= 2;
+                if (nibbleIndex == 0) {
+                    //We fill high-bits first
+                    buffer = values[x] << 4;
+                    nibbleIndex = 1;
+                } else {
+                    blackboxWrite(buffer | (values[x] & 0x0F));
+                    nibbleIndex = 0;
+                }
             break;
             case FIELD_8BIT:
-                blackboxWrite(values[x]);
+                if (nibbleIndex == 0)
+                    blackboxWrite(values[x]);
+                else {
+                    //Write the high bits of the value first (mask to avoid sign extension)
+                    blackboxWrite(buffer | ((values[x] >> 4) & 0x0F));
+                    //Now put the leftover low bits into the top of the next buffer entry
+                    buffer = values[x] << 4;
+                }
             break;
             case FIELD_16BIT:
-                blackboxWrite(values[x]);
-                blackboxWrite(values[x] >> 8);
+                if (nibbleIndex == 0) {
+                    //Write high byte first
+                    blackboxWrite(values[x] >> 8);
+                    blackboxWrite(values[x]);
+                } else {
+                    //First write the highest 4 bits
+                    blackboxWrite(buffer | ((values[x] >> 12) & 0x0F));
+                    // Then the middle 8
+                    blackboxWrite(values[x] >> 4);
+                    //Only the smallest 4 bits are still left to write
+                    buffer = values[x] << 4;
+                }
             break;
         }
     }
+    //Anything left over to write?
+    if (nibbleIndex == 1)
+        blackboxWrite(buffer);
 }
 
 static void writeIntraframe(void)
