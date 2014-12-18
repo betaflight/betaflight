@@ -1016,6 +1016,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
         serialize16(masterConfig.rxConfig.mincheck);
+        serialize8(masterConfig.rxConfig.spektrum_sat_bind);
+        break;
 
     case MSP_RSSI_CONFIG:
         headSerialReply(1);
@@ -1291,6 +1293,7 @@ static bool processInCommand(void)
         masterConfig.rxConfig.maxcheck = read16();
         masterConfig.rxConfig.midrc = read16();
         masterConfig.rxConfig.mincheck = read16();
+        masterConfig.rxConfig.spektrum_sat_bind = read8();
         break;
 
     case MSP_SET_RSSI_CONFIG:

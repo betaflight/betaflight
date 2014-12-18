@@ -21,11 +21,14 @@
 
 #include "platform.h"
 
+#include "drivers/gpio.h"
 #include "drivers/system.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
+
+#include "config/config.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -138,3 +141,78 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
 
     return data;
 }
+
+#ifdef SPEKTRUM_BIND
+
+bool spekShouldBind(uint8_t spektrum_sat_bind)
+{
+#ifdef HARDWARE_BIND_PLUG
+    gpio_config_t cfg = {
+        BINDPLUG_PIN,
+        Mode_IPU,
+        Speed_2MHz
+    };
+    gpioInit(BINDPLUG_PORT, &cfg);
+
+    // Check status of bind plug and exit if not active
+    delayMicroseconds(10);  // allow configuration to settle
+    if (digitalIn(BINDPLUG_PORT, BINDPLUG_PIN)) {
+        return false;
+    }
+#endif
+
+    return !(
+        isMPUSoftReset() ||
+        spektrum_sat_bind == SPEKTRUM_SAT_BIND_DISABLED ||
+        spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX
+    );
+}
+/* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
+ * Function must be called immediately after startup so that we don't miss satellite bind window.
+ * Known parameters. Tested with DSMX satellite and DX8 radio. Framerate (11ms or 22ms) must be selected from TX.
+ * 9 = DSMX 11ms / DSMX 22ms
+ * 5 = DSM2 11ms 2048 / DSM2 22ms 1024
+ */
+void spektrumBind(rxConfig_t *rxConfig)
+{
+    int i;
+
+    if (!spekShouldBind(rxConfig->spektrum_sat_bind)) {
+        return;
+    }
+
+    gpio_config_t cfg = {
+        BIND_PIN,
+        Mode_Out_OD,
+        Speed_2MHz
+    };
+    gpioInit(BIND_PORT, &cfg);
+
+    // RX line, set high
+    digitalHi(BIND_PORT, BIND_PIN);
+
+    // Bind window is around 20-140ms after powerup
+    delay(60);
+
+    for (i = 0; i < rxConfig->spektrum_sat_bind; i++) {
+
+        // RX line, drive low for 120us
+        digitalLo(BIND_PORT, BIND_PIN);
+        delayMicroseconds(120);
+
+        // RX line, drive high for 120us
+        digitalHi(BIND_PORT, BIND_PIN);
+        delayMicroseconds(120);
+    }
+
+#ifndef HARDWARE_BIND_PLUG
+    // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
+    // Don't reset if hardware bind plug is present
+    if (!isMPUSoftReset()) {
+        rxConfig->spektrum_sat_bind = 0;
+        saveConfigAndNotify();
+    }
+#endif
+
+}
+#endif

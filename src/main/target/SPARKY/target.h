@@ -82,3 +82,7 @@
 #define GPS
 #define DISPLAY
 
+#define SPEKTRUM_BIND
+// USART2, PA3
+#define BIND_PORT GPIOA
+#define BIND_PIN Pin_3

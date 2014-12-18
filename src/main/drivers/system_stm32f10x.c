@@ -22,11 +22,19 @@
 #include "platform.h"
 
 #include "gpio.h"
+#include "system.h"
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
+#define BKP_SOFTRESET (0x50F7B007)
 
 void systemReset(void)
 {
+    // write magic value that we're doing a soft reset
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);
+    PWR->CR |= PWR_CR_DBP;
+    *((uint16_t *)BKP_BASE + 0x04) = BKP_SOFTRESET & 0xffff;
+    *((uint16_t *)BKP_BASE + 0x08) = (BKP_SOFTRESET & 0xffff0000) >> 16;
+
     // Generate system reset
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
 }
@@ -51,4 +59,12 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     gpioInit(GPIOA, &gpio);
     gpioInit(GPIOB, &gpio);
     gpioInit(GPIOC, &gpio);
+}
+
+bool isMPUSoftReset(void)
+{
+    if ((*((uint16_t *)BKP_BASE + 0x04) | *((uint16_t *)BKP_BASE + 0x08) << 16) == BKP_SOFTRESET)
+        return true;
+    else
+        return false;
 }
