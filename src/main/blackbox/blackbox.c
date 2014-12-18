@@ -191,7 +191,7 @@ static const char * const blackboxHeaderFields[] = {
         PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
         PREDICT(AVERAGE_2),
 
-    /* RC fields are encoded together as a group, everything else is signed since they're diffs: */
+    /* PID_I terms and RC fields are encoded together as groups, everything else is signed since they're diffs: */
     "H Field P encoding:"
         /* loopIteration, time: */
         ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","
@@ -547,13 +547,13 @@ static void writeIntraframe(void)
     writeUnsignedVB(blackboxCurrent->time);
 
     for (x = 0; x < 3; x++)
-        writeSignedVB(blackboxCurrent->axisP[x]);
+        writeSignedVB(blackboxCurrent->axisPID_P[x]);
 
     for (x = 0; x < 3; x++)
-        writeSignedVB(blackboxCurrent->axisI[x]);
+        writeSignedVB(blackboxCurrent->axisPID_I[x]);
 
     for (x = 0; x < 3; x++)
-        writeSignedVB(blackboxCurrent->axisD[x]);
+        writeSignedVB(blackboxCurrent->axisPID_D[x]);
 
     for (x = 0; x < 3; x++)
         writeSignedVB(blackboxCurrent->rcCommand[x]);
@@ -605,10 +605,10 @@ static void writeInterframe(void)
     writeSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
     for (x = 0; x < 3; x++)
-        writeSignedVB(blackboxCurrent->axisP[x] - blackboxLast->axisP[x]);
+        writeSignedVB(blackboxCurrent->axisPID_P[x] - blackboxLast->axisPID_P[x]);
 
     for (x = 0; x < 3; x++)
-        deltas[x] = blackboxCurrent->axisI[x] - blackboxLast->axisI[x];
+        deltas[x] = blackboxCurrent->axisPID_I[x] - blackboxLast->axisPID_I[x];
 
     /* 
      * The PID I field changes very slowly, most of the time +-2, so use an encoding
@@ -617,7 +617,7 @@ static void writeInterframe(void)
     writeTag2_3S32(deltas);
     
     for (x = 0; x < 3; x++)
-        writeSignedVB(blackboxCurrent->axisD[x] - blackboxLast->axisD[x]);
+        writeSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
 
     for (x = 0; x < 4; x++)
         deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
@@ -772,11 +772,11 @@ static void loadBlackboxState(void)
     blackboxCurrent->time = currentTime;
 
     for (i = 0; i < 3; i++)
-        blackboxCurrent->axisP[i] = axisP[i];
+        blackboxCurrent->axisPID_P[i] = axisPID_P[i];
     for (i = 0; i < 3; i++)
-        blackboxCurrent->axisI[i] = axisI[i];
+        blackboxCurrent->axisPID_I[i] = axisPID_I[i];
     for (i = 0; i < 3; i++)
-        blackboxCurrent->axisD[i] = axisD[i];
+        blackboxCurrent->axisPID_D[i] = axisPID_D[i];
 
     for (i = 0; i < 4; i++)
         blackboxCurrent->rcCommand[i] = rcCommand[i];

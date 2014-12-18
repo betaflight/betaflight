@@ -44,7 +44,7 @@ int16_t heading, magHold;
 int16_t axisPID[3];
 
 #ifdef BLACKBOX
-int32_t axisP[3], axisI[3], axisD[3];
+int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
@@ -250,9 +250,9 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         axisPID[axis] = PTerm + ITerm - DTerm;
 
 #ifdef BLACKBOX
-        axisP[axis] = PTerm;
-        axisI[axis] = ITerm;
-        axisD[axis] = -DTerm;
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = -DTerm;
 #endif
     }
 }
@@ -339,9 +339,9 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         axisPID[axis] = PTerm + ITerm + DTerm;
 
 #ifdef BLACKBOX
-        axisP[axis] = PTerm;
-        axisI[axis] = ITerm;
-        axisD[axis] = DTerm;
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = DTerm;
 #endif
     }
 }

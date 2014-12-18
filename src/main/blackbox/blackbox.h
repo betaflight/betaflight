@@ -22,7 +22,7 @@
 typedef struct blackboxValues_t {
     uint32_t time;
 
-    int32_t axisP[3], axisI[3], axisD[3];
+    int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
     int16_t rcCommand[4];
     int16_t gyroData[3];

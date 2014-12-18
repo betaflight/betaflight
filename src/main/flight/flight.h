@@ -127,7 +127,7 @@ extern int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AX
 extern int32_t accSum[XYZ_AXIS_COUNT];
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 
-extern int32_t axisP[3], axisI[3], axisD[3];
+extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 extern int16_t heading, magHold;
 
