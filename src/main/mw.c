@@ -307,7 +307,7 @@ void mwDisarm(void)
 
 #ifdef BLACKBOX
         if (feature(FEATURE_BLACKBOX)) {
-        	finishBlackbox();
+            finishBlackbox();
             if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
@@ -341,7 +341,7 @@ void mwArm(void)
                 if (sharedBlackboxAndMspPort) {
                     mspReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }
-            	startBlackbox();
+                startBlackbox();
             }
 #endif
             return;
@@ -700,9 +700,9 @@ void loop(void)
         writeMotors();
 
 #ifdef BLACKBOX
-	    if (!cliMode && feature(FEATURE_BLACKBOX)) {
-	        handleBlackbox();
-	    }
+        if (!cliMode && feature(FEATURE_BLACKBOX)) {
+            handleBlackbox();
+        }
 #endif
     }
 
