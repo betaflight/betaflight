@@ -143,6 +143,30 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
 }
 
 #ifdef SPEKTRUM_BIND
+
+bool spekShouldBind(uint8_t spektrum_sat_bind)
+{
+#ifdef HARDWARE_BIND_PLUG
+    gpio_config_t cfg = {
+        BINDPLUG_PIN,
+        Mode_IPU,
+        Speed_2MHz
+    };
+    gpioInit(BINDPLUG_PORT, &cfg);
+
+    // Check status of bind plug and exit if not active
+    delayMicroseconds(10);  // allow configuration to settle
+    if (digitalIn(BINDPLUG_PORT, BINDPLUG_PIN)) {
+        return false;
+    }
+#endif
+
+    return !(
+        isMPUSoftReset() ||
+        spektrum_sat_bind == SPEKTRUM_SAT_BIND_DISABLED ||
+        spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX
+    );
+}
 /* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
  * Function must be called immediately after startup so that we don't miss satellite bind window.
  * Known parameters. Tested with DSMX satellite and DX8 radio. Framerate (11ms or 22ms) must be selected from TX.
@@ -152,57 +176,41 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
 void spektrumBind(rxConfig_t *rxConfig)
 {
     int i;
-    gpio_config_t gpio;
-    GPIO_TypeDef *spekBindPort;
-    uint16_t spekBindPin;
 
-#ifdef HARDWARE_BIND_PLUG
-    // Check status of bind plug and exit if not active
-    GPIO_TypeDef *hwBindPort;
-    uint16_t hwBindPin;
-
-    hwBindPort = BINDPLUG_PORT;
-    hwBindPin = BINDPLUG_PIN;
-    gpio.speed = Speed_2MHz;
-    gpio.pin = hwBindPin;
-    gpio.mode = Mode_IPU;
-    gpioInit(hwBindPort, &gpio);
-    delayMicroseconds(10);  // allow configuration to settle
-    if (digitalIn(hwBindPort, hwBindPin))
+    if (!spekShouldBind(rxConfig->spektrum_sat_bind)) {
         return;
-#endif
+    }
 
-    spekBindPort = BIND_PORT;
-    spekBindPin = BIND_PIN;
+    gpio_config_t cfg = {
+        BIND_PIN,
+        Mode_Out_OD,
+        Speed_2MHz
+    };
+    gpioInit(BIND_PORT, &cfg);
 
-    // don't try to bind if: here after soft reset or bind flag is out of range
-    if (isMPUSoftReset() || rxConfig->spektrum_sat_bind == 0 || rxConfig->spektrum_sat_bind > 10)
-        return;
-
-    gpio.speed = Speed_2MHz;
-    gpio.pin = spekBindPin;
-    gpio.mode = Mode_Out_OD;
-    gpioInit(spekBindPort, &gpio);
     // RX line, set high
-    digitalHi(spekBindPort, spekBindPin);
+    digitalHi(BIND_PORT, BIND_PIN);
+
     // Bind window is around 20-140ms after powerup
     delay(60);
 
     for (i = 0; i < rxConfig->spektrum_sat_bind; i++) {
+
         // RX line, drive low for 120us
-        digitalLo(spekBindPort, spekBindPin);
+        digitalLo(BIND_PORT, BIND_PIN);
         delayMicroseconds(120);
+
         // RX line, drive high for 120us
-        digitalHi(spekBindPort, spekBindPin);
+        digitalHi(BIND_PORT, BIND_PIN);
         delayMicroseconds(120);
     }
 
 #ifndef HARDWARE_BIND_PLUG
-    // If we came here as a result of hard  reset (power up, with mcfg.spektrum_sat_bind set), then reset it back to zero and write config
+    // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
     // Don't reset if hardware bind plug is present
     if (!isMPUSoftReset()) {
         rxConfig->spektrum_sat_bind = 0;
-        writeEEPROM(1, true);
+        saveConfigAndNotify();
     }
 #endif
 
