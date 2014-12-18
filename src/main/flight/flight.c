@@ -250,9 +250,9 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         axisPID[axis] = PTerm + ITerm - DTerm;
 
 #ifdef BLACKBOX
-		axisP[axis] = PTerm;
-		axisI[axis] = ITerm;
-		axisD[axis] = -DTerm;
+        axisP[axis] = PTerm;
+        axisI[axis] = ITerm;
+        axisD[axis] = -DTerm;
 #endif
     }
 }
