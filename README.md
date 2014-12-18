@@ -1,55 +1,90 @@
-# Blackbox flight data recorder port for Cleanflight
+# Cleanflight
 
-![Rendered flight log frame](http://i.imgur.com/FBphB8c.jpg)
+Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 
-WARNING - This firmware is experimental, and may cause your craft to suddenly fall out of the sky. No warranty is
-offered: if your craft breaks, you get to keep both pieces.
+This fork differs from baseflight in that it attempts to use modern software development practices which result in:
 
-## Introduction
-This is a modified version of Cleanflight which adds a flight data recorder function ("Blackbox"). Flight data
-information is transmitted over the flight controller's serial port on every control loop iteration to an external
-logging device to be recorded.
+1. greater reliability through code robustness and automated testing. 
+2. easier maintainance through code cleanliness.
+3. easier to develop new features. 
+4. easier to re-use code though code de-coupling and modularisation.
 
-After your flight, you can process the resulting logs on your computer to either turn them into CSV (comma-separated
-values) or render your flight log as a video.
+The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediately raise an issue so it can be fixed, or better yet submit a pull request.
 
-This is a port of my Blackbox feature for Baseflight, so please follow the instructions there for usage details (just
-use the Cleanflight firmware from this repository instead of the Baseflight firmware):
+## Additional Features
 
-https://github.com/thenickdude/blackbox
+Cleanflight also has additional features not found in baseflight.
 
-You will also find the tools to turn your logs into CSV logs or PNG image files. Instructions which are specific to
-Cleanflight are included here.
+* Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
+* OneShot ESC support.
+* Support for additional targets that use the STM32F3 processors (baseflight only supports STM32F1).
+* Support for the TauLabs Sparky board (~$35 STM32F303 I2C sensors, based board with acc/gyro/compass and baro!)
+* Support for the OpenPilot CC3D board. (~$20 STM32F103 board, SPI acc/gyro)
+* Support for the CJMCU nano quadcopter board.
+* Support for developer breakout boards: (Port103R, EUSTM32F103RC, Olimexino, STM32F3Discovery).
+* Support for more than 8 RC channels - (e.g. 16 Channels via FrSky X4RSB SBus).
+* Support for N-Position switches via flexible channel ranges - not just 3 like baseflight or 3/6 in MultiWii
+* Lux's new PID (uses float values internally, resistant to looptime variation).
+* Simultaneous Bluetooth configuration and OSD.
+* Better PWM and PPM input and failsafe detection than baseflight.
+* Better FrSky Telemetry than baseflight.
+* MSP Telemetry.
+* RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
+* Autotune - ported from BradWii, experimental - feedback welcomed.
+* OLED Displays - Display information on: Battery voltage, profile, rate profile, version, sensors, RC, etc.
+* In-flight manual PID tuning and rate adjustment.
+* Rate profiles and in-flight selection of them.
+* Graupner PPM failsafe.
+* Graupner HoTT telemetry.
+* Configurable serial port scenarios for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
++ more many minor bug fixes.
 
-## Installation of firmware
-Before installing the new firmware onto your Naze32, back up your configuration: Connect to your flight controller
-using the [Cleanflight Configurator][] , open up the CLI tab and enter "dump" into the box at the bottom and press enter.
-Copy all of the text that results and paste it into a text document somewhere for safe-keeping.
+For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documenation.
 
-Click the disconnect button, then on the main page choose the Firmware Flasher option. Tick the box for "Full Chip
-Erase" (warning, this will erase all your settings!). Click the "Load firmware (local)" button, and select the file `cleanflight_NAZE.hex`
-from the `obj/` directory. Click the "Flash Firmware" button and wait for it to complete.
+http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
 
-Now you need to reload your configuration: Go to the CLI tab and paste in the dump that you saved earlier and press
-enter, it should execute and restore your settings.
 
-Before you leave the CLI tab, enable the Blackbox feature by typing in `feature BLACKBOX` and pressing enter. You also
-need to assign the Blackbox to one of [your serial ports][]. Because it requires a 115200 baud port, the best choice on the
-Naze32 to use is serial_port_1, which is the two-pin Tx/Rx header in the centre of the board.
+## Documentation
 
-Use `set serial_port_1_scenario=10` to switch the port to Blackbox-only, or `set serial_port_1_scenario=11` to switch it
-to MSP, CLI, Blackbox and GPS Passthrough (probably the most useful configuration, since this is the port connected to
-USB and you'll still want to access the CLI over it).
+There is lots of documentation here: https://github.com/hydra/cleanflight/tree/master/docs 
 
-Enter `save`. Your configuration should be saved and the flight controller will reboot. You're ready to go!
+If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
 
-If you ever need to disable the Blackbox (say, for example, to switch to using the serial port for an OSD instead), you
-can either reflash the stock firmware using the Configurator, or you can just turn off the Blackbox feature
-by entering `feature -BLACKBOX` on the CLI tab.
+## IRC Support and Developers Channel
 
-[your serial ports]: https://github.com/cleanflight/cleanflight/blob/master/docs/Serial.md
-[Cleanflight Configurator]: https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en
+There's a dedicated IRC channel here:
 
-## License
+irc://irc.freenode.net/#cleanflight
 
-This project is licensed under GPLv3.
+If you are using windows and don't have an IRC client installed then take a look at HydraIRC - here: http://hydrairc.com/
+
+## Videos
+
+
+There is a dedicated Cleanflight youtube channel which has progress update videos, flight demonstrations, instrutions and other related videos.
+
+https://www.youtube.com/playlist?list=PL6H1fAj_XUNVBEcp8vbMH2DrllZAGWkt8
+
+Please subscribe and '+1' the videos if you find them useful.
+
+## Configuration Tool
+
+To configure Cleanflight you should use the Cleanlight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
+
+https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
+
+The source for it is here:
+
+https://github.com/hydra/cleanflight-configurator
+
+## Contributing
+
+Before making any contributions, take a note of the https://github.com/multiwii/baseflight/wiki/CodingStyle
+
+For this fork it is also advised to read about clean code, here are some useful links:
+
+* http://cleancoders.com/
+* http://en.wikipedia.org/wiki/SOLID_%28object-oriented_design%29
+* http://en.wikipedia.org/wiki/Code_smell
+* http://en.wikipedia.org/wiki/Code_refactoring
+* http://www.amazon.co.uk/Working-Effectively-Legacy-Robert-Martin/dp/0131177052

@@ -24,6 +24,8 @@ typedef enum {
     NAV_MODE_WP
 } navigationMode_e;
 
+// FIXME ap_mode is badly named, it's a value that is compared to rcCommand, not a flag at it's name implies.
+
 typedef struct gpsProfile_s {
     uint16_t gps_wp_radius;                 // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
     uint8_t gps_lpf;                        // Low pass filter cut frequency for derivative calculation (default 20Hz)

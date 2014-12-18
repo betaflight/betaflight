@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <platform.h>
 
@@ -33,27 +34,36 @@
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 
 #define I2C1_SCL_GPIO        GPIOB
+#define I2C1_SCL_GPIO_AF     GPIO_AF_4
 #define I2C1_SCL_PIN         GPIO_Pin_6
 #define I2C1_SCL_PIN_SOURCE  GPIO_PinSource6
 #define I2C1_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOB
 #define I2C1_SDA_GPIO        GPIOB
+#define I2C1_SDA_GPIO_AF     GPIO_AF_4
 #define I2C1_SDA_PIN         GPIO_Pin_7
 #define I2C1_SDA_PIN_SOURCE  GPIO_PinSource7
 #define I2C1_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOB
 
+#if !defined(I2C2_SCL_GPIO)
 #define I2C2_SCL_GPIO        GPIOF
+#define I2C2_SCL_GPIO_AF     GPIO_AF_4
 #define I2C2_SCL_PIN         GPIO_Pin_6
 #define I2C2_SCL_PIN_SOURCE  GPIO_PinSource6
 #define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOF
 #define I2C2_SDA_GPIO        GPIOA
+#define I2C2_SDA_GPIO_AF     GPIO_AF_4
 #define I2C2_SDA_PIN         GPIO_Pin_10
 #define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
+
+#endif
 
 static uint32_t i2cTimeout;
 
 static volatile uint16_t i2c1ErrorCount = 0;
 static volatile uint16_t i2c2ErrorCount = 0;
+
+static I2C_TypeDef *I2Cx = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
 // I2C TimeoutUserCallback
@@ -75,15 +85,14 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
     I2C_InitTypeDef I2C_InitStructure;
 
     if (I2Cx == I2C1) {
-        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
         RCC_AHBPeriphClockCmd(I2C1_SCL_CLK_SOURCE | I2C1_SDA_CLK_SOURCE, ENABLE);
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
         RCC_I2CCLKConfig(RCC_I2C1CLK_SYSCLK);
 
         //i2cUnstick(I2Cx);                                         // Clock out stuff to make sure slaves arent stuck
 
-        GPIO_PinAFConfig(I2C1_SCL_GPIO, I2C1_SCL_PIN_SOURCE, GPIO_AF_4);
-        GPIO_PinAFConfig(I2C1_SDA_GPIO, I2C1_SDA_PIN_SOURCE, GPIO_AF_4);
+        GPIO_PinAFConfig(I2C1_SCL_GPIO, I2C1_SCL_PIN_SOURCE, I2C1_SCL_GPIO_AF);
+        GPIO_PinAFConfig(I2C1_SDA_GPIO, I2C1_SDA_PIN_SOURCE, I2C1_SDA_GPIO_AF);
 
         GPIO_StructInit(&GPIO_InitStructure);
         I2C_StructInit(&I2C_InitStructure);
@@ -118,15 +127,14 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
     }
 
     if (I2Cx == I2C2) {
-        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
         RCC_AHBPeriphClockCmd(I2C2_SCL_CLK_SOURCE | I2C2_SDA_CLK_SOURCE, ENABLE);
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
         RCC_I2CCLKConfig(RCC_I2C2CLK_SYSCLK);
 
         //i2cUnstick(I2Cx);                                         // Clock out stuff to make sure slaves arent stuck
 
-        GPIO_PinAFConfig(I2C2_SCL_GPIO, I2C2_SCL_PIN_SOURCE, GPIO_AF_4);
-        GPIO_PinAFConfig(I2C2_SDA_GPIO, I2C2_SDA_PIN_SOURCE, GPIO_AF_4);
+        GPIO_PinAFConfig(I2C2_SCL_GPIO, I2C2_SCL_PIN_SOURCE, I2C2_SCL_GPIO_AF);
+        GPIO_PinAFConfig(I2C2_SDA_GPIO, I2C2_SDA_PIN_SOURCE, I2C2_SDA_GPIO_AF);
 
         GPIO_StructInit(&GPIO_InitStructure);
         I2C_StructInit(&I2C_InitStructure);
@@ -134,7 +142,7 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
         // Init pins
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
         GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
         GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
         GPIO_InitStructure.GPIO_Pin = I2C2_SCL_PIN;
@@ -151,7 +159,14 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
         I2C_InitStructure.I2C_OwnAddress1 = 0x00;
         I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
         I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+
+        // FIXME timing is board specific
+        //I2C_InitStructure.I2C_Timing = 0x00310309; // //400kHz I2C @ 8MHz input -> PRESC=0x0, SCLDEL=0x3, SDADEL=0x1, SCLH=0x03, SCLL=0x09 - value from TauLabs/Sparky
+        // ^ when using this setting and after a few seconds of a scope probe being attached to the I2C bus it was observed that the bus enters
+        // a busy state and does not recover.
+
         I2C_InitStructure.I2C_Timing = 0x00E0257A; // 400 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
+
         //I2C_InitStructure.I2C_Timing              = 0x8000050B;
 
         I2C_Init(I2C2, &I2C_InitStructure);
@@ -162,19 +177,26 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
 
 void i2cInit(I2CDevice index)
 {
-    UNUSED(index);
-    i2cInitPort(I2C1); // FIXME hard coded to use I2C1 for now
+    if (index == I2CDEV_1) {
+        I2Cx = I2C1;
+    } else {
+        I2Cx = I2C2;
+    }
+    i2cInitPort(I2Cx);
 }
 
 uint16_t i2cGetErrorCounter(void)
 {
-    return i2c1ErrorCount;
+    if (I2Cx == I2C1) {
+        return i2c1ErrorCount;
+    }
+
+    return i2c2ErrorCount;
+
 }
 
 bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data)
 {
-    I2C_TypeDef* I2Cx = I2C1;
-
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
@@ -236,7 +258,6 @@ bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data)
 
 bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
 {
-    I2C_TypeDef* I2Cx = I2C1;
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {

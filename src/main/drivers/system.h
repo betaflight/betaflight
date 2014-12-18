@@ -30,6 +30,7 @@ void failureMode(uint8_t mode);
 // bootloader/IAP
 void systemReset(void);
 void systemResetToBootloader(void);
+bool isMPUSoftReset(void);
 
 void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz

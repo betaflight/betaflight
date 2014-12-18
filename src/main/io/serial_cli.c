@@ -51,6 +51,7 @@
 #include "io/rc_controls.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+#include "rx/spektrum.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -133,7 +134,7 @@ static const char * const sensorNames[] = {
 };
 
 static const char * const accNames[] = {
-    "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", "None", NULL
+    "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9150", "FAKE", "None", NULL
 };
 
 typedef struct {
@@ -251,7 +252,8 @@ const clivalue_t valueTable[] = {
 
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.provider, 0, GPS_PROVIDER_MAX },
     { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.sbasMode, 0, SBAS_MODE_MAX },
-    { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.gpsAutoConfig, 0, GPS_AUTOCONFIG_OFF },
+    { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.autoConfig, GPS_AUTOCONFIG_OFF, GPS_AUTOCONFIG_ON },
+    { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.autoBaud, GPS_AUTOBAUD_OFF, GPS_AUTOBAUD_ON },
 
 
     { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDPOS], 0, 200 },
@@ -271,6 +273,7 @@ const clivalue_t valueTable[] = {
 #endif
 
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.serialrx_provider, 0, SERIALRX_PROVIDER_MAX },
+    { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, SPEKTRUM_SAT_BIND_DISABLED, SPEKTRUM_SAT_BIND_MAX},
 
     { "telemetry_provider",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_switch, 0, 1 },
@@ -952,10 +955,6 @@ static void cliGpsPassthrough(char *cmdline)
     gpsEnablePassthroughResult_e result = gpsEnablePassthrough();
 
     switch (result) {
-        case GPS_PASSTHROUGH_NO_GPS:
-            cliPrint("Error: Enable and plug in GPS first\r\n");
-            break;
-
         case GPS_PASSTHROUGH_NO_SERIAL_PORT:
             cliPrint("Error: Enable and plug in GPS first\r\n");
             break;

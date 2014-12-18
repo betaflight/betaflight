@@ -106,7 +106,7 @@ void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse);
 void loop(void);
-
+void spektrumBind(rxConfig_t *rxConfig);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -150,6 +150,20 @@ void init(void)
 #endif
 
     systemInit();
+
+#ifdef SPEKTRUM_BIND
+    if (feature(FEATURE_RX_SERIAL)) {
+        switch (masterConfig.rxConfig.serialrx_provider) {
+            case SERIALRX_SPEKTRUM1024:
+            case SERIALRX_SPEKTRUM2048:
+                // Spektrum satellite binding if enabled on startup.
+                // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
+                // The rest of Spektrum initialization will happen later - via spektrumInit()
+                spektrumBind(&masterConfig.rxConfig);
+                break;
+        }
+    }
+#endif
 
     delay(100);
 
@@ -201,6 +215,7 @@ void init(void)
 #endif
 #endif
 
+#if !defined(SPARKY)
     adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
     adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
     adc_params.enableExternal1 = false;
@@ -213,6 +228,8 @@ void init(void)
 #endif
 
     adcInit(&adc_params);
+#endif
+
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
@@ -362,7 +379,11 @@ void init(void)
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
+#ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
+        displayShowFixedPage(PAGE_GPS);
+#else
         displayEnablePageCycling();
+#endif
     }
 #endif
 }

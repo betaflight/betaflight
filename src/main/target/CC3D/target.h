@@ -76,3 +76,8 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
+
+#define SPEKTRUM_BIND
+// USART3, PB11 (Flexport)
+#define BIND_PORT  GPIOB
+#define BIND_PIN   Pin_11

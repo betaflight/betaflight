@@ -48,20 +48,26 @@ typedef enum {
 } gpsBaudRate_e;
 
 typedef enum {
-    GPS_AUTOCONFIG_ON = 0,
-    GPS_AUTOCONFIG_OFF
+    GPS_AUTOCONFIG_OFF = 0,
+    GPS_AUTOCONFIG_ON,
 } gpsAutoConfig_e;
+
+typedef enum {
+    GPS_AUTOBAUD_OFF = 0,
+    GPS_AUTOBAUD_ON
+} gpsAutoBaud_e;
+
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
 typedef struct gpsConfig_s {
     gpsProvider_e provider;
     sbasMode_e sbasMode;
-    gpsAutoConfig_e gpsAutoConfig;
+    gpsAutoConfig_e autoConfig;
+    gpsAutoBaud_e autoBaud;
 } gpsConfig_t;
 
 typedef enum {
     GPS_PASSTHROUGH_ENABLED = 1,
-    GPS_PASSTHROUGH_NO_GPS,
     GPS_PASSTHROUGH_NO_SERIAL_PORT
 } gpsEnablePassthroughResult_e;
 
@@ -83,7 +89,8 @@ typedef enum {
 typedef struct gpsData_t {
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
     uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
-    int errors;                     // gps error counter - crc error/lost of data/sync etc. reset on each reinit.
+    uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
+    uint32_t timeouts;
     uint32_t lastMessage;           // last time valid GPS data was received (millis)
     uint32_t lastLastMessage;       // last-last valid GPS message. Used to calculate delta.
 
@@ -92,13 +99,16 @@ typedef struct gpsData_t {
     gpsMessageState_e messageState;
 } gpsData_t;
 
+#define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
+extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
+
 extern gpsData_t gpsData;
 extern int32_t GPS_coord[2];               // LAT/LON
 
 extern uint8_t GPS_numSat;
 extern uint16_t GPS_hdop;                  // GPS signal quality
 extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update
-
+extern uint32_t GPS_packetCount;
 extern uint16_t GPS_altitude;              // altitude in 0.1m
 extern uint16_t GPS_speed;                 // speed in 0.1m/s
 extern uint16_t GPS_ground_course;         // degrees * 10
@@ -107,6 +117,10 @@ extern uint8_t GPS_svinfo_chn[16];         // Channel number
 extern uint8_t GPS_svinfo_svid[16];        // Satellite ID
 extern uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
 extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
+
+#define GPS_DBHZ_MIN 0
+#define GPS_DBHZ_MAX 55
+
 
 void gpsThread(void);
 bool gpsNewFrame(uint8_t c);

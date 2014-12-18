@@ -67,3 +67,11 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     gpioInit(GPIOE, &gpio);
     gpioInit(GPIOF, &gpio);
 }
+
+bool isMPUSoftReset(void)
+{
+    if (RCC->CSR & RCC_CSR_SFTRSTF)
+        return true;
+    else
+        return false;
+}

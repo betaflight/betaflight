@@ -15,7 +15,23 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+typedef enum {
+    PAGE_WELCOME,
+    PAGE_ARMED,
+    PAGE_BATTERY,
+    PAGE_SENSORS,
+    PAGE_RX,
+    PAGE_PROFILE,
+    PAGE_GPS
+#ifdef ENABLE_DEBUG_OLED_PAGE
+    ,
+    PAGE_DEBUG
+#endif
+} pageId_e;
+
 void updateDisplay(void);
+
+void displayShowFixedPage(pageId_e pageId);
 
 void displayEnablePageCycling(void);
 void displayDisablePageCycling(void);

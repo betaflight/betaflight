@@ -17,5 +17,8 @@
 
 #pragma once
 
+#define SPEKTRUM_SAT_BIND_DISABLED 0
+#define SPEKTRUM_SAT_BIND_MAX 10
+
 bool spektrumFrameComplete(void);
 void spektrumUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint);

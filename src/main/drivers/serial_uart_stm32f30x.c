@@ -40,21 +40,39 @@
 #define USE_USART1_RX_DMA
 //#define USE_USART2_RX_DMA
 //#define USE_USART2_TX_DMA
+//#define USE_USART3_RX_DMA
+//#define USE_USART3_TX_DMA
 
-#define UART1_TX_PIN GPIO_Pin_9  // PA9
-#define UART1_RX_PIN GPIO_Pin_10 // PA10
-#define UART1_GPIO GPIOA
-#define UART1_TX_PINSOURCE GPIO_PinSource9
-#define UART1_RX_PINSOURCE GPIO_PinSource10
+#ifndef UART1_GPIO
+#define UART1_TX_PIN        GPIO_Pin_9  // PA9
+#define UART1_RX_PIN        GPIO_Pin_10 // PA10
+#define UART1_GPIO          GPIOA
+#define UART1_GPIO_AF       GPIO_AF_7
+#define UART1_TX_PINSOURCE  GPIO_PinSource9
+#define UART1_RX_PINSOURCE  GPIO_PinSource10
+#endif
 
+#ifndef UART2_GPIO
 #define UART2_TX_PIN        GPIO_Pin_5 // PD5
 #define UART2_RX_PIN        GPIO_Pin_6 // PD6
 #define UART2_GPIO          GPIOD
+#define UART2_GPIO_AF       GPIO_AF_7
 #define UART2_TX_PINSOURCE  GPIO_PinSource5
 #define UART2_RX_PINSOURCE  GPIO_PinSource6
+#endif
+
+#ifndef UART3_GPIO
+#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
+#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
+#define UART2_GPIO_AF       GPIO_AF_7
+#define UART3_GPIO          GPIOB
+#define UART3_TX_PINSOURCE  GPIO_PinSource10
+#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#endif
 
 static uartPort_t uartPort1;
 static uartPort_t uartPort2;
+static uartPort_t uartPort3;
 
 void uartStartTxDMA(uartPort_t *s);
 
@@ -96,20 +114,20 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 
     if (mode & MODE_TX) {
         GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
         GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
     }
 
     if (mode & MODE_RX) {
         GPIO_InitStructure.GPIO_Pin = UART1_RX_PIN;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, UART1_GPIO_AF);
         GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
     }
 
     if (mode & MODE_BIDIR) {
         GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
         GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
         GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
     }
 
@@ -173,20 +191,20 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 
     if (mode & MODE_TX) {
         GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
     }
 
     if (mode & MODE_RX) {
         GPIO_InitStructure.GPIO_Pin = UART2_RX_PIN;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, UART2_GPIO_AF);
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
     }
 
     if (mode & MODE_BIDIR) {
         GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
         GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
     }
 
@@ -203,6 +221,85 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART2_RXDMA);
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART2_RXDMA);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
+
+    return s;
+}
+
+uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode)
+{
+    uartPort_t *s;
+    static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
+    static volatile uint8_t tx3Buffer[UART3_TX_BUFFER_SIZE];
+    NVIC_InitTypeDef NVIC_InitStructure;
+    GPIO_InitTypeDef  GPIO_InitStructure;
+
+    s = &uartPort3;
+    s->port.vTable = uartVTable;
+
+    s->port.baudRate = baudRate;
+
+    s->port.rxBufferSize = UART3_RX_BUFFER_SIZE;
+    s->port.txBufferSize = UART3_TX_BUFFER_SIZE;
+    s->port.rxBuffer = rx3Buffer;
+    s->port.txBuffer = tx3Buffer;
+
+    s->USARTx = USART3;
+
+#ifdef USE_USART3_RX_DMA
+    s->rxDMAChannel = DMA1_Channel3;
+    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
+#endif
+#ifdef USE_USART3_TX_DMA
+    s->txDMAChannel = DMA1_Channel2;
+    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
+#endif
+
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+
+#if defined(USE_USART3_TX_DMA) || defined(USE_USART3_RX_DMA)
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+#endif
+
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+
+    if (mode & MODE_TX) {
+        GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
+        GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+    }
+
+    if (mode & MODE_RX) {
+        GPIO_InitStructure.GPIO_Pin = UART3_RX_PIN;
+        GPIO_PinAFConfig(UART3_GPIO, UART3_RX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+    }
+
+    if (mode & MODE_BIDIR) {
+        GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+        GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, GPIO_AF_7);
+        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+    }
+
+#ifdef USE_USART3_TX_DMA
+    // DMA TX Interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART3_TXDMA);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART3_TXDMA);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
+
+#ifndef USE_USART3_RX_DMA
+    NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART3_RXDMA);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART3_RXDMA);
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 #endif
@@ -238,6 +335,15 @@ void DMA1_Channel7_IRQHandler(void)
     handleUsartTxDma(s);
 }
 
+// USART3 Tx DMA Handler
+void DMA1_Channel2_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort3;
+    DMA_ClearITPendingBit(DMA1_IT_TC2);
+    DMA_Cmd(DMA1_Channel2, DISABLE);
+    handleUsartTxDma(s);
+}
+
 void usartIrqHandler(uartPort_t *s)
 {
     uint32_t ISR = s->USARTx->ISR;
@@ -246,15 +352,19 @@ void usartIrqHandler(uartPort_t *s)
         if (s->port.callback) {
             s->port.callback(s->USARTx->RDR);
         } else {
-            s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->RDR;
-            s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
+            s->port.rxBuffer[s->port.rxBufferHead++] = s->USARTx->RDR;
+            if (s->port.rxBufferHead >= s->port.rxBufferSize) {
+                s->port.rxBufferHead = 0;
+            }
         }
     }
 
     if (!s->txDMAChannel && (ISR & USART_FLAG_TXE)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
-            USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
-            s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
+            USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail++]);
+            if (s->port.txBufferTail >= s->port.txBufferSize) {
+                s->port.txBufferTail = 0;
+            }
         } else {
             USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
         }
@@ -276,6 +386,13 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort2;
+
+    usartIrqHandler(s);
+}
+
+void USART3_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort3;
 
     usartIrqHandler(s);
 }

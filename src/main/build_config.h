@@ -37,6 +37,8 @@
 
 extern int16_t debug[4];
 
+#define DEBUG_SECTION_TIMES
+
 #ifdef DEBUG_SECTION_TIMES
 extern uint32_t sectionTimes[2][4];
 

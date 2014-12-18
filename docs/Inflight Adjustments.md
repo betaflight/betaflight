@@ -88,7 +88,7 @@ The Range Channel and the Adjustment Channel can be the same channel.  This is u
 to a single adjustment function regardless of other switch positions.
  
 The adjustment functions is applied to the adjustment channel when range channel between the range values.
-The adjustment is made when the adjustment channel is in the high or low position.  high = midrc + 200, low = midrc - 200.  by default this is 1700 and 1500 respectively.
+The adjustment is made when the adjustment channel is in the high or low position.  high = midrc + 200, low = midrc - 200.  by default this is 1700 and 1300 respectively.
 
 ### Adjustment function
 

@@ -307,7 +307,10 @@ static void mpu6050AccRead(int16_t *accData)
 {
     uint8_t buf[6];
 
-    i2cRead(MPU6050_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf);
+    if (!i2cRead(MPU6050_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf)) {
+        return;
+    }
+
     accData[0] = (int16_t)((buf[0] << 8) | buf[1]);
     accData[1] = (int16_t)((buf[2] << 8) | buf[3]);
     accData[2] = (int16_t)((buf[4] << 8) | buf[5]);
@@ -338,7 +341,9 @@ static void mpu6050GyroRead(int16_t *gyroData)
 {
     uint8_t buf[6];
 
-    i2cRead(MPU6050_ADDRESS, MPU_RA_GYRO_XOUT_H, 6, buf);
+    if (!i2cRead(MPU6050_ADDRESS, MPU_RA_GYRO_XOUT_H, 6, buf)) {
+        return;
+    }
 
     gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]);
     gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]);

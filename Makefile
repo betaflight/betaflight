@@ -35,7 +35,7 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC MASSIVEF3 PORT103R
+VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC MASSIVEF3 PORT103R SPARKY
 
 # Valid targets for OP BootLoader support
 OPBL_VALID_TARGETS = CC3D
@@ -54,7 +54,7 @@ LINKER_DIR	 = $(ROOT)/src/main/target
 # Search path for sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 
-ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO MASSIVEF3))
+ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO MASSIVEF3 SPARKY))
 
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
@@ -267,7 +267,7 @@ EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/compass_hmc5883l.c \
-		   drivers/display_ug2864hsweg01.h \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/inverter.c \
 		   drivers/light_led_stm32f10x.c \
@@ -421,6 +421,13 @@ CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 		   $(COMMON_SRC)
 
 MASSIVEF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
+		   $(HIGHEND_SRC) \
+		   $(COMMON_SRC)
+
+SPARKY_SRC	 = $(STM32F30x_COMMON_SRC) \
+		   drivers/display_ug2864hsweg01.c \
+		   drivers/accgyro_mpu9150.c \
+		   drivers/barometer_ms5611.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
