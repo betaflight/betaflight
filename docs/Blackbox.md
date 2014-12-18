@@ -41,6 +41,10 @@ data rate. The default looptime on Cleanflight is 3500. If you're using a loopti
 need to reduce the sampling rate in the Blackbox settings, see the later section on configuring the Blackbox feature for
 details.
 
+The Blackbox feature is currently available on the Naze32 and Naze32Pro targets. It may work on other targets, but you 
+will need to enable those manually in `/src/main/target/xxx/target.h` by adding a `#define BLACKBOX` statement and 
+recompile Cleanflight.
+
 ## Hardware
 The blackbox software is designed to be used with an [OpenLog serial data logger][] and a microSDHC card. You need a
 little prep to get the OpenLog ready for use, so here are the details:
@@ -58,7 +62,7 @@ The original OpenLog firmware may work with acceptable error rates if you use lo
 
 [OpenLog serial data logger]: https://www.sparkfun.com/products/9530
 [OpenLog Lite firmware]: https://github.com/sparkfun/OpenLog/tree/master/firmware/OpenLog_v3_Light
-[this version][]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/openlog/OpenLog_v3_Light.cpp.hex
+[this version]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/openlog/OpenLog_v3_Light.cpp.hex
 [Required libraries]: https://code.google.com/p/beta-lib/downloads/detail?name=SerialLoggerBeta20120108.zip&can=4&q=
 [FTDI Basic Breakout]: https://www.sparkfun.com/products/9716
 [FTDI crossover]: https://www.sparkfun.com/products/10660
