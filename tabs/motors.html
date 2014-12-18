@@ -1,0 +1,108 @@
+<div class="tab-motors">
+    <div class="wrapper accel">
+        <div class="plot_control">
+            <div class="title">Accelerometer - <a class="reset_accel_max" href="#" title="Reset overtime maximum">[Reset]</a></div>
+            <dl>
+                <dt i18n="sensorsRefresh"></dt>
+                <dd class="rate">
+                    <select name="accel_refresh_rate">
+                        <option value="10">10 ms</option>
+                        <option value="20" selected="selected">20 ms</option>
+                        <option value="30">30 ms</option>
+                        <option value="40">40 ms</option>
+                        <option value="50">50 ms</option>
+                        <option value="100">100 ms</option>
+                        <option value="250">250 ms</option>
+                        <option value="500">500 ms</option>
+                        <option value="1000">1000 ms</option>
+                    </select>
+                </dd>
+                <dt i18n="sensorsScale"></dt>
+                <dd class="scale">
+                    <select name="accel_scale">
+                        <option value="0.05">0.05</option>
+                        <option value="0.1">0.1</option>
+                        <option value="0.2">0.2</option>
+                        <option value="0.3">0.3</option>
+                        <option value="0.4">0.4</option>
+                        <option value="0.5">0.5</option>
+                        <option value="1">1</option>
+                        <option value="2" selected="selected">2</option>
+                    </select>
+                </dd>
+                <dt>X:</dt><dd class="x">0</dd>
+                <dt>Y:</dt><dd class="y">0</dd>
+                <dt>Z:</dt><dd class="z">0</dd>
+            </dl>
+        </div>
+        <svg id="accel">
+            <g class="grid x" transform="translate(40, 120)"></g>
+            <g class="grid y" transform="translate(40, 10)"></g>
+            <g class="data" transform="translate(41, 10)"></g>
+            <g class="axis x" transform="translate(40, 120)"></g>
+            <g class="axis y" transform="translate(40, 10)"></g>
+        </svg>
+        <div class="clear-both"></div>
+    </div>
+    <div class="left motors">
+        <div class="title">Motors</div>
+        <ul class="titles">
+            <li title="Motor - 1">1</li>
+            <li title="Motor - 2">2</li>
+            <li title="Motor - 3">3</li>
+            <li title="Motor - 4">4</li>
+            <li title="Motor - 5">5</li>
+            <li title="Motor - 6">6</li>
+            <li title="Motor - 7">7</li>
+            <li title="Motor - 8">8</li>
+        </ul>
+        <div class="bar-wrapper">
+        </div>
+    </div>
+    <div class="right servos">
+        <div class="title">Servos</div>
+        <ul class="titles">
+            <li title="Servo - 8">8</li>
+            <li title="Servo - 7">7</li>
+            <li title="Servo - 6">6</li>
+            <li title="Servo - 5">5</li>
+            <li title="Servo - 4">4</li>
+            <li title="Servo - 3">3</li>
+            <li title="Servo - 2">2</li>
+            <li title="Servo - 1">1</li>
+        </ul>
+        <div class="bar-wrapper">
+        </div>
+    </div>
+    <div class="clear-both"></div>
+    <div class="motor_testing">
+        <div class="left">
+            <div class="sliders">
+                <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+                <input class="master" type="range" min="1000" max="2000" value="1000" disabled="disabled" />
+            </div>
+            <div class="values">
+                <ul>
+                    <li>1000</li>
+                    <li>1000</li>
+                    <li>1000</li>
+                    <li>1000</li>
+                    <li>1000</li>
+                    <li>1000</li>
+                    <li>1000</li>
+                    <li>1000</li>
+                    <li style="font-weight: bold" i18n="motorsMaster"></li>
+                </ul>
+            </div>
+        </div>
+        <div class="notice" i18n="motorsNotice"></div>
+        <div class="cler-both"></div>
+    </div>
+</div>

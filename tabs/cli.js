@@ -7,9 +7,11 @@ TABS.cli = {
 
 TABS.cli.initialize = function (callback) {
     var self = this;
-    GUI.active_tab_ref = this;
-    GUI.active_tab = 'cli';
-    googleAnalytics.sendAppView('CLI Page');
+
+    if (GUI.active_tab != 'cli') {
+        GUI.active_tab = 'cli';
+        googleAnalytics.sendAppView('CLI');
+    }
 
     $('#content').load("./tabs/cli.html", function () {
         // translate to user-selected language
@@ -23,7 +25,7 @@ TABS.cli.initialize = function (callback) {
 
         bufView[0] = 0x23; // #
 
-        serial.send(bufferOut, function (writeInfo) {});
+        serial.send(bufferOut);
 
         var textarea = $('.tab-cli textarea');
 
@@ -93,7 +95,7 @@ TABS.cli.sendSlowly = function (out_arr, i, timeout_needle) {
 
         bufView[out_arr[i].length] = 0x0D; // enter (\n)
 
-        serial.send(bufferOut, function (writeInfo) {});
+        serial.send(bufferOut);
     }, timeout_needle * 5);
 };
 
@@ -178,7 +180,7 @@ TABS.cli.cleanup = function (callback) {
         // (another approach is however much more complicated):
         // we can setup an interval asking for data lets say every 200ms, when data arrives, callback will be triggered and tab switched
         // we could probably implement this someday
-        GUI.timeout_add('waiting_for_bootup', function () {
+        GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
             CONFIGURATOR.cliActive = false;
             CONFIGURATOR.cliValid = false;
 

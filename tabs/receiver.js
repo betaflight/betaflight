@@ -2,19 +2,30 @@
 
 TABS.receiver = {};
 TABS.receiver.initialize = function (callback) {
-    GUI.active_tab_ref = this;
-    GUI.active_tab = 'receiver';
-    googleAnalytics.sendAppView('Receiver Page');
+    var self = this;
+
+    if (GUI.active_tab != 'receiver') {
+        GUI.active_tab = 'receiver';
+        googleAnalytics.sendAppView('Receiver');
+    }
+
+    function get_misc_data() {
+        MSP.send_message(MSP_codes.MSP_MISC, false, false, get_rc_data);
+    }
 
     function get_rc_data() {
-        MSP.send_message(MSP_codes.MSP_RC, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_RC, false, false, get_rc_map);
+    }
+
+    function get_rc_map() {
+        MSP.send_message(MSP_codes.MSP_RCMAP, false, false, load_html);
     }
 
     function load_html() {
         $('#content').load("./tabs/receiver.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_rc_data);
+    MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_misc_data);
 
     function process_html() {
         // translate to user-selected language
@@ -51,72 +62,181 @@ TABS.receiver.initialize = function (callback) {
             bar_container.append('\
                 <ul>\
                     <li class="name">' + name + '</li>\
-                    <li class="meter"><meter min="800" max="2200"></meter></li>\
-                    <li class="value"></li>\
+                    <li class="meter">\
+                        <div class="meter-bar">\
+                            <div class="label"></div>\
+                            <div class="fill">\
+                                <div class="label"></div>\
+                            </div>\
+                        </div>\
+                    </li>\
                 </ul>\
-                <div class="clear-both"></div>\
             ');
         }
 
-        var meter_array = [];
-        $('meter', bar_container).each(function () {
-            meter_array.push($(this));
+        // we could probably use min and max throttle for the range, will see
+        var meter_scale = {
+            'min': 800,
+            'max': 2200
+        };
+
+        var meter_fill_array = [];
+        $('.meter .fill', bar_container).each(function () {
+            meter_fill_array.push($(this));
         });
 
-        var meter_values_array = [];
-        $('.value', bar_container).each(function () {
-            meter_values_array.push($(this));
+        var meter_label_array = [];
+        $('.meter', bar_container).each(function () {
+            meter_label_array.push($('.label' , this));
         });
+
+        // correct inner label margin on window resize (i don't know how we could do this in css)
+        self.resize = function () {
+            var containerWidth = $('.meter:first', bar_container).width(),
+                labelWidth = $('.meter .label:first', bar_container).width(),
+                margin = (containerWidth / 2) - (labelWidth / 2);
+
+            for (var i = 0; i < meter_label_array.length; i++) {
+                meter_label_array[i].css('margin-left', margin);
+            }
+        };
+
+        $(window).on('resize', self.resize).resize(); // trigger so labels get correctly aligned on creation
+
+        // handle rcmap & rssi aux channel
+        var RC_MAP_Letters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+
+        var strBuffer = [];
+        for (var i = 0; i < RC_MAP.length; i++) {
+            strBuffer[RC_MAP[i]] = RC_MAP_Letters[i];
+        }
+
+        // reconstruct
+        var str = strBuffer.join('');
+
+        // set current value
+        $('input[name="rcmap"]').val(str);
+
+        // validation / filter
+        var last_valid = str;
+
+        $('input[name="rcmap"]').on('input', function () {
+            var val = $(this).val();
+
+            // limit length to max 8
+            if (val.length > 8) {
+                val = val.substr(0, 8);
+                $(this).val(val);
+            }
+        });
+
+        $('input[name="rcmap"]').focusout(function () {
+            var val = $(this).val(),
+                strBuffer = val.split(''),
+                duplicityBuffer = [];
+
+            if (val.length != 8) {
+                $(this).val(last_valid);
+                return false;
+            }
+
+            // check if characters inside are all valid, also check for duplicity
+            for (var i = 0; i < val.length; i++) {
+                if (RC_MAP_Letters.indexOf(strBuffer[i]) < 0) {
+                    $(this).val(last_valid);
+                    return false;
+                }
+
+                if (duplicityBuffer.indexOf(strBuffer[i]) < 0) {
+                    duplicityBuffer.push(strBuffer[i]);
+                } else {
+                    $(this).val(last_valid);
+                    return false;
+                }
+            }
+        });
+
+        // handle helper
+        $('select[name="rcmap_helper"]').val(0); // go out of bounds
+        $('select[name="rcmap_helper"]').change(function () {
+            $('input[name="rcmap"]').val($(this).val());
+        });
+
+        // rssi aux
+        $('select[name="rssi_aux_channel"]').val(MISC.rssi_aux_channel);
 
         // UI Hooks
         // curves
-        $('.tunings .throttle input').change(function () {
-            setTimeout(function () {
-                var mid = parseFloat($('.tunings .throttle input[name="mid"]').val());
-                var expo = parseFloat($('.tunings .throttle input[name="expo"]').val());
+        $('.tunings .throttle input').on('input change', function () {
+            setTimeout(function () { // let global validation trigger and adjust the values first
+                var throttleMidE = $('.tunings .throttle input[name="mid"]'),
+                    throttleExpoE = $('.tunings .throttle input[name="expo"]'),
+                    mid = parseFloat(throttleMidE.val()),
+                    expo = parseFloat(throttleExpoE.val()),
+                    throttle_curve = $('.throttle_curve canvas').get(0),
+                    context = throttle_curve.getContext("2d");
 
-                var throttle_curve = $('.throttle_curve canvas').get(0);
-                var context = throttle_curve.getContext("2d");
-                context.clearRect(0, 0, 220, 58);
+                // local validation to deal with input event
+                if (mid >= parseFloat(throttleMidE.prop('min')) &&
+                    mid <= parseFloat(throttleMidE.prop('max')) &&
+                    expo >= parseFloat(throttleExpoE.prop('min')) &&
+                    expo <= parseFloat(throttleExpoE.prop('max'))) {
+                    // continue
+                } else {
+                    return;
+                }
 
                 // math magic by englishman
-                var midx = 220 * mid;
-                var midxl = midx * 0.5;
-                var midxr = (((220 - midx) * 0.5) + midx);
-                var midy = 58 - (midx * (58 / 220));
-                var midyl = 58 - ((58 - midy) * 0.5 *(expo + 1));
-                var midyr = (midy / 2) * (expo + 1);
+                var midx = 220 * mid,
+                    midxl = midx * 0.5,
+                    midxr = (((220 - midx) * 0.5) + midx),
+                    midy = 58 - (midx * (58 / 220)),
+                    midyl = 58 - ((58 - midy) * 0.5 *(expo + 1)),
+                    midyr = (midy / 2) * (expo + 1);
 
+                // draw
+                context.clearRect(0, 0, 220, 58);
                 context.beginPath();
                 context.moveTo(0, 58);
                 context.quadraticCurveTo(midxl, midyl, midx, midy);
                 context.moveTo(midx, midy);
                 context.quadraticCurveTo(midxr, midyr, 220, 0);
-
                 context.lineWidth = 2;
                 context.stroke();
-            }, 0); // race condition, that should always trigger after all events are processed
-        }).change();
+            }, 0);
+        }).trigger('input');
 
-        $('.tunings .rate input').change(function () {
-            setTimeout(function () {
-                var rate = parseFloat($('.tunings .rate input[name="rate"]').val());
-                var expo = parseFloat($('.tunings .rate input[name="expo"]').val());
+        $('.tunings .rate input').on('input change', function () {
+            setTimeout(function () { // let global validation trigger and adjust the values first
+                var rateE = $('.tunings .rate input[name="rate"]'),
+                    expoE = $('.tunings .rate input[name="expo"]'),
+                    rate = parseFloat(rateE.val()),
+                    expo = parseFloat(expoE.val()),
+                    pitch_roll_curve = $('.pitch_roll_curve canvas').get(0),
+                    context = pitch_roll_curve.getContext("2d");
 
-                var pitch_roll_curve = $('.pitch_roll_curve canvas').get(0);
-                var context = pitch_roll_curve.getContext("2d");
-                context.clearRect(0, 0, 220, 58);
+                // local validation to deal with input event
+                if (rate >= parseFloat(rateE.prop('min')) &&
+                    rate <= parseFloat(rateE.prop('max')) &&
+                    expo >= parseFloat(expoE.prop('min')) &&
+                    expo <= parseFloat(expoE.prop('max'))) {
+                    // continue
+                } else {
+                    return;
+                }
 
                 // math magic by englishman
                 var ratey = 58 * rate;
 
+                // draw
+                context.clearRect(0, 0, 220, 58);
                 context.beginPath();
                 context.moveTo(0, 58);
                 context.quadraticCurveTo(110, 58 - ((ratey / 2) * (1 - expo)), 220, 58 - ratey);
                 context.lineWidth = 2;
                 context.stroke();
-            }, 0); // race condition, that should always trigger after all events are processed
-        }).change();
+            }, 0);
+        }).trigger('input');
 
         $('a.refresh').click(function () {
             MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, function () {
@@ -143,23 +263,32 @@ TABS.receiver.initialize = function (callback) {
             RC_tuning.RC_RATE = parseFloat($('.tunings .rate input[name="rate"]').val());
             RC_tuning.RC_EXPO = parseFloat($('.tunings .rate input[name="expo"]').val());
 
-            var RC_tuning_buffer_out = new Array();
-            RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100, 10);
-            RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100, 10);
-            RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100, 10);
-            RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100, 10);
-            RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100, 10);
-            RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100, 10);
-            RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100, 10);
+            // catch rc map
+            var RC_MAP_Letters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
+            var strBuffer = $('input[name="rcmap"]').val().split('');
 
-            // Send over the RC_tuning changes
-            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, save_to_eeprom);
+            for (var i = 0; i < RC_MAP.length; i++) {
+                RC_MAP[i] = strBuffer.indexOf(RC_MAP_Letters[i]);
+            }
+
+            // catch rssi aux
+            MISC.rssi_aux_channel = parseInt($('select[name="rssi_aux_channel"]').val());
+
+            function save_rc_map() {
+                MSP.send_message(MSP_codes.MSP_SET_RCMAP, MSP.crunch(MSP_codes.MSP_SET_RCMAP), false, save_misc);
+            }
+
+            function save_misc() {
+                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_to_eeprom);
+            }
 
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
                 });
             }
+
+            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_rc_map);
         });
 
         $('select[name="rx_refresh_rate"]').change(function () {
@@ -195,8 +324,8 @@ TABS.receiver.initialize = function (callback) {
             function update_ui() {
                 // update bars with latest data
                 for (var i = 0; i < RC.active_channels; i++) {
-                    meter_array[i].val(RC.channels[i]);
-                    meter_values_array[i].text('[ ' + RC.channels[i] + ' ]');
+                    meter_fill_array[i].css('width', ((RC.channels[i] - meter_scale.min) / (meter_scale.max - meter_scale.min) * 100).clamp(0, 100) + '%');
+                    meter_label_array[i].text(RC.channels[i]);
                 }
 
                 // push latest data to the main array
@@ -267,7 +396,7 @@ TABS.receiver.initialize = function (callback) {
         });
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function () {
+        GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -276,5 +405,7 @@ TABS.receiver.initialize = function (callback) {
 };
 
 TABS.receiver.cleanup = function (callback) {
+    $(window).off('resize', this.resize);
+
     if (callback) callback();
 };

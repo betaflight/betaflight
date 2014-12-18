@@ -6,8 +6,8 @@ var GUI_control = function () {
     this.auto_connect = false;
     this.connecting_to = false;
     this.connected_to = false;
+    this.connect_lock = false;
     this.active_tab;
-    this.active_tab_ref = false;
     this.tab_switch_in_progress = false;
     this.operating_system;
     this.optional_usb_permissions = false; // controlled by usb permissions code
@@ -198,7 +198,7 @@ GUI_control.prototype.tab_switch_cleanup = function (callback) {
     MSP.callbacks_cleanup(); // we don't care about any old data that might or might not arrive
     GUI.interval_kill_all(); // all intervals (mostly data pulling) needs to be removed on tab switch
 
-    this.active_tab_ref.cleanup(callback);
+    TABS[this.active_tab].cleanup(callback);
 };
 
 // initialize object into GUI variable

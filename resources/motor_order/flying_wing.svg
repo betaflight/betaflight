@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2014.  All rights reserved.  Used with permission for Baseflight Configurator -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1 Basic//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-basic.dtd" [
+	<!ENTITY st0 "fill:none;stroke:#666666;">
+	<!ENTITY st1 "fill:none;stroke:#666666;stroke-width:2;">
+	<!ENTITY st2 "fill:#ED1C24;">
+	<!ENTITY st3 "fill:none;stroke:#BF1B2C;stroke-width:3;stroke-miterlimit:10;">
+	<!ENTITY st4 "fill:none;stroke:#000000;stroke-miterlimit:10;">
+	<!ENTITY st5 "fill:none;stroke:#8D198F;stroke-width:2.5;stroke-linecap:round;stroke-miterlimit:10;">
+	<!ENTITY st6 "font-family:'ArialMT';">
+	<!ENTITY st7 "font-size:18;">
+]>
+<svg version="1.1" baseProfile="basic"
+	 id="FlyingWingMix" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" inkscape:version="0.48.4 r9939" sodipodi:docname="flyingwing.svg"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="125.3px" height="80.8px"
+	 viewBox="296.37 388.68 125.3 80.8" xml:space="preserve">
+<polygon id="Front_Arrow" style="&st2;" points="359.02,390.34 349.67,406.53 356.58,406.53 356.58,416.18 361.58,416.18 
+	361.58,406.53 368.37,406.53 "/>
+<g id="WingGraphic">
+	<line id="line_1_" style="&st0;" x1="348.58" y1="417.31" x2="348.58" y2="389.68"/>
+	<line id="line" style="&st0;" x1="369.46" y1="389.68" x2="369.47" y2="417.31"/>
+	<line id="elevon" style="&st0;" x1="369.47" y1="417.31" x2="420.67" y2="433.24"/>
+	<line id="elevon_1_" style="&st0;" x1="348.58" y1="417.31" x2="297.37" y2="433.24"/>
+	<polygon id="wing_outline" style="&st1;" points="348.58,389.68 297.37,420.85 297.37,438.76 345.86,423.83 348.58,417.31 
+		369.47,417.31 372.18,423.83 420.67,438.76 420.67,420.85 369.46,389.68 	"/>
+</g>
+<g id="_x34_">
+	<text transform="matrix(1 0 0 1 397.604 461.5044)" style="&st6; &st7;">4</text>
+	<g id="leader_1_">
+		<line id="line_3_" style="&st4;" x1="401.19" y1="429.74" x2="401.23" y2="442.71"/>
+		<circle id="dot_1_" cx="401.2" cy="429.75" r="1.66"/>
+	</g>
+	<path id="square" style="&st3;" d="M413.87,467.96H388.6V442.7h25.27V467.96L413.87,467.96z"/>
+</g>
+<g id="_x33_" transform="translate(-52.834,-63.500761)">
+	<text transform="matrix(1 0 0 1 364.4331 525.2874)" style="&st6; &st7;">3</text>
+	<g id="leader">
+		<line id="line_2_" style="&st4;" x1="369.62" y1="493.24" x2="369.66" y2="506.21"/>
+		<circle id="dot" cx="369.63" cy="493.25" r="1.66"/>
+	</g>
+	<path id="square_1_" style="&st3;" d="M382.29,531.48h-25.26v-25.27h25.27L382.29,531.48L382.29,531.48z"/>
+</g>
+<g id="_x31_and2" transform="matrix(1.25,0,0,-1.25,-378.9054,819.72049)">
+	<text transform="matrix(0.8 0 0 -0.8 580.4521 300.6838)" style="&st6; &st7;">1/2</text>
+	<path id="circle" style="&st5;" d="M603.37,305.84c0-7.19-5.83-13.03-13.03-13.03c-7.2,0-13.03,5.84-13.03,13.03
+		c0,7.2,5.83,13.03,13.03,13.03C597.54,318.87,603.37,313.03,603.37,305.84z"/>
+</g>
+</svg>

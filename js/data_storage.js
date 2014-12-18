@@ -1,10 +1,10 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1415494669479, // 08.31.2014 - new Date().getTime()
+    'releaseDate': 1417875879820, // new Date().getTime() - 2014.12.06
     'firmwareVersionAccepted': 2.3,
+    'backupFileMinVersionAccepted': '0.55', // chrome.runtime.getManifest().version is stored as string, so does this one
     'connectionValid': false,
-    'mspPassThrough': false,
     'cliActive': false,
     'cliValid': false
 };
@@ -14,6 +14,7 @@ var CONFIG = {
     flightControllerIdentifier: '',
     flightControllerVersion: '',
     version:       0,
+    buildInfo:     '',
     multiType:     0,
     msp_version:   0,
     capability:    0,
@@ -22,9 +23,19 @@ var CONFIG = {
     activeSensors: 0,
     mode:          0,
     profile:       0,
-
     uid:           [0, 0, 0],
     accelerometerTrims: [0, 0]
+};
+
+var BF_CONFIG = {
+    mixerConfiguration:     0,
+    features:               0,
+    serialrx_type:          0,
+    board_align_roll:       0,
+    board_align_pitch:      0,
+    board_align_yaw:        0,
+    currentscale:           0,
+    currentoffset:          0
 };
 
 var PID_names = [];
@@ -32,6 +43,8 @@ var PIDs = new Array(10);
 for (var i = 0; i < 10; i++) {
     PIDs[i] = new Array(3);
 }
+
+var RC_MAP = [];
 
 // defaults
 // roll, pitch, yaw, throttle, aux 1, ... aux n
@@ -47,11 +60,12 @@ var RC_tuning = {
     yaw_rate:        0,
     dynamic_THR_PID: 0,
     throttle_MID:    0,
-    throttle_EXPO:   0,
+    throttle_EXPO:   0
 };
 
 var AUX_CONFIG = [];
 var AUX_CONFIG_IDS = [];
+var AUX_CONFIG_values = [];
 
 var MODE_RANGES = [];
 var ADJUSTMENT_RANGES = [];
@@ -97,16 +111,20 @@ var ANALOG = {
 };
 
 var MISC = {
-    PowerTrigger1:      0, // intPowerTrigger1 (aka useless trash)
-    minthrottle:        0,
-    maxthrottle:        0,
-    mincommand:         0,
-    failsafe_throttle:  0,
-    plog0:              0, // plog useless shit
-    plog1:              0, // plog useless shit
-    mag_declination:    0, // not checked
-    vbatscale:          0,
-    vbatmincellvoltage: 0,
-    vbatmaxcellvoltage: 0,
-    empty:              0 // unknown
+    midrc:                  0,
+    minthrottle:            0,
+    maxthrottle:            0,
+    mincommand:             0,
+    failsafe_throttle:      0,
+    gps_type:               0,
+    gps_baudrate:           0,
+    gps_ubx_sbas:           0,
+    multiwiicurrentoutput:  0,
+    rssi_aux_channel:       0,
+    placeholder2:           0,
+    mag_declination:        0, // not checked
+    vbatscale:              0,
+    vbatmincellvoltage:     0,
+    vbatmaxcellvoltage:     0,
+    placeholder3:           0
 };

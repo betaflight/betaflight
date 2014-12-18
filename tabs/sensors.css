@@ -1,74 +1,74 @@
 .tab-sensors {
 }
-    .tab-sensors .info {
-        margin-bottom: 10px;
-    }
-        .tab-sensors .info p {
-            padding: 5px;
+.tab-sensors .info {
+    margin-bottom: 10px;
+}
+.tab-sensors .info p {
+    padding: 5px;
 
-            border: 1px dashed silver;
+    border: 1px dashed silver;
 
-            margin-bottom: 10px;
-        }
-        .tab-sensors .info input {
-            vertical-align: middle;
-            margin: 0 5px 0 15px;
-        }
-        .tab-sensors .info .first {
-            margin: 0 5px 0 0;
-        }
-    .tab-sensors .wrapper {
-        display: none;
-    }
-    .tab-sensors .plot_control {
-        float: right;
+    margin-bottom: 10px;
+}
+.tab-sensors .info input {
+    vertical-align: middle;
+    margin: 0 5px 0 15px;
+}
+.tab-sensors .info .first {
+    margin: 0 5px 0 0;
+}
+.tab-sensors .wrapper {
+    display: none;
+}
+.tab-sensors .plot_control {
+    float: right;
 
-        width: 158px;
+    width: 158px;
 
-        border: 1px solid silver;
-    }
-        .tab-sensors .plot_control .title {
-            line-height: 20px;
-            font-weight: bold;
-            text-align: center;
+    border: 1px solid silver;
+}
+.tab-sensors .plot_control .title {
+    line-height: 20px;
+    font-weight: bold;
+    text-align: center;
 
-            border-bottom: 1px solid silver;
-            background-color: #ececec;
-        }
-        .tab-sensors .plot_control dl {
-            padding: 5px 5px 0 5px;
-            line-height: 22px;
-        }
-        .tab-sensors .plot_control dt {
-            float: left;
+    border-bottom: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-sensors .plot_control dl {
+    padding: 5px 5px 0 5px;
+    line-height: 22px;
+}
+.tab-sensors .plot_control dt {
+    float: left;
 
-            width: 60px;
-            height: 22px;
+    width: 60px;
+    height: 22px;
 
-            font-weight: bold;
-        }
-        .tab-sensors .plot_control dd {
-            margin-left: 20px;
-            height: 22px;
-        }
-        .tab-sensors .plot_control select {
-            float: right;
+    font-weight: bold;
+}
+.tab-sensors .plot_control dd {
+    margin-left: 20px;
+    height: 22px;
+}
+.tab-sensors .plot_control select {
+    float: right;
 
-            width: 80px;
-            border: 1px solid silver;
-        }
-        .tab-sensors .plot_control .x {
-            color: #00A8F0;
-        }
-        .tab-sensors .plot_control .y {
-            color: #C0D800;
-        }
-        .tab-sensors .plot_control .z {
-            color: #CB4B4B;
-        }
-        .tab-sensors .plot_control .x, .tab-sensors .plot_control .y, .tab-sensors .plot_control .z {
-            text-align: right;
-        }
+    width: 80px;
+    border: 1px solid silver;
+}
+.tab-sensors .plot_control .x {
+    color: #00A8F0;
+}
+.tab-sensors .plot_control .y {
+    color: #C0D800;
+}
+.tab-sensors .plot_control .z {
+    color: #CB4B4B;
+}
+.tab-sensors .plot_control .x, .tab-sensors .plot_control .y, .tab-sensors .plot_control .z {
+    text-align: right;
+}
 /* SVG classes*/
 .tab-sensors svg {
     float: left;

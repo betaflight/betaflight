@@ -1,41 +1,101 @@
 'use strict';
 
-function configuration_backup() {
-    // request configuration data (one by one)
+// code below is highly experimental, although it runs fine on latest firmware
+// the data inside nested objects needs to be verified if deep copy works properly
+function configuration_backup(callback) {
+    var activeProfile = null,
+        profilesN = 3;
 
-    function get_ident_data() {
-        MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_status_data);
+    var profileSpecificData = [
+        MSP_codes.MSP_PID,
+        MSP_codes.MSP_RC_TUNING,
+        MSP_codes.MSP_ACC_TRIM,
+        MSP_codes.MSP_SERVO_CONF
+    ];
+
+    var uniqueData = [
+        MSP_codes.MSP_BOX,
+        MSP_codes.MSP_MISC,
+        MSP_codes.MSP_RCMAP,
+        MSP_codes.MSP_CONFIG
+    ];
+
+    var configuration = {
+        'generatedBy': chrome.runtime.getManifest().version,
+        'profiles': []
+    };
+
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
+        activeProfile = CONFIG.profile;
+        select_profile();
+    });
+
+    function select_profile() {
+        if (activeProfile > 0) {
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_specific_data);
+        } else {
+            fetch_specific_data();
+        }
     }
 
-    function get_status_data() {
-        MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_data);
+    function fetch_specific_data() {
+        var fetchingProfile = 0,
+            codeKey = 0;
+
+        function query() {
+            if (fetchingProfile < profilesN) {
+                MSP.send_message(profileSpecificData[codeKey], false, false, function () {
+                    codeKey++;
+
+                    if (codeKey < profileSpecificData.length) {
+                        query();
+                    } else {
+                        configuration.profiles.push({
+                            'PID': jQuery.extend(true, [], PIDs),
+                            'RC': jQuery.extend(true, {}, RC_tuning),
+                            'AccTrim': jQuery.extend(true, [], CONFIG.accelerometerTrims),
+                            'ServoConfig': jQuery.extend(true, [], SERVO_CONFIG)
+                        });
+
+                        codeKey = 0;
+                        fetchingProfile++;
+
+                        MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [fetchingProfile], false, query);
+                    }
+                });
+            } else {
+                MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [activeProfile], false, fetch_unique_data);
+            }
+        }
+
+        // start fetching
+        query();
     }
 
-    function get_pid_data() {
-        MSP.send_message(MSP_codes.MSP_PID, false, false, get_rc_tuning_data);
+    function fetch_unique_data() {
+        var codeKey = 0;
+
+        function query() {
+            if (codeKey < uniqueData.length) {
+                MSP.send_message(uniqueData[codeKey], false, false, function () {
+                    codeKey++;
+                    query();
+                });
+            } else {
+                configuration.AUX = jQuery.extend(true, [], AUX_CONFIG_values);
+                configuration.MISC = jQuery.extend(true, {}, MISC);
+                configuration.RCMAP = jQuery.extend(true, [], RC_MAP);
+                configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
+
+                save();
+            }
+        }
+
+        // start fetching
+        query();
     }
 
-    function get_rc_tuning_data() {
-        MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_box_names_data);
-    }
-
-    function get_box_names_data() {
-        MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_box_data);
-    }
-
-    function get_box_data() {
-        MSP.send_message(MSP_codes.MSP_BOX, false, false, get_acc_trim_data);
-    }
-
-    function get_acc_trim_data() {
-        MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, get_misc_data);
-    }
-
-    function get_misc_data() {
-        MSP.send_message(MSP_codes.MSP_MISC, false, false, backup);
-    }
-
-    function backup() {
+    function save() {
         var chosenFileEntry = null;
 
         var accepts = [{
@@ -43,14 +103,18 @@ function configuration_backup() {
         }];
 
         // generate timestamp for the backup file
-        var d = new Date();
-        var now = d.getUTCFullYear() + '.' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getHours() + '.' + d.getMinutes();
+        var d = new Date(),
+            now = (d.getMonth() + 1) + '.' + d.getDate() + '.' + d.getFullYear() + '.' + d.getHours() + '.' + d.getMinutes();
 
         // create or load the file
-        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'cleanflight_config_' + now, accepts: accepts}, function (fileEntry) {
+        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'baseflight_backup_' + now, accepts: accepts}, function (fileEntry) {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError.message);
+                return;
+            }
+
             if (!fileEntry) {
                 console.log('No file selected, backup aborted.');
-
                 return;
             }
 
@@ -67,17 +131,6 @@ function configuration_backup() {
                 chrome.fileSystem.isWritableEntry(fileEntryWritable, function (isWritable) {
                     if (isWritable) {
                         chosenFileEntry = fileEntryWritable;
-
-                        // create config object that will be used to store all downloaded data
-                        var configuration = {
-                            'firmware_version': CONFIG.version,
-                            'configurator_version': chrome.runtime.getManifest().version,
-                            'PID': PIDs,
-                            //'AUX_val': AUX_CONFIG_values,
-                            'RC': RC_tuning,
-                            'AccelTrim': CONFIG.accelerometerTrims,
-                            'MISC': MISC
-                        };
 
                         // crunch the config object
                         var serialized_config_object = JSON.stringify(configuration);
@@ -99,6 +152,7 @@ function configuration_backup() {
                                 }
 
                                 console.log('Write SUCCESSFUL');
+                                if (callback) callback();
                             };
 
                             writer.write(blob);
@@ -113,12 +167,9 @@ function configuration_backup() {
             });
         });
     }
-
-    // begin fetching latest data
-    get_ident_data();
 }
 
-function configuration_restore() {
+function configuration_restore(callback) {
     var chosenFileEntry = null;
 
     var accepts = [{
@@ -127,9 +178,13 @@ function configuration_restore() {
 
     // load up the file
     chrome.fileSystem.chooseEntry({type: 'openFile', accepts: accepts}, function (fileEntry) {
+        if (chrome.runtime.lastError) {
+            console.error(chrome.runtime.lastError.message);
+            return;
+        }
+
         if (!fileEntry) {
             console.log('No file selected, restore aborted.');
-
             return;
         }
 
@@ -165,145 +220,165 @@ function configuration_restore() {
                         return;
                     }
 
-                    // replacing "old configuration" with configuration from backup file
-                    var configuration = deserialized_configuration_object;
-
-                    // some configuration.VERSION code goes here? will see
-
-                    PIDs = configuration.PID;
-                    //AUX_CONFIG_values = configuration.AUX_val;
-                    RC_tuning = configuration.RC;
-                    CONFIG.accelerometerTrims = configuration.AccelTrim;
-                    MISC = configuration.MISC;
-
-                    // all of the arrays/objects are set, upload changes
-                    configuration_upload();
+                    configuration_upload(deserialized_configuration_object, callback);
                 }
             };
 
             reader.readAsText(file);
         });
     });
-}
 
-function configuration_upload() {
-    // this "cloned" function contains all the upload sequences for the respective array/objects
-    // that are currently scattered in separate tabs (ergo - pid_tuning.js/initial_setup.js/etc)
-    // for current purposes, this approach works, but its not really "valid" and this approach
-    // should be reworked in the future, so the same code won't be cloned over !!!
+    function configuration_upload(configuration, callback) {
+        function compareVersions(generated, required) {
+            var a = generated.split('.'),
+                b = required.split('.');
 
-    // PID section
-    var PID_buffer_out = new Array(),
-        PID_buffer_needle = 0;
+            for (var i = 0; i < a.length; ++i) {
+                a[i] = Number(a[i]);
+            }
+            for (var i = 0; i < b.length; ++i) {
+                b[i] = Number(b[i]);
+            }
+            if (a.length == 2) {
+                a[2] = 0;
+            }
 
-    for (var i = 0; i < PIDs.length; i++) {
-        switch (i) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 8:
-            case 9:
-                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 10);
-                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 1000);
-                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2]);
-                break;
-            case 4:
-                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 100);
-                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 100);
-                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2]);
-                break;
-            case 5:
-            case 6:
-                PID_buffer_out[PID_buffer_needle]     = parseInt(PIDs[i][0] * 10);
-                PID_buffer_out[PID_buffer_needle + 1] = parseInt(PIDs[i][1] * 100);
-                PID_buffer_out[PID_buffer_needle + 2] = parseInt(PIDs[i][2] * 1000);
-                break;
+            if (a[0] > b[0]) return true;
+            if (a[0] < b[0]) return false;
+
+            if (a[1] > b[1]) return true;
+            if (a[1] < b[1]) return false;
+
+            if (a[2] > b[2]) return true;
+            if (a[2] < b[2]) return false;
+
+            return true;
         }
 
-        PID_buffer_needle += 3;
-    }
+        function upload() {
+            var activeProfile = null,
+                profilesN = 3;
 
-    // Send over the PID changes
-    MSP.send_message(MSP_codes.MSP_SET_PID, PID_buffer_out, false, rc_tuning);
+            var profileSpecificData = [
+                MSP_codes.MSP_SET_PID,
+                MSP_codes.MSP_SET_RC_TUNING,
+                MSP_codes.MSP_SET_ACC_TRIM,
+                MSP_codes.MSP_SET_SERVO_CONF
+            ];
 
-    function rc_tuning() {
-        // RC Tuning section
-        var RC_tuning_buffer_out = new Array();
-        RC_tuning_buffer_out[0] = parseInt(RC_tuning.RC_RATE * 100);
-        RC_tuning_buffer_out[1] = parseInt(RC_tuning.RC_EXPO * 100);
-        RC_tuning_buffer_out[2] = parseInt(RC_tuning.roll_pitch_rate * 100);
-        RC_tuning_buffer_out[3] = parseInt(RC_tuning.yaw_rate * 100);
-        RC_tuning_buffer_out[4] = parseInt(RC_tuning.dynamic_THR_PID * 100);
-        RC_tuning_buffer_out[5] = parseInt(RC_tuning.throttle_MID * 100);
-        RC_tuning_buffer_out[6] = parseInt(RC_tuning.throttle_EXPO * 100);
+            var uniqueData = [
+                MSP_codes.MSP_SET_BOX,
+                MSP_codes.MSP_SET_MISC,
+                MSP_codes.MSP_SET_RCMAP,
+                MSP_codes.MSP_SET_CONFIG
+            ];
 
-        // Send over the RC_tuning changes
-        MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, RC_tuning_buffer_out, false, aux);
-    }
-
-    function aux() {
-        /*
-        // AUX section
-        var AUX_val_buffer_out = new Array(),
-            needle = 0;
-
-        for (var i = 0; i < AUX_CONFIG_values.length; i++) {
-            AUX_val_buffer_out[needle++] = lowByte(AUX_CONFIG_values[i]);
-            AUX_val_buffer_out[needle++] = highByte(AUX_CONFIG_values[i]);
-        }
-
-        // Send over the AUX changes
-        MSP.send_message(MSP_codes.MSP_SET_BOX, AUX_val_buffer_out, false, trim);
-        */
-    }
-
-    // Trim section
-    function trim() {
-        var buffer_out = new Array();
-        buffer_out[0] = lowByte(CONFIG.accelerometerTrims[0]);
-        buffer_out[1] = highByte(CONFIG.accelerometerTrims[0]);
-        buffer_out[2] = lowByte(CONFIG.accelerometerTrims[1]);
-        buffer_out[3] = highByte(CONFIG.accelerometerTrims[1]);
-
-        // Send over the new trims
-        MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, buffer_out, false, misc);
-    }
-
-    function misc() {
-        // MISC
-        // we also have to fill the unsupported bytes
-        var buffer_out = new Array();
-        buffer_out[0] = 0; // powerfailmeter
-        buffer_out[1] = 0;
-        buffer_out[2] = lowByte(MISC.minthrottle);
-        buffer_out[3] = highByte(MISC.minthrottle);
-        buffer_out[4] = lowByte(MISC.maxthrottle);
-        buffer_out[5] = highByte(MISC.maxthrottle);
-        buffer_out[6] = lowByte(MISC.mincommand);
-        buffer_out[7] = highByte(MISC.mincommand);
-        buffer_out[8] = lowByte(MISC.failsafe_throttle);
-        buffer_out[9] = highByte(MISC.failsafe_throttle);
-        buffer_out[10] = 0;
-        buffer_out[11] = 0;
-        buffer_out[12] = 0;
-        buffer_out[13] = 0;
-        buffer_out[14] = 0;
-        buffer_out[15] = 0;
-        buffer_out[16] = lowByte(MISC.mag_declination);
-        buffer_out[17] = highByte(MISC.mag_declination);
-        buffer_out[18] = MISC.vbatscale;
-        buffer_out[19] = MISC.vbatmincellvoltage;
-        buffer_out[20] = MISC.vbatmaxcellvoltage;
-        buffer_out[21] = 0; // vbatlevel_crit (unused)
-
-        // Send ove the new MISC
-        MSP.send_message(MSP_codes.MSP_SET_MISC, buffer_out, false, function () {
-            // Save changes to EEPROM
-            MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
+            MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
+                activeProfile = CONFIG.profile;
+                select_profile();
             });
-        });
+
+            function select_profile() {
+                if (activeProfile > 0) {
+                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, upload_specific_data);
+                } else {
+                    upload_specific_data();
+                }
+            }
+
+            function upload_specific_data() {
+                var savingProfile = 0,
+                    codeKey = 0;
+
+                function load_objects(profile) {
+                    PIDs = configuration.profiles[profile].PID;
+                    RC_tuning = configuration.profiles[profile].RC;
+                    CONFIG.accelerometerTrims = configuration.profiles[profile].AccTrim;
+                    SERVO_CONFIG = configuration.profiles[profile].ServoConfig;
+                }
+
+                function query() {
+                    MSP.send_message(profileSpecificData[codeKey], MSP.crunch(profileSpecificData[codeKey]), false, function () {
+                        codeKey++;
+
+                        if (codeKey < profileSpecificData.length) {
+                            query();
+                        } else {
+                            codeKey = 0;
+                            savingProfile++;
+
+                            if (savingProfile < profilesN) {
+                                load_objects(savingProfile);
+
+                                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [savingProfile], false, query);
+                                });
+                            } else {
+                                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [activeProfile], false, upload_unique_data);
+                                });
+                            }
+                        }
+                    });
+                }
+
+                // start uploading
+                load_objects(0);
+                query();
+            }
+
+            function upload_unique_data() {
+                var codeKey = 0;
+
+                function load_objects() {
+                    AUX_CONFIG_values = configuration.AUX;
+                    MISC = configuration.MISC;
+                    RC_MAP = configuration.RCMAP;
+                    BF_CONFIG = configuration.BF_CONFIG;
+                }
+
+                function query() {
+                    if (codeKey < uniqueData.length) {
+                        MSP.send_message(uniqueData[codeKey], MSP.crunch(uniqueData[codeKey]), false, function () {
+                            codeKey++;
+                            query();
+                        });
+                    } else {
+                        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+                    }
+                }
+
+                // start uploading
+                load_objects();
+                query();
+            }
+
+            function reboot() {
+                GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
+
+                GUI.tab_switch_cleanup(function() {
+                    MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
+                });
+            }
+
+            function reinitialize() {
+                GUI.log(chrome.i18n.getMessage('deviceRebooting'));
+
+                GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
+                    MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                        GUI.log(chrome.i18n.getMessage('deviceReady'));
+
+                        if (callback) callback();
+                    });
+                }, 1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
+            }
+        }
+
+        // validate
+        if (typeof configuration.generatedBy !== 'undefined' && compareVersions(configuration.generatedBy, CONFIGURATOR.backupFileMinVersionAccepted)) {
+            upload();
+        } else {
+            GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
+        }
     }
 }

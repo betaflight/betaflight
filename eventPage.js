@@ -1,41 +1,36 @@
 /*
     If an id is also specified and a window with a matching id has been shown before, the remembered bounds of the window will be used instead.
-
-    Size calculation for innerBounds seems to be faulty, app was designed for 960x625
-
-    Bug was confirmed on Windows 7
-    OSX seems to be unaffected
-    Linux and cros is unknown
-
-    I am using arbitrary dimensions which fixes the Windows 7 problem, hopefully it will get resolved in future release so other OSs won't have to
-    use bigger dimensions by default.
 */
 'use strict';
 
-function start_app() {
+function startApplication() {
+    var applicationStartTime = new Date().getTime();
+
     chrome.app.window.create('main.html', {
         id: 'main-window',
         frame: 'chrome',
         innerBounds: {
-            minWidth: 974,
-            minHeight: 632
+            minWidth: 960,
+            minHeight: 625
         }
     }, function (createdWindow) {
+        createdWindow.contentWindow.addEventListener('load', function () {
+            createdWindow.contentWindow.catch_startup_time(applicationStartTime);
+        });
+
         createdWindow.onClosed.addListener(function () {
-            // connectionId is passed from the script side through the chrome.runtime.getBackgroundPage refference
-            // allowing us to automatically close the port when application shut down
+            // autoamtically close the port when application closes
+            // save connectionId in separate variable before createdWindow.contentWindow is destroyed
+            var connectionId = createdWindow.contentWindow.serial.connectionId,
+                valid_connection = createdWindow.contentWindow.CONFIGURATOR.connectionValid,
+                mincommand = createdWindow.contentWindow.MISC.mincommand;
 
-            // save connectionId in separate variable before app_window is destroyed
-            var connectionId = app_window.serial.connectionId;
-            var valid_connection = app_window.CONFIGURATOR.connectionValid;
-            var mincommand = app_window.MISC.mincommand;
-
-            if (connectionId > 0 && valid_connection) {
+            if (connectionId && valid_connection) {
                 // code below is handmade MSP message (without pretty JS wrapper), it behaves exactly like MSP.send_message
                 // reset motors to default (mincommand)
-                var bufferOut = new ArrayBuffer(22);
-                var bufView = new Uint8Array(bufferOut);
-                var checksum = 0;
+                var bufferOut = new ArrayBuffer(22),
+                    bufView = new Uint8Array(bufferOut),
+                    checksum = 0;
 
                 bufView[0] = 36; // $
                 bufView[1] = 77; // M
@@ -60,7 +55,7 @@ function start_app() {
                         console.log('SERIAL: Connection closed - ' + result);
                     });
                 });
-            } else if (connectionId > 0) {
+            } else if (connectionId) {
                 chrome.serial.disconnect(connectionId, function (result) {
                     console.log('SERIAL: Connection closed - ' + result);
                 });
@@ -69,17 +64,15 @@ function start_app() {
     });
 }
 
-chrome.app.runtime.onLaunched.addListener(function () {
-    start_app();
-});
+chrome.app.runtime.onLaunched.addListener(startApplication);
 
 chrome.runtime.onInstalled.addListener(function (details) {
     if (details.reason == 'update') {
-        var previousVersionArr = details.previousVersion.split('.');
-        var currentVersionArr = chrome.runtime.getManifest().version.split('.');
+        var previousVersionArr = details.previousVersion.split('.'),
+            currentVersionArr = chrome.runtime.getManifest().version.split('.');
 
         // only fire up notification sequence when one of the major version numbers changed
-        if (currentVersionArr[0] != previousVersionArr[0] || currentVersionArr[1] != previousVersionArr[1]) {
+        if (currentVersionArr[0] > previousVersionArr[0] || currentVersionArr[1] > previousVersionArr[1]) {
             chrome.storage.local.get('update_notify', function (result) {
                 if (result.update_notify === 'undefined' || result.update_notify) {
                     var manifest = chrome.runtime.getManifest();
@@ -103,6 +96,6 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 chrome.notifications.onButtonClicked.addListener(function (notificationId, buttonIndex) {
     if (notificationId == 'baseflight_update') {
-        start_app();
+        startApplication();
     }
 });

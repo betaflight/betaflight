@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2014.  All rights reserved.  Used with permission for Baseflight Configurator -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1 Basic//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-basic.dtd" [
+	<!ENTITY st0 "fill:#ED1C24;">
+	<!ENTITY st1 "fill:none;stroke:#293D9B;stroke-width:3;stroke-linecap:round;stroke-miterlimit:10;">
+	<!ENTITY st2 "fill:#FFFFFF;">
+	<!ENTITY st3 "font-family:'ArialMT';">
+	<!ENTITY st4 "font-size:18;">
+	<!ENTITY st5 "fill:none;stroke:#8D198F;stroke-width:3;stroke-linecap:round;stroke-miterlimit:10;">
+]>
+<svg version="1.1" baseProfile="basic"
+	 id="Y6-mix" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="151.51px"
+	 height="136.81px" viewBox="5.05 13.08 151.51 136.81" xml:space="preserve">
+<g id="M4">
+	<path id="path5606" style="&st1;" d="M94.63,119.65c6.05,7.74,4.68,18.92-3.06,24.97c-7.74,6.05-18.92,4.68-24.97-3.06
+		c-6.05-7.74-4.68-18.92,3.06-24.97C77.4,110.54,88.58,111.91,94.63,119.65z"/>
+	<path id="path5610" style="&st1;" d="M63.66,125.22l-7.82,7.67"/>
+	<path id="path5614" style="&st1;" d="M63.66,125.22l7.1,8.6"/>
+	<text transform="matrix(1 0 0 1 75.6128 137.0476)" style="&st3; &st4;">4</text>
+</g>
+<g id="M6">
+	<path id="path5618" style="&st1;" d="M33.9,47.88c8.29-5.27,10.74-16.27,5.46-24.56c-5.27-8.29-16.27-10.74-24.56-5.46
+		C6.51,23.13,4.06,34.13,9.34,42.42C14.61,50.71,25.61,53.15,33.9,47.88z"/>
+	<path id="path5622" style="&st1;" d="M31,16.37L33.67,27"/>
+	<path id="path5626" style="&st1;" d="M31,16.37l11.01-1.79"/>
+	<text transform="matrix(1 0 0 1 19.3428 37.0769)" style="&st3; &st4;">6</text>
+</g>
+<g id="M5">
+	<path id="path5630" style="&st1;" d="M119.52,31.79c-0.62,9.81,6.83,18.26,16.63,18.88c9.81,0.62,18.26-6.83,18.88-16.63
+		c0.62-9.81-6.83-18.26-16.63-18.88C128.6,14.53,120.15,21.98,119.52,31.79z"/>
+	<path id="path5634" style="&st1;" d="M121.03,25.65l10.72-2.28"/>
+	<path id="path5638" style="&st1;" d="M121.03,25.65l-1.39-11.06"/>
+	<text transform="matrix(1 0 0 1 132.2725 39.3621)" style="&st3; &st4;">5</text>
+</g>
+<g id="M3">
+	<path id="path5642_1_" style="&st2;" d="M49.06,64.93c-9.83,0-17.79-7.97-17.79-17.79c0-9.83,7.96-17.79,17.79-17.79
+		c9.82,0,17.79,7.96,17.79,17.79C66.85,56.96,58.88,64.92,49.06,64.93z"/>
+	<path id="path5642" style="&st5;" d="M49.06,64.93c-9.83,0-17.79-7.97-17.79-17.79c0-9.83,7.96-17.79,17.79-17.79
+		c9.82,0,17.79,7.96,17.79,17.79C66.85,56.96,58.88,64.92,49.06,64.93z"/>
+	<path id="path5646" style="&st5;" d="M61.3,34.23l-3.49-10.39"/>
+	<path id="path5650" style="&st5;" d="M61.3,34.23l-10.83,2.63"/>
+	<text transform="matrix(1 0 0 1 44.0503 53.5837)" style="&st3; &st4;">3</text>
+</g>
+<g id="M2">
+	<path id="path5654_1_" style="&st2;" d="M94.85,47.14c0-9.82,7.97-17.79,17.79-17.79c9.83,0,17.79,7.97,17.79,17.79
+		c0,9.83-7.97,17.79-17.79,17.79S94.85,56.97,94.85,47.14z"/>
+	<path id="path5654" style="&st5;" d="M94.85,47.14c0-9.82,7.97-17.79,17.79-17.79c9.83,0,17.79,7.97,17.79,17.79
+		c0,9.83-7.97,17.79-17.79,17.79S94.85,56.97,94.85,47.14z"/>
+	<path id="path5658" style="&st5;" d="M109.29,29.67l-10.04-4.4"/>
+	<path id="path5662" style="&st5;" d="M109.29,29.67l-5.33,9.79"/>
+	<text transform="matrix(1 0 0 1 107.9717 53.5837)" style="&st3; &st4;">2</text>
+</g>
+<g id="M1">
+	<path id="path5666_1_" style="&st2;" d="M63.01,102.2c0,9.82,7.97,17.79,17.79,17.79c9.83,0,17.79-7.97,17.79-17.79
+		c0-9.83-7.96-17.79-17.79-17.79C70.98,84.41,63.01,92.38,63.01,102.2z"/>
+	<path id="path5666" style="&st5;" d="M63.01,102.2c0,9.82,7.97,17.79,17.79,17.79c9.83,0,17.79-7.97,17.79-17.79
+		c0-9.83-7.96-17.79-17.79-17.79C70.98,84.41,63.01,92.38,63.01,102.2z"/>
+	<path id="path5670" style="&st5;" d="M63.41,105.94l7.29-8.17"/>
+	<path id="path5674" style="&st5;" d="M63.41,105.94l-7.64-8.11"/>
+	<text transform="matrix(1 0 0 1 75.8457 108.6482)" style="&st3; &st4;">1</text>
+</g>
+<polygon id="Front_Arrow" style="&st0;" points="90.2,68.76 80.85,52.57 71.5,68.76 78.4,68.76 78.4,78.41 83.4,78.41 83.4,68.76 
+	"/>
+</svg>

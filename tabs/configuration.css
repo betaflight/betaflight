@@ -1,0 +1,137 @@
+.tab-configuration {
+    position: relative;
+}
+.tab-configuration .groupTitle {
+    padding: 0 0 5px 0;
+    margin: 0 0 10px 0;
+
+    font-size: 16px;
+
+    border-bottom: 1px solid #dddddd;
+}
+.tab-configuration .leftWrapper {
+    float: left;
+    width: 50%;
+
+    margin: 0 0 10px 0;
+}
+.tab-configuration .rightWrapper {
+    float: left;
+
+    width: calc(50% - 10px);
+    margin: 0 0 10px 10px;
+}
+.tab-configuration .mixerPreview {
+    width: 180px;
+    height: 180px;
+}
+.tab-configuration .mixerPreview img {
+    display: block;
+
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+
+    padding: 5px;
+
+    border: 1px solid silver;
+    border-bottom: 0;
+}
+.tab-configuration select.mixerList {
+    width: calc(100% + 2px);
+    height: 20px;
+
+    font-weight: bold;
+
+    border: 1px solid silver;
+}
+.tab-configuration dl.features dt {
+    float: left;
+
+    width: 10px;
+    height: 18px;
+    line-height: 18px;
+}
+.tab-configuration dl.features dt input {
+    margin-top: 2px;
+}
+.tab-configuration dl.features dd {
+    margin: 0 0 0 20px;
+    height: 18px;
+
+    line-height: 18px;
+}
+.tab-configuration .number {
+    margin-bottom: 5px;
+}
+.tab-configuration .number input {
+    width: 60px;
+    height: 20px;
+    line-height: 20px;
+
+    text-align: right;
+
+    border: 1px solid silver;
+}
+.tab-configuration .number span {
+    margin-left: 10px;
+    line-height: 20px;
+}
+.tab-configuration .gps .line {
+    clear: left;
+}
+.tab-configuration .gps select {
+    float: left;
+
+    width: 100px;
+    height: 20px;
+
+    margin: 0 10px 5px 0;
+
+    border: 1px solid silver;
+}
+.tab-configuration .gps span {
+    line-height: 20px;
+}
+.tab-configuration .serialRX {
+    width: 125px;
+
+    border: 1px solid silver;
+}
+.tab-configuration .current .checkbox {
+    margin-top: 2px;
+}
+.tab-configuration .current .checkbox div {
+    float: left;
+    width: 60px;
+}
+.tab-configuration .current .checkbox div input {
+    display: block;
+    margin: 2px auto 0 auto;
+}
+.tab-configuration .current .checkbox span {
+    margin-left: 15px;
+}
+.tab-configuration .buttons {
+    position: fixed;
+
+    width: calc(100% - 20px);
+    bottom: 10px;
+}
+.tab-configuration .save {
+    display: block;
+    float: right;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-configuration .save:hover {
+    background-color: #dedcdc;
+}

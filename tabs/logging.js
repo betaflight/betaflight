@@ -2,11 +2,17 @@
 
 TABS.logging = {};
 TABS.logging.initialize = function (callback) {
-    GUI.active_tab_ref = this;
-    GUI.active_tab = 'logging';
-    googleAnalytics.sendAppView('Logging');
+    var self = this;
 
-    var requested_properties = [];
+    if (GUI.active_tab != 'logging') {
+        GUI.active_tab = 'logging';
+        googleAnalytics.sendAppView('Logging');
+    }
+
+    var requested_properties = [],
+        samples = 0,
+        requests = 0,
+        log_buffer = [];
 
     if (CONFIGURATOR.connectionValid) {
         var get_motor_data = function () {
@@ -18,20 +24,6 @@ TABS.logging.initialize = function (callback) {
         }
 
         MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
-    } else {
-        CONFIGURATOR.mspPassThrough = true;
-
-        // we will initialize RC.channels array and MOTOR_DATA array manually
-        RC.active_channels = 8;
-        for (var i = 0; i < RC.active_channels; i++) {
-            RC.channels[i] = 0;
-        }
-
-        for (var i = 0; i < 8; i++) {
-            MOTOR_DATA[i] = 0;
-        }
-
-        $('#content').load("./tabs/logging.html", process_html);
     }
 
     function process_html() {
@@ -68,10 +60,8 @@ TABS.logging.initialize = function (callback) {
                                 }
 
                                 // request new
-                                if (!CONFIGURATOR.mspPassThrough) {
-                                    for (var i = 0; i < requested_properties.length; i++, requests++) {
-                                        MSP.send_message(MSP_codes[requested_properties[i]]);
-                                    }
+                                for (var i = 0; i < requested_properties.length; i++, requests++) {
+                                    MSP.send_message(MSP_codes[requested_properties[i]]);
                                 }
                             }
 
@@ -110,22 +100,6 @@ TABS.logging.initialize = function (callback) {
                 GUI.log(chrome.i18n.getMessage('loggingErrorNotConnected'));
             }
         });
-
-        if (CONFIGURATOR.mspPassThrough) {
-            $('a.back').show();
-
-            $('a.back').click(function() {
-                if (GUI.connected_to) {
-                    $('a.connect').click();
-                } else {
-                    GUI.tab_switch_cleanup(function () {
-                        CONFIGURATOR.mspPassThrough = false;
-                        $('#tabs > ul li').removeClass('active');
-                        TABS.default.initialize();
-                    });
-                }
-            });
-        }
 
         chrome.storage.local.get('logging_file_entry', function (result) {
             if (result.logging_file_entry) {
@@ -200,10 +174,6 @@ TABS.logging.initialize = function (callback) {
 
         append_to_file(head);
     }
-
-    var samples = 0,
-        requests = 0,
-        log_buffer = [];
 
     function crunch_data() {
         var sample = millitime();

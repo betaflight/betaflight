@@ -1,79 +1,79 @@
 .tab-logging {
 }
-    .tab-logging .note {
-        padding: 5px;
-        border: 1px dashed silver;
+.tab-logging .note {
+    padding: 5px;
+    border: 1px dashed silver;
+}
+.tab-logging .properties {
+    margin-top: 10px;
+}
+.tab-logging .properties dt {
+    float: left;
+    width: 120px;
+    height: 20px;
+    line-height: 20px;
+
+    font-weight: bold;
+}
+    .tab-logging .properties dt input {
+        vertical-align: middle;
     }
-    .tab-logging .properties {
-        margin-top: 10px;
-    }
-        .tab-logging .properties dt {
-            float: left;
-            width: 120px;
-            height: 20px;
-            line-height: 20px;
+.tab-logging .properties dd {
+    display: block;
+    margin-left: 130px;
+    height: 20px;
+    line-height: 20px;
+    color: silver;
+}
+.tab-logging .speed {
+    margin-top: 5px;
+    width: 80px;
 
-            font-weight: bold;
-        }
-            .tab-logging .properties dt input {
-                vertical-align: middle;
-            }
-        .tab-logging .properties dd {
-            display: block;
-            margin-left: 130px;
-            height: 20px;
-            line-height: 20px;
-            color: silver;
-        }
-    .tab-logging .speed {
-        margin-top: 5px;
-        width: 80px;
+    border: 1px solid silver;
+}
+.tab-logging .info {
+    margin-top: 10px;
+}
+.tab-logging .info dt {
+    float: left;
+    width: 120px;
+    height: 20px;
+    line-height: 20px;
 
-        border: 1px solid silver;
-    }
-    .tab-logging .info {
-        margin-top: 10px;
-    }
-        .tab-logging .info dt {
-            float: left;
-            width: 120px;
-            height: 20px;
-            line-height: 20px;
+    font-weight: bold;
+}
+.tab-logging .info dd {
+    display: block;
+    margin-left: 130px;
+    height: 20px;
+    line-height: 20px;
+}
+.tab-logging .buttons {
+    width: calc(100% - 20px);
 
-            font-weight: bold;
-        }
-        .tab-logging .info dd {
-            display: block;
-            margin-left: 130px;
-            height: 20px;
-            line-height: 20px;
-        }
-    .tab-logging .buttons {
-        width: calc(100% - 20px);
+    position: absolute;
+    bottom: 10px;
+}
+.tab-logging .buttons a {
+    display: block;
+    float: right;
 
-        position: absolute;
-        bottom: 10px;
-    }
-        .tab-logging .buttons a {
-            display: block;
-            float: right;
+    margin-left: 10px;
 
-            margin-left: 10px;
+    height: 28px;
+    line-height: 28px;
 
-            height: 28px;
-            line-height: 28px;
+    padding: 0 15px 0 15px;
 
-            padding: 0 15px 0 15px;
+    text-align: center;
+    font-weight: bold;
 
-            text-align: center;
-            font-weight: bold;
-
-            border: 1px solid silver;
-            background-color: #ececec;
-        }
-        .tab-logging .buttons a:hover {
-            background-color: #dedcdc;
-        }
-        .tab-logging .buttons .back {
-            display: none;
-        }
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-logging .buttons a:hover {
+    background-color: #dedcdc;
+}
+.tab-logging .buttons .back {
+    display: none;
+}

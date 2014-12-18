@@ -1,6 +1,7 @@
 'use strict';
 
 TABS.adjustments = {};
+
 TABS.adjustments.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'adjustments';

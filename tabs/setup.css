@@ -1,0 +1,202 @@
+.tab-setup .CAP_BASEFLIGHT_CONFIG {
+    height: calc(100% - 138px);
+}
+.tab-setup {
+    height: 100%;
+}
+.tab-setup .section {
+    clear: both;
+    padding-bottom: 8px;
+}
+.tab-setup .section a {
+    display: block;
+
+    float: left;
+
+    width: 170px;
+    height: 24px;
+    line-height: 24px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-setup .section a:hover {
+    background-color: #dedcdc;
+}
+.tab-setup .section  a.calibrating {
+    background-color: #c1c1c1;
+}
+.tab-setup .section a.calibrating:hover {
+    cursor: default;
+    background-color: #c1c1c1;
+}
+.tab-setup .section a.disabled {
+    background-color: #c1c1c1;
+}
+.tab-setup .section a.disabled:hover {
+    cursor: default;
+}
+.tab-setup .section a.backup {
+    width: 80px;
+    margin-right: 10px;
+}
+.tab-setup .section a.restore {
+    width: 80px;
+}
+.tab-setup .section p {
+    margin-left: 180px;
+
+    padding: 0 0 0 5px;
+
+    height: 25px;
+    line-height: 25px;
+
+    border-bottom: 1px solid #e5e5e5;
+}
+.tab-setup #interactive_block {
+    float: left;
+    position: relative;
+
+    height: 100%;
+    width: calc(100% - 199px);
+
+    border: 1px solid silver;
+    background-color: white;
+}
+.tab-setup #interactive_block .heading {
+    float: right;
+    height: 15px;
+
+    margin: 10px 10px 0 0;
+    font-weight: bold;
+}
+.tab-setup #interactive_block a.reset {
+    position: absolute;
+    display: block;
+
+    bottom: 10px;
+    right: 10px;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+
+    z-index: 100;
+}
+.tab-setup #interactive_block a.reset:hover {
+    background-color: #dedcdc;
+}
+.tab-setup #canvas_wrapper {
+    position: absolute;
+
+    width: 100%;
+    height: 100%;
+
+    top: 0;
+    left: 0;
+}
+.tab-setup .block_wrapper {
+    font-size: 0;
+}
+.tab-setup .block {
+    float: left;
+    display: block;
+
+    margin-left: 10px;
+
+    border: 1px solid silver;
+}
+.tab-setup .block .head {
+    display: block;
+
+    text-align: center;
+    line-height: 20px;
+    font-weight: bold;
+
+    border-bottom: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-setup .block.info {
+    display: inline-block;
+    margin-bottom: 10px;
+
+    vertical-align: top;
+    font-size: 12px;
+
+    border: 1px solid silver;
+}
+.tab-setup .block.info .fields {
+    padding: 5px 5px 3px 5px;
+}
+.tab-setup .block.info dt {
+    float: left;
+
+    width: 99px;
+    height: 20px;
+    line-height: 20px;
+}
+.tab-setup .block.info dd {
+    width: 76px;
+    height: 20px;
+    line-height: 20px;
+
+    margin-left: 99px;
+}
+.tab-setup .block.gps {
+    width: 185px;
+}
+.tab-setup .block.gps .fields {
+    padding: 5px 5px 3px 5px;
+}
+.tab-setup .block.gps dt {
+    float: left;
+
+    width: 85px;
+    height: 20px;
+
+    margin-bottom: 2px;
+
+    line-height: 20px;
+}
+.tab-setup .block.gps dd {
+    height: 20px;
+
+    margin-left: 85px;
+    margin-bottom: 2px;
+
+    line-height: 20px;
+}
+.tab-setup .buttons {
+    width: calc(100% - 20px);
+
+    position: absolute;
+    bottom: 10px;
+}
+.tab-setup .update {
+    display: block;
+    float: right;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-setup .update:hover {
+    background-color: #dedcdc;
+}
