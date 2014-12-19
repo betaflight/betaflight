@@ -208,8 +208,8 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 // FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
 // DEPRECATED - DO NOT USE "MSP_CONFIG" and MSP_SET_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
-#define MSP_CONFIG                    66 //out message baseflight-specific settings that aren't covered elsewhere
-#define MSP_SET_CONFIG                67 //in message baseflight-specific settings save
+#define MSP_CONFIG                      66 //out message baseflight-specific settings that aren't covered elsewhere
+#define MSP_SET_CONFIG                  67 //in message baseflight-specific settings save
 
 #define MSP_REBOOT                      68 //in message reboot settings
 
@@ -1302,31 +1302,26 @@ static bool processInCommand(void)
         break;
 #endif
     case MSP_SET_FEATURE:
-        headSerialReply(0);
         featureClearAll();
         featureSet(read32()); // features bitmap
         break;
 
     case MSP_SET_BOARD_ALIGNMENT:
-        headSerialReply(0);
         masterConfig.boardAlignment.rollDegrees = read16();
         masterConfig.boardAlignment.pitchDegrees = read16();
         masterConfig.boardAlignment.yawDegrees = read16();
         break;
 
     case MSP_SET_CURRENT_METER_CONFIG:
-        headSerialReply(0);
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();
         break;
 
     case MSP_SET_MIXER:
-        headSerialReply(0);
         masterConfig.mixerConfiguration = read8();
         break;
 
     case MSP_SET_RX_CONFIG:
-        headSerialReply(0);
         masterConfig.rxConfig.serialrx_provider = read8();
         masterConfig.rxConfig.maxcheck = read16();
         masterConfig.rxConfig.midrc = read16();
@@ -1335,20 +1330,16 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RSSI_CONFIG:
-        headSerialReply(0);
         masterConfig.rxConfig.rssi_channel = read8();
         break;
 
-
     case MSP_SET_RX_MAP:
-        headSerialReply(0);
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
             masterConfig.rxConfig.rcmap[i] = read8();
         }
         break;
 
     case MSP_SET_CONFIG:
-        headSerialReply(0);
 
         masterConfig.mixerConfiguration = read8(); // multitype
 
@@ -1367,7 +1358,6 @@ static bool processInCommand(void)
 
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
-        headSerialReply(0);
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.colors[i];
             color->h = read16();
@@ -1377,7 +1367,6 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_LED_STRIP_CONFIG:
-        headSerialReply(MAX_LED_STRIP_LENGTH * 6);
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
             uint16_t mask;
@@ -1398,7 +1387,6 @@ static bool processInCommand(void)
         break;
 #endif
     case MSP_REBOOT:
-        headSerialReply(0);
         isRebootScheduled = true;
         break;
 
@@ -1477,6 +1465,10 @@ void mspProcess(void)
         mspProcessPort();
 
         if (isRebootScheduled) {
+            // pause a little while to allow response to be sent
+            while (!isSerialTransmitBufferEmpty(candidatePort->port)) {
+                delay(50);
+            }
             systemReset();
         }
     }
