@@ -314,7 +314,7 @@ Number.prototype.clamp = function(min, max) {
  * For a format string with N replacement indices, you can call .format
  * with M <= N arguments. The result is going to be a format string
  * with N-M replacement indices, properly counting from 0 .. N-M.
- * The following Example should explane the usage of partial aplied format:
+ * The following Example should explain the usage of partial applied format:
  *  "{0}:{1}:{2}".format("a","b","c") === "{0}:{1}:{2}".format("a","b").format("c")
  *  "{0}:{1}:{2}".format("a").format("b").format("c") === "{0}:{1}:{2}".format("a").format("b", "c")
  **/

@@ -62,7 +62,7 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                             releases_e.append(
                                 $("<option value='{0}_{1}'>{2} {3} {4}</option>".
-                                    format(releaseIndex,assetIndex,summary.name,summary.target,formattedDate) )
+                                    format(releaseIndex,assetIndex,summary.name,summary.target,formattedDate))
                                     .data('obj', summary));
                         }
                     }).bind(this, releases, releaseIndex, releases_e)
