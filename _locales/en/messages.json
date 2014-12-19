@@ -760,6 +760,24 @@
     "firmwareFlasherReleaseSummaryHead": {    
         "message": "Release info"
     },
+    "firmwareFlasherReleaseNotes": {
+        "message": "Release notes:"
+    },
+    "firmwareFlasherReleaseDate": {
+        "message": "Date:"
+    },
+    "firmwareFlasherReleaseTarget": {
+        "message": "Target:"
+    },
+    "firmwareFlasherReleaseFile": {
+        "message": "Binary:"
+    },
+    "firmwareFlasherReleaseFileUrl": {
+        "message": "Download manually."
+    },
+    "firmwareFlasherTargetWarning": {
+        "message": "<span style=\"color: red\">IMPORTANT</span>: Ensure you flash a file appropriate for your target.  Flashing a binary for the wrong target can cause <span style=\"color: red\">bad</span> things to happen."
+    },
     
     "firmwareFlasherPath": {
         "message": "Path:"

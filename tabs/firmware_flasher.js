@@ -48,15 +48,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                                 continue;
                             }
 
-                            var summary = {
-                                "name"    : release.name,
-                                "url"     : asset.browser_download_url,
-                                "target"  : target,
-                                "date"    : release.published_at,
-                                "message" : release.body
-                            };
-
-                            var date = new Date(summary.date);
+                            var date = new Date(release.published_at);
                             var formattedDate = "{0}-{1}-{2} {3}:{4}".format(
                                 date.getFullYear(),
                                 date.getMonth(),
@@ -64,6 +56,15 @@ TABS.firmware_flasher.initialize = function (callback) {
                                 date.getHours(),
                                 date.getMinutes()
                             );
+                            
+                            var summary = {
+                                "name"    : release.name,
+                                "url"     : asset.browser_download_url,
+                                "file"    : asset.name,
+                                "target"  : target,
+                                "date"    : formattedDate,
+                                "notes"   : release.body
+                            };
 
                             var select_e = 
                                 $("<option value='{0}_{1}'>{2} {3} {4}</option>".format(
@@ -71,7 +72,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                                     assetIndex,
                                     summary.name,
                                     summary.target,
-                                    formattedDate
+                                    summary.date
                                 )).data('summary', summary);
                             
                             releases_e.append(select_e);
@@ -239,8 +240,12 @@ TABS.firmware_flasher.initialize = function (callback) {
                                 $('div.git_info').slideDown();
                             });
                         }
-                        $('div.release_info .message').text(summary.message);
                         
+                        $('div.release_info .target').text(summary.target);
+                        $('div.release_info .date').text(summary.date);
+                        $('div.release_info .file').text(summary.file).prop('href', summary.url);
+                        $('div.release_info .notes').text(summary.notes);
+
                         $('div.release_info').slideDown();
 
                     } else {

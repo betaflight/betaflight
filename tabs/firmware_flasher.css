@@ -117,6 +117,9 @@
 .tab-firmware_flasher .release_info p a:hover {
     text-decoration: underline;
 }
+.tab-firmware_flasher .release_info .notes {
+    padding: 5px;
+}
 
 .tab-firmware_flasher .git_info {
     display: none;
