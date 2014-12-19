@@ -38,6 +38,24 @@ input[type="number"]::-webkit-inner-spin-button {
     padding: 5px 5px 0 5px;
     height: calc(100% - 5px);
 }
+
+#watermark {
+    width: 100%;
+    text-align: center;
+    position: absolute;
+    z-index: 0;
+    display: block;
+}
+
+#watermark p{
+    opacity: 0.1;
+    font-family: monospace;
+    color: grey;
+    font-size: 50px;
+    font-variant: small-caps;
+    letter-spacing: 0.5em;
+}
+
 #port-picker {
     float: left;
 
