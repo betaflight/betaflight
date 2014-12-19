@@ -757,6 +757,10 @@
         "message": "Automatically loaded previous log file: <strong>$1</strong>"
     },
 
+    "firmwareFlasherReleaseSummaryHead": {    
+        "message": "Release info"
+    },
+    
     "firmwareFlasherPath": {
         "message": "Path:"
     },

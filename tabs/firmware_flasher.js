@@ -57,13 +57,24 @@ TABS.firmware_flasher.initialize = function (callback) {
                             };
 
                             var date = new Date(summary.date);
-                            var formattedDate = "{0}-{1}-{2} {3}:{4}".format(date.getFullYear(),date.getMonth(),date.getDay(),
-                                date.getHours(),date.getMinutes());
+                            var formattedDate = "{0}-{1}-{2} {3}:{4}".format(
+                                date.getFullYear(),
+                                date.getMonth(),
+                                date.getDay(),
+                                date.getHours(),
+                                date.getMinutes()
+                            );
 
-                            releases_e.append(
-                                $("<option value='{0}_{1}'>{2} {3} {4}</option>".
-                                    format(releaseIndex,assetIndex,summary.name,summary.target,formattedDate))
-                                    .data('obj', summary));
+                            var select_e = 
+                                $("<option value='{0}_{1}'>{2} {3} {4}</option>".format(
+                                    releaseIndex,
+                                    assetIndex,
+                                    summary.name,
+                                    summary.target,
+                                    formattedDate
+                                )).data('summary', summary);
+                            
+                            releases_e.append(select_e);
                         }
                     }).bind(this, releases, releaseIndex, releases_e)
                 );
@@ -72,6 +83,18 @@ TABS.firmware_flasher.initialize = function (callback) {
 
         $.get('https://api.github.com/repos/cleanflight/cleanflight/releases', function (releases){
             processReleases(releases);
+            
+            // bind events
+            $('select[name="release"]').change(function() {
+                if (!GUI.connect_lock) {
+                    $('.progress').val(0).removeClass('valid invalid');
+                    $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherLoadFirmwareFile'));
+                    $('div.git_info').slideUp();
+                    $('div.release_info').slideUp();
+                    $('a.flash_firmware').addClass('locked');
+                }
+            });
+
         }).fail(function (data){
             if (data["responseJSON"]){
                 GUI.log("<b>GITHUB Query Failed: <code>{0}</code></b>".format(data["responseJSON"].message));
@@ -183,7 +206,7 @@ TABS.firmware_flasher.initialize = function (callback) {
         });
         
         $('a.load_remote_file').click(function () {
-            function process_hex(data, obj) {
+            function process_hex(data, summary) {
                 intel_hex = data;
 
                 parse_hex(intel_hex, function (data) {
@@ -197,23 +220,29 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                         $('a.flash_firmware').removeClass('locked');
 
-                        $.get('https://api.github.com/repos/cleanflight/cleanflight/commits/' + obj.commit, function (data) {
-                            var data = data,
-                                d = new Date(data.commit.author.date),
-                                offset = d.getTimezoneOffset() / 60,
-                                date;
+                        if (summary.commit) {
+                            $.get('https://api.github.com/repos/cleanflight/cleanflight/commits/' + summary.commit, function (data) {
+                                var data = data,
+                                    d = new Date(data.commit.author.date),
+                                    offset = d.getTimezoneOffset() / 60,
+                                    date;
+    
+                                date = d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate())).slice(-2);
+                                date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+                                date += (offset > 0) ? ' GMT+' + offset : ' GMT' + offset;
+    
+                                $('div.git_info .committer').text(data.commit.author.name);
+                                $('div.git_info .date').text(date);
+                                $('div.git_info .hash').text(data.sha.slice(0, 7)).prop('href', 'https://github.com/cleanflight/cleanflight/commit/' + data.sha);
+                                $('div.git_info .message').text(data.commit.message);
+    
+                                $('div.git_info').slideDown();
+                            });
+                        }
+                        $('div.release_info .message').text(summary.message);
+                        
+                        $('div.release_info').slideDown();
 
-                            date = d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate())).slice(-2);
-                            date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-                            date += (offset > 0) ? ' GMT+' + offset : ' GMT' + offset;
-
-                            $('div.git_info .committer').text(data.commit.author.name);
-                            $('div.git_info .date').text(date);
-                            $('div.git_info .hash').text(data.sha.slice(0, 7)).prop('href', 'https://github.com/cleanflight/cleanflight/commit/' + data.sha);
-                            $('div.git_info .message').text(data.commit.message);
-
-                            $('div.git_info').slideDown();
-                        });
                     } else {
                         $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherHexCorrupted'));
                     }
@@ -225,11 +254,11 @@ TABS.firmware_flasher.initialize = function (callback) {
                 $('a.flash_firmware').addClass('locked');
             }
 
-            var obj = $('select[name="release"] option:selected').data('obj');
+            var summary = $('select[name="release"] option:selected').data('summary');
 
-            if (obj) { // undefined while list is loading or while running offline
-                $.get('http://firmware.baseflight.net/' + obj.file, function (data) {
-                    process_hex(data, obj);
+            if (summary) { // undefined while list is loading or while running offline
+                $.get(summary.url, function (data) {
+                    process_hex(data, summary);
                 }).fail(failed_to_load);
             } else {
                 $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
