@@ -29,53 +29,53 @@ TABS.firmware_flasher.initialize = function (callback) {
             worker.postMessage(str);
         }
 
-        // Fetch Releases
-
-        var processAssets = function(assets, release, releaseIndex) {
-        
-            console.log('in callback');
-            console.log(release); // FIXME this is broken, release is undefined
-            
-            for (var assetIndex = 0; assetIndex < assets.length; assetIndex++) {
-                var asset = assets[assetIndex];
-                
-                var targetFromFilenameExpression = /.*_(.*)\.(.*)/;
-                var match = targetFromFilenameExpression.exec(asset.name);
-                var target = match[1];
-                var format = match[2];
-                if (format != 'hex') {
-                    continue;
-                }
-
-                var summary = {
-                    "name"    : release.name,
-                    "url"     : asset.browser_download_url,
-                    "target"  : target,
-                    "date"    : release.published_at,
-                    "message" : release.body
-                };
-                
-                var element = $('<option value="' + releaseIndex + '_' + assetIndex + '">' + summary.name + ' ' + summary.target + ' ' + summary.date + '</option>').data('obj', summary);
-                releases_e.append(element);
-            }
-        };
-        
-        var processReleases = function(releases) {
+        var processReleases = function (releases){
             var releases_e = $('select[name="release"]').empty();
 
-            for (var releaseIndex = 0; releaseIndex < releases.length; releaseIndex++) {            
-                console.log('processing assets release ' + releaseIndex);
-                console.log(releases[releaseIndex]);
+            for(var releaseIndex = 0; releaseIndex < releases.length; releaseIndex++){
+                $.get(releases[releaseIndex].assets_url).done(
+                    (function (releases, releaseIndex, releases_e, assets){
+                        var release = releases[releaseIndex];
+                        for (var assetIndex = 0; assetIndex < assets.length; assetIndex++) {
 
-                $.get(releases[releaseIndex].assets_url).done(function (assets) {
-                    processAssets(assets, releases[releaseIndex], releaseIndex);
-                });
+                            var asset = assets[assetIndex];
+                            var targetFromFilenameExpression = /.*_(.*)\.(.*)/;
+                            var match = targetFromFilenameExpression.exec(asset.name);
+                            var target = match[1];
+                            var format = match[2];
+
+                            if (format != 'hex') {
+                                continue;
+                            }
+
+                            var summary = {
+                                "name"    : release.name,
+                                "url"     : asset.browser_download_url,
+                                "target"  : target,
+                                "date"    : release.published_at,
+                                "message" : release.body
+                            };
+
+                            var date = new Date(summary.date);
+                            var formattedDate = "{0}-{1}-{2} {3}:{4}".format(date.getFullYear(),date.getMonth(),date.getDay(),
+                                date.getHours(),date.getMinutes());
+
+                            releases_e.append(
+                                $("<option value='{0}_{1}'>{2} {3} {4}</option>".
+                                    format(releaseIndex,assetIndex,summary.name,summary.target,formattedDate) )
+                                    .data('obj', summary));
+                        }
+                    }).bind(this, releases, releaseIndex, releases_e)
+                );
             }
         };
-        
-        $.get('https://api.github.com/repos/cleanflight/cleanflight/releases', function (releases) {
+
+        $.get('https://api.github.com/repos/cleanflight/cleanflight/releases', function (releases){
             processReleases(releases);
-        }).fail(function () {
+        }).fail(function (data){
+            if (data["responseJSON"]){
+                GUI.log("<b>GITHUB Query Failed: <code>{0}</code></b>".format(data["responseJSON"].message));
+            }
             $('select[name="release"]').empty().append('<option value="0">Offline</option>');
         });
         
