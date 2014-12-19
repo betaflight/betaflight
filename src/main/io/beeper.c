@@ -24,6 +24,7 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "flight/failsafe.h"
+#include "sensors/battery.h"
 #include "sensors/sensors.h"
 
 #include "rx/rx.h"
@@ -60,7 +61,7 @@ void beepcodeInit(failsafe_t *initialFailsafe)
     failsafe = initialFailsafe;
 }
 
-void beepcodeUpdateState(bool warn_vbat)
+void beepcodeUpdateState(batteryState_e batteryState)
 {
     static uint8_t beeperOnBox;
 #ifdef GPS
@@ -117,7 +118,9 @@ void beepcodeUpdateState(bool warn_vbat)
 #endif
     else if (beeperOnBox == 1)
         beep_code('S','S','S','M');                 // beeperon
-    else if (warn_vbat)
+    else if (batteryState == BATTERY_CRITICAL)
+        beep_code('S','S','M','D');
+    else if (batteryState == BATTERY_WARNING)
         beep_code('S','M','M','D');
     else if (FLIGHT_MODE(AUTOTUNE_MODE))
         beep_code('S','M','S','M');

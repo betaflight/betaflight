@@ -19,7 +19,7 @@
 #define FC_VERSION_MINOR            0  // increment when a minor release is made (small new feature, change etc)
 #define FC_VERSION_PATCH_LEVEL      0  // increment when a bug is fixed
 
-#define MW_VERSION              230
+#define MW_VERSION              231
 
 extern char* targetName;
 

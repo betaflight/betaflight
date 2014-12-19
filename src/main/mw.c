@@ -161,7 +161,7 @@ void annexCode(void)
     int32_t tmp, tmp2;
     int32_t axis, prop1 = 0, prop2;
 
-    static uint8_t batteryWarningEnabled = false;
+    static batteryState_e batteryState = BATTERY_OK;
     static uint8_t vbatTimer = 0;
     static int32_t vbatCycleTime = 0;
 
@@ -231,7 +231,7 @@ void annexCode(void)
 
             if (feature(FEATURE_VBAT)) {
                 updateBatteryVoltage();
-                batteryWarningEnabled = shouldSoundBatteryAlarm();
+                batteryState = calculateBatteryState();
             }
 
             if (feature(FEATURE_CURRENT_METER)) {
@@ -241,7 +241,7 @@ void annexCode(void)
         }
     }
 
-    beepcodeUpdateState(batteryWarningEnabled);
+    beepcodeUpdateState(batteryState);
 
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;

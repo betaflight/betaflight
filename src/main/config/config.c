@@ -104,7 +104,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 86;
+static const uint8_t EEPROM_CONF_VERSION = 87;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -216,6 +216,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatscale = VBAT_SCALE_DEFAULT;
     batteryConfig->vbatmaxcellvoltage = 43;
     batteryConfig->vbatmincellvoltage = 33;
+    batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;

@@ -901,18 +901,27 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_MISC:
         headSerialReply(2 * 6 + 4 + 2 + 4);
-        serialize16(0); // intPowerTrigger1 (aka useless trash)
+        serialize16(masterConfig.rxConfig.midrc);
+
         serialize16(masterConfig.escAndServoConfig.minthrottle);
         serialize16(masterConfig.escAndServoConfig.maxthrottle);
         serialize16(masterConfig.escAndServoConfig.mincommand);
+
         serialize16(currentProfile->failsafeConfig.failsafe_throttle);
-        serialize16(0); // plog useless shit
-        serialize32(0); // plog useless shit
-        serialize16(currentProfile->mag_declination / 10); // TODO check this shit
+
+        serialize8(0); // gps_type
+        serialize8(0); // gps_baudrate
+        serialize8(0); // gps_ubx_sbas
+        serialize8(masterConfig.batteryConfig.multiwiiCurrentMeterOutput);
+        serialize8(masterConfig.rxConfig.rssi_channel);
+        serialize8(0);
+
+        serialize16(currentProfile->mag_declination / 10);
+
         serialize8(masterConfig.batteryConfig.vbatscale);
         serialize8(masterConfig.batteryConfig.vbatmincellvoltage);
         serialize8(masterConfig.batteryConfig.vbatmaxcellvoltage);
-        serialize8(0);
+        serialize8(masterConfig.batteryConfig.vbatwarningcellvoltage);
         break;
     case MSP_MOTOR_PINS:
         headSerialReply(8);
@@ -1062,6 +1071,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 static bool processInCommand(void)
 {
     uint32_t i;
+    uint16_t tmp;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1165,18 +1175,29 @@ static bool processInCommand(void)
         currentControlRateProfile->thrExpo8 = read8();
         break;
     case MSP_SET_MISC:
-        read16(); // powerfailmeter
+        tmp = read16();
+        if (tmp < 1600 && tmp > 1400)
+            masterConfig.rxConfig.midrc = tmp;
+
         masterConfig.escAndServoConfig.minthrottle = read16();
         masterConfig.escAndServoConfig.maxthrottle = read16();
         masterConfig.escAndServoConfig.mincommand = read16();
+
         currentProfile->failsafeConfig.failsafe_throttle = read16();
-        read16();
-        read32();
+
+        read8(); // gps_type
+        read8(); // gps_baudrate
+        read8(); // gps_ubx_sbas
+        masterConfig.batteryConfig.multiwiiCurrentMeterOutput = read8();
+        masterConfig.rxConfig.rssi_channel = read8();
+        read8();
+
         currentProfile->mag_declination = read16() * 10;
+
         masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
         masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
-        read8();                            // vbatlevel_crit (unused)
+        masterConfig.batteryConfig.vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
         break;
     case MSP_SET_MOTOR:
         for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8

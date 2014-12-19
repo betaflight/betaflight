@@ -570,7 +570,7 @@ void applyLedWarningLayer(uint8_t updateNow)
 
     if (updateNow && warningFlashCounter == 0) {
         warningFlags = WARNING_FLAG_NONE;
-        if (feature(FEATURE_VBAT) && shouldSoundBatteryAlarm()) {
+        if (feature(FEATURE_VBAT) && calculateBatteryState() != BATTERY_OK) {
             warningFlags |= WARNING_FLAG_LOW_BATTERY;
         }
         if (failsafe->vTable->hasTimerElapsed()) {

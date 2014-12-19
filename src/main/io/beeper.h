@@ -17,5 +17,5 @@
 
 #pragma once
 
-void beepcodeUpdateState(bool warn_vbat);
+void beepcodeUpdateState(batteryState_e batteryState);
 void queueConfirmationBeep(uint8_t duration);
