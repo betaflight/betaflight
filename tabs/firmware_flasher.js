@@ -11,7 +11,7 @@ TABS.firmware_flasher.initialize = function (callback) {
 
     var intel_hex = false, // standard intel hex in string format
         parsed_hex = false; // parsed raw hex in array format
-
+        
     $('#content').load("./tabs/firmware_flasher.html", function () {
         // translate to user-selected language
         localize();
@@ -30,6 +30,56 @@ TABS.firmware_flasher.initialize = function (callback) {
         }
 
         // Fetch Releases
+
+        var processAssets = function(assets, release, releaseIndex) {
+        
+            console.log('in callback');
+            console.log(release); // FIXME this is broken, release is undefined
+            
+            for (var assetIndex = 0; assetIndex < assets.length; assetIndex++) {
+                var asset = assets[assetIndex];
+                
+                var targetFromFilenameExpression = /.*_(.*)\.(.*)/;
+                var match = targetFromFilenameExpression.exec(asset.name);
+                var target = match[1];
+                var format = match[2];
+                if (format != 'hex') {
+                    continue;
+                }
+
+                var summary = {
+                    "name"    : release.name,
+                    "url"     : asset.browser_download_url,
+                    "target"  : target,
+                    "date"    : release.published_at,
+                    "message" : release.body
+                };
+                
+                var element = $('<option value="' + releaseIndex + '_' + assetIndex + '">' + summary.name + ' ' + summary.target + ' ' + summary.date + '</option>').data('obj', summary);
+                releases_e.append(element);
+            }
+        };
+        
+        var processReleases = function(releases) {
+            var releases_e = $('select[name="release"]').empty();
+
+            for (var releaseIndex = 0; releaseIndex < releases.length; releaseIndex++) {            
+                console.log('processing assets release ' + releaseIndex);
+                console.log(releases[releaseIndex]);
+
+                $.get(releases[releaseIndex].assets_url).done(function (assets) {
+                    processAssets(assets, releases[releaseIndex], releaseIndex);
+                });
+            }
+        };
+        
+        $.get('https://api.github.com/repos/cleanflight/cleanflight/releases', function (releases) {
+            processReleases(releases);
+        }).fail(function () {
+            $('select[name="release"]').empty().append('<option value="0">Offline</option>');
+        });
+        
+/*
         $.get('http://firmware.baseflight.net/listing.json', function (data) {
             var releases = [],
                 releases_e = $('select[name="release"]').empty(),
@@ -77,6 +127,7 @@ TABS.firmware_flasher.initialize = function (callback) {
         }).fail(function () {
             $('select[name="release"]').empty().append('<option value="0">Offline</option>')
         });
+*/
 
         // UI Hooks
         $('a.load_file').click(function () {
@@ -130,7 +181,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                 });
             });
         });
-
+        
         $('a.load_remote_file').click(function () {
             function process_hex(data, obj) {
                 intel_hex = data;
@@ -184,7 +235,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                 $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
             }
         });
-
+        
         $('a.flash_firmware').click(function () {
             if (!$(this).hasClass('locked')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
