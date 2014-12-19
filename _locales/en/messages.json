@@ -760,6 +760,12 @@
     "firmwareFlasherReleaseSummaryHead": {    
         "message": "Release info"
     },
+    "firmwareFlasherReleaseName": {
+        "message": "Name/Version:"
+    },
+    "firmwareFlasherReleaseVersionUrl": {
+        "message": "Visit release page."
+    },
     "firmwareFlasherReleaseNotes": {
         "message": "Release notes:"
     },
