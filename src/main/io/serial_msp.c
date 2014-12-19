@@ -206,9 +206,10 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)
 #define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
 
-// DO NOT IMPLEMENT "MSP_CONFIG" and MSP_SET_CONFIG in Cleanflight, isolated commands already exist
-//#define MSP_CONFIG                    66 //out message baseflight-specific settings that aren't covered elsewhere
-//#define MSP_SET_CONFIG                67 //in message baseflight-specific settings save
+// FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
+// DEPRECATED - DO NOT USE "MSP_CONFIG" and MSP_SET_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
+#define MSP_CONFIG                    66 //out message baseflight-specific settings that aren't covered elsewhere
+#define MSP_SET_CONFIG                67 //in message baseflight-specific settings save
 
 #define MSP_REBOOT                      68 //in message reboot settings
 
@@ -1039,6 +1040,22 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(masterConfig.rxConfig.rcmap[i]);
         break;
 
+    case MSP_CONFIG:
+        headSerialReply(1 + 4 + 1 + 2 + 2 + 2 + 2 + 2);
+        serialize8(masterConfig.mixerConfiguration);
+
+        serialize32(featureMask());
+
+        serialize8(masterConfig.rxConfig.serialrx_provider);
+
+        serialize16(masterConfig.boardAlignment.rollDegrees);
+        serialize16(masterConfig.boardAlignment.pitchDegrees);
+        serialize16(masterConfig.boardAlignment.yawDegrees);
+
+        serialize16(masterConfig.batteryConfig.currentMeterScale);
+        serialize16(masterConfig.batteryConfig.currentMeterOffset);
+        break;
+
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
         headSerialReply(CONFIGURABLE_COLOR_COUNT * 4);
@@ -1328,6 +1345,24 @@ static bool processInCommand(void)
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
             masterConfig.rxConfig.rcmap[i] = read8();
         }
+        break;
+
+    case MSP_SET_CONFIG:
+        headSerialReply(0);
+
+        masterConfig.mixerConfiguration = read8(); // multitype
+
+        featureClearAll();
+        featureSet(read32()); // features bitmap
+
+        masterConfig.rxConfig.serialrx_provider = read8(); // serialrx_type
+
+        masterConfig.boardAlignment.rollDegrees = read16(); // board_align_roll
+        masterConfig.boardAlignment.pitchDegrees = read16(); // board_align_pitch
+        masterConfig.boardAlignment.yawDegrees = read16(); // board_align_yaw
+
+        masterConfig.batteryConfig.currentMeterScale = read16();
+        masterConfig.batteryConfig.currentMeterOffset = read16();
         break;
 
 #ifdef LED_STRIP
