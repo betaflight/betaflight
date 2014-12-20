@@ -13,8 +13,7 @@ TABS.setup.initialize = function (callback) {
     }
 
     function load_ident() {
-        MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_html);
-        //MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
+        MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_misc_data);
     }
 
     function load_config() {
