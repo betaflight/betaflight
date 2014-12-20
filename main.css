@@ -40,15 +40,15 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #watermark {
-    width: 100%;
-    text-align: center;
     position: absolute;
-    z-index: 0;
-    display: block;
-}
+    text-align: center;
+    top: 30px;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: -1;
+    overflow: hidden;
 
-#watermark p{
-    opacity: 0.1;
     font-family: monospace;
     color: grey;
     font-size: 50px;
@@ -201,7 +201,7 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 65px;
 
     border: 1px solid silver;
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.5);
 
     overflow-y: scroll;
 }
