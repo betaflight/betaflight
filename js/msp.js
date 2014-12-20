@@ -489,6 +489,9 @@ var MSP = {
             //
             // Cleanflight specific 
             //
+            case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
+                console.log('Channel forwarding saved');
+                break;
             
             case MSP_codes.MSP_API_VERSION:
                 CONFIG.apiVersion = data.getUint8(1) + '.' + data.getUint8(2);

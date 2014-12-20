@@ -1,3 +1,26 @@
+.tab-configuration table {
+    float: left;
+
+    margin-bottom: 10px;
+
+    border-collapse: collapse;
+}
+.tab-configuration table,
+.tab-configuration table th,
+.tab-configuration table td {
+    padding: 4px;
+    border: 1px solid #8b8b8b;
+}
+.tab-configuration table tr td:first-child {
+    text-align: center;
+}
+.tab-configuration table td {
+    padding: 2px 10px;
+}
+.tab-configuration table tr:nth-child(odd) {
+    background-color: #ececec;
+}
+
 .tab-configuration {
     position: relative;
 }
@@ -111,12 +134,14 @@
 .tab-configuration .current .checkbox span {
     margin-left: 15px;
 }
-.tab-configuration .buttons {
-    position: fixed;
 
+.tab-auxiliary > .buttons {
     width: calc(100% - 20px);
+
+    margin-top: 10px;
     bottom: 10px;
 }
+
 .tab-configuration .save {
     display: block;
     float: right;

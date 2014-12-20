@@ -54,40 +54,42 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
         // generate features
         var featureNames = [
-            {name: 'PPM', description: 'Enable PPM input (and disable PWM input)'},
-            {name: 'VBAT', description: 'Enable Battery voltage monitoring'},
-            {name: 'INFLIGHT_ACC_CAL', description: 'Enable in-flight level calibration'},
-            {name: 'SERIALRX', description: 'Enable Serial-based receiver (SPEKSAT, SBUS, SUMD)'},
+            {name: 'RX_PPM', description: 'PPM RX input'},
+            {name: 'VBAT', description: 'Battery voltage monitoring'},
+            {name: 'INFLIGHT_ACC_CAL', description: 'In-flight level calibration'},
+            {name: 'RX_SERIAL', description: 'Serial-based receiver (SPEKSAT, SBUS, SUMD)'},
             {name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
-            {name: 'SERVO_TILT', description: 'Enable servo gimbal'},
-            {name: 'SOFTSERIAL', description: 'Enable 3rd serial port'},
-            {name: 'LED_RING', description: 'Enable LED ring support'},
-            {name: 'GPS', description: 'Enable GPS (PPM or 3rd serial port required)'},
-            {name: 'FAILSAFE', description: 'Enable failsafe settings on PPM/PWM signal loss'},
-            {name: 'SONAR', description: 'Enable sonar'},
-            {name: 'TELEMETRY', description: 'Enable FrSky- compatible telemetry output'},
-            {name: 'POWERMETER', description: 'Enable battery current monitoring'},
-            {name: 'VARIO', description: 'Enable VARIO'},
-            {name: '3D', description: 'Enable 3D mode (for use with reversible ESCs)'}
+            {name: 'SERVO_TILT', description: 'Servo gimbal'},
+            {name: 'SOFTSERIAL', description: 'Enable CPU based serial ports (configure port scenario first)'},
+            {name: 'GPS', description: 'GPS (configure port scenario first)'},
+            {name: 'FAILSAFE', description: 'Failsafe settings on RX signal loss'},
+            {name: 'SONAR', description: 'Sonar'},
+            {name: 'TELEMETRY', description: 'Telemetry output'},
+            {name: 'CURRENT_METER', description: 'Battery current monitoring'},
+            {name: '3D', description: '3D mode (for use with reversible ESCs)'},
+            {name: 'RX_PARALLEL_PWM', description: 'PWM RX input'},
+            {name: 'RX_MSP', description: 'MSP RX input'},
+            {name: 'RSSI_ADC', description: 'Analog RSSI input'},
+            {name: 'LED_STRIP', description: 'Addressable RGB LED strip support'},
+            {name: 'DISPLAY', description: 'OLED Screen Display'},
+            {name: 'ONESHOT125', description: 'ONESHOT ESC support (disconnect ESCs, remove props)'}
         ];
 
         var features_e = $('.features');
         for (var i = 0; i < featureNames.length; i++) {
-            var element = $('<dt><input id="feature-' + i + '" title="' + featureNames[i].name + '" type="checkbox" /></dt><dd><label for="feature-' + i + '">' + featureNames[i].description + '</label></dd>');
-            element.find('input').attr('checked', bit_check(BF_CONFIG.features, i));
+            var row_e = $('<tr><td><input id="feature-' + i + '" title="' + featureNames[i].name + '" type="checkbox" /></td><td><label for="feature-' + i + '">' + featureNames[i].name + '</label></td><td>' + featureNames[i].description + '</td>');
+            row_e.find('input').attr('checked', bit_check(BF_CONFIG.features, i));
 
-            features_e.append(element);
+            features_e.append(row_e);
         }
 
         // generate GPS
         var gpsTypes = [
             'NMEA',
-            'UBLOX',
-            'MTK_NMEA',
-            'MTK_BINARY',
-            'MAG_BINARY'
+            'UBLOX'
         ];
 
+        /*
         var gpsBauds = [
             '115200',
             '57600',
@@ -95,6 +97,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             '19200',
             '9600'
         ];
+        */
 
         var gpsSbas = [
             'Disabled',
@@ -114,6 +117,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.gps_type = parseInt($(this).val());
         });
 
+        /*
         var gps_baudrate_e = $('select.gps_baudrate');
         for (var i = 0; i < gpsBauds.length; i++) {
             gps_baudrate_e.append('<option value="' + i + '">' + gpsBauds[i] + '</option>');
@@ -122,6 +126,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         gps_baudrate_e.change(function () {
             MISC.gps_baudrate = parseInt($(this).val());
         });
+        */
 
         var gps_ubx_sbas_e = $('select.gps_ubx_sbas');
         for (var i = 0; i < gpsSbas.length; i++) {
@@ -134,7 +139,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
         // select current gps configuration
         gps_type_e.val(MISC.gps_type);
-        gps_baudrate_e.val(MISC.gps_baudrate);
+        //gps_baudrate_e.val(MISC.gps_baudrate);
         gps_ubx_sbas_e.val(MISC.gps_ubx_sbas);
 
         // generate serial RX
@@ -143,7 +148,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'SPEKTRUM2048',
             'SBUS',
             'SUMD',
-            'MSP'
+            'SUMH'
         ];
 
         var serialRX_e = $('select.serialRX');

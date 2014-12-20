@@ -334,6 +334,17 @@
         "message": "EEPROM <span style=\"color: green\">saved</span>"
     },
 
+    "configurationFeatureEnabled": {
+        "message": "Enabled"
+    },
+    "configurationFeatureName": {
+        "message": "Name"
+    },
+    "configurationFeatureDescription": {
+        "message": "Description"
+    },
+
+
     "configurationMixer": {
         "message": "Mixer"
     },
