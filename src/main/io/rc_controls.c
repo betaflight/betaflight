@@ -421,15 +421,21 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
 
 void changeControlRateProfile(uint8_t profileIndex);
 
-void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position) {
+void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
+{
+    bool applied = false;
 
-    queueConfirmationBeep(position + 1);
     switch(adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
             if (getCurrentControlRateProfile() != position) {
                 changeControlRateProfile(position);
+                applied = true;
             }
             break;
+    }
+
+    if (applied) {
+        queueConfirmationBeep(position + 1);
     }
 }
 
