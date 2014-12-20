@@ -214,7 +214,7 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_REBOOT                      68 //in message reboot settings
 
 // DEPRECATED - Use MSP_API_VERSION instead
-//#define MSP_BUILD_INFO                  69 //out message build date as well as some space for future expansion
+#define MSP_BUILD_INFO                  69 //out message build date as well as some space for future expansion
 
 //
 // Multwii original MSP commands
@@ -1078,6 +1078,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         }
         break;
 #endif
+    case MSP_BUILD_INFO:
+        headSerialReply(11 + 4 + 4);
+        for (i = 0; i < 11; i++)
+        serialize8(buildDate[i]); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
+        serialize32(0); // future exp
+        serialize32(0); // future exp
+        break;
 
     default:
         return false;
