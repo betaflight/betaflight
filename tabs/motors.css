@@ -1,3 +1,22 @@
+.tab-motors .wrapper.modelAndAccel {
+    float: left;
+    width: 100%;
+}
+
+.tab-motors .wrapper.accel {
+    float: left;
+    width: calc(100% - 120px);
+}
+
+.tab-motors .mixerPreview {
+    float: left;
+}
+
+.tab-motors .mixerPreview img {
+    width: 120px;
+    height: 120px;
+}
+
 .tab-motors .plot_control {
     float: right;
 

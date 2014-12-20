@@ -36,33 +36,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // translate to user-selected language
         localize();
 
-        // generate mixer
-        var mixerList = [
-            {name: 'Tricopter', image: 'tri'},
-            {name: 'Quad +', image: 'quad_p'},
-            {name: 'Quad X', image: 'quad_x'},
-            {name: 'Bicopter', image: 'custom'},
-            {name: 'Gimbal', image: 'custom'},
-            {name: 'Y6', image: 'y6'},
-            {name: 'Hex +', image: 'hex_p'},
-            {name: 'Flying Wing', image: 'flying_wing'},
-            {name: 'Y4', image: 'y4'},
-            {name: 'Hex X', image: 'hex_x'},
-            {name: 'Octo X8', image: 'octo_x8'},
-            {name: 'Octo Flat +', image: 'custom'},
-            {name: 'Octo Flat X', image: 'octo_flat_x'},
-            {name: 'Airplane', image: 'airplane'},
-            {name: 'Heli 120', image: 'custom'},
-            {name: 'Heli 90', image: 'custom'},
-            {name: 'V-tail Quad', image: 'vtail_quad'},
-            {name: 'Hex H', image: 'custom'},
-            {name: 'PPM to SERVO', image: 'custom'},
-            {name: 'Dualcopter', image: 'custom'},
-            {name: 'Singlecopter', image: 'custom'},
-            {name: 'A-tail Quad', image: 'atail_quad'},
-            {name: 'Custom', image: 'custom'}
-        ];
-
         var mixer_list_e = $('select.mixerList');
         for (var i = 0; i < mixerList.length; i++) {
             mixer_list_e.append('<option value="' + (i + 1) + '">' + mixerList[i].name + '</option>');
@@ -285,7 +258,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         GUI.log(chrome.i18n.getMessage('deviceReady'));
                         TABS.configuration.initialize(false, $('#content').scrollTop());
                     });
-                }, 1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
+                },1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
             }
 
             MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_misc);
