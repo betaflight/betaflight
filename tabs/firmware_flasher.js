@@ -243,9 +243,9 @@ TABS.firmware_flasher.initialize = function (callback) {
                         }
                         
                         $('div.release_info .target').text(summary.target);
-                        $('div.release_info .name').text(summary.name).prop('href', summary.url);
+                        $('div.release_info .name').text(summary.name).prop('href', summary.releaseUrl);
                         $('div.release_info .date').text(summary.date);
-                        $('div.release_info .file').text(summary.file).prop('href', summary.releaseUrl);
+                        $('div.release_info .file').text(summary.file).prop('href', summary.url);
                         $('div.release_info .notes').text(summary.notes);
 
                         $('div.release_info').slideDown();
