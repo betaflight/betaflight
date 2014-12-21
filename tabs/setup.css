@@ -13,7 +13,7 @@
 
     float: left;
 
-    width: 170px;
+    width: 190px;
     height: 24px;
     line-height: 24px;
 
@@ -22,6 +22,8 @@
 
     border: 1px solid silver;
     background-color: #ececec;
+    
+    white-space: nowrap;
 }
 .tab-setup .section a:hover {
     background-color: #dedcdc;
@@ -40,14 +42,14 @@
     cursor: default;
 }
 .tab-setup .section a.backup {
-    width: 80px;
-    margin-right: 10px;
+    width: 90px;
+    margin-right: 8px;
 }
 .tab-setup .section a.restore {
-    width: 80px;
+    width: 90px;
 }
 .tab-setup .section p {
-    margin-left: 180px;
+    margin-left: 200px;
 
     padding: 0 0 0 5px;
 
