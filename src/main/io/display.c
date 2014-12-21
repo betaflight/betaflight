@@ -34,6 +34,9 @@
 #include "drivers/system.h"
 #include "drivers/display_ug2864hsweg01.h"
 
+#include "drivers/sensor.h"
+#include "drivers/compass.h"
+
 #include "sensors/battery.h"
 
 #include "common/axis.h"

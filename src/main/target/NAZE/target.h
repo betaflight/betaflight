@@ -74,6 +74,8 @@
 #define USE_BARO_BMP085
 
 #define MAG
+#define USE_MAG_HMC5883
+
 #define SONAR
 #define BEEPER
 #define LED0

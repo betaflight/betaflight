@@ -30,8 +30,12 @@
 
 #include "drivers/system.h"
 
-#include "sensors/sensors.h"
+
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/compass.h"
+
+#include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"

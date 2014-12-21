@@ -29,9 +29,12 @@
 #include "config/runtime_config.h"
 
 #include "rx/rx.h"
+
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
+
 #include "io/rc_controls.h"
 #include "flight/flight.h"
 #include "flight/navigation.h"

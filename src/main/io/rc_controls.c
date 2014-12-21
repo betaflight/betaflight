@@ -31,6 +31,7 @@
 
 #include "flight/flight.h"
 
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
 #include "sensors/battery.h"

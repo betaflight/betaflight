@@ -43,6 +43,7 @@
 #define USE_GYRO_MPU6050
 
 #define MAG
+#define USE_MAG_HMC5883
 
 #define BRUSHED_MOTORS
 

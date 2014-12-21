@@ -35,6 +35,7 @@
 #include "gpio.h"
 #include "bus_spi.h"
 
+#include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_spi_mpu6000.h"
 

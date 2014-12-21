@@ -31,6 +31,7 @@
 #include "common/axis.h"
 
 #include "drivers/system.h"
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"

@@ -21,8 +21,6 @@
 #include "platform.h"
 #include "system.h"
 
-#include "accgyro.h"
-
 #include "adc.h"
 
 adc_config_t adcConfig[ADC_CHANNEL_COUNT];

@@ -34,7 +34,11 @@
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"
+
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/compass.h"
+
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
@@ -57,6 +61,7 @@
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
+#include "sensors/compass.h"
 #include "sensors/barometer.h"
 #include "telemetry/telemetry.h"
 
@@ -355,6 +360,7 @@ const clivalue_t valueTable[] = {
     { "baro_cf_vel",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_cf_vel, 0, 1 },
     { "baro_cf_alt",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_cf_alt, 0, 1 },
 
+    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, 0, MAG_NONE },
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, -18000, 18000 },
 
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidController, 0, 2 },

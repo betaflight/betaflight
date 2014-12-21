@@ -36,6 +36,9 @@
 #define BARO
 #define USE_BARO_MS5611
 
+#define MAG
+#define USE_MAG_AK8975
+
 #define LED0
 #define LED1
 
@@ -76,7 +79,7 @@
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
 
-#define SENSORS_SET (SENSOR_ACC)
+#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 #define SERIAL_RX
 #define GPS
