@@ -18,16 +18,17 @@
 
     height: 22px;
     line-height: 20px;
+    white-space: nowrap;
 }
 .tab-receiver .bars .name {
     padding: 0 10px 0 0;
 
-    width: 40px;
+    width: 50px;
 
     text-align: right;
 }
 .tab-receiver .bars .meter {
-    width: calc(100% - 50px);
+    width: calc(100% - 60px);
 }
 .tab-receiver .bars .meter-bar {
     position: relative;
