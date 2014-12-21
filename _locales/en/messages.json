@@ -439,7 +439,7 @@
         "message": "EEPROM <span style=\"color: green\">saved</span>"
     },
     "configurationButtonSave": {
-        "message": "Save"
+        "message": "Save and Reboot"
     },
 
     "pidTuningName": {
