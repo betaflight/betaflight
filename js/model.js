@@ -23,6 +23,6 @@ var mixerList = [
     {name: 'PPM to SERVO', image: 'custom'},
     {name: 'Dualcopter', image: 'custom'},
     {name: 'Singlecopter', image: 'custom'},
-    //{name: 'A-tail Quad', image: 'atail_quad'}, // Not supported in Cleanflight yet.
+    {name: 'A-tail Quad', image: 'atail_quad'},
     {name: 'Custom', image: 'custom'}
 ];
