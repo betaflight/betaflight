@@ -42,7 +42,7 @@
 #define XBUS_CRC_BYTE_2 26
 
 #define XBUS_CRC_AND_VALUE 0x8000
-#define XBUS_CRC_XOR_VALUE 0x1021
+#define XBUS_CRC_POLY 0x1021
 
 #define XBUS_BAUDRATE 115200
 #define XBUS_MAX_FRAME_TIME 5000
@@ -115,7 +115,7 @@ static uint16_t xBusCRC16(uint16_t crc, uint8_t value)
 
     for (i = 0; i < 8; i++) {
         if (crc & XBUS_CRC_AND_VALUE) {
-            crc = crc << 1 ^ XBUS_CRC_XOR_VALUE;
+            crc = crc << 1 ^ XBUS_CRC_POLY;
         } else {
             crc = crc << 1;
         }
