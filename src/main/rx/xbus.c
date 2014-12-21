@@ -65,55 +65,55 @@
 // Use formula: 800 + value * 1400 / 4096 (i.e. a shift by 12)
 #define XBUS_CONVERT_TO_USEC(V)	(800 + ((V * 1400) >> 12))
 
-static bool xbusFrameReceived = false;
-static bool xbusDataIncoming = false;
-static uint8_t xbusFramePosition;
+static bool xBusFrameReceived = false;
+static bool xBusDataIncoming = false;
+static uint8_t xBusFramePosition;
 
-static volatile uint8_t xbusFrame[XBUS_FRAME_SIZE];
-static uint16_t xbusChannelData[XBUS_CHANNEL_COUNT];
+static volatile uint8_t xBusFrame[XBUS_FRAME_SIZE];
+static uint16_t xBusChannelData[XBUS_CHANNEL_COUNT];
 
-static void xbusDataReceive(uint16_t c);
-static uint16_t xbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static void xBusDataReceive(uint16_t c);
+static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-static serialPort_t *xbusPort;
+static serialPort_t *xBusPort;
 
-void xbusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
+void xBusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
 {
     functionConstraint->minBaudRate = XBUS_BAUDRATE;
     functionConstraint->maxBaudRate = XBUS_BAUDRATE;
     functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK;
 }
 
-bool xbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     switch (rxConfig->serialrx_provider) {
         case SERIALRX_XBUS_MODE_B:
             rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
-            xbusFrameReceived = false;
-            xbusDataIncoming = false;
-            xbusFramePosition = 0;
+            xBusFrameReceived = false;
+            xBusDataIncoming = false;
+            xBusFramePosition = 0;
             break;
         default:
             return false;
             break;
     }
 
-    xbusPort = openSerialPort(FUNCTION_SERIAL_RX, xbusDataReceive, XBUS_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+    xBusPort = openSerialPort(FUNCTION_SERIAL_RX, xBusDataReceive, XBUS_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
     if (callback) {
-        *callback = xbusReadRawRC;
+        *callback = xBusReadRawRC;
     }
 
-    return xbusPort != NULL;
+    return xBusPort != NULL;
 }
 
 // The xbus mode B CRC calculations
-static uint16_t xbusCRC16(uint16_t crc, uint8_t value)
+static uint16_t xBusCRC16(uint16_t crc, uint8_t value)
 {
     uint8_t i;
+    
     crc = crc ^ (int16_t)value << 8;
 
-    for (i = 0; i < 8; i++)
-    {
+    for (i = 0; i < 8; i++) {
         if (crc & XBUS_CRC_AND_VALUE) {
             crc = crc << 1 ^ XBUS_CRC_XOR_VALUE;
         } else {
@@ -123,7 +123,7 @@ static uint16_t xbusCRC16(uint16_t crc, uint8_t value)
     return crc;
 }
 
-static void xbusUnpackFrame(void)
+static void xBusUnpackFrame(void)
 {
     // Calculate the CRC of the incoming frame
     uint16_t crc = 0;
@@ -133,70 +133,67 @@ static void xbusUnpackFrame(void)
     uint8_t frameAddr;
 
     // Calculate on all bytes except the final two CRC bytes
-    for (i = 0; i < XBUS_FRAME_SIZE - 2; i++)
-    {
-        inCrc = xbusCRC16(inCrc, xbusFrame[i]);
+    for (i = 0; i < XBUS_FRAME_SIZE - 2; i++) {
+        inCrc = xBusCRC16(inCrc, xBusFrame[i]);
     }
 
     // Get the received CRC
-    crc = ((uint16_t)xbusFrame[XBUS_CRC_BYTE_1]) << 8;
-    crc = crc + ((uint16_t)xbusFrame[XBUS_CRC_BYTE_2]);
+    crc = ((uint16_t)xBusFrame[XBUS_CRC_BYTE_1]) << 8;
+    crc = crc + ((uint16_t)xBusFrame[XBUS_CRC_BYTE_2]);
 
-    if (crc == inCrc)
-    {
+    if (crc == inCrc) {
         // Unpack the data, we have a valid frame
         for (i = 0; i < XBUS_CHANNEL_COUNT; i++) {
 
             frameAddr = 1 + i * 2;
-            value = ((uint16_t)xbusFrame[frameAddr]) << 8;
-            value = value + ((uint16_t)xbusFrame[frameAddr + 1]);
+            value = ((uint16_t)xBusFrame[frameAddr]) << 8;
+            value = value + ((uint16_t)xBusFrame[frameAddr + 1]);
 
             // Convert to internal format
-            xbusChannelData[i] = XBUS_CONVERT_TO_USEC(value);
+            xBusChannelData[i] = XBUS_CONVERT_TO_USEC(value);
         }
 
-        xbusFrameReceived = true;
+        xBusFrameReceived = true;
     }
 
 }
 
 // Receive ISR callback
-static void xbusDataReceive(uint16_t c)
+static void xBusDataReceive(uint16_t c)
 {
-
     // Check if we shall start a frame?
-    if ((xbusFramePosition == 0) && (c == XBUS_START_OF_FRAME_BYTE)) {
-        xbusDataIncoming = true;
+    if ((xBusFramePosition == 0) && (c == XBUS_START_OF_FRAME_BYTE)) {
+        xBusDataIncoming = true;
     }
 
     // Only do this if we are receiving to a frame
-    if (xbusDataIncoming == true) {
+    if (xBusDataIncoming == true) {
         // Store in frame copy
-        xbusFrame[xbusFramePosition] = (uint8_t)c;
-        xbusFramePosition++;
+        xBusFrame[xBusFramePosition] = (uint8_t)c;
+        xBusFramePosition++;
     }
     
     // Done?
-    if (xbusFramePosition == XBUS_FRAME_SIZE) {
-        xbusUnpackFrame();
-        xbusDataIncoming = false;
-        xbusFramePosition = 0;
+    if (xBusFramePosition == XBUS_FRAME_SIZE) {
+        xBusUnpackFrame();
+        xBusDataIncoming = false;
+        xBusFramePosition = 0;
     }
 }
 
 // Indicate time to read a frame from the data...
-bool xbusFrameComplete(void)
+bool xBusFrameComplete(void)
 {
-    return xbusFrameReceived;
+    return xBusFrameReceived;
 }
 
-static uint16_t xbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     uint16_t data;
 
     // Mark frame as read
-    if (xbusFrameReceived) {
-        xbusFrameReceived = false;
+    if (xBusFrameReceived) {
+        xBusFrameReceived = false;
     }
 
     // Deliver the data wanted
@@ -204,7 +201,7 @@ static uint16_t xbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
         return 0;
     }
 
-    data = xbusChannelData[chan];
+    data = xBusChannelData[chan];
 
     return data;
 }

@@ -19,6 +19,6 @@
 
 #include "rx/rx.h"
 
-bool xbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
-bool xbusFrameComplete(void);
-void xbusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint);
+bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool xBusFrameComplete(void);
+void xBusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint);
