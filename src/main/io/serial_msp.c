@@ -910,9 +910,15 @@ static bool processOutCommand(uint8_t cmdMSP)
 
         serialize16(currentProfile->failsafeConfig.failsafe_throttle);
 
+#ifdef GPS
         serialize8(masterConfig.gpsConfig.provider); // gps_type
         serialize8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
         serialize8(masterConfig.gpsConfig.sbasMode); // gps_ubx_sbas
+#else
+        serialize8(0); // gps_type
+        serialize8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
+        serialize8(0); // gps_ubx_sbas
+#endif
         serialize8(masterConfig.batteryConfig.multiwiiCurrentMeterOutput);
         serialize8(masterConfig.rxConfig.rssi_channel);
         serialize8(0);
@@ -1209,9 +1215,15 @@ static bool processInCommand(void)
 
         currentProfile->failsafeConfig.failsafe_throttle = read16();
 
+#ifdef GPS
         masterConfig.gpsConfig.provider = read8(); // gps_type
         read8(); // gps_baudrate
         masterConfig.gpsConfig.sbasMode = read8(); // gps_ubx_sbas
+#else
+        read8(); // gps_type
+        read8(); // gps_baudrate
+        read8(); // gps_ubx_sbas
+#endif
         masterConfig.batteryConfig.multiwiiCurrentMeterOutput = read8();
         masterConfig.rxConfig.rssi_channel = read8();
         read8();
@@ -1348,7 +1360,11 @@ static bool processInCommand(void)
 
     case MSP_SET_CONFIG:
 
+#ifdef CJMCU
         masterConfig.mixerConfiguration = read8(); // multitype
+#else
+        read8(); // multitype
+#endif
 
         featureClearAll();
         featureSet(read32()); // features bitmap

@@ -87,7 +87,9 @@ static void cliMap(char *cmdline);
 static void cliLed(char *cmdline);
 static void cliColor(char *cmdline);
 #endif
+#ifndef CJMCU
 static void cliMixer(char *cmdline);
+#endif
 static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
@@ -163,7 +165,9 @@ const clicmd_t cmdTable[] = {
     { "led", "configure leds", cliLed },
 #endif
     { "map", "mapping of rc channel order", cliMap },
+#ifndef CJMCU
     { "mixer", "mixer name or list", cliMixer },
+#endif
     { "motor", "get/set motor output value", cliMotor },
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
@@ -563,6 +567,9 @@ static void cliAdjustmentRange(char *cmdline)
 
 static void cliCMix(char *cmdline)
 {
+#ifdef CJMCU
+    UNUSED(cmdline);
+#else
     int i, check = 0;
     int num_motors = 0;
     uint8_t len;
@@ -649,6 +656,7 @@ static void cliCMix(char *cmdline)
             printf("Motor number must be between 1 and %d\r\n", MAX_SUPPORTED_MOTORS);
         }
     }
+#endif
 }
 
 #ifdef LED_STRIP
@@ -1000,6 +1008,7 @@ static void cliMap(char *cmdline)
     printf("%s\r\n", out);
 }
 
+#ifndef CJMCU
 static void cliMixer(char *cmdline)
 {
     int i;
@@ -1033,6 +1042,7 @@ static void cliMixer(char *cmdline)
         }
     }
 }
+#endif
 
 static void cliMotor(char *cmdline)
 {
