@@ -9,7 +9,7 @@ html, body {
     height: 100%;
 }
 body {
-    font-family: sans-serif;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
     font-size: 12px;
     color: #303030;
     background-color: #dfddd0;
