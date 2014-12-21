@@ -83,10 +83,10 @@
         "message": "GPS"
     },
     "tabMotorTesting": {
-        "message": "Motor Testing"
+        "message": "Motors"
     },
     "tabRawSensorData": {
-        "message": "Raw Sensor Data"
+        "message": "Sensors"
     },
     "tabCLI": {
         "message": "CLI"
