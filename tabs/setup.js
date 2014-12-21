@@ -12,8 +12,12 @@ TABS.setup.initialize = function (callback) {
         googleAnalytics.sendAppView('Setup');
     }
 
+    function load_status() {
+        MSP.send_message(MSP_codes.MSP_STATUS, false, false, load_ident);
+    }
+
     function load_ident() {
-        MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_misc_data);
+        MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
     }
 
     function load_config() {
@@ -28,7 +32,7 @@ TABS.setup.initialize = function (callback) {
         $('#content').load("./tabs/setup.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_ident);
+    MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_status);
 
     function process_html() {
         // translate to user-selected language
@@ -136,6 +140,8 @@ TABS.setup.initialize = function (callback) {
             heading_e = $('span.heading');
 
         function get_slow_data() {
+            MSP.send_message(MSP_codes.MSP_STATUS);
+            
             MSP.send_message(MSP_codes.MSP_ANALOG, false, false, function () {
                 bat_voltage_e.text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
                 bat_mah_drawn_e.text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.mAhdrawn]));
@@ -149,8 +155,6 @@ TABS.setup.initialize = function (callback) {
                 gpsLat_e.text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
                 gpsLon_e.text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
             });
-
-            MSP.send_message(MSP_codes.MSP_STATUS);
         }
 
         function get_fast_data() {
