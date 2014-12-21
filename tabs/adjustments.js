@@ -180,7 +180,7 @@ TABS.adjustments.initialize = function (callback) {
                 auxSwitchChannelIndex: 0
             };
 
-            $('.adjustments .adjustment').each(function () {
+            $('.tab-adjustments .adjustments .adjustment').each(function () {
                 var adjustmentElement = $(this);
                 
                 if ($(adjustmentElement).find('.enable').prop("checked")) {
@@ -208,36 +208,8 @@ TABS.adjustments.initialize = function (callback) {
             //
             // send data to FC
             //
-
-            var nextFunction = send_next_adjustment_range; 
-                
-            var adjustmentRangeIndex = 0;
-
-            send_next_adjustment_range();
-
+            MSP.sendAdjustmentRanges(save_to_eeprom);
             
-            function send_next_adjustment_range() {
-                
-                var adjustmentRange = ADJUSTMENT_RANGES[adjustmentRangeIndex];
-                                
-                var ADJUSTMENT_val_buffer_out = [];
-                ADJUSTMENT_val_buffer_out.push(adjustmentRangeIndex);
-                ADJUSTMENT_val_buffer_out.push(adjustmentRange.slotIndex);
-                ADJUSTMENT_val_buffer_out.push(adjustmentRange.auxChannelIndex);
-                ADJUSTMENT_val_buffer_out.push((adjustmentRange.range.start - 900) / 25);
-                ADJUSTMENT_val_buffer_out.push((adjustmentRange.range.end - 900) / 25);
-                ADJUSTMENT_val_buffer_out.push(adjustmentRange.adjustmentFunction);
-                ADJUSTMENT_val_buffer_out.push(adjustmentRange.auxSwitchChannelIndex);
-                
-                // prepare for next iteration
-                adjustmentRangeIndex++;
-                if (adjustmentRangeIndex == requiredAdjustmentRangeCount) {
-                    nextFunction = save_to_eeprom;
-                
-                }
-                MSP.send_message(MSP_codes.MSP_SET_ADJUSTMENT_RANGE, ADJUSTMENT_val_buffer_out, false, nextFunction);
-            }
-
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('adjustmentsEepromSaved'));

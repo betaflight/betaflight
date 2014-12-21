@@ -10,11 +10,17 @@ function configuration_backup(callback) {
         MSP_codes.MSP_PID,
         MSP_codes.MSP_RC_TUNING,
         MSP_codes.MSP_ACC_TRIM,
-        MSP_codes.MSP_SERVO_CONF
+        MSP_codes.MSP_SERVO_CONF,
+        MSP_codes.MSP_CHANNEL_FORWARDING,
+        MSP_codes.MSP_MODE_RANGES,
+        MSP_codes.MSP_ADJUSTMENT_RANGES
     ];
 
     var uniqueData = [
+        // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
+        /*
         MSP_codes.MSP_BOX,
+        */
         MSP_codes.MSP_MISC,
         MSP_codes.MSP_RCMAP,
         MSP_codes.MSP_CONFIG
@@ -54,7 +60,9 @@ function configuration_backup(callback) {
                             'PID': jQuery.extend(true, [], PIDs),
                             'RC': jQuery.extend(true, {}, RC_tuning),
                             'AccTrim': jQuery.extend(true, [], CONFIG.accelerometerTrims),
-                            'ServoConfig': jQuery.extend(true, [], SERVO_CONFIG)
+                            'ServoConfig': jQuery.extend(true, [], SERVO_CONFIG),
+                            'ModeRanges': jQuery.extend(true, [], MODE_RANGES),
+                            'AdjustmentRanges': jQuery.extend(true, [], ADJUSTMENT_RANGES)
                         });
 
                         codeKey = 0;
@@ -82,7 +90,10 @@ function configuration_backup(callback) {
                     query();
                 });
             } else {
+                // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
+                /*
                 configuration.AUX = jQuery.extend(true, [], AUX_CONFIG_values);
+                */
                 configuration.MISC = jQuery.extend(true, {}, MISC);
                 configuration.RCMAP = jQuery.extend(true, [], RC_MAP);
                 configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
@@ -107,7 +118,7 @@ function configuration_backup(callback) {
             now = (d.getMonth() + 1) + '.' + d.getDate() + '.' + d.getFullYear() + '.' + d.getHours() + '.' + d.getMinutes();
 
         // create or load the file
-        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'baseflight_backup_' + now, accepts: accepts}, function (fileEntry) {
+        chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'cleanflight_backup_' + now, accepts: accepts}, function (fileEntry) {
             if (chrome.runtime.lastError) {
                 console.error(chrome.runtime.lastError.message);
                 return;
@@ -263,11 +274,15 @@ function configuration_restore(callback) {
                 MSP_codes.MSP_SET_PID,
                 MSP_codes.MSP_SET_RC_TUNING,
                 MSP_codes.MSP_SET_ACC_TRIM,
-                MSP_codes.MSP_SET_SERVO_CONF
+                MSP_codes.MSP_SET_SERVO_CONF,
+                MSP_codes.MSP_SET_CHANNEL_FORWARDING
             ];
 
             var uniqueData = [
+                // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
+                /*
                 MSP_codes.MSP_SET_BOX,
+                */
                 MSP_codes.MSP_SET_MISC,
                 MSP_codes.MSP_SET_RCMAP,
                 MSP_codes.MSP_SET_CONFIG
@@ -295,14 +310,16 @@ function configuration_restore(callback) {
                     RC_tuning = configuration.profiles[profile].RC;
                     CONFIG.accelerometerTrims = configuration.profiles[profile].AccTrim;
                     SERVO_CONFIG = configuration.profiles[profile].ServoConfig;
+                    MODE_RANGES = configuration.profiles[profile].ModeRanges;
+                    ADJUSTMENT_RANGES = configuration.profiles[profile].AdjustmentRanges;
                 }
 
-                function query() {
+                function upload_using_specific_commands() {
                     MSP.send_message(profileSpecificData[codeKey], MSP.crunch(profileSpecificData[codeKey]), false, function () {
                         codeKey++;
 
                         if (codeKey < profileSpecificData.length) {
-                            query();
+                            upload_using_specific_commands();
                         } else {
                             codeKey = 0;
                             savingProfile++;
@@ -311,7 +328,7 @@ function configuration_restore(callback) {
                                 load_objects(savingProfile);
 
                                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [savingProfile], false, query);
+                                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [savingProfile], false, upload_using_specific_commands);
                                 });
                             } else {
                                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
@@ -322,16 +339,26 @@ function configuration_restore(callback) {
                     });
                 }
 
+                function upload_mode_ranges() {
+                    MSP.sendModeRanges(upload_adjustment_ranges);
+                }
+                
+                function upload_adjustment_ranges() {
+                    MSP.sendAdjustmentRanges(upload_using_specific_commands);
+                }
                 // start uploading
                 load_objects(0);
-                query();
+                upload_mode_ranges();
             }
 
             function upload_unique_data() {
                 var codeKey = 0;
 
                 function load_objects() {
+                    // Disabled, cleanflight does not use MSP_BOX.
+                    /*
                     AUX_CONFIG_values = configuration.AUX;
+                    */
                     MISC = configuration.MISC;
                     RC_MAP = configuration.RCMAP;
                     BF_CONFIG = configuration.BF_CONFIG;

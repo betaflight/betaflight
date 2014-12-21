@@ -402,6 +402,9 @@
     "configurationBatteryMaximum": {
         "message": "Maximum Cell Voltage"
     },
+    "configurationBatteryWarning": {
+        "message": "Warning Cell Voltage"
+    },
     "configurationBatteryScale": {
         "message": "Voltage Scale"
     },

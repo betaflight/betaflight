@@ -190,6 +190,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // fill battery
         $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
         $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
+        $('input[name="warningcellvoltage"]').val(MISC.vbatwarningcellvoltage);
         $('input[name="voltagescale"]').val(MISC.vbatscale);
 
         // fill current
@@ -229,6 +230,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val());
             MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val());
+            MISC.vbatwarningcellvoltage = parseFloat($('input[name="warningcellvoltage"]').val());
             MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
 
             BF_CONFIG.currentscale = parseInt($('input[name="currentscale"]').val());

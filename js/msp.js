@@ -292,6 +292,7 @@ var MSP = {
                     }
                 }
                 break;
+            // Disabled, cleanflight does not use MSP_BOX.
             /*
             case MSP_codes.MSP_BOX:
                 AUX_CONFIG_values = []; // empty the array as new data is coming in
@@ -318,7 +319,7 @@ var MSP = {
                 MISC.vbatscale = data.getUint8(18, 1); // 10-200
                 MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
                 MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
-                MISC.placeholder3 = data.getUint8(21, 1);
+                MISC.vbatwarningcellvoltage = data.getUint8(21, 1) / 10; // 10-50
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
@@ -724,12 +725,15 @@ MSP.crunch = function (code) {
             buffer.push(parseInt(RC_tuning.throttle_MID * 100));
             buffer.push(parseInt(RC_tuning.throttle_EXPO * 100));
             break;
+        // Disabled, cleanflight does not use MSP_SET_BOX.
+        /*
         case MSP_codes.MSP_SET_BOX:
             for (var i = 0; i < AUX_CONFIG_values.length; i++) {
                 buffer.push(lowByte(AUX_CONFIG_values[i]));
                 buffer.push(highByte(AUX_CONFIG_values[i]));
             }
             break;
+        */
         case MSP_codes.MSP_SET_RCMAP:
             for (var i = 0; i < RC_MAP.length; i++) {
                 buffer.push(RC_MAP[i]);
@@ -763,7 +767,7 @@ MSP.crunch = function (code) {
             buffer.push(MISC.vbatscale);
             buffer.push(MISC.vbatmincellvoltage * 10);
             buffer.push(MISC.vbatmaxcellvoltage * 10);
-            buffer.push(MISC.placeholder3);
+            buffer.push(MISC.vbatwarningcellvoltage * 10);
             break;
         case MSP_codes.MSP_SET_SERVO_CONF:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
@@ -779,6 +783,11 @@ MSP.crunch = function (code) {
                 buffer.push(lowByte(SERVO_CONFIG[i].rate));
             }
             break;
+        case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
+            for (var i = 0; i < SERVO_CONFIG.length; i++) {
+                buffer.push(SERVO_CONFIG[i].indexOfChannelToForward);
+            }
+            break;
 
         default:
             return false;
@@ -786,3 +795,65 @@ MSP.crunch = function (code) {
 
     return buffer;
 };
+
+
+MSP.sendModeRanges = function(onCompleteCallback) {
+    var nextFunction = send_next_mode_range; 
+    
+    var modeRangeIndex = 0;
+
+    send_next_mode_range();
+
+    
+    function send_next_mode_range() {
+        
+        var modeRange = MODE_RANGES[modeRangeIndex];
+                        
+        var AUX_val_buffer_out = [];
+        AUX_val_buffer_out.push(modeRangeIndex);
+        AUX_val_buffer_out.push(modeRange.id);
+        AUX_val_buffer_out.push(modeRange.auxChannelIndex);
+        AUX_val_buffer_out.push((modeRange.range.start - 900) / 25);
+        AUX_val_buffer_out.push((modeRange.range.end - 900) / 25);
+        
+        // prepare for next iteration
+        modeRangeIndex++;
+        if (modeRangeIndex == MODE_RANGES.length) {
+            nextFunction = onCompleteCallback;
+        
+        }
+        MSP.send_message(MSP_codes.MSP_SET_MODE_RANGE, AUX_val_buffer_out, false, nextFunction);
+    }
+};
+
+MSP.sendAdjustmentRanges = function(onCompleteCallback) {
+    var nextFunction = send_next_adjustment_range; 
+        
+    var adjustmentRangeIndex = 0;
+
+    send_next_adjustment_range();
+
+    
+    function send_next_adjustment_range() {
+        
+        var adjustmentRange = ADJUSTMENT_RANGES[adjustmentRangeIndex];
+                        
+        var ADJUSTMENT_val_buffer_out = [];
+        ADJUSTMENT_val_buffer_out.push(adjustmentRangeIndex);
+        ADJUSTMENT_val_buffer_out.push(adjustmentRange.slotIndex);
+        ADJUSTMENT_val_buffer_out.push(adjustmentRange.auxChannelIndex);
+        ADJUSTMENT_val_buffer_out.push((adjustmentRange.range.start - 900) / 25);
+        ADJUSTMENT_val_buffer_out.push((adjustmentRange.range.end - 900) / 25);
+        ADJUSTMENT_val_buffer_out.push(adjustmentRange.adjustmentFunction);
+        ADJUSTMENT_val_buffer_out.push(adjustmentRange.auxSwitchChannelIndex);
+        
+        // prepare for next iteration
+        adjustmentRangeIndex++;
+        if (adjustmentRangeIndex == ADJUSTMENT_RANGES.length) {
+            nextFunction = onCompleteCallback;
+        
+        }
+        MSP.send_message(MSP_codes.MSP_SET_ADJUSTMENT_RANGE, ADJUSTMENT_val_buffer_out, false, nextFunction);
+    }
+};
+

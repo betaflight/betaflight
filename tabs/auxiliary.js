@@ -178,7 +178,7 @@ TABS.auxiliary.initialize = function (callback) {
             
             MODE_RANGES = [];
             
-            $('.modes .mode').each(function () {
+            $('.tab-auxiliary .modes .mode').each(function () {
                 var modeElement = $(this);
                 var modeId = modeElement.data('id');
                 
@@ -212,33 +212,7 @@ TABS.auxiliary.initialize = function (callback) {
             //
             // send data to FC
             //
-
-            var nextFunction = send_next_mode_range; 
-                
-            var modeRangeIndex = 0;
-
-            send_next_mode_range();
-
-            
-            function send_next_mode_range() {
-                
-                var modeRange = MODE_RANGES[modeRangeIndex];
-                                
-                var AUX_val_buffer_out = [];
-                AUX_val_buffer_out.push(modeRangeIndex);
-                AUX_val_buffer_out.push(modeRange.id);
-                AUX_val_buffer_out.push(modeRange.auxChannelIndex);
-                AUX_val_buffer_out.push((modeRange.range.start - 900) / 25);
-                AUX_val_buffer_out.push((modeRange.range.end - 900) / 25);
-                
-                // prepare for next iteration
-                modeRangeIndex++;
-                if (modeRangeIndex == requiredModesRangeCount) {
-                    nextFunction = save_to_eeprom;
-                
-                }
-                MSP.send_message(MSP_codes.MSP_SET_MODE_RANGE, AUX_val_buffer_out, false, nextFunction);
-            }
+            MSP.sendModeRanges(save_to_eeprom);
 
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {

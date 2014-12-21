@@ -65,7 +65,10 @@ var RC_tuning = {
 
 var AUX_CONFIG = [];
 var AUX_CONFIG_IDS = [];
+//Disabled, cleanflight does not use MSP_BOX.
+/*
 var AUX_CONFIG_values = [];
+*/
 
 var MODE_RANGES = [];
 var ADJUSTMENT_RANGES = [];
@@ -126,5 +129,5 @@ var MISC = {
     vbatscale:              0,
     vbatmincellvoltage:     0,
     vbatmaxcellvoltage:     0,
-    placeholder3:           0
+    vbatwarningcellvoltage: 0
 };
