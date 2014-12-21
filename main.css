@@ -42,7 +42,7 @@ input[type="number"]::-webkit-inner-spin-button {
 #watermark {
     position: absolute;
     text-align: center;
-    top: 30px;
+    top: 35px;
     left: 0;
     bottom: 0;
     right: 0;
