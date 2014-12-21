@@ -193,25 +193,32 @@
 .tab-motors .motor_testing .left {
     width: calc(50% - 50px);
 }
+
 .tab-motors .motor_testing .sliders input {
     -webkit-appearance: slider-vertical;
 
     width: calc((100% / 9) - 13px);
     height: 100px;
 
-    margin-right: 10px;
+    margin-left: 10px;
 }
 .tab-motors .motor_testing .sliders input:first-child {
-    /* margin-left: 2px; */ /* seems to vary depending on chrome version O.o */
+    margin-left: 0px;
 }
+
 .tab-motors .motor_testing .values {
     margin-top: 5px;
 }
+
+.tab-motors .motor_testing .values li:first-child {
+    margin-left: 0px;
+}
+
 .tab-motors .motor_testing .values li {
     float: left;
 
     width: calc((100% / 9) - 10px);
-    margin-right: 10px;
+    margin-left: 10px;
 
     text-align: center;
 }
