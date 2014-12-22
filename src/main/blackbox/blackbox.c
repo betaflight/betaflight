@@ -26,14 +26,15 @@
 #include "common/axis.h"
 #include "common/color.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/light_led.h"
-
 #include "drivers/gpio.h"
+#include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/compass.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/accgyro.h"
+#include "drivers/light_led.h"
 
 #include "common/printf.h"
 
@@ -844,7 +845,8 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
     size_t conditionsStride = (char*) secondCondition - (char*) conditions;
 
     /*
-     * Send information about the fields we're recording to the log. Once again, we're chunking up the data so we don't exceed our datarate.
+     * We're chunking up the header data so we don't exceed our datarate. So we'll be called multiple times to transmit
+     * the whole header.
      */
     if (fieldXmitIndex == -1) {
         if (headerXmitIndex >= headerCount)
@@ -911,14 +913,13 @@ void handleBlackbox(void)
                 for (i = 0; i < SERIAL_CHUNK_SIZE && blackboxHeader[headerXmitIndex] != '\0'; i++, headerXmitIndex++)
                     blackboxWrite(blackboxHeader[headerXmitIndex]);
 
-                if (blackboxHeader[headerXmitIndex] == '\0') {
+                if (blackboxHeader[headerXmitIndex] == '\0')
                     blackboxSetState(BLACKBOX_STATE_SEND_FIELDINFO);
-                }
             }
         break;
         case BLACKBOX_STATE_SEND_FIELDINFO:
             //On entry of this state, headerXmitIndex is 0 and fieldXmitIndex is -1
-            if (!sendFieldDefinition(blackboxMainHeaderNames, ARRAY_LENGTH(blackboxMainHeaderNames), blackboxMainFields, &blackboxMainFields[1],
+            if (!sendFieldDefinition(blackboxMainHeaderNames, ARRAY_LENGTH(blackboxMainHeaderNames), blackboxMainFields, blackboxMainFields + 1,
                     ARRAY_LENGTH(blackboxMainFields), &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
                 if (feature(FEATURE_GPS))
                     blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADERS);
@@ -928,14 +929,14 @@ void handleBlackbox(void)
         break;
         case BLACKBOX_STATE_SEND_GPS_H_HEADERS:
             //On entry of this state, headerXmitIndex is 0 and fieldXmitIndex is -1
-            if (!sendFieldDefinition(blackboxGPSHHeaderNames, ARRAY_LENGTH(blackboxGPSHHeaderNames), blackboxGpsHFields, &blackboxGpsHFields[1],
+            if (!sendFieldDefinition(blackboxGPSHHeaderNames, ARRAY_LENGTH(blackboxGPSHHeaderNames), blackboxGpsHFields, blackboxGpsHFields + 1,
                     ARRAY_LENGTH(blackboxGpsHFields), NULL, 0)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADERS);
             }
         break;
         case BLACKBOX_STATE_SEND_GPS_G_HEADERS:
             //On entry of this state, headerXmitIndex is 0 and fieldXmitIndex is -1
-            if (!sendFieldDefinition(blackboxGPSGHeaderNames, ARRAY_LENGTH(blackboxGPSGHeaderNames), blackboxGpsGFields, &blackboxGpsGFields[1],
+            if (!sendFieldDefinition(blackboxGPSGHeaderNames, ARRAY_LENGTH(blackboxGPSGHeaderNames), blackboxGpsGFields, blackboxGpsGFields + 1,
                     ARRAY_LENGTH(blackboxGpsGFields), NULL, 0)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
