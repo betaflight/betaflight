@@ -24,7 +24,8 @@
 typedef struct batteryConfig_s {
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
     uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
-    uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery out alarms, in 0.1V units, default is 33 (3.3V)
+    uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
+    uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
 
     uint16_t currentMeterScale;             // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
     uint16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
@@ -34,6 +35,12 @@ typedef struct batteryConfig_s {
     uint16_t batteryCapacity;               // mAh
 } batteryConfig_t;
 
+typedef enum {
+    BATTERY_OK = 0,
+    BATTERY_WARNING,
+    BATTERY_CRITICAL
+} batteryState_e;
+
 extern uint8_t vbat;
 extern uint8_t batteryCellCount;
 extern uint16_t batteryWarningVoltage;
@@ -41,7 +48,7 @@ extern int32_t amperage;
 extern int32_t mAhDrawn;
 
 uint16_t batteryAdcToVoltage(uint16_t src);
-bool shouldSoundBatteryAlarm(void);
+batteryState_e calculateBatteryState(void);
 void updateBatteryVoltage(void);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 

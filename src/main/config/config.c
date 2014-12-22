@@ -27,7 +27,10 @@
 #include "common/axis.h"
 #include "flight/flight.h"
 
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/compass.h"
+
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
@@ -35,6 +38,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
+#include "sensors/compass.h"
 
 #include "io/statusindicator.h"
 #include "sensors/acceleration.h"
@@ -104,7 +108,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 86;
+static const uint8_t EEPROM_CONF_VERSION = 88;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -216,6 +220,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatscale = VBAT_SCALE_DEFAULT;
     batteryConfig->vbatmaxcellvoltage = 43;
     batteryConfig->vbatmincellvoltage = 33;
+    batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
@@ -328,6 +333,8 @@ static void resetConf(void)
     masterConfig.max_angle_inclination = 500;    // 50 degrees
     masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
+
+    masterConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 

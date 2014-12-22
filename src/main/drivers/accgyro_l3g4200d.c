@@ -26,6 +26,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_l3g4200d.h"
 

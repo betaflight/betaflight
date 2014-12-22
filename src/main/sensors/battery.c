@@ -27,7 +27,8 @@
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count
-uint16_t batteryWarningVoltage;     // annoying beeper after this one, battery ready to be dead
+uint16_t batteryWarningVoltage;
+uint16_t batteryCriticalVoltage;
 
 uint8_t vbat = 0;                   // battery voltage in 0.1V steps
 
@@ -62,9 +63,15 @@ void updateBatteryVoltage(void)
     vbat = batteryAdcToVoltage(vbatSampleTotal / BATTERY_SAMPLE_COUNT);
 }
 
-bool shouldSoundBatteryAlarm(void)
+batteryState_e calculateBatteryState(void)
 {
-    return !((vbat > batteryWarningVoltage) || (vbat < batteryConfig->vbatmincellvoltage));
+    if (vbat <= batteryCriticalVoltage) {
+        return BATTERY_CRITICAL;
+    }
+    if (vbat <= batteryWarningVoltage) {
+        return BATTERY_WARNING;
+    }
+    return BATTERY_OK;
 }
 
 void batteryInit(batteryConfig_t *initialBatteryConfig)
@@ -85,7 +92,8 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
     }
 
     batteryCellCount = i;
-    batteryWarningVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage; // 3.3V per cell minimum, configurable in CLI
+    batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
+    batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
 }
 
 #define ADCVREF 33L

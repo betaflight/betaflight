@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -62,6 +64,14 @@ static gimbalConfig_t *gimbalConfig;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static MultiType currentMixerConfiguration;
 
+static const motorMixer_t mixerQuadX[] = {
+    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+};
+
+#ifndef CJMCU
 static const motorMixer_t mixerTri[] = {
     { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
     { 1.0f, -1.0f, -0.666667f,  0.0f },     // RIGHT
@@ -73,13 +83,6 @@ static const motorMixer_t mixerQuadP[] = {
     { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
     { 1.0f,  1.0f,  0.0f,  1.0f },          // LEFT
     { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
-};
-
-static const motorMixer_t mixerQuadX[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
 };
 
 static const motorMixer_t mixerBi[] = {
@@ -161,6 +164,13 @@ static const motorMixer_t mixerVtail4[] = {
     { 1.0f,  1.0f, -1.0f, -0.0f },          // FRONT_L
 };
 
+static const motorMixer_t mixerAtail4[] = {
+    { 1.0f, 0.0f, 1.0f, 1.0f },             // REAR_R
+    { 1.0f, -1.0f, -1.0f, 0.0f },           // FRONT_R
+    { 1.0f, 0.0f, 1.0f, -1.0f },            // REAR_L
+    { 1.0f, 1.0f, -1.0f, -0.0f },           // FRONT_L
+};
+
 static const motorMixer_t mixerHex6H[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
     { 1.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
@@ -200,8 +210,10 @@ const mixer_t mixers[] = {
     { 0, 1, NULL },                // * MULTITYPE_PPM_TO_SERVO
     { 2, 1, mixerDualcopter  },    // MULTITYPE_DUALCOPTER
     { 1, 1, NULL },                // MULTITYPE_SINGLECOPTER
+    { 4, 0, mixerAtail4 },         // MULTITYPE_ATAIL4
     { 0, 0, NULL },                // MULTITYPE_CUSTOM
 };
+#endif
 
 void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse, escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse, airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfigToUse, gimbalConfig_t *gimbalConfigToUse)
 {
@@ -245,6 +257,8 @@ int servoDirection(int nr, int lr)
 
 static motorMixer_t *customMixers;
 
+
+#ifndef CJMCU
 void mixerInit(MultiType mixerConfiguration, motorMixer_t *initialCustomMixers)
 {
     currentMixerConfiguration = mixerConfiguration;
@@ -302,6 +316,32 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 
     mixerResetMotors();
 }
+#else
+
+void mixerInit(MultiType mixerConfiguration, motorMixer_t *initialCustomMixers)
+{
+    currentMixerConfiguration = mixerConfiguration;
+
+    customMixers = initialCustomMixers;
+
+    useServo = false;
+}
+
+void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
+{
+    UNUSED(pwmOutputConfiguration);
+    motorCount = 4;
+    servoCount = 0;
+
+    uint8_t i;
+    for (i = 0; i < motorCount; i++) {
+        currentMixer[i] = mixerQuadX[i];
+    }
+
+    mixerResetMotors();
+}
+#endif
+
 
 void mixerResetMotors(void)
 {
@@ -311,6 +351,7 @@ void mixerResetMotors(void)
         motor_disarmed[i] = feature(FEATURE_3D) ? flight3DConfig->neutral3d : escAndServoConfig->mincommand;
 }
 
+#ifndef CJMCU
 void mixerLoadMix(int index, motorMixer_t *customMixers)
 {
     int i;
@@ -327,6 +368,7 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
             customMixers[i] = mixers[index].motor[i];
     }
 }
+#endif
 
 static void updateGimbalServos(void)
 {

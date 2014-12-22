@@ -266,6 +266,7 @@ EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
 		   drivers/barometer_ms5611.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
+		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/gpio_stm32f10x.c \
@@ -428,6 +429,7 @@ SPARKY_SRC	 = $(STM32F30x_COMMON_SRC) \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu9150.c \
 		   drivers/barometer_ms5611.c \
+		   drivers/compass_ak8975.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 

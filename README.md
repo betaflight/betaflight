@@ -43,10 +43,14 @@ For a list of features, changes and some discussion please review the thread on 
 
 http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
 
+## Installation
+
+See: https://github.com/cleanflight/cleanflight/blob/master/docs/Installation.md 
+
 
 ## Documentation
 
-There is lots of documentation here: https://github.com/hydra/cleanflight/tree/master/docs 
+There is lots of documentation here: https://github.com/cleanflight/cleanflight/tree/master/docs 
 
 If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
 

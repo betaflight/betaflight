@@ -26,6 +26,7 @@
 #include "gpio.h"
 #include "bus_spi.h"
 
+#include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_l3gd20.h"
 

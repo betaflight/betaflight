@@ -30,10 +30,11 @@
 #include "gpio.h"
 #include "bus_i2c.h"
 
+#include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu9150.h"
 
-#define MPU9150_ADDRESS         0xD0
+#define MPU9150_ADDRESS         0xD0 // (204) 1101000 // See http://www.invensense.com/mems/gyro/documents/PS-MPU-9150A-00v4_3.pdf, section 6.5.
 
 #define DMP_MEM_START_ADDR 0x6E
 #define DMP_MEM_R_W 0x6F

@@ -23,6 +23,7 @@
 #include "system.h"
 #include "bus_i2c.h"
 
+#include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_adxl345.h"
 

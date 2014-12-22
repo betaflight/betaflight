@@ -17,5 +17,5 @@
 
 #pragma once
 
-void beepcodeUpdateState(batteryState_e batteryState);
-void queueConfirmationBeep(uint8_t duration);
+typedef void (*sensorInitFuncPtr)(void);                    // sensor init prototype
+typedef void (*sensorReadFuncPtr)(int16_t *data);           // sensor read and align prototype

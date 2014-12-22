@@ -23,6 +23,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "flight/flight.h"
 #include "sensors/sensors.h"

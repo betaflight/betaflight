@@ -63,6 +63,10 @@
 #define USE_BARO_BMP085
 
 #define MAG
+#define USE_MAG_HMC5883
+#define USE_MAG_AK8975
+
+
 #define SONAR
 #define LED0
 #define LED1

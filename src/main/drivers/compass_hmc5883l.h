@@ -23,6 +23,6 @@ typedef struct hmc5883Config_s {
     GPIO_TypeDef *gpioPort;
 } hmc5883Config_t;
 
-bool hmc5883lDetect(void);
-void hmc5883lInit(hmc5883Config_t *hmc5883Config);
+bool hmc5883lDetect(mag_t* mag, hmc5883Config_t *hmc5883ConfigToUse);
+void hmc5883lInit(void);
 void hmc5883lRead(int16_t *magData);

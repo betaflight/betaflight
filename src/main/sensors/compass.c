@@ -22,6 +22,8 @@
 
 #include "common/axis.h"
 
+#include "drivers/sensor.h"
+#include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
@@ -38,6 +40,9 @@
 #include "hardware_revision.h"
 #endif
 
+mag_t mag;                   // mag access functions
+uint8_t magHardware = MAG_DEFAULT;
+
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
 int16_t magADC[XYZ_AXIS_COUNT];
@@ -49,27 +54,7 @@ void compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
-
-    hmc5883Config_t *hmc5883Config = 0;
-#ifdef NAZE
-    hmc5883Config_t nazeHmc5883Config;
-
-    if (hardwareRevision < NAZE32_REV5) {
-        nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOB;
-        nazeHmc5883Config.gpioPin = Pin_12;
-        nazeHmc5883Config.gpioPort = GPIOB;
-    } else {
-        nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOC;
-        nazeHmc5883Config.gpioPin = Pin_14;
-        nazeHmc5883Config.gpioPort = GPIOC;
-    }
-
-    hmc5883Config = &nazeHmc5883Config;
-#endif
-
-    hmc5883lInit(hmc5883Config);
-
-
+    mag.init();
     LED1_OFF;
     magInit = 1;
 }
@@ -88,7 +73,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
 
     nextUpdateAt = currentTime + COMPASS_UPDATE_FREQUENCY_10HZ;
 
-    hmc5883lRead(magADC);
+    mag.read(magADC);
     alignSensors(magADC, magADC, magAlign);
 
     if (STATE(CALIBRATE_MAG)) {

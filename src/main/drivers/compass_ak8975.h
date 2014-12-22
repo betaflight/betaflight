@@ -17,5 +17,6 @@
 
 #pragma once
 
-void beepcodeUpdateState(batteryState_e batteryState);
-void queueConfirmationBeep(uint8_t duration);
+bool ak8975detect(mag_t *mag);
+void ak8975Init(void);
+void ak8975Read(int16_t *magData);

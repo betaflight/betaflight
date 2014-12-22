@@ -17,10 +17,21 @@
 
 #pragma once
 
+// Type of accelerometer used/detected
+typedef enum MagSensors {
+    MAG_DEFAULT = 0,
+    MAG_HMC5883 = 1,
+    MAG_AK8975 = 2,
+    MAG_NONE = 3
+} magSensor_e;
+
 #ifdef MAG
 void compassInit(void);
 void updateCompass(flightDynamicsTrims_t *magZero);
 #endif
 
 extern int16_t magADC[XYZ_AXIS_COUNT];
+
+extern uint8_t magHardware;
 extern sensor_align_e magAlign;
+extern mag_t mag;

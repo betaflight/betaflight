@@ -24,8 +24,9 @@
 
 #include "common/axis.h"
 
-#include "drivers/accgyro.h"
+#include "drivers/sensor.h"
 
+#include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
 #include "drivers/accgyro_bma280.h"
 #include "drivers/accgyro_l3g4200d.h"
@@ -43,8 +44,13 @@
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
 #include "drivers/barometer_ms5611.h"
+
+#include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
+#include "drivers/compass_ak8975.h"
+
 #include "drivers/sonar_hcsr04.h"
+
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 
@@ -330,7 +336,7 @@ retry:
 
     // Found anything? Check if error or ACC is really missing.
     if (accHardware == ACC_DEFAULT) {
-        if (accHardwareToUse > ACC_DEFAULT) {
+        if (accHardwareToUse > ACC_DEFAULT && accHardwareToUse < ACC_NONE) {
             // Nothing was found and we have a forced sensor that isn't present.
             accHardwareToUse = ACC_DEFAULT;
             goto retry;
@@ -384,6 +390,77 @@ static void detectBaro()
     sensorsClear(SENSOR_BARO);
 }
 
+static void detectMag(uint8_t magHardwareToUse)
+{
+#ifdef USE_MAG_HMC5883
+    static hmc5883Config_t *hmc5883Config = 0;
+
+#ifdef NAZE
+    hmc5883Config_t nazeHmc5883Config;
+
+    if (hardwareRevision < NAZE32_REV5) {
+        nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOB;
+        nazeHmc5883Config.gpioPin = Pin_12;
+        nazeHmc5883Config.gpioPort = GPIOB;
+    } else {
+        nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOC;
+        nazeHmc5883Config.gpioPin = Pin_14;
+        nazeHmc5883Config.gpioPort = GPIOC;
+    }
+
+    hmc5883Config = &nazeHmc5883Config;
+#endif
+#endif
+
+retry:
+
+    magAlign = ALIGN_DEFAULT;
+
+    switch(magHardwareToUse) {
+        case MAG_NONE: // disable MAG
+            sensorsClear(SENSOR_MAG);
+            break;
+        case MAG_DEFAULT: // autodetect
+
+#ifdef USE_MAG_HMC5883
+        case MAG_HMC5883:
+            if (hmc5883lDetect(&mag, hmc5883Config)) {
+#ifdef NAZE
+                magAlign = CW180_DEG;
+#endif
+                magHardware = MAG_HMC5883;
+                if (magHardwareToUse == MAG_HMC5883)
+                    break;
+
+            }
+            ; // fallthrough
+#endif
+
+#ifdef USE_MAG_AK8975
+        case MAG_AK8975:
+            if (ak8975detect(&mag)) {
+                magHardware = MAG_AK8975;
+                if (magHardwareToUse == MAG_AK8975)
+                    break;
+            }
+            ; // fallthrough
+#endif
+            ; // prevent compiler error.
+    }
+
+    if (magHardware == MAG_DEFAULT) {
+        if (magHardwareToUse > MAG_DEFAULT && magHardwareToUse < MAG_NONE) {
+            // Nothing was found and we have a forced sensor that isn't present.
+            magHardwareToUse = MAG_DEFAULT;
+            goto retry;
+        } else {
+            // No MAG was detected
+            sensorsClear(SENSOR_MAG);
+        }
+    }
+
+}
+
 void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
     if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
@@ -397,7 +474,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int16_t magDeclinationFromConfig)
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, int16_t magDeclinationFromConfig)
 {
     int16_t deg, min;
     memset(&acc, sizeof(acc), 0);
@@ -409,16 +486,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     sensorsSet(SENSOR_GYRO);
     detectAcc(accHardwareToUse);
     detectBaro();
-
-#ifdef MAG
-    if (hmc5883lDetect()) {
-#ifdef NAZE
-        magAlign = CW180_DEG;
-#endif
-    } else {
-        sensorsClear(SENSOR_MAG);
-    }
-#endif
+    detectMag(magHardwareToUse);
 
     reconfigureAlignment(sensorAlignmentConfig);
 

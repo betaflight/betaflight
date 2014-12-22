@@ -30,7 +30,11 @@
 #include "common/maths.h"
 
 #include "drivers/system.h"
+
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/compass.h"
+
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
@@ -206,14 +210,15 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)
 #define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
 
-// DO NOT IMPLEMENT "MSP_CONFIG" and MSP_SET_CONFIG in Cleanflight, isolated commands already exist
-//#define MSP_CONFIG                    66 //out message baseflight-specific settings that aren't covered elsewhere
-//#define MSP_SET_CONFIG                67 //in message baseflight-specific settings save
+// FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
+// DEPRECATED - DO NOT USE "MSP_CONFIG" and MSP_SET_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
+#define MSP_CONFIG                      66 //out message baseflight-specific settings that aren't covered elsewhere
+#define MSP_SET_CONFIG                  67 //in message baseflight-specific settings save
 
 #define MSP_REBOOT                      68 //in message reboot settings
 
 // DEPRECATED - Use MSP_API_VERSION instead
-//#define MSP_BUILD_INFO                  69 //out message build date as well as some space for future expansion
+#define MSP_BUILD_INFO                  69 //out message build date as well as some space for future expansion
 
 //
 // Multwii original MSP commands
@@ -901,18 +906,33 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_MISC:
         headSerialReply(2 * 6 + 4 + 2 + 4);
-        serialize16(0); // intPowerTrigger1 (aka useless trash)
+        serialize16(masterConfig.rxConfig.midrc);
+
         serialize16(masterConfig.escAndServoConfig.minthrottle);
         serialize16(masterConfig.escAndServoConfig.maxthrottle);
         serialize16(masterConfig.escAndServoConfig.mincommand);
+
         serialize16(currentProfile->failsafeConfig.failsafe_throttle);
-        serialize16(0); // plog useless shit
-        serialize32(0); // plog useless shit
-        serialize16(currentProfile->mag_declination / 10); // TODO check this shit
+
+#ifdef GPS
+        serialize8(masterConfig.gpsConfig.provider); // gps_type
+        serialize8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
+        serialize8(masterConfig.gpsConfig.sbasMode); // gps_ubx_sbas
+#else
+        serialize8(0); // gps_type
+        serialize8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
+        serialize8(0); // gps_ubx_sbas
+#endif
+        serialize8(masterConfig.batteryConfig.multiwiiCurrentMeterOutput);
+        serialize8(masterConfig.rxConfig.rssi_channel);
+        serialize8(0);
+
+        serialize16(currentProfile->mag_declination / 10);
+
         serialize8(masterConfig.batteryConfig.vbatscale);
         serialize8(masterConfig.batteryConfig.vbatmincellvoltage);
         serialize8(masterConfig.batteryConfig.vbatmaxcellvoltage);
-        serialize8(0);
+        serialize8(masterConfig.batteryConfig.vbatwarningcellvoltage);
         break;
     case MSP_MOTOR_PINS:
         headSerialReply(8);
@@ -1030,6 +1050,22 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(masterConfig.rxConfig.rcmap[i]);
         break;
 
+    case MSP_CONFIG:
+        headSerialReply(1 + 4 + 1 + 2 + 2 + 2 + 2 + 2);
+        serialize8(masterConfig.mixerConfiguration);
+
+        serialize32(featureMask());
+
+        serialize8(masterConfig.rxConfig.serialrx_provider);
+
+        serialize16(masterConfig.boardAlignment.rollDegrees);
+        serialize16(masterConfig.boardAlignment.pitchDegrees);
+        serialize16(masterConfig.boardAlignment.yawDegrees);
+
+        serialize16(masterConfig.batteryConfig.currentMeterScale);
+        serialize16(masterConfig.batteryConfig.currentMeterOffset);
+        break;
+
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
         headSerialReply(CONFIGURABLE_COLOR_COUNT * 4);
@@ -1052,6 +1088,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         }
         break;
 #endif
+    case MSP_BUILD_INFO:
+        headSerialReply(11 + 4 + 4);
+        for (i = 0; i < 11; i++)
+        serialize8(buildDate[i]); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
+        serialize32(0); // future exp
+        serialize32(0); // future exp
+        break;
 
     default:
         return false;
@@ -1062,6 +1105,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 static bool processInCommand(void)
 {
     uint32_t i;
+    uint16_t tmp;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1165,18 +1209,35 @@ static bool processInCommand(void)
         currentControlRateProfile->thrExpo8 = read8();
         break;
     case MSP_SET_MISC:
-        read16(); // powerfailmeter
+        tmp = read16();
+        if (tmp < 1600 && tmp > 1400)
+            masterConfig.rxConfig.midrc = tmp;
+
         masterConfig.escAndServoConfig.minthrottle = read16();
         masterConfig.escAndServoConfig.maxthrottle = read16();
         masterConfig.escAndServoConfig.mincommand = read16();
+
         currentProfile->failsafeConfig.failsafe_throttle = read16();
-        read16();
-        read32();
+
+#ifdef GPS
+        masterConfig.gpsConfig.provider = read8(); // gps_type
+        read8(); // gps_baudrate
+        masterConfig.gpsConfig.sbasMode = read8(); // gps_ubx_sbas
+#else
+        read8(); // gps_type
+        read8(); // gps_baudrate
+        read8(); // gps_ubx_sbas
+#endif
+        masterConfig.batteryConfig.multiwiiCurrentMeterOutput = read8();
+        masterConfig.rxConfig.rssi_channel = read8();
+        read8();
+
         currentProfile->mag_declination = read16() * 10;
+
         masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
         masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
-        read8();                            // vbatlevel_crit (unused)
+        masterConfig.batteryConfig.vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
         break;
     case MSP_SET_MOTOR:
         for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
@@ -1264,31 +1325,26 @@ static bool processInCommand(void)
         break;
 #endif
     case MSP_SET_FEATURE:
-        headSerialReply(0);
         featureClearAll();
         featureSet(read32()); // features bitmap
         break;
 
     case MSP_SET_BOARD_ALIGNMENT:
-        headSerialReply(0);
         masterConfig.boardAlignment.rollDegrees = read16();
         masterConfig.boardAlignment.pitchDegrees = read16();
         masterConfig.boardAlignment.yawDegrees = read16();
         break;
 
     case MSP_SET_CURRENT_METER_CONFIG:
-        headSerialReply(0);
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();
         break;
 
     case MSP_SET_MIXER:
-        headSerialReply(0);
         masterConfig.mixerConfiguration = read8();
         break;
 
     case MSP_SET_RX_CONFIG:
-        headSerialReply(0);
         masterConfig.rxConfig.serialrx_provider = read8();
         masterConfig.rxConfig.maxcheck = read16();
         masterConfig.rxConfig.midrc = read16();
@@ -1297,21 +1353,38 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RSSI_CONFIG:
-        headSerialReply(0);
         masterConfig.rxConfig.rssi_channel = read8();
         break;
 
-
     case MSP_SET_RX_MAP:
-        headSerialReply(0);
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
             masterConfig.rxConfig.rcmap[i] = read8();
         }
         break;
 
+    case MSP_SET_CONFIG:
+
+#ifdef CJMCU
+        masterConfig.mixerConfiguration = read8(); // multitype
+#else
+        read8(); // multitype
+#endif
+
+        featureClearAll();
+        featureSet(read32()); // features bitmap
+
+        masterConfig.rxConfig.serialrx_provider = read8(); // serialrx_type
+
+        masterConfig.boardAlignment.rollDegrees = read16(); // board_align_roll
+        masterConfig.boardAlignment.pitchDegrees = read16(); // board_align_pitch
+        masterConfig.boardAlignment.yawDegrees = read16(); // board_align_yaw
+
+        masterConfig.batteryConfig.currentMeterScale = read16();
+        masterConfig.batteryConfig.currentMeterOffset = read16();
+        break;
+
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
-        headSerialReply(0);
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.colors[i];
             color->h = read16();
@@ -1321,7 +1394,6 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_LED_STRIP_CONFIG:
-        headSerialReply(MAX_LED_STRIP_LENGTH * 6);
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
             uint16_t mask;
@@ -1342,7 +1414,6 @@ static bool processInCommand(void)
         break;
 #endif
     case MSP_REBOOT:
-        headSerialReply(0);
         isRebootScheduled = true;
         break;
 
@@ -1421,6 +1492,10 @@ void mspProcess(void)
         mspProcessPort();
 
         if (isRebootScheduled) {
+            // pause a little while to allow response to be sent
+            while (!isSerialTransmitBufferEmpty(candidatePort->port)) {
+                delay(50);
+            }
             systemReset();
         }
     }

@@ -17,5 +17,7 @@
 
 #pragma once
 
-void beepcodeUpdateState(batteryState_e batteryState);
-void queueConfirmationBeep(uint8_t duration);
+typedef struct mag_s {
+    sensorInitFuncPtr init;                                 // initialize function
+    sensorReadFuncPtr read;                                 // read 3 axis data function
+} mag_t;

@@ -22,8 +22,12 @@
 
 #include "common/axis.h"
 
+#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+
 #include "flight/flight.h"
+
+#include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "io/beeper.h"
 #include "sensors/boardalignment.h"
