@@ -13,6 +13,7 @@
 'use strict';
 
 var STM32DFU_protocol = function () {
+    this.callback; // ref
     this.hex; // ref
     this.verify_hex;
 
@@ -62,12 +63,13 @@ var STM32DFU_protocol = function () {
     };
 };
 
-STM32DFU_protocol.prototype.connect = function (device, hex) {
+STM32DFU_protocol.prototype.connect = function (device, hex, callback) {
     var self = this;
     self.hex = hex;
+    self.callback = callback;
 
     // reset and set some variables before we start
-    self.upload_time_start = microtime();
+    self.upload_time_start = new Date().getTime();
     self.verify_hex = [];
 
     // reset progress bar to initial state
@@ -466,9 +468,13 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
             break;
         case 99:
             // cleanup
-            console.log('Script finished after: ' + (microtime() - self.upload_time_start).toFixed(4) + ' seconds');
-
             self.releaseInterface(0);
+
+            var timeSpent = new Date().getTime() - self.upload_time_start;
+
+            console.log('Script finished after: ' + (timeSpent / 1000) + ' seconds');
+
+            if (self.callback) self.callback();
             break;
     }
 };

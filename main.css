@@ -9,7 +9,7 @@ html, body {
     height: 100%;
 }
 body {
-    font-family: sans-serif;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
     font-size: 12px;
     color: #303030;
     background-color: #dfddd0;
@@ -22,17 +22,8 @@ a:hover {
     text-decoration: none;
 }
 input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-
-    display: block;
     opacity: 1; /* required for chromium 33+ beta */
-
-    width: 15px;
-
-    background-image: url('../images/arrows.png');
-    background-repeat: no-repeat;
-
-    border-left: 1px solid silver;
+    margin-left: 5px;
 }
 .clear-both {
     clear: both;
@@ -44,108 +35,93 @@ input[type="number"]::-webkit-inner-spin-button {
     float: right;
 }
 #main-wrapper {
-    margin: 10px auto 0 auto;
-    padding: 0 10px 0 10px;
-
-    height: calc(100% - 10px); /* - padding */
+    padding: 5px 5px 0 5px;
+    height: calc(100% - 5px);
 }
+
+#watermark {
+    position: absolute;
+    text-align: center;
+    top: 35px;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: -1;
+    overflow: hidden;
+
+    font-family: monospace;
+    color: grey;
+    font-size: 50px;
+    font-variant: small-caps;
+    letter-spacing: 0.5em;
+}
+
 #port-picker {
     float: left;
 
-    height: 22px;
-    margin-bottom: 10px;
+    height: 20px;
+    margin-bottom: 5px;
 }
-    #port-picker li {
-        float: left;
-    }
-    #port-picker select {
-        height: 20px;
-        line-height: 20px;
-
-        float: left;
-        margin-right: 10px;
-
-        border: 1px solid silver;
-    }
-    #port-picker #port {
-        width: 120px;
-    }
-    #port-picker #baud {
-        width: 80px;
-    }
-    #port-picker #delay {
-        width: 60px;
-    }
-    #port-picker a {
-        float: left;
-
-        display: block;
-
-        width: 80px;
-        height: 18px;
-        border: 1px solid silver;
-
-        line-height: 18px;
-        text-align: center;
-    }
-    #port-picker a.connect {
-        margin-right: 10px;
-
-        background-color: #be2222;
-        color: white;
-
-        font-weight: bold;
-    }
-        #port-picker a.connect:hover {
-            text-decoration: none;
-            background-color: #ea3131;
-        }
-    #port-picker a.connect.active {
-        background-color: #0fab16;
-    }
-        #port-picker a.connect.active:hover {
-            background-color: #13d81d;
-        }
-    #port-picker input.auto_connect {
-        float: left;
-
-        margin-top: 4px;
-    }
-    #port-picker span.auto_connect {
-        float: left;
-
-        margin: 3px 0 0 5px;
-    }
-        .modelPanel .model {
-        float: left;
-        height: 15px;
-        margin: 10px 0 0 10px;
-
-        font-weight: bold;
-    }
-
-.modelPanel {
-    position: relative;
-    width:110px;
-    height: 150px;
+#port-picker li {
     float: left;
 }
+#port-picker select {
+    height: 20px;
+    line-height: 20px;
 
-.modelPanel .modelMixDiagram {
-    position: absolute;
+    float: left;
+    margin-right: 5px;
 
-    top: 32px;
-    left: 10px;
+    border: 1px solid silver;
 }
-
-.modelPanel .modelMixAirplane { /* Position airplane correctly */
-    height: 35%;
-    padding-left: 0px;
+#port-picker #port {
+    width: 120px;
 }
+#port-picker #baud {
+    width: 80px;
+}
+#port-picker #delay {
+    width: 60px;
+}
+#port-picker a {
+    float: left;
 
-.modelPanel .modelMixCustom { /* Position question mark correctly */
-    height: 20%; /* resize question mark */
-    padding-left: 25px;
+    display: block;
+
+    width: 80px;
+    height: 18px;
+    border: 1px solid silver;
+
+    line-height: 18px;
+    text-align: center;
+}
+#port-picker a.connect {
+    margin-right: 10px;
+
+    background-color: #be2222;
+    color: white;
+
+    font-weight: bold;
+}
+#port-picker a.connect:hover {
+    text-decoration: none;
+    background-color: #ea3131;
+}
+#port-picker a.connect.active {
+    background-color: #0fab16;
+}
+#port-picker a.connect.active:hover {
+    background-color: #13d81d;
+}
+#port-picker input.auto_connect {
+    float: left;
+
+    margin-top: 4px;
+}
+#port-picker span.auto_connect {
+    float: left;
+
+    margin: 3px 0 0 5px;
 }
 
 #sensor-status {
@@ -156,58 +132,55 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 22px;
     line-height: 22px;
 }
-    #sensor-status li {
-        float: left;
+#sensor-status li {
+    float: left;
 
-        padding: 0 12px 0 12px;
+    padding: 0 12px 0 12px;
 
-        height: 18px;
-        line-height: 18px;
+    height: 18px;
+    line-height: 18px;
 
-        color: white;
-        text-align: center;
+    color: white;
+    text-align: center;
 
-        border: 1px solid #c0c0c0;
-        border-right: 0;
+    border: 1px solid #c0c0c0;
+    border-right: 0;
 
-        background-color: #901515;
-    }
-    #sensor-status li:last-child {
-        border-right: 1px solid #c0c0c0;
-    }
-    #sensor-status .on {
-        background-color: #076b0c;
-    }
+    background-color: #e32424;
+}
+#sensor-status li:last-child {
+    border-right: 1px solid #c0c0c0;
+}
+#sensor-status .on {
+    background-color: #b8cf02;
+}
 #options {
     float: right;
-
-    margin-top: 1px;
 
     width: 20px;
     height: 20px;
 
+    background-image: url('./images/ic_settings_24px.svg');
+    background-position: -1px -1px;
+    background-repeat: no-repeat;
+
     opacity: 0.6;
 }
-    #options:before {
-        font-family: icons;
-        content: '\e600';
-        font-size: 18px;
-    }
-    #options:hover {
-        opacity: 0.70;
-    }
-    #options.active {
-        opacity: 0.70;
-    }
-    #options.active:hover {
-        opacity: 0.85;
-    }
+#options:hover {
+    opacity: 0.7;
+}
+#options.active {
+    opacity: 0.7;
+}
+#options.active:hover {
+    opacity: 0.85;
+}
 #options-window {
     display: none;
     position: fixed;
 
-    right: 10px;
-    top: 32px;
+    right: 30px;
+    top: 15px;
 
     padding: 5px;
 
@@ -216,33 +189,33 @@ input[type="number"]::-webkit-inner-spin-button {
     border: 1px solid silver;
     background-color: white;
 }
-    #options-window input {
-        float: left;
+#options-window input {
+    float: left;
 
-        margin-top: 3px;
-        margin-right: 5px;
-    }
+    margin-top: 3px;
+    margin-right: 5px;
+}
 #log {
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 
-    height: 60px;
+    height: 65px;
 
     border: 1px solid silver;
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.5);
 
     overflow-y: scroll;
 }
-    #log .wrapper {
-        padding: 5px;
+#log .wrapper {
+    padding: 5px;
 
-        -webkit-user-select: text;
-    }
-    #log a {
-        font-weight: bold;
-    }
-    #log a:hover {
-        text-decoration: underline;
-    }
+    -webkit-user-select: text;
+}
+#log a {
+    font-weight: bold;
+}
+#log a:hover {
+    text-decoration: underline;
+}
 #tabs {
     position: absolute;
     margin-top: 1px;
@@ -251,44 +224,44 @@ input[type="number"]::-webkit-inner-spin-button {
 
     font-weight: bold;
 }
-    #tabs li {
-        float: left;
-        margin-right: 5px;
+#tabs li {
+    float: left;
+    margin-right: 5px;
 
-        border: 1px solid #848484;
-        border-bottom: 0;
-    }
-        #tabs li a {
-            display: block;
+    border: 1px solid #848484;
+    border-bottom: 0;
+}
+#tabs li a {
+    display: block;
 
-            height: 15px;
+    height: 15px;
 
-            padding: 5px;
-            padding-left: 8px;
-            padding-right: 8px;
+    padding: 5px;
+    padding-left: 8px;
+    padding-right: 8px;
 
-            background-color: #d0d0d0;
-        }
-        #tabs li a:hover {
-            text-decoration: none;
-            background-color: #acacac;
-        }
-        #tabs li.active {
-        }
-        #tabs li.active a {
-            height: 16px;
+    background-color: #d0d0d0;
+}
+#tabs li a:hover {
+    text-decoration: none;
+    background-color: #acacac;
+}
+#tabs li.active {
+}
+#tabs li.active a {
+    height: 16px;
 
-            background-color: white;
-        }
-        #tabs li.active a:hover {
-            cursor: default;
-            background-color: white;
-        }
+    background-color: white;
+}
+#tabs li.active a:hover {
+    cursor: default;
+    background-color: white;
+}
 #content {
-    margin-top: 37px;
+    margin-top: 31px;
     padding: 10px;
 
-    height: calc(100% - 184px); /* - (port picker, log, tab, status bar) */
+    height: calc(100% - 171px); /* - (port picker, log, tab, status bar) */
 
     background-color: white;
 
@@ -304,7 +277,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
     bottom: 0px;
 
-    width: 100%;
+    width: calc(100% - 20px);
     height: 20px;
     line-height: 20px;
 
@@ -313,14 +286,21 @@ input[type="number"]::-webkit-inner-spin-button {
     border-top: 1px solid #7d7d79;
     background-color: #bfbeb5;
 }
-    #status-bar div {
-        float: left;
+#status-bar div {
+    float: left;
 
-        padding-right: 10px;
-        margin-right: 10px;
+    padding-right: 10px;
+    margin-right: 10px;
 
-        border-right: 1px solid #7d7d79;
-    }
+    border-right: 1px solid #7d7d79;
+}
+#status-bar .version {
+    float: right;
+
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
 #cache {
     display: none;
 }
@@ -332,7 +312,6 @@ input[type="number"]::-webkit-inner-spin-button {
     background-repeat: no-repeat;
     background-position: center 45%;
 }
-
 .data-loading p {
     position: relative;
     top: calc(45% + 45px);
@@ -340,8 +319,47 @@ input[type="number"]::-webkit-inner-spin-button {
     text-align: center;
     font-weight: bold;
 }
-
-@font-face {
-    font-family: 'icons';
-    src: url('./images/icons/icomoon.woff');
+#dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border: 1px solid silver;
+    background-color: white;
+    display: none;
+    z-index: 1001;
+}
+#dialog.review {
+    width: 300px;
+}
+#dialog.review .head {
+    line-height: 20px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+#dialog.review .wrapper {
+    padding: 5px;
+}
+#dialog.review p {
+    display: none;
+    padding: 5px;
+    text-align: center;
+}
+#dialog.review .buttons {
+    float: right;
+    margin: 5px 0 0 0;
+}
+#dialog.review .yes,
+#dialog.review .no {
+    display: block;
+    float: left;
+    margin: 0 0 0 5px;
+    height: 24px;
+    line-height: 24px;
+    padding: 0 10px 0 10px;
+    font-weight: bold;
+    border: 1px solid #dddddd;
+    background-color: #f1f1f1;
 }

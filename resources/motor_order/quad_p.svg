@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2014.  All rights reserved.  Used with permission for Baseflight Configurator -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1 Basic//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-basic.dtd" [
+	<!ENTITY st0 "fill:#ED1C24;">
+	<!ENTITY st1 "font-family:'ArialMT';">
+	<!ENTITY st2 "font-size:18;">
+	<!ENTITY st3 "fill:none;stroke:#8D198F;stroke-width:3;stroke-linecap:round;stroke-miterlimit:10;">
+]>
+<svg version="1.1" baseProfile="basic"
+	 id="quadp-mix" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="111.99px" height="112px"
+	 viewBox="7.19 8.99 111.99 112" xml:space="preserve">
+<g id="M4">
+	<path id="path5342" style="&st3;" d="M80.98,28.28c0,9.82-7.96,17.79-17.79,17.79c-9.83,0-17.79-7.97-17.79-17.79
+		c0-9.83,7.96-17.79,17.79-17.79C73.02,10.49,80.98,18.46,80.98,28.28z"/>
+	<path id="path5346" style="&st3;" d="M80.62,24.7l3-10.53"/>
+	<path id="path5350" style="&st3;" d="M80.62,24.7L70.2,20.74"/>
+	<text transform="matrix(1 0 0 1 58.1836 33.084)" style="&st1; &st2;">4</text>
+</g>
+<g id="M3">
+	<path id="path5354" style="&st3;" d="M44.27,64.99c0-9.82-7.96-17.79-17.79-17.79S8.69,55.17,8.69,64.99
+		c0,9.83,7.96,17.79,17.79,17.79S44.27,74.82,44.27,64.99z"/>
+	<path id="path5358" style="&st3;" d="M21.62,82.11l-3.96-10.22"/>
+	<path id="path5362" style="&st3;" d="M21.62,82.11l-10.7,3.12"/>
+	<text transform="matrix(1 0 0 1 21.4751 69.791)" style="&st1; &st2;">3</text>
+</g>
+<g id="M1">
+	<path id="path5366" style="&st3;" d="M45.4,101.7c0-9.82,7.96-17.79,17.79-17.79c9.83,0,17.79,7.97,17.79,17.79
+		c0,9.83-7.96,17.79-17.79,17.79C53.37,119.49,45.4,111.52,45.4,101.7z"/>
+	<path id="path5370" style="&st3;" d="M45.81,105.51l-3.97,10.21"/>
+	<path id="path5374" style="&st3;" d="M45.81,105.51l10.01,4.91"/>
+	<text transform="matrix(1 0 0 1 58.1836 106.498)" style="&st1; &st2;">1</text>
+</g>
+<g id="M2">
+	<path id="path5378" style="&st3;" d="M82.1,64.99c0,9.83,7.97,17.79,17.79,17.79c9.83,0,17.79-7.96,17.79-17.79
+		c0-9.82-7.97-17.79-17.79-17.79C90.06,47.2,82.1,55.17,82.1,64.99z"/>
+	<path id="path5382" style="&st3;" d="M102.7,47.42l4.82,9.84"/>
+	<path id="path5386" style="&st3;" d="M102.7,47.42l10.4-4.03"/>
+	<text transform="matrix(1 0 0 1 94.8906 69.793)" style="&st1; &st2;">2</text>
+</g>
+<polygon id="Front_Arrow" style="&st0;" points="72.34,68.1 62.99,51.91 53.64,68.1 60.54,68.1 60.54,77.75 65.54,77.75 65.54,68.1 
+	"/>
+</svg>

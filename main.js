@@ -1,13 +1,5 @@
 'use strict';
 
-// Get access to the background window object
-// This object is used to pass variables between active page and background page
-var backgroundPage;
-chrome.runtime.getBackgroundPage(function (result) {
-    backgroundPage = result;
-    backgroundPage.app_window = window;
-});
-
 // Google Analytics
 var googleAnalyticsService = analytics.getService('ice_cream_app');
 var googleAnalytics = googleAnalyticsService.getTracker(atob("VUEtNTI4MjA5MjAtMQ=="));
@@ -17,8 +9,6 @@ googleAnalyticsService.getConfig().addCallback(function (config) {
 });
 
 $(document).ready(function () {
-    googleAnalytics.sendAppView('Application Started');
-
     // translate to user-selected language
     localize();
 
@@ -26,6 +16,8 @@ $(document).ready(function () {
     GUI.log('Running - OS: <strong>' + GUI.operating_system + '</strong>, ' +
         'Chrome: <strong>' + window.navigator.appVersion.replace(/.*Chrome\/([0-9.]*).*/, "$1") + '</strong>, ' +
         'Configurator: <strong>' + chrome.runtime.getManifest().version + '</strong>');
+
+    $('#status-bar .version').text(chrome.runtime.getManifest().version);
 
     // notification messages for various operating systems
     switch (GUI.operating_system) {
@@ -43,10 +35,25 @@ $(document).ready(function () {
     }
 
     // check release time to inform people in case they are running old release
-    if (CONFIGURATOR.releaseDate < (new Date().getTime() - (86400000 * 60))) { // 1 day = 86400000 miliseconds, * 60 = 2 month window
+    if (CONFIGURATOR.releaseDate > (new Date().getTime() - (86400000 * 60))) { // 1 day = 86400000 miliseconds, * 60 = 2 month window
+        console.log('Application version is valid for another: ' + Math.round((CONFIGURATOR.releaseDate - (new Date().getTime() - (86400000 * 60))) / 86400000) + ' days');
+    } else {
+        console.log('Application version expired');
         GUI.log('You\'re using an old version of ' + chrome.runtime.getManifest().name + '. Please update so you can benefit from recently added features and bugfixes.');
     }
 
+    // log webgl capability
+    // it would seem the webgl "enabling" through advanced settings will be ignored in the future
+    // and webgl will be supported if gpu supports it by default (canary 40.0.2175.0), keep an eye on this one
+    var canvas = document.createElement('canvas');
+    if (window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))) {
+        googleAnalytics.sendEvent('Capability', 'WebGL', 'true');
+    } else {
+        googleAnalytics.sendEvent('Capability', 'WebGL', 'false');
+    }
+
+    // log library versions in console to make version tracking easier
+    console.log('Libraries: jQuery - ' + $.fn.jquery + ', d3 - ' + d3.version + ', three.js - ' + THREE.REVISION);
 
     // Tabs
     var ui_tabs = $('#tabs > ul');
@@ -56,7 +63,7 @@ $(document).ready(function () {
                 tab = $(self).parent().prop('class');
 
             // if there is no active connection, return
-            if (!CONFIGURATOR.connectionValid && tab != 'tab_logging') {
+            if (!CONFIGURATOR.connectionValid) {
                 GUI.log('You need to <strong>connect</strong> before you can view any of the tabs');
                 return;
             }
@@ -82,8 +89,18 @@ $(document).ready(function () {
                 }
 
                 switch (tab) {
-                    case 'tab_initial_setup':
-                        TABS.initial_setup.initialize(content_ready);
+                    case 'tab_auxiliary':
+                        TABS.auxiliary.initialize(content_ready);
+                        break;
+                    case 'tab_adjustments':
+                        TABS.adjustments.initialize(content_ready);
+                        break;
+
+                    case 'tab_setup':
+                        TABS.setup.initialize(content_ready);
+                        break;
+                    case 'tab_configuration':
+                        TABS.configuration.initialize(content_ready);
                         break;
                     case 'tab_pid_tuning':
                         TABS.pid_tuning.initialize(content_ready);
@@ -91,11 +108,8 @@ $(document).ready(function () {
                     case 'tab_receiver':
                         TABS.receiver.initialize(content_ready);
                         break;
-                    case 'tab_auxiliary_configuration':
-                        TABS.auxiliary_configuration.initialize(content_ready);
-                        break;
-                    case 'tab_adjustments':
-                        TABS.adjustments.initialize(content_ready);
+                    case 'tab_modes':
+                        TABS.modes.initialize(content_ready);
                         break;
                     case 'tab_servos':
                         TABS.servos.initialize(content_ready);
@@ -103,24 +117,27 @@ $(document).ready(function () {
                     case 'tab_gps':
                         TABS.gps.initialize(content_ready);
                         break;
-                    case 'tab_motor_outputs':
-                        TABS.motor_outputs.initialize(content_ready);
+                    case 'tab_motors':
+                        TABS.motors.initialize(content_ready);
                         break;
                     case 'tab_sensors':
                         TABS.sensors.initialize(content_ready);
                         break;
-                    case 'tab_cli':
-                        TABS.cli.initialize(content_ready);
-                        break;
                     case 'tab_logging':
                         TABS.logging.initialize(content_ready);
                         break;
+                    case 'tab_cli':
+                        TABS.cli.initialize(content_ready);
+                        break;
+
+                    default:
+                        console.log('Tab not found');
                 }
             });
         }
     });
 
-    TABS.default.initialize();
+    TABS.landing.initialize();
 
     // options
     $('a#options').click(function () {
@@ -138,13 +155,14 @@ $(document).ready(function () {
 
                 // if notifications are enabled, or wasn't set, check the notifications checkbox
                 chrome.storage.local.get('update_notify', function (result) {
-                    if (result.update_notify === 'undefined' || result.update_notify) {
+                    if (typeof result.update_notify === 'undefined' || result.update_notify) {
                         $('div.notifications input').prop('checked', true);
                     }
                 });
 
                 $('div.notifications input').change(function () {
                     var check = $(this).is(':checked');
+                    googleAnalytics.sendEvent('Settings', 'Notifications', check);
 
                     chrome.storage.local.set({'update_notify': check});
                 });
@@ -155,15 +173,16 @@ $(document).ready(function () {
                 }
 
                 $('div.statistics input').change(function () {
-                    var result = $(this).is(':checked');
-                    googleAnalyticsConfig.setTrackingPermitted(result);
+                    var check = $(this).is(':checked');
+                    googleAnalytics.sendEvent('Settings', 'GoogleAnalytics', check);
+                    googleAnalyticsConfig.setTrackingPermitted(check);
                 });
 
                 function close_and_cleanup(e) {
                     if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
                         $(document).unbind('click keyup', close_and_cleanup);
 
-                        $('div#options-window').slideUp(function () {
+                        $('div#options-window').slideUp(250, function () {
                             el.removeClass('active');
                             $(this).empty().remove();
                         });
@@ -172,7 +191,7 @@ $(document).ready(function () {
 
                 $(document).bind('click keyup', close_and_cleanup);
 
-                $(this).slideDown();
+                $(this).slideDown(250);
             });
         }
     });
@@ -214,6 +233,7 @@ $(document).ready(function () {
         if (element.prop('min')) {
             if (val < min) {
                 element.val(min);
+                val = min;
             }
         }
 
@@ -221,18 +241,21 @@ $(document).ready(function () {
         if (element.prop('max')) {
             if (val > max) {
                 element.val(max);
+                val = max;
             }
         }
 
         // if entered value is illegal use previous value instead
         if (isNaN(val)) {
             element.val(element.data('previousValue'));
+            val = element.data('previousValue');
         }
 
         // if step is not set or step is int and value is float use previous value instead
         if (isNaN(step) || step % 1 === 0) {
             if (val % 1 !== 0) {
                 element.val(element.data('previousValue'));
+                val = element.data('previousValue');
             }
         }
 
@@ -248,6 +271,13 @@ $(document).ready(function () {
         }
     });
 });
+
+function catch_startup_time(startTime) {
+    var endTime = new Date().getTime(),
+        timeSpent = endTime - startTime;
+
+    googleAnalytics.sendTiming('Load Times', 'Application Startup', timeSpent);
+}
 
 function microtime() {
     var now = new Date().getTime() / 1000;
@@ -274,3 +304,23 @@ function bytesToSize(bytes) {
 
     return bytes;
 }
+
+Number.prototype.clamp = function(min, max) {
+    return Math.min(Math.max(this, min), max);
+};
+
+/**
+ * String formatting now supports currying (partial application).
+ * For a format string with N replacement indices, you can call .format
+ * with M <= N arguments. The result is going to be a format string
+ * with N-M replacement indices, properly counting from 0 .. N-M.
+ * The following Example should explain the usage of partial applied format:
+ *  "{0}:{1}:{2}".format("a","b","c") === "{0}:{1}:{2}".format("a","b").format("c")
+ *  "{0}:{1}:{2}".format("a").format("b").format("c") === "{0}:{1}:{2}".format("a").format("b", "c")
+ **/
+String.prototype.format = function () {
+    var args = arguments;
+    return this.replace(/\{(\d+)\}/g, function (t, i) {
+        return args[i] !== void 0 ? args[i] : "{"+(i-args.length)+"}";
+    });
+};

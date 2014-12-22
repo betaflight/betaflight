@@ -1,40 +1,40 @@
 .tab-cli {
     height: 100%;
 }
-    .tab-cli p {
-        padding: 5px;
-        border: 1px dotted silver;
-    }
-    .tab-cli .window {
-        margin-top: 10px;
-        height: calc(100% - 80px); /* - (p, textarea) */
+.tab-cli p {
+    padding: 5px;
+    border: 1px dotted silver;
+}
+.tab-cli .window {
+    margin-top: 10px;
+    height: calc(100% - 80px); /* - (p, textarea) */
 
-        padding: 5px;
+    padding: 5px;
 
-        overflow-y: scroll;
-        overflow-x: hidden;
+    overflow-y: scroll;
+    overflow-x: hidden;
 
-        font-family: monospace;
-        color: white;
+    font-family: monospace;
+    color: white;
 
-        border: 1px solid silver;
-        background-color: black;
+    border: 1px solid silver;
+    background-color: black;
 
-        -webkit-user-select: text;
-    }
-    .tab-cli textarea {
-        -webkit-box-sizing: border-box;
+    -webkit-user-select: text;
+}
+.tab-cli textarea {
+    -webkit-box-sizing: border-box;
 
-        width: 100%;
+    width: 100%;
 
-        margin-top: 8px;
+    margin-top: 8px;
 
-        height: 22px;
-        line-height: 20px;
+    height: 22px;
+    line-height: 20px;
 
-        padding-left: 5px;
+    padding-left: 5px;
 
-        border: 1px solid silver;
+    border: 1px solid silver;
 
-        resize: none;
-    }
+    resize: none;
+}

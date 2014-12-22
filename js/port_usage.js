@@ -13,11 +13,11 @@ var PortUsage = {
     },
     update: function() {
         if (serial.bitrate) {
-            var port_usage_down = parseInt(((serial.bytes_received - this.previous_received) * 10 / serial.bitrate) * 100);
-            var port_usage_up = parseInt(((serial.bytes_sent - this.previous_sent) * 10 / serial.bitrate) * 100);
+            var port_usage_down = parseInt(((serial.bytesReceived - this.previous_received) * 10 / serial.bitrate) * 100);
+            var port_usage_up = parseInt(((serial.bytesSent - this.previous_sent) * 10 / serial.bitrate) * 100);
 
-            this.previous_received = serial.bytes_received;
-            this.previous_sent = serial.bytes_sent;
+            this.previous_received = serial.bytesReceived;
+            this.previous_sent = serial.bytesSent;
 
             // update UI
             $('span.port_usage_down').text(chrome.i18n.getMessage('statusbar_usage_download', [port_usage_down]));

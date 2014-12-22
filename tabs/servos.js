@@ -8,9 +8,12 @@
 
 TABS.servos = {};
 TABS.servos.initialize = function (callback) {
-    GUI.active_tab_ref = this;
-    GUI.active_tab = 'servos';
-    googleAnalytics.sendAppView('Servos');
+    var self = this;
+
+    if (GUI.active_tab != 'servos') {
+        GUI.active_tab = 'servos';
+        googleAnalytics.sendAppView('Servos');
+    }
 
     function get_servo_conf_data() {
         MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_channel_forwarding_data);
@@ -159,40 +162,18 @@ TABS.servos.initialize = function (callback) {
                     SERVO_CONFIG[info.obj].rate = val;
                 }
             });
-
-            // send settings over to mcu
-            var buffer_out = [];
-
-            var needle = 0;
-            for (var i = 0; i < SERVO_CONFIG.length; i++) {
-                buffer_out[needle++] = lowByte(SERVO_CONFIG[i].min);
-                buffer_out[needle++] = highByte(SERVO_CONFIG[i].min);
-
-                buffer_out[needle++] = lowByte(SERVO_CONFIG[i].max);
-                buffer_out[needle++] = highByte(SERVO_CONFIG[i].max);
-
-                buffer_out[needle++] = lowByte(SERVO_CONFIG[i].middle);
-                buffer_out[needle++] = highByte(SERVO_CONFIG[i].middle);
-
-                buffer_out[needle++] = lowByte(SERVO_CONFIG[i].rate);
-            }
-            MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, buffer_out);
             
-            // send channel forwarding over to mcu
-            buffer_out = [];
-
-            var needle = 0;
-            for (var i = 0; i < SERVO_CONFIG.length; i++) {
-                buffer_out[needle++] = SERVO_CONFIG[i].indexOfChannelToForward;
-            }
-            MSP.send_message(MSP_codes.MSP_SET_CHANNEL_FORWARDING, buffer_out);
-
-            if (save_to_eeprom) {
-                // Save changes to EEPROM
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                    GUI.log(chrome.i18n.getMessage('servosEepromSave'));
+            MSP.send_message(MSP_codes.MSP_SET_CHANNEL_FORWARDING, MSP.crunch(MSP_codes.MSP_SET_CHANNEL_FORWARDING), false, function () {
+                MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, MSP.crunch(MSP_codes.MSP_SET_SERVO_CONF), false, function () {
+                    if (save_to_eeprom) {
+                        // Save changes to EEPROM
+                        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                            GUI.log(chrome.i18n.getMessage('servosEepromSave'));
+                        });
+                    }
                 });
-            }
+            });
+
         }
 
         // drop previous table

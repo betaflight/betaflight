@@ -2,9 +2,12 @@
 
 TABS.sensors = {};
 TABS.sensors.initialize = function (callback) {
-    GUI.active_tab_ref = this;
-    GUI.active_tab = 'sensors';
-    googleAnalytics.sendAppView('Sensor Page');
+    var self = this;
+
+    if (GUI.active_tab != 'sensors') {
+        GUI.active_tab = 'sensors';
+        googleAnalytics.sendAppView('Sensors');
+    }
 
     function initSensorData(){
         for (var i = 0; i < 3; i++) {
@@ -257,7 +260,7 @@ TABS.sensors.initialize = function (callback) {
         var raw_data_text_ements = {
             x: [],
             y: [],
-            z: [],
+            z: []
         };
         $('.plot_control .x, .plot_control .y, .plot_control .z').each(function () {
             var el = $(this);
@@ -405,7 +408,7 @@ TABS.sensors.initialize = function (callback) {
         });
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function () {
+        GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
@@ -414,7 +417,7 @@ TABS.sensors.initialize = function (callback) {
 };
 
 TABS.sensors.cleanup = function (callback) {
-    serial.empty_output_buffer();
+    serial.emptyOutputBuffer();
 
     if (callback) callback();
 };

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2014.  All rights reserved.  Used with permission for Baseflight Configurator -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1 Basic//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-basic.dtd" [
+	<!ENTITY st0 "fill:#ED1C24;">
+	<!ENTITY st1 "fill:none;stroke:#BF1B2C;stroke-width:3;stroke-miterlimit:10;">
+	<!ENTITY st2 "fill:none;stroke:#000000;stroke-miterlimit:10;">
+	<!ENTITY st3 "fill:none;stroke:#8D198F;stroke-width:2.5;stroke-linecap:round;stroke-miterlimit:10;">
+	<!ENTITY st4 "font-family:'ArialMT';">
+	<!ENTITY st5 "fill:none;stroke:#666666;stroke-miterlimit:10;">
+	<!ENTITY st6 "font-size:18;">
+	<!ENTITY st7 "fill:none;stroke:#666666;stroke-width:2;stroke-miterlimit:10;">
+]>
+<svg version="1.1" baseProfile="basic"
+	 id="AirplaneMix" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="138px" height="125.03px"
+	 viewBox="-20.34 -48.94 138 125.03" xml:space="preserve">
+<polygon id="Front_Arrow" style="&st0;" points="48.66,-5.46 39.31,10.73 46.22,10.73 46.22,20.38 51.22,20.38 51.22,10.73 
+	58.01,10.73 "/>
+<g id="AirplaneGraphic">
+	<polyline id="ail-l" style="&st5;" points="-3.2,22.63 -3.2,15.58 30,15.58 30,22.63 	"/>
+	<polyline id="ail-r" style="&st5;" points="100.53,22.63 100.53,15.58 67.83,15.58 67.83,22.63 	"/>
+	<path id="wing" style="&st7;" d="M-19.34,22.63c0,0,0-31.4,20.31-31.4h95.38c20.31,0,20.31,31.4,20.31,31.4H-19.34z"/>
+	<path id="fuse-l" style="&st7;" d="M46.42,72.99L15.96,71c0-18.32,15.88-15,30.44-18.67l-3.65-29.7"/>
+	<path id="fuse-r" style="&st7;" d="M54.58,22.63l-3.64,29.7C65.49,56,81.38,52.67,81.38,71l-30.46,1.99"/>
+	<line id="elevator-l" style="&st5;" x1="16.58" y1="65.45" x2="46.76" y2="67.03"/>
+	<line id="elevator-r" style="&st5;" x1="80.76" y1="65.45" x2="50.57" y2="67.03"/>
+	<path id="rudder" style="&st5;" d="M50.92,73.57c0-2.09,0-5.78,0-10.99c0-8.56-2.25-8.81-2.25-8.81s-2.25,0.25-2.25,8.81
+		s0,13.01,0,13.01h4.5C50.92,75.6,50.92,74.92,50.92,73.57"/>
+	<polyline id="nose" style="&st7;" points="37.72,-8.77 37.72,-15.32 41,-22.39 56.33,-22.39 59.61,-15.32 59.61,-8.77 	"/>
+</g>
+<g id="_x31_and2" transform="matrix(1.25,0,0,-1.25,-378.9054,819.72049)">
+	<text transform="matrix(0.8 0 0 -0.8 332.1708 675.5416)" style="&st4; &st6;">1/2</text>
+	<path id="path5318_1_" style="&st3;" d="M355.09,680.7c0-7.19-5.83-13.03-13.03-13.03s-13.03,5.84-13.03,13.03
+		c0,7.2,5.83,13.03,13.03,13.03S355.09,687.89,355.09,680.7z"/>
+</g>
+<g id="_x33_" transform="translate(-52.834,-63.500761)">
+	<path id="path5276-7" style="&st1;" d="M78.81,83.09H53.55V57.82h25.27L78.81,83.09L78.81,83.09z"/>
+	<text transform="matrix(1 0 0 1 60.9546 76.9026)" style="&st4; &st6;">3</text>
+</g>
+<g id="_x34_">
+	<path id="path5276" style="&st1;" d="M96.78,19.86H71.51V-5.4h25.27V19.86L96.78,19.86z"/>
+	<text transform="matrix(1 0 0 1 80.5186 13.4008)" style="&st4; &st6;">4</text>
+</g>
+<g id="_x35_">
+	<polyline id="polyline40" style="&st2;" points="48.67,65.33 28.26,44.49 17.37,44.49 	"/>
+	<path id="path5276-7_1_" style="&st1;" d="M17.2,57.08H-8.07V31.81H17.2V57.08z"/>
+	<circle id="circle62" cx="48.67" cy="65.33" r="1.88"/>
+	<text transform="matrix(1 0 0 1 -0.4399 50.8921)" style="&st4; &st6;">5</text>
+</g>
+<g id="_x36_">
+	<polyline id="polyline42" style="&st2;" points="61.83,69.6 71.55,44.45 83.02,44.45 	"/>
+	<path id="path5276-7_2_" style="&st1;" d="M108.28,57.08H83.01V31.81h25.27V57.08z"/>
+	<circle id="circle64" cx="61.83" cy="69.59" r="1.66"/>
+	<text transform="matrix(1 0 0 1 90.6397 50.8921)" style="&st4; &st6;">6</text>
+</g>
+</svg>

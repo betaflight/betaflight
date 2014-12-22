@@ -1,8 +1,8 @@
 .tab-servos {
 }
-    .tab-servos input[type="number"]::-webkit-inner-spin-button {
-        border: 0;
-    }
+.tab-servos input[type="number"]::-webkit-inner-spin-button {
+    border: 0;
+}
 .tab-servos .supported_wrapper,
 .tab-servos .direction_wrapper {
     display: none;
@@ -27,108 +27,106 @@
     width: 100%;
     border-collapse: collapse;
 }
-    .tab-servos table th {
-        line-height: 20px;
-        text-align: center;
+.tab-servos table th {
+    line-height: 20px;
+    text-align: center;
 
-        border: 1px solid #8b8b8b;
-    }
-    .tab-servos table td {
-        padding: 1px;
+    border: 1px solid #8b8b8b;
+}
+.tab-servos table td {
+    padding: 1px;
 
-        border: 1px solid #8b8b8b;
-    }
-    .tab-servos table .main {
-        font-weight: bold;
+    border: 1px solid #8b8b8b;
+}
+.tab-servos table .main {
+    font-weight: bold;
 
-        text-align: center;
+    text-align: center;
 
-        background-color: #ececec;
-    }
-    .tab-servos table .channel {
-        width: 40px;
-        text-align: center;
-    }
-        .tab-servos table .channel input {
-            vertical-align: middle;
-        }
-    .tab-servos table input[type="number"] {
-        display: block;
+    background-color: #ececec;
+}
+.tab-servos table .channel {
+    width: 40px;
+    text-align: center;
+}
+.tab-servos table .channel input {
+    vertical-align: middle;
+}
+.tab-servos table input[type="number"] {
+    display: block;
 
-        width: calc(100% - 5px);
-        height: 20px;
+    width: 100%;
+    height: 20px;
 
-        padding-right: 5px;
+    line-height: 20px;
 
-        line-height: 20px;
+    text-align: right;
+}
+.tab-servos table .direction {
+}
+.tab-servos .direction .name {
+    float: left;
+    display: block;
 
-        text-align: right;
-    }
-    .tab-servos table .direction {
-    }
-        .tab-servos .direction .name {
-            float: left;
-            display: block;
+    width: 60px;
+}
+.tab-servos .direction .alternate {
+    float: left;
+    display: block;
 
-            width: 60px;
-        }
-        .tab-servos .direction .alternate {
-            float: left;
-            display: block;
+    width: 60px;
+}
+.tab-servos .direction .first {
+    float: left;
 
-            width: 60px;
-        }
-        .tab-servos .direction .first {
-            float: left;
+    margin: 2px 10px 0 20px;
+}
+.tab-servos .direction .second {
+    float: left;
 
-            margin: 2px 10px 0 20px;
-        }
-        .tab-servos .direction .second {
-            float: left;
+    margin: 2px 10px 0 0;
+}
+.tab-servos .direction .rate {
+    width: 200px;
+    height: 20px;
 
-            margin: 2px 10px 0 0;
-        }
-        .tab-servos .direction .rate {
-            width: 200px;
-            height: 20px;
+    text-align: center;
+}
+.tab-servos .live {
+    float: left;
 
-            text-align: center;
-        }
-    .tab-servos .live {
-        float: left;
+    margin-top: 10px;
+}
+.tab-servos .live span {
+    float: left;
+}
+.tab-servos .live input {
+    float: left;
+    margin: 0 0 0 5px;
+}
+.tab-servos .buttons {
+    width: calc(100% - 20px);
 
-        margin-top: 10px;
-    }
-        .tab-servos .live span {
-            float: left;
-        }
-        .tab-servos .live input {
-            float: left;
-            margin: 0 0 0 5px;
-        }
-    .tab-servos .buttons {
-        width: calc(100% - 20px);
+    position: absolute;
+    bottom: 10px;
+}
+.tab-servos .update {
+    display: block;
+    float: right;
 
-        position: absolute;
-        bottom: 10px;
-    }
-    .tab-servos .update {
-        display: block;
-        float: right;
+    margin-top: 10px;
 
-        margin-top: 10px;
+    height: 28px;
+    line-height: 28px;
 
-        height: 28px;
-        line-height: 28px;
+    padding: 0 15px 0 15px;
 
-        padding: 0 15px 0 15px;
+    text-align: center;
+    font-weight: bold;
 
-        text-align: center;
-        font-weight: bold;
-
-        border: 1px solid silver;
-        background-color: #ececec;
-    }
-    .tab-servos .update:hover {
-        background-color: #dedcdc;
-    }
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-servos .update:hover {
+    background-color: #dedcdc;
+}

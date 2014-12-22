@@ -2,9 +2,12 @@
 
 TABS.gps = {};
 TABS.gps.initialize = function (callback) {
-    GUI.active_tab_ref = this;
-    GUI.active_tab = 'gps';
-    googleAnalytics.sendAppView('GPS Page');
+    var self = this;
+
+    if (GUI.active_tab != 'gps') {
+        GUI.active_tab = 'gps';
+        googleAnalytics.sendAppView('GPS');
+    }
 
     function load_html() {
         $('#content').load("./tabs/gps.html", process_html);
@@ -17,7 +20,11 @@ TABS.gps.initialize = function (callback) {
         localize();
 
         function get_raw_gps_data() {
-            MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, get_gpsvinfo_data);
+            MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, get_comp_gps_data);
+        }
+
+        function get_comp_gps_data() {
+            MSP.send_message(MSP_codes.MSP_COMP_GPS, false, false, get_gpsvinfo_data);
         }
 
         function get_gpsvinfo_data() {
@@ -53,7 +60,7 @@ TABS.gps.initialize = function (callback) {
         GUI.interval_add('gps_pull', get_raw_gps_data, 75, true);
 
         // status data pulled via separate timer with static speed
-        GUI.interval_add('status_pull', function () {
+        GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 

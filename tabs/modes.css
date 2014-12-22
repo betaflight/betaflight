@@ -1,0 +1,64 @@
+.tab-modes .boxes {
+    width: 100%;
+    border-collapse: collapse;
+}
+.tab-modes .boxes th, .tab-modes .boxes td {
+    line-height: 22px;
+    text-align: center;
+
+    border: 1px solid #8b8b8b;
+}
+.tab-modes .boxes .heads {
+    background-color: #ececec;
+}
+.tab-modes .boxes .main {
+    background-color: #ececec;
+}
+.tab-modes .boxes .name {
+    text-align: center;
+}
+.tab-modes .boxes .on {
+    color: white;
+    background-color: #0d8b13;
+}
+.tab-modes .boxes .off {
+    color: white;
+    background-color: #be2222;
+}
+.tab-modes .boxes td input {
+    position: absolute;
+
+    margin-top: -6px;
+    margin-left: -6px;
+}
+.tab-modes .boxes .switches:nth-child(odd) {
+    background-color: #ececec;
+}
+.tab-modes .boxes .heads th:first-child {
+    border: 0;
+    background-color: white;
+}
+.tab-modes .buttons {
+    width: calc(100% - 20px);
+
+    position: absolute;
+    bottom: 10px;
+}
+.tab-modes .update {
+    display: block;
+    float: right;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-modes .update:hover {
+    background-color: #dedcdc;
+}
