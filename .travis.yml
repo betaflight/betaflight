@@ -16,3 +16,8 @@ before_install: sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sud
 install: sudo apt-get install build-essential gcc-arm-none-eabi git
 before_script: $CC --version
 script: make -j2
+
+notifications:
+  irc: "chat.freenode.net#cleanflight"
+  use_notice: true
+  skip_join: true
