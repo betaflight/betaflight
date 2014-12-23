@@ -83,7 +83,7 @@ This will immediatly "break" communication to the GPS. Since you haven't saved t
 
 Click on `PRT` in the Configuration view again and inspect the packet console to make sure messages are being sent and acknowledged.
 
-Next, to ensure the FC doesn't waste time processing messages it does not need you must disable all messages on except:
+Next, to ensure the FC doesn't waste time processing unneeded messages, click on `MSG` and enable the following on UART1 alone with a rate of 1. When changing message target and rates remember to click `Send` after changing each message.:
 
     NAV-POSLLH
     NAV-DOP
@@ -91,13 +91,11 @@ Next, to ensure the FC doesn't waste time processing messages it does not need y
     NAV-VELNED
     NAV-TIMEUTC
 
-The above messages should each be enabled with a rate of `1`.
+Enable the following on UART1 with a rate of 5, to reduce bandwidth and load on the FC.
 
     NAV-SVINFO
 
-The above messages should each be enabled with a rate of `5` to reduce bandwidth and load on the FC.
-
-When changing message target and rates remember to click `Send` after changing each message.
+All other message types should be disabled.
 
 Next change the global update rate, click `Rate (Rates)` in the Configuration view.
 
