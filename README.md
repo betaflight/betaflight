@@ -47,7 +47,6 @@ http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
 
 See: https://github.com/cleanflight/cleanflight/blob/master/docs/Installation.md 
 
-
 ## Documentation
 
 There is lots of documentation here: https://github.com/cleanflight/cleanflight/tree/master/docs 
@@ -62,8 +61,9 @@ irc://irc.freenode.net/#cleanflight
 
 If you are using windows and don't have an IRC client installed then take a look at HydraIRC - here: http://hydrairc.com/
 
-## Videos
+Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 
+## Videos
 
 There is a dedicated Cleanflight youtube channel which has progress update videos, flight demonstrations, instrutions and other related videos.
 
@@ -83,7 +83,26 @@ https://github.com/hydra/cleanflight-configurator
 
 ## Contributing
 
-Before making any contributions, take a note of the https://github.com/multiwii/baseflight/wiki/CodingStyle
+Contributions are welcome and encouraged.  You can contibute in many ways:
+
+* Documentation updates and corrections.
+* How-To guides - received help?  help others!
+* Bug fixes.
+* New features.
+* Telling us your ideas and suggestions.
+
+The best place to start is the IRC channel on freenode (see above), drop in, say hi. Next place is the github issue tracker:
+
+https://github.com/cleanflight/cleanflight/issues
+https://github.com/cleanflight/cleanflight-configurator/issues
+
+Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
+
+## Developers
+
+There is a developers section in the `docs/development` folder.
+
+Before making any code contributions, take a note of the https://github.com/multiwii/baseflight/wiki/CodingStyle
 
 For this fork it is also advised to read about clean code, here are some useful links:
 
@@ -92,3 +111,11 @@ For this fork it is also advised to read about clean code, here are some useful 
 * http://en.wikipedia.org/wiki/Code_smell
 * http://en.wikipedia.org/wiki/Code_refactoring
 * http://www.amazon.co.uk/Working-Effectively-Legacy-Robert-Martin/dp/0131177052
+
+TravisCI is also used to run automatic builds
+
+https://travis-ci.org/cleanflight/cleanflight
+
+[![Build Status](https://travis-ci.org/cleanflight/cleanflight.svg?branch=master)](https://travis-ci.org/cleanflight/cleanflight)
+
+
