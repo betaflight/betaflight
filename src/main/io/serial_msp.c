@@ -1365,9 +1365,9 @@ static bool processInCommand(void)
     case MSP_SET_CONFIG:
 
 #ifdef CJMCU
-        masterConfig.mixerConfiguration = read8(); // multitype
-#else
         read8(); // multitype
+#else
+        masterConfig.mixerConfiguration = read8(); // multitype
 #endif
 
         featureClearAll();
