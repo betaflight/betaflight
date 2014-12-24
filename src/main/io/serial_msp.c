@@ -1340,9 +1340,11 @@ static bool processInCommand(void)
         masterConfig.batteryConfig.currentMeterOffset = read16();
         break;
 
+#ifndef USE_QUAD_MIXER_ONLY
     case MSP_SET_MIXER:
         masterConfig.mixerConfiguration = read8();
         break;
+#endif
 
     case MSP_SET_RX_CONFIG:
         masterConfig.rxConfig.serialrx_provider = read8();
@@ -1364,8 +1366,8 @@ static bool processInCommand(void)
 
     case MSP_SET_CONFIG:
 
-#ifdef CJMCU
-        read8(); // multitype
+#ifdef USE_QUAD_MIXER_ONLY
+        read8(); // multitype ignored
 #else
         masterConfig.mixerConfiguration = read8(); // multitype
 #endif

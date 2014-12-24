@@ -96,7 +96,7 @@ void initTelemetry(void);
 void serialInit(serialConfig_t *initialSerialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
-void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers);
+void mixerInit(multiType_e mixerConfiguration, motorMixer_t *customMixers);
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void beepcodeInit(failsafe_t *initialFailsafe);

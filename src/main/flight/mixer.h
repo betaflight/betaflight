@@ -20,7 +20,6 @@
 #define MAX_SUPPORTED_MOTORS 12
 #define MAX_SUPPORTED_SERVOS 8
 
-// Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
 typedef enum MultiType
 {
     MULTITYPE_TRI = 1,
@@ -33,9 +32,9 @@ typedef enum MultiType
     MULTITYPE_FLYING_WING = 8,
     MULTITYPE_Y4 = 9,
     MULTITYPE_HEX6X = 10,
-    MULTITYPE_OCTOX8 = 11,          // Java GUI is same for the next 3 configs
-    MULTITYPE_OCTOFLATP = 12,       // MultiWinGui shows this differently
-    MULTITYPE_OCTOFLATX = 13,       // MultiWinGui shows this differently
+    MULTITYPE_OCTOX8 = 11,
+    MULTITYPE_OCTOFLATP = 12,
+    MULTITYPE_OCTOFLATX = 13,
     MULTITYPE_AIRPLANE = 14,        // airplane / singlecopter / dualcopter (not yet properly supported)
     MULTITYPE_HELI_120_CCPM = 15,
     MULTITYPE_HELI_90_DEG = 16,
@@ -47,7 +46,7 @@ typedef enum MultiType
     MULTITYPE_ATAIL4 = 22,
     MULTITYPE_CUSTOM = 23,
     MULTITYPE_LAST = 24
-} MultiType;
+} multiType_e;
 
 // Custom mixer data per motor
 typedef struct motorMixer_t {

@@ -62,7 +62,7 @@ static rxConfig_t *rxConfig;
 static gimbalConfig_t *gimbalConfig;
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
-static MultiType currentMixerConfiguration;
+static multiType_e currentMixerConfiguration;
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -70,8 +70,7 @@ static const motorMixer_t mixerQuadX[] = {
     { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
     { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
 };
-
-#ifndef CJMCU
+#ifndef USE_QUAD_MIXER_ONLY
 static const motorMixer_t mixerTri[] = {
     { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
     { 1.0f, -1.0f, -0.666667f,  0.0f },     // RIGHT
@@ -258,8 +257,8 @@ int servoDirection(int nr, int lr)
 static motorMixer_t *customMixers;
 
 
-#ifndef CJMCU
-void mixerInit(MultiType mixerConfiguration, motorMixer_t *initialCustomMixers)
+#ifndef USE_QUAD_MIXER_ONLY
+void mixerInit(multiType_e mixerConfiguration, motorMixer_t *initialCustomMixers)
 {
     currentMixerConfiguration = mixerConfiguration;
 
@@ -316,9 +315,27 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 
     mixerResetMotors();
 }
+
+void mixerLoadMix(int index, motorMixer_t *customMixers)
+{
+    int i;
+
+    // we're 1-based
+    index++;
+    // clear existing
+    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+        customMixers[i].throttle = 0.0f;
+
+    // do we have anything here to begin with?
+    if (mixers[index].motor != NULL) {
+        for (i = 0; i < mixers[index].motorCount; i++)
+            customMixers[i] = mixers[index].motor[i];
+    }
+}
+
 #else
 
-void mixerInit(MultiType mixerConfiguration, motorMixer_t *initialCustomMixers)
+void mixerInit(multiType_e mixerConfiguration, motorMixer_t *initialCustomMixers)
 {
     currentMixerConfiguration = mixerConfiguration;
 
@@ -350,25 +367,6 @@ void mixerResetMotors(void)
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         motor_disarmed[i] = feature(FEATURE_3D) ? flight3DConfig->neutral3d : escAndServoConfig->mincommand;
 }
-
-#ifndef CJMCU
-void mixerLoadMix(int index, motorMixer_t *customMixers)
-{
-    int i;
-
-    // we're 1-based
-    index++;
-    // clear existing
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-        customMixers[i].throttle = 0.0f;
-
-    // do we have anything here to begin with?
-    if (mixers[index].motor != NULL) {
-        for (i = 0; i < mixers[index].motorCount; i++)
-            customMixers[i] = mixers[index].motor[i];
-    }
-}
-#endif
 
 static void updateGimbalServos(void)
 {
@@ -454,6 +452,7 @@ void writeAllMotors(int16_t mc)
     writeMotors();
 }
 
+#ifndef USE_QUAD_MIXER_ONLY
 static void airplaneMixer(void)
 {
     int16_t flapperons[2] = { 0, 0 };
@@ -499,6 +498,7 @@ static void airplaneMixer(void)
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
 }
+#endif
 
 void mixTable(void)
 {
@@ -515,6 +515,7 @@ void mixTable(void)
         for (i = 0; i < motorCount; i++)
             motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + -mixerConfig->yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
 
+#ifndef USE_QUAD_MIXER_ONLY
     // airplane / servo mixes
     switch (currentMixerConfiguration) {
         case MULTITYPE_BI:
@@ -572,6 +573,7 @@ void mixTable(void)
         default:
             break;
     }
+#endif
 
     // do camstab
     if (feature(FEATURE_SERVO_TILT)) {
