@@ -33,7 +33,7 @@
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 
-int32_t sonarAlt = -1;	// in cm , -1 indicate sonar is not in range
+int32_t sonarAlt = -1;                  // in cm , -1 indicate sonar is not in range - inclination adjusted by imu
 
 #ifdef SONAR
 
@@ -79,7 +79,7 @@ void Sonar_init(void)
 
 void Sonar_update(void)
 {
-    hcsr04_get_distance(&sonarAlt);
+    hcsr04_start_reading();
 }
 
 int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle)
@@ -89,6 +89,10 @@ int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle)
         return -1;
 
     return sonarAlt * (900.0f - tiltAngle) / 900.0f;
+}
+
+int32_t sonarRead(void) {
+    return hcsr04_get_distance();
 }
 
 #endif
