@@ -103,7 +103,7 @@ void calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
     fc_acc = 0.5f / (M_PI * accz_lpf_cutoff); // calculate RC time constant used in the accZ lpf
 }
 
-void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfiguration)
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
 {
     static int16_t gyroYawSmooth = 0;
 
@@ -120,7 +120,7 @@ void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfigurat
     gyroData[FD_ROLL] = gyroADC[FD_ROLL];
     gyroData[FD_PITCH] = gyroADC[FD_PITCH];
 
-    if (mixerConfiguration == MULTITYPE_TRI) {
+    if (mixerMode == MIXER_TRI) {
         gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
         gyroYawSmooth = gyroData[FD_YAW];
     } else {

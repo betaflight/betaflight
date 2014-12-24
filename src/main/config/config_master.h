@@ -23,7 +23,7 @@ typedef struct master_t {
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
 
-    uint8_t mixerConfiguration;
+    uint8_t mixerMode;
     uint32_t enabledFeatures;
     uint16_t looptime;                      // imu loop time in us
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band

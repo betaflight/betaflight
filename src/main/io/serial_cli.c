@@ -119,7 +119,7 @@ static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
 
 #ifndef USE_QUAD_MIXER_ONLY
-// sync this with multiType_e
+// sync this with mixerMode_e
 static const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
@@ -783,7 +783,7 @@ static void cliDump(char *cmdline)
         printf("\r\n# mixer\r\n");
 
 #ifndef USE_QUAD_MIXER_ONLY
-        printf("mixer %s\r\n", mixerNames[masterConfig.mixerConfiguration - 1]);
+        printf("mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
 
         if (masterConfig.customMixer[0].throttle != 0.0f) {
             for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -1032,7 +1032,7 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        printf("Current mixer: %s\r\n", mixerNames[masterConfig.mixerConfiguration - 1]);
+        printf("Current mixer: %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
@@ -1051,7 +1051,7 @@ static void cliMixer(char *cmdline)
             break;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
-            masterConfig.mixerConfiguration = i + 1;
+            masterConfig.mixerMode = i + 1;
             printf("Mixer set to %s\r\n", mixerNames[i]);
             break;
         }

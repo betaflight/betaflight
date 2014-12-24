@@ -225,7 +225,7 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 //
 
 // DEPRECATED - See MSP_API_VERSION and MSP_MIXER
-#define MSP_IDENT                100    //out message         multitype + multiwii version + protocol version + capability variable
+#define MSP_IDENT                100    //out message         mixerMode + multiwii version + protocol version + capability variable
 
 
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
@@ -616,7 +616,7 @@ void mspInit(serialConfig_t *serialConfig)
     }
 #endif
 
-    if (masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING || masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE)
+    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE)
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
 
     activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
@@ -711,7 +711,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_IDENT:
         headSerialReply(7);
         serialize8(MW_VERSION);
-        serialize8(masterConfig.mixerConfiguration); // type of multicopter
+        serialize8(masterConfig.mixerMode);
         serialize8(MSP_PROTOCOL_VERSION);
         serialize32(CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0)); // "capability"
         break;
@@ -1027,7 +1027,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_MIXER:
         headSerialReply(1);
-        serialize8(masterConfig.mixerConfiguration);
+        serialize8(masterConfig.mixerMode);
         break;
 
     case MSP_RX_CONFIG:
@@ -1052,7 +1052,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_CONFIG:
         headSerialReply(1 + 4 + 1 + 2 + 2 + 2 + 2 + 2);
-        serialize8(masterConfig.mixerConfiguration);
+        serialize8(masterConfig.mixerMode);
 
         serialize32(featureMask());
 
@@ -1342,7 +1342,7 @@ static bool processInCommand(void)
 
 #ifndef USE_QUAD_MIXER_ONLY
     case MSP_SET_MIXER:
-        masterConfig.mixerConfiguration = read8();
+        masterConfig.mixerMode = read8();
         break;
 #endif
 
@@ -1367,9 +1367,9 @@ static bool processInCommand(void)
     case MSP_SET_CONFIG:
 
 #ifdef USE_QUAD_MIXER_ONLY
-        read8(); // multitype ignored
+        read8(); // mixerMode ignored
 #else
-        masterConfig.mixerConfiguration = read8(); // multitype
+        masterConfig.mixerMode = read8(); // mixerMode
 #endif
 
         featureClearAll();

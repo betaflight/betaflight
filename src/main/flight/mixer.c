@@ -62,7 +62,7 @@ static rxConfig_t *rxConfig;
 static gimbalConfig_t *gimbalConfig;
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
-static multiType_e currentMixerConfiguration;
+static mixerMode_e currentMixerMode;
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -188,29 +188,29 @@ static const motorMixer_t mixerDualcopter[] = {
 const mixer_t mixers[] = {
 //    Mo Se Mixtable
     { 0, 0, NULL },                // entry 0
-    { 3, 1, mixerTri },            // MULTITYPE_TRI
-    { 4, 0, mixerQuadP },          // MULTITYPE_QUADP
-    { 4, 0, mixerQuadX },          // MULTITYPE_QUADX
-    { 2, 1, mixerBi },             // MULTITYPE_BI
-    { 0, 1, NULL },                // * MULTITYPE_GIMBAL
-    { 6, 0, mixerY6 },             // MULTITYPE_Y6
-    { 6, 0, mixerHex6P },          // MULTITYPE_HEX6
-    { 1, 1, NULL },                // * MULTITYPE_FLYING_WING
-    { 4, 0, mixerY4 },             // MULTITYPE_Y4
-    { 6, 0, mixerHex6X },          // MULTITYPE_HEX6X
-    { 8, 0, mixerOctoX8 },         // MULTITYPE_OCTOX8
-    { 8, 0, mixerOctoFlatP },      // MULTITYPE_OCTOFLATP
-    { 8, 0, mixerOctoFlatX },      // MULTITYPE_OCTOFLATX
-    { 1, 1, NULL },                // * MULTITYPE_AIRPLANE
-    { 0, 1, NULL },                // * MULTITYPE_HELI_120_CCPM
-    { 0, 1, NULL },                // * MULTITYPE_HELI_90_DEG
-    { 4, 0, mixerVtail4 },         // MULTITYPE_VTAIL4
-    { 6, 0, mixerHex6H },          // MULTITYPE_HEX6H
-    { 0, 1, NULL },                // * MULTITYPE_PPM_TO_SERVO
-    { 2, 1, mixerDualcopter  },    // MULTITYPE_DUALCOPTER
-    { 1, 1, NULL },                // MULTITYPE_SINGLECOPTER
-    { 4, 0, mixerAtail4 },         // MULTITYPE_ATAIL4
-    { 0, 0, NULL },                // MULTITYPE_CUSTOM
+    { 3, 1, mixerTri },            // MIXER_TRI
+    { 4, 0, mixerQuadP },          // MIXER_QUADP
+    { 4, 0, mixerQuadX },          // MIXER_QUADX
+    { 2, 1, mixerBi },             // MIXER_BI
+    { 0, 1, NULL },                // * MIXER_GIMBAL
+    { 6, 0, mixerY6 },             // MIXER_Y6
+    { 6, 0, mixerHex6P },          // MIXER_HEX6
+    { 1, 1, NULL },                // * MIXER_FLYING_WING
+    { 4, 0, mixerY4 },             // MIXER_Y4
+    { 6, 0, mixerHex6X },          // MIXER_HEX6X
+    { 8, 0, mixerOctoX8 },         // MIXER_OCTOX8
+    { 8, 0, mixerOctoFlatP },      // MIXER_OCTOFLATP
+    { 8, 0, mixerOctoFlatX },      // MIXER_OCTOFLATX
+    { 1, 1, NULL },                // * MIXER_AIRPLANE
+    { 0, 1, NULL },                // * MIXER_HELI_120_CCPM
+    { 0, 1, NULL },                // * MIXER_HELI_90_DEG
+    { 4, 0, mixerVtail4 },         // MIXER_VTAIL4
+    { 6, 0, mixerHex6H },          // MIXER_HEX6H
+    { 0, 1, NULL },                // * MIXER_PPM_TO_SERVO
+    { 2, 1, mixerDualcopter  },    // MIXER_DUALCOPTER
+    { 1, 1, NULL },                // MIXER_SINGLECOPTER
+    { 4, 0, mixerAtail4 },         // MIXER_ATAIL4
+    { 0, 0, NULL },                // MIXER_CUSTOM
 };
 #endif
 
@@ -258,14 +258,14 @@ static motorMixer_t *customMixers;
 
 
 #ifndef USE_QUAD_MIXER_ONLY
-void mixerInit(multiType_e mixerConfiguration, motorMixer_t *initialCustomMixers)
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
 {
-    currentMixerConfiguration = mixerConfiguration;
+    currentMixerMode = mixerMode;
 
     customMixers = initialCustomMixers;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    useServo = mixers[currentMixerConfiguration].useServo;
+    useServo = mixers[currentMixerMode].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (feature(FEATURE_SERVO_TILT))
         useServo = 1;
@@ -277,7 +277,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 
     servoCount = pwmOutputConfiguration->servoCount;
 
-    if (currentMixerConfiguration == MULTITYPE_CUSTOM) {
+    if (currentMixerMode == MIXER_CUSTOM) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
@@ -287,11 +287,11 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
             motorCount++;
         }
     } else {
-        motorCount = mixers[currentMixerConfiguration].motorCount;
+        motorCount = mixers[currentMixerMode].motorCount;
         // copy motor-based mixers
-        if (mixers[currentMixerConfiguration].motor) {
+        if (mixers[currentMixerMode].motor) {
             for (i = 0; i < motorCount; i++)
-                currentMixer[i] = mixers[currentMixerConfiguration].motor[i];
+                currentMixer[i] = mixers[currentMixerMode].motor[i];
         }
     }
 
@@ -307,8 +307,8 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
     }
 
     // set flag that we're on something with wings
-    if (currentMixerConfiguration == MULTITYPE_FLYING_WING ||
-            currentMixerConfiguration == MULTITYPE_AIRPLANE)
+    if (currentMixerMode == MIXER_FLYING_WING ||
+            currentMixerMode == MIXER_AIRPLANE)
         ENABLE_STATE(FIXED_WING);
     else
         DISABLE_STATE(FIXED_WING);
@@ -335,9 +335,9 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 
 #else
 
-void mixerInit(multiType_e mixerConfiguration, motorMixer_t *initialCustomMixers)
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
 {
-    currentMixerConfiguration = mixerConfiguration;
+    currentMixerMode = mixerMode;
 
     customMixers = initialCustomMixers;
 
@@ -359,7 +359,6 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 }
 #endif
 
-
 void mixerResetMotors(void)
 {
     int i;
@@ -379,13 +378,13 @@ void writeServos(void)
     if (!useServo)
         return;
 
-    switch (currentMixerConfiguration) {
-        case MULTITYPE_BI:
+    switch (currentMixerMode) {
+        case MIXER_BI:
             pwmWriteServo(0, servo[4]);
             pwmWriteServo(1, servo[5]);
             break;
 
-        case MULTITYPE_TRI:
+        case MIXER_TRI:
             if (mixerConfig->tri_unarmed_servo) {
                 // if unarmed flag set, we always move servo
                 pwmWriteServo(0, servo[5]);
@@ -398,22 +397,22 @@ void writeServos(void)
             }
             break;
 
-        case MULTITYPE_FLYING_WING:
+        case MIXER_FLYING_WING:
             pwmWriteServo(0, servo[3]);
             pwmWriteServo(1, servo[4]);
             break;
 
-        case MULTITYPE_GIMBAL:
+        case MIXER_GIMBAL:
             updateGimbalServos();
             break;
 
-        case MULTITYPE_DUALCOPTER:
+        case MIXER_DUALCOPTER:
             pwmWriteServo(0, servo[4]);
             pwmWriteServo(1, servo[5]);
             break;
 
-        case MULTITYPE_AIRPLANE:
-        case MULTITYPE_SINGLECOPTER:
+        case MIXER_AIRPLANE:
+        case MIXER_SINGLECOPTER:
             pwmWriteServo(0, servo[3]);
             pwmWriteServo(1, servo[4]);
             pwmWriteServo(2, servo[5]);
@@ -517,26 +516,26 @@ void mixTable(void)
 
 #ifndef USE_QUAD_MIXER_ONLY
     // airplane / servo mixes
-    switch (currentMixerConfiguration) {
-        case MULTITYPE_BI:
+    switch (currentMixerMode) {
+        case MIXER_BI:
             servo[4] = (servoDirection(4, 2) * axisPID[YAW]) + (servoDirection(4, 1) * axisPID[PITCH]) + determineServoMiddleOrForwardFromChannel(4);     // LEFT
             servo[5] = (servoDirection(5, 2) * axisPID[YAW]) + (servoDirection(5, 1) * axisPID[PITCH]) + determineServoMiddleOrForwardFromChannel(5);     // RIGHT
             break;
 
-        case MULTITYPE_TRI:
+        case MIXER_TRI:
             servo[5] = (servoDirection(5, 1) * axisPID[YAW]) + determineServoMiddleOrForwardFromChannel(5); // REAR
             break;
 
-        case MULTITYPE_GIMBAL:
+        case MIXER_GIMBAL:
             servo[0] = (((int32_t)servoConf[0].rate * inclination.values.pitchDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(0);
             servo[1] = (((int32_t)servoConf[1].rate * inclination.values.rollDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(1);
             break;
 
-        case MULTITYPE_AIRPLANE:
+        case MIXER_AIRPLANE:
             airplaneMixer();
             break;
 
-        case MULTITYPE_FLYING_WING:
+        case MIXER_FLYING_WING:
             if (!ARMING_FLAG(ARMED))
                 servo[7] = escAndServoConfig->mincommand;
             else
@@ -555,14 +554,14 @@ void mixTable(void)
             servo[4] += determineServoMiddleOrForwardFromChannel(4);
             break;
 
-        case MULTITYPE_DUALCOPTER:
+        case MIXER_DUALCOPTER:
             for (i = 4; i < 6; i++) {
                 servo[i] = axisPID[5 - i] * servoDirection(i, 1); // mix and setup direction
                 servo[i] += determineServoMiddleOrForwardFromChannel(i);
             }
             break;
 
-        case MULTITYPE_SINGLECOPTER:
+        case MIXER_SINGLECOPTER:
             for (i = 3; i < 7; i++) {
                 servo[i] = (axisPID[YAW] * servoDirection(i, 2)) + (axisPID[(6 - i) >> 1] * servoDirection(i, 1)); // mix and setup direction
                 servo[i] += determineServoMiddleOrForwardFromChannel(i);
