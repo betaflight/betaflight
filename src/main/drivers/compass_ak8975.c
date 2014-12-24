@@ -74,16 +74,30 @@ bool ak8975detect(mag_t *mag)
     return true;
 }
 
+#define AK8975A_ASAX 0x10 // Fuse ROM x-axis sensitivity adjustment value
+#define AK8975A_ASAY 0x11 // Fuse ROM y-axis sensitivity adjustment value
+#define AK8975A_ASAZ 0x12 // Fuse ROM z-axis sensitivity adjustment value
+
 void ak8975Init()
 {
     bool ack;
+    uint8_t buffer[3];
+    uint8_t status;
+
     UNUSED(ack);
 
-
-    ack = i2cWrite(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x00);
+    ack = i2cWrite(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x00); // power down before entering fuse mode
     delay(20);
 
-    uint8_t status;
+    ack = i2cWrite(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x0F); // Enter Fuse ROM access mode
+    delay(10);
+
+    ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975A_ASAX, 3, &buffer[0]); // Read the x-, y-, and z-axis calibration values
+    delay(10);
+
+    ack = i2cWrite(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x00); // power down after reading.
+    delay(10);
+
     // Clear status registers
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS1, 1, &status);
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS2, 1, &status);
@@ -109,7 +123,16 @@ void ak8975Read(int16_t *magData)
         return;
     }
 
+#if 1 // USE_I2C_SINGLE_BYTE_READS
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_HXL, 6, buf); // read from AK8975_MAG_REG_HXL to AK8975_MAG_REG_HZH
+#else
+    for (uint8_t i = 0; i < 6; i++) {
+        ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_HXL + i, 1, &buf[i]); // read from AK8975_MAG_REG_HXL to AK8975_MAG_REG_HZH
+        if (!ack) {
+            break;
+        }
+    }
+#endif
 
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS2, 1, &status);
     if (!ack) {
@@ -124,12 +147,8 @@ void ak8975Read(int16_t *magData)
         return;
     }
 
-    // align sensors to match MPU6050:
-    // x -> y
-    // y -> x
-    // z-> -z
-    magData[X] = -(int16_t)(buf[3] << 8 | buf[2]) * 4;
-    magData[Y] = -(int16_t)(buf[1] << 8 | buf[0]) * 4;
+    magData[X] = -(int16_t)(buf[1] << 8 | buf[0]) * 4;
+    magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * 4;
     magData[Z] = -(int16_t)(buf[5] << 8 | buf[4]) * 4;
 
 
