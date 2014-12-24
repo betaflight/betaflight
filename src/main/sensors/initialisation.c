@@ -33,8 +33,6 @@
 #include "drivers/accgyro_mma845x.h"
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
-#include "drivers/accgyro_mpu9150.h"
-
 #include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
 
@@ -146,12 +144,6 @@ bool detectGyro(uint16_t gyroLpf)
     }
 #endif
 
-#ifdef USE_GYRO_MPU9150
-    if (mpu9150GyroDetect(NULL, &gyro, gyroLpf)) {
-        return true;
-    }
-#endif
-
 #ifdef USE_GYRO_L3G4200D
     if (l3g4200dDetect(&gyro, gyroLpf)) {
 #ifdef NAZE
@@ -254,15 +246,6 @@ retry:
                 accAlign = CW0_DEG;
 #endif
                 if (accHardwareToUse == ACC_MPU6050)
-                    break;
-            }
-            ; // fallthrough
-#endif
-#ifdef USE_ACC_MPU9150
-        case ACC_MPU9150: // MPU9150
-            if (mpu9150AccDetect(NULL, &acc)) {
-                accHardware = ACC_MPU9150;
-                if (accHardwareToUse == ACC_MPU9150)
                     break;
             }
             ; // fallthrough
@@ -486,15 +469,17 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     sensorsSet(SENSOR_GYRO);
     detectAcc(accHardwareToUse);
     detectBaro();
-    detectMag(magHardwareToUse);
 
-    reconfigureAlignment(sensorAlignmentConfig);
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init();
+
+    detectMag(magHardwareToUse);
+
+    reconfigureAlignment(sensorAlignmentConfig);
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (sensors(SENSOR_MAG)) {

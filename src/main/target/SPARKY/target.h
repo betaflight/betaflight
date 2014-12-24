@@ -26,15 +26,15 @@
 #define LED1_PIN    Pin_5  // Green LEDs - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
 
-// MPU 9150 INT connected to PA15, pulled up to VCC by 10K Resistor
+// MPU 9150 INT connected to PA15, pulled up to VCC by 10K Resistor, contains MPU6050 and AK8975 in single component.
 #define GYRO
-#define USE_GYRO_MPU9150
+#define USE_GYRO_MPU6050
 
 #define ACC
-#define USE_ACC_MPU9150
+#define USE_ACC_MPU6050
 
-#define BARO
-#define USE_BARO_MS5611
+//#define BARO
+//#define USE_BARO_MS5611
 
 #define MAG
 #define USE_MAG_AK8975

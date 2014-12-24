@@ -35,10 +35,10 @@
 
 #define GYRO
 #define USE_GYRO_L3GD20
-#define USE_GYRO_MPU9150
+#define USE_GYRO_MPU6050
 
 #define ACC
-#define USE_ACC_MPU9150
+#define USE_ACC_MPU6050
 #define USE_ACC_LSM303DLHC
 
 #define BARO
