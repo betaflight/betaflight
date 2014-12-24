@@ -12,26 +12,7 @@
     "options_improve_configurator": {
         "message": "Send anonymous usage data to the developer team"
     },
-
-    "reviewHead": {
-        "message": "Application Review"
-    },
-    "reviewInitial": {
-        "message": "Do you like this app?"
-    },
-    "reviewStore": {
-        "message": "We are glad to hear that, would you like to send a review to make the application more popular?"
-    },
-    "reviewBug": {
-        "message": "We are sorry to hear that, would you like to submit a ticker and tell us what bothers you?"
-    },
-    "reviewYes": {
-        "message": "Yes"
-    },
-    "reviewNo": {
-        "message": "No"
-    },
-
+    
     "connect": {
         "message": "Connect"
     },
