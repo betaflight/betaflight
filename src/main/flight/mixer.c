@@ -42,6 +42,9 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
+#define GIMBAL_SERVO_PITCH 0
+#define GIMBAL_SERVO_ROLL 1
+
 #define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
 static uint8_t motorCount = 0;
@@ -512,7 +515,11 @@ void mixTable(void)
     // motors for non-servo mixes
     if (motorCount > 1)
         for (i = 0; i < motorCount; i++)
-            motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + -mixerConfig->yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
+            motor[i] =
+                rcCommand[THROTTLE] * currentMixer[i].throttle +
+                axisPID[PITCH] * currentMixer[i].pitch +
+                axisPID[ROLL] * currentMixer[i].roll +
+                -mixerConfig->yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
 
 #ifndef USE_QUAD_MIXER_ONLY
     // airplane / servo mixes
@@ -527,8 +534,8 @@ void mixTable(void)
             break;
 
         case MIXER_GIMBAL:
-            servo[0] = (((int32_t)servoConf[0].rate * inclination.values.pitchDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(0);
-            servo[1] = (((int32_t)servoConf[1].rate * inclination.values.rollDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(1);
+            servo[GIMBAL_SERVO_PITCH] = (((int32_t)servoConf[GIMBAL_SERVO_PITCH].rate * inclination.values.pitchDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(GIMBAL_SERVO_PITCH);
+            servo[GIMBAL_SERVO_ROLL] = (((int32_t)servoConf[GIMBAL_SERVO_ROLL].rate * inclination.values.rollDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(GIMBAL_SERVO_ROLL);
             break;
 
         case MIXER_AIRPLANE:
