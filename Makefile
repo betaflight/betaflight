@@ -414,6 +414,9 @@ STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_l3g4200d.c \
+		   drivers/accgyro_mpu9150.c \
+		   drivers/barometer_ms5611.c \
+		   drivers/compass_ak8975.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
