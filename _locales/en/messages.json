@@ -828,6 +828,9 @@
     "firmwareFlasherFlashSlowlyDescription": {
         "message": "Use 115200 baudrate for flashing (useful for flashing via bluetooth)"
     },
+    "firmwareFlasherOptionLabelSelectFirmware": {
+        "message": "Choose a Firmware / Board"
+    },
     "firmwareFlasherButtonLoadLocal": {
         "message": "Load Firmware [Local]"
     },
