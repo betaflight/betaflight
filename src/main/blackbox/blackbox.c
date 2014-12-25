@@ -82,7 +82,7 @@
 
 #define ARRAY_LENGTH(x) (sizeof((x))/sizeof((x)[0]))
 
-// Some macros to make writing FLIGHT_LOG_FIELD_PREDICTOR_* constants shorter:
+// Some macros to make writing FLIGHT_LOG_FIELD_* constants shorter:
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
@@ -147,6 +147,12 @@ typedef struct blackboxGPSFieldDefinition_t {
     uint8_t encode;
 } blackboxGPSFieldDefinition_t;
 
+/**
+ * Description of the blackbox fields we are writing in our main intra (I) and inter (P) frames. This description is
+ * written into the flight log header so the log can be properly interpreted (but these definitions don't actually cause
+ * the encoding to happen, we have to encode the flight log ourselves in write{Inter|Intra}frame() in a way that matches
+ * the encoding we've promised here).
+ */
 static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
     /* loopIteration doesn't appear in P frames since it always increments */
     {"loopIteration", UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
@@ -528,7 +534,7 @@ static bool testBlackboxCondition(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
             return motorCount >= 8;
         case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
-            return masterConfig.mixerConfiguration == MULTITYPE_TRI;
+            return masterConfig.mixerMode == MIXER_TRI;
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
         default:
