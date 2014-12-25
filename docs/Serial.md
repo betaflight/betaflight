@@ -46,6 +46,8 @@ To make configuration easier common usage scenarios are listed below.
 7   GPS-PASSTHROUGH ONLY
 8   MSP ONLY
 9   SMARTPORT TELEMETRY ONLY
+10  BLACKBOX ONLY
+11  MSP, CLI, BLACKBOX, GPS-PASSTHROUGH
 ```
 
 ### Constraints
