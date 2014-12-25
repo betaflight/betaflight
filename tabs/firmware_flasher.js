@@ -55,7 +55,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                                 date.getFullYear(),
                                 date.getMonth() + 1,
                                 date.getDate(),
-                                date.getHours(),
+                                date.getUTCHours(),
                                 date.getMinutes()
                             );
                             
