@@ -148,7 +148,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'SPEKTRUM2048',
             'SBUS',
             'SUMD',
-            'SUMH'
+            'SUMH',
+            'XBUS_MODE_B'
         ];
 
         var serialRX_e = $('select.serialRX');
