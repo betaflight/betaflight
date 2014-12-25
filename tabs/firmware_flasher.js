@@ -53,8 +53,8 @@ TABS.firmware_flasher.initialize = function (callback) {
                             var date = new Date(release.published_at);
                             var formattedDate = "{0}-{1}-{2} {3}:{4}".format(
                                 date.getFullYear(),
-                                date.getMonth(),
-                                date.getDay(),
+                                date.getMonth() + 1,
+                                date.getDate(),
                                 date.getHours(),
                                 date.getMinutes()
                             );
