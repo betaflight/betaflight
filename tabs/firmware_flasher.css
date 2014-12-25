@@ -71,7 +71,7 @@
     margin-left: 6px;
 }
 .tab-firmware_flasher .options select {
-    width: 180px;
+    width: 280px;
     height: 20px;
 
     border: 1px solid silver;
@@ -82,7 +82,7 @@
 }
 .tab-firmware_flasher .options .description {
     position: absolute;
-    left: 200px;
+    left: 300px;
 
     font-style: italic;
     color: #818181;
@@ -191,6 +191,13 @@
     background-color: #b8b8b8;
 }
 .tab-firmware_flasher .buttons a.flash_firmware.locked:hover {
+    cursor: default;
+    background-color: #b8b8b8;
+}
+.tab-firmware_flasher .buttons a.load_remote_file.locked {
+    background-color: #b8b8b8;
+}
+.tab-firmware_flasher .buttons a.load_remote_file.locked:hover {
     cursor: default;
     background-color: #b8b8b8;
 }
