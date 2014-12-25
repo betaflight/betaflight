@@ -33,10 +33,10 @@
 
 extern int16_t debug[4];
 
-// Address
+// Addresses (7 bit address format)
 
-#define LSM303DLHC_ACCEL_ADDRESS 0x32
-#define LSM303DLHC_MAG_ADDRESS 0x3C
+#define LSM303DLHC_ACCEL_ADDRESS 0x19
+#define LSM303DLHC_MAG_ADDRESS 0x1E
 
 // Registers
 

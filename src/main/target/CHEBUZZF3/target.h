@@ -35,9 +35,17 @@
 
 #define GYRO
 #define USE_GYRO_L3GD20
+#define USE_GYRO_MPU6050
 
 #define ACC
+#define USE_ACC_MPU6050
 #define USE_ACC_LSM303DLHC
+
+#define BARO
+#define USE_BARO_MS5611
+
+#define MAG
+#define USE_MAG_AK8975
 
 #define BEEPER
 #define LED0
@@ -51,7 +59,7 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
-#define SENSORS_SET (SENSOR_ACC)
+#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 #define GPS
 #define LED_STRIP

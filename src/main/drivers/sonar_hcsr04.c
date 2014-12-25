@@ -36,35 +36,21 @@
  *
  */
 
-static uint32_t last_measurement;
-static volatile int32_t *distance_ptr = 0;
-
-extern int16_t debug[4];
-
+static uint32_t lastMeasurementAt;
+static volatile int32_t measurement = -1;
 static sonarHardware_t const *sonarHardware;
 
 void ECHO_EXTI_IRQHandler(void)
 {
     static uint32_t timing_start;
     uint32_t timing_stop;
+
     if (digitalIn(GPIOB, sonarHardware->echo_pin) != 0) {
         timing_start = micros();
     } else {
         timing_stop = micros();
         if (timing_stop > timing_start) {
-            // The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
-            // The ping travels out and back, so to find the distance of the
-            // object we take half of the distance traveled.
-            //
-            // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
-            int32_t distance = (timing_stop - timing_start) / 59;
-            // this sonar range is up to 4meter , but 3meter is the safe working range (+tilted and roll)
-            if (distance > 300)
-                distance = -1;
-
-            if (distance_ptr) {
-                *distance_ptr = distance;
-            }
+            measurement = timing_stop - timing_start;
         }
     }
 
@@ -115,30 +101,41 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware)
 
     NVIC_EnableIRQ(sonarHardware->exti_irqn);
 
-    last_measurement = millis() - 60; // force 1st measurement in hcsr04_get_distance()
+    lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()
 }
 
-// distance calculation is done asynchronously, using interrupt
-void hcsr04_get_distance(volatile int32_t *distance)
+// measurement reading is done asynchronously, using interrupt
+void hcsr04_start_reading(void)
 {
-    uint32_t current_time = millis();
+    uint32_t now = millis();
 
-    if (current_time < (last_measurement + 60)) {
+    if (now < (lastMeasurementAt + 60)) {
         // the repeat interval of trig signal should be greater than 60ms
         // to avoid interference between connective measurements.
         return;
     }
 
-    last_measurement = current_time;
-    distance_ptr = distance;
-
-#if 0
-    debug[0] = *distance;
-#endif
+    lastMeasurementAt = now;
 
     digitalHi(GPIOB, sonarHardware->trigger_pin);
     //  The width of trig signal must be greater than 10us
     delayMicroseconds(11);
     digitalLo(GPIOB, sonarHardware->trigger_pin);
+}
+
+int32_t hcsr04_get_distance(void)
+{
+    // The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
+    // The ping travels out and back, so to find the distance of the
+    // object we take half of the distance traveled.
+    //
+    // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
+    int32_t distance = measurement / 59;
+
+    // this sonar range is up to 4meter , but 3meter is the safe working range (+tilted and roll)
+    if (distance > 300)
+        distance = -1;
+
+    return distance;
 }
 #endif

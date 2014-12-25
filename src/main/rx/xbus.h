@@ -17,13 +17,8 @@
 
 #pragma once
 
-typedef struct mpu9150Config_s {
-    uint32_t gpioAPB2Peripherals;
-    uint16_t gpioPin;
-    GPIO_TypeDef *gpioPort;
-} mpu9150Config_t;
+#include "rx/rx.h"
 
-bool mpu9150AccDetect(const mpu9150Config_t *config,acc_t *acc);
-bool mpu9150GyroDetect(const mpu9150Config_t *config, gyro_t *gyro, uint16_t lpf);
-void mpu9150DmpLoop(void);
-void mpu9150DmpResetFifo(void);
+bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool xBusFrameComplete(void);
+void xBusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint);

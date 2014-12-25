@@ -309,7 +309,7 @@ static void resetConf(void)
     setControlRateProfile(0);
 
     masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.mixerConfiguration = MULTITYPE_QUADX;
+    masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
 #if defined(CJMCU) || defined(SPARKY)
     featureSet(FEATURE_RX_PPM);

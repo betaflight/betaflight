@@ -20,34 +20,33 @@
 #define MAX_SUPPORTED_MOTORS 12
 #define MAX_SUPPORTED_SERVOS 8
 
-// Syncronized with GUI. Only exception is mixer > 11, which is always returned as 11 during serialization.
-typedef enum MultiType
+// Note: this is called MultiType/MULTITYPE_* in baseflight.
+typedef enum mixerMode
 {
-    MULTITYPE_TRI = 1,
-    MULTITYPE_QUADP = 2,
-    MULTITYPE_QUADX = 3,
-    MULTITYPE_BI = 4,
-    MULTITYPE_GIMBAL = 5,
-    MULTITYPE_Y6 = 6,
-    MULTITYPE_HEX6 = 7,
-    MULTITYPE_FLYING_WING = 8,
-    MULTITYPE_Y4 = 9,
-    MULTITYPE_HEX6X = 10,
-    MULTITYPE_OCTOX8 = 11,          // Java GUI is same for the next 3 configs
-    MULTITYPE_OCTOFLATP = 12,       // MultiWinGui shows this differently
-    MULTITYPE_OCTOFLATX = 13,       // MultiWinGui shows this differently
-    MULTITYPE_AIRPLANE = 14,        // airplane / singlecopter / dualcopter (not yet properly supported)
-    MULTITYPE_HELI_120_CCPM = 15,
-    MULTITYPE_HELI_90_DEG = 16,
-    MULTITYPE_VTAIL4 = 17,
-    MULTITYPE_HEX6H = 18,
-    MULTITYPE_PPM_TO_SERVO = 19,    // PPM -> servo relay
-    MULTITYPE_DUALCOPTER = 20,
-    MULTITYPE_SINGLECOPTER = 21,
-    MULTITYPE_ATAIL4 = 22,
-    MULTITYPE_CUSTOM = 23,
-    MULTITYPE_LAST = 24
-} MultiType;
+    MIXER_TRI = 1,
+    MIXER_QUADP = 2,
+    MIXER_QUADX = 3,
+    MIXER_BI = 4,
+    MIXER_GIMBAL = 5,
+    MIXER_Y6 = 6,
+    MIXER_HEX6 = 7,
+    MIXER_FLYING_WING = 8,
+    MIXER_Y4 = 9,
+    MIXER_HEX6X = 10,
+    MIXER_OCTOX8 = 11,
+    MIXER_OCTOFLATP = 12,
+    MIXER_OCTOFLATX = 13,
+    MIXER_AIRPLANE = 14,        // airplane / singlecopter / dualcopter (not yet properly supported)
+    MIXER_HELI_120_CCPM = 15,
+    MIXER_HELI_90_DEG = 16,
+    MIXER_VTAIL4 = 17,
+    MIXER_HEX6H = 18,
+    MIXER_PPM_TO_SERVO = 19,    // PPM -> servo relay
+    MIXER_DUALCOPTER = 20,
+    MIXER_SINGLECOPTER = 21,
+    MIXER_ATAIL4 = 22,
+    MIXER_CUSTOM = 23
+} mixerMode_e;
 
 // Custom mixer data per motor
 typedef struct motorMixer_t {

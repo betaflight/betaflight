@@ -46,6 +46,8 @@
 
 #include "config/runtime_config.h"
 
+extern int16_t debug[4];
+
 int32_t setVelocity = 0;
 uint8_t velocityControl = 0;
 int32_t errorVelocityI = 0;
@@ -258,6 +260,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
 #ifdef SONAR
     tiltAngle = calculateTiltAngle(&inclination);
+    sonarAlt = sonarRead();
     sonarAlt = sonarCalculateAltitude(sonarAlt, tiltAngle);
 #endif
 

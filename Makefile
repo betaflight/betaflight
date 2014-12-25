@@ -190,6 +190,7 @@ COMMON_SRC	 = build_config.c \
 		   rx/sumd.c \
 		   rx/sumh.c \
 		   rx/spektrum.c \
+		   rx/xbus.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
@@ -414,6 +415,8 @@ STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_l3g4200d.c \
+		   drivers/barometer_ms5611.c \
+		   drivers/compass_ak8975.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
@@ -427,7 +430,7 @@ MASSIVEF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
 
 SPARKY_SRC	 = $(STM32F30x_COMMON_SRC) \
 		   drivers/display_ug2864hsweg01.c \
-		   drivers/accgyro_mpu9150.c \
+		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
 		   $(HIGHEND_SRC) \

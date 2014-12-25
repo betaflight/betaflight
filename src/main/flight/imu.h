@@ -33,7 +33,7 @@ typedef struct imuRuntimeConfig_s {
 void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, accDeadband_t *initialAccDeadband);
 
 void calculateEstimatedAltitude(uint32_t currentTime);
-void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerConfiguration);
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode);
 void calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 void calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);

@@ -101,7 +101,7 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
 
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
         GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
         GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
         GPIO_InitStructure.GPIO_Pin = I2C1_SCL_PIN;
@@ -197,6 +197,8 @@ uint16_t i2cGetErrorCounter(void)
 
 bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data)
 {
+    addr_ <<= 1;
+
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
@@ -258,6 +260,8 @@ bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data)
 
 bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
 {
+    addr_ <<= 1;
+
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {

@@ -42,6 +42,7 @@
 #include "rx/sumd.h"
 #include "rx/sumh.h"
 #include "rx/msp.h"
+#include "rx/xbus.h"
 
 #include "rx/rx.h"
 
@@ -100,6 +101,9 @@ void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintTo
         case SERIALRX_SUMH:
             sumhUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
             break;
+        case SERIALRX_XBUS_MODE_B:
+            xBusUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
+            break;
     }
 }
 #endif
@@ -109,6 +113,7 @@ void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintTo
 void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
 {
     uint8_t i;
+
     useRxConfig(rxConfig);
 
     for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
@@ -152,6 +157,9 @@ void serialRxInit(rxConfig_t *rxConfig)
         case SERIALRX_SUMH:
             enabled = sumhInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+        case SERIALRX_XBUS_MODE_B:
+            enabled = xBusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            break;
     }
 
     if (!enabled) {
@@ -162,6 +170,7 @@ void serialRxInit(rxConfig_t *rxConfig)
 
 bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
 {
+
     switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
@@ -172,6 +181,8 @@ bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
             return sumdFrameComplete();
         case SERIALRX_SUMH:
             return sumhFrameComplete();
+        case SERIALRX_XBUS_MODE_B:
+            return xBusFrameComplete();
     }
     return false;
 }

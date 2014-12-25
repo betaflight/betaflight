@@ -97,7 +97,7 @@ void initTelemetry(void);
 void serialInit(serialConfig_t *initialSerialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
-void mixerInit(MultiType mixerConfiguration, motorMixer_t *customMixers);
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMixers);
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
 void beepcodeInit(failsafe_t *initialFailsafe);
@@ -265,7 +265,7 @@ void init(void)
     LED1_OFF;
 
     imuInit();
-    mixerInit(masterConfig.mixerConfiguration, masterConfig.customMixer);
+    mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
 
 #ifdef MAG
     if (sensors(SENSOR_MAG))
@@ -276,7 +276,7 @@ void init(void)
 
     memset(&pwm_params, 0, sizeof(pwm_params));
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerConfiguration == MULTITYPE_AIRPLANE || masterConfig.mixerConfiguration == MULTITYPE_FLYING_WING)
+    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
@@ -350,7 +350,7 @@ void init(void)
 
     previousTime = micros();
 
-    if (masterConfig.mixerConfiguration == MULTITYPE_GIMBAL) {
+    if (masterConfig.mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);

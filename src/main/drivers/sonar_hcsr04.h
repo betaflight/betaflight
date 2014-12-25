@@ -27,4 +27,5 @@ typedef struct sonarHardware_s {
 
 void hcsr04_init(const sonarHardware_t *sonarHardware);
 
-void hcsr04_get_distance(volatile int32_t *distance);
+void hcsr04_start_reading(void);
+int32_t hcsr04_get_distance(void);

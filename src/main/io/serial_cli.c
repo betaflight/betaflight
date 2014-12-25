@@ -74,8 +74,10 @@
 
 #include "serial_cli.h"
 
-// we unset this on 'exit'
-extern uint8_t cliMode;
+extern uint16_t cycleTime; // FIXME dependency on mw.c
+
+static serialPort_t *cliPort;
+
 static void cliAux(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
 static void cliCMix(char *cmdline);
@@ -83,18 +85,6 @@ static void cliDefaults(char *cmdline);
 static void cliDump(char *cmdLine);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
-#ifdef GPS
-static void cliGpsPassthrough(char *cmdline);
-#endif
-static void cliHelp(char *cmdline);
-static void cliMap(char *cmdline);
-#ifdef LED_STRIP
-static void cliLed(char *cmdline);
-static void cliColor(char *cmdline);
-#endif
-#ifndef CJMCU
-static void cliMixer(char *cmdline);
-#endif
 static void cliMotor(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
@@ -105,9 +95,21 @@ static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
 static void cliVersion(char *cmdline);
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
+#ifdef GPS
+static void cliGpsPassthrough(char *cmdline);
+#endif
 
-static serialPort_t *cliPort;
+static void cliHelp(char *cmdline);
+static void cliMap(char *cmdline);
+
+#ifdef LED_STRIP
+static void cliLed(char *cmdline);
+static void cliColor(char *cmdline);
+#endif
+
+#ifndef USE_QUAD_MIXER_ONLY
+static void cliMixer(char *cmdline);
+#endif
 
 // signal that we're in cli mode
 uint8_t cliMode = 0;
@@ -116,7 +118,8 @@ uint8_t cliMode = 0;
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
 
-// sync this with mutiType_e
+#ifndef USE_QUAD_MIXER_ONLY
+// sync this with mixerMode_e
 static const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
@@ -125,6 +128,7 @@ static const char * const mixerNames[] = {
     "HEX6H", "PPM_TO_SERVO", "DUALCOPTER", "SINGLECOPTER",
     "ATAIL4", "CUSTOM", NULL
 };
+#endif
 
 // sync this with features_e
 static const char * const featureNames[] = {
@@ -141,7 +145,7 @@ static const char * const sensorNames[] = {
 };
 
 static const char * const accNames[] = {
-    "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9150", "FAKE", "None", NULL
+    "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", "None", NULL
 };
 
 typedef struct {
@@ -171,7 +175,7 @@ const clicmd_t cmdTable[] = {
     { "led", "configure leds", cliLed },
 #endif
     { "map", "mapping of rc channel order", cliMap },
-#ifndef CJMCU
+#ifndef USE_QUAD_MIXER_ONLY
     { "mixer", "mixer name or list", cliMixer },
 #endif
     { "motor", "get/set motor output value", cliMotor },
@@ -577,7 +581,7 @@ static void cliAdjustmentRange(char *cmdline)
 
 static void cliCMix(char *cmdline)
 {
-#ifdef CJMCU
+#ifdef USE_QUAD_MIXER_ONLY
     UNUSED(cmdline);
 #else
     int i, check = 0;
@@ -757,8 +761,11 @@ static void cliDump(char *cmdline)
 {
     unsigned int i;
     char buf[16];
-    float thr, roll, pitch, yaw;
     uint32_t mask;
+
+#ifndef USE_QUAD_MIXER_ONLY
+    float thr, roll, pitch, yaw;
+#endif
 
     uint8_t dumpMask = DUMP_ALL;
     if (strcasecmp(cmdline, "master") == 0) {
@@ -779,7 +786,8 @@ static void cliDump(char *cmdline)
         printf("\r\n# dump master\r\n");
         printf("\r\n# mixer\r\n");
 
-        printf("mixer %s\r\n", mixerNames[masterConfig.mixerConfiguration - 1]);
+#ifndef USE_QUAD_MIXER_ONLY
+        printf("mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
 
         if (masterConfig.customMixer[0].throttle != 0.0f) {
             for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -805,6 +813,7 @@ static void cliDump(char *cmdline)
             }
             printf("cmix %d 0 0 0 0\r\n", i + 1);
         }
+#endif
 
         printf("\r\n\r\n# feature\r\n");
 
@@ -1018,7 +1027,7 @@ static void cliMap(char *cmdline)
     printf("%s\r\n", out);
 }
 
-#ifndef CJMCU
+#ifndef USE_QUAD_MIXER_ONLY
 static void cliMixer(char *cmdline)
 {
     int i;
@@ -1027,7 +1036,7 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        printf("Current mixer: %s\r\n", mixerNames[masterConfig.mixerConfiguration - 1]);
+        printf("Current mixer: %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
@@ -1046,7 +1055,7 @@ static void cliMixer(char *cmdline)
             break;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
-            masterConfig.mixerConfiguration = i + 1;
+            masterConfig.mixerMode = i + 1;
             printf("Mixer set to %s\r\n", mixerNames[i]);
             break;
         }

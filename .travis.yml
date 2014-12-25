@@ -1,0 +1,23 @@
+env:
+  - TARGET=CC3D
+  - TARGET=CHEBUZZF3
+  - TARGET=CJMCU
+  - TARGET=EUSTM32F103RC
+  - TARGET=MASSIVEF3
+  - TARGET=NAZE
+  - TARGET=NAZE32PRO
+  - TARGET=OLIMEXINO
+  - TARGET=PORT103R
+  - TARGET=SPARKY
+  - TARGET=STM32F3DISCOVERY
+language: c
+compiler: arm-none-eabi-gcc
+before_install: sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sudo apt-get update
+install: sudo apt-get install build-essential gcc-arm-none-eabi git
+before_script: $CC --version
+script: make -j2
+
+notifications:
+  irc: "chat.freenode.net#cleanflight"
+  use_notice: true
+  skip_join: true
