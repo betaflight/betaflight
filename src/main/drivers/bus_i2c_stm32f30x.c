@@ -281,10 +281,6 @@ bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
         }
     }
 
-    if (len > 1) {
-        reg |= 0x80;
-    }
-
     /* Send Register address */
     I2C_SendData(I2Cx, (uint8_t) reg);
 
