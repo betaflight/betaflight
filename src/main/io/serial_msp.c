@@ -80,6 +80,8 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern int16_t debug[4]; // FIXME dependency on mw.c
 
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+
 /**
  * MSP Guidelines, emphasis is used to clarify.
  *
@@ -1172,6 +1174,8 @@ static bool processInCommand(void)
                 mac->auxChannelIndex = read8();
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
+
+                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
             } else {
                 headSerialError(0);
             }

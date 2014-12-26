@@ -519,6 +519,8 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
     escAndServoConfig = escAndServoConfigToUse;
     pidProfile = pidProfileToUse;
 
+    isUsingSticksToArm = true;
+
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
         if (modeActivationCondition->modeId == BOXARM && IS_RANGE_USABLE(&modeActivationCondition->range)) {
