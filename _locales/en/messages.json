@@ -799,10 +799,10 @@
         "message": "No reboot sequence"
     },
     "firmwareFlasherOnlineReleasesDescription": {
-        "message": "Available online firmware releases"
+        "message": "Available online firmware releases - Select the correct firmware appropriate for your board."
     },
     "firmwareFlasherNoRebootDescription": {
-        "message": "Check if you are flashing board with bootloader pins shorted"
+        "message": "Enable if you are flashing board with bootloader pins shorted"
     },
     "firmwareFlasherFlashOnConnect": {
         "message": "Flash on connect"
