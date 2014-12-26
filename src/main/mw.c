@@ -91,7 +91,7 @@ uint16_t cycleTime = 0;         // this is the number in micro second to achieve
 int16_t headFreeModeHold;
 
 int16_t telemTemperature1;      // gyro sensor temperature
-static uint32_t disarmTime;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
+static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 extern failsafe_t *failsafe;
@@ -327,7 +327,7 @@ void mwArm(void)
                 }
             }
 #endif
-            disarmTime = millis() + masterConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+            disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             return;
         }
@@ -502,10 +502,10 @@ void processRx(void)
         && feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING)
         && masterConfig.auto_disarm_delay != 0) {
         if (throttleStatus == THROTTLE_LOW) {
-            if ((int32_t)(disarmTime - millis()) < 0)  // delay is over
+            if ((int32_t)(disarmAt - millis()) < 0)  // delay is over
                 mwDisarm();
         } else {
-            disarmTime = millis() + masterConfig.auto_disarm_delay * 1000;   // extend delay
+            disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // extend delay
         }
     }
 
