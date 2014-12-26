@@ -760,7 +760,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
-        // Retarded hack until multiwiidorks start using real units for sensor data
+        // Hack due to choice of units for sensor data in multiwii
         if (acc_1G > 1024) {
             for (i = 0; i < 3; i++)
                 serialize16(accSmooth[i] / 8);
@@ -982,7 +982,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                serialize8(GPS_svinfo_svid[i]);
                serialize8(GPS_svinfo_quality[i]);
                serialize8(GPS_svinfo_cno[i]);
-            }
+           }
         break;
 #endif
     case MSP_DEBUG:
@@ -1469,6 +1469,7 @@ static void mspProcessPort(void)
                 tailSerialReply();
             }
             currentPort->c_state = IDLE;
+            break; // process one command so as not to block.
         }
     }
 }
