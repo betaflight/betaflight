@@ -48,6 +48,8 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500
 
+#define GYRO_MPU6050_ALIGN CW0_DEG
+
 #define ACC
 #define USE_FAKE_ACC
 #define USE_ACC_ADXL345
@@ -57,6 +59,8 @@
 //#define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
 
+#define ACC_MPU6050_ALIGN CW0_DEG
+
 #define BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
@@ -64,6 +68,8 @@
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
+
+#define MAG_AK8975_ALIGN CW180_DEG_FLIP
 
 
 #define SONAR
