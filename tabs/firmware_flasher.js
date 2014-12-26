@@ -32,6 +32,8 @@ TABS.firmware_flasher.initialize = function (callback) {
         var processReleases = function (releases){
             var releases_e = $('select[name="release"]').empty();
 
+            releases_e.append($("<option value='0'>{0}</option>".format(chrome.i18n.getMessage('firmwareFlasherOptionLabelSelectFirmware'))));
+
             for(var releaseIndex = 0; releaseIndex < releases.length; releaseIndex++){
                 $.get(releases[releaseIndex].assets_url).done(
                     (function (releases, releaseIndex, releases_e, assets){
@@ -206,8 +208,26 @@ TABS.firmware_flasher.initialize = function (callback) {
                 });
             });
         });
+
+        /**
+         * Lock / Unlock the firmware download button according to the firmware selection dropdown.
+         */
+        $('select[name="release"]').change(function(evt){
+            if (evt.target.value=="0") {
+                $("a.load_remote_file").addClass('locked');
+            }
+            else {
+                $("a.load_remote_file").removeClass('locked');
+            }
+        });
         
-        $('a.load_remote_file').click(function () {
+        $('a.load_remote_file').click(function (evt) {
+
+            if ($('select[name="release"]').val() == "0") {
+                GUI.log("<b>No firmware selected to load</b>");
+                return;
+            }
+
             function process_hex(data, summary) {
                 intel_hex = data;
 

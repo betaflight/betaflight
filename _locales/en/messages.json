@@ -12,26 +12,7 @@
     "options_improve_configurator": {
         "message": "Send anonymous usage data to the developer team"
     },
-
-    "reviewHead": {
-        "message": "Application Review"
-    },
-    "reviewInitial": {
-        "message": "Do you like this app?"
-    },
-    "reviewStore": {
-        "message": "We are glad to hear that, would you like to send a review to make the application more popular?"
-    },
-    "reviewBug": {
-        "message": "We are sorry to hear that, would you like to submit a ticker and tell us what bothers you?"
-    },
-    "reviewYes": {
-        "message": "Yes"
-    },
-    "reviewNo": {
-        "message": "No"
-    },
-
+    
     "connect": {
         "message": "Connect"
     },
@@ -818,10 +799,10 @@
         "message": "No reboot sequence"
     },
     "firmwareFlasherOnlineReleasesDescription": {
-        "message": "Available online firmware releases"
+        "message": "Available online firmware releases - Select the correct firmware appropriate for your board."
     },
     "firmwareFlasherNoRebootDescription": {
-        "message": "Check if you are flashing board with bootloader pins shorted"
+        "message": "Enable if you are flashing board with bootloader pins shorted"
     },
     "firmwareFlasherFlashOnConnect": {
         "message": "Flash on connect"
@@ -846,6 +827,9 @@
     },
     "firmwareFlasherFlashSlowlyDescription": {
         "message": "Use 115200 baudrate for flashing (useful for flashing via bluetooth)"
+    },
+    "firmwareFlasherOptionLabelSelectFirmware": {
+        "message": "Choose a Firmware / Board"
     },
     "firmwareFlasherButtonLoadLocal": {
         "message": "Load Firmware [Local]"
