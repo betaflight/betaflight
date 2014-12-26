@@ -219,22 +219,22 @@ This is the default so that if you don't want to place LEDs top and bottom in th
 ### Example 16 LED config
 
 ```
-15,15:SD:IA
-8,8:E:FW
-8,7:E:FW
-15,0:ND:IA
-7,7:N:FW
-8,7:N:FW
-0,0:ND:IA
-7,7:W:FW
-7,8:W:FW
-0,15:SD:IA
-7,8:S:FW
-8,8:S:FW
-7,7:D:FW
-8,7:D:FW
-7,7:U:FW
-8,7:U:FW
+led 0 15,15:SD:IA
+led 1 8,8:E:FW
+led 2 8,7:E:FW
+led 3 15,0:ND:IA
+led 4 7,7:N:FW
+led 5 8,7:N:FW
+led 6 0,0:ND:IA
+led 7 7,7:W:FW
+led 8 7,8:W:FW
+led 9 0,15:SD:IA
+led 10 7,8:S:FW
+led 11 8,8:S:FW
+led 12 7,7:D:FW
+led 13 8,7:D:FW
+led 14 7,7:U:FW
+led 15 8,7:U:FW
 ```
 
 Which translates into the following positions:
