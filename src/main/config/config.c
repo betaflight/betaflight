@@ -352,6 +352,7 @@ static void resetConf(void)
 
     masterConfig.retarded_arm = 0;
     masterConfig.disarm_kill_switch = 1;
+    masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;
 
     masterConfig.airplaneConfig.flaps_speed = 0;
