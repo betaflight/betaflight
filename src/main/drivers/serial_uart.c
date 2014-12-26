@@ -39,6 +39,31 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode);
 uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode);
 uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode);
 
+static void usartConfigurePinInversion(uartPort_t *uartPort) {
+#ifdef INVERTER
+    if (uartPort->port.inversion == SERIAL_INVERTED && uartPort->USARTx == INVERTER_USART) {
+        // Enable hardware inverter if available.
+        INVERTER_ON;
+    }
+#endif
+
+#ifdef STM32F303xC
+    uint32_t inversionPins = 0;
+
+    if (uartPort->port.mode & MODE_TX) {
+        inversionPins |= USART_InvPin_Tx;
+    }
+    if (uartPort->port.mode & MODE_RX) {
+        inversionPins |= USART_InvPin_Rx;
+    }
+
+    // Note: inversion when using MODE_BIDIR not supported yet.
+
+    USART_InvPinCmd(uartPort->USARTx, inversionPins, uartPort->port.inversion == SERIAL_INVERTED ? ENABLE : DISABLE);
+#endif
+
+}
+
 static void uartReconfigure(uartPort_t *uartPort)
 {
     USART_InitTypeDef USART_InitStructure;
@@ -63,21 +88,15 @@ static void uartReconfigure(uartPort_t *uartPort)
         USART_InitStructure.USART_Mode |= USART_Mode_Tx | USART_Mode_Rx;
 
     USART_Init(uartPort->USARTx, &USART_InitStructure);
+
+    usartConfigurePinInversion(uartPort);
+
     USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion)
 {
-    UNUSED(inversion);
-
     uartPort_t *s = NULL;
-
-#ifdef INVERTER
-    if (inversion == SERIAL_INVERTED && USARTx == INVERTER_USART) {
-        // Enable hardware inverter if available.
-        INVERTER_ON;
-    }
-#endif
 
     if (USARTx == USART1) {
         s = serialUSART1(baudRate, mode);
@@ -101,12 +120,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     s->port.callback = callback;
     s->port.mode = mode;
     s->port.baudRate = baudRate;
-
-#if 1 // FIXME use inversion on STM32F3
-    s->port.inversion = SERIAL_NOT_INVERTED;
-#else
     s->port.inversion = inversion;
-#endif
 
     uartReconfigure(s);
 
