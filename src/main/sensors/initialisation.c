@@ -246,6 +246,18 @@ retry:
             }
             ; // fallthrough
 #endif
+#ifdef USE_ACC_LSM303DLHC
+        case ACC_LSM303DLHC:
+            if (lsm303dlhcAccDetect(&acc)) {
+#ifdef ACC_LSM303DLHC_ALIGN
+                accAlign = ACC_LSM303DLHC_ALIGN;
+#endif
+                accHardware = ACC_LSM303DLHC;
+                if (accHardwareToUse == ACC_LSM303DLHC)
+                    break;
+            }
+            ; // fallthrough
+#endif
 #ifdef USE_ACC_MPU6050
         case ACC_MPU6050: // MPU6050
             if (mpu6050AccDetect(selectMPU6050Config(), &acc)) {
@@ -283,18 +295,6 @@ retry:
 #endif
                 accHardware = ACC_BMA280;
                 if (accHardwareToUse == ACC_BMA280)
-                    break;
-            }
-            ; // fallthrough
-#endif
-#ifdef USE_ACC_LSM303DLHC
-        case ACC_LSM303DLHC:
-            if (lsm303dlhcAccDetect(&acc)) {
-#ifdef ACC_LSM303DLHC_ALIGN
-                accAlign = ACC_LSM303DLHC_ALIGN;
-#endif
-                accHardware = ACC_LSM303DLHC;
-                if (accHardwareToUse == ACC_LSM303DLHC)
                     break;
             }
             ; // fallthrough
