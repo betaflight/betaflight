@@ -498,9 +498,12 @@ void processRx(void)
     }
     // When armed and motors aren't spinning, disarm board after delay so users without buzzer won't lose fingers.
     // mixTable constrains motor commands, so checking  throttleStatus is enough
-    if (ARMING_FLAG(ARMED)
+    if (
+        ARMING_FLAG(ARMED)
         && feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING)
-        && masterConfig.auto_disarm_delay != 0) {
+        && masterConfig.auto_disarm_delay != 0
+        && isUsingSticksForArming()
+    ) {
         if (throttleStatus == THROTTLE_LOW) {
             if ((int32_t)(disarmAt - millis()) < 0)  // delay is over
                 mwDisarm();

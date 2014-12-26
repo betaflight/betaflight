@@ -57,6 +57,11 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+bool isUsingSticksForArming(void)
+{
+    return isUsingSticksToArm;
+}
+
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
     return abs(rcCommand[ROLL]) < ap_mode && abs(rcCommand[PITCH]) < ap_mode;

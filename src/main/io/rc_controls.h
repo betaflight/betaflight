@@ -213,3 +213,4 @@ void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmen
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
+bool isUsingSticksForArming(void);
