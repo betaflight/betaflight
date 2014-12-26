@@ -23,6 +23,7 @@ Tested with revision 1 board.
 * Sonar
 * Display (via Flex port)
 * Softserial - though having 3 hardware serial ports makes it a little redundant.
+* Airplane PWM mappings.
 
 # Flashing
 
