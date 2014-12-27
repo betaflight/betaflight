@@ -175,7 +175,7 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
     /* Throttle is always in the range [minthrottle..maxthrottle]: */
     {"rcCommand[3]",  UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
-    {"vbatLatest",    UNSIGNED, .Ipredict = PREDICT(VBATREF), .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(ALWAYS)},
+    {"vbatLatest",    UNSIGNED, .Ipredict = PREDICT(VBATREF), .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
 #ifdef MAG
     {"magADC[0]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
     {"magADC[1]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
@@ -612,6 +612,9 @@ static bool testBlackboxCondition(FlightLogFieldCondition condition)
             return false;
 #endif
 
+        case FLIGHT_LOG_FIELD_CONDITION_VBAT:
+            return feature(FEATURE_VBAT);
+
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
         default:
@@ -672,13 +675,15 @@ static void writeIntraframe(void)
 
     writeUnsignedVB(blackboxCurrent->rcCommand[3] - masterConfig.escAndServoConfig.minthrottle); //Throttle lies in range [minthrottle..maxthrottle]
 
-    /*
-     * Our voltage is expected to decrease over the course of the flight, so store our difference from
-     * the reference:
-     *
-     * Write 14 bits even if the number is negative (which would otherwise result in 32 bits)
-     */
-    writeUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
+        /*
+         * Our voltage is expected to decrease over the course of the flight, so store our difference from
+         * the reference:
+         *
+         * Write 14 bits even if the number is negative (which would otherwise result in 32 bits)
+         */
+        writeUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
+    }
 
 #ifdef MAG
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
@@ -768,7 +773,9 @@ static void writeInterframe(void)
     //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, MAG, BARO
     int optionalFieldCount = 0;
 
-    deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->vbatLatest - blackboxLast->vbatLatest;
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
+        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->vbatLatest - blackboxLast->vbatLatest;
+    }
 
 #ifdef MAG
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
