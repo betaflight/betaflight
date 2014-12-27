@@ -102,7 +102,7 @@ void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintTo
             sumhUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
             break;
         case SERIALRX_XBUS_MODE_B:
-        case SERIALRX_XBUS_MODE_B_JR01:
+        case SERIALRX_XBUS_MODE_B_RJ01:
             xBusUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
             break;
     }
@@ -159,7 +159,7 @@ void serialRxInit(rxConfig_t *rxConfig)
             enabled = sumhInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_XBUS_MODE_B:
-        case SERIALRX_XBUS_MODE_B_JR01:
+        case SERIALRX_XBUS_MODE_B_RJ01:
             enabled = xBusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
     }
@@ -184,7 +184,7 @@ bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
         case SERIALRX_SUMH:
             return sumhFrameComplete();
         case SERIALRX_XBUS_MODE_B:
-        case SERIALRX_XBUS_MODE_B_JR01:
+        case SERIALRX_XBUS_MODE_B_RJ01:
             return xBusFrameComplete();
     }
     return false;

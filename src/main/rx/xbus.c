@@ -35,18 +35,18 @@
 //
 
 #define XBUS_CHANNEL_COUNT 12
-#define XBUS_JR01_CHANNEL_COUNT 12
+#define XBUS_RJ01_CHANNEL_COUNT 12
 
 // Frame is: ID(1 byte) + 12*channel(2 bytes) + CRC(2 bytes) = 27
 #define XBUS_FRAME_SIZE 27
 
-#define XBUS_JR01_FRAME_SIZE 33
+#define XBUS_RJ01_FRAME_SIZE 33
 
 #define XBUS_CRC_AND_VALUE 0x8000
 #define XBUS_CRC_POLY 0x1021
 
 #define XBUS_BAUDRATE 115200
-#define XBUS_JR01_BAUDRATE 250000
+#define XBUS_RJ01_BAUDRATE 250000
 #define XBUS_MAX_FRAME_TIME 8000
 
 // NOTE!
@@ -76,8 +76,8 @@ static uint8_t xBusProvider;
 
 
 // Use max values for ram areas
-static volatile uint8_t xBusFrame[XBUS_JR01_FRAME_SIZE];
-static uint16_t xBusChannelData[XBUS_JR01_CHANNEL_COUNT];
+static volatile uint8_t xBusFrame[XBUS_RJ01_FRAME_SIZE];
+static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
 
 static void xBusDataReceive(uint16_t c);
 static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
@@ -87,7 +87,7 @@ static serialPort_t *xBusPort;
 void xBusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
 {
     functionConstraint->minBaudRate = XBUS_BAUDRATE;
-    functionConstraint->maxBaudRate = XBUS_JR01_BAUDRATE;
+    functionConstraint->maxBaudRate = XBUS_RJ01_BAUDRATE;
     functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK;
 }
 
@@ -106,15 +106,15 @@ bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
             xBusChannelCount = XBUS_CHANNEL_COUNT;
             xBusProvider = SERIALRX_XBUS_MODE_B;
             break;
-        case SERIALRX_XBUS_MODE_B_JR01:
-            rxRuntimeConfig->channelCount = XBUS_JR01_CHANNEL_COUNT;
+        case SERIALRX_XBUS_MODE_B_RJ01:
+            rxRuntimeConfig->channelCount = XBUS_RJ01_CHANNEL_COUNT;
             xBusFrameReceived = false;
             xBusDataIncoming = false;
             xBusFramePosition = 0;
-            baudRate = XBUS_JR01_BAUDRATE;
-            xBusFrameLength = XBUS_JR01_FRAME_SIZE;
-            xBusChannelCount = XBUS_JR01_CHANNEL_COUNT;
-            xBusProvider = SERIALRX_XBUS_MODE_B_JR01;
+            baudRate = XBUS_RJ01_BAUDRATE;
+            xBusFrameLength = XBUS_RJ01_FRAME_SIZE;
+            xBusChannelCount = XBUS_RJ01_CHANNEL_COUNT;
+            xBusProvider = SERIALRX_XBUS_MODE_B_RJ01;
             break;
         default:
             return false;
@@ -181,7 +181,7 @@ static void xBusUnpackModeBFrame(void)
 
 }
 
-static void xBusUnpackJr01Frame(void)
+static void xBusUnpackRJ01Frame(void)
 {
     // Calculate the CRC of the incoming frame
     uint16_t crc = 0;
@@ -190,7 +190,7 @@ static void xBusUnpackJr01Frame(void)
     uint16_t value;
     uint8_t frameAddr;
 
-    // When using the Align JR01 receiver with 
+    // When using the Align RJ01 receiver with 
     // a MODE B setting in the radio (XG14 tested)
     // the MODE_B -frame is packed within some
     // at the moment unknown bytes before and after:
@@ -198,7 +198,7 @@ static void xBusUnpackJr01Frame(void)
     // Compared to a standard MODE B frame that only
     // contains the "middle" package
     // Hence, at the moment, the unknown header and footer
-    // of the JR01 MODEB packages are discarded. This is
+    // of the RJ01 MODEB packages are discarded. This is
     // ok as the CRC-checksum of the embedded package works 
     // out nicely.
 
@@ -260,8 +260,8 @@ static void xBusDataReceive(uint16_t c)
         switch (xBusProvider) {
             case SERIALRX_XBUS_MODE_B:
                 xBusUnpackModeBFrame();
-            case SERIALRX_XBUS_MODE_B_JR01:
-                xBusUnpackJr01Frame();
+            case SERIALRX_XBUS_MODE_B_RJ01:
+                xBusUnpackRJ01Frame();
         }
         xBusDataIncoming = false;
         xBusFramePosition = 0;
