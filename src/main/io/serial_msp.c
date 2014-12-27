@@ -80,6 +80,8 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern int16_t debug[4]; // FIXME dependency on mw.c
 
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+
 /**
  * MSP Guidelines, emphasis is used to clarify.
  *
@@ -760,7 +762,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
-        // Retarded hack until multiwiidorks start using real units for sensor data
+        // Hack due to choice of units for sensor data in multiwii
         if (acc_1G > 1024) {
             for (i = 0; i < 3; i++)
                 serialize16(accSmooth[i] / 8);
@@ -982,7 +984,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                serialize8(GPS_svinfo_svid[i]);
                serialize8(GPS_svinfo_quality[i]);
                serialize8(GPS_svinfo_cno[i]);
-            }
+           }
         break;
 #endif
     case MSP_DEBUG:
@@ -1172,6 +1174,8 @@ static bool processInCommand(void)
                 mac->auxChannelIndex = read8();
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
+
+                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
             } else {
                 headSerialError(0);
             }
@@ -1469,6 +1473,7 @@ static void mspProcessPort(void)
                 tailSerialReply();
             }
             currentPort->c_state = IDLE;
+            break; // process one command so as not to block.
         }
     }
 }

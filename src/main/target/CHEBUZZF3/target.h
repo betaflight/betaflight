@@ -37,15 +37,21 @@
 #define USE_GYRO_L3GD20
 #define USE_GYRO_MPU6050
 
+#define GYRO_MPU6050_ALIGN CW0_DEG
+
 #define ACC
 #define USE_ACC_MPU6050
 #define USE_ACC_LSM303DLHC
+
+#define ACC_MPU6050_ALIGN CW0_DEG
 
 #define BARO
 #define USE_BARO_MS5611
 
 #define MAG
 #define USE_MAG_AK8975
+
+#define MAG_AK8975_ALIGN CW90_DEG_FLIP
 
 #define BEEPER
 #define LED0

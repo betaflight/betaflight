@@ -352,6 +352,7 @@ static void resetConf(void)
 
     masterConfig.retarded_arm = 0;
     masterConfig.disarm_kill_switch = 1;
+    masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;
 
     masterConfig.airplaneConfig.flaps_speed = 0;
@@ -447,6 +448,71 @@ static void resetConf(void)
 #ifdef BLACKBOX
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
+#endif
+
+    // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
+#ifdef ALIENWII32
+    featureSet(FEATURE_RX_SERIAL);
+    featureSet(FEATURE_MOTOR_STOP);
+    featureSet(FEATURE_FAILSAFE);
+    masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+    masterConfig.rxConfig.serialrx_provider = 1;
+    masterConfig.rxConfig.spektrum_sat_bind = 5;
+    masterConfig.escAndServoConfig.minthrottle = 1000;
+    masterConfig.escAndServoConfig.maxthrottle = 2000;
+    masterConfig.motor_pwm_rate = 32000;
+    currentControlRateProfile->rcRate8 = 130;
+    currentControlRateProfile->rollPitchRate = 20;
+    currentControlRateProfile->yawRate = 60;
+    parseRcChannels("TAER1234", &masterConfig.rxConfig);
+
+    //  { 1.0f, -0.5f,  1.0f, -1.0f },          // REAR_R
+    masterConfig.customMixer[0].throttle = 1.0f;
+    masterConfig.customMixer[0].roll = -0.5f;
+    masterConfig.customMixer[0].pitch = 1.0f;
+    masterConfig.customMixer[0].yaw = -1.0f;
+
+    //  { 1.0f, -0.5f, -1.0f,  1.0f },          // FRONT_R
+    masterConfig.customMixer[1].throttle = 1.0f;
+    masterConfig.customMixer[1].roll = -0.5f;
+    masterConfig.customMixer[1].pitch = -1.0f;
+    masterConfig.customMixer[1].yaw = 1.0f;
+
+    //  { 1.0f,  0.5f,  1.0f,  1.0f },          // REAR_L
+    masterConfig.customMixer[2].throttle = 1.0f;
+    masterConfig.customMixer[2].roll = 0.5f;
+    masterConfig.customMixer[2].pitch = 1.0f;
+    masterConfig.customMixer[2].yaw = 1.0f;
+
+    //  { 1.0f,  0.5f, -1.0f, -1.0f },          // FRONT_L
+    masterConfig.customMixer[3].throttle = 1.0f;
+    masterConfig.customMixer[3].roll = 0.5f;
+    masterConfig.customMixer[3].pitch = -1.0f;
+    masterConfig.customMixer[3].yaw = -1.0f;
+
+    //  { 1.0f, -1.0f, -0.5f, -1.0f },          // MIDFRONT_R
+    masterConfig.customMixer[4].throttle = 1.0f;
+    masterConfig.customMixer[4].roll = -1.0f;
+    masterConfig.customMixer[4].pitch = -0.5f;
+    masterConfig.customMixer[4].yaw = -1.0f;
+
+    //  { 1.0f,  1.0f, -0.5f,  1.0f },          // MIDFRONT_L
+    masterConfig.customMixer[5].throttle = 1.0f;
+    masterConfig.customMixer[5].roll = 1.0f;
+    masterConfig.customMixer[5].pitch = -0.5f;
+    masterConfig.customMixer[5].yaw = 1.0f;
+
+    //  { 1.0f, -1.0f,  0.5f,  1.0f },          // MIDREAR_R
+    masterConfig.customMixer[6].throttle = 1.0f;
+    masterConfig.customMixer[6].roll = -1.0f;
+    masterConfig.customMixer[6].pitch = 0.5f;
+    masterConfig.customMixer[6].yaw = 1.0f;
+
+    //  { 1.0f,  1.0f,  0.5f, -1.0f },          // MIDREAR_L
+    masterConfig.customMixer[7].throttle = 1.0f;
+    masterConfig.customMixer[7].roll = 1.0f;
+    masterConfig.customMixer[7].pitch = 0.5f;
+    masterConfig.customMixer[7].yaw = -1.0f;
 #endif
 
     // copy first profile into remaining profile

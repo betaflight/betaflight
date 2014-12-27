@@ -3,6 +3,7 @@
 The Sparky is a very low cost and very powerful board.
 
 * 3 hardware serial ports.
+* Built-in serial port inverters which allows SBUS receivers to be used without external inverters.
 * USB (can be used at the same time as the serial ports).
 * 10 PWM outputs.
 * Dedicated PPM/SerialRX input pin.
@@ -16,12 +17,13 @@ Flyable!
 Tested with revision 1 board. 
 
 ## TODO
-* Mag
-* Baro
+* Baro - detection works but getting bad readings, disabled for now.
 * Led Strip
 * ADC
-* Display
+* Sonar
+* Display (via Flex port)
 * Softserial - though having 3 hardware serial ports makes it a little redundant.
+* Airplane PWM mappings.
 
 # Flashing
 
@@ -46,10 +48,12 @@ Flashing cleanflight will erase the TauLabs bootloader, this is not a problem an
 | Value | Identifier   | RX        | TX         | Notes                                                                                       |
 | ----- | ------------ | --------- | ---------- | ------------------------------------------------------------------------------------------- |
 | 1     | USB VCP      | RX (USB)  | TX (USB)   |  |
-| 2     | USART1       | RX / PB7  | TX / PB6   | Conn1 / Flexi Port |
-| 3     | USART2       | RX / PA3  | PWM6 / PA2 | On RX is on INPUT header.  Best port for Serial RX input. |
+| 2     | USART1       | RX / PB7  | TX / PB6   | Conn1 / Flexi Port. |
+| 3     | USART2       | RX / PA3  | PWM6 / PA2 | On RX is on INPUT header.  Best port for Serial RX input |
 | 4     | USART3       | RX / PB11 | TX / PB10  | RX/TX is on one end of the 6-pin header about the PWM outputs. |
 
 USB VCP *can* be used at the same time as other serial ports (unlike Naze32).
+
+All USART ports all support automatic hardware inversion which allows direct connection of serial rx receivers like the FrSky X4RSB - no external inverter needed.
 
 

@@ -57,6 +57,11 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+bool isUsingSticksForArming(void)
+{
+    return isUsingSticksToArm;
+}
+
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
     return abs(rcCommand[ROLL]) < ap_mode && abs(rcCommand[PITCH]) < ap_mode;
@@ -518,6 +523,8 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 
     escAndServoConfig = escAndServoConfigToUse;
     pidProfile = pidProfileToUse;
+
+    isUsingSticksToArm = true;
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
