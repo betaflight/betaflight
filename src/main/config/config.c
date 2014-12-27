@@ -449,7 +449,7 @@ static void resetConf(void)
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
-    featureSet(FEATURE_FAILSAVE);
+    featureSet(FEATURE_FAILSAFE);
     masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
