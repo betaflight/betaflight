@@ -165,15 +165,26 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
     {"axisI[0]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(ALWAYS)},
     {"axisI[1]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(ALWAYS)},
     {"axisI[2]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(ALWAYS)},
-    {"axisD[0]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"axisD[1]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"axisD[2]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"axisD[0]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_0)},
+    {"axisD[1]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_1)},
+    {"axisD[2]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_2)},
     /* rcCommands are encoded together as a group in P-frames: */
     {"rcCommand[0]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
     {"rcCommand[1]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
     {"rcCommand[2]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
     /* Throttle is always in the range [minthrottle..maxthrottle]: */
     {"rcCommand[3]",  UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
+
+    {"vbatLatest",    UNSIGNED, .Ipredict = PREDICT(VBATREF), .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(ALWAYS)},
+#ifdef MAG
+    {"magADC[0]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
+    {"magADC[1]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
+    {"magADC[2]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
+#endif
+#ifdef BARO
+    {"BaroAlt",       SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_BARO},
+#endif
+
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
     {"gyroData[0]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"gyroData[1]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -246,6 +257,12 @@ static serialPort_t *blackboxPort;
 static portMode_t previousPortMode;
 static uint32_t previousBaudRate;
 
+/*
+ * We store voltages in I-frames relative to this, which was the voltage when the blackbox was activated.
+ * This helps out since the voltage is only expected to fall from that point and we can reduce our diffs
+ * to encode:
+ */
+static uint16_t vbatReference;
 static gpsState_t gpsHistory;
 
 // Keep a history of length 2, plus a buffer for MW to store the new values into
@@ -512,29 +529,89 @@ static void writeTag8_4S16(int32_t *values) {
         blackboxWrite(buffer);
 }
 
+/**
+ * Write `valueCount` fields from `values` to the Blackbox using signed variable byte encoding. A 1-byte header is
+ * written first which specifies which fields are non-zero (so this encoding is compact when most fields are zero).
+ *
+ * valueCount must be 8 or less.
+ */
+static void writeTag8_8SVB(int32_t *values, int valueCount)
+{
+    uint8_t header;
+    int i;
+
+    if (valueCount > 0) {
+        //If we're only writing one field then we can skip the header
+        if (valueCount == 1) {
+            writeSignedVB(values[0]);
+        } else {
+            //First write a one-byte header that marks which fields are non-zero
+            header = 0;
+
+            // First field should be in low bits of header
+            for (i = valueCount - 1; i >= 0; i--) {
+                header <<= 1;
+
+                if (values[i] != 0)
+                    header |= 0x01;
+            }
+
+            blackboxWrite(header);
+
+            for (i = 0; i < valueCount; i++)
+                if (values[i] != 0)
+                    writeSignedVB(values[i]);
+        }
+    }
+}
+
 static bool testBlackboxCondition(FlightLogFieldCondition condition)
 {
     switch (condition) {
         case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
             return true;
+
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1:
-            return motorCount >= 1;
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2:
-            return motorCount >= 2;
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3:
-            return motorCount >= 3;
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_4:
-            return motorCount >= 4;
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_5:
-            return motorCount >= 5;
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6:
-            return motorCount >= 6;
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
-            return motorCount >= 7;
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
-            return motorCount >= 8;
+            return motorCount >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
         case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
             return masterConfig.mixerMode == MIXER_TRI;
+
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_0:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_1:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_2:
+            return currentProfile->pidProfile.P8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_0] != 0;
+
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_0:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_1:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_2:
+            return currentProfile->pidProfile.I8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_0] != 0;
+
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
+            return currentProfile->pidProfile.D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
+
+        case FLIGHT_LOG_FIELD_CONDITION_MAG:
+#ifdef MAG
+            return sensors(SENSOR_MAG);
+#else
+            return false;
+#endif
+
+        case FLIGHT_LOG_FIELD_CONDITION_BARO:
+#ifdef BARO
+            return sensors(SENSOR_BARO);
+#else
+            return false;
+#endif
+
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
         default:
@@ -580,24 +657,45 @@ static void writeIntraframe(void)
     writeUnsignedVB(blackboxIteration);
     writeUnsignedVB(blackboxCurrent->time);
 
-    for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxCurrent->axisPID_P[x]);
 
-    for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxCurrent->axisPID_I[x]);
 
-    for (x = 0; x < 3; x++)
-        writeSignedVB(blackboxCurrent->axisPID_D[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x))
+            writeSignedVB(blackboxCurrent->axisPID_D[x]);
 
     for (x = 0; x < 3; x++)
         writeSignedVB(blackboxCurrent->rcCommand[x]);
 
     writeUnsignedVB(blackboxCurrent->rcCommand[3] - masterConfig.escAndServoConfig.minthrottle); //Throttle lies in range [minthrottle..maxthrottle]
 
-    for (x = 0; x < 3; x++)
+    /*
+     * Our voltage is expected to decrease over the course of the flight, so store our difference from
+     * the reference:
+     *
+     * Write 14 bits even if the number is negative (which would otherwise result in 32 bits)
+     */
+    writeUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
+
+#ifdef MAG
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
+            for (x = 0; x < XYZ_AXIS_COUNT; x++)
+                writeSignedVB(blackboxCurrent->magADC[x]);
+        }
+#endif
+
+#ifdef BARO
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO))
+            writeSignedVB(blackboxCurrent->BaroAlt);
+#endif
+
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxCurrent->gyroData[x]);
 
-    for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxCurrent->accSmooth[x]);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
@@ -623,7 +721,7 @@ static void writeIntraframe(void)
 static void writeInterframe(void)
 {
     int x;
-    int32_t deltas[4];
+    int32_t deltas[5];
 
     blackboxValues_t *blackboxCurrent = blackboxHistory[0];
     blackboxValues_t *blackboxLast = blackboxHistory[1];
@@ -638,10 +736,10 @@ static void writeInterframe(void)
      */
     writeSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
-    for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxCurrent->axisPID_P[x] - blackboxLast->axisPID_P[x]);
 
-    for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
         deltas[x] = blackboxCurrent->axisPID_I[x] - blackboxLast->axisPID_I[x];
 
     /* 
@@ -650,23 +748,46 @@ static void writeInterframe(void)
      */
     writeTag2_3S32(deltas);
     
-    for (x = 0; x < 3; x++)
-        writeSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
-
-    for (x = 0; x < 4; x++)
-        deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
+    /*
+     * The PID D term is frequently set to zero for yaw, which makes the result from the calculation
+     * always zero. So don't bother recording D results when PID D terms are zero.
+     */
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x))
+            writeSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
 
     /*
      * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
      * can pack multiple values per byte:
      */
+    for (x = 0; x < 4; x++)
+        deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
+
     writeTag8_4S16(deltas);
 
+    //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, MAG, BARO
+    int optionalFieldCount = 0;
+
+    deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->vbatLatest - blackboxLast->vbatLatest;
+
+#ifdef MAG
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
+        for (x = 0; x < XYZ_AXIS_COUNT; x++)
+            deltas[optionalFieldCount++] = blackboxCurrent->magADC[x] - blackboxLast->magADC[x];
+    }
+#endif
+
+#ifdef BARO
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO))
+        deltas[optionalFieldCount++] = blackboxCurrent->BaroAlt - blackboxLast->BaroAlt;
+#endif
+    writeTag8_8SVB(deltas, optionalFieldCount);
+
     //Since gyros, accs and motors are noisy, base the prediction on the average of the history:
-    for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
 
-    for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
         writeSignedVB(blackboxHistory[0]->accSmooth[x] - (blackboxHistory[1]->accSmooth[x] + blackboxHistory[2]->accSmooth[x]) / 2);
 
     for (x = 0; x < motorCount; x++)
@@ -750,6 +871,8 @@ void startBlackbox(void)
         blackboxHistory[1] = &blackboxHistoryRing[1];
         blackboxHistory[2] = &blackboxHistoryRing[2];
 
+        vbatReference = vbatLatest;
+
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
         blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
@@ -802,24 +925,35 @@ static void loadBlackboxState(void)
 
     blackboxCurrent->time = currentTime;
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++)
         blackboxCurrent->axisPID_P[i] = axisPID_P[i];
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++)
         blackboxCurrent->axisPID_I[i] = axisPID_I[i];
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++)
         blackboxCurrent->axisPID_D[i] = axisPID_D[i];
 
     for (i = 0; i < 4; i++)
         blackboxCurrent->rcCommand[i] = rcCommand[i];
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++)
         blackboxCurrent->gyroData[i] = gyroData[i];
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++)
         blackboxCurrent->accSmooth[i] = accSmooth[i];
 
     for (i = 0; i < motorCount; i++)
         blackboxCurrent->motor[i] = motor[i];
+
+    blackboxCurrent->vbatLatest = vbatLatest;
+
+#ifdef MAG
+    for (i = 0; i < XYZ_AXIS_COUNT; i++)
+        blackboxCurrent->magADC[i] = magADC[i];
+#endif
+
+#ifdef BARO
+    blackboxCurrent->BaroAlt = BaroAlt;
+#endif
 
     //Tail servo for tricopters
     blackboxCurrent->servo[5] = servo[5];
@@ -881,9 +1015,15 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
             if (headerXmitIndex == 0) {
                 charsWritten += blackboxPrint(def->name);
             } else {
-                //The other headers are integers (format as single digit for now):
-                blackboxWrite(def->arr[headerXmitIndex - 1] + '0');
-                charsWritten++;
+                //The other headers are integers
+                if (def->arr[headerXmitIndex - 1] >= 10) {
+                    blackboxWrite(def->arr[headerXmitIndex - 1] / 10 + '0');
+                    blackboxWrite(def->arr[headerXmitIndex - 1] % 10 + '0');
+                    charsWritten += 2;
+                } else {
+                    blackboxWrite(def->arr[headerXmitIndex - 1] + '0');
+                    charsWritten++;
+                }
             }
         }
     }
@@ -898,14 +1038,74 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
     return headerXmitIndex < headerCount;
 }
 
-void handleBlackbox(void)
+static int blackboxWriteSysinfo(int xmitIndex)
 {
-    int i;
-
     union floatConvert_t {
         float f;
         uint32_t u;
     } floatConvert;
+
+    switch (xmitIndex) {
+        case 0:
+            blackboxPrintf("H Firmware type:Cleanflight\n");
+        break;
+        case 1:
+            // Pause to allow more time for previous to transmit (it exceeds our chunk size)
+        break;
+        case 2:
+            blackboxPrintf("H Firmware revision:%s\n", shortGitRevision);
+        break;
+        case 3:
+            // Pause to allow more time for previous to transmit
+        break;
+        case 4:
+            blackboxPrintf("H Firmware date:%s %s\n", buildDate, buildTime);
+        break;
+        case 5:
+            // Pause to allow more time for previous to transmit
+        break;
+        case 6:
+            blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
+        break;
+        case 7:
+            blackboxPrintf("H minthrottle:%d\n", masterConfig.escAndServoConfig.minthrottle);
+        break;
+        case 8:
+            blackboxPrintf("H maxthrottle:%d\n", masterConfig.escAndServoConfig.maxthrottle);
+        break;
+        case 9:
+            floatConvert.f = gyro.scale;
+            blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
+        break;
+        case 10:
+            blackboxPrintf("H acc_1G:%u\n", acc_1G);
+        break;
+        case 11:
+            blackboxPrintf("H vbatscale:%u\n", masterConfig.batteryConfig.vbatscale);
+        break;
+        case 12:
+            blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", masterConfig.batteryConfig.vbatmincellvoltage,
+                masterConfig.batteryConfig.vbatwarningcellvoltage, masterConfig.batteryConfig.vbatmaxcellvoltage);
+        break;
+        case 13:
+            //Pause
+        break;
+        case 14:
+            blackboxPrintf("H vbatref:%u\n", vbatReference);
+        break;
+        case 15:
+            // One more pause for good luck
+        break;
+        default:
+            blackboxSetState(BLACKBOX_STATE_RUNNING);
+    }
+
+    return xmitIndex + 1;
+}
+
+void handleBlackbox(void)
+{
+    int i;
 
     switch (blackboxState) {
         case BLACKBOX_STATE_SEND_HEADER:
@@ -949,49 +1149,7 @@ void handleBlackbox(void)
         break;
         case BLACKBOX_STATE_SEND_SYSINFO:
             //On entry of this state, headerXmitIndex is 0
-            switch (headerXmitIndex) {
-                case 0:
-                    blackboxPrintf("H Firmware type:Cleanflight\n");
-                break;
-                case 1:
-                    // Pause to allow more time for previous to transmit (it exceeds our chunk size)
-                break;
-                case 2:
-                    blackboxPrintf("H Firmware revision:%s\n", shortGitRevision);
-                break;
-                case 3:
-                    // Pause to allow more time for previous to transmit
-                break;
-                case 4:
-                    blackboxPrintf("H Firmware date:%s %s\n", buildDate, buildTime);
-                break;
-                case 5:
-                    // Pause to allow more time for previous to transmit
-                break;
-                case 6:
-                    blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
-                break;
-                case 7:
-                    blackboxPrintf("H minthrottle:%d\n", masterConfig.escAndServoConfig.minthrottle);
-                break;
-                case 8:
-                    blackboxPrintf("H maxthrottle:%d\n", masterConfig.escAndServoConfig.maxthrottle);
-                break;
-                case 9:
-                    floatConvert.f = gyro.scale;
-                    blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
-                break;
-                case 10:
-                    blackboxPrintf("H acc_1G:%u\n", acc_1G);
-                break;
-                case 11:
-                    // One more pause for good luck
-                break;
-                default:
-                    blackboxSetState(BLACKBOX_STATE_RUNNING);
-            }
-
-            headerXmitIndex++;
+            headerXmitIndex = blackboxWriteSysinfo(headerXmitIndex);
         break;
         case BLACKBOX_STATE_RUNNING:
             // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0

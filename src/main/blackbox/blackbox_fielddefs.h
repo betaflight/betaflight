@@ -28,6 +28,20 @@ typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7,
     FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8,
     FLIGHT_LOG_FIELD_CONDITION_TRICOPTER,
+
+    FLIGHT_LOG_FIELD_CONDITION_MAG = 20,
+    FLIGHT_LOG_FIELD_CONDITION_BARO,
+
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_0 = 40,
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_1,
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_2,
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_0,
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_1,
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_2,
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0,
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1,
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2,
+
     FLIGHT_LOG_FIELD_CONDITION_NEVER = 255,
 } FlightLogFieldCondition;
 
@@ -57,15 +71,21 @@ typedef enum FlightLogFieldPredictor {
     FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD     = 7,
 
     //Predict 1500
-    FLIGHT_LOG_FIELD_PREDICTOR_1500           = 8
+    FLIGHT_LOG_FIELD_PREDICTOR_1500           = 8,
+
+    //Predict vbatref, the reference ADC level stored in the header
+    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF        = 9
+
 } FlightLogFieldPredictor;
 
 typedef enum FlightLogFieldEncoding {
-    FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB       = 0,
-    FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB     = 1,
+    FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB       = 0, // Signed variable-byte
+    FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB     = 1, // Unsigned variable-byte
+    FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT       = 3, // Unsigned variable-byte but we negate the value before storing, value is 14 bits
+    FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB       = 6,
     FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32       = 7,
     FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16       = 8,
-    FLIGHT_LOG_FIELD_ENCODING_NULL            = 9
+    FLIGHT_LOG_FIELD_ENCODING_NULL            = 9 // Nothing is written to the file, take value to be zero
 } FlightLogFieldEncoding;
 
 typedef enum FlightLogFieldSign {

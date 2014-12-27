@@ -17,18 +17,28 @@
 
 #pragma once
 
+#include "common/axis.h"
 #include <stdint.h>
 
 typedef struct blackboxValues_t {
     uint32_t time;
 
-    int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
+    int32_t axisPID_P[XYZ_AXIS_COUNT], axisPID_I[XYZ_AXIS_COUNT], axisPID_D[XYZ_AXIS_COUNT];
 
     int16_t rcCommand[4];
-    int16_t gyroData[3];
-    int16_t accSmooth[3];
+    int16_t gyroData[XYZ_AXIS_COUNT];
+    int16_t accSmooth[XYZ_AXIS_COUNT];
     int16_t motor[MAX_SUPPORTED_MOTORS];
     int16_t servo[MAX_SUPPORTED_SERVOS];
+
+    uint16_t vbatLatest;
+
+#ifdef BARO
+    int32_t BaroAlt;
+#endif
+#ifdef MAG
+    int16_t magADC[XYZ_AXIS_COUNT];
+#endif
 } blackboxValues_t;
 
 void initBlackbox(void);
