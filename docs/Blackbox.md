@@ -19,9 +19,9 @@ gyroscope data, accelerometer data (after your configured low-pass filtering), a
 speed controller. This is all stored without any approximation or loss of precision, so even quite subtle problems
 should be detectable from the fight data log.
 
-Currently, the blackbox attempts to log GPS data whenever new GPS data is available, but this has not been tested yet
-as my GPS unit is not functional. The CSV decoder and video renderer do not yet show any of the GPS data (though this
-will be added). If you have a working GPS, please send me your logs so I can get the decoding implemented.
+Currently, the blackbox attempts to log GPS data whenever new GPS data is available, but this has not been tested yet.
+The CSV decoder and video renderer do not yet show any of the GPS data (though this will be added). If you have a working
+GPS, please send in your logs so I can get the decoding implemented.
 
 The data rate for my quadcopter using a looptime of 2400 is about 10.25kB/s. This allows about 18 days of flight logs
 to fit on a 16GB MicroSD card, which ought to be enough for anybody :).
@@ -50,19 +50,20 @@ The blackbox software is designed to be used with an [OpenLog serial data logger
 little prep to get the OpenLog ready for use, so here are the details:
 
 ### Firmware
-The OpenLog should be flashed with the [OpenLog Lite firmware][] using Arduino IDE in order to minimise dropped frames
-(target the "Arduino Uno"). Note that the .hex file currently in the OpenLog repository is out of date with respect to
-the .ino source file, use [this version][] instead. Or you can build your own hex file if you add the [required libraries][]
-to your Arduino libraries directory.
+The OpenLog should be flashed with the [OpenLog Lite firmware][] or the special [OpenLog Blackbox variant][] using the Arduino IDE
+in order to minimise dropped frames (target the "Arduino Uno"). The Blackbox variant of the firmware ensures that the
+OpenLog is running at the correct baud-rate and does away for the need for a `CONFIG.TXT` file to set up the OpenLog. 
+
+If you decide to use the OpenLog Lite firmware instead, note that the .hex file for OpenLog Lite currently in the
+OpenLog repository is out of date with respect to their .ino source file, so you'll need to build it yourself after
+adding the [required libraries][] to your Arduino libraries directory.
 
 To flash the firmware, you'll need to use an FTDI programmer like the [FTDI Basic Breakout][] along with some way of
 switching the Tx and Rx pins over (since the OpenLog has them switched) like the [FTDI crossover][].
 
-The original OpenLog firmware may work with acceptable error rates if you use lower data-rates.
-
 [OpenLog serial data logger]: https://www.sparkfun.com/products/9530
 [OpenLog Lite firmware]: https://github.com/sparkfun/OpenLog/tree/master/firmware/OpenLog_v3_Light
-[this version]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/openlog/OpenLog_v3_Light.cpp.hex
+[OpenLog Blackbox variant]: https://github.com/thenickdude/blackbox/tree/blackbox/tools/blackbox/OpenLog_v3_Blackbox
 [Required libraries]: https://code.google.com/p/beta-lib/downloads/detail?name=SerialLoggerBeta20120108.zip&can=4&q=
 [FTDI Basic Breakout]: https://www.sparkfun.com/products/9716
 [FTDI crossover]: https://www.sparkfun.com/products/10660
@@ -90,6 +91,9 @@ the best chance of writing at high speed. You must format it with either FAT, or
 [SD Association's special formatting tool]: https://www.sdcard.org/downloads/formatter_4/
 
 ### OpenLog configuration
+This section applies only if you are using the OpenLog or OpenLog Lite original firmware on the OpenLog. If you flashed
+it with the special OpenLog Blackbox firmware, you don't need to configure it further.
+
 Power up the OpenLog with a microSD card inside, wait 10 seconds or so, then power it down and plug the microSD card
 into your computer. You should find a "CONFIG.TXT" file on the card. Edit it in a text editor to set the first number
 (baud) to 115200. Set esc# to 0, mode to 0, and echo to 0. Save the file and put the card back into your OpenLog, it
@@ -97,7 +101,7 @@ should use those settings from now on.
 
 If your OpenLog didn't write a CONFIG.TXT file, you can [use this one instead][].
 
-[use this one instead]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/openlog/CONFIG.TXT
+[use this one instead]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/OpenLog_v3_Blackbox/CONFIG.TXT
 
 ### Protection
 The OpenLog can be wrapped in black electrical tape in order to insulate it from conductive frames (like carbon fiber),
@@ -110,8 +114,7 @@ In the [Cleanflight Configurator][], open up the CLI tab. Enable the Blackbox fe
 and pressing enter. You also need to assign the Blackbox to one of [your serial ports][] . A 115200 baud port is
 required (such as serial_port_1 on the Naze32, the two-pin Tx/Rx header in the center of the board).
 
-Use `set serial_port_1_scenario=10` to switch the main serial port to Blackbox-only, or `set serial_port_1_scenario=11`
-to switch it to MSP, CLI, Blackbox and GPS Passthrough.
+For example, use `set serial_port_1_scenario=11` to switch the main serial port to MSP, CLI, Blackbox and GPS Passthrough.
 
 Enter `save`. Your configuration should be saved and the flight controller will reboot. You're ready to go!
 
