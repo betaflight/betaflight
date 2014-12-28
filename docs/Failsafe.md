@@ -22,8 +22,14 @@ The failsafe system attempts to detect when your receiver looses signal.  It the
 
 The failsafe is activated when:
 
+Either:
 a) no valid channel data from the RX via Serial RX.
 b) the first 4 Parallel PWM/PPM channels do not have valid signals.
+
+And:
+c) the failsafe guard time specified by `failsafe_delay` has elapsed. 
+
+## Configuration
 
 There are a few settings for it, as below.
 
