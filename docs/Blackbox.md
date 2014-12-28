@@ -143,6 +143,10 @@ power-cycled, it begins a fresh new log file. If you arm and disarm several time
 several flights), those logs will be combined together into one file. The command line tools will ask you to pick which
 one of these flights you want to display/decode.
 
+If your craft has a buzzer attached, a short beep will be played when you arm. You can later use this beep to
+synchronize your recorded flight video with the rendered flight data log (the beep is shown as a blue line in the flight
+data log, which you can sync against the beep in your recorded audio track).
+
 The OpenLog requires a couple of seconds of delay after powerup before it's ready to record, so don't arm your craft
 immediately after connecting the battery (you'll probably be waiting for the flight controller to become ready during
 that time anyway!)

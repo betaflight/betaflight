@@ -35,6 +35,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
+#include "drivers/sound_beeper.h"
 
 #include "common/printf.h"
 
@@ -228,6 +229,7 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_SEND_GPS_H_HEADERS,
     BLACKBOX_STATE_SEND_GPS_G_HEADERS,
     BLACKBOX_STATE_SEND_SYSINFO,
+    BLACKBOX_STATE_PRERUN,
     BLACKBOX_STATE_RUNNING
 } BlackboxState;
 
@@ -1045,6 +1047,10 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
     return headerXmitIndex < headerCount;
 }
 
+/**
+ * Transmit a portion of the system information headers. Begin with a xmitIndex of 0. Returns the next xmitIndex to
+ * call with, or -1 if transmission is complete.
+ */
 static int blackboxWriteSysinfo(int xmitIndex)
 {
     union floatConvert_t {
@@ -1104,10 +1110,30 @@ static int blackboxWriteSysinfo(int xmitIndex)
             // One more pause for good luck
         break;
         default:
-            blackboxSetState(BLACKBOX_STATE_RUNNING);
+            return -1;
     }
 
     return xmitIndex + 1;
+}
+
+// Beep the buzzer and write the current time to the log as a synchronization point
+static void blackboxPlaySyncBeep()
+{
+    uint32_t now = micros();
+
+    /*
+     * The regular beep routines aren't going to work for us, because they queue up the beep to be executed later.
+     * Our beep is timing sensitive, so start beeping now without setting the beeperIsOn flag.
+     */
+    BEEP_ON;
+
+    // Have the regular beeper code turn off the beep for us eventually, since that's not timing-sensitive
+    queueConfirmationBeep(1);
+
+    blackboxWrite('E');
+    blackboxWrite(FLIGHT_LOG_EVENT_SYNC_BEEP);
+
+    writeUnsignedVB(now);
 }
 
 void handleBlackbox(void)
@@ -1157,6 +1183,13 @@ void handleBlackbox(void)
         case BLACKBOX_STATE_SEND_SYSINFO:
             //On entry of this state, headerXmitIndex is 0
             headerXmitIndex = blackboxWriteSysinfo(headerXmitIndex);
+
+            blackboxSetState(BLACKBOX_STATE_PRERUN);
+        break;
+        case BLACKBOX_STATE_PRERUN:
+            blackboxPlaySyncBeep();
+
+            blackboxSetState(BLACKBOX_STATE_RUNNING);
         break;
         case BLACKBOX_STATE_RUNNING:
             // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0

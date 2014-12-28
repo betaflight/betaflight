@@ -94,3 +94,7 @@ typedef enum FlightLogFieldSign {
     FLIGHT_LOG_FIELD_SIGNED   = 1
 } FlightLogFieldSign;
 
+typedef enum FlightLogEvent {
+    FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
+    FLIGHT_LOG_EVENT_LOG_END = 255
+} FlightLogEvent;
