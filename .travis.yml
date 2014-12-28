@@ -10,6 +10,7 @@ env:
   - TARGET=PORT103R
   - TARGET=SPARKY
   - TARGET=STM32F3DISCOVERY
+  - TARGET=ALIENWIIF1
 language: c
 compiler: arm-none-eabi-gcc
 before_install: sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sudo apt-get update
