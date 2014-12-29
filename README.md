@@ -1,3 +1,12 @@
+*NOTICE*
+========
+
+This code is dead, cTn made the original closed source.  All new development should happen on the cleanflight/development branch.
+
+https://github.com/cleanflight/cleanflight-configurator/tree/development
+
+This copy of the old baseflight code is placed in the cleanflight repository as a courtesy to the Open Source community.
+
 Baseflight Configurator
 =======================
 Configurator based on chrome.serial API running on Google Chrome/Chromium core
