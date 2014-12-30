@@ -1078,35 +1078,38 @@ static int blackboxWriteSysinfo(int xmitIndex)
             // Pause to allow more time for previous to transmit
         break;
         case 6:
+            blackboxPrintf("H P interval:%d/%d\n", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+         break;
+        case 7:
             blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
         break;
-        case 7:
+        case 8:
             blackboxPrintf("H minthrottle:%d\n", masterConfig.escAndServoConfig.minthrottle);
         break;
-        case 8:
+        case 9:
             blackboxPrintf("H maxthrottle:%d\n", masterConfig.escAndServoConfig.maxthrottle);
         break;
-        case 9:
+        case 10:
             floatConvert.f = gyro.scale;
             blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
         break;
-        case 10:
+        case 11:
             blackboxPrintf("H acc_1G:%u\n", acc_1G);
         break;
-        case 11:
+        case 12:
             blackboxPrintf("H vbatscale:%u\n", masterConfig.batteryConfig.vbatscale);
         break;
-        case 12:
+        case 13:
             blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", masterConfig.batteryConfig.vbatmincellvoltage,
                 masterConfig.batteryConfig.vbatwarningcellvoltage, masterConfig.batteryConfig.vbatmaxcellvoltage);
         break;
-        case 13:
+        case 14:
             //Pause
         break;
-        case 14:
+        case 15:
             blackboxPrintf("H vbatref:%u\n", vbatReference);
         break;
-        case 15:
+        case 16:
             // One more pause for good luck
         break;
         default:
