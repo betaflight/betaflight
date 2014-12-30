@@ -1079,7 +1079,7 @@ static int blackboxWriteSysinfo(int xmitIndex)
         break;
         case 6:
             blackboxPrintf("H P interval:%d/%d\n", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
-         break;
+        break;
         case 7:
             blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
         break;
@@ -1187,7 +1187,8 @@ void handleBlackbox(void)
             //On entry of this state, headerXmitIndex is 0
             headerXmitIndex = blackboxWriteSysinfo(headerXmitIndex);
 
-            blackboxSetState(BLACKBOX_STATE_PRERUN);
+            if (headerXmitIndex == -1)
+                blackboxSetState(BLACKBOX_STATE_PRERUN);
         break;
         case BLACKBOX_STATE_PRERUN:
             blackboxPlaySyncBeep();
