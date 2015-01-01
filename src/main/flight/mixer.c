@@ -42,6 +42,8 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
+#include "notch_table.h"
+
 #define GIMBAL_SERVO_PITCH 0
 #define GIMBAL_SERVO_ROLL 1
 
@@ -66,6 +68,7 @@ static gimbalConfig_t *gimbalConfig;
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static mixerMode_e currentMixerMode;
+static notchFilter_t notchFilters[MAX_SUPPORTED_SERVOS];
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -654,17 +657,18 @@ bool isMixerUsingServos(void)
     return useServo;
 }
 
-#include "notch_table.h"
-#define NOTCH_FILTER_COEFS 3
-static notchFilter_t notchFilters[MAX_SUPPORTED_SERVOS];
 
-static float notchFilter(notchFilter_t *filter, float in)
+static float notchFilter(notchFilter_t *filter, float in, int16_t freqIdx )
 {
     int16_t coefIdx;
     float out;
 
+    if (freqIdx != filter->freqIdx) {
+        filter->init = false;
+    }
+
     if (!filter->init) {
-        filter->freqIdx = 9;
+        filter->freqIdx = freqIdx;
         filter->freq = notch_table[filter->freqIdx][0];
         filter->pCoef = &notch_table[filter->freqIdx][1];
         for (coefIdx = 0; coefIdx < NOTCH_FILTER_COEFS; coefIdx++) {
@@ -695,8 +699,10 @@ void filterServos(void)
 {
     int16_t servoIdx;
 
-    for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-        notchFilter(&notchFilters[servoIdx], servo[servoIdx]);
+    if (mixerConfig->servo_notch_enable) {
+        for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
+            servo[servoIdx] = notchFilter(&notchFilters[servoIdx], servo[servoIdx], mixerConfig->servo_notch_freq_idx);
+        }
     }
 }
 

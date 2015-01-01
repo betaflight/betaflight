@@ -66,6 +66,8 @@ typedef struct mixer_t {
 typedef struct mixerConfig_s {
     int8_t yaw_direction;
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
+    int16_t servo_notch_freq_idx;           // notch filter frequency selection
+    int8_t servo_notch_enable;              // enable/disable notch filter
 } mixerConfig_t;
 
 typedef struct flight3DConfig_s {

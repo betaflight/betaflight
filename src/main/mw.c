@@ -696,9 +696,7 @@ void loop(void)
         );
 
         mixTable();
-        if (1) {
-            filterServos();
-        } 
+        filterServos();
         writeServos();
         writeMotors();
     }
