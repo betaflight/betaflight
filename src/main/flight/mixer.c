@@ -653,3 +653,50 @@ bool isMixerUsingServos(void)
 {
     return useServo;
 }
+
+#include "notch_table.h"
+#define NOTCH_FILTER_COEFS 3
+static notchFilter_t notchFilters[MAX_SUPPORTED_SERVOS];
+
+static float notchFilter(notchFilter_t *filter, float in)
+{
+    int16_t coefIdx;
+    float out;
+
+    if (!filter->init) {
+        filter->freqIdx = 9;
+        filter->freq = notch_table[filter->freqIdx][0];
+        filter->pCoef = &notch_table[filter->freqIdx][1];
+        for (coefIdx = 0; coefIdx < NOTCH_FILTER_COEFS; coefIdx++) {
+            filter->in[coefIdx] = in;
+            filter->out[coefIdx] = in;
+        }
+        filter->init = true;
+    }
+
+    filter->in[2] = filter->in[1];
+    filter->in[1] = filter->in[0];
+    filter->in[0] = in;
+    filter->out[2] = filter->out[1];
+    filter->out[1] = filter->out[0];
+
+    out = filter->in[0] * filter->pCoef[0] +
+          filter->in[1] * filter->pCoef[1] +
+          filter->in[2] * filter->pCoef[2] -
+          (filter->out[1] * filter->pCoef[3] +
+           filter->out[2] * filter->pCoef[4]);
+
+    filter->out[0] = out; 
+
+    return out;
+}
+
+void filterServos(void)
+{
+    int16_t servoIdx;
+
+    for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
+        notchFilter(&notchFilters[servoIdx], servo[servoIdx]);
+    }
+}
+

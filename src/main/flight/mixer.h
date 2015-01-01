@@ -90,6 +90,16 @@ typedef struct servoParam_t {
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 
+#define NOTCH_FILTER_COEFS 3
+typedef struct notchFilter_t {
+    bool init;
+    int16_t freqIdx;
+    float freq;
+    float *pCoef;
+    float in[NOTCH_FILTER_COEFS];
+    float out[NOTCH_FILTER_COEFS];
+} notchFilter_t;
+
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
@@ -99,5 +109,6 @@ void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerResetMotors(void);
 void mixTable(void);
+void filterServos(void);
 void writeServos(void);
 void writeMotors(void);
