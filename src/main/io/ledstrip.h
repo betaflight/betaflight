@@ -18,6 +18,7 @@
 #pragma once
 
 #define MAX_LED_STRIP_LENGTH 32
+#define CONFIGURABLE_COLOR_COUNT 16
 
 #define LED_X_BIT_OFFSET 4
 #define LED_Y_BIT_OFFSET 0
@@ -29,6 +30,7 @@
 
 #define CALCULATE_LED_X(x) ((x & LED_XY_MASK) << LED_X_BIT_OFFSET)
 #define CALCULATE_LED_Y(y) ((y & LED_XY_MASK) << LED_Y_BIT_OFFSET)
+
 
 #define CALCULATE_LED_XY(x,y) (CALCULATE_LED_X(x) | CALCULATE_LED_Y(y))
 
@@ -44,7 +46,8 @@ typedef enum {
     LED_FUNCTION_WARNING     = (1 << 7),
     LED_FUNCTION_FLIGHT_MODE = (1 << 8),
     LED_FUNCTION_ARM_STATE   = (1 << 9),
-    LED_FUNCTION_THROTTLE    = (1 << 10)
+    LED_FUNCTION_THROTTLE    = (1 << 10),
+    LED_FUNCTION_THRUST_RING = (1 << 11),
 } ledFlag_e;
 
 #define LED_DIRECTION_BIT_OFFSET 0
@@ -54,17 +57,18 @@ typedef enum {
 
 
 typedef struct ledConfig_s {
-    uint8_t xy; // see LED_X/Y_MASK defines
+    uint8_t xy;     // see LED_X/Y_MASK defines
+    uint8_t color;  // see colors (config_master)
     uint16_t flags; // see ledFlag_e
 } ledConfig_t;
 
 extern uint8_t ledCount;
 
-#define CONFIGURABLE_COLOR_COUNT 16
 
 
 bool parseLedStripConfig(uint8_t ledIndex, const char *config);
 void updateLedStrip(void);
+void updateLedRing(void);
 
 void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
 void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSize);
