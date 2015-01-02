@@ -97,9 +97,10 @@ typedef struct lowpass_t {
     bool init;
     int16_t freqIdx;
     float freq;
-    float *pCoef;
-    float in[LOWPASS_NUM_COEF];
-    float out[LOWPASS_NUM_COEF];
+    const float *b;
+    const float *a;
+    float x[LOWPASS_NUM_COEF];
+    float y[LOWPASS_NUM_COEF];
 } lowpass_t;
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];

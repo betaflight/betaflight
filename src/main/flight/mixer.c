@@ -714,28 +714,29 @@ static float lowpass(lowpass_t *filter, float in, int16_t freqIdx )
     if (!filter->init) {
         filter->freqIdx = freqIdx;
         filter->freq = lowpass_table[filter->freqIdx][0];
-        filter->pCoef = &lowpass_table[filter->freqIdx][1];
+        filter->b = &lowpass_table[filter->freqIdx][1];
+        filter->a = &lowpass_table[filter->freqIdx][1 + LOWPASS_NUM_COEF];
         for (coefIdx = 0; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
-            filter->in[coefIdx] = in;
-            filter->out[coefIdx] = in;
+            filter->x[coefIdx] = in;
+            filter->y[coefIdx] = in;
         }
         filter->init = true;
     }
 
     // Delays
     for (coefIdx = LOWPASS_NUM_COEF-1; coefIdx > 0; coefIdx--) {
-        filter->in[coefIdx] = filter->in[coefIdx-1];
-        filter->out[coefIdx] = filter->out[coefIdx-1];
+        filter->x[coefIdx] = filter->x[coefIdx-1];
+        filter->y[coefIdx] = filter->y[coefIdx-1];
     }
-    filter->in[0] = in;
+    filter->x[0] = in;
 
     // Accumulate result
-    out = filter->in[0] * filter->pCoef[0];
+    out = filter->x[0] * filter->b[0];
     for (coefIdx = 1; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
-        out += filter->in[coefIdx] * filter->pCoef[coefIdx];
-        out -= filter->out[coefIdx] * filter->pCoef[coefIdx + LOWPASS_NUM_COEF - 1];
+        out += filter->x[coefIdx] * filter->b[coefIdx];
+        out -= filter->y[coefIdx] * filter->a[coefIdx-1];
     }
-    filter->out[0] = out;
+    filter->y[0] = out;
 
     return out;
 }
@@ -747,6 +748,8 @@ void filterServos(void)
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             servo[servoIdx] = (int16_t)lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx);
+            // Sanity check
+            servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
         }
     }
 }
