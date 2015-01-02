@@ -16,7 +16,7 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         MSP.send_message(MSP_codes.MSP_IDENT, false, false, on_ident_loaded_handler);
 
         function on_ident_loaded_handler() {
-            MSP.send_message(MSP_codes.MSP_CONFIG, false, false, on_configuration_loaded_handler);
+            MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, on_configuration_loaded_handler);
         }
 
         function on_configuration_loaded_handler() {
