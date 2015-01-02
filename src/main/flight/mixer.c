@@ -25,13 +25,12 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
-#if 1
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
 
-#endif
 #include "rx/rx.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
@@ -232,7 +231,6 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
     gimbalConfig = gimbalConfigToUse;
 }
 
-#if 1
 
 int16_t determineServoMiddleOrForwardFromChannel(int nr)
 {
@@ -659,46 +657,6 @@ bool isMixerUsingServos(void)
 {
     return useServo;
 }
-#endif
-
-/*
-static float notchFilter(notchFilter_t *filter, float in, int16_t freqIdx )
-{
-    int16_t coefIdx;
-    float out;
-
-    if (freqIdx != filter->freqIdx) {
-        filter->init = false;
-    }
-
-    if (!filter->init) {
-        filter->freqIdx = freqIdx;
-        filter->freq = notch_table[filter->freqIdx][0];
-        filter->pCoef = &notch_table[filter->freqIdx][1];
-        for (coefIdx = 0; coefIdx < NOTCH_FILTER_COEFS; coefIdx++) {
-            filter->in[coefIdx] = in;
-            filter->out[coefIdx] = in;
-        }
-        filter->init = true;
-    }
-
-    filter->in[2] = filter->in[1];
-    filter->in[1] = filter->in[0];
-    filter->in[0] = in;
-    filter->out[2] = filter->out[1];
-    filter->out[1] = filter->out[0];
-
-    out = filter->in[0] * filter->pCoef[0] +
-          filter->in[1] * filter->pCoef[1] +
-          filter->in[2] * filter->pCoef[2] -
-          (filter->out[1] * filter->pCoef[3] +
-           filter->out[2] * filter->pCoef[4]);
-
-    filter->out[0] = out; 
-
-    return out;
-}
-*/
 
 static float lowpass(lowpass_t *filter, float in, int16_t freqIdx )
 {
