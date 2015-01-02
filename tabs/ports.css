@@ -1,0 +1,29 @@
+.tab-ports {
+    position: relative;
+}
+
+.tab-ports > .buttons {
+    width: calc(100% - 20px);
+
+    margin-top: 10px;
+    bottom: 10px;
+}
+
+.tab-ports .save {
+    display: block;
+    float: right;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-ports .save:hover {
+    background-color: #dedcdc;
+}

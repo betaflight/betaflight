@@ -48,6 +48,9 @@
     "tabConfiguration": {
         "message": "Configuration"
     },
+    "tabPorts": {
+        "message": "Ports"
+    },
     "tabPidTuning": {
         "message": "PID Tuning"
     },
@@ -429,6 +432,10 @@
         "message": "EEPROM <span style=\"color: green\">saved</span>"
     },
     "configurationButtonSave": {
+        "message": "Save and Reboot"
+    },
+
+    "portsButtonSave": {
         "message": "Save and Reboot"
     },
 

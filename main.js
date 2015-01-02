@@ -95,6 +95,9 @@ $(document).ready(function () {
                     case 'tab_adjustments':
                         TABS.adjustments.initialize(content_ready);
                         break;
+                    case 'tab_ports':
+                        TABS.ports.initialize(content_ready);
+                        break;
 
                     case 'tab_setup':
                         TABS.setup.initialize(content_ready);
