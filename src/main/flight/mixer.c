@@ -25,12 +25,13 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
-
+#if 1
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
 
+#endif
 #include "rx/rx.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
@@ -42,7 +43,7 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
-#include "notch_table.h"
+#include "lowpass_table.h"
 
 #define GIMBAL_SERVO_PITCH 0
 #define GIMBAL_SERVO_ROLL 1
@@ -68,7 +69,7 @@ static gimbalConfig_t *gimbalConfig;
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static mixerMode_e currentMixerMode;
-static notchFilter_t notchFilters[MAX_SUPPORTED_SERVOS];
+static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -230,6 +231,8 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
     rxConfig = rxConfigToUse;
     gimbalConfig = gimbalConfigToUse;
 }
+
+#if 1
 
 int16_t determineServoMiddleOrForwardFromChannel(int nr)
 {
@@ -656,8 +659,9 @@ bool isMixerUsingServos(void)
 {
     return useServo;
 }
+#endif
 
-
+/*
 static float notchFilter(notchFilter_t *filter, float in, int16_t freqIdx )
 {
     int16_t coefIdx;
@@ -694,14 +698,55 @@ static float notchFilter(notchFilter_t *filter, float in, int16_t freqIdx )
 
     return out;
 }
+*/
+
+static float lowpass(lowpass_t *filter, float in, int16_t freqIdx )
+{
+    int16_t coefIdx;
+    float out;
+
+    // Check to see if cutoff frequency changed
+    if (freqIdx != filter->freqIdx) {
+        filter->init = false;
+    }
+
+    // Initialize if needed
+    if (!filter->init) {
+        filter->freqIdx = freqIdx;
+        filter->freq = lowpass_table[filter->freqIdx][0];
+        filter->pCoef = &lowpass_table[filter->freqIdx][1];
+        for (coefIdx = 0; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
+            filter->in[coefIdx] = in;
+            filter->out[coefIdx] = in;
+        }
+        filter->init = true;
+    }
+
+    // Delays
+    for (coefIdx = LOWPASS_NUM_COEF-1; coefIdx > 0; coefIdx--) {
+        filter->in[coefIdx] = filter->in[coefIdx-1];
+        filter->out[coefIdx] = filter->out[coefIdx-1];
+    }
+    filter->in[0] = in;
+
+    // Accumulate result
+    out = filter->in[0] * filter->pCoef[0];
+    for (coefIdx = 1; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
+        out += filter->in[coefIdx] * filter->pCoef[coefIdx];
+        out -= filter->out[coefIdx] * filter->pCoef[coefIdx + LOWPASS_NUM_COEF - 1];
+    }
+    filter->out[0] = out;
+
+    return out;
+}
 
 void filterServos(void)
 {
     int16_t servoIdx;
 
-    if (mixerConfig->servo_notch_enable) {
+    if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = notchFilter(&notchFilters[servoIdx], servo[servoIdx], mixerConfig->servo_notch_freq_idx);
+            servo[servoIdx] = (int16_t)lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx);
         }
     }
 }

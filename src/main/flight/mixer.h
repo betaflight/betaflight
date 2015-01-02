@@ -66,8 +66,8 @@ typedef struct mixer_t {
 typedef struct mixerConfig_s {
     int8_t yaw_direction;
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
-    int16_t servo_notch_freq_idx;           // notch filter frequency selection
-    int8_t servo_notch_enable;              // enable/disable notch filter
+    int16_t servo_lowpass_freq_idx;         // lowpass servo filter frequency selection
+    int8_t servo_lowpass_enable;            // enable/disable lowpass filter
 } mixerConfig_t;
 
 typedef struct flight3DConfig_s {
@@ -92,15 +92,15 @@ typedef struct servoParam_t {
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 
-#define NOTCH_FILTER_COEFS 3
-typedef struct notchFilter_t {
+#define LOWPASS_NUM_COEF 6
+typedef struct lowpass_t {
     bool init;
     int16_t freqIdx;
     float freq;
     float *pCoef;
-    float in[NOTCH_FILTER_COEFS];
-    float out[NOTCH_FILTER_COEFS];
-} notchFilter_t;
+    float in[LOWPASS_NUM_COEF];
+    float out[LOWPASS_NUM_COEF];
+} lowpass_t;
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
