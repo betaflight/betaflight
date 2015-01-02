@@ -52,7 +52,7 @@
 static uint8_t motorCount = 0;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-int16_t servo[MAX_SUPPORTED_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
+int16_t servo[MAX_SUPPORTED_SERVOS];
 
 static int useServo;
 
@@ -511,6 +511,11 @@ void mixTable(void)
     int16_t maxMotor;
     uint32_t i;
 
+    // paranoia: give all servos a default command; prevents drift on unused servos with lowpass enabled
+    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servo[i] = DEFAULT_SERVO_MIDDLE;
+    }
+
     if (motorCount > 3) {
         // prevent "yaw jump" during yaw correction
         axisPID[YAW] = constrain(axisPID[YAW], -100 - abs(rcCommand[YAW]), +100 + abs(rcCommand[YAW]));
@@ -705,7 +710,8 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = (int16_t)lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx);
+            // Round to nearest
+            servo[servoIdx] = (int16_t)(lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx) + 0.5f);
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
         }
