@@ -10,47 +10,25 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         googleAnalytics.sendAppView('Ports');
     }
 
-    function load_config() {
-        MSP.send_message(MSP_codes.MSP_CONFIG, false, false, load_html);
+    load_configuration_from_fc();
+    
+    function load_configuration_from_fc() {
+        MSP.send_message(MSP_codes.MSP_IDENT, false, false, on_ident_loaded_handler);
+
+        function on_ident_loaded_handler() {
+            MSP.send_message(MSP_codes.MSP_CONFIG, false, false, on_configuration_loaded_handler);
+        }
+
+        function on_configuration_loaded_handler() {
+            $('#content').load("./tabs/ports.html", on_tab_loaded_handler);
+        }
     }
 
-    function load_html() {
-        $('#content').load("./tabs/ports.html", process_html);
-    }
-
-    MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
-
-    function process_html() {
+    function on_tab_loaded_handler() {
 
         localize();
 
-        $('a.save').click(function () {
-
-            function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
-            }
-
-            function reboot() {
-                GUI.log(chrome.i18n.getMessage('configurationEepromSaved'));
-
-                GUI.tab_switch_cleanup(function() {
-                    MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
-                });
-            }
-
-            function reinitialize() {
-                GUI.log(chrome.i18n.getMessage('deviceRebooting'));
-
-                GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                    MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
-                        GUI.log(chrome.i18n.getMessage('deviceReady'));
-                        TABS.ports.initialize(false, $('#content').scrollTop());
-                    });
-                },1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
-            }
-
-            MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_to_eeprom);
-        });
+        $('a.save').click(on_save_handler);
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {
@@ -58,6 +36,36 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         }, 250, true);
 
         if (callback) callback();
+    }
+
+    function on_save_handler() {
+        
+        MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_to_eeprom);
+
+        function save_to_eeprom() {
+            MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, on_saved_handler);
+        }
+
+        function on_saved_handler() {
+            GUI.log(chrome.i18n.getMessage('configurationEepromSaved'));
+
+            GUI.tab_switch_cleanup(function() {
+                MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, on_reboot_success_handler);
+            });
+        }
+
+        function on_reboot_success_handler() {
+            GUI.log(chrome.i18n.getMessage('deviceRebooting'));
+
+            var rebootTimeoutDelay = 1500;  // seems to be just the right amount of delay to prevent data request timeouts
+            
+            GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
+                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                    GUI.log(chrome.i18n.getMessage('deviceReady'));
+                    TABS.ports.initialize(false, $('#content').scrollTop());
+                });
+            }, rebootTimeoutDelay); 
+        }
     }
 };
 
