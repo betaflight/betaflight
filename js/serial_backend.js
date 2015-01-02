@@ -135,33 +135,50 @@ function onOpen(openInfo) {
             }
         }, 10000);
 
-        MSP.send_message(MSP_codes.MSP_API_VERSION, false, false, function () {
-            GUI.log(chrome.i18n.getMessage('apiVersionReceived', [CONFIG.apiVersion]));
-        });
+
 
         // request configuration data
-        MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
-            GUI.timeout_remove('connecting'); // kill connecting timer
+        MSP.send_message(MSP_codes.MSP_API_VERSION, false, false, function () {
+            GUI.log(chrome.i18n.getMessage('apiVersionReceived', [CONFIG.apiVersion]));
 
-            GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
-            MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+            if (CONFIG.apiVersion >= CONFIGURATOR.apiVersionAccepted) {
 
-                if (CONFIG.version >= CONFIGURATOR.firmwareVersionAccepted) {
-                    MSP.send_message(MSP_codes.MSP_BUILDINFO, false, false, function () {
-                        googleAnalytics.sendEvent('Firmware', 'Using', CONFIG.buildInfo);
-                        GUI.log('Running firmware released on: <strong>' + CONFIG.buildInfo + '</strong>');
-
-                        // continue as usually
-                        CONFIGURATOR.connectionValid = true;
-
-                        $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-                        $('#tabs li a:first').click();
+                MSP.send_message(MSP_codes.MSP_FC_VARIANT, false, false, function () {
+                    
+                    MSP.send_message(MSP_codes.MSP_FC_VERSION, false, false, function () {
+                        
+                        googleAnalytics.sendEvent('Firmware', 'Variant', CONFIG.flightControllerIdentifier + ',' + CONFIG.flightControllerVersion);
+                        GUI.log(chrome.i18n.getMessage('fcInfoReceived', [CONFIG.flightControllerIdentifier, CONFIG.flightControllerVersion]));
+                        
+                        MSP.send_message(MSP_codes.MSP_BUILD_INFO, false, false, function () {
+                            
+                            googleAnalytics.sendEvent('Firmware', 'Using', CONFIG.buildInfo);
+                            GUI.log(chrome.i18n.getMessage('buildInfoReceived', [CONFIG.buildInfo]));
+                            
+                            MSP.send_message(MSP_codes.MSP_BOARD_INFO, false, false, function () {
+                                
+                                googleAnalytics.sendEvent('Board', 'Using', CONFIG.boardIdentifier + ',' + CONFIG.boardVersion);
+                                GUI.log(chrome.i18n.getMessage('boardInfoReceived', [CONFIG.boardIdentifier, CONFIG.boardVersion]));
+                                
+                                MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
+                                    GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
+                                    
+                                    GUI.timeout_remove('connecting'); // kill connecting timer
+                                    
+                                    // continue as usually
+                                    CONFIGURATOR.connectionValid = true;
+                                    
+                                    $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+                                    $('#tabs li a:first').click();
+                                });
+                            });
+                        });
                     });
-                } else {
-                    GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.firmwareVersionAccepted]));
-                    $('div#port-picker a.connect').click(); // disconnect
-                }
-            });
+                });
+            } else {
+                GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.apiVersionAccepted]));
+                $('div#port-picker a.connect').click(); // disconnect
+            }
         });
     } else {
         console.log('Failed to open serial port');

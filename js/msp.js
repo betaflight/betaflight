@@ -3,6 +3,10 @@
 // MSP_codes needs to be re-integrated inside MSP object
 var MSP_codes = {
     MSP_API_VERSION:            1,
+    MSP_FC_VARIANT:             2,
+    MSP_FC_VERSION:             3,
+    MSP_BOARD_INFO:             4,
+    MSP_BUILD_INFO:             5,
     
     // MSP commands for Cleanflight original features
     MSP_CHANNEL_FORWARDING:     32,
@@ -61,15 +65,15 @@ var MSP_codes = {
     MSP_UID:                160, // Unique device ID
     MSP_ACC_TRIM:           240, // get acc angle trim values
     MSP_SET_ACC_TRIM:       239, // set acc angle trim values
-    MSP_GPSSVINFO:          164, // get Signal Strength (only U-Blox)
+    MSP_GPS_SV_INFO:        164, // get Signal Strength (only U-Blox)
 
     // Additional private MSP for baseflight configurator (yes thats us \o/)
     MSP_RCMAP:              64, // get channel map (also returns number of channels total)
     MSP_SET_RCMAP:          65, // set rc map, numchannels to set comes from MSP_RCMAP
-    MSP_CONFIG:             66, // baseflight-specific settings that aren't covered elsewhere
-    MSP_SET_CONFIG:         67, // baseflight-specific settings save
+    MSP_BF_CONFIG:             66, // baseflight-specific settings that aren't covered elsewhere
+    MSP_SET_BF_CONFIG:         67, // baseflight-specific settings save
     MSP_SET_REBOOT:         68, // reboot settings
-    MSP_BUILDINFO:          69  // build date as well as some space for future expansion
+    MSP_BF_BUILD_INFO:          69  // build date as well as some space for future expansion
 };
 
 var MSP = {
@@ -169,6 +173,8 @@ var MSP = {
 
         switch (code) {
             case MSP_codes.MSP_IDENT:
+                console.log('Using deprecated msp command: MSP_IDENT');
+                // Deprecated
                 CONFIG.version = parseFloat((data.getUint8(0) / 100).toFixed(2));
                 CONFIG.multiType = data.getUint8(1);
                 CONFIG.msp_version = data.getUint8(2);
@@ -436,7 +442,7 @@ var MSP = {
             case MSP_codes.MSP_SET_ACC_TRIM:
                 console.log('Accelerometer trimms saved.');
                 break;
-            case MSP_codes.MSP_GPSSVINFO:
+            case MSP_codes.MSP_GPS_SV_INFO:
                 if (data.byteLength > 0) {
                     var numCh = data.getUint8(0);
 
@@ -462,7 +468,7 @@ var MSP = {
             case MSP_codes.MSP_SET_RCMAP:
                 console.log('RCMAP saved');
                 break;
-            case MSP_codes.MSP_CONFIG:
+            case MSP_codes.MSP_BF_CONFIG:
                 BF_CONFIG.mixerConfiguration = data.getUint8(0);
                 BF_CONFIG.features = data.getUint32(1, 1);
                 BF_CONFIG.serialrx_type = data.getUint8(5);
@@ -472,38 +478,68 @@ var MSP = {
                 BF_CONFIG.currentscale = data.getUint16(12, 1);
                 BF_CONFIG.currentoffset = data.getUint16(14, 1);
                 break;
-            case MSP_codes.MSP_SET_CONFIG:
+            case MSP_codes.MSP_SET_BF_CONFIG:
                 break;
-            case MSP_codes.MSP_SET_REBOOT:
+            case MSP_codes.MSP_REBOOT:
                 console.log('Reboot request accepted');
-                break;
-            case MSP_codes.MSP_BUILDINFO:
-                var buff = [];
-
-                for (var i = 0; i < data.byteLength; i++) {
-                    buff.push(data.getUint8(i));
-                }
-
-                CONFIG.buildInfo = String.fromCharCode.apply(null, buff);
                 break;
 
             //
             // Cleanflight specific 
             //
+
+            case MSP_codes.MSP_API_VERSION:
+                var offset = 0;
+                CONFIG.mspProtocolVersion = data.getUint8(offset++); 
+                CONFIG.apiVersion = data.getUint8(offset++) + '.' + data.getUint8(offset++);
+                break;
+
+            case MSP_codes.MSP_FC_VARIANT:
+                var identifier = '';
+                var offset;
+                for (offset = 0; offset < 4; offset++) {
+                    identifier += String.fromCharCode(data.getUint8(offset));
+                }
+                CONFIG.flightControllerIdentifier = identifier;
+                break;
+
+            case MSP_codes.MSP_FC_VERSION:
+                var offset = 0;
+                CONFIG.flightControllerVersion = data.getUint8(offset++) + '.' + data.getUint8(offset++) + '.' + data.getUint8(offset++);
+                break;
+
+            case MSP_codes.MSP_BUILD_INFO:
+                var offset = 0;
+                
+                var dateLength = 11;
+                var buff = [];
+                for (var i = 0; i < dateLength; i++) {
+                    buff.push(data.getUint8(offset++));
+                }
+                buff.push(32); // ascii space
+                
+                var timeLength = 8;
+                for (var i = 0; i < timeLength; i++) {
+                    buff.push(data.getUint8(offset++));
+                }
+                CONFIG.buildInfo = String.fromCharCode.apply(null, buff);
+                break;
+
+            case MSP_codes.MSP_BOARD_INFO:
+                var identifier = '';
+                var offset;
+                for (offset = 0; offset < 4; offset++) {
+                    identifier += String.fromCharCode(data.getUint8(offset));
+                }
+                CONFIG.boardIdentifier = identifier;
+                CONFIG.boardVersion = data.getUint16(offset);
+                offset+=2;
+                break;
+
             case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
                 console.log('Channel forwarding saved');
                 break;
             
-            case MSP_codes.MSP_API_VERSION:
-                CONFIG.apiVersion = data.getUint8(1) + '.' + data.getUint8(2);
-                var identifier = '';
-                for (i = 0; i < 4; i++) {
-                    identifier += String.fromCharCode(data.getUint8(3 + i));
-                }
-                CONFIG.flightControllerIdentifier = identifier;
-                CONFIG.flightControllerVersion = data.getUint8(7) + '.' + data.getUint8(8) + '.' + data.getUint8(9);
-                break;
-
             case MSP_codes.MSP_MODE_RANGES:
                 MODE_RANGES = []; // empty the array as new data is coming in
 

@@ -23,7 +23,7 @@ function configuration_backup(callback) {
         */
         MSP_codes.MSP_MISC,
         MSP_codes.MSP_RCMAP,
-        MSP_codes.MSP_CONFIG
+        MSP_codes.MSP_BF_CONFIG
     ];
 
     var configuration = {

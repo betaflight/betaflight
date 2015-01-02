@@ -2,7 +2,7 @@
 
 var CONFIGURATOR = {
     'releaseDate': 1417875879820, // new Date().getTime() - 2014.12.06
-    'firmwareVersionAccepted': 2.3,
+    'apiVersionAccepted': 1.1,
     'backupFileMinVersionAccepted': '0.55', // chrome.runtime.getManifest().version is stored as string, so does this one
     'connectionValid': false,
     'cliActive': false,

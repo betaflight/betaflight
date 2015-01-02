@@ -11,7 +11,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_config() {
-        MSP.send_message(MSP_codes.MSP_CONFIG, false, false, load_rc_map);
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_rc_map);
     }
 
     function load_rc_map() {
@@ -268,7 +268,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 },1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_misc);
+            MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_misc);
         });
 
         // status data pulled via separate timer with static speed

@@ -100,7 +100,7 @@
         "message": "No configuration received within <span style=\"color: red\">10 seconds</span>, communication <span style=\"color: red\">failed</span>"
     },
     "firmwareVersionNotSupported": {
-        "message": "This firmware version is <span style=\"color: red\">not supported</span>. Please upgrade to version <strong>$1</strong> or higher"
+        "message": "This firmware version is <span style=\"color: red\">not supported</span>. Please upgrade to firmware that supports api version <strong>$1</strong> or higher"
     },
     "firmwareVersion": {
         "message": "Firmware Version: <strong>$1</strong>"
@@ -110,6 +110,15 @@
     },
     "uniqueDeviceIdReceived": {
         "message": "Unique device ID <span style=\"color: green\">received</span> - <strong>0x$1</strong>"
+    },
+    "boardInfoReceived": {
+        "message": "Board: <strong>$1</strong>, version: <strong>$2</strong>"
+    },
+    "buildInfoReceived": {
+        "message": "Running firmware released on: <strong>$1</strong>"
+    },
+    "fcInfoReceived": {
+        "message": "Flight controller info, identifier: <strong>$1</strong>, version: <strong>$2</strong>"
     },
 
     "notifications_app_just_updated_to_version": {

@@ -21,7 +21,7 @@ TABS.setup.initialize = function (callback) {
     }
 
     function load_config() {
-        MSP.send_message(MSP_codes.MSP_CONFIG, false, false, load_misc_data);
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_misc_data);
     }
 
     function load_misc_data() {
