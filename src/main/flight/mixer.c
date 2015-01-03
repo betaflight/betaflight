@@ -53,6 +53,9 @@
 
 #define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
+#include "drivers/system.h"
+extern int16_t debug[4];
+
 static uint8_t motorCount = 0;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
@@ -734,6 +737,8 @@ void filterServos(void)
 {
     int16_t servoIdx;
 
+    uint32_t startTime = micros();
+
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             // Round to nearest
@@ -742,5 +747,7 @@ void filterServos(void)
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
         }
     }
+
+    debug[0] = (int16_t)(micros() - startTime);
 }
 
