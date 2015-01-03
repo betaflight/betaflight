@@ -196,6 +196,10 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_ADJUSTMENT_RANGES           52
 #define MSP_SET_ADJUSTMENT_RANGE        53
 
+// private - only to be used by the configurator, the commands are likely to change
+#define MSP_CF_SERIAL_CONFIG            54
+#define MSP_SET_CF_SERIAL_CONFIG        55
+
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -203,9 +207,9 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
 
 // FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
-// DEPRECATED - DO NOT USE "MSP_CONFIG" and MSP_SET_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
+// DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
 #define MSP_BF_CONFIG                      66 //out message baseflight-specific settings that aren't covered elsewhere
-#define MSP_BF_SET_CONFIG                  67 //in message baseflight-specific settings save
+#define MSP_SET_BF_CONFIG                  67 //in message baseflight-specific settings save
 
 #define MSP_REBOOT                      68 //in message reboot settings
 
@@ -1066,6 +1070,21 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.batteryConfig.currentMeterOffset);
         break;
 
+    case MSP_CF_SERIAL_CONFIG:
+        headSerialReply(
+            ((sizeof(uint8_t) * 2) * SERIAL_PORT_COUNT) +
+            (sizeof(uint32_t) * 4)
+        );
+        for (i = 0; i < SERIAL_PORT_COUNT; i++) {
+            serialize8(serialPortConstraints[i].identifier);
+            serialize8(masterConfig.serialConfig.serial_port_scenario[i]);
+        }
+        serialize32(masterConfig.serialConfig.msp_baudrate);
+        serialize32(masterConfig.serialConfig.cli_baudrate);
+        serialize32(masterConfig.serialConfig.gps_baudrate);
+        serialize32(masterConfig.serialConfig.gps_passthrough_baudrate);
+        break;
+
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
         headSerialReply(CONFIGURABLE_COLOR_COUNT * 4);
@@ -1366,7 +1385,7 @@ static bool processInCommand(void)
         }
         break;
 
-    case MSP_BF_SET_CONFIG:
+    case MSP_SET_BF_CONFIG:
 
 #ifdef USE_QUAD_MIXER_ONLY
         read8(); // mixerMode ignored
@@ -1385,6 +1404,24 @@ static bool processInCommand(void)
 
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();
+        break;
+
+    case MSP_SET_CF_SERIAL_CONFIG:
+        {
+            uint8_t baudRateSize = (sizeof(uint32_t) * 4);
+            uint8_t serialPortCount = currentPort->dataSize - baudRateSize;
+            if (serialPortCount != SERIAL_PORT_COUNT) {
+                headSerialError(0);
+                break;
+            }
+            for (i = 0; i < SERIAL_PORT_COUNT; i++) {
+                masterConfig.serialConfig.serial_port_scenario[i] = read8();
+            }
+            masterConfig.serialConfig.msp_baudrate = read32();
+            masterConfig.serialConfig.cli_baudrate = read32();
+            masterConfig.serialConfig.gps_baudrate = read32();
+            masterConfig.serialConfig.gps_passthrough_baudrate = read32();
+        }
         break;
 
 #ifdef LED_STRIP
