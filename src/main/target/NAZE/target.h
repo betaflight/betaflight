@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considerd misleading on Naze clones like the flip32.
+#define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3 // PB3 (LED)
@@ -132,3 +132,12 @@
 // USART2, PA3
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
+
+// alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
+#ifdef ALIENWII32
+#define BRUSHED_MOTORS
+#define HARDWARE_BIND_PLUG
+// Hardware bind plug at PB5 (Pin 41)
+#define BINDPLUG_PORT  GPIOB
+#define BINDPLUG_PIN   Pin_5
+#endif

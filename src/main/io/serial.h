@@ -73,42 +73,18 @@ typedef enum {
 #endif
 } serialPortIndex_e;
 
-
-#ifdef STM32F303xC
-
-typedef enum {
-    SERIAL_PORT_USB_VCP = 0,
-    SERIAL_PORT_USART1,
-    SERIAL_PORT_USART2,
-    SERIAL_PORT_USART3,
-    SERIAL_PORT_USART4
-} serialPortIdentifier_e;
-
-#define SERIAL_PORT_IDENTIFIER_COUNT 5
-#else
-
-#ifdef CC3D
-
-typedef enum {
-    SERIAL_PORT_USART1 = 0,
-    SERIAL_PORT_USART3,
-    SERIAL_PORT_SOFTSERIAL1,
-} serialPortIdentifier_e;
-
-#define SERIAL_PORT_IDENTIFIER_COUNT 3
-#else
-
+// serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
     SERIAL_PORT_USART1 = 0,
     SERIAL_PORT_USART2,
     SERIAL_PORT_USART3,
-    SERIAL_PORT_SOFTSERIAL1,
-    SERIAL_PORT_SOFTSERIAL2
+    SERIAL_PORT_USART4,
+    SERIAL_PORT_USB_VCP = 20,
+    SERIAL_PORT_SOFTSERIAL1 = 30,
+    SERIAL_PORT_SOFTSERIAL2,
+    SERIAL_PORT_IDENTIFIER_MAX = SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;
 
-#define SERIAL_PORT_IDENTIFIER_COUNT 5
-#endif
-#endif
 
 // bitmask
 typedef enum {
@@ -125,6 +101,7 @@ typedef struct serialPortConstraint_s {
     uint32_t maxBaudRate;
     serialPortFeature_t feature;
 } serialPortConstraint_t;
+extern const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT];
 
 typedef struct serialPortFunction_s {
     serialPortIdentifier_e identifier;

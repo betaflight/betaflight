@@ -297,7 +297,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
     if (init->airplane)
         i = 2; // switch to air hardware config
-    if (init->usePPM)
+    if (init->usePPM || init->useSerialRx)
         i++; // next index is for PPM
 
     setup = hardwareMaps[i];

@@ -37,7 +37,7 @@ When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two
 
 | Pin | Identifier | Function       | Notes                            |
 | --- | ---------- | -------------- | -------------------------------- |
-| 7   | 5          | SOFTSERIAL1 TX    | Enable `feature SOFTSERIAL`      |
-| 8   | 6          | SOFTSERIAL1 RX    |                                  |
-| 9   | 7          | SOFTSERIAL2 TX    |                                  |
-| 10  | 8          | SOFTSERIAL2 RX    |                                  |
+| 7   | 5          | SOFTSERIAL1 RX | Enable `feature SOFTSERIAL`|
+| 8   | 6          | SOFTSERIAL1 TX |                                  |
+| 9   | 7          | SOFTSERIAL2 RX |                                  |
+| 10  | 8          | SOFTSERIAL2 TX |                                  |

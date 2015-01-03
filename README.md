@@ -118,4 +118,7 @@ https://travis-ci.org/cleanflight/cleanflight
 
 [![Build Status](https://travis-ci.org/cleanflight/cleanflight.svg?branch=master)](https://travis-ci.org/cleanflight/cleanflight)
 
+## Cleanflight Releases
+https://github.com/cleanflight/cleanflight/releases
+
 

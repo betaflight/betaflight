@@ -573,7 +573,7 @@ void applyLedWarningLayer(uint8_t updateNow)
         if (feature(FEATURE_VBAT) && calculateBatteryState() != BATTERY_OK) {
             warningFlags |= WARNING_FLAG_LOW_BATTERY;
         }
-        if (failsafe->vTable->hasTimerElapsed()) {
+        if (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed()) {
             warningFlags |= WARNING_FLAG_FAILSAFE;
         }
         if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM)) {
