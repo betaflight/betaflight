@@ -4,9 +4,8 @@ A sonar sensor can be used to measure altitude for use with BARO and SONAR altit
 hold modes.
 
 The sonar sensor is used instead of the pressure sensor (barometer) at low altitudes.
-The sonar sensor is only used when the aircraft inclination angle is small.
+The sonar sensor is only used when the aircraft inclination angle (attitude) is small.
 
- 
 ## Hardware
 
 Currently the only supported sensor is the HCSR04 sensor.
@@ -28,4 +27,4 @@ Current meter cannot be used in conjunction with Parallel PWM and Sonar.
 | ------------- | ------------- | ------------------- |
 | PB0 / RC7     | PB1 / RC8     | YES (3.3v input)    |
 
-Current meter cannot be used in conjunction sonar.
+Current meter cannot be used in conjunction with sonar.

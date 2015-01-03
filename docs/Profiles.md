@@ -2,7 +2,7 @@
 
 A profile is a set of configuration settings.
 
-Current 3 profiles are supported, The default profile is profile `0`.
+Currently three profiles are supported. The default profile is profile `0`.
 
 ## Changing profiles
 
@@ -14,7 +14,7 @@ Profiles can be slected using a GUI or the following stick combinations
 | 1       | Down     | Left  | Up     | Middle |
 | 2       | Down     | Left  | Middle | Right  |
 
-The cli `profile` command can also be used:
+The CLI `profile` command can also be used:
 
 ```
 profile <index>
@@ -26,7 +26,7 @@ Cleanflight supports rate profiles in addition to regular profiles.
 
 Rate profiles contain settings that adjust how your craft behaves based on control input.
 
-3 rate profiles are supported.
+Three rate profiles are supported.
 
 Rate profiles can be selected while flying using the inflight adjustments feature.
 

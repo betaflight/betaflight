@@ -32,8 +32,8 @@ The following adjustments can be made, in flight, as well as on the ground.
 * Yaw P I and D
 
 Example scenarios:
-Up to 4 3 position switches or pots can be used to adjust 4 different settings at the same time.
-A single 2/3/4/5/6/x position switches can be used to make one 3 position switch adjust one setting at a time.
+Up to 4 3-position switches or pots can be used to adjust 4 different settings at the same time.
+A single 2/3/4/5/6/x position switche can be used to make one 3 position switch adjust one setting at a time.
 
 Any combination of switches and pots can be used.  So you could have 6 POS switch.
 
@@ -55,7 +55,7 @@ Hint: With OpenTX transmitters you can combine two momentary OFF-ON switches to 
 
 ## Configuration
 
-The cli command `adjrange` is used to configure adjustment ranges.
+The CLI command `adjrange` is used to configure adjustment ranges.
 
 12 adjustment ranges can be defined.
 4 adjustments can be made at the same time, each simultaneous adjustment requires an adjustment slot.
@@ -87,8 +87,8 @@ Normally Range Channel and Slot values are grouped together over multiple adjust
 The Range Channel and the Adjustment Channel can be the same channel.  This is useful when you want a single 3 Position switch to be dedicated
 to a single adjustment function regardless of other switch positions.
  
-The adjustment functions is applied to the adjustment channel when range channel between the range values.
-The adjustment is made when the adjustment channel is in the high or low position.  high = midrc + 200, low = midrc - 200.  by default this is 1700 and 1300 respectively.
+The adjustment function is applied to the adjustment channel when range channel is between the range values.
+The adjustment is made when the adjustment channel is in the high or low position.  high = mid_rc + 200, low = mid_rc - 200.  by default this is 1700 and 1300 respectively.
 
 ### Adjustment function
 
