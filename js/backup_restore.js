@@ -23,7 +23,8 @@ function configuration_backup(callback) {
         */
         MSP_codes.MSP_MISC,
         MSP_codes.MSP_RCMAP,
-        MSP_codes.MSP_BF_CONFIG
+        MSP_codes.MSP_BF_CONFIG,
+        MSP_codes.MSP_CF_SERIAL_CONFIG
     ];
 
     var configuration = {
@@ -97,6 +98,7 @@ function configuration_backup(callback) {
                 configuration.MISC = jQuery.extend(true, {}, MISC);
                 configuration.RCMAP = jQuery.extend(true, [], RC_MAP);
                 configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
+                configuration.SERIAL_CONFIG = jQuery.extend(true, {}, SERIAL_CONFIG);
 
                 save();
             }
@@ -285,7 +287,8 @@ function configuration_restore(callback) {
                 */
                 MSP_codes.MSP_SET_MISC,
                 MSP_codes.MSP_SET_RCMAP,
-                MSP_codes.MSP_SET_CONFIG
+                MSP_codes.MSP_SET_BF_CONFIG,
+                MSP_codes.MSP_SET_CF_SERIAL_CONFIG
             ];
 
             MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
@@ -362,6 +365,7 @@ function configuration_restore(callback) {
                     MISC = configuration.MISC;
                     RC_MAP = configuration.RCMAP;
                     BF_CONFIG = configuration.BF_CONFIG;
+                    SERIAL_CONFIG = configuration.SERIAL_CONFIG;
                 }
 
                 function query() {

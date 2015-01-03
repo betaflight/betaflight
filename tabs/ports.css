@@ -2,6 +2,42 @@
     position: relative;
 }
 
+#tab-ports-templates {
+    display: none;
+}
+
+.tab-ports .help {
+    padding: 10px;
+    background-color: #ffcb18;
+    margin-bottom: 10px;
+}
+
+.tab-ports table {
+    margin-bottom: 10px;
+
+    border-collapse: collapse;
+}
+.tab-ports table,
+.tab-ports table th,
+.tab-ports table td {
+    padding: 4px;
+    border: 1px solid #8b8b8b;
+}
+.tab-ports table tr td:first-child {
+    text-align: center;
+}
+.tab-ports table td {
+    padding: 2px 10px;
+}
+
+.tab-ports table thead tr:first-child,
+.tab-ports table tr:nth-child(even) {
+    background-color: #ececec;
+}
+
+.tab-ports select {
+    border: 1px solid silver;
+}
 .tab-ports > .buttons {
     width: calc(100% - 20px);
 

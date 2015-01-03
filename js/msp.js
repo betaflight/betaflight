@@ -15,6 +15,8 @@ var MSP_codes = {
     MSP_SET_MODE_RANGE:         35,
     MSP_ADJUSTMENT_RANGES:      52,
     MSP_SET_ADJUSTMENT_RANGE:   53,
+    MSP_CF_SERIAL_CONFIG:       54,
+    MSP_SET_CF_SERIAL_CONFIG:   55,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -539,7 +541,28 @@ var MSP = {
             case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
                 console.log('Channel forwarding saved');
                 break;
-            
+
+            case MSP_codes.MSP_CF_SERIAL_CONFIG:
+                SERIAL_CONFIG.ports = [];
+                var offset = 0;
+                var serialPortCount = data.byteLength - (4 * 4);
+                for (var i = 0; offset < serialPortCount; i++) {
+                    var serialPort = {
+                        identifier: data.getUint8(offset++, 1),
+                        scenario: data.getUint8(offset++, 1)
+                    }
+                    SERIAL_CONFIG.ports.push(serialPort); 
+                }
+                SERIAL_CONFIG.mspBaudRate = data.getUint32(offset, 1);
+                offset+= 4;
+                SERIAL_CONFIG.cliBaudRate = data.getUint32(offset, 1);
+                offset+= 4;
+                SERIAL_CONFIG.gpsBaudRate = data.getUint32(offset, 1);
+                offset+= 4;
+                SERIAL_CONFIG.gpsPassthroughBaudRate = data.getUint32(offset, 1);
+                offset+= 4;
+                break;
+
             case MSP_codes.MSP_MODE_RANGES:
                 MODE_RANGES = []; // empty the array as new data is coming in
 
@@ -706,7 +729,7 @@ MSP.crunch = function (code) {
     var buffer = [];
 
     switch (code) {
-        case MSP_codes.MSP_SET_CONFIG:
+        case MSP_codes.MSP_SET_BF_CONFIG:
             buffer.push(BF_CONFIG.mixerConfiguration);
             buffer.push(specificByte(BF_CONFIG.features, 0));
             buffer.push(specificByte(BF_CONFIG.features, 1));
@@ -823,6 +846,30 @@ MSP.crunch = function (code) {
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
                 buffer.push(SERVO_CONFIG[i].indexOfChannelToForward);
             }
+            break;
+        case MSP_codes.MSP_SET_CF_SERIAL_CONFIG:
+            for (var i = 0; i < SERIAL_CONFIG.ports.length; i++) {
+                buffer.push(SERIAL_CONFIG.ports[i].scenario);
+            }
+            buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 0));
+            buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 1));
+            buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 2));
+            buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 3));
+
+            buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 0));
+            buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 1));
+            buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 2));
+            buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 3));
+
+            buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 0));
+            buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 1));
+            buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 2));
+            buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 3));
+
+            buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 0));
+            buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 1));
+            buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 2));
+            buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 3));
             break;
 
         default:

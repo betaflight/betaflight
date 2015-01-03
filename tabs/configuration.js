@@ -268,7 +268,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 },1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CONFIG), false, save_misc);
+            MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_misc);
         });
 
         // status data pulled via separate timer with static speed

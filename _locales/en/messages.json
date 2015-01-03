@@ -344,6 +344,10 @@
     "configurationFeatures": {
         "message": "Features"
     },
+    "configurationFeaturesHelp": {
+        "message": "<strong>Note:</strong> that not all combinations of features are valid.  When the flight controller firmware detects this conflicting features will be disabled.<br /><strong>Note:</strong> Configure serial ports <span style=\"color: red\">before</span> enabling the features that will use the ports."
+    },
+    
     "configurationBoardAlignment": {
         "message": "Board Alignment"
     },
@@ -435,6 +439,9 @@
         "message": "Save and Reboot"
     },
 
+    "portsHelp": {
+        "message": "Configure serial ports.  <strong>Note:</strong> that not all ports support all scenarios and not all combinations of scenarios are valid.  When the flight controller firmware detects this the serial port configuration will be reset."
+    },
     "portsButtonSave": {
         "message": "Save and Reboot"
     },

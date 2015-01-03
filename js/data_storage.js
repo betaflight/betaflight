@@ -75,6 +75,14 @@ var ADJUSTMENT_RANGES = [];
 
 var SERVO_CONFIG = [];
 
+var SERIAL_CONFIG = {
+    ports: [],
+    mspBaudRate: 0,
+    gpsBaudRate: 0,
+    gpsPassthroughBaudRate: 0,
+    cliBaudRate: 0,
+};
+
 var SENSOR_DATA = {
     gyroscope:     [0, 0, 0],
     accelerometer: [0, 0, 0],
