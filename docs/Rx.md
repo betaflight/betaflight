@@ -47,7 +47,11 @@ http://www.lemon-rx.com/shop/index.php?route=product/product&product_id=118
 
 ### S.BUS
 
-16 channels via serial currently supported.
+16 channels via serial currently supported.  See the Serial chapter in the documentation for a configuration example.
+
+* In most cases you will need an inverter between the receiver output and the flight controller hardware.  
+* Softserial ports cannot be used with SBUS because it runs at too high of a bitrate (1Mbps).  Refer to the chapter specific to your board to determine which port(s) may be used.
+* You will need to configure the channel mapping in the GUI (Receiver tab) or CLI (`map` command).
 
 These receivers are reported working:
 
