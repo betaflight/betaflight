@@ -207,6 +207,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                                 $('div.git_info .committer').text(data.commit.author.name);
                                 $('div.git_info .date').text(date);
                                 $('div.git_info .hash').text(data.sha.slice(0, 7)).prop('href', 'https://github.com/cleanflight/cleanflight/commit/' + data.sha);
+                                
                                 $('div.git_info .message').text(data.commit.message);
     
                                 $('div.git_info').slideDown();
@@ -217,7 +218,9 @@ TABS.firmware_flasher.initialize = function (callback) {
                         $('div.release_info .name').text(summary.name).prop('href', summary.releaseUrl);
                         $('div.release_info .date').text(summary.date);
                         $('div.release_info .file').text(summary.file).prop('href', summary.url);
-                        $('div.release_info .notes').text(summary.notes);
+                        
+                        var formattedNotes = summary.notes.trim('\r').replace(/\r/g, '<br />');
+                        $('div.release_info .notes').html(formattedNotes);
 
                         $('div.release_info').slideDown();
 
