@@ -98,7 +98,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
  * API consumers should ALWAYS handle communication failures gracefully and attempt to continue
  * without the information if possible.  Clients MAY log/display a suitable message.
  *
- * API clients should NOT attempt any communication if they can't handle the API MAJOR VERSION.
+ * API clients should NOT attempt any communication if they can't handle the returned API MAJOR VERSION.
  *
  * API clients SHOULD attempt communication if the API MINOR VERSION has increased from the time
  * the API client was written and handle command failures gracefully.  Clients MAY disable
@@ -121,7 +121,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   0 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   1 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -154,21 +154,11 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define CAP_NAVCAP                  ((uint32_t)1 << 4)
 #define CAP_EXTAUX                  ((uint32_t)1 << 5)
 
-/**
- * Returns MSP protocol version
- * API version
- * Flight Controller Identifier
- * Flight Controller build version (major, minor, patchlevel)
- * Board Identifier
- * Board Hardware Revision
- * Build Date - "MMM DD YYYY" MMM = Jan/Feb/...
- * Build Time - "HH:MM:SS"
- * SCM reference length
- * SCM reference (git revision, svn commit id)
- * Additional FC information length
- * Additional FC information (as decided by the FC, for FC specific tools to use as required)
- **/
 #define MSP_API_VERSION                 1    //out message
+#define MSP_FC_VARIANT                  2    //out message
+#define MSP_FC_VERSION                  3    //out message
+#define MSP_BOARD_INFO                  4    //out message
+#define MSP_BUILD_INFO                  5    //out message
 
 //
 // MSP commands for Cleanflight original features
@@ -206,6 +196,10 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_ADJUSTMENT_RANGES           52
 #define MSP_SET_ADJUSTMENT_RANGE        53
 
+// private - only to be used by the configurator, the commands are likely to change
+#define MSP_CF_SERIAL_CONFIG            54
+#define MSP_SET_CF_SERIAL_CONFIG        55
+
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -213,14 +207,14 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
 
 // FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
-// DEPRECATED - DO NOT USE "MSP_CONFIG" and MSP_SET_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
-#define MSP_CONFIG                      66 //out message baseflight-specific settings that aren't covered elsewhere
-#define MSP_SET_CONFIG                  67 //in message baseflight-specific settings save
+// DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
+#define MSP_BF_CONFIG                      66 //out message baseflight-specific settings that aren't covered elsewhere
+#define MSP_SET_BF_CONFIG                  67 //in message baseflight-specific settings save
 
 #define MSP_REBOOT                      68 //in message reboot settings
 
-// DEPRECATED - Use MSP_API_VERSION instead
-#define MSP_BUILD_INFO                  69 //out message build date as well as some space for future expansion
+// DEPRECATED - Use MSP_BUILD_INFO instead
+#define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
 
 //
 // Multwii original MSP commands
@@ -657,35 +651,37 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     switch (cmdMSP) {
     case MSP_API_VERSION:
-        // the components of this command are in an order such that future changes could be made to it without breaking clients.
-        // i.e. most important first.
         headSerialReply(
             1 + // protocol version length
-            API_VERSION_LENGTH +
-            FLIGHT_CONTROLLER_IDENTIFIER_LENGTH +
-            FLIGHT_CONTROLLER_VERSION_LENGTH +
-            BOARD_IDENTIFIER_LENGTH +
-            BOARD_HARDWARE_REVISION_LENGTH +
-            BUILD_DATE_LENGTH +
-            BUILD_TIME_LENGTH +
-            1 + // scm reference length
-            GIT_SHORT_REVISION_LENGTH +
-            1 // additional FC specific length
-            // no addition FC specific data yet.
+            API_VERSION_LENGTH
         );
         serialize8(MSP_PROTOCOL_VERSION);
 
         serialize8(API_VERSION_MAJOR);
         serialize8(API_VERSION_MINOR);
+        break;
+
+    case MSP_FC_VARIANT:
+        headSerialReply(FLIGHT_CONTROLLER_IDENTIFIER_LENGTH);
 
         for (i = 0; i < FLIGHT_CONTROLLER_IDENTIFIER_LENGTH; i++) {
             serialize8(flightControllerIdentifier[i]);
         }
+        break;
+
+    case MSP_FC_VERSION:
+        headSerialReply(FLIGHT_CONTROLLER_VERSION_LENGTH);
 
         serialize8(FC_VERSION_MAJOR);
         serialize8(FC_VERSION_MINOR);
         serialize8(FC_VERSION_PATCH_LEVEL);
+        break;
 
+    case MSP_BOARD_INFO:
+        headSerialReply(
+            BOARD_IDENTIFIER_LENGTH +
+            BOARD_HARDWARE_REVISION_LENGTH
+        );
         for (i = 0; i < BOARD_IDENTIFIER_LENGTH; i++) {
             serialize8(boardIdentifier[i]);
         }
@@ -694,6 +690,14 @@ static bool processOutCommand(uint8_t cmdMSP)
 #else
         serialize16(0); // No other build targets currently have hardware revision detection.
 #endif
+        break;
+
+    case MSP_BUILD_INFO:
+        headSerialReply(
+                BUILD_DATE_LENGTH +
+                BUILD_TIME_LENGTH +
+                GIT_SHORT_REVISION_LENGTH
+        );
 
         for (i = 0; i < BUILD_DATE_LENGTH; i++) {
             serialize8(buildDate[i]);
@@ -702,11 +706,9 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(buildTime[i]);
         }
 
-        serialize8(GIT_SHORT_REVISION_LENGTH);
         for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
             serialize8(shortGitRevision[i]);
         }
-        serialize8(0); // No flight controller specific information to follow.
         break;
 
     // DEPRECATED - Use MSP_API_VERSION
@@ -1052,7 +1054,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(masterConfig.rxConfig.rcmap[i]);
         break;
 
-    case MSP_CONFIG:
+    case MSP_BF_CONFIG:
         headSerialReply(1 + 4 + 1 + 2 + 2 + 2 + 2 + 2);
         serialize8(masterConfig.mixerMode);
 
@@ -1066,6 +1068,21 @@ static bool processOutCommand(uint8_t cmdMSP)
 
         serialize16(masterConfig.batteryConfig.currentMeterScale);
         serialize16(masterConfig.batteryConfig.currentMeterOffset);
+        break;
+
+    case MSP_CF_SERIAL_CONFIG:
+        headSerialReply(
+            ((sizeof(uint8_t) * 2) * SERIAL_PORT_COUNT) +
+            (sizeof(uint32_t) * 4)
+        );
+        for (i = 0; i < SERIAL_PORT_COUNT; i++) {
+            serialize8(serialPortConstraints[i].identifier);
+            serialize8(masterConfig.serialConfig.serial_port_scenario[i]);
+        }
+        serialize32(masterConfig.serialConfig.msp_baudrate);
+        serialize32(masterConfig.serialConfig.cli_baudrate);
+        serialize32(masterConfig.serialConfig.gps_baudrate);
+        serialize32(masterConfig.serialConfig.gps_passthrough_baudrate);
         break;
 
 #ifdef LED_STRIP
@@ -1090,7 +1107,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         }
         break;
 #endif
-    case MSP_BUILD_INFO:
+    case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
         serialize8(buildDate[i]); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
@@ -1368,7 +1385,7 @@ static bool processInCommand(void)
         }
         break;
 
-    case MSP_SET_CONFIG:
+    case MSP_SET_BF_CONFIG:
 
 #ifdef USE_QUAD_MIXER_ONLY
         read8(); // mixerMode ignored
@@ -1387,6 +1404,24 @@ static bool processInCommand(void)
 
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();
+        break;
+
+    case MSP_SET_CF_SERIAL_CONFIG:
+        {
+            uint8_t baudRateSize = (sizeof(uint32_t) * 4);
+            uint8_t serialPortCount = currentPort->dataSize - baudRateSize;
+            if (serialPortCount != SERIAL_PORT_COUNT) {
+                headSerialError(0);
+                break;
+            }
+            for (i = 0; i < SERIAL_PORT_COUNT; i++) {
+                masterConfig.serialConfig.serial_port_scenario[i] = read8();
+            }
+            masterConfig.serialConfig.msp_baudrate = read32();
+            masterConfig.serialConfig.cli_baudrate = read32();
+            masterConfig.serialConfig.gps_baudrate = read32();
+            masterConfig.serialConfig.gps_passthrough_baudrate = read32();
+        }
         break;
 
 #ifdef LED_STRIP
