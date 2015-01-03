@@ -106,55 +106,6 @@ TABS.firmware_flasher.initialize = function (callback) {
             $('select[name="release"]').empty().append('<option value="0">Offline</option>');
         });
         
-/*
-        $.get('http://firmware.baseflight.net/listing.json', function (data) {
-            var releases = [],
-                releases_e = $('select[name="release"]').empty(),
-                d, date, offset;
-
-            // filter out what we need
-            for (var i = 0; i < data.length; i++) {
-                if (data[i].target == 'NAZE') {
-                    releases.push(data[i]);
-                }
-            }
-
-            // reorder the array by time, TODO needs more testing
-            releases.sort(function (a, b) {
-                // stable releases always go first
-                if (a.release > b.release) {
-                    return -1;
-                } else if (a.release < b.release) {
-                    return 1;
-                }
-
-                // sort by time
-                return b.time - a.time;
-            });
-
-            // populate select
-            for (var i = 0; i < releases.length; i++) {
-                d = new Date(releases[i].time * 1000);
-                date = d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate())).slice(-2);
-                date += ' - ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-
-                var element = $('<option value="' + i + '">' + (((releases[i].release) ? 'Stable' : 'Dev') + ' ' + date) + '</option>').data('obj', releases[i]);
-                releases_e.append(element);
-            }
-
-            // bind events
-            $('select[name="release"]').change(function() {
-                if (!GUI.connect_lock) {
-                    $('.progress').val(0).removeClass('valid invalid');
-                    $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherLoadFirmwareFile'));
-                    $('div.git_info').slideUp();
-                    $('a.flash_firmware').addClass('locked');
-                }
-            });
-        }).fail(function () {
-            $('select[name="release"]').empty().append('<option value="0">Offline</option>')
-        });
-*/
 
         // UI Hooks
         $('a.load_file').click(function () {
