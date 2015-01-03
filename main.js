@@ -39,7 +39,7 @@ $(document).ready(function () {
         console.log('Application version is valid for another: ' + Math.round((CONFIGURATOR.releaseDate - (new Date().getTime() - (86400000 * 60))) / 86400000) + ' days');
     } else {
         console.log('Application version expired');
-        GUI.log('You\'re using an old version of ' + chrome.runtime.getManifest().name + '. Please update so you can benefit from recently added features and bugfixes.');
+        GUI.log('You are using an old version of ' + chrome.runtime.getManifest().name + '. There may be a more recent version with improvements and fixes.');
     }
 
     // log webgl capability
