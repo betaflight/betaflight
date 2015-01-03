@@ -70,6 +70,9 @@ static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static mixerMode_e currentMixerMode;
 static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 
+static const float lowpassNormalizedButter5[] = 
+    { 3.2361f, 5.2361f, 5.2361f, 3.2361f, 1.0f };
+
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
     { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
@@ -663,22 +666,29 @@ bool isMixerUsingServos(void)
     return useServo;
 }
 
-static float lowpass(lowpass_t *filter, float in, int16_t freqIdx )
+static void generate_lowpass_coeffs5(int16_t freq)
+{
+    const float lowpassNormalizedButter5[] = { 3.2361f, 5.2361f, 5.2361f, 3.2361f, 1.0f };
+
+
+
+}
+
+static float lowpass(lowpass_t *filter, float in, int16_t freq)
 {
     int16_t coefIdx;
     float out;
 
     // Check to see if cutoff frequency changed
-    if (freqIdx != filter->freqIdx) {
+    if (freq != filter->freq) {
         filter->init = false;
     }
 
     // Initialize if needed
     if (!filter->init) {
-        filter->freqIdx = freqIdx;
-        filter->freq = lowpass_table[filter->freqIdx][0];
-        filter->b = &lowpass_table[filter->freqIdx][1];
-        filter->a = &lowpass_table[filter->freqIdx][1 + LOWPASS_NUM_COEF];
+        generate_lowpass_coeffs5(freq, filter->b, filter->a);
+        //filter->b = &lowpass_table[filter->freqIdx][1];
+        //filter->a = &lowpass_table[filter->freqIdx][1 + LOWPASS_NUM_COEF];
         for (coefIdx = 0; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
             filter->x[coefIdx] = in;
             filter->y[coefIdx] = in;
@@ -711,7 +721,7 @@ void filterServos(void)
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             // Round to nearest
-            servo[servoIdx] = (int16_t)(lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx) + 0.5f);
+            servo[servoIdx] = (int16_t)(lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq) + 0.5f);
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
         }

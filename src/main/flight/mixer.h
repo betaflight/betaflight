@@ -93,15 +93,23 @@ typedef struct servoParam_t {
 } servoParam_t;
 
 #define LOWPASS_NUM_COEF 6
+/*
+typedef struct lowpass_coeffs_t {
+    int16_t freq;                           // 1/1000ths of normalized frequency
+    float b[LOWPASS_NUM_COEF];
+    float a[LOWPASS_NUM_COEF];
+} lowpass_coeffs_t;
+*/
+
 typedef struct lowpass_t {
     bool init;
-    int16_t freqIdx;
-    float freq;
-    const float *b;
-    const float *a;
+    int16_t freq;                           // Normalized freq in 1/1000ths
+    float b[LOWPASS_NUM_COEF];
+    float a[LOWPASS_NUM_COEF];
     float x[LOWPASS_NUM_COEF];
     float y[LOWPASS_NUM_COEF];
 } lowpass_t;
+
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
