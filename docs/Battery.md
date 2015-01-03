@@ -65,7 +65,7 @@ When enabled, Amps, mAh used and capacity remaining are calculated and used by t
 
 ## Configuration
 
-Enable current monitoring using the cli command
+Enable current monitoring using the CLI command
 
 ```
 feature CURRENT_METER

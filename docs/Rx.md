@@ -60,7 +60,7 @@ without the fix you are limited to 8 channels regardless of the CH1-16/D16 setti
 
 See the Configuration document some some RX configuration examples.
 
-For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` cli setting as follows.
+For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as follows.
 
 | Serial RX Provider | Value |
 | ------------------ | ----- |
