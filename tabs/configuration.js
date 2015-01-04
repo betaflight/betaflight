@@ -11,7 +11,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_config() {
-        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_rc_map);
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_serial_config);
+    }
+
+    function load_serial_config() {
+        MSP.send_message(MSP_codes.MSP_CF_SERIAL_CONFIG, false, false, load_rc_map);
     }
 
     function load_rc_map() {
@@ -117,15 +121,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'UBLOX'
         ];
 
-        /*
-        var gpsBauds = [
+        var gpsBaudRates = [
             '115200',
             '57600',
             '38400',
             '19200',
             '9600'
         ];
-        */
 
         var gpsSbas = [
             'Disabled',
@@ -145,16 +147,14 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.gps_type = parseInt($(this).val());
         });
 
-        /*
         var gps_baudrate_e = $('select.gps_baudrate');
-        for (var i = 0; i < gpsBauds.length; i++) {
-            gps_baudrate_e.append('<option value="' + i + '">' + gpsBauds[i] + '</option>');
+        for (var i = 0; i < gpsBaudRates.length; i++) {
+            gps_baudrate_e.append('<option value="' + gpsBaudRates[i] + '">' + gpsBaudRates[i] + '</option>');
         }
 
         gps_baudrate_e.change(function () {
-            MISC.gps_baudrate = parseInt($(this).val());
+            SERIAL_CONFIG.gpsBaudRate = parseInt($(this).val());
         });
-        */
 
         var gps_ubx_sbas_e = $('select.gps_ubx_sbas');
         for (var i = 0; i < gpsSbas.length; i++) {
@@ -167,7 +167,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
         // select current gps configuration
         gps_protocol_e.val(MISC.gps_type);
-        //gps_baudrate_e.val(MISC.gps_baudrate);
+        gps_baudrate_e.val(SERIAL_CONFIG.gpsBaudRate);
         gps_ubx_sbas_e.val(MISC.gps_ubx_sbas);
 
         // generate serial RX
@@ -287,6 +287,10 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             BF_CONFIG.currentoffset = parseInt($('input[name="currentoffset"]').val());
             MISC.multiwiicurrentoutput = ~~$('input[name="multiwiicurrentoutput"]').is(':checked'); // ~~ boolean to decimal conversion
 
+            function save_serial_config() {
+                MSP.send_message(MSP_codes.MSP_SET_CF_SERIAL_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CF_SERIAL_CONFIG), false, save_misc);
+            }
+
             function save_misc() {
                 MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_acc_trim);
             }
@@ -318,7 +322,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 },1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_misc);
+            MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_serial_config);
         });
 
         // status data pulled via separate timer with static speed
