@@ -176,8 +176,8 @@ TABS.setup.initialize3D = function (compatibility) {
         loader, canvas, wrapper, renderer, camera, scene, light, light2, modelWrapper, model, model_file,
         fallback = false;
 
-    canvas = $('.CAP_BASEFLIGHT_CONFIG #canvas');
-    wrapper = $('.CAP_BASEFLIGHT_CONFIG #canvas_wrapper');
+    canvas = $('.model-and-info #canvas');
+    wrapper = $('.model-and-info #canvas_wrapper');
 
     // webgl capability detector
     // it would seem the webgl "enabling" through advanced settings will be ignored in the future
