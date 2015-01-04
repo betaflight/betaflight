@@ -1141,7 +1141,7 @@ static void blackboxPlaySyncBeep()
 
 void handleBlackbox(void)
 {
-    int i;
+    int i, result;
 
     switch (blackboxState) {
         case BLACKBOX_STATE_SEND_HEADER:
@@ -1185,10 +1185,12 @@ void handleBlackbox(void)
         break;
         case BLACKBOX_STATE_SEND_SYSINFO:
             //On entry of this state, headerXmitIndex is 0
-            headerXmitIndex = blackboxWriteSysinfo(headerXmitIndex);
+            result = blackboxWriteSysinfo(headerXmitIndex);
 
-            if (headerXmitIndex == -1)
+            if (result == -1)
                 blackboxSetState(BLACKBOX_STATE_PRERUN);
+            else
+                headerXmitIndex = result;
         break;
         case BLACKBOX_STATE_PRERUN:
             blackboxPlaySyncBeep();
