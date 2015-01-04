@@ -78,7 +78,7 @@ set serial_port_2_scenario = 2
 save
 ```
 
-b) Graupner SumD RX SERIAL and HoTT TELEMETRY via Softserial
+b) Graupner SumD RX SERIAL and HoTT TELEMETRY via SoftSerial
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - RX SERIAL on UART2
