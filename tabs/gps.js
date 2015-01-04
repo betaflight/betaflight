@@ -28,7 +28,7 @@ TABS.gps.initialize = function (callback) {
         }
 
         function get_gpsvinfo_data() {
-            MSP.send_message(MSP_codes.MSP_GPSSVINFO, false, false, update_ui);
+            MSP.send_message(MSP_codes.MSP_GPS_SV_INFO, false, false, update_ui);
         }
 
         function update_ui() {
