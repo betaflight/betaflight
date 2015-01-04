@@ -18,7 +18,7 @@ Tested with revision 1 board.
 
 ## TODO
 * Baro - detection works but sending bad readings, disabled for now.
-* Led Strip
+* LED Strip
 * ADC
 * Sonar
 * Display (via Flex port)

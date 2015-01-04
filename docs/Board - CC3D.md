@@ -40,7 +40,7 @@ The 6 pin RC_Output connector has the following pinouts when used in RX_PPM/RX_S
 | 2   | MOTOR 2   |       |
 | 3   | MOTOR 3   |       |
 | 4   | MOTOR 4   |       |
-| 5   | Led Strip |       |
+| 5   | LED Strip |       |
 | 6   | Unused    |       |
 
 The 8 pin RC_Input connector has the following pinouts when used in RX_PARALLEL_PWM mode
