@@ -1,10 +1,11 @@
 .tab-configuration .help {
-    float: left;
+    padding: 10px;
+    background-color: #ffcb18;
+    margin-bottom: 10px;
 }
 
-.tab-configuration table {
-    float: left;
 
+.tab-configuration table {
     margin-bottom: 10px;
 
     border-collapse: collapse;
@@ -57,17 +58,13 @@
 .tab-configuration .mixerPreview img {
     display: block;
 
-    width: calc(100% - 10px);
-    height: calc(100% - 10px);
-
-    padding: 5px;
-
-    border: 1px solid silver;
-    border-bottom: 0;
+    width: 100%;
+    height: 100%;
 }
 .tab-configuration select.mixerList {
-    width: calc(100% + 2px);
+    width: 180px;
     height: 20px;
+    margin-top: 10px;
 
     font-weight: bold;
 
@@ -91,6 +88,7 @@
 }
 .tab-configuration .number {
     margin-bottom: 5px;
+    clear: left;
 }
 .tab-configuration .number input {
     width: 60px;
@@ -125,6 +123,7 @@
     width: 125px;
 
     border: 1px solid silver;
+    margin-bottom: 5px;
 }
 .tab-configuration .current .checkbox {
     margin-top: 2px;

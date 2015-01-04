@@ -1,15 +1,19 @@
 <div class="tab-configuration">
+    <div class="help">
+        <p i18n="configurationFeaturesHelp"></p>
+    </div>
+
     <div class="leftWrapper">
         <div class="groupTitle" i18n="configurationMixer"></div>
         <div class="mixerPreview">
             <img src="./resources/motor_order/custom.svg" />
-            <select class="mixerList">
-                <!-- list generated here -->
-            </select>
         </div>
+        <select class="mixerList">
+            <!-- list generated here -->
+        </select>
     </div>
-    <div class="rightWrapper">
-        <div class="groupTitle" i18n="configurationFeatures"></div>
+    <div class="rightWrapper">        
+        <div class="groupTitle" i18n="configurationEscFeatures"></div>
         <table>
             <thead>
                 <tr>
@@ -18,17 +22,10 @@
                     <th i18n="configurationFeatureDescription"></th>
                 </tr>
             </thead>
-            <tbody class="features">
+            <tbody class="features esc">
                 <!-- table generated here -->
             </tbody>
         </table>
-        <div class="help">
-            <p i18n="configurationFeaturesHelp"></p>
-        </div>
-    </div>
-    <div class="clear-both"></div>
-    <div class="leftWrapper">
-        <div class="groupTitle" i18n="configurationThrottle"></div>
         <div class="number">
             <label>
                 <input type="number" name="minthrottle" min="0" max="2000" />
@@ -60,8 +57,30 @@
             </label>
         </div>
     </div>
+    <div class="clear-both"></div>
+    <div class="leftWrapper">
+        <div class="groupTitle" i18n="configurationBoardAlignment"></div>
+        <div class="number">
+            <label>
+                <input type="number" name="board_align_roll" step="1" min="-180" max="180" />
+                <span i18n="configurationBoardAlignmentRoll"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="board_align_pitch" step="1" min="-180" max="180" />
+                <span i18n="configurationBoardAlignmentPitch"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="board_align_yaw" step="1" min="-180" max="180" />
+                <span i18n="configurationBoardAlignmentYaw"></span>
+            </label>
+        </div>
+    </div>
     <div class="rightWrapper">
-        <div class="groupTitle" i18n="configurationAccelTrimMagDec"></div>
+        <div class="groupTitle" i18n="configurationAccelTrims"></div>
         <div class="number">
             <label>
                 <input type="number" name="roll"   min="-300" max="300" />
@@ -74,27 +93,76 @@
                 <span i18n="configurationAccelTrimPitch"></span>
             </label>
         </div>
-        <div class="number">
-            <label>
-                <input type="number" name="mag_declination" step="0.1" min="-180" max="180" />
-                <span i18n="configurationMagDeclination"></span>
-            </label>
-        </div>
     </div>
     <div class="clear-both"></div>
     <div class="leftWrapper">
+        <div class="groupTitle" i18n="configurationReceiver"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features rxMode">
+                <!-- table generated here -->
+            </tbody>
+        </table>
+                
         <div class="groupTitle" i18n="configurationSerialRX"></div>
         <select class="serialRX" size="4">
             <!-- list generated here -->
         </select>
+        
+        <div class="groupTitle" i18n="configurationRSSI"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features rssi">
+                <!-- table generated here -->
+            </tbody>
+        </table>
+        <div class="groupTitle" i18n="configurationFailsafe"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features rxMisc">
+                <!-- table generated here -->
+            </tbody>
+        </table>
+
     </div>
     <div class="rightWrapper gps">
         <div class="groupTitle" i18n="configurationGPS"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features gps">
+                <!-- table generated here -->
+            </tbody>
+        </table>
+        
         <div class="line">
-            <select class="gps_type">
+            <select class="gps_protocol">
                 <!-- list generated here -->
             </select>
-            <span i18n="configurationGPStype"></span>
+            <span i18n="configurationGPSProtocol"></span>
         </div>
 <!--         <div class="line"> -->
 <!--             <select class="gps_baudrate"> -->
@@ -108,10 +176,29 @@
             </select>
             <span i18n="configurationGPSubxSbas"></span>
         </div>
+        <div class="number">
+            <label>
+                <input type="number" name="mag_declination" step="0.1" min="-180" max="180" />
+                <span i18n="configurationMagDeclination"></span>
+            </label>
+        </div>
     </div>
     <div class="clear-both"></div>
     <div class="leftWrapper">
         <div class="groupTitle" i18n="configurationBatteryVoltage"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features batteryVoltage">
+                <!-- table generated here -->
+            </tbody>
+        </table>
+        
         <div class="number">
             <label>
                 <input type="number" name="mincellvoltage" step="0.1" min="1" max="5" />
@@ -139,6 +226,18 @@
     </div>
     <div class="rightWrapper current">
         <div class="groupTitle" i18n="configurationCurrent"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features batteryCurrent">
+                <!-- table generated here -->
+            </tbody>
+        </table>        
         <div class="number">
             <label>
                 <input type="number" name="currentscale" step="1" min="1" max="1000" />
@@ -162,25 +261,19 @@
     </div>
     <div class="clear-both"></div>
     <div class="leftWrapper">
-        <div class="groupTitle" i18n="configurationBoardAlignment"></div>
-        <div class="number">
-            <label>
-                <input type="number" name="board_align_roll" step="1" min="-180" max="180" />
-                <span i18n="configurationBoardAlignmentRoll"></span>
-            </label>
-        </div>
-        <div class="number">
-            <label>
-                <input type="number" name="board_align_pitch" step="1" min="-180" max="180" />
-                <span i18n="configurationBoardAlignmentPitch"></span>
-            </label>
-        </div>
-        <div class="number">
-            <label>
-                <input type="number" name="board_align_yaw" step="1" min="-180" max="180" />
-                <span i18n="configurationBoardAlignmentYaw"></span>
-            </label>
-        </div>
+        <div class="groupTitle" i18n="configurationFeatures"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features other">
+                <!-- table generated here -->
+            </tbody>
+        </table>
     </div>
     <div class="clear-both"></div>
     <div class="buttons">

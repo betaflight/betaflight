@@ -331,7 +331,7 @@
         "message": "Enabled"
     },
     "configurationFeatureName": {
-        "message": "Name"
+        "message": "Feature"
     },
     "configurationFeatureDescription": {
         "message": "Description"
@@ -342,10 +342,19 @@
         "message": "Mixer"
     },
     "configurationFeatures": {
-        "message": "Features"
+        "message": "Other Features"
+    },
+    "configurationReceiver": {
+        "message": "Receiver Mode"
+    },
+    "configurationRSSI": {
+        "message": "RSSI (Signal Strength)"
+    },
+    "configurationEscFeatures": {
+        "message": "ESC/Motor Features"
     },
     "configurationFeaturesHelp": {
-        "message": "<strong>Note:</strong> that not all combinations of features are valid.  When the flight controller firmware detects this conflicting features will be disabled.<br /><strong>Note:</strong> Configure serial ports <span style=\"color: red\">before</span> enabling the features that will use the ports."
+        "message": "<strong>Note:</strong> Not all combinations of features are valid.  When the flight controller firmware detects invalid feature combinations conflicting features will be disabled.<br /><strong>Note:</strong> Configure serial ports <span style=\"color: red\">before</span> enabling the features that will use the ports."
     },
     
     "configurationBoardAlignment": {
@@ -360,8 +369,8 @@
     "configurationBoardAlignmentYaw": {
         "message": "Yaw Adjustment [deg]"
     },
-    "configurationAccelTrimMagDec": {
-        "message": "Accelerometer & Magnetometer"
+    "configurationAccelTrims": {
+        "message": "Accelerometer Trim"
     },
     "configurationAccelTrimRoll": {
         "message": "Accelerometer Roll Trim"
@@ -371,9 +380,6 @@
     },
     "configurationMagDeclination": {
         "message": "Magnetometer Declination [deg]"
-    },
-    "configurationThrottle": {
-        "message": "Throttle"
     },
     "configurationThrottleMinimum": {
         "message": "Minimum Throttle"
@@ -420,8 +426,8 @@
     "configurationGPS": {
         "message": "GPS"
     },
-    "configurationGPStype": {
-        "message": "Type"
+    "configurationGPSProtocol": {
+        "message": "Protocol"
     },
     "configurationGPSbaudrate": {
         "message": "Baudrate"
@@ -430,7 +436,7 @@
         "message": "Ground Assistance Type"
     },
     "configurationSerialRX": {
-        "message": "Serial Receiver"
+        "message": "Serial Receiver Provider"
     },
     "configurationEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"

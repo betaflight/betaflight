@@ -53,38 +53,66 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         mixer_list_e.val(BF_CONFIG.mixerConfiguration).change();
 
         // generate features
-        var featureNames = [
-            {name: 'RX_PPM', description: 'PPM RX input'},
-            {name: 'VBAT', description: 'Battery voltage monitoring'},
-            {name: 'INFLIGHT_ACC_CAL', description: 'In-flight level calibration'},
-            {name: 'RX_SERIAL', description: 'Serial-based receiver (SPEKSAT, SBUS, SUMD)'},
-            {name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
-            {name: 'SERVO_TILT', description: 'Servo gimbal'},
-            {name: 'SOFTSERIAL', description: 'Enable CPU based serial ports (configure port scenario first)'},
-            {name: 'GPS', description: 'GPS (configure port scenario first)'},
-            {name: 'FAILSAFE', description: 'Failsafe settings on RX signal loss'},
-            {name: 'SONAR', description: 'Sonar'},
-            {name: 'TELEMETRY', description: 'Telemetry output'},
-            {name: 'CURRENT_METER', description: 'Battery current monitoring'},
-            {name: '3D', description: '3D mode (for use with reversible ESCs)'},
-            {name: 'RX_PARALLEL_PWM', description: 'PWM RX input'},
-            {name: 'RX_MSP', description: 'MSP RX input'},
-            {name: 'RSSI_ADC', description: 'Analog RSSI input'},
-            {name: 'LED_STRIP', description: 'Addressable RGB LED strip support'},
-            {name: 'DISPLAY', description: 'OLED Screen Display'},
-            {name: 'ONESHOT125', description: 'ONESHOT ESC support (disconnect ESCs, remove props)'}
+        var features = [
+            {bit: 0, group: 'rxMode', mode: 'group', name: 'RX_PPM', description: 'PPM RX input'},
+            {bit: 1, group: 'batteryVoltage', name: 'VBAT', description: 'Battery voltage monitoring'},
+            {bit: 2, group: 'other', name: 'INFLIGHT_ACC_CAL', description: 'In-flight level calibration'},
+            {bit: 3, group: 'rxMode', mode: 'group', name: 'RX_SERIAL', description: 'Serial-based receiver (SPEKSAT, SBUS, SUMD)'},
+            {bit: 4, group: 'esc', name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
+            {bit: 5, group: 'other', name: 'SERVO_TILT', description: 'Servo gimbal'},
+            {bit: 6, group: 'other', name: 'SOFTSERIAL', description: 'Enable CPU based serial ports (configure port scenario first)'},
+            {bit: 7, group: 'gps', name: 'GPS', description: 'GPS (configure port scenario first)'},
+            {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE', description: 'Failsafe settings on RX signal loss'},
+            {bit: 9, group: 'other', name: 'SONAR', description: 'Sonar'},
+            {bit: 10, group: 'other', name: 'TELEMETRY', description: 'Telemetry output'},
+            {bit: 11, group: 'batteryCurrent', name: 'CURRENT_METER', description: 'Battery current monitoring'},
+            {bit: 12, group: 'other', name: '3D', description: '3D mode (for use with reversible ESCs)'},
+            {bit: 13, group: 'rxMode', mode: 'group', name: 'RX_PARALLEL_PWM', description: 'PWM RX input'},
+            {bit: 14, group: 'rxMode', mode: 'group', name: 'RX_MSP', description: 'MSP RX input'},
+            {bit: 15, group: 'rssi', name: 'RSSI_ADC', description: 'Analog RSSI input'},
+            {bit: 16, group: 'other', name: 'LED_STRIP', description: 'Addressable RGB LED strip support'},
+            {bit: 17, group: 'other', name: 'DISPLAY', description: 'OLED Screen Display'},
+            {bit: 18, group: 'esc', name: 'ONESHOT125', description: 'ONESHOT ESC support (disconnect ESCs, remove props)'}
         ];
 
+        var radioGroups = [];
+        
         var features_e = $('.features');
-        for (var i = 0; i < featureNames.length; i++) {
-            var row_e = $('<tr><td><input id="feature-' + i + '" title="' + featureNames[i].name + '" type="checkbox" /></td><td><label for="feature-' + i + '">' + featureNames[i].name + '</label></td><td>' + featureNames[i].description + '</td>');
-            row_e.find('input').attr('checked', bit_check(BF_CONFIG.features, i));
+        for (var i = 0; i < features.length; i++) {
+            var row_e;
+            
+            if (features[i].mode == 'group') {
+                row_e = $('<tr><td><input class="feature" id="feature-' + i + '" value="' + features[i].bit + '" title="' + features[i].name + '" type="radio" name="' + features[i].group + '" /></td><td><label for="feature-' + i + '">' + features[i].name + '</label></td><td>' + features[i].description + '</td>');
+                radioGroups.push(features[i].group);
+            } else {
+                row_e = $('<tr><td><input class="feature" id="feature-' + i + '" title="' + features[i].name + '" type="checkbox" /></td><td><label for="feature-' + i + '">' + features[i].name + '</label></td><td>' + features[i].description + '</td>');
+                var feature_e = row_e.find('input.feature');
+                feature_e.data('bit', features[i].bit);
+                feature_e.prop('checked', bit_check(BF_CONFIG.features, features[i].bit));
+            }
 
-            features_e.append(row_e);
+            features_e.each(function () {
+                if ($(this).hasClass(features[i].group)) {
+                    $(this).append(row_e);
+                }
+            });
+        }
+
+        for (var i = 0; i < radioGroups.length; i++) {
+            var group = radioGroups[i];
+            var controls_e = $('input[name="' + group + '"].feature');
+            
+            
+            controls_e.each(function() {
+                var bit = parseInt($(this).attr('value'));
+                var state = bit_check(BF_CONFIG.features, bit);
+                
+                $(this).prop('checked', state);
+            });
         }
 
         // generate GPS
-        var gpsTypes = [
+        var gpsProtocols = [
             'NMEA',
             'UBLOX'
         ];
@@ -108,12 +136,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'Indian GAGAN'
         ];
 
-        var gps_type_e = $('select.gps_type');
-        for (var i = 0; i < gpsTypes.length; i++) {
-            gps_type_e.append('<option value="' + i + '">' + gpsTypes[i] + '</option>');
+        var gps_protocol_e = $('select.gps_protocol');
+        for (var i = 0; i < gpsProtocols.length; i++) {
+            gps_protocol_e.append('<option value="' + i + '">' + gpsProtocols[i] + '</option>');
         }
 
-        gps_type_e.change(function () {
+        gps_protocol_e.change(function () {
             MISC.gps_type = parseInt($(this).val());
         });
 
@@ -138,7 +166,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         });
 
         // select current gps configuration
-        gps_type_e.val(MISC.gps_type);
+        gps_protocol_e.val(MISC.gps_type);
         //gps_baudrate_e.val(MISC.gps_baudrate);
         gps_ubx_sbas_e.val(MISC.gps_ubx_sbas);
 
@@ -201,9 +229,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
 
         // UI hooks
-        $('input', features_e).change(function () {
+        $('input[type="checkbox"].feature', features_e).change(function () {
             var element = $(this),
-                index = $('input', features_e).index(element),
+                index = element.data('bit'),
                 state = element.is(':checked');
 
             if (state) {
@@ -211,6 +239,27 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             } else {
                 BF_CONFIG.features = bit_clear(BF_CONFIG.features, index);
             }
+        });
+
+        // UI hooks
+        $('input[type="radio"].feature', features_e).change(function () {
+            var element = $(this),
+                group = element.attr('name');
+
+            var controls_e = $('input[name="' + group + '"]');
+            var selected_bit = controls_e.filter(':checked').val();
+            
+            controls_e.each(function() {
+                var bit = $(this).attr('value');
+                
+                var selected = (selected_bit == bit);
+                if (selected) {
+                    BF_CONFIG.features = bit_set(BF_CONFIG.features, bit);
+                } else {
+                    BF_CONFIG.features = bit_clear(BF_CONFIG.features, bit);
+                }
+
+            });
         });
 
         $('a.save').click(function () {
