@@ -50,12 +50,16 @@ To make configuration easier common usage scenarios are listed below.
 
 ### Constraints
 
+If the configuration is invalid the serial port configuration will reset to it's defaults and features may be disabled.
+
 * There must always be a port available to use for MSP
 * There must always be a port available to use for CLI
-* To use a port for a function, the function's corresponding feature must be enabled first.
-e.g. to use GPS enable the GPS feature.
-* If the configuration is invalid the serial port configuration will reset to it's defaults and features may be disabled.
-* If softserial is used be aware that both softserial ports must use the same baudrate.
+* There can only be 1 CLI port.
+* There is a maximum of 2 MSP ports.
+* To use a port for a function, the function's corresponding feature must be also be enabled.
+e.g. after configuring a port for GPS enable the GPS feature.
+* If softserial is used both softserial ports must use the same baudrate.
+
 
 ### Examples
 
