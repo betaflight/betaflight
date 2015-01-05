@@ -33,16 +33,16 @@ CXXFLAGS += -g -Wall -Wextra -pthread -ggdb3 -O0 -DUNIT_TEST
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-#flight_imu_unittest
-#altitude_hold_unittest
-	#gps_conversion_unittest
-	#ledstrip_unittest 
-	#ws2811_unittest
 TESTS = \
 	battery_unittest \
+	flight_imu_unittest \
+	altitude_hold_unittest \
+	gps_conversion_unittest \
 	telemetry_hott_unittest \
-	mixer_unittest \
-	rc_controls_unittest
+	rc_controls_unittest \
+	ledstrip_unittest \
+	ws2811_unittest \
+	mixer_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -148,17 +148,6 @@ gps_conversion_unittest : $(OBJECT_DIR)/flight/gps_conversion.o $(OBJECT_DIR)/gp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/flight/mixer.o : $(USER_DIR)/flight/mixer.c $(USER_DIR)/flight/mixer.h $(GTEST_HEADERS)
-	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
-
-$(OBJECT_DIR)/mixer_unittest.o : $(TEST_DIR)/mixer_unittest.cc $(USER_DIR)/flight/mixer.h $(GTEST_HEADERS)
-	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/mixer_unittest.cc -o $@
-
-mixer_unittest : $(OBJECT_DIR)/flight/mixer.o $(OBJECT_DIR)/flight/mixer.o $(OBJECT_DIR)/mixer_unittest.o $(OBJECT_DIR)/gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
-
 
 $(OBJECT_DIR)/telemetry/hott.o : $(USER_DIR)/telemetry/hott.c $(USER_DIR)/telemetry/hott.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
@@ -213,4 +202,14 @@ $(OBJECT_DIR)/ws2811_unittest.o : $(TEST_DIR)/ws2811_unittest.cc \
 ws2811_unittest :$(OBJECT_DIR)/drivers/light_ws2811strip.o $(OBJECT_DIR)/ws2811_unittest.o $(OBJECT_DIR)/gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/flight/mixer.o : $(USER_DIR)/flight/mixer.c $(USER_DIR)/flight/mixer.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
+
+$(OBJECT_DIR)/mixer_unittest.o : $(TEST_DIR)/mixer_unittest.cc $(USER_DIR)/flight/mixer.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/mixer_unittest.cc -o $@
+
+mixer_unittest : $(OBJECT_DIR)/flight/mixer.o $(OBJECT_DIR)/flight/mixer.o $(OBJECT_DIR)/mixer_unittest.o $(OBJECT_DIR)/gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 

@@ -84,12 +84,4 @@ void delay(uint32_t ms)
     UNUSED(ms);
     return;
 }
-
-int constrain(int amt, int low, int high)
-{
-    UNUSED(amt);
-    UNUSED(low);
-    UNUSED(high);
-    return 0;
-}
 }
