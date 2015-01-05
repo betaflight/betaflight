@@ -79,7 +79,7 @@ https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgein
 
 The source for it is here:
 
-https://github.com/hydra/cleanflight-configurator
+https://github.com/cleanflight/cleanflight-configurator
 
 ## Contributing
 
