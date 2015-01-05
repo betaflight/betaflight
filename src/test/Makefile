@@ -148,7 +148,7 @@ gps_conversion_unittest : $(OBJECT_DIR)/flight/gps_conversion.o $(OBJECT_DIR)/gp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/flight/mixer.o : $(USER_DIR)/flight/mixer.c $(USER_DIR)/flight/mixer.h $(USER_DIR)/flight/lowpass_table.h $(GTEST_HEADERS)
+$(OBJECT_DIR)/flight/mixer.o : $(USER_DIR)/flight/mixer.c $(USER_DIR)/flight/mixer.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
 

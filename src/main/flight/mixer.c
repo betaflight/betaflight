@@ -53,6 +53,8 @@
 
 #define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
+#define MIXER_DEBUG
+
 #include "drivers/system.h"
 extern int16_t debug[4];
 
@@ -672,24 +674,95 @@ bool isMixerUsingServos(void)
 
 #endif
 
-static void generate_lowpass_coeffs2(int16_t freq, float *b, float *a)
+static void generate_lowpass_coeffs2(int16_t freq, lowpass_t *filter)
 {
+    float fixedScaler;
+    int i;
+
+    // generates coefficients for a 2nd-order butterworth low-pass filter
     float freqf = (float)freq*0.001f;
     float omega = tanf(M_PI*freqf/2.0f);
-    float scaling = 1.0f / (omega*omega + 1.4142f*omega + 1.0f);
-   
-    b[0] = scaling * omega*omega;
-    b[1] = 2.0f * b[0];
-    b[2] = b[0];
+    float scaling = 1.0f / (omega*omega + 1.4142136f*omega + 1.0f);
 
-    // First assumed to be 1.0
-    a[0] = scaling * (2.0f * omega*omega - 2.0f);
-    a[1] = scaling * (omega*omega - 1.4142f * omega + 1.0f);
 
 #ifdef UNIT_TEST
     printf("lowpass cutoff: %f, omega: %f\n", freqf, omega);
-    printf("b: %f %f %f, a: %f %f\n", b[2], b[1], b[0], a[1], a[0]);
 #endif
+   
+    filter->bf[0] = scaling * omega*omega;
+    filter->bf[1] = 2.0f * filter->bf[0];
+    filter->bf[2] = filter->bf[0];
+
+    filter->af[0] = 1.0f;
+    filter->af[1] = scaling * (2.0f * omega*omega - 2.0f);
+    filter->af[2] = scaling * (omega*omega - 1.4142136f * omega + 1.0f);
+
+    // Scale for fixed-point
+    filter->input_bias = 1500; // Typical servo range is 1500 +/- 500
+    filter->input_shift = 16;
+    filter->coeff_shift = 24; 
+    fixedScaler = (float)(1ULL << filter->coeff_shift);
+    for (i = 0; i < LOWPASS_NUM_COEF; i++) {
+        filter->a[i] = LPF_ROUND(filter->af[i] * fixedScaler);
+        filter->b[i] = LPF_ROUND(filter->bf[i] * fixedScaler);
+#ifdef UNIT_TEST
+        printf("(%d) bf: %f af: %f b: %ld a: %ld\n", i, 
+                filter->bf[i], filter->af[i], filter->b[i], filter->a[i]);
+#endif
+    }
+
+    filter->freq = freq;
+}
+
+static int32_t lowpass_fixed(lowpass_t *filter, int32_t in, int16_t freq)
+{
+    int16_t coefIdx;
+    int64_t out;
+    int32_t in_s;
+  
+    // Check to see if cutoff frequency changed
+    if (freq != filter->freq) {
+        filter->init = false;
+    }
+
+    // Initialize if needed
+    if (!filter->init) {
+        generate_lowpass_coeffs2(freq, filter);
+        for (coefIdx = 0; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
+            filter->x[coefIdx] = (in - filter->input_bias) << filter->input_shift;
+            filter->y[coefIdx] = (in - filter->input_bias) << filter->input_shift;
+        }
+        filter->init = true;
+    }
+
+    // Unbias input and scale
+    in_s = (in - filter->input_bias) << filter->input_shift;
+
+    // Delays
+    for (coefIdx = LOWPASS_NUM_COEF-1; coefIdx > 0; coefIdx--) {
+        filter->x[coefIdx] = filter->x[coefIdx-1];
+        filter->y[coefIdx] = filter->y[coefIdx-1];
+    }
+    filter->x[0] = in_s;
+
+    // Accumulate result
+    out = filter->x[0] * filter->b[0];
+    for (coefIdx = 1; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
+        out -= filter->y[coefIdx] * filter->a[coefIdx];
+        out += filter->x[coefIdx] * filter->b[coefIdx];
+    }
+
+    // Scale output by coefficient shift
+    out >>= filter->coeff_shift;
+    filter->y[0] = (int32_t)out;
+
+    // Scale output by input shift and round
+    out = (out + (1 << (filter->input_shift-1))) >> filter->input_shift;
+    
+    // Reapply bias
+    out += filter->input_bias;
+
+    return (int32_t)out;
 }
 
 static float lowpass(lowpass_t *filter, float in, int16_t freq)
@@ -704,50 +777,53 @@ static float lowpass(lowpass_t *filter, float in, int16_t freq)
 
     // Initialize if needed
     if (!filter->init) {
-        generate_lowpass_coeffs2(freq, filter->b, filter->a);
-        filter->freq = freq;
-        //filter->b = &lowpass_table[filter->freqIdx][1];
-        //filter->a = &lowpass_table[filter->freqIdx][1 + LOWPASS_NUM_COEF];
+        generate_lowpass_coeffs2(freq, filter);
         for (coefIdx = 0; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
-            filter->x[coefIdx] = in;
-            filter->y[coefIdx] = in;
+            filter->xf[coefIdx] = in;
+            filter->yf[coefIdx] = in;
         }
         filter->init = true;
     }
 
     // Delays
     for (coefIdx = LOWPASS_NUM_COEF-1; coefIdx > 0; coefIdx--) {
-        filter->x[coefIdx] = filter->x[coefIdx-1];
-        filter->y[coefIdx] = filter->y[coefIdx-1];
+        filter->xf[coefIdx] = filter->xf[coefIdx-1];
+        filter->yf[coefIdx] = filter->yf[coefIdx-1];
     }
-    filter->x[0] = in;
+    filter->xf[0] = in;
 
     // Accumulate result
-    out = filter->x[0] * filter->b[0];
+    out = filter->xf[0] * filter->b[0];
     for (coefIdx = 1; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
-        out += filter->x[coefIdx] * filter->b[coefIdx];
-        out -= filter->y[coefIdx] * filter->a[coefIdx-1];
+        out += filter->xf[coefIdx] * filter->bf[coefIdx];
+        out -= filter->yf[coefIdx] * filter->af[coefIdx];
     }
-    filter->y[0] = out;
+    filter->yf[0] = out;
 
     return out;
 }
+
 
 void filterServos(void)
 {
     int16_t servoIdx;
 
+#if defined(MIXER_DEBUG)
     uint32_t startTime = micros();
+#endif
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             // Round to nearest
-            servo[servoIdx] = (int16_t)(lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx) + 0.5f);
+            //servo[servoIdx] = (int16_t)(lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx) + 0.5f);
+            servo[servoIdx] = (int16_t)lowpass_fixed(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx);
+
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
         }
     }
-
+#if defined(MIXER_DEBUG)
     debug[0] = (int16_t)(micros() - startTime);
+#endif
 }
 
