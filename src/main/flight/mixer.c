@@ -53,7 +53,7 @@
 
 #define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
-#define MIXER_DEBUG
+//#define MIXER_DEBUG
 
 #include "drivers/system.h"
 extern int16_t debug[4];
