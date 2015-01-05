@@ -127,7 +127,7 @@ TEST(MixerTest, ServoLowpassFilter)
         printf("*** Testing freq: %d (%f)\n", freq, ((float)freq * 0.001f));
 
         mixerConfig.servo_lowpass_enable = 1;
-        mixerConfig.servo_lowpass_freq_idx = freq;
+        mixerConfig.servo_lowpass_freq = freq;
         mixerUseConfigs(servoConfig, NULL, NULL, &mixerConfig, NULL, NULL, NULL);
 
         // Run tests

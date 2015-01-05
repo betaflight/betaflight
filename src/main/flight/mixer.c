@@ -58,14 +58,16 @@
 #include "drivers/system.h"
 extern int16_t debug[4];
 
+#ifndef UNIT_TEST
 static uint8_t motorCount = 0;
+static int useServo;
+static uint8_t servoCount;
+#endif
+
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 int16_t servo[MAX_SUPPORTED_SERVOS];
 
-static int useServo;
-
-static uint8_t servoCount;
 
 static servoParam_t *servoConf;
 static mixerConfig_t *mixerConfig;
@@ -75,8 +77,10 @@ static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
 static gimbalConfig_t *gimbalConfig;
 
+#ifndef UNIT_TEST
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static mixerMode_e currentMixerMode;
+#endif
 static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 
 static const motorMixer_t mixerQuadX[] = {
@@ -775,7 +779,7 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = (int16_t)lowpass_fixed(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx);
+            servo[servoIdx] = (int16_t)lowpass_fixed(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq);
 
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
