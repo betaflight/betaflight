@@ -674,7 +674,7 @@ bool isMixerUsingServos(void)
 
 #endif
 
-static void generate_lowpass_coeffs2(int16_t freq, lowpass_t *filter)
+void generate_lowpass_coeffs2(int16_t freq, lowpass_t *filter)
 {
     float fixedScaler;
     int i;
@@ -765,45 +765,6 @@ static int32_t lowpass_fixed(lowpass_t *filter, int32_t in, int16_t freq)
     return (int32_t)out;
 }
 
-static float lowpass(lowpass_t *filter, float in, int16_t freq)
-{
-    int16_t coefIdx;
-    float out;
-
-    // Check to see if cutoff frequency changed
-    if (freq != filter->freq) {
-        filter->init = false;
-    }
-
-    // Initialize if needed
-    if (!filter->init) {
-        generate_lowpass_coeffs2(freq, filter);
-        for (coefIdx = 0; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
-            filter->xf[coefIdx] = in;
-            filter->yf[coefIdx] = in;
-        }
-        filter->init = true;
-    }
-
-    // Delays
-    for (coefIdx = LOWPASS_NUM_COEF-1; coefIdx > 0; coefIdx--) {
-        filter->xf[coefIdx] = filter->xf[coefIdx-1];
-        filter->yf[coefIdx] = filter->yf[coefIdx-1];
-    }
-    filter->xf[0] = in;
-
-    // Accumulate result
-    out = filter->xf[0] * filter->b[0];
-    for (coefIdx = 1; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
-        out += filter->xf[coefIdx] * filter->bf[coefIdx];
-        out -= filter->yf[coefIdx] * filter->af[coefIdx];
-    }
-    filter->yf[0] = out;
-
-    return out;
-}
-
-
 void filterServos(void)
 {
     int16_t servoIdx;
@@ -814,8 +775,6 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            // Round to nearest
-            //servo[servoIdx] = (int16_t)(lowpass(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx) + 0.5f);
             servo[servoIdx] = (int16_t)lowpass_fixed(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq_idx);
 
             // Sanity check
