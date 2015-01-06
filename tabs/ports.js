@@ -37,7 +37,9 @@ TABS.ports.initialize = function (callback, scrollPosition) {
             'CLI',
             'GPS Passthrough',
             'MSP',
-            'SmartPort Telemetry'
+            'SmartPort Telemetry',
+            'Blackbox',
+            'MSP, CLI, Blackbox (when armed), GPS Passthrough'
         ];
         
         var portIdentifierToNameMapping = {
