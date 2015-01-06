@@ -1,6 +1,6 @@
 # Blackbox flight data recorder
 
-![Rendered flight log frame](Screenshots/blackbox-screenshot1.jpg)
+![Rendered flight log frame](Screenshots/blackbox-screenshot-1.jpg)
 
 ## Introduction
 
@@ -145,7 +145,7 @@ pin to the OpenLog.
 The OpenLog can be wrapped in black electrical tape in order to insulate it from conductive frames (like carbon fiber),
 but this makes its status LEDs impossible to see. I recommend wrapping it with some clear heatshrink tubing instead.
 
-![OpenLog installed](Screenshots/blackbox-installation-1.jpg "OpenLog installed with double-sided tape, SDCard slot pointing outward")
+![OpenLog installed](Wiring/blackbox-installation-1.jpg "OpenLog installed with double-sided tape, SDCard slot pointing outward")
 
 ## Usage
 
