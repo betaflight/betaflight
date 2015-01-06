@@ -1,44 +1,64 @@
-# Board - CMJCU
+# Board - CJMCU
 
-The CMJCU is a tiny (80mm) board running a STM32F103, which contains a 3-Axis Compass (HMC5883L) 
+The CJMCU is a tiny (80mm) board running a STM32F103, which contains a 3-Axis Compass (HMC5883L) 
 and an Accelerometer/Gyro (MPU6050).
 
 This board does not have an onboard USB-Serial converter, so an external adapter is needed.
 
+# Hardware revisions
+
+| Revision | Notes |
+| -------- | ----- |
+| 1        | no boot jumper at the edge of the board. |
+| 2        | identified by no boot jumper pads at the edge of the board. |
+
+Version 2 boards are supported from firmware v1.4.0 onwards, do NOT flash earlier versions to version 2 boards.
+
 # Pins
 
-RX Connections
+## RX Connections
 
-| Pin Label | Description |
-| --------- | ----------- |
-| PA0       | Channel 1   |
-| PA1       | Channel 2   |
-| PA2       | Channel 3   |
-| PA3       | Channel 4   |
-| VCC       | Power +3.3v |
-| GND       | Ground      |
+| Pin Label | Description              |
+| --------- | ------------------------ |
+| PA0       | RC Channel 1             |
+| PA1       | RC Channel 2             |
+| PA2       | RC Channel 3 / USART2 TX |
+| PA3       | RC Channel 4 / USART2 RX |
+| VCC       | Power +3.3v              |
+| GND       | Ground                   |
 
-Serial Connections
+## Serial Connections
+
+USART1 (along with power) is on the following pins.
 
 | Pin Label | Description     |
 | --------- | --------------- |
-| TX1       | Serial Transmit |
-| RX1       | Serial Receive  |
+| TX1       | UART1 TX        |
+| RX1       | UART2 RX        |
 | GND       | Ground          |
 | 3V3       | Power +3.3v     |
 | 5V        | Power +5v       |
 
-Power Connections
+USART2 is the following pins.
+
+| Pin Label | Description |
+| --------- | ----------- |
+| PA2       | USART2 TX   |
+| PA3       | USART2 RX   |
+
+
+## Power Connections
 
 | Pin Label | Description             |
 | --------- | ----------------------- |
 | Power +   | Power - 1 Cell 3.7v Max |
 | Power -   | Ground                  |
 
-Motor Connections
+## Motor Connections
+
 In standard QUADX configuration, the motors are mapped:
 
-| Cleanflight | CMJCU  |
+| Cleanflight | CJMCU  |
 | ----------- | ------ |
 | Motor 1     | Motor3 |
 | Motor 2     | Motor2 |
@@ -51,8 +71,9 @@ It is therefore simplest to wire the motors:
  * Motor 3 -> Clockwise
  * Motor 4 -> Anti-Clockwise
 
-If you are using the Hubsan x4/Ladybird motors, clockwise are Blue(GND)/Red(VCC) wires, anticlockwise
-are Black(GND)/White(VCC)
+If you are using the Hubsan x4/Ladybird motors, clockwise are Blue (GND) / Red (VCC) wires, anticlockwise
+are Black (GND) / White (VCC).
+i.e. there is one wire on each motor out of the standard RED/BLACK VCC/GND polarity colors that can be used to identify polarity.
 
 If you have wired as above, Motor1/Motor2 on the board will be forward.
 
@@ -60,7 +81,7 @@ If you have wired as above, Motor1/Motor2 on the board will be forward.
 
 You will need a USB -> Serial UART adapter. Connect:
 
-| Adapter           | CMJCU                      |
+| Adapter           | CJMCU                      |
 | ----------------- | -------------------------- |
 | Either 3.3v OR 5v | The correct 3.3v OR 5v pin |
 | RX                | TX                         |
@@ -79,8 +100,8 @@ is flashed.
 
 To flash the board:
  * Open Cleanflight Configurator
- * Download the CMJCU firmware binary (https://github.com/cleanflight/cleanflight/tree/master/obj/cleanflight_CJMCU.hex)
- * Select "Load Firmware [Local]" and choose the CMJCU binary
+ * Choose the latest CJMCU firmware from the list.
+ * Select "Load Firmware [Online]" and wait for the firmware to download.
  * Tick "No Reboot Sequence" and "Full Chip Erase"
  * Connect the USB->Serial adapter to the board
  * Select the USB-UART adapter from the top left box

@@ -87,7 +87,9 @@ e.g.
 
 Configure AUX range slot 0 to enable ARM when AUX1 is withing 1700 and 2100.
  
-```aux 0 0 0 1700 2100```
+```
+aux 0 0 0 1700 2100
+```
 
 You can display the AUX configuration by using the `aux` command with no arguments.
 
