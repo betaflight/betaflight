@@ -27,10 +27,73 @@ Tested with revision 1 board.
 
 # Flashing
 
-## Via USART1
+## Via Device Firmware Upload (DFU, USB)
 
-Short the bootloader pads and flash using configurator or the st flashloader tool via USART1.
-Unshort bootloader pads after flashing.
+These instructions are for dfu-util, tested using dfu-util 0.7 for OSX from the OpenTX project.
+
+http://www.open-tx.org/2013/07/15/dfu-util-07-for-mac-taranis-flashing-utility/
+
+A binary file is required for DFU, not a .hex file.  If one is not included in the release then build one as follows.
+
+```
+make TARGET=SPARKY clean
+make TARGET=SPARKY binary
+```
+
+Put the device into DFU mode by powering on the sparky with the bootloader pins temporarily bridged.  The only light that should come on is the blue PWR led.
+
+Run 'dfu-util -l' to make sure the device is listed, as below.
+
+```
+$ dfu-util -l
+dfu-util 0.7
+
+Copyright 2005-2008 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2012 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to dfu-util@lists.gnumonks.org
+
+Found DFU: [0483:df11] devnum=0, cfg=1, intf=0, alt=0, name="@Internal Flash  /0x08000000/128*0002Kg"
+Found DFU: [0483:df11] devnum=0, cfg=1, intf=0, alt=1, name="@Option Bytes  /0x1FFFF800/01*016 e"
+```
+
+Then flash the binary as below.
+
+```
+dfu-util -D obj/cleanflight_SPARKY.bin --alt 0 -R -s 0x08000000
+```
+
+The output should be similar to this:
+
+```
+dfu-util 0.7
+
+Copyright 2005-2008 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2012 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to dfu-util@lists.gnumonks.org
+
+Opening DFU capable USB device... ID 0483:df11
+Run-time device DFU version 011a
+Found DFU: [0483:df11] devnum=0, cfg=1, intf=0, alt=0, name="@Internal Flash  /0x08000000/128*0002Kg"
+Claiming USB DFU Interface...
+Setting Alternate Setting #0 ...
+Determining device status: state = dfuERROR, status = 10
+dfuERROR, clearing status
+Determining device status: state = dfuIDLE, status = 0
+dfuIDLE, continuing
+DFU mode device DFU version 011a
+Device returned transfer size 2048
+No valid DFU suffix signature
+Warning: File has no DFU suffix
+DfuSe interface name: "Internal Flash  "
+Downloading to address = 0x08000000, size = 76764
+......................................
+File downloaded successfully
+can't detach
+Resetting USB to switch back to runtime mode
+
+```
 
 ## Via SWD
 
