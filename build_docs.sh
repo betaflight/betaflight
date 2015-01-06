@@ -29,6 +29,7 @@ doc_files=(
     'Inflight Adjustments.md'
     'Controls.md'
 	'Autotune.md'
+	'Blackbox.md'
 	'Migrating from baseflight.md')
 
 if which gimli >/dev/null; then
