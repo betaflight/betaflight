@@ -124,6 +124,7 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 
+#define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE

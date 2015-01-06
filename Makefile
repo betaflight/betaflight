@@ -219,7 +219,8 @@ HIGHEND_SRC  = flight/autotune.c \
 		   telemetry/msp.c \
            telemetry/smartport.c \
 		   sensors/sonar.c \
-		   sensors/barometer.c
+		   sensors/barometer.c \
+		   blackbox/blackbox.c
 
 NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_adxl345.c \

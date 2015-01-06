@@ -445,6 +445,11 @@ static void resetConf(void)
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
 #endif
 
+#ifdef BLACKBOX
+    masterConfig.blackbox_rate_num = 1;
+    masterConfig.blackbox_rate_denom = 1;
+#endif
+
     // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
