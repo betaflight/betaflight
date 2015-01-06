@@ -27,6 +27,7 @@ $(document).ready(function () {
 
                     GUI.connected_to = false;
                     CONFIGURATOR.connectionValid = false;
+                    CONFIGURATOR.connectionValidCliOnly = false;
                     MSP.disconnect_cleanup();
                     PortUsage.reset();
 
@@ -177,7 +178,11 @@ function onOpen(openInfo) {
                 });
             } else {
                 GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.apiVersionAccepted]));
-                $('div#port-picker a.connect').click(); // disconnect
+                CONFIGURATOR.connectionValid = true; // making it possible to open the CLI tab
+                $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+                $('#tabs li a:last').click(); // open CLI tab
+                GUI.timeout_remove('connecting'); // kill connecting timer
+                CONFIGURATOR.connectionValidCliOnly = true;
             }
         });
     } else {
