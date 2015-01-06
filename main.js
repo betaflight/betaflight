@@ -62,9 +62,13 @@ $(document).ready(function () {
             var self = this,
                 tab = $(self).parent().prop('class');
 
-            // if there is no active connection, return
             if (!CONFIGURATOR.connectionValid) {
                 GUI.log('You need to <strong>connect</strong> before you can view any of the tabs');
+                return;
+            }
+
+            if (CONFIGURATOR.connectionValidCliOnly) {
+                GUI.log('You need to <strong>Upgrade</strong> your firmware before you can view any of the tabs');
                 return;
             }
 

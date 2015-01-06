@@ -5,6 +5,7 @@ var CONFIGURATOR = {
     'apiVersionAccepted': 1.1,
     'backupFileMinVersionAccepted': '0.55', // chrome.runtime.getManifest().version is stored as string, so does this one
     'connectionValid': false,
+    'connectionValidCliOnly': false,
     'cliActive': false,
     'cliValid': false
 };
