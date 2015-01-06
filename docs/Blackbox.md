@@ -1,13 +1,14 @@
 # Blackbox flight data recorder
 
-![Rendered flight log frame](http://i.imgur.com/FBphB8c.jpg)
+![Rendered flight log frame](Screenshots/blackbox-screenshot1.jpg)
 
 ## Introduction
+
 This feature transmits your flight data information on every control loop iteration over a serial port to an external
 logging device to be recorded.
 
 After your flight, you can process the resulting logs on your computer to either turn them into CSV (comma-separated
-values) or render your flight log as a video using the tools `blackbox_decode` and `blackbox_render` . Those tools can be
+values) or render your flight log as a video using the tools `blackbox_decode` and `blackbox_render`. Those tools can be
 found in this repository:
 
 https://github.com/thenickdude/blackbox
@@ -27,6 +28,7 @@ The data rate for my quadcopter using a looptime of 2400 is about 10.25kB/s. Thi
 to fit on a 16GB MicroSD card, which ought to be enough for anybody :).
 
 ## Supported configurations
+
 The maximum data rate for the flight log is fairly restricted, so anything that increases the load can cause the flight
 log to drop frames and contain errors.
 
@@ -46,10 +48,12 @@ will need to enable those manually in `/src/main/target/xxx/target.h` by adding 
 recompile Cleanflight.
 
 ## Hardware
+
 The blackbox software is designed to be used with an [OpenLog serial data logger][] and a microSDHC card. You need a
 little prep to get the OpenLog ready for use, so here are the details:
 
 ### Firmware
+
 The OpenLog should be flashed with the [OpenLog Lite firmware][] or the special [OpenLog Blackbox variant][] using the Arduino IDE
 in order to minimise dropped frames (target the "Arduino Uno"). The Blackbox variant of the firmware ensures that the
 OpenLog is running at the correct baud-rate and does away for the need for a `CONFIG.TXT` file to set up the OpenLog. 
@@ -68,20 +72,19 @@ switching the Tx and Rx pins over (since the OpenLog has them switched) like the
 [FTDI Basic Breakout]: https://www.sparkfun.com/products/9716
 [FTDI crossover]: https://www.sparkfun.com/products/10660
 
-### Serial port
-Connect the "TX" pin of the serial port you've chosen to the OpenLog's "RXI" pin. Don't connect the serial port's RX
-pin to the OpenLog.
-
 ### microSDHC
+
 Your choice of microSDHC card is very important to the performance of the system. The OpenLog relies on being able to
 make many small writes to the card with minimal delay, which not every card is good at. A faster SD-card speed rating is
 not a guarantee of better performance.
 
 #### microSDHC cards known to have poor performance
+
  - Generic 4GB Class 4 microSDHC card - the rate of missing frames is about 1%, and is concentrated around the most
    interesting parts of the log!
 
 #### microSDHC cards known to have good performance
+
  - Transcend 16GB Class 10 UHS-I microSDHC (typical error rate < 0.1%)
  - Sandisk Extreme 16GB Class 10 UHS-I microSDHC (typical error rate < 0.1%)
 
@@ -91,6 +94,7 @@ the best chance of writing at high speed. You must format it with either FAT, or
 [SD Association's special formatting tool]: https://www.sdcard.org/downloads/formatter_4/
 
 ### OpenLog configuration
+
 This section applies only if you are using the OpenLog or OpenLog Lite original firmware on the OpenLog. If you flashed
 it with the special OpenLog Blackbox firmware, you don't need to configure it further.
 
@@ -103,16 +107,9 @@ If your OpenLog didn't write a CONFIG.TXT file, you can [use this one instead][]
 
 [use this one instead]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/OpenLog_v3_Blackbox/CONFIG.TXT
 
-### Protection
-The OpenLog can be wrapped in black electrical tape in order to insulate it from conductive frames (like carbon fiber),
-but this makes its status LEDs impossible to see. I recommend wrapping it with some clear heatshrink tubing instead.
+## Enabling this feature (CLI)
 
-![OpenLog installed](http://i.imgur.com/jYyZ0oC.jpg "OpenLog installed with double-sided tape, SDCard slot pointing outward")
-
-## Enabling this feature
-In the [Cleanflight Configurator][], open up the CLI tab. Enable the Blackbox feature by typing in `feature BLACKBOX`
-and pressing enter. You also need to assign the Blackbox to one of [your serial ports][] . A 115200 baud port is
-required (such as serial_port_1 on the Naze32, the two-pin Tx/Rx header in the center of the board).
+Enable the Blackbox feature by typing in `feature BLACKBOX` and pressing enter. You also need to assign the Blackbox to one of [your serial ports][] . A 115200 baud port is required (such as serial_port_1 on the Naze32, the two-pin Tx/Rx header in the center of the board).
 
 For example, use `set serial_port_1_scenario=11` to switch the main serial port to MSP, CLI, Blackbox and GPS Passthrough.
 
@@ -122,6 +119,7 @@ Enter `save`. Your configuration should be saved and the flight controller will 
 [Cleanflight Configurator]: https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en
 
 ## Configuring this feature
+
 The Blackbox currently provides two settings (`blackbox_rate_num` and `blackbox_rate_denom`) that allow you to control 
 the rate at which data is logged. These two together form a fraction (`blackbox_rate_num / blackbox_rate_denom`) which
 decides what portion of the flight controller's control loop iterations should be logged. The default is 1/1 which logs 
@@ -137,7 +135,20 @@ set blackbox_rate_num = 1
 set blackbox_rate_denom = 2
 ```
 
+### Serial port
+
+Connect the "TX" pin of the serial port you've chosen to the OpenLog's "RXI" pin. Don't connect the serial port's RX
+pin to the OpenLog.
+
+### Protection
+
+The OpenLog can be wrapped in black electrical tape in order to insulate it from conductive frames (like carbon fiber),
+but this makes its status LEDs impossible to see. I recommend wrapping it with some clear heatshrink tubing instead.
+
+![OpenLog installed](Screenshots/blackbox-installation-1.jpg "OpenLog installed with double-sided tape, SDCard slot pointing outward")
+
 ## Usage
+
 The Blackbox starts recording data as soon as you arm your craft, and stops when you disarm. Each time the OpenLog is
 power-cycled, it begins a fresh new log file. If you arm and disarm several times without cycling the power (recording
 several flights), those logs will be combined together into one file. The command line tools will ask you to pick which
@@ -160,6 +171,7 @@ decode these with the `blackbox_decode` tool to create a CSV (comma-separated va
 PNG frames with `blackbox_render` which you could convert into a video using another software package.
 
 ### Using the blackbox_decode tool
+
 This tool converts a flight log binary file into CSV format. Typical usage (from the command line) would be like:
 
 ```bash
@@ -187,6 +199,7 @@ Options:
 ```
 
 ### Using the blackbox_render tool
+
 This tool converts a flight log binary file into a series of transparent PNG images that you could overlay onto your
 flight video using a video editor (like [DaVinci Resolve][]). Typical usage (from the command line) would be like:
 
