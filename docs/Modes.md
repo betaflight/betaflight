@@ -44,7 +44,7 @@ In this mode the aircraft attempts to return to the GPS position recorded when t
 
 This mode should be enabled in conjunction with Angle or Horizion modes and an Altitude hold mode.
 
-Requires a 3D GPS fix and minimum of 5 satallites in view.
+Requires a 3D GPS fix and minimum of 5 satellites in view.
 
 ## GPS Position Hold
 
@@ -56,7 +56,7 @@ Disabling and re-enabling the mode will reset the GPS hold position.
 
 This mode should be enabled in conjunction with Angle or Horizion modes and an Altitude hold mode.
 
-Requires a 3D GPS fix and minimum of 5 satallites in view.
+Requires a 3D GPS fix and minimum of 5 satellites in view.
 
 ## Auxillary Configuration
 
