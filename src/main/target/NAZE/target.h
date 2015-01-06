@@ -152,8 +152,10 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
-// alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
+// alternative defaults for AlienWii32 F1 target
 #ifdef ALIENWII32
+#undef TARGET_BOARD_IDENTIFIER
+#define TARGET_BOARD_IDENTIFIER "AWF1" // AlienWii32 F1.
 #define BRUSHED_MOTORS
 #define HARDWARE_BIND_PLUG
 // Hardware bind plug at PB5 (Pin 41)

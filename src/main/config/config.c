@@ -453,20 +453,33 @@ static void resetConf(void)
     masterConfig.blackbox_rate_denom = 1;
 #endif
 
-    // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
+    // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
     featureSet(FEATURE_FAILSAFE);
+    featureClear(FEATURE_VBAT);
+#ifdef ALIENWIIF3
+    masterConfig.serialConfig.serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+#else
     masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+#endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
+    masterConfig.looptime = 2000;
+//    currentProfile->pidController = 3;
+    currentProfile->pidProfile.P8[ROLL] = 36;
+    currentProfile->pidProfile.P8[PITCH] = 36;
+    currentProfile->failsafeConfig.failsafe_delay = 2;
+    currentProfile->failsafeConfig.failsafe_off_delay = 0;
+    currentProfile->failsafeConfig.failsafe_throttle = 1000;
     currentControlRateProfile->rcRate8 = 130;
     currentControlRateProfile->rollPitchRate = 20;
     currentControlRateProfile->yawRate = 60;
+    currentControlRateProfile->yawRate = 100;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.5f,  1.0f, -1.0f },          // REAR_R

@@ -13,6 +13,7 @@ env:
   - TARGET=SPARKY
   - TARGET=STM32F3DISCOVERY
   - TARGET=ALIENWIIF1
+  - TARGET=ALIENWIIF3
 # We use cpp for unit tests, and c for the main project.
 language: cpp
 compiler: clang
