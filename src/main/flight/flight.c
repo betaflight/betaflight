@@ -287,7 +287,97 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     }
 }
 
+#define GYRO_P_MAX 300
 #define GYRO_I_MAX 256
+
+static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
+            rollAndPitchTrims_t *angleTrim)
+{
+    int axis, prop = 0;
+    int32_t rc, error, errorAngle;
+    int32_t delta;
+    static int32_t delta1[2], delta2[2];
+    int32_t PTerm, ITerm, DTerm;
+    int32_t PTermACC, ITermACC;
+    static int16_t lastGyro[2] = {0,0};
+    static int16_t errorAngleI[2] = {0,0};
+    static int32_t errorGyroI_YAW;
+
+    if (FLIGHT_MODE(HORIZON_MODE)) prop = min(max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])), 512);
+
+    // PITCH & ROLL
+    for(axis = 0; axis < 2; axis++) {
+        rc = rcCommand[axis] << 1;
+        error = rc - gyroData[axis];
+        errorGyroI[axis]  = constrain(errorGyroI[axis] + error, -16000, +16000);   // WindUp   16 bits is ok here
+        if (abs(gyroData[axis]) > 640) errorGyroI[axis] = 0;
+
+        ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
+
+        PTerm = (int32_t)rc * pidProfile->P8[axis] >> 6;
+
+        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {   // axis relying on ACC
+            // 50 degrees max inclination
+#ifdef GPS
+            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+#else
+            errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclnation),
+                +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+#endif
+
+#ifdef AUTOTUNE
+            if (shouldAutotune()) {
+                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
+            }
+#endif
+
+            errorAngleI[axis]  = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);                                                // WindUp     //16 bits is ok here
+
+            PTermACC = ((int32_t)errorAngle * pidProfile->P8[PIDLEVEL]) >> 7;   // 32 bits is needed for calculation: errorAngle*P8 could exceed 32768   16 bits is ok for result
+
+            int16_t limit = pidProfile->D8[PIDLEVEL] * 5;
+            PTermACC = constrain(PTermACC, -limit, +limit);
+
+            ITermACC = ((int32_t)errorAngleI[axis] * pidProfile->I8[PIDLEVEL]) >> 12;  // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
+
+            ITerm = ITermACC + ((ITerm-ITermACC) * prop >> 9);
+            PTerm = PTermACC + ((PTerm-PTermACC) * prop >> 9);
+        }
+
+        PTerm -= ((int32_t)gyroData[axis] * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
+
+        delta = gyroData[axis] - lastGyro[axis];   // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+        lastGyro[axis] = gyroData[axis];
+        DTerm = delta1[axis] + delta2[axis] + delta;
+        delta2[axis] = delta1[axis];
+        delta1[axis] = delta;
+
+        DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
+
+        axisPID[axis] = PTerm + ITerm - DTerm;
+    }
+
+    //YAW
+    rc = (int32_t)rcCommand[YAW] * (2*controlRateConfig->yawRate + 30)  >> 5;
+    error = rc - gyroData[YAW];
+    errorGyroI_YAW  += (int32_t)error * pidProfile->I8[YAW];
+    errorGyroI_YAW  = constrain(errorGyroI_YAW, 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
+    if (abs(rc) > 50) errorGyroI_YAW = 0;
+
+    PTerm = (int32_t)error * pidProfile->P8[YAW] >> 6;
+
+    // Constrain YAW by D value if not servo driven in that case servolimits apply
+//  if(NumberOfMotors > 3) {
+        int16_t limit = GYRO_P_MAX - pidProfile->D8[YAW];
+        PTerm = constrain(PTerm, -limit, +limit);
+//  }
+
+    ITerm = constrain((int16_t)(errorGyroI_YAW >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
+
+    axisPID[YAW] =  PTerm + ITerm;
+}
+
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
         rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -390,6 +480,9 @@ void setPIDController(int type)
             break;
         case 2:
             pid_controller = pidBaseflight;
+            break;
+        case 3:
+            pid_controller = pidMultiWii23;
     }
 }
 
