@@ -71,6 +71,7 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
 
+#define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
