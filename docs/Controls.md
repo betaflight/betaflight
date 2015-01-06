@@ -4,7 +4,7 @@
 
 When armed the aircraft is ready to fly and any motors attached will spin when throttle is applied.
 
-By default arming and disarming is done using stick positions.  This is disabled when using a switch to arm.
+By default arming and disarming is done using stick positions.  Arming with stick positions is disabled when using a switch to arm.
 
 
 ## Stick positions

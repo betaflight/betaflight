@@ -3,7 +3,7 @@
 The Sparky is a very low cost and very powerful board.
 
 * 3 hardware serial ports.
-* Built-in serial port inverters which allows SBUS receivers to be used without external inverters.
+* Built-in serial port inverters which allows S.BUS receivers to be used without external inverters.
 * USB (can be used at the same time as the serial ports).
 * 10 PWM outputs.
 * Dedicated PPM/SerialRX input pin.
@@ -17,12 +17,12 @@ Flyable!
 Tested with revision 1 board. 
 
 ## TODO
-* Baro - detection works but getting bad readings, disabled for now.
-* Led Strip
+* Baro - detection works but sending bad readings, disabled for now.
+* LED Strip
 * ADC
 * Sonar
 * Display (via Flex port)
-* Softserial - though having 3 hardware serial ports makes it a little redundant.
+* SoftSerial - though having 3 hardware serial ports makes it a little redundant.
 * Airplane PWM mappings.
 
 # Flashing

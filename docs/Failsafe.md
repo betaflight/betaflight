@@ -18,7 +18,7 @@ The failsafe system is not activated until 5 seconds after the flight controller
 
 After the failsafe has been forced a landing, the flight controller cannot be armed and has to be reset.
  
-The failsafe system attempts to detect when your receiver looses signal.  It then attempts to prevent your aircraft from flying away uncontrollably.
+The failsafe system attempts to detect when your receiver loses signal.  It then attempts to prevent your aircraft from flying away uncontrollably.
 
 The failsafe is activated when:
 
@@ -67,4 +67,4 @@ Only valid when using Parallel PWM or PPM receivers.
 This setting helps catch when your RX stops sending any data when the RX looses signal.
 
 With a Graupner GR-24 configured for PWM output with failsafe on channels 1-4 set to OFF in the receiver settings
-then this setting, at it's default value, will allow failsafe to be activated.
+then this setting, at its default value, will allow failsafe to be activated.

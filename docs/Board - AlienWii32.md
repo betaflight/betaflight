@@ -1,6 +1,6 @@
 # Board - AlienWii32
 
-The AlienWii32 is actually in prototype stage only a few samples exist. There is some more field testing ongoing. The information below is preliminary and will be updated as needed.
+The AlienWii32 is actually in prototype stage and only a few samples exist. There is some more field testing ongoing. The information below is preliminary and will be updated as needed.
 
 Here are the hardware specifications:
 

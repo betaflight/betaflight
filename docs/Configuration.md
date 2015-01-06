@@ -3,7 +3,7 @@
 Cleanflight is configured primarilty using the Cleanflight Configurator GUI.
 
 Both the command line interface and GUI are accessible by connecting to a serial port on the target,
-be it a USB virtual serial port, physical hardware UART port or a softserial port.
+be it a USB virtual serial port, physical hardware UART port or a SoftSerial port.
 
 See the Serial section for more information and see the Board specific sections for details of the serial ports available on the board you are using.
 
