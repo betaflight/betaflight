@@ -162,8 +162,15 @@ TABS.receiver.initialize = function (callback) {
             $('input[name="rcmap"]').val($(this).val());
         });
 
-        // rssi aux
-        $('select[name="rssi_aux_channel"]').val(MISC.rssi_aux_channel);
+        // rssi
+        
+        var rssi_channel_e = $('select.rssi_channel');
+        rssi_channel_e.append('<option value="0">Disabled</option>');
+        for (var i = 0; i < RC.active_channels; i++) {
+            rssi_channel_e.append('<option value="' + i + '">' + i + '</option>');
+        }
+
+        $('select[name="rssi_channel"]').val(MISC.rssi_channel);
 
         // UI Hooks
         // curves
@@ -272,7 +279,7 @@ TABS.receiver.initialize = function (callback) {
             }
 
             // catch rssi aux
-            MISC.rssi_aux_channel = parseInt($('select[name="rssi_aux_channel"]').val());
+            MISC.rssi_channel = parseInt($('select[name="rssi_channel"]').val());
 
             function save_rc_map() {
                 MSP.send_message(MSP_codes.MSP_SET_RCMAP, MSP.crunch(MSP_codes.MSP_SET_RCMAP), false, save_misc);

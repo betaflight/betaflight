@@ -510,8 +510,8 @@
     "receiverChannelMapTitle": {
         "message": "You can define your own channel map by clicking inside the box"
     },
-    "receiverRssiAux": {
-        "message": "RSSI on AUX"
+    "receiverRssiChannel": {
+        "message": "RSSI Channel"
     },
     "receiverRefreshRateTitle": {
         "message": "Graph refresh rate"
