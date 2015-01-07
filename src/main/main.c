@@ -390,6 +390,10 @@ void init(void)
 #endif
     }
 #endif
+
+#ifdef CJMCU
+    LED2_ON;
+#endif
 }
 
 #ifdef SOFTSERIAL_LOOPBACK
