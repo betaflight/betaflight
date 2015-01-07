@@ -16,9 +16,9 @@ https://github.com/cleanflight/blackbox-tools
 ## Logged data
 The blackbox records flight data on every iteration of the flight control loop. It records the current time in
 microseconds, P, I and D corrections for each axis, your RC command stick positions (after applying expo curves),
-gyroscope data, accelerometer data (after your configured low-pass filtering), and the command being sent to each motor
-speed controller. This is all stored without any approximation or loss of precision, so even quite subtle problems
-should be detectable from the fight data log.
+gyroscope data, accelerometer data (after your configured low-pass filtering), barometer readings, 3-axis magnetometer
+readings, raw VBAT measurements, and the command being sent to each motor speed controller. This is all stored without
+any approximation or loss of precision, so even quite subtle problems should be detectable from the fight data log.
 
 Currently, the blackbox attempts to log GPS data whenever new GPS data is available, but this has not been tested yet.
 The CSV decoder and video renderer do not yet show any of the GPS data (though this will be added). If you have a working
