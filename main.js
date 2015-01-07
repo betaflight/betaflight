@@ -68,7 +68,7 @@ $(document).ready(function () {
             }
 
             if (CONFIGURATOR.connectionValidCliOnly) {
-                GUI.log('You need to <strong>Upgrade</strong> your firmware before you can view any of the tabs');
+                GUI.log('You need to <strong>upgrade</strong> your firmware before you can view any of the tabs. Use CLI for backup before flashing!');
                 return;
             }
 
