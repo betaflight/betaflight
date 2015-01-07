@@ -779,7 +779,7 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = (int16_t)lowpass_fixed(&lowpassFilters[servoIdx], (float)servo[servoIdx], mixerConfig->servo_lowpass_freq);
+            servo[servoIdx] = (int16_t)lowpass_fixed(&lowpassFilters[servoIdx], servo[servoIdx], mixerConfig->servo_lowpass_freq);
 
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
