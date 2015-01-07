@@ -140,7 +140,7 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch);
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
-
+int32_t getRcStickPosition(int32_t axis);
 
 typedef enum {
     ADJUSTMENT_NONE = 0,

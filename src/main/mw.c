@@ -338,6 +338,11 @@ void mwArm(void)
     }
 }
 
+int32_t getRcStickPosition(int32_t axis) {
+
+    return min(abs(rcData[axis] - masterConfig.rxConfig.midrc), 500);
+}
+
 // Automatic ACC Offset Calibration
 bool AccInflightCalibrationArmed = false;
 bool AccInflightCalibrationMeasurementDone = false;

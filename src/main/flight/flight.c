@@ -96,6 +96,7 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
 {
     float RateError, errorAngle, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
+    int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastGyroRate[3];
     static float delta1[3], delta2[3];
     float delta, deltaSum;
@@ -107,19 +108,23 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
-        if(abs(rcCommand[FD_ROLL]) > abs(rcCommand[FD_PITCH])){
-            axis = FD_ROLL;
+        // Figure out the raw stick positions
+        stickPosAil = getRcStickPosition(FD_ROLL);
+        stickPosEle = getRcStickPosition(FD_PITCH);
+
+        if(abs(stickPosAil) > abs(stickPosEle)){
+            mostDeflectedPos = abs(stickPosAil);
         }
         else {
-            axis = FD_PITCH;
+            mostDeflectedPos = abs(stickPosEle);
         }
 
         // Progressively turn off the horizon self level strength as the stick is banged over
-        horizonLevelStrength = (float)(500 - abs(rcCommand[axis])) / 500;  // 1 at centre stick, 0 = max stick deflection
+        horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
         if(pidProfile->H_sensitivity == 0){
             horizonLevelStrength = 0;
         } else {
-            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (10 / pidProfile->H_sensitivity)) + 1, 0, 1);
+            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->H_sensitivity)) + 1, 0, 1);
         }
     }
 
