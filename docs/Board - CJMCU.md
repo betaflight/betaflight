@@ -124,6 +124,8 @@ To charge an attached battery:
  * Plug in a 1S battery to the battery pins
  * Plug in a 5v supply to the 5v serial pins
 
+The charger will finish when either the battery reaches 4.2v, or the battery's voltage is greater than the charger's input voltage.
+
 The two nearby LEDs will show the status of charging:
 
 | Status             | Green LED | Red LED   |
