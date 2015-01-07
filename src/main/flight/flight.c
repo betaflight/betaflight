@@ -295,18 +295,15 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 {
     int axis, prop = 0;
     int32_t rc, error, errorAngle;
+    int32_t PTerm, ITerm, PTermACC, ITermACC, DTerm;
+    static int16_t lastGyro[2] = { 0, 0 };
+    static int32_t delta1[2] = { 0, 0 }, delta2[2] = { 0, 0 };
     int32_t delta;
-    static int32_t delta1[2], delta2[2];
-    int32_t PTerm, ITerm, DTerm;
-    int32_t PTermACC, ITermACC;
-    static int16_t lastGyro[2] = {0,0};
-    static int16_t errorAngleI[2] = {0,0};
-    static int32_t errorGyroI_YAW;
 
     if (FLIGHT_MODE(HORIZON_MODE)) prop = min(max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])), 512);
 
     // PITCH & ROLL
-    for(axis = 0; axis < 2; axis++) {
+    for (axis = 0; axis < 2; axis++) {
         rc = rcCommand[axis] << 1;
         error = rc - gyroData[axis];
         errorGyroI[axis]  = constrain(errorGyroI[axis] + error, -16000, +16000);   // WindUp   16 bits is ok here
@@ -322,7 +319,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                 +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
 #else
-            errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclnation),
+            errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                 +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
 #endif
 
@@ -341,8 +338,8 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
             ITermACC = ((int32_t)errorAngleI[axis] * pidProfile->I8[PIDLEVEL]) >> 12;  // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
 
-            ITerm = ITermACC + ((ITerm-ITermACC) * prop >> 9);
-            PTerm = PTermACC + ((PTerm-PTermACC) * prop >> 9);
+            ITerm = ITermACC + ((ITerm - ITermACC) * prop >> 9);
+            PTerm = PTermACC + ((PTerm - PTermACC) * prop >> 9);
         }
 
         PTerm -= ((int32_t)gyroData[axis] * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
@@ -359,25 +356,117 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     }
 
     //YAW
-    rc = (int32_t)rcCommand[YAW] * (2*controlRateConfig->yawRate + 30)  >> 5;
-    error = rc - gyroData[YAW];
-    errorGyroI_YAW  += (int32_t)error * pidProfile->I8[YAW];
-    errorGyroI_YAW  = constrain(errorGyroI_YAW, 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
-    if (abs(rc) > 50) errorGyroI_YAW = 0;
+    rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
+    error = rc - gyroData[FD_YAW];
+    errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
+    errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
+    if (abs(rc) > 50) errorGyroI[FD_YAW] = 0;
 
-    PTerm = (int32_t)error * pidProfile->P8[YAW] >> 6;
+    PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6;
 
     // Constrain YAW by D value if not servo driven in that case servolimits apply
 //  if(NumberOfMotors > 3) {
-        int16_t limit = GYRO_P_MAX - pidProfile->D8[YAW];
+        int16_t limit = GYRO_P_MAX - pidProfile->D8[FD_YAW];
         PTerm = constrain(PTerm, -limit, +limit);
 //  }
 
-    ITerm = constrain((int16_t)(errorGyroI_YAW >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
+    ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
-    axisPID[YAW] =  PTerm + ITerm;
+    axisPID[FD_YAW] =  PTerm + ITerm;
 }
 
+static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
+{
+    int axis, prop;
+    int32_t rc, error, errorAngle;
+    int32_t PTerm, ITerm, PTermACC = 0, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
+    static int16_t lastGyro[2] = { 0, 0 };
+    static int32_t delta1[2] = { 0, 0 }, delta2[2] = { 0, 0 };
+    int32_t deltaSum;
+    int32_t delta;
+
+    UNUSED(controlRateConfig);
+
+    // **** PITCH & ROLL ****
+    prop = min(max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])), 500); // range [0;500]
+
+    for (axis = 0; axis < 2; axis++) {
+        if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) { // MODE relying on ACC
+            // observe max inclination
+#ifdef GPS
+            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+#else
+            errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+#endif
+
+#ifdef AUTOTUNE
+            if (shouldAutotune()) {
+                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
+            }
+#endif
+
+            PTermACC = errorAngle * pidProfile->P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+            PTermACC = constrain(PTermACC, -pidProfile->D8[PIDLEVEL] * 5, +pidProfile->D8[PIDLEVEL] * 5);
+
+            errorAngleI[axis] = constrain(errorAngleI[axis] + errorAngle, -10000, +10000); // WindUp
+            ITermACC = (errorAngleI[axis] * pidProfile->I8[PIDLEVEL]) >> 12;
+        }
+        if (!FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) { // MODE relying on GYRO
+            error = (int32_t) rcCommand[axis] * 10 * 8 / pidProfile->P8[axis];
+            error -= gyroData[axis] / 4;
+
+            PTermGYRO = rcCommand[axis];
+
+            errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
+            if (abs(gyroData[axis]) > (640 * 4))
+                errorGyroI[axis] = 0;
+
+            ITermGYRO = (errorGyroI[axis] / 125 * pidProfile->I8[axis]) / 64;
+        }
+        if (FLIGHT_MODE(HORIZON_MODE)) {
+            PTerm = (PTermACC * (500 - prop) + PTermGYRO * prop) / 500;
+            ITerm = (ITermACC * (500 - prop) + ITermGYRO * prop) / 500;
+        } else {
+            if (FLIGHT_MODE(ANGLE_MODE)) {
+                PTerm = PTermACC;
+                ITerm = ITermACC;
+            } else {
+                PTerm = PTermGYRO;
+                ITerm = ITermGYRO;
+            }
+        }
+
+        PTerm -= ((int32_t)gyroData[axis] / 4) * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
+        delta = (gyroData[axis] - lastGyro[axis]) / 4;
+        lastGyro[axis] = gyroData[axis];
+        deltaSum = delta1[axis] + delta2[axis] + delta;
+        delta2[axis] = delta1[axis];
+        delta1[axis] = delta;
+        DTerm = (deltaSum * dynD8[axis]) / 32;
+        axisPID[axis] = PTerm + ITerm - DTerm;
+    }
+    //YAW
+    rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
+    error = rc - gyroData[FD_YAW];
+    errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
+    errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
+    if (abs(rc) > 50) errorGyroI[FD_YAW] = 0;
+
+    PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6;
+
+    // Constrain YAW by D value if not servo driven in that case servolimits apply
+//  if(NumberOfMotors > 3) {
+        int16_t limit = GYRO_P_MAX - pidProfile->D8[FD_YAW];
+        PTerm = constrain(PTerm, -limit, +limit);
+//  }
+
+    ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
+
+    axisPID[FD_YAW] =  PTerm + ITerm;
+}
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
         rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -483,6 +572,9 @@ void setPIDController(int type)
             break;
         case 3:
             pid_controller = pidMultiWii23;
+            break;
+        case 4:
+            pid_controller = pidMultiWiiHybrid;
     }
 }
 
