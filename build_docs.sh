@@ -5,13 +5,6 @@ doc_files=(
     'Installation.md'
     'Configuration.md'
     'Cli.md'
-    
-    'Board - AlienWii32.md'
-    'Board - CC3D.md'
-    'Board - CJMCU.md'
-    'Board - Naze32.md'
-    'Board - Sparky.md'
-    
     'Serial.md'
 	'Rx.md'
 	'Spektrum bind.md'
@@ -30,7 +23,15 @@ doc_files=(
     'Controls.md'
 	'Autotune.md'
 	'Blackbox.md'
-	'Migrating from baseflight.md')
+	'Migrating from baseflight.md'
+    'Board - AlienWii32.md'
+    'Board - CC3D.md'
+    'Board - CJMCU.md'
+    'Board - Naze32.md'
+    'Board - Sparky.md'
+    'Board - Olimexino.md'
+    'Board - CheBuzzF3.md'
+)
 
 if which gimli >/dev/null; then
 	echo "Building ${filename}.pdf"
