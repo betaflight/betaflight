@@ -110,8 +110,8 @@ To flash the board:
  * Click "Flash Firmware"
  * You should see "Programming: SUCCESSFUL" in the log box
  * Click "Connect" -> This should open the "Initial Setup" tab and you should see sensor data from the quad shown
- * Unplug the quad and solder across the 2 "BOOT0" pins - This prevents the board from going into bootloader mode on next
-   boot, if anything goes wrong, simply unsolder these pins and the bootloader will start, allowing you to reflash. You cannot
+ * Unplug the quad and short the 2 "BOOT0" pins. Revision 1 boards require this to be soldered, revision 2 boards can connect the included jumper to the two pre-soldered pins - This prevents the board from going into bootloader mode on next
+   boot, if anything goes wrong, simply disconnect these two pins and the bootloader will start, allowing you to reflash. You cannot
    overwrite the bootloader.
 
 # Charging
