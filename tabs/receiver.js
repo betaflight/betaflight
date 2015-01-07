@@ -163,8 +163,7 @@ TABS.receiver.initialize = function (callback) {
         });
 
         // rssi
-        
-        var rssi_channel_e = $('select.rssi_channel');
+        var rssi_channel_e = $('select[name="rssi_channel"]');
         rssi_channel_e.append('<option value="0">Disabled</option>');
         for (var i = 0; i < RC.active_channels; i++) {
             rssi_channel_e.append('<option value="' + i + '">' + i + '</option>');
