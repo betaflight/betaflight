@@ -11,7 +11,7 @@ After your flight, you can process the resulting logs on your computer to either
 values) or render your flight log as a video using the tools `blackbox_decode` and `blackbox_render`. Those tools can be
 found in this repository:
 
-https://github.com/thenickdude/blackbox
+https://github.com/cleanflight/blackbox-tools
 
 ## Logged data
 The blackbox records flight data on every iteration of the flight control loop. It records the current time in
@@ -43,10 +43,6 @@ data rate. The default looptime on Cleanflight is 3500. If you're using a loopti
 need to reduce the sampling rate in the Blackbox settings, see the later section on configuring the Blackbox feature for
 details.
 
-The Blackbox feature is currently available on the Naze32 and Naze32Pro targets. It may work on other targets, but you 
-will need to enable those manually in `/src/main/target/xxx/target.h` by adding a `#define BLACKBOX` statement and 
-recompile Cleanflight.
-
 ## Hardware
 
 The blackbox software is designed to be used with an [OpenLog serial data logger][] and a microSDHC card. You need a
@@ -54,23 +50,17 @@ little prep to get the OpenLog ready for use, so here are the details:
 
 ### Firmware
 
-The OpenLog should be flashed with the [OpenLog Lite firmware][] or the special [OpenLog Blackbox variant][] using the Arduino IDE
-in order to minimise dropped frames (target the "Arduino Uno"). The Blackbox variant of the firmware ensures that the
-OpenLog is running at the correct baud-rate and does away for the need for a `CONFIG.TXT` file to set up the OpenLog. 
+The OpenLog ships with standard OpenLog 3 firmware installed. However, in order to reduce the number of dropped frames,
+it should be reflashed with the [OpenLog Light firmware][] or the special [OpenLog Blackbox firmware][] . The Blackbox
+variant of the firmware ensures that the OpenLog is running at the correct baud-rate and does away for the need for a 
+`CONFIG.TXT` file to set up the OpenLog.
 
-If you decide to use the OpenLog Lite firmware instead, note that the .hex file for OpenLog Lite currently in the
-OpenLog repository is out of date with respect to their .ino source file, so you'll need to build it yourself after
-adding the [required libraries][] to your Arduino libraries directory.
-
-To flash the firmware, you'll need to use an FTDI programmer like the [FTDI Basic Breakout][] along with some way of
-switching the Tx and Rx pins over (since the OpenLog has them switched) like the [FTDI crossover][].
+You can find the Blackbox version of the OpenLog firmware [here](https://github.com/cleanflight/blackbox-firmware), 
+along with instructions for installing it onto your OpenLog.
 
 [OpenLog serial data logger]: https://www.sparkfun.com/products/9530
-[OpenLog Lite firmware]: https://github.com/sparkfun/OpenLog/tree/master/firmware/OpenLog_v3_Light
-[OpenLog Blackbox variant]: https://github.com/thenickdude/blackbox/tree/blackbox/tools/blackbox/OpenLog_v3_Blackbox
-[Required libraries]: https://code.google.com/p/beta-lib/downloads/detail?name=SerialLoggerBeta20120108.zip&can=4&q=
-[FTDI Basic Breakout]: https://www.sparkfun.com/products/9716
-[FTDI crossover]: https://www.sparkfun.com/products/10660
+[OpenLog Light firmware]: https://github.com/sparkfun/OpenLog/tree/master/firmware/OpenLog_v3_Light
+[OpenLog Blackbox firmware]: https://github.com/cleanflight/blackbox-firmware
 
 ### microSDHC
 
@@ -95,7 +85,7 @@ the best chance of writing at high speed. You must format it with either FAT, or
 
 ### OpenLog configuration
 
-This section applies only if you are using the OpenLog or OpenLog Lite original firmware on the OpenLog. If you flashed
+This section applies only if you are using the OpenLog or OpenLog Light original firmware on the OpenLog. If you flashed
 it with the special OpenLog Blackbox firmware, you don't need to configure it further.
 
 Power up the OpenLog with a microSD card inside, wait 10 seconds or so, then power it down and plug the microSD card
@@ -103,13 +93,19 @@ into your computer. You should find a "CONFIG.TXT" file on the card. Edit it in 
 (baud) to 115200. Set esc# to 0, mode to 0, and echo to 0. Save the file and put the card back into your OpenLog, it
 should use those settings from now on.
 
-If your OpenLog didn't write a CONFIG.TXT file, you can [use this one instead][].
+If your OpenLog didn't write a CONFIG.TXT file, create a CONFIG.TXT file with these contents and store it in the root
+of the MicroSD card:
 
-[use this one instead]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/OpenLog_v3_Blackbox/CONFIG.TXT
+```
+115200,26,0,0,1,0,1
+baud,escape,esc#,mode,verb,echo,ignoreRX
+```
 
 ## Enabling this feature (CLI)
 
-Enable the Blackbox feature by typing in `feature BLACKBOX` and pressing enter. You also need to assign the Blackbox to one of [your serial ports][] . A 115200 baud port is required (such as serial_port_1 on the Naze32, the two-pin Tx/Rx header in the center of the board).
+Enable the Blackbox feature by typing in `feature BLACKBOX` and pressing enter. You also need to assign the Blackbox to
+one of [your serial ports][] . A 115200 baud port is required (such as serial_port_1 on the Naze32, the two-pin Tx/Rx
+header in the center of the board).
 
 For example, use `set serial_port_1_scenario=11` to switch the main serial port to MSP, CLI, Blackbox and GPS Passthrough.
 
@@ -142,8 +138,9 @@ pin to the OpenLog.
 
 ### Protection
 
-The OpenLog can be wrapped in black electrical tape in order to insulate it from conductive frames (like carbon fiber),
-but this makes its status LEDs impossible to see. I recommend wrapping it with some clear heatshrink tubing instead.
+The OpenLog can be wrapped in black electrical tape or heat-shrink in order to insulate it from conductive frames (like
+carbon fiber), but this makes its status LEDs impossible to see. I recommend wrapping it with some clear heatshrink
+tubing instead.
 
 ![OpenLog installed](Wiring/blackbox-installation-1.jpg "OpenLog installed with double-sided tape, SDCard slot pointing outward")
 
@@ -158,89 +155,20 @@ If your craft has a buzzer attached, a short beep will be played when you arm. Y
 synchronize your recorded flight video with the rendered flight data log (the beep is shown as a blue line in the flight
 data log, which you can sync against the beep in your recorded audio track).
 
-The OpenLog requires a couple of seconds of delay after powerup before it's ready to record, so don't arm your craft
-immediately after connecting the battery (you'll probably be waiting for the flight controller to become ready during
-that time anyway!)
+The OpenLog requires a couple of seconds of delay after connecting the battery before it's ready to record, so don't
+arm your craft immediately after connecting the battery (you'll probably be waiting for the flight controller to become
+ready during that time anyway!)
 
 You should also wait a few seconds after disarming the quad to allow the OpenLog to finish saving its data.
 
 Don't insert or remove the SD card while the OpenLog is powered up.
 
+## Converting logs to CSV or PNG
 After your flights, you'll have a series of files labeled "LOG00001.TXT" etc. on the microSD card. You'll need to
-decode these with the `blackbox_decode` tool to create a CSV (comma-separated values) file, or render it into a series of
-PNG frames with `blackbox_render` which you could convert into a video using another software package.
+decode these with the `blackbox_decode` tool to create a CSV (comma-separated values) file for analysis, or render them
+into a series of PNG frames with `blackbox_render` tool, which you could then convert into a video using another 
+software package.
 
-### Using the blackbox_decode tool
+You'll find those tools along with instructions for using them in this repository:
 
-This tool converts a flight log binary file into CSV format. Typical usage (from the command line) would be like:
-
-```bash
-blackbox_decode LOG00001.TXT
-```
-
-That'll decode the log to `LOG00001.01.csv` and print out some statistics about the log. If you're using Windows, you
-can drag and drop your log files onto `blackbox_decode` and they'll all be decoded.
-
-Use the `--help` option to show more details:
-
-```text
-Blackbox flight log decoder by Nicholas Sherlock
-
-Usage:
-     blackbox_decode [options] <input logs>
-
-Options:
-   --help           This page
-   --index <num>    Choose the log from the file that should be decoded (or omit to decode all)
-   --limits         Print the limits and range of each field
-   --stdout         Write log to stdout instead of to a file
-   --debug          Show extra debugging information
-   --raw            Don't apply predictions to fields (show raw field deltas)
-```
-
-### Using the blackbox_render tool
-
-This tool converts a flight log binary file into a series of transparent PNG images that you could overlay onto your
-flight video using a video editor (like [DaVinci Resolve][]). Typical usage (from the command line) would be like:
-
-```bash
-blackbox_render LOG00001.TXT
-```
-
-This will create PNG files at 30 fps into a new directory called `LOG00001.01` next to the log file.
-
-Use the `--help` option to show more details:
-
-```text
-Blackbox flight log renderer by Nicholas Sherlock
-
-Usage:
-     blackbox_render [options] <logfilename.txt>
-
-Options:
-   --help                 This page
-   --index <num>          Choose which log from the file should be rendered
-   --width <px>           Choose the width of the image (default 1920)
-   --height <px>          Choose the height of the image (default 1080)
-   --fps                  FPS of the resulting video (default 30)
-   --prefix <filename>    Set the prefix of the output frame filenames
-   --start <x:xx>         Begin the log at this time offset (default 0:00)
-   --end <x:xx>           End the log at this time offset
-   --[no-]draw-pid-table  Show table with PIDs and gyros (default on)
-   --[no-]draw-craft      Show craft drawing (default on)
-   --[no-]draw-sticks     Show RC command sticks (default on)
-   --[no-]draw-time       Show frame number and time in bottom right (default on)
-   --[no-]plot-motor      Draw motors on the upper graph (default on)
-   --[no-]plot-pid        Draw PIDs on the lower graph (default off)
-   --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)
-   --smoothing-pid <n>    Smoothing window for the PIDs (default 4)
-   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default 2)
-   --smoothing-motor <n>  Smoothing window for the motors (default 2)
-   --prop-style <name>    Style of propeller display (pie/blades, default pie)
-   --gapless              Fill in gaps in the log with straight lines
-```
-
-(At least on Windows) if you just want to render a log file using the defaults, you can drag and drop a log onto the
-blackbox_render program and it'll start generating the PNGs immediately.
-
-[DaVinci Resolve]: https://www.blackmagicdesign.com/products/davinciresolve
+https://github.com/cleanflight/blackbox-tools
