@@ -482,7 +482,7 @@ var MSP = {
                 break;
             case MSP_codes.MSP_SET_BF_CONFIG:
                 break;
-            case MSP_codes.MSP_REBOOT:
+            case MSP_codes.MSP_SET_REBOOT:
                 console.log('Reboot request accepted');
                 break;
 
@@ -561,6 +561,10 @@ var MSP = {
                 offset+= 4;
                 SERIAL_CONFIG.gpsPassthroughBaudRate = data.getUint32(offset, 1);
                 offset+= 4;
+                break;
+
+            case MSP_codes.MSP_SET_CF_SERIAL_CONFIG:
+                console.log('Serial config saved');
                 break;
 
             case MSP_codes.MSP_MODE_RANGES:
