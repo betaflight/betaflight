@@ -66,16 +66,18 @@ TABS.firmware_flasher.initialize = function (callback) {
                                 "file"      : asset.name,
                                 "target"    : target,
                                 "date"      : formattedDate,
-                                "notes"     : release.body
+                                "notes"     : release.body,
+                                "status"    : release.prerelease ? "release-candidate" : "stable"
                             };
 
                             var select_e = 
-                                $("<option value='{0}_{1}'>{2} {3} {4}</option>".format(
+                                $("<option value='{0}_{1}'>{2} {3} {4} ({5})</option>".format(
                                     releaseIndex,
                                     assetIndex,
                                     summary.name,
                                     summary.target,
-                                    summary.date
+                                    summary.date,
+                                    summary.status
                                 )).data('summary', summary);
                             
                             releases_e.append(select_e);
@@ -215,6 +217,14 @@ TABS.firmware_flasher.initialize = function (callback) {
                         }
                         
                         $('div.release_info .target').text(summary.target);
+                        
+                        var status_e = $('div.release_info .status');
+                        if (summary.status == 'release-candidate') {
+                            $('div.release_info .status').html(chrome.i18n.getMessage('firmwareFlasherReleaseStatusReleaseCandidate')).show();
+                        } else {
+                            status_e.hide();
+                        }
+                        
                         $('div.release_info .name').text(summary.name).prop('href', summary.releaseUrl);
                         $('div.release_info .date').text(summary.date);
                         $('div.release_info .file').text(summary.file).prop('href', summary.url);
