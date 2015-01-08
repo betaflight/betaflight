@@ -43,6 +43,9 @@ TABS.firmware_flasher.initialize = function (callback) {
                             var asset = assets[assetIndex];
                             var targetFromFilenameExpression = /.*_(.*)\.(.*)/;
                             var match = targetFromFilenameExpression.exec(asset.name);
+                            if (!match) {
+                                continue;
+                            }
                             var target = match[1];
                             var format = match[2];
 
