@@ -9,8 +9,8 @@ This board does not have an onboard USB-Serial converter, so an external adapter
 
 | Revision | Notes |
 | -------- | ----- |
-| 1        | No boot jumper pads by LED1. |
-| 2        | Boot jumper pads presoldered with pins and a jumper by LED1. |
+| 1        | No boot jumper pads by LED1. Uses blue and red LEDs |
+| 2        | Boot jumper pads presoldered with pins and a jumper by LED1. Uses green and red LEDs. |
 
 Version 2 boards are supported from firmware v1.4.0 onwards, do NOT flash earlier versions to version 2 boards.
 
