@@ -63,7 +63,7 @@ $(document).ready(function () {
                 tab = $(self).parent().prop('class');
 
             if (!CONFIGURATOR.connectionValid) {
-                GUI.log('tabSwitchConnectionRequired');
+                GUI.log(chrome.i18n.getMessage('tabSwitchConnectionRequired'));
                 return;
             }
 

@@ -821,11 +821,17 @@
     "firmwareFlasherReleaseDate": {
         "message": "Date:"
     },
+    "firmwareFlasherReleaseStatus": {
+        "message": "State:"
+    },
     "firmwareFlasherReleaseTarget": {
         "message": "Target:"
     },
     "firmwareFlasherReleaseFile": {
         "message": "Binary:"
+    },
+    "firmwareFlasherReleaseStatusReleaseCandidate": {
+        "message": "<span style=\"color: red\">IMPORTANT: This firmware release is currently marked as a release candidate.  Please report any issues immediately.</span>"
     },
     "firmwareFlasherReleaseFileUrl": {
         "message": "Download manually."
