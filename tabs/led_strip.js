@@ -200,18 +200,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         $('.wires-remaining div').html(remaining);
     }
 
-    
-    function message(msg) {
-        $('tab-led-strip').append('<div class="alertMsg"> ' + msg + ' </div>');
-
-        $('.alertMsg').click(function() {
-            $('.alertMsg').remove();
-        });
-
-        var time = setTimeout(function(){
-            $('.alertMsg').fadeOut();
-        }, 3000);
-    }
 };
 
 TABS.led_strip.cleanup = function (callback) {
