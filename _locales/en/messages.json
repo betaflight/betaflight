@@ -361,6 +361,9 @@
     "configurationReceiver": {
         "message": "Receiver Mode"
     },
+    "configurationFailsafe": {
+        "message": "Receiver failsafe"
+    },    
     "configurationRSSI": {
         "message": "RSSI (Signal Strength)"
     },
