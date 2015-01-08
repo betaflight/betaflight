@@ -1,0 +1,46 @@
+<div class="tab-led-strip">
+    <div class="help">
+        <p i18n="ledStripHelp"></p>
+    </div>
+    <div class="mainGrid"></div>
+
+    <div class="controls">
+        <div class="wires-remaining"><div></div>Remaining</div>
+        <button class="funcClear">Clear selected</button>
+
+        <div class="section">LED Modes</div>
+        <div class="modes">
+            <button class="modeW w50">Warnings</button>
+            <button class="modeF w50">Flight &amp; Orientation</button><br>
+            <button class="modeI w33">Indicator</button>
+            <button class="modeA w33">Arm State</button>
+            <button class="modeT w33">Thrust</button>
+        </div>
+    
+        <div class="section">LED Orientation</div>
+        <div class="orientation">
+            <button class="dirN">N</button>
+            <button class="dirE">E</button>
+            <button class="dirS">S</button>
+            <button class="dirW">W</button>
+            <button class="dirU">U</button>
+            <button class="dirD">D</button>
+        </div>
+
+
+        <div class="section">LED Strip Wiring</div>
+        <div class="wiringMode">
+            <button class="funcWire w100">Wire Ordering Mode</button>
+        </div>
+        <div class="wiringControls">
+            <button class="funcWireClearSelect w50">Clear selected</button>
+            <button class="funcWireClear w50">Clear ALL Wiring</button>
+        </div>      
+        <p>Wiring order must be set before code will be generated</p>
+
+        <div class="output">
+            <textarea class="tempOutput" readonly></textarea>
+        </div>
+
+    </div>
+</div>
