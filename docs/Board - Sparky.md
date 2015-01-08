@@ -48,6 +48,7 @@ Press: "S19 or Hex.."
 Go to the folder where you saved the cleanflight_SPARKY.hex file, select it and press open (you might need to change the filetype in the DfuSE explorer window to "hex Files (*.hex)" to be able to see the file
 Press: "Generate" and select the .dfu output file and location
 If all worked well you should see " Success for 'Image for lternate Setting 00 (ST..)'!"
+
 ```
 
 Put the device into DFU mode by powering on the sparky with the bootloader pins temporarily bridged.  The only light that should come on is the blue PWR led.
@@ -70,6 +71,7 @@ Press "Choose.." at the bootom of the window and select the .dfu file created in
 "File correctly loaded" should appear in the status bar
 Press "Upgrade" and confirm with "Yes"
 The status bar will show the upload progress and confirm that the upload is complete at the end
+
 ```
 
 Disconnect and reconnect the board from USB and continue to configure it via the Cleanflight configurator as per normal
