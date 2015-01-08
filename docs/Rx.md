@@ -27,6 +27,12 @@ http://www.frsky-rc.com/product/pro.php?pro_id=24
 Graupner GR24
 http://www.graupner.de/en/products/33512/product.aspx
 
+R615X Spektrum/JR DSM2/DSMX Compatible 6Ch 2.4GHz Receiver w/CPPM
+http://orangerx.com/2014/05/20/r615x-spektrumjr-dsm2dsmx-compatible-6ch-2-4ghz-receiver-wcppm-2/
+
+FrSky D8R-XP 8ch telemetry receiver, or CPPM and RSSI enabled receiver
+http://www.frsky-rc.com/product/pro.php?pro_id=21
+
 ## Serial Receivers
 
 ### Spektrum
