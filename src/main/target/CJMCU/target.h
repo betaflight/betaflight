@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CJM1" // CJMCU
+#define USE_HARDWARE_REVISION_DETECTION
 
 #define FLASH_PAGE_COUNT 64
 #define FLASH_PAGE_SIZE ((uint16_t)0x400)

@@ -355,6 +355,7 @@ CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   drivers/timer_stm32f10x.c \
+		   hardware_revision.c \
 		   $(COMMON_SRC)
 
 CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
