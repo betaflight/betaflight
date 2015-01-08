@@ -39,6 +39,9 @@ var BF_CONFIG = {
     currentoffset:          0
 };
 
+var LED_STRIP = [];
+
+
 var PID_names = [];
 var PIDs = new Array(10);
 for (var i = 0; i < 10; i++) {

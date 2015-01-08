@@ -13,6 +13,8 @@ var MSP_codes = {
     MSP_SET_CHANNEL_FORWARDING: 33,
     MSP_MODE_RANGES:            34,
     MSP_SET_MODE_RANGE:         35,
+    MSP_LED_STRIP_CONFIG:       48,
+    MSP_SET_LED_STRIP_CONFIG:   49,
     MSP_ADJUSTMENT_RANGES:      52,
     MSP_SET_ADJUSTMENT_RANGE:   53,
     MSP_CF_SERIAL_CONFIG:       54,
@@ -612,12 +614,55 @@ var MSP = {
                 }
                 break;
 
+            case MSP_codes.MSP_LED_STRIP_CONFIG:
+                LED_STRIP = [];
+                
+                var ledCount = data.byteLength / 6; // v1.4.0 and below incorrectly reported 4 bytes per led.
+                
+                var offset = 0;
+                for (var i = 0; offset < data.byteLength && i < ledCount; i++) {
+                    
+                    var directionMask = data.getUint16(offset, 1);
+                    offset += 2;
+                    
+                    var directions = [];
+                    var directionLetters = ['n', 'e', 's', 'w', 'u', 'd'];
+                    for (var directionLetterIndex = 0; directionLetterIndex < directionLetters.length; directionLetterIndex++) {
+                        if (bit_check(directionMask, directionLetterIndex)) {
+                            directions.push(directionLetters[directionLetterIndex]);
+                        }
+                    }
+
+                    var functionMask = data.getUint16(offset, 1);
+                    offset += 2;
+
+                    var functions = [];
+                    var functionLetters = ['i', 'w', 'f', 'a', 't'];
+                    for (var functionLetterIndex = 0; functionLetterIndex < functionLetters.length; functionLetterIndex++) {
+                        if (bit_check(functionMask, functionLetterIndex)) {
+                            functions.push(functionLetters[functionLetterIndex]);
+                        }
+                    }
+                    
+                    var led = {
+                        directions: directions,
+                        functions: functions,
+                        x: data.getUint8(offset++, 1),
+                        y: data.getUint8(offset++, 1)
+                    };
+                    
+                    LED_STRIP.push(led);
+                }
+                
+                break;
+
             case MSP_codes.MSP_SET_MODE_RANGE:
                 console.log('Mode range saved');
                 break;
             case MSP_codes.MSP_SET_ADJUSTMENT_RANGE:
                 console.log('Adjustment range saved');
                 break;
+                
 
             default:
                 console.log('Unknown code detected: ' + code);

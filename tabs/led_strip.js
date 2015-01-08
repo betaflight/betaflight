@@ -16,11 +16,15 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         googleAnalytics.sendAppView('LED Strip');
     }
 
+    function load_led_config() {
+        MSP.send_message(MSP_codes.MSP_LED_STRIP_CONFIG, false, false, load_html);
+    }
+
     function load_html() {
         $('#content').load("./tabs/led_strip.html", process_html);
     }
 
-    load_html();
+    load_led_config();
     
 
     function process_html() {
@@ -116,7 +120,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             stop: function() {
                 $('.ui-selected').each(function() {             
                     if (TABS.led_strip.wireMode) {
-                        if ($(this).find('.wire').html() == '' && TABS.led_strip.currentWire < 32) {
+                        if ($(this).find('.wire').html() == '' && TABS.led_strip.currentWire < LED_STRIP.length) {
                             $(this).find('.wire').html(TABS.led_strip.currentWire);
                             TABS.led_strip.currentWire++;
                         }
@@ -190,7 +194,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
         TABS.led_strip.totalLights = counter;
 
-        var remaining = 32 - TABS.led_strip.totalLights;
+        var remaining = LED_STRIP.length - TABS.led_strip.totalLights;
         if (remaining <= 0) {
             remaining = 0;
             $('.wires-remaining').addClass('error');
