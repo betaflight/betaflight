@@ -1145,10 +1145,16 @@ static bool processInCommand(void)
         magHold = read16();
         break;
     case MSP_SET_RAW_RC:
-        // FIXME need support for more than 8 channels
-        for (i = 0; i < 8; i++)
-            rcData[i] = read16();
-        rxMspFrameRecieve();
+        {
+            uint8_t channelCount = currentPort->dataSize / sizeof(uint16_t);
+            if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
+                headSerialError(0);
+            } else {
+                for (i = 0; i < channelCount; i++)
+                    rcData[i] = read16();
+                rxMspFrameRecieve();
+            }
+        }
         break;
     case MSP_SET_ACC_TRIM:
         currentProfile->accelerometerTrims.values.pitch = read16();
