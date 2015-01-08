@@ -63,12 +63,12 @@ $(document).ready(function () {
                 tab = $(self).parent().prop('class');
 
             if (!CONFIGURATOR.connectionValid) {
-                GUI.log('You need to <strong>connect</strong> before you can view any of the tabs');
+                GUI.log('tabSwitchConnectionRequired');
                 return;
             }
 
             if (CONFIGURATOR.connectionValidCliOnly) {
-                GUI.log('You need to <strong>upgrade</strong> your firmware before you can view any of the tabs. Use CLI for backup before flashing!');
+                GUI.log(chrome.i18n.getMessage('tabSwitchUpgradeRequired'));
                 return;
             }
 

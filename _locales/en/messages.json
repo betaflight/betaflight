@@ -99,7 +99,7 @@
     "tabAuxiliary": {
         "message": "Modes"
     },
-    
+        
     "serialPortOpened": {
         "message": "Serial port <span style=\"color: green\">successfully</span> opened with ID: $1"
     },
@@ -117,7 +117,15 @@
         "message": "No configuration received within <span style=\"color: red\">10 seconds</span>, communication <span style=\"color: red\">failed</span>"
     },
     "firmwareVersionNotSupported": {
-        "message": "This firmware version is <span style=\"color: red\">not supported</span>. Please upgrade to firmware that supports api version <strong>$1</strong> or higher. Only CLI is usable for backup purposes."
+        "message": "This firmware version is <span style=\"color: red\">not supported</span>. Please upgrade to firmware that supports api version <strong>$1</strong> or higher. Use CLI for backup before flashing.  CLI backup/restore procedure is in the documention."
+    },
+    
+    "tabSwitchConnectionRequired": {
+        "message": "You need to <strong>connect</strong> before you can view any of the tabs."
+    },
+    
+    "tabSwitchUpgradeRequired": {
+        "message": "You need to <strong>upgrade</strong> your firmware before you can view any of the tabs."
     },
     "firmwareVersion": {
         "message": "Firmware Version: <strong>$1</strong>"
