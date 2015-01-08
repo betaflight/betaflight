@@ -13,6 +13,10 @@ found in this repository:
 
 https://github.com/cleanflight/blackbox-tools
 
+You can also view your flight logs using your web browser with the interactive log viewer:
+
+https://github.com/cleanflight/blackbox-log-viewer
+
 ## Logged data
 The blackbox records flight data on every iteration of the flight control loop. It records the current time in
 microseconds, P, I and D corrections for each axis, your RC command stick positions (after applying expo curves),
@@ -172,3 +176,10 @@ software package.
 You'll find those tools along with instructions for using them in this repository:
 
 https://github.com/cleanflight/blackbox-tools
+
+You can also view your .TXT flight log files interactively using your web browser with the Cleanflight Blackbox Explorer
+tool:
+
+https://github.com/cleanflight/blackbox-log-viewer
+
+This allows you to scroll around a graphed version of your log and examine your log in detail.
