@@ -40,12 +40,14 @@ A binary file is required for DFU, not a .hex file.  If one is not included in t
 
 ```
 Unpack DfuSE and the STM VCP Drivers into a folder on your Hardrive
-Download the latest Sparky release (cleanflight_SPARKY.hex) from: https://github.com/cleanflight/cleanflight/releases and store it on your Hardrive
+Download the latest Sparky release (cleanflight_SPARKY.hex) from:
+https://github.com/cleanflight/cleanflight/releases and store it on your Hardrive
 
 In your DfuSE folder go to BIN and start DfuFileMgr.exe
 Select: "I want to GENERATE a DFUfile from S19,HEX or BIN files" press OK
 Press: "S19 or Hex.." 
-Go to the folder where you saved the cleanflight_SPARKY.hex file, select it and press open (you might need to change the filetype in the DfuSE explorer window to "hex Files (*.hex)" to be able to see the file
+Go to the folder where you saved the cleanflight_SPARKY.hex file, select it  and press open
+(you might need to change the filetype in the DfuSE explorer window to "hex Files (*.hex)" to be able to see the file)
 Press: "Generate" and select the .dfu output file and location
 If all worked well you should see " Success for 'Image for lternate Setting 00 (ST..)'!"
 
