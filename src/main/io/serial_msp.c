@@ -1097,7 +1097,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_LED_STRIP_CONFIG:
-        headSerialReply(MAX_LED_STRIP_LENGTH * 4);
+        headSerialReply(MAX_LED_STRIP_LENGTH * 6);
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
             serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
