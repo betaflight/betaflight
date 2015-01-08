@@ -225,7 +225,7 @@ function configuration_restore(callback) {
                     console.log('Read SUCCESSFUL');
 
                     try { // check if string provided is a valid JSON
-                        var deserialized_configuration_object = JSON.parse(e.target.result);
+                        var configuration = JSON.parse(e.target.result);
                     } catch (e) {
                         // data provided != valid json object
                         console.log('Data provided != valid JSON string, restore aborted.');
@@ -233,7 +233,23 @@ function configuration_restore(callback) {
                         return;
                     }
 
-                    configuration_upload(deserialized_configuration_object, callback);
+                    // validate
+                    if (typeof configuration.generatedBy !== 'undefined' && compareVersions(configuration.generatedBy, CONFIGURATOR.backupFileMinVersionAccepted)) {
+                                                
+                        if (configuration.generatedBy != chrome.runtime.getManifest().version) {
+                            if (!migrate(configuration)) {
+                                GUI.log(chrome.i18n.getMessage('backupFileUnmigratable'));
+                                return;
+                            }
+                        }
+                        
+                        configuration_upload(configuration, callback);
+                        
+                    } else {
+                        GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
+                    }
+
+                    
                 }
             };
 
@@ -241,33 +257,51 @@ function configuration_restore(callback) {
         });
     });
 
-    function configuration_upload(configuration, callback) {
-        function compareVersions(generated, required) {
-            var a = generated.split('.'),
-                b = required.split('.');
+    function compareVersions(generated, required) {
+        var a = generated.split('.'),
+            b = required.split('.');
 
-            for (var i = 0; i < a.length; ++i) {
-                a[i] = Number(a[i]);
-            }
-            for (var i = 0; i < b.length; ++i) {
-                b[i] = Number(b[i]);
-            }
-            if (a.length == 2) {
-                a[2] = 0;
-            }
-
-            if (a[0] > b[0]) return true;
-            if (a[0] < b[0]) return false;
-
-            if (a[1] > b[1]) return true;
-            if (a[1] < b[1]) return false;
-
-            if (a[2] > b[2]) return true;
-            if (a[2] < b[2]) return false;
-
-            return true;
+        for (var i = 0; i < a.length; ++i) {
+            a[i] = Number(a[i]);
+        }
+        for (var i = 0; i < b.length; ++i) {
+            b[i] = Number(b[i]);
+        }
+        if (a.length == 2) {
+            a[2] = 0;
         }
 
+        if (a[0] > b[0]) return true;
+        if (a[0] < b[0]) return false;
+
+        if (a[1] > b[1]) return true;
+        if (a[1] < b[1]) return false;
+
+        if (a[2] > b[2]) return true;
+        if (a[2] < b[2]) return false;
+
+        return true;
+    }
+
+    function migrate(configuration) {
+        var appliedMigrationsCount = 0;
+        var migratedVersion = configuration.generatedBy;
+        GUI.log(chrome.i18n.getMessage('configMigrationFrom', [migratedVersion]));
+        
+        if (!compareVersions(migratedVersion, '0.59.1')) {
+            
+            configuration.MISC.rssi_channel = configuration.MISC.rssi_aux_channel; // variable was renamed
+            configuration.MISC.rssi_aux_channel = undefined;
+            
+            migratedVersion = '0.59.1';
+            GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
+            appliedMigrationsCount++;
+        }
+        GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
+        return true;
+    }
+    
+    function configuration_upload(configuration, callback) {
         function upload() {
             var activeProfile = null,
                 profilesN = 3;
@@ -405,11 +439,6 @@ function configuration_restore(callback) {
             }
         }
 
-        // validate
-        if (typeof configuration.generatedBy !== 'undefined' && compareVersions(configuration.generatedBy, CONFIGURATOR.backupFileMinVersionAccepted)) {
-            upload();
-        } else {
-            GUI.log(chrome.i18n.getMessage('backupFileIncompatible'));
-        }
+        upload();
     }
 }

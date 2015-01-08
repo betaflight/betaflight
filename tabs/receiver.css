@@ -127,7 +127,7 @@
     line-height: 20px;
     text-align: right;
 }
-.tab-receiver .rssi_aux_wrapper {
+.tab-receiver .rssi_channel_wrapper {
     float: right;
 
     margin: 10px 0 0 0;
@@ -137,7 +137,7 @@
     border: 1px solid #8b8b8b;
     border-left: 0;
 }
-.tab-receiver .rssi_aux_wrapper .head {
+.tab-receiver .rssi_channel_wrapper .head {
     height: 15px;
     padding: 4px;
 
@@ -147,7 +147,7 @@
     border-bottom: 1px solid #8b8b8b;
     background-color: #ececec;
 }
-.tab-receiver .rssi_aux_wrapper select {
+.tab-receiver .rssi_channel_wrapper select {
     width: 100%;
     height: 22px;
 

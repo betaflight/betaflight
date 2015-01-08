@@ -76,7 +76,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             {bit: 15, group: 'rssi', name: 'RSSI_ADC', description: 'Analog RSSI input'},
             {bit: 16, group: 'other', name: 'LED_STRIP', description: 'Addressable RGB LED strip support'},
             {bit: 17, group: 'other', name: 'DISPLAY', description: 'OLED Screen Display'},
-            {bit: 18, group: 'esc', name: 'ONESHOT125', description: 'ONESHOT ESC support (disconnect ESCs, remove props)'}
+            {bit: 18, group: 'esc', name: 'ONESHOT125', description: 'ONESHOT ESC support (disconnect ESCs, remove props)'},
+            {bit: 19, group: 'other', name: 'BLACKBOX', description: 'Blackbox flight data recorder'}
         ];
 
         var radioGroups = [];
