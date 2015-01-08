@@ -46,12 +46,6 @@
         </div>
         <div class="number">
             <label>
-                <input type="number" name="failsafe_throttle" min="0" max="2000" />
-                <span i18n="configurationThrottleFailsafe"></span>
-            </label>
-        </div>
-        <div class="number">
-            <label>
                 <input type="number" name="mincommand" min="0" max="2000" />
                 <span i18n="configurationThrottleMinimumCommand"></span>
             </label>
@@ -141,9 +135,90 @@
                 <!-- table generated here -->
             </tbody>
         </table>
+        <div class="number">
+            <label>
+                <input type="number" name="failsafe_throttle" min="0" max="2000" />
+                <span i18n="configurationThrottleFailsafe"></span>
+            </label>
+        </div>
+        
 
     </div>
-    <div class="rightWrapper gps">
+    <div class="rightWrapper current voltage">
+        <div class="groupTitle" i18n="configurationBatteryVoltage"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features batteryVoltage">
+                <!-- table generated here -->
+            </tbody>
+        </table>
+        
+        <div class="number">
+            <label>
+                <input type="number" name="mincellvoltage" step="0.1" min="1" max="5" />
+                <span i18n="configurationBatteryMinimum"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="maxcellvoltage" step="0.1" min="1" max="5" />
+                <span i18n="configurationBatteryMaximum"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="warningcellvoltage" step="0.1" min="1" max="5" />
+                <span i18n="configurationBatteryWarning"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="voltagescale" step="1" min="10" max="200" />
+                <span i18n="configurationBatteryScale"></span>
+            </label>
+        </div>
+                <div class="groupTitle" i18n="configurationCurrent"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features batteryCurrent">
+                <!-- table generated here -->
+            </tbody>
+        </table>        
+        <div class="number">
+            <label>
+                <input type="number" name="currentscale" step="1" min="1" max="1000" />
+                <span i18n="configurationCurrentScale"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="currentoffset" step="1" min="1" max="1000" />
+                <span i18n="configurationCurrentOffset"></span>
+            </label>
+        </div>
+        <div class="checkbox">
+            <label>
+                <div>
+                    <input type="checkbox" name="multiwiicurrentoutput" />
+                </div>
+                <span i18n="configurationBatteryMultiwiiCurrent"></span>
+            </label>
+        </div>        
+    </div>
+    <div class="clear-both"></div>
+    <div class="leftWrapper gps">
         <div class="groupTitle" i18n="configurationGPS"></div>
         <table>
             <thead>
@@ -183,84 +258,7 @@
             </label>
         </div>
     </div>
-    <div class="clear-both"></div>
-    <div class="leftWrapper">
-        <div class="groupTitle" i18n="configurationBatteryVoltage"></div>
-        <table>
-            <thead>
-                <tr>
-                    <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
-                    <th i18n="configurationFeatureDescription"></th>
-                </tr>
-            </thead>
-            <tbody class="features batteryVoltage">
-                <!-- table generated here -->
-            </tbody>
-        </table>
-        
-        <div class="number">
-            <label>
-                <input type="number" name="mincellvoltage" step="0.1" min="1" max="5" />
-                <span i18n="configurationBatteryMinimum"></span>
-            </label>
-        </div>
-        <div class="number">
-            <label>
-                <input type="number" name="maxcellvoltage" step="0.1" min="1" max="5" />
-                <span i18n="configurationBatteryMaximum"></span>
-            </label>
-        </div>
-        <div class="number">
-            <label>
-                <input type="number" name="warningcellvoltage" step="0.1" min="1" max="5" />
-                <span i18n="configurationBatteryWarning"></span>
-            </label>
-        </div>
-        <div class="number">
-            <label>
-                <input type="number" name="voltagescale" step="1" min="10" max="200" />
-                <span i18n="configurationBatteryScale"></span>
-            </label>
-        </div>
-    </div>
-    <div class="rightWrapper current">
-        <div class="groupTitle" i18n="configurationCurrent"></div>
-        <table>
-            <thead>
-                <tr>
-                    <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
-                    <th i18n="configurationFeatureDescription"></th>
-                </tr>
-            </thead>
-            <tbody class="features batteryCurrent">
-                <!-- table generated here -->
-            </tbody>
-        </table>        
-        <div class="number">
-            <label>
-                <input type="number" name="currentscale" step="1" min="1" max="1000" />
-                <span i18n="configurationCurrentScale"></span>
-            </label>
-        </div>
-        <div class="number">
-            <label>
-                <input type="number" name="currentoffset" step="1" min="1" max="1000" />
-                <span i18n="configurationCurrentOffset"></span>
-            </label>
-        </div>
-        <div class="checkbox">
-            <label>
-                <div>
-                    <input type="checkbox" name="multiwiicurrentoutput" />
-                </div>
-                <span i18n="configurationBatteryMultiwiiCurrent"></span>
-            </label>
-        </div>
-    </div>
-    <div class="clear-both"></div>
-    <div class="leftWrapper">
+    <div class="rightWrapper">
         <div class="groupTitle" i18n="configurationFeatures"></div>
         <table>
             <thead>
