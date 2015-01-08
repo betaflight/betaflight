@@ -111,6 +111,7 @@ static const char* const blackboxMainHeaderNames[] = {
     "P encoding"
 };
 
+#ifdef GPS
 static const char* const blackboxGPSGHeaderNames[] = {
     "G name",
     "G signed",
@@ -124,6 +125,7 @@ static const char* const blackboxGPSHHeaderNames[] = {
     "H predictor",
     "H encoding"
 };
+#endif
 
 /* All field definition structs should look like this (but with longer arrs): */
 typedef struct blackboxFieldDefinition_t {
@@ -206,6 +208,7 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
     {"servo[5]",      UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)}
 };
 
+#ifdef GPS
 // GPS position/vel frame
 static const blackboxGPSFieldDefinition_t blackboxGpsGFields[] = {
     {"GPS_numSat",    UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
@@ -220,6 +223,7 @@ static const blackboxGPSFieldDefinition_t blackboxGpsHFields[] = {
     {"GPS_home[0]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
     {"GPS_home[1]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
 };
+#endif
 
 typedef enum BlackboxState {
     BLACKBOX_STATE_DISABLED = 0,
@@ -897,6 +901,7 @@ void finishBlackbox(void)
     }
 }
 
+#ifdef GPS
 static void writeGPSHomeFrame()
 {
     blackboxWrite('H');
@@ -923,6 +928,7 @@ static void writeGPSFrame()
     gpsHistory.GPS_coord[0] = GPS_coord[0];
     gpsHistory.GPS_coord[1] = GPS_coord[1];
 }
+#endif
 
 /**
  * Fill the current state of the blackbox using values read from the flight controller
@@ -1163,12 +1169,15 @@ void handleBlackbox(void)
             //On entry of this state, headerXmitIndex is 0 and fieldXmitIndex is -1
             if (!sendFieldDefinition(blackboxMainHeaderNames, ARRAY_LENGTH(blackboxMainHeaderNames), blackboxMainFields, blackboxMainFields + 1,
                     ARRAY_LENGTH(blackboxMainFields), &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
+#ifdef GPS
                 if (feature(FEATURE_GPS))
                     blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADERS);
                 else
+#endif
                     blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
         break;
+#ifdef GPS
         case BLACKBOX_STATE_SEND_GPS_H_HEADERS:
             //On entry of this state, headerXmitIndex is 0 and fieldXmitIndex is -1
             if (!sendFieldDefinition(blackboxGPSHHeaderNames, ARRAY_LENGTH(blackboxGPSHHeaderNames), blackboxGpsHFields, blackboxGpsHFields + 1,
@@ -1183,6 +1192,7 @@ void handleBlackbox(void)
                 blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
         break;
+#endif
         case BLACKBOX_STATE_SEND_SYSINFO:
             //On entry of this state, headerXmitIndex is 0
             result = blackboxWriteSysinfo(headerXmitIndex);
@@ -1210,7 +1220,7 @@ void handleBlackbox(void)
                     loadBlackboxState();
                     writeInterframe();
                 }
-
+#ifdef GPS
                 if (feature(FEATURE_GPS)) {
                     /*
                      * If the GPS home point has been updated, or every 128 intraframes (~10 seconds), write the
@@ -1230,6 +1240,7 @@ void handleBlackbox(void)
                         writeGPSFrame();
                     }
                 }
+#endif
             }
 
             blackboxIteration++;
