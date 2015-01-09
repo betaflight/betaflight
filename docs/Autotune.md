@@ -5,9 +5,10 @@ Autotune helps to automatically tune your multirotor.
 ## Configuration.
 
 Autotune only works in HORIZON or ANGLE mode, before using auto-tune it's best you setup so there is as little drift as possible.
-Autotuning is best on a full battery in good flying conditions, i.e. no or minimal wind.
+Autotuning is best on a full battery in good flying conditions, i.e. no or minimal wind. Autotune does not support 
+pid_controller 2 (pid_controller 0 is the Cleanflight default).
 
-Configure a two position switch on your transmitter to activate the AUTOTUNE and (HORIZON or ANGLE) modes using the auxilary configuration.
+Configure a two position switch on your transmitter to activate the AUTOTUNE and (HORIZON or ANGLE) modes using the auxiliary configuration.
 You may find a momentary switch more suitable than a toggle switch.
 
 
