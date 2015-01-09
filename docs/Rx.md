@@ -58,6 +58,9 @@ These receivers are reported working:
 FrSky X4RSB 3/16ch Telemetry Receiver
 http://www.frsky-rc.com/product/pro.php?pro_id=135
 
+FrSky X8R 8/16ch Telemetry Receiver
+http://www.frsky-rc.com/product/pro.php?pro_id=105
+
 #### OpenTX S.BUS configuration
 
 If using OpenTX set the transmitter module to D16 mode and select CH1-16 on the transmitter before binding to allow reception
@@ -116,7 +119,7 @@ Only one receiver feature can be enabled at a time.
 
 ### Serial RX
 
-See the Configuration document some some RX configuration examples.
+See the Serial chapter for some some RX configuration examples.
 
 For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as follows.
 
