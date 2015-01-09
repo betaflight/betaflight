@@ -305,9 +305,9 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     // PITCH & ROLL
     for (axis = 0; axis < 2; axis++) {
         rc = rcCommand[axis] << 1;
-        error = rc - gyroData[axis];
+        error = rc - (gyroData[axis] / 4);
         errorGyroI[axis]  = constrain(errorGyroI[axis] + error, -16000, +16000);   // WindUp   16 bits is ok here
-        if (abs(gyroData[axis]) > 640) errorGyroI[axis] = 0;
+        if (abs(gyroData[axis]) > (640 * 4)) errorGyroI[axis] = 0;
 
         ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
 
@@ -342,9 +342,9 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             PTerm = PTermACC + ((PTerm - PTermACC) * prop >> 9);
         }
 
-        PTerm -= ((int32_t)gyroData[axis] * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
+        PTerm -= ((int32_t)(gyroData[axis] / 4) * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
 
-        delta = gyroData[axis] - lastGyro[axis];   // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+        delta = (gyroData[axis] - lastGyro[axis]) / 4;   // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
         lastGyro[axis] = gyroData[axis];
         DTerm = delta1[axis] + delta2[axis] + delta;
         delta2[axis] = delta1[axis];
@@ -357,7 +357,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
     //YAW
     rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
-    error = rc - gyroData[FD_YAW];
+    error = rc - (gyroData[FD_YAW] / 4);
     errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
     errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
     if (abs(rc) > 50) errorGyroI[FD_YAW] = 0;
@@ -450,7 +450,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
     }
     //YAW
     rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
-    error = rc - gyroData[FD_YAW];
+    error = rc - (gyroData[FD_YAW] / 4);
     errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
     errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
     if (abs(rc) > 50) errorGyroI[FD_YAW] = 0;
