@@ -151,9 +151,50 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
         $('.mainGrid').disableSelection();
 
+        $('.gPoint').each(function(){
+            var gridNumber = ($(this).index() + 1);
+            var row = Math.ceil(gridNumber / 16) - 1;
+            var col = gridNumber/16 % 1 * 16 - 1;
+            if (col < 0) {
+                col = 15;
+            }
+            
+            var ledResult = findLed(col, row);
+            if (!ledResult) {
+                return;
+            }
+            
+            var ledIndex = ledResult.index;
+            var led = ledResult.led;
+            
+            if (led.functions.length == 0 && led.directions.length == 0) {
+                return;
+            }
+            
+            $(this).find('.wire').html(ledIndex);
+
+            for (var modeIndex = 0; modeIndex < led.functions.length; modeIndex++) {
+                $(this).addClass('mode-' + led.functions[modeIndex]);
+            }
+            
+            for (var directionIndex = 0; directionIndex < led.directions.length; directionIndex++) {
+                $(this).addClass('dir-' + led.directions[directionIndex]);
+            }
+
+        });
         updateBulkCmd(); 
         
         if (callback) callback();
+    }
+    
+    function findLed(x, y) {
+        for (var ledIndex = 0; ledIndex < LED_STRIP.length; ledIndex++) {
+            var led = LED_STRIP[ledIndex];
+            if (led.x == x && led.y == y) {
+                return { index: ledIndex, led: led };
+            }
+        }
+        return undefined;
     }
         
     function updateBulkCmd() {
@@ -161,6 +202,8 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         $('.tempOutput').html('# Copy and paste commands below into the CLI' + "\n\n");
         var counter = 0;
 
+        var lines = [];
+        
         $('.gPoint').each(function(){
             if ($(this).is('[class*="mode"]')) {
                 var gridNumber = ($(this).index() + 1);
@@ -186,11 +229,14 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 });
 
                 if (wireNumber != '') {
-                    $('.tempOutput').append('led ' + wireNumber + ' ' + col + ',' + row + ':' + directions + ':' + ledModes + "\n");
+                    var line = 'led ' + wireNumber + ' ' + col + ',' + row + ':' + directions + ':' + ledModes;
+                    lines[wireNumber] = line;
                 }
                 counter++;
             }
         });
+
+        $('.tempOutput').append(lines.join("\n"));
 
         TABS.led_strip.totalLights = counter;
 
