@@ -1,8 +1,6 @@
 'use strict';
 
 TABS.led_strip = {
-    totalLights: 0,
-    currentWire: 0,
     wireMode: false,
     flightModes: ['w', 'f', 'i', 'a', 't'],
     ledOrientations: ['n', 'e', 's', 'w', 'u', 'd'],
@@ -27,6 +25,18 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     load_led_config();
     
 
+    function buildUsedWireNumbers() {
+        var usedWireNumbers = [];
+        $('.mainGrid .gPoint .wire').each(function () {
+            var wireNumber = parseInt($(this).html());
+            if (wireNumber >= 0) {
+                usedWireNumbers.push(wireNumber);
+            }
+        });
+        usedWireNumbers.sort(function(a,b){return a - b});
+        return usedWireNumbers;
+    }
+    
     function process_html() {
         
         localize();
@@ -102,27 +112,34 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 var thisWire = $(this).find('.wire');
                 if (thisWire.html() != '') {
                     thisWire.html('');
-                    TABS.led_strip.currentWire--;
                 }
-                updateBulkCmd();             
+                updateBulkCmd();
             });
         });
 
         $('.funcWireClear').click(function() {
-            TABS.led_strip.currentWire = 0;
             $('.gPoint .wire').html('');
             updateBulkCmd();
         });
 
-
         $('.mainGrid').selectable({
             filter: ' > div',
             stop: function() {
-                $('.ui-selected').each(function() {             
+                $('.ui-selected').each(function() {
+
+                    
+                    var usedWireNumbers = buildUsedWireNumbers();
+                    
+                    var nextWireNumber = 0;
+                    for (var nextWireNumber = 0; nextWireNumber < usedWireNumbers.length; nextWireNumber++) {
+                        if (usedWireNumbers[nextWireNumber] != nextWireNumber) {
+                            break;
+                        }
+                    }
+                        
                     if (TABS.led_strip.wireMode) {
-                        if ($(this).find('.wire').html() == '' && TABS.led_strip.currentWire < LED_STRIP.length) {
-                            $(this).find('.wire').html(TABS.led_strip.currentWire);
-                            TABS.led_strip.currentWire++;
+                        if ($(this).find('.wire').html() == '' && nextWireNumber < LED_STRIP.length) {
+                            $(this).find('.wire').html(nextWireNumber);
                         }
                     }
 
@@ -238,15 +255,9 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
         $('.tempOutput').append(lines.join("\n"));
 
-        TABS.led_strip.totalLights = counter;
+        var usedWireNumbers = buildUsedWireNumbers();
 
-        var remaining = LED_STRIP.length - TABS.led_strip.totalLights;
-        if (remaining <= 0) {
-            remaining = 0;
-            $('.wires-remaining').addClass('error');
-        } else {
-            $('.wires-remaining').removeClass('error');
-        }
+        var remaining = LED_STRIP.length - usedWireNumbers.length;
         $('.wires-remaining div').html(remaining);
     }
 
