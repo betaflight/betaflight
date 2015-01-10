@@ -27,10 +27,23 @@ function startApplication() {
 
             if (connectionId && valid_connection) {
                 // code below is handmade MSP message (without pretty JS wrapper), it behaves exactly like MSP.send_message
+                // sending exit command just in case the cli tab was open.
                 // reset motors to default (mincommand)
-                var bufferOut = new ArrayBuffer(22),
-                    bufView = new Uint8Array(bufferOut),
-                    checksum = 0;
+
+                var bufferOut = new ArrayBuffer(5);
+                var bufView = new Uint8Array(bufferOut);
+
+                bufView[0] = 0x65; // e
+                bufView[1] = 0x78; // x
+                bufView[2] = 0x69; // i
+                bufView[3] = 0x74; // t
+                bufView[4] = 0x0D; // enter
+
+                chrome.serial.send(connectionId, bufferOut, function () { console.log('Send exit') }); 
+
+                bufferOut = new ArrayBuffer(29);
+                bufView = new Uint8Array(bufferOut);
+                var checksum = 0;
 
                 bufView[0] = 36; // $
                 bufView[1] = 77; // M
