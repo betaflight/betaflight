@@ -32,8 +32,8 @@ The following adjustments can be made, in flight, as well as on the ground.
 * Yaw P I and D
 
 Example scenarios:
-Up to 4 3 position switches or pots can be used to adjust 4 different settings at the same time.
-A single 2/3/4/5/6/x position switches can be used to make one 3 position switch adjust one setting at a time.
+Up to 4 3-position switches or pots can be used to adjust 4 different settings at the same time.
+A single 2/3/4/5/6/x position switche can be used to make one 3 position switch adjust one setting at a time.
 
 Any combination of switches and pots can be used.  So you could have 6 POS switch.
 
@@ -55,7 +55,7 @@ Hint: With OpenTX transmitters you can combine two momentary OFF-ON switches to 
 
 ## Configuration
 
-The cli command `adjrange` is used to configure adjustment ranges.
+The CLI command `adjrange` is used to configure adjustment ranges.
 
 12 adjustment ranges can be defined.
 4 adjustments can be made at the same time, each simultaneous adjustment requires an adjustment slot.
@@ -87,8 +87,11 @@ Normally Range Channel and Slot values are grouped together over multiple adjust
 The Range Channel and the Adjustment Channel can be the same channel.  This is useful when you want a single 3 Position switch to be dedicated
 to a single adjustment function regardless of other switch positions.
  
-The adjustment functions is applied to the adjustment channel when range channel between the range values.
-The adjustment is made when the adjustment channel is in the high or low position.  high = midrc + 200, low = midrc - 200.  by default this is 1700 and 1300 respectively.
+The adjustment function is applied to the adjustment channel when range channel is between the range values.
+The adjustment is made when the adjustment channel is in the high or low position.  high = mid_rc + 200, low = mid_rc - 200.  by default this is 1700 and 1300 respectively.
+
+When the Range Channel does not fall into Start/End range the assigned slot will retain it's state and will continue to apply the adjustment.  For
+this reason ensure that you define enough ranges to cover the range channel's usable range.
 
 ### Adjustment function
 
@@ -187,3 +190,23 @@ explained:
 When the switch is low, rate profile 0 is selcted.
 When the switch is medium, rate profile 1 is selcted.
 When the switch is high, rate profile 2 is selcted.
+
+
+### Configurator examples
+
+The following 5 images show valid configurations.  In all cales the enture usable range for the Range Channel is used.
+
+![Configurator example 1](Screenshots/adjustments-rate-profile-selection-via-3pos.png)
+![Configurator example 2](Screenshots/adjustments-pitch-and-roll-rate-adjustment-via-3pos.png)
+![Configurator example 3](Screenshots/adjustments-pid-via-two-3pos.png)
+![Configurator example 4](Screenshots/adjustments-pid-via-6pos-and-3pos.png)
+![Configurator example 5](Screenshots/adjustments-rates-via-a-2pos-and-3pos.png)
+
+The following examples shows __incorrect__ configuration - the entire usable range for the Range Channel is not used in both cases.
+
+![Configurator example 6](Screenshots/adjustments-incorrect-config-1.png)
+![Configurator example 7](Screenshots/adjustments-incorrect-config-2.png)
+
+In the following example, the incorrect configuraton (above) has been corrected by adding a range that makes 'No changes'.
+
+![Configurator example 7](Screenshots/adjustments-incorrect-config-2-corrected.png)

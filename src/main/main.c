@@ -66,6 +66,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "telemetry/telemetry.h"
+#include "blackbox/blackbox.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "config/runtime_config.h"
@@ -73,8 +74,8 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#ifdef NAZE
-#include "target/NAZE/hardware_revision.h"
+#ifdef USE_HARDWARE_REVISION_DETECTION
+#include "hardware_revision.h"
 #endif
 
 #include "build_config.h"
@@ -145,13 +146,15 @@ void init(void)
     SetSysClock(masterConfig.emf_avoidance);
 #endif
 
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
 #endif
 
     systemInit();
 
-#ifdef SPEKTRUM_BIND
+    ledInit();
+
+    #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
         switch (masterConfig.rxConfig.serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
@@ -168,8 +171,6 @@ void init(void)
     delay(100);
 
     timerInit();  // timer must be initialized before any channel is allocated
-
-    ledInit();
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
@@ -200,7 +201,7 @@ void init(void)
     spiInit(SPI2);
 #endif
 
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
 
@@ -344,6 +345,10 @@ void init(void)
         initTelemetry();
 #endif
 
+#ifdef BLACKBOX
+    initBlackbox();
+#endif
+
     previousTime = micros();
 
     if (masterConfig.mixerMode == MIXER_GIMBAL) {
@@ -384,6 +389,10 @@ void init(void)
         displayEnablePageCycling();
 #endif
     }
+#endif
+
+#ifdef CJMCU
+    LED2_ON;
 #endif
 }
 

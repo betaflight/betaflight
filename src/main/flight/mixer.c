@@ -47,7 +47,7 @@
 
 #define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
-static uint8_t motorCount = 0;
+uint8_t motorCount = 0;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 int16_t servo[MAX_SUPPORTED_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };

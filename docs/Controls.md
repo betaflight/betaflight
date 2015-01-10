@@ -4,7 +4,7 @@
 
 When armed the aircraft is ready to fly and any motors attached will spin when throttle is applied.
 
-By default arming and disarming is done using stick positions.  This is disabled when using a switch to arm.
+By default arming and disarming is done using stick positions.  Arming with stick positions is disabled when using a switch to arm.
 
 
 ## Stick positions
@@ -30,3 +30,7 @@ HIGH - the channel value for the mapped channel input is around 2000
 | Trim Acc Backwards            | HIGH     | CENTER  | LOW    | CENTER |
 | Save setting                  | LOW      | LOW     | LOW    | HIGH   |
 
+
+##### Download a graphic [pdf cheat-sheet](https://multiwii.googlecode.com/svn/branches/Hamburger/MultiWii-StickConfiguration-23_v0-5772156649.pdf) with TX stick commands.
+
+The Latest version of this pdf can always be found [Here](https://code.google.com/p/multiwii/source/browse/#svn%2Fbranches%2FHamburger)

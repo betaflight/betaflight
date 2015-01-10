@@ -24,6 +24,8 @@
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 
+#include "drivers/light_led.h"
+
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
@@ -176,10 +178,11 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
 void spektrumBind(rxConfig_t *rxConfig)
 {
     int i;
-
     if (!spekShouldBind(rxConfig->spektrum_sat_bind)) {
         return;
     }
+
+    LED1_ON;
 
     gpio_config_t cfg = {
         BIND_PIN,
@@ -193,16 +196,22 @@ void spektrumBind(rxConfig_t *rxConfig)
 
     // Bind window is around 20-140ms after powerup
     delay(60);
+    LED1_OFF;
 
     for (i = 0; i < rxConfig->spektrum_sat_bind; i++) {
 
+        LED0_OFF;
+        LED2_OFF;
         // RX line, drive low for 120us
         digitalLo(BIND_PORT, BIND_PIN);
         delayMicroseconds(120);
 
+        LED0_ON;
+        LED2_ON;
         // RX line, drive high for 120us
         digitalHi(BIND_PORT, BIND_PIN);
         delayMicroseconds(120);
+
     }
 
 #ifndef HARDWARE_BIND_PLUG

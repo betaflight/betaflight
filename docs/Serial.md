@@ -1,9 +1,9 @@
 # Serial
 
-Cleanflight has enhanced serial port flexibility and configuration is slightly more complex as a result.
+Cleanflight has enhanced serial port flexibility but configuration is slightly more complex as a result.
 
 Cleanflight has the concept of a function (MSP, GPS, Serial RX, etc) and a port (VCP, UARTx, SoftSerial x).
-Not all functions can be used on all ports due to hardware pin mapping, conflicting features, hardware and software
+Not all functions can be used on all ports due to hardware pin mapping, conflicting features, hardware, and software
 constraints.
 
 ## Serial port types
@@ -14,11 +14,11 @@ a dedicated USB to UART adapter.  VCP does not 'use' a physical UART port.
 * SoftSerial - A pair of hardware transmit and receive pins with signal detection and generation done in software.
 
 UART is the most efficent in terms of CPU usage.
-SoftSerial is the least efficient and slowest, softserial should only be used for low-bandwith usages, such as telemetry transmission.
+SoftSerial is the least efficient and slowest, SoftSerial should only be used for low-bandwith usages, such as telemetry transmission.
 
 UART ports are sometimes exposed via on-board USB to UART converters, such as the CP2102 as found on the Naze and Flip32 boards.
 If the flight controller does not have an onboard USB to UART converter and doesn't support VCP then an external USB to UART board is required.
-These are sometimes referred to as FTDI boards.  FTDI is just a common manufacter of a chip (the FT232RL) used on USB to UART boards.
+These are sometimes referred to as FTDI boards.  FTDI is just a common manufacturer of a chip (the FT232RL) used on USB to UART boards.
 
 When selecting a USB to UART converter choose one that has DTR exposed as well as a selector for 3.3v and 5v since they are more useful.
 
@@ -31,7 +31,7 @@ Both SoftSerial and UART ports can be connected to your computer via USB to UART
 
 ## Serial Configuration
 
-To make configuration easier common usage scenarios are listed below.
+To make configuration easier, common usage scenarios are listed below.
 
 ### Serial port scenarios
 
@@ -46,11 +46,13 @@ To make configuration easier common usage scenarios are listed below.
 7   GPS-PASSTHROUGH ONLY
 8   MSP ONLY
 9   SMARTPORT TELEMETRY ONLY
+10  BLACKBOX ONLY
+11  MSP, CLI, BLACKBOX, GPS-PASSTHROUGH
 ```
 
 ### Constraints
 
-If the configuration is invalid the serial port configuration will reset to it's defaults and features may be disabled.
+If the configuration is invalid the serial port configuration will reset to its defaults and features may be disabled.
 
 * There must always be a port available to use for MSP
 * There must always be a port available to use for CLI
@@ -58,12 +60,12 @@ If the configuration is invalid the serial port configuration will reset to it's
 * There is a maximum of 2 MSP ports.
 * To use a port for a function, the function's corresponding feature must be also be enabled.
 e.g. after configuring a port for GPS enable the GPS feature.
-* If softserial is used both softserial ports must use the same baudrate.
+* If SoftSerial is used, then all SoftSerial ports must use the same baudrate.
 
 
 ### Examples
 
-All examples assume default configuration (via cli `defaults` command)
+All examples assume default configuration (via CLI `defaults` command)
 
 a) Parallel PWM, GPS and FrSky TELEMETRY (when armed)
 
@@ -78,7 +80,7 @@ set serial_port_2_scenario = 2
 save
 ```
 
-b) Graupner SumD RX SERIAL and HoTT TELEMETRY via Softserial
+b) Graupner SumD RX SERIAL and HoTT TELEMETRY via SoftSerial
 
 - MSP,CLI,GPS PASSTHROUGH on UART1
 - RX SERIAL on UART2
@@ -96,9 +98,9 @@ set serial_port_3_scenario = 4
 save
 ```
 
-c) PPM RX, GPS and FrSky TELEMETRY via softserial
+c) PPM RX, GPS and FrSky TELEMETRY via SoftSerial
 
-- MSP,CLI,GPS PASSTHROUGH on UART1
+- MSP, CLI, GPS PASSTHROUGH on UART1
 - GPS on UART2
 - TELEMETRY on SOFTSERIAL1
 
@@ -113,7 +115,7 @@ set serial_port_2_scenario = 2
 set serial_port_3_scenario = 4
 save
 ```
-d) RX SERIAL, GPS and TELEMETRY (when armed) MSP/CLI via softserial
+d) RX SERIAL, GPS and TELEMETRY (when armed) MSP/CLI via SoftSerial
 
 - GPS on UART1
 - RX SERIAL on UART2
@@ -166,9 +168,9 @@ set telemetry_provider = 1
 save
 ```
 
-g) SBus RX SERIAL 
+g) S.BUS RX SERIAL 
 
-- TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
+- TELEMETRY, MSP, CLI, GPS PASSTHROUGH on UART1
 - RX SERIAL on UART2
 
 ```
@@ -181,7 +183,7 @@ save
 
 h) Spektrum RX SERIAL 
 
-- TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
+- TELEMETRY, MSP, CLI, GPS PASSTHROUGH on UART1
 - RX SERIAL on UART2
 
 ```
@@ -194,9 +196,9 @@ save
 
 i) MSP via USART1 and SoftSerial 1 
 
-- TELEMETRY,MSP,CLI,GPS PASSTHROUGH on UART1
-- MSP on SPFTSERIAL1
-- Both ports will be at 19200 (limited by softserial)
+- TELEMETRY, MSP, CLI, GPS PASSTHROUGH on UART1
+- MSP on SOFTSERIAL1
+- Both ports will be at 19200 (limited by SoftSerial)
 - USART2 can still be used for GPS/SerialRX/Telemetry, etc.
 
 ```

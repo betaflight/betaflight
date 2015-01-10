@@ -87,6 +87,7 @@
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
+#define BLACKBOX
 #define SERIAL_RX
 #define GPS
 #define DISPLAY
