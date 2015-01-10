@@ -59,7 +59,7 @@
 extern int16_t debug[4];
 
 #ifndef UNIT_TEST
-static uint8_t motorCount = 0;
+uint8_t motorCount = 0;
 static int useServo;
 static uint8_t servoCount;
 #endif
