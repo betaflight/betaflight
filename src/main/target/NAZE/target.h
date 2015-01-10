@@ -17,7 +17,8 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considerd misleading on Naze clones like the flip32.
+#define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
+#define USE_HARDWARE_REVISION_DETECTION
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3 // PB3 (LED)
@@ -124,6 +125,7 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 
+#define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE

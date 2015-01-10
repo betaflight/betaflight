@@ -265,6 +265,10 @@ void processRxChannels(void)
 {
     uint8_t chan;
 
+    if (feature(FEATURE_RX_MSP)) {
+        return; // rcData will have already been updated by MSP_SET_RAW_RC
+    }
+
     bool shouldCheckPulse = true;
 
     if (feature(FEATURE_FAILSAFE) && feature(FEATURE_RX_PPM)) {
@@ -341,7 +345,7 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
 
     for (c = input; *c; c++) {
         s = strchr(rcChannelLetters, *c);
-        if (s)
+        if (s && (s < rcChannelLetters + MAX_MAPPABLE_RX_INPUTS))
             rxConfig->rcmap[s - rcChannelLetters] = c - input;
     }
 }

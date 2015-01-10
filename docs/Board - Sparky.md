@@ -3,7 +3,7 @@
 The Sparky is a very low cost and very powerful board.
 
 * 3 hardware serial ports.
-* Built-in serial port inverters which allows SBUS receivers to be used without external inverters.
+* Built-in serial port inverters which allows S.BUS receivers to be used without external inverters.
 * USB (can be used at the same time as the serial ports).
 * 10 PWM outputs.
 * Dedicated PPM/SerialRX input pin.
@@ -17,20 +17,135 @@ Flyable!
 Tested with revision 1 board. 
 
 ## TODO
-* Baro - detection works but getting bad readings, disabled for now.
-* Led Strip
+* Baro - detection works but sending bad readings, disabled for now.
+* LED Strip
 * ADC
 * Sonar
 * Display (via Flex port)
-* Softserial - though having 3 hardware serial ports makes it a little redundant.
+* SoftSerial - though having 3 hardware serial ports makes it a little redundant.
 * Airplane PWM mappings.
 
 # Flashing
 
-## Via USART1
+## Via Device Firmware Upload (DFU, USB) - Windows
 
-Short the bootloader pads and flash using configurator or the st flashloader tool via USART1.
-Unshort bootloader pads after flashing.
+These instructions are for flashing the Sparky board under Windows using DfuSE.
+Credits go to Thomas Shue (Full video of the below steps can be found here: https://www.youtube.com/watch?v=I4yHiRVRY94)
+
+Required Software:
+DfuSE Version 3.0.2 (latest version 3.0.4 causes errors): http://code.google.com/p/multipilot32/downloads/detail?name=DfuSe.rar
+STM VCP Driver 1.4.0: http://www.st.com/web/en/catalog/tools/PF257938
+
+A binary file is required for DFU, not a .hex file.  If one is not included in the release then build one as follows.
+
+```
+Unpack DfuSE and the STM VCP Drivers into a folder on your Hardrive
+Download the latest Sparky release (cleanflight_SPARKY.hex) from:
+https://github.com/cleanflight/cleanflight/releases and store it on your Hardrive
+
+In your DfuSE folder go to BIN and start DfuFileMgr.exe
+Select: "I want to GENERATE a DFUfile from S19,HEX or BIN files" press OK
+Press: "S19 or Hex.." 
+Go to the folder where you saved the cleanflight_SPARKY.hex file, select it  and press open
+(you might need to change the filetype in the DfuSE explorer window to "hex Files (*.hex)" to be able to see the file)
+Press: "Generate" and select the .dfu output file and location
+If all worked well you should see " Success for 'Image for lternate Setting 00 (ST..)'!"
+
+```
+
+Put the device into DFU mode by powering on the sparky with the bootloader pins temporarily bridged.  The only light that should come on is the blue PWR led.
+
+Check the windows device manager to make sure the board is recognized correctly.
+It should show up as "STM Device in DFU mode" under Universal Serial Bus Controllers
+
+If it shows up as "STMicroelectronics Virtual COM" under Ports (COM & LPT) instead then the board is not in DFU mode. Disconnect the board, short the bootloader pins again while connecting the board.
+
+If the board shows up as "STM 32 Bootloader" device in the device manager, the drivers need to be updated manually.
+Select the device in the device manager, press "update drivers", select "manual update drivers" and choose the location where you extracted the STM VCP Drivers, select "let me choose which driver to install". You shoud now be able to select either the STM32 Bootloader driver or the STM in DFU mode driver. Select the later and install.
+
+
+Then flash the binary as below.
+
+```
+In your DfuSE folder go to BIN and start DfuSeDemo.exe
+Select the Sparky Board (STM in DFU Mode) from the Available DFU and compatible HID Devices drop down list
+Press "Choose.." at the bootom of the window and select the .dfu file created in the previous step
+"File correctly loaded" should appear in the status bar
+Press "Upgrade" and confirm with "Yes"
+The status bar will show the upload progress and confirm that the upload is complete at the end
+
+```
+
+Disconnect and reconnect the board from USB and continue to configure it via the Cleanflight configurator as per normal
+
+
+## Via Device Firmware Upload (DFU, USB) - Mac OS X
+
+These instructions are for dfu-util, tested using dfu-util 0.7 for OSX from the OpenTX project.
+
+http://www.open-tx.org/2013/07/15/dfu-util-07-for-mac-taranis-flashing-utility/
+
+A binary file is required for DFU, not a .hex file.  If one is not included in the release then build one as follows.
+
+```
+make TARGET=SPARKY clean
+make TARGET=SPARKY binary
+```
+
+Put the device into DFU mode by powering on the sparky with the bootloader pins temporarily bridged.  The only light that should come on is the blue PWR led.
+
+Run 'dfu-util -l' to make sure the device is listed, as below.
+
+```
+$ dfu-util -l
+dfu-util 0.7
+
+Copyright 2005-2008 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2012 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to dfu-util@lists.gnumonks.org
+
+Found DFU: [0483:df11] devnum=0, cfg=1, intf=0, alt=0, name="@Internal Flash  /0x08000000/128*0002Kg"
+Found DFU: [0483:df11] devnum=0, cfg=1, intf=0, alt=1, name="@Option Bytes  /0x1FFFF800/01*016 e"
+```
+
+Then flash the binary as below.
+
+```
+dfu-util -D obj/cleanflight_SPARKY.bin --alt 0 -R -s 0x08000000
+```
+
+The output should be similar to this:
+
+```
+dfu-util 0.7
+
+Copyright 2005-2008 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2012 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to dfu-util@lists.gnumonks.org
+
+Opening DFU capable USB device... ID 0483:df11
+Run-time device DFU version 011a
+Found DFU: [0483:df11] devnum=0, cfg=1, intf=0, alt=0, name="@Internal Flash  /0x08000000/128*0002Kg"
+Claiming USB DFU Interface...
+Setting Alternate Setting #0 ...
+Determining device status: state = dfuERROR, status = 10
+dfuERROR, clearing status
+Determining device status: state = dfuIDLE, status = 0
+dfuIDLE, continuing
+DFU mode device DFU version 011a
+Device returned transfer size 2048
+No valid DFU suffix signature
+Warning: File has no DFU suffix
+DfuSe interface name: "Internal Flash  "
+Downloading to address = 0x08000000, size = 76764
+......................................
+File downloaded successfully
+can't detach
+Resetting USB to switch back to runtime mode
+
+```
 
 ## Via SWD
 

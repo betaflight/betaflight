@@ -32,8 +32,8 @@
 /* Includes ------------------------------------------------------------------*/
 /* Comment the line below to disable peripheral header file inclusion */
 #include "stm32f30x_adc.h"
-#include "stm32f30x_can.h"
-#include "stm32f30x_crc.h"
+//#include "stm32f30x_can.h"
+//#include "stm32f30x_crc.h"
 #include "stm32f30x_comp.h"
 #include "stm32f30x_dac.h"
 #include "stm32f30x_dbgmcu.h"

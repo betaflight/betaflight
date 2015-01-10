@@ -27,9 +27,9 @@
 /* Uncomment/Comment the line below to enable/disable peripheral header file inclusion */
 #include "stm32f10x_adc.h"
 #include "stm32f10x_bkp.h"
-#include "stm32f10x_can.h"
-#include "stm32f10x_cec.h"
-#include "stm32f10x_crc.h"
+//#include "stm32f10x_can.h"
+//#include "stm32f10x_cec.h"
+//#include "stm32f10x_crc.h"
 #include "stm32f10x_dac.h"
 #include "stm32f10x_dbgmcu.h"
 #include "stm32f10x_dma.h"

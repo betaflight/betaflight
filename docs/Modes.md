@@ -42,9 +42,9 @@ WORK-IN-PROGRESS.  This mode is not reliable yet, please share your experiences 
 
 In this mode the aircraft attempts to return to the GPS position recorded when the aircraft was armed.
 
-This mode should be enabled in conjunction with Angle or Horizion modes and an Altitude hold mode.
+This mode should be enabled in conjunction with Angle or Horizon modes and an Altitude hold mode.
 
-Requires a 3D GPS fix and minimum of 5 satallites in view.
+Requires a 3D GPS fix and minimum of 5 satellites in view.
 
 ## GPS Position Hold
 
@@ -54,15 +54,15 @@ In this mode the aircraft attempts to stay at the same GPS position, as recorded
 
 Disabling and re-enabling the mode will reset the GPS hold position.
 
-This mode should be enabled in conjunction with Angle or Horizion modes and an Altitude hold mode.
+This mode should be enabled in conjunction with Angle or Horizon modes and an Altitude hold mode.
 
-Requires a 3D GPS fix and minimum of 5 satallites in view.
+Requires a 3D GPS fix and minimum of 5 satellites in view.
 
 ## Auxillary Configuration
 
 Spare auxillary receiver channels can be used to enable/disable modes.  Some modes can only be enabled this way.
 
-Configure your transmitter so that switches or dial (pots) send channel data on channels 5 upwards.
+Configure your transmitter so that switches or dial (pots) send channel data on channels 5 and upwards.
 e.g. You can configure a 3 position switch to send 1000 when the switch is low, 1500 when the switch is in the middle and 2000 when the switch is high.
 
 Configure your tx/rx channel limits to use values between 1000 and 2000.
@@ -87,7 +87,9 @@ e.g.
 
 Configure AUX range slot 0 to enable ARM when AUX1 is withing 1700 and 2100.
  
-```aux 0 0 0 1700 2100```
+```
+aux 0 0 0 1700 2100
+```
 
-You can display the aux configuration by using the `aux` command with no arguments.
+You can display the AUX configuration by using the `aux` command with no arguments.
 

@@ -20,7 +20,7 @@ This is to activate the hardware bind plug feature
 
 ## Hardware
 
-The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienWii32 firmware is build. The hardware bind plug is expected between the defined bind pin and ground. 
+The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienWii32 firmware is built. The hardware bind plug is expected between the defined bind pin and ground. 
 
 ## Function
 

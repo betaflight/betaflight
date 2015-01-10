@@ -70,7 +70,7 @@ reason: renamed to `yaw_rate` for consistency
 reason: renamed to `yaw_deadband` for consistency
 
 ### midrc
-reason: renamed to `midrc` for consistency
+reason: renamed to `mid_rc` for consistency
 
 ### mincheck
 reason: renamed to `min_check` for consistency
@@ -100,4 +100,4 @@ reason: renamed to `3d_deadband_throttle` for consistency
 reason: renamed to `3d_neutral` for consistency
 
 ### alt_hold_throttle_neutral
-reason: renamed to 'alt_hold_deadband'
+reason: renamed to `alt_hold_deadband` for consistency

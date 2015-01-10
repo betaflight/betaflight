@@ -45,6 +45,11 @@ extern uint16_t cycleTime;
 
 int16_t heading, magHold;
 int16_t axisPID[3];
+
+#ifdef BLACKBOX
+int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
+#endif
+
 uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 static int32_t errorGyroI[3] = { 0, 0, 0 };
@@ -189,7 +194,8 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     UNUSED(controlRateConfig);
 
     // **** PITCH & ROLL & YAW PID ****
-    prop = max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])); // range [0;500]
+    prop = min(max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])), 500); // range [0;500]
+
     for (axis = 0; axis < 3; axis++) {
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && (axis == FD_ROLL || axis == FD_PITCH)) { // MODE relying on ACC
             // observe max inclination
@@ -246,6 +252,12 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         delta1[axis] = delta;
         DTerm = (deltaSum * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
+
+#ifdef BLACKBOX
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = -DTerm;
+#endif
     }
 }
 
@@ -329,6 +341,12 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
+
+#ifdef BLACKBOX
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = DTerm;
+#endif
     }
 }
 
