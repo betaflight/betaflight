@@ -44,9 +44,10 @@ void ws2811LedStripHardwareInit(void)
 
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,  GPIO_AF_1);
 
-    /* GPIOA Configuration: TIM16 Channel 1 as alternate function push-pull */
+    /* Configuration alternate function push-pull */
     GPIO_InitStructure.GPIO_Pin = WS2811_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(WS2811_GPIO, &GPIO_InitStructure);
