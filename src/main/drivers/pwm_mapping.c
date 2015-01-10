@@ -334,8 +334,15 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #ifdef LED_STRIP_TIMER
         // skip LED Strip output
-        if (init->useLEDStrip && timerHardwarePtr->tim == LED_STRIP_TIMER)
-            continue;
+        if (init->useLEDStrip) {
+            if (timerHardwarePtr->tim == LED_STRIP_TIMER)
+                continue;
+#if defined(WS2811_GPIO) && defined(WS2811_PIN)
+            if (timerHardwarePtr->gpio == WS2811_GPIO && timerHardwarePtr->pin == WS2811_PIN)
+                continue;
+#endif
+        }
+
 #endif
 
 #ifdef STM32F10X

@@ -92,6 +92,36 @@
 #define GPS
 #define DISPLAY
 
+#define LED_STRIP
+#if 1
+// LED strip configuration using PWM motor output pin 5.
+#define LED_STRIP_TIMER TIM16
+
+#define WS2811_GPIO                     GPIOA
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define WS2811_PIN                      Pin_6 // TIM16_CH1
+#define WS2811_PIN_SOURCE               GPIO_PinSource6
+#define WS2811_TIMER                    TIM16
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
+#define WS2811_DMA_CHANNEL              DMA1_Channel3
+#define WS2811_IRQ                      DMA1_Channel3_IRQn
+#endif
+
+#if 0
+// Alternate LED strip pin - FIXME for some reason the DMA IRQ Transfer Complete is never called.
+#define LED_STRIP_TIMER TIM17
+
+#define WS2811_GPIO                     GPIOA
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define WS2811_PIN                      Pin_7 // TIM17_CH1
+#define WS2811_PIN_SOURCE               GPIO_PinSource7
+#define WS2811_TIMER                    TIM17
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM17
+#define WS2811_DMA_CHANNEL              DMA1_Channel7
+#define WS2811_IRQ                      DMA1_Channel7_IRQn
+#endif
+
+
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT GPIOA
