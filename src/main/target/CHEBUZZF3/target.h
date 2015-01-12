@@ -69,7 +69,23 @@
 
 #define GPS
 #define LED_STRIP
+#if 1
 #define LED_STRIP_TIMER TIM16
+#else
+// alternative LED strip configuration, tested working.
+#define LED_STRIP_TIMER TIM1
+
+#define USE_LED_STRIP_ON_DMA1_CHANNEL2
+#define WS2811_GPIO                     GPIOA
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define WS2811_GPIO_AF                  GPIO_AF_6
+#define WS2811_PIN                      GPIO_Pin_8
+#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_TIMER                    TIM1
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+#define WS2811_DMA_CHANNEL              DMA1_Channel2
+#define WS2811_IRQ                      DMA1_Channel2_IRQn
+#endif
 
 #define BLACKBOX
 #define TELEMETRY

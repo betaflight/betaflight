@@ -338,6 +338,7 @@ void DMA1_Channel7_IRQHandler(void)
 #endif
 
 // USART3 Tx DMA Handler
+#ifdef USE_USART2_TX_DMA
 void DMA1_Channel2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort3;
@@ -345,6 +346,8 @@ void DMA1_Channel2_IRQHandler(void)
     DMA_Cmd(DMA1_Channel2, DISABLE);
     handleUsartTxDma(s);
 }
+#endif
+
 
 void usartIrqHandler(uartPort_t *s)
 {

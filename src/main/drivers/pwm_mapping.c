@@ -337,8 +337,8 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         if (init->useLEDStrip) {
             if (timerHardwarePtr->tim == LED_STRIP_TIMER)
                 continue;
-#if defined(WS2811_GPIO) && defined(WS2811_PIN)
-            if (timerHardwarePtr->gpio == WS2811_GPIO && timerHardwarePtr->pin == WS2811_PIN)
+#if defined(STM32F303xC) && defined(WS2811_GPIO) && defined(WS2811_PIN_SOURCE)
+            if (timerHardwarePtr->gpio == WS2811_GPIO && timerHardwarePtr->gpioPinSource == WS2811_PIN_SOURCE)
                 continue;
 #endif
         }

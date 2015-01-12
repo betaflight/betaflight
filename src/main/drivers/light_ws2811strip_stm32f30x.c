@@ -27,9 +27,11 @@
 #include "drivers/light_ws2811strip.h"
 
 #ifndef WS2811_GPIO
+#define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOB
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
-#define WS2811_PIN                      Pin_8 // TIM16_CH1
+#define WS2811_GPIO_AF                  GPIO_AF_1
+#define WS2811_PIN                      GPIO_Pin_8 // TIM16_CH1
 #define WS2811_PIN_SOURCE               GPIO_PinSource8
 #define WS2811_TIMER                    TIM16
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
@@ -48,9 +50,10 @@ void ws2811LedStripHardwareInit(void)
 
     RCC_AHBPeriphClockCmd(WS2811_GPIO_AHB_PERIPHERAL, ENABLE);
 
-    GPIO_PinAFConfig(WS2811_GPIO, WS2811_PIN_SOURCE,  GPIO_AF_1);
+    GPIO_PinAFConfig(WS2811_GPIO, WS2811_PIN_SOURCE,  WS2811_GPIO_AF);
 
     /* Configuration alternate function push-pull */
+    GPIO_StructInit(&GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = WS2811_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -60,9 +63,11 @@ void ws2811LedStripHardwareInit(void)
 
 
     RCC_APB2PeriphClockCmd(WS2811_TIMER_APB2_PERIPHERAL, ENABLE);
+
     /* Compute the prescaler value */
     prescalerValue = (uint16_t) (SystemCoreClock / 24000000) - 1;
     /* Time base configuration */
+    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
     TIM_TimeBaseStructure.TIM_Period = 29; // 800kHz
     TIM_TimeBaseStructure.TIM_Prescaler = prescalerValue;
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
@@ -70,6 +75,7 @@ void ws2811LedStripHardwareInit(void)
     TIM_TimeBaseInit(WS2811_TIMER, &TIM_TimeBaseStructure);
 
     /* PWM1 Mode configuration */
+    TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_Pulse = 0;
@@ -87,6 +93,7 @@ void ws2811LedStripHardwareInit(void)
     /* DMA1 Channel Config */
     DMA_DeInit(WS2811_DMA_CHANNEL);
 
+    DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&WS2811_TIMER->CCR1;
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)ledStripDMABuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
@@ -117,6 +124,7 @@ void ws2811LedStripHardwareInit(void)
     ws2811UpdateStrip();
 }
 
+#ifdef USE_LED_STRIP_ON_DMA1_CHANNEL3
 void DMA1_Channel3_IRQHandler(void)
 {
     if (DMA_GetFlagStatus(DMA1_FLAG_TC3)) {
@@ -125,8 +133,20 @@ void DMA1_Channel3_IRQHandler(void)
         DMA_ClearFlag(DMA1_FLAG_TC3);               // clear DMA1 Channel transfer complete flag
     }
 }
+#endif
 
-#if 0
+#ifdef USE_LED_STRIP_ON_DMA1_CHANNEL2
+void DMA1_Channel2_IRQHandler(void)
+{
+    if (DMA_GetFlagStatus(DMA1_FLAG_TC2)) {
+        ws2811LedDataTransferInProgress = 0;
+        DMA_Cmd(DMA1_Channel2, DISABLE);            // disable DMA channel
+        DMA_ClearFlag(DMA1_FLAG_TC2);               // clear DMA1 Channel transfer complete flag
+    }
+}
+#endif
+
+#ifdef USE_LED_STRIP_ON_DMA1_CHANNEL7
 void DMA1_Channel7_IRQHandler(void)
 {
     if (DMA_GetFlagStatus(DMA1_FLAG_TC7)) {
