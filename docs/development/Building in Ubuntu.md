@@ -18,14 +18,19 @@ sudo add-apt-repository ppa:terry.guo/gcc-arm-embedded
 sudo apt-get update
 ```
 
+For Ubuntu 14.10 (current release, called Utopic Unicorn), you should pin:
+```
+sudo apt-get install gcc-arm-none-eabi=4.9.3.2014q4-0utopic12
+```
+
 For Ubuntu 14.04 (an LTS as of Q1'2015, called Trusty Tahr), you should pin:
 ```
 sudo apt-get install gcc-arm-none-eabi=4.9.3.2014q4-0trusty12
 ```
 
-For Ubuntu 14.10 (current release, called Utopic Unicorn), you should pin:
+For Ubuntu 12.04 (previous LTS, called Precise Penguin), you should pin:
 ```
-sudo apt-get install gcc-arm-none-eabi=4.9.3.2014q4-0utopic12
+sudo apt-get install gcc-arm-none-eabi=4.9.3.2014q4-0precise12
 ```
 
 ## Building on Ubuntu
@@ -62,5 +67,8 @@ git pull
 make clean TARGET=NAZE
 make
 ```
+
+## Notes
+There are compiler issues with at least the Sparky target.
 
 Credit goes to K.C. Budd for doing the long legwork that yielded this very short document.
