@@ -61,6 +61,10 @@ http://www.frsky-rc.com/product/pro.php?pro_id=135
 FrSky X8R 8/16ch Telemetry Receiver
 http://www.frsky-rc.com/product/pro.php?pro_id=105
 
+Futaba R2008SB 2.4GHz S-FHSS
+http://www.futaba-rc.com/systems/futk8100-8j/
+
+
 #### OpenTX S.BUS configuration
 
 If using OpenTX set the transmitter module to D16 mode and select CH1-16 on the transmitter before binding to allow reception
