@@ -48,4 +48,20 @@
 #define LED1_ON
 #endif
 
+
+#ifdef LED2
+#define LED2_TOGGLE              digitalToggle(LED2_GPIO, LED2_PIN);
+#ifndef LED2_INVERTED
+#define LED2_OFF                 digitalHi(LED2_GPIO, LED2_PIN);
+#define LED2_ON                  digitalLo(LED2_GPIO, LED2_PIN);
+#else
+#define LED2_OFF                 digitalLo(LED2_GPIO, LED2_PIN);
+#define LED2_ON                  digitalHi(LED2_GPIO, LED2_PIN);
+#endif // inverted
+#else
+#define LED2_TOGGLE
+#define LED2_OFF
+#define LED2_ON
+#endif
+
 void ledInit(void);

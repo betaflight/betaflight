@@ -18,16 +18,17 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CJM1" // CJMCU
+#define USE_HARDWARE_REVISION_DETECTION
 
 #define FLASH_PAGE_COUNT 64
 #define FLASH_PAGE_SIZE ((uint16_t)0x400)
 
 #define LED0_GPIO GPIOC
-#define LED0_PIN Pin_13 // PC13 (LED)
+#define LED0_PIN Pin_14 // PC14 (LED)
 #define LED0
 #define LED0_PERIPHERAL RCC_APB2Periph_GPIOC
 #define LED1_GPIO GPIOC
-#define LED1_PIN Pin_14 // PC14 (LED)
+#define LED1_PIN Pin_13 // PC13 (LED)
 #define LED1
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOC
 #define LED2_GPIO GPIOC

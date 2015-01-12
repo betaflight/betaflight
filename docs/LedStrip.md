@@ -51,12 +51,12 @@ uses.  e.g. ESC1/BEC1 -> FC, ESC2/BEC2 -> LED strip.   It's also possible to pow
 from another BEC.  Just ensure that the GROUND is the same for all BEC outputs and LEDs.
 
 
-| Target                | Pin | LED Strip | Signal |
-| --------------------- | --- | --------- | -------|
-| Naze/Olimexino        | RC5 | Data In   | PA6    |
-| CC3D                  | ??? | Data In   | PB4    |
-| ChebuzzF3/F3Discovery | PB8 | Data In   | PB8    |
-
+| Target                | Pin  | LED Strip | Signal |
+| --------------------- | ---- | --------- | -------|
+| Naze/Olimexino        | RC5  | Data In   | PA6    |
+| CC3D                  | RCO5 | Data In   | PB4    |
+| ChebuzzF3/F3Discovery | PB8  | Data In   | PB8    |
+| Sparky                | PWM5 | Data In   | PA6    |
 
 Since RC5 is also used for SoftSerial on the Naze/Olimexino it means that you cannot use SoftSerial and led strips at the same time.
 Additionally, since RC5 is also used for Parallel PWM RC input on both the Naze, Chebuzz and STM32F3Discovery targets, led strips

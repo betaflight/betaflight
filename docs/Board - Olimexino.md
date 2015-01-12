@@ -1,6 +1,12 @@
-Olimexino
+# Board - Olimexino
 
-Author: Dominic Clifton
+The Olimexino is a cheap and widely available development board
+
+This board is not recommended for cleanflight development because many of the pins needed are not broken out to header pins.  A better choice for development is the Port103R, EUSTM32F103RB (F1) or the STM32F3Discovery (F3).
+
+## Connections
+
+### RC Input
 
 INPUT
 
@@ -13,6 +19,8 @@ PA7 CH6 - D11 - PWM6 / SOFTSERIAL1 TX
 PB0 CH7 - D27 - PWM7 / SOFTSERIAL2 RX
 PB1 CH8 - D28 - PWM8 / SOFTSERIAL2 TX
 
+### PWM Output
+
 OUTPUT
 PA8  CH1 - PWM9  - D6
 PA11 CH2 - PWM10 - USBDM
@@ -21,8 +29,7 @@ PB7  CH4 - PWM12 - D9
 PB8  CH5 - PWM13 - D14
 PB9  CH6 - PWM14 - D24
 
-
-Olimexino Shield V1 connections
+## Olimexino Shield V1
 
 Headers for a CP2102 for UART1
 

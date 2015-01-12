@@ -56,6 +56,7 @@
 
 #define SENSORS_SET (SENSOR_ACC)
 
+#define BLACKBOX
 #define GPS
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16

@@ -15,40 +15,33 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define TARGET_BOARD_IDENTIFIER "AFF3" // AFro F3
-
 #pragma once
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_12
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-#define BEEP_GPIO   GPIOB
-#define BEEP_PIN    Pin_10
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
+#include "common/axis.h"
+#include <stdint.h>
 
-#define BEEPER
-#define LED0
+typedef struct blackboxValues_t {
+    uint32_t time;
 
-#define GYRO
-#define ACC
+    int32_t axisPID_P[XYZ_AXIS_COUNT], axisPID_I[XYZ_AXIS_COUNT], axisPID_D[XYZ_AXIS_COUNT];
 
-#define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define SERIAL_PORT_COUNT 3
+    int16_t rcCommand[4];
+    int16_t gyroData[XYZ_AXIS_COUNT];
+    int16_t accSmooth[XYZ_AXIS_COUNT];
+    int16_t motor[MAX_SUPPORTED_MOTORS];
+    int16_t servo[MAX_SUPPORTED_SERVOS];
 
-#define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+    uint16_t vbatLatest;
 
-#define SENSORS_SET (SENSOR_ACC)
+#ifdef BARO
+    int32_t BaroAlt;
+#endif
+#ifdef MAG
+    int16_t magADC[XYZ_AXIS_COUNT];
+#endif
+} blackboxValues_t;
 
-#define GPS
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-#define AUTOTUNE
-
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+void initBlackbox(void);
+void handleBlackbox(void);
+void startBlackbox(void);
+void finishBlackbox(void);

@@ -121,7 +121,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   1 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   2 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -1097,7 +1097,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_LED_STRIP_CONFIG:
-        headSerialReply(MAX_LED_STRIP_LENGTH * 4);
+        headSerialReply(MAX_LED_STRIP_LENGTH * 6);
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
             serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
@@ -1145,10 +1145,16 @@ static bool processInCommand(void)
         magHold = read16();
         break;
     case MSP_SET_RAW_RC:
-        // FIXME need support for more than 8 channels
-        for (i = 0; i < 8; i++)
-            rcData[i] = read16();
-        rxMspFrameRecieve();
+        {
+            uint8_t channelCount = currentPort->dataSize / sizeof(uint16_t);
+            if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
+                headSerialError(0);
+            } else {
+                for (i = 0; i < channelCount; i++)
+                    rcData[i] = read16();
+                rxMspFrameRecieve();
+            }
+        }
         break;
     case MSP_SET_ACC_TRIM:
         currentProfile->accelerometerTrims.values.pitch = read16();
@@ -1435,22 +1441,29 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_LED_STRIP_CONFIG:
-        for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
-            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-            uint16_t mask;
-            // currently we're storing directions and functions in a uint16 (flags)
-            // the msp uses 2 x uint16_t to cater for future expansion
-            mask = read16();
-            ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
+        {
+            uint8_t ledCount = currentPort->dataSize / 6;
+            if (ledCount != MAX_LED_STRIP_LENGTH) {
+                headSerialError(0);
+                break;
+            }
+            for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+                ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+                uint16_t mask;
+                // currently we're storing directions and functions in a uint16 (flags)
+                // the msp uses 2 x uint16_t to cater for future expansion
+                mask = read16();
+                ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
 
-            mask = read16();
-            ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
+                mask = read16();
+                ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
 
-            mask = read8();
-            ledConfig->xy = CALCULATE_LED_X(mask);
+                mask = read8();
+                ledConfig->xy = CALCULATE_LED_X(mask);
 
-            mask = read8();
-            ledConfig->xy |= CALCULATE_LED_Y(mask);
+                mask = read8();
+                ledConfig->xy |= CALCULATE_LED_Y(mask);
+            }
         }
         break;
 #endif
