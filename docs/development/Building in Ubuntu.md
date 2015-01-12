@@ -3,8 +3,12 @@
 Building for Ubuntu platform is remarkably easy. The only trick to understand is that the Ubuntu toolchain,
 which they are downstreaming from Debian, is not compatible with Cleanflight. We suggest that you take an
 alternative PPA from Terry Guo, found here:
- 
 https://launchpad.net/~terry.guo/+archive/ubuntu/gcc-arm-embedded
+
+This PPA has several compiler versions and platforms available. For many hardware platforms (notably Naze)
+the 4.9.3 compiler will work fine. For some, older compiler 4.8 (notably Sparky) is more appropriate. We
+suggest you build with 4.9.3 first, and try to see if you can connect to the CLI or run the Configurator.
+If you cannot, please see the section below for further hints on what you might do.
 
 ## Setup GNU ARM Toolchain
 
@@ -56,6 +60,20 @@ $ ls -la obj/cleanflight_NAZE.hex
 
 You can use the Cleanflight-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
 
+## Bricked/Bad build?
+
+Users have reported that the 4.9.3 compiler for ARM produces bad builds, for example on the Sparky hardware platform.
+It is very likely that using an older compiler would be fine -- Terry happens to have also a 4.8 2014q2 build in his
+PPA - to install this, you can fetch the `.deb` directly:
+http://ppa.launchpad.net/terry.guo/gcc-arm-embedded/ubuntu/pool/main/g/gcc-arm-none-eabi/
+
+and use `dpkg` to install:
+```
+sudo dpkg -i gcc-arm-none-eabi_4-8-2014q2-0saucy9_amd64.deb
+```
+
+Make sure to remove `obj/` and `make clean`, before building again.
+
 ## Updating and rebuilding
 
 Navigate to the local cleanflight repository and use the following steps to pull the latest changes and rebuild your version of cleanflight:
@@ -68,7 +86,4 @@ make clean TARGET=NAZE
 make
 ```
 
-## Notes
-There are compiler issues with at least the Sparky target.
-
-Credit goes to K.C. Budd for doing the long legwork that yielded this very short document.
+Credit goes to K.C. Budd, AKfreak for testing, and pulsar for doing the long legwork that yielded this very short document.
