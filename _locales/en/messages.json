@@ -640,13 +640,13 @@
         "message": "Yaw Rate Adjustment"
     },
     "adjustmentsFunction6": {
-        "message": "Pitch P Adjustment"
+        "message": "Pitch & Roll P Adjustment"
     },
     "adjustmentsFunction7": {
-        "message": "Pitch I Adjustment"
+        "message": "Pitch & Roll I Adjustment"
     },
     "adjustmentsFunction8": {
-        "message": "Pitch D Adjustment"
+        "message": "Pitch & Roll D Adjustment"
     },
     "adjustmentsFunction9": {
         "message": "Yaw P Adjustment"
