@@ -215,7 +215,8 @@ static const blackboxGPSFieldDefinition_t blackboxGpsGFields[] = {
     {"GPS_coord[0]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB)},
     {"GPS_coord[1]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB)},
     {"GPS_altitude",  UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"GPS_speed",     UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)}
+    {"GPS_speed",     UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
+    {"GPS_ground_course",UNSIGNED, PREDICT(0),       ENCODING(UNSIGNED_VB)}
 };
 
 // GPS home frame
@@ -942,6 +943,7 @@ static void writeGPSFrame()
     writeSignedVB(GPS_coord[1] - gpsHistory.GPS_home[1]);
     writeUnsignedVB(GPS_altitude);
     writeUnsignedVB(GPS_speed);
+    writeUnsignedVB(GPS_ground_course);
 
     gpsHistory.GPS_numSat = GPS_numSat;
     gpsHistory.GPS_coord[0] = GPS_coord[0];
