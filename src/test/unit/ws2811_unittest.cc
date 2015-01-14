@@ -39,7 +39,7 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue);
 
 TEST(WS2812, updateDMABuffer) {
     // given
-    rgbColor24bpp_t color1 = {0xFF,0xAA,0x55};
+    rgbColor24bpp_t color1 = { .raw = {0xFF,0xAA,0x55} };
 
     // and
     dmaBufferOffset = 0;

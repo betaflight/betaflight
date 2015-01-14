@@ -185,6 +185,7 @@ static const modeColorIndexes_t angleModeColors = {
         COLOR_ORANGE
 };
 
+#ifdef MAG
 static const modeColorIndexes_t magModeColors = {
         COLOR_MINT_GREEN,
         COLOR_DARK_VIOLET,
@@ -193,6 +194,7 @@ static const modeColorIndexes_t magModeColors = {
         COLOR_BLUE,
         COLOR_ORANGE
 };
+#endif
 
 static const modeColorIndexes_t baroModeColors = {
         COLOR_LIGHT_BLUE,
@@ -788,9 +790,9 @@ void updateLedStrip(void)
     ws2811UpdateStrip();
 }
 
-bool parseColor(uint8_t index, char *colorConfig)
+bool parseColor(uint8_t index, const char *colorConfig)
 {
-    char *remainingCharacters = colorConfig;
+    const char *remainingCharacters = colorConfig;
 
     hsvColor_t *color = &colors[index];
 

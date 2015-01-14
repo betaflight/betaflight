@@ -23,13 +23,23 @@ USER_INCLUDE_DIR = $(USER_DIR)
 
 OBJECT_DIR = ../../obj/test
 
-# Flags passed to the preprocessor.
-# Set Google Test's header directory as a system directory, such that
-# the compiler doesn't generate warnings in Google Test headers.
-CPPFLAGS += -isystem $(GTEST_DIR)/inc
+COMMON_FLAGS = \
+	-g \
+	-Wall \
+	-Wextra \
+	-pthread \
+	-ggdb3 \
+	-O0 \
+	-DUNIT_TEST \
+	-isystem $(GTEST_DIR)/inc
+
+# Flags passed to the C compiler.
+C_FLAGS = $(COMMON_FLAGS) \
+	-std=gnu99
 
 # Flags passed to the C++ compiler.
-CXXFLAGS += -g -Wall -Wextra -pthread -ggdb3 -O0 -DUNIT_TEST
+CXX_FLAGS = $(COMMON_FLAGS) \
+	-std=gnu++98
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
@@ -66,12 +76,12 @@ GTEST_SRCS_ = $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/inc/gtest/*.h $(GTEST_HEADERS)
 # compiles fast and for ordinary users its source rarely changes.
 $(OBJECT_DIR)/gtest-all.o : $(GTEST_SRCS_)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
+	$(CXX) $(CXX_FLAGS) -I$(GTEST_DIR) -c \
             $(GTEST_DIR)/src/gtest-all.cc -o $@
 
 $(OBJECT_DIR)/gtest_main.o : $(GTEST_SRCS_)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
+	$(CXX) $(CXX_FLAGS) -I$(GTEST_DIR) -c \
             $(GTEST_DIR)/src/gtest_main.cc -o $@
 
 $(OBJECT_DIR)/gtest.a : $(OBJECT_DIR)/gtest-all.o
@@ -96,12 +106,12 @@ $(OBJECT_DIR)/common/maths.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
 
 $(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
 
 $(OBJECT_DIR)/battery_unittest.o : \
 	$(TEST_DIR)/battery_unittest.cc \
@@ -109,7 +119,7 @@ $(OBJECT_DIR)/battery_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/battery_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/battery_unittest.cc -o $@
 
 battery_unittest : \
 	$(OBJECT_DIR)/sensors/battery.o \
@@ -117,7 +127,7 @@ battery_unittest : \
 	$(OBJECT_DIR)/battery_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 $(OBJECT_DIR)/flight/imu.o : \
 	$(USER_DIR)/flight/imu.c \
@@ -125,7 +135,7 @@ $(OBJECT_DIR)/flight/imu.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/imu.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/imu.c -o $@
 
 $(OBJECT_DIR)/flight_imu_unittest.o : \
 	$(TEST_DIR)/flight_imu_unittest.cc \
@@ -133,7 +143,7 @@ $(OBJECT_DIR)/flight_imu_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_imu_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_imu_unittest.cc -o $@
 
 flight_imu_unittest : \
 	$(OBJECT_DIR)/flight/imu.o \
@@ -141,7 +151,7 @@ flight_imu_unittest : \
 	$(OBJECT_DIR)/flight_imu_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
 
@@ -151,7 +161,7 @@ $(OBJECT_DIR)/flight/altitudehold.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/altitudehold.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/altitudehold.c -o $@
 
 $(OBJECT_DIR)/altitude_hold_unittest.o : \
 	$(TEST_DIR)/altitude_hold_unittest.cc \
@@ -159,14 +169,14 @@ $(OBJECT_DIR)/altitude_hold_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/altitude_hold_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/altitude_hold_unittest.cc -o $@
 
 altitude_hold_unittest : \
 	$(OBJECT_DIR)/flight/altitudehold.o \
 	$(OBJECT_DIR)/altitude_hold_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
 $(OBJECT_DIR)/flight/gps_conversion.o : \
@@ -175,7 +185,7 @@ $(OBJECT_DIR)/flight/gps_conversion.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/gps_conversion.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/gps_conversion.c -o $@
 
 $(OBJECT_DIR)/gps_conversion_unittest.o : \
 	$(TEST_DIR)/gps_conversion_unittest.cc \
@@ -183,14 +193,14 @@ $(OBJECT_DIR)/gps_conversion_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/gps_conversion_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/gps_conversion_unittest.cc -o $@
 
 gps_conversion_unittest : \
 	$(OBJECT_DIR)/flight/gps_conversion.o \
 	$(OBJECT_DIR)/gps_conversion_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
 
@@ -200,7 +210,7 @@ $(OBJECT_DIR)/telemetry/hott.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/hott.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/hott.c -o $@
 
 $(OBJECT_DIR)/telemetry_hott_unittest.o : \
 	$(TEST_DIR)/telemetry_hott_unittest.cc \
@@ -208,7 +218,7 @@ $(OBJECT_DIR)/telemetry_hott_unittest.o : \
 	$(GTEST_HEADERS)
 	
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_hott_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_hott_unittest.cc -o $@
 
 telemetry_hott_unittest : \
 	$(OBJECT_DIR)/telemetry/hott.o \
@@ -216,7 +226,7 @@ telemetry_hott_unittest : \
 	$(OBJECT_DIR)/flight/gps_conversion.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
 
@@ -226,7 +236,7 @@ $(OBJECT_DIR)/io/rc_controls.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
 
 $(OBJECT_DIR)/rc_controls_unittest.o : \
 	$(TEST_DIR)/rc_controls_unittest.cc \
@@ -234,14 +244,14 @@ $(OBJECT_DIR)/rc_controls_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rc_controls_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rc_controls_unittest.cc -o $@
 
 rc_controls_unittest : \
 	$(OBJECT_DIR)/io/rc_controls.o \
 	$(OBJECT_DIR)/rc_controls_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
 $(OBJECT_DIR)/io/ledstrip.o : \
@@ -250,7 +260,7 @@ $(OBJECT_DIR)/io/ledstrip.o : \
 	$(GTEST_HEADERS)
 	
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/ledstrip.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/ledstrip.c -o $@
 
 $(OBJECT_DIR)/ledstrip_unittest.o : \
 	$(TEST_DIR)/ledstrip_unittest.cc \
@@ -258,14 +268,14 @@ $(OBJECT_DIR)/ledstrip_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ledstrip_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ledstrip_unittest.cc -o $@
 
 ledstrip_unittest : \
 	$(OBJECT_DIR)/io/ledstrip.o \
 	$(OBJECT_DIR)/ledstrip_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 
 
@@ -275,7 +285,7 @@ $(OBJECT_DIR)/drivers/light_ws2811strip.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/light_ws2811strip.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/light_ws2811strip.c -o $@
 
 $(OBJECT_DIR)/ws2811_unittest.o : \
 	$(TEST_DIR)/ws2811_unittest.cc \
@@ -283,13 +293,13 @@ $(OBJECT_DIR)/ws2811_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ws2811_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ws2811_unittest.cc -o $@
 
 ws2811_unittest : \
 	$(OBJECT_DIR)/drivers/light_ws2811strip.o \
 	$(OBJECT_DIR)/ws2811_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 

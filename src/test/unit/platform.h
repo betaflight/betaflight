@@ -17,6 +17,7 @@
 
 #pragma once
 
+#define MAG
 #define BARO
 #define GPS
 #define TELEMETRY

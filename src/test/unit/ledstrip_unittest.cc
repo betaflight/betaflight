@@ -315,7 +315,7 @@ TEST(ColorTest, parseColor)
             { 333,  22,   1 }
     };
 
-    char *testColors[TEST_COLOR_COUNT] = {
+    const char *testColors[TEST_COLOR_COUNT] = {
             "0,0,0",
             "1,1,1",
             "359,255,255",

@@ -36,7 +36,7 @@ TEST(GpsConversionTest, GPSCoordToDegrees_BadString)
 }
 
 typedef struct gpsConversionExpectation_s {
-    char *coord;
+    const char *coord;
     uint32_t degrees;
 } gpsConversionExpectation_t;
 
