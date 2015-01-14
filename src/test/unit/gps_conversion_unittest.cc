@@ -18,7 +18,10 @@
 #include <stdint.h>
 
 #include <limits.h>
-#include "flight/gps_conversion.h"
+
+extern "C" {
+    #include "flight/gps_conversion.h"
+}
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
