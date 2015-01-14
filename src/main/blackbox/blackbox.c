@@ -74,7 +74,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#include "blackbox_fielddefs.h"
 #include "blackbox.h"
 
 #define BLACKBOX_BAUDRATE 115200
@@ -1125,10 +1124,49 @@ static int blackboxWriteSysinfo(int xmitIndex)
     return xmitIndex + 1;
 }
 
+/**
+ * Write the given event to the log immediately
+ */
+void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
+{
+    if (blackboxState != BLACKBOX_STATE_RUNNING)
+        return;
+
+    //Shared header for event frames
+    blackboxWrite('E');
+    blackboxWrite(event);
+
+    //Now serialize the data for this specific frame type
+    switch (event) {
+        case FLIGHT_LOG_EVENT_SYNC_BEEP:
+            writeUnsignedVB(data->syncBeep.time);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START:
+            blackboxWrite(data->autotuneCycleStart.phase);
+            blackboxWrite(data->autotuneCycleStart.cycle);
+            blackboxWrite(data->autotuneCycleStart.p);
+            blackboxWrite(data->autotuneCycleStart.i);
+            blackboxWrite(data->autotuneCycleStart.d);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
+            blackboxWrite(data->autotuneCycleResult.overshot);
+            blackboxWrite(data->autotuneCycleStart.p);
+            blackboxWrite(data->autotuneCycleStart.i);
+            blackboxWrite(data->autotuneCycleStart.d);
+        break;
+        case FLIGHT_LOG_EVENT_LOG_END:
+            blackboxPrint("That's all folks!");
+            blackboxWrite(0);
+        break;
+    }
+}
+
 // Beep the buzzer and write the current time to the log as a synchronization point
 static void blackboxPlaySyncBeep()
 {
-    uint32_t now = micros();
+    flightLogEvent_syncBeep_t eventData;
+
+    eventData.time = micros();
 
     /*
      * The regular beep routines aren't going to work for us, because they queue up the beep to be executed later.
@@ -1139,10 +1177,7 @@ static void blackboxPlaySyncBeep()
     // Have the regular beeper code turn off the beep for us eventually, since that's not timing-sensitive
     queueConfirmationBeep(1);
 
-    blackboxWrite('E');
-    blackboxWrite(FLIGHT_LOG_EVENT_SYNC_BEEP);
-
-    writeUnsignedVB(now);
+    blackboxLogEvent(FLIGHT_LOG_EVENT_SYNC_BEEP, (flightLogEventData_t *) &eventData);
 }
 
 void handleBlackbox(void)
@@ -1203,9 +1238,9 @@ void handleBlackbox(void)
                 headerXmitIndex = result;
         break;
         case BLACKBOX_STATE_PRERUN:
-            blackboxPlaySyncBeep();
-
             blackboxSetState(BLACKBOX_STATE_RUNNING);
+
+            blackboxPlaySyncBeep();
         break;
         case BLACKBOX_STATE_RUNNING:
             // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
