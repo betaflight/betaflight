@@ -267,6 +267,8 @@ static struct {
     } u;
 } xmitState;
 
+static uint32_t blackboxConditionCache;
+
 static uint32_t blackboxIteration;
 static uint32_t blackboxPFrameIndex, blackboxIFrameIndex;
 
@@ -582,7 +584,7 @@ static void writeTag8_8SVB(int32_t *values, int valueCount)
     }
 }
 
-static bool testBlackboxCondition(FlightLogFieldCondition condition)
+static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 {
     switch (condition) {
         case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
@@ -597,18 +599,9 @@ static bool testBlackboxCondition(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
             return motorCount >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
+        
         case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
             return masterConfig.mixerMode == MIXER_TRI;
-
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_0:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_1:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_2:
-            return currentProfile->pidProfile.P8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_0] != 0;
-
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_0:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_1:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_2:
-            return currentProfile->pidProfile.I8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_0] != 0;
 
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
@@ -637,6 +630,23 @@ static bool testBlackboxCondition(FlightLogFieldCondition condition)
         default:
             return false;
     }
+}
+
+static void blackboxBuildConditionCache()
+{
+    FlightLogFieldCondition cond;
+
+    blackboxConditionCache = 0;
+
+    for (cond = FLIGHT_LOG_FIELD_CONDITION_FIRST; cond <= FLIGHT_LOG_FIELD_CONDITION_LAST; cond++) {
+        if (testBlackboxConditionUncached(cond))
+            blackboxConditionCache |= 1 << cond;
+    }
+}
+
+static bool testBlackboxCondition(FlightLogFieldCondition condition)
+{
+    return (blackboxConditionCache & (1 << condition)) != 0;
 }
 
 static void blackboxSetState(BlackboxState newState)
@@ -907,6 +917,13 @@ void startBlackbox(void)
         vbatReference = vbatLatest;
 
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
+
+        /*
+         * We use conditional tests to decide whether or not certain fields should be logged. Since our headers
+         * must always agree with the logged data, the results of these tests must not change during logging. So
+         * cache those now.
+         */
+        blackboxBuildConditionCache();
 
         blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
     }
