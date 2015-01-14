@@ -27,7 +27,59 @@ Tested with revision 1 board.
 
 # Flashing
 
-## Via Device Firmware Upload (DFU, USB)
+## Via Device Firmware Upload (DFU, USB) - Windows
+
+These instructions are for flashing the Sparky board under Windows using DfuSE.
+Credits go to Thomas Shue (Full video of the below steps can be found here: https://www.youtube.com/watch?v=I4yHiRVRY94)
+
+Required Software:
+DfuSE Version 3.0.2 (latest version 3.0.4 causes errors): http://code.google.com/p/multipilot32/downloads/detail?name=DfuSe.rar
+STM VCP Driver 1.4.0: http://www.st.com/web/en/catalog/tools/PF257938
+
+A binary file is required for DFU, not a .hex file.  If one is not included in the release then build one as follows.
+
+```
+Unpack DfuSE and the STM VCP Drivers into a folder on your Hardrive
+Download the latest Sparky release (cleanflight_SPARKY.hex) from:
+https://github.com/cleanflight/cleanflight/releases and store it on your Hardrive
+
+In your DfuSE folder go to BIN and start DfuFileMgr.exe
+Select: "I want to GENERATE a DFUfile from S19,HEX or BIN files" press OK
+Press: "S19 or Hex.." 
+Go to the folder where you saved the cleanflight_SPARKY.hex file, select it  and press open
+(you might need to change the filetype in the DfuSE explorer window to "hex Files (*.hex)" to be able to see the file)
+Press: "Generate" and select the .dfu output file and location
+If all worked well you should see " Success for 'Image for lternate Setting 00 (ST..)'!"
+
+```
+
+Put the device into DFU mode by powering on the sparky with the bootloader pins temporarily bridged.  The only light that should come on is the blue PWR led.
+
+Check the windows device manager to make sure the board is recognized correctly.
+It should show up as "STM Device in DFU mode" under Universal Serial Bus Controllers
+
+If it shows up as "STMicroelectronics Virtual COM" under Ports (COM & LPT) instead then the board is not in DFU mode. Disconnect the board, short the bootloader pins again while connecting the board.
+
+If the board shows up as "STM 32 Bootloader" device in the device manager, the drivers need to be updated manually.
+Select the device in the device manager, press "update drivers", select "manual update drivers" and choose the location where you extracted the STM VCP Drivers, select "let me choose which driver to install". You shoud now be able to select either the STM32 Bootloader driver or the STM in DFU mode driver. Select the later and install.
+
+
+Then flash the binary as below.
+
+```
+In your DfuSE folder go to BIN and start DfuSeDemo.exe
+Select the Sparky Board (STM in DFU Mode) from the Available DFU and compatible HID Devices drop down list
+Press "Choose.." at the bootom of the window and select the .dfu file created in the previous step
+"File correctly loaded" should appear in the status bar
+Press "Upgrade" and confirm with "Yes"
+The status bar will show the upload progress and confirm that the upload is complete at the end
+
+```
+
+Disconnect and reconnect the board from USB and continue to configure it via the Cleanflight configurator as per normal
+
+
+## Via Device Firmware Upload (DFU, USB) - Mac OS X
 
 These instructions are for dfu-util, tested using dfu-util 0.7 for OSX from the OpenTX project.
 

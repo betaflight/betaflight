@@ -345,7 +345,7 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
 
     for (c = input; *c; c++) {
         s = strchr(rcChannelLetters, *c);
-        if (s)
+        if (s && (s < rcChannelLetters + MAX_MAPPABLE_RX_INPUTS))
             rxConfig->rcmap[s - rcChannelLetters] = c - input;
     }
 }

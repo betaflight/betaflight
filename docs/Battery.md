@@ -47,6 +47,8 @@ Configure min/max cell voltages using the following CLI setting:
 
 `vbat_max_cell_voltage` - maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, i.e. 43 = 4.3V
 
+`set vbat_warning_cell_voltage` - warning voltage per cell, this triggers battery out alarms, in 0.1V units, i.e. 34 = 3.4V
+
 `vbat_min_cell_voltage` - minimum voltage per cell, this triggers battery out alarms, in 0.1V units, i.e. 33 = 3.3V
 
 e.g.
@@ -54,6 +56,7 @@ e.g.
 ```
 set vbat_scale = 110
 set vbat_max_cell_voltage = 43
+set vbat_warning_cell_voltage = 34
 set vbat_min_cell_voltage = 33
 ```
 
@@ -75,7 +78,7 @@ Configure capacity using the `battery_capacity` setting, which takes a value in 
 
 The current meter may need to be configured so that the value read at the ADC input matches actual current draw.  Just like you need a voltmeter to correctly calibrate your voltage reading you also need an ammeter to calibrate your current sensor.
 
-Use the following settings to adjust calibrtion. 
+Use the following settings to adjust calibration. 
 
 `current_meter_scale`
 `current_meter_offset`

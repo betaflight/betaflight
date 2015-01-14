@@ -9,8 +9,8 @@ This board does not have an onboard USB-Serial converter, so an external adapter
 
 | Revision | Notes |
 | -------- | ----- |
-| 1        | no boot jumper at the edge of the board. |
-| 2        | identified by no boot jumper pads at the edge of the board. |
+| 1        | No boot jumper pads by LED1. Uses blue and red LEDs |
+| 2        | Boot jumper pads presoldered with pins and a jumper by LED1. Uses green and red LEDs. |
 
 Version 2 boards are supported from firmware v1.4.0 onwards, do NOT flash earlier versions to version 2 boards.
 
@@ -24,8 +24,10 @@ Version 2 boards are supported from firmware v1.4.0 onwards, do NOT flash earlie
 | PA1       | RC Channel 2             |
 | PA2       | RC Channel 3 / USART2 TX |
 | PA3       | RC Channel 4 / USART2 RX |
-| VCC       | Power +3.3v              |
+| VCC       | Power (See note)         |
 | GND       | Ground                   |
+
+NOTE: The VCC RX Pin is not regulated and will supply what ever voltage is provided to the board, this will mean it'll provide 5v if a 5v serial connection is used. Be careful if you are using a voltage sensitive RX. A regulated 3.3v supply can be found on the top pin of column 1, just below the RX GND pin.
 
 ## Serial Connections
 
@@ -108,9 +110,31 @@ To flash the board:
  * Click "Flash Firmware"
  * You should see "Programming: SUCCESSFUL" in the log box
  * Click "Connect" -> This should open the "Initial Setup" tab and you should see sensor data from the quad shown
- * Unplug the quad and solder across the 2 "BOOT0" pins - This prevents the board from going into bootloader mode on next
-   boot, if anything goes wrong, simply unsolder these pins and the bootloader will start, allowing you to reflash. You cannot
+ * Unplug the quad and short the 2 "BOOT0" pins. Revision 1 boards require this to be soldered, revision 2 boards can connect the included jumper to the two pre-soldered pins - This prevents the board from going into bootloader mode on next
+   boot, if anything goes wrong, simply disconnect these two pins and the bootloader will start, allowing you to reflash. You cannot
    overwrite the bootloader.
+
+# Charging
+
+The CJMCU has on it a TP4056 Lithium battery charging IC that can charge a 1S battery at 1A using a provided 5v supply attached to the 5v serial pin.
+
+To charge an attached battery:
+ * Set the power switch to OFF
+ * Set the charge switch to CHG
+ * Plug in a 1S battery to the battery pins
+ * Plug in a 5v supply to the 5v serial pins
+
+The charger will finish when either the battery reaches 4.2v, or the battery's voltage is greater than the charger's input voltage.
+
+The two nearby LEDs will show the status of charging:
+
+| Status             | Green LED | Red LED   |
+|--------------------|-----------|-----------|
+| Charging           | On        | Off       |
+| Finished           | Off       | On        |
+| 5v not connected   | Off       | Off       |
+| Batt not connected | Flashing  | On        |
+
 
 # Helpful Hints
 
