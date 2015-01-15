@@ -311,9 +311,6 @@ void mwDisarm(void)
 #ifdef BLACKBOX
         if (feature(FEATURE_BLACKBOX)) {
             finishBlackbox();
-            if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
-                mspAllocateSerialPorts(&masterConfig.serialConfig);
-            }
         }
 #endif
     }
