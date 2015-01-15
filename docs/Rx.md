@@ -86,6 +86,11 @@ These receivers are reported working:
 XG14 14ch DMSS System w/RG731BX XBus Receiver
 http://www.jramericas.com/233794/JRP00631/
 
+There exist a remote receiver made for small BNF-models like the Align T-Rex 150 helicopter. The code also supports using the Align DMSS RJ01 receiver directly with the cleanflight software.
+To use this receiver you must power it with 3V from the hardware, and then connect the serial line as other serial RX receivers.
+In order for this receiver to work, you need to specify the XBUS_MODE_B_RJ01 for serialrx_provider. Note that you need to set your radio mode for XBUS "MODE B" also for this receiver to work.
+Receiver name: Align DMSS RJ01 (HER15001)
+
 ### SUMD
 
 16 channels via serial currently supported.
@@ -135,7 +140,7 @@ For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as 
 | SUMD               | 3     |
 | SUMH               | 4     |
 | XBUS_MODE_B        | 5     |
-
+| XBUS_MODE_B_RJ01   | 6     |
 
 ### PPM/PWM input filtering.
 
