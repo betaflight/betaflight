@@ -16,6 +16,8 @@ This project could really do with some functional tests which test the behaviour
 
 All pull requests to add/improve the testability of the code or testing methods are highly sought!
 
+Note: Tests are written in C++ and linked with with firmware's C code.
+
 ##General principals
 
 1. Name everything well.
@@ -48,22 +50,3 @@ You can run them on the command line to execute the tests and to see the test re
 You can also step-debug the tests in eclipse and you can use the GoogleTest test runner to make building and re-running the tests simple.
 
 The tests are currently always compiled with debugging information enabled, there may be additional warnings, if you see any warnings please attempt to fix them and submit pull requests with the fixes.
-
-
-##TODO
-
-* Test OpenLRSNG's RSSI PWM on AUX5-8.
-* Add support for UART3/4 on STM32F3.
-* Cleanup validateAndFixConfig and pwm_mapping.c to use some kind of feature/timer/io pin mapping to remove #ifdef
-* Split RX config into RC config and RX config.
-* Enabling/disabling features should not take effect until reboot since.  Main loop executes and uses new flags as they are set in the cli but
-appropriate init methods will not have been called which results in undefined behaviour and could damage connected devices - this is a legacy
-problem from baseflight.
-* Solve all the naze rev4/5 HSE_VALUE == 8000000/1200000 checking, the checks should only apply to the naze32 target.  See system_stm32f10x.c/SetSysClock().
-
-##Known Issues
-
-* Softserial RX on STM32F3 does not work. TX is fine.
-* Dynamic throttle PID does not work with new pid controller.
-* Autotune does not work yet with with new pid controller.
-

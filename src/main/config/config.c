@@ -445,6 +445,11 @@ static void resetConf(void)
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
 #endif
 
+#ifdef BLACKBOX
+    masterConfig.blackbox_rate_num = 1;
+    masterConfig.blackbox_rate_denom = 1;
+#endif
+
     // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
@@ -569,28 +574,37 @@ void activateConfig(void)
 
     activateControlRateConfig();
 
-    useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+    useRcControlsConfig(
+        currentProfile->modeActivationConditions,
+        &masterConfig.escAndServoConfig,
+        &currentProfile->pidProfile
+    );
 
     useGyroConfig(&masterConfig.gyroConfig);
+
 #ifdef TELEMETRY
     useTelemetryConfig(&masterConfig.telemetryConfig);
 #endif
+
     setPIDController(currentProfile->pidController);
+
 #ifdef GPS
     gpsUseProfile(&currentProfile->gpsProfile);
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
+
     useFailsafeConfig(&currentProfile->failsafeConfig);
     setAccelerationTrims(&masterConfig.accZero);
+
     mixerUseConfigs(
-            currentProfile->servoConf,
-            &masterConfig.flight3DConfig,
-            &masterConfig.escAndServoConfig,
-            &currentProfile->mixerConfig,
-            &masterConfig.airplaneConfig,
-            &masterConfig.rxConfig,
-            &currentProfile->gimbalConfig
-            );
+        currentProfile->servoConf,
+        &masterConfig.flight3DConfig,
+        &masterConfig.escAndServoConfig,
+        &currentProfile->mixerConfig,
+        &masterConfig.airplaneConfig,
+        &masterConfig.rxConfig,
+        &currentProfile->gimbalConfig
+    );
 
     imuRuntimeConfig.gyro_cmpf_factor = masterConfig.gyro_cmpf_factor;
     imuRuntimeConfig.gyro_cmpfm_factor = masterConfig.gyro_cmpfm_factor;
@@ -598,8 +612,18 @@ void activateConfig(void)
     imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
-    configureImu(&imuRuntimeConfig, &currentProfile->pidProfile, &currentProfile->accDeadband);
-    configureAltitudeHold(&currentProfile->pidProfile, &currentProfile->barometerConfig, &currentProfile->rcControlsConfig, &masterConfig.escAndServoConfig);
+    configureImu(
+        &imuRuntimeConfig,
+        &currentProfile->pidProfile,
+        &currentProfile->accDeadband
+    );
+
+    configureAltitudeHold(
+        &currentProfile->pidProfile,
+        &currentProfile->barometerConfig,
+        &currentProfile->rcControlsConfig,
+        &masterConfig.escAndServoConfig
+    );
 
     calculateThrottleAngleScale(currentProfile->throttle_correction_angle);
     calculateAccZLowPassFilterRCTimeConstant(currentProfile->accz_lpf_cutoff);

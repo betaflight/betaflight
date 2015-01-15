@@ -43,6 +43,7 @@
 #define SENSORS_SET (SENSOR_ACC)
 
 #define GPS
+#define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
