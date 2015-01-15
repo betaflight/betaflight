@@ -15,7 +15,7 @@ __Due to ongoing development, the fact that the GUI cannot yet backup all your s
 
 ## GUI
 
-![Cleanflight Gui](cleanflight-gui.png)
+![Cleanflight Gui](Screenshots/cleanflight-gui.png)
 
 The GUI tool is the preferred way of configuration.  The GUI tool also includes a terminal which
 can be used to interact with the CLI.
