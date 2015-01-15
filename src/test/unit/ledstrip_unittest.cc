@@ -19,37 +19,40 @@
 
 #include <limits.h>
 
-#include "build_config.h"
+extern "C" {
+    #include "build_config.h"
 
-#include "common/color.h"
-#include "common/axis.h"
-#include "flight/flight.h"
+    #include "common/color.h"
+    #include "common/axis.h"
+    #include "flight/flight.h"
 
-#include "sensors/battery.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
+    #include "sensors/battery.h"
+    #include "config/runtime_config.h"
+    #include "config/config.h"
 
-#include "rx/rx.h"
+    #include "rx/rx.h"
 
-#include "drivers/light_ws2811strip.h"
-#include "io/ledstrip.h"
-
+    #include "drivers/light_ws2811strip.h"
+    #include "io/ledstrip.h"
+}
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-extern ledConfig_t *ledConfigs;
-extern uint8_t highestYValueForNorth;
-extern uint8_t lowestYValueForSouth;
-extern uint8_t highestXValueForWest;
-extern uint8_t lowestXValueForEast;
-extern uint8_t ledGridWidth;
-extern uint8_t ledGridHeight;
+extern "C" {
+    extern ledConfig_t *ledConfigs;
+    extern uint8_t highestYValueForNorth;
+    extern uint8_t lowestYValueForSouth;
+    extern uint8_t highestXValueForWest;
+    extern uint8_t lowestXValueForEast;
+    extern uint8_t ledGridWidth;
+    extern uint8_t ledGridHeight;
 
-void determineLedStripDimensions(void);
-void determineOrientationLimits(void);
+    void determineLedStripDimensions(void);
+    void determineOrientationLimits(void);
 
-ledConfig_t systemLedConfigs[MAX_LED_STRIP_LENGTH];
+    ledConfig_t systemLedConfigs[MAX_LED_STRIP_LENGTH];
+}
 
 TEST(LedStripTest, parseLedStripConfig)
 {
@@ -312,7 +315,7 @@ TEST(ColorTest, parseColor)
             { 333,  22,   1 }
     };
 
-    char *testColors[TEST_COLOR_COUNT] = {
+    const char *testColors[TEST_COLOR_COUNT] = {
             "0,0,0",
             "1,1,1",
             "359,255,255",
@@ -336,12 +339,18 @@ TEST(ColorTest, parseColor)
     }
 }
 
+extern "C" {
+
 uint8_t armingFlags = 0;
 uint16_t flightModeFlags = 0;
 int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
+batteryState_e calculateBatteryState(void) {
+    return BATTERY_OK;
+}
 
+void ws2811LedStripInit(void) {}
 void ws2811UpdateStrip(void) {}
 
 void setLedValue(uint16_t index, const uint8_t value) {
@@ -398,4 +407,6 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
     UNUSED(destMax);
 
     return 0;
+}
+
 }

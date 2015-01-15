@@ -18,7 +18,10 @@
 #include <stdint.h>
 
 #include <limits.h>
-#include "flight/gps_conversion.h"
+
+extern "C" {
+    #include "flight/gps_conversion.h"
+}
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
@@ -33,7 +36,7 @@ TEST(GpsConversionTest, GPSCoordToDegrees_BadString)
 }
 
 typedef struct gpsConversionExpectation_s {
-    char *coord;
+    const char *coord;
     uint32_t degrees;
 } gpsConversionExpectation_t;
 
