@@ -50,13 +50,25 @@
 static bool ledStripInitialised = false;
 static failsafe_t* failsafe;
 
+//#define USE_LED_ANIMATION
+
+// timers
+#ifdef USE_LED_ANIMATION
+static uint32_t nextAnimationUpdateAt = 0;
+#endif
+
+static uint32_t nextIndicatorFlashAt = 0;
+static uint32_t nextWarningFlashAt = 0;
+
+#define LED_STRIP_20HZ ((1000 * 1000) / 20)
+#define LED_STRIP_10HZ ((1000 * 1000) / 10)
+#define LED_STRIP_5HZ ((1000 * 1000) / 5)
+
 #if MAX_LED_STRIP_LENGTH > WS2811_LED_STRIP_LENGTH
 #error "Led strip length must match driver"
 #endif
 
 hsvColor_t *colors;
-
-//#define USE_LED_ANIMATION
 
 //                          H    S    V
 #define LED_BLACK        {  0,   0,   0}
@@ -438,15 +450,6 @@ void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSiz
     sprintf(ledConfigBuffer, "%u,%u:%s:%s", GET_LED_X(ledConfig), GET_LED_Y(ledConfig), directions, functions);
 }
 
-// timers
-uint32_t nextAnimationUpdateAt = 0;
-uint32_t nextIndicatorFlashAt = 0;
-uint32_t nextWarningFlashAt = 0;
-
-#define LED_STRIP_20HZ ((1000 * 1000) / 20)
-#define LED_STRIP_10HZ ((1000 * 1000) / 10)
-#define LED_STRIP_5HZ ((1000 * 1000) / 5)
-
 void applyDirectionalModeColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, const modeColorIndexes_t *modeColors)
 {
     // apply up/down colors regardless of quadrant.
@@ -688,6 +691,7 @@ void applyLedThrottleLayer()
     }
 }
 
+#ifdef USE_LED_ANIMATION
 static uint8_t frameCounter = 0;
 
 static uint8_t previousRow;
@@ -705,7 +709,6 @@ static void updateLedAnimationState(void)
     frameCounter = (frameCounter + 1) % animationFrames;
 }
 
-#ifdef USE_LED_ANIMATION
 static void applyLedAnimationLayer(void)
 {
     const ledConfig_t *ledConfig;
@@ -740,11 +743,18 @@ void updateLedStrip(void)
 
     uint32_t now = micros();
 
-    bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
-    bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
-    bool warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
-
-    if (!(warningFlashNow || indicatorFlashNow || animationUpdateNow)) {
+    bool indicatorFlashNow = indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
+    bool warningFlashNow =warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
+#ifdef USE_LED_ANIMATION
+    bool animationUpdateNow = animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
+#endif
+    if (!(
+            indicatorFlashNow ||
+            warningFlashNow
+#ifdef USE_LED_ANIMATION
+            || animationUpdateNow
+#endif
+    )) {
         return;
     }
 
@@ -779,14 +789,15 @@ void updateLedStrip(void)
 
     applyLedIndicatorLayer(indicatorFlashState);
 
+#ifdef USE_LED_ANIMATION
     if (animationUpdateNow) {
         nextAnimationUpdateAt = now + LED_STRIP_20HZ;
         updateLedAnimationState();
     }
 
-#ifdef USE_LED_ANIMATION
     applyLedAnimationLayer();
 #endif
+
     ws2811UpdateStrip();
 }
 
