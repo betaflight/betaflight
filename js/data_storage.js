@@ -1,7 +1,7 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1420323157912, // new Date().getTime() - 2015.01.03
+    'releaseDate': 1421431075334, // new Date().getTime() - 2015.01.16
     'apiVersionAccepted': 1.1,
     'backupFileMinVersionAccepted': '0.55', // chrome.runtime.getManifest().version is stored as string, so does this one
     'connectionValid': false,
