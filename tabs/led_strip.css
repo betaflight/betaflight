@@ -1,0 +1,282 @@
+
+.tab-led-strip .help {
+    padding: 10px;
+    background-color: #ffcb18;
+    margin-bottom: 10px;
+}
+
+.tab-led-strip .section {
+    color: #565656;
+    margin: 20px 0 0 0;
+    border-bottom: 1px solid silver;
+}
+
+.tab-led-strip .mainGrid {
+    width: calc((30px + 8px) * 16);
+    height: calc((30px + 8px) * 16);
+    float: left;
+    margin-right: 10px;
+}
+
+.tab-led-strip .mainGrid .gPoint {
+    float: left;
+    border: solid 2px #ADADAD;
+    width: 28px;
+    height: 28px;
+    margin: 3px;
+    border-radius: 7px;
+    background: #ececec;;
+    cursor: pointer;
+}
+
+.tab-led-strip .gPoint.function-w { /* warning */
+    background: red;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: red;      
+}
+
+.tab-led-strip .gPoint.function-f { /* flight mode & orientation */
+    background: rgb(50, 205, 50);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: rgb(50, 205, 50);
+}
+
+.tab-led-strip .gPoint.function-w.function-f {
+    background: linear-gradient(to bottom, #42c949 0%,#d2ff52 52%,#d2ff52 52%,#ff5454 52%,#ba3535 100%);
+}
+
+.tab-led-strip .gPoint.function-i { /* indicator */
+    background: yellow;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: yellow;       
+}
+
+.tab-led-strip .gPoint.function-a { /* Armed Mode */
+    background: rgb(52, 155, 255);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: rgb(52, 155, 255);
+}
+
+.tab-led-strip .gPoint.function-t { /* Armed Mode */
+    background: orange;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: orange;
+}
+
+.tab-led-strip .gPoint select {
+    background: #000;
+    width: 13px;
+    height: 13px;
+}
+
+.tab-led-strip .wire {
+    color: rgba(255,255,255,.5);
+    text-align: center;
+    font-size: 25px;
+    text-shadow: 1px 1px rgba(0,0,0,.4);
+    padding-top: 0px;
+    display: block;
+    font-family: monospace;
+    position: absolute;
+    margin-top: -32px;
+    width: 28px;
+}
+
+.gridWire .wire {
+    color: rgba(255,255,255,1);
+}
+
+.gridWire .gPoint {
+    background: #CAFFCD !important;
+}
+
+/*function buttons*/
+
+.tab-led-strip button {
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+
+    padding: 7px 7px;
+    margin: 3px 0;
+}
+
+.tab-led-strip button:hover {
+    background-color: #acacac;
+}
+
+.tab-led-strip .funcWire.btnOn {
+    background: rgb(15, 171, 22);
+}
+
+
+.tab-led-strip button.w100 {
+    width: 100%;
+}
+
+.tab-led-strip button.w50 {
+    width: 49%;
+}
+
+.tab-led-strip button.w33 {
+    width: 32%;
+}
+
+.tab-led-strip .functions .function-w.btnOn {background: red;}
+.tab-led-strip .functions .function-f.btnOn {background: rgb(50, 205, 50);}
+.tab-led-strip .functions .function-i.btnOn {background: yellow; color: #333;}
+.tab-led-strip .functions .function-a.btnOn {background: blue;}
+.tab-led-strip .functions .function-t.btnOn {background: orange;}
+
+.tab-led-strip .directions .btnOn {background: #FFF; color: #000;}
+
+.tab-led-strip .indicators {
+    position: relative;
+    height: 30px    
+}
+
+.tab-led-strip .indicators span {
+    width: 0; 
+    height: 0; 
+    position: absolute;
+    display: none;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.tab-led-strip .indicators .north {
+    top: -4px;
+    left: 7px; 
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;    
+    border-bottom: 7px solid rgba(0,0,0,.8);
+}
+
+.tab-led-strip .indicators .south {
+    bottom: -2px;
+    left: 7px; 
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;    
+    border-top: 7px solid rgba(0,0,0,.8);
+}
+
+.tab-led-strip .indicators .east {
+    bottom: 8px;
+    right: -5px; 
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;   
+    border-left: 7px solid rgba(0,0,0,.8);
+}
+
+.tab-led-strip .indicators .west {
+    bottom: 8px;
+    left: -5px;  
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;   
+    border-right: 7px solid rgba(0,0,0,.8);
+}
+
+.tab-led-strip .indicators .up {
+    top: 0px;
+    left: 2px;  
+}
+
+.tab-led-strip .indicators .down {
+    bottom: 17px;
+    right: 10px; 
+}
+
+
+.tab-led-strip .dir-n .north {display: inline;}
+.tab-led-strip .dir-s .south {display: inline;}
+.tab-led-strip .dir-e .east {display: inline;}
+.tab-led-strip .dir-w .west {display: inline;}
+.tab-led-strip .dir-u .up {display: inline;}
+.tab-led-strip .dir-d .down {display: inline;}
+
+.tab-led-strip .controls {
+    position: relative;
+    float: left;
+    width: 290px;
+    height: calc((30px + 8px) * 16);
+}
+
+.tab-led-strip .directions {
+    width: 130px;
+    height: 100px;
+    position: relative;
+}
+
+.tab-led-strip .directions button {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+}
+
+.tab-led-strip .directions .dir-n {top: 0; left: 32px;}
+.tab-led-strip .directions .dir-s {bottom: 0; left: 32px;}
+.tab-led-strip .directions .dir-e {left: 64px; top: 32px;}
+.tab-led-strip .directions .dir-w {left: 0; top: 32px;}
+.tab-led-strip .directions .dir-u {right: 0; top: 15px;}
+.tab-led-strip .directions .dir-d {right: 0; bottom: 15px;}
+
+.tab-led-strip .wires-remaining {
+    float: right;
+    text-align: center;
+    font-size: 14px;
+}
+
+.tab-led-strip .wires-remaining div {
+    font-size: 40px;
+    color: #7AAE2D;
+    font-family: monospace;
+}
+
+.tab-led-strip .wires-remaining.error div {
+    color: #FF5700;
+}
+
+
+
+/*******JQUERYUI**********/
+
+.tab-led-strip .ui-selected {
+    box-shadow: inset 0 0 30px rgba(255, 255, 255, 1) !important;
+}
+
+.tab-led-strip .ui-selecting {
+    box-shadow: inset 0 0 30px rgba(255, 255, 255, .7) !important;
+    border: solid 2px #000 !important;
+}
+
+.tab-led-strip .ui-selectable-helper {
+    background: rgba(0,0,0,.4);
+    position: absolute;
+    z-index: 100;
+    border: 1px dotted white;   
+}
+
+.tab-led-strip > .buttons {
+    margin-top: 10px;
+}
+
+.tab-led-strip .save {
+    display: block;
+    float: right;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-led-strip.save:hover {
+    background-color: #dedcdc;
+}

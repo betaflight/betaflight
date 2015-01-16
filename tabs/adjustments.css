@@ -98,10 +98,7 @@
 }
 
 .tab-adjustments > .buttons {
-    width: calc(100% - 20px);
-
     margin-top: 10px;
-    bottom: 10px;
 }
 
 .tab-adjustments > .buttons a {

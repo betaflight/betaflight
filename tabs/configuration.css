@@ -140,13 +140,6 @@
     margin-left: 15px;
 }
 
-.tab-auxiliary > .buttons {
-    width: calc(100% - 20px);
-
-    margin-top: 10px;
-    bottom: 10px;
-}
-
 .tab-configuration .save {
     display: block;
     float: right;

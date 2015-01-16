@@ -83,6 +83,9 @@
     "tabMotorTesting": {
         "message": "Motors"
     },
+    "tabLedStrip": {
+        "message": "LED Strip"
+    },
     "tabRawSensorData": {
         "message": "Sensors"
     },
@@ -941,5 +944,15 @@
     },
     "firmwareFlasherWaitForFinish": {
         "message": "You <span style=\"color: red\">can't</span> do this right now, please wait for current operation to finish ..."
+    },
+    
+    "ledStripHelp": {
+        "message": "The flight controller can control colors and effects of individual LEDs on a strip.<br />Configure LEDs on the grid, configure wiring order then attach LEDs on your aircraft according to grid positions."
+    },
+    "ledStripButtonSave": {
+        "message": "Save"
+    },
+    "ledStripEepromSaved": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
     }
 }
