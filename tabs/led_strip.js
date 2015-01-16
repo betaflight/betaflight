@@ -206,7 +206,9 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             MSP.sendLedStripConfig(save_to_eeprom);
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                    GUI.log(chrome.i18n.getMessage('ledStripEepromSaved'));
+                });
             }
 
         });
@@ -225,8 +227,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
         
     function updateBulkCmd() {
-        $('.tempOutput').empty();
-        $('.tempOutput').html('# CLI commands' + "\n\n");
         var counter = 0;
 
         var lines = [];
@@ -259,9 +259,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 });
 
                 if (wireNumber != '') {
-                    var line = 'led ' + wireNumber + ' ' + col + ',' + row + ':' + directions.toUpperCase() + ':' + functions.toUpperCase();
-                    lines[wireNumber] = line;
-                    
                     var led = {
                         x: col,
                         y: row,
@@ -274,8 +271,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 counter++;
             }
         });
-
-        $('.tempOutput').append(lines.join("\n"));
 
         var defaultLed = {
             x: 0,

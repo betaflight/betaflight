@@ -951,6 +951,8 @@
     },
     "ledStripButtonSave": {
         "message": "Save"
+    },
+    "ledStripEepromSaved": {
+        "message": "EEPROM <span style=\"color: green\">saved</span>"
     }
-
 }
