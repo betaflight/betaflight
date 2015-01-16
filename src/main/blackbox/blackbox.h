@@ -17,8 +17,11 @@
 
 #pragma once
 
-#include "common/axis.h"
 #include <stdint.h>
+
+#include "common/axis.h"
+#include "flight/mixer.h"
+#include "blackbox/blackbox_fielddefs.h"
 
 typedef struct blackboxValues_t {
     uint32_t time;
@@ -40,6 +43,8 @@ typedef struct blackboxValues_t {
     int16_t magADC[XYZ_AXIS_COUNT];
 #endif
 } blackboxValues_t;
+
+void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void initBlackbox(void);
 void handleBlackbox(void);

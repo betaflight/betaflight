@@ -846,7 +846,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                 if (i == PIDLEVEL) {
                     serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 250));
                     serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 250));
-                    serialize8(0);
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 250));
                 } else {
                     serialize8(currentProfile->pidProfile.P8[i]);
                     serialize8(currentProfile->pidProfile.I8[i]);
@@ -1171,7 +1171,7 @@ static bool processInCommand(void)
                 if (i == PIDLEVEL) {
                     currentProfile->pidProfile.A_level = (float)read8() / 10.0f;
                     currentProfile->pidProfile.H_level = (float)read8() / 10.0f;
-                    read8();
+                    currentProfile->pidProfile.H_sensitivity = read8();
                 } else {
                     currentProfile->pidProfile.P8[i] = read8();
                     currentProfile->pidProfile.I8[i] = read8();
@@ -1442,28 +1442,26 @@ static bool processInCommand(void)
 
     case MSP_SET_LED_STRIP_CONFIG:
         {
-            uint8_t ledCount = currentPort->dataSize / 6;
-            if (ledCount != MAX_LED_STRIP_LENGTH) {
+            i = read8();
+            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != 7) {
                 headSerialError(0);
                 break;
             }
-            for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
-                ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-                uint16_t mask;
-                // currently we're storing directions and functions in a uint16 (flags)
-                // the msp uses 2 x uint16_t to cater for future expansion
-                mask = read16();
-                ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
+            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            uint16_t mask;
+            // currently we're storing directions and functions in a uint16 (flags)
+            // the msp uses 2 x uint16_t to cater for future expansion
+            mask = read16();
+            ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
 
-                mask = read16();
-                ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
+            mask = read16();
+            ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
 
-                mask = read8();
-                ledConfig->xy = CALCULATE_LED_X(mask);
+            mask = read8();
+            ledConfig->xy = CALCULATE_LED_X(mask);
 
-                mask = read8();
-                ledConfig->xy |= CALCULATE_LED_Y(mask);
-            }
+            mask = read8();
+            ledConfig->xy |= CALCULATE_LED_Y(mask);
         }
         break;
 #endif

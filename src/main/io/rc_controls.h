@@ -214,3 +214,5 @@ void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
 bool isUsingSticksForArming(void);
+
+int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);

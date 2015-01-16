@@ -93,5 +93,40 @@ typedef enum FlightLogFieldSign {
 
 typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
+    FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START = 10,
+    FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT = 11,
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;
+
+typedef struct flightLogEvent_syncBeep_t {
+    uint32_t time;
+} flightLogEvent_syncBeep_t;
+
+typedef struct flightLogEvent_autotuneCycleStart_t {
+    uint8_t phase;
+    uint8_t cycle;
+    uint8_t p;
+    uint8_t i;
+    uint8_t d;
+} flightLogEvent_autotuneCycleStart_t;
+
+typedef struct flightLogEvent_autotuneCycleResult_t {
+    uint8_t overshot;
+    uint8_t p;
+    uint8_t i;
+    uint8_t d;
+} flightLogEvent_autotuneCycleResult_t;
+
+typedef union flightLogEventData_t
+{
+    flightLogEvent_syncBeep_t syncBeep;
+    flightLogEvent_autotuneCycleStart_t autotuneCycleStart;
+    flightLogEvent_autotuneCycleResult_t autotuneCycleResult;
+
+} flightLogEventData_t;
+
+typedef struct flightLogEvent_t
+{
+    FlightLogEvent event;
+    flightLogEventData_t data;
+} flightLogEvent_t;

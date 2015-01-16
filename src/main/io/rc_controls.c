@@ -517,6 +517,10 @@ void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges)
     }
 }
 
+int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
+    return min(abs(rcData[axis] - midrc), 500);
+}
+
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse)
 {
     uint8_t index;

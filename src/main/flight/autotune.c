@@ -31,6 +31,9 @@
 
 #include "flight/flight.h"
 
+#include "config/config.h"
+#include "blackbox/blackbox.h"
+
 extern int16_t debug[4];
 
 /*
@@ -97,6 +100,12 @@ typedef enum {
     PHASE_SAVE_OR_RESTORE_PIDS,
 } autotunePhase_e;
 
+typedef enum {
+    CYCLE_TUNE_I = 0,
+    CYCLE_TUNE_PD,
+    CYCLE_TUNE_PD2
+} autotuneCycle_e;
+
 static const pidIndex_e angleIndexToPidIndexMap[] = {
     PIDROLL,
     PIDPITCH
@@ -112,7 +121,7 @@ static pidProfile_t pidBackup;
 static uint8_t pidController;
 static uint8_t pidIndex;
 static bool rising;
-static uint8_t cycleCount; // TODO can we replace this with an enum to improve readability.
+static autotuneCycle_e cycle;
 static uint32_t timeoutAt;
 static angle_index_t autoTuneAngleIndex;
 static autotunePhase_e phase = PHASE_IDLE;
@@ -140,10 +149,33 @@ bool isAutotuneIdle(void)
     return phase == PHASE_IDLE;
 }
 
+#ifdef BLACKBOX
+
+static void autotuneLogCycleStart()
+{
+    if (feature(FEATURE_BLACKBOX)) {
+        flightLogEvent_autotuneCycleStart_t eventData;
+
+        eventData.phase = phase;
+        eventData.cycle = cycle;
+        eventData.p = pid.p * MULTIWII_P_MULTIPLIER;
+        eventData.i = pid.i * MULTIWII_I_MULTIPLIER;
+        eventData.d = pid.d;
+
+        blackboxLogEvent(FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START, (flightLogEventData_t*)&eventData);
+    }
+}
+
+#endif
+
 static void startNewCycle(void)
 {
     rising = !rising;
     secondPeakAngle = firstPeakAngle = 0;
+
+#ifdef BLACKBOX
+    autotuneLogCycleStart();
+#endif
 }
 
 static void updatePidIndex(void)
@@ -155,8 +187,7 @@ static void updateTargetAngle(void)
 {
     if (rising) {
         targetAngle = AUTOTUNE_TARGET_ANGLE;
-    }
-    else  {
+    } else {
         targetAngle = -AUTOTUNE_TARGET_ANGLE;
     }
 
@@ -210,30 +241,48 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             debug[3] = DEGREES_TO_DECIDEGREES(secondPeakAngle);
 
         } else if (secondPeakAngle > 0) {
-            if (cycleCount == 0) {
-                // when checking the I value, we would like to overshoot the target position by half of the max oscillation.
-                if (currentAngle - targetAngle < AUTOTUNE_MAX_OSCILLATION_ANGLE / 2) {
-                    pid.i *= AUTOTUNE_INCREASE_MULTIPLIER;
-                } else {
-                    pid.i *= AUTOTUNE_DECREASE_MULTIPLIER;
-                    if (pid.i < AUTOTUNE_MINIMUM_I_VALUE) {
-                        pid.i = AUTOTUNE_MINIMUM_I_VALUE;
+            switch (cycle) {
+                case CYCLE_TUNE_I:
+                    // when checking the I value, we would like to overshoot the target position by half of the max oscillation.
+                    if (currentAngle - targetAngle < AUTOTUNE_MAX_OSCILLATION_ANGLE / 2) {
+                        pid.i *= AUTOTUNE_INCREASE_MULTIPLIER;
+                    } else {
+                        pid.i *= AUTOTUNE_DECREASE_MULTIPLIER;
+                        if (pid.i < AUTOTUNE_MINIMUM_I_VALUE) {
+                            pid.i = AUTOTUNE_MINIMUM_I_VALUE;
+                        }
                     }
-                }
 
-                // go back to checking P and D
-                cycleCount = 1;
-                pidProfile->I8[pidIndex] = 0;
-                startNewCycle();
-            } else {
-                // we are checking P and D values
-                // set up to look for the 2nd peak
-                firstPeakAngle = currentAngle;
-                timeoutAt = millis() + AUTOTUNE_SETTLING_DELAY_MS;
+#ifdef BLACKBOX
+                    if (feature(FEATURE_BLACKBOX)) {
+                        flightLogEvent_autotuneCycleResult_t eventData;
+
+                        eventData.overshot = currentAngle - targetAngle < AUTOTUNE_MAX_OSCILLATION_ANGLE / 2 ? 0 : 1;
+                        eventData.p = pidProfile->P8[pidIndex];
+                        eventData.i = pidProfile->I8[pidIndex];
+                        eventData.d = pidProfile->D8[pidIndex];
+
+                        blackboxLogEvent(FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT, (flightLogEventData_t*)&eventData);
+                    }
+#endif
+
+                    // go back to checking P and D
+                    cycle = CYCLE_TUNE_PD;
+                    pidProfile->I8[pidIndex] = 0;
+                    startNewCycle();
+                    break;
+
+                case CYCLE_TUNE_PD:
+                case CYCLE_TUNE_PD2:
+                    // we are checking P and D values
+                    // set up to look for the 2nd peak
+                    firstPeakAngle = currentAngle;
+                    timeoutAt = millis() + AUTOTUNE_SETTLING_DELAY_MS;
+                    break;
             }
         }
     } else {
-        // we saw the first peak. looking for the second
+        // We saw the first peak while tuning PD, looking for the second
 
         if (currentAngle < firstPeakAngle) {
             firstPeakAngle = currentAngle;
@@ -266,8 +315,8 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
                     pid.d *= AUTOTUNE_INCREASE_MULTIPLIER;
                 }
 #else
-				pid.p *= AUTOTUNE_DECREASE_MULTIPLIER;
-				pid.d *= AUTOTUNE_INCREASE_MULTIPLIER;
+                pid.p *= AUTOTUNE_DECREASE_MULTIPLIER;
+                pid.d *= AUTOTUNE_INCREASE_MULTIPLIER;
 #endif
             } else {
                 // undershot
@@ -286,15 +335,30 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             pidProfile->P8[pidIndex] = pid.p * MULTIWII_P_MULTIPLIER;
             pidProfile->D8[pidIndex] = pid.d;
 
-            // switch to the other direction and start a new cycle
-            startNewCycle();
+#ifdef BLACKBOX
+            if (feature(FEATURE_BLACKBOX)) {
+                flightLogEvent_autotuneCycleResult_t eventData;
 
-            if (++cycleCount == 3) {
-                // switch to testing I value
-                cycleCount = 0;
+                eventData.overshot = secondPeakAngle > targetAngleAtPeak ? 1 : 0;
+                eventData.p = pidProfile->P8[pidIndex];
+                eventData.i = pidProfile->I8[pidIndex];
+                eventData.d = pidProfile->D8[pidIndex];
 
-                pidProfile->I8[pidIndex] = pid.i  * MULTIWII_I_MULTIPLIER;
+                blackboxLogEvent(FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT, (flightLogEventData_t*)&eventData);
             }
+#endif
+
+            if (cycle == CYCLE_TUNE_PD2) {
+                // switch to testing I value
+                cycle = CYCLE_TUNE_I;
+                
+                pidProfile->I8[pidIndex] = pid.i * MULTIWII_I_MULTIPLIER;
+            } else {
+                cycle = CYCLE_TUNE_PD2;
+            }
+
+            // switch to the other direction for the new cycle
+            startNewCycle();
         }
     }
 
@@ -344,7 +408,7 @@ void autotuneBeginNextPhase(pidProfile_t *pidProfileToTune, uint8_t pidControlle
     }
 
     rising = true;
-    cycleCount = 1;
+    cycle = CYCLE_TUNE_PD;
     secondPeakAngle = firstPeakAngle = 0;
 
     pidProfile = pidProfileToTune;
@@ -360,6 +424,10 @@ void autotuneBeginNextPhase(pidProfile_t *pidProfileToTune, uint8_t pidControlle
 
     pidProfile->D8[pidIndex] = pid.d;
     pidProfile->I8[pidIndex] = 0;
+
+#ifdef BLACKBOX
+    autotuneLogCycleStart();
+#endif
 }
 
 void autotuneEndPhase(void)
