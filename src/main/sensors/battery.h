@@ -20,6 +20,15 @@
 #define VBAT_SCALE_DEFAULT 110
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
+#define VIRTUAL_CURRENT_MIN 0
+#define VIRTUAL_CURRENT_MAX 0xffff
+
+typedef enum {
+    CURRENT_SENSOR_NONE = 0,
+    CURRENT_SENSOR_ADC,
+    CURRENT_SENSOR_VIRTUAL,
+    CURRENT_SENSOR_MAX = CURRENT_SENSOR_VIRTUAL
+} currentSensor_e;
 
 typedef struct batteryConfig_s {
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
@@ -29,6 +38,7 @@ typedef struct batteryConfig_s {
 
     uint16_t currentMeterScale;             // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
     uint16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
+    currentSensor_e  currentMeterType;      // type of current meter used, either ADC or virtual
 
     // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
     uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
