@@ -285,7 +285,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             }
             LED_STRIP[i] = defaultLed;
         }
-        console.log(LED_STRIP);
         
         var usedWireNumbers = buildUsedWireNumbers();
 

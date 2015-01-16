@@ -69,18 +69,6 @@
     height: 13px;
 }
 
-.tab-led-strip .alertMsg {
-    background: rgba(100,0,0,.5);
-    text-align: center;
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    color: #FFF;
-    padding: 30px;
-    font-family: sans-serif;
-}
-
 .tab-led-strip .wire {
     color: rgba(255,255,255,.5);
     text-align: center;
@@ -213,21 +201,6 @@
     float: left;
     width: 290px;
     height: calc((30px + 8px) * 16);
-}
-
-.tab-led-strip .output {
-    bottom: 0px;
-    position: absolute;
-    width: 100%;
-    height: 160px;
-}
-
-.tab-led-strip .tempOutput {
-    color: #fff;
-    background: rgba(0,0,0,.2);
-    width: 100%;
-    height: 100%;
-    outline: none;
 }
 
 .tab-led-strip .directions {
