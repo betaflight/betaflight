@@ -38,12 +38,6 @@
 .tab-ports select {
     border: 1px solid silver;
 }
-.tab-ports > .buttons {
-    width: calc(100% - 20px);
-
-    margin-top: 10px;
-    bottom: 10px;
-}
 
 .tab-ports .save {
     display: block;

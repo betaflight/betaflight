@@ -948,7 +948,9 @@
     
     "ledStripHelp": {
         "message": "The flight controller can control colors and effects of individual LEDs on a strip.<br />Configure LEDs on the grid, configure wiring order then attach LEDs on your aircraft according to grid positions."
+    },
+    "ledStripButtonSave": {
+        "message": "Save"
     }
-    
-    
+
 }

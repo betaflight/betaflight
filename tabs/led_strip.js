@@ -2,8 +2,8 @@
 
 TABS.led_strip = {
     wireMode: false,
-    flightModes: ['w', 'f', 'i', 'a', 't'],
-    ledOrientations: ['n', 'e', 's', 'w', 'u', 'd'],
+    functions: ['w', 'f', 'i', 'a', 't'],
+    directions: ['n', 'e', 's', 'w', 'u', 'd'],
 };
 
 TABS.led_strip.initialize = function (callback, scrollPosition) {
@@ -71,11 +71,11 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
 
         // Directional Buttons
-        $('.orientation').on('click', 'button', function() {
+        $('.directions').on('click', 'button', function() {
             var that = this;
             if ($('.ui-selected').length > 0) {
-                TABS.led_strip.ledOrientations.forEach(function(letter) {
-                    if ($(that).is('.dir' + letter.toUpperCase())) {
+                TABS.led_strip.directions.forEach(function(letter) {
+                    if ($(that).is('.dir-' + letter)) {
                         $(that).toggleClass('btnOn');
                         $('.ui-selected').toggleClass('dir-' + letter);
                     }
@@ -87,13 +87,13 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
 
         // Mode Buttons
-        $('.modes').on('click', 'button', function() {
+        $('.functions').on('click', 'button', function() {
             var that = this;
             if ($('.ui-selected').length > 0) {
-                TABS.led_strip.flightModes.forEach(function(letter) {
-                    if ($(that).is('.mode' + letter.toUpperCase())) {
+                TABS.led_strip.functions.forEach(function(letter) {
+                    if ($(that).is('.function-' + letter)) {
                         $(that).toggleClass('btnOn');
-                        $('.ui-selected').toggleClass('mode-' + letter);
+                        $('.ui-selected').toggleClass('function-' + letter);
                     }
                 });
 
@@ -145,19 +145,19 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
                     var that = this;
 
-                    TABS.led_strip.ledOrientations.forEach(function(letter) {
+                    TABS.led_strip.directions.forEach(function(letter) {
                         if ($(that).is('.dir-' + letter)) {
-                            $('.dir' + letter.toUpperCase()).addClass('btnOn');
+                            $('.dir-' + letter).addClass('btnOn');
                         } else {
-                            $('.dir' + letter.toUpperCase()).removeClass('btnOn');
+                            $('.dir-' + letter).removeClass('btnOn');
                         }
                     });
 
-                    TABS.led_strip.flightModes.forEach(function(letter) {
-                        if ($(that).is('.mode-' + letter)) {
-                            $('.mode' + letter.toUpperCase()).addClass('btnOn');
+                    TABS.led_strip.functions.forEach(function(letter) {
+                        if ($(that).is('.function-' + letter)) {
+                            $('.function-' + letter).addClass('btnOn');
                         } else {
-                            $('.mode' + letter.toUpperCase()).removeClass('btnOn');
+                            $('.function-' + letter).removeClass('btnOn');
                         }
                     });
 
@@ -191,7 +191,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             $(this).find('.wire').html(ledIndex);
 
             for (var modeIndex = 0; modeIndex < led.functions.length; modeIndex++) {
-                $(this).addClass('mode-' + led.functions[modeIndex]);
+                $(this).addClass('function-' + led.functions[modeIndex]);
             }
             
             for (var directionIndex = 0; directionIndex < led.directions.length; directionIndex++) {
@@ -200,6 +200,16 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
         });
         updateBulkCmd(); 
+        
+        $('a.save').click(function () {
+
+            MSP.sendLedStripConfig(save_to_eeprom);
+
+            function save_to_eeprom() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+            }
+
+        });
         
         if (callback) callback();
     }
@@ -216,38 +226,50 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         
     function updateBulkCmd() {
         $('.tempOutput').empty();
-        $('.tempOutput').html('# Copy and paste commands below into the CLI' + "\n\n");
+        $('.tempOutput').html('# CLI commands' + "\n\n");
         var counter = 0;
 
         var lines = [];
+        var ledStripLength = LED_STRIP.length;
+        
+        LED_STRIP = [];
         
         $('.gPoint').each(function(){
-            if ($(this).is('[class*="mode"]')) {
+            if ($(this).is('[class*="function"]')) {
                 var gridNumber = ($(this).index() + 1);
                 var row = Math.ceil(gridNumber / 16) - 1;
                 var col = gridNumber/16 % 1 * 16 - 1;
                 if (col < 0) {col = 15;}
 
                 var wireNumber = $(this).find('.wire').html();
-                var ledModes = '';
+                var functions = '';
                 var directions = '';
                 var that = this;
 
-                TABS.led_strip.flightModes.forEach(function(letter){
-                    if ($(that).is('.mode-' + letter)) {
-                        ledModes += letter.toUpperCase();
+                TABS.led_strip.functions.forEach(function(letter){
+                    if ($(that).is('.function-' + letter)) {
+                        functions += letter;
                     }
                 });
 
-                TABS.led_strip.ledOrientations.forEach(function(letter){
+                TABS.led_strip.directions.forEach(function(letter){
                     if ($(that).is('.dir-' + letter)) {
-                        directions += letter.toUpperCase();
+                        directions += letter;
                     }
                 });
 
                 if (wireNumber != '') {
-                    var line = 'led ' + wireNumber + ' ' + col + ',' + row + ':' + directions + ':' + ledModes;
+                    var line = 'led ' + wireNumber + ' ' + col + ',' + row + ':' + directions.toUpperCase() + ':' + functions.toUpperCase();
                     lines[wireNumber] = line;
+                    
+                    var led = {
+                        x: col,
+                        y: row,
+                        directions: directions,
+                        functions: functions
+                    }
+                    
+                    LED_STRIP[wireNumber] = led;
                 }
                 counter++;
             }
@@ -255,9 +277,25 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
         $('.tempOutput').append(lines.join("\n"));
 
+        var defaultLed = {
+            x: 0,
+            y: 0,
+            directions: '',
+            functions: ''
+        };
+        
+        for (var i = 0; i < ledStripLength; i++) {
+            if (LED_STRIP[i]) {
+                continue;
+            }
+            LED_STRIP[i] = defaultLed;
+        }
+        console.log(LED_STRIP);
+        
         var usedWireNumbers = buildUsedWireNumbers();
 
         var remaining = LED_STRIP.length - usedWireNumbers.length;
+        
         $('.wires-remaining div').html(remaining);
     }
 
