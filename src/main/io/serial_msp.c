@@ -1442,28 +1442,26 @@ static bool processInCommand(void)
 
     case MSP_SET_LED_STRIP_CONFIG:
         {
-            uint8_t ledCount = currentPort->dataSize / 6;
-            if (ledCount != MAX_LED_STRIP_LENGTH) {
+            i = read8();
+            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != 7) {
                 headSerialError(0);
                 break;
             }
-            for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
-                ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-                uint16_t mask;
-                // currently we're storing directions and functions in a uint16 (flags)
-                // the msp uses 2 x uint16_t to cater for future expansion
-                mask = read16();
-                ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
+            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            uint16_t mask;
+            // currently we're storing directions and functions in a uint16 (flags)
+            // the msp uses 2 x uint16_t to cater for future expansion
+            mask = read16();
+            ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
 
-                mask = read16();
-                ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
+            mask = read16();
+            ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
 
-                mask = read8();
-                ledConfig->xy = CALCULATE_LED_X(mask);
+            mask = read8();
+            ledConfig->xy = CALCULATE_LED_X(mask);
 
-                mask = read8();
-                ledConfig->xy |= CALCULATE_LED_Y(mask);
-            }
+            mask = read8();
+            ledConfig->xy |= CALCULATE_LED_Y(mask);
         }
         break;
 #endif
