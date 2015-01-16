@@ -20,8 +20,6 @@
 #define VBAT_SCALE_DEFAULT 110
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
-#define VIRTUAL_CURRENT_MIN 0
-#define VIRTUAL_CURRENT_MAX 0xffff
 
 typedef enum {
     CURRENT_SENSOR_NONE = 0,
