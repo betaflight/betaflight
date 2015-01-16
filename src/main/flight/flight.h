@@ -42,6 +42,7 @@ typedef struct pidProfile_s {
     float D_f[3];
     float A_level;
     float H_level;
+    uint8_t H_sensitivity;
 } pidProfile_t;
 
 typedef enum {

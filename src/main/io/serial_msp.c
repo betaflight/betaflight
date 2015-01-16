@@ -846,7 +846,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                 if (i == PIDLEVEL) {
                     serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 250));
                     serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 250));
-                    serialize8(0);
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 250));
                 } else {
                     serialize8(currentProfile->pidProfile.P8[i]);
                     serialize8(currentProfile->pidProfile.I8[i]);
@@ -1171,7 +1171,7 @@ static bool processInCommand(void)
                 if (i == PIDLEVEL) {
                     currentProfile->pidProfile.A_level = (float)read8() / 10.0f;
                     currentProfile->pidProfile.H_level = (float)read8() / 10.0f;
-                    read8();
+                    currentProfile->pidProfile.H_sensitivity = read8();
                 } else {
                     currentProfile->pidProfile.P8[i] = read8();
                     currentProfile->pidProfile.I8[i] = read8();

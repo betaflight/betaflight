@@ -159,6 +159,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D_f[YAW] = 0.05f;
     pidProfile->A_level = 5.0f;
     pidProfile->H_level = 3.0f;
+    pidProfile->H_sensitivity = 75;
 }
 
 #ifdef GPS

@@ -101,13 +101,37 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
 {
     float RateError, errorAngle, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
+    int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastGyroRate[3];
     static float delta1[3], delta2[3];
     float delta, deltaSum;
     float dT;
     int axis;
+    float horizonLevelStrength = 1;
 
     dT = (float)cycleTime * 0.000001f;
+
+    if (FLIGHT_MODE(HORIZON_MODE)) {
+
+        // Figure out the raw stick positions
+        stickPosAil = getRcStickPosition(FD_ROLL);
+        stickPosEle = getRcStickPosition(FD_PITCH);
+
+        if(abs(stickPosAil) > abs(stickPosEle)){
+            mostDeflectedPos = abs(stickPosAil);
+        }
+        else {
+            mostDeflectedPos = abs(stickPosEle);
+        }
+
+        // Progressively turn off the horizon self level strength as the stick is banged over
+        horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
+        if(pidProfile->H_sensitivity == 0){
+            horizonLevelStrength = 0;
+        } else {
+            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->H_sensitivity)) + 1, 0, 1);
+        }
+    }
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
@@ -139,7 +163,7 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
                 AngleRate = (float)((controlRateConfig->rollPitchRate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max yaw rate
                 if (FLIGHT_MODE(HORIZON_MODE)) {
                     // mix up angle error to desired AngleRate to add a little auto-level feel
-                    AngleRate += errorAngle * pidProfile->H_level;
+                    AngleRate += errorAngle * pidProfile->H_level * horizonLevelStrength;
                 }
             }
         }
