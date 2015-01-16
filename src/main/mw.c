@@ -97,7 +97,8 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 extern failsafe_t *failsafe;
 
-typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination, rollAndPitchTrims_t *accelerometerTrims);
+typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
 extern pidControllerFuncPtr pid_controller;
 
@@ -353,11 +354,6 @@ void mwArm(void)
     if (!ARMING_FLAG(ARMED)) {
         blinkLedAndSoundBeeper(2, 255, 1);
     }
-}
-
-int32_t getRcStickPosition(int32_t axis) {
-
-    return min(abs(rcData[axis] - masterConfig.rxConfig.midrc), 500);
 }
 
 // Automatic ACC Offset Calibration
@@ -714,7 +710,8 @@ void loop(void)
             &currentProfile->pidProfile,
             currentControlRateProfile,
             masterConfig.max_angle_inclination,
-            &currentProfile->accelerometerTrims
+            &currentProfile->accelerometerTrims,
+            &masterConfig.rxConfig
         );
 
         mixTable();

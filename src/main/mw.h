@@ -22,5 +22,3 @@ void handleInflightCalibrationStickPosition();
 
 void mwDisarm(void);
 void mwArm(void);
-
-int32_t getRcStickPosition(int32_t axis);

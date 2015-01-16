@@ -57,10 +57,10 @@ static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 static int32_t errorAngleI[2] = { 0, 0 };
 
 static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim);
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim);            // pid controller function prototype
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
@@ -97,7 +97,7 @@ bool shouldAutotune(void)
 #endif
 
 static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     float RateError, errorAngle, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
@@ -114,8 +114,8 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
         // Figure out the raw stick positions
-        stickPosAil = getRcStickPosition(FD_ROLL);
-        stickPosEle = getRcStickPosition(FD_PITCH);
+        stickPosAil = getRcStickDeflection(FD_ROLL, rxConfig->midrc);
+        stickPosEle = getRcStickDeflection(FD_PITCH, rxConfig->midrc);
 
         if(abs(stickPosAil) > abs(stickPosEle)){
             mostDeflectedPos = abs(stickPosAil);
@@ -205,8 +205,10 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
 }
 
 static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
+    UNUSED(rxConfig);
+
     int axis, prop;
     int32_t error, errorAngle;
     int32_t PTerm, ITerm, PTermACC = 0, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
@@ -288,8 +290,10 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #define GYRO_I_MAX 256
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
-        rollAndPitchTrims_t *angleTrim)
+        rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
+    UNUSED(rxConfig);
+
     int32_t errorAngle;
     int axis;
     int32_t delta, deltaSum;
