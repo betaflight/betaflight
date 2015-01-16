@@ -237,8 +237,8 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 15px;
 
     padding: 5px;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: 6px;
+    padding-right: 6px;
 
     background-color: #d0d0d0;
 }
