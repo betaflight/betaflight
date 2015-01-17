@@ -289,7 +289,7 @@ void processRxChannels(void)
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
 
         if (feature(FEATURE_FAILSAFE) && shouldCheckPulse) {
-            failsafe->vTable->checkPulse(rawChannel, sample);
+            failsafe->vTable->checkPulse(chan, sample);
         }
 
         // validate the range
