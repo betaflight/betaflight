@@ -28,7 +28,7 @@ Note: Tests are written in C++ and linked with with firmware's C code.
 6. Keep methods short - it makes it easier to test.
 7. Don't be afraid of moving code to a new file - it helps to reduce test dependencies.
 8. Avoid noise-words in variable names, like 'data' or 'info'.  Think about what you're naming and name it well.  Don't be afraid to rename anything.
-9. Avoid comments taht describe what the code is doing, the code should describe itself.  Comments are useful however for big-picture purposes and to document content of variables.
+9. Avoid comments that describe what the code is doing, the code should describe itself.  Comments are useful however for big-picture purposes and to document content of variables.
 10. If you need to document a variable do it at the declarion, don't copy the comment to the `extern` usage since it will lead to comment rot.
 11. Seek advice from other developers - know you can always learn more.
 12. Be professional - attempts at humor or slating existing code in the codebase itself is not helpful when you have to change/fix it.
