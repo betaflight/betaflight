@@ -97,6 +97,7 @@ TABS.servos.initialize = function (callback) {
 					' + servoCheckbox + '\
                     <td class="direction">\
                         <input class="first" type="checkbox"/><span class="name">' + name + '</span>\
+						<input class="second" type="checkbox"/><span class="alternate">' + alternate + '</span>\
                     </td>\
                 </tr> \
             ');
