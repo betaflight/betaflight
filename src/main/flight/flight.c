@@ -291,8 +291,10 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #define GYRO_I_MAX 256
 
 static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
-            rollAndPitchTrims_t *angleTrim)
+            rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
+    UNUSED(rxConfig);
+
     int axis, prop = 0;
     int32_t rc, error, errorAngle;
     int32_t PTerm, ITerm, PTermACC, ITermACC, DTerm;
@@ -376,8 +378,10 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 }
 
 static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
+    UNUSED(rxConfig);
+
     int axis, prop;
     int32_t rc, error, errorAngle;
     int32_t PTerm, ITerm, PTermACC = 0, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
