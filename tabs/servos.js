@@ -39,21 +39,21 @@ TABS.servos.initialize = function (callback) {
 
     function process_html() {
 
-		var servoCheckbox = '';
-		var servoHeader = '';
-		for (var i = 0; i < RC.active_channels-4; i++) {
-			servoHeader = servoHeader + '\
+        var servoCheckbox = '';
+        var servoHeader = '';
+        for (var i = 0; i < RC.active_channels-4; i++) {
+            servoHeader = servoHeader + '\
                 <th >A' + (i+1) + '</th>\
-			';
-		}
-		servoHeader = servoHeader + '<th style="width: 200px" i18n="servosDirection"></th>';
+            ';
+        }
+        servoHeader = servoHeader + '<th style="width: 200px" i18n="servosDirection"></th>';
 
-		for (var i = 0; i < RC.active_channels; i++) {
-			servoCheckbox = servoCheckbox + '\
+        for (var i = 0; i < RC.active_channels; i++) {
+            servoCheckbox = servoCheckbox + '\
                 <td class="channel"><input type="checkbox"/></td>\
-			';
-		}
-		
+            ';
+        }
+        
 
 
         $('div.tab-servos table.fields tr.main').append(servoHeader);
@@ -83,28 +83,28 @@ TABS.servos.initialize = function (callback) {
         }
 
         function process_servos(name, alternate, obj, directions) {
-		
+        
             $('div.supported_wrapper').show();
 
 
-			
+            
             $('div.tab-servos table.fields').append('\
                 <tr> \
                     <td style="text-align: center">' + name + '</td>\
                     <td class="middle"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].middle + '" /></td>\
                     <td class="min"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].min +'" /></td>\
                     <td class="max"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].max +'" /></td>\
-					' + servoCheckbox + '\
+                    ' + servoCheckbox + '\
                     <td class="direction">\
                         <input class="first" type="checkbox"/><span class="name">' + name + '</span>\
-						<input class="second" type="checkbox"/><span class="alternate">' + alternate + '</span>\
+                        <input class="second" type="checkbox"/><span class="alternate">' + alternate + '</span>\
                     </td>\
                 </tr> \
             ');
 
-			
+            
 
-			        // translate to user-selected language
+                    // translate to user-selected language
         localize();
 
             $('div.tab-servos table.fields tr:last td.channel input').eq(SERVO_CONFIG[obj].indexOfChannelToForward).prop('checked', true);
