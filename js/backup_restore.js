@@ -6,27 +6,6 @@ function configuration_backup(callback) {
     var activeProfile = null,
         profilesN = 3;
 
-    var profileSpecificData = [
-        MSP_codes.MSP_PID,
-        MSP_codes.MSP_RC_TUNING,
-        MSP_codes.MSP_ACC_TRIM,
-        MSP_codes.MSP_SERVO_CONF,
-        MSP_codes.MSP_CHANNEL_FORWARDING,
-        MSP_codes.MSP_MODE_RANGES,
-        MSP_codes.MSP_ADJUSTMENT_RANGES
-    ];
-
-    var uniqueData = [
-        // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
-        /*
-        MSP_codes.MSP_BOX,
-        */
-        MSP_codes.MSP_MISC,
-        MSP_codes.MSP_RCMAP,
-        MSP_codes.MSP_BF_CONFIG,
-        MSP_codes.MSP_CF_SERIAL_CONFIG
-    ];
-
     var configuration = {
         'generatedBy': chrome.runtime.getManifest().version,
         'profiles': []
@@ -45,17 +24,27 @@ function configuration_backup(callback) {
         }
     }
 
+    var profileSpecificData = [
+        MSP_codes.MSP_PID,
+        MSP_codes.MSP_RC_TUNING,
+        MSP_codes.MSP_ACC_TRIM,
+        MSP_codes.MSP_SERVO_CONF,
+        MSP_codes.MSP_CHANNEL_FORWARDING,
+        MSP_codes.MSP_MODE_RANGES,
+        MSP_codes.MSP_ADJUSTMENT_RANGES
+    ];
+
     function fetch_specific_data() {
         var fetchingProfile = 0,
             codeKey = 0;
 
-        function query() {
+        function fetch_specific_data_item() {
             if (fetchingProfile < profilesN) {
                 MSP.send_message(profileSpecificData[codeKey], false, false, function () {
                     codeKey++;
 
                     if (codeKey < profileSpecificData.length) {
-                        query();
+                        fetch_specific_data_item();
                     } else {
                         configuration.profiles.push({
                             'PID': jQuery.extend(true, [], PIDs),
@@ -69,7 +58,7 @@ function configuration_backup(callback) {
                         codeKey = 0;
                         fetchingProfile++;
 
-                        MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [fetchingProfile], false, query);
+                        MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [fetchingProfile], false, fetch_specific_data_item);
                     }
                 });
             } else {
@@ -78,17 +67,29 @@ function configuration_backup(callback) {
         }
 
         // start fetching
-        query();
+        fetch_specific_data_item();
     }
+
+    var uniqueData = [
+        // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
+        /*
+        MSP_codes.MSP_BOX,
+        */
+        MSP_codes.MSP_MISC,
+        MSP_codes.MSP_RCMAP,
+        MSP_codes.MSP_BF_CONFIG,
+        MSP_codes.MSP_CF_SERIAL_CONFIG,
+        MSP_codes.MSP_LED_STRIP_CONFIG
+    ];
 
     function fetch_unique_data() {
         var codeKey = 0;
 
-        function query() {
+        function fetch_unique_data_item() {
             if (codeKey < uniqueData.length) {
                 MSP.send_message(uniqueData[codeKey], false, false, function () {
                     codeKey++;
-                    query();
+                    fetch_unique_data_item();
                 });
             } else {
                 // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
@@ -99,13 +100,14 @@ function configuration_backup(callback) {
                 configuration.RCMAP = jQuery.extend(true, [], RC_MAP);
                 configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
                 configuration.SERIAL_CONFIG = jQuery.extend(true, {}, SERIAL_CONFIG);
+                configuration.LED_STRIP = jQuery.extend(true, {}, LED_STRIP);
 
                 save();
             }
         }
 
         // start fetching
-        query();
+        fetch_unique_data_item();
     }
 
     function save() {
@@ -290,13 +292,27 @@ function configuration_restore(callback) {
         
         if (!compareVersions(migratedVersion, '0.59.1')) {
             
-            configuration.MISC.rssi_channel = configuration.MISC.rssi_aux_channel; // variable was renamed
+            // variable was renamed
+            configuration.MISC.rssi_channel = configuration.MISC.rssi_aux_channel;
             configuration.MISC.rssi_aux_channel = undefined;
             
             migratedVersion = '0.59.1';
             GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
             appliedMigrationsCount++;
         }
+        
+        if (!compareVersions(migratedVersion, '0.60.1')) {
+            
+            // LED_STRIP support was added.
+            if (!configuration.LED_STRIP) {
+                configuration.LED_STRIP = [];
+            }
+            
+            migratedVersion = '0.60.1';
+            GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
+            appliedMigrationsCount++;
+        }
+        
         GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         return true;
     }
@@ -312,17 +328,6 @@ function configuration_restore(callback) {
                 MSP_codes.MSP_SET_ACC_TRIM,
                 MSP_codes.MSP_SET_SERVO_CONF,
                 MSP_codes.MSP_SET_CHANNEL_FORWARDING
-            ];
-
-            var uniqueData = [
-                // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
-                /*
-                MSP_codes.MSP_SET_BOX,
-                */
-                MSP_codes.MSP_SET_MISC,
-                MSP_codes.MSP_SET_RCMAP,
-                MSP_codes.MSP_SET_BF_CONFIG,
-                MSP_codes.MSP_SET_CF_SERIAL_CONFIG
             ];
 
             MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
@@ -391,6 +396,17 @@ function configuration_restore(callback) {
             function upload_unique_data() {
                 var codeKey = 0;
 
+                var uniqueData = [
+                    // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
+                    /*
+                    MSP_codes.MSP_SET_BOX,
+                    */
+                    MSP_codes.MSP_SET_MISC,
+                    MSP_codes.MSP_SET_RCMAP,
+                    MSP_codes.MSP_SET_BF_CONFIG,
+                    MSP_codes.MSP_SET_CF_SERIAL_CONFIG
+                ];
+
                 function load_objects() {
                     // Disabled, cleanflight does not use MSP_BOX.
                     /*
@@ -400,24 +416,30 @@ function configuration_restore(callback) {
                     RC_MAP = configuration.RCMAP;
                     BF_CONFIG = configuration.BF_CONFIG;
                     SERIAL_CONFIG = configuration.SERIAL_CONFIG;
+                    LED_STRIP = configuration.LED_STRIP;
                 }
 
-                function query() {
+                function send_unique_data_item() {
                     if (codeKey < uniqueData.length) {
                         MSP.send_message(uniqueData[codeKey], MSP.crunch(uniqueData[codeKey]), false, function () {
                             codeKey++;
-                            query();
+                            send_unique_data_item();
                         });
                     } else {
-                        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+                        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, send_led_strip_config);
                     }
                 }
 
-                // start uploading
                 load_objects();
-                query();
+                
+                // start uploading
+                send_unique_data_item();
             }
 
+            function send_led_strip_config() {
+                MSP.sendLedStripConfig(reboot);
+            }
+            
             function reboot() {
                 GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
 

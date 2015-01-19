@@ -939,6 +939,10 @@ MSP.sendModeRanges = function(onCompleteCallback) {
     
     var modeRangeIndex = 0;
 
+    if (MODE_RANGES.length == 0) {
+        onCompleteCallback();
+    }
+    
     send_next_mode_range();
 
     
@@ -968,6 +972,10 @@ MSP.sendAdjustmentRanges = function(onCompleteCallback) {
         
     var adjustmentRangeIndex = 0;
 
+    if (ADJUSTMENT_RANGES.length == 0) {
+        onCompleteCallback();
+    }
+    
     send_next_adjustment_range();
 
     
@@ -1000,6 +1008,10 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
     
     var ledIndex = 0;
 
+    if (LED_STRIP.length == 0) {
+        onCompleteCallback();
+    }
+    
     send_next_led_strip_config();
 
     function send_next_led_strip_config() {
