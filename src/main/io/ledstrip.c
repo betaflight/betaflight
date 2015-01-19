@@ -741,6 +741,11 @@ void updateLedStrip(void)
         return;
     }
 
+    if ( IS_RC_MODE_ACTIVE(BOXLLIGHTS)){
+    		ledStripDisable();
+    		return;
+    }
+
     uint32_t now = micros();
 
     bool indicatorFlashNow = indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
@@ -882,5 +887,11 @@ void ledStripEnable(void)
     ledStripInitialised = true;
 
     ws2811LedStripInit();
+}
+
+void ledStripDisable(void)
+{
+	setStripColor(&hsv_black);
+	ws2811UpdateStrip();
 }
 #endif
