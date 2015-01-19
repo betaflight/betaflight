@@ -58,7 +58,7 @@ UBlox GPS units can either be configured using the FC or manually.
 
 ### UBlox GPS manual configuration
 
-Use UBox U-Center and connect your GPS to your computer.  The CLI `gpspassthough` command may be of use if you do not have a spare USART to USB adapter.
+Use UBox U-Center and connect your GPS to your computer.  The CLI `gpspassthrough` command may be of use if you do not have a spare USART to USB adapter.
 
 Display the Packet Console (so you can see what messages your receiver is sending to your computer).
 
