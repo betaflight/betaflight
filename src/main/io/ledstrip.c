@@ -48,8 +48,11 @@
 #include "io/ledstrip.h"
 
 static bool ledStripInitialised = false;
-static bool ledStripIsOnFlag = true;
+
 static failsafe_t* failsafe;
+
+static bool ledStripEnabled = true;
+static void ledStripDisable(void);
 
 //#define USE_LED_ANIMATION
 
@@ -743,14 +746,20 @@ void updateLedStrip(void)
     }
 
     if ( IS_RC_MODE_ACTIVE(BOXLEDLOW)){
-        if (ledStripIsOnFlag){
+        if (ledStripEnabled){
     		ledStripDisable();
-            ledStripIsOnFlag = false;
+            ledStripEnabled = false;
         }
-        return;
     }else{
-        ledStripIsOnFlag = true;
+        ledStripEnabled = true;
     }
+    
+    if (!ledStripEnabled){
+        return;
+    }
+    
+    
+    
 
     uint32_t now = micros();
 
@@ -895,7 +904,7 @@ void ledStripEnable(void)
     ws2811LedStripInit();
 }
 
-void ledStripDisable(void)
+static void ledStripDisable(void)
 {
 	setStripColor(&hsv_black);
 	ws2811UpdateStrip();
