@@ -42,6 +42,9 @@
 #define ACC
 #define USE_ACC_LSM303DLHC
 
+#define MAG
+#define USE_MAG_HMC5883
+
 #define BEEPER
 #define LED0
 #define LED1
@@ -56,7 +59,7 @@
 
 #define USE_ADC
 
-#define SENSORS_SET (SENSOR_ACC)
+#define SENSORS_SET (SENSOR_ACC | SENSOR_MAG)
 
 #define BLACKBOX
 #define GPS
