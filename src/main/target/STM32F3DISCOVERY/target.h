@@ -54,6 +54,8 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
+#define USE_ADC
+
 #define SENSORS_SET (SENSOR_ACC)
 
 #define BLACKBOX

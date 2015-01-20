@@ -65,7 +65,7 @@ typedef struct pwmOutputConfiguration_s {
     uint8_t motorCount;
 } pwmOutputConfiguration_t;
 
-// This indexes into the read-only hardware definition structure, timerHardware_t, as well as into pwmPorts structure with dynamic data.
+// This indexes into the read-only hardware definition structure, timerHardware_t
 enum {
     PWM1 = 0,
     PWM2,
@@ -80,5 +80,7 @@ enum {
     PWM11,
     PWM12,
     PWM13,
-    PWM14
+    PWM14,
+    PWM15,
+    PWM16
 };

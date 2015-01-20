@@ -178,9 +178,17 @@ static const mpu6050Config_t *mpu6050Config = NULL;
 void mpu6050GpioInit(void) {
     gpio_config_t gpio;
 
-    if (mpu6050Config->gpioAPB2Peripherals) {
-        RCC_APB2PeriphClockCmd(mpu6050Config->gpioAPB2Peripherals, ENABLE);
-    }
+#ifdef STM32F303
+        if (mpu6050Config->gpioAHBPeripherals) {
+            RCC_AHBPeriphClockCmd(mpu6050Config->gpioAHBPeripherals, ENABLE);
+        }
+#endif
+#ifdef STM32F10X
+        if (mpu6050Config->gpioAPB2Peripherals) {
+            RCC_APB2PeriphClockCmd(mpu6050Config->gpioAPB2Peripherals, ENABLE);
+        }
+#endif
+
 
     gpio.pin = mpu6050Config->gpioPin;
     gpio.speed = Speed_2MHz;

@@ -35,6 +35,8 @@
 #define MPU6000_CS_PIN        GPIO_Pin_4
 #define MPU6000_SPI_INSTANCE  SPI1
 
+#define USABLE_TIMER_CHANNEL_COUNT 12
+
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 
@@ -70,6 +72,8 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
+
+#define USE_ADC
 
 #define SENSORS_SET (SENSOR_ACC)
 

@@ -73,7 +73,9 @@ static serialPort_t *serialPorts[SERIAL_PORT_COUNT];
 
 #ifdef STM32F303xC
 static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
+#ifdef USE_VCP
     {SERIAL_PORT_USB_VCP,     NULL, SCENARIO_UNUSED, FUNCTION_NONE},
+#endif
     {SERIAL_PORT_USART1,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
     {SERIAL_PORT_USART2,      NULL, SCENARIO_UNUSED, FUNCTION_NONE},
 #if (SERIAL_PORT_COUNT > 3)
@@ -85,7 +87,9 @@ static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
 };
 
 const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
+#ifdef USE_VCP
     {SERIAL_PORT_USB_VCP,       9600,   115200,   SPF_NONE },
+#endif
     {SERIAL_PORT_USART1,        9600,   115200,   SPF_NONE | SPF_SUPPORTS_SBUS_MODE | SPF_SUPPORTS_BIDIR_MODE},
     {SERIAL_PORT_USART2,        9600,   115200,   SPF_SUPPORTS_CALLBACK | SPF_SUPPORTS_SBUS_MODE | SPF_SUPPORTS_BIDIR_MODE},
 #if (SERIAL_PORT_COUNT > 3)

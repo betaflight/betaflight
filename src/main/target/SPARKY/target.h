@@ -26,6 +26,8 @@
 #define LED1_PIN    Pin_5  // Green LEDs - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
 
+#define USABLE_TIMER_CHANNEL_COUNT 11
+
 // MPU 9150 INT connected to PA15, pulled up to VCC by 10K Resistor, contains MPU6050 and AK8975 in single component.
 #define GYRO
 #define USE_GYRO_MPU6050

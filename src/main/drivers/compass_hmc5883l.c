@@ -142,10 +142,16 @@ void hmc5883lInit(void)
     gpio_config_t gpio;
 
     if (hmc5883Config) {
+#ifdef STM32F303
+        if (hmc5883Config->gpioAHBPeripherals) {
+            RCC_AHBPeriphClockCmd(hmc5883Config->gpioAHBPeripherals, ENABLE);
+        }
+#endif
+#ifdef STM32F10X
         if (hmc5883Config->gpioAPB2Peripherals) {
             RCC_APB2PeriphClockCmd(hmc5883Config->gpioAPB2Peripherals, ENABLE);
         }
-
+#endif
         gpio.pin = hmc5883Config->gpioPin;
         gpio.speed = Speed_2MHz;
         gpio.mode = Mode_IN_FLOATING;
