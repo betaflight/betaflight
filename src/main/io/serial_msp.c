@@ -619,9 +619,7 @@ void mspInit(serialConfig_t *serialConfig)
 
 #ifdef LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
-        //activeBoxIds[activeBoxIdCount++] = BOXLEDMAX;
         activeBoxIds[activeBoxIdCount++] = BOXLEDLOW;
-        //activeBoxIds[activeBoxIdCount++] = BOXLLIGHTS;
     }
 #endif
     
