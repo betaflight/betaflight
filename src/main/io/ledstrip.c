@@ -48,6 +48,7 @@
 #include "io/ledstrip.h"
 
 static bool ledStripInitialised = false;
+static bool ledStripIsOnFlag = true;
 static failsafe_t* failsafe;
 
 //#define USE_LED_ANIMATION
@@ -742,8 +743,13 @@ void updateLedStrip(void)
     }
 
     if ( IS_RC_MODE_ACTIVE(BOXLEDLOW)){
+        if (ledStripIsOnFlag){
     		ledStripDisable();
-    		return;
+            ledStripIsOnFlag = false;
+        }
+        return;
+    }else{
+        ledStripIsOnFlag = true;
     }
 
     uint32_t now = micros();
