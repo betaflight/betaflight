@@ -741,7 +741,7 @@ void updateLedStrip(void)
         return;
     }
 
-    if ( IS_RC_MODE_ACTIVE(BOXLLIGHTS)){
+    if ( IS_RC_MODE_ACTIVE(BOXLEDLOW)){
     		ledStripDisable();
     		return;
     }
