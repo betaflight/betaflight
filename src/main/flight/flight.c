@@ -359,7 +359,11 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
     //YAW
     rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
+#ifdef ALIENWII32
+    error = rc - gyroData[FD_YAW];
+#else
     error = rc - (gyroData[FD_YAW] / 4);
+#endif
     errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
     errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
     if (abs(rc) > 50) errorGyroI[FD_YAW] = 0;
@@ -375,6 +379,12 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
     axisPID[FD_YAW] =  PTerm + ITerm;
+
+#ifdef BLACKBOX
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = DTerm;
+#endif
 }
 
 static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
@@ -454,7 +464,11 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
     }
     //YAW
     rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
+#ifdef ALIENWII32
+    error = rc - gyroData[FD_YAW];
+#else
     error = rc - (gyroData[FD_YAW] / 4);
+#endif
     errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
     errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
     if (abs(rc) > 50) errorGyroI[FD_YAW] = 0;
@@ -470,6 +484,12 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
     ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
     axisPID[FD_YAW] =  PTerm + ITerm;
+
+#ifdef BLACKBOX
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = DTerm;
+#endif
 }
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
