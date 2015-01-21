@@ -42,9 +42,10 @@ typedef enum {
 } batteryState_e;
 
 extern uint8_t vbat;
-extern uint16_t vbatLatest;
+extern uint16_t vbatLatestADC;
 extern uint8_t batteryCellCount;
 extern uint16_t batteryWarningVoltage;
+extern uint16_t amperageLatestADC;
 extern int32_t amperage;
 extern int32_t mAhDrawn;
 
