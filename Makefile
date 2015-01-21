@@ -441,6 +441,7 @@ STM32F3DISCOVERY_COMMON_SRC	 = \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
+		   drivers/compass_hmc5883l.c \
 		   $(VCP_SRC)
 
 STM32F3DISCOVERY_SRC	 = \
