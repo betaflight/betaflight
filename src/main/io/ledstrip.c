@@ -758,8 +758,6 @@ void updateLedStrip(void)
         return;
     }
     
-    
-    
 
     uint32_t now = micros();
 
@@ -907,6 +905,7 @@ void ledStripEnable(void)
 static void ledStripDisable(void)
 {
 	setStripColor(&hsv_black);
+    
 	ws2811UpdateStrip();
 }
 #endif
