@@ -394,24 +394,20 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #endif
 
-#ifdef STM32F10X
-        // skip ADC for RSSI
-        if (init->useRSSIADC && timerIndex == PWM2)
+#ifdef VBAT_ADC_GPIO
+        if (init->useVbat && timerHardwarePtr->gpio == VBAT_ADC_GPIO && timerHardwarePtr->pin == VBAT_ADC_GPIO_PIN) {
             continue;
+        }
 #endif
 
-#ifdef CC3D
-        if (init->useVbat && timerIndex == Vbat_TIMER) {
+#ifdef RSSI_ADC_GPIO
+        if (init->useRSSIADC && timerHardwarePtr->gpio == RSSI_ADC_GPIO && timerHardwarePtr->pin == RSSI_ADC_GPIO_PIN) {
             continue;
         }
 #endif
-#ifdef CC3D
-        if (init->useCurrentMeterADC && timerIndex == CurrentMeter_TIMER) {
-            continue;
-        }
-#endif
-#ifdef CC3D
-        if (init->useRSSIADC && timerIndex == RSSI_TIMER) {
+
+#ifdef CURRENT_METER_ADC_GPIO
+        if (init->useCurrentMeterADC && timerHardwarePtr->gpio == CURRENT_METER_ADC_GPIO && timerHardwarePtr->pin == CURRENT_METER_ADC_GPIO_PIN) {
             continue;
         }
 #endif
