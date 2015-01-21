@@ -150,6 +150,7 @@ typedef struct blackboxGPSFieldDefinition_t {
     uint8_t isSigned;
     uint8_t predict;
     uint8_t encode;
+    uint8_t condition; // Decide whether this field should appear in the log
 } blackboxGPSFieldDefinition_t;
 
 /**
@@ -213,18 +214,19 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
 #ifdef GPS
 // GPS position/vel frame
 static const blackboxGPSFieldDefinition_t blackboxGpsGFields[] = {
-    {"GPS_numSat",    UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"GPS_coord[0]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB)},
-    {"GPS_coord[1]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB)},
-    {"GPS_altitude",  UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"GPS_speed",     UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"GPS_ground_course",UNSIGNED, PREDICT(0),       ENCODING(UNSIGNED_VB)}
+    {"time",          UNSIGNED, PREDICT(LAST_MAIN_FRAME_TIME), ENCODING(UNSIGNED_VB), CONDITION(NOT_LOGGING_EVERY_FRAME)},
+    {"GPS_numSat",    UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_coord[0]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_coord[1]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_altitude",  UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_speed",     UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_ground_course",UNSIGNED, PREDICT(0),       ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)}
 };
 
 // GPS home frame
 static const blackboxGPSFieldDefinition_t blackboxGpsHFields[] = {
-    {"GPS_home[0]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
-    {"GPS_home[1]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
+    {"GPS_home[0]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_home[1]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)}
 };
 #endif
 
@@ -631,6 +633,9 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_VBAT:
             return feature(FEATURE_VBAT);
 
+        case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
+            return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
+
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
         default:
@@ -772,8 +777,8 @@ static void writeInterframe(void)
     //No need to store iteration count since its delta is always 1
 
     /*
-     * Since the difference between the difference between successive times will be nearly zero, use
-     * second-order differences.
+     * Since the difference between the difference between successive times will be nearly zero (due to consistent
+     * looptime spacing), use second-order differences.
      */
     writeSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
@@ -979,6 +984,17 @@ static void writeGPSHomeFrame()
 static void writeGPSFrame()
 {
     blackboxWrite('G');
+
+    /*
+     * If we're logging every frame, then a GPS frame always appears just after a frame with the
+     * currentTime timestamp in the log, so the reader can just use that timestamp for the GPS frame.
+     *
+     * If we're not logging every frame, we need to store the time of this GPS frame.
+     */
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME)) {
+        // Predict the time of the last frame in the main log
+        writeUnsignedVB(currentTime - blackboxHistory[1]->time);
+    }
 
     writeUnsignedVB(GPS_numSat);
     writeSignedVB(GPS_coord[0] - gpsHistory.GPS_home[0]);
@@ -1309,14 +1325,14 @@ void handleBlackbox(void)
         case BLACKBOX_STATE_SEND_GPS_H_HEADERS:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
             if (!sendFieldDefinition(blackboxGPSHHeaderNames, ARRAY_LENGTH(blackboxGPSHHeaderNames), blackboxGpsHFields, blackboxGpsHFields + 1,
-                    ARRAY_LENGTH(blackboxGpsHFields), NULL, NULL)) {
+                    ARRAY_LENGTH(blackboxGpsHFields), &blackboxGpsHFields[0].condition, &blackboxGpsHFields[1].condition)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADERS);
             }
         break;
         case BLACKBOX_STATE_SEND_GPS_G_HEADERS:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
             if (!sendFieldDefinition(blackboxGPSGHeaderNames, ARRAY_LENGTH(blackboxGPSGHeaderNames), blackboxGpsGFields, blackboxGpsGFields + 1,
-                    ARRAY_LENGTH(blackboxGpsGFields), NULL, NULL)) {
+                    ARRAY_LENGTH(blackboxGpsGFields), &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
         break;
