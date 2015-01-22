@@ -158,12 +158,11 @@ void normalizeV(struct fp_vector *src, struct fp_vector *dest)
     }
 }
 
-// Rotate Estimated vector(s) with small angle approximation, according to the gyro data
+// Rotate a vector *v by the euler angles defined by the 3-vector *delta.
 void rotateV(struct fp_vector *v, fp_angles_t *delta)
 {
     struct fp_vector v_tmp = *v;
 
-    // This does a  "proper" matrix rotation using gyro deltas without small-angle approximation
     float mat[3][3];
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, sinzcosx, coszsinx, sinzsinx;
