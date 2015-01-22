@@ -1469,6 +1469,8 @@ static bool processInCommand(void)
 
             mask = read8();
             ledConfig->xy |= CALCULATE_LED_Y(mask);
+
+            reevalulateLedConfig();
         }
         break;
 #endif

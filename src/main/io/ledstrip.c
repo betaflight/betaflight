@@ -337,7 +337,7 @@ void updateLedCount(void)
     }
 }
 
-static void reevalulateLedConfig(void)
+void reevalulateLedConfig(void)
 {
     updateLedCount();
     determineLedStripDimensions();
