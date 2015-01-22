@@ -744,67 +744,53 @@ void applyLedThrottleLayer()
     }
 }
 
-int applyLedThrustRingLayer(void)
+void applyLedThrustRingLayer(void)
 {
-    uint8_t oppositeLedIndex = ledsInRingCount >> 1;
     uint8_t ledIndex;
-    int returnedValue = 1;
-    int throttleScaled = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 1, 10);
     static uint8_t rotationPhase = 0;
     bool nextLedOn = false;
     hsvColor_t ringColor;
     const ledConfig_t *ledConfig;
 
+    uint8_t phaseCount = ledsInRingCount / 2;
 
+    uint8_t ledRingIndex = 0;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
         ledConfig = &ledConfigs[ledIndex];
 
-        ringColor = colors[ledConfig->color];
 
-        if ((ledConfig->flags & LED_FUNCTION_THRUST_RING)) {
-
-            if (!ARMING_FLAG(ARMED)) {
-
-                if (nextLedOn == false) {
-                    nextLedOn = true;
-                }
-                else {
-                    nextLedOn = false;
-                    ringColor = hsv_black;
-                }
-
-                returnedValue = 1;
-            }
-            else {
-                if (rotationPhase == ((oppositeLedIndex) - 1)) {
-                    if (!((ledIndex == rotationPhase) || (ledIndex == (rotationPhase + oppositeLedIndex))
-                                  || (ledIndex == (rotationPhase +1)) || (ledIndex == 0))) {
-                        ringColor = hsv_black;
-                    }
-                }
-                else if (!((ledIndex == rotationPhase) || (ledIndex == (rotationPhase + oppositeLedIndex))
-                            || (ledIndex == (rotationPhase +1)) || (ledIndex == (rotationPhase + oppositeLedIndex +1 )))) {
-                        ringColor = hsv_black;
-                }
-                else {
-                        // Led stay on
-                }
-
-                returnedValue = throttleScaled;
-            }
-            setLedHsv(ledIndex, &ringColor);
+        if ((ledConfig->flags & LED_FUNCTION_THRUST_RING) == 0) {
+            continue;
         }
+
+        bool applyColor = false;
+        if (ARMING_FLAG(ARMED)) {
+            if (ledRingIndex == rotationPhase || ledIndex == rotationPhase + phaseCount) {
+                applyColor = true;
+            }
+        } else {
+            if (nextLedOn == false) {
+                applyColor = true;
+            }
+            nextLedOn = !nextLedOn;
+        }
+
+        if (applyColor) {
+            ringColor = colors[ledConfig->color];
+        } else {
+            ringColor = hsv_black;
+        }
+
+        setLedHsv(ledIndex, &ringColor);
+
+        ledRingIndex++;
     }
 
-    if (rotationPhase >= (oppositeLedIndex - 1)) {
+    rotationPhase++;
+    if (rotationPhase == phaseCount) {
         rotationPhase = 0;
     }
-    else {
-        rotationPhase++;
-    }
-
-    return returnedValue;
 }
 
 #ifdef USE_LED_ANIMATION
@@ -931,9 +917,15 @@ void updateLedStrip(void)
 
     if (rotationUpdateNow) {
 
-        int animationSpeedScaled = applyLedThrustRingLayer();
+        applyLedThrustRingLayer();
 
-        nextRotationUpdateAt = now + LED_STRIP_5HZ/animationSpeedScaled;           // TODO will be changed with more specifics animation
+        uint8_t animationSpeedScale = 1;
+
+        if (ARMING_FLAG(ARMED)) {
+            animationSpeedScale = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 1, 10);
+        }
+
+        nextRotationUpdateAt = now + LED_STRIP_5HZ/animationSpeedScale;
     }
 
     ws2811UpdateStrip();
