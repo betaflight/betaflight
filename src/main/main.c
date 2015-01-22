@@ -206,12 +206,15 @@ void init(void)
 #endif
 
 #ifdef USE_I2C
-#ifdef NAZE
+#if defined(NAZE)
     if (hardwareRevision != NAZE32_SP) {
         i2cInit(I2C_DEVICE);
     }
+#elif defined(CC3D)
+    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+        i2cInit(I2C_DEVICE);
+    }
 #else
-    // Configure the rest of the stuff
     i2cInit(I2C_DEVICE);
 #endif
 #endif
