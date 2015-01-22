@@ -62,11 +62,15 @@
 }
 
 .tab-led-strip .gPoint.function-i.function-w {
-    background: linear-gradient(to bottom, #42c949 0%,#d2ff52 50%,#ff5454 50%,#ba3535 100%);
+    background: linear-gradient(to bottom, yellow 0%,yellow 50%,#ff5454 50%,#ba3535 100%);
 }
 
 .tab-led-strip .gPoint.function-f.function-w {
     background: linear-gradient(to bottom, rgb(50, 205, 50) 0%,rgb(50, 205, 50) 50%,#ff5454 50%,#ba3535 100%);
+}
+
+.tab-led-strip .gPoint.function-f.function-t {
+    background: linear-gradient(to bottom, rgb(50, 205, 50) 0%,rgb(50, 205, 50) 50%,orange 50%,orange 100%);
 }
 
 .tab-led-strip .gPoint.function-i { /* indicator */
