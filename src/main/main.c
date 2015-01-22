@@ -104,7 +104,7 @@ void beepcodeInit(failsafe_t *initialFailsafe);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int8_t magHardwareToUse, int16_t magDeclinationFromConfig);
-void imuInit(void);
+void initIMU(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse);
 void loop(void);
@@ -264,7 +264,7 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-    imuInit();
+    initIMU();
     mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
 
 #ifdef MAG

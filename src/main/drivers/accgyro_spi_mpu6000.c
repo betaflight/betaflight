@@ -319,7 +319,7 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
     gyro->read = mpu6000SpiGyroRead;
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
-    //gyro->scale = (4.0f / 16.4f) * (M_PI / 180.0f) * 0.000001f;
+    //gyro->scale = (4.0f / 16.4f) * (M_PIf / 180.0f) * 0.000001f;
     delay(100);
     return true;
 }

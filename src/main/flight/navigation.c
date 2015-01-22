@@ -163,7 +163,7 @@ static int32_t get_D(int32_t input, float *dt, PID *pid, PID_PARAM *pid_param)
 
     // Low pass filter cut frequency for derivative calculation
     // Set to  "1 / ( 2 * PI * gps_lpf )
-    float pidFilter = (1.0f / (2.0f * M_PI * (float)gpsProfile->gps_lpf));
+    float pidFilter = (1.0f / (2.0f * M_PIf * (float)gpsProfile->gps_lpf));
     // discrete low pass filter, cuts out the
     // high frequency noise that can drive the controller crazy
     pid->derivative = pid->last_derivative + (*dt / (pidFilter + *dt)) * (pid->derivative - pid->last_derivative);

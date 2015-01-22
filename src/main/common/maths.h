@@ -21,16 +21,10 @@
 #define sq(x) ((x)*(x))
 #endif
 
-#ifdef M_PI
-// M_PI should be float, but previous definition may be double
-# undef M_PI
-#endif
-#define M_PI       3.14159265358979323846f
+// Use floating point M_PI instead explicitly.
+#define M_PIf       3.14159265358979323846f
 
-#define RADX10 (M_PI / 1800.0f)                  // 0.001745329252f
-#define RAD    (M_PI / 180.0f)
-
-#define DEG2RAD(degrees) (degrees * RAD)
+#define RAD    (M_PIf / 180.0f)
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -41,6 +35,31 @@ typedef struct stdev_t
     float m_oldM, m_newM, m_oldS, m_newS;
     int m_n;
 } stdev_t;
+
+// Floating point 3 vector.
+typedef struct fp_vector {
+    float X;
+    float Y;
+    float Z;
+} t_fp_vector_def;
+
+typedef union {
+    float A[3];
+    t_fp_vector_def V;
+} t_fp_vector;
+
+// Floating point Euler angles.
+// Be carefull, could be either of degrees or radians.
+typedef struct fp_angles {
+    float roll;
+    float pitch;
+    float yaw;
+} fp_angles_def;
+
+typedef union {
+    float raw[3];
+    fp_angles_def angles;
+} fp_angles_t;
 
 int32_t applyDeadband(int32_t value, int32_t deadband);
 
@@ -54,3 +73,7 @@ float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
 
 int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax);
+
+void normalizeV(struct fp_vector *src, struct fp_vector *dest);
+
+void rotateV(struct fp_vector *v, fp_angles_t *delta);

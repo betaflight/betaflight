@@ -30,7 +30,7 @@ typedef struct imuRuntimeConfig_s {
     int8_t small_angle;
 } imuRuntimeConfig_t;
 
-void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, accDeadband_t *initialAccDeadband);
+void configureIMU(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, accDeadband_t *initialAccDeadband);
 
 void calculateEstimatedAltitude(uint32_t currentTime);
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode);
