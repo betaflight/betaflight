@@ -1451,7 +1451,7 @@ static bool processInCommand(void)
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = read8();
-            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != 8) {
+            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != (1 + 7)) {
                 headSerialError(0);
                 break;
             }
