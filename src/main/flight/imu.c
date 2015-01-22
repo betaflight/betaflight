@@ -86,7 +86,7 @@ void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *ini
     accDeadband = initialAccDeadband;
 }
 
-void imuInit()
+void initIMU()
 {
     smallAngle = lrintf(acc_1G * cosf(degreesToRadians(imuRuntimeConfig->small_angle)));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
