@@ -88,7 +88,7 @@ void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *ini
 
 void imuInit()
 {
-    smallAngle = lrintf(acc_1G * cosf(RAD * imuRuntimeConfig->small_angle));
+    smallAngle = lrintf(acc_1G * cosf(degreesToRadians(imuRuntimeConfig->small_angle)));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
     gyroScaleRad = gyro.scale * (M_PI / 180.0f) * 0.000001f;
 }
