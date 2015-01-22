@@ -53,21 +53,42 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             $(this).select();
         });
 
-        // Clear Button
+        // Clear button
         $('.funcClear').click(function() {
             $('.gPoint').each(function() {
                 if ($(this).is('.ui-selected')) {
-                    $(this).removeClass(function(index, theClass) { 
-                       theClass = theClass.replace(/(^|\s)+gPoint\s+/, '');                    
-                       return theClass;
-                    });
-                    $(this).addClass('ui-selected');
-                    updateBulkCmd();
+                    removeFunctionsAndDirections(this);
+                    $(this).find('.wire').html('');
                 }
             });
 
             $('.controls button').removeClass('btnOn');
+            updateBulkCmd();
         });
+
+        // Clear All button
+        $('.funcClearAll').click(function() {
+            $('.gPoint').each(function() {
+                removeFunctionsAndDirections(this);
+            });
+            $('.gPoint .wire').html('');
+
+            updateBulkCmd();
+
+            $('.controls button').removeClass('btnOn');
+        });
+
+        function removeFunctionsAndDirections(element) {
+            var classesToRemove = [];
+            
+            TABS.led_strip.functions.forEach(function(letter) {
+                classesToRemove.push('function-' + letter);
+            });
+            TABS.led_strip.directions.forEach(function(letter) {
+                classesToRemove.push('dir-' + letter);
+            });
+            $(element).removeClass(classesToRemove.join(' '));
+        }
 
 
         // Directional Buttons
