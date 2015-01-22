@@ -41,8 +41,28 @@
     border-color: rgb(50, 205, 50);
 }
 
-.tab-led-strip .gPoint.function-w.function-f {
-    background: linear-gradient(to bottom, #42c949 0%,#d2ff52 52%,#d2ff52 52%,#ff5454 52%,#ba3535 100%);
+.tab-led-strip .gPoint.function-i.function-f {
+    background: linear-gradient(to bottom, yellow 0%,yellow 50%,rgb(50, 205, 50) 50%, rgb(50, 205, 50) 100%);
+}
+
+.tab-led-strip .gPoint.function-i.function-a {
+    background: linear-gradient(to bottom, yellow 0%,yellow 50%,rgb(52, 155, 255) 50%, rgb(52, 155, 255) 100%);
+}
+
+.tab-led-strip .gPoint.function-i.function-f.function-a {
+    background: linear-gradient(to bottom, yellow 0%,yellow 33%,rgb(50, 205, 50) 33%, rgb(50, 205, 50) 66%, rgb(52, 155, 255) 66%, rgb(52, 155, 255) 100%);
+}
+
+.tab-led-strip .gPoint.function-i.function-w.function-a {
+    background: linear-gradient(to bottom, yellow 0%,yellow 33%,red 33%, red 66%, rgb(52, 155, 255) 66%, rgb(52, 155, 255) 100%);
+}
+
+.tab-led-strip .gPoint.function-t.function-f.function-w {
+    background: linear-gradient(to bottom, orange 0%,orange 33%,rgb(50, 205, 50) 33%, rgb(50, 205, 50) 66%, red 66%, red 100%);
+}
+
+.tab-led-strip .gPoint.function-i.function-w {
+    background: linear-gradient(to bottom, #42c949 0%,#d2ff52 50%,#ff5454 50%,#ba3535 100%);
 }
 
 .tab-led-strip .gPoint.function-i { /* indicator */
