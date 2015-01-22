@@ -247,7 +247,13 @@ void acc_calc(uint32_t deltaT)
     accSumCount++;
 }
 
-// baseflight calculation by Luggi09 originates from arducopter
+/*
+* Baseflight calculation by Luggi09 originates from arducopter
+* ============================================================
+*
+* Calculate the heading of the craft (in degrees clockwise from North)
+* when given a 3-vector representing the direction of North.
+*/
 static int16_t calculateHeading(t_fp_vector *vec)
 {
     int16_t head;
