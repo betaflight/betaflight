@@ -751,7 +751,7 @@ int applyLedThrustRingLayer(void)
     int returnedValue = 1;
     int throttleScaled = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 1, 10);
     static uint8_t rotationPhase = 0;
-    static bool nextLedOn = false;
+    bool nextLedOn = false;
     hsvColor_t ringColor;
     const ledConfig_t *ledConfig;
 
