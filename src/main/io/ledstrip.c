@@ -744,21 +744,21 @@ void applyLedThrottleLayer()
     }
 }
 
+#define ROTATION_SEQUENCE_LED_COUNT 6 // 2 on, 4 off
+#define ROTATION_SEQUENCE_LED_WIDTH 2
+
 void applyLedThrustRingLayer(void)
 {
     uint8_t ledIndex;
-    static uint8_t rotationPhase = 0;
+    static uint8_t rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
     bool nextLedOn = false;
     hsvColor_t ringColor;
     const ledConfig_t *ledConfig;
-
-    uint8_t phaseCount = ledsInRingCount / 2;
 
     uint8_t ledRingIndex = 0;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
         ledConfig = &ledConfigs[ledIndex];
-
 
         if ((ledConfig->flags & LED_FUNCTION_THRUST_RING) == 0) {
             continue;
@@ -766,7 +766,7 @@ void applyLedThrustRingLayer(void)
 
         bool applyColor = false;
         if (ARMING_FLAG(ARMED)) {
-            if (ledRingIndex == rotationPhase || ledIndex == rotationPhase + phaseCount) {
+            if ((ledRingIndex + rotationPhase) % ROTATION_SEQUENCE_LED_COUNT < ROTATION_SEQUENCE_LED_WIDTH) {
                 applyColor = true;
             }
         } else {
@@ -787,9 +787,9 @@ void applyLedThrustRingLayer(void)
         ledRingIndex++;
     }
 
-    rotationPhase++;
-    if (rotationPhase == phaseCount) {
-        rotationPhase = 0;
+    rotationPhase--;
+    if (rotationPhase == 0) {
+        rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
     }
 }
 
