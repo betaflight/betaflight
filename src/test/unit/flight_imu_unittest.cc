@@ -85,18 +85,8 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     UNUSED(rollAndPitchTrims);
 }
 
-int32_t applyDeadband(int32_t, int32_t) { return 0; }
-
 uint32_t micros(void) { return 0; }
 bool isBaroCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
-int constrain(int amt, int low, int high)
-{
-    UNUSED(amt);
-    UNUSED(low);
-    UNUSED(high);
-    return 0;
-}
-
 }
