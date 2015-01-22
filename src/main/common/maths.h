@@ -21,13 +21,10 @@
 #define sq(x) ((x)*(x))
 #endif
 
-#ifdef M_PI
-// M_PI should be float, but previous definition may be double
-# undef M_PI
-#endif
-#define M_PI       3.14159265358979323846f
+// Use floating point M_PI instead explicitly.
+#define M_PIf       3.14159265358979323846f
 
-#define RAD    (M_PI / 180.0f)
+#define RAD    (M_PIf / 180.0f)
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))

@@ -90,17 +90,17 @@ void imuInit()
 {
     smallAngle = lrintf(acc_1G * cosf(degreesToRadians(imuRuntimeConfig->small_angle)));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
-    gyroScaleRad = gyro.scale * (M_PI / 180.0f) * 0.000001f;
+    gyroScaleRad = gyro.scale * (M_PIf / 180.0f) * 0.000001f;
 }
 
 void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
-    throttleAngleScale = (1800.0f / M_PI) * (900.0f / throttle_correction_angle);
+    throttleAngleScale = (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
 }
 
 void calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
 {
-    fc_acc = 0.5f / (M_PI * accz_lpf_cutoff); // calculate RC time constant used in the accZ lpf
+    fc_acc = 0.5f / (M_PIf * accz_lpf_cutoff); // calculate RC time constant used in the accZ lpf
 }
 
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
@@ -259,7 +259,7 @@ static int16_t calculateHeading(t_fp_vector *vec)
     float sinePitch = sinf(anglerad[AI_PITCH]);
     float Xh = vec->A[X] * cosinePitch + vec->A[Y] * sineRoll * sinePitch + vec->A[Z] * sinePitch * cosineRoll;
     float Yh = vec->A[Y] * cosineRoll - vec->A[Z] * sineRoll;
-    float hd = (atan2f(Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
+    float hd = (atan2f(Yh, Xh) * 1800.0f / M_PIf + magneticDeclination) / 10.0f;
     head = lrintf(hd);
     if (head < 0)
         head += 360;
@@ -318,8 +318,8 @@ static void getEstimatedAttitude(void)
     // Attitude of the estimated vector
     anglerad[AI_ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
     anglerad[AI_PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
-    inclination.values.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
-    inclination.values.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
+    inclination.values.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PIf));
+    inclination.values.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PIf));
 
     if (sensors(SENSOR_MAG)) {
         rotateV(&EstM.V, &deltaGyroAngle);
@@ -349,5 +349,5 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
     int angle = lrintf(acosf(cosZ) * throttleAngleScale);
     if (angle > 900)
         angle = 900;
-    return lrintf(throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f)));
+    return lrintf(throttle_correction_value * sinf(angle / (900.0f * M_PIf / 2.0f)));
 }

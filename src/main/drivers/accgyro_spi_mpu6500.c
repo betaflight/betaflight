@@ -128,7 +128,7 @@ bool mpu6500SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
-    //gyro->scale = (4.0f / 16.4f) * (M_PI / 180.0f) * 0.000001f;
+    //gyro->scale = (4.0f / 16.4f) * (M_PIf / 180.0f) * 0.000001f;
 
     // default lpf is 42Hz
     if (lpf >= 188)
