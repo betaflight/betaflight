@@ -25,7 +25,7 @@ https://help.github.com/articles/creating-a-pull-request/
 The main flow for a contributing is as follows:
 
 1. Login to github, goto the cleanflight repository and press `fork`.
-2. `git clone <url to YOUR fork>`
+2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`
 3. `cd cleanflight`
 4. `git checkout master`
 5. `git checkout -b my-new-code`
@@ -44,4 +44,7 @@ Later, you can get the changes from the cleanflight repo into your `master` bran
 2. `git checkout master`
 3. `git fetch cleanflight`
 4. `git merge cleanflight/master`
+ 
+
+You can also perform the git commands using the git client inside Eclipse.  Refer to the Eclipse git manual.
  
