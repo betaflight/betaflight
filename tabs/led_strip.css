@@ -65,6 +65,10 @@
     background: linear-gradient(to bottom, #42c949 0%,#d2ff52 50%,#ff5454 50%,#ba3535 100%);
 }
 
+.tab-led-strip .gPoint.function-f.function-w {
+    background: linear-gradient(to bottom, rgb(50, 205, 50) 0%,rgb(50, 205, 50) 50%,#ff5454 50%,#ba3535 100%);
+}
+
 .tab-led-strip .gPoint.function-i { /* indicator */
     background: yellow;
     box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
