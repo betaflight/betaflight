@@ -48,10 +48,10 @@
 #include "io/ledstrip.h"
 
 static bool ledStripInitialised = false;
+static bool ledStripEnabled = true;
 
 static failsafe_t* failsafe;
 
-static bool ledStripEnabled = true;
 static void ledStripDisable(void);
 
 //#define USE_LED_ANIMATION
@@ -745,12 +745,12 @@ void updateLedStrip(void)
         return;
     }
 
-    if ( IS_RC_MODE_ACTIVE(BOXLEDLOW)){
-        if (ledStripEnabled){
-    		ledStripDisable();
+    if (IS_RC_MODE_ACTIVE(BOXLEDLOW)) {
+        if (ledStripEnabled) {
+            ledStripDisable();
             ledStripEnabled = false;
         }
-    }else{
+    } else {
         ledStripEnabled = true;
     }
     
