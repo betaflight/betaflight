@@ -12,6 +12,7 @@ supports the following:
 * Heading/Orientation lights.
 * Flight mode specific color schemes.
 * Low battery warning.
+* AUX operated on/off switch
 
 The function and orientation configuration is fixed for now but later it should be able to be set via the UI or CLI..
 
