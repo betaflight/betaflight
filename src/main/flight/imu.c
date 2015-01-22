@@ -298,12 +298,17 @@ static void getEstimatedAttitude(void)
     acc_calc(deltaT); // rotate acc vector into earth frame
 }
 
-// correction of throttle in lateral wind,
+// Correction of throttle in lateral wind.
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
 {
     float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);
 
-    if (cosZ <= 0.015f) { // we are inverted, vertical or with a small angle < 0.86 deg
+    /*
+    * Use 0 as the throttle angle correction if we are inverted, vertical or with a
+    * small angle < 0.86 deg
+    * TODO: Define this small angle in config.
+    */
+    if (cosZ <= 0.015f) {
         return 0;
     }
     int angle = lrintf(acosf(cosZ) * throttleAngleScale);
