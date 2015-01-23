@@ -7,7 +7,7 @@
 
 .tab-led-strip .section {
     color: #565656;
-    margin: 20px 0 0 0;
+    margin: 20px 0 5px 0;
     border-bottom: 1px solid silver;
 }
 
@@ -39,6 +39,30 @@
     background: rgb(50, 205, 50);
     box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
     border-color: rgb(50, 205, 50);
+}
+
+.tab-led-strip .gPoint.function-i { /* indicator */
+    background: yellow;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: yellow;       
+}
+
+.tab-led-strip .gPoint.function-a { /* Armed Mode */
+    background: rgb(52, 155, 255);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: rgb(52, 155, 255);
+}
+
+.tab-led-strip .gPoint.function-t { /* Armed Mode */
+    background: orange;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: orange;
+}
+
+.tab-led-strip .gPoint.function-r { /* ring */
+    background: radial-gradient(ellipse at center, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, white 60%,white 70%,black 70%, black 100%);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
+    border-color: black;
 }
 
 .tab-led-strip .gPoint.function-i.function-f {
@@ -73,24 +97,6 @@
     background: linear-gradient(to bottom, rgb(50, 205, 50) 0%,rgb(50, 205, 50) 50%,orange 50%,orange 100%);
 }
 
-.tab-led-strip .gPoint.function-i { /* indicator */
-    background: yellow;
-    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
-    border-color: yellow;       
-}
-
-.tab-led-strip .gPoint.function-a { /* Armed Mode */
-    background: rgb(52, 155, 255);
-    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
-    border-color: rgb(52, 155, 255);
-}
-
-.tab-led-strip .gPoint.function-t { /* Armed Mode */
-    background: orange;
-    box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
-    border-color: orange;
-}
-
 .tab-led-strip .gPoint select {
     background: #000;
     width: 13px;
@@ -115,8 +121,8 @@
     color: rgba(255,255,255,1);
 }
 
-.gridWire .gPoint {
-    background: #CAFFCD !important;
+.gridWire {
+    background: rgba(15, 171, 22, .5) !important;
 }
 
 /*function buttons*/
@@ -149,16 +155,14 @@
     width: 49%;
 }
 
-.tab-led-strip button.w33 {
-    width: 32%;
-}
-
 .tab-led-strip .functions .function-w.btnOn {background: red;}
 .tab-led-strip .functions .function-f.btnOn {background: rgb(50, 205, 50);}
 .tab-led-strip .functions .function-i.btnOn {background: yellow; color: #333;}
 .tab-led-strip .functions .function-a.btnOn {background: blue;}
 .tab-led-strip .functions .function-t.btnOn {background: orange;}
+.tab-led-strip .functions .function-r.btnOn {background: #acacac;}
 
+.tab-led-strip .colors .btnOn,
 .tab-led-strip .directions .btnOn {background: #FFF; color: #000;}
 
 .tab-led-strip .indicators {
@@ -232,11 +236,14 @@
     height: calc((30px + 8px) * 16);
 }
 
-.tab-led-strip .directions {
-    width: 130px;
-    height: 100px;
+.tab-led-strip .directions,
+.tab-led-strip .colors {
+    height: 130px;
     position: relative;
+	display: inline-block;
+    width: 49%;
 }
+
 
 .tab-led-strip .directions button {
     position: absolute;
@@ -245,11 +252,15 @@
 }
 
 .tab-led-strip .directions .dir-n {top: 0; left: 32px;}
-.tab-led-strip .directions .dir-s {bottom: 0; left: 32px;}
+.tab-led-strip .directions .dir-s {top: 64px; left: 32px;}
 .tab-led-strip .directions .dir-e {left: 64px; top: 32px;}
 .tab-led-strip .directions .dir-w {left: 0; top: 32px;}
-.tab-led-strip .directions .dir-u {right: 0; top: 15px;}
-.tab-led-strip .directions .dir-d {right: 0; bottom: 15px;}
+.tab-led-strip .directions .dir-u {right: 10px; top: 15px;}
+.tab-led-strip .directions .dir-d {right: 10px; top: 54px;}
+
+.tab-led-strip .colors button {
+    width: 23%;
+}
 
 .tab-led-strip .wires-remaining {
     float: right;

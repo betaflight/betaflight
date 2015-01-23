@@ -2,7 +2,7 @@
 
 TABS.led_strip = {
     wireMode: false,
-    functions: ['w', 'f', 'i', 'a', 't'],
+    functions: ['w', 'f', 'i', 'a', 't', 'r'],
     directions: ['n', 'e', 's', 'w', 'u', 'd'],
 };
 
@@ -122,6 +122,25 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             }
         });
 
+        // Color Buttons
+        $('.colors').on('click', 'button', function() {            
+            var that = this;
+            var colorButtons = $(this).parent().find('button');
+            
+            for (var colorIndex = 0; colorIndex < 16; colorIndex++) {
+                colorButtons.removeClass('btnOn');
+                $('.ui-selected').removeClass('color-' + colorIndex);
+                
+                if ($(that).is('.color-' + colorIndex)) {
+                    $('.ui-selected').addClass('color-' + colorIndex);
+                }
+            }
+
+            $(this).addClass('btnOn');
+
+            updateBulkCmd();
+        });
+
         $('.funcWire').click(function() {
             (TABS.led_strip.wireMode) ? TABS.led_strip.wireMode=false : TABS.led_strip.wireMode=true;
             $(this).toggleClass('btnOn');
@@ -167,20 +186,31 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                     var that = this;
 
                     TABS.led_strip.directions.forEach(function(letter) {
-                        if ($(that).is('.dir-' + letter)) {
-                            $('.dir-' + letter).addClass('btnOn');
+                        var className = '.dir-' + letter;
+                        if ($(that).is(className)) {
+                            $(className).addClass('btnOn');
                         } else {
-                            $('.dir-' + letter).removeClass('btnOn');
+                            $(className).removeClass('btnOn');
                         }
                     });
 
                     TABS.led_strip.functions.forEach(function(letter) {
-                        if ($(that).is('.function-' + letter)) {
-                            $('.function-' + letter).addClass('btnOn');
+                        var className = '.function-' + letter;
+                        if ($(that).is(className)) {
+                            $(className).addClass('btnOn');
                         } else {
-                            $('.function-' + letter).removeClass('btnOn');
+                            $(className).removeClass('btnOn');
                         }
                     });
+
+                    for (var colorIndex = 0; colorIndex < 16; colorIndex++) {
+                        var className = '.color-' + colorIndex;
+                        if ($(this).is(className)) {
+                            $(className).addClass('btnOn');
+                        } else {
+                            $(className).removeClass('btnOn');
+                        }
+                    }
 
                     updateBulkCmd();
                 });
@@ -205,7 +235,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             var ledIndex = ledResult.index;
             var led = ledResult.led;
             
-            if (led.functions.length == 0 && led.directions.length == 0) {
+            if (led.functions.length == 0 && led.directions.length == 0 && led.color == 0) {
                 return;
             }
             
@@ -218,6 +248,8 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             for (var directionIndex = 0; directionIndex < led.directions.length; directionIndex++) {
                 $(this).addClass('dir-' + led.directions[directionIndex]);
             }
+            
+            $(this).addClass('color-' + led.color);
 
         });
         updateBulkCmd(); 
@@ -265,8 +297,14 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 var wireNumber = $(this).find('.wire').html();
                 var functions = '';
                 var directions = '';
+                var colorIndex = 0;
                 var that = this;
-
+                
+                var match = $(this).attr("class").match(/(^|\s)color-([0-9]+)(\s|$)/);
+                if (match) {
+                    colorIndex = match[2];
+                }
+                
                 TABS.led_strip.functions.forEach(function(letter){
                     if ($(that).is('.function-' + letter)) {
                         functions += letter;
@@ -284,7 +322,8 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                         x: col,
                         y: row,
                         directions: directions,
-                        functions: functions
+                        functions: functions,
+                        color: colorIndex
                     }
                     
                     LED_STRIP[wireNumber] = led;

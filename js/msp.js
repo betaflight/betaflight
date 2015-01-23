@@ -94,7 +94,7 @@ var MSP = {
     packet_error:               0,
 
     ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'], // in LSB bit order
-    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't'],      // in LSB bit order
+    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r'], // in LSB bit order
 
     read: function (readInfo) {
         var data = new Uint8Array(readInfo.data);
@@ -620,7 +620,7 @@ var MSP = {
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];
                 
-                var ledCount = data.byteLength / 6; // v1.4.0 and below incorrectly reported 4 bytes per led.
+                var ledCount = data.byteLength / 7; // v1.4.0 and below incorrectly reported 4 bytes per led.
                 
                 var offset = 0;
                 for (var i = 0; offset < data.byteLength && i < ledCount; i++) {
@@ -649,7 +649,8 @@ var MSP = {
                         directions: directions,
                         functions: functions,
                         x: data.getUint8(offset++, 1),
-                        y: data.getUint8(offset++, 1)
+                        y: data.getUint8(offset++, 1),
+                        color: data.getUint8(offset++, 1)
                     };
                     
                     LED_STRIP.push(led);
@@ -1044,6 +1045,8 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
 
         buffer.push(led.x);
         buffer.push(led.y);
+
+        buffer.push(led.color);
 
         
         // prepare for next iteration
