@@ -484,7 +484,6 @@ void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSiz
     memset(ledConfigBuffer, 0, bufferSize);
     memset(&functions, 0, sizeof(functions));
     memset(&directions, 0, sizeof(directions));
-    //memset(&ringColors, 0 ,sizeof(ringColors));
 
     for (mappingIndex = 0, index = 0; mappingIndex < FUNCTION_COUNT; mappingIndex++) {
         if (ledConfig->flags & functionMappings[mappingIndex]) {
