@@ -97,8 +97,13 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             if ($('.ui-selected').length > 0) {
                 TABS.led_strip.directions.forEach(function(letter) {
                     if ($(that).is('.dir-' + letter)) {
-                        $(that).toggleClass('btnOn');
-                        $('.ui-selected').toggleClass('dir-' + letter);
+                        if ($(that).is('.btnOn')) {
+                            $(that).removeClass('btnOn');
+                            $('.ui-selected').removeClass('dir-' + letter);
+                        } else {
+                            $(that).addClass('btnOn');
+                            $('.ui-selected').addClass('dir-' + letter);
+                        }
                     }
                 });
 
@@ -113,8 +118,14 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             if ($('.ui-selected').length > 0) {
                 TABS.led_strip.functions.forEach(function(letter) {
                     if ($(that).is('.function-' + letter)) {
-                        $(that).toggleClass('btnOn');
-                        $('.ui-selected').toggleClass('function-' + letter);
+
+                        if ($(that).is('.btnOn')) {
+                            $(that).removeClass('btnOn');
+                            $('.ui-selected').removeClass('function-' + letter);
+                        } else {
+                            $(that).addClass('btnOn');
+                            $('.ui-selected').addClass('function-' + letter);
+                        }
                     }
                 });
 
@@ -165,6 +176,9 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         $('.mainGrid').selectable({
             filter: ' > div',
             stop: function() {
+                var modesInSelection = [];
+                var dirInSelection = [];
+
                 $('.ui-selected').each(function() {
 
                     
@@ -188,18 +202,14 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                     TABS.led_strip.directions.forEach(function(letter) {
                         var className = '.dir-' + letter;
                         if ($(that).is(className)) {
-                            $(className).addClass('btnOn');
-                        } else {
-                            $(className).removeClass('btnOn');
+                            dirInSelection.push(className);
                         }
                     });
 
                     TABS.led_strip.functions.forEach(function(letter) {
                         var className = '.function-' + letter;
                         if ($(that).is(className)) {
-                            $(className).addClass('btnOn');
-                        } else {
-                            $(className).removeClass('btnOn');
+                            modesInSelection.push(className);
                         }
                     });
 
@@ -213,6 +223,16 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                     }
 
                     updateBulkCmd();
+                });
+                
+                $('.functions button').removeClass('btnOn');
+                modesInSelection.forEach(function(eachMode) {
+                    $(eachMode).addClass('btnOn');
+                });
+
+                $('.directions button').removeClass('btnOn');
+                dirInSelection.forEach(function(eachMode) {
+                    $(eachMode).addClass('btnOn');
                 });
             }
         });
