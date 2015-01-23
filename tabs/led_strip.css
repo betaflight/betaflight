@@ -134,7 +134,7 @@
     border: 1px solid silver;
     background-color: #ececec;
 
-    padding: 7px 7px;
+    padding: 7px 6px;
     margin: 3px 0;
 }
 
@@ -221,7 +221,6 @@
     right: 10px; 
 }
 
-
 .tab-led-strip .dir-n .north {display: inline;}
 .tab-led-strip .dir-s .south {display: inline;}
 .tab-led-strip .dir-e .east {display: inline;}
@@ -243,7 +242,6 @@
 	display: inline-block;
     width: 49%;
 }
-
 
 .tab-led-strip .directions button {
     position: absolute;
@@ -278,26 +276,6 @@
     color: #FF5700;
 }
 
-
-
-/*******JQUERYUI**********/
-
-.tab-led-strip .ui-selected {
-    box-shadow: inset 0 0 30px rgba(255, 255, 255, 1) !important;
-}
-
-.tab-led-strip .ui-selecting {
-    box-shadow: inset 0 0 30px rgba(255, 255, 255, .7) !important;
-    border: solid 2px #000 !important;
-}
-
-.tab-led-strip .ui-selectable-helper {
-    background: rgba(0,0,0,.4);
-    position: absolute;
-    z-index: 100;
-    border: 1px dotted white;   
-}
-
 .tab-led-strip > .buttons {
     margin-top: 10px;
 }
@@ -317,6 +295,43 @@
     border: 1px solid silver;
     background-color: #ececec;
 }
+
 .tab-led-strip.save:hover {
     background-color: #dedcdc;
+}
+
+.gridSections {
+    position: absolute;
+    width: 613px;
+    z-index: -1;
+}
+
+.gridSections .block {
+    width: 150px;
+    height: 150px;
+    float: left;
+    border: solid 1px rgba(255, 203, 24, 1);
+}
+
+
+
+
+
+/*******JQUERYUI**********/
+
+.tab-led-strip .ui-selected {
+    box-shadow: inset 0 0 8px rgba(255, 0, 255, 1) !important;
+    border: solid 2px #000 !important;
+}
+
+.tab-led-strip .ui-selecting {
+    box-shadow: inset 0 0 30px rgba(255, 0, 255, .7) !important;
+    border: solid 2px #000 !important;
+}
+
+.tab-led-strip .ui-selectable-helper {
+    background: rgba(0,0,0,.4);
+    position: absolute;
+    z-index: 100;
+    border: 1px dotted white;   
 }
