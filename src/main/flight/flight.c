@@ -42,6 +42,7 @@
 #include "io/gps.h"
 
 extern uint16_t cycleTime;
+extern uint8_t motorCount;
 
 int16_t heading, magHold;
 int16_t axisPID[3];
@@ -371,10 +372,10 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6;
 
     // Constrain YAW by D value if not servo driven in that case servolimits apply
-//  if(NumberOfMotors > 3) {
+    if(motorCount > 3) {
         int16_t limit = GYRO_P_MAX - pidProfile->D8[FD_YAW];
         PTerm = constrain(PTerm, -limit, +limit);
-//  }
+    }
 
     ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
@@ -476,10 +477,10 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
     PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6;
 
     // Constrain YAW by D value if not servo driven in that case servolimits apply
-//  if(NumberOfMotors > 3) {
+    if(motorCount > 3) {
         int16_t limit = GYRO_P_MAX - pidProfile->D8[FD_YAW];
         PTerm = constrain(PTerm, -limit, +limit);
-//  }
+    }
 
     ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
