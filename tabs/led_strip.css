@@ -302,15 +302,18 @@
 
 .gridSections {
     position: absolute;
-    width: 613px;
     z-index: -1;
+    width: 608px;
+    border: 1px solid rgb(236, 236, 236);
+    margin-top: -1px;
+    margin-left: -1px;
 }
 
 .gridSections .block {
     width: 150px;
     height: 150px;
     float: left;
-    border: solid 1px rgba(255, 203, 24, 1);
+    border: solid 1px rgb(236, 236, 236);
 }
 
 
