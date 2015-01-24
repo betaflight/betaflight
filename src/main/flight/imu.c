@@ -79,11 +79,19 @@ imuRuntimeConfig_t *imuRuntimeConfig;
 pidProfile_t *pidProfile;
 accDeadband_t *accDeadband;
 
-void configureIMU(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, accDeadband_t *initialAccDeadband)
+void configureIMU(
+    imuRuntimeConfig_t *initialImuRuntimeConfig,
+    pidProfile_t *initialPidProfile,
+    accDeadband_t *initialAccDeadband,
+    float accz_lpf_cutoff,
+    uint16_t throttle_correction_angle
+)
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
     pidProfile = initialPidProfile;
     accDeadband = initialAccDeadband;
+    fc_acc = calculateAccZLowPassFilterRCTimeConstant(accz_lpf_cutoff);
+    throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 }
 
 void initIMU()
@@ -93,14 +101,17 @@ void initIMU()
     gyroScaleRad = gyro.scale * (M_PIf / 180.0f) * 0.000001f;
 }
 
-void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
+float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
-    throttleAngleScale = (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
+    return (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
 }
 
-void calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
+/*
+* Calculate RC time constant used in the accZ lpf.
+*/
+float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
 {
-    fc_acc = 0.5f / (M_PIf * accz_lpf_cutoff); // calculate RC time constant used in the accZ lpf
+    return 0.5f / (M_PIf * accz_lpf_cutoff);
 }
 
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
