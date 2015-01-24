@@ -188,11 +188,33 @@ void acc_calc(uint32_t deltaT)
 /*
 * Baseflight calculation by Luggi09 originates from arducopter
 * ============================================================
+* This function turns a vector which is (usually) the direction
+* of magnetic flux in the coordinate system of the craft into
+* a compass heading in degrees, clockwise away from north. Note
+* that the magnetic flux is not parrelell with the vector towards
+* magnetic north it's self but rather is parrelell with the ground
+* when near the equator.
 *
-* Calculate the heading of the craft (in degrees clockwise from North)
-* when given a 3-vector representing the direction of North.
+* First we consider it in 2D:
+*
+* An example, the vector <1, 1> would be turned into the heading
+* 45 degrees, representing it's angle clockwise from north.
+*
+*      ***************** *
+*      *       |   <1,1> *
+*      *       |  /      *
+*      *       | /       *
+*      *       |/        *
+*      *       *         *
+*      *                 *
+*      *                 *
+*      *                 *
+*      *                 *
+*      *******************
+*
+* //TODO: Add explanation for how it uses the Z dimension.
 */
-static int16_t calculateHeading(t_fp_vector *vec)
+int16_t calculateHeading(t_fp_vector *vec)
 {
     int16_t head;
 
