@@ -36,6 +36,31 @@ typedef struct stdev_t
     int m_n;
 } stdev_t;
 
+// Floating point 3 vector.
+typedef struct fp_vector {
+    float X;
+    float Y;
+    float Z;
+} t_fp_vector_def;
+
+typedef union {
+    float A[3];
+    t_fp_vector_def V;
+} t_fp_vector;
+
+// Floating point Euler angles.
+// Be carefull, could be either of degrees or radians.
+typedef struct fp_angles {
+    float roll;
+    float pitch;
+    float yaw;
+} fp_angles_def;
+
+typedef union {
+    float raw[3];
+    fp_angles_def angles;
+} fp_angles_t;
+
 int32_t applyDeadband(int32_t value, int32_t deadband);
 
 int constrain(int amt, int low, int high);
@@ -48,3 +73,7 @@ float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
 
 int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax);
+
+void normalizeV(struct fp_vector *src, struct fp_vector *dest);
+
+void rotateV(struct fp_vector *v, fp_angles_t *delta);
