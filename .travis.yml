@@ -1,4 +1,5 @@
 env:
+  - RUNTESTS=True
   - TARGET=CC3D
   - TARGET=CHEBUZZF3
   - TARGET=CJMCU
