@@ -46,12 +46,12 @@ CXX_FLAGS = $(COMMON_FLAGS) \
 TESTS = \
 	battery_unittest \
 	flight_imu_unittest \
-	altitude_hold_unittest \
 	gps_conversion_unittest \
 	telemetry_hott_unittest \
 	rc_controls_unittest \
 	ledstrip_unittest \
-	ws2811_unittest
+	ws2811_unittest \
+	#altitude_hold_unittest \
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
