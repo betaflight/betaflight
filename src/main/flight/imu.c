@@ -82,6 +82,7 @@ void configureIMU(
     pidProfile_t *initialPidProfile,
     accDeadband_t *initialAccDeadband,
     float accz_lpf_cutoff,
+    //TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
     uint16_t throttle_correction_angle
 )
 {
@@ -89,6 +90,7 @@ void configureIMU(
     pidProfile = initialPidProfile;
     accDeadband = initialAccDeadband;
     fc_acc = calculateAccZLowPassFilterRCTimeConstant(accz_lpf_cutoff);
+    //TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 }
 
@@ -99,6 +101,7 @@ void initIMU()
     gyroScaleRad = gyro.scale * (M_PIf / 180.0f) * 0.000001f;
 }
 
+//TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
     return (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
@@ -307,7 +310,7 @@ void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
     }
 }
 
-// Correction of throttle in lateral wind.
+//TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
 {
     float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);
