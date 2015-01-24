@@ -73,8 +73,6 @@ int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 rollAndPitchInclination_t inclination = { { 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
-static void getEstimatedAttitude(void);
-
 imuRuntimeConfig_t *imuRuntimeConfig;
 pidProfile_t *pidProfile;
 accDeadband_t *accDeadband;
@@ -112,31 +110,6 @@ float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
 {
     return 0.5f / (M_PIf * accz_lpf_cutoff);
-}
-
-void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
-{
-    static int16_t gyroYawSmooth = 0;
-
-    gyroGetADC();
-    if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings(accelerometerTrims);
-        getEstimatedAttitude();
-    } else {
-        accADC[X] = 0;
-        accADC[Y] = 0;
-        accADC[Z] = 0;
-    }
-
-    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
-    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
-
-    if (mixerMode == MIXER_TRI) {
-        gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
-        gyroYawSmooth = gyroData[FD_YAW];
-    } else {
-        gyroData[FD_YAW] = gyroADC[FD_YAW];
-    }
 }
 
 // **************************************************
@@ -307,6 +280,31 @@ static void getEstimatedAttitude(void)
     }
 
     acc_calc(deltaT); // rotate acc vector into earth frame
+}
+
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
+{
+    static int16_t gyroYawSmooth = 0;
+
+    gyroGetADC();
+    if (sensors(SENSOR_ACC)) {
+        updateAccelerationReadings(accelerometerTrims);
+        getEstimatedAttitude();
+    } else {
+        accADC[X] = 0;
+        accADC[Y] = 0;
+        accADC[Z] = 0;
+    }
+
+    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
+    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
+
+    if (mixerMode == MIXER_TRI) {
+        gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
+        gyroYawSmooth = gyroData[FD_YAW];
+    } else {
+        gyroData[FD_YAW] = gyroADC[FD_YAW];
+    }
 }
 
 // Correction of throttle in lateral wind.
