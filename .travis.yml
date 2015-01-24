@@ -18,7 +18,7 @@ compiler: clang
 before_install: sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sudo apt-get update
 install: sudo apt-get install build-essential gcc-arm-none-eabi git
 before_script: arm-none-eabi-gcc --version
-script: make -j2
+script: ./.travis.sh
 
 notifications:
   irc: "chat.freenode.net#cleanflight"
