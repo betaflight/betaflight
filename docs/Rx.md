@@ -4,9 +4,9 @@ A receiver is used to receive radio control signals from your transmitter and co
 
 There are 3 basic types of receivers:
 
-Parallel PWM Receivers
-PPM Receivers
-Serial Receivers
+1. Parallel PWM Receivers
+2. PPM Receivers
+3. Serial Receivers
 
 ## Parallel PWM Receivers
 

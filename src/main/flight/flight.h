@@ -42,6 +42,7 @@ typedef struct pidProfile_s {
     float D_f[3];
     float A_level;
     float H_level;
+    uint8_t H_sensitivity;
 } pidProfile_t;
 
 typedef enum {
@@ -59,28 +60,6 @@ typedef enum {
 } flight_dynamics_index_t;
 
 #define FLIGHT_DYNAMICS_INDEX_COUNT 3
-
-typedef struct fp_vector {
-    float X;
-    float Y;
-    float Z;
-} t_fp_vector_def;
-
-typedef union {
-    float A[3];
-    t_fp_vector_def V;
-} t_fp_vector;
-
-typedef struct fp_angles {
-    float roll;
-    float pitch;
-    float yaw;
-} fp_angles_def;
-
-typedef union {
-    float raw[3];
-    fp_angles_def angles;
-} fp_angles_t;
 
 typedef struct int16_flightDynamicsTrims_s {
     int16_t roll;

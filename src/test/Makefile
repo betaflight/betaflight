@@ -149,6 +149,7 @@ flight_imu_unittest : \
 	$(OBJECT_DIR)/flight/imu.o \
 	$(OBJECT_DIR)/flight/altitudehold.o \
 	$(OBJECT_DIR)/flight_imu_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@

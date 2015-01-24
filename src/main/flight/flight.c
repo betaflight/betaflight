@@ -57,10 +57,10 @@ static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 static int32_t errorAngleI[2] = { 0, 0 };
 
 static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim);
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim);            // pid controller function prototype
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
@@ -97,17 +97,41 @@ bool shouldAutotune(void)
 #endif
 
 static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     float RateError, errorAngle, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
+    int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastGyroRate[3];
     static float delta1[3], delta2[3];
     float delta, deltaSum;
     float dT;
     int axis;
+    float horizonLevelStrength = 1;
 
     dT = (float)cycleTime * 0.000001f;
+
+    if (FLIGHT_MODE(HORIZON_MODE)) {
+
+        // Figure out the raw stick positions
+        stickPosAil = getRcStickDeflection(FD_ROLL, rxConfig->midrc);
+        stickPosEle = getRcStickDeflection(FD_PITCH, rxConfig->midrc);
+
+        if(abs(stickPosAil) > abs(stickPosEle)){
+            mostDeflectedPos = abs(stickPosAil);
+        }
+        else {
+            mostDeflectedPos = abs(stickPosEle);
+        }
+
+        // Progressively turn off the horizon self level strength as the stick is banged over
+        horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
+        if(pidProfile->H_sensitivity == 0){
+            horizonLevelStrength = 0;
+        } else {
+            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->H_sensitivity)) + 1, 0, 1);
+        }
+    }
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
@@ -139,7 +163,7 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
                 AngleRate = (float)((controlRateConfig->rollPitchRate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max yaw rate
                 if (FLIGHT_MODE(HORIZON_MODE)) {
                     // mix up angle error to desired AngleRate to add a little auto-level feel
-                    AngleRate += errorAngle * pidProfile->H_level;
+                    AngleRate += errorAngle * pidProfile->H_level * horizonLevelStrength;
                 }
             }
         }
@@ -181,8 +205,10 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
 }
 
 static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim)
+        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
+    UNUSED(rxConfig);
+
     int axis, prop;
     int32_t error, errorAngle;
     int32_t PTerm, ITerm, PTermACC = 0, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
@@ -264,8 +290,10 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #define GYRO_I_MAX 256
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
-        rollAndPitchTrims_t *angleTrim)
+        rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
+    UNUSED(rxConfig);
+
     int32_t errorAngle;
     int axis;
     int32_t delta, deltaSum;

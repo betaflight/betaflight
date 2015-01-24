@@ -39,8 +39,13 @@
 #define GYRO
 #define USE_GYRO_L3GD20
 
+#define GYRO_L3GD20_ALIGN CW90_DEG
+
 #define ACC
 #define USE_ACC_LSM303DLHC
+
+#define MAG
+#define USE_MAG_HMC5883
 
 #define BEEPER
 #define LED0
@@ -54,7 +59,9 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
-#define SENSORS_SET (SENSOR_ACC)
+#define USE_ADC
+
+#define SENSORS_SET (SENSOR_ACC | SENSOR_MAG)
 
 #define BLACKBOX
 #define GPS

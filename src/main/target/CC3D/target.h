@@ -35,6 +35,8 @@
 #define MPU6000_CS_PIN        GPIO_Pin_4
 #define MPU6000_SPI_INSTANCE  SPI1
 
+#define USABLE_TIMER_CHANNEL_COUNT 12
+
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 
@@ -45,8 +47,18 @@
 
 #define ACC_SPI_MPU6000_ALIGN CW270_DEG
 
+// External I2C BARO
+#define BARO
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+
+// External I2C MAG
+#define MAG
+#define USE_MAG_HMC5883
+
 #define INVERTER
 #define BEEPER
+#define DISPLAY
 
 #define USE_USART1
 #define USE_USART3
@@ -57,10 +69,6 @@
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
 
-#define CurrentMeter_TIMER 3 // PWM4
-#define Vbat_TIMER 4 // PWM5
-#define RSSI_TIMER 5 // PWM6
-
 #define USART3_RX_PIN Pin_11
 #define USART3_TX_PIN Pin_10
 #define USART3_GPIO GPIOB
@@ -70,6 +78,24 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
+
+#define USE_I2C
+#define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
+
+#define USE_ADC
+
+#define CURRENT_METER_ADC_GPIO      GPIOB
+#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_1
+#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_9
+
+#define VBAT_ADC_GPIO               GPIOA
+#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
+#define VBAT_ADC_CHANNEL            ADC_Channel_0
+
+#define RSSI_ADC_GPIO               GPIOA
+#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
+#define RSSI_ADC_CHANNEL            ADC_Channel_1
+
 
 #define SENSORS_SET (SENSOR_ACC)
 

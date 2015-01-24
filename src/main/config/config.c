@@ -108,7 +108,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 88;
+static const uint8_t EEPROM_CONF_VERSION = 89;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -159,6 +159,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D_f[YAW] = 0.05f;
     pidProfile->A_level = 5.0f;
     pidProfile->H_level = 3.0f;
+    pidProfile->H_sensitivity = 75;
 }
 
 #ifdef GPS
@@ -612,7 +613,7 @@ void activateConfig(void)
     imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
-    configureImu(
+    configureIMU(
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
         &currentProfile->accDeadband

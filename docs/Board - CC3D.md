@@ -79,6 +79,22 @@ The SoftSerial port is not available when RX_PARALLEL_PWM is used. The transmiss
 
 To connect the GUI to the flight controller you need additional hardware attached to the USART1 serial port (by default).
 
+# Flex Port
+
+The flex port will be enabled in I2C mode unless USART3 is used.  You can connect external I2C sensors and displays to this port.
+
+You cannot use USART3 and I2C at the same time.
+
+## Flex port pinout
+
+| Pin | Signal             | Notes                   |
+| --- | ------------------ | ----------------------- |
+| 1   | GND                |                         |
+| 2   | VCC unregulated    |                         |
+| 3   | I2C SCL / UART3 TX | 3.3v level              |
+| 4   | I2C SDA / UART3 RX | 3.3v level (5v tolerant |
+
+
 # Flashing
 
 There are two primary ways to get Cleanflight onto a CC3D board.

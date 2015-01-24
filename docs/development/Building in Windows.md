@@ -38,7 +38,7 @@ Continue with the Installation and accept all autodetected dependencies.
 
 ----------
 
-versions do matter, 4.8-2014-q2 is known to work well. Download this version from htps://launchpad.net/gcc-arm-embedded/+download - preferrebly as a ZIP-File. 
+versions do matter, 4.8-2014-q2 is known to work well. Download this version from https://launchpad.net/gcc-arm-embedded/+download - preferrebly as a ZIP-File. 
 
 
 Extract the contents of this archive to any folder of your choice, for instance ```C:\dev\gcc-arm-none-eabi-4_8-2014q2```. 

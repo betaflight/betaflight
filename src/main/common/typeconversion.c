@@ -92,7 +92,7 @@ int a2d(char ch)
 
 char a2i(char ch, const char **src, int base, int *nump)
 {
-    char *p = *src;
+    const char *p = *src;
     int num = 0;
     int digit;
     while ((digit = a2d(ch)) >= 0) {
