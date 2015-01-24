@@ -157,15 +157,12 @@ flight_imu_unittest : \
 
 $(OBJECT_DIR)/maths_unittest.o : \
 	$(TEST_DIR)/maths_unittest.cc \
-	$(USER_DIR)/flight/imu.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/maths_unittest.cc -o $@
 
 maths_unittest : \
-	$(OBJECT_DIR)/flight/imu.o \
-	$(OBJECT_DIR)/flight/altitudehold.o \
 	$(OBJECT_DIR)/maths_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a

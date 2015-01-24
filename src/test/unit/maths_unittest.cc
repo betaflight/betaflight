@@ -24,8 +24,6 @@
 
 extern "C" {
     #include "common/maths.h"
-
-    #include "config/runtime_config.h"
 }
 
 #include "unittest_macros.h"
