@@ -53,13 +53,13 @@ LINKER_DIR	 = $(ROOT)/src/main/target
 
 # Search path for sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
+USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
+USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 
 ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 SPARKY))
 
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
-USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 
-USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 STDPERIPH_SRC = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 
 EXCLUDES	= stm32f30x_crc.c \
@@ -155,13 +155,25 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM3/CoreSupport \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
+DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
+
+ifeq ($(TARGET),CC3D)
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+		   $(USBFS_DIR)/inc \
+		   $(ROOT)/src/main/vcp
+
+VPATH := $(VPATH):$(USBFS_DIR)/src
+
+DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC) \
+		   $(USBPERIPH_SRC) 
+
+endif
+
 LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_128k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
 DEVICE_FLAGS = -DSTM32F10X_MD -DSTM32F10X
-
-DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 endif
 
@@ -233,10 +245,20 @@ HIGHEND_SRC  = flight/autotune.c \
 		   telemetry/frsky.c \
 		   telemetry/hott.c \
 		   telemetry/msp.c \
-           telemetry/smartport.c \
+		   telemetry/smartport.c \
 		   sensors/sonar.c \
 		   sensors/barometer.c \
 		   blackbox/blackbox.c
+
+VCP_SRC	 = \
+		   vcp/hw_config.c \
+		   vcp/stm32_it.c \
+		   vcp/usb_desc.c \
+		   vcp/usb_endp.c \
+		   vcp/usb_istr.c \
+		   vcp/usb_prop.c \
+		   vcp/usb_pwr.c \
+		   drivers/serial_usb_vcp.c
 
 NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_adxl345.c \
@@ -403,7 +425,8 @@ CC3D_SRC	 = \
 		   drivers/timer.c \
 		   drivers/timer_stm32f10x.c \
 		   $(HIGHEND_SRC) \
-		   $(COMMON_SRC)
+		   $(COMMON_SRC) \
+		   $(VCP_SRC)
 
 STM32F30x_COMMON_SRC	 = \
 		   startup_stm32f30x_md_gcc.S \
@@ -424,16 +447,6 @@ STM32F30x_COMMON_SRC	 = \
 		   drivers/system_stm32f30x.c \
 		   drivers/timer.c \
 		   drivers/timer_stm32f30x.c
-
-VCP_SRC	 = \
-		   vcp/hw_config.c \
-		   vcp/stm32_it.c \
-		   vcp/usb_desc.c \
-		   vcp/usb_endp.c \
-		   vcp/usb_istr.c \
-		   vcp/usb_prop.c \
-		   vcp/usb_pwr.c \
-		   drivers/serial_usb_vcp.c
 
 NAZE32PRO_SRC	 = \
 		   $(STM32F30x_COMMON_SRC) \
