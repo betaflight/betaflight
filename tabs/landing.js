@@ -18,11 +18,6 @@ TABS.landing.initialize = function (callback) {
         // load changelog content
         $('div.changelog.configurator .wrapper').load('./changelog.html');
 
-        // UI Hooks
-        $('a.firmware_flasher').click(function () {
-            TABS.firmware_flasher.initialize();
-        });
-
         $('div.welcome a, div.sponsors a').click(function () {
             googleAnalytics.sendEvent('ExternalUrls', 'Click', $(this).prop('href'));
         });

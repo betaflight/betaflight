@@ -62,10 +62,18 @@ $(document).ready(function () {
             var self = this,
                 tab = $(self).parent().prop('class');
 
-            if (!CONFIGURATOR.connectionValid) {
+            var tabRequiresConnection = $(self).parent().hasClass('mode-connected');
+            
+            if (tabRequiresConnection && !CONFIGURATOR.connectionValid) {
                 GUI.log(chrome.i18n.getMessage('tabSwitchConnectionRequired'));
                 return;
             }
+            
+            if (GUI.connect_lock) { // tab switching disabled while operation is in progress
+                GUI.log(chrome.i18n.getMessage('tabSwitchWaitForOperation'));
+                return;
+            }
+            
 
             if (CONFIGURATOR.connectionValidCliOnly) {
                 GUI.log(chrome.i18n.getMessage('tabSwitchUpgradeRequired'));
@@ -93,6 +101,13 @@ $(document).ready(function () {
                 }
 
                 switch (tab) {
+                    case 'tab_landing':
+                        TABS.landing.initialize(content_ready);
+                        break;
+                    case 'tab_firmware_flasher':
+                        TABS.firmware_flasher.initialize(content_ready);
+                        break;
+
                     case 'tab_auxiliary':
                         TABS.auxiliary.initialize(content_ready);
                         break;
@@ -105,7 +120,7 @@ $(document).ready(function () {
                     case 'tab_led_strip':
                         TABS.led_strip.initialize(content_ready);
                         break;
-
+                                                
                     case 'tab_setup':
                         TABS.setup.initialize(content_ready);
                         break;
@@ -147,7 +162,7 @@ $(document).ready(function () {
         }
     });
 
-    TABS.landing.initialize();
+    $('#tabs ul.mode-disconnected li a:first').click();
 
     // options
     $('a#options').click(function () {

@@ -224,6 +224,11 @@ input[type="number"]::-webkit-inner-spin-button {
 
     font-weight: bold;
 }
+
+#tabs ul.mode-connected {
+    display: none;
+}
+
 #tabs li {
     float: left;
     margin-right: 5px;
@@ -231,6 +236,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border: 1px solid #848484;
     border-bottom: 0;
 }
+
 #tabs li a {
     display: block;
 

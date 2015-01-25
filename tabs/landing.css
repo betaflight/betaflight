@@ -117,24 +117,6 @@
 
     margin: auto;
 }
-.firmware_flasher {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.firmware_flasher:hover {
-    background-color: #dedcdc;
-}
 .tab-landing .sponsors {
     margin-top: 10px;
     border: 1px solid silver;

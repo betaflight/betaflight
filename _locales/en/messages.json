@@ -56,6 +56,13 @@
         "message": "Configuration migration complete, migrations applied: $1"
     },
 
+    "tabFirmwareFlasher": {
+        "message": "Firmware Flasher"
+    },
+    "tabLanding": {
+        "message": "Welcome"
+    },
+
     "tabSetup": {
         "message": "Setup"
     },
@@ -126,6 +133,9 @@
     "tabSwitchConnectionRequired": {
         "message": "You need to <strong>connect</strong> before you can view any of the tabs."
     },
+    "tabSwitchWaitForOperation": {
+        "message": "You <span style=\"color: red\">can't</span> do this right now, please wait for current operation to finish ..."
+    },    
     
     "tabSwitchUpgradeRequired": {
         "message": "You need to <strong>upgrade</strong> your firmware before you can view any of the tabs."
@@ -196,7 +206,7 @@
         "message": "Request Optional Permissions"
     },
     "defaultWelcomeText": {
-        "message": "Welcome to <strong>Cleanflight - Configurator</strong>, utility designed to simplify updating, configuring and tuning of your flight controller.<br /><br />Application supports hardware that run cleanflight (sparky, cc3d, acro naze, naze, afromini, flip32, flip32+, cjmcu, chebuzz f3, stm32f3discovery, naze32pro, etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/hydra/cleanflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/cleanflight/cleanflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com/\" target=\"_blank\">here</a><br />"
+        "message": "Welcome to <strong>Cleanflight - Configurator</strong>, a utility designed to simplify updating, configuring and tuning of your flight controller.<br /><br />The application supports all hardware that can run cleanflight (sparky, cc3d, acro naze, naze, afromini, flip32, flip32+, cjmcu, chebuzz f3, stm32f3discovery, naze32pro, etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/cleanflight/cleanflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/cleanflight/cleanflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com/\" target=\"_blank\">here</a><br />"
     },
     "defaultChangelogHead": {
         "message": "Configurator - Changelog"
@@ -941,9 +951,6 @@
     },
     "firmwareFlasherFailedToLoadOnlineFirmware": {
         "message": "Failed to load remote firmware"
-    },
-    "firmwareFlasherWaitForFinish": {
-        "message": "You <span style=\"color: red\">can't</span> do this right now, please wait for current operation to finish ..."
     },
     
     "ledStripHelp": {

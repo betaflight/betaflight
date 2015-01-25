@@ -170,7 +170,9 @@ function onOpen(openInfo) {
                                     CONFIGURATOR.connectionValid = true;
                                     
                                     $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-                                    $('#tabs li a:first').click();
+                                    $('#tabs ul.mode-disconnected').hide();
+                                    $('#tabs ul.mode-connected').show();
+                                    $('#tabs ul.mode-connected li a:first').click();
                                 });
                             });
                         });
@@ -206,6 +208,9 @@ function onClosed(result) {
     } else { // Something went wrong
         GUI.log(chrome.i18n.getMessage('serialPortClosedFail'));
     }
+    $('#tabs ul.mode-disconnected').show();
+    $('#tabs ul.mode-connected').hide();
+    $('#tabs ul.mode-disconnected li a:first').click();
 }
 
 function read_serial(info) {

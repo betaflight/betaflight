@@ -198,7 +198,11 @@ GUI_control.prototype.tab_switch_cleanup = function (callback) {
     MSP.callbacks_cleanup(); // we don't care about any old data that might or might not arrive
     GUI.interval_kill_all(); // all intervals (mostly data pulling) needs to be removed on tab switch
 
-    TABS[this.active_tab].cleanup(callback);
+    if (this.active_tab) {
+        TABS[this.active_tab].cleanup(callback);
+    } else {
+        callback();
+    }
 };
 
 // initialize object into GUI variable
