@@ -225,6 +225,10 @@ input[type="number"]::-webkit-inner-spin-button {
     font-weight: bold;
 }
 
+#tabs ul {
+    overflow: hidden; /* Cause the height to expand to contain its floated contents */
+}
+
 #tabs ul.mode-connected {
     display: none;
 }
