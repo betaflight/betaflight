@@ -93,8 +93,8 @@ var MSP = {
     callbacks:                  [],
     packet_error:               0,
 
-    ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'], // in LSB bit order
-    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r'], // in LSB bit order
+    ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'],      // in LSB bit order
+    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c'], // in LSB bit order
 
     read: function (readInfo) {
         var data = new Uint8Array(readInfo.data);
