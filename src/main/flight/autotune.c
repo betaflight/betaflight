@@ -129,7 +129,7 @@ static autotunePhase_e nextPhase = FIRST_TUNE_PHASE;
 
 static float targetAngle = 0;
 static float targetAngleAtPeak;
-static float secondPeakAngle, firstPeakAngle; // deci dgrees, 180 deg = 1800
+static float firstPeakAngle, secondPeakAngle; // deci dgrees, 180 deg = 1800
 
 typedef struct fp_pid {
     float p;
@@ -171,7 +171,7 @@ static void autotuneLogCycleStart()
 static void startNewCycle(void)
 {
     rising = !rising;
-    secondPeakAngle = firstPeakAngle = 0;
+    firstPeakAngle = secondPeakAngle = 0;
 
 #ifdef BLACKBOX
     autotuneLogCycleStart();
@@ -229,18 +229,18 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
     debug[2] = DEGREES_TO_DECIDEGREES(targetAngle);
 #endif
 
-    if (firstPeakAngle == 0) {
+    if (secondPeakAngle == 0) {
         // The peak will be when our angular velocity is negative.  To be sure we are in the right place,
         // we also check to make sure our angle position is greater than zero.
 
-        if (currentAngle > secondPeakAngle) {
+        if (currentAngle > firstPeakAngle) {
             // we are still going up
-            secondPeakAngle = currentAngle;
+            firstPeakAngle = currentAngle;
             targetAngleAtPeak = targetAngle;
 
-            debug[3] = DEGREES_TO_DECIDEGREES(secondPeakAngle);
+            debug[3] = DEGREES_TO_DECIDEGREES(firstPeakAngle);
 
-        } else if (secondPeakAngle > 0) {
+        } else if (firstPeakAngle > 0) {
             switch (cycle) {
                 case CYCLE_TUNE_I:
                     // when checking the I value, we would like to overshoot the target position by half of the max oscillation.
@@ -276,7 +276,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
                 case CYCLE_TUNE_PD2:
                     // we are checking P and D values
                     // set up to look for the 2nd peak
-                    firstPeakAngle = currentAngle;
+                    secondPeakAngle = currentAngle;
                     timeoutAt = millis() + AUTOTUNE_SETTLING_DELAY_MS;
                     break;
             }
@@ -284,23 +284,23 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
     } else {
         // We saw the first peak while tuning PD, looking for the second
 
-        if (currentAngle < firstPeakAngle) {
-            firstPeakAngle = currentAngle;
-            debug[3] = DEGREES_TO_DECIDEGREES(firstPeakAngle);
+        if (currentAngle < secondPeakAngle) {
+            secondPeakAngle = currentAngle;
+            debug[3] = DEGREES_TO_DECIDEGREES(secondPeakAngle);
         }
 
-        float oscillationAmplitude = secondPeakAngle - firstPeakAngle;
+        float oscillationAmplitude = firstPeakAngle - secondPeakAngle;
 
         uint32_t now = millis();
         int32_t signedDiff = now - timeoutAt;
         bool timedOut = signedDiff >= 0L;
 
         // stop looking for the 2nd peak if we time out or if we change direction again after moving by more than half the maximum oscillation
-        if (timedOut || (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION_ANGLE / 2 && currentAngle > firstPeakAngle)) {
+        if (timedOut || (oscillationAmplitude > AUTOTUNE_MAX_OSCILLATION_ANGLE / 2 && currentAngle > secondPeakAngle)) {
             // analyze the data
             // Our goal is to have zero overshoot and to have AUTOTUNE_MAX_OSCILLATION_ANGLE amplitude
 
-            if (secondPeakAngle > targetAngleAtPeak) {
+            if (firstPeakAngle > targetAngleAtPeak) {
                 // overshot
 #ifdef DEBUG_AUTOTUNE
                 debug[0] = 1;
@@ -339,7 +339,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             if (feature(FEATURE_BLACKBOX)) {
                 flightLogEvent_autotuneCycleResult_t eventData;
 
-                eventData.overshot = secondPeakAngle > targetAngleAtPeak ? 1 : 0;
+                eventData.overshot = firstPeakAngle > targetAngleAtPeak ? 1 : 0;
                 eventData.p = pidProfile->P8[pidIndex];
                 eventData.i = pidProfile->I8[pidIndex];
                 eventData.d = pidProfile->D8[pidIndex];
@@ -409,7 +409,7 @@ void autotuneBeginNextPhase(pidProfile_t *pidProfileToTune, uint8_t pidControlle
 
     rising = true;
     cycle = CYCLE_TUNE_PD;
-    secondPeakAngle = firstPeakAngle = 0;
+    firstPeakAngle = secondPeakAngle = 0;
 
     pidProfile = pidProfileToTune;
     pidController = pidControllerInUse;
