@@ -173,8 +173,8 @@ bool detectGyro(uint16_t gyroLpf)
 
 #ifdef USE_GYRO_L3GD20
     if (l3gd20Detect(&gyro, gyroLpf)) {
-#ifdef GYRO_GYRO_L3GD20_ALIGN
-        gyroAlign = GYRO_GYRO_L3GD20_ALIGN;
+#ifdef GYRO_L3GD20_ALIGN
+        gyroAlign = GYRO_L3GD20_ALIGN;
 #endif
         return true;
     }

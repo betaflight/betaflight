@@ -1,4 +1,14 @@
-# Contributing
+# Issues and Support.
+
+Please remember the issue tracker on github is _not_ for user support.  Please also do not email developers directly for support.  Instead please use IRC or the forums first, then if the problem is confirmed create an issue that details how to repeat the problem so it can be investigated.
+
+Issued created without steps to repeat are likely to be closed.  E-mail requests for support will go un-answered.
+
+Remember that issues that are due to mis-configuration, wiring or failure to read documentation just takes time away from the developers and can often be solved without developer interaction by other users.
+
+Please search for existing issues *before* creating new ones.
+
+# Developers
 
 Please see the Contributing section of the README.md
 
@@ -15,7 +25,7 @@ https://help.github.com/articles/creating-a-pull-request/
 The main flow for a contributing is as follows:
 
 1. Login to github, goto the cleanflight repository and press `fork`.
-2. `git clone <url to YOUR fork>`
+2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`
 3. `cd cleanflight`
 4. `git checkout master`
 5. `git checkout -b my-new-code`
@@ -34,4 +44,7 @@ Later, you can get the changes from the cleanflight repo into your `master` bran
 2. `git checkout master`
 3. `git fetch cleanflight`
 4. `git merge cleanflight/master`
+ 
+
+You can also perform the git commands using the git client inside Eclipse.  Refer to the Eclipse git manual.
  

@@ -35,6 +35,7 @@ typedef struct blackboxValues_t {
     int16_t servo[MAX_SUPPORTED_SERVOS];
 
     uint16_t vbatLatest;
+    uint16_t amperageLatest;
 
 #ifdef BARO
     int32_t BaroAlt;

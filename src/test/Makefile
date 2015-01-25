@@ -47,6 +47,7 @@ TESTS = \
 	battery_unittest \
 	flight_imu_unittest \
 	altitude_hold_unittest \
+	maths_unittest \
 	gps_conversion_unittest \
 	telemetry_hott_unittest \
 	rc_controls_unittest \
@@ -149,6 +150,20 @@ flight_imu_unittest : \
 	$(OBJECT_DIR)/flight/imu.o \
 	$(OBJECT_DIR)/flight/altitudehold.o \
 	$(OBJECT_DIR)/flight_imu_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/maths_unittest.o : \
+	$(TEST_DIR)/maths_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/maths_unittest.cc -o $@
+
+maths_unittest : \
+	$(OBJECT_DIR)/maths_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -303,4 +318,8 @@ ws2811_unittest : \
 
 	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
+test: $(TESTS)
+	set -e && for test in $(TESTS) ; do \
+		$(OBJECT_DIR)/$$test; \
+	done
 

@@ -182,6 +182,7 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
     {"rcCommand[3]",  UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
     {"vbatLatest",    UNSIGNED, .Ipredict = PREDICT(VBATREF), .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
+    {"amperageLatest",UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE},
 #ifdef MAG
     {"magADC[0]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
     {"magADC[1]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
@@ -633,6 +634,9 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_VBAT:
             return feature(FEATURE_VBAT);
 
+        case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE:
+            return feature(FEATURE_CURRENT_METER);
+
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
             return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
 
@@ -726,6 +730,11 @@ static void writeIntraframe(void)
         writeUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
     }
 
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
+        // 12bit value directly from ADC
+        writeUnsignedVB(blackboxCurrent->amperageLatest);
+    }
+
 #ifdef MAG
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
             for (x = 0; x < XYZ_AXIS_COUNT; x++)
@@ -811,11 +820,15 @@ static void writeInterframe(void)
 
     writeTag8_4S16(deltas);
 
-    //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, MAG, BARO
+    //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, Amperage, MAG, BARO
     int optionalFieldCount = 0;
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->vbatLatest - blackboxLast->vbatLatest;
+    }
+
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
+        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
     }
 
 #ifdef MAG
@@ -899,7 +912,7 @@ static void configureBlackboxPort(void)
      *
      * 9 / 1250 = 7200 / 1000000
      */
-    serialChunkSize = max((masterConfig.looptime * 9) / 1250, 4);
+    serialChunkSize = MAX((masterConfig.looptime * 9) / 1250, 4);
 }
 
 static void releaseBlackboxPort(void)
@@ -936,7 +949,7 @@ void startBlackbox(void)
         blackboxHistory[1] = &blackboxHistoryRing[1];
         blackboxHistory[2] = &blackboxHistoryRing[2];
 
-        vbatReference = vbatLatest;
+        vbatReference = vbatLatestADC;
 
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
@@ -1038,7 +1051,8 @@ static void loadBlackboxState(void)
     for (i = 0; i < motorCount; i++)
         blackboxCurrent->motor[i] = motor[i];
 
-    blackboxCurrent->vbatLatest = vbatLatest;
+    blackboxCurrent->vbatLatest = vbatLatestADC;
+    blackboxCurrent->amperageLatest = amperageLatestADC;
 
 #ifdef MAG
     for (i = 0; i < XYZ_AXIS_COUNT; i++)
@@ -1149,7 +1163,7 @@ static bool blackboxWriteSysinfo()
     }
 
     // How many bytes can we afford to transmit this loop?
-    xmitState.u.serialBudget = min(xmitState.u.serialBudget + serialChunkSize, 64);
+    xmitState.u.serialBudget = MIN(xmitState.u.serialBudget + serialChunkSize, 64);
 
     // Most headers will consume at least 20 bytes so wait until we've built up that much link budget
     if (xmitState.u.serialBudget < 20) {
@@ -1225,6 +1239,10 @@ static bool blackboxWriteSysinfo()
 
             xmitState.u.serialBudget -= strlen("H vbatref:%u\n");
         break;
+        case 13:
+            blackboxPrintf("H currentMeter:%i,%i\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+
+            xmitState.u.serialBudget -= strlen("H currentMeter:%i,%i\n");
         default:
             return true;
     }

@@ -27,6 +27,7 @@ extern "C" {
     #include "flight/flight.h"
 
     #include "sensors/sensors.h"
+    #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"

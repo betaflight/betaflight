@@ -73,17 +73,25 @@ int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 rollAndPitchInclination_t inclination = { { 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
-static void getEstimatedAttitude(void);
-
 imuRuntimeConfig_t *imuRuntimeConfig;
 pidProfile_t *pidProfile;
 accDeadband_t *accDeadband;
 
-void configureIMU(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, accDeadband_t *initialAccDeadband)
+void configureIMU(
+    imuRuntimeConfig_t *initialImuRuntimeConfig,
+    pidProfile_t *initialPidProfile,
+    accDeadband_t *initialAccDeadband,
+    float accz_lpf_cutoff,
+    //TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
+    uint16_t throttle_correction_angle
+)
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
     pidProfile = initialPidProfile;
     accDeadband = initialAccDeadband;
+    fc_acc = calculateAccZLowPassFilterRCTimeConstant(accz_lpf_cutoff);
+    //TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
+    throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 }
 
 void initIMU()
@@ -93,39 +101,18 @@ void initIMU()
     gyroScaleRad = gyro.scale * (M_PIf / 180.0f) * 0.000001f;
 }
 
-void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
+//TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
+float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
-    throttleAngleScale = (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
+    return (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
 }
 
-void calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
+/*
+* Calculate RC time constant used in the accZ lpf.
+*/
+float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
 {
-    fc_acc = 0.5f / (M_PIf * accz_lpf_cutoff); // calculate RC time constant used in the accZ lpf
-}
-
-void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
-{
-    static int16_t gyroYawSmooth = 0;
-
-    gyroGetADC();
-    if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings(accelerometerTrims);
-        getEstimatedAttitude();
-    } else {
-        accADC[X] = 0;
-        accADC[Y] = 0;
-        accADC[Z] = 0;
-    }
-
-    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
-    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
-
-    if (mixerMode == MIXER_TRI) {
-        gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
-        gyroYawSmooth = gyroData[FD_YAW];
-    } else {
-        gyroData[FD_YAW] = gyroADC[FD_YAW];
-    }
+    return 0.5f / (M_PIf * accz_lpf_cutoff);
 }
 
 // **************************************************
@@ -201,11 +188,34 @@ void acc_calc(uint32_t deltaT)
 /*
 * Baseflight calculation by Luggi09 originates from arducopter
 * ============================================================
+* This function rotates magnetic vector to cancel actual yaw and
+* pitch of craft. Then it computes it's direction in X/Y plane.
+* This value is returned as compass heading, value is 0-360 degrees.
 *
-* Calculate the heading of the craft (in degrees clockwise from North)
-* when given a 3-vector representing the direction of North.
+* Note that Earth's magnetic field is not parallel with ground unless
+* you are near equator. Its inclination is considerable, >60 degrees
+* towards ground in most of Europe.
+*
+* First we consider it in 2D:
+*
+* An example, the vector <1, 1> would be turned into the heading
+* 45 degrees, representing it's angle clockwise from north.
+*
+*      ***************** *
+*      *       |   <1,1> *
+*      *       |  /      *
+*      *       | /       *
+*      *       |/        *
+*      *       *         *
+*      *                 *
+*      *                 *
+*      *                 *
+*      *                 *
+*      *******************
+*
+* //TODO: Add explanation for how it uses the Z dimension.
 */
-static int16_t calculateHeading(t_fp_vector *vec)
+int16_t calculateHeading(t_fp_vector *vec)
 {
     int16_t head;
 
@@ -298,7 +308,32 @@ static void getEstimatedAttitude(void)
     acc_calc(deltaT); // rotate acc vector into earth frame
 }
 
-// Correction of throttle in lateral wind.
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
+{
+    static int16_t gyroYawSmooth = 0;
+
+    gyroGetADC();
+    if (sensors(SENSOR_ACC)) {
+        updateAccelerationReadings(accelerometerTrims);
+        getEstimatedAttitude();
+    } else {
+        accADC[X] = 0;
+        accADC[Y] = 0;
+        accADC[Z] = 0;
+    }
+
+    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
+    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
+
+    if (mixerMode == MIXER_TRI) {
+        gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
+        gyroYawSmooth = gyroData[FD_YAW];
+    } else {
+        gyroData[FD_YAW] = gyroADC[FD_YAW];
+    }
+}
+
+//TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
 {
     float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);

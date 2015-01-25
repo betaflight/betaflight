@@ -39,6 +39,8 @@
 #define GYRO
 #define USE_GYRO_L3GD20
 
+#define GYRO_L3GD20_ALIGN CW90_DEG
+
 #define ACC
 #define USE_ACC_LSM303DLHC
 

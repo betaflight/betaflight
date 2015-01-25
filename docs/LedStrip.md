@@ -12,6 +12,7 @@ supports the following:
 * Heading/Orientation lights.
 * Flight mode specific color schemes.
 * Low battery warning.
+* AUX operated on/off switch
 
 The function and orientation configuration is fixed for now but later it should be able to be set via the UI or CLI..
 
@@ -110,6 +111,7 @@ Note: It is perfectly possible to configure an LED to have all directions `NESWU
 * `I` - `I`ndicator.
 * `A` - `A`rmed state.
 * `T` - `T`hrust state.
+* `R` - `R`ing thrust state.
 
 Example:
 
@@ -169,6 +171,24 @@ Note: Armed State cannot be used with Flight Mode.
 This mode fades the LED current LED color to the previous/next color in the HSB color space depending on throttle stick position.  When the
 throttle is in the middle position the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and throttle at
 the same time.
+
+#### Thrust ring state
+
+This mode is allows you to use a 12, 16 or 24 leds ring (e.g. NeoPixel ring) for an afterburner effect. When armed the leds use the following sequences: 2 On, 4 Off, 2 On, 4 Off, and so on.  The light pattern rotates clockwise as throttle increases. 
+
+A better effect is acheived when LEDs configured for thrust ring have no other functions.
+
+LED direction and X/Y positions are irrelevant for thrust ring LED state.  The order of the LEDs that have the state determines how the LED behaves.
+
+Each LED of the ring can be a different color. The color can be selected between the 15 colors availables.
+
+For example, led 0 is set as a `R`ing thrust state led in color 13 as follow. 
+
+```
+led 0 2,2::R:13
+```
+
+LED strips and rings can be combined.
 
 ## Positioning
 
