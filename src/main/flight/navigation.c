@@ -306,7 +306,7 @@ void onGpsNewData(void)
     dTnav = (float)(millis() - nav_loopTimer) / 1000.0f;
     nav_loopTimer = millis();
     // prevent runup from bad GPS
-    dTnav = min(dTnav, 1.0f);
+    dTnav = MIN(dTnav, 1.0f);
 
     GPS_calculateDistanceAndDirectionToHome();
 
@@ -413,7 +413,7 @@ void gpsUsePIDs(pidProfile_t *pidProfile)
 //
 static void GPS_calc_longitude_scaling(int32_t lat)
 {
-    float rads = (abs((float)lat) / 10000000.0f) * 0.0174532925f;
+    float rads = (ABS((float)lat) / 10000000.0f) * 0.0174532925f;
     GPS_scaleLonDown = cosf(rads);
 }
 
@@ -442,7 +442,7 @@ static bool check_missed_wp(void)
     int32_t temp;
     temp = target_bearing - original_target_bearing;
     temp = wrap_18000(temp);
-    return (abs(temp) > 10000); // we passed the waypoint by 100 degrees
+    return (ABS(temp) > 10000); // we passed the waypoint by 100 degrees
 }
 
 #define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS 1.113195f
@@ -536,7 +536,7 @@ static void GPS_calc_poshold(void)
 
         // get rid of noise
 #if defined(GPS_LOW_SPEED_D_FILTER)
-        if (abs(actual_speed[axis]) < 50)
+        if (ABS(actual_speed[axis]) < 50)
             d = 0;
 #endif
 
@@ -582,7 +582,7 @@ static void GPS_calc_nav_rate(uint16_t max_speed)
 //
 static void GPS_update_crosstrack(void)
 {
-    if (abs(wrap_18000(target_bearing - original_target_bearing)) < 4500) {     // If we are too far off or too close we don't do track following
+    if (ABS(wrap_18000(target_bearing - original_target_bearing)) < 4500) {     // If we are too far off or too close we don't do track following
         float temp = (target_bearing - original_target_bearing) * RADX100;
         crosstrack_error = sinf(temp) * (wp_distance * CROSSTRACK_GAIN); // Meters we are off track line
         nav_bearing = target_bearing + constrain(crosstrack_error, -3000, 3000);
@@ -607,10 +607,10 @@ static uint16_t GPS_calc_desired_speed(uint16_t max_speed, bool _slow)
 {
     // max_speed is default 400 or 4m/s
     if (_slow) {
-        max_speed = min(max_speed, wp_distance / 2);
+        max_speed = MIN(max_speed, wp_distance / 2);
     } else {
-        max_speed = min(max_speed, wp_distance);
-        max_speed = max(max_speed, gpsProfile->nav_speed_min);      // go at least 100cm/s
+        max_speed = MIN(max_speed, wp_distance);
+        max_speed = MAX(max_speed, gpsProfile->nav_speed_min);      // go at least 100cm/s
     }
 
     // limit the ramp up of the speed

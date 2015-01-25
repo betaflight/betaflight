@@ -30,12 +30,20 @@ typedef struct imuRuntimeConfig_s {
     int8_t small_angle;
 } imuRuntimeConfig_t;
 
-void configureIMU(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, accDeadband_t *initialAccDeadband);
+void configureIMU(
+	imuRuntimeConfig_t *initialImuRuntimeConfig,
+	pidProfile_t *initialPidProfile,
+	accDeadband_t *initialAccDeadband,
+	float accz_lpf_cutoff,
+	uint16_t throttle_correction_angle
+);
 
 void calculateEstimatedAltitude(uint32_t currentTime);
 void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode);
-void calculateThrottleAngleScale(uint16_t throttle_correction_angle);
+float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
-void calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
+float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
+
+int16_t calculateHeading(t_fp_vector *vec);
 
 void accSum_reset(void);

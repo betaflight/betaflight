@@ -182,7 +182,7 @@ void annexCode(void)
     }
 
     for (axis = 0; axis < 3; axis++) {
-        tmp = min(abs(rcData[axis] - masterConfig.rxConfig.midrc), 500);
+        tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
         if (axis == ROLL || axis == PITCH) {
             if (currentProfile->rcControlsConfig.deadband) {
                 if (tmp > currentProfile->rcControlsConfig.deadband) {
@@ -205,7 +205,7 @@ void annexCode(void)
                 }
             }
             rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->yawRate * abs(tmp) / 500;
+            prop1 = 100 - (uint16_t)currentControlRateProfile->yawRate * ABS(tmp) / 500;
         }
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
         dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
@@ -397,7 +397,7 @@ void updateInflightCalibrationState(void)
 
 void updateMagHold(void)
 {
-    if (abs(rcCommand[YAW]) < 70 && FLIGHT_MODE(MAG_MODE)) {
+    if (ABS(rcCommand[YAW]) < 70 && FLIGHT_MODE(MAG_MODE)) {
         int16_t dif = heading - magHold;
         if (dif <= -180)
             dif += 360;

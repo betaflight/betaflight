@@ -177,7 +177,7 @@ void hmc5883lInit(void)
         xyz_total[Z] += magADC[Z];
 
         // Detect saturation.
-        if (-4096 >= min(magADC[X], min(magADC[Y], magADC[Z]))) {
+        if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
             bret = false;
             break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
         }
@@ -197,7 +197,7 @@ void hmc5883lInit(void)
         xyz_total[Z] -= magADC[Z];
 
         // Detect saturation.
-        if (-4096 >= min(magADC[X], min(magADC[Y], magADC[Z]))) {
+        if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
             bret = false;
             break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
         }

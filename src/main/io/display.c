@@ -292,12 +292,12 @@ void showProfilePage(void)
 void showGpsPage() {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    i2c_OLED_set_xy(max(0, SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
+    i2c_OLED_set_xy(MAX(0, SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
 
     uint32_t index;
     for (index = 0; index < SATELLITE_COUNT && index < SCREEN_CHARACTER_COLUMN_COUNT; index++) {
         uint8_t bargraphValue = ((uint16_t) GPS_svinfo_cno[index] * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
-        bargraphValue = min(bargraphValue, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
+        bargraphValue = MIN(bargraphValue, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
         i2c_OLED_send_char(VERTICAL_BARGRAPH_ZERO_CHARACTER + bargraphValue);
     }
 

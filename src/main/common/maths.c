@@ -22,7 +22,7 @@
 
 int32_t applyDeadband(int32_t value, int32_t deadband)
 {
-    if (abs(value) < deadband) {
+    if (ABS(value) < deadband) {
         value = 0;
     } else if (value > 0) {
         value -= deadband;

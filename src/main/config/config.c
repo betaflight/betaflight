@@ -616,7 +616,9 @@ void activateConfig(void)
     configureIMU(
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
-        &currentProfile->accDeadband
+        &currentProfile->accDeadband,
+        currentProfile->accz_lpf_cutoff,
+        currentProfile->throttle_correction_angle
     );
 
     configureAltitudeHold(
@@ -625,9 +627,6 @@ void activateConfig(void)
         &currentProfile->rcControlsConfig,
         &masterConfig.escAndServoConfig
     );
-
-    calculateThrottleAngleScale(currentProfile->throttle_correction_angle);
-    calculateAccZLowPassFilterRCTimeConstant(currentProfile->accz_lpf_cutoff);
 
 #ifdef BARO
     useBarometerConfig(&currentProfile->barometerConfig);

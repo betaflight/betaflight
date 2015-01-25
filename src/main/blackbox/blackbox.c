@@ -912,7 +912,7 @@ static void configureBlackboxPort(void)
      *
      * 9 / 1250 = 7200 / 1000000
      */
-    serialChunkSize = max((masterConfig.looptime * 9) / 1250, 4);
+    serialChunkSize = MAX((masterConfig.looptime * 9) / 1250, 4);
 }
 
 static void releaseBlackboxPort(void)
@@ -1163,7 +1163,7 @@ static bool blackboxWriteSysinfo()
     }
 
     // How many bytes can we afford to transmit this loop?
-    xmitState.u.serialBudget = min(xmitState.u.serialBudget + serialChunkSize, 64);
+    xmitState.u.serialBudget = MIN(xmitState.u.serialBudget + serialChunkSize, 64);
 
     // Most headers will consume at least 20 bytes so wait until we've built up that much link budget
     if (xmitState.u.serialBudget < 20) {

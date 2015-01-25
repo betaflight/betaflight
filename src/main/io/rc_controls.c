@@ -64,7 +64,7 @@ bool isUsingSticksForArming(void)
 
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
-    return abs(rcCommand[ROLL]) < ap_mode && abs(rcCommand[PITCH]) < ap_mode;
+    return ABS(rcCommand[ROLL]) < ap_mode && ABS(rcCommand[PITCH]) < ap_mode;
 }
 
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -518,7 +518,7 @@ void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges)
 }
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
-    return min(abs(rcData[axis] - midrc), 500);
+    return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse)
