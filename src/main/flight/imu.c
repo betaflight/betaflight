@@ -188,12 +188,13 @@ void acc_calc(uint32_t deltaT)
 /*
 * Baseflight calculation by Luggi09 originates from arducopter
 * ============================================================
-* This function turns a vector which is (usually) the direction
-* of magnetic flux in the coordinate system of the craft into
-* a compass heading in degrees, clockwise away from north. Note
-* that the magnetic flux is not parrelell with the vector towards
-* magnetic north it's self but rather is parrelell with the ground
-* when near the equator.
+* This function rotates magnetic vector to cancel actual yaw and
+* pitch of craft. Then it computes it's direction in X/Y plane.
+* This value is returned as compass heading, value is 0-360 degrees.
+*
+* Note that Earth's magnetic field is not parallel with ground unless
+* you are near equator. Its inclination is considerable, >60 degrees
+* towards ground in most of Europe.
 *
 * First we consider it in 2D:
 *
