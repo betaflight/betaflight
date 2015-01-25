@@ -42,6 +42,7 @@
 
 #define XBUS_RJ01_FRAME_SIZE 33
 #define XBUS_RJ01_MESSAGE_LENGTH 30
+#define XBUS_RJ01_OFFSET_BYTES 3
 
 #define XBUS_CRC_AND_VALUE 0x8000
 #define XBUS_CRC_POLY 0x1021
@@ -171,7 +172,7 @@ uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
 }
 
 
-static void xBusUnpackModeBFrame(void)
+static void xBusUnpackModeBFrame(uint8_t offsetBytes)
 {
     // Calculate the CRC of the incoming frame
     uint16_t crc = 0;
@@ -181,19 +182,19 @@ static void xBusUnpackModeBFrame(void)
     uint8_t frameAddr;
 
     // Calculate on all bytes except the final two CRC bytes
-    for (i = 0; i < xBusFrameLength - 2; i++) {
-        inCrc = xBusCRC16(inCrc, xBusFrame[i]);
+    for (i = 0; i < XBUS_FRAME_SIZE - 2; i++) {
+        inCrc = xBusCRC16(inCrc, xBusFrame[i+offsetBytes]);
     }
 
     // Get the received CRC
-    crc = ((uint16_t)xBusFrame[xBusFrameLength-2]) << 8;
-    crc = crc + ((uint16_t)xBusFrame[xBusFrameLength-1]);
+    crc = ((uint16_t)xBusFrame[offsetBytes + XBUS_FRAME_SIZE - 2]) << 8;
+    crc = crc + ((uint16_t)xBusFrame[offsetBytes + XBUS_FRAME_SIZE - 1]);
 
     if (crc == inCrc) {
         // Unpack the data, we have a valid frame
         for (i = 0; i < xBusChannelCount; i++) {
 
-            frameAddr = 1 + i * 2;
+            frameAddr = offsetBytes + 1 + i * 2;
             value = ((uint16_t)xBusFrame[frameAddr]) << 8;
             value = value + ((uint16_t)xBusFrame[frameAddr + 1]);
 
@@ -210,11 +211,7 @@ static void xBusUnpackRJ01Frame(void)
 {
     // Calculate the CRC of the incoming frame
     uint8_t outerCrc = 0;
-    uint16_t crc = 0;
-    uint16_t inCrc = 0;
     uint8_t i = 0;
-    uint16_t value;
-    uint8_t frameAddr;
 
     // When using the Align RJ01 receiver with 
     // a MODE B setting in the radio (XG14 tested)
@@ -253,32 +250,8 @@ static void xBusUnpackRJ01Frame(void)
         return;
     }
 
-    //
-    // Calculate CRC bytes of the "embedded MODE B frame"
-    //
-    for (i = 3; i < xBusFrameLength - 5; i++) {
-        inCrc = xBusCRC16(inCrc, xBusFrame[i]);
-    }
-
-    // Get the received CRC (of the "embedded MODE B frame")
-    crc = ((uint16_t)xBusFrame[xBusFrameLength-5]) << 8;
-    crc = crc + ((uint16_t)xBusFrame[xBusFrameLength-4]);
-
-    if (crc == inCrc) {
-        // Unpack the data, we have a valid frame
-        for (i = 0; i < xBusChannelCount; i++) {
-
-            frameAddr = 4 + i * 2;
-            value = ((uint16_t)xBusFrame[frameAddr]) << 8;
-            value = value + ((uint16_t)xBusFrame[frameAddr + 1]);
-
-            // Convert to internal format
-            xBusChannelData[i] = XBUS_CONVERT_TO_USEC(value);
-        }
-
-        xBusFrameReceived = true;
-    }
-
+    // Now unpack the "embedded MODE B frame"
+    xBusUnpackModeBFrame(XBUS_RJ01_OFFSET_BYTES);
 }
 
 // Receive ISR callback
@@ -312,7 +285,7 @@ static void xBusDataReceive(uint16_t c)
     if (xBusFramePosition == xBusFrameLength) {
         switch (xBusProvider) {
             case SERIALRX_XBUS_MODE_B:
-                xBusUnpackModeBFrame();
+                xBusUnpackModeBFrame(0);
             case SERIALRX_XBUS_MODE_B_RJ01:
                 xBusUnpackRJ01Frame();
         }
