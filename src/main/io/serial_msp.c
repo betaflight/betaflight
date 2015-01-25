@@ -1024,7 +1024,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_BOARD_ALIGNMENT:
-        headSerialReply(3);
+        headSerialReply(6);
         serialize16(masterConfig.boardAlignment.rollDegrees);
         serialize16(masterConfig.boardAlignment.pitchDegrees);
         serialize16(masterConfig.boardAlignment.yawDegrees);
@@ -1042,7 +1042,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_RX_CONFIG:
-        headSerialReply(7);
+        headSerialReply(8);
         serialize8(masterConfig.rxConfig.serialrx_provider);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
