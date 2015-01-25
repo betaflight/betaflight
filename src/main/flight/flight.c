@@ -303,14 +303,14 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     static int32_t delta1[2] = { 0, 0 }, delta2[2] = { 0, 0 };
     int32_t delta;
 
-    if (FLIGHT_MODE(HORIZON_MODE)) prop = min(max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])), 512);
+    if (FLIGHT_MODE(HORIZON_MODE)) prop = MIN(MAX(ABS(rcCommand[PITCH]), ABS(rcCommand[ROLL])), 512);
 
     // PITCH & ROLL
     for (axis = 0; axis < 2; axis++) {
         rc = rcCommand[axis] << 1;
         error = rc - (gyroData[axis] / 4);
         errorGyroI[axis]  = constrain(errorGyroI[axis] + error, -16000, +16000);   // WindUp   16 bits is ok here
-        if (abs(gyroData[axis]) > (640 * 4)) errorGyroI[axis] = 0;
+        if (ABS(gyroData[axis]) > (640 * 4)) errorGyroI[axis] = 0;
 
         ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
 
@@ -367,7 +367,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 #endif
     errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
     errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
-    if (abs(rc) > 50) errorGyroI[FD_YAW] = 0;
+    if (ABS(rc) > 50) errorGyroI[FD_YAW] = 0;
 
     PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6;
 
@@ -404,7 +404,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
     UNUSED(controlRateConfig);
 
     // **** PITCH & ROLL ****
-    prop = min(max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])), 500); // range [0;500]
+    prop = MIN(MAX(ABS(rcCommand[PITCH]), ABS(rcCommand[ROLL])), 500); // range [0;500]
 
     for (axis = 0; axis < 2; axis++) {
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) { // MODE relying on ACC
@@ -436,7 +436,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
             PTermGYRO = rcCommand[axis];
 
             errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
-            if (abs(gyroData[axis]) > (640 * 4))
+            if (ABS(gyroData[axis]) > (640 * 4))
                 errorGyroI[axis] = 0;
 
             ITermGYRO = (errorGyroI[axis] / 125 * pidProfile->I8[axis]) / 64;
@@ -472,7 +472,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 #endif
     errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
     errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
-    if (abs(rc) > 50) errorGyroI[FD_YAW] = 0;
+    if (ABS(rc) > 50) errorGyroI[FD_YAW] = 0;
 
     PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6;
 
