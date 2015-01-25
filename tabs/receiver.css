@@ -98,6 +98,18 @@
 .tab-receiver .bars ul:nth-of-type(12) .fill {
     background-color: #7a6614;
 }
+.tab-receiver .bars ul:nth-of-type(13) .fill {
+    background-color: #cf267d;
+}
+.tab-receiver .bars ul:nth-of-type(14) .fill {
+    background-color: #7a1464;
+}
+.tab-receiver .bars ul:nth-of-type(15) .fill {
+    background-color: #3a7a14;
+}
+.tab-receiver .bars ul:nth-of-type(16) .fill {
+    background-color: #14407a;
+}
 .tab-receiver .tunings {
     float: right;
 }
@@ -255,6 +267,18 @@
 }
 .tab-receiver #RX_plot .line:nth-child(12) {
     stroke: #7a6614;
+}
+.tab-receiver #RX_plot .line:nth-child(13) {
+    stroke: #cf267d;
+}
+.tab-receiver #RX_plot .line:nth-child(14) {
+    stroke: #7a1464;
+}
+.tab-receiver #RX_plot .line:nth-child(15) {
+    stroke: #3a7a14;
+}
+.tab-receiver #RX_plot .line:nth-child(16) {
+    stroke: #14407a;
 }
 .tab-receiver .buttons {
     width: calc(100% - 20px);
