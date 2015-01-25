@@ -159,7 +159,7 @@ char *ftoa(float x, char *floatString)
 
     value = (int32_t)(x * 1000.0f);    // Convert float * 1000 to an integer
 
-    itoa(abs(value), intString1, 10);   // Create string from abs of integer value
+    itoa(ABS(value), intString1, 10);   // Create string from abs of integer value
 
     if (value >= 0)
         intString2[0] = ' ';    // Positive number, add a pad space

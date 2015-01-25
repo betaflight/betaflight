@@ -32,10 +32,13 @@ typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_MAG,
     FLIGHT_LOG_FIELD_CONDITION_BARO,
     FLIGHT_LOG_FIELD_CONDITION_VBAT,
+    FLIGHT_LOG_FIELD_CONDITION_AMPERAGE,
 
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2,
+
+    FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME,
 
     FLIGHT_LOG_FIELD_CONDITION_NEVER,
 
@@ -72,7 +75,10 @@ typedef enum FlightLogFieldPredictor {
     FLIGHT_LOG_FIELD_PREDICTOR_1500           = 8,
 
     //Predict vbatref, the reference ADC level stored in the header
-    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF        = 9
+    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF        = 9,
+
+    //Predict the last time value written in the main stream
+    FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10
 
 } FlightLogFieldPredictor;
 

@@ -17,67 +17,52 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "CHF3" // Chebuzz F3
+#define TARGET_BOARD_IDENTIFIER "SRF3"
 
-#define LED0_GPIO   GPIOE
-#define LED0_PIN    Pin_8|Pin_12 // Blue LEDs - PE8/PE12
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOE
-#define LED0_INVERTED
-#define LED1_GPIO   GPIOE
-#define LED1_PIN    Pin_10|Pin_14  // Orange LEDs - PE10/PE14
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOE
-#define LED1_INVERTED
+#define LED0_GPIO   GPIOB
+#define LED0_PIN    Pin_3
+#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
 
-#define BEEP_GPIO   GPIOE
-#define BEEP_PIN    Pin_9|Pin_13 // Red LEDs - PE9/PE13
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOE
-#define BEEPER_INVERTED
+#define BEEP_GPIO   GPIOC
+#define BEEP_PIN    Pin_15
+#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
 
-#define USABLE_TIMER_CHANNEL_COUNT 18
+#define USABLE_TIMER_CHANNEL_COUNT 17
 
 #define GYRO
-#define USE_GYRO_L3GD20
 #define USE_GYRO_MPU6050
-
-#define GYRO_L3GD20_ALIGN CW90_DEG
-#define GYRO_MPU6050_ALIGN CW0_DEG
 
 #define ACC
 #define USE_ACC_MPU6050
-#define USE_ACC_LSM303DLHC
-
-#define ACC_MPU6050_ALIGN CW0_DEG
 
 #define BARO
 #define USE_BARO_MS5611
 
 #define MAG
-#define USE_MAG_AK8975
-
-#define MAG_AK8975_ALIGN CW90_DEG_FLIP
+#define USE_MAG_HMC5883
 
 #define BEEPER
 #define LED0
-#define LED1
 
-#define USE_VCP
 #define USE_USART1
 #define USE_USART2
+#define USE_USART3
 #define SERIAL_PORT_COUNT 3
 
+#define UART2_TX_PIN        GPIO_Pin_14 // PA14 / SWCLK
+#define UART2_RX_PIN        GPIO_Pin_15 // PA15
+#define UART2_GPIO          GPIOA
+#define UART2_GPIO_AF       GPIO_AF_7
+#define UART2_TX_PINSOURCE  GPIO_PinSource14
+#define UART2_RX_PINSOURCE  GPIO_PinSource15
+
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
-#define USE_ADC
+//#define USE_SPI
+//#define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
-
-#define GPS
 #define LED_STRIP
-#if 1
-#define LED_STRIP_TIMER TIM16
-#else
-// alternative LED strip configuration, tested working.
 #define LED_STRIP_TIMER TIM1
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
@@ -90,9 +75,12 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
-#endif
 
+#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
+
+#define GPS
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
+

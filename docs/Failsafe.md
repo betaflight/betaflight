@@ -28,7 +28,7 @@ a) no valid channel data from the RX is received via Serial RX.
 
 b) the first 4 Parallel PWM/PPM channels do not have valid signals.
 
-And:
+And when:
 
 c) the failsafe guard time specified by `failsafe_delay` has elapsed. 
 

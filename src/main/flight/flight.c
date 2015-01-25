@@ -117,11 +117,11 @@ static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *control
         stickPosAil = getRcStickDeflection(FD_ROLL, rxConfig->midrc);
         stickPosEle = getRcStickDeflection(FD_PITCH, rxConfig->midrc);
 
-        if(abs(stickPosAil) > abs(stickPosEle)){
-            mostDeflectedPos = abs(stickPosAil);
+        if(ABS(stickPosAil) > ABS(stickPosEle)){
+            mostDeflectedPos = ABS(stickPosAil);
         }
         else {
-            mostDeflectedPos = abs(stickPosEle);
+            mostDeflectedPos = ABS(stickPosEle);
         }
 
         // Progressively turn off the horizon self level strength as the stick is banged over
@@ -220,7 +220,7 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     UNUSED(controlRateConfig);
 
     // **** PITCH & ROLL & YAW PID ****
-    prop = min(max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])), 500); // range [0;500]
+    prop = MIN(MAX(ABS(rcCommand[PITCH]), ABS(rcCommand[ROLL])), 500); // range [0;500]
 
     for (axis = 0; axis < 3; axis++) {
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && (axis == FD_ROLL || axis == FD_PITCH)) { // MODE relying on ACC
@@ -252,7 +252,7 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             PTermGYRO = rcCommand[axis];
 
             errorGyroI[axis] = constrain(errorGyroI[axis] + error, -16000, +16000); // WindUp
-            if ((abs(gyroData[axis]) > (640 * 4)) || (axis == FD_YAW && abs(rcCommand[axis]) > 100))
+            if ((ABS(gyroData[axis]) > (640 * 4)) || (axis == FD_YAW && ABS(rcCommand[axis]) > 100))
                 errorGyroI[axis] = 0;
 
             ITermGYRO = (errorGyroI[axis] / 125 * pidProfile->I8[axis]) / 64;

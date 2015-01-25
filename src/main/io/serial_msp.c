@@ -121,7 +121,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   2 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   4 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -617,6 +617,12 @@ void mspInit(serialConfig_t *serialConfig)
 
     activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
 
+#ifdef LED_STRIP
+    if (feature(FEATURE_LED_STRIP)) {
+        activeBoxIds[activeBoxIdCount++] = BOXLEDLOW;
+    }
+#endif
+    
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         activeBoxIds[activeBoxIdCount++] = BOXCALIB;
 
@@ -746,6 +752,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
@@ -820,9 +827,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamphours drawn from battery
         serialize16(rssi);
         if(masterConfig.batteryConfig.multiwiiCurrentMeterOutput) {
-            serialize16((uint16_t)constrain((abs(amperage) * 10), 0, 0xFFFF)); // send amperage in 0.001 A steps
+            serialize16((uint16_t)constrain((ABS(amperage) * 10), 0, 0xFFFF)); // send amperage in 0.001 A steps
         } else
-            serialize16((uint16_t)constrain(abs(amperage), 0, 0xFFFF)); // send amperage in 0.01 A steps
+            serialize16((uint16_t)constrain(ABS(amperage), 0, 0xFFFF)); // send amperage in 0.01 A steps
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
@@ -1097,13 +1104,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_LED_STRIP_CONFIG:
-        headSerialReply(MAX_LED_STRIP_LENGTH * 6);
+        headSerialReply(MAX_LED_STRIP_LENGTH * 7);
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
             serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
             serialize16((ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
             serialize8(GET_LED_X(ledConfig));
             serialize8(GET_LED_Y(ledConfig));
+            serialize8(ledConfig->color);
         }
         break;
 #endif
@@ -1443,7 +1451,7 @@ static bool processInCommand(void)
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = read8();
-            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != 7) {
+            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != (1 + 7)) {
                 headSerialError(0);
                 break;
             }
@@ -1462,6 +1470,10 @@ static bool processInCommand(void)
 
             mask = read8();
             ledConfig->xy |= CALCULATE_LED_Y(mask);
+
+            ledConfig->color = read8();
+
+            reevalulateLedConfig();
         }
         break;
 #endif

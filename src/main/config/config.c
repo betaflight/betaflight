@@ -25,6 +25,8 @@
 
 #include "common/color.h"
 #include "common/axis.h"
+#include "common/maths.h"
+
 #include "flight/flight.h"
 
 #include "drivers/sensor.h"
@@ -613,10 +615,12 @@ void activateConfig(void)
     imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
-    configureImu(
+    configureIMU(
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
-        &currentProfile->accDeadband
+        &currentProfile->accDeadband,
+        currentProfile->accz_lpf_cutoff,
+        currentProfile->throttle_correction_angle
     );
 
     configureAltitudeHold(
@@ -625,9 +629,6 @@ void activateConfig(void)
         &currentProfile->rcControlsConfig,
         &masterConfig.escAndServoConfig
     );
-
-    calculateThrottleAngleScale(currentProfile->throttle_correction_angle);
-    calculateAccZLowPassFilterRCTimeConstant(currentProfile->accz_lpf_cutoff);
 
 #ifdef BARO
     useBarometerConfig(&currentProfile->barometerConfig);

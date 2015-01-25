@@ -24,6 +24,7 @@
 
 extern "C" {
     #include "common/axis.h"
+    #include "common/maths.h"
     #include "flight/flight.h"
 
     #include "sensors/sensors.h"
@@ -48,10 +49,23 @@ extern "C" {
 #define UPWARDS_THRUST false
 
 
-TEST(FlightImuTest, Placeholder)
+TEST(FlightImuTest, TestCalculateHeading)
 {
-    // TODO test things
-    EXPECT_EQ(true, true);
+    //TODO: Add test cases using the Z dimension.
+    t_fp_vector north = {.A={1.0f, 0.0f, 0.0f}};
+    EXPECT_EQ(calculateHeading(&north), 0);
+
+    t_fp_vector east = {.A={0.0f, 1.0f, 0.0f}};
+    EXPECT_EQ(calculateHeading(&east), 90);
+
+    t_fp_vector south = {.A={-1.0f, 0.0f, 0.0f}};
+    EXPECT_EQ(calculateHeading(&south), 180);
+
+    t_fp_vector west = {.A={0.0f, -1.0f, 0.0f}};
+    EXPECT_EQ(calculateHeading(&west), 270);
+
+    t_fp_vector north_east = {.A={1.0f, 1.0f, 0.0f}};
+    EXPECT_EQ(calculateHeading(&north_east), 45);
 }
 
 // STUBS
@@ -85,18 +99,8 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     UNUSED(rollAndPitchTrims);
 }
 
-int32_t applyDeadband(int32_t, int32_t) { return 0; }
-
 uint32_t micros(void) { return 0; }
 bool isBaroCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
-int constrain(int amt, int low, int high)
-{
-    UNUSED(amt);
-    UNUSED(low);
-    UNUSED(high);
-    return 0;
-}
-
 }

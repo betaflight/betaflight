@@ -150,6 +150,7 @@ typedef struct blackboxGPSFieldDefinition_t {
     uint8_t isSigned;
     uint8_t predict;
     uint8_t encode;
+    uint8_t condition; // Decide whether this field should appear in the log
 } blackboxGPSFieldDefinition_t;
 
 /**
@@ -181,6 +182,7 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
     {"rcCommand[3]",  UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
     {"vbatLatest",    UNSIGNED, .Ipredict = PREDICT(VBATREF), .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
+    {"amperageLatest",UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE},
 #ifdef MAG
     {"magADC[0]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
     {"magADC[1]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
@@ -213,18 +215,19 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
 #ifdef GPS
 // GPS position/vel frame
 static const blackboxGPSFieldDefinition_t blackboxGpsGFields[] = {
-    {"GPS_numSat",    UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"GPS_coord[0]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB)},
-    {"GPS_coord[1]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB)},
-    {"GPS_altitude",  UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"GPS_speed",     UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"GPS_ground_course",UNSIGNED, PREDICT(0),       ENCODING(UNSIGNED_VB)}
+    {"time",          UNSIGNED, PREDICT(LAST_MAIN_FRAME_TIME), ENCODING(UNSIGNED_VB), CONDITION(NOT_LOGGING_EVERY_FRAME)},
+    {"GPS_numSat",    UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_coord[0]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_coord[1]",  SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_altitude",  UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_speed",     UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_ground_course",UNSIGNED, PREDICT(0),       ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)}
 };
 
 // GPS home frame
 static const blackboxGPSFieldDefinition_t blackboxGpsHFields[] = {
-    {"GPS_home[0]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
-    {"GPS_home[1]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
+    {"GPS_home[0]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_home[1]",   SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)}
 };
 #endif
 
@@ -631,6 +634,12 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_VBAT:
             return feature(FEATURE_VBAT);
 
+        case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE:
+            return feature(FEATURE_CURRENT_METER);
+
+        case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
+            return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
+
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
         default:
@@ -721,6 +730,11 @@ static void writeIntraframe(void)
         writeUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
     }
 
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
+        // 12bit value directly from ADC
+        writeUnsignedVB(blackboxCurrent->amperageLatest);
+    }
+
 #ifdef MAG
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
             for (x = 0; x < XYZ_AXIS_COUNT; x++)
@@ -772,8 +786,8 @@ static void writeInterframe(void)
     //No need to store iteration count since its delta is always 1
 
     /*
-     * Since the difference between the difference between successive times will be nearly zero, use
-     * second-order differences.
+     * Since the difference between the difference between successive times will be nearly zero (due to consistent
+     * looptime spacing), use second-order differences.
      */
     writeSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
@@ -806,11 +820,15 @@ static void writeInterframe(void)
 
     writeTag8_4S16(deltas);
 
-    //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, MAG, BARO
+    //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, Amperage, MAG, BARO
     int optionalFieldCount = 0;
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->vbatLatest - blackboxLast->vbatLatest;
+    }
+
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
+        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
     }
 
 #ifdef MAG
@@ -894,7 +912,7 @@ static void configureBlackboxPort(void)
      *
      * 9 / 1250 = 7200 / 1000000
      */
-    serialChunkSize = max((masterConfig.looptime * 9) / 1250, 4);
+    serialChunkSize = MAX((masterConfig.looptime * 9) / 1250, 4);
 }
 
 static void releaseBlackboxPort(void)
@@ -931,7 +949,7 @@ void startBlackbox(void)
         blackboxHistory[1] = &blackboxHistoryRing[1];
         blackboxHistory[2] = &blackboxHistoryRing[2];
 
-        vbatReference = vbatLatest;
+        vbatReference = vbatLatestADC;
 
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
@@ -980,6 +998,17 @@ static void writeGPSFrame()
 {
     blackboxWrite('G');
 
+    /*
+     * If we're logging every frame, then a GPS frame always appears just after a frame with the
+     * currentTime timestamp in the log, so the reader can just use that timestamp for the GPS frame.
+     *
+     * If we're not logging every frame, we need to store the time of this GPS frame.
+     */
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME)) {
+        // Predict the time of the last frame in the main log
+        writeUnsignedVB(currentTime - blackboxHistory[1]->time);
+    }
+
     writeUnsignedVB(GPS_numSat);
     writeSignedVB(GPS_coord[0] - gpsHistory.GPS_home[0]);
     writeSignedVB(GPS_coord[1] - gpsHistory.GPS_home[1]);
@@ -1022,7 +1051,8 @@ static void loadBlackboxState(void)
     for (i = 0; i < motorCount; i++)
         blackboxCurrent->motor[i] = motor[i];
 
-    blackboxCurrent->vbatLatest = vbatLatest;
+    blackboxCurrent->vbatLatest = vbatLatestADC;
+    blackboxCurrent->amperageLatest = amperageLatestADC;
 
 #ifdef MAG
     for (i = 0; i < XYZ_AXIS_COUNT; i++)
@@ -1133,7 +1163,7 @@ static bool blackboxWriteSysinfo()
     }
 
     // How many bytes can we afford to transmit this loop?
-    xmitState.u.serialBudget = min(xmitState.u.serialBudget + serialChunkSize, 64);
+    xmitState.u.serialBudget = MIN(xmitState.u.serialBudget + serialChunkSize, 64);
 
     // Most headers will consume at least 20 bytes so wait until we've built up that much link budget
     if (xmitState.u.serialBudget < 20) {
@@ -1209,6 +1239,10 @@ static bool blackboxWriteSysinfo()
 
             xmitState.u.serialBudget -= strlen("H vbatref:%u\n");
         break;
+        case 13:
+            blackboxPrintf("H currentMeter:%i,%i\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+
+            xmitState.u.serialBudget -= strlen("H currentMeter:%i,%i\n");
         default:
             return true;
     }
@@ -1309,14 +1343,14 @@ void handleBlackbox(void)
         case BLACKBOX_STATE_SEND_GPS_H_HEADERS:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
             if (!sendFieldDefinition(blackboxGPSHHeaderNames, ARRAY_LENGTH(blackboxGPSHHeaderNames), blackboxGpsHFields, blackboxGpsHFields + 1,
-                    ARRAY_LENGTH(blackboxGpsHFields), NULL, NULL)) {
+                    ARRAY_LENGTH(blackboxGpsHFields), &blackboxGpsHFields[0].condition, &blackboxGpsHFields[1].condition)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADERS);
             }
         break;
         case BLACKBOX_STATE_SEND_GPS_G_HEADERS:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
             if (!sendFieldDefinition(blackboxGPSGHeaderNames, ARRAY_LENGTH(blackboxGPSGHeaderNames), blackboxGpsGFields, blackboxGpsGFields + 1,
-                    ARRAY_LENGTH(blackboxGpsGFields), NULL, NULL)) {
+                    ARRAY_LENGTH(blackboxGpsGFields), &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
         break;

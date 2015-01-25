@@ -35,7 +35,7 @@ SERIAL_DEVICE	?= /dev/ttyUSB0
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC MASSIVEF3 PORT103R SPARKY ALIENWIIF1
+VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENWIIF1
 
 # Valid targets for OP BootLoader support
 OPBL_VALID_TARGETS = CC3D
@@ -54,7 +54,7 @@ LINKER_DIR	 = $(ROOT)/src/main/target
 # Search path for sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 
-ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO MASSIVEF3 SPARKY))
+ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 SPARKY))
 
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
@@ -67,20 +67,30 @@ EXCLUDES	= stm32f30x_crc.c \
 
 STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
-DEVICE_STDPERIPH_SRC = $(USBPERIPH_SRC) \
+DEVICE_STDPERIPH_SRC = \
 		$(STDPERIPH_SRC)
 
 
-VPATH		:= $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x:$(USBFS_DIR)/src
+VPATH		:= $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
 CMSIS_SRC	 = $(notdir $(wildcard $(CMSIS_DIR)/CM1/CoreSupport/*.c \
 			   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x/*.c))
 
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(STDPERIPH_DIR)/inc \
-		   $(USBFS_DIR)/inc \
 		   $(CMSIS_DIR)/CM1/CoreSupport \
-		   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x \
+		   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
+
+ifneq ($(TARGET),SPRACINGF3)
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+		   $(USBFS_DIR)/inc \
 		   $(ROOT)/src/main/vcp
+
+VPATH := $(VPATH):$(USBFS_DIR)/src
+
+DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC)\
+		   $(USBPERIPH_SRC) 
+
+endif
 
 LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_256k.ld
 
@@ -91,12 +101,6 @@ ifeq ($(TARGET),CHEBUZZF3)
 # CHEBUZZ is a VARIANT of STM32F3DISCOVERY
 TARGET_FLAGS := $(TARGET_FLAGS) -DSTM32F3DISCOVERY
 endif
-
-ifeq ($(TARGET),MASSIVEF3)
-# MASSIVEF3 is a VARIANT of STM32F3DISCOVERY
-TARGET_FLAGS := $(TARGET_FLAGS) -DSTM32F3DISCOVERY
-endif
-
 
 else ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC PORT103R))
 
@@ -350,7 +354,8 @@ $(error OPBL specified with a unsupported target)
 endif
 endif
 
-CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
+CJMCU_SRC	 = \
+		   startup_stm32f10x_md_gcc.S \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
 		   drivers/accgyro_mpu6050.c \
@@ -371,11 +376,17 @@ CJMCU_SRC	 = startup_stm32f10x_md_gcc.S \
 		   hardware_revision.c \
 		   $(COMMON_SRC)
 
-CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
+CC3D_SRC	 = \
+		   startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
+		   drivers/barometer_bmp085.c \
+		   drivers/barometer_ms5611.c \
 		   drivers/bus_spi.c \
+		   drivers/bus_i2c_stm32f10x.c \
+		   drivers/compass_hmc5883l.c \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/inverter.c \
 		   drivers/light_led_stm32f10x.c \
@@ -394,7 +405,8 @@ CC3D_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
-STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
+STM32F30x_COMMON_SRC	 = \
+		   startup_stm32f30x_md_gcc.S \
 		   drivers/adc.c \
 		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
@@ -408,29 +420,37 @@ STM32F30x_COMMON_SRC	 = startup_stm32f30x_md_gcc.S \
 		   drivers/pwm_rx.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f30x.c \
-		   drivers/serial_usb_vcp.c \
 		   drivers/sound_beeper_stm32f30x.c \
 		   drivers/system_stm32f30x.c \
 		   drivers/timer.c \
-		   drivers/timer_stm32f30x.c \
+		   drivers/timer_stm32f30x.c
+
+VCP_SRC	 = \
 		   vcp/hw_config.c \
 		   vcp/stm32_it.c \
 		   vcp/usb_desc.c \
 		   vcp/usb_endp.c \
 		   vcp/usb_istr.c \
 		   vcp/usb_prop.c \
-		   vcp/usb_pwr.c
+		   vcp/usb_pwr.c \
+		   drivers/serial_usb_vcp.c
 
-NAZE32PRO_SRC	 = $(STM32F30x_COMMON_SRC) \
+NAZE32PRO_SRC	 = \
+		   $(STM32F30x_COMMON_SRC) \
 		   $(HIGHEND_SRC) \
-		   $(COMMON_SRC)
+		   $(COMMON_SRC) \
+		   $(VCP_SRC)
 
-STM32F3DISCOVERY_COMMON_SRC	 = $(STM32F30x_COMMON_SRC) \
+STM32F3DISCOVERY_COMMON_SRC	 = \
+		   $(STM32F30x_COMMON_SRC) \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_l3gd20.c \
-		   drivers/accgyro_lsm303dlhc.c
+		   drivers/accgyro_lsm303dlhc.c \
+		   drivers/compass_hmc5883l.c \
+		   $(VCP_SRC)
 
-STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
+STM32F3DISCOVERY_SRC	 = \
+		   $(STM32F3DISCOVERY_COMMON_SRC) \
 		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_bma280.c \
 		   drivers/accgyro_mma845x.c \
@@ -442,23 +462,31 @@ STM32F3DISCOVERY_SRC	 = $(STM32F3DISCOVERY_COMMON_SRC) \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
-CHEBUZZF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
+CHEBUZZF3_SRC	 = \
+		   $(STM32F3DISCOVERY_SRC) \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
-MASSIVEF3_SRC	 = $(STM32F3DISCOVERY_SRC) \
-		   $(HIGHEND_SRC) \
-		   $(COMMON_SRC)
-
-SPARKY_SRC	 = $(STM32F30x_COMMON_SRC) \
+SPARKY_SRC	 = \
+		   $(STM32F30x_COMMON_SRC) \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
+		   drivers/serial_usb_vcp.c \
+		   $(HIGHEND_SRC) \
+		   $(COMMON_SRC) \
+		   $(VCP_SRC)
+
+SPRACINGF3_SRC	 = \
+		   $(STM32F30x_COMMON_SRC) \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/barometer_ms5611.c \
+		   drivers/compass_hmc5883l.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
-ifeq ($(TARGET),MASSIVEF3)
+ifeq ($(TARGET),SPRACINGF3)
 LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_128k.ld
 endif
 

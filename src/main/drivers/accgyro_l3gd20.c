@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "common/maths.h"
 
 #include "system.h"
@@ -110,7 +112,7 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-    SPI_I2S_DeInit(SPI1);
+    SPI_I2S_DeInit(SPIx);
 
     SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
     SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
@@ -122,11 +124,11 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
     SPI_InitStructure.SPI_CRCPolynomial = 7;
 
-    SPI_Init(SPI1, &SPI_InitStructure);
+    SPI_Init(SPIx, &SPI_InitStructure);
 
-    SPI_RxFIFOThresholdConfig(L3GD20_SPI, SPI_RxFIFOThreshold_QF);
+    SPI_RxFIFOThresholdConfig(SPIx, SPI_RxFIFOThreshold_QF);
 
-    SPI_Cmd(SPI1, ENABLE);
+    SPI_Cmd(SPIx, ENABLE);
 }
 
 void l3gd20GyroInit(void)
@@ -194,6 +196,8 @@ static void l3gd20GyroRead(int16_t *gyroData)
 
 bool l3gd20Detect(gyro_t *gyro, uint16_t lpf)
 {
+    UNUSED(lpf);
+
     gyro->init = l3gd20GyroInit;
     gyro->read = l3gd20GyroRead;
 
