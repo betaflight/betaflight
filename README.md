@@ -1,7 +1,7 @@
 Cleanflight Configurator
 ========================
 
-Cleanflight Configurator is a crossplatform configuration tool for [Cleanflight](http://cleanflight.com/) flight control system.
+Cleanflight Configurator is a crossplatform configuration tool for the [Cleanflight](http://cleanflight.com/) flight control system.
 
 It runs as an app within Google Chrome and allows you to configure the Cleanflight software running on any [supported Cleanflight target](https://github.com/cleanflight/cleanflight/blob/master/docs/Boards.md).
 
@@ -16,7 +16,7 @@ Dominic Clifton/hydra - maintainer of the Cleanflight firmware and configurator.
 Cleanflight Configurator was originally a [fork](#credits) of Baseflight Configurator with support for Cleanflight instead of Baseflight.
 
 This configurator is the only configurator with support for Cleanflight specific features. It will likely require that you run the latest firmware on the flight controller.
-If you are experiencing any problems please make sure you are running the l[atest firmware version](https://github.com/cleanflight/cleanflight/releases/latest).
+If you are experiencing any problems please make sure you are running the [latest firmware version](https://github.com/cleanflight/cleanflight/releases/latest).
 
 Installation
 ------------
