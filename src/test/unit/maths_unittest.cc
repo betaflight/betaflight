@@ -31,7 +31,9 @@ extern "C" {
 
 TEST(MathsUnittest, TestConstrain)
 {
-    // Within bounds.
+    // Within bounds
+    EXPECT_EQ(constrain(0, 0, 0), 0);
+    EXPECT_EQ(constrain(1, 1, 1), 1);
     EXPECT_EQ(constrain(1, 0, 2), 1);
 
     // Equal to bottom bound.
@@ -46,11 +48,26 @@ TEST(MathsUnittest, TestConstrain)
     EXPECT_EQ(constrain(2, 0, 1), 1);
     // Below bottom bound.
     EXPECT_EQ(constrain(0, 1, 2), 1);
+}
 
-    // Above bouth bounds.
-    EXPECT_EQ(constrain(2, 0, 1), 1);
-    // Below bouth bounds.
-    EXPECT_EQ(constrain(0, 1, 2), 1);
+TEST(MathsUnittest, TestConstrainNegatives)
+{
+    // Within bounds.
+    EXPECT_EQ(constrain(-1, -1, -1), -1);
+    EXPECT_EQ(constrain(-1, -2, 0), -1);
+
+    // Equal to bottom bound.
+    EXPECT_EQ(constrain(-1, -1, 0), -1);
+    // Equal to top bound.
+    EXPECT_EQ(constrain(-1, -2, -1), -1);
+
+    // Equal to both bottom and top bound.
+    EXPECT_EQ(constrain(-1, -1, -1), -1);
+
+    // Above top bound.
+    EXPECT_EQ(constrain(-1, -3, -2), -2);
+    // Below bottom bound.
+    EXPECT_EQ(constrain(-3, -2, -1), -2);
 }
 
 TEST(MathsUnittest, TestConstrainf)
