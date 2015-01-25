@@ -175,11 +175,15 @@ bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
     return ABS(inclination->values.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && ABS(inclination->values.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
 }
 
+/*
+* This (poorly named) function merely returns whichever is higher, roll inclination or pitch inclination.
+* //TODO: Fix this up. We could either actually return the angle between 'down' and the normal of the craft
+* (my best interpretation of scalar 'tiltAngle') or rename the function.
+*/
 int16_t calculateTiltAngle(rollAndPitchInclination_t *inclination)
 {
     return MAX(ABS(inclination->values.rollDeciDegrees), ABS(inclination->values.pitchDeciDegrees));
 }
-
 
 int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, float accZ_old)
 {
