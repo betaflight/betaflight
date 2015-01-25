@@ -41,6 +41,7 @@
 #define XBUS_FRAME_SIZE 27
 
 #define XBUS_RJ01_FRAME_SIZE 33
+#define XBUS_RJ01_MESSAGE_LENGTH 30
 
 #define XBUS_CRC_AND_VALUE 0x8000
 #define XBUS_CRC_POLY 0x1021
@@ -146,6 +147,30 @@ static uint16_t xBusCRC16(uint16_t crc, uint8_t value)
     return crc;
 }
 
+// Full RJ01 message CRC calculations
+uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
+{
+    uint8_t bitsLeft;
+    uint8_t temp;
+
+    for (bitsLeft = 8; bitsLeft > 0; bitsLeft--) {
+        temp = ((seed ^ inData) & 0x01);
+
+        if (temp == 0) {
+            seed >>= 1;
+        } else {
+            seed ^= 0x18;
+            seed >>= 1;
+            seed |= 0x80;
+        }
+
+        inData >>= 1;
+    }
+
+    return seed;    
+}
+
+
 static void xBusUnpackModeBFrame(void)
 {
     // Calculate the CRC of the incoming frame
@@ -184,6 +209,7 @@ static void xBusUnpackModeBFrame(void)
 static void xBusUnpackRJ01Frame(void)
 {
     // Calculate the CRC of the incoming frame
+    uint8_t outerCrc = 0;
     uint16_t crc = 0;
     uint16_t inCrc = 0;
     uint8_t i = 0;
@@ -194,15 +220,42 @@ static void xBusUnpackRJ01Frame(void)
     // a MODE B setting in the radio (XG14 tested)
     // the MODE_B -frame is packed within some
     // at the moment unknown bytes before and after:
-    // 0xA1 __ __ 0xA1 12*(High + Low) CRC1 CRC2 + __ __ __
+    // 0xA1 LEN __ 0xA1 12*(High + Low) CRC1 CRC2 + __ __ CRC_OUTER
     // Compared to a standard MODE B frame that only
-    // contains the "middle" package
+    // contains the "middle" package.
     // Hence, at the moment, the unknown header and footer
-    // of the RJ01 MODEB packages are discarded. This is
-    // ok as the CRC-checksum of the embedded package works 
-    // out nicely.
+    // of the RJ01 MODEB packages are discarded. 
+    // However, the LAST byte (CRC_OUTER) is infact an 8-bit
+    // CRC for the whole package, using the Dallas-One-Wire CRC
+    // method.
+    // So, we check both these values as well as the provided length
+    // of the outer/full message (LEN)
+    
+    //
+    // Check we have correct length of message
+    //
+    if (xBusFrame[1] != XBUS_RJ01_MESSAGE_LENGTH)
+    {
+        // Unknown package as length is not ok
+        return;
+    }
+    
+    //
+    // CRC calculation & check for full message
+    //
+    for (i = 0; i < xBusFrameLength - 1; i++) {
+        outerCrc = xBusRj01CRC8(outerCrc, xBusFrame[i]);
+    }
+    
+    if (outerCrc != xBusFrame[xBusFrameLength - 1])
+    {
+        // CRC does not match, skip this frame
+        return;
+    }
 
+    //
     // Calculate CRC bytes of the "embedded MODE B frame"
+    //
     for (i = 3; i < xBusFrameLength - 5; i++) {
         inCrc = xBusCRC16(inCrc, xBusFrame[i]);
     }
