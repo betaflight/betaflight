@@ -25,6 +25,8 @@
 
 #include "common/color.h"
 #include "common/axis.h"
+#include "common/maths.h"
+
 #include "flight/flight.h"
 
 #include "drivers/sensor.h"
