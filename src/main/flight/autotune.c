@@ -300,8 +300,8 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             // analyze the data
             // Our goal is to have zero overshoot and to have AUTOTUNE_MAX_OSCILLATION_ANGLE amplitude
 
-            if (firstPeakAngle > targetAngleAtPeak) {
-                // overshot
+            bool overshot = firstPeakAngle > targetAngleAtPeak;
+            if (overshot) {
 #ifdef DEBUG_AUTOTUNE
                 debug[0] = 1;
 #endif
@@ -319,7 +319,6 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
                 pid.d *= AUTOTUNE_INCREASE_MULTIPLIER;
 #endif
             } else {
-                // undershot
 #ifdef DEBUG_AUTOTUNE
                 debug[0] = 2;
 #endif
@@ -339,7 +338,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             if (feature(FEATURE_BLACKBOX)) {
                 flightLogEvent_autotuneCycleResult_t eventData;
 
-                eventData.overshot = firstPeakAngle > targetAngleAtPeak ? 1 : 0;
+                eventData.overshot = overshot;
                 eventData.p = pidProfile->P8[pidIndex];
                 eventData.i = pidProfile->I8[pidIndex];
                 eventData.d = pidProfile->D8[pidIndex];
