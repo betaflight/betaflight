@@ -84,11 +84,11 @@ If you enable LED_STRIP feature and the feature is turned off again after a rebo
 
 Configure the LEDs using the `led` command.
 
-The `led` command takes either zero or two arguments - an zero-based led number and a pair of coordinates, direction flags and mode flags.
+The `led` command takes either zero or two arguments - an zero-based led number and a sequence which indicates pair of coordinates, direction flags and mode flags and a color.
 
 If used with zero arguments it prints out the led configuration which can be copied for future reference.
 
-Each led is configured using the following template: `x,y:ddd:mmm`
+Each led is configured using the following template: `x,y:ddd:mmm:cc`
 
 `x` and `y` are grid coordinates of a 0 based 16x16 grid, north west is 0,0, south east is 15,15
 `ddd` specifies the directions, since an led can face in any direction it can have multiple directions.  Directions are:
@@ -112,22 +112,28 @@ Note: It is perfectly possible to configure an LED to have all directions `NESWU
 * `A` - `A`rmed state.
 * `T` - `T`hrust state.
 * `R` - `R`ing thrust state.
+* `C` - `C`olor.
+
+`cc` specifies the color number (0 based index).
 
 Example:
 
 ```
-led 0 0,15:SD:IAW
-led 1 15,0:ND:IAW
-led 2 0,0:ND:IAW
-led 3 0,15:SD:IAW
+led 0 0,15:SD:IAW:0
+led 1 15,0:ND:IAW:0
+led 2 0,0:ND:IAW:0
+led 3 0,15:SD:IAW:0
+led 4 7,7::C:1
+led 5 8,8::C:2
 ```
 
-to erase an led, and to mark the end of the chain, use `0,0::` as the second argument, like this:
+To erase an led, and to mark the end of the chain, use `0,0::` as the second argument, like this:
 
 ```
-led 4 0,0::
+led 4 0,0:::
 ```
 
+It is best to erase all LEDs that you do not have connected.
 
 ### Modes
 
@@ -156,6 +162,8 @@ LEDs are set in a specific order:
 
 That is, south facing LEDs have priority.
 
+The mapping between modes led placement and colors is currently fixed and cannot be changed.
+
 #### Indicator
 
 This mode flashes LEDs that correspond to roll and pitch stick positions.  i.e.  they indicate the direction the craft is going to turn.
@@ -180,7 +188,7 @@ A better effect is acheived when LEDs configured for thrust ring have no other f
 
 LED direction and X/Y positions are irrelevant for thrust ring LED state.  The order of the LEDs that have the state determines how the LED behaves.
 
-Each LED of the ring can be a different color. The color can be selected between the 15 colors availables.
+Each LED of the ring can be a different color. The color can be selected between the 16 colors availables.
 
 For example, led 0 is set as a `R`ing thrust state led in color 13 as follow. 
 
@@ -189,6 +197,70 @@ led 0 2,2::R:13
 ```
 
 LED strips and rings can be combined.
+
+#### Solid Color
+
+The mode allows you to set an LED to be permanently on and set to a specific color.
+
+x,y position and directions are ignored when using this mode.
+
+Other modes will override or combine with the color mode.
+
+For example, to set led 0 to always use color 10 you would issue this command. 
+
+```
+led 0 0,0::C:10
+```
+
+### Colors
+
+Colors can be configured using the cli `color` command.
+
+The `color` command takes either zero or two arguments - an zero-based color number and a sequence which indicates pair of hue, saturation and value (HSV).
+
+See http://en.wikipedia.org/wiki/HSL_and_HSV
+
+If used with zero arguments it prints out the color configuration which can be copied for future reference.
+
+The default color configuration is as follows:
+
+| Index | Color       |
+| ----- | ----------- |
+|     0 | black       |
+|     1 | white       |
+|     2 | red         |
+|     3 | orange      |
+|     4 | yellow      |
+|     5 | lime green  |
+|     6 | green       |
+|     7 | mint green  |
+|     8 | cyan        |
+|     9 | light blue  |
+|    10 | blue        |
+|    11 | dark violet |
+|    12 | magenta     |
+|    13 | deep pink   |
+|    14 | black       |
+|    15 | black       |
+
+```
+color 0 0,0,0
+color 1 0,255,255
+color 2 0,0,255
+color 3 30,0,255
+color 4 60,0,255
+color 5 90,0,255
+color 6 120,0,255
+color 7 150,0,255
+color 8 180,0,255
+color 9 210,0,255
+color 10 240,0,255
+color 11 270,0,255
+color 12 300,0,255
+color 13 330,0,255
+color 14 0,0,0
+color 15 0,0,0
+```
 
 ## Positioning
 
@@ -201,128 +273,150 @@ Orientation is when viewed with the front of the aircraft facing away from you a
 
 The default configuration is as follows
 ```
-led 0 2,2:ES:IA
-led 1 2,1:E:WF
-led 2 2,0:NE:IA
-led 3 1,0:N:F
-led 4 0,0:NW:IA
-led 5 0,1:W:WF
-led 6 0,2:SW:IA
-led 7 1,2:S:WF
-led 8 1,1:U:WF
-led 9 1,1:U:WF
-led 10 1,1:D:WF
-led 11 1,1:D:WF
+led 0 15,15:ES:IA:0
+led 1 15,8:E:WF:0
+led 2 15,7:E:WF:0
+led 3 15,0:NE:IA:0
+led 4 8,0:N:F:0
+led 5 7,0:N:F:0
+led 6 0,0:NW:IA:0
+led 7 0,7:W:WF:0
+led 8 0,8:W:WF:0
+led 9 0,15:SW:IA:0
+led 10 7,15:S:WF:0
+led 11 8,15:S:WF:0
+led 12 7,7:U:WF:0
+led 13 8,7:U:WF:0
+led 14 7,8:D:WF:0
+led 15 8,8:D:WF:0
+led 16 8,9::R:3
+led 17 9,10::R:3
+led 18 10,11::R:3
+led 19 10,12::R:3
+led 20 9,13::R:3
+led 21 8,14::R:3
+led 22 7,14::R:3
+led 23 6,13::R:3
+led 24 5,12::R:3
+led 25 5,11::R:3
+led 26 6,10::R:3
+led 27 7,9::R:3
+led 28 0,0:::0
+led 29 0,0:::0
+led 30 0,0:::0
+led 31 0,0:::0
 ```
 
 Which translates into the following positions:
 
 ```
-     5             3
-      \           / 
-       \    4    / 
-        \ FRONT / 
-      6 | 9-12  | 2
-        /  BACK \ 
-       /    8    \
-      /           \ 
-     7             1  
+     6             3
+      \           /
+       \   5-4   /
+        \ FRONT /
+    7,8 | 12-15 | 1,2
+        /  BACK \
+       /  10,11  \
+      /           \
+     9             0
+       RING 16-27
 ```
 
-LEDs 1,3,5 and 7 should be placed underneath the quad, facing downwards.
-LEDs 2, 4, 6 and 8 should be positioned so the face east/north/west/south, respectively.
-LEDs 9-10 should be placed facing down, in the middle
-LEDs 11-12 should be placed facing up, in the middle
+LEDs 0,3,6 and 9 should be placed underneath the quad, facing downwards.
+LEDs 1-2, 4-5, 7-8 and 10-11 should be positioned so the face east/north/west/south, respectively.
+LEDs 12-13 should be placed facing down, in the middle
+LEDs 14-15 should be placed facing up, in the middle
+LEDs 16-17 should be placed in a ring and positioned at the rear facing south.
 
-This is the default so that if you don't want to place LEDs top and bottom in the middle just connect the first 8 LEDs.
+This is the default so that if you don't want to place LEDs top and bottom in the middle just connect the first 12 LEDs.
 
 ### Example 16 LED config
 
 ```
-led 0 15,15:SD:IA
-led 1 8,8:E:FW
-led 2 8,7:E:FW
-led 3 15,0:ND:IA
-led 4 7,7:N:FW
-led 5 8,7:N:FW
-led 6 0,0:ND:IA
-led 7 7,7:W:FW
-led 8 7,8:W:FW
-led 9 0,15:SD:IA
-led 10 7,8:S:FW
-led 11 8,8:S:FW
-led 12 7,7:D:FW
-led 13 8,7:D:FW
-led 14 7,7:U:FW
-led 15 8,7:U:FW
+led 0 15,15:SD:IA:0
+led 1 8,8:E:FW:0
+led 2 8,7:E:FW:0
+led 3 15,0:ND:IA:0
+led 4 7,7:N:FW:0
+led 5 8,7:N:FW:0
+led 6 0,0:ND:IA:0
+led 7 7,7:W:FW:0
+led 8 7,8:W:FW:0
+led 9 0,15:SD:IA:0
+led 10 7,8:S:FW:0
+led 11 8,8:S:FW:0
+led 12 7,7:D:FW:0
+led 13 8,7:D:FW:0
+led 14 7,7:U:FW:0
+led 15 8,7:U:FW:0
 ```
 
 Which translates into the following positions:
 
 ```
-     7             4
+     6             3
       \           / 
-       \   6-5   / 
-      8 \ FRONT / 3
-        | 13-16 | 
-      9 /  BACK \ 2
-       /  11-12  \
+       \   5-4   / 
+      7 \ FRONT / 2
+        | 12-15 | 
+      8 /  BACK \ 1
+       /  10-11  \
       /           \ 
-    10             1  
+     9             0
 ```
 
-LEDs 1,4,7 and 10 should be placed underneath the quad, facing downwards.
-LEDs 2-3, 6-5, 8-9 and 11-12 should be positioned so the face east/north/west/south, respectively.
-LEDs 13-14 should be placed facing down, in the middle
-LEDs 15-16 should be placed facing up, in the middle
+LEDs 0,3,6 and 9 should be placed underneath the quad, facing downwards.
+LEDs 1-2, 4-5, 7-8 and 10-11 should be positioned so the face east/north/west/south, respectively.
+LEDs 12-13 should be placed facing down, in the middle
+LEDs 14-15 should be placed facing up, in the middle
  
 ### Exmple 28 LED config
 
 ```
 #right rear cluster
-led 0 9,9:S:FWT
-led 1 10,10:S:FWT
-led 2 11,11:S:IA
-led 3 11,11:E:IA
-led 4 10,10:E:AT
-led 5 9,9:E:AT
+led 0 9,9:S:FWT:0
+led 1 10,10:S:FWT:0
+led 2 11,11:S:IA:0
+led 3 11,11:E:IA:0
+led 4 10,10:E:AT:0
+led 5 9,9:E:AT:0
 # right front cluster
-led 6 10,5:S:F
-led 7 11,4:S:F
-led 8 12,3:S:IA
-led 9 12,2:N:IA
-led 10 11,1:N:F
-led 11 10,0:N:F
+led 6 10,5:S:F:0
+led 7 11,4:S:F:0
+led 8 12,3:S:IA:0
+led 9 12,2:N:IA:0
+led 10 11,1:N:F:0
+led 11 10,0:N:F:0
 # center front cluster
-led 12 7,0:N:FW
-led 13 6,0:N:FW
-led 14 5,0:N:FW
-led 15 4,0:N:FW
+led 12 7,0:N:FW:0
+led 13 6,0:N:FW:0
+led 14 5,0:N:FW:0
+led 15 4,0:N:FW:0
 # left front cluster
-led 16 2,0:N:F
-led 17 1,1:N:F
-led 18 0,2:N:IA
-led 19 0,3:W:IA
-led 20 1,4:S:F
-led 21 2,5:S:F
+led 16 2,0:N:F:0
+led 17 1,1:N:F:0
+led 18 0,2:N:IA:0
+led 19 0,3:W:IA:0
+led 20 1,4:S:F:0
+led 21 2,5:S:F:0
 # left rear cluster
-led 22 2,9:W:AT
-led 23 1,10:W:AT
-led 24 0,11:W:IA
-led 25 0,11:S:IA
-led 26 1,10:S:FWT
-led 27 2,9:S:FWT
+led 22 2,9:W:AT:0
+led 23 1,10:W:AT:0
+led 24 0,11:W:IA:0
+led 25 0,11:S:IA:0
+led 26 1,10:S:FWT:0
+led 27 2,9:S:FWT:0
 ```
 
 ```
-       17-19  10-12
-20-22 \           / 7-9
+       16-18  9-11
+19-21 \           / 6-8
        \  13-16  / 
         \ FRONT /
         /  BACK \
        /         \
-23-25 /           \ 4-6
-       26-28   1-3  
+22-24 /           \ 3-5
+       25-27   0-2  
 ```
 
 All LEDs should face outwards from the chassis in this configuration.

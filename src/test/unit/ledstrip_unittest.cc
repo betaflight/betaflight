@@ -58,14 +58,6 @@ extern "C" {
 
 TEST(LedStripTest, parseLedStripConfig)
 {
-    /*
-     * 0..5   - rear right cluster,  0..2 rear 3..5 right
-     * 6..11  - front right cluster, 6..8 rear, 9..11 front
-     * 12..15 - front center cluster
-     * 16..21 - front left cluster,  16..18 front, 19..21 rear
-     * 22..27 - rear left cluster,   22..24 left, 25..27 rear
-     */
-
     // given
     static const ledConfig_t expectedLedStripConfig[WS2811_LED_STRIP_LENGTH] = {
             { CALCULATE_LED_XY( 9,  9), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
@@ -73,7 +65,6 @@ TEST(LedStripTest, parseLedStripConfig)
             { CALCULATE_LED_XY(11, 11), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
             { CALCULATE_LED_XY(11, 11), 0, LED_DIRECTION_EAST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
             { CALCULATE_LED_XY(10, 10), 0, LED_DIRECTION_EAST  | LED_FUNCTION_FLIGHT_MODE },
-            { CALCULATE_LED_XY( 9,  9), 0, LED_DIRECTION_EAST  | LED_FUNCTION_FLIGHT_MODE },
 
             { CALCULATE_LED_XY(10,  5), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE },
             { CALCULATE_LED_XY(11,  4), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE },
@@ -83,8 +74,8 @@ TEST(LedStripTest, parseLedStripConfig)
             { CALCULATE_LED_XY(10,  0), 0, LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE },
 
             { CALCULATE_LED_XY( 7,  0), 0, LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-            { CALCULATE_LED_XY( 6,  0), 0, LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-            { CALCULATE_LED_XY( 5,  0), 0, LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
+            { CALCULATE_LED_XY( 6,  0), 1, LED_DIRECTION_NORTH | LED_FUNCTION_COLOR | LED_FUNCTION_WARNING },
+            { CALCULATE_LED_XY( 5,  0), 1, LED_DIRECTION_NORTH | LED_FUNCTION_COLOR | LED_FUNCTION_WARNING },
             { CALCULATE_LED_XY( 4,  0), 0, LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
 
             { CALCULATE_LED_XY( 2,  0), 0, LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE },
@@ -94,17 +85,19 @@ TEST(LedStripTest, parseLedStripConfig)
             { CALCULATE_LED_XY( 1,  4), 0, LED_DIRECTION_WEST  | LED_FUNCTION_FLIGHT_MODE },
             { CALCULATE_LED_XY( 2,  5), 0, LED_DIRECTION_WEST  | LED_FUNCTION_FLIGHT_MODE },
 
-            { CALCULATE_LED_XY( 2,  9), 0, LED_DIRECTION_WEST  | LED_FUNCTION_FLIGHT_MODE },
             { CALCULATE_LED_XY( 1, 10), 0, LED_DIRECTION_WEST  | LED_FUNCTION_FLIGHT_MODE },
             { CALCULATE_LED_XY( 0, 11), 0, LED_DIRECTION_WEST  | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
             { CALCULATE_LED_XY( 0, 11), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
             { CALCULATE_LED_XY( 1, 10), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
             { CALCULATE_LED_XY( 2,  9), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
 
-            { 0, 0 },
-            { 0, 0 },
-            { 0, 0 },
-            { 0, 0 },
+            { CALCULATE_LED_XY( 7,  7), 14, LED_FUNCTION_THRUST_RING },
+            { CALCULATE_LED_XY( 8,  7), 15, LED_FUNCTION_THRUST_RING },
+            { CALCULATE_LED_XY( 8,  8), 14, LED_FUNCTION_THRUST_RING },
+            { CALCULATE_LED_XY( 7,  8), 15, LED_FUNCTION_THRUST_RING },
+
+            { 0, 0, 0 },
+            { 0, 0, 0 },
     };
 
     // and
@@ -117,7 +110,6 @@ TEST(LedStripTest, parseLedStripConfig)
             "11,11:S:IA:0",
             "11,11:E:IA:0",
             "10,10:E:F:0",
-            "9,9:E:F:0",
 
             // right front cluster
             "10,5:S:F:0",
@@ -129,8 +121,8 @@ TEST(LedStripTest, parseLedStripConfig)
 
             // center front cluster
             "7,0:N:FW:0",
-            "6,0:N:FW:0",
-            "5,0:N:FW:0",
+            "6,0:N:CW:1",
+            "5,0:N:CW:1",
             "4,0:N:FW:0",
 
             // left front cluster
@@ -142,12 +134,17 @@ TEST(LedStripTest, parseLedStripConfig)
             "2,5:W:F:0",
 
             // left rear cluster
-            "2,9:W:F:0",
             "1,10:W:F:0",
             "0,11:W:IA:0",
             "0,11:S:IA:0",
             "1,10:S:FW:0",
-            "2,9:S:FW:0"
+            "2,9:S:FW:0",
+
+            // thrust ring
+            "7,7::R:14",
+            "8,7::R:15",
+            "8,8::R:14",
+            "7,8::R:15"
     };
     // and
     memset(&systemLedConfigs, 0, sizeof(systemLedConfigs));
@@ -163,7 +160,8 @@ TEST(LedStripTest, parseLedStripConfig)
 
     // then
     EXPECT_EQ(true, ok);
-    EXPECT_EQ(28, ledCount);
+    EXPECT_EQ(30, ledCount);
+    EXPECT_EQ(4, ledsInRingCount);
 
 
     // and
@@ -172,6 +170,7 @@ TEST(LedStripTest, parseLedStripConfig)
 
         EXPECT_EQ(expectedLedStripConfig[index].xy, ledConfigs[index].xy);
         EXPECT_EQ(expectedLedStripConfig[index].flags, ledConfigs[index].flags);
+        EXPECT_EQ(expectedLedStripConfig[index].color, ledConfigs[index].color);
     }
 
     // then

@@ -48,6 +48,7 @@ typedef enum {
     LED_FUNCTION_ARM_STATE   = (1 << 9),
     LED_FUNCTION_THROTTLE    = (1 << 10),
     LED_FUNCTION_THRUST_RING = (1 << 11),
+    LED_FUNCTION_COLOR       = (1 << 12),
 } ledFlag_e;
 
 #define LED_DIRECTION_BIT_OFFSET 0
@@ -66,7 +67,8 @@ typedef enum {
     LED_FUNCTION_FLIGHT_MODE | \
     LED_FUNCTION_ARM_STATE | \
     LED_FUNCTION_THROTTLE | \
-    LED_FUNCTION_THRUST_RING \
+    LED_FUNCTION_THRUST_RING | \
+    LED_FUNCTION_COLOR \
 )
 
 
@@ -77,6 +79,7 @@ typedef struct ledConfig_s {
 } ledConfig_t;
 
 extern uint8_t ledCount;
+extern uint8_t ledsInRingCount;
 
 
 
