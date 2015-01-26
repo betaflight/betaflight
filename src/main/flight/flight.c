@@ -356,6 +356,12 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
 
         axisPID[axis] = PTerm + ITerm - DTerm;
+
+#ifdef BLACKBOX
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = DTerm;
+#endif
     }
 
     //YAW
@@ -382,9 +388,9 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     axisPID[FD_YAW] =  PTerm + ITerm;
 
 #ifdef BLACKBOX
-        axisPID_P[axis] = PTerm;
-        axisPID_I[axis] = ITerm;
-        axisPID_D[axis] = DTerm;
+    axisPID_P[FD_YAW] = PTerm;
+    axisPID_I[FD_YAW] = ITerm;
+    axisPID_D[FD_YAW] = DTerm;
 #endif
 }
 
@@ -462,6 +468,12 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
         delta1[axis] = delta;
         DTerm = (deltaSum * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
+
+#ifdef BLACKBOX
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = DTerm;
+#endif
     }
     //YAW
     rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
@@ -486,10 +498,11 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 
     axisPID[FD_YAW] =  PTerm + ITerm;
 
+
 #ifdef BLACKBOX
-        axisPID_P[axis] = PTerm;
-        axisPID_I[axis] = ITerm;
-        axisPID_D[axis] = DTerm;
+    axisPID_P[FD_YAW] = PTerm;
+    axisPID_I[FD_YAW] = ITerm;
+    axisPID_D[FD_YAW] = DTerm;
 #endif
 }
 
