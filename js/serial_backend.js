@@ -25,6 +25,8 @@ $(document).ready(function () {
 
                     serial.disconnect(onClosed);
 
+                    var wasConnected = CONFIGURATOR.connectionValid;
+                    
                     GUI.connected_to = false;
                     CONFIGURATOR.connectionValid = false;
                     GUI.allowedTabs = GUI.defaultAllowedTabsWhenDisconnected.slice();
@@ -46,8 +48,10 @@ $(document).ready(function () {
                     // reset active sensor indicators
                     sensor_status(0);
 
-                    // detach listeners and remove element data
-                    $('#content').empty();
+                    if (wasConnected) {
+                        // detach listeners and remove element data
+                        $('#content').empty();
+                    }
                     
                     $('#tabs .tab_landing a').click();
                 }
