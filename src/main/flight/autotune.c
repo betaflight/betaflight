@@ -129,7 +129,7 @@ static autotunePhase_e nextPhase = FIRST_TUNE_PHASE;
 
 static float targetAngle = 0;
 static float targetAngleAtPeak;
-static float firstPeakAngle, secondPeakAngle; // deci dgrees, 180 deg = 1800
+static float firstPeakAngle, secondPeakAngle; // in degrees
 
 typedef struct fp_pid {
     float p;
