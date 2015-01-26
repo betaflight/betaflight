@@ -360,7 +360,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
-        axisPID_D[axis] = DTerm;
+        axisPID_D[axis] = -DTerm;
 #endif
     }
 
@@ -390,7 +390,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 #ifdef BLACKBOX
     axisPID_P[FD_YAW] = PTerm;
     axisPID_I[FD_YAW] = ITerm;
-    axisPID_D[FD_YAW] = DTerm;
+    axisPID_D[FD_YAW] = 0;
 #endif
 }
 
@@ -472,7 +472,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
-        axisPID_D[axis] = DTerm;
+        axisPID_D[axis] = -DTerm;
 #endif
     }
     //YAW
@@ -502,7 +502,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 #ifdef BLACKBOX
     axisPID_P[FD_YAW] = PTerm;
     axisPID_I[FD_YAW] = ITerm;
-    axisPID_D[FD_YAW] = DTerm;
+    axisPID_D[FD_YAW] = 0;
 #endif
 }
 
