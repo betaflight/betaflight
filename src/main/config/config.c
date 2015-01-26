@@ -470,7 +470,7 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
     masterConfig.looptime = 2000;
-//    currentProfile->pidController = 3;
+    currentProfile->pidController = 3;
     currentProfile->pidProfile.P8[ROLL] = 36;
     currentProfile->pidProfile.P8[PITCH] = 36;
     currentProfile->failsafeConfig.failsafe_delay = 2;
