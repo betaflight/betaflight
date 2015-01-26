@@ -1,28 +1,29 @@
 Cleanflight Configurator
 ========================
 
-Cleanflight Configurator is a fork of Baseflight Configurator to support Cleanflight instead of Baseflight.
+Cleanflight Configurator is a crossplatform configuration tool for the [Cleanflight](http://cleanflight.com/) flight control system.
 
-It allows you to configure the Cleanflight software running on any supported Cleanflight target.
+It runs as an app within Google Chrome and allows you to configure the Cleanflight software running on any [supported Cleanflight target](https://github.com/cleanflight/cleanflight/blob/master/docs/Boards.md).
 
-Cleanflight is available here:
+Various types of aircraft are supported by the tool and by cleanflight, e.g. quadcopters, hexacopters, octocopters and fixed-wing aircraft.
 
-https://github.com/cleanflight/cleanflight
+[![available in the Chrome web store](https://developer.chrome.com/webstore/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
 
 Authors
 -------
 Dominic Clifton/hydra - maintainer of the Cleanflight firmware and configurator. 
 
-This configurator is the only configurator for Cleanflight specific features, it will likely require that you run the latest firmware on the flight controller,
-if you are experiencing any problems please make sure you are running the latest version of firmware.
+Cleanflight Configurator was originally a [fork](#credits) of Baseflight Configurator with support for Cleanflight instead of Baseflight.
+
+This configurator is the only configurator with support for Cleanflight specific features. It will likely require that you run the latest firmware on the flight controller.
+If you are experiencing any problems please make sure you are running the [latest firmware version](https://github.com/cleanflight/cleanflight/releases/latest).
 
 Installation
 ------------
 1. - Visit [Chrome web store](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
-2. - Click <strong>+ Free</strong>
+2. - Click **+ Free**
 
-Alternative way
----------------
+#### Alternative way
 1. - Clone the repo to any local directory or download it as zip
 2. - Start Chromium or Google Chrome and go to tools -> extension
 3. - Check the "Developer mode" checkbox
@@ -49,7 +50,7 @@ https://github.com/multiwii/baseflight-configurator/issues
 
 For Cleanflight specific issues raise them here:
 
-https://github.com/hydra/cleanflight-configurator/issues
+https://github.com/cleanflight/cleanflight-configurator/issues
 
 There is an IRC channel for Cleanflight, here: irc://irc.freenode.net/#cleanflight
 
