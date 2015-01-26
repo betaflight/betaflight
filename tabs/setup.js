@@ -38,6 +38,12 @@ TABS.setup.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
+        if (CONFIG.apiVersion < CONFIGURATOR.backupRestoreMinApiVersionAccepted) {
+            $('#content .backup').addClass('disabled');
+            $('#content .restore').addClass('disabled');
+            
+            GUI.log(chrome.i18n.getMessage('initialSetupBackupAndRestoreApiVersion', [CONFIG.apiVersion, CONFIGURATOR.backupRestoreMinApiVersionAccepted]));
+        }
         // initialize 3D
         self.initialize3D();
 
@@ -112,6 +118,9 @@ TABS.setup.initialize = function (callback) {
         });
 
         $('#content .backup').click(function () {
+            if ($(this).hasClass('disabled')) {
+                return;
+            }
             configuration_backup(function () {
                 GUI.log(chrome.i18n.getMessage('initialSetupBackupSuccess'));
                 googleAnalytics.sendEvent('Configuration', 'Backup', 'true');
@@ -119,6 +128,9 @@ TABS.setup.initialize = function (callback) {
         });
 
         $('#content .restore').click(function () {
+            if ($(this).hasClass('disabled')) {
+                return;
+            }
             configuration_restore(function () {
                 GUI.log(chrome.i18n.getMessage('initialSetupRestoreSuccess'));
                 googleAnalytics.sendEvent('Configuration', 'Restore', 'true');

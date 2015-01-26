@@ -60,9 +60,12 @@ $(document).ready(function () {
     $('a', ui_tabs).click(function () {
         if ($(this).parent().hasClass('active') == false && !GUI.tab_switch_in_progress) { // only initialize when the tab isn't already active
             var self = this,
-                tab = $(self).parent().prop('class');
+                tabClass = $(self).parent().prop('class');
 
             var tabRequiresConnection = $(self).parent().hasClass('mode-connected');
+            
+            var tab = tabClass.substring(4);
+            var tabName = $(self).text();
             
             if (tabRequiresConnection && !CONFIGURATOR.connectionValid) {
                 GUI.log(chrome.i18n.getMessage('tabSwitchConnectionRequired'));
@@ -74,9 +77,8 @@ $(document).ready(function () {
                 return;
             }
             
-
-            if (CONFIGURATOR.connectionValidCliOnly) {
-                GUI.log(chrome.i18n.getMessage('tabSwitchUpgradeRequired'));
+            if (GUI.allowedTabs.indexOf(tab) < 0) {
+                GUI.log(chrome.i18n.getMessage('tabSwitchUpgradeRequired', [tabName]));
                 return;
             }
 
@@ -101,62 +103,62 @@ $(document).ready(function () {
                 }
 
                 switch (tab) {
-                    case 'tab_landing':
+                    case 'landing':
                         TABS.landing.initialize(content_ready);
                         break;
-                    case 'tab_firmware_flasher':
+                    case 'firmware_flasher':
                         TABS.firmware_flasher.initialize(content_ready);
                         break;
 
-                    case 'tab_auxiliary':
+                    case 'auxiliary':
                         TABS.auxiliary.initialize(content_ready);
                         break;
-                    case 'tab_adjustments':
+                    case 'adjustments':
                         TABS.adjustments.initialize(content_ready);
                         break;
-                    case 'tab_ports':
+                    case 'ports':
                         TABS.ports.initialize(content_ready);
                         break;
-                    case 'tab_led_strip':
+                    case 'led_strip':
                         TABS.led_strip.initialize(content_ready);
                         break;
                                                 
-                    case 'tab_setup':
+                    case 'setup':
                         TABS.setup.initialize(content_ready);
                         break;
-                    case 'tab_configuration':
+                    case 'configuration':
                         TABS.configuration.initialize(content_ready);
                         break;
-                    case 'tab_pid_tuning':
+                    case 'pid_tuning':
                         TABS.pid_tuning.initialize(content_ready);
                         break;
-                    case 'tab_receiver':
+                    case 'receiver':
                         TABS.receiver.initialize(content_ready);
                         break;
-                    case 'tab_modes':
+                    case 'modes':
                         TABS.modes.initialize(content_ready);
                         break;
-                    case 'tab_servos':
+                    case 'servos':
                         TABS.servos.initialize(content_ready);
                         break;
-                    case 'tab_gps':
+                    case 'gps':
                         TABS.gps.initialize(content_ready);
                         break;
-                    case 'tab_motors':
+                    case 'motors':
                         TABS.motors.initialize(content_ready);
                         break;
-                    case 'tab_sensors':
+                    case 'sensors':
                         TABS.sensors.initialize(content_ready);
                         break;
-                    case 'tab_logging':
+                    case 'logging':
                         TABS.logging.initialize(content_ready);
                         break;
-                    case 'tab_cli':
+                    case 'cli':
                         TABS.cli.initialize(content_ready);
                         break;
 
                     default:
-                        console.log('Tab not found');
+                        console.log('Tab not found:' + tab);
                 }
             });
         }

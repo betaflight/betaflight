@@ -138,7 +138,7 @@
     },    
     
     "tabSwitchUpgradeRequired": {
-        "message": "You need to <strong>upgrade</strong> your firmware before you can view any of the tabs."
+        "message": "You need to <strong>upgrade</strong> your firmware before you can use the $1 tab."
     },
     "firmwareVersion": {
         "message": "Firmware Version: <strong>$1</strong>"
@@ -219,6 +219,9 @@
     },
     "defaultDonateText": {
         "message": "This utility is fully <strong>open source</strong> and is available free of charge to all <strong>cleanflight</strong> users.<br />If you found the cleanflight or cleanflight configurator useful, please consider <strong>supporting</strong> its development by donating."
+    },
+    "initialSetupBackupAndRestoreApiVersion": {
+        "message": "<span style=\"color: red\">Backup and restore functionality disabled.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, backup and restore requires <span style=\"color: green\">$2</span>.  Please backup your settings via the CLI, see Cleanflight documentation for procedure."
     },
     "initialSetupButtonCalibrateAccel": {
         "message": "Calibrate Accelerometer"

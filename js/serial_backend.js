@@ -27,7 +27,7 @@ $(document).ready(function () {
 
                     GUI.connected_to = false;
                     CONFIGURATOR.connectionValid = false;
-                    CONFIGURATOR.connectionValidCliOnly = false;
+                    GUI.allowedTabs = GUI.defaultAllowedTabsWhenDisconnected.slice();
                     MSP.disconnect_cleanup();
                     PortUsage.reset();
 
@@ -46,14 +46,10 @@ $(document).ready(function () {
                     // reset active sensor indicators
                     sensor_status(0);
 
-                    // de-select any selected tabs
-                    $('#tabs > ul li').removeClass('active');
-
                     // detach listeners and remove element data
                     $('#content').empty();
-
-                    // load default html
-                    TABS.landing.initialize();
+                    
+                    $('#tabs .tab_landing a').click();
                 }
 
                 $(this).data("clicks", !clicks);
@@ -164,15 +160,16 @@ function onOpen(openInfo) {
                                 MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
                                     GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
                                     
-                                    GUI.timeout_remove('connecting'); // kill connecting timer
-                                    
                                     // continue as usually
                                     CONFIGURATOR.connectionValid = true;
+                                    GUI.allowedTabs = GUI.defaultAllowedTabsWhenConnected.slice();
+                                    if (CONFIG.apiVersion < 1.4) {
+                                        GUI.allowedTabs.splice(GUI.allowedTabs.indexOf('led_strip'), 1);
+                                    }
                                     
-                                    $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-                                    $('#tabs ul.mode-disconnected').hide();
-                                    $('#tabs ul.mode-connected').show();
-                                    $('#tabs ul.mode-connected li a:first').click();
+                                    onConnect();
+                                    
+                                    $('#tabs ul.mode-connected .tab_setup a').click();
                                 });
                             });
                         });
@@ -181,10 +178,9 @@ function onOpen(openInfo) {
             } else {
                 GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.apiVersionAccepted]));
                 CONFIGURATOR.connectionValid = true; // making it possible to open the CLI tab
-                $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-                $('#tabs li a:last').click(); // open CLI tab
-                GUI.timeout_remove('connecting'); // kill connecting timer
-                CONFIGURATOR.connectionValidCliOnly = true;
+                GUI.allowedTabs = ['cli'];
+                onConnect();
+                $('#tabs .tab_cli a').click();
             }
         });
     } else {
@@ -202,15 +198,22 @@ function onOpen(openInfo) {
     }
 }
 
+function onConnect() {
+    GUI.timeout_remove('connecting'); // kill connecting timer
+    $('div#port-picker a.connect').text(chrome.i18n.getMessage('disconnect')).addClass('active');
+    $('#tabs ul.mode-disconnected').hide();
+    $('#tabs ul.mode-connected').show();
+}
+
 function onClosed(result) {
     if (result) { // All went as expected
         GUI.log(chrome.i18n.getMessage('serialPortClosedOk'));
     } else { // Something went wrong
         GUI.log(chrome.i18n.getMessage('serialPortClosedFail'));
     }
-    $('#tabs ul.mode-disconnected').show();
+
     $('#tabs ul.mode-connected').hide();
-    $('#tabs ul.mode-disconnected li a:first').click();
+    $('#tabs ul.mode-disconnected').show();
 }
 
 function read_serial(info) {

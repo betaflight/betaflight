@@ -13,6 +13,28 @@ var GUI_control = function () {
     this.optional_usb_permissions = false; // controlled by usb permissions code
     this.interval_array = [];
     this.timeout_array = [];
+    this.defaultAllowedTabsWhenDisconnected = [
+        'landing',
+        'firmware_flasher'
+    ];
+    this.defaultAllowedTabsWhenConnected = [
+        'adjustments',
+        'auxiliary',
+        'cli',
+        'configuration',
+        'gps',
+        'led_strip',
+        'logging', 
+        'modes',
+        'motors',
+        'pid_tuning',
+        'ports',
+        'receiver',
+        'sensors', 
+        'servos',
+        'setup'
+    ];
+    this.allowedTabs = this.defaultAllowedTabsWhenDisconnected;
 
     // check which operating system is user running
     if (navigator.appVersion.indexOf("Win") != -1)          this.operating_system = "Windows";
