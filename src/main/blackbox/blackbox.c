@@ -354,6 +354,12 @@ static void writeSignedVB(int32_t value)
     writeUnsignedVB((uint32_t)((value << 1) ^ (value >> 31)));
 }
 
+static void writeS16(int16_t value)
+{
+    blackboxWrite(value & 0xFF);
+    blackboxWrite((value >> 8) & 0xFF);
+}
+
 /**
  * Write a 2 bit tag followed by 3 signed fields of 2, 4, 6 or 32 bits
  */
@@ -1270,16 +1276,23 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START:
             blackboxWrite(data->autotuneCycleStart.phase);
-            blackboxWrite(data->autotuneCycleStart.cycle);
+            blackboxWrite(data->autotuneCycleStart.cycle | (data->autotuneCycleStart.rising ? 0x80 : 0));
             blackboxWrite(data->autotuneCycleStart.p);
             blackboxWrite(data->autotuneCycleStart.i);
             blackboxWrite(data->autotuneCycleStart.d);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
-            blackboxWrite(data->autotuneCycleResult.overshot);
+            blackboxWrite(data->autotuneCycleResult.flags);
             blackboxWrite(data->autotuneCycleStart.p);
             blackboxWrite(data->autotuneCycleStart.i);
             blackboxWrite(data->autotuneCycleStart.d);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS:
+            writeS16(data->autotuneTargets.currentAngle);
+            blackboxWrite((uint8_t) data->autotuneTargets.targetAngle);
+            blackboxWrite((uint8_t) data->autotuneTargets.targetAngleAtPeak);
+            writeS16(data->autotuneTargets.firstPeakAngle);
+            writeS16(data->autotuneTargets.secondPeakAngle);
         break;
         case FLIGHT_LOG_EVENT_LOG_END:
             blackboxPrint("End of log");
