@@ -1045,7 +1045,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(7);
         serialize16(masterConfig.batteryConfig.currentMeterScale);
         serialize16(masterConfig.batteryConfig.currentMeterOffset);
-        serialize8(0);  // current meter type
+        serialize8(masterConfig.batteryConfig.currentMeterType);
         serialize16(masterConfig.batteryConfig.batteryCapacity);
         break;
 
@@ -1393,7 +1393,7 @@ static bool processInCommand(void)
     case MSP_SET_CURRENT_METER_CONFIG:
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();
-        read(8);  // current meter type
+        masterConfig.batteryConfig.currentMeterType = read8();
         masterConfig.batteryConfig.batteryCapacity = read16();
         break;
 
