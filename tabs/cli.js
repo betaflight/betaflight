@@ -166,6 +166,11 @@ TABS.cli.read = function (readInfo) {
 };
 
 TABS.cli.cleanup = function (callback) {
+    if (!CONFIGURATOR.connectionValid) {
+        if (callback) callback();
+        return;
+    }
+
     var bufferOut = new ArrayBuffer(5);
     var bufView = new Uint8Array(bufferOut);
 
