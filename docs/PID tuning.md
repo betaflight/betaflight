@@ -116,7 +116,7 @@ For the ALIENWII32 targets the gyroscale is removed for even more yaw authority.
 
 ### PID controller 4, "MultiWiiHybrid"
 
-PID Controller 3 is an hybrid version of two MultiWii PID controllers. Roll and pitch is using the MultiWii 2.2 algorithm and yaw is using the 2.3 algorithm. 
+PID Controller 4 is an hybrid version of two MultiWii PID controllers. Roll and pitch is using the MultiWii 2.2 algorithm and yaw is using the 2.3 algorithm. 
 
 This PID controller was initialy implementd for testing purposes but is also performing quite well.
 
