@@ -151,8 +151,8 @@ void updateAutotuneState(void)
 bool isCalibrating()
 {
 #ifdef BARO
-    if (sensors(SENSOR_ACC) && !isBaroCalibrationComplete()) {
-        return false;
+    if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
+        return true;
     }
 #endif
 
