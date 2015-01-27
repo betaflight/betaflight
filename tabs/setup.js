@@ -212,10 +212,17 @@ TABS.setup.initialize3D = function (compatibility) {
     } else {
         model_file = 'fallback'
     }
+    
+    // Temporary workaround for 'custom' model until akfreak's custom model is merged.
+    var useLegacyCustomModel = false;
+    if (model_file = 'custom') {
+        model_file = 'fallback';
+        useLegacyCustomModel = true;
+    }
 
     loader = new THREE.JSONLoader();
     loader.load('./resources/models/' + model_file + '.json', function (geometry, materials) {
-        if (useWebGlRenderer) {
+        if (useWebGlRenderer & !useLegacyCustomModel) {
             model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
         } else {
             materials = THREE.ImageUtils.loadTexture('./resources/textures/fallback_texture.png');
