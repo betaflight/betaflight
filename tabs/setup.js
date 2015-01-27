@@ -186,7 +186,7 @@ TABS.setup.initialize = function (callback) {
 TABS.setup.initialize3D = function (compatibility) {
     var self = this,
         loader, canvas, wrapper, renderer, camera, scene, light, light2, modelWrapper, model, model_file,
-        fallback = false;
+        useWebGlRenderer = false;
 
     canvas = $('.model-and-info #canvas');
     wrapper = $('.model-and-info #canvas_wrapper');
@@ -197,50 +197,25 @@ TABS.setup.initialize3D = function (compatibility) {
     var detector_canvas = document.createElement('canvas');
     if (window.WebGLRenderingContext && (detector_canvas.getContext('webgl') || detector_canvas.getContext('experimental-webgl'))) {
         renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
+        useWebGlRenderer = true;
     } else {
+    
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
-        fallback = true;
     }
 
     // modelWrapper just adds an extra axis of rotation to avoid gimbal lock withe euler angles
     modelWrapper = new THREE.Object3D()
 
     // load the model including materials
-    var models = [
-        'tricopter',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'y6',
-        'hex_plus',
-        'quad_x',
-        'y4',
-        'hex_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_vtail',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_x',
-        'quad_atail',
-        'quad_x'
-    ];
-
-    if (!fallback) {
-        model_file = models[CONFIG.multiType - 1];
+    if (useWebGlRenderer) {
+        model_file = mixerList[CONFIG.multiType - 1].model;
     } else {
-        model_file = 'fallback';
+        model_file = 'fallback'
     }
 
     loader = new THREE.JSONLoader();
     loader.load('./resources/models/' + model_file + '.json', function (geometry, materials) {
-        if (!fallback) {
+        if (useWebGlRenderer) {
             model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
         } else {
             materials = THREE.ImageUtils.loadTexture('./resources/textures/fallback_texture.png');
