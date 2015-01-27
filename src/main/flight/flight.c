@@ -585,7 +585,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 #endif
     }
 
-    tmp0flt  = (uint16_t)FLOATcycleTime & (uint16_t)0xFFFC;                    // Filter last 2 bit jitter
+    tmp0flt = (int32_t)FLOATcycleTime & (int32_t)~3;                          // Filter last 2 bit jitter
     tmp0flt /= 3000.0f;
     if (OLD_YAW) { // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw. hardcoded for now
         PTerm = ((int32_t)pidProfile->P8[FD_YAW] * (100 - (int32_t)controlRateConfig->yawRate * (int32_t)ABS(rcCommand[FD_YAW]) / 500)) / 100;
