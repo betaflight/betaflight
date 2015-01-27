@@ -305,7 +305,7 @@ void init(void)
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
-    pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
+    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
 
     pwmRxInit(masterConfig.inputFilteringMode);
 

@@ -473,14 +473,14 @@ static void airplaneMixer(void)
         int16_t lFlap = determineServoMiddleOrForwardFromChannel(2);
 
         lFlap = constrain(lFlap, servoConf[2].min, servoConf[2].max);
-        lFlap = rxConfig->midrc - lFlap;
+        lFlap = escAndServoConfig->servoCenterPulse - lFlap;
         if (slow_LFlaps < lFlap)
             slow_LFlaps += airplaneConfig->flaps_speed;
         else if (slow_LFlaps > lFlap)
             slow_LFlaps -= airplaneConfig->flaps_speed;
 
         servo[2] = ((int32_t)servoConf[2].rate * slow_LFlaps) / 100L;
-        servo[2] += rxConfig->midrc;
+        servo[2] += escAndServoConfig->servoCenterPulse;
     }
 
     if (FLIGHT_MODE(PASSTHRU_MODE)) {   // Direct passthru from RX
