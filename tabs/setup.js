@@ -215,7 +215,7 @@ TABS.setup.initialize3D = function (compatibility) {
     
     // Temporary workaround for 'custom' model until akfreak's custom model is merged.
     var useLegacyCustomModel = false;
-    if (model_file = 'custom') {
+    if (model_file == 'custom') {
         model_file = 'fallback';
         useLegacyCustomModel = true;
     }
