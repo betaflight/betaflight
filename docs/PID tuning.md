@@ -126,7 +126,7 @@ For the ALIENWII32 targets the gyroscale is removed for more yaw authority. This
 
 PID Controller 5 is an port of the PID controller from the Harakiri firmware.
 
-The algorithm is leveraging more floating point math. Actually there are two settings hardcoded which are configurable via the GUI in Harakiri:
+The algorithm is leveraging more floating point math. This PID controller is also compensates for different looptimes on roll and pitch. It likely don’t need retuning of the PID values. Actually there are two settings hardcoded which are configurable via the GUI in Harakiri:
 
         OLD_YAW 0 // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw.
         MAIN_CUT_HZ 12.0f // (default 12Hz, Range 1-50Hz)
