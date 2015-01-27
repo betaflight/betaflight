@@ -43,7 +43,6 @@
 
 extern uint16_t cycleTime;
 extern uint8_t motorCount;
-extern uint32_t currentTime;
 
 int16_t heading, magHold;
 int16_t axisPID[3];
@@ -507,16 +506,9 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 #endif
 }
 
-int32_t SpecialIntegerRoundUp(float val)       // If neg value just represents a change in direction rounding to next higher number is "more" negative
-{
-    if (val > 0) return val + 0.5f;
-    else if (val < 0) return val - 0.5f;
-    else return 0;
-}
-
 #define RCconstPI   0.159154943092f // 0.5f / M_PI;
-#define OLD_YAW	0 // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw.
 #define MAIN_CUT_HZ 12.0f // (default 12Hz, Range 1-50Hz)
+#define OLD_YAW	0 // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw.
 
 static void pidHarakiri(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
 rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -527,7 +519,6 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     float PTerm = 0, ITerm = 0, DTerm = 0, PTermACC = 0, ITermACC = 0, ITermGYRO = 0, error = 0, prop = 0;
     static float lastGyro[2] = {0, 0}, lastDTerm[2] = {0, 0};
     float tmp0flt;
-    static uint32_t previousTime;
     int32_t tmp0;
     uint8_t axis;
     float ACCDeltaTimeINS = 0;
@@ -535,8 +526,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 
 //    MainDptCut = RCconstPI / (float)cfg.maincuthz;                           // Initialize Cut off frequencies for mainpid D
     MainDptCut = RCconstPI / MAIN_CUT_HZ;                                      // maincuthz (default 12Hz, Range 1-50Hz), hardcoded for now
-    FLOATcycleTime  = (float)constrain(currentTime - previousTime, 1, 100000); // 1us - 100ms
-    previousTime = currentTime;
+    FLOATcycleTime  = (float)constrain(cycleTime, 1, 100000);                  // 1us - 100ms
     ACCDeltaTimeINS = FLOATcycleTime * 0.000001f;                              // ACCDeltaTimeINS is in seconds now
     RCfactor = ACCDeltaTimeINS / (MainDptCut + ACCDeltaTimeINS);               // used for pt1 element
 
@@ -586,7 +576,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
         lastGyro[axis] = gyroData[axis];
         lastDTerm[axis] += RCfactor * (delta - lastDTerm[axis]);
         DTerm = lastDTerm[axis] * dynD8[axis] * 0.00007f;
-        axisPID[axis] = SpecialIntegerRoundUp(PTerm + ITerm - DTerm);          // Round up result.
+        axisPID[axis] = lrintf(PTerm + ITerm - DTerm);                         // Round up result.
 
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
@@ -597,37 +587,36 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 
     tmp0flt  = (uint16_t)FLOATcycleTime & (uint16_t)0xFFFC;                    // Filter last 2 bit jitter
     tmp0flt /= 3000.0f;
-    if (OLD_YAW) { // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw. hardrcoded for now
+    if (OLD_YAW) { // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw. hardcoded for now
         PTerm = ((int32_t)pidProfile->P8[FD_YAW] * (100 - (int32_t)controlRateConfig->yawRate * (int32_t)ABS(rcCommand[FD_YAW]) / 500)) / 100;
-        tmp0 = SpecialIntegerRoundUp(gyroData[FD_YAW] * 0.25f);
-        axisPID[FD_YAW] = rcCommand[FD_YAW] - tmp0 * PTerm / 80;
-        if ((ABS(tmp0) > 640) || (ABS(rcCommand[FD_YAW]) > 100))
-        errorGyroI[FD_YAW] = 0;
+        tmp0 = lrintf(gyroData[FD_YAW] * 0.25f);
+        PTerm = rcCommand[FD_YAW] - tmp0 * PTerm / 80;
+        if ((ABS(tmp0) > 640) || (ABS(rcCommand[FD_YAW]) > 100)) errorGyroI[FD_YAW] = 0;
         else {
             error = ((int32_t)rcCommand[FD_YAW] * 80 / (int32_t)pidProfile->P8[FD_YAW]) - tmp0;
             errorGyroI[FD_YAW] = constrain(errorGyroI[FD_YAW] + (int32_t)(error * tmp0flt), -16000, +16000); // WindUp
-            axisPID[FD_YAW] += (errorGyroI[FD_YAW] / 125 * pidProfile->I8[FD_YAW]) >> 6;
+            ITerm = (errorGyroI[FD_YAW] / 125 * pidProfile->I8[FD_YAW]) >> 6;
         }
     }
     else {
         tmp0 = ((int32_t)rcCommand[FD_YAW] * (((int32_t)controlRateConfig->yawRate << 1) + 40)) >> 5;
-        error = tmp0 - SpecialIntegerRoundUp(gyroData[FD_YAW] * 0.25f);        // Less Gyrojitter works actually better
+        error = tmp0 - lrintf(gyroData[FD_YAW] * 0.25f);                       // Less Gyrojitter works actually better
         if (ABS(tmp0) > 50) errorGyroI[FD_YAW] = 0;
         else errorGyroI[FD_YAW] = constrain(errorGyroI[FD_YAW] + (int32_t)(error * (float)pidProfile->I8[FD_YAW] * tmp0flt), -268435454, +268435454);
-        axisPID[FD_YAW] = constrain(errorGyroI[FD_YAW] >> 13, -GYRO_I_MAX, +GYRO_I_MAX);
+        ITerm = constrain(errorGyroI[FD_YAW] >> 13, -GYRO_I_MAX, +GYRO_I_MAX);
         PTerm = ((int32_t)error * (int32_t)pidProfile->P8[FD_YAW]) >> 6;
         if(motorCount > 3) { // Constrain FD_YAW by D value if not servo driven in that case servolimits apply
             tmp0 = 300;
             if (pidProfile->D8[FD_YAW]) tmp0 -= (int32_t)pidProfile->D8[FD_YAW];
             PTerm = constrain(PTerm, -tmp0, tmp0);
         }
-        axisPID[FD_YAW] += PTerm;
     }
-    axisPID[FD_YAW] = SpecialIntegerRoundUp(axisPID[FD_YAW]);                  // Round up result.
+    axisPID[FD_YAW] = PTerm + ITerm;
+    axisPID[FD_YAW] = lrintf(axisPID[FD_YAW]);                                 // Round up result.
 
 #ifdef BLACKBOX
     axisPID_P[FD_YAW] = PTerm;
-    axisPID_I[FD_YAW] = 0;
+    axisPID_I[FD_YAW] = ITerm;
     axisPID_D[FD_YAW] = 0;
 #endif
 }
