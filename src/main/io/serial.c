@@ -44,7 +44,6 @@
 
 void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintToUpdate);
 
-void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
 
 // this exists so the user can reference scenarios by a number in the CLI instead of an unuser-friendly bitmask.

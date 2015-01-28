@@ -469,7 +469,7 @@ void executePeriodicTasks(void)
 #ifdef SONAR
     case UPDATE_SONAR_TASK:
         if (sensors(SENSOR_SONAR)) {
-            Sonar_update();
+            sonarUpdate();
         }
         break;
 #endif

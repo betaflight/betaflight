@@ -332,7 +332,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        Sonar_init();
+        sonarInit();
     }
 #endif
 

@@ -45,6 +45,8 @@
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
+#include "flight/altitudehold.h"
+
 #include "rx/rx.h"
 #include "rx/msp.h"
 #include "io/escservo.h"
@@ -54,9 +56,11 @@
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "telemetry/telemetry.h"
+
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
+#include "sensors/sonar.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
@@ -249,6 +253,7 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SERVO_CONF           120    //out message         Servo settings
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
+#define MSP_SONAR_ALTITUDE       123    //out message         Returns sonar altitude [cm]
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -368,7 +373,7 @@ static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static mspPort_t *currentPort;
 
-void serialize32(uint32_t a)
+static void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
@@ -385,7 +390,7 @@ void serialize32(uint32_t a)
     currentPort->checksum ^= t;
 }
 
-void serialize16(int16_t a)
+static void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
@@ -396,32 +401,32 @@ void serialize16(int16_t a)
     currentPort->checksum ^= t;
 }
 
-void serialize8(uint8_t a)
+static void serialize8(uint8_t a)
 {
     serialWrite(mspSerialPort, a);
     currentPort->checksum ^= a;
 }
 
-uint8_t read8(void)
+static uint8_t read8(void)
 {
     return currentPort->inBuf[currentPort->indRX++] & 0xff;
 }
 
-uint16_t read16(void)
+static uint16_t read16(void)
 {
     uint16_t t = read8();
     t += (uint16_t)read8() << 8;
     return t;
 }
 
-uint32_t read32(void)
+static uint32_t read32(void)
 {
     uint32_t t = read16();
     t += (uint32_t)read16() << 16;
     return t;
 }
 
-void headSerialResponse(uint8_t err, uint8_t s)
+static void headSerialResponse(uint8_t err, uint8_t s)
 {
     serialize8('$');
     serialize8('M');
@@ -431,36 +436,36 @@ void headSerialResponse(uint8_t err, uint8_t s)
     serialize8(currentPort->cmdMSP);
 }
 
-void headSerialReply(uint8_t s)
+static void headSerialReply(uint8_t s)
 {
     headSerialResponse(0, s);
 }
 
-void headSerialError(uint8_t s)
+static void headSerialError(uint8_t s)
 {
     headSerialResponse(1, s);
 }
 
-void tailSerialReply(void)
+static void tailSerialReply(void)
 {
     serialize8(currentPort->checksum);
 }
 
-void s_struct(uint8_t *cb, uint8_t siz)
+static void s_struct(uint8_t *cb, uint8_t siz)
 {
     headSerialReply(siz);
     while (siz--)
         serialize8(*cb++);
 }
 
-void serializeNames(const char *s)
+static void serializeNames(const char *s)
 {
     const char *c;
     for (c = s; *c; c++)
         serialize8(*c);
 }
 
-const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
+static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
     uint8_t boxIndex;
     const box_t *candidate;
@@ -473,7 +478,7 @@ const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
     return NULL;
 }
 
-const box_t *findBoxByPermenantId(uint8_t permenantId)
+static const box_t *findBoxByPermenantId(uint8_t permenantId)
 {
     uint8_t boxIndex;
     const box_t *candidate;
@@ -486,7 +491,7 @@ const box_t *findBoxByPermenantId(uint8_t permenantId)
     return NULL;
 }
 
-void serializeBoxNamesReply(void)
+static void serializeBoxNamesReply(void)
 {
     int i, activeBoxId, j, flag = 1, count = 0, len;
     const box_t *box;
@@ -625,7 +630,7 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXLEDLOW;
     }
 #endif
-    
+
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         activeBoxIds[activeBoxIdCount++] = BOXCALIB;
 
@@ -651,7 +656,6 @@ void mspInit(serialConfig_t *serialConfig)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i, tmp, junk;
-
 
 #ifdef GPS
     uint8_t wp_no;
@@ -821,8 +825,20 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ALTITUDE:
         headSerialReply(6);
-        serialize32(EstAlt);
+#if defined(BARO) || defined(SONAR)
+        serialize32(altitudeHoldGetEstimatedAltitude());
+#else
+        serialize32(0);
+#endif
         serialize16(vario);
+        break;
+    case MSP_SONAR_ALTITUDE:
+        headSerialReply(4);
+#if defined(SONAR)
+        serialize32(sonarGetLatestAltitude());
+#else
+        serialize32(0);
+#endif
         break;
     case MSP_ANALOG:
         headSerialReply(7);
