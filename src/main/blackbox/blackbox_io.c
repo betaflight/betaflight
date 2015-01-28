@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "blackbox_io.h"
 
@@ -100,14 +101,31 @@ void blackboxPrintf(char *fmt, ...)
 // Print the null-terminated string 's' to the serial port and return the number of bytes written
 int blackboxPrint(const char *s)
 {
-    const char *pos = s;
+    int length;
+    const uint8_t *pos;
 
-    while (*pos) {
-        blackboxWrite(*pos);
-        pos++;
+    switch (masterConfig.blackbox_device) {
+
+#ifdef FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+            length = strlen(s);
+            flashfsWrite((const uint8_t*) s, length);
+        break;
+#endif
+
+        case BLACKBOX_DEVICE_SERIAL:
+        default:
+            pos = (uint8_t*) s;
+            while (*pos) {
+                serialWrite(blackboxPort, *pos);
+                pos++;
+            }
+
+            length = pos - (uint8_t*) s;
+        break;
     }
 
-    return pos - s;
+    return length;
 }
 
 /**
