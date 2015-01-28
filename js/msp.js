@@ -72,7 +72,7 @@ var MSP_codes = {
     MSP_UID:                160, // Unique device ID
     MSP_ACC_TRIM:           240, // get acc angle trim values
     MSP_SET_ACC_TRIM:       239, // set acc angle trim values
-    MSP_GPS_SV_INFO:        164, // get Signal Strength (only U-Blox)
+    MSP_GPS_SV_INFO:        164, // get Signal Strength
 
     // Additional private MSP for baseflight configurator (yes thats us \o/)
     MSP_RCMAP:              64, // get channel map (also returns number of channels total)
