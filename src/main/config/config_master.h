@@ -85,6 +85,7 @@ typedef struct master_t {
     uint8_t current_profile_index;
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 
+    uint8_t blackbox_device;
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
 

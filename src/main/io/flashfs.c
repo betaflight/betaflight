@@ -131,16 +131,13 @@ static void flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSizes, 
 {
     const flashGeometry_t *geometry = m25p16_getGeometry();
 
-    uint32_t bytesTotalToWrite = 0;
-    uint32_t bytesTotalRemaining;
+    uint32_t bytesTotalRemaining = 0;
 
     int i;
 
     for (i = 0; i < bufferCount; i++) {
-        bytesTotalToWrite += bufferSizes[i];
+        bytesTotalRemaining += bufferSizes[i];
     }
-
-    bytesTotalRemaining = bytesTotalToWrite;
 
     while (bytesTotalRemaining > 0) {
         uint32_t bytesTotalThisIteration;
@@ -188,7 +185,7 @@ static void flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSizes, 
         bytesTotalRemaining -= bytesTotalThisIteration;
 
         // Advance the cursor in the file system to match the bytes we wrote
-        flashfsSetTailAddress(tailAddress + bytesTotalToWrite);
+        flashfsSetTailAddress(tailAddress + bytesTotalThisIteration);
     }
 }
 
@@ -219,6 +216,7 @@ static void flashfsGetDirtyDataBuffers(uint8_t const *buffers[], uint32_t buffer
 void flashfsFlushAsync()
 {
     if (bufferHead == bufferTail) {
+        shouldFlush = false;
         return; // Nothing to flush
     }
 
@@ -230,6 +228,8 @@ void flashfsFlushAsync()
         flashfsWriteBuffers(buffers, bufferSizes, 2);
 
         flashfsClearBuffer();
+
+        shouldFlush = false;
     } else {
         shouldFlush = true;
     }
@@ -243,8 +243,10 @@ void flashfsFlushAsync()
  */
 void flashfsFlushSync()
 {
-    if (bufferHead == bufferTail)
+    if (bufferHead == bufferTail) {
+        shouldFlush = false;
         return; // Nothing to write
+    }
 
     m25p16_waitForReady(10); //TODO caller should customize timeout
 
@@ -273,7 +275,7 @@ void flashfsWriteByte(uint8_t byte)
         bufferHead = 0;
     }
 
-    if (flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
+    if (shouldFlush || flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
         flashfsFlushAsync();
     }
 }
@@ -281,7 +283,7 @@ void flashfsWriteByte(uint8_t byte)
 void flashfsWrite(const uint8_t *data, unsigned int len)
 {
     // Would writing this cause our buffer to reach the flush threshold? If so just write it now
-    if (len + flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN || shouldFlush) {
+    if (shouldFlush || len + flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
         uint8_t const * buffers[3];
         uint32_t bufferSizes[3];
 
@@ -297,6 +299,8 @@ void flashfsWrite(const uint8_t *data, unsigned int len)
 
         // And now our buffer is empty
         flashfsClearBuffer();
+
+        return;
     }
 
     // Buffer up the data the user supplied instead of writing it right away

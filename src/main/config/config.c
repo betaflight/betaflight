@@ -450,6 +450,7 @@ static void resetConf(void)
 #endif
 
 #ifdef BLACKBOX
+    masterConfig.blackbox_device = 0;
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 #endif

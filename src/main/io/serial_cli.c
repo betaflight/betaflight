@@ -422,6 +422,7 @@ const clivalue_t valueTable[] = {
     { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], 0, 200 },
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], 0, 200 },
 
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_device, 0, 1 },
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, 1, 32 },
     { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, 1, 32 },
 };
@@ -800,7 +801,7 @@ static void cliFlashRead(char *cmdline)
         flashfsSeekAbs(address);
 
         while (length > 0) {
-            int bytesToRead = length < 32 ? length : 32;
+            uint32_t bytesToRead = length < 32 ? length : 32;
 
             flashfsRead(buffer, bytesToRead);
 

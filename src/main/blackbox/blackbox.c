@@ -605,6 +605,10 @@ static void validateBlackboxConfig()
         masterConfig.blackbox_rate_num /= div;
         masterConfig.blackbox_rate_denom /= div;
     }
+
+    if (!(masterConfig.blackbox_device == BLACKBOX_DEVICE_SERIAL || masterConfig.blackbox_device == BLACKBOX_DEVICE_FLASH)) {
+        masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
+    }
 }
 
 void startBlackbox(void)

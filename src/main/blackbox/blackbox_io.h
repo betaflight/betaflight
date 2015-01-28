@@ -20,6 +20,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define BLACKBOX_DEVICE_SERIAL 0
+#define BLACKBOX_DEVICE_FLASH  1
+
 uint8_t blackboxWriteChunkSize;
 
 void blackboxWrite(uint8_t value);
