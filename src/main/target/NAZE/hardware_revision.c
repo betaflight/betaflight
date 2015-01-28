@@ -58,7 +58,7 @@ void detectHardwareRevision(void)
 #define SPI_DEVICE_MPU (2)
 
 #define M25P16_INSTRUCTION_RDID 0x9F
-#define FLASH_M25P16 (0x202015)
+#define FLASH_M25P16_ID (0x202015)
 
 uint8_t detectSpiDevice(void)
 {
@@ -74,7 +74,7 @@ uint8_t detectSpiDevice(void)
     DISABLE_SPI_CS;
 
     flash_id = in[1] << 16 | in[2] << 8 | in[3];
-    if (flash_id == FLASH_M25P16)
+    if (flash_id == FLASH_M25P16_ID)
         return SPI_DEVICE_FLASH;
 
     // try autodetect MPU

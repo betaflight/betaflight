@@ -17,14 +17,23 @@
 
 #pragma once
 
-#define SPI_0_5625MHZ_CLOCK_DIVIDER 128
-#define SPI_18MHZ_CLOCK_DIVIDER     2
+#include <stdint.h>
+#include "flash.h"
 
-bool spiInit(SPI_TypeDef *instance);
-void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
-uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in);
+bool m25p16_init();
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len);
+void m25p16_eraseSector(uint32_t address);
+void m25p16_eraseCompletely();
 
-uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
-void spiResetErrorCounter(SPI_TypeDef *instance);
+void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length);
+
+void m25p16_pageProgramBegin(uint32_t address);
+void m25p16_pageProgramContinue(const uint8_t *data, int length);
+void m25p16_pageProgramFinish();
+
+int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length);
+
+bool m25p16_isReady();
+bool m25p16_waitForReady(uint32_t timeoutMillis);
+
+const flashGeometry_t* m25p16_getGeometry();

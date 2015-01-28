@@ -44,6 +44,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/flash_m25p16.h"
 #include "flight/flight.h"
 #include "flight/mixer.h"
 #include "flight/navigation.h"
@@ -55,6 +56,7 @@
 #include "io/rc_controls.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/flashfs.h"
 #include "rx/spektrum.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
@@ -109,6 +111,13 @@ static void cliColor(char *cmdline);
 
 #ifndef USE_QUAD_MIXER_ONLY
 static void cliMixer(char *cmdline);
+#endif
+
+#ifdef FLASHFS
+static void cliFlashIdent(char *cmdline);
+static void cliFlashEraseSector(char *cmdline);
+static void cliFlashWrite(char *cmdline);
+static void cliFlashRead(char *cmdline);
 #endif
 
 // signal that we're in cli mode
@@ -166,6 +175,12 @@ const clicmd_t cmdTable[] = {
     { "dump", "print configurable settings in a pastable form", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
+#ifdef FLASHFS
+    { "flash_erase_sector", "erase flash sector at the given address", cliFlashEraseSector },
+    { "flash_ident", "get flash chip details", cliFlashIdent },
+    { "flash_read", "read text from the given address", cliFlashRead },
+    { "flash_write", "write text to the given address", cliFlashWrite },
+#endif
     { "get", "get variable value", cliGet },
 #ifdef GPS
     { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
@@ -727,6 +742,75 @@ static void cliColor(char *cmdline)
         }
     }
 }
+#endif
+
+#ifdef FLASHFS
+
+static void cliFlashIdent(char *cmdline)
+{
+    const flashGeometry_t *layout = flashfsGetGeometry();
+
+    UNUSED(cmdline);
+
+    printf("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u\r\n",
+            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize);
+}
+
+static void cliFlashEraseSector(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+
+    flashfsEraseRange(address, address + 1);
+    printf("Erased sector at %u.\r\n", address);
+}
+
+static void cliFlashWrite(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+    char *text = strchr(cmdline, ' ');
+
+    if (!text) {
+        printf("Missing text to write.\r\n");
+    } else {
+        flashfsSeekAbs(address);
+        flashfsWrite((uint8_t*)text, strlen(text));
+        flashfsFlushSync();
+
+        printf("Wrote %u bytes at %u.\r\n", strlen(text), address);
+    }
+}
+
+static void cliFlashRead(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+    uint32_t length;
+    uint32_t i;
+
+    uint8_t buffer[32];
+
+    char *nextArg = strchr(cmdline, ' ');
+
+    if (!nextArg) {
+        printf("Missing length argument.\r\n");
+    } else {
+        length = atoi(nextArg);
+        if (length > 32) {
+            length = 32;
+            printf("Length truncated to 32 bytes.\r\n");
+        }
+
+        flashfsSeekAbs(address);
+        flashfsRead(buffer, length);
+
+        printf("Read %u bytes at %u:\r\n", length, address);
+
+        for (i = 0; i < length; i++) {
+            printf("%c", (char) buffer[i]);
+        }
+        printf("\r\n");
+    }
+}
+
 #endif
 
 static void dumpValues(uint16_t mask)

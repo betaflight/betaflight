@@ -44,6 +44,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
+#include "drivers/flash_m25p16.h"
 
 #include "flight/flight.h"
 #include "flight/mixer.h"
@@ -346,6 +347,13 @@ void init(void)
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY))
         initTelemetry();
+#endif
+
+#ifdef FLASHFS
+    #ifdef NAZE
+        // naze32 rev5 and above have 16mbit of flash available
+        m25p16_init();
+    #endif
 #endif
 
 #ifdef BLACKBOX

@@ -198,7 +198,7 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 #endif
 }
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, uint8_t *in, int len)
+bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
 {
     uint16_t spiTimeout = 1000;
 
