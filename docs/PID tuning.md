@@ -31,7 +31,7 @@ strength of the correction to be backed off in order to avoid overshooting the t
 
 ## PID controllers
 
-Cleanflight has 5 built-in PID controllers which each have different flight behavior. Each controller requires
+Cleanflight has 6 built-in PID controllers which each have different flight behavior. Each controller requires
 different PID settings for best performance, so if you tune your craft using one PID controller, those settings will
 likely not work well on any of the other controllers.
 
