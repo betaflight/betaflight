@@ -264,7 +264,7 @@ var MSP = {
                 ANALOG.voltage = data.getUint8(0) / 10.0;
                 ANALOG.mAhdrawn = data.getUint16(1, 1);
                 ANALOG.rssi = data.getUint16(3, 1); // 0-1023
-                ANALOG.amperage = data.getUint16(5, 1) / 100; // A
+                ANALOG.amperage = data.getInt16(5, 1) / 100; // A
                 break;
             case MSP_codes.MSP_RC_TUNING:
                 RC_tuning.RC_RATE = parseFloat((data.getUint8(0) / 100).toFixed(2));
