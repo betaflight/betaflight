@@ -924,9 +924,10 @@ static bool blackboxWriteSysinfo()
             xmitState.u.serialBudget -= strlen("H vbatref:%u\n");
         break;
         case 13:
-            blackboxPrintf("H currentMeter:%i,%i\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+            blackboxPrintf("H currentMeter:%d,%d\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
 
-            xmitState.u.serialBudget -= strlen("H currentMeter:%i,%i\n");
+            xmitState.u.serialBudget -= strlen("H currentMeter:%d,%d\n");
+        break;
         default:
             return true;
     }
