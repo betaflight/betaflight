@@ -235,7 +235,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#ifdef SPARKY
+#if defined(SPARKY) || defined(ALIENWIIF3)
 static const uint16_t multiPPM[] = {
     PWM11 | (MAP_TO_PPM_INPUT << 8), // PPM input
 

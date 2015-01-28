@@ -110,7 +110,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 89;
+static const uint8_t EEPROM_CONF_VERSION = 90;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -197,6 +197,7 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     escAndServoConfig->minthrottle = 1150;
     escAndServoConfig->maxthrottle = 1850;
     escAndServoConfig->mincommand = 1000;
+    escAndServoConfig->servoCenterPulse = 1500;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -227,7 +228,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
-
+    batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
 }
 
 void resetSerialConfig(serialConfig_t *serialConfig)
@@ -453,20 +454,33 @@ static void resetConf(void)
     masterConfig.blackbox_rate_denom = 1;
 #endif
 
-    // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
+    // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
     featureSet(FEATURE_FAILSAFE);
+    featureClear(FEATURE_VBAT);
+#ifdef ALIENWIIF3
+    masterConfig.serialConfig.serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+#else
     masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+#endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
+    masterConfig.looptime = 2000;
+    currentProfile->pidController = 3;
+    currentProfile->pidProfile.P8[ROLL] = 36;
+    currentProfile->pidProfile.P8[PITCH] = 36;
+    currentProfile->failsafeConfig.failsafe_delay = 2;
+    currentProfile->failsafeConfig.failsafe_off_delay = 0;
+    currentProfile->failsafeConfig.failsafe_throttle = 1000;
     currentControlRateProfile->rcRate8 = 130;
     currentControlRateProfile->rollPitchRate = 20;
     currentControlRateProfile->yawRate = 60;
+    currentControlRateProfile->yawRate = 100;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.5f,  1.0f, -1.0f },          // REAR_R

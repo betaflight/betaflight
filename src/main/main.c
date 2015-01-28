@@ -291,7 +291,8 @@ void init(void)
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
-    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER);
+    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
+        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
@@ -305,7 +306,7 @@ void init(void)
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
-    pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
+    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
 
     pwmRxInit(masterConfig.inputFilteringMode);
 

@@ -129,7 +129,7 @@ static autotunePhase_e nextPhase = FIRST_TUNE_PHASE;
 
 static float targetAngle = 0;
 static float targetAngleAtPeak;
-static float firstPeakAngle, secondPeakAngle; // deci dgrees, 180 deg = 1800
+static float firstPeakAngle, secondPeakAngle; // in degrees
 
 typedef struct fp_pid {
     float p;
@@ -161,8 +161,29 @@ static void autotuneLogCycleStart()
         eventData.p = pid.p * MULTIWII_P_MULTIPLIER;
         eventData.i = pid.i * MULTIWII_I_MULTIPLIER;
         eventData.d = pid.d;
+        eventData.rising = rising ? 1 : 0;
 
         blackboxLogEvent(FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START, (flightLogEventData_t*)&eventData);
+    }
+}
+
+static void autotuneLogAngleTargets(float currentAngle)
+{
+    if (feature(FEATURE_BLACKBOX)) {
+        flightLogEvent_autotuneTargets_t eventData;
+
+        // targetAngle is always just -AUTOTUNE_TARGET_ANGLE or +AUTOTUNE_TARGET_ANGLE so no need for float precision:
+        eventData.targetAngle = (int) targetAngle;
+        // and targetAngleAtPeak is set to targetAngle so it has the same small precision requirement:
+        eventData.targetAngleAtPeak = (int) targetAngleAtPeak;
+
+        // currentAngle is integer decidegrees divided by 10, so just reverse that process to get an integer again:
+        eventData.currentAngle = round(currentAngle * 10);
+        // the peak angles are only ever set to currentAngle, so they get the same treatment:
+        eventData.firstPeakAngle = round(firstPeakAngle * 10);
+        eventData.secondPeakAngle = round(secondPeakAngle * 10);
+
+        blackboxLogEvent(FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS, (flightLogEventData_t*)&eventData);
     }
 }
 
@@ -199,6 +220,7 @@ static void updateTargetAngle(void)
 float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclination, float errorAngle)
 {
     float currentAngle;
+    bool overshot;
 
     if (!(phase == PHASE_TUNE_ROLL || phase == PHASE_TUNE_PITCH) || autoTuneAngleIndex != angleIndex) {
         return errorAngle;
@@ -229,6 +251,10 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
     debug[2] = DEGREES_TO_DECIDEGREES(targetAngle);
 #endif
 
+#ifdef BLACKBOX
+    autotuneLogAngleTargets(currentAngle);
+#endif
+
     if (secondPeakAngle == 0) {
         // The peak will be when our angular velocity is negative.  To be sure we are in the right place,
         // we also check to make sure our angle position is greater than zero.
@@ -244,20 +270,22 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             switch (cycle) {
                 case CYCLE_TUNE_I:
                     // when checking the I value, we would like to overshoot the target position by half of the max oscillation.
-                    if (currentAngle - targetAngle < AUTOTUNE_MAX_OSCILLATION_ANGLE / 2) {
-                        pid.i *= AUTOTUNE_INCREASE_MULTIPLIER;
-                    } else {
+                    overshot = currentAngle - targetAngle >= AUTOTUNE_MAX_OSCILLATION_ANGLE / 2;
+                    
+                    if (overshot) {
                         pid.i *= AUTOTUNE_DECREASE_MULTIPLIER;
                         if (pid.i < AUTOTUNE_MINIMUM_I_VALUE) {
                             pid.i = AUTOTUNE_MINIMUM_I_VALUE;
                         }
+                    } else {
+                        pid.i *= AUTOTUNE_INCREASE_MULTIPLIER;
                     }
 
 #ifdef BLACKBOX
                     if (feature(FEATURE_BLACKBOX)) {
                         flightLogEvent_autotuneCycleResult_t eventData;
 
-                        eventData.overshot = currentAngle - targetAngle < AUTOTUNE_MAX_OSCILLATION_ANGLE / 2 ? 0 : 1;
+                        eventData.flags = overshot ? FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_OVERSHOT: 0;
                         eventData.p = pidProfile->P8[pidIndex];
                         eventData.i = pidProfile->I8[pidIndex];
                         eventData.d = pidProfile->D8[pidIndex];
@@ -300,7 +328,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             // analyze the data
             // Our goal is to have zero overshoot and to have AUTOTUNE_MAX_OSCILLATION_ANGLE amplitude
 
-            bool overshot = firstPeakAngle > targetAngleAtPeak;
+            overshot = firstPeakAngle > targetAngleAtPeak;
             if (overshot) {
 #ifdef DEBUG_AUTOTUNE
                 debug[0] = 1;
@@ -338,7 +366,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             if (feature(FEATURE_BLACKBOX)) {
                 flightLogEvent_autotuneCycleResult_t eventData;
 
-                eventData.overshot = overshot;
+                eventData.flags = (overshot ? FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_OVERSHOT : 0) | (timedOut ? FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_TIMEDOUT : 0);
                 eventData.p = pidProfile->P8[pidIndex];
                 eventData.i = pidProfile->I8[pidIndex];
                 eventData.d = pidProfile->D8[pidIndex];

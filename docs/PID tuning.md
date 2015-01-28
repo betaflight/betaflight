@@ -105,3 +105,19 @@ For example, at a setting of "100" for "sensitivity_horizon", 100% self-leveling
 stick, 50% self-leveling will be applied at 50% stick, and no self-leveling will be applied at 100% stick. If
 sensitivity is decreased to 75, 100% self-leveling will be applied at center stick, 50% will be applied at 63%
 stick, and no self-leveling will be applied at 75% stick and onwards.
+
+### PID controller 3, "MultiWii23" (default for the ALIENWIIF1 and ALIENWIIF3 targets)
+
+PID Controller 3 is an direct port of the PID controller from MultiWii 2.3 and later.
+
+The algorithm is handling roll and pitch differently to yaw. users with problems on yaw authority should try this one.
+
+For the ALIENWII32 targets the gyroscale is removed for even more yaw authority. This will provide best performance on very small multicopters with brushed motors.
+
+### PID controller 4, "MultiWiiHybrid"
+
+PID Controller 4 is an hybrid version of two MultiWii PID controllers. Roll and pitch is using the MultiWii 2.2 algorithm and yaw is using the 2.3 algorithm. 
+
+This PID controller was initialy implementd for testing purposes but is also performing quite well.
+
+For the ALIENWII32 targets the gyroscale is removed for more yaw authority. This will provide best performance on very small multicopters with brushed motors.

@@ -10,9 +10,6 @@ If issues are found with this board please report via the [github issue tracker]
 The board has a USB port directly connected to the processor.  Other boards like the Naze and Flip32
 have an on-board USB to uart adapter which connect to the processor's serial port instead.
 
-Currently there is no support for virtual com port functionality on the CC3D which means that cleanflight
-does not currently use the USB socket at all. Therefore, the communication with the board is achieved through a USB-UART adaptater connected to the Main port.
-
 The board cannot currently be used for hexacopters/octocopters.
 
 Tricopter & Airplane support is untested, please report success or failure if you try it. 
@@ -71,13 +68,14 @@ The 6 pin RC_Output connector has the following pinouts when used in RX_PARALLEL
 
 | Value | Identifier   | Board Markings | Notes                                    |
 | ----- | ------------ | -------------- | -----------------------------------------|
-| 1     | USART1       | MAIN PORT      | Has a hardware inverter for S.BUS        |
-| 2     | USART3       | FLEX PORT      |                                          |
-| 3     | SoftSerial   | RC connector   | Pins 4 and 5 (Tx and Rx respectively)    |
+| 1     | VCP          | USB PORT       |                                          |
+| 2     | USART1       | MAIN PORT      | Has a hardware inverter for S.BUS        |
+| 3     | USART3       | FLEX PORT      |                                          |
+| 4     | SoftSerial   | RC connector   | Pins 4 and 5 (Tx and Rx respectively)    |
 
 The SoftSerial port is not available when RX_PARALLEL_PWM is used. The transmission data rate is limited to 19200 baud.
 
-To connect the GUI to the flight controller you need additional hardware attached to the USART1 serial port (by default).
+To connect the GUI to the flight controller you just need a USB cable to use the Virtual Com Port (VCP).
 
 # Flex Port
 
@@ -106,6 +104,8 @@ There are two primary ways to get Cleanflight onto a CC3D board.
 
 The entire flash ram on the target processor is flashed with a single image.
 
+The image can be flashed by using a USB to UART adapter connected to the main port when the CC3D is put into the STM32 bootloader mode, achieved by powering on the CC3D with the SBL/3.3v pads bridged.  
+
 ## OpenPilot Bootloader compatible image mode.
 
 The initial section of flash ram on the target process is flashed with a bootloader which can then run the code in the
@@ -114,4 +114,3 @@ remaining area of flash ram.
 The OpenPilot bootloader code also allows the remaining section of flash to be reconfigured and re-flashed by the
 OpenPilot Ground Station (GCS) via USB without requiring a USB to uart adapter.
 
-In this mode a USB to uart adapter is still required to connect to via the GUI or CLI.

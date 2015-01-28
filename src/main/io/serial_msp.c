@@ -200,6 +200,9 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_CF_SERIAL_CONFIG            54
 #define MSP_SET_CF_SERIAL_CONFIG        55
 
+#define MSP_VOLTAGE_METER_CONFIG        56
+#define MSP_SET_VOLTAGE_METER_CONFIG    57
+
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -1024,16 +1027,26 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_BOARD_ALIGNMENT:
-        headSerialReply(3);
+        headSerialReply(6);
         serialize16(masterConfig.boardAlignment.rollDegrees);
         serialize16(masterConfig.boardAlignment.pitchDegrees);
         serialize16(masterConfig.boardAlignment.yawDegrees);
         break;
 
-    case MSP_CURRENT_METER_CONFIG:
+    case MSP_VOLTAGE_METER_CONFIG:
         headSerialReply(4);
+        serialize8(masterConfig.batteryConfig.vbatscale);
+        serialize8(masterConfig.batteryConfig.vbatmincellvoltage);
+        serialize8(masterConfig.batteryConfig.vbatmaxcellvoltage);
+        serialize8(masterConfig.batteryConfig.vbatwarningcellvoltage);
+        break;
+
+    case MSP_CURRENT_METER_CONFIG:
+        headSerialReply(7);
         serialize16(masterConfig.batteryConfig.currentMeterScale);
         serialize16(masterConfig.batteryConfig.currentMeterOffset);
+        serialize8(masterConfig.batteryConfig.currentMeterType);
+        serialize16(masterConfig.batteryConfig.batteryCapacity);
         break;
 
     case MSP_MIXER:
@@ -1042,7 +1055,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_RX_CONFIG:
-        headSerialReply(7);
+        headSerialReply(8);
         serialize8(masterConfig.rxConfig.serialrx_provider);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
@@ -1370,9 +1383,18 @@ static bool processInCommand(void)
         masterConfig.boardAlignment.yawDegrees = read16();
         break;
 
+    case MSP_SET_VOLTAGE_METER_CONFIG:
+        masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
+        masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
+        masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
+        masterConfig.batteryConfig.vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
+        break;
+
     case MSP_SET_CURRENT_METER_CONFIG:
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();
+        masterConfig.batteryConfig.currentMeterType = read8();
+        masterConfig.batteryConfig.batteryCapacity = read16();
         break;
 
 #ifndef USE_QUAD_MIXER_ONLY

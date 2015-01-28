@@ -20,8 +20,13 @@
 
 #include "common/maths.h"
 
+#include "config/runtime_config.h"
+
 #include "drivers/adc.h"
 #include "drivers/system.h"
+
+#include "rx/rx.h"
+#include "io/rc_controls.h"
 
 #include "sensors/battery.h"
 
@@ -113,13 +118,29 @@ void updateCurrentMeter(int32_t lastUpdateAt)
 {
     static int32_t amperageRaw = 0;
     static int64_t mAhdrawnRaw = 0;
+    int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
+    int32_t throttleFactor = 0;
 
-	amperageRaw -= amperageRaw / 8;
-	amperageRaw += (amperageLatestADC = adcGetChannel(ADC_CURRENT));
-	amperage = currentSensorToCentiamps(amperageRaw / 8);
+    switch(batteryConfig->currentMeterType) {
+        case CURRENT_SENSOR_ADC:
+            amperageRaw -= amperageRaw / 8;
+            amperageRaw += (amperageLatestADC = adcGetChannel(ADC_CURRENT));
+            amperage = currentSensorToCentiamps(amperageRaw / 8);
+            break;
+        case CURRENT_SENSOR_VIRTUAL:
+            amperage = (int32_t)batteryConfig->currentMeterOffset;
+            if(ARMING_FLAG(ARMED)) {
+                throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
+                amperage += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
+            }
+            break;
+        case CURRENT_SENSOR_NONE:
+            amperage = 0;
+            break;
+    }
 
-	mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
-	mAhDrawn = mAhdrawnRaw / (3600 * 100);
+    mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
+    mAhDrawn = mAhdrawnRaw / (3600 * 100);
 }
 
 uint8_t calculateBatteryPercentage(void)

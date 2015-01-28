@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include "platform.h"
 #include "version.h"
@@ -36,8 +35,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
-
-#include "common/printf.h"
 
 #include "flight/flight.h"
 #include "sensors/sensors.h"
@@ -75,9 +72,8 @@
 #include "config/config_master.h"
 
 #include "blackbox.h"
+#include "blackbox_io.h"
 
-#define BLACKBOX_BAUDRATE 115200
-#define BLACKBOX_INITIAL_PORT_MODE MODE_TX
 #define BLACKBOX_I_INTERVAL 32
 
 #define ARRAY_LENGTH(x) (sizeof((x))/sizeof((x)[0]))
@@ -255,9 +251,6 @@ extern uint8_t motorCount;
 //From mw.c:
 extern uint32_t currentTime;
 
-// How many bytes should we transmit per loop iteration?
-static uint8_t serialChunkSize = 16;
-
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
 static struct {
@@ -281,10 +274,6 @@ STATIC_ASSERT((sizeof(blackboxConditionCache) * 8) >= FLIGHT_LOG_FIELD_CONDITION
 static uint32_t blackboxIteration;
 static uint32_t blackboxPFrameIndex, blackboxIFrameIndex;
 
-static serialPort_t *blackboxPort;
-static portMode_t previousPortMode;
-static uint32_t previousBaudRate;
-
 /*
  * We store voltages in I-frames relative to this, which was the voltage when the blackbox was activated.
  * This helps out since the voltage is only expected to fall from that point and we can reduce our diffs
@@ -298,300 +287,6 @@ static blackboxValues_t blackboxHistoryRing[3];
 
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
 static blackboxValues_t* blackboxHistory[3];
-
-static void blackboxWrite(uint8_t value)
-{
-    serialWrite(blackboxPort, value);
-}
-
-static void _putc(void *p, char c)
-{
-    (void)p;
-    serialWrite(blackboxPort, c);
-}
-
-//printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
-static void blackboxPrintf(char *fmt, ...)
-{
-    va_list va;
-    va_start(va, fmt);
-    tfp_format(NULL, _putc, fmt, va);
-    va_end(va);
-}
-
-// Print the null-terminated string 's' to the serial port and return the number of bytes written
-static int blackboxPrint(const char *s)
-{
-    const char *pos = s;
-
-    while (*pos) {
-        serialWrite(blackboxPort, *pos);
-        pos++;
-    }
-
-    return pos - s;
-}
-
-/**
- * Write an unsigned integer to the blackbox serial port using variable byte encoding.
- */
-static void writeUnsignedVB(uint32_t value)
-{
-    //While this isn't the final byte (we can only write 7 bits at a time)
-    while (value > 127) {
-        blackboxWrite((uint8_t) (value | 0x80)); // Set the high bit to mean "more bytes follow"
-        value >>= 7;
-    }
-    blackboxWrite(value);
-}
-
-/**
- * Write a signed integer to the blackbox serial port using ZigZig and variable byte encoding.
- */
-static void writeSignedVB(int32_t value)
-{
-    //ZigZag encode to make the value always positive
-    writeUnsignedVB((uint32_t)((value << 1) ^ (value >> 31)));
-}
-
-/**
- * Write a 2 bit tag followed by 3 signed fields of 2, 4, 6 or 32 bits
- */
-static void writeTag2_3S32(int32_t *values) {
-    static const int NUM_FIELDS = 3;
-
-    //Need to be enums rather than const ints if we want to switch on them (due to being C)
-    enum {
-        BITS_2  = 0,
-        BITS_4  = 1,
-        BITS_6  = 2,
-        BITS_32 = 3
-    };
-
-    enum {
-        BYTES_1  = 0,
-        BYTES_2  = 1,
-        BYTES_3  = 2,
-        BYTES_4  = 3
-    };
-
-    int x;
-    int selector = BITS_2, selector2;
-
-    /*
-     * Find out how many bits the largest value requires to encode, and use it to choose one of the packing schemes
-     * below:
-     *
-     * Selector possibilities
-     *
-     * 2 bits per field  ss11 2233,
-     * 4 bits per field  ss00 1111 2222 3333
-     * 6 bits per field  ss11 1111 0022 2222 0033 3333
-     * 32 bits per field sstt tttt followed by fields of various byte counts
-     */
-    for (x = 0; x < NUM_FIELDS; x++) {
-        //Require more than 6 bits?
-        if (values[x] >= 32 || values[x] < -32) {
-            selector = BITS_32;
-            break;
-        }
-
-        //Require more than 4 bits?
-        if (values[x] >= 8 || values[x] < -8) {
-             if (selector < BITS_6)
-                 selector = BITS_6;
-        } else if (values[x] >= 2 || values[x] < -2) { //Require more than 2 bits?
-            if (selector < BITS_4)
-                selector = BITS_4;
-        }
-    }
-
-    switch (selector) {
-        case BITS_2:
-            blackboxWrite((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03));
-        break;
-        case BITS_4:
-            blackboxWrite((selector << 6) | (values[0] & 0x0F));
-            blackboxWrite((values[1] << 4) | (values[2] & 0x0F));
-        break;
-        case BITS_6:
-            blackboxWrite((selector << 6) | (values[0] & 0x3F));
-            blackboxWrite((uint8_t)values[1]);
-            blackboxWrite((uint8_t)values[2]);
-        break;
-        case BITS_32:
-            /*
-             * Do another round to compute a selector for each field, assuming that they are at least 8 bits each
-             *
-             * Selector2 field possibilities
-             * 0 - 8 bits
-             * 1 - 16 bits
-             * 2 - 24 bits
-             * 3 - 32 bits
-             */
-            selector2 = 0;
-
-            //Encode in reverse order so the first field is in the low bits:
-            for (x = NUM_FIELDS - 1; x >= 0; x--) {
-                selector2 <<= 2;
-
-                if (values[x] < 128 && values[x] >= -128)
-                    selector2 |= BYTES_1;
-                else if (values[x] < 32768 && values[x] >= -32768)
-                    selector2 |= BYTES_2;
-                else if (values[x] < 8388608 && values[x] >= -8388608)
-                    selector2 |= BYTES_3;
-                else
-                    selector2 |= BYTES_4;
-            }
-
-            //Write the selectors
-            blackboxWrite((selector << 6) | selector2);
-
-            //And now the values according to the selectors we picked for them
-            for (x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
-                switch (selector2 & 0x03) {
-                    case BYTES_1:
-                        blackboxWrite(values[x]);
-                    break;
-                    case BYTES_2:
-                        blackboxWrite(values[x]);
-                        blackboxWrite(values[x] >> 8);
-                    break;
-                    case BYTES_3:
-                        blackboxWrite(values[x]);
-                        blackboxWrite(values[x] >> 8);
-                        blackboxWrite(values[x] >> 16);
-                    break;
-                    case BYTES_4:
-                        blackboxWrite(values[x]);
-                        blackboxWrite(values[x] >> 8);
-                        blackboxWrite(values[x] >> 16);
-                        blackboxWrite(values[x] >> 24);
-                    break;
-                }
-            }
-        break;
-    }
-}
-
-/**
- * Write an 8-bit selector followed by four signed fields of size 0, 4, 8 or 16 bits.
- */
-static void writeTag8_4S16(int32_t *values) {
-
-    //Need to be enums rather than const ints if we want to switch on them (due to being C)
-    enum {
-        FIELD_ZERO  = 0,
-        FIELD_4BIT  = 1,
-        FIELD_8BIT  = 2,
-        FIELD_16BIT = 3
-    };
-
-    uint8_t selector, buffer;
-    int nibbleIndex;
-    int x;
-
-    selector = 0;
-    //Encode in reverse order so the first field is in the low bits:
-    for (x = 3; x >= 0; x--) {
-        selector <<= 2;
-
-        if (values[x] == 0)
-            selector |= FIELD_ZERO;
-        else if (values[x] < 8 && values[x] >= -8)
-            selector |= FIELD_4BIT;
-        else if (values[x] < 128 && values[x] >= -128)
-            selector |= FIELD_8BIT;
-        else
-            selector |= FIELD_16BIT;
-    }
-
-    blackboxWrite(selector);
-
-    nibbleIndex = 0;
-    buffer = 0;
-    for (x = 0; x < 4; x++, selector >>= 2) {
-        switch (selector & 0x03) {
-            case FIELD_ZERO:
-                //No-op
-            break;
-            case FIELD_4BIT:
-                if (nibbleIndex == 0) {
-                    //We fill high-bits first
-                    buffer = values[x] << 4;
-                    nibbleIndex = 1;
-                } else {
-                    blackboxWrite(buffer | (values[x] & 0x0F));
-                    nibbleIndex = 0;
-                }
-            break;
-            case FIELD_8BIT:
-                if (nibbleIndex == 0)
-                    blackboxWrite(values[x]);
-                else {
-                    //Write the high bits of the value first (mask to avoid sign extension)
-                    blackboxWrite(buffer | ((values[x] >> 4) & 0x0F));
-                    //Now put the leftover low bits into the top of the next buffer entry
-                    buffer = values[x] << 4;
-                }
-            break;
-            case FIELD_16BIT:
-                if (nibbleIndex == 0) {
-                    //Write high byte first
-                    blackboxWrite(values[x] >> 8);
-                    blackboxWrite(values[x]);
-                } else {
-                    //First write the highest 4 bits
-                    blackboxWrite(buffer | ((values[x] >> 12) & 0x0F));
-                    // Then the middle 8
-                    blackboxWrite(values[x] >> 4);
-                    //Only the smallest 4 bits are still left to write
-                    buffer = values[x] << 4;
-                }
-            break;
-        }
-    }
-    //Anything left over to write?
-    if (nibbleIndex == 1)
-        blackboxWrite(buffer);
-}
-
-/**
- * Write `valueCount` fields from `values` to the Blackbox using signed variable byte encoding. A 1-byte header is
- * written first which specifies which fields are non-zero (so this encoding is compact when most fields are zero).
- *
- * valueCount must be 8 or less.
- */
-static void writeTag8_8SVB(int32_t *values, int valueCount)
-{
-    uint8_t header;
-    int i;
-
-    if (valueCount > 0) {
-        //If we're only writing one field then we can skip the header
-        if (valueCount == 1) {
-            writeSignedVB(values[0]);
-        } else {
-            //First write a one-byte header that marks which fields are non-zero
-            header = 0;
-
-            // First field should be in low bits of header
-            for (i = valueCount - 1; i >= 0; i--) {
-                header <<= 1;
-
-                if (values[i] != 0)
-                    header |= 0x01;
-            }
-
-            blackboxWrite(header);
-
-            for (i = 0; i < valueCount; i++)
-                if (values[i] != 0)
-                    writeSignedVB(values[i]);
-        }
-    }
-}
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 {
@@ -654,8 +349,9 @@ static void blackboxBuildConditionCache()
     blackboxConditionCache = 0;
 
     for (cond = FLIGHT_LOG_FIELD_CONDITION_FIRST; cond <= FLIGHT_LOG_FIELD_CONDITION_LAST; cond++) {
-        if (testBlackboxConditionUncached(cond))
+        if (testBlackboxConditionUncached(cond)) {
             blackboxConditionCache |= 1 << cond;
+        }
     }
 }
 
@@ -688,6 +384,7 @@ static void blackboxSetState(BlackboxState newState)
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
             xmitState.u.startTime = millis();
+            blackboxDeviceFlush();
         break;
         default:
             ;
@@ -702,23 +399,28 @@ static void writeIntraframe(void)
 
     blackboxWrite('I');
 
-    writeUnsignedVB(blackboxIteration);
-    writeUnsignedVB(blackboxCurrent->time);
+    blackboxWriteUnsignedVB(blackboxIteration);
+    blackboxWriteUnsignedVB(blackboxCurrent->time);
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxCurrent->axisPID_P[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxCurrent->axisPID_P[x]);
+    }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxCurrent->axisPID_I[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxCurrent->axisPID_I[x]);
+    }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x))
-            writeSignedVB(blackboxCurrent->axisPID_D[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
+            blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x]);
+        }
+    }
 
-    for (x = 0; x < 3; x++)
-        writeSignedVB(blackboxCurrent->rcCommand[x]);
+    for (x = 0; x < 3; x++) {
+        blackboxWriteSignedVB(blackboxCurrent->rcCommand[x]);
+    }
 
-    writeUnsignedVB(blackboxCurrent->rcCommand[3] - masterConfig.escAndServoConfig.minthrottle); //Throttle lies in range [minthrottle..maxthrottle]
+    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[3] - masterConfig.escAndServoConfig.minthrottle); //Throttle lies in range [minthrottle..maxthrottle]
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         /*
@@ -727,41 +429,47 @@ static void writeIntraframe(void)
          *
          * Write 14 bits even if the number is negative (which would otherwise result in 32 bits)
          */
-        writeUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
+        blackboxWriteUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
     }
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
         // 12bit value directly from ADC
-        writeUnsignedVB(blackboxCurrent->amperageLatest);
+        blackboxWriteUnsignedVB(blackboxCurrent->amperageLatest);
     }
 
 #ifdef MAG
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
-            for (x = 0; x < XYZ_AXIS_COUNT; x++)
-                writeSignedVB(blackboxCurrent->magADC[x]);
+            for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+                blackboxWriteSignedVB(blackboxCurrent->magADC[x]);
+            }
         }
 #endif
 
 #ifdef BARO
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO))
-            writeSignedVB(blackboxCurrent->BaroAlt);
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO)) {
+            blackboxWriteSignedVB(blackboxCurrent->BaroAlt);
+        }
 #endif
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxCurrent->gyroData[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxCurrent->gyroData[x]);
+    }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxCurrent->accSmooth[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxCurrent->accSmooth[x]);
+    }
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
-    writeUnsignedVB(blackboxCurrent->motor[0] - masterConfig.escAndServoConfig.minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - masterConfig.escAndServoConfig.minthrottle);
 
     //Motors tend to be similar to each other
-    for (x = 1; x < motorCount; x++)
-        writeSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
+    for (x = 1; x < motorCount; x++) {
+        blackboxWriteSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
+    }
 
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER))
-        writeSignedVB(blackboxHistory[0]->servo[5] - 1500);
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
+        blackboxWriteSignedVB(blackboxHistory[0]->servo[5] - 1500);
+    }
 
     //Rotate our history buffers:
 
@@ -789,36 +497,41 @@ static void writeInterframe(void)
      * Since the difference between the difference between successive times will be nearly zero (due to consistent
      * looptime spacing), use second-order differences.
      */
-    writeSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
+    blackboxWriteSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxCurrent->axisPID_P[x] - blackboxLast->axisPID_P[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxCurrent->axisPID_P[x] - blackboxLast->axisPID_P[x]);
+    }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         deltas[x] = blackboxCurrent->axisPID_I[x] - blackboxLast->axisPID_I[x];
+    }
 
     /* 
      * The PID I field changes very slowly, most of the time +-2, so use an encoding
      * that can pack all three fields into one byte in that situation.
      */
-    writeTag2_3S32(deltas);
+    blackboxWriteTag2_3S32(deltas);
     
     /*
      * The PID D term is frequently set to zero for yaw, which makes the result from the calculation
      * always zero. So don't bother recording D results when PID D terms are zero.
      */
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x))
-            writeSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
+            blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
+        }
+    }
 
     /*
      * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
      * can pack multiple values per byte:
      */
-    for (x = 0; x < 4; x++)
+    for (x = 0; x < 4; x++) {
         deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
+    }
 
-    writeTag8_4S16(deltas);
+    blackboxWriteTag8_4S16(deltas);
 
     //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, Amperage, MAG, BARO
     int optionalFieldCount = 0;
@@ -833,29 +546,35 @@ static void writeInterframe(void)
 
 #ifdef MAG
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
-        for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        for (x = 0; x < XYZ_AXIS_COUNT; x++) {
             deltas[optionalFieldCount++] = blackboxCurrent->magADC[x] - blackboxLast->magADC[x];
+        }
     }
 #endif
 
 #ifdef BARO
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO))
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO)) {
         deltas[optionalFieldCount++] = blackboxCurrent->BaroAlt - blackboxLast->BaroAlt;
+    }
 #endif
-    writeTag8_8SVB(deltas, optionalFieldCount);
+    blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
 
     //Since gyros, accs and motors are noisy, base the prediction on the average of the history:
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
+    }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++)
-        writeSignedVB(blackboxHistory[0]->accSmooth[x] - (blackboxHistory[1]->accSmooth[x] + blackboxHistory[2]->accSmooth[x]) / 2);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxHistory[0]->accSmooth[x] - (blackboxHistory[1]->accSmooth[x] + blackboxHistory[2]->accSmooth[x]) / 2);
+    }
 
-    for (x = 0; x < motorCount; x++)
-        writeSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
+    for (x = 0; x < motorCount; x++) {
+        blackboxWriteSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
+    }
 
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER))
-        writeSignedVB(blackboxCurrent->servo[5] - blackboxLast->servo[5]);
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
+        blackboxWriteSignedVB(blackboxCurrent->servo[5] - blackboxLast->servo[5]);
+    }
 
     //Rotate our history buffers
     blackboxHistory[2] = blackboxHistory[1];
@@ -865,8 +584,10 @@ static void writeInterframe(void)
 
 static int gcd(int num, int denom)
 {
-    if (denom == 0)
+    if (denom == 0) {
         return num;
+    }
+
     return gcd(denom, num % denom);
 }
 
@@ -886,59 +607,12 @@ static void validateBlackboxConfig()
     }
 }
 
-static void configureBlackboxPort(void)
-{
-    blackboxPort = findOpenSerialPort(FUNCTION_BLACKBOX);
-    if (blackboxPort) {
-        previousPortMode = blackboxPort->mode;
-        previousBaudRate = blackboxPort->baudRate;
-
-        serialSetBaudRate(blackboxPort, BLACKBOX_BAUDRATE);
-        serialSetMode(blackboxPort, BLACKBOX_INITIAL_PORT_MODE);
-        beginSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
-    } else {
-        blackboxPort = openSerialPort(FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
-
-        if (blackboxPort) {
-            previousPortMode = blackboxPort->mode;
-            previousBaudRate = blackboxPort->baudRate;
-        }
-    }
-
-    /*
-     * We want to write at about 7200 bytes per second to give the OpenLog a good chance to save to disk. If
-     * about looptime microseconds elapse between our writes, this is the budget of how many bytes we should
-     * transmit with each write.
-     *
-     * 9 / 1250 = 7200 / 1000000
-     */
-    serialChunkSize = MAX((masterConfig.looptime * 9) / 1250, 4);
-}
-
-static void releaseBlackboxPort(void)
-{
-    serialSetMode(blackboxPort, previousPortMode);
-    serialSetBaudRate(blackboxPort, previousBaudRate);
-
-    endSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
-
-    /*
-     * Normally this would be handled by mw.c, but since we take an unknown amount
-     * of time to shut down asynchronously, we're the only ones that know when to call it.
-     */
-    if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
-        mspAllocateSerialPorts(&masterConfig.serialConfig);
-    }
-}
-
 void startBlackbox(void)
 {
     if (blackboxState == BLACKBOX_STATE_STOPPED) {
         validateBlackboxConfig();
 
-        configureBlackboxPort();
-
-        if (!blackboxPort) {
+        if (!blackboxDeviceOpen()) {
             blackboxSetState(BLACKBOX_STATE_DISABLED);
             return;
         }
@@ -976,7 +650,7 @@ void finishBlackbox(void)
          * We're shutting down in the middle of transmitting headers, so we can't log a "log completed" event.
          * Just give the port back and stop immediately.
          */
-        releaseBlackboxPort();
+        blackboxDeviceClose();
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     }
 }
@@ -986,8 +660,8 @@ static void writeGPSHomeFrame()
 {
     blackboxWrite('H');
 
-    writeSignedVB(GPS_home[0]);
-    writeSignedVB(GPS_home[1]);
+    blackboxWriteSignedVB(GPS_home[0]);
+    blackboxWriteSignedVB(GPS_home[1]);
     //TODO it'd be great if we could grab the GPS current time and write that too
 
     gpsHistory.GPS_home[0] = GPS_home[0];
@@ -1006,15 +680,15 @@ static void writeGPSFrame()
      */
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME)) {
         // Predict the time of the last frame in the main log
-        writeUnsignedVB(currentTime - blackboxHistory[1]->time);
+        blackboxWriteUnsignedVB(currentTime - blackboxHistory[1]->time);
     }
 
-    writeUnsignedVB(GPS_numSat);
-    writeSignedVB(GPS_coord[0] - gpsHistory.GPS_home[0]);
-    writeSignedVB(GPS_coord[1] - gpsHistory.GPS_home[1]);
-    writeUnsignedVB(GPS_altitude);
-    writeUnsignedVB(GPS_speed);
-    writeUnsignedVB(GPS_ground_course);
+    blackboxWriteUnsignedVB(GPS_numSat);
+    blackboxWriteSignedVB(GPS_coord[0] - gpsHistory.GPS_home[0]);
+    blackboxWriteSignedVB(GPS_coord[1] - gpsHistory.GPS_home[1]);
+    blackboxWriteUnsignedVB(GPS_altitude);
+    blackboxWriteUnsignedVB(GPS_speed);
+    blackboxWriteUnsignedVB(GPS_ground_course);
 
     gpsHistory.GPS_numSat = GPS_numSat;
     gpsHistory.GPS_coord[0] = GPS_coord[0];
@@ -1032,31 +706,39 @@ static void loadBlackboxState(void)
 
     blackboxCurrent->time = currentTime;
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_P[i] = axisPID_P[i];
-    for (i = 0; i < XYZ_AXIS_COUNT; i++)
+    }
+    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_I[i] = axisPID_I[i];
-    for (i = 0; i < XYZ_AXIS_COUNT; i++)
+    }
+    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_D[i] = axisPID_D[i];
+    }
 
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 4; i++) {
         blackboxCurrent->rcCommand[i] = rcCommand[i];
+    }
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->gyroData[i] = gyroData[i];
+    }
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->accSmooth[i] = accSmooth[i];
+    }
 
-    for (i = 0; i < motorCount; i++)
+    for (i = 0; i < motorCount; i++) {
         blackboxCurrent->motor[i] = motor[i];
+    }
 
     blackboxCurrent->vbatLatest = vbatLatestADC;
     blackboxCurrent->amperageLatest = amperageLatestADC;
 
 #ifdef MAG
-    for (i = 0; i < XYZ_AXIS_COUNT; i++)
+    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->magADC[i] = magADC[i];
+    }
 #endif
 
 #ifdef BARO
@@ -1097,8 +779,9 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
      * the whole header.
      */
     if (xmitState.u.fieldIndex == -1) {
-        if (xmitState.headerIndex >= headerCount)
+        if (xmitState.headerIndex >= headerCount) {
             return false; //Someone probably called us again after we had already completed transmission
+        }
 
         charsWritten = blackboxPrint("H Field ");
         charsWritten += blackboxPrint(headerNames[xmitState.headerIndex]);
@@ -1109,15 +792,16 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
     } else
         charsWritten = 0;
 
-    for (; xmitState.u.fieldIndex < fieldCount && charsWritten < serialChunkSize; xmitState.u.fieldIndex++) {
+    for (; xmitState.u.fieldIndex < fieldCount && charsWritten < blackboxWriteChunkSize; xmitState.u.fieldIndex++) {
         def = (const blackboxFieldDefinition_t*) ((const char*)fieldDefinitions + definitionStride * xmitState.u.fieldIndex);
 
         if (!conditions || testBlackboxCondition(conditions[conditionsStride * xmitState.u.fieldIndex])) {
             if (needComma) {
                 blackboxWrite(',');
                 charsWritten++;
-            } else
+            } else {
                 needComma = true;
+            }
 
             // The first header is a field name
             if (xmitState.headerIndex == 0) {
@@ -1163,7 +847,7 @@ static bool blackboxWriteSysinfo()
     }
 
     // How many bytes can we afford to transmit this loop?
-    xmitState.u.serialBudget = MIN(xmitState.u.serialBudget + serialChunkSize, 64);
+    xmitState.u.serialBudget = MIN(xmitState.u.serialBudget + blackboxWriteChunkSize, 64);
 
     // Most headers will consume at least 20 bytes so wait until we've built up that much link budget
     if (xmitState.u.serialBudget < 20) {
@@ -1240,9 +924,10 @@ static bool blackboxWriteSysinfo()
             xmitState.u.serialBudget -= strlen("H vbatref:%u\n");
         break;
         case 13:
-            blackboxPrintf("H currentMeter:%i,%i\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+            blackboxPrintf("H currentMeter:%d,%d\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
 
-            xmitState.u.serialBudget -= strlen("H currentMeter:%i,%i\n");
+            xmitState.u.serialBudget -= strlen("H currentMeter:%d,%d\n");
+        break;
         default:
             return true;
     }
@@ -1256,8 +941,9 @@ static bool blackboxWriteSysinfo()
  */
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
 {
-    if (blackboxState != BLACKBOX_STATE_RUNNING)
+    if (blackboxState != BLACKBOX_STATE_RUNNING) {
         return;
+    }
 
     //Shared header for event frames
     blackboxWrite('E');
@@ -1266,20 +952,27 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
     //Now serialize the data for this specific frame type
     switch (event) {
         case FLIGHT_LOG_EVENT_SYNC_BEEP:
-            writeUnsignedVB(data->syncBeep.time);
+            blackboxWriteUnsignedVB(data->syncBeep.time);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START:
             blackboxWrite(data->autotuneCycleStart.phase);
-            blackboxWrite(data->autotuneCycleStart.cycle);
+            blackboxWrite(data->autotuneCycleStart.cycle | (data->autotuneCycleStart.rising ? 0x80 : 0));
             blackboxWrite(data->autotuneCycleStart.p);
             blackboxWrite(data->autotuneCycleStart.i);
             blackboxWrite(data->autotuneCycleStart.d);
         break;
         case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
-            blackboxWrite(data->autotuneCycleResult.overshot);
+            blackboxWrite(data->autotuneCycleResult.flags);
             blackboxWrite(data->autotuneCycleStart.p);
             blackboxWrite(data->autotuneCycleStart.i);
             blackboxWrite(data->autotuneCycleStart.d);
+        break;
+        case FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS:
+            blackboxWriteS16(data->autotuneTargets.currentAngle);
+            blackboxWrite((uint8_t) data->autotuneTargets.targetAngle);
+            blackboxWrite((uint8_t) data->autotuneTargets.targetAngleAtPeak);
+            blackboxWriteS16(data->autotuneTargets.firstPeakAngle);
+            blackboxWriteS16(data->autotuneTargets.secondPeakAngle);
         break;
         case FLIGHT_LOG_EVENT_LOG_END:
             blackboxPrint("End of log");
@@ -1320,11 +1013,13 @@ void handleBlackbox(void)
              * buffer.
              */
             if (millis() > xmitState.u.startTime + 100) {
-                for (i = 0; i < serialChunkSize && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++)
+                for (i = 0; i < blackboxWriteChunkSize && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
                     blackboxWrite(blackboxHeader[xmitState.headerIndex]);
+                }
 
-                if (blackboxHeader[xmitState.headerIndex] == '\0')
+                if (blackboxHeader[xmitState.headerIndex] == '\0') {
                     blackboxSetState(BLACKBOX_STATE_SEND_FIELDINFO);
+                }
             }
         break;
         case BLACKBOX_STATE_SEND_FIELDINFO:
@@ -1332,9 +1027,9 @@ void handleBlackbox(void)
             if (!sendFieldDefinition(blackboxMainHeaderNames, ARRAY_LENGTH(blackboxMainHeaderNames), blackboxMainFields, blackboxMainFields + 1,
                     ARRAY_LENGTH(blackboxMainFields), &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef GPS
-                if (feature(FEATURE_GPS))
+                if (feature(FEATURE_GPS)) {
                     blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADERS);
-                else
+                } else
 #endif
                     blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
@@ -1359,8 +1054,9 @@ void handleBlackbox(void)
             //On entry of this state, xmitState.headerIndex is 0
 
             //Keep writing chunks of the system info headers until it returns true to signal completion
-            if (blackboxWriteSysinfo())
+            if (blackboxWriteSysinfo()) {
                 blackboxSetState(BLACKBOX_STATE_PRERUN);
+            }
         break;
         case BLACKBOX_STATE_PRERUN:
             blackboxSetState(BLACKBOX_STATE_RUNNING);
@@ -1412,7 +1108,7 @@ void handleBlackbox(void)
             }
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
-            //On entry of this state, startTime is set
+            //On entry of this state, startTime is set and a flush is performed
 
             /*
              * Wait for the log we've transmitted to make its way to the logger before we release the serial port,
@@ -1420,8 +1116,8 @@ void handleBlackbox(void)
              *
              * Don't wait longer than it could possibly take if something funky happens.
              */
-            if (millis() > xmitState.u.startTime + 200 || isSerialTransmitBufferEmpty(blackboxPort)) {
-                releaseBlackboxPort();
+            if (millis() > xmitState.u.startTime + 200 || isBlackboxDeviceIdle()) {
+                blackboxDeviceClose();
                 blackboxSetState(BLACKBOX_STATE_STOPPED);
             }
         break;
@@ -1432,16 +1128,14 @@ void handleBlackbox(void)
 
 static bool canUseBlackboxWithCurrentConfiguration(void)
 {
-    if (!feature(FEATURE_BLACKBOX))
-        return false;
-
-    return true;
+    return feature(FEATURE_BLACKBOX);
 }
 
 void initBlackbox(void)
 {
-    if (canUseBlackboxWithCurrentConfiguration())
+    if (canUseBlackboxWithCurrentConfiguration()) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
-    else
+    } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
+    }
 }
