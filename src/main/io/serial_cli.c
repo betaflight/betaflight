@@ -44,7 +44,6 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/flash_m25p16.h"
 #include "flight/flight.h"
 #include "flight/mixer.h"
 #include "flight/navigation.h"
@@ -794,18 +793,21 @@ static void cliFlashRead(char *cmdline)
         printf("Missing length argument.\r\n");
     } else {
         length = atoi(nextArg);
-        if (length > 32) {
-            length = 32;
-            printf("Length truncated to 32 bytes.\r\n");
-        }
+
+        printf("Reading %u bytes at %u:\r\n", length, address);
 
         flashfsSeekAbs(address);
-        flashfsRead(buffer, length);
 
-        printf("Read %u bytes at %u:\r\n", length, address);
+        while (length > 0) {
+            int bytesToRead = length < 32 ? length : 32;
 
-        for (i = 0; i < length; i++) {
-            printf("%c", (char) buffer[i]);
+            flashfsRead(buffer, bytesToRead);
+
+            for (i = 0; i < bytesToRead; i++) {
+                printf("%c", (char) buffer[i]);
+            }
+
+            length -= bytesToRead;
         }
         printf("\r\n");
     }

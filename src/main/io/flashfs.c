@@ -114,15 +114,11 @@ static uint32_t flashfsTransmitBufferUsed()
 
 static uint32_t flashfsTransmitBufferRemaining()
 {
-    /*
-     * We subtract one from the actual transmit buffer remaining space to allow us to distinguish
-     * between completely full and completely empty states, that would otherwise both have head = tail
-     */
     return FLASHFS_WRITE_BUFFER_USABLE - flashfsTransmitBufferUsed();
 }
 
 /**
- * Waits for the flash device to be ready to accept writes, then write the given buffers to flash.
+ * Waits for the flash device to be ready to accept writes, then write the given buffers to flash sequentially.
  *
  * Advances the address of the beginning of the supplied buffers and reduces the size of the buffers according to how
  * many bytes get written.
@@ -150,7 +146,10 @@ static void flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSizes, 
         uint32_t bytesTotalThisIteration;
         uint32_t bytesRemainThisIteration;
 
-        // If we would cross a page boundary, only write up to the boundary in this iteration:
+        /*
+         * Each page needs to be saved in a separate program operation, so
+         * if we would cross a page boundary, only write up to the boundary in this iteration:
+         */
         if (tailIndexInPage + bytesTotalRemaining > geometry->pageSize) {
             bytesTotalThisIteration = geometry->pageSize - tailIndexInPage;
         } else {

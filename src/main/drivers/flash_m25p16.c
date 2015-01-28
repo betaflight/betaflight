@@ -97,6 +97,7 @@ static uint8_t m25p16_readStatus()
 
 bool m25p16_isReady()
 {
+    // If couldBeBusy is false, don't bother to poll the flash chip for its status
     couldBeBusy = couldBeBusy && ((m25p16_readStatus() & M25P16_STATUS_FLAG_WRITE_IN_PROGRESS) != 0);
 
     return !couldBeBusy;
@@ -126,7 +127,10 @@ static bool m25p16_readIdentification()
 
     delay(50); // short delay required after initialisation of SPI device instance.
 
-    in[1] = 0; // Just in case transfer fails and writes nothing
+    /* Just in case transfer fails and writes nothing, so we don't try to verify the ID against random garbage
+     * from the stack:
+     */
+    in[1] = 0;
 
     ENABLE_M25P16;
 
