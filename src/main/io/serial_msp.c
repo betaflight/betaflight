@@ -830,9 +830,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamphours drawn from battery
         serialize16(rssi);
         if(masterConfig.batteryConfig.multiwiiCurrentMeterOutput) {
-            serialize16((uint16_t)constrain((ABS(amperage) * 10), 0, 0xFFFF)); // send amperage in 0.001 A steps
+            serialize16((uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
         } else
-            serialize16((uint16_t)constrain(ABS(amperage), 0, 0xFFFF)); // send amperage in 0.01 A steps
+            serialize16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
