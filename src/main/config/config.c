@@ -719,6 +719,12 @@ void validateAndFixConfig(void)
     }
 #endif
 
+#if defined(CC3D) && defined(DISPLAY) && defined(USE_USART3)
+    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
+        featureClear(FEATURE_DISPLAY);
+    }
+#endif
+
     useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
