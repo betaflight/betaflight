@@ -31,7 +31,7 @@ strength of the correction to be backed off in order to avoid overshooting the t
 
 ## PID controllers
 
-Cleanflight has 5 built-in PID controllers which each have different flight behavior. Each controller requires
+Cleanflight has 6 built-in PID controllers which each have different flight behavior. Each controller requires
 different PID settings for best performance, so if you tune your craft using one PID controller, those settings will
 likely not work well on any of the other controllers.
 
@@ -121,3 +121,19 @@ PID Controller 4 is an hybrid version of two MultiWii PID controllers. Roll and 
 This PID controller was initialy implemented for testing purposes but is also performing quite well.
 
 For the ALIENWII32 targets the gyroscale is removed for more yaw authority. This will provide best performance on very small multicopters with brushed motors.
+
+### PID controller 5, "Harakiri"
+
+PID Controller 5 is an port of the PID controller from the Harakiri firmware.
+
+The algorithm is leveraging more floating point math. This PID controller also compensates for different looptimes on roll and pitch. It likely don’t need retuning of the PID values when looptime is changing. Actually there are two settings hardcoded which are configurable via the GUI in Harakiri:
+
+        OLD_YAW 0 // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw.
+        MAIN_CUT_HZ 12.0f // (default 12Hz, Range 1-50Hz)
+
+The PID controller is flight tested and running well with the default PID settings. If you want do acrobatics start slowly.
+
+Yaw authority is also quite good.
+
+
+
