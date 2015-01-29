@@ -48,7 +48,7 @@ function configuration_backup(callback) {
                         fetch_specific_data_item();
                     } else {
                         configuration.profiles.push({
-                            'PID': jQuery.extend(true, [], PID),
+                            'PID': jQuery.extend(true, {}, PID),
                             'PIDs': jQuery.extend(true, [], PIDs),
                             'RC': jQuery.extend(true, {}, RC_tuning),
                             'AccTrim': jQuery.extend(true, [], CONFIG.accelerometerTrims),
