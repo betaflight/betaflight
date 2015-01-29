@@ -325,6 +325,7 @@ void handleSmartPortTelemetry(void)
         static uint8_t t1Cnt = 0;
 
         switch(id) {
+#ifdef GPS
             case FSSP_DATAID_SPEED      :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     uint32_t tmpui = (GPS_speed * 36 + 36 / 2) / 100;
@@ -332,6 +333,7 @@ void handleSmartPortTelemetry(void)
                     smartPortHasRequest = 0;
                 }
                 break;
+#endif
             case FSSP_DATAID_VFAS       :
                 smartPortSendPackage(id, vbat * 83); // supposedly given in 0.1V, unknown requested unit
                 // multiplying by 83 seems to make Taranis read correctly
@@ -352,6 +354,7 @@ void handleSmartPortTelemetry(void)
                 break;
             //case FSSP_DATAID_ADC1       :
             //case FSSP_DATAID_ADC2       :
+#ifdef GPS
             case FSSP_DATAID_LATLONG    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     uint32_t tmpui = 0;
@@ -377,6 +380,7 @@ void handleSmartPortTelemetry(void)
                     smartPortHasRequest = 0;
                 }
                 break;
+#endif
             //case FSSP_DATAID_CAP_USED   :
             case FSSP_DATAID_VARIO      :
                 smartPortSendPackage(id, vario); // unknown given unit but requested in 100 = 1m/s
@@ -448,21 +452,25 @@ void handleSmartPortTelemetry(void)
                 break;
             case FSSP_DATAID_T2         :
                 if (sensors(SENSOR_GPS)) {
+#ifdef GPS
                     // provide GPS lock status
                     smartPortSendPackage(id, (STATE(GPS_FIX) ? 1000 : 0) + (STATE(GPS_FIX_HOME) ? 2000 : 0) + GPS_numSat);
                     smartPortHasRequest = 0;
+#endif
                 }
                 else {
                     smartPortSendPackage(id, 0);
                     smartPortHasRequest = 0;
                 }
                 break;
+#ifdef GPS
             case FSSP_DATAID_GPS_ALT    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     smartPortSendPackage(id, GPS_altitude * 1000); // given in 0.1m , requested in 100 = 1m
                     smartPortHasRequest = 0;
                 }
                 break;
+#endif
             default:
                 break;
                 // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just wait for the next loop

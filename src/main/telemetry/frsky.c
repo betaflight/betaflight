@@ -172,6 +172,7 @@ static void sendBaro(void)
     serialize16(ABS(BaroAlt % 100));
 }
 
+#ifdef GPS
 static void sendGpsAltitude(void)
 {
     uint16_t altitude = GPS_altitude;
@@ -184,7 +185,7 @@ static void sendGpsAltitude(void)
     sendDataHead(ID_GPS_ALTIDUTE_AP);
     serialize16(0);
 }
-
+#endif
 
 static void sendThrottleOrBatterySizeAsRpm(void)
 {
@@ -207,6 +208,7 @@ static void sendTemperature1(void)
 #endif
 }
 
+#ifdef GPS
 static void sendSatalliteSignalQualityAsTemperature2(void)
 {
     uint16_t satellite = GPS_numSat;
@@ -236,6 +238,7 @@ static void sendSpeed(void)
     sendDataHead(ID_GPS_SPEED_AP);
     serialize16(0); //Not dipslayed
 }
+#endif
 
 static void sendTime(void)
 {
