@@ -25,6 +25,7 @@ function configuration_backup(callback) {
     }
 
     var profileSpecificData = [
+        MSP_codes.MSP_PID_CONTROLLER,
         MSP_codes.MSP_PID,
         MSP_codes.MSP_RC_TUNING,
         MSP_codes.MSP_ACC_TRIM,
@@ -47,7 +48,8 @@ function configuration_backup(callback) {
                         fetch_specific_data_item();
                     } else {
                         configuration.profiles.push({
-                            'PID': jQuery.extend(true, [], PIDs),
+                            'PID': jQuery.extend(true, [], PID),
+                            'PIDs': jQuery.extend(true, [], PIDs),
                             'RC': jQuery.extend(true, {}, RC_tuning),
                             'AccTrim': jQuery.extend(true, [], CONFIG.accelerometerTrims),
                             'ServoConfig': jQuery.extend(true, [], SERVO_CONFIG),
@@ -312,7 +314,22 @@ function configuration_restore(callback) {
             GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
             appliedMigrationsCount++;
         }
-        
+
+        if (!compareVersions(migratedVersion, '0.61.0')) {
+            
+            // Changing PID controller via UI was added.
+            if (!configuration.PIDs && configuration.PID) {
+                configuration.PIDs = configuration.PID;
+                configuration.PID = {
+                    controller: 0 // assume pid controller 0 was used.
+                };
+            }
+            
+            migratedVersion = '0.61.0';
+            GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
+            appliedMigrationsCount++;
+        }
+
         GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         return true;
     }
@@ -323,6 +340,7 @@ function configuration_restore(callback) {
                 profilesN = 3;
 
             var profileSpecificData = [
+                MSP_codes.MSP_SET_PID_CONTROLLER,
                 MSP_codes.MSP_SET_PID,
                 MSP_codes.MSP_SET_RC_TUNING,
                 MSP_codes.MSP_SET_ACC_TRIM,
@@ -348,7 +366,8 @@ function configuration_restore(callback) {
                     codeKey = 0;
 
                 function load_objects(profile) {
-                    PIDs = configuration.profiles[profile].PID;
+                    PID = configuration.profiles[profile].PID;
+                    PIDs = configuration.profiles[profile].PIDs;
                     RC_tuning = configuration.profiles[profile].RC;
                     CONFIG.accelerometerTrims = configuration.profiles[profile].AccTrim;
                     SERVO_CONFIG = configuration.profiles[profile].ServoConfig;

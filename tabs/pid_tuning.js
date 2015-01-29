@@ -3,10 +3,18 @@
 TABS.pid_tuning = {};
 TABS.pid_tuning.initialize = function (callback) {
     var self = this;
-
+    
     if (GUI.active_tab != 'pid_tuning') {
         GUI.active_tab = 'pid_tuning';
         googleAnalytics.sendAppView('PID Tuning');
+    }
+
+    function get_pid_controller() {
+        if (GUI.canChangePidController) {
+            MSP.send_message(MSP_codes.MSP_PID_CONTROLLER, false, false, get_pid_names);
+        } else {
+            get_pid_names();
+        }
     }
 
     function get_pid_names() {
@@ -26,12 +34,12 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
     // requesting MSP_STATUS manually because it contains CONFIG.profile
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_names);
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_controller);
 
     function process_html() {
         // translate to user-selected language
         localize();
-
+        
         // Fill in the names from PID_names array
         // this needs to be reworked, but will do for now
         $('.pid_tuning tr:eq(1) td:first').text(PID_names[0]);
@@ -181,6 +189,20 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.rate-tpa input[name="yaw"]').val(RC_tuning.yaw_rate.toFixed(2));
         $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
 
+        var pidController_e = $('select[name="controller"]');
+        
+        if (GUI.canChangePidController) {
+            pidController_e.val(PID.controller);
+        } else {
+            GUI.log(chrome.i18n.getMessage('pidTuningUpgradeFirmwareToChangePidController', [CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion]));
+            
+            pidController_e.empty();
+            pidController_e.append('<option value="">Unknown</option>');
+            
+            pidController_e.prop('disabled', true);
+        }
+
+
         // Fill in currently selected profile
         $('select[name="profile"]').val(CONFIG.profile);
 
@@ -261,6 +283,12 @@ TABS.pid_tuning.initialize = function (callback) {
             RC_tuning.yaw_rate = parseFloat($('.rate-tpa input[name="yaw"]').val());
             RC_tuning.dynamic_THR_PID = parseFloat($('.rate-tpa input[name="tpa"]').val());
 
+            var pidController_e = $('select[name="controller"]');
+            
+            function send_pids() {
+                MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, send_rc_tuning_changes);
+            }
+ 
             function send_rc_tuning_changes() {
                 MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_to_eeprom);
             }
@@ -271,7 +299,12 @@ TABS.pid_tuning.initialize = function (callback) {
                 });
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, send_rc_tuning_changes);
+            if (GUI.canChangePidController) {
+                PID.controller = pidController_e.val(); 
+                MSP.send_message(MSP_codes.MSP_SET_PID_CONTROLLER, MSP.crunch(MSP_codes.MSP_SET_PID_CONTROLLER), false, send_pids);
+            } else {
+                send_pids();
+            }
         });
 
         // status data pulled via separate timer with static speed

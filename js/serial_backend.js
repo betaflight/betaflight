@@ -171,6 +171,8 @@ function onOpen(openInfo) {
                                         GUI.allowedTabs.splice(GUI.allowedTabs.indexOf('led_strip'), 1);
                                     }
                                     
+                                    GUI.canChangePidController = CONFIG.apiVersion >= CONFIGURATOR.pidControllerChangeMinApiVersion;
+
                                     onConnect();
                                     
                                     $('#tabs ul.mode-connected .tab_setup a').click();

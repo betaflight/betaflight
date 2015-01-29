@@ -1,9 +1,10 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1421431075334, // new Date().getTime() - 2015.01.16
+    'releaseDate': 1422552160231, // new Date().getTime() - 2015.01.29
     'apiVersionAccepted': 1.2,
-    'backupRestoreMinApiVersionAccepted': 1.4,
+    'backupRestoreMinApiVersionAccepted': 1.5,
+    'pidControllerChangeMinApiVersion': 1.5,
     'backupFileMinVersionAccepted': '0.55', // chrome.runtime.getManifest().version is stored as string, so does this one
     'connectionValid': false,
     'connectionValidCliOnly': false,
@@ -42,6 +43,9 @@ var BF_CONFIG = {
 
 var LED_STRIP = [];
 
+var PID = {
+    controller:             0
+};
 
 var PID_names = [];
 var PIDs = new Array(10);

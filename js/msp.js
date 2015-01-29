@@ -20,6 +20,8 @@ var MSP_codes = {
     MSP_CF_SERIAL_CONFIG:       54,
     MSP_SET_CF_SERIAL_CONFIG:   55,
     MSP_SONAR:                  58,
+    MSP_PID_CONTROLLER:         59,
+    MSP_SET_PID_CONTROLLER:     60,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -673,6 +675,13 @@ var MSP = {
                 console.log('Adjustment range saved');
                 break;
                 
+            case MSP_codes.MSP_PID_CONTROLLER:
+                PID.controller = data.getUint8(0, 1);
+                break;
+            case MSP_codes.MSP_SET_PID_CONTROLLER:
+                console.log('PID controller changed');
+                break;
+
 
             default:
                 console.log('Unknown code detected: ' + code);
@@ -805,6 +814,9 @@ MSP.crunch = function (code) {
             buffer.push(highByte(BF_CONFIG.currentscale));
             buffer.push(lowByte(BF_CONFIG.currentoffset));
             buffer.push(highByte(BF_CONFIG.currentoffset));
+            break;
+        case MSP_codes.MSP_SET_PID_CONTROLLER:
+            buffer.push(PID.controller);
             break;
         case MSP_codes.MSP_SET_PID:
             for (var i = 0; i < PIDs.length; i++) {

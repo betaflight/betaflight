@@ -508,6 +508,9 @@
         "message": "Save and Reboot"
     },
 
+    "pidTuningUpgradeFirmwareToChangePidController": {
+        "message": "<span style=\"color: red\">Changing PID controller disabled - you can change it via the CLI.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, but this functionality requires requires <span style=\"color: green\">$2</span>."
+    },
     "pidTuningName": {
         "message": "Name"
     },
@@ -537,6 +540,9 @@
     },
     "pidTuningProfileHead": {
         "message": "Profile"
+    },
+    "pidTuningControllerHead": {
+        "message": "PID Controller"
     },
     "pidTuningLoadedProfile": {
         "message": "Loaded Profile: <strong>$1</strong>"

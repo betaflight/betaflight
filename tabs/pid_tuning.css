@@ -34,6 +34,30 @@
 
     text-align: right;
 }
+.tab-pid_tuning .controller {
+    float: left;
+
+    width: calc(18% - 2px); /* - border*/
+
+    margin-bottom: 10px;
+    border: 1px solid #8b8b8b;
+}
+.tab-pid_tuning .controller .head {
+    display: block;
+
+    text-align: center;
+    line-height: 20px;
+    font-weight: bold;
+
+    border-bottom: 1px solid #8b8b8b;
+    background-color: #ececec;
+}
+.tab-pid_tuning .controller select {
+    width: 100%;
+    padding-left: calc(100% - 35px);
+    height: 20px;
+    line-height: 20px;
+}
 .tab-pid_tuning .profile {
     float: left;
 
