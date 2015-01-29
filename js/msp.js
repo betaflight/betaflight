@@ -19,6 +19,7 @@ var MSP_codes = {
     MSP_SET_ADJUSTMENT_RANGE:   53,
     MSP_CF_SERIAL_CONFIG:       54,
     MSP_SET_CF_SERIAL_CONFIG:   55,
+    MSP_SONAR:                  58,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -42,7 +43,6 @@ var MSP_codes = {
     MSP_WP:                 118,
     MSP_BOXIDS:             119,
     MSP_SERVO_CONF:         120,
-    MSP_SONAR:              123,
 
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
