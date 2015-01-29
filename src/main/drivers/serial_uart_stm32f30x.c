@@ -35,6 +35,7 @@
 
 #include "serial.h"
 #include "serial_uart.h"
+#include "serial_uart_impl.h"
 
 // Using RX DMA disables the use of receive callbacks
 #define USE_USART1_RX_DMA
@@ -73,8 +74,6 @@
 static uartPort_t uartPort1;
 static uartPort_t uartPort2;
 static uartPort_t uartPort3;
-
-void uartStartTxDMA(uartPort_t *s);
 
 uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 {
