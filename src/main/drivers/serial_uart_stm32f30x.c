@@ -71,10 +71,17 @@
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 #endif
 
+#ifdef USE_USART1
 static uartPort_t uartPort1;
+#endif
+#ifdef USE_USART2
 static uartPort_t uartPort2;
+#endif
+#ifdef USE_USART3
 static uartPort_t uartPort3;
+#endif
 
+#ifdef USE_USART1
 uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 {
     uartPort_t *s;
@@ -147,7 +154,9 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 
     return s;
 }
+#endif
 
+#ifdef USE_USART2
 uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 {
     uartPort_t *s;
@@ -226,7 +235,9 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 
     return s;
 }
+#endif
 
+#ifdef USE_USART3
 uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode)
 {
     uartPort_t *s;
@@ -305,6 +316,7 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode)
 
     return s;
 }
+#endif
 
 static void handleUsartTxDma(uartPort_t *s)
 {
@@ -380,24 +392,29 @@ void usartIrqHandler(uartPort_t *s)
     }
 }
 
+#ifdef USE_USART1
 void USART1_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
 
     usartIrqHandler(s);
 }
+#endif
 
+#ifdef USE_USART2
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort2;
 
     usartIrqHandler(s);
 }
+#endif
 
+#ifdef USE_USART3
 void USART3_IRQHandler(void)
 {
     uartPort_t *s = &uartPort3;
 
     usartIrqHandler(s);
 }
-
+#endif
