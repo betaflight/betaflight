@@ -42,6 +42,7 @@ var MSP_codes = {
     MSP_WP:                 118,
     MSP_BOXIDS:             119,
     MSP_SERVO_CONF:         120,
+    MSP_SONAR:              123,
 
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -259,6 +260,9 @@ var MSP = {
                 break;
             case MSP_codes.MSP_ALTITUDE:
                 SENSOR_DATA.altitude = parseFloat((data.getInt32(0, 1) / 100.0).toFixed(2)); // correct scale factor
+                break;
+            case MSP_codes.MSP_SONAR:
+                SENSOR_DATA.sonar = data.getInt32(0, 1);
                 break;
             case MSP_codes.MSP_ANALOG:
                 ANALOG.voltage = data.getUint8(0) / 10.0;

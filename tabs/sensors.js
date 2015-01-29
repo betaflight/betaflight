@@ -14,6 +14,7 @@ TABS.sensors.initialize = function (callback) {
             SENSOR_DATA.accelerometer[i] = 0;
             SENSOR_DATA.gyroscope[i] = 0;
             SENSOR_DATA.magnetometer[i] = 0;
+            SENSOR_DATA.sonar[i] = 0;
             SENSOR_DATA.debug[i] = 0;
         }
     }
@@ -162,6 +163,14 @@ TABS.sensors.initialize = function (callback) {
         }
     }
 
+    function plot_sonar(enable) {
+        if (enable) {
+            $('.wrapper.sonar').show();
+        } else {
+            $('.wrapper.sonar').hide();
+        }
+    }
+
     function plot_debug(enable) {
         if (enable) {
             $('.wrapper.debug').show();
@@ -182,6 +191,9 @@ TABS.sensors.initialize = function (callback) {
         if (!bit_check(CONFIG.activeSensors, 2)) { // mag
             checkboxes.eq(2).prop('disabled', true);
         }
+        if (!bit_check(CONFIG.activeSensors, 4)) { // sonar
+            checkboxes.eq(4).prop('disabled', true);
+        }
 
         $('.tab-sensors .info .checkboxes input').change(function () {
             var enable = $(this).prop('checked');
@@ -201,6 +213,9 @@ TABS.sensors.initialize = function (callback) {
                     plot_baro(enable);
                     break;
                 case 4:
+                    plot_sonar(enable);
+                    break;
+                case 5:
                     plot_debug(enable);
                     break;
             }
@@ -234,11 +249,13 @@ TABS.sensors.initialize = function (callback) {
             samples_accel_i = 0,
             samples_mag_i = 0,
             samples_baro_i = 0,
+            samples_sonar_i = 0,
             samples_debug_i = 0,
             gyro_data = initDataArray(3),
             accel_data = initDataArray(3),
             mag_data = initDataArray(3),
             baro_data = initDataArray(1),
+            sonar_data = initDataArray(1),
             debug_data = [
             initDataArray(1),
             initDataArray(1),
@@ -250,6 +267,7 @@ TABS.sensors.initialize = function (callback) {
         var accelHelpers = initGraphHelpers('#accel', samples_accel_i, [-2, 2]);
         var magHelpers = initGraphHelpers('#mag', samples_mag_i, [-1, 1]);
         var baroHelpers = initGraphHelpers('#baro', samples_baro_i);
+        var sonarHelpers = initGraphHelpers('#sonar', samples_sonar_i);
         var debugHelpers = [
             initGraphHelpers('#debug1', samples_debug_i),
             initGraphHelpers('#debug2', samples_debug_i),
@@ -286,6 +304,8 @@ TABS.sensors.initialize = function (callback) {
                 $('.tab-sensors select[name="mag_scale"]').val(result.sensor_settings.scales.mag);
 
                 $('.tab-sensors select[name="baro_refresh_rate"]').val(result.sensor_settings.rates.baro);
+                $('.tab-sensors select[name="sonar_refresh_rate"]').val(result.sensor_settings.rates.sonar);
+
                 $('.tab-sensors select[name="debug_refresh_rate"]').val(result.sensor_settings.rates.debug);
 
                 // start polling data by triggering refresh rate change event
@@ -304,6 +324,7 @@ TABS.sensors.initialize = function (callback) {
                 'accel':  parseInt($('.tab-sensors select[name="accel_refresh_rate"]').val(), 10),
                 'mag':    parseInt($('.tab-sensors select[name="mag_refresh_rate"]').val(), 10),
                 'baro':   parseInt($('.tab-sensors select[name="baro_refresh_rate"]').val(), 10),
+                'sonar':  parseInt($('.tab-sensors select[name="sonar_refresh_rate"]').val(), 10),
                 'debug':  parseInt($('.tab-sensors select[name="debug_refresh_rate"]').val(), 10)
             };
 
@@ -350,6 +371,12 @@ TABS.sensors.initialize = function (callback) {
             }
 
             if (checkboxes[4]) {
+                GUI.interval_add('sonar_pull', function sonar_data_pull() {
+                    MSP.send_message(MSP_codes.MSP_SONAR, false, false, update_sonar_graphs);
+                }, rates.sonar, true);
+            }
+
+            if (checkboxes[5]) {
                 GUI.interval_add('debug_pull', function debug_data_pull() {
                     MSP.send_message(MSP_codes.MSP_DEBUG, false, false, update_debug_graphs);
                 }, rates.debug, true);
@@ -395,13 +422,21 @@ TABS.sensors.initialize = function (callback) {
                 raw_data_text_ements.x[3].text(SENSOR_DATA.altitude.toFixed(2));
             }
 
+            function update_sonar_graphs() {
+                updateGraphHelperSize(sonarHelpers);
+
+                samples_sonar_i = addSampleToData(sonar_data, samples_sonar_i, [SENSOR_DATA.sonar]);
+                drawGraph(sonarHelpers, sonar_data, samples_sonar_i);
+                raw_data_text_ements.x[4].text(SENSOR_DATA.sonar.toFixed(2));
+            }
+
             function update_debug_graphs() {
                 for (var i = 0; i < 4; i++) {
                     updateGraphHelperSize(debugHelpers[i]);
 
                     addSampleToData(debug_data[i], samples_debug_i, [SENSOR_DATA.debug[i]]);
                     drawGraph(debugHelpers[i], debug_data[i], samples_debug_i);
-                    raw_data_text_ements.x[4 + i].text(SENSOR_DATA.debug[i]);
+                    raw_data_text_ements.x[5 + i].text(SENSOR_DATA.debug[i]);
                 }
                 samples_debug_i++;
             }
