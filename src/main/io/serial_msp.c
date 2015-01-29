@@ -207,6 +207,8 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_VOLTAGE_METER_CONFIG        56
 #define MSP_SET_VOLTAGE_METER_CONFIG    57
 
+#define MSP_SONAR_ALTITUDE              58 //out message get sonar altitude [cm]
+
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -253,7 +255,6 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SERVO_CONF           120    //out message         Servo settings
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
-#define MSP_SONAR_ALTITUDE       123    //out message         Returns sonar altitude [cm]
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
