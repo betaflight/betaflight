@@ -233,7 +233,7 @@
         "message": "Support"
     },
     "defaultSupport": {
-        "message": "For support please search the forums first or contact your vendor.<br /><br />RC Groups thread is <a href=\"http://www.rcgroups.com/forums/showthread.php?t=2249574&page=1\" target=\"_blank\">here</a>. MultiWii forums thread is <a href=\"http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149\" target=\"_blank\">here</a>.<br /><br />Developers and users hang out in IRC channel on freenode<br /><a href=\"irc://irc.freenode.net/#cleanflight\" target=\"_blank\">irc://irc.freenode.net/#cleanflight</a> or <a href=\"webchat.freenode.net/?channels=cleanflight\" target=\"_blank\">Join via web client</a>."
+        "message": "For support please search the forums first or contact your vendor.<br /><br />RC Groups thread is <a href=\"http://www.rcgroups.com/forums/showthread.php?t=2249574&page=1\" target=\"_blank\">here</a>. MultiWii forums thread is <a href=\"http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149\" target=\"_blank\">here</a>.<br /><br />Developers and users hang out in IRC channel on freenode<br /><a href=\"irc://irc.freenode.net/#cleanflight\" target=\"_blank\">irc://irc.freenode.net/#cleanflight</a> or <a href=\"http://webchat.freenode.net/?channels=cleanflight\" target=\"_blank\">Join via web client</a>."
     },
     "initialSetupBackupAndRestoreApiVersion": {
         "message": "<span style=\"color: red\">Backup and restore functionality disabled.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, backup and restore requires <span style=\"color: green\">$2</span>.  Please backup your settings via the CLI, see Cleanflight documentation for procedure."
