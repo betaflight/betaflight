@@ -101,9 +101,8 @@ const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
 #endif
 };
 
-#else
+#elif defined(CC3D)
 
-#ifdef CC3D
 static serialPortFunction_t serialPortFunctions[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
     {SERIAL_PORT_USB_VCP,     NULL, SCENARIO_UNUSED, FUNCTION_NONE},
@@ -140,7 +139,7 @@ const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT] = {
     {SERIAL_PORT_SOFTSERIAL2,   9600, 19200,    SPF_SUPPORTS_CALLBACK | SPF_IS_SOFTWARE_INVERTABLE}
 #endif
 };
-#endif
+
 #endif
 
 const functionConstraint_t functionConstraints[] = {
@@ -271,25 +270,18 @@ serialPortSearchResult_t *findNextSerialPort(serialPortFunction_e function, cons
         uint8_t serialPortIndex = lookupSerialPortIndexByIdentifier(serialPortFunction->identifier);
         const serialPortConstraint_t *serialPortConstraint = &serialPortConstraints[serialPortIndex];
 
-#if defined(CC3D)
-        if (!feature(FEATURE_SOFTSERIAL) && (
-                serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL1)) {
+#if defined(USE_SOFTSERIAL1)
+        if (!feature(FEATURE_SOFTSERIAL) && serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL1)
             continue;
-        }
-#else
-#if defined(USE_SOFTSERIAL1) ||(defined(USE_SOFTSERIAL2))
-        if (!feature(FEATURE_SOFTSERIAL) && (
-                serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL1 ||
-                serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2
-        )) {
+#endif
+#if defined(USE_SOFTSERIAL2)
+        if (!feature(FEATURE_SOFTSERIAL) && serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2)
             continue;
-        }
 #endif
 #if (defined(NAZE) || defined(OLIMEXINO)) && defined(SONAR)
         if (feature(FEATURE_SONAR) && !feature(FEATURE_RX_PARALLEL_PWM) && (serialPortConstraint->identifier == SERIAL_PORT_SOFTSERIAL2)) {
             continue;
         }
-#endif
 #endif
 
         if ((serialPortConstraint->feature & functionConstraint->requiredSerialPortFeatures) != functionConstraint->requiredSerialPortFeatures) {
