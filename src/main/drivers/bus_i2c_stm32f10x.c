@@ -325,6 +325,9 @@ void i2cInit(I2CDevice index)
     I2Cx_index = index;
     RCC_APB1PeriphClockCmd(i2cHardwareMap[index].peripheral, ENABLE);
 
+    // diable I2C interrrupts first to avoid ER handler triggering
+    I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+
     // clock out stuff to make sure slaves arent stuck
     // This will also configure GPIO as AF_OD at the end
     i2cUnstick();
