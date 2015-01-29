@@ -1437,16 +1437,16 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
         case VAR_INT8:
-            *(char *)ptr = (char)value.int_value;
+            *(int8_t *)ptr = value.int_value;
             break;
 
         case VAR_UINT16:
         case VAR_INT16:
-            *(short *)ptr = (short)value.int_value;
+            *(int16_t *)ptr = value.int_value;
             break;
 
         case VAR_UINT32:
-            *(int *)ptr = (int)value.int_value;
+            *(uint32_t *)ptr = value.int_value;
             break;
 
         case VAR_FLOAT:
@@ -1639,7 +1639,7 @@ void cliProcess(void)
             }
             for (; i < bufferIndex; i++)
                 cliWrite(cliBuffer[i]);
-        } else if (!bufferIndex && c == 4) {
+        } else if (!bufferIndex && c == 4) {   // CTRL-D
             cliExit(cliBuffer);
             return;
         } else if (c == 12) {

@@ -322,13 +322,12 @@ void handleSmartPortTelemetry(void)
         smartPortIdCnt++;
 
         int32_t tmpi;
-        uint32_t tmpui;
         static uint8_t t1Cnt = 0;
 
         switch(id) {
             case FSSP_DATAID_SPEED      :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-                    tmpui = (GPS_speed * 36 + 36 / 2) / 100;
+                    uint32_t tmpui = (GPS_speed * 36 + 36 / 2) / 100;
                     smartPortSendPackage(id, tmpui); // given in 0.1 m/s, provide in KM/H
                     smartPortHasRequest = 0;
                 }
@@ -355,7 +354,7 @@ void handleSmartPortTelemetry(void)
             //case FSSP_DATAID_ADC2       :
             case FSSP_DATAID_LATLONG    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-                    tmpui = 0;
+                    uint32_t tmpui = 0;
                     // the same ID is sent twice, one for longitude, one for latitude
                     // the MSB of the sent uint32_t helps FrSky keep track
                     // the even/odd bit of our counter helps us keep track
