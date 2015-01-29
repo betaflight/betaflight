@@ -5,7 +5,6 @@
     float: left;
 
     margin-left: 10px;
-
     width: calc(40% - 10px);
 }
 .tab-landing .optional_permissions {
@@ -48,9 +47,9 @@
     background-color: #dedcdc;
 }
 .welcome {
-    margin-bottom: 10px;
-
+    height: 171px;
     padding: 5px;
+    margin-bottom: 10px;
 
     border: 1px solid silver;
 }
@@ -61,8 +60,6 @@
     text-decoration: underline;
 }
 .changelog {
-    margin: 0 0 10px 0;
-
     border: 1px solid silver;
 }
 .changelog .title {
@@ -92,7 +89,8 @@
     margin-bottom: 5px;
 }
 .donate {
-    padding: 0 0 5px 0;
+    height: 105px;
+    margin-bottom: 10px;
 
     border: 1px solid silver;
 }
@@ -117,8 +115,9 @@
 
     margin: auto;
 }
+
 .tab-landing .sponsors {
-    margin-top: 10px;
+    height: 105px;
     border: 1px solid silver;
 }
 .tab-landing .sponsors .title {
@@ -139,4 +138,58 @@
 }
 .tab-landing .sponsors p a:hover {
     text-decoration: underline;
+}
+.documentation {
+    height: 135px;
+
+    border: 1px solid silver;
+}
+.documentation .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+.documentation p {
+    padding: 5px;
+}
+.documentation p a {
+    font-weight: bold;
+}
+.documentation p a:hover {
+    text-decoration: underline;
+}
+.support {
+    height: 135px;
+
+    border: 1px solid silver;
+}
+.support .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+.support p {
+    padding: 5px;
+}
+.support p a {
+    font-weight: bold;
+}
+.support p a:hover {
+    text-decoration: underline;
+}
+.support .wrapper {
+    height: 114px;
+
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
