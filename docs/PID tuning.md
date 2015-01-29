@@ -71,7 +71,7 @@ need to be increased in order to perform like PID controller 0.
 
 The LEVEL "D" setting is not used by this controller.
 
-### PID controller 2, "Baseflight"
+### PID controller 2, "LuxFloat"
 
 PID Controller 2 is Lux's new floating point PID controller. Both controller 0 and 1 use integer arithmetic, which was
 faster in the days of the slower 8-bit MultiWii controllers, but is less precise.
@@ -82,10 +82,7 @@ don't have to be retuned when the looptime setting changes.
 There were initially some problems with horizon mode, and sluggishness in acro mode, that were recently fixed by
 nebbian in v1.6.0. The autotune feature does not work on this controller, so don't try to autotune it.
 
-Even though PC2 is called "pidBaseflight" in the code, it was never in Baseflight or MultiWii. A better name might have
-been pidFloatingPoint, or pidCleanflight. It is the first PID Controller designed for 32-bit processors and not derived
-from MultiWii. I believe it was named pidBaseflight because it was to be the first true 32-bit processor native PID
-controller, and thus the native Baseflight PC, but Timecop never accepted the code into Baseflight.
+It is the first PID Controller designed for 32-bit processors and not derived from MultiWii.
 
 The strength of the auto-leveling correction applied during Angle mode is set by the parameter "level_angle" which
 is labeled "LEVEL Integral" in the GUI. This can be used to tune the auto-leveling strength in Angle mode compared to
@@ -126,7 +123,7 @@ For the ALIENWII32 targets the gyroscale is removed for more yaw authority. This
 
 PID Controller 5 is an port of the PID controller from the Harakiri firmware.
 
-The algorithm is leveraging more floating point math. This PID controller also compensates for different looptimes on roll and pitch. It likely don’t need retuning of the PID values when looptime is changing. Actually there are two settings hardcoded which are configurable via the GUI in Harakiri:
+The algorithm is leveraging more floating point math. This PID controller also compensates for different looptimes on roll and pitch. It likely donï¿½t need retuning of the PID values when looptime is changing. Actually there are two settings hardcoded which are configurable via the GUI in Harakiri:
 
         OLD_YAW 0 // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw.
         MAIN_CUT_HZ 12.0f // (default 12Hz, Range 1-50Hz)

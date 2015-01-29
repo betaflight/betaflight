@@ -97,7 +97,7 @@ bool shouldAutotune(void)
 }
 #endif
 
-static void pidBaseflight(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     float RateError, errorAngle, AngleRate, gyroRate;
@@ -736,7 +736,7 @@ void setPIDController(int type)
             pid_controller = pidRewrite;
             break;
         case 2:
-            pid_controller = pidBaseflight;
+            pid_controller = pidLuxFloat;
             break;
         case 3:
             pid_controller = pidMultiWii23;
