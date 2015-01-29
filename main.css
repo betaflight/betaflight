@@ -154,6 +154,18 @@ input[type="number"]::-webkit-inner-spin-button {
 #sensor-status .on {
     background-color: #b8cf02;
 }
+#button-help {
+    float: right;
+    height: 18px;
+    line-height: 18px;
+    background-color: yellow;
+    color: #000;
+    font-weight: bold;
+    border: solid 1px;
+    padding: 0px 2px 0px 2px;
+    margin: 0px 10px 0px 0px;
+    display: none;
+}
 #options {
     float: right;
 
