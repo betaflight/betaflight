@@ -125,7 +125,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   4 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   5 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -209,6 +209,8 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #define MSP_SONAR_ALTITUDE              58 //out message get sonar altitude [cm]
 
+#define MSP_PID_CONTROLLER              59
+#define MSP_SET_PID_CONTROLLER          60
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -892,6 +894,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(sizeof(pidnames) - 1);
         serializeNames(pidnames);
         break;
+    case MSP_PID_CONTROLLER:
+        headSerialReply(1);
+        serialize8(currentProfile->pidController);
+        break;
     case MSP_MODE_RANGES:
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
@@ -1197,6 +1203,10 @@ static bool processInCommand(void)
     case MSP_SET_ACC_TRIM:
         currentProfile->accelerometerTrims.values.pitch = read16();
         currentProfile->accelerometerTrims.values.roll  = read16();
+        break;
+    case MSP_SET_PID_CONTROLLER:
+        currentProfile->pidController = read8();
+        setPIDController(currentProfile->pidController);
         break;
     case MSP_SET_PID:
         if (currentProfile->pidController == 2) {
