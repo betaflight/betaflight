@@ -48,8 +48,10 @@ static uartPort_t uartPort3;
 #endif
 
 // Using RX DMA disables the use of receive callbacks
-#if !defined(CC3D) // FIXME move board specific code to target.h files.
 #define USE_USART1_RX_DMA
+
+#if defined(CC3D) // FIXME move board specific code to target.h files.
+#undef USE_USART1_RX_DMA
 #endif
 
 void uartStartTxDMA(uartPort_t *s);
