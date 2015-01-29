@@ -176,8 +176,8 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         $('.mainGrid').selectable({
             filter: ' > div',
             stop: function() {
-                var modesInSelection = [];
-                var dirInSelection = [];
+                var functionsInSelection = [];
+                var directionsInSelection = [];
 
                 $('.ui-selected').each(function() {
 
@@ -202,14 +202,14 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                     TABS.led_strip.directions.forEach(function(letter) {
                         var className = '.dir-' + letter;
                         if ($(that).is(className)) {
-                            dirInSelection.push(className);
+                            directionsInSelection.push(className);
                         }
                     });
 
                     TABS.led_strip.functions.forEach(function(letter) {
                         var className = '.function-' + letter;
                         if ($(that).is(className)) {
-                            modesInSelection.push(className);
+                            functionsInSelection.push(className);
                         }
                     });
 
@@ -226,13 +226,13 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 });
                 
                 $('.functions button').removeClass('btnOn');
-                modesInSelection.forEach(function(eachMode) {
-                    $(eachMode).addClass('btnOn');
+                functionsInSelection.forEach(function(function_e) {
+                    $(function_e).addClass('btnOn');
                 });
 
                 $('.directions button').removeClass('btnOn');
-                dirInSelection.forEach(function(eachMode) {
-                    $(eachMode).addClass('btnOn');
+                directionsInSelection.forEach(function(direction_e) {
+                    $(direction_e).addClass('btnOn');
                 });
             }
         });
