@@ -184,7 +184,7 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 static void i2c_er_handler(void)
 {
     // Read the I2Cx status register
-    volatile uint32_t SR1Register = I2Cx->SR1;
+    uint32_t SR1Register = I2Cx->SR1;
 
     if (SR1Register & 0x0F00) {                                         // an error
         error = true;
@@ -333,7 +333,7 @@ void i2cInit(I2CDevice index)
     I2C_DeInit(I2Cx);
     I2C_StructInit(&i2c);
 
-    I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);               // Enable EVT and ERR interrupts - they are enabled by the first request
+    I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);               // Disable EVT and ERR interrupts - they are enabled by the first request
     i2c.I2C_Mode = I2C_Mode_I2C;
     i2c.I2C_DutyCycle = I2C_DutyCycle_2;
     i2c.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
