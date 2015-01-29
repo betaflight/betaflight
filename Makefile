@@ -444,6 +444,7 @@ CC3D_SRC	 = \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sonar_hcsr04.c \
 		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \

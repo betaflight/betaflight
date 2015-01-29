@@ -58,6 +58,11 @@ static void ECHO_EXTI_IRQHandler(void)
     EXTI_ClearITPendingBit(sonarHardware->exti_line);
 }
 
+void EXTI0_IRQHandler(void)
+{
+    ECHO_EXTI_IRQHandler();
+}
+
 void EXTI1_IRQHandler(void)
 {
     ECHO_EXTI_IRQHandler();

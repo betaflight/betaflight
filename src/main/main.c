@@ -47,6 +47,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
+#include "drivers/sonar_hcsr04.h"
 
 #include "rx/rx.h"
 
@@ -114,6 +115,8 @@ void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void loop(void);
 void spektrumBind(rxConfig_t *rxConfig);
+const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
+void sonarInit(const sonarHardware_t *sonarHardware);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -193,6 +196,21 @@ void init(void)
     mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
 
     memset(&pwm_params, 0, sizeof(pwm_params));
+
+#ifdef SONAR
+    const sonarHardware_t *sonarHardware = NULL;
+
+    if (feature(FEATURE_SONAR)) {
+        sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
+        sonarGPIOConfig_t sonarGPIOConfig = {
+                .echoPin = sonarHardware->trigger_pin,
+                .triggerPin = sonarHardware->echo_pin,
+                .gpio = SONAR_GPIO
+        };
+        pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
+    }
+#endif
+
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING)
         pwm_params.airplane = true;
@@ -383,7 +401,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        sonarInit(&masterConfig.batteryConfig);
+        sonarInit(sonarHardware);
     }
 #endif
 

@@ -19,6 +19,8 @@ Currently the only supported sensor is the HCSR04 sensor.
 | Parallel PWM/ADC current sensor | PB8 / Motor 5 | PB9 / Motor 6 | NO (5v tolerant)    |
 | PPM/Serial RX                   | PB0 / RC7     | PB1 / RC8     | YES (3.3v input)    |
 
+#### Constraints
+
 Current meter cannot be used in conjunction with Parallel PWM and Sonar.
 
 ### Olimexino
@@ -27,4 +29,16 @@ Current meter cannot be used in conjunction with Parallel PWM and Sonar.
 | ------------- | ------------- | ------------------- |
 | PB0 / RC7     | PB1 / RC8     | YES (3.3v input)    |
 
-Current meter cannot be used in conjunction with sonar.
+#### Constraints
+
+Current meter cannot be used in conjunction with Sonar.
+
+### CC3D
+
+| Trigger       | Echo          | Inline 1k resistors |
+| ------------- | ------------- | ------------------- |
+| PB5           | PB0           | YES (3.3v input)    |
+
+#### Constraints
+
+Sonar cannot be used in conjuction with SoftSerial or Parallel PWM.

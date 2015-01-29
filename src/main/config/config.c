@@ -804,6 +804,12 @@ void validateAndFixConfig(void)
         masterConfig.mixerConfig.pid_at_min_throttle = 0;
     }
 
+#if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+        featureClear(FEATURE_SONAR);
+    }
+#endif
+
     useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;

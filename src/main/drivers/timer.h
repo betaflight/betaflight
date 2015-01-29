@@ -60,7 +60,7 @@ typedef struct timerOvrHandlerRec_s {
 typedef struct {
     TIM_TypeDef *tim;
     GPIO_TypeDef *gpio;
-    uint32_t pin;
+    uint16_t pin;
     uint8_t channel;
     uint8_t irq;
     uint8_t outputEnable;

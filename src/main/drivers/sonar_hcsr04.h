@@ -25,6 +25,8 @@ typedef struct sonarHardware_s {
     IRQn_Type exti_irqn;
 } sonarHardware_t;
 
+#define SONAR_GPIO GPIOB
+
 void hcsr04_init(const sonarHardware_t *sonarHardware);
 
 void hcsr04_start_reading(void);
