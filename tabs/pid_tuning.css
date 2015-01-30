@@ -54,7 +54,6 @@
 }
 .tab-pid_tuning .controller select {
     width: 100%;
-    padding-left: calc(100% - 35px);
     height: 20px;
     line-height: 20px;
 }
