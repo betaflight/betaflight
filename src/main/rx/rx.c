@@ -21,6 +21,8 @@
 
 #include <string.h>
 
+#include "build_config.h"
+
 #include "platform.h"
 
 #include "common/maths.h"
@@ -59,7 +61,7 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
-uint16_t rssi;                  // range: [0;1023]
+uint16_t rssi = 0;                  // range: [0;1023]
 
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
@@ -377,6 +379,9 @@ void updateRSSIPWM(void)
 
 void updateRSSIADC(uint32_t currentTime)
 {
+#ifndef USE_ADC
+    UNUSED(currentTime);
+#else
     static uint8_t adcRssiSamples[RSSI_ADC_SAMPLE_COUNT];
     static uint8_t adcRssiSampleIndex = 0;
     static uint32_t rssiUpdateAt = 0;
@@ -403,6 +408,7 @@ void updateRSSIADC(uint32_t currentTime)
     adcRssiMean = adcRssiMean / RSSI_ADC_SAMPLE_COUNT;
 
     rssi = (uint16_t)((constrain(adcRssiMean, 0, 100) / 100.0f) * 1023.0f);
+#endif
 }
 
 void updateRSSI(uint32_t currentTime)
