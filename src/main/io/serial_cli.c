@@ -114,7 +114,7 @@ static void cliMixer(char *cmdline);
 
 #ifdef FLASHFS
 static void cliFlashIdent(char *cmdline);
-static void cliFlashEraseSector(char *cmdline);
+static void cliFlashErase(char *cmdline);
 static void cliFlashWrite(char *cmdline);
 static void cliFlashRead(char *cmdline);
 #endif
@@ -175,7 +175,7 @@ const clicmd_t cmdTable[] = {
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
 #ifdef FLASHFS
-    { "flash_erase_sector", "erase flash sector at the given address", cliFlashEraseSector },
+    { "flash_erase", "erase flash chip", cliFlashErase },
     { "flash_ident", "get flash chip details", cliFlashIdent },
     { "flash_read", "read text from the given address", cliFlashRead },
     { "flash_write", "write text to the given address", cliFlashWrite },
@@ -757,12 +757,13 @@ static void cliFlashIdent(char *cmdline)
             layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize);
 }
 
-static void cliFlashEraseSector(char *cmdline)
+static void cliFlashErase(char *cmdline)
 {
-    uint32_t address = atoi(cmdline);
+    UNUSED(cmdline);
 
-    flashfsEraseRange(address, address + 1);
-    printf("Erased sector at %u.\r\n", address);
+    printf("Erasing, please wait...\r\n");
+    flashfsEraseCompletely();
+    printf("Erased flash chip.\r\n");
 }
 
 static void cliFlashWrite(char *cmdline)

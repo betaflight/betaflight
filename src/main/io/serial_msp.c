@@ -53,6 +53,7 @@
 #include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/flashfs.h"
 #include "telemetry/telemetry.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -121,7 +122,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   4 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   5 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -218,6 +219,10 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 // DEPRECATED - Use MSP_BUILD_INFO instead
 #define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
+
+#define MSP_DATAFLASH_SUMMARY           70 //out message - get description of dataflash chip
+#define MSP_DATAFLASH_READ              71 //out message - get content of dataflash chip
+#define MSP_DATAFLASH_ERASE             72 //in message - erase dataflash chip
 
 //
 // Multwii original MSP commands
@@ -421,24 +426,24 @@ uint32_t read32(void)
     return t;
 }
 
-void headSerialResponse(uint8_t err, uint8_t s)
+void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
     currentPort->checksum = 0;               // start calculating a new checksum
-    serialize8(s);
+    serialize8(responseBodySize);
     serialize8(currentPort->cmdMSP);
 }
 
-void headSerialReply(uint8_t s)
+void headSerialReply(uint8_t responseBodySize)
 {
-    headSerialResponse(0, s);
+    headSerialResponse(0, responseBodySize);
 }
 
-void headSerialError(uint8_t s)
+void headSerialError(uint8_t responseBodySize)
 {
-    headSerialResponse(1, s);
+    headSerialResponse(1, responseBodySize);
 }
 
 void tailSerialReply(void)
@@ -517,6 +522,44 @@ reset:
         goto reset;
     }
 }
+
+void serializeDataflashSummaryReply(void)
+{
+#ifdef FLASHFS
+    const flashGeometry_t *geometry = flashfsGetGeometry();
+    headSerialReply(2 * 4);
+    serialize32(geometry->sectors);
+    serialize32(geometry->totalSize);
+#else
+    headSerialReply(2 * 4);
+    serialize32(0);
+    serialize32(0);
+#endif
+}
+
+#ifdef FLASHFS
+void serializeDataflashReadReply(uint32_t address, uint8_t size)
+{
+    enum { DATAFLASH_READ_REPLY_CHUNK_SIZE = 128 };
+
+    uint8_t buffer[DATAFLASH_READ_REPLY_CHUNK_SIZE];
+
+    if (size > DATAFLASH_READ_REPLY_CHUNK_SIZE) {
+        size = DATAFLASH_READ_REPLY_CHUNK_SIZE;
+    }
+
+    headSerialReply(4 + size);
+
+    serialize32(address);
+
+    flashfsSeekAbs(address);
+    flashfsRead(buffer, size);
+
+    for (int i = 0; i < size; i++) {
+        serialize8(buffer[i]);
+    }
+}
+#endif
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, mspPortUsage_e usage)
 {
@@ -1128,6 +1171,22 @@ static bool processOutCommand(uint8_t cmdMSP)
         }
         break;
 #endif
+
+    case MSP_DATAFLASH_SUMMARY:
+        serializeDataflashSummaryReply();
+        break;
+
+#ifdef FLASHFS
+    case MSP_DATAFLASH_READ:
+        {
+            uint32_t readAddress = read32();
+            uint8_t readSize = read8();
+
+            serializeDataflashReadReply(readAddress, readSize);
+        }
+        break;
+#endif
+
     case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
@@ -1333,6 +1392,13 @@ static bool processInCommand(void)
         writeEEPROM();
         readEEPROM();
         break;
+
+#ifdef FLASHFS
+    case MSP_DATAFLASH_ERASE:
+        flashfsEraseCompletely();
+        break;
+#endif
+
 #ifdef GPS
     case MSP_SET_RAW_GPS:
         if (read8()) {

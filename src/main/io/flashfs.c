@@ -112,32 +112,42 @@ static uint32_t flashfsTransmitBufferUsed()
     return FLASHFS_WRITE_BUFFER_SIZE - bufferTail + bufferHead;
 }
 
-static uint32_t flashfsTransmitBufferRemaining()
-{
-    return FLASHFS_WRITE_BUFFER_USABLE - flashfsTransmitBufferUsed();
-}
-
 /**
- * Waits for the flash device to be ready to accept writes, then write the given buffers to flash sequentially.
+ * Write the given buffers to flash sequentially at the current tail address, advancing the tail address after
+ * each write.
  *
- * Advances the address of the beginning of the supplied buffers and reduces the size of the buffers according to how
- * many bytes get written.
+ * In synchronous mode, waits for the flash to become ready before writing so that every byte requested can be written.
+ *
+ * In asynchronous mode, if the flash is busy, then the write is aborted and the routine returns immediately.
+ * In this case the returned number of bytes written will be less than the total amount requested.
+ *
+ * Modifies the supplied buffer pointers and sizes to reflect how many bytes remain in each of them.
  *
  * bufferCount: the number of buffers provided
  * buffers: an array of pointers to the beginning of buffers
  * bufferSizes: an array of the sizes of those buffers
+ * sync: true if we should wait for the device to be idle before writes, otherwise if the device is busy the
+ *       write will be aborted and this routine will return immediately.
+ *
+ * Returns the number of bytes written
  */
-static void flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSizes, int bufferCount)
+static uint32_t flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSizes, int bufferCount, bool sync)
 {
     const flashGeometry_t *geometry = m25p16_getGeometry();
 
-    uint32_t bytesTotalRemaining = 0;
+    uint32_t bytesTotal = 0;
 
     int i;
 
     for (i = 0; i < bufferCount; i++) {
-        bytesTotalRemaining += bufferSizes[i];
+        bytesTotal += bufferSizes[i];
     }
+
+    if (!sync && !m25p16_isReady()) {
+        return 0;
+    }
+
+    uint32_t bytesTotalRemaining = bytesTotal;
 
     while (bytesTotalRemaining > 0) {
         uint32_t bytesTotalThisIteration;
@@ -186,7 +196,16 @@ static void flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSizes, 
 
         // Advance the cursor in the file system to match the bytes we wrote
         flashfsSetTailAddress(tailAddress + bytesTotalThisIteration);
+
+        /*
+         * We'll have to wait for that write to complete before we can issue the next one, so if
+         * the user requested asynchronous writes, break now.
+         */
+        if (!sync)
+            break;
     }
+
+    return bytesTotal - bytesTotalRemaining;
 }
 
 /*
@@ -210,6 +229,22 @@ static void flashfsGetDirtyDataBuffers(uint8_t const *buffers[], uint32_t buffer
 }
 
 /**
+ * Called after bytes have been written from the buffer to advance the position of the tail by the given amount.
+ */
+static void flashfsAdvanceTailInBuffer(uint32_t delta)
+{
+    bufferTail += delta;
+
+    if (bufferTail > FLASHFS_WRITE_BUFFER_SIZE) {
+        bufferTail -= FLASHFS_WRITE_BUFFER_SIZE;
+    }
+
+    if (bufferTail == bufferHead) {
+        flashfsClearBuffer();
+    }
+}
+
+/**
  * If the flash is ready to accept writes, flush the buffer to it, otherwise schedule
  * a flush for later and return immediately.
  */
@@ -220,19 +255,15 @@ void flashfsFlushAsync()
         return; // Nothing to flush
     }
 
-    if (m25p16_isReady()) {
-        uint8_t const * buffers[2];
-        uint32_t bufferSizes[2];
+    uint8_t const * buffers[2];
+    uint32_t bufferSizes[2];
+    uint32_t bytesWritten;
 
-        flashfsGetDirtyDataBuffers(buffers, bufferSizes);
-        flashfsWriteBuffers(buffers, bufferSizes, 2);
+    flashfsGetDirtyDataBuffers(buffers, bufferSizes);
+    bytesWritten = flashfsWriteBuffers(buffers, bufferSizes, 2, false);
+    flashfsAdvanceTailInBuffer(bytesWritten);
 
-        flashfsClearBuffer();
-
-        shouldFlush = false;
-    } else {
-        shouldFlush = true;
-    }
+    shouldFlush = bufferTail != bufferHead;
 }
 
 /**
@@ -248,9 +279,14 @@ void flashfsFlushSync()
         return; // Nothing to write
     }
 
-    m25p16_waitForReady(10); //TODO caller should customize timeout
+    uint8_t const * buffers[2];
+    uint32_t bufferSizes[2];
 
-    flashfsFlushAsync();
+    flashfsGetDirtyDataBuffers(buffers, bufferSizes);
+    flashfsWriteBuffers(buffers, bufferSizes, 2, true);
+
+    // We've written our entire buffer now:
+    flashfsClearBuffer();
 }
 
 void flashfsSeekAbs(uint32_t offset)
@@ -282,25 +318,56 @@ void flashfsWriteByte(uint8_t byte)
 
 void flashfsWrite(const uint8_t *data, unsigned int len)
 {
-    // Would writing this cause our buffer to reach the flush threshold? If so just write it now
-    if (shouldFlush || len + flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
-        uint8_t const * buffers[3];
-        uint32_t bufferSizes[3];
+    uint8_t const * buffers[3];
+    uint32_t bufferSizes[3];
 
-        // There could be two dirty buffers to write out already:
-        flashfsGetDirtyDataBuffers(buffers, bufferSizes);
+    // There could be two dirty buffers to write out already:
+    flashfsGetDirtyDataBuffers(buffers, bufferSizes);
 
-        // Plus the buffer the user supplied:
-        buffers[2] = data;
-        bufferSizes[2] = len;
+    // Plus the buffer the user supplied:
+    buffers[2] = data;
+    bufferSizes[2] = len;
 
-        // Write all three buffers through to the flash
-        flashfsWriteBuffers(buffers, bufferSizes, 3);
+    /*
+     * Would writing this data to our buffer cause our buffer to reach the flush threshold? If so try to write through
+     * to the flash now
+     */
+    if (shouldFlush || bufferSizes[0] + bufferSizes[1] + bufferSizes[2] >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
+        uint32_t bytesWritten;
 
-        // And now our buffer is empty
-        flashfsClearBuffer();
+        // Attempt to write all three buffers through to the flash asynchronously
+        bytesWritten = flashfsWriteBuffers(buffers, bufferSizes, 3, false);
 
-        return;
+        if (bufferSizes[0] == 0 && bufferSizes[1] == 0) {
+            // We wrote all the data that was previously buffered
+            flashfsClearBuffer();
+
+            if (bufferSizes[2] == 0) {
+                // And we wrote all the data the user supplied! Job done!
+                return;
+            }
+        } else {
+            // We only wrote a portion of the old data, so advance the tail to remove the bytes we did write from the buffer
+            flashfsAdvanceTailInBuffer(bytesWritten);
+        }
+
+        if (bufferSizes[0] + bufferSizes[1] + bufferSizes[2] > FLASHFS_WRITE_BUFFER_USABLE) {
+            /*
+             * We don't have enough room to store the new data in the buffer without blocking waiting for the flash to
+             * become ready, so we're forced to write it through synchronously.
+             *
+             * TODO we can skip this code and just drop the data for this write instead if the caller wants to
+             * prioritize predictable response time over reliable data delivery (i.e. sync/async)
+             */
+            flashfsWriteBuffers(buffers, bufferSizes, 3, true);
+            flashfsClearBuffer();
+
+            return;
+        }
+
+        // Fall through and add the remainder of the incoming data to our buffer
+        data = buffers[2];
+        len = bufferSizes[2];
     }
 
     // Buffer up the data the user supplied instead of writing it right away
