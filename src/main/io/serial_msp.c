@@ -551,6 +551,7 @@ static void serializeDataflashReadReply(uint32_t address, uint8_t size)
     enum { DATAFLASH_READ_REPLY_CHUNK_SIZE = 128 };
 
     uint8_t buffer[DATAFLASH_READ_REPLY_CHUNK_SIZE];
+    int bytesRead;
 
     if (size > DATAFLASH_READ_REPLY_CHUNK_SIZE) {
         size = DATAFLASH_READ_REPLY_CHUNK_SIZE;
@@ -561,9 +562,10 @@ static void serializeDataflashReadReply(uint32_t address, uint8_t size)
     serialize32(address);
 
     flashfsSeekAbs(address);
-    flashfsRead(buffer, size);
+    // bytesRead will be lower than that requested if we reach end of volume
+    bytesRead = flashfsRead(buffer, size);
 
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < bytesRead; i++) {
         serialize8(buffer[i]);
     }
 }
@@ -1203,9 +1205,8 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_DATAFLASH_READ:
         {
             uint32_t readAddress = read32();
-            uint8_t readSize = read8();
 
-            serializeDataflashReadReply(readAddress, readSize);
+            serializeDataflashReadReply(readAddress, 128);
         }
         break;
 #endif

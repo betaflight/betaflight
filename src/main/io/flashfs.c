@@ -401,9 +401,17 @@ void flashfsWrite(const uint8_t *data, unsigned int len)
  */
 int flashfsRead(uint8_t *data, unsigned int len)
 {
-    int result = m25p16_readBytes(tailAddress, data, len);
+    int bytesRead;
 
-    flashfsSetTailAddress(tailAddress + result);
+    // Did caller try to read past the end of the volume?
+    if (tailAddress + len > flashfsGetSize()) {
+        // Truncate their request
+        len = flashfsGetSize() - tailAddress;
+    }
 
-    return result;
+    bytesRead = m25p16_readBytes(tailAddress, data, len);
+
+    flashfsSetTailAddress(tailAddress + bytesRead);
+
+    return bytesRead;
 }
