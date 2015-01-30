@@ -102,7 +102,9 @@
     "tabLogging": {
         "message": "Logging"
     },
-
+    "tabDataflash": {
+        "message": "Dataflash"
+    },
     "tabAdjustments": {
         "message": "Adjustments"
     },
@@ -843,6 +845,13 @@
         "message": "Automatically loaded previous log file: <strong>$1</strong>"
     },
 
+    "dataflashButtonSaveFile": {
+        "message": "Save flash to file..."
+    },
+    "dataflashButtonErase": {
+        "message": "Erase flash"
+    },
+    
     "firmwareFlasherReleaseSummaryHead": {    
         "message": "Release info"
     },

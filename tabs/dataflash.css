@@ -1,0 +1,81 @@
+.tab-dataflash {
+}
+.tab-dataflash .dataflash-info dd{
+    
+}
+
+.tab-dataflash .note {
+    padding: 5px;
+    border: 1px dashed silver;
+}
+.tab-dataflash .properties {
+    margin-top: 10px;
+}
+.tab-dataflash .dataflash-info {
+    overflow:hidden;
+}
+.tab-dataflash .dataflash-info dt {
+    float: left;
+    width: 12em;
+    height: 20px;
+    line-height: 20px;
+
+    font-weight: bold;
+}
+.tab-dataflash .dataflash-info dd {
+    display: block;
+    height: 20px;
+    line-height: 20px;
+}
+.tab-dataflash .speed {
+    margin-top: 5px;
+    width: 80px;
+
+    border: 1px solid silver;
+}
+.tab-dataflash .info {
+    margin-top: 10px;
+}
+.tab-dataflash .info dt {
+    float: left;
+    width: 120px;
+    height: 20px;
+    line-height: 20px;
+
+    font-weight: bold;
+}
+.tab-dataflash .info dd {
+    display: block;
+    margin-left: 130px;
+    height: 20px;
+    line-height: 20px;
+}
+.tab-dataflash .buttons {
+    width: calc(100% - 20px);
+
+    position: absolute;
+    bottom: 10px;
+}
+.tab-dataflash .buttons a {
+    display: block;
+    float: right;
+
+    margin-left: 10px;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-dataflash .buttons a:hover {
+    background-color: #dedcdc;
+}
+.tab-dataflash .buttons .back {
+    display: none;
+}
