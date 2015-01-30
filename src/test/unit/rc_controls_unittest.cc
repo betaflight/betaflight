@@ -674,12 +674,12 @@ TEST(RcControlsTest, processPIDIncreasePidController2)
     EXPECT_EQ(0.1f, pidProfile.P_f[PIDPITCH]);
     EXPECT_EQ(5.1f, pidProfile.P_f[PIDROLL]);
     EXPECT_EQ(7.1f, pidProfile.P_f[PIDYAW]);
-    EXPECT_EQ(10.1f, pidProfile.I_f[PIDPITCH]);
-    EXPECT_EQ(15.1f, pidProfile.I_f[PIDROLL]);
-    EXPECT_EQ(17.1f, pidProfile.I_f[PIDYAW]);
-    EXPECT_EQ(20.1f, pidProfile.D_f[PIDPITCH]);
-    EXPECT_EQ(25.1f, pidProfile.D_f[PIDROLL]);
-    EXPECT_EQ(27.1f, pidProfile.D_f[PIDYAW]);
+    EXPECT_EQ(10.01f, pidProfile.I_f[PIDPITCH]);
+    EXPECT_EQ(15.01f, pidProfile.I_f[PIDROLL]);
+    EXPECT_EQ(17.01f, pidProfile.I_f[PIDYAW]);
+    EXPECT_EQ(20.001f, pidProfile.D_f[PIDPITCH]);
+    EXPECT_EQ(25.001f, pidProfile.D_f[PIDROLL]);
+    EXPECT_EQ(27.001f, pidProfile.D_f[PIDYAW]);
 
 }
 
