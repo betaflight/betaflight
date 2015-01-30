@@ -226,7 +226,7 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
         return errorAngle;
     }
 
-    if (IS_PID_CONTROLLER_FP_BASED(pidController) {
+    if (IS_PID_CONTROLLER_FP_BASED(pidController)) {
         // TODO support floating point based pid controllers
         return errorAngle;
     }
