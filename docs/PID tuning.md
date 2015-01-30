@@ -85,7 +85,7 @@ nebbian in v1.6.0. The autotune feature does not work on this controller, so don
 It is the first PID Controller designed for 32-bit processors and not derived from MultiWii.
 
 The strength of the auto-leveling correction applied during Angle mode is set by the parameter "level_angle" which
-is labeled "LEVEL Integral" in the GUI. This can be used to tune the auto-leveling strength in Angle mode compared to
+is labeled "LEVEL Proportional" in the GUI. This can be used to tune the auto-leveling strength in Angle mode compared to
 Horizon mode. The default is 5.0.
 
 The strength of the auto-leveling correction applied during Horizon mode is set by the parameter "level_horizon" which
