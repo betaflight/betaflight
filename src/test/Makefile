@@ -263,6 +263,7 @@ $(OBJECT_DIR)/rc_controls_unittest.o : \
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rc_controls_unittest.cc -o $@
 
 rc_controls_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/io/rc_controls.o \
 	$(OBJECT_DIR)/rc_controls_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a

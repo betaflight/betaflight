@@ -20,6 +20,7 @@
 
 extern "C" {
     #include "platform.h"
+    #include "common/maths.h"
     #include "common/axis.h"
     #include "flight/flight.h"
 
@@ -32,16 +33,6 @@ extern "C" {
 
 extern "C" {
 extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfig, pidProfile_t *pidProfile);
-
-int constrain(int amt, int low, int high)
-{
-    if (amt < low)
-        return low;
-    else if (amt > high)
-        return high;
-    else
-        return amt;
-}
 }
 
 TEST(RcControlsTest, updateActivatedModesWithAllInputsAtMidde)
@@ -594,15 +585,15 @@ TEST(RcControlsTest, processPIDIncreasePidController0)
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     // and
-    EXPECT_EQ(pidProfile.P8[PIDPITCH], 1);
-    EXPECT_EQ(pidProfile.P8[PIDROLL], 6);
-    EXPECT_EQ(pidProfile.P8[YAW], 8);
-    EXPECT_EQ(pidProfile.I8[PIDPITCH], 11);
-    EXPECT_EQ(pidProfile.I8[PIDROLL], 16);
-    EXPECT_EQ(pidProfile.I8[YAW], 18);
-    EXPECT_EQ(pidProfile.D8[PIDPITCH], 21);
-    EXPECT_EQ(pidProfile.D8[PIDROLL], 26);
-    EXPECT_EQ(pidProfile.D8[YAW], 28);
+    EXPECT_EQ(1, pidProfile.P8[PIDPITCH]);
+    EXPECT_EQ(6, pidProfile.P8[PIDROLL]);
+    EXPECT_EQ(8, pidProfile.P8[YAW]);
+    EXPECT_EQ(11, pidProfile.I8[PIDPITCH]);
+    EXPECT_EQ(16, pidProfile.I8[PIDROLL]);
+    EXPECT_EQ(18, pidProfile.I8[YAW]);
+    EXPECT_EQ(21, pidProfile.D8[PIDPITCH]);
+    EXPECT_EQ(26, pidProfile.D8[PIDROLL]);
+    EXPECT_EQ(28, pidProfile.D8[YAW]);
 }
 
 TEST(RcControlsTest, processPIDIncreasePidController2)
@@ -680,15 +671,15 @@ TEST(RcControlsTest, processPIDIncreasePidController2)
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     // and
-    EXPECT_EQ(pidProfile.P_f[PIDPITCH], 1.0f);
-    EXPECT_EQ(pidProfile.P_f[PIDROLL], 6.0f);
-    EXPECT_EQ(pidProfile.P_f[PIDYAW], 8.0f);
-    EXPECT_EQ(pidProfile.I_f[PIDPITCH], 11.0f);
-    EXPECT_EQ(pidProfile.I_f[PIDROLL], 16.0f);
-    EXPECT_EQ(pidProfile.I_f[PIDYAW], 18.0f);
-    EXPECT_EQ(pidProfile.D_f[PIDPITCH], 21.0f);
-    EXPECT_EQ(pidProfile.D_f[PIDROLL], 26.0f);
-    EXPECT_EQ(pidProfile.D_f[PIDYAW], 28.0f);
+    EXPECT_EQ(0.1f, pidProfile.P_f[PIDPITCH]);
+    EXPECT_EQ(5.1f, pidProfile.P_f[PIDROLL]);
+    EXPECT_EQ(7.1f, pidProfile.P_f[PIDYAW]);
+    EXPECT_EQ(10.1f, pidProfile.I_f[PIDPITCH]);
+    EXPECT_EQ(15.1f, pidProfile.I_f[PIDROLL]);
+    EXPECT_EQ(17.1f, pidProfile.I_f[PIDYAW]);
+    EXPECT_EQ(20.1f, pidProfile.D_f[PIDPITCH]);
+    EXPECT_EQ(25.1f, pidProfile.D_f[PIDROLL]);
+    EXPECT_EQ(27.1f, pidProfile.D_f[PIDYAW]);
 
 }
 
