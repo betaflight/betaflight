@@ -163,7 +163,7 @@ const clicmd_t cmdTable[] = {
     { "color", "configure colors", cliColor },
 #endif
     { "defaults", "reset to defaults and reboot", cliDefaults },
-    { "dump", "print configurable settings in a pastable form", cliDump },
+    { "dump", "dump configuration", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
     { "get", "get variable value", cliGet },
@@ -249,7 +249,7 @@ const clivalue_t valueTable[] = {
     { "serial_port_2_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[1], 0, SERIAL_PORT_SCENARIO_MAX },
 #if (SERIAL_PORT_COUNT > 2)
     { "serial_port_3_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[2], 0, SERIAL_PORT_SCENARIO_MAX },
-#if !defined(CC3D)
+#if (SERIAL_PORT_COUNT > 3)
     { "serial_port_4_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[3], 0, SERIAL_PORT_SCENARIO_MAX },
 #if (SERIAL_PORT_COUNT > 4)
     { "serial_port_5_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[4], 0, SERIAL_PORT_SCENARIO_MAX },
@@ -408,8 +408,10 @@ const clivalue_t valueTable[] = {
     { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], 0, 200 },
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], 0, 200 },
 
+#ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, 1, 32 },
     { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, 1, 32 },
+#endif
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
