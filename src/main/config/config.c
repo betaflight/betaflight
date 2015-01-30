@@ -110,7 +110,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 90;
+static const uint8_t EEPROM_CONF_VERSION = 91;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -121,6 +121,8 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
+    pidProfile->pidController = 0;
+
     pidProfile->P8[ROLL] = 40;
     pidProfile->I8[ROLL] = 30;
     pidProfile->D8[ROLL] = 23;
@@ -386,7 +388,6 @@ static void resetConf(void)
     masterConfig.looptime = 3500;
     masterConfig.emf_avoidance = 0;
 
-    currentProfile->pidController = 0;
     resetPidProfile(&currentProfile->pidProfile);
 
     resetControlRateConfig(&masterConfig.controlRateProfiles[0]);
@@ -603,7 +604,7 @@ void activateConfig(void)
     useTelemetryConfig(&masterConfig.telemetryConfig);
 #endif
 
-    setPIDController(currentProfile->pidController);
+    setPIDController(currentProfile->pidProfile.pidController);
 
 #ifdef GPS
     gpsUseProfile(&currentProfile->gpsProfile);

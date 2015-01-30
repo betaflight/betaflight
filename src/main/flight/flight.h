@@ -32,12 +32,16 @@ typedef enum {
     PID_ITEM_COUNT
 } pidIndex_e;
 
+#define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
+
 typedef struct pidProfile_s {
+    uint8_t pidController;                  // 0 = multiwii original, 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 1, 2 = Luggi09s new baseflight pid
+
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    float P_f[3];                           // float p i and d factors for the new baseflight pid
+    float P_f[3];                           // float p i and d factors for lux float pid controller
     float I_f[3];
     float D_f[3];
     float A_level;

@@ -207,7 +207,10 @@ typedef struct adjustmentState_s {
     uint32_t timeoutAt;
 } adjustmentState_t;
 
+
+#ifndef MAX_SIMULTANEOUS_ADJUSTMENT_COUNT
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
+#endif
 
 #define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
 

@@ -21,6 +21,8 @@
 
 #include <math.h>
 
+#include "platform.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -360,6 +362,7 @@ void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adj
 
 void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
     int newValue;
+    float newFloatValue;
 
     if (delta > 0) {
         queueConfirmationBeep(2);
@@ -391,34 +394,70 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             controlRateConfig->yawRate = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             break;
         case ADJUSTMENT_PITCH_ROLL_P:
-            newValue = (int)pidProfile->P8[PIDPITCH] + delta;
-            pidProfile->P8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
-            newValue = (int)pidProfile->P8[PIDROLL] + delta;
-            pidProfile->P8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
+                newFloatValue = (int)pidProfile->P_f[PIDPITCH] + delta;
+                pidProfile->P_f[PIDPITCH] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+                newFloatValue = (int)pidProfile->P_f[PIDROLL] + delta;
+                pidProfile->P_f[PIDROLL] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            } else {
+                newValue = (int)pidProfile->P8[PIDPITCH] + delta;
+                pidProfile->P8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+                newValue = (int)pidProfile->P8[PIDROLL] + delta;
+                pidProfile->P8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            }
             break;
         case ADJUSTMENT_PITCH_ROLL_I:
-            newValue = (int)pidProfile->I8[PIDPITCH] + delta;
-            pidProfile->I8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
-            newValue = (int)pidProfile->I8[PIDROLL] + delta;
-            pidProfile->I8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
+                newFloatValue = (int)pidProfile->I_f[PIDPITCH] + delta;
+                pidProfile->I_f[PIDPITCH] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+                newFloatValue = (int)pidProfile->I_f[PIDROLL] + delta;
+                pidProfile->I_f[PIDROLL] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            } else {
+                newValue = (int)pidProfile->I8[PIDPITCH] + delta;
+                pidProfile->I8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+                newValue = (int)pidProfile->I8[PIDROLL] + delta;
+                pidProfile->I8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            }
             break;
         case ADJUSTMENT_PITCH_ROLL_D:
-            newValue = (int)pidProfile->D8[PIDPITCH] + delta;
-            pidProfile->D8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
-            newValue = (int)pidProfile->D8[PIDROLL] + delta;
-            pidProfile->D8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
+                newFloatValue = (int)pidProfile->D_f[PIDPITCH] + delta;
+                pidProfile->D_f[PIDPITCH] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+                newFloatValue = (int)pidProfile->D_f[PIDROLL] + delta;
+                pidProfile->D_f[PIDROLL] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            } else {
+                newValue = (int)pidProfile->D8[PIDPITCH] + delta;
+                pidProfile->D8[PIDPITCH] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+                newValue = (int)pidProfile->D8[PIDROLL] + delta;
+                pidProfile->D8[PIDROLL] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            }
             break;
         case ADJUSTMENT_YAW_P:
-            newValue = (int)pidProfile->P8[PIDYAW] + delta;
-            pidProfile->P8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
+                newFloatValue = (int)pidProfile->P_f[PIDYAW] + delta;
+                pidProfile->P_f[PIDYAW] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            } else {
+                newValue = (int)pidProfile->P8[PIDYAW] + delta;
+                pidProfile->P8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            }
             break;
         case ADJUSTMENT_YAW_I:
-            newValue = (int)pidProfile->I8[PIDYAW] + delta;
-            pidProfile->I8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
+                newFloatValue = (int)pidProfile->I_f[PIDYAW] + delta;
+                pidProfile->I_f[PIDYAW] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            } else {
+                newValue = (int)pidProfile->I8[PIDYAW] + delta;
+                pidProfile->I8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            }
             break;
         case ADJUSTMENT_YAW_D:
-            newValue = (int)pidProfile->D8[PIDYAW] + delta;
-            pidProfile->D8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
+                newFloatValue = (int)pidProfile->D_f[PIDYAW] + delta;
+                pidProfile->D_f[PIDYAW] = constrain(newFloatValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            } else {
+                newValue = (int)pidProfile->D8[PIDYAW] + delta;
+                pidProfile->D8[PIDYAW] = constrain(newValue, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            }
             break;
         default:
             break;
