@@ -33,11 +33,13 @@
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 
-int32_t sonarAlt = -1;                  // in cm , -1 indicate sonar is not in range - inclination adjusted by imu
+// in cm , -1 indicate sonar is not in range - inclination adjusted by imu
 
 #ifdef SONAR
 
-void Sonar_init(void)
+static int32_t calculatedAltitude;
+
+void sonarInit(void)
 {
 #if defined(NAZE) || defined(EUSTM32F103RC) || defined(PORT103R)
     static const sonarHardware_t const sonarPWM56 = {
@@ -74,25 +76,33 @@ void Sonar_init(void)
 #endif
 
     sensorsSet(SENSOR_SONAR);
-    sonarAlt = 0;
+    calculatedAltitude = -1;
 }
 
-void Sonar_update(void)
+void sonarUpdate(void)
 {
     hcsr04_start_reading();
+}
+
+int32_t sonarRead(void)
+{
+    return hcsr04_get_distance();
 }
 
 int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle)
 {
     // calculate sonar altitude only if the sonar is facing downwards(<25deg)
     if (tiltAngle > 250)
-        return -1;
+        calculatedAltitude = -1;
+    else
+        calculatedAltitude = sonarAlt * (900.0f - tiltAngle) / 900.0f;
 
-    return sonarAlt * (900.0f - tiltAngle) / 900.0f;
+    return calculatedAltitude;
 }
 
-int32_t sonarRead(void) {
-    return hcsr04_get_distance();
+int32_t sonarGetLatestAltitude(void)
+{
+    return calculatedAltitude;
 }
 
 #endif

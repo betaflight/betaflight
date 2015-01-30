@@ -111,7 +111,6 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 extern int16_t heading, magHold;
 
 extern int32_t AltHold;
-extern int32_t EstAlt;
 extern int32_t vario;
 
 void setPIDController(int type);

@@ -31,13 +31,13 @@ strength of the correction to be backed off in order to avoid overshooting the t
 
 ## PID controllers
 
-Cleanflight has three built-in PID controllers which each have different flight behavior. Each controller requires
+Cleanflight has 6 built-in PID controllers which each have different flight behavior. Each controller requires
 different PID settings for best performance, so if you tune your craft using one PID controller, those settings will
 likely not work well on any of the other controllers.
 
-You can change between PID controllers by running `set pid_controller = X` on the CLI tab of the Cleanflight
-Configurator, where X is the number of the controller you want to use. Please read these notes first before trying one
-out!
+You can change between PID controllers by running `set pid_controller=n` on the CLI tab of the Cleanflight
+Configurator, where `n` is the number of the controller you want to use. Please read these notes first before trying one
+out.
 
 ### PID controller 0, "MultiWii" (default)
 
@@ -71,7 +71,7 @@ need to be increased in order to perform like PID controller 0.
 
 The LEVEL "D" setting is not used by this controller.
 
-### PID controller 2, "Baseflight"
+### PID controller 2, "LuxFloat"
 
 PID Controller 2 is Lux's new floating point PID controller. Both controller 0 and 1 use integer arithmetic, which was
 faster in the days of the slower 8-bit MultiWii controllers, but is less precise.
@@ -82,10 +82,7 @@ don't have to be retuned when the looptime setting changes.
 There were initially some problems with horizon mode, and sluggishness in acro mode, that were recently fixed by
 nebbian in v1.6.0. The autotune feature does not work on this controller, so don't try to autotune it.
 
-Even though PC2 is called "pidBaseflight" in the code, it was never in Baseflight or MultiWii. A better name might have
-been pidFloatingPoint, or pidCleanflight. It is the first PID Controller designed for 32-bit processors and not derived
-from MultiWii. I believe it was named pidBaseflight because it was to be the first true 32-bit processor native PID
-controller, and thus the native Baseflight PC, but Timecop never accepted the code into Baseflight.
+It is the first PID Controller designed for 32-bit processors and not derived from MultiWii.
 
 The strength of the auto-leveling correction applied during Angle mode is set by the parameter "level_angle" which
 is labeled "LEVEL Integral" in the GUI. This can be used to tune the auto-leveling strength in Angle mode compared to
@@ -110,7 +107,7 @@ stick, and no self-leveling will be applied at 75% stick and onwards.
 
 PID Controller 3 is an direct port of the PID controller from MultiWii 2.3 and later.
 
-The algorithm is handling roll and pitch differently to yaw. users with problems on yaw authority should try this one.
+The algorithm is handling roll and pitch differently to yaw. Users with problems on yaw authority should try this one.
 
 For the ALIENWII32 targets the gyroscale is removed for even more yaw authority. This will provide best performance on very small multicopters with brushed motors.
 
@@ -118,6 +115,22 @@ For the ALIENWII32 targets the gyroscale is removed for even more yaw authority.
 
 PID Controller 4 is an hybrid version of two MultiWii PID controllers. Roll and pitch is using the MultiWii 2.2 algorithm and yaw is using the 2.3 algorithm. 
 
-This PID controller was initialy implementd for testing purposes but is also performing quite well.
+This PID controller was initialy implemented for testing purposes but is also performing quite well.
 
 For the ALIENWII32 targets the gyroscale is removed for more yaw authority. This will provide best performance on very small multicopters with brushed motors.
+
+### PID controller 5, "Harakiri"
+
+PID Controller 5 is an port of the PID controller from the Harakiri firmware.
+
+The algorithm is leveraging more floating point math. This PID controller also compensates for different looptimes on roll and pitch. It likely don�t need retuning of the PID values when looptime is changing. Actually there are two settings hardcoded which are configurable via the GUI in Harakiri:
+
+        OLD_YAW 0 // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw.
+        MAIN_CUT_HZ 12.0f // (default 12Hz, Range 1-50Hz)
+
+The PID controller is flight tested and running well with the default PID settings. If you want do acrobatics start slowly.
+
+Yaw authority is also quite good.
+
+
+

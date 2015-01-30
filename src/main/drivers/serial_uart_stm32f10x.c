@@ -47,13 +47,20 @@ static uartPort_t uartPort2;
 static uartPort_t uartPort3;
 #endif
 
+// Using RX DMA disables the use of receive callbacks
+#define USE_USART1_RX_DMA
+
+#if defined(CC3D) // FIXME move board specific code to target.h files.
+#undef USE_USART1_RX_DMA
+#endif
+
 void uartStartTxDMA(uartPort_t *s);
 
 void usartIrqCallback(uartPort_t *s)
 {
     uint16_t SR = s->USARTx->SR;
 
-    if (SR & USART_FLAG_RXNE) {
+    if (SR & USART_FLAG_RXNE && !s->rxDMAChannel) {
         // If we registered a callback, pass crap there
         if (s->port.callback) {
             s->port.callback(s->USARTx->DR);
@@ -98,11 +105,13 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     
     s->USARTx = USART1;
 
-    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
-    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 
+#ifdef USE_USART1_RX_DMA
     s->rxDMAChannel = DMA1_Channel5;
+    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+#endif
     s->txDMAChannel = DMA1_Channel4;
+    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
@@ -129,6 +138,15 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
+#ifndef USE_USART1_RX_DMA
+    // RX/TX Interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART1);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART1);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
+
     return s;
 }
 
@@ -146,20 +164,11 @@ void DMA1_Channel4_IRQHandler(void)
         s->txDMAEmpty = true;
 }
 
-// USART1 Tx IRQ Handler
+// USART1 Rx/Tx IRQ Handler
 void USART1_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
-    uint16_t SR = s->USARTx->SR;
-
-    if (SR & USART_FLAG_TXE) {
-        if (s->port.txBufferTail != s->port.txBufferHead) {
-            s->USARTx->DR = s->port.txBuffer[s->port.txBufferTail];
-            s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
-        } else {
-            USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
-        }
-    }
+    usartIrqCallback(s);
 }
 
 #endif

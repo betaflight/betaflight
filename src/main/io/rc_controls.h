@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "rx/rx.h"
+
 typedef enum {
     BOXARM = 0,
     BOXANGLE,
