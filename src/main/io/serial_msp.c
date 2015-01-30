@@ -865,7 +865,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
-        if (currentProfile->pidProfile.pidController == 2) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
+        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
             for (i = 0; i < 3; i++) {
                 serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 250));
                 serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 250));
@@ -1209,7 +1209,7 @@ static bool processInCommand(void)
         setPIDController(currentProfile->pidProfile.pidController);
         break;
     case MSP_SET_PID:
-        if (currentProfile->pidProfile.pidController == 2) {
+        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) {
             for (i = 0; i < 3; i++) {
                 currentProfile->pidProfile.P_f[i] = (float)read8() / 10.0f;
                 currentProfile->pidProfile.I_f[i] = (float)read8() / 100.0f;
