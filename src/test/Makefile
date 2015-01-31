@@ -53,7 +53,7 @@ TESTS = \
 	rc_controls_unittest \
 	ledstrip_unittest \
 	ws2811_unittest \
-	mixer_unittest
+	lowpass_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -320,16 +320,30 @@ ws2811_unittest : \
 
 	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
-$(OBJECT_DIR)/flight/mixer.o : $(USER_DIR)/flight/mixer.c $(USER_DIR)/flight/mixer.h $(GTEST_HEADERS)
-	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
 
-$(OBJECT_DIR)/mixer_unittest.o : $(TEST_DIR)/mixer_unittest.cc $(USER_DIR)/flight/mixer.h $(GTEST_HEADERS)
-	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/mixer_unittest.cc -o $@
+$(OBJECT_DIR)/flight/lowpass.o : \
+	$(USER_DIR)/flight/lowpass.c \
+	$(USER_DIR)/flight/lowpass.h \
+	$(GTEST_HEADERS)
 
-mixer_unittest : $(OBJECT_DIR)/flight/mixer.o $(OBJECT_DIR)/flight/mixer.o $(OBJECT_DIR)/mixer_unittest.o $(OBJECT_DIR)/gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/lowpass.c -o $@
+
+$(OBJECT_DIR)/lowpass_unittest.o : \
+	$(TEST_DIR)/lowpass_unittest.cc \
+	$(USER_DIR)/flight/lowpass.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/lowpass_unittest.cc -o $@
+
+lowpass_unittest : \
+	$(OBJECT_DIR)/flight/lowpass.o \
+	$(OBJECT_DIR)/lowpass_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
 
 test: $(TESTS)
 	set -e && for test in $(TESTS) ; do \

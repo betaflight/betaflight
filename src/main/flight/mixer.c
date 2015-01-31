@@ -18,11 +18,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <math.h>
-
-#ifdef UNIT_TEST
-#include <stdio.h>
-#endif
 
 #include "platform.h"
 
@@ -30,12 +25,11 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
-#ifndef UNIT_TEST
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
-#endif
 
 #include "rx/rx.h"
 #include "io/gimbal.h"
@@ -44,6 +38,7 @@
 
 #include "flight/mixer.h"
 #include "flight/flight.h"
+#include "flight/lowpass.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -55,19 +50,16 @@
 
 //#define MIXER_DEBUG
 
-#include "drivers/system.h"
 extern int16_t debug[4];
 
-#ifndef UNIT_TEST
 uint8_t motorCount = 0;
-static int useServo;
-static uint8_t servoCount;
-#endif
-
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 int16_t servo[MAX_SUPPORTED_SERVOS];
 
+static int useServo;
+
+static uint8_t servoCount;
 
 static servoParam_t *servoConf;
 static mixerConfig_t *mixerConfig;
@@ -77,10 +69,8 @@ static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
 static gimbalConfig_t *gimbalConfig;
 
-#ifndef UNIT_TEST
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static mixerMode_e currentMixerMode;
-#endif
 static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 
 static const motorMixer_t mixerQuadX[] = {
@@ -244,7 +234,6 @@ void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DCon
     gimbalConfig = gimbalConfigToUse;
 }
 
-#ifndef UNIT_TEST
 int16_t determineServoMiddleOrForwardFromChannel(int nr)
 {
     uint8_t channelToForwardFrom = servoConf[nr].forwardFromChannel;
@@ -524,7 +513,7 @@ void mixTable(void)
     int16_t maxMotor;
     uint32_t i;
 
-    // paranoia: give all servos a default command; prevents drift on unused servos with lowpass enabled
+    // paranoia: give all servos a default command
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
@@ -676,99 +665,6 @@ bool isMixerUsingServos(void)
     return useServo;
 }
 
-#endif
-
-void generate_lowpass_coeffs2(int16_t freq, lowpass_t *filter)
-{
-    float fixedScaler;
-    int i;
-
-    // generates coefficients for a 2nd-order butterworth low-pass filter
-    float freqf = (float)freq*0.001f;
-    float omega = tanf(M_PI*freqf/2.0f);
-    float scaling = 1.0f / (omega*omega + 1.4142136f*omega + 1.0f);
-
-
-#ifdef UNIT_TEST
-    printf("lowpass cutoff: %f, omega: %f\n", freqf, omega);
-#endif
-   
-    filter->bf[0] = scaling * omega*omega;
-    filter->bf[1] = 2.0f * filter->bf[0];
-    filter->bf[2] = filter->bf[0];
-
-    filter->af[0] = 1.0f;
-    filter->af[1] = scaling * (2.0f * omega*omega - 2.0f);
-    filter->af[2] = scaling * (omega*omega - 1.4142136f * omega + 1.0f);
-
-    // Scale for fixed-point
-    filter->input_bias = 1500; // Typical servo range is 1500 +/- 500
-    filter->input_shift = 16;
-    filter->coeff_shift = 24; 
-    fixedScaler = (float)(1ULL << filter->coeff_shift);
-    for (i = 0; i < LOWPASS_NUM_COEF; i++) {
-        filter->a[i] = LPF_ROUND(filter->af[i] * fixedScaler);
-        filter->b[i] = LPF_ROUND(filter->bf[i] * fixedScaler);
-#ifdef UNIT_TEST
-        printf("(%d) bf: %f af: %f b: %ld a: %ld\n", i, 
-                filter->bf[i], filter->af[i], filter->b[i], filter->a[i]);
-#endif
-    }
-
-    filter->freq = freq;
-}
-
-static int32_t lowpass_fixed(lowpass_t *filter, int32_t in, int16_t freq)
-{
-    int16_t coefIdx;
-    int64_t out;
-    int32_t in_s;
-  
-    // Check to see if cutoff frequency changed
-    if (freq != filter->freq) {
-        filter->init = false;
-    }
-
-    // Initialize if needed
-    if (!filter->init) {
-        generate_lowpass_coeffs2(freq, filter);
-        for (coefIdx = 0; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
-            filter->x[coefIdx] = (in - filter->input_bias) << filter->input_shift;
-            filter->y[coefIdx] = (in - filter->input_bias) << filter->input_shift;
-        }
-        filter->init = true;
-    }
-
-    // Unbias input and scale
-    in_s = (in - filter->input_bias) << filter->input_shift;
-
-    // Delays
-    for (coefIdx = LOWPASS_NUM_COEF-1; coefIdx > 0; coefIdx--) {
-        filter->x[coefIdx] = filter->x[coefIdx-1];
-        filter->y[coefIdx] = filter->y[coefIdx-1];
-    }
-    filter->x[0] = in_s;
-
-    // Accumulate result
-    out = filter->x[0] * filter->b[0];
-    for (coefIdx = 1; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
-        out -= filter->y[coefIdx] * filter->a[coefIdx];
-        out += filter->x[coefIdx] * filter->b[coefIdx];
-    }
-
-    // Scale output by coefficient shift
-    out >>= filter->coeff_shift;
-    filter->y[0] = (int32_t)out;
-
-    // Scale output by input shift and round
-    out = (out + (1 << (filter->input_shift-1))) >> filter->input_shift;
-    
-    // Reapply bias
-    out += filter->input_bias;
-
-    return (int32_t)out;
-}
-
 void filterServos(void)
 {
     int16_t servoIdx;
@@ -779,7 +675,7 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = (int16_t)lowpass_fixed(&lowpassFilters[servoIdx], servo[servoIdx], mixerConfig->servo_lowpass_freq);
+            servo[servoIdx] = (int16_t)lowpassFixed(&lowpassFilters[servoIdx], servo[servoIdx], mixerConfig->servo_lowpass_freq);
 
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);

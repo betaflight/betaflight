@@ -92,26 +92,6 @@ typedef struct servoParam_t {
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 
-#define LOWPASS_NUM_COEF 3
-#define LPF_ROUND(x) (x < 0 ? (x - 0.5f) : (x + 0.5f))
-
-typedef struct lowpass_t {
-    bool init;
-    int16_t freq;                           // Normalized freq in 1/1000ths
-    float bf[LOWPASS_NUM_COEF];
-    float af[LOWPASS_NUM_COEF];
-    int64_t b[LOWPASS_NUM_COEF];
-    int64_t a[LOWPASS_NUM_COEF];
-    int16_t coeff_shift;
-    int16_t input_shift;
-    int32_t input_bias;
-    float xf[LOWPASS_NUM_COEF];
-    float yf[LOWPASS_NUM_COEF];
-    int32_t x[LOWPASS_NUM_COEF];
-    int32_t y[LOWPASS_NUM_COEF];
-} lowpass_t;
-
-
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 extern int16_t servo[MAX_SUPPORTED_SERVOS];

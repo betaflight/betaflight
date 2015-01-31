@@ -15,29 +15,19 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
-
 #include <limits.h>
 
 extern "C" {
-    #include "flight/mixer.h" 
-    #include "rx/rx.h"
-    #include "io/gimbal.h"
-    #include "io/escservo.h"
-    extern void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse, escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse, airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfigToUse, gimbalConfig_t *gimbalConfigToUse);
-    extern void generate_lowpass_coeffs2(int16_t freq, lowpass_t *filter);
+    #include "flight/lowpass.h" 
 }
 
-uint32_t debug[4];
-static int16_t servoRef[MAX_SUPPORTED_SERVOS];
-static int16_t referenceOut[MAX_SUPPORTED_SERVOS];
-static uint16_t freq;
-static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
-static servoParam_t servoConfig[MAX_SUPPORTED_SERVOS];
+static lowpass_t lowpassFilterReference;
+static lowpass_t lowpassFilter;
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-static float lowpass_ref(lowpass_t *filter, float in, int16_t freq)
+static float lowpassRef(lowpass_t *filter, float in, int16_t freq)
 {
     int16_t coefIdx;
     float out;
@@ -49,7 +39,7 @@ static float lowpass_ref(lowpass_t *filter, float in, int16_t freq)
 
     // Initialize if needed
     if (!filter->init) {
-        generate_lowpass_coeffs2(freq, filter);
+        generateLowpassCoeffs2(freq, filter);
         for (coefIdx = 0; coefIdx < LOWPASS_NUM_COEF; coefIdx++) {
             filter->xf[coefIdx] = in;
             filter->yf[coefIdx] = in;
@@ -75,24 +65,14 @@ static float lowpass_ref(lowpass_t *filter, float in, int16_t freq)
     return out;
 }
 
-static void filterServosReference(void)
-{
-    int16_t servoIdx;
-
-    for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-        // Round to nearest
-        referenceOut[servoIdx] = (int16_t)(lowpass_ref(&lowpassFilters[servoIdx], (float)servoRef[servoIdx], freq) + 0.5f);
-    }
-}
-
-
-TEST(MixerTest, ServoLowpassFilter)
+TEST(LowpassTest, Lowpass)
 {
     int16_t servoCmds[3000];
     int16_t expectedOut[3000];
-    uint8_t servoIdx;
+    int16_t referenceOut;
+    int16_t filterOut;
     uint16_t sampleIdx;
-    static mixerConfig_t mixerConfig;
+    int16_t freq;
 
     uint16_t sampleCount = sizeof(servoCmds) / sizeof(int16_t);
 
@@ -115,38 +95,26 @@ TEST(MixerTest, ServoLowpassFilter)
         }
     }
 
-    // Set mixer configuration
-    for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-        servoConfig[servoIdx].min = 0;
-        servoConfig[servoIdx].max = 3000;
-    }
-
     // Test all frequencies
-    for (freq = 10; freq <= 400; freq++)
-    {
+    for (freq = 10; freq <= 400; freq++) {
         printf("*** Testing freq: %d (%f)\n", freq, ((float)freq * 0.001f));
 
-        mixerConfig.servo_lowpass_enable = 1;
-        mixerConfig.servo_lowpass_freq = freq;
-        mixerUseConfigs(servoConfig, NULL, NULL, &mixerConfig, NULL, NULL, NULL);
-
         // Run tests
-        for (sampleIdx = 0; sampleIdx < sampleCount; sampleIdx++) {
-            for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-                servo[servoIdx] = servoCmds[sampleIdx];
-                servoRef[servoIdx] = servoCmds[sampleIdx];
-            }
+        for (sampleIdx = 0; sampleIdx < sampleCount; sampleIdx++) 
+        {
+            // Filter under test
+            filterOut = (int16_t)lowpassFixed(&lowpassFilter, servoCmds[sampleIdx], freq);
 
-            filterServos();
-            filterServosReference();
+            // Floating-point reference
+            referenceOut = (int16_t)(lowpassRef(&lowpassFilterReference, (float)servoCmds[sampleIdx], freq) + 0.5f);
 
-            for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-                if (expectedOut[sampleIdx] >= 0) {
-                    EXPECT_EQ(servo[servoIdx], expectedOut[sampleIdx]);
-                }
-                EXPECT_LE(servo[servoIdx], referenceOut[servoIdx] + 1);
-                EXPECT_GE(servo[servoIdx], referenceOut[servoIdx] - 1);
+            if (expectedOut[sampleIdx] >= 0) {
+                EXPECT_EQ(filterOut, expectedOut[sampleIdx]);
             }
+            // Some tolerance
+            // TODO adjust precision to remove the need for this?
+            EXPECT_LE(filterOut, referenceOut + 1);
+            EXPECT_GE(filterOut, referenceOut - 1);
         } // for each sample
     } // for each freq
 }
@@ -155,21 +123,6 @@ TEST(MixerTest, ServoLowpassFilter)
 
 extern "C" {
 
-void delay(uint32_t ms)
-{
-    UNUSED(ms);
-    return;
-}
-
-int constrain(int amt, int low, int high)
-{
-    return (amt > high ? high : (amt < low ? low : amt));
-}
-
-uint32_t micros()
-{
-    return 0;
-}
 }
 
 
