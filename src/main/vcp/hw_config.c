@@ -92,11 +92,11 @@ void Set_System(void)
     GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;        // HJI
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;     // HJI
 #else
-            RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); // HJI
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); // HJI
 
-            GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;// HJI
-            GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;// HJI
-            GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;// HJI
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;// HJI
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;// HJI
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;// HJI
 #endif
 
     GPIO_Init(GPIOA, &GPIO_InitStructure);                // HJI
@@ -123,6 +123,13 @@ void Set_System(void)
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource12, GPIO_AF_14);
 
 #endif /* STM32F37X  && STM32F303xC)*/
+#if defined(STM32F10X)
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+#endif
 
     /* Configure the EXTI line 18 connected internally to the USB IP */
     EXTI_ClearITPendingBit(EXTI_Line18);

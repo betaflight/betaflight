@@ -73,59 +73,46 @@ int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 rollAndPitchInclination_t inclination = { { 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
-static void getEstimatedAttitude(void);
-
 imuRuntimeConfig_t *imuRuntimeConfig;
 pidProfile_t *pidProfile;
 accDeadband_t *accDeadband;
 
-void configureImu(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile, accDeadband_t *initialAccDeadband)
+void configureIMU(
+    imuRuntimeConfig_t *initialImuRuntimeConfig,
+    pidProfile_t *initialPidProfile,
+    accDeadband_t *initialAccDeadband,
+    float accz_lpf_cutoff,
+    //TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
+    uint16_t throttle_correction_angle
+)
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
     pidProfile = initialPidProfile;
     accDeadband = initialAccDeadband;
+    fc_acc = calculateAccZLowPassFilterRCTimeConstant(accz_lpf_cutoff);
+    //TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
+    throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 }
 
-void imuInit()
+void initIMU()
 {
-    smallAngle = lrintf(acc_1G * cosf(RAD * imuRuntimeConfig->small_angle));
+    smallAngle = lrintf(acc_1G * cosf(degreesToRadians(imuRuntimeConfig->small_angle)));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
-    gyroScaleRad = gyro.scale * (M_PI / 180.0f) * 0.000001f;
+    gyroScaleRad = gyro.scale * (M_PIf / 180.0f) * 0.000001f;
 }
 
-void calculateThrottleAngleScale(uint16_t throttle_correction_angle)
+//TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
+float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
-    throttleAngleScale = (1800.0f / M_PI) * (900.0f / throttle_correction_angle);
+    return (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
 }
 
-void calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
+/*
+* Calculate RC time constant used in the accZ lpf.
+*/
+float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
 {
-    fc_acc = 0.5f / (M_PI * accz_lpf_cutoff); // calculate RC time constant used in the accZ lpf
-}
-
-void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
-{
-    static int16_t gyroYawSmooth = 0;
-
-    gyroGetADC();
-    if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings(accelerometerTrims);
-        getEstimatedAttitude();
-    } else {
-        accADC[X] = 0;
-        accADC[Y] = 0;
-        accADC[Z] = 0;
-    }
-
-    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
-    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
-
-    if (mixerMode == MIXER_TRI) {
-        gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
-        gyroYawSmooth = gyroData[FD_YAW];
-    } else {
-        gyroData[FD_YAW] = gyroADC[FD_YAW];
-    }
+    return 0.5f / (M_PIf * accz_lpf_cutoff);
 }
 
 // **************************************************
@@ -144,56 +131,6 @@ void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
 
 
 t_fp_vector EstG;
-
-// Normalize a vector
-void normalizeV(struct fp_vector *src, struct fp_vector *dest)
-{
-    float length;
-
-    length = sqrtf(src->X * src->X + src->Y * src->Y + src->Z * src->Z);
-    if (length != 0) {
-        dest->X = src->X / length;
-        dest->Y = src->Y / length;
-        dest->Z = src->Z / length;
-    }
-}
-
-// Rotate Estimated vector(s) with small angle approximation, according to the gyro data
-void rotateV(struct fp_vector *v, fp_angles_t *delta)
-{
-    struct fp_vector v_tmp = *v;
-
-    // This does a  "proper" matrix rotation using gyro deltas without small-angle approximation
-    float mat[3][3];
-    float cosx, sinx, cosy, siny, cosz, sinz;
-    float coszcosx, sinzcosx, coszsinx, sinzsinx;
-
-    cosx = cosf(delta->angles.roll);
-    sinx = sinf(delta->angles.roll);
-    cosy = cosf(delta->angles.pitch);
-    siny = sinf(delta->angles.pitch);
-    cosz = cosf(delta->angles.yaw);
-    sinz = sinf(delta->angles.yaw);
-
-    coszcosx = cosz * cosx;
-    sinzcosx = sinz * cosx;
-    coszsinx = sinx * cosz;
-    sinzsinx = sinx * sinz;
-
-    mat[0][0] = cosz * cosy;
-    mat[0][1] = -cosy * sinz;
-    mat[0][2] = siny;
-    mat[1][0] = sinzcosx + (coszsinx * siny);
-    mat[1][1] = coszcosx - (sinzsinx * siny);
-    mat[1][2] = -sinx * cosy;
-    mat[2][0] = (sinzsinx) - (coszcosx * siny);
-    mat[2][1] = (coszsinx) + (sinzcosx * siny);
-    mat[2][2] = cosy * cosx;
-
-    v->X = v_tmp.X * mat[0][0] + v_tmp.Y * mat[1][0] + v_tmp.Z * mat[2][0];
-    v->Y = v_tmp.X * mat[0][1] + v_tmp.Y * mat[1][1] + v_tmp.Z * mat[2][1];
-    v->Z = v_tmp.X * mat[0][2] + v_tmp.Y * mat[1][2] + v_tmp.Z * mat[2][2];
-}
 
 void accSum_reset(void)
 {
@@ -248,8 +185,37 @@ void acc_calc(uint32_t deltaT)
     accSumCount++;
 }
 
-// baseflight calculation by Luggi09 originates from arducopter
-static int16_t calculateHeading(t_fp_vector *vec)
+/*
+* Baseflight calculation by Luggi09 originates from arducopter
+* ============================================================
+* This function rotates magnetic vector to cancel actual yaw and
+* pitch of craft. Then it computes it's direction in X/Y plane.
+* This value is returned as compass heading, value is 0-360 degrees.
+*
+* Note that Earth's magnetic field is not parallel with ground unless
+* you are near equator. Its inclination is considerable, >60 degrees
+* towards ground in most of Europe.
+*
+* First we consider it in 2D:
+*
+* An example, the vector <1, 1> would be turned into the heading
+* 45 degrees, representing it's angle clockwise from north.
+*
+*      ***************** *
+*      *       |   <1,1> *
+*      *       |  /      *
+*      *       | /       *
+*      *       |/        *
+*      *       *         *
+*      *                 *
+*      *                 *
+*      *                 *
+*      *                 *
+*      *******************
+*
+* //TODO: Add explanation for how it uses the Z dimension.
+*/
+int16_t calculateHeading(t_fp_vector *vec)
 {
     int16_t head;
 
@@ -259,8 +225,12 @@ static int16_t calculateHeading(t_fp_vector *vec)
     float sinePitch = sinf(anglerad[AI_PITCH]);
     float Xh = vec->A[X] * cosinePitch + vec->A[Y] * sineRoll * sinePitch + vec->A[Z] * sinePitch * cosineRoll;
     float Yh = vec->A[Y] * cosineRoll - vec->A[Z] * sineRoll;
-    float hd = (atan2f(Yh, Xh) * 1800.0f / M_PI + magneticDeclination) / 10.0f;
+    //TODO: Replace this comment with an explanation of why Yh and Xh can never simultanoeusly be zero,
+    // or handle the case in which they are and (atan2f(0, 0) is undefined.
+    float hd = (atan2f(Yh, Xh) * 1800.0f / M_PIf + magneticDeclination) / 10.0f;
     head = lrintf(hd);
+
+    // Arctan returns a value in the range -180 to 180 degrees. We 'normalize' negative angles to be positive.
     if (head < 0)
         head += 360;
 
@@ -318,8 +288,8 @@ static void getEstimatedAttitude(void)
     // Attitude of the estimated vector
     anglerad[AI_ROLL] = atan2f(EstG.V.Y, EstG.V.Z);
     anglerad[AI_PITCH] = atan2f(-EstG.V.X, sqrtf(EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z));
-    inclination.values.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PI));
-    inclination.values.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PI));
+    inclination.values.rollDeciDegrees = lrintf(anglerad[AI_ROLL] * (1800.0f / M_PIf));
+    inclination.values.pitchDeciDegrees = lrintf(anglerad[AI_PITCH] * (1800.0f / M_PIf));
 
     if (sensors(SENSOR_MAG)) {
         rotateV(&EstM.V, &deltaGyroAngle);
@@ -338,16 +308,46 @@ static void getEstimatedAttitude(void)
     acc_calc(deltaT); // rotate acc vector into earth frame
 }
 
-// correction of throttle in lateral wind,
+void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
+{
+    static int16_t gyroYawSmooth = 0;
+
+    gyroGetADC();
+    if (sensors(SENSOR_ACC)) {
+        updateAccelerationReadings(accelerometerTrims);
+        getEstimatedAttitude();
+    } else {
+        accADC[X] = 0;
+        accADC[Y] = 0;
+        accADC[Z] = 0;
+    }
+
+    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
+    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
+
+    if (mixerMode == MIXER_TRI) {
+        gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
+        gyroYawSmooth = gyroData[FD_YAW];
+    } else {
+        gyroData[FD_YAW] = gyroADC[FD_YAW];
+    }
+}
+
+//TODO: Move throttle angle correction code into flight/throttle_angle_correction.c
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
 {
     float cosZ = EstG.V.Z / sqrtf(EstG.V.X * EstG.V.X + EstG.V.Y * EstG.V.Y + EstG.V.Z * EstG.V.Z);
 
-    if (cosZ <= 0.015f) { // we are inverted, vertical or with a small angle < 0.86 deg
+    /*
+    * Use 0 as the throttle angle correction if we are inverted, vertical or with a
+    * small angle < 0.86 deg
+    * TODO: Define this small angle in config.
+    */
+    if (cosZ <= 0.015f) {
         return 0;
     }
     int angle = lrintf(acosf(cosZ) * throttleAngleScale);
     if (angle > 900)
         angle = 900;
-    return lrintf(throttle_correction_value * sinf(angle / (900.0f * M_PI / 2.0f)));
+    return lrintf(throttle_correction_value * sinf(angle / (900.0f * M_PIf / 2.0f)));
 }

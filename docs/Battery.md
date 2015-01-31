@@ -74,8 +74,19 @@ Enable current monitoring using the CLI command
 feature CURRENT_METER
 ```
 
+Configure the current meter type using the `current_meter_type` settings as per the following table.
+
+| Value | Sensor Type            |
+| ----- | ---------------------- | 
+| 0     | None                   |
+| 1     | ADC/hardware sensor    |
+| 2     | Virtual sensor         |
+
 Configure capacity using the `battery_capacity` setting, which takes a value in mAh.
 
+If you're using an OSD that expects the multiwii current meter output value, then set `multiwii_current_meter_output` to `1` (this multiplies amperage sent to MSP by 10).
+
+### ADC Sensor
 The current meter may need to be configured so that the value read at the ADC input matches actual current draw.  Just like you need a voltmeter to correctly calibrate your voltage reading you also need an ammeter to calibrate your current sensor.
 
 Use the following settings to adjust calibration. 
@@ -83,4 +94,23 @@ Use the following settings to adjust calibration.
 `current_meter_scale`
 `current_meter_offset`
 
-If you're using an OSD that expects the multiwii current meter output value, then set `multiwii_current_meter_output` to `1`.
+### Virtual Sensor
+The virtual sensor uses the throttle position to calculate as estimated current value. This is useful when a real sensor is not available. The following settings adjust the calibration.
+
+| Setting                       | Description                                              |
+| ----------------------------- | -------------------------------------------------------- | 
+| `current_meter_scale`      | The throttle scaling factor [centiamps, i.e. 1/100th A]  |
+| `current_meter_offset`     | The current at zero throttle [centiamps, i.e. 1/100th A] |
+
+If you know your current at zero throttle (Imin) and maximum throttle(Imax) you can calculate the scaling factors using the following formulas where Tmax is maximum throttle offset (i.e. for `max_throttle` = 1850, Tmax = 1850 - 1000 = 850):
+```
+current_meter_scale = (Imax - Imin) * 100000 / (Tmax + (Tmax * Tmax / 50))
+current_meter_offset = Imin * 100
+```
+e.g. For a maximum current of 34.2 A and minimum current of 2.8 A with `max_throttle` = 1850
+```
+current_meter_scale = (Imax - Imin) * 100000 / (Tmax + (Tmax * Tmax / 50))
+                    = (34.2 - 2.8) * 100000 / (850 + (850 * 850 / 50))
+                    = 205
+current_meter_offset = Imin * 100 = 280
+```

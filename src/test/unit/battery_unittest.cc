@@ -73,6 +73,9 @@ TEST(BatteryTest, BatteryADCToVoltage)
 
 extern "C" {
 
+uint8_t armingFlags = 0;
+int16_t rcCommand[4] = {0,0,0,0};
+
 uint16_t adcGetChannel(uint8_t channel)
 {
     UNUSED(channel);

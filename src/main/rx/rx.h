@@ -33,7 +33,8 @@ typedef enum {
     SERIALRX_SUMD = 3,
     SERIALRX_SUMH = 4,
     SERIALRX_XBUS_MODE_B = 5,
-    SERIALRX_PROVIDER_MAX = SERIALRX_XBUS_MODE_B
+    SERIALRX_XBUS_MODE_B_RJ01 = 6,
+    SERIALRX_PROVIDER_MAX = SERIALRX_XBUS_MODE_B_RJ01
 } SerialRXType;
 
 #define SERIALRX_PROVIDER_COUNT (SERIALRX_PROVIDER_MAX + 1)
@@ -67,11 +68,11 @@ typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
+    uint8_t rssi_channel;
+    uint8_t rssi_scale;
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
-    uint8_t rssi_channel;
-    uint8_t rssi_scale;
 } rxConfig_t;
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))

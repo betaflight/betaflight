@@ -1,9 +1,11 @@
 env:
+  - RUNTESTS=True
   - TARGET=CC3D
+  - TARGET=CC3D OPBL=yes
   - TARGET=CHEBUZZF3
   - TARGET=CJMCU
   - TARGET=EUSTM32F103RC
-  - TARGET=MASSIVEF3
+  - TARGET=SPRACINGF3
   - TARGET=NAZE
   - TARGET=NAZE32PRO
   - TARGET=OLIMEXINO
@@ -11,12 +13,14 @@ env:
   - TARGET=SPARKY
   - TARGET=STM32F3DISCOVERY
   - TARGET=ALIENWIIF1
-language: c
-compiler: arm-none-eabi-gcc
+  - TARGET=ALIENWIIF3
+# We use cpp for unit tests, and c for the main project.
+language: cpp
+compiler: clang
 before_install: sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sudo apt-get update
 install: sudo apt-get install build-essential gcc-arm-none-eabi git
-before_script: $CC --version
-script: make -j2
+before_script: arm-none-eabi-gcc --version
+script: ./.travis.sh
 
 notifications:
   irc: "chat.freenode.net#cleanflight"

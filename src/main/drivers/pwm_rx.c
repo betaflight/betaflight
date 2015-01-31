@@ -234,9 +234,7 @@ static void pwmOverflowCallback(timerOvrHandlerRec_t* cbRec, captureCompare_t ca
     pwmInputPort_t *pwmInputPort = container_of(cbRec, pwmInputPort_t, overflowCb);
 
     if (++pwmInputPort->missedEvents > MAX_MISSED_PWM_EVENTS) {
-        if (pwmInputPort->state == 0) {
-            captures[pwmInputPort->channel] = PPM_RCVR_TIMEOUT;
-        }
+        captures[pwmInputPort->channel] = PPM_RCVR_TIMEOUT;
         pwmInputPort->missedEvents = 0;
     }
 }

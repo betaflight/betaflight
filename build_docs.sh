@@ -2,6 +2,7 @@
 
 filename=Manual
 doc_files=(
+    'Introduction.md'
     'Installation.md'
     'Configuration.md'
     'Cli.md'
@@ -24,6 +25,7 @@ doc_files=(
 	'Autotune.md'
 	'Blackbox.md'
 	'Migrating from baseflight.md'
+	'Boards.md'
     'Board - AlienWii32.md'
     'Board - CC3D.md'
     'Board - CJMCU.md'

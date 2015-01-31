@@ -29,21 +29,21 @@ typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8,
     FLIGHT_LOG_FIELD_CONDITION_TRICOPTER,
 
-    FLIGHT_LOG_FIELD_CONDITION_MAG = 20,
+    FLIGHT_LOG_FIELD_CONDITION_MAG,
     FLIGHT_LOG_FIELD_CONDITION_BARO,
     FLIGHT_LOG_FIELD_CONDITION_VBAT,
+    FLIGHT_LOG_FIELD_CONDITION_AMPERAGE,
 
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_0 = 40,
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_1,
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_2,
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_0,
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_1,
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_2,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2,
 
-    FLIGHT_LOG_FIELD_CONDITION_NEVER = 255,
+    FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME,
+
+    FLIGHT_LOG_FIELD_CONDITION_NEVER,
+
+    FLIGHT_LOG_FIELD_CONDITION_FIRST = FLIGHT_LOG_FIELD_CONDITION_ALWAYS,
+    FLIGHT_LOG_FIELD_CONDITION_LAST = FLIGHT_LOG_FIELD_CONDITION_NEVER
 } FlightLogFieldCondition;
 
 typedef enum FlightLogFieldPredictor {
@@ -75,7 +75,10 @@ typedef enum FlightLogFieldPredictor {
     FLIGHT_LOG_FIELD_PREDICTOR_1500           = 8,
 
     //Predict vbatref, the reference ADC level stored in the header
-    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF        = 9
+    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF        = 9,
+
+    //Predict the last time value written in the main stream
+    FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10
 
 } FlightLogFieldPredictor;
 
@@ -96,5 +99,51 @@ typedef enum FlightLogFieldSign {
 
 typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
+    FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START = 10,
+    FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT = 11,
+    FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS = 12,
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;
+
+typedef struct flightLogEvent_syncBeep_t {
+    uint32_t time;
+} flightLogEvent_syncBeep_t;
+
+typedef struct flightLogEvent_autotuneCycleStart_t {
+    uint8_t phase;
+    uint8_t cycle;
+    uint8_t p;
+    uint8_t i;
+    uint8_t d;
+    uint8_t rising;
+} flightLogEvent_autotuneCycleStart_t;
+
+#define FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_OVERSHOT 1
+#define FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_TIMEDOUT 2
+
+typedef struct flightLogEvent_autotuneCycleResult_t {
+    uint8_t flags;
+    uint8_t p;
+    uint8_t i;
+    uint8_t d;
+} flightLogEvent_autotuneCycleResult_t;
+
+typedef struct flightLogEvent_autotuneTargets_t {
+    uint16_t currentAngle;
+    int8_t targetAngle, targetAngleAtPeak;
+    uint16_t firstPeakAngle, secondPeakAngle;
+} flightLogEvent_autotuneTargets_t;
+
+typedef union flightLogEventData_t
+{
+    flightLogEvent_syncBeep_t syncBeep;
+    flightLogEvent_autotuneCycleStart_t autotuneCycleStart;
+    flightLogEvent_autotuneCycleResult_t autotuneCycleResult;
+    flightLogEvent_autotuneTargets_t autotuneTargets;
+} flightLogEventData_t;
+
+typedef struct flightLogEvent_t
+{
+    FlightLogEvent event;
+    flightLogEventData_t data;
+} flightLogEvent_t;

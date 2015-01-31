@@ -292,12 +292,12 @@ void showProfilePage(void)
 void showGpsPage() {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    i2c_OLED_set_xy(max(0, SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
+    i2c_OLED_set_xy(MAX(0, SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
 
     uint32_t index;
     for (index = 0; index < SATELLITE_COUNT && index < SCREEN_CHARACTER_COLUMN_COUNT; index++) {
         uint8_t bargraphValue = ((uint16_t) GPS_svinfo_cno[index] * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
-        bargraphValue = min(bargraphValue, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
+        bargraphValue = MIN(bargraphValue, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
         i2c_OLED_send_char(VERTICAL_BARGRAPH_ZERO_CHARACTER + bargraphValue);
     }
 
@@ -378,24 +378,28 @@ void showBatteryPage(void)
 void showSensorsPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
+    static const char *format = "%c = %5d %5d %5d";
 
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string("        X     Y     Z");
+
     if (sensors(SENSOR_ACC)) {
-        tfp_sprintf(lineBuffer, "A = %5d %5d %5d", accSmooth[X], accSmooth[Y], accSmooth[Z]);
+        tfp_sprintf(lineBuffer, format, 'A', accSmooth[X], accSmooth[Y], accSmooth[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
+
     if (sensors(SENSOR_GYRO)) {
-        tfp_sprintf(lineBuffer, "G = %5d %5d %5d", gyroADC[X], gyroADC[Y], gyroADC[Z]);
+        tfp_sprintf(lineBuffer, format, 'G', gyroADC[X], gyroADC[Y], gyroADC[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
+
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-        tfp_sprintf(lineBuffer, "M = %5d %5d %5d", magADC[X], magADC[Y], magADC[Z]);
+        tfp_sprintf(lineBuffer, format, 'M', magADC[X], magADC[Y], magADC[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);

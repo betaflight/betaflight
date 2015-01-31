@@ -17,7 +17,10 @@
 #include <stdint.h>
 
 #include <limits.h>
+
 extern "C" {
+    #include "platform.h"
+    #include "common/maths.h"
     #include "common/axis.h"
     #include "flight/flight.h"
 
@@ -29,15 +32,7 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern "C" {
-int constrain(int amt, int low, int high)
-{
-    if (amt < low)
-        return low;
-    else if (amt > high)
-        return high;
-    else
-        return amt;
-}
+extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfig, pidProfile_t *pidProfile);
 }
 
 TEST(RcControlsTest, updateActivatedModesWithAllInputsAtMidde)
@@ -479,6 +474,215 @@ TEST(RcControlsTest, processRcRateProfileAdjustments)
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 }
 
+static const adjustmentConfig_t pidPitchAndRollPAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidPitchAndRollIAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidPitchAndRollDAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidYawPAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_YAW_P,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidYawIAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_YAW_I,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidYawDAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_YAW_D,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+TEST(RcControlsTest, processPIDIncreasePidController0)
+{
+    // given
+    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+    memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
+
+    escAndServoConfig_t escAndServoConfig;
+    memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
+
+    pidProfile_t pidProfile;
+    memset(&pidProfile, 0, sizeof (pidProfile));
+    pidProfile.pidController = 0;
+    pidProfile.P8[PIDPITCH] = 0;
+    pidProfile.P8[PIDROLL] = 5;
+    pidProfile.P8[YAW] = 7;
+    pidProfile.I8[PIDPITCH] = 10;
+    pidProfile.I8[PIDROLL] = 15;
+    pidProfile.I8[YAW] = 17;
+    pidProfile.D8[PIDPITCH] = 20;
+    pidProfile.D8[PIDROLL] = 25;
+    pidProfile.D8[YAW] = 27;
+
+    // and
+    controlRateConfig_t controlRateConfig;
+    memset(&controlRateConfig, 0, sizeof (controlRateConfig));
+
+    // and
+    memset(&rxConfig, 0, sizeof (rxConfig));
+    rxConfig.mincheck = DEFAULT_MIN_CHECK;
+    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig.midrc = 1500;
+
+    adjustmentStateMask = 0;
+    memset(&adjustmentStates, 0, sizeof(adjustmentStates));
+
+    configureAdjustment(0, AUX1 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollPAdjustmentConfig);
+    configureAdjustment(1, AUX2 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollIAdjustmentConfig);
+    configureAdjustment(2, AUX3 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollDAdjustmentConfig);
+    configureAdjustment(3, AUX1 - NON_AUX_CHANNEL_COUNT, &pidYawPAdjustmentConfig);
+    configureAdjustment(4, AUX2 - NON_AUX_CHANNEL_COUNT, &pidYawIAdjustmentConfig);
+    configureAdjustment(5, AUX3 - NON_AUX_CHANNEL_COUNT, &pidYawDAdjustmentConfig);
+
+    // and
+    uint8_t index;
+    for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    // and
+    resetCallCounters();
+    resetMillis();
+
+    // and
+    rcData[AUX1] = PWM_RANGE_MAX;
+    rcData[AUX2] = PWM_RANGE_MAX;
+    rcData[AUX3] = PWM_RANGE_MAX;
+
+    // and
+    uint8_t expectedAdjustmentStateMask =
+            (1 << 0) |
+            (1 << 1) |
+            (1 << 2) |
+            (1 << 3) |
+            (1 << 4) |
+            (1 << 5);
+
+    // when
+    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 6);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
+
+    // and
+    EXPECT_EQ(1, pidProfile.P8[PIDPITCH]);
+    EXPECT_EQ(6, pidProfile.P8[PIDROLL]);
+    EXPECT_EQ(8, pidProfile.P8[YAW]);
+    EXPECT_EQ(11, pidProfile.I8[PIDPITCH]);
+    EXPECT_EQ(16, pidProfile.I8[PIDROLL]);
+    EXPECT_EQ(18, pidProfile.I8[YAW]);
+    EXPECT_EQ(21, pidProfile.D8[PIDPITCH]);
+    EXPECT_EQ(26, pidProfile.D8[PIDROLL]);
+    EXPECT_EQ(28, pidProfile.D8[YAW]);
+}
+
+TEST(RcControlsTest, processPIDIncreasePidController2)
+{
+    // given
+    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+    memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
+
+    escAndServoConfig_t escAndServoConfig;
+    memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
+
+    pidProfile_t pidProfile;
+    memset(&pidProfile, 0, sizeof (pidProfile));
+    pidProfile.pidController = 2;
+    pidProfile.P_f[PIDPITCH] = 0.0f;
+    pidProfile.P_f[PIDROLL] = 5.0f;
+    pidProfile.P_f[PIDYAW] = 7.0f;
+    pidProfile.I_f[PIDPITCH] = 10.0f;
+    pidProfile.I_f[PIDROLL] = 15.0f;
+    pidProfile.I_f[PIDYAW] = 17.0f;
+    pidProfile.D_f[PIDPITCH] = 20.0f;
+    pidProfile.D_f[PIDROLL] = 25.0f;
+    pidProfile.D_f[PIDYAW] = 27.0f;
+
+    // and
+    controlRateConfig_t controlRateConfig;
+    memset(&controlRateConfig, 0, sizeof (controlRateConfig));
+
+    // and
+    memset(&rxConfig, 0, sizeof (rxConfig));
+    rxConfig.mincheck = DEFAULT_MIN_CHECK;
+    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig.midrc = 1500;
+
+    adjustmentStateMask = 0;
+    memset(&adjustmentStates, 0, sizeof(adjustmentStates));
+
+    configureAdjustment(0, AUX1 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollPAdjustmentConfig);
+    configureAdjustment(1, AUX2 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollIAdjustmentConfig);
+    configureAdjustment(2, AUX3 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollDAdjustmentConfig);
+    configureAdjustment(3, AUX1 - NON_AUX_CHANNEL_COUNT, &pidYawPAdjustmentConfig);
+    configureAdjustment(4, AUX2 - NON_AUX_CHANNEL_COUNT, &pidYawIAdjustmentConfig);
+    configureAdjustment(5, AUX3 - NON_AUX_CHANNEL_COUNT, &pidYawDAdjustmentConfig);
+
+    // and
+    uint8_t index;
+    for (index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
+        rcData[index] = PWM_RANGE_MIDDLE;
+    }
+
+    // and
+    resetCallCounters();
+    resetMillis();
+
+    // and
+    rcData[AUX1] = PWM_RANGE_MAX;
+    rcData[AUX2] = PWM_RANGE_MAX;
+    rcData[AUX3] = PWM_RANGE_MAX;
+
+    // and
+    uint8_t expectedAdjustmentStateMask =
+            (1 << 0) |
+            (1 << 1) |
+            (1 << 2) |
+            (1 << 3) |
+            (1 << 4) |
+            (1 << 5);
+
+    // when
+    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    processRcAdjustments(&controlRateConfig, &rxConfig);
+
+    // then
+    EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 6);
+    EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
+
+    // and
+    EXPECT_EQ(0.1f, pidProfile.P_f[PIDPITCH]);
+    EXPECT_EQ(5.1f, pidProfile.P_f[PIDROLL]);
+    EXPECT_EQ(7.1f, pidProfile.P_f[PIDYAW]);
+    EXPECT_EQ(10.01f, pidProfile.I_f[PIDPITCH]);
+    EXPECT_EQ(15.01f, pidProfile.I_f[PIDROLL]);
+    EXPECT_EQ(17.01f, pidProfile.I_f[PIDYAW]);
+    EXPECT_EQ(20.001f, pidProfile.D_f[PIDPITCH]);
+    EXPECT_EQ(25.001f, pidProfile.D_f[PIDROLL]);
+    EXPECT_EQ(27.001f, pidProfile.D_f[PIDYAW]);
+
+}
+
 extern "C" {
 void saveConfigAndNotify(void) {}
 void generateThrottleCurve(controlRateConfig_t *, escAndServoConfig_t *) {}
@@ -494,6 +698,8 @@ void mwDisarm(void) {}
 uint8_t getCurrentControlRateProfile(void) {
     return 0;
 }
+void GPS_reset_home_position(void) {}
+void baroSetCalibrationCycles(uint16_t) {}
 
 uint8_t armingFlags = 0;
 int16_t heading;

@@ -104,7 +104,7 @@ void beepcodeInit(failsafe_t *initialFailsafe);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int8_t magHardwareToUse, int16_t magDeclinationFromConfig);
-void imuInit(void);
+void initIMU(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse);
 void loop(void);
@@ -206,17 +206,20 @@ void init(void)
 #endif
 
 #ifdef USE_I2C
-#ifdef NAZE
+#if defined(NAZE)
     if (hardwareRevision != NAZE32_SP) {
         i2cInit(I2C_DEVICE);
     }
+#elif defined(CC3D)
+    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+        i2cInit(I2C_DEVICE);
+    }
 #else
-    // Configure the rest of the stuff
     i2cInit(I2C_DEVICE);
 #endif
 #endif
 
-#if !defined(SPARKY)
+#ifdef USE_ADC
     drv_adc_config_t adc_params;
 
     adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
@@ -264,7 +267,7 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-    imuInit();
+    initIMU();
     mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
 
 #ifdef MAG
@@ -287,7 +290,8 @@ void init(void)
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
-    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER);
+    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
+        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
@@ -301,7 +305,7 @@ void init(void)
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
-    pwm_params.servoCenterPulse = masterConfig.rxConfig.midrc;
+    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
 
     pwmRxInit(masterConfig.inputFilteringMode);
 
@@ -328,7 +332,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        Sonar_init();
+        sonarInit();
     }
 #endif
 

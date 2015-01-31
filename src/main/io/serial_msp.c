@@ -45,6 +45,8 @@
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
+#include "flight/altitudehold.h"
+
 #include "rx/rx.h"
 #include "rx/msp.h"
 #include "io/escservo.h"
@@ -54,9 +56,11 @@
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "telemetry/telemetry.h"
+
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
+#include "sensors/sonar.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
@@ -121,7 +125,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   2 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   5 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -200,6 +204,13 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_CF_SERIAL_CONFIG            54
 #define MSP_SET_CF_SERIAL_CONFIG        55
 
+#define MSP_VOLTAGE_METER_CONFIG        56
+#define MSP_SET_VOLTAGE_METER_CONFIG    57
+
+#define MSP_SONAR_ALTITUDE              58 //out message get sonar altitude [cm]
+
+#define MSP_PID_CONTROLLER              59
+#define MSP_SET_PID_CONTROLLER          60
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -365,7 +376,7 @@ static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static mspPort_t *currentPort;
 
-void serialize32(uint32_t a)
+static void serialize32(uint32_t a)
 {
     static uint8_t t;
     t = a;
@@ -382,7 +393,7 @@ void serialize32(uint32_t a)
     currentPort->checksum ^= t;
 }
 
-void serialize16(int16_t a)
+static void serialize16(int16_t a)
 {
     static uint8_t t;
     t = a;
@@ -393,32 +404,32 @@ void serialize16(int16_t a)
     currentPort->checksum ^= t;
 }
 
-void serialize8(uint8_t a)
+static void serialize8(uint8_t a)
 {
     serialWrite(mspSerialPort, a);
     currentPort->checksum ^= a;
 }
 
-uint8_t read8(void)
+static uint8_t read8(void)
 {
     return currentPort->inBuf[currentPort->indRX++] & 0xff;
 }
 
-uint16_t read16(void)
+static uint16_t read16(void)
 {
     uint16_t t = read8();
     t += (uint16_t)read8() << 8;
     return t;
 }
 
-uint32_t read32(void)
+static uint32_t read32(void)
 {
     uint32_t t = read16();
     t += (uint32_t)read16() << 16;
     return t;
 }
 
-void headSerialResponse(uint8_t err, uint8_t s)
+static void headSerialResponse(uint8_t err, uint8_t s)
 {
     serialize8('$');
     serialize8('M');
@@ -428,36 +439,36 @@ void headSerialResponse(uint8_t err, uint8_t s)
     serialize8(currentPort->cmdMSP);
 }
 
-void headSerialReply(uint8_t s)
+static void headSerialReply(uint8_t s)
 {
     headSerialResponse(0, s);
 }
 
-void headSerialError(uint8_t s)
+static void headSerialError(uint8_t s)
 {
     headSerialResponse(1, s);
 }
 
-void tailSerialReply(void)
+static void tailSerialReply(void)
 {
     serialize8(currentPort->checksum);
 }
 
-void s_struct(uint8_t *cb, uint8_t siz)
+static void s_struct(uint8_t *cb, uint8_t siz)
 {
     headSerialReply(siz);
     while (siz--)
         serialize8(*cb++);
 }
 
-void serializeNames(const char *s)
+static void serializeNames(const char *s)
 {
     const char *c;
     for (c = s; *c; c++)
         serialize8(*c);
 }
 
-const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
+static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
     uint8_t boxIndex;
     const box_t *candidate;
@@ -470,7 +481,7 @@ const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
     return NULL;
 }
 
-const box_t *findBoxByPermenantId(uint8_t permenantId)
+static const box_t *findBoxByPermenantId(uint8_t permenantId)
 {
     uint8_t boxIndex;
     const box_t *candidate;
@@ -483,7 +494,7 @@ const box_t *findBoxByPermenantId(uint8_t permenantId)
     return NULL;
 }
 
-void serializeBoxNamesReply(void)
+static void serializeBoxNamesReply(void)
 {
     int i, activeBoxId, j, flag = 1, count = 0, len;
     const box_t *box;
@@ -617,6 +628,12 @@ void mspInit(serialConfig_t *serialConfig)
 
     activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
 
+#ifdef LED_STRIP
+    if (feature(FEATURE_LED_STRIP)) {
+        activeBoxIds[activeBoxIdCount++] = BOXLEDLOW;
+    }
+#endif
+
     if (feature(FEATURE_INFLIGHT_ACC_CAL))
         activeBoxIds[activeBoxIdCount++] = BOXCALIB;
 
@@ -642,7 +659,6 @@ void mspInit(serialConfig_t *serialConfig)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i, tmp, junk;
-
 
 #ifdef GPS
     uint8_t wp_no;
@@ -746,6 +762,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
@@ -811,8 +828,20 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ALTITUDE:
         headSerialReply(6);
-        serialize32(EstAlt);
+#if defined(BARO) || defined(SONAR)
+        serialize32(altitudeHoldGetEstimatedAltitude());
+#else
+        serialize32(0);
+#endif
         serialize16(vario);
+        break;
+    case MSP_SONAR_ALTITUDE:
+        headSerialReply(4);
+#if defined(SONAR)
+        serialize32(sonarGetLatestAltitude());
+#else
+        serialize32(0);
+#endif
         break;
     case MSP_ANALOG:
         headSerialReply(7);
@@ -820,9 +849,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamphours drawn from battery
         serialize16(rssi);
         if(masterConfig.batteryConfig.multiwiiCurrentMeterOutput) {
-            serialize16((uint16_t)constrain((abs(amperage) * 10), 0, 0xFFFF)); // send amperage in 0.001 A steps
+            serialize16((uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
         } else
-            serialize16((uint16_t)constrain(abs(amperage), 0, 0xFFFF)); // send amperage in 0.01 A steps
+            serialize16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
         break;
     case MSP_RC_TUNING:
         headSerialReply(7);
@@ -836,7 +865,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
-        if (currentProfile->pidController == 2) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
+        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
             for (i = 0; i < 3; i++) {
                 serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 250));
                 serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 250));
@@ -846,7 +875,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                 if (i == PIDLEVEL) {
                     serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 250));
                     serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 250));
-                    serialize8(0);
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 250));
                 } else {
                     serialize8(currentProfile->pidProfile.P8[i]);
                     serialize8(currentProfile->pidProfile.I8[i]);
@@ -864,6 +893,10 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_PIDNAMES:
         headSerialReply(sizeof(pidnames) - 1);
         serializeNames(pidnames);
+        break;
+    case MSP_PID_CONTROLLER:
+        headSerialReply(1);
+        serialize8(currentProfile->pidProfile.pidController);
         break;
     case MSP_MODE_RANGES:
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
@@ -1017,16 +1050,26 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_BOARD_ALIGNMENT:
-        headSerialReply(3);
+        headSerialReply(6);
         serialize16(masterConfig.boardAlignment.rollDegrees);
         serialize16(masterConfig.boardAlignment.pitchDegrees);
         serialize16(masterConfig.boardAlignment.yawDegrees);
         break;
 
-    case MSP_CURRENT_METER_CONFIG:
+    case MSP_VOLTAGE_METER_CONFIG:
         headSerialReply(4);
+        serialize8(masterConfig.batteryConfig.vbatscale);
+        serialize8(masterConfig.batteryConfig.vbatmincellvoltage);
+        serialize8(masterConfig.batteryConfig.vbatmaxcellvoltage);
+        serialize8(masterConfig.batteryConfig.vbatwarningcellvoltage);
+        break;
+
+    case MSP_CURRENT_METER_CONFIG:
+        headSerialReply(7);
         serialize16(masterConfig.batteryConfig.currentMeterScale);
         serialize16(masterConfig.batteryConfig.currentMeterOffset);
+        serialize8(masterConfig.batteryConfig.currentMeterType);
+        serialize16(masterConfig.batteryConfig.batteryCapacity);
         break;
 
     case MSP_MIXER:
@@ -1035,7 +1078,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_RX_CONFIG:
-        headSerialReply(7);
+        headSerialReply(8);
         serialize8(masterConfig.rxConfig.serialrx_provider);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
@@ -1097,13 +1140,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_LED_STRIP_CONFIG:
-        headSerialReply(MAX_LED_STRIP_LENGTH * 6);
+        headSerialReply(MAX_LED_STRIP_LENGTH * 7);
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
             serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
             serialize16((ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
             serialize8(GET_LED_X(ledConfig));
             serialize8(GET_LED_Y(ledConfig));
+            serialize8(ledConfig->color);
         }
         break;
 #endif
@@ -1160,8 +1204,12 @@ static bool processInCommand(void)
         currentProfile->accelerometerTrims.values.pitch = read16();
         currentProfile->accelerometerTrims.values.roll  = read16();
         break;
+    case MSP_SET_PID_CONTROLLER:
+        currentProfile->pidProfile.pidController = read8();
+        setPIDController(currentProfile->pidProfile.pidController);
+        break;
     case MSP_SET_PID:
-        if (currentProfile->pidController == 2) {
+        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) {
             for (i = 0; i < 3; i++) {
                 currentProfile->pidProfile.P_f[i] = (float)read8() / 10.0f;
                 currentProfile->pidProfile.I_f[i] = (float)read8() / 100.0f;
@@ -1171,7 +1219,7 @@ static bool processInCommand(void)
                 if (i == PIDLEVEL) {
                     currentProfile->pidProfile.A_level = (float)read8() / 10.0f;
                     currentProfile->pidProfile.H_level = (float)read8() / 10.0f;
-                    read8();
+                    currentProfile->pidProfile.H_sensitivity = read8();
                 } else {
                     currentProfile->pidProfile.P8[i] = read8();
                     currentProfile->pidProfile.I8[i] = read8();
@@ -1362,9 +1410,18 @@ static bool processInCommand(void)
         masterConfig.boardAlignment.yawDegrees = read16();
         break;
 
+    case MSP_SET_VOLTAGE_METER_CONFIG:
+        masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
+        masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
+        masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
+        masterConfig.batteryConfig.vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
+        break;
+
     case MSP_SET_CURRENT_METER_CONFIG:
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();
+        masterConfig.batteryConfig.currentMeterType = read8();
+        masterConfig.batteryConfig.batteryCapacity = read16();
         break;
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -1442,28 +1499,30 @@ static bool processInCommand(void)
 
     case MSP_SET_LED_STRIP_CONFIG:
         {
-            uint8_t ledCount = currentPort->dataSize / 6;
-            if (ledCount != MAX_LED_STRIP_LENGTH) {
+            i = read8();
+            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != (1 + 7)) {
                 headSerialError(0);
                 break;
             }
-            for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
-                ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-                uint16_t mask;
-                // currently we're storing directions and functions in a uint16 (flags)
-                // the msp uses 2 x uint16_t to cater for future expansion
-                mask = read16();
-                ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
+            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            uint16_t mask;
+            // currently we're storing directions and functions in a uint16 (flags)
+            // the msp uses 2 x uint16_t to cater for future expansion
+            mask = read16();
+            ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
 
-                mask = read16();
-                ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
+            mask = read16();
+            ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
 
-                mask = read8();
-                ledConfig->xy = CALCULATE_LED_X(mask);
+            mask = read8();
+            ledConfig->xy = CALCULATE_LED_X(mask);
 
-                mask = read8();
-                ledConfig->xy |= CALCULATE_LED_Y(mask);
-            }
+            mask = read8();
+            ledConfig->xy |= CALCULATE_LED_Y(mask);
+
+            ledConfig->color = read8();
+
+            reevalulateLedConfig();
         }
         break;
 #endif

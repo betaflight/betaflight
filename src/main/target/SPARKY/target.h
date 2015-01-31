@@ -26,6 +26,8 @@
 #define LED1_PIN    Pin_5  // Green LEDs - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
 
+#define USABLE_TIMER_CHANNEL_COUNT 11
+
 // MPU 9150 INT connected to PA15, pulled up to VCC by 10K Resistor, contains MPU6050 and AK8975 in single component.
 #define GYRO
 #define USE_GYRO_MPU6050
@@ -91,6 +93,41 @@
 #define SERIAL_RX
 #define GPS
 #define DISPLAY
+
+#define LED_STRIP
+#if 1
+// LED strip configuration using PWM motor output pin 5.
+#define LED_STRIP_TIMER TIM16
+
+#define USE_LED_STRIP_ON_DMA1_CHANNEL3
+#define WS2811_GPIO                     GPIOA
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define WS2811_GPIO_AF                  GPIO_AF_1
+#define WS2811_PIN                      GPIO_Pin_6 // TIM16_CH1
+#define WS2811_PIN_SOURCE               GPIO_PinSource6
+#define WS2811_TIMER                    TIM16
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
+#define WS2811_DMA_CHANNEL              DMA1_Channel3
+#define WS2811_IRQ                      DMA1_Channel3_IRQn
+#endif
+
+#if 0
+// Alternate LED strip pin
+// FIXME DMA IRQ Transfer Complete is never called because the  TIM17_DMA_RMP needs to be set in SYSCFG_CFGR1
+#define LED_STRIP_TIMER TIM17
+
+#define USE_LED_STRIP_ON_DMA1_CHANNEL7
+#define WS2811_GPIO                     GPIOA
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define WS2811_GPIO_AF                  GPIO_AF_1
+#define WS2811_PIN                      GPIO_Pin_7 // TIM17_CH1
+#define WS2811_PIN_SOURCE               GPIO_PinSource7
+#define WS2811_TIMER                    TIM17
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM17
+#define WS2811_DMA_CHANNEL              DMA1_Channel7
+#define WS2811_IRQ                      DMA1_Channel7_IRQn
+#endif
+
 
 #define SPEKTRUM_BIND
 // USART2, PA3

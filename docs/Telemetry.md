@@ -64,16 +64,17 @@ Only Electric Air Modules and GPS Modules are emulated, remember to enable them 
 Serial ports use two wires but HoTT uses a single wire so some electronics are required so that the signals don't get mixed up.
 
 Connect as follows:
-```
-HoTT TX/RX -> Serial RX (connect directly)
-Serial TX -> 1N4148 Diode -(|  )-> HoTT TX/RX (connect via diode)
-```
+
+* HoTT TX/RX `T` -> Serial RX (connect directly)
+* HoTT TX/RX `T` -> Diode `-(  |)-` > Serial TX (connect via diode)
 
 The diode should be arranged to allow the data signals to flow the right way
 
 ```
--(|  )- == Diode, | indicates cathode marker.
+-(  |)- == Diode, | indicates cathode marker.
 ```
+
+1N4148 diodes have been tested and work with the GR-24.
 
 As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC 24FJ64GA-002, which has 5V tolerant digital pins.
 

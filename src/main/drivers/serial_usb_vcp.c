@@ -17,16 +17,16 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include "platform.h"
+
+#include "build_config.h"
 
 #include "usb_core.h"
 #include "usb_init.h"
 #include "hw_config.h"
-
-#include <stdbool.h>
-#include <string.h>
-
 
 #include "drivers/system.h"
 
@@ -40,26 +40,37 @@ static vcpPort_t vcpPort;
 
 void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
+    UNUSED(instance);
+    UNUSED(baudRate);
+
     // TODO implement
 }
 
 void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
 {
+    UNUSED(instance);
+    UNUSED(mode);
+
     // TODO implement
 }
 
 bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
 {
+    UNUSED(instance);
     return true;
 }
 
 uint8_t usbVcpAvailable(serialPort_t *instance)
 {
+    UNUSED(instance);
+
     return receiveLength & 0xFF; // FIXME use uint32_t return type everywhere
 }
 
 uint8_t usbVcpRead(serialPort_t *instance)
 {
+    UNUSED(instance);
+
     uint8_t buf[1];
 
     uint32_t rxed = 0;
@@ -73,6 +84,8 @@ uint8_t usbVcpRead(serialPort_t *instance)
 
 void usbVcpWrite(serialPort_t *instance, uint8_t c)
 {
+    UNUSED(instance);
+
     uint32_t txed;
     uint32_t start = millis();
 

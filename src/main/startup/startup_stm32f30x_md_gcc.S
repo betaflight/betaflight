@@ -70,6 +70,12 @@ defined in linker script */
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler:
+  ldr r0, =0x20009FFC         // HJI 11/9/2012
+  ldr r1, =0xDEADBEEF         // HJI 11/9/2012
+  ldr r2, [r0, #0]            // HJI 11/9/2012
+  str r0, [r0, #0]            // HJI 11/9/2012
+  cmp r2, r1                  // HJI 11/9/2012
+  beq Reboot_Loader           // HJI 11/9/2012
 
 /* Copy the data segment initializers from flash to SRAM */
   movs  r1, #0
@@ -104,6 +110,18 @@ LoopFillZerobss:
 /* Call the application's entry point.*/
   bl  main
   bx  lr
+
+LoopForever:
+  b LoopForever
+
+Reboot_Loader:                // HJI 11/9/2012
+
+  // Reboot to ROM            // HJI 11/9/2012
+  ldr     r0, =0x1FFFD800     // HJI 4/26/2013
+  ldr     sp,[r0, #0]         // HJI 11/9/2012
+  ldr     r0,[r0, #4]         // HJI 11/9/2012
+  bx      r0                  // HJI 11/9/2012
+
 .size  Reset_Handler, .-Reset_Handler
 
 /**

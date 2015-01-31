@@ -32,16 +32,21 @@ typedef enum {
     PID_ITEM_COUNT
 } pidIndex_e;
 
+#define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
+
 typedef struct pidProfile_s {
+    uint8_t pidController;                  // 0 = multiwii original, 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 1, 2 = Luggi09s new baseflight pid
+
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    float P_f[3];                           // float p i and d factors for the new baseflight pid
+    float P_f[3];                           // float p i and d factors for lux float pid controller
     float I_f[3];
     float D_f[3];
     float A_level;
     float H_level;
+    uint8_t H_sensitivity;
 } pidProfile_t;
 
 typedef enum {
@@ -59,28 +64,6 @@ typedef enum {
 } flight_dynamics_index_t;
 
 #define FLIGHT_DYNAMICS_INDEX_COUNT 3
-
-typedef struct fp_vector {
-    float X;
-    float Y;
-    float Z;
-} t_fp_vector_def;
-
-typedef union {
-    float A[3];
-    t_fp_vector_def V;
-} t_fp_vector;
-
-typedef struct fp_angles {
-    float roll;
-    float pitch;
-    float yaw;
-} fp_angles_def;
-
-typedef union {
-    float raw[3];
-    fp_angles_def angles;
-} fp_angles_t;
 
 typedef struct int16_flightDynamicsTrims_s {
     int16_t roll;
@@ -132,7 +115,6 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 extern int16_t heading, magHold;
 
 extern int32_t AltHold;
-extern int32_t EstAlt;
 extern int32_t vario;
 
 void setPIDController(int type);

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#define MAG
 #define BARO
 #define GPS
 #define TELEMETRY
@@ -24,3 +25,4 @@
 
 #define SERIAL_PORT_COUNT 4
 
+#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6

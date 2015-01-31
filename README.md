@@ -83,7 +83,7 @@ https://github.com/cleanflight/cleanflight-configurator
 
 ## Contributing
 
-Contributions are welcome and encouraged.  You can contibute in many ways:
+Contributions are welcome and encouraged.  You can contribute in many ways:
 
 * Documentation updates and corrections.
 * How-To guides - received help?  help others!

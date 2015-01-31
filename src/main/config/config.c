@@ -25,6 +25,8 @@
 
 #include "common/color.h"
 #include "common/axis.h"
+#include "common/maths.h"
+
 #include "flight/flight.h"
 
 #include "drivers/sensor.h"
@@ -108,7 +110,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 88;
+static const uint8_t EEPROM_CONF_VERSION = 91;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -119,6 +121,8 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
+    pidProfile->pidController = 0;
+
     pidProfile->P8[ROLL] = 40;
     pidProfile->I8[ROLL] = 30;
     pidProfile->D8[ROLL] = 23;
@@ -159,6 +163,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D_f[YAW] = 0.05f;
     pidProfile->A_level = 5.0f;
     pidProfile->H_level = 3.0f;
+    pidProfile->H_sensitivity = 75;
 }
 
 #ifdef GPS
@@ -194,6 +199,7 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     escAndServoConfig->minthrottle = 1150;
     escAndServoConfig->maxthrottle = 1850;
     escAndServoConfig->mincommand = 1000;
+    escAndServoConfig->servoCenterPulse = 1500;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -224,7 +230,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
-
+    batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
 }
 
 void resetSerialConfig(serialConfig_t *serialConfig)
@@ -382,7 +388,6 @@ static void resetConf(void)
     masterConfig.looptime = 3500;
     masterConfig.emf_avoidance = 0;
 
-    currentProfile->pidController = 0;
     resetPidProfile(&currentProfile->pidProfile);
 
     resetControlRateConfig(&masterConfig.controlRateProfiles[0]);
@@ -452,20 +457,33 @@ static void resetConf(void)
     masterConfig.blackbox_rate_denom = 1;
 #endif
 
-    // alternative defaults AlienWii32 (activate via OPTIONS="ALIENWII32" during make for NAZE target)
+    // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
     featureSet(FEATURE_FAILSAFE);
+    featureClear(FEATURE_VBAT);
+#ifdef ALIENWIIF3
+    masterConfig.serialConfig.serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+#else
     masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+#endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
+    masterConfig.looptime = 2000;
+    currentProfile->pidProfile.pidController = 3;
+    currentProfile->pidProfile.P8[ROLL] = 36;
+    currentProfile->pidProfile.P8[PITCH] = 36;
+    currentProfile->failsafeConfig.failsafe_delay = 2;
+    currentProfile->failsafeConfig.failsafe_off_delay = 0;
+    currentProfile->failsafeConfig.failsafe_throttle = 1000;
     currentControlRateProfile->rcRate8 = 130;
     currentControlRateProfile->rollPitchRate = 20;
     currentControlRateProfile->yawRate = 60;
+    currentControlRateProfile->yawRate = 100;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.5f,  1.0f, -1.0f },          // REAR_R
@@ -588,7 +606,7 @@ void activateConfig(void)
     useTelemetryConfig(&masterConfig.telemetryConfig);
 #endif
 
-    setPIDController(currentProfile->pidController);
+    setPIDController(currentProfile->pidProfile.pidController);
 
 #ifdef GPS
     gpsUseProfile(&currentProfile->gpsProfile);
@@ -614,10 +632,12 @@ void activateConfig(void)
     imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
-    configureImu(
+    configureIMU(
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
-        &currentProfile->accDeadband
+        &currentProfile->accDeadband,
+        currentProfile->accz_lpf_cutoff,
+        currentProfile->throttle_correction_angle
     );
 
     configureAltitudeHold(
@@ -626,9 +646,6 @@ void activateConfig(void)
         &currentProfile->rcControlsConfig,
         &masterConfig.escAndServoConfig
     );
-
-    calculateThrottleAngleScale(currentProfile->throttle_correction_angle);
-    calculateAccZLowPassFilterRCTimeConstant(currentProfile->accz_lpf_cutoff);
 
 #ifdef BARO
     useBarometerConfig(&currentProfile->barometerConfig);
@@ -702,6 +719,12 @@ void validateAndFixConfig(void)
 #if defined(OLIMEXINO) && defined(SONAR)
     if (feature(FEATURE_SONAR) && feature(FEATURE_CURRENT_METER)) {
         featureClear(FEATURE_CURRENT_METER);
+    }
+#endif
+
+#if defined(CC3D) && defined(DISPLAY) && defined(USE_USART3)
+    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
+        featureClear(FEATURE_DISPLAY);
     }
 #endif
 

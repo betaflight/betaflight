@@ -21,6 +21,8 @@
 
 #include <string.h>
 
+#include "build_config.h"
+
 #include "platform.h"
 
 #include "common/maths.h"
@@ -59,7 +61,7 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
-uint16_t rssi;                  // range: [0;1023]
+uint16_t rssi = 0;                  // range: [0;1023]
 
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
@@ -102,6 +104,7 @@ void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintTo
             sumhUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
             break;
         case SERIALRX_XBUS_MODE_B:
+        case SERIALRX_XBUS_MODE_B_RJ01:
             xBusUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
             break;
     }
@@ -158,6 +161,7 @@ void serialRxInit(rxConfig_t *rxConfig)
             enabled = sumhInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_XBUS_MODE_B:
+        case SERIALRX_XBUS_MODE_B_RJ01:
             enabled = xBusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
     }
@@ -170,7 +174,15 @@ void serialRxInit(rxConfig_t *rxConfig)
 
 bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
 {
-
+    /**
+     * FIXME: Each of the xxxxFrameComplete() methods MUST be able to survive being called without the
+     * corresponding xxxInit() method having been called first.
+     *
+     * This situation arises when the cli or the msp changes the value of rxConfig->serialrx_provider
+     *
+     * A solution is for the ___Init() to configure the serialRxFrameComplete function pointer which
+     * should be used instead of the switch statement below.
+     */
     switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
@@ -182,6 +194,7 @@ bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
         case SERIALRX_SUMH:
             return sumhFrameComplete();
         case SERIALRX_XBUS_MODE_B:
+        case SERIALRX_XBUS_MODE_B_RJ01:
             return xBusFrameComplete();
     }
     return false;
@@ -289,7 +302,7 @@ void processRxChannels(void)
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
 
         if (feature(FEATURE_FAILSAFE) && shouldCheckPulse) {
-            failsafe->vTable->checkPulse(rawChannel, sample);
+            failsafe->vTable->checkPulse(chan, sample);
         }
 
         // validate the range
@@ -366,6 +379,9 @@ void updateRSSIPWM(void)
 
 void updateRSSIADC(uint32_t currentTime)
 {
+#ifndef USE_ADC
+    UNUSED(currentTime);
+#else
     static uint8_t adcRssiSamples[RSSI_ADC_SAMPLE_COUNT];
     static uint8_t adcRssiSampleIndex = 0;
     static uint32_t rssiUpdateAt = 0;
@@ -392,6 +408,7 @@ void updateRSSIADC(uint32_t currentTime)
     adcRssiMean = adcRssiMean / RSSI_ADC_SAMPLE_COUNT;
 
     rssi = (uint16_t)((constrain(adcRssiMean, 0, 100) / 100.0f) * 1023.0f);
+#endif
 }
 
 void updateRSSI(uint32_t currentTime)

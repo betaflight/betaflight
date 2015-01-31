@@ -4,9 +4,9 @@ A receiver is used to receive radio control signals from your transmitter and co
 
 There are 3 basic types of receivers:
 
-Parallel PWM Receivers
-PPM Receivers
-Serial Receivers
+1. Parallel PWM Receivers
+2. PPM Receivers
+3. Serial Receivers
 
 ## Parallel PWM Receivers
 
@@ -61,6 +61,10 @@ http://www.frsky-rc.com/product/pro.php?pro_id=135
 FrSky X8R 8/16ch Telemetry Receiver
 http://www.frsky-rc.com/product/pro.php?pro_id=105
 
+Futaba R2008SB 2.4GHz S-FHSS
+http://www.futaba-rc.com/systems/futk8100-8j/
+
+
 #### OpenTX S.BUS configuration
 
 If using OpenTX set the transmitter module to D16 mode and select CH1-16 on the transmitter before binding to allow reception
@@ -81,6 +85,11 @@ These receivers are reported working:
 
 XG14 14ch DMSS System w/RG731BX XBus Receiver
 http://www.jramericas.com/233794/JRP00631/
+
+There exist a remote receiver made for small BNF-models like the Align T-Rex 150 helicopter. The code also supports using the Align DMSS RJ01 receiver directly with the cleanflight software.
+To use this receiver you must power it with 3V from the hardware, and then connect the serial line as other serial RX receivers.
+In order for this receiver to work, you need to specify the XBUS_MODE_B_RJ01 for serialrx_provider. Note that you need to set your radio mode for XBUS "MODE B" also for this receiver to work.
+Receiver name: Align DMSS RJ01 (HER15001)
 
 ### SUMD
 
@@ -131,7 +140,7 @@ For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as 
 | SUMD               | 3     |
 | SUMH               | 4     |
 | XBUS_MODE_B        | 5     |
-
+| XBUS_MODE_B_RJ01   | 6     |
 
 ### PPM/PWM input filtering.
 

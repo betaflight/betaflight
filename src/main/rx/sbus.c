@@ -121,7 +121,7 @@ static void sbusDataReceive(uint16_t c)
 
     static uint8_t sbusFramePosition = 0;
     static uint32_t sbusTimeoutAt = 0;
-    uint32_t now = millis();
+    uint32_t now = micros();
 
     if ((int32_t)(sbusTimeoutAt - now) < 0) {
         sbusFramePosition = 0;

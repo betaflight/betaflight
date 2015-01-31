@@ -27,6 +27,7 @@ extern "C" {
     #include "flight/flight.h"
 
     #include "sensors/sensors.h"
+    #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
@@ -53,6 +54,7 @@ extern "C" {
 
 extern "C" {
     bool isThrustFacingDownwards(rollAndPitchInclination_t *inclinations);
+    uint16_t calculateTiltAngle(rollAndPitchInclination_t *inclinations);
 }
 
 typedef struct inclinationExpectation_s {
@@ -86,6 +88,36 @@ TEST(AltitudeHoldTest, IsThrustFacingDownwards)
         printf("iteration: %d\n", index);
         bool result = isThrustFacingDownwards(&angleInclinationExpectation->inclination);
         EXPECT_EQ(angleInclinationExpectation->expectDownwardsThrust, result);
+    }
+}
+
+typedef struct inclinationAngleExpectations_s {
+    rollAndPitchInclination_t inclination;
+    uint16_t expected_angle;
+} inclinationAngleExpectations_t;
+
+TEST(AltitudeHoldTest, TestCalculateTiltAngle)
+{
+    inclinationAngleExpectations_t inclinationAngleExpectations[] = {
+        { {0, 0}, 0},
+        { {1, 0}, 1},
+        { {0, 1}, 1},
+        { {0, -1}, 1},
+        { {-1, 0}, 1},
+        { {-1, -2}, 2},
+        { {-2, -1}, 2},
+        { {1, 2}, 2},
+        { {2, 1}, 2}
+    };
+
+    rollAndPitchInclination_t inclination = {0, 0};
+    uint16_t tilt_angle = calculateTiltAngle(&inclination);
+    EXPECT_EQ(tilt_angle, 0);
+
+    for (uint8_t i = 0; i < 9; i++) {
+        inclinationAngleExpectations_t *expectation = &inclinationAngleExpectations[i];
+        uint16_t result = calculateTiltAngle(&expectation->inclination);
+        EXPECT_EQ(expectation->expected_angle, result);
     }
 }
 

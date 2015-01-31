@@ -17,18 +17,6 @@
 
 #pragma once
 
-#ifdef SPARKY
-#define USABLE_TIMER_CHANNEL_COUNT 11
-#endif
-
-#ifdef CHEBUZZF3
-#define USABLE_TIMER_CHANNEL_COUNT 18
-#endif
-
-#ifdef CC3D
-#define USABLE_TIMER_CHANNEL_COUNT 12
-#endif
-
 #if !defined(USABLE_TIMER_CHANNEL_COUNT)
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #endif

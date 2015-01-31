@@ -1,6 +1,6 @@
 # Configuration
 
-Cleanflight is configured primarilty using the Cleanflight Configurator GUI.
+Cleanflight is configured primarily using the Cleanflight Configurator GUI.
 
 Both the command line interface and GUI are accessible by connecting to a serial port on the target,
 be it a USB virtual serial port, physical hardware UART port or a SoftSerial port.
@@ -15,7 +15,7 @@ __Due to ongoing development, the fact that the GUI cannot yet backup all your s
 
 ## GUI
 
-![Cleanflight Gui](cleanflight-gui.png)
+![Cleanflight Gui](Screenshots/cleanflight-gui.png)
 
 The GUI tool is the preferred way of configuration.  The GUI tool also includes a terminal which
 can be used to interact with the CLI.
