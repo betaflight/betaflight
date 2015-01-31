@@ -93,7 +93,7 @@ failsafe_t *failsafe;
 
 void initPrintfSupport(void);
 void timerInit(void);
-void initTelemetry(void);
+void telemetryInit(void);
 void serialInit(serialConfig_t *initialSerialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
@@ -346,7 +346,7 @@ void init(void)
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY))
-        initTelemetry();
+        telemetryInit();
 #endif
 
 #ifdef BLACKBOX
