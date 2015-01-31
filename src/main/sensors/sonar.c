@@ -28,8 +28,6 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
-#include "flight/flight.h"
-
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 

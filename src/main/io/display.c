@@ -48,7 +48,7 @@
 
 #include "io/rc_controls.h"
 
-#include "flight/flight.h"
+#include "flight/pid.h"
 #include "flight/imu.h"
 
 #ifdef GPS

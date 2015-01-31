@@ -64,7 +64,7 @@
 #include "sensors/compass.h"
 #include "sensors/barometer.h"
 
-#include "flight/flight.h"
+#include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/navigation.h"

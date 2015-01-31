@@ -15,10 +15,9 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "flight/flight.h"
-
 #include "io/escservo.h"
 #include "io/rc_controls.h"
+#include "flight/pid.h"
 
 #include "sensors/barometer.h"
 

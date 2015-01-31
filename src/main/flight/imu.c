@@ -40,7 +40,7 @@
 #include "sensors/sonar.h"
 
 #include "flight/mixer.h"
-#include "flight/flight.h"
+#include "flight/pid.h"
 #include "flight/imu.h"
 
 #include "config/runtime_config.h"

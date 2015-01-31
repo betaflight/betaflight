@@ -38,7 +38,7 @@
 #include "io/rc_controls.h"
 #include "io/gps.h"
 
-#include "flight/flight.h"
+#include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/autotune.h"

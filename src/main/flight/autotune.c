@@ -34,7 +34,7 @@
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 
-#include "flight/flight.h"
+#include "flight/pid.h"
 #include "flight/imu.h"
 
 #include "config/config.h"

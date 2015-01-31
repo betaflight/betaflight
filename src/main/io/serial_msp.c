@@ -62,12 +62,14 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
-#include "flight/flight.h"
-#include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
+
+#include "mw.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"

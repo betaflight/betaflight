@@ -24,24 +24,26 @@
 
 extern "C" {
     #include "common/axis.h"
-    #include "flight/flight.h"
+    #include "common/maths.h"
 
-    #include "sensors/sensors.h"
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
+
+    #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
 
-    #include "flight/mixer.h"
-    #include "flight/mixer.h"
-
     #include "io/escservo.h"
-    #include "rx/rx.h"
     #include "io/rc_controls.h"
 
-    #include "config/runtime_config.h"
+    #include "rx/rx.h"
 
+    #include "flight/mixer.h"
+    #include "flight/pid.h"
+    #include "flight/imu.h"
     #include "flight/altitudehold.h"
+
+    #include "config/runtime_config.h"
 
 }
 
@@ -148,7 +150,7 @@ uint8_t armingFlags;
 int32_t sonarAlt;
 
 
-void gyroGetADC(void) {};
+void gyroUpdate(void) {};
 bool sensors(uint32_t mask)
 {
     UNUSED(mask);
@@ -159,7 +161,7 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     UNUSED(rollAndPitchTrims);
 }
 
-void accSum_reset(void) {};
+void imuResetAccelerationSum(void) {};
 
 int32_t applyDeadband(int32_t, int32_t) { return 0; }
 uint32_t micros(void) { return 0; }

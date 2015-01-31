@@ -66,10 +66,10 @@
 #include "blackbox/blackbox.h"
 
 #include "flight/mixer.h"
-#include "flight/flight.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
-#include "flight/imu.h"
 #include "flight/autotune.h"
 #include "flight/navigation.h"
 
@@ -94,6 +94,8 @@ int16_t debug[4];
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+
+int16_t magHold;
 int16_t headFreeModeHold;
 
 int16_t telemTemperature1;      // gyro sensor temperature

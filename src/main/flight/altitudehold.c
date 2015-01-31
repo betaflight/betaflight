@@ -35,13 +35,14 @@
 #include "sensors/barometer.h"
 #include "sensors/sonar.h"
 
-#include "flight/mixer.h"
-#include "flight/flight.h"
-#include "flight/imu.h"
-
 #include "rx/rx.h"
+
 #include "io/rc_controls.h"
 #include "io/escservo.h"
+
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
 
 #include "config/runtime_config.h"
 

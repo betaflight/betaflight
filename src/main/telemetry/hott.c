@@ -74,7 +74,7 @@
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
 
-#include "flight/flight.h"
+#include "flight/pid.h"
 #include "flight/navigation.h"
 #include "io/gps.h"
 

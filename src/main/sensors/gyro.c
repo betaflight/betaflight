@@ -25,7 +25,6 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "flight/flight.h"
 #include "sensors/sensors.h"
 #include "io/statusindicator.h"
 #include "sensors/boardalignment.h"

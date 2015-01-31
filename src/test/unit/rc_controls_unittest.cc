@@ -20,14 +20,24 @@
 
 extern "C" {
     #include "platform.h"
+
     #include "common/maths.h"
     #include "common/axis.h"
-    #include "flight/flight.h"
 
-    #include "rx/rx.h"
+    #include "drivers/sensor.h"
+    #include "drivers/accgyro.h"
+
+    #include "sensors/sensors.h"
+    #include "sensors/acceleration.h"
+
     #include "io/escservo.h"
     #include "io/rc_controls.h"
+
+    #include "rx/rx.h"
+
+    #include "flight/pid.h"
 }
+
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 

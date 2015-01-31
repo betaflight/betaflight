@@ -58,14 +58,15 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
-#include "flight/flight.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/altitudehold.h"
-#include "flight/imu.h"
 #include "flight/navigation.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
+
 #include "config/config_profile.h"
 #include "config/config_master.h"
 

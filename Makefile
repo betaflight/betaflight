@@ -203,7 +203,7 @@ COMMON_SRC	 = build_config.c \
 		   mw.c \
 		   flight/altitudehold.c \
 		   flight/failsafe.c \
-		   flight/flight.c \
+		   flight/pid.c \
 		   flight/imu.c \
 		   flight/mixer.c \
 		   drivers/bus_i2c_soft.c \

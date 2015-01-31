@@ -28,24 +28,26 @@
 #ifdef LED_STRIP
 
 #include <common/color.h>
+#include <common/maths.h>
+#include <common/typeconversion.h>
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include <common/maths.h>
 #include <common/printf.h>
-#include <common/typeconversion.h>
 
 #include "sensors/battery.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
-#include "rx/rx.h"
 #include "io/rc_controls.h"
+#include "io/ledstrip.h"
+
+#include "rx/rx.h"
+
 #include "flight/failsafe.h"
 
-#include "io/ledstrip.h"
+#include "config/runtime_config.h"
+#include "config/config.h"
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
