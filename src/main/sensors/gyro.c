@@ -108,7 +108,7 @@ static void applyGyroZero(void)
     }
 }
 
-void gyroGetADC(void)
+void gyroUpdate(void)
 {
     // FIXME When gyro.read() fails due to i2c or other error gyroZero is continually re-applied to gyroADC resulting in a old reading that gets worse over time.
 

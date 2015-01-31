@@ -294,7 +294,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     debug[3] = accAlt;                  // height
 #endif
 
-    accSum_reset();
+    imuResetAccelerationSum();
 
 #ifdef BARO
     if (!isBaroCalibrationComplete()) {

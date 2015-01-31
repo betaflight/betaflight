@@ -77,7 +77,7 @@ imuRuntimeConfig_t *imuRuntimeConfig;
 pidProfile_t *pidProfile;
 accDeadband_t *accDeadband;
 
-void configureIMU(
+void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,
     pidProfile_t *initialPidProfile,
     accDeadband_t *initialAccDeadband,
@@ -92,7 +92,7 @@ void configureIMU(
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 }
 
-void initIMU()
+void imuInit()
 {
     smallAngle = lrintf(acc_1G * cosf(degreesToRadians(imuRuntimeConfig->small_angle)));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
@@ -129,7 +129,7 @@ float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
 
 t_fp_vector EstG;
 
-void accSum_reset(void)
+void imuResetAccelerationSum(void)
 {
     accSum[0] = 0;
     accSum[1] = 0;
@@ -139,7 +139,7 @@ void accSum_reset(void)
 }
 
 // rotate acc into Earth frame and calculate acceleration in it
-void acc_calc(uint32_t deltaT)
+void imuCalculateAcceleration(uint32_t deltaT)
 {
     static int32_t accZoffset = 0;
     static float accz_smooth = 0;
@@ -212,7 +212,7 @@ void acc_calc(uint32_t deltaT)
 *
 * //TODO: Add explanation for how it uses the Z dimension.
 */
-int16_t calculateHeading(t_fp_vector *vec)
+int16_t imuCalculateHeading(t_fp_vector *vec)
 {
     int16_t head;
 
@@ -234,7 +234,7 @@ int16_t calculateHeading(t_fp_vector *vec)
     return head;
 }
 
-static void getEstimatedAttitude(void)
+static void imuCalculateEstimatedAttitude(void)
 {
     int32_t axis;
     int32_t accMag = 0;
@@ -295,24 +295,24 @@ static void getEstimatedAttitude(void)
         for (axis = 0; axis < 3; axis++) {
             EstM.A[axis] = (EstM.A[axis] * imuRuntimeConfig->gyro_cmpfm_factor + magADC[axis]) * invGyroComplimentaryFilter_M_Factor;
         }
-        heading = calculateHeading(&EstM);
+        heading = imuCalculateHeading(&EstM);
     } else {
         rotateV(&EstN.V, &deltaGyroAngle);
         normalizeV(&EstN.V, &EstN.V);
-        heading = calculateHeading(&EstN);
+        heading = imuCalculateHeading(&EstN);
     }
 
-    acc_calc(deltaT); // rotate acc vector into earth frame
+    imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
 }
 
-void computeIMU(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
+void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
 {
     static int16_t gyroYawSmooth = 0;
 
-    gyroGetADC();
+    gyroUpdate();
     if (sensors(SENSOR_ACC)) {
         updateAccelerationReadings(accelerometerTrims);
-        getEstimatedAttitude();
+        imuCalculateEstimatedAttitude();
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;

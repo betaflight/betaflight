@@ -630,7 +630,7 @@ void activateConfig(void)
     imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
-    configureIMU(
+    imuConfigure(
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
         &currentProfile->accDeadband,
