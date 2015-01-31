@@ -50,6 +50,7 @@
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
+#include "flight/altitudehold.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"

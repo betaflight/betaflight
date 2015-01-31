@@ -22,6 +22,11 @@ extern uint32_t accTimeSum;
 extern int accSumCount;
 extern float accVelScale;
 
+extern int16_t accSmooth[XYZ_AXIS_COUNT];
+extern int32_t accSum[XYZ_AXIS_COUNT];
+extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT];
+
+
 typedef struct rollAndPitchInclination_s {
     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
     int16_t rollDeciDegrees;

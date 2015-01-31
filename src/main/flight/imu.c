@@ -48,8 +48,9 @@
 
 extern int16_t debug[4];
 
-int16_t gyroADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
+int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
+int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
@@ -63,11 +64,6 @@ float fc_acc;
 float magneticDeclination = 0.0f;       // calculated at startup from config
 float gyroScaleRad;
 
-// **************
-// gyro+acc IMU
-// **************
-int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
-int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 rollAndPitchInclination_t inclination = { { 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians

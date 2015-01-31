@@ -17,6 +17,8 @@
 
 #pragma once
 
+extern int16_t magHold;
+
 // navigation mode
 typedef enum {
     NAV_MODE_NONE = 0,

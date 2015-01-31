@@ -48,7 +48,7 @@
 extern uint16_t cycleTime;
 extern uint8_t motorCount;
 
-int16_t heading, magHold;
+int16_t heading;
 int16_t axisPID[3];
 
 #ifdef BLACKBOX

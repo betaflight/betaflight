@@ -57,6 +57,7 @@ extern int16_t debug[4];
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 
+int16_t magHold;
 
 // **********************
 // GPS

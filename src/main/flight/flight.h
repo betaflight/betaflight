@@ -49,38 +49,11 @@ typedef struct pidProfile_s {
     uint8_t H_sensitivity;
 } pidProfile_t;
 
-typedef enum {
-    AI_ROLL = 0,
-    AI_PITCH,
-} angle_index_t;
-
-#define ANGLE_INDEX_COUNT 2
-
-// See http://en.wikipedia.org/wiki/Flight_dynamics
-typedef enum {
-    FD_ROLL = 0,
-    FD_PITCH,
-    FD_YAW
-} flight_dynamics_index_t;
-
-#define FLIGHT_DYNAMICS_INDEX_COUNT 3
-
 #define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
 #define DECIDEGREES_TO_DEGREES(angle) (angle / 10.0f)
 
-extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT];
-extern int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT];
-
-extern int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
-extern int32_t accSum[XYZ_AXIS_COUNT];
 extern int16_t axisPID[XYZ_AXIS_COUNT];
-
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
-
-extern int16_t heading, magHold;
-
-extern int32_t AltHold;
-extern int32_t vario;
 
 void setPIDController(int type);
 void resetErrorAngle(void);
