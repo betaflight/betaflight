@@ -185,7 +185,7 @@ static void _putc(void *p, char c)
     serialWrite(printfSerialPort, c);
 }
 
-void initPrintfSupport(void)
+void printfSupportInit(void)
 {
     init_printf(NULL, _putc);
 }
@@ -201,7 +201,7 @@ int fputc(int c, FILE *f)
     return c;
 }
 
-void initPrintfSupport(serialPort_t *serialPort)
+void printfSupportInit(void)
 {
     // Nothing to do
 }

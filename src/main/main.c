@@ -91,7 +91,7 @@ serialPort_t *loopbackPort;
 
 failsafe_t *failsafe;
 
-void initPrintfSupport(void);
+void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
 void serialInit(serialConfig_t *initialSerialConfig);
@@ -125,7 +125,7 @@ void init(void)
     drv_pwm_config_t pwm_params;
     bool sensorsOK = false;
 
-    initPrintfSupport();
+    printfSupportInit();
 
     initEEPROM();
 
