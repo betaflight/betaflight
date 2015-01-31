@@ -22,6 +22,24 @@ extern uint32_t accTimeSum;
 extern int accSumCount;
 extern float accVelScale;
 
+typedef struct rollAndPitchInclination_s {
+    // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+    int16_t rollDeciDegrees;
+    int16_t pitchDeciDegrees;
+} rollAndPitchInclination_t_def;
+
+typedef union {
+    int16_t raw[ANGLE_INDEX_COUNT];
+    rollAndPitchInclination_t_def values;
+} rollAndPitchInclination_t;
+
+extern rollAndPitchInclination_t inclination;
+
+typedef struct accDeadband_s {
+    uint8_t xy;                 // set the acc deadband for xy-Axis
+    uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
+} accDeadband_t;
+
 typedef struct imuRuntimeConfig_s {
     uint8_t acc_lpf_factor;
     uint8_t acc_unarmedcal;
@@ -31,11 +49,11 @@ typedef struct imuRuntimeConfig_s {
 } imuRuntimeConfig_t;
 
 void imuConfigure(
-	imuRuntimeConfig_t *initialImuRuntimeConfig,
-	pidProfile_t *initialPidProfile,
-	accDeadband_t *initialAccDeadband,
-	float accz_lpf_cutoff,
-	uint16_t throttle_correction_angle
+    imuRuntimeConfig_t *initialImuRuntimeConfig,
+    pidProfile_t *initialPidProfile,
+    accDeadband_t *initialAccDeadband,
+    float accz_lpf_cutoff,
+    uint16_t throttle_correction_angle
 );
 
 void calculateEstimatedAltitude(uint32_t currentTime);
@@ -47,3 +65,5 @@ float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
 int16_t imuCalculateHeading(t_fp_vector *vec);
 
 void imuResetAccelerationSum(void);
+
+

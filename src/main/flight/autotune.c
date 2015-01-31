@@ -28,8 +28,14 @@
 #include "common/maths.h"
 
 #include "drivers/system.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
 
 #include "flight/flight.h"
+#include "flight/imu.h"
 
 #include "config/config.h"
 #include "blackbox/blackbox.h"

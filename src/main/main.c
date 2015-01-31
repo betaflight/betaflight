@@ -25,6 +25,8 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/atomic.h"
+#include "common/maths.h"
+
 #include "drivers/nvic.h"
 
 #include "drivers/sensor.h"
@@ -45,30 +47,34 @@
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 
-#include "flight/flight.h"
-#include "flight/mixer.h"
+#include "rx/rx.h"
 
 #include "io/serial.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
-
-#include "rx/rx.h"
 #include "io/gps.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
+
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
-#include "telemetry/telemetry.h"
-#include "blackbox/blackbox.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+
+#include "telemetry/telemetry.h"
+#include "blackbox/blackbox.h"
+
+#include "flight/flight.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/failsafe.h"
+#include "flight/navigation.h"
+
 #include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"

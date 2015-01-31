@@ -30,14 +30,13 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
-#include "flight/flight.h"
-
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/sonar.h"
 
 #include "flight/mixer.h"
+#include "flight/flight.h"
 #include "flight/imu.h"
 
 #include "rx/rx.h"

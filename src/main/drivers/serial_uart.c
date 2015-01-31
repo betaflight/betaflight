@@ -40,6 +40,10 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode);
 uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode);
 
 static void usartConfigurePinInversion(uartPort_t *uartPort) {
+#if !defined(INVERTER) && !defined(STM32F303xC)
+    UNUSED(uartPort);
+#endif
+
 #ifdef INVERTER
     if (uartPort->port.inversion == SERIAL_INVERTED && uartPort->USARTx == INVERTER_USART) {
         // Enable hardware inverter if available.

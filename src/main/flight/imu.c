@@ -26,11 +26,8 @@
 #include <platform.h>
 
 #include "common/axis.h"
-#include "flight/flight.h"
 
 #include "drivers/system.h"
-
-
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
@@ -42,14 +39,16 @@
 #include "sensors/barometer.h"
 #include "sensors/sonar.h"
 
+#include "flight/mixer.h"
+#include "flight/flight.h"
+#include "flight/imu.h"
+
 #include "config/runtime_config.h"
 
-#include "flight/mixer.h"
-#include "flight/imu.h"
 
 extern int16_t debug[4];
 
-int16_t gyroADC[XYZ_AXIS_COUNT], accADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
+int16_t gyroADC[XYZ_AXIS_COUNT], accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
@@ -311,7 +310,7 @@ void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
 
     gyroUpdate();
     if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings(accelerometerTrims);
+        updateAccelerationReadings(accelerometerTrims); // TODO rename to accelerometerUpdate and rename many other 'Acceleration' references to be 'Accelerometer'
         imuCalculateEstimatedAttitude();
     } else {
         accADC[X] = 0;
