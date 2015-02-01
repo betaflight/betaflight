@@ -103,3 +103,4 @@ void mixerResetMotors(void);
 void mixTable(void);
 void writeServos(void);
 void writeMotors(void);
+void filterServos(void);
