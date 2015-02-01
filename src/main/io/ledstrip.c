@@ -771,7 +771,7 @@ void applyLedThrottleLayer()
 
         int scaled = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, -60, +60);
         scaled += HSV_HUE_MAX;
-        color.h = scaled % HSV_HUE_MAX;
+        color.h = (color.h + scaled) % HSV_HUE_MAX;
         setLedHsv(ledIndex, &color);
     }
 }
