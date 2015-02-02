@@ -27,6 +27,8 @@ These values affect mostly the endpoints of the input.  For example,  If the ove
 
 ##TPA and TPA Breakpoint
 
+* Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  tpa_breakpoint is set via CLI
+
 An Example: With TPA = 50 (or .5 in the GUI) and tpa_breakpoint = 1500
 
 At full throttle, your P value is reduced by 50%
@@ -35,6 +37,6 @@ at half throttle (1500), your P vallue is reduced by ~0
 
 So how do you use this?
 
-If you're getting oscillations starting at say 3/4 throttle, set tpa_breakpoint = 1750 or lower (remember, this is assuming your throttle range is 1000-2000), and then slowly increase TPA until your oscillations are gone. Usually, you will want tpa_breakpoint to start a little sooner then when your oscillations start so you'll want to experiment with the values to reduce/remove the oscillations.
+If you're getting oscillations starting at say 3/4 throttle, set tpa breakpoint = 1750 or lower (remember, this is assuming your throttle range is 1000-2000), and then slowly increase TPA until your oscillations are gone. Usually, you will want tpa breakpoint to start a little sooner then when your oscillations start so you'll want to experiment with the values to reduce/remove the oscillations.
 
 In theory, this should allow you to bump your PIDs a tiny bit more because now you can focus your PID tune to how you fly and not have to worry about bringing it down some to compensate for high throttle oscillations.
