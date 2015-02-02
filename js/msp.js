@@ -485,9 +485,9 @@ var MSP = {
                 BF_CONFIG.mixerConfiguration = data.getUint8(0);
                 BF_CONFIG.features = data.getUint32(1, 1);
                 BF_CONFIG.serialrx_type = data.getUint8(5);
-                BF_CONFIG.board_align_roll = data.getInt16(6, 1);
-                BF_CONFIG.board_align_pitch = data.getInt16(8, 1);
-                BF_CONFIG.board_align_yaw = data.getInt16(10, 1);
+                BF_CONFIG.board_align_roll = data.getInt16(6, 1); // -180 - 360
+                BF_CONFIG.board_align_pitch = data.getInt16(8, 1); // -180 - 360
+                BF_CONFIG.board_align_yaw = data.getInt16(10, 1); // -180 - 360
                 BF_CONFIG.currentscale = data.getInt16(12, 1);
                 BF_CONFIG.currentoffset = data.getUint16(14, 1);
                 break;
