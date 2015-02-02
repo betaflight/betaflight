@@ -240,12 +240,14 @@ void showRxPage(void)
 
 void showWelcomePage(void)
 {
-    tfp_sprintf(lineBuffer, "Rev: %s", shortGitRevision);
-    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 0);
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
+
+    tfp_sprintf(lineBuffer, "v%s (%s)", FC_VERSION_STRING, shortGitRevision);
+    i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
     tfp_sprintf(lineBuffer, "Target: %s", targetName);
-    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 1);
+    i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 }
 
