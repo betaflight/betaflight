@@ -234,15 +234,26 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
 }
 
+#ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
+#define FIRST_PORT_INDEX 1
+#define SECOND_PORT_INDEX 0
+#else
+#define FIRST_PORT_INDEX 0
+#define SECOND_PORT_INDEX 1
+#endif
+
 void resetSerialConfig(serialConfig_t *serialConfig)
 {
-#ifdef SWAP_SERIAL_PORT_1_AND_2_DEFAULTS
-    serialConfig->serial_port_scenario[0] = lookupScenarioIndex(SCENARIO_UNUSED);
-    serialConfig->serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
+    serialConfig->serial_port_scenario[FIRST_PORT_INDEX] = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
+
+#ifdef CC3D
+    // Temporary workaround for CC3D non-functional VCP when using OpenPilot bootloader.
+    // This allows MSP connection via USART so the board can be reconfigured.
+    serialConfig->serial_port_scenario[SECOND_PORT_INDEX] = lookupScenarioIndex(SCENARIO_MSP_ONLY);
 #else
-    serialConfig->serial_port_scenario[0] = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
-    serialConfig->serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_UNUSED);
+    serialConfig->serial_port_scenario[SECOND_PORT_INDEX] = lookupScenarioIndex(SCENARIO_UNUSED);
 #endif
+
 #if (SERIAL_PORT_COUNT > 2)
     serialConfig->serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_UNUSED);
 #if (SERIAL_PORT_COUNT > 3)
