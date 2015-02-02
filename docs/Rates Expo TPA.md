@@ -29,6 +29,8 @@ These values affect mostly the endpoints of the input.  For example,  If the ove
 
 * Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  tpa_breakpoint is set via CLI
 
+TPA applies a 'P' value reduction in relation to full Throttle. It is used to 'soften' the P value at extream throttle which sometimes induces oscellation in the aircraft.
+
 An Example: With TPA = 50 (or .5 in the GUI) and tpa_breakpoint = 1500
 
 At full throttle, your P value is reduced by 50%
