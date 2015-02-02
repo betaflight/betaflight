@@ -1,4 +1,4 @@
-#Rates, Expo, & TPA
+#Rates & Expo
 
 RC Rates (on the RECEIVER tab in the GUI)  and Pitch & Roll and Yaw Rates (on the PID TUNING tab of the GUI);  
 
@@ -23,6 +23,6 @@ The most sensitive at the center of the inputs is 0 Expo.
 
 ##Pitch & Roll and Yaw Rates
 
-These values affect mostly the endpoints of the input.  For example,  If the over all control of the aircraft is good, i.e you have your RC Rates dialed in, but extreme enpoint controls need to be faster or slower, like for aerobatics, then these rates can be used to increase the response withoug effecting the center of the input ranges as much.
+These values affect mostly the endpoints of the input.  For example,  If the over all control of the aircraft is good but extreme enpoint controls need to be faster or slower, like for aerobatics, then these rates can be used to increase the response withoug effecting the center of the input ranges as much.
 
 
