@@ -387,8 +387,7 @@ void init(void)
 
     // Now that everything has powered up the voltage and cell count be determined.
 
-    // Check battery type/voltage
-    if (feature(FEATURE_VBAT))
+    if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
         batteryInit(&masterConfig.batteryConfig);
 
 #ifdef DISPLAY
