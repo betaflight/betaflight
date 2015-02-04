@@ -44,42 +44,56 @@ void adcInit(drv_adc_config_t *init)
     memset(&adcConfig, 0, sizeof(adcConfig));
 
     GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_0 | GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AN;
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL ;
 
-    adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_6;
+#ifdef VBAT_ADC_GPIO
+    GPIO_InitStructure.GPIO_Pin   = VBAT_ADC_GPIO_PIN;
+    GPIO_Init(VBAT_ADC_GPIO, &GPIO_InitStructure);
+
+    adcConfig[ADC_BATTERY].adcChannel = VBAT_ADC_CHANNEL;
     adcConfig[ADC_BATTERY].dmaIndex = adcChannelCount;
     adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_601Cycles5;
     adcConfig[ADC_BATTERY].enabled = true;
     adcChannelCount++;
+#endif
 
+#ifdef CURRENT_METER_ADC_GPIO
     if (init->enableCurrentMeter) {
-        GPIO_InitStructure.GPIO_Pin |= GPIO_Pin_1;
+        GPIO_InitStructure.GPIO_Pin = CURRENT_METER_ADC_GPIO_PIN;
+        GPIO_Init(CURRENT_METER_ADC_GPIO, &GPIO_InitStructure);
 
-        adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_7;
+        adcConfig[ADC_CURRENT].adcChannel = CURRENT_METER_ADC_CHANNEL;
         adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
         adcConfig[ADC_CURRENT].enabled = true;
         adcChannelCount++;
-
     }
+#endif
 
+#ifdef RSSI_ADC_GPIO
     if (init->enableRSSI) {
-        GPIO_InitStructure.GPIO_Pin |= GPIO_Pin_2;
+        GPIO_InitStructure.GPIO_Pin = RSSI_ADC_GPIO_PIN;
+        GPIO_Init(RSSI_ADC_GPIO, &GPIO_InitStructure);
 
-        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_8;
+        adcConfig[ADC_RSSI].adcChannel = RSSI_ADC_CHANNEL;
         adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
         adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
         adcConfig[ADC_RSSI].enabled = true;
         adcChannelCount++;
     }
+#endif
 
-    adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_9;
+#ifdef EXTERNAL1_ADC_GPIO
+    GPIO_InitStructure.GPIO_Pin   = EXTERNAL1_ADC_GPIO_PIN;
+    GPIO_Init(EXTERNAL1_ADC_GPIO, &GPIO_InitStructure);
+
+    adcConfig[ADC_EXTERNAL1].adcChannel = EXTERNAL1_ADC_CHANNEL;
     adcConfig[ADC_EXTERNAL1].dmaIndex = adcChannelCount;
     adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_601Cycles5;
     adcConfig[ADC_EXTERNAL1].enabled = true;
     adcChannelCount++;
+#endif
 
     RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_ADC12, ENABLE);
@@ -103,7 +117,6 @@ void adcInit(drv_adc_config_t *init)
 
     DMA_Cmd(DMA1_Channel1, ENABLE);
 
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     // calibrate
 

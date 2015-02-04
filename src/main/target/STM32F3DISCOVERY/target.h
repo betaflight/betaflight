@@ -61,6 +61,22 @@
 
 #define USE_ADC
 
+#define VBAT_ADC_GPIO               GPIOC
+#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
+#define VBAT_ADC_CHANNEL            ADC_Channel_6
+
+#define CURRENT_METER_ADC_GPIO      GPIOC
+#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_1
+#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_7
+
+#define RSSI_ADC_GPIO               GPIOC
+#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
+#define RSSI_ADC_CHANNEL            ADC_Channel_8
+
+#define EXTERNAL1_ADC_GPIO          GPIOC
+#define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
+#define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
+
 #define SENSORS_SET (SENSOR_ACC | SENSOR_MAG)
 
 #define BLACKBOX

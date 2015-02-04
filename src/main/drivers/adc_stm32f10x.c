@@ -64,7 +64,7 @@ void adcInit(drv_adc_config_t *init)
     GPIO_StructInit(&GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AIN;
 
-#ifdef VBAT_ADC_GPIO_PIN
+#ifdef VBAT_ADC_GPIO
     GPIO_InitStructure.GPIO_Pin = VBAT_ADC_GPIO_PIN;
     GPIO_Init(VBAT_ADC_GPIO, &GPIO_InitStructure);
     adcConfig[ADC_BATTERY].adcChannel = VBAT_ADC_CHANNEL;
