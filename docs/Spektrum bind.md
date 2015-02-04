@@ -56,6 +56,9 @@ In order to connect the satellite to a Flip32+, you have to wire the serial data
 
 #### Tested satellite transmitter combinations
 
-| Satellite   | Remote        | Bind Value |
-| ----------- | ------------- | ---------- |
-| Orange R100 | Spektrum DX6i | 3          |
+| Satellite            | Remote        | Remark                             |
+| -------------------- | ------------- | ---------------------------------  |
+| Orange R100          | Spektrum DX6i | Bind value 3                       |
+| Lemon RX DSM2/DSMX   | Spektrum DX8  |                                    |
+| Lemon RX DSMX Devo10 |               | Deviation 4.01 up to 12 channels   |
+| Lemon RX DSM2 Devo7  |               | Deviation                          |
