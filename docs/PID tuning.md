@@ -33,19 +33,21 @@ strength of the correction to be backed off in order to avoid overshooting the t
 
 * Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  tpa_breakpoint is set via CLI
 
-TPA applies a 'P' value reduction in relation to full Throttle. It is used to 'soften' the P value at extream throttle which sometimes induces oscellation in the aircraft.
+TPA applies a PID value reduction in relation to full Throttle. It is used to apply dampening of PID values as full throttle is reached.
+
+TPA = % of dampening that will occur at full throttle.
+
+tpa_breakpoint = the point in the throttle curve at which TPA will begin to be applied.
 
 An Example: With TPA = 50 (or .5 in the GUI) and tpa_breakpoint = 1500
 
-At full throttle, your P value is reduced by 50%
-at 3/4 throttle (say 1750), your P value is reduced by 25% (1/2 the differnce of 1500 and 2000 = 1/2 of 50% = 25%)
-at half throttle (1500), your P vallue is reduced by ~0
+* At 1500 on the throttle channel, the PIDs will begin to be dampened.
+* At 3/4 throttle (1750), PIDs are reduced by 25% (half way between 1500 and 2000 the dampening will be 50% of the total TPA value)
+* At full throttle (2000) the full amount of dampening set in TPA is applied. (50% in this example)
 
-So how do you use this?
+How to use this?
 
-If you're getting oscillations starting at say 3/4 throttle, set tpa breakpoint = 1750 or lower (remember, this is assuming your throttle range is 1000-2000), and then slowly increase TPA until your oscillations are gone. Usually, you will want tpa breakpoint to start a little sooner then when your oscillations start so you'll want to experiment with the values to reduce/remove the oscillations.
-
-In theory, this should allow you to bump your PIDs a tiny bit more because now you can focus your PID tune to how you fly and not have to worry about bringing it down some to compensate for high throttle oscillations.
+If you are getting oscillations starting at say 3/4 throttle, set tpa breakpoint = 1750 or lower (remember, this is assuming your throttle range is 1000-2000), and then slowly increase TPA until your oscillations are gone. Usually, you will want tpa breakpoint to start a little sooner then when your oscillations start so you'll want to experiment with the values to reduce/remove the oscillations.
 
 ## PID controllers
 
