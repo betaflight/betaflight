@@ -556,8 +556,8 @@ var MSP = {
             case MSP_codes.MSP_CF_SERIAL_CONFIG:
                 SERIAL_CONFIG.ports = [];
                 var offset = 0;
-                var serialPortCount = data.byteLength - (4 * 4);
-                for (var i = 0; offset < serialPortCount; i++) {
+                var serialPortCount = (data.byteLength - (4 * 4)) / 2;
+                for (var i = 0; i < serialPortCount; i++) {
                     var serialPort = {
                         identifier: data.getUint8(offset++, 1),
                         scenario: data.getUint8(offset++, 1)

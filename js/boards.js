@@ -3,51 +3,40 @@
 var BOARD_DEFINITIONS = [
     {
         name: "CC3D",
-        identifier: "CC3D",
-        serialPortCount: 3
+        identifier: "CC3D"
     }, {
         name: "ChebuzzF3",
-        identifier: "CHF3",
-        serialPortCount: 3
+        identifier: "CHF3"
     }, {
         name: "CJMCU",
-        identifier: "CJM1",
-        serialPortCount: 2
+        identifier: "CJM1"
     }, {
         name: "EUSTM32F103RB",
-        identifier: "EUF1",
-        serialPortCount: 4
+        identifier: "EUF1"
     }, {
         name: "Naze/Flip32+",
-        identifier: "AFNA",
-        serialPortCount: 4
+        identifier: "AFNA"
     }, {
         name: "Naze32Pro",
-        identifier: "AFF3",
-        serialPortCount: 3
+        identifier: "AFF3"
     }, {
         name: "Olimexino",
-        identifier: "OLI1",
-        serialPortCount: 4
+        identifier: "OLI1"
     }, {
         name: "Port103R",
-        identifier: "103R",
-        serialPortCount: 4
+        identifier: "103R"
     }, {
         name: "Sparky",
-        identifier: "SPKY",
-        serialPortCount: 4
+        identifier: "SPKY"
     }, {
         name: "STM32F3Discovery",
-        identifier: "SDF3",
-        serialPortCount: 3
+        identifier: "SDF3"
     }
 ];
 
 var DEFAULT_BOARD_DEFINITION = {
     name: "Unknown",
-    identifier: "????",
-    serialPortCount: 1
+    identifier: "????"
 };
 
 var BOARD = {
