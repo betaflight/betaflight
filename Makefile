@@ -498,6 +498,7 @@ SPRACINGF3_SRC	 = \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/display_ug2864hsweg01.h \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
