@@ -180,11 +180,16 @@ void init(void)
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
-        .gpioMode = Mode_Out_OD,
         .gpioPin = BEEP_PIN,
         .gpioPort = BEEP_GPIO,
         .gpioPeripheral = BEEP_PERIPHERAL,
+#ifdef BEEPER_INVERTED
+        .gpioMode = Mode_Out_PP,
+        .isInverted = true
+#else
+        .gpioMode = Mode_Out_OD,
         .isInverted = false
+#endif
     };
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
@@ -272,6 +277,7 @@ void init(void)
     }
     LED0_OFF;
     LED1_OFF;
+
 
     imuInit();
     mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
