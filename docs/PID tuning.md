@@ -31,7 +31,7 @@ strength of the correction to be backed off in order to avoid overshooting the t
 
 ##TPA and TPA Breakpoint
 
-* Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  tpa_breakpoint is set via CLI
+*Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  tpa_breakpoint is set via CLI*
 
 TPA applies a PID value reduction in relation to full Throttle. It is used to apply dampening of PID values as full throttle is reached.
 
@@ -42,8 +42,8 @@ tpa_breakpoint = the point in the throttle curve at which TPA will begin to be a
 An Example: With TPA = 50 (or .5 in the GUI) and tpa_breakpoint = 1500
 
 * At 1500 on the throttle channel, the PIDs will begin to be dampened.
-* At 3/4 throttle (1750), PIDs are reduced by 25% (half way between 1500 and 2000 the dampening will be 50% of the total TPA value)
-* At full throttle (2000) the full amount of dampening set in TPA is applied. (50% in this example)
+* At 3/4 throttle (1750), PIDs are reduced by approximately 25% (half way between 1500 and 2000 the dampening will be 50% of the total TPA value of 50% in this example)
+* At full throttle (2000) the full amount of dampening set in TPA is applied. (50% reduction in this example)
 
 How to use this?
 
