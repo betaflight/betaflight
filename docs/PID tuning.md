@@ -16,15 +16,17 @@ Basically, the goal of the PID controller is to bring the craft's rotation rate 
 you're commanding with your sticks. An error is computed which is the difference between your target rotation rate and
 the actual one measured by the gyroscopes, and the controller tries to bring this error to zero.
 
-The P term controls the strength of the correction that is applied to bring the craft toward the target angle or
+##PIDs
+
+**The P term** controls the strength of the correction that is applied to bring the craft toward the target angle or
 rotation rate. If the P term is too low, the craft will be difficult to control as it won't respond quickly enough to
 keep itself stable. If it is set too high, the craft will rapidly oscillate/shake as it continually overshoots its
 target.
 
-The I term corrects small, long term errors. If it is set too low, the craft's attitude will slowly drift. If it is
+**The I term** corrects small, long term errors. If it is set too low, the craft's attitude will slowly drift. If it is
 set too high, the craft will oscillate (but with slower oscillations than with P being set too high).
 
-The D term attempts to increase system stability by monitoring the rate of change in the error. If the error is
+**The D term** attempts to increase system stability by monitoring the rate of change in the error. If the error is
 changing slowly (so the P and I terms aren't having enough impact on reaching the target) the D term causes an increase
 in the correction in order to reach the target sooner. If the error is rapidly converging to zero, the D term causes the
 strength of the correction to be backed off in order to avoid overshooting the target.
