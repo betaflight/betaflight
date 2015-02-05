@@ -45,7 +45,10 @@ An Example: With TPA = 50 (or .5 in the GUI) and tpa_breakpoint = 1500
 * At 3/4 throttle (1750), PIDs are reduced by approximately 25% (half way between 1500 and 2000 the dampening will be 50% of the total TPA value of 50% in this example)
 * At full throttle (2000) the full amount of dampening set in TPA is applied. (50% reduction in this example)
 
-How to use this?
+![tpa example chart](https://cloud.githubusercontent.com/assets/1668170/6053290/655255dc-ac92-11e4-9491-1a58d868c131.png "TPA Example Chart")
+
+
+**How and Why to use this?**
 
 If you are getting oscillations starting at say 3/4 throttle, set tpa breakpoint = 1750 or lower (remember, this is assuming your throttle range is 1000-2000), and then slowly increase TPA until your oscillations are gone. Usually, you will want tpa breakpoint to start a little sooner then when your oscillations start so you'll want to experiment with the values to reduce/remove the oscillations.
 
