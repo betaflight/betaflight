@@ -26,10 +26,7 @@ target.
 **The I term** corrects small, long term errors. If it is set too low, the craft's attitude will slowly drift. If it is
 set too high, the craft will oscillate (but with slower oscillations than with P being set too high).
 
-**The D term** attempts to increase system stability by monitoring the rate of change in the error. If the error is
-changing slowly (so the P and I terms aren't having enough impact on reaching the target) the D term causes an increase
-in the correction in order to reach the target sooner. If the error is rapidly converging to zero, the D term causes the
-strength of the correction to be backed off in order to avoid overshooting the target.
+**The D term** attempts to increase system stability by monitoring the rate of change in the error. If the error is rapidly converging to zero, the D term causes the strength of the correction to be backed off in order to avoid overshooting the target.
 
 ##TPA and TPA Breakpoint
 
@@ -37,11 +34,11 @@ strength of the correction to be backed off in order to avoid overshooting the t
 
 TPA applies a PID value reduction in relation to full Throttle. It is used to apply dampening of PID values as full throttle is reached.
 
-TPA = % of dampening that will occur at full throttle.
+**TPA** = % of dampening that will occur at full throttle.
 
-tpa_breakpoint = the point in the throttle curve at which TPA will begin to be applied.
+**tpa_breakpoint** = the point in the throttle curve at which TPA will begin to be applied.
 
-An Example: With TPA = 50 (or .5 in the GUI) and tpa_breakpoint = 1500
+An Example: With TPA = 50 (or .5 in the GUI) and tpa_breakpoint = 1500 (assumed throttle range 1000 - 2000)
 
 * At 1500 on the throttle channel, the PIDs will begin to be dampened.
 * At 3/4 throttle (1750), PIDs are reduced by approximately 25% (half way between 1500 and 2000 the dampening will be 50% of the total TPA value of 50% in this example)
