@@ -63,7 +63,7 @@ affecting yaw, roll or pitch rotation rates (which are tuned by the dedicated ro
 settings).
 
 In Angle mode, this controller uses the LEVEL "P" PID setting to decide how strong the auto-level correction should
-be.  
+be. Note that the default value for P_Level is 90.  This is more than likely too high of a value for most, and will cause the model to be very unstable in Angle Mode, and could result in loss of control.  It is recommended to change this value to 20 before using PID Controller 2 in Angle Mode.
 
 In Horizon mode, this controller uses the LEVEL "I" PID setting to decide how much auto-level correction should be
 applied. The default Cleanflight setting for "I" will result in virtually no auto-leveling being applied, so that will
