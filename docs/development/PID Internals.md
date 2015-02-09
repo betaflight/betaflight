@@ -42,5 +42,5 @@ reset I term if
 
 ```
 P = -gyroData[axis] / 4 * dynP8 / 10 / 8
-D = -mean(diff(gyroData[axis] / 4), over 3 samples) * 3 * dynP8 / 32
+D = -mean(diff(gyroData[axis] / 4), over 3 samples) * 3 * dynD8 / 32
 ```
