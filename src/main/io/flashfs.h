@@ -31,6 +31,8 @@ void flashfsEraseCompletely();
 void flashfsEraseRange(uint32_t start, uint32_t end);
 
 uint32_t flashfsGetSize();
+uint32_t flashfsGetOffset();
+int flashfsIdentifyStartOfFreeSpace();
 const flashGeometry_t* flashfsGetGeometry();
 
 void flashfsSeekAbs(uint32_t offset);
@@ -39,7 +41,9 @@ void flashfsSeekRel(int32_t offset);
 void flashfsWriteByte(uint8_t byte);
 void flashfsWrite(const uint8_t *data, unsigned int len);
 
-int flashfsRead(uint8_t *data, unsigned int len);
+int flashfsReadAbs(uint32_t offset, uint8_t *data, unsigned int len);
 
 void flashfsFlushAsync();
 void flashfsFlushSync();
+
+void flashfsInit();

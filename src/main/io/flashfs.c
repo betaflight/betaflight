@@ -18,6 +18,10 @@
 /**
  * This provides a stream interface to a flash chip if one is present.
  *
+ * On statup, call flashfsInit after initialising the flash chip, in order to init the filesystem. This will
+ * result in the file pointer being pointed at the first free block found, or at the end of the device if the
+ * flash chip is full.
+ *
  * Note that bits can only be set to 0 when writing, not back to 1 from 0. You must erase sectors in order
  * to bring bits back to 1 again.
  */
@@ -39,7 +43,7 @@ static uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
  */
 static uint8_t bufferHead = 0, bufferTail = 0;
 
-// The position of our tail in the overall flash address space:
+// The position of the buffer's tail in the overall flash address space:
 static uint32_t tailAddress = 0;
 // The index of the tail within the flash page it is inside
 static uint16_t tailIndexInPage = 0;
@@ -55,7 +59,10 @@ static void flashfsClearBuffer()
 static void flashfsSetTailAddress(uint32_t address)
 {
     tailAddress = address;
-    tailIndexInPage = tailAddress % m25p16_getGeometry()->pageSize;
+
+    if (m25p16_getGeometry()->pageSize > 0) {
+        tailIndexInPage = tailAddress % m25p16_getGeometry()->pageSize;
+    }
 }
 
 void flashfsEraseCompletely()
@@ -163,6 +170,10 @@ static uint32_t flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSiz
             bytesTotalThisIteration = bytesTotalRemaining;
         }
 
+        // Are we at EOF already? Abort.
+        if (tailAddress >= flashfsGetSize())
+            break;
+
         m25p16_pageProgramBegin(tailAddress);
 
         bytesRemainThisIteration = bytesTotalThisIteration;
@@ -226,6 +237,21 @@ static void flashfsGetDirtyDataBuffers(uint8_t const *buffers[], uint32_t buffer
         bufferSizes[0] = FLASHFS_WRITE_BUFFER_SIZE - bufferTail;
         bufferSizes[1] = bufferHead;
     }
+}
+
+/**
+ * Get the current offset of the file pointer within the volume.
+ */
+uint32_t flashfsGetOffset()
+{
+    uint8_t const * buffers[2];
+    uint32_t bufferSizes[2];
+
+    // Dirty data in the buffers contributes to the offset
+
+    flashfsGetDirtyDataBuffers(buffers, bufferSizes);
+
+    return tailAddress + bufferSizes[0] + bufferSizes[1];
 }
 
 /**
@@ -395,23 +421,100 @@ void flashfsWrite(const uint8_t *data, unsigned int len)
 }
 
 /**
- * Read `len` bytes from the current cursor location into the supplied buffer.
+ * Read `len` bytes from the given address into the supplied buffer.
  *
  * Returns the number of bytes actually read which may be less than that requested.
  */
-int flashfsRead(uint8_t *data, unsigned int len)
+int flashfsReadAbs(uint32_t address, uint8_t *buffer, unsigned int len)
 {
     int bytesRead;
 
     // Did caller try to read past the end of the volume?
-    if (tailAddress + len > flashfsGetSize()) {
+    if (address + len > flashfsGetSize()) {
         // Truncate their request
-        len = flashfsGetSize() - tailAddress;
+        len = flashfsGetSize() - address;
     }
 
-    bytesRead = m25p16_readBytes(tailAddress, data, len);
+    // Since the read could overlap data in our dirty buffers, force a sync to clear those first
+    flashfsFlushSync();
 
-    flashfsSetTailAddress(tailAddress + bytesRead);
+    bytesRead = m25p16_readBytes(address, buffer, len);
 
     return bytesRead;
+}
+
+/**
+ * Find the offset of the start of the free space on the device (or the size of the device if it is full).
+ */
+int flashfsIdentifyStartOfFreeSpace()
+{
+    /* Find the start of the free space on the device by examining the beginning of blocks with a binary search,
+     * looking for ones that appear to be erased. We can achieve this with good accuracy because an erased block
+     * is all bits set to 1, which pretty much never appears in reasonable size substrings of blackbox logs.
+     *
+     * To do better we might write a volume header instead, which would mark how much free space remains. But keeping
+     * a header up to date while logging would incur more writes to the flash, which would consume precious write
+     * bandwidth and block more often.
+     */
+
+    enum {
+        /* We can choose whatever power of 2 size we like, which determines how much wastage of free space we'll have
+         * at the end of the last written data. But smaller blocksizes will require more searching.
+         */
+        FREE_BLOCK_SIZE = 65536,
+
+        /* We don't expect valid data to ever contain this many consecutive uint32_t's of all 1 bits: */
+        FREE_BLOCK_TEST_SIZE_INTS = 4, // i.e. 16 bytes
+        FREE_BLOCK_TEST_SIZE_BYTES = FREE_BLOCK_TEST_SIZE_INTS * sizeof(uint32_t),
+    };
+
+    union {
+        uint8_t bytes[FREE_BLOCK_TEST_SIZE_BYTES];
+        uint32_t ints[FREE_BLOCK_TEST_SIZE_INTS];
+    } testBuffer;
+
+    int left = 0;
+    int right = flashfsGetSize() / FREE_BLOCK_SIZE;
+    int mid, result = right;
+    int i;
+    bool blockErased;
+
+    while (left < right) {
+        mid = (left + right) / 2;
+
+        m25p16_readBytes(mid * FREE_BLOCK_SIZE, testBuffer.bytes, FREE_BLOCK_TEST_SIZE_BYTES);
+
+        // Checking the buffer 4 bytes at a time like this is probably faster than byte-by-byte, but I didn't benchmark it :)
+        blockErased = true;
+        for (i = 0; i < FREE_BLOCK_TEST_SIZE_INTS; i++) {
+            if (testBuffer.ints[i] != 0xFFFFFFFF) {
+                blockErased = false;
+                break;
+            }
+        }
+
+        if (blockErased) {
+            /* This erased block might be the leftmost erased block in the volume, but we'll need to continue the
+             * search leftwards to find out:
+             */
+            result = mid;
+
+            right = mid;
+        } else {
+            left = mid + 1;
+        }
+    }
+
+    return result * FREE_BLOCK_SIZE;
+}
+
+/**
+ * Call after initializing the flash chip in order to set up the filesystem.
+ */
+void flashfsInit()
+{
+    if (flashfsGetSize() > 0) {
+        // Start the file pointer off at the beginning of free space so caller can start writing immediately
+        flashfsSeekAbs(flashfsIdentifyStartOfFreeSpace());
+    }
 }

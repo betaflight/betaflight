@@ -50,6 +50,7 @@
 #include "flight/mixer.h"
 
 #include "io/serial.h"
+#include "io/flashfs.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
@@ -355,6 +356,7 @@ void init(void)
         // naze32 rev5 and above have 16mbit of flash available
         m25p16_init();
     #endif
+    flashfsInit();
 #endif
 
 #ifdef BLACKBOX

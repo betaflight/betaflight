@@ -256,7 +256,9 @@ void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length)
  * Read `length` bytes into the provided `buffer` from the flash starting from the given `address` (which need not lie
  * on a page boundary).
  *
- * The number of bytes actually read is returned, which can be zero if an error occurred.
+ * Waits up to DEFAULT_TIMEOUT_MILLIS milliseconds for the flash to become ready before reading.
+ *
+ * The number of bytes actually read is returned, which can be zero if an error or timeout occurred.
  */
 int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length)
 {

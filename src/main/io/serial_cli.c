@@ -753,8 +753,8 @@ static void cliFlashIdent(char *cmdline)
 
     UNUSED(cmdline);
 
-    printf("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u\r\n",
-            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize);
+    printf("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u, usedSize=%u\r\n",
+            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
 }
 
 static void cliFlashErase(char *cmdline)
@@ -786,7 +786,7 @@ static void cliFlashRead(char *cmdline)
 {
     uint32_t address = atoi(cmdline);
     uint32_t length;
-    uint32_t i;
+    int i;
 
     uint8_t buffer[32];
 
@@ -799,18 +799,22 @@ static void cliFlashRead(char *cmdline)
 
         printf("Reading %u bytes at %u:\r\n", length, address);
 
-        flashfsSeekAbs(address);
-
         while (length > 0) {
-            uint32_t bytesToRead = length < 32 ? length : 32;
+            int bytesRead;
 
-            flashfsRead(buffer, bytesToRead);
+            bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
 
-            for (i = 0; i < bytesToRead; i++) {
-                printf("%c", (char) buffer[i]);
+            for (i = 0; i < bytesRead; i++) {
+                cliWrite(buffer[i]);
             }
 
-            length -= bytesToRead;
+            length -= bytesRead;
+            address += bytesRead;
+
+            if (bytesRead == 0) {
+                //Assume we reached the end of the volume or something fatal happened
+                break;
+            }
         }
         printf("\r\n");
     }

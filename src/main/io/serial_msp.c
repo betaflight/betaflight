@@ -533,13 +533,14 @@ reset:
 
 static void serializeDataflashSummaryReply(void)
 {
+    headSerialReply(3 * 4);
 #ifdef FLASHFS
     const flashGeometry_t *geometry = flashfsGetGeometry();
-    headSerialReply(2 * 4);
     serialize32(geometry->sectors);
     serialize32(geometry->totalSize);
+    serialize32(flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
 #else
-    headSerialReply(2 * 4);
+    serialize32(0);
     serialize32(0);
     serialize32(0);
 #endif
@@ -548,22 +549,19 @@ static void serializeDataflashSummaryReply(void)
 #ifdef FLASHFS
 static void serializeDataflashReadReply(uint32_t address, uint8_t size)
 {
-    enum { DATAFLASH_READ_REPLY_CHUNK_SIZE = 128 };
-
-    uint8_t buffer[DATAFLASH_READ_REPLY_CHUNK_SIZE];
+    uint8_t buffer[128];
     int bytesRead;
 
-    if (size > DATAFLASH_READ_REPLY_CHUNK_SIZE) {
-        size = DATAFLASH_READ_REPLY_CHUNK_SIZE;
+    if (size > sizeof(buffer)) {
+        size = sizeof(buffer);
     }
 
     headSerialReply(4 + size);
 
     serialize32(address);
 
-    flashfsSeekAbs(address);
     // bytesRead will be lower than that requested if we reach end of volume
-    bytesRead = flashfsRead(buffer, size);
+    bytesRead = flashfsReadAbs(address, buffer, size);
 
     for (int i = 0; i < bytesRead; i++) {
         serialize8(buffer[i]);
