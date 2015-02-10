@@ -619,7 +619,12 @@ var MSP = {
                 break;
             case MSP_codes.MSP_CHANNEL_FORWARDING:
                 for (var i = 0; i < 8; i ++) {
-                    SERVO_CONFIG[i].indexOfChannelToForward = data.getUint8(i);
+                    var channelIndex = data.getUint8(i);
+                    if (channelIndex < 255) {
+                        SERVO_CONFIG[i].indexOfChannelToForward;
+                    } else {
+                        SERVO_CONFIG[i].indexOfChannelToForward = undefined;
+                    }
                 }
                 break;
 
@@ -915,7 +920,11 @@ MSP.crunch = function (code) {
             break;
         case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
-                buffer.push(SERVO_CONFIG[i].indexOfChannelToForward);
+                var out = SERVO_CONFIG[i].indexOfChannelToForward;
+                if (out == undefined) {
+                    out = 255; // Cleanflight defines "CHANNEL_FORWARDING_DISABLED" as "(uint8_t)0xFF"
+                }
+                buffer.push(out);
             }
             break;
         case MSP_codes.MSP_SET_CF_SERIAL_CONFIG:

@@ -35,7 +35,6 @@ var BOARD_DEFINITIONS = [
         name: "SP Racing F3",
         identifier: "SRF3"
     }
-   }
 ];
 
 var DEFAULT_BOARD_DEFINITION = {
