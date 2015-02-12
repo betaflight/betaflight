@@ -30,7 +30,7 @@ set too high, the craft will oscillate (but with slower oscillations than with P
 
 ##TPA and TPA Breakpoint
 
-*Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  tpa_breakpoint is set via CLI*
+Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  tpa_breakpoint is set via CLI
 
 Also note that TPA and tpa_breakpoint may not be used in certain PID Contorllers.  Check the description on the individual controller.
 
