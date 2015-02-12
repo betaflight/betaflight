@@ -101,6 +101,8 @@ void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
 void serialInit(serialConfig_t *initialSerialConfig);
+void mspInit(serialConfig_t *serialConfig);
+void cliInit(serialConfig_t *serialConfig);
 failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMixers);
@@ -289,13 +291,16 @@ void init(void)
 
     serialInit(&masterConfig.serialConfig);
 
+    mspInit(&masterConfig.serialConfig);
+    cliInit(&masterConfig.serialConfig);
+
     memset(&pwm_params, 0, sizeof(pwm_params));
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-#if defined(SERIAL_PORT_USART2) && defined(STM32F10X)
+#if defined(USE_USART2) && defined(STM32F10X)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
     pwm_params.useVbat = feature(FEATURE_VBAT);

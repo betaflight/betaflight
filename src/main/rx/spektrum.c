@@ -56,14 +56,7 @@ static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 static void spektrumDataReceive(uint16_t c);
 static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-static serialPort_t *spektrumPort;
-
-void spektrumUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
-{
-    functionConstraint->minBaudRate = SPEKTRUM_BAUDRATE;
-    functionConstraint->maxBaudRate = SPEKTRUM_BAUDRATE;
-    functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK;
-}
+static serialPort_t *spektrumPort = NULL;
 
 bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
@@ -84,9 +77,15 @@ bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
             break;
     }
 
-    spektrumPort = openSerialPort(FUNCTION_SERIAL_RX, spektrumDataReceive, SPEKTRUM_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
     if (callback)
         *callback = spektrumReadRawRC;
+
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_SERIAL_RX);
+    if (!portConfig) {
+        return false;
+    }
+
+    spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_SERIAL_RX, spektrumDataReceive, SPEKTRUM_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
 
     return spektrumPort != NULL;
 }

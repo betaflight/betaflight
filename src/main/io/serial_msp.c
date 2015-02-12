@@ -130,7 +130,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   5 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   6 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -357,6 +357,7 @@ typedef enum {
     HEADER_ARROW,
     HEADER_SIZE,
     HEADER_CMD,
+    COMMAND_RECEIVED
 } mspState_e;
 
 typedef enum {
@@ -539,48 +540,30 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, ms
     mspPortToReset->mspPortUsage = usage;
 }
 
-// This rate is chosen since softserial supports it.
-#define MSP_FALLBACK_BAUDRATE 19200
-
 void mspAllocateSerialPorts(serialConfig_t *serialConfig)
 {
-    serialPort_t *port;
+    UNUSED(serialConfig);
 
-    uint8_t portIndex;
+    serialPort_t *serialPort;
 
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+    uint8_t portIndex = 0;
+
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
+
+    while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
         mspPort_t *mspPort = &mspPorts[portIndex];
         if (mspPort->mspPortUsage != UNUSED_PORT) {
             continue;
         }
 
-        uint32_t baudRate = serialConfig->msp_baudrate;
-
-        bool triedFallbackRate = false;
-        do {
-
-            port = openSerialPort(FUNCTION_MSP, NULL, baudRate, MODE_RXTX, SERIAL_NOT_INVERTED);
-            if (!port) {
-                if (triedFallbackRate) {
-                    break;
-                }
-
-                baudRate = MSP_FALLBACK_BAUDRATE;
-                triedFallbackRate = true;
-            }
-        } while (!port);
-
-        if (port && portIndex < MAX_MSP_PORT_COUNT) {
-            resetMspPort(mspPort, port, FOR_GENERAL_MSP);
+        serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, portConfig->baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
+        if (serialPort) {
+            resetMspPort(mspPort, serialPort, FOR_GENERAL_MSP);
+            portIndex++;
         }
-        if (!port) {
-            break;
-        }
+
+        portConfig = findNextSerialPortConfig(FUNCTION_MSP);
     }
-
-    // XXX this function might help with adding support for MSP on more than one port, if not delete it.
-    const serialPortFunctionList_t *serialPortFunctionList = getSerialPortFunctionList();
-    UNUSED(serialPortFunctionList);
 }
 
 void mspReleasePortIfAllocated(serialPort_t *serialPort)
@@ -589,7 +572,7 @@ void mspReleasePortIfAllocated(serialPort_t *serialPort)
     for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t *candidateMspPort = &mspPorts[portIndex];
         if (candidateMspPort->port == serialPort) {
-            endSerialPortFunction(serialPort, FUNCTION_MSP);
+            closeSerialPort(serialPort);
             memset(candidateMspPort, 0, sizeof(mspPort_t));
         }
     }
@@ -1120,17 +1103,13 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_CF_SERIAL_CONFIG:
         headSerialReply(
-            ((sizeof(uint8_t) * 2) * SERIAL_PORT_COUNT) +
-            (sizeof(uint32_t) * 4)
+            ((sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t)) * SERIAL_PORT_COUNT)
         );
         for (i = 0; i < SERIAL_PORT_COUNT; i++) {
-            serialize8(serialPortConstraints[i].identifier);
-            serialize8(masterConfig.serialConfig.serial_port_scenario[i]);
+            serialize8(masterConfig.serialConfig.portConfigs[i].identifier);
+            serialize16(masterConfig.serialConfig.portConfigs[i].functionMask);
+            serialize32(masterConfig.serialConfig.portConfigs[i].baudrate);
         }
-        serialize32(masterConfig.serialConfig.msp_baudrate);
-        serialize32(masterConfig.serialConfig.cli_baudrate);
-        serialize32(masterConfig.serialConfig.gps_baudrate);
-        serialize32(masterConfig.serialConfig.gps_passthrough_baudrate);
         break;
 
 #ifdef LED_STRIP
@@ -1476,19 +1455,17 @@ static bool processInCommand(void)
 
     case MSP_SET_CF_SERIAL_CONFIG:
         {
-            uint8_t baudRateSize = (sizeof(uint32_t) * 4);
-            uint8_t serialPortCount = currentPort->dataSize - baudRateSize;
-            if (serialPortCount != SERIAL_PORT_COUNT) {
+            uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
+
+            if ((SERIAL_PORT_COUNT * portConfigSize) != SERIAL_PORT_COUNT) {
                 headSerialError(0);
                 break;
             }
             for (i = 0; i < SERIAL_PORT_COUNT; i++) {
-                masterConfig.serialConfig.serial_port_scenario[i] = read8();
+                masterConfig.serialConfig.portConfigs[i].identifier = read8();
+                masterConfig.serialConfig.portConfigs[i].functionMask = read16();
+                masterConfig.serialConfig.portConfigs[i].baudrate = read32();
             }
-            masterConfig.serialConfig.msp_baudrate = read32();
-            masterConfig.serialConfig.cli_baudrate = read32();
-            masterConfig.serialConfig.gps_baudrate = read32();
-            masterConfig.serialConfig.gps_passthrough_baudrate = read32();
         }
         break;
 
@@ -1543,51 +1520,53 @@ static bool processInCommand(void)
     return true;
 }
 
-static void mspProcessPort(void)
+static void mspProcessReceivedCommand() {
+    if (!(processOutCommand(currentPort->cmdMSP) || processInCommand())) {
+        headSerialError(0);
+    }
+    tailSerialReply();
+    currentPort->c_state = IDLE;
+}
+
+static bool mspProcessReceivedData(uint8_t c)
 {
-    uint8_t c;
+    if (currentPort->c_state == IDLE) {
+        if (c == '$') {
+            currentPort->c_state = HEADER_START;
+        } else {
+            return false;
+        }
+    } else if (currentPort->c_state == HEADER_START) {
+        currentPort->c_state = (c == 'M') ? HEADER_M : IDLE;
+    } else if (currentPort->c_state == HEADER_M) {
+        currentPort->c_state = (c == '<') ? HEADER_ARROW : IDLE;
+    } else if (currentPort->c_state == HEADER_ARROW) {
+        if (c > INBUF_SIZE) {
+            currentPort->c_state = IDLE;
 
-    while (serialTotalBytesWaiting(mspSerialPort)) {
-        c = serialRead(mspSerialPort);
-
-        if (currentPort->c_state == IDLE) {
-            currentPort->c_state = (c == '$') ? HEADER_START : IDLE;
-            if (currentPort->c_state == IDLE && !ARMING_FLAG(ARMED))
-                evaluateOtherData(c); // if not armed evaluate all other incoming serial data
-        } else if (currentPort->c_state == HEADER_START) {
-            currentPort->c_state = (c == 'M') ? HEADER_M : IDLE;
-        } else if (currentPort->c_state == HEADER_M) {
-            currentPort->c_state = (c == '<') ? HEADER_ARROW : IDLE;
-        } else if (currentPort->c_state == HEADER_ARROW) {
-            if (c > INBUF_SIZE) {       // now we are expecting the payload size
-                currentPort->c_state = IDLE;
-                continue;
-            }
+        } else {
             currentPort->dataSize = c;
             currentPort->offset = 0;
             currentPort->checksum = 0;
             currentPort->indRX = 0;
             currentPort->checksum ^= c;
-            currentPort->c_state = HEADER_SIZE;      // the command is to follow
-        } else if (currentPort->c_state == HEADER_SIZE) {
-            currentPort->cmdMSP = c;
-            currentPort->checksum ^= c;
-            currentPort->c_state = HEADER_CMD;
-        } else if (currentPort->c_state == HEADER_CMD && currentPort->offset < currentPort->dataSize) {
-            currentPort->checksum ^= c;
-            currentPort->inBuf[currentPort->offset++] = c;
-        } else if (currentPort->c_state == HEADER_CMD && currentPort->offset >= currentPort->dataSize) {
-            if (currentPort->checksum == c) {        // compare calculated and transferred checksum
-                // we got a valid packet, evaluate it
-                if (!(processOutCommand(currentPort->cmdMSP) || processInCommand())) {
-                    headSerialError(0);
-                }
-                tailSerialReply();
-            }
+            currentPort->c_state = HEADER_SIZE;
+        }
+    } else if (currentPort->c_state == HEADER_SIZE) {
+        currentPort->cmdMSP = c;
+        currentPort->checksum ^= c;
+        currentPort->c_state = HEADER_CMD;
+    } else if (currentPort->c_state == HEADER_CMD && currentPort->offset < currentPort->dataSize) {
+        currentPort->checksum ^= c;
+        currentPort->inBuf[currentPort->offset++] = c;
+    } else if (currentPort->c_state == HEADER_CMD && currentPort->offset >= currentPort->dataSize) {
+        if (currentPort->checksum == c) {
+            currentPort->c_state = COMMAND_RECEIVED;
+        } else {
             currentPort->c_state = IDLE;
-            break; // process one command so as not to block.
         }
     }
+    return true;
 }
 
 void setCurrentPort(mspPort_t *port)
@@ -1608,7 +1587,21 @@ void mspProcess(void)
         }
 
         setCurrentPort(candidatePort);
-        mspProcessPort();
+
+        while (serialTotalBytesWaiting(mspSerialPort)) {
+
+            uint8_t c = serialRead(mspSerialPort);
+            bool consumed = mspProcessReceivedData(c);
+
+            if (!consumed && !ARMING_FLAG(ARMED)) {
+                evaluateOtherData(mspSerialPort, c);
+            }
+
+            if (currentPort->c_state == COMMAND_RECEIVED) {
+                mspProcessReceivedCommand();
+                break; // process one command at a time so as not to block.
+            }
+        }
 
         if (isRebootScheduled) {
             // pause a little while to allow response to be sent

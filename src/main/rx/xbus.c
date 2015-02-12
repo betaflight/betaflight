@@ -86,13 +86,6 @@ static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static serialPort_t *xBusPort;
 
-void xBusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
-{
-    functionConstraint->minBaudRate = XBUS_BAUDRATE;
-    functionConstraint->maxBaudRate = XBUS_RJ01_BAUDRATE;
-    functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK;
-}
-
 bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     uint32_t baudRate;
@@ -123,10 +116,16 @@ bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
             break;
     }
 
-    xBusPort = openSerialPort(FUNCTION_SERIAL_RX, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
     if (callback) {
         *callback = xBusReadRawRC;
     }
+
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_SERIAL_RX);
+    if (!portConfig) {
+        return false;
+    }
+
+    xBusPort = openSerialPort(portConfig->identifier, FUNCTION_SERIAL_RX, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
 
     return xBusPort != NULL;
 }

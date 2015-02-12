@@ -103,7 +103,7 @@ static uint8_t hottMsgCrc;
 #define HOTT_BAUDRATE 19200
 #define HOTT_INITIAL_PORT_MODE MODE_RX
 
-static serialPort_t *hottPort;
+static serialPort_t *hottPort = NULL;
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -249,16 +249,10 @@ static void hottSerialWrite(uint8_t c)
     serialWrite(hottPort, c);
 }
 
-static portMode_t previousPortMode;
-static uint32_t previousBaudRate;
-
 void freeHoTTTelemetryPort(void)
 {
-    // FIXME only need to do this if the port is shared
-    serialSetMode(hottPort, previousPortMode);
-    serialSetBaudRate(hottPort, previousBaudRate);
-
-    endSerialPortFunction(hottPort, FUNCTION_TELEMETRY);
+    closeSerialPort(hottPort);
+    hottPort = NULL;
 }
 
 void initHoTTTelemetry(telemetryConfig_t *initialTelemetryConfig)
@@ -270,33 +264,27 @@ void initHoTTTelemetry(telemetryConfig_t *initialTelemetryConfig)
 
 void configureHoTTTelemetryPort(void)
 {
-    hottPort = findOpenSerialPort(FUNCTION_TELEMETRY);
-    if (hottPort) {
-        previousPortMode = hottPort->mode;
-        previousBaudRate = hottPort->baudRate;
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_HOTT_TELEMETRY);
+    if (!portConfig) {
+        return;
+    }
 
-        //waitForSerialPortToFinishTransmitting(hottPort); // FIXME locks up the system
+    hottPort = openSerialPort(portConfig->identifier, FUNCTION_HOTT_TELEMETRY, NULL, HOTT_BAUDRATE, HOTT_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
-        serialSetBaudRate(hottPort, HOTT_BAUDRATE);
-        serialSetMode(hottPort, HOTT_INITIAL_PORT_MODE);
-        beginSerialPortFunction(hottPort, FUNCTION_TELEMETRY);
-    } else {
-        hottPort = openSerialPort(FUNCTION_TELEMETRY, NULL, HOTT_BAUDRATE, HOTT_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+    if (!hottPort) {
+        return;
+    }
 
-        // FIXME only need to do this if the port is shared
-        previousPortMode = hottPort->mode;
-        previousBaudRate = hottPort->baudRate;
 #ifdef USE_SOFTSERIAL1
-        if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL1) {
-            useSoftserialRxFailureWorkaround = true;
-        }
+    if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL1) {
+        useSoftserialRxFailureWorkaround = true;
+    }
 #endif
 #ifdef USE_SOFTSERIAL2
-        if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL2) {
-            useSoftserialRxFailureWorkaround = true;
-        }
-#endif
+    if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL2) {
+        useSoftserialRxFailureWorkaround = true;
     }
+#endif
 }
 
 static void hottSendResponse(uint8_t *buffer, int length)
@@ -488,7 +476,4 @@ void handleHoTTTelemetry(void)
     serialTimer = now;
 }
 
-uint32_t getHoTTTelemetryProviderBaudRate(void) {
-    return HOTT_BAUDRATE;
-}
 #endif

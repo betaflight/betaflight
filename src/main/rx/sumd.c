@@ -44,26 +44,27 @@
 
 static bool sumdFrameDone = false;
 static uint32_t sumdChannels[SUMD_MAX_CHANNEL];
-static serialPort_t *sumdPort;
+
+static serialPort_t *sumdPort = NULL;
 
 static void sumdDataReceive(uint16_t c);
 static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-void sumdUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
-{
-    functionConstraint->minBaudRate = SUMD_BAUDRATE;
-    functionConstraint->maxBaudRate = SUMD_BAUDRATE;
-    functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK;
-}
-
 bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     UNUSED(rxConfig);
-    sumdPort = openSerialPort(FUNCTION_SERIAL_RX, sumdDataReceive, SUMD_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+
     if (callback)
         *callback = sumdReadRawRC;
 
     rxRuntimeConfig->channelCount = SUMD_MAX_CHANNEL;
+
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_SERIAL_RX);
+    if (!portConfig) {
+        return false;
+    }
+
+    sumdPort = openSerialPort(portConfig->identifier, FUNCTION_SERIAL_RX, sumdDataReceive, SUMD_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
 
     return sumdPort != NULL;
 }

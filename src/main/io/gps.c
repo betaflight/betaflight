@@ -202,20 +202,12 @@ static void gpsSetState(uint8_t state)
     gpsData.messageState = GPS_MESSAGE_STATE_IDLE;
 }
 
-// When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
 void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 {
     serialConfig = initialSerialConfig;
 
-    gpsData.baudrateIndex = 0;
-    while (gpsInitData[gpsData.baudrateIndex].baudrate != serialConfig->gps_baudrate) {
-        gpsData.baudrateIndex++;
-        if (gpsData.baudrateIndex >= GPS_INIT_DATA_ENTRY_COUNT) {
-            gpsData.baudrateIndex = DEFAULT_BAUD_RATE_INDEX;
-            break;
-        }
-    }
 
+    gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
     gpsData.timeouts = 0;
 
@@ -228,13 +220,27 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 
     gpsData.lastMessage = millis();
 
+    serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
+    if (!gpsPortConfig) {
+        featureClear(FEATURE_GPS);
+        return;
+    }
+
+    while (gpsInitData[gpsData.baudrateIndex].baudrate != gpsPortConfig->baudrate) {
+        gpsData.baudrateIndex++;
+        if (gpsData.baudrateIndex >= GPS_INIT_DATA_ENTRY_COUNT) {
+            gpsData.baudrateIndex = DEFAULT_BAUD_RATE_INDEX;
+            break;
+        }
+    }
+
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
     if (gpsConfig->provider == GPS_NMEA)
         mode &= ~MODE_TX;
 
     // no callback - buffer will be consumed in gpsThread()
-    gpsPort = openSerialPort(FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrate, mode, SERIAL_NOT_INVERTED);
+    gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrate, mode, SERIAL_NOT_INVERTED);
     if (!gpsPort) {
         featureClear(FEATURE_GPS);
         return;
@@ -258,7 +264,7 @@ void gpsInitNmea(void)
 void gpsInitUblox(void)
 {
     uint32_t now;
-    // UBX will run at mcfg.gps_baudrate, it shouldn't be "autodetected". So here we force it to that rate
+    // UBX will run at the serial port's baudrate, it shouldn't be "autodetected". So here we force it to that rate
 
     // Wait until GPS transmit buffer is empty
     if (!isSerialTransmitBufferEmpty(gpsPort))
@@ -959,20 +965,11 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     return parsed;
 }
 
-gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
+void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {
-    serialPort_t *gpsPassthroughPort = findOpenSerialPort(FUNCTION_GPS_PASSTHROUGH);
-    if (gpsPassthroughPort) {
+    waitForSerialPortToFinishTransmitting(gpsPort);
+    waitForSerialPortToFinishTransmitting(gpsPassthroughPort);
 
-        waitForSerialPortToFinishTransmitting(gpsPassthroughPort);
-        serialSetBaudRate(gpsPassthroughPort, serialConfig->gps_passthrough_baudrate);
-    } else {
-        gpsPassthroughPort = openSerialPort(FUNCTION_GPS_PASSTHROUGH, NULL, serialConfig->gps_passthrough_baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
-        if (!gpsPassthroughPort) {
-            return GPS_PASSTHROUGH_NO_SERIAL_PORT;
-        }
-    }
-    serialSetBaudRate(gpsPort, serialConfig->gps_baudrate);
     if(!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
@@ -1003,9 +1000,7 @@ gpsEnablePassthroughResult_e gpsEnablePassthrough(void)
             updateDisplay();
         }
 #endif
-
     }
-    return GPS_PASSTHROUGH_ENABLED;
 }
 
 void updateGpsIndicator(uint32_t currentTime)

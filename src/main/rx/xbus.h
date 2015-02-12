@@ -21,4 +21,3 @@
 
 bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool xBusFrameComplete(void);
-void xBusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint);

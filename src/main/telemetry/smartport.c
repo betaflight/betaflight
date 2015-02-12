@@ -66,7 +66,6 @@ enum
     SPSTATE_INITIALIZED,
     SPSTATE_WORKING,
     SPSTATE_TIMEDOUT,
-    SPSTATE_DEINITIALIZED,
 };
 
 enum
@@ -139,10 +138,9 @@ const uint16_t frSkyDataIdTable[] = {
 #define SMARTPORT_SERVICE_DELAY_MS 5 // telemetry requests comes in at roughly 12 ms intervals, keep this under that
 #define SMARTPORT_NOT_CONNECTED_TIMEOUT_MS 7000
 
-static serialPort_t *smartPortSerialPort; // The 'SmartPort'(tm) Port.
+static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
 static telemetryConfig_t *telemetryConfig;
-static portMode_t previousPortMode;
-static uint32_t previousBaudRate;
+
 extern void serialInit(serialConfig_t *); // from main.c // FIXME remove this dependency
 
 char smartPortState = SPSTATE_UNINITIALIZED;
@@ -216,68 +214,31 @@ void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
 
 void freeSmartPortTelemetryPort(void)
 {
-    if (smartPortState == SPSTATE_UNINITIALIZED)
-        return;
-    if (smartPortState == SPSTATE_DEINITIALIZED)
-        return;
-
-    if (isTelemetryPortShared()) {
-        endSerialPortFunction(smartPortSerialPort, FUNCTION_SMARTPORT_TELEMETRY);
-        smartPortState = SPSTATE_DEINITIALIZED;
-        serialInit(&masterConfig.serialConfig);
-    }
-    else {
-        serialSetMode(smartPortSerialPort, previousPortMode);
-        serialSetBaudRate(smartPortSerialPort, previousBaudRate);
-        endSerialPortFunction(smartPortSerialPort, FUNCTION_SMARTPORT_TELEMETRY);
-        smartPortState = SPSTATE_DEINITIALIZED;
-    }
+    closeSerialPort(smartPortSerialPort);
     smartPortSerialPort = NULL;
+
+    smartPortState = SPSTATE_UNINITIALIZED;
 }
 
 void configureSmartPortTelemetryPort(void)
 {
-    if (smartPortState != SPSTATE_UNINITIALIZED) {
-        // do not allow reinitialization
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_SMARTPORT_TELEMETRY);
+    if (!portConfig) {
         return;
     }
 
-    smartPortSerialPort = findOpenSerialPort(FUNCTION_SMARTPORT_TELEMETRY);
-    if (smartPortSerialPort) {
-        previousPortMode = smartPortSerialPort->mode;
-        previousBaudRate = smartPortSerialPort->baudRate;
+    smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_SMARTPORT_TELEMETRY, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, telemetryConfig->telemetry_inversion);
 
-        //waitForSerialPortToFinishTransmitting(smartPortPort); // FIXME locks up the system
-
-        serialSetBaudRate(smartPortSerialPort, SMARTPORT_BAUD);
-        serialSetMode(smartPortSerialPort, SMARTPORT_UART_MODE);
-        beginSerialPortFunction(smartPortSerialPort, FUNCTION_SMARTPORT_TELEMETRY);
-    } else {
-        smartPortSerialPort = openSerialPort(FUNCTION_SMARTPORT_TELEMETRY, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, telemetryConfig->telemetry_inversion);
-
-        if (smartPortSerialPort) {
-            smartPortState = SPSTATE_INITIALIZED;
-            previousPortMode = smartPortSerialPort->mode;
-            previousBaudRate = smartPortSerialPort->baudRate;
-        }
-        else {
-            // failed, resume MSP and CLI
-            if (isTelemetryPortShared()) {
-                smartPortState = SPSTATE_DEINITIALIZED;
-                serialInit(&masterConfig.serialConfig);
-            }
-        }
+    if (!smartPortSerialPort) {
+        return;
     }
+
+    smartPortState = SPSTATE_INITIALIZED;
 }
 
 bool canSendSmartPortTelemetry(void)
 {
-    return smartPortState == SPSTATE_INITIALIZED || smartPortState == SPSTATE_WORKING;
-}
-
-bool canSmartPortAllowOtherSerial(void)
-{
-    return smartPortState == SPSTATE_DEINITIALIZED;
+    return smartPortSerialPort && (smartPortState == SPSTATE_INITIALIZED || smartPortState == SPSTATE_WORKING);
 }
 
 bool isSmartPortTimedOut(void)
@@ -285,15 +246,11 @@ bool isSmartPortTimedOut(void)
     return smartPortState >= SPSTATE_TIMEDOUT;
 }
 
-uint32_t getSmartPortTelemetryProviderBaudRate(void)
-{
-    return SMARTPORT_BAUD;
-}
-
 void handleSmartPortTelemetry(void)
 {
-    if (!canSendSmartPortTelemetry())
+    if (!canSendSmartPortTelemetry()) {
         return;
+    }
 
     while (serialTotalBytesWaiting(smartPortSerialPort) > 0) {
         uint8_t c = serialRead(smartPortSerialPort);

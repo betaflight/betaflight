@@ -8,8 +8,8 @@ Enable the GPS from the CLI as follows:
 
 1. first enable the `feature GPS`
 1. set the `gps_provider`
-1. if required, set your GPS baud rate using `gps_baudrate`
-1. connect your GPS to a serial port that supports GPS and set an approprate `serial_port_x_scenario` to `2`. where `x` is a serial port number.
+1. set your GPS baud rate
+1. connect your GPS to a serial port that supports GPS and set an approprate `serial_port_x_functions` to include the GPS flag.
 1. `save`.
 
 Note:  GPS packet loss has been observed at 115200.  Try using 57600 if you experience this.

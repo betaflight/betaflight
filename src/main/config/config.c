@@ -111,7 +111,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 91;
+static const uint8_t EEPROM_CONF_VERSION = 92;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -213,7 +213,6 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
-    telemetryConfig->telemetry_provider = TELEMETRY_PROVIDER_FRSKY;
     telemetryConfig->telemetry_inversion = SERIAL_NOT_INVERTED;
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
@@ -244,30 +243,24 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
 
 void resetSerialConfig(serialConfig_t *serialConfig)
 {
-    serialConfig->serial_port_scenario[FIRST_PORT_INDEX] = lookupScenarioIndex(SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH);
+    uint8_t index;
+    memset(serialConfig, 0, sizeof(serialConfig_t));
+
+    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
+        serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
+    }
+
+    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfig->portConfigs[0].identifier = serialPortIdentifiers[FIRST_PORT_INDEX];
+    serialConfig->portConfigs[0].baudrate = 115200;
 
 #ifdef CC3D
     // Temporary workaround for CC3D non-functional VCP when using OpenPilot bootloader.
     // This allows MSP connection via USART so the board can be reconfigured.
-    serialConfig->serial_port_scenario[SECOND_PORT_INDEX] = lookupScenarioIndex(SCENARIO_MSP_ONLY);
-#else
-    serialConfig->serial_port_scenario[SECOND_PORT_INDEX] = lookupScenarioIndex(SCENARIO_UNUSED);
+    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
+    serialConfig->portConfigs[1].identifier = serialPortIdentifiers[SECOND_PORT_INDEX];
+    serialConfig->portConfigs[1].baudrate = 115200;
 #endif
-
-#if (SERIAL_PORT_COUNT > 2)
-    serialConfig->serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_UNUSED);
-#if (SERIAL_PORT_COUNT > 3)
-    serialConfig->serial_port_scenario[3] = lookupScenarioIndex(SCENARIO_UNUSED);
-#if (SERIAL_PORT_COUNT > 4)
-    serialConfig->serial_port_scenario[4] = lookupScenarioIndex(SCENARIO_UNUSED);
-#endif
-#endif
-#endif
-
-    serialConfig->msp_baudrate = 115200;
-    serialConfig->cli_baudrate = 115200;
-    serialConfig->gps_baudrate = 115200;
-    serialConfig->gps_passthrough_baudrate = 115200;
 
     serialConfig->reboot_character = 'R';
 }
@@ -743,7 +736,6 @@ void validateAndFixConfig(void)
     useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
-    applySerialConfigToPortFunctions(serialConfig);
 
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);

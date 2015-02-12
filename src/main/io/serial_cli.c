@@ -83,6 +83,8 @@
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 
+void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
+
 static serialPort_t *cliPort;
 
 static void cliAux(char *cmdline);
@@ -252,31 +254,32 @@ const clivalue_t valueTable[] = {
 
     { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &masterConfig.airplaneConfig.fixedwing_althold_dir, -1, 1 },
 
-    { "serial_port_1_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[0], 0, SERIAL_PORT_SCENARIO_MAX },
-    { "serial_port_2_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[1], 0, SERIAL_PORT_SCENARIO_MAX },
-#if (SERIAL_PORT_COUNT > 2)
-    { "serial_port_3_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[2], 0, SERIAL_PORT_SCENARIO_MAX },
-#if (SERIAL_PORT_COUNT > 3)
-    { "serial_port_4_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[3], 0, SERIAL_PORT_SCENARIO_MAX },
-#if (SERIAL_PORT_COUNT > 4)
-    { "serial_port_5_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[4], 0, SERIAL_PORT_SCENARIO_MAX },
+    { "serial_port_1_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].functionMask, 0, 0xFFFF },
+    { "serial_port_1_baudrate",     VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].baudrate, 1200, 115200 },
+#if (SERIAL_PORT_COUNT >= 2)
+    { "serial_port_2_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].functionMask, 0, 0xFFFF },
+    { "serial_port_2_baudrate",     VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].baudrate, 1200, 115200 },
+#if (SERIAL_PORT_COUNT >= 3)
+    { "serial_port_3_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].functionMask, 0, 0xFFFF},
+    { "serial_port_3_baudrate",     VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].baudrate, 1200, 115200 },
+#if (SERIAL_PORT_COUNT >= 4)
+    { "serial_port_4_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].functionMask, 0, 0xFFFF },
+    { "serial_port_4_baudrate",     VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].baudrate, 1200, 115200 },
+#if (SERIAL_PORT_COUNT >= 5)
+    { "serial_port_5_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].functionMask, 0, 0xFFFF },
+    { "serial_port_5_baudrate",     VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].baudrate, 1200, 115200 },
+#endif
 #endif
 #endif
 #endif
 
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.reboot_character, 48, 126 },
-    { "msp_baudrate",               VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.msp_baudrate, 1200, 115200 },
-    { "cli_baudrate",               VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.cli_baudrate, 1200, 115200 },
 
 #ifdef GPS
-    { "gps_baudrate",               VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.gps_baudrate, 0, 115200 },
-    { "gps_passthrough_baudrate",   VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.gps_passthrough_baudrate, 1200, 115200 },
-
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.provider, 0, GPS_PROVIDER_MAX },
     { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.sbasMode, 0, SBAS_MODE_MAX },
     { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.autoConfig, GPS_AUTOCONFIG_OFF, GPS_AUTOCONFIG_ON },
     { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.autoBaud, GPS_AUTOBAUD_OFF, GPS_AUTOBAUD_ON },
-
 
     { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDPOS], 0, 200 },
     { "gps_pos_i",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDPOS], 0, 200 },
@@ -297,7 +300,6 @@ const clivalue_t valueTable[] = {
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.serialrx_provider, 0, SERIALRX_PROVIDER_MAX },
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, SPEKTRUM_SAT_BIND_DISABLED, SPEKTRUM_SAT_BIND_MAX},
 
-    { "telemetry_provider",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_switch, 0, 1 },
     { "telemetry_inversion",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_inversion, 0, 1 },
     { "frsky_default_lattitude",    VAR_FLOAT  | MASTER_VALUE,  &masterConfig.telemetryConfig.gpsNoFixLatitude, -90.0, 90.0 },
@@ -891,10 +893,10 @@ static void cliDump(char *cmdline)
     }
 }
 
-static void cliEnter(void)
+void cliEnter(serialPort_t *serialPort)
 {
     cliMode = 1;
-    beginSerialPortFunction(cliPort, FUNCTION_CLI);
+    cliPort = serialPort;
     setPrintfSerialPort(cliPort);
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
     cliPrompt();
@@ -903,6 +905,7 @@ static void cliEnter(void)
 static void cliExit(char *cmdline)
 {
     UNUSED(cmdline);
+
     cliPrint("\r\nLeaving CLI mode, unsaved changes lost.\r\n");
     *cliBuffer = '\0';
     bufferIndex = 0;
@@ -910,6 +913,8 @@ static void cliExit(char *cmdline)
     // incase a motor was left running during motortest, clear it here
     mixerResetMotors();
     cliReboot();
+
+    cliPort = NULL;
 }
 
 static void cliFeature(char *cmdline)
@@ -988,16 +993,7 @@ static void cliGpsPassthrough(char *cmdline)
 {
     UNUSED(cmdline);
 
-    gpsEnablePassthroughResult_e result = gpsEnablePassthrough();
-
-    switch (result) {
-        case GPS_PASSTHROUGH_NO_SERIAL_PORT:
-            cliPrint("Error: Enable and plug in GPS first\r\n");
-            break;
-
-        default:
-            break;
-    }
+    gpsEnablePassthrough(cliPort);
 }
 #endif
 
@@ -1402,10 +1398,10 @@ static void cliVersion(char *cmdline)
     );
 }
 
-void cliProcess(void)
+void cliProcess()
 {
-    if (!cliMode) {
-        cliEnter();
+    if (!cliPort) {
+        return;
     }
 
     while (serialTotalBytesWaiting(cliPort)) {
@@ -1496,9 +1492,5 @@ void cliProcess(void)
 
 void cliInit(serialConfig_t *serialConfig)
 {
-    cliPort = findOpenSerialPort(FUNCTION_CLI);
-    if (!cliPort) {
-        cliPort = openSerialPort(FUNCTION_CLI, NULL, serialConfig->cli_baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
-    }
-
+    UNUSED(serialConfig);
 }

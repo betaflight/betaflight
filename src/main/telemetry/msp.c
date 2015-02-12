@@ -41,10 +41,7 @@ static telemetryConfig_t *telemetryConfig;
 #define MSP_TELEMETRY_BAUDRATE 19200 // TODO make this configurable
 #define MSP_TELEMETRY_INITIAL_PORT_MODE MODE_TX
 
-static serialPort_t *mspTelemetryPort;
-
-static portMode_t previousPortMode;
-static uint32_t previousBaudRate;
+static serialPort_t *mspTelemetryPort = NULL;
 
 void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
@@ -53,43 +50,32 @@ void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig)
 
 void handleMSPTelemetry(void)
 {
+    if (!mspTelemetryPort) {
+        return;
+    }
+
     sendMspTelemetry();
 }
 
 void freeMSPTelemetryPort(void)
 {
-    // FIXME only need to reset the port if the port is shared
-    serialSetMode(mspTelemetryPort, previousPortMode);
-    serialSetBaudRate(mspTelemetryPort, previousBaudRate);
-
-    endSerialPortFunction(mspTelemetryPort, FUNCTION_TELEMETRY);
+    closeSerialPort(mspTelemetryPort);
+    mspTelemetryPort = NULL;
 }
 
 void configureMSPTelemetryPort(void)
 {
-    mspTelemetryPort = findOpenSerialPort(FUNCTION_TELEMETRY);
-    if (mspTelemetryPort) {
-        previousPortMode = mspTelemetryPort->mode;
-        previousBaudRate = mspTelemetryPort->baudRate;
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP_TELEMETRY);
+    if (!portConfig) {
+        return;
+    }
 
-        //waitForSerialPortToFinishTransmitting(mspTelemetryPort); // FIXME locks up the system
+    mspTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_MSP_TELEMETRY, NULL, MSP_TELEMETRY_BAUDRATE, MSP_TELEMETRY_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
-        serialSetBaudRate(mspTelemetryPort, MSP_TELEMETRY_BAUDRATE);
-        serialSetMode(mspTelemetryPort, MSP_TELEMETRY_INITIAL_PORT_MODE);
-        beginSerialPortFunction(mspTelemetryPort, FUNCTION_TELEMETRY);
-    } else {
-        mspTelemetryPort = openSerialPort(FUNCTION_TELEMETRY, NULL, MSP_TELEMETRY_BAUDRATE, MSP_TELEMETRY_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
-
-        // FIXME only need these values to reset the port if the port is shared
-        previousPortMode = mspTelemetryPort->mode;
-        previousBaudRate = mspTelemetryPort->baudRate;
+    if (!mspTelemetryPort) {
+        return;
     }
     mspSetTelemetryPort(mspTelemetryPort);
-}
-
-uint32_t getMSPTelemetryProviderBaudRate(void)
-{
-    return MSP_TELEMETRY_BAUDRATE;
 }
 
 #endif

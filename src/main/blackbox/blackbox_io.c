@@ -62,9 +62,7 @@
 // How many bytes should we transmit per loop iteration?
 uint8_t blackboxWriteChunkSize = 16;
 
-static serialPort_t *blackboxPort;
-static portMode_t previousPortMode;
-static uint32_t previousBaudRate;
+static serialPort_t *blackboxPort = NULL;
 
 void blackboxWrite(uint8_t value)
 {
@@ -387,21 +385,14 @@ void blackboxDeviceFlush(void)
  */
 bool blackboxDeviceOpen(void)
 {
-    blackboxPort = findOpenSerialPort(FUNCTION_BLACKBOX);
-    if (blackboxPort) {
-        previousPortMode = blackboxPort->mode;
-        previousBaudRate = blackboxPort->baudRate;
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
+    if (!portConfig) {
+        return false;
+    }
 
-        serialSetBaudRate(blackboxPort, BLACKBOX_BAUDRATE);
-        serialSetMode(blackboxPort, BLACKBOX_INITIAL_PORT_MODE);
-        beginSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
-    } else {
-        blackboxPort = openSerialPort(FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
-
-        if (blackboxPort) {
-            previousPortMode = blackboxPort->mode;
-            previousBaudRate = blackboxPort->baudRate;
-        }
+    blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+    if (!blackboxPort) {
+        return false;
     }
 
     /*
@@ -413,23 +404,13 @@ bool blackboxDeviceOpen(void)
      */
     blackboxWriteChunkSize = MAX((masterConfig.looptime * 9) / 1250, 4);
 
-    return blackboxPort != NULL;
+    return true;
 }
 
 void blackboxDeviceClose(void)
 {
-    serialSetMode(blackboxPort, previousPortMode);
-    serialSetBaudRate(blackboxPort, previousBaudRate);
+    closeSerialPort(blackboxPort);
 
-    endSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
-
-    /*
-     * Normally this would be handled by mw.c, but since we take an unknown amount
-     * of time to shut down asynchronously, we're the only ones that know when to call it.
-     */
-    if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
-        mspAllocateSerialPorts(&masterConfig.serialConfig);
-    }
 }
 
 bool isBlackboxDeviceIdle(void)

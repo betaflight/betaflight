@@ -86,31 +86,6 @@ void useRxConfig(rxConfig_t *rxConfigToUse)
     rxConfig = rxConfigToUse;
 }
 
-#ifdef SERIAL_RX
-void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintToUpdate)
-{
-    switch (rxConfig->serialrx_provider) {
-        case SERIALRX_SPEKTRUM1024:
-        case SERIALRX_SPEKTRUM2048:
-            spektrumUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-        case SERIALRX_SBUS:
-            sbusUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-        case SERIALRX_SUMD:
-            sumdUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-        case SERIALRX_SUMH:
-            sumhUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-        case SERIALRX_XBUS_MODE_B:
-        case SERIALRX_XBUS_MODE_B_RJ01:
-            xBusUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-    }
-}
-#endif
-
 #define STICK_CHANNEL_COUNT 4
 
 void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)

@@ -52,27 +52,25 @@ static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
-static serialPort_t *sBusPort;
-static uint32_t sbusSignalLostEventCount = 0;
+static serialPort_t *sBusPort = NULL;
 
-void sbusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
-{
-    functionConstraint->minBaudRate = SBUS_BAUDRATE;
-    functionConstraint->maxBaudRate = SBUS_BAUDRATE;
-    functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK | SPF_SUPPORTS_SBUS_MODE;
-}
+static uint32_t sbusSignalLostEventCount = 0;
 
 bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     int b;
-
-    sBusPort = openSerialPort(FUNCTION_SERIAL_RX, sbusDataReceive, SBUS_BAUDRATE, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_INVERTED);
-
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
         sbusChannelData[b] = (1.6f * rxConfig->midrc) - 1408;
     if (callback)
         *callback = sbusReadRawRC;
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
+
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_SERIAL_RX);
+    if (!portConfig) {
+        return false;
+    }
+
+    sBusPort = openSerialPort(portConfig->identifier, FUNCTION_SERIAL_RX, sbusDataReceive, SBUS_BAUDRATE, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_INVERTED);
 
     return sBusPort != NULL;
 }
