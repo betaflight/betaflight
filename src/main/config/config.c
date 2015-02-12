@@ -251,14 +251,12 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     }
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
-    serialConfig->portConfigs[0].identifier = serialPortIdentifiers[FIRST_PORT_INDEX];
     serialConfig->portConfigs[0].baudrate = 115200;
 
 #ifdef CC3D
     // Temporary workaround for CC3D non-functional VCP when using OpenPilot bootloader.
     // This allows MSP connection via USART so the board can be reconfigured.
     serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
-    serialConfig->portConfigs[1].identifier = serialPortIdentifiers[SECOND_PORT_INDEX];
     serialConfig->portConfigs[1].baudrate = 115200;
 #endif
 
@@ -467,9 +465,9 @@ static void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
     featureClear(FEATURE_VBAT);
 #ifdef ALIENWIIF3
-    masterConfig.serialConfig.serial_port_scenario[2] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_SERIAL_RX;
 #else
-    masterConfig.serialConfig.serial_port_scenario[1] = lookupScenarioIndex(SCENARIO_SERIAL_RX_ONLY);
+    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_SERIAL_RX;
 #endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
