@@ -1129,6 +1129,11 @@ void handleBlackbox(void)
         default:
         break;
     }
+
+    // Did we run out of room on the device? Stop!
+    if (isBlackboxDeviceFull()) {
+        blackboxSetState(BLACKBOX_STATE_STOPPED);
+    }
 }
 
 static bool canUseBlackboxWithCurrentConfiguration(void)

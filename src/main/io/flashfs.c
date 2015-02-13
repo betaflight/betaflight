@@ -18,12 +18,15 @@
 /**
  * This provides a stream interface to a flash chip if one is present.
  *
- * On statup, call flashfsInit after initialising the flash chip, in order to init the filesystem. This will
+ * On statup, call flashfsInit() after initialising the flash chip in order to init the filesystem. This will
  * result in the file pointer being pointed at the first free block found, or at the end of the device if the
  * flash chip is full.
  *
  * Note that bits can only be set to 0 when writing, not back to 1 from 0. You must erase sectors in order
  * to bring bits back to 1 again.
+ *
+ * In future, we can add support for multiple different flash chips by adding a flash device driver vtable
+ * and make calls through that, at the moment flashfs just calls m25p16_* routines explicitly.
  */
 
 #include <stdint.h>
@@ -185,8 +188,12 @@ static uint32_t flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSiz
         }
 
         // Are we at EOF already? Abort.
-        if (tailAddress >= flashfsGetSize())
+        if (flashfsIsEOF()) {
+            // May as well throw away any buffered data
+            flashfsClearBuffer();
+
             break;
+        }
 
         m25p16_pageProgramBegin(tailAddress);
 
@@ -530,6 +537,13 @@ int flashfsIdentifyStartOfFreeSpace()
     }
 
     return result * FREE_BLOCK_SIZE;
+}
+
+/**
+ * Returns true if the file pointer is at the end of the device.
+ */
+bool flashfsIsEOF() {
+    return tailAddress >= flashfsGetSize();
 }
 
 /**

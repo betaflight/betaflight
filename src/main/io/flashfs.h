@@ -49,3 +49,4 @@ void flashfsFlushSync();
 void flashfsInit();
 
 bool flashfsIsReady();
+bool flashfsIsEOF();

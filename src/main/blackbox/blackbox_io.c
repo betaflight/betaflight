@@ -457,8 +457,9 @@ bool blackboxDeviceOpen(void)
         break;
 #ifdef FLASHFS
         case BLACKBOX_DEVICE_FLASH:
-            if (flashfsGetSize() == 0)
+            if (flashfsGetSize() == 0 || isBlackboxDeviceFull()) {
                 return false;
+            }
 
             return true;
         break;
@@ -503,6 +504,22 @@ bool isBlackboxDeviceIdle(void)
         case BLACKBOX_DEVICE_FLASH:
             flashfsFlushSync();
             return true;
+#endif
+
+        default:
+            return false;
+    }
+}
+
+bool isBlackboxDeviceFull(void)
+{
+    switch (masterConfig.blackbox_device) {
+        case BLACKBOX_DEVICE_SERIAL:
+            return false;
+
+#ifdef FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+            return flashfsIsEOF();
 #endif
 
         default:

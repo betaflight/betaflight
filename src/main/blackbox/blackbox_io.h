@@ -42,3 +42,4 @@ bool blackboxDeviceOpen(void);
 void blackboxDeviceClose(void);
 
 bool isBlackboxDeviceIdle(void);
+bool isBlackboxDeviceFull(void);
