@@ -151,6 +151,8 @@ var MISC = {
 };
 
 var DATAFLASH = {
+    ready: false,
     sectors: 0,
-    totalSize: 0
+    totalSize: 0,
+    usedSize: 0
 };

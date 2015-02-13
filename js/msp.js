@@ -670,14 +670,16 @@ var MSP = {
                 console.log('Led strip config saved');
                 break;
             case MSP_codes.MSP_DATAFLASH_SUMMARY:
-                DATAFLASH.sectors = data.getUint32(0, 1);
-                DATAFLASH.totalSize = data.getUint32(4, 1);
+                DATAFLASH.ready = (data.getUint8(0) & 1) != 0;
+                DATAFLASH.sectors = data.getUint32(1, 1);
+                DATAFLASH.totalSize = data.getUint32(5, 1);
+                DATAFLASH.usedSize = data.getUint32(9, 1);
                 break;
             case MSP_codes.MSP_DATAFLASH_READ:
                 // No-op, let callback handle it
                 break;
             case MSP_codes.MSP_DATAFLASH_ERASE:
-                console.log("Data flash erased");
+                console.log("Data flash erase begun...");
                 break;
             case MSP_codes.MSP_SET_MODE_RANGE:
                 console.log('Mode range saved');
