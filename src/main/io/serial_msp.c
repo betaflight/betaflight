@@ -533,13 +533,15 @@ reset:
 
 static void serializeDataflashSummaryReply(void)
 {
-    headSerialReply(3 * 4);
+    headSerialReply(1 + 3 * 4);
 #ifdef FLASHFS
     const flashGeometry_t *geometry = flashfsGetGeometry();
+    serialize8(flashfsIsReady() ? 1 : 0);
     serialize32(geometry->sectors);
     serialize32(geometry->totalSize);
     serialize32(flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
 #else
+    serialize8(0);
     serialize32(0);
     serialize32(0);
     serialize32(0);

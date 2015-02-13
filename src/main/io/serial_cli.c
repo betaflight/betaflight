@@ -775,7 +775,7 @@ static void cliFlashWrite(char *cmdline)
         printf("Missing text to write.\r\n");
     } else {
         flashfsSeekAbs(address);
-        flashfsWrite((uint8_t*)text, strlen(text));
+        flashfsWrite((uint8_t*)text, strlen(text), true);
         flashfsFlushSync();
 
         printf("Wrote %u bytes at %u.\r\n", strlen(text), address);

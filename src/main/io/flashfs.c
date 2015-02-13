@@ -28,6 +28,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "drivers/flash_m25p16.h"
 #include "flashfs.h"
@@ -54,6 +55,11 @@ static void flashfsClearBuffer()
 {
     bufferTail = bufferHead = 0;
     shouldFlush = false;
+}
+
+static bool flashfsBufferIsEmpty()
+{
+    return bufferTail == bufferHead;
 }
 
 static void flashfsSetTailAddress(uint32_t address)
@@ -99,6 +105,14 @@ void flashfsEraseRange(uint32_t start, uint32_t end)
     for (int i = startSector; i < endSector; i++) {
         m25p16_eraseSector(i * geometry->sectorSize);
     }
+}
+
+/**
+ * Return true if the flash is not currently occupied with an operation.
+ */
+bool flashfsIsReady()
+{
+    return m25p16_isReady();
 }
 
 uint32_t flashfsGetSize()
@@ -261,12 +275,13 @@ static void flashfsAdvanceTailInBuffer(uint32_t delta)
 {
     bufferTail += delta;
 
-    if (bufferTail > FLASHFS_WRITE_BUFFER_SIZE) {
+    // Wrap tail around the end of the buffer
+    if (bufferTail >= FLASHFS_WRITE_BUFFER_SIZE) {
         bufferTail -= FLASHFS_WRITE_BUFFER_SIZE;
     }
 
-    if (bufferTail == bufferHead) {
-        flashfsClearBuffer();
+    if (flashfsBufferIsEmpty()) {
+        flashfsClearBuffer(); // Bring buffer pointers back to the start to be tidier
     }
 }
 
@@ -276,7 +291,7 @@ static void flashfsAdvanceTailInBuffer(uint32_t delta)
  */
 void flashfsFlushAsync()
 {
-    if (bufferHead == bufferTail) {
+    if (flashfsBufferIsEmpty()) {
         shouldFlush = false;
         return; // Nothing to flush
     }
@@ -289,7 +304,7 @@ void flashfsFlushAsync()
     bytesWritten = flashfsWriteBuffers(buffers, bufferSizes, 2, false);
     flashfsAdvanceTailInBuffer(bytesWritten);
 
-    shouldFlush = bufferTail != bufferHead;
+    shouldFlush = !flashfsBufferIsEmpty();
 }
 
 /**
@@ -300,9 +315,9 @@ void flashfsFlushAsync()
  */
 void flashfsFlushSync()
 {
-    if (bufferHead == bufferTail) {
+    if (flashfsBufferIsEmpty()) {
         shouldFlush = false;
-        return; // Nothing to write
+        return; // Nothing to flush
     }
 
     uint8_t const * buffers[2];
@@ -329,6 +344,9 @@ void flashfsSeekRel(int32_t offset)
     flashfsSetTailAddress(tailAddress + offset);
 }
 
+/**
+ * Write the given byte asynchronously to the flash. If the buffer overflows, data is silently discarded.
+ */
 void flashfsWriteByte(uint8_t byte)
 {
     flashWriteBuffer[bufferHead++] = byte;
@@ -342,7 +360,13 @@ void flashfsWriteByte(uint8_t byte)
     }
 }
 
-void flashfsWrite(const uint8_t *data, unsigned int len)
+/**
+ * Write the given buffer to the flash either synchronously or asynchronously depending on the 'sync' parameter.
+ *
+ * If writing asynchronously, data will be silently discarded if the buffer overflows.
+ * If writing synchronously, the routine will block waiting for the flash to become ready so will never drop data.
+ */
+void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
 {
     uint8_t const * buffers[3];
     uint32_t bufferSizes[3];
@@ -377,16 +401,18 @@ void flashfsWrite(const uint8_t *data, unsigned int len)
             flashfsAdvanceTailInBuffer(bytesWritten);
         }
 
+        // Is the remainder of the data to be written too big to fit in the buffers?
         if (bufferSizes[0] + bufferSizes[1] + bufferSizes[2] > FLASHFS_WRITE_BUFFER_USABLE) {
-            /*
-             * We don't have enough room to store the new data in the buffer without blocking waiting for the flash to
-             * become ready, so we're forced to write it through synchronously.
-             *
-             * TODO we can skip this code and just drop the data for this write instead if the caller wants to
-             * prioritize predictable response time over reliable data delivery (i.e. sync/async)
-             */
-            flashfsWriteBuffers(buffers, bufferSizes, 3, true);
-            flashfsClearBuffer();
+            if (sync) {
+                // Write it through synchronously
+                flashfsWriteBuffers(buffers, bufferSizes, 3, true);
+                flashfsClearBuffer();
+            } else {
+                /*
+                 * Silently drop the data the user asked to write (i.e. no-op) since we can't buffer it and they
+                 * requested async.
+                 */
+            }
 
             return;
         }
@@ -399,24 +425,22 @@ void flashfsWrite(const uint8_t *data, unsigned int len)
     // Buffer up the data the user supplied instead of writing it right away
 
     // First write the portion before we wrap around the end of the circular buffer
-    unsigned int bufferBytesBeforeLoop = FLASHFS_WRITE_BUFFER_SIZE - bufferHead;
+    unsigned int bufferBytesBeforeWrap = FLASHFS_WRITE_BUFFER_SIZE - bufferHead;
 
-    unsigned int firstPortion = len < bufferBytesBeforeLoop ? len : bufferBytesBeforeLoop;
-    unsigned int remainder = firstPortion < len ? len - firstPortion : 0;
+    unsigned int firstPortion = len < bufferBytesBeforeWrap ? len : bufferBytesBeforeWrap;
 
-    for (unsigned int i = 0; i < firstPortion; i++) {
-        flashWriteBuffer[bufferHead++] = *data;
-        data++;
-    }
+    memcpy(flashWriteBuffer + bufferHead, data, firstPortion);
 
+    bufferHead += firstPortion;
+
+    data += firstPortion;
+    len -= firstPortion;
+
+    // If we wrap the head around, write the remainder to the start of the buffer (if any)
     if (bufferHead == FLASHFS_WRITE_BUFFER_SIZE) {
-        bufferHead = 0;
-    }
+        memcpy(flashWriteBuffer + 0, data, len);
 
-    // Then the remainder (if any)
-    for (unsigned int i = 0; i < remainder; i++) {
-        flashWriteBuffer[bufferHead++] = *data;
-        data++;
+        bufferHead = len;
     }
 }
 

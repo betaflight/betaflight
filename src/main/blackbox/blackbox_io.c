@@ -73,7 +73,7 @@ void blackboxWrite(uint8_t value)
     switch (masterConfig.blackbox_device) {
 #ifdef FLASHFS
         case BLACKBOX_DEVICE_FLASH:
-            flashfsWriteByte(value);
+            flashfsWriteByte(value); // Write byte asynchronously
         break;
 #endif
         case BLACKBOX_DEVICE_SERIAL:
@@ -109,7 +109,7 @@ int blackboxPrint(const char *s)
 #ifdef FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             length = strlen(s);
-            flashfsWrite((const uint8_t*) s, length);
+            flashfsWrite((const uint8_t*) s, length, false); // Write asynchronously
         break;
 #endif
 

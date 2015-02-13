@@ -789,7 +789,8 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
 
         charsWritten = blackboxPrint("H Field ");
         charsWritten += blackboxPrint(headerNames[xmitState.headerIndex]);
-        charsWritten += blackboxPrint(":");
+        blackboxWrite(':');
+        charsWritten++;
 
         xmitState.u.fieldIndex++;
         needComma = false;
