@@ -71,7 +71,7 @@ static uint32_t previousBaudRate;
 void blackboxWrite(uint8_t value)
 {
     switch (masterConfig.blackbox_device) {
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             flashfsWriteByte(value); // Write byte asynchronously
         break;
@@ -106,7 +106,7 @@ int blackboxPrint(const char *s)
 
     switch (masterConfig.blackbox_device) {
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             length = strlen(s);
             flashfsWrite((const uint8_t*) s, length, false); // Write asynchronously
@@ -412,7 +412,7 @@ void blackboxDeviceFlush(void)
         case BLACKBOX_DEVICE_SERIAL:
             //Presently a no-op on serial, as serial is continuously being drained out of its buffer
         break;
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             flashfsFlushSync();
         break;
@@ -455,7 +455,7 @@ bool blackboxDeviceOpen(void)
 
             return blackboxPort != NULL;
         break;
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             if (flashfsGetSize() == 0 || isBlackboxDeviceFull()) {
                 return false;
@@ -486,7 +486,7 @@ void blackboxDeviceClose(void)
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
         break;
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             flashfsFlushSync();
         break;
@@ -500,7 +500,7 @@ bool isBlackboxDeviceIdle(void)
         case BLACKBOX_DEVICE_SERIAL:
             return isSerialTransmitBufferEmpty(blackboxPort);
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             flashfsFlushSync();
             return true;
@@ -517,7 +517,7 @@ bool isBlackboxDeviceFull(void)
         case BLACKBOX_DEVICE_SERIAL:
             return false;
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             return flashfsIsEOF();
 #endif

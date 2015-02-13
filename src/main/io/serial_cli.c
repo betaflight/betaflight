@@ -112,7 +112,7 @@ static void cliColor(char *cmdline);
 static void cliMixer(char *cmdline);
 #endif
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
 static void cliFlashIdent(char *cmdline);
 static void cliFlashErase(char *cmdline);
 static void cliFlashWrite(char *cmdline);
@@ -174,7 +174,7 @@ const clicmd_t cmdTable[] = {
     { "dump", "print configurable settings in a pastable form", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
     { "flash_erase", "erase flash chip", cliFlashErase },
     { "flash_ident", "get flash chip details", cliFlashIdent },
     { "flash_read", "read text from the given address", cliFlashRead },
@@ -745,7 +745,7 @@ static void cliColor(char *cmdline)
 }
 #endif
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
 
 static void cliFlashIdent(char *cmdline)
 {

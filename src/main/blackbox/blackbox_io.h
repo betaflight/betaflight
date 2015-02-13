@@ -20,8 +20,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define BLACKBOX_DEVICE_SERIAL 0
-#define BLACKBOX_DEVICE_FLASH  1
+#include "target.h"
+
+typedef enum BlackboxDevice {
+    BLACKBOX_DEVICE_SERIAL = 0,
+
+#ifdef USE_FLASHFS
+    BLACKBOX_DEVICE_FLASH,
+#endif
+
+    BLACKBOX_DEVICE_END
+} BlackboxDevice;
 
 uint8_t blackboxWriteChunkSize;
 

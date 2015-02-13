@@ -351,7 +351,7 @@ void init(void)
         initTelemetry();
 #endif
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
     #ifdef NAZE
         // naze32 rev5 and above have 16mbit of flash available
         m25p16_init();

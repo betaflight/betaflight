@@ -534,7 +534,7 @@ reset:
 static void serializeDataflashSummaryReply(void)
 {
     headSerialReply(1 + 3 * 4);
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
     const flashGeometry_t *geometry = flashfsGetGeometry();
     serialize8(flashfsIsReady() ? 1 : 0);
     serialize32(geometry->sectors);
@@ -548,7 +548,7 @@ static void serializeDataflashSummaryReply(void)
 #endif
 }
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
 static void serializeDataflashReadReply(uint32_t address, uint8_t size)
 {
     uint8_t buffer[128];
@@ -1201,7 +1201,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serializeDataflashSummaryReply();
         break;
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
     case MSP_DATAFLASH_READ:
         {
             uint32_t readAddress = read32();
@@ -1421,7 +1421,7 @@ static bool processInCommand(void)
         readEEPROM();
         break;
 
-#ifdef FLASHFS
+#ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
         flashfsEraseCompletely();
         break;
