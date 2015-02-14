@@ -94,6 +94,7 @@ applied. The default Cleanflight setting for "I" will result in virtually no aut
 need to be increased in order to perform like PID controller 0.
 
 The LEVEL "D" setting is not used by this controller.
+TPA is not used by this controller.
 
 ### PID controller 2, "LuxFloat"
 
