@@ -113,4 +113,4 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
-
+#define BLACKBOX

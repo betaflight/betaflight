@@ -63,7 +63,7 @@ affecting yaw, roll or pitch rotation rates (which are tuned by the dedicated ro
 settings).
 
 In Angle mode, this controller uses the LEVEL "P" PID setting to decide how strong the auto-level correction should
-be.  
+be. Note that the default value for P_Level is 90.  This is more than likely too high of a value for most, and will cause the model to be very unstable in Angle Mode, and could result in loss of control.  It is recommended to change this value to 20 before using PID Controller 2 in Angle Mode.
 
 In Horizon mode, this controller uses the LEVEL "I" PID setting to decide how much auto-level correction should be
 applied. The default Cleanflight setting for "I" will result in virtually no auto-leveling being applied, so that will
@@ -85,7 +85,7 @@ nebbian in v1.6.0. The autotune feature does not work on this controller, so don
 It is the first PID Controller designed for 32-bit processors and not derived from MultiWii.
 
 The strength of the auto-leveling correction applied during Angle mode is set by the parameter "level_angle" which
-is labeled "LEVEL Integral" in the GUI. This can be used to tune the auto-leveling strength in Angle mode compared to
+is labeled "LEVEL Proportional" in the GUI. This can be used to tune the auto-leveling strength in Angle mode compared to
 Horizon mode. The default is 5.0.
 
 The strength of the auto-leveling correction applied during Horizon mode is set by the parameter "level_horizon" which

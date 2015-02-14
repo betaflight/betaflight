@@ -26,31 +26,35 @@
 #include "build_config.h"
 
 #include "drivers/serial.h"
+#include "drivers/system.h"
+#include "drivers/display_ug2864hsweg01.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+#include "drivers/compass.h"
+
 #include "common/printf.h"
 #include "common/maths.h"
+#include "common/axis.h"
 
 #ifdef DISPLAY
 
-#include "drivers/system.h"
-#include "drivers/display_ug2864hsweg01.h"
-
-#include "drivers/sensor.h"
-#include "drivers/compass.h"
-
 #include "sensors/battery.h"
-
-#include "common/axis.h"
-#include "flight/flight.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
+#include "sensors/acceleration.h"
+#include "sensors/gyro.h"
+
+#include "rx/rx.h"
+
+#include "io/rc_controls.h"
+
+#include "flight/pid.h"
+#include "flight/imu.h"
 
 #ifdef GPS
 #include "io/gps.h"
 #include "flight/navigation.h"
 #endif
-
-#include "rx/rx.h"
-#include "io/rc_controls.h"
 
 #include "config/runtime_config.h"
 
@@ -236,12 +240,14 @@ void showRxPage(void)
 
 void showWelcomePage(void)
 {
-    tfp_sprintf(lineBuffer, "Rev: %s", shortGitRevision);
-    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 0);
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
+
+    tfp_sprintf(lineBuffer, "v%s (%s)", FC_VERSION_STRING, shortGitRevision);
+    i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
     tfp_sprintf(lineBuffer, "Target: %s", targetName);
-    i2c_OLED_set_line(PAGE_TITLE_LINE_COUNT + 1);
+    i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 }
 

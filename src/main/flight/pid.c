@@ -26,25 +26,29 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "config/runtime_config.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+
+#include "sensors/sensors.h"
+#include "sensors/gyro.h"
+#include "sensors/acceleration.h"
 
 #include "rx/rx.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-
 #include "io/rc_controls.h"
-#include "flight/flight.h"
+#include "io/gps.h"
+
+#include "flight/pid.h"
+#include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/autotune.h"
-#include "io/gps.h"
+
+#include "config/runtime_config.h"
 
 extern uint16_t cycleTime;
 extern uint8_t motorCount;
 
-int16_t heading, magHold;
+int16_t heading;
 int16_t axisPID[3];
 
 #ifdef BLACKBOX
@@ -64,12 +68,6 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
-
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
-{
-    rollAndPitchTrims->values.roll = 0;
-    rollAndPitchTrims->values.pitch = 0;
-}
 
 void resetErrorAngle(void)
 {
@@ -201,8 +199,13 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm - DTerm), -1000, 1000);
-    }
 
+#ifdef BLACKBOX
+        axisPID_P[axis] = PTerm;
+        axisPID_I[axis] = ITerm;
+        axisPID_D[axis] = -DTerm;
+#endif
+    }
 }
 
 static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,

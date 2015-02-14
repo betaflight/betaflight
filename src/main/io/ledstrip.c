@@ -28,24 +28,26 @@
 #ifdef LED_STRIP
 
 #include <common/color.h>
+#include <common/maths.h>
+#include <common/typeconversion.h>
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include <common/maths.h>
 #include <common/printf.h>
-#include <common/typeconversion.h>
 
 #include "sensors/battery.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
-#include "rx/rx.h"
 #include "io/rc_controls.h"
+#include "io/ledstrip.h"
+
+#include "rx/rx.h"
+
 #include "flight/failsafe.h"
 
-#include "io/ledstrip.h"
+#include "config/runtime_config.h"
+#include "config/config.h"
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
@@ -769,7 +771,7 @@ void applyLedThrottleLayer()
 
         int scaled = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, -60, +60);
         scaled += HSV_HUE_MAX;
-        color.h = scaled % HSV_HUE_MAX;
+        color.h = (color.h + scaled) % HSV_HUE_MAX;
         setLedHsv(ledIndex, &color);
     }
 }

@@ -32,6 +32,12 @@
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
+#endif
+
 void adcInit(drv_adc_config_t *init)
 {
     ADC_InitTypeDef ADC_InitStructure;
@@ -44,50 +50,64 @@ void adcInit(drv_adc_config_t *init)
     memset(&adcConfig, 0, sizeof(adcConfig));
 
     GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_0 | GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AN;
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL ;
 
-    adcConfig[ADC_BATTERY].adcChannel = ADC_Channel_6;
+#ifdef VBAT_ADC_GPIO
+    GPIO_InitStructure.GPIO_Pin   = VBAT_ADC_GPIO_PIN;
+    GPIO_Init(VBAT_ADC_GPIO, &GPIO_InitStructure);
+
+    adcConfig[ADC_BATTERY].adcChannel = VBAT_ADC_CHANNEL;
     adcConfig[ADC_BATTERY].dmaIndex = adcChannelCount;
     adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_601Cycles5;
     adcConfig[ADC_BATTERY].enabled = true;
     adcChannelCount++;
+#endif
 
+#ifdef CURRENT_METER_ADC_GPIO
     if (init->enableCurrentMeter) {
-        GPIO_InitStructure.GPIO_Pin |= GPIO_Pin_1;
+        GPIO_InitStructure.GPIO_Pin = CURRENT_METER_ADC_GPIO_PIN;
+        GPIO_Init(CURRENT_METER_ADC_GPIO, &GPIO_InitStructure);
 
-        adcConfig[ADC_CURRENT].adcChannel = ADC_Channel_7;
+        adcConfig[ADC_CURRENT].adcChannel = CURRENT_METER_ADC_CHANNEL;
         adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
         adcConfig[ADC_CURRENT].enabled = true;
         adcChannelCount++;
-
     }
+#endif
 
+#ifdef RSSI_ADC_GPIO
     if (init->enableRSSI) {
-        GPIO_InitStructure.GPIO_Pin |= GPIO_Pin_2;
+        GPIO_InitStructure.GPIO_Pin = RSSI_ADC_GPIO_PIN;
+        GPIO_Init(RSSI_ADC_GPIO, &GPIO_InitStructure);
 
-        adcConfig[ADC_RSSI].adcChannel = ADC_Channel_8;
+        adcConfig[ADC_RSSI].adcChannel = RSSI_ADC_CHANNEL;
         adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
         adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
         adcConfig[ADC_RSSI].enabled = true;
         adcChannelCount++;
     }
+#endif
 
-    adcConfig[ADC_EXTERNAL1].adcChannel = ADC_Channel_9;
+#ifdef EXTERNAL1_ADC_GPIO
+    GPIO_InitStructure.GPIO_Pin   = EXTERNAL1_ADC_GPIO_PIN;
+    GPIO_Init(EXTERNAL1_ADC_GPIO, &GPIO_InitStructure);
+
+    adcConfig[ADC_EXTERNAL1].adcChannel = EXTERNAL1_ADC_CHANNEL;
     adcConfig[ADC_EXTERNAL1].dmaIndex = adcChannelCount;
     adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_601Cycles5;
     adcConfig[ADC_EXTERNAL1].enabled = true;
     adcChannelCount++;
+#endif
 
     RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_ADC12, ENABLE);
+    RCC_AHBPeriphClockCmd(ADC_AHB_PERIPHERAL | RCC_AHBPeriph_ADC12, ENABLE);
 
-    DMA_DeInit(DMA1_Channel1);
+    DMA_DeInit(ADC_DMA_CHANNEL);
 
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&ADC_INSTANCE->DR;
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)adcValues;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
     DMA_InitStructure.DMA_BufferSize = adcChannelCount;
@@ -99,20 +119,19 @@ void adcInit(drv_adc_config_t *init)
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
-    DMA_Init(DMA1_Channel1, &DMA_InitStructure);
+    DMA_Init(ADC_DMA_CHANNEL, &DMA_InitStructure);
 
-    DMA_Cmd(DMA1_Channel1, ENABLE);
+    DMA_Cmd(ADC_DMA_CHANNEL, ENABLE);
 
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     // calibrate
 
-    ADC_VoltageRegulatorCmd(ADC1, ENABLE);
+    ADC_VoltageRegulatorCmd(ADC_INSTANCE, ENABLE);
     delay(10);
-    ADC_SelectCalibrationMode(ADC1, ADC_CalibrationMode_Single);
-    ADC_StartCalibration(ADC1);
-    while(ADC_GetCalibrationStatus(ADC1) != RESET);
-    ADC_VoltageRegulatorCmd(ADC1, DISABLE);
+    ADC_SelectCalibrationMode(ADC_INSTANCE, ADC_CalibrationMode_Single);
+    ADC_StartCalibration(ADC_INSTANCE);
+    while(ADC_GetCalibrationStatus(ADC_INSTANCE) != RESET);
+    ADC_VoltageRegulatorCmd(ADC_INSTANCE, DISABLE);
 
 
     ADC_CommonInitTypeDef ADC_CommonInitStructure;
@@ -123,7 +142,7 @@ void adcInit(drv_adc_config_t *init)
     ADC_CommonInitStructure.ADC_DMAAccessMode = ADC_DMAAccessMode_1;
     ADC_CommonInitStructure.ADC_DMAMode = ADC_DMAMode_Circular;
     ADC_CommonInitStructure.ADC_TwoSamplingDelay = 0;
-    ADC_CommonInit(ADC1, &ADC_CommonInitStructure);
+    ADC_CommonInit(ADC_INSTANCE, &ADC_CommonInitStructure);
 
     ADC_StructInit(&ADC_InitStructure);
 
@@ -136,24 +155,24 @@ void adcInit(drv_adc_config_t *init)
     ADC_InitStructure.ADC_AutoInjMode           = ADC_AutoInjec_Disable;
     ADC_InitStructure.ADC_NbrOfRegChannel       = adcChannelCount;
 
-    ADC_Init(ADC1, &ADC_InitStructure);
+    ADC_Init(ADC_INSTANCE, &ADC_InitStructure);
 
     uint8_t rank = 1;
     for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].enabled) {
             continue;
         }
-        ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, rank++, adcConfig[i].sampleTime);
+        ADC_RegularChannelConfig(ADC_INSTANCE, adcConfig[i].adcChannel, rank++, adcConfig[i].sampleTime);
     }
 
-    ADC_Cmd(ADC1, ENABLE);
+    ADC_Cmd(ADC_INSTANCE, ENABLE);
 
-    while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_RDY));
+    while(!ADC_GetFlagStatus(ADC_INSTANCE, ADC_FLAG_RDY));
 
-    ADC_DMAConfig(ADC1, ADC_DMAMode_Circular);
+    ADC_DMAConfig(ADC_INSTANCE, ADC_DMAMode_Circular);
 
-    ADC_DMACmd(ADC1, ENABLE);
+    ADC_DMACmd(ADC_INSTANCE, ENABLE);
 
-    ADC_StartConversion(ADC1);
+    ADC_StartConversion(ADC_INSTANCE);
 }
 

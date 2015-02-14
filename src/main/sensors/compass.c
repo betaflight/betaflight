@@ -28,7 +28,6 @@
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 
-#include "flight/flight.h"
 #include "sensors/boardalignment.h"
 #include "config/runtime_config.h"
 #include "config/config.h"

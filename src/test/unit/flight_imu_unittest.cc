@@ -25,7 +25,6 @@
 extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
-    #include "flight/flight.h"
 
     #include "sensors/sensors.h"
     #include "drivers/sensor.h"
@@ -39,6 +38,7 @@ extern "C" {
     #include "config/runtime_config.h"
 
     #include "flight/mixer.h"
+    #include "flight/pid.h"
     #include "flight/imu.h"
 }
 
@@ -53,19 +53,19 @@ TEST(FlightImuTest, TestCalculateHeading)
 {
     //TODO: Add test cases using the Z dimension.
     t_fp_vector north = {.A={1.0f, 0.0f, 0.0f}};
-    EXPECT_EQ(calculateHeading(&north), 0);
+    EXPECT_EQ(imuCalculateHeading(&north), 0);
 
     t_fp_vector east = {.A={0.0f, 1.0f, 0.0f}};
-    EXPECT_EQ(calculateHeading(&east), 90);
+    EXPECT_EQ(imuCalculateHeading(&east), 90);
 
     t_fp_vector south = {.A={-1.0f, 0.0f, 0.0f}};
-    EXPECT_EQ(calculateHeading(&south), 180);
+    EXPECT_EQ(imuCalculateHeading(&south), 180);
 
     t_fp_vector west = {.A={0.0f, -1.0f, 0.0f}};
-    EXPECT_EQ(calculateHeading(&west), 270);
+    EXPECT_EQ(imuCalculateHeading(&west), 270);
 
     t_fp_vector north_east = {.A={1.0f, 1.0f, 0.0f}};
-    EXPECT_EQ(calculateHeading(&north_east), 45);
+    EXPECT_EQ(imuCalculateHeading(&north_east), 45);
 }
 
 // STUBS
@@ -86,9 +86,12 @@ uint16_t flightModeFlags;
 uint8_t armingFlags;
 
 int32_t sonarAlt;
+int16_t accADC[XYZ_AXIS_COUNT];
+int16_t gyroADC[XYZ_AXIS_COUNT];
 
 
-void gyroGetADC(void) {};
+
+void gyroUpdate(void) {};
 bool sensors(uint32_t mask)
 {
     UNUSED(mask);

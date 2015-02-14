@@ -18,11 +18,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "build_config.h"
+
 #include "platform.h"
 #include "system.h"
 
 #include "adc.h"
 
+//#define DEBUG_ADC_CHANNELS
+
+#ifdef USE_ADC
 adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
@@ -30,7 +35,7 @@ extern int16_t debug[4];
 
 uint16_t adcGetChannel(uint8_t channel)
 {
-#if DEBUG_ADC_CHANNELS
+#ifdef DEBUG_ADC_CHANNELS
     if (adcConfig[0].enabled) {
         debug[0] = adcValues[adcConfig[0].dmaIndex];
     }
@@ -47,3 +52,10 @@ uint16_t adcGetChannel(uint8_t channel)
     return adcValues[adcConfig[channel].dmaIndex];
 }
 
+#else
+uint16_t adcGetChannel(uint8_t channel)
+{
+    UNUSED(channel);
+    return 0;
+}
+#endif

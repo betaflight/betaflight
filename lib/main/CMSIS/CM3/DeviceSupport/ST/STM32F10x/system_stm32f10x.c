@@ -145,7 +145,7 @@ void SetSysClock(bool overclock)
     // On CJMCU new revision boards (Late 2014) bit 15 of GPIOC->IDR is '1'.
     RCC_CFGR_PLLMUL = RCC_CFGR_PLLMULL9;
 #else
-    RCC_CFGR_PLLMUL = GPIOC->IDR & CAN_MCR_RESET ? hse_value = 12000000, RCC_CFGR_PLLMULL6 : RCC_CFGR_PLLMULL9;
+    RCC_CFGR_PLLMUL = GPIOC->IDR & GPIO_IDR_IDR15 ? hse_value = 12000000, RCC_CFGR_PLLMULL6 : RCC_CFGR_PLLMULL9;
 #endif
     switch (clocksrc) {
         case SRC_HSE:

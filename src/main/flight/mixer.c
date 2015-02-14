@@ -30,14 +30,21 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
 
 #include "rx/rx.h"
+
 #include "io/gimbal.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
+
 #include "flight/mixer.h"
-#include "flight/flight.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"

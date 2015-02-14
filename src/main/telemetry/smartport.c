@@ -27,18 +27,16 @@
 #include "drivers/adc.h"
 #include "drivers/light_led.h"
 
-#include "flight/flight.h"
-#include "flight/mixer.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
+
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
@@ -46,6 +44,13 @@
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
+
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/failsafe.h"
+#include "flight/navigation.h"
+#include "flight/altitudehold.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"

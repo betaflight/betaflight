@@ -25,8 +25,6 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
-#include "flight/flight.h"
-
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "io/beeper.h"
@@ -35,6 +33,8 @@
 #include "config/config.h"
 
 #include "sensors/acceleration.h"
+
+int16_t accADC[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 uint8_t accHardware = ACC_DEFAULT;  // which accel chip is used/detected
@@ -71,6 +71,12 @@ bool isOnFirstAccelerationCalibrationCycle(void)
     return calibratingA == CALIBRATING_ACC_CYCLES;
 }
 
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+    rollAndPitchTrims->values.roll = 0;
+    rollAndPitchTrims->values.pitch = 0;
+}
+
 void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
@@ -92,9 +98,9 @@ void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 
     if (isOnFinalAccelerationCalibrationCycle()) {
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-        accelerationTrims->raw[FD_ROLL] = (a[FD_ROLL] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-        accelerationTrims->raw[FD_PITCH] = (a[FD_PITCH] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-        accelerationTrims->raw[FD_YAW] = (a[FD_YAW] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc_1G;
+        accelerationTrims->raw[X] = (a[X] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+        accelerationTrims->raw[Y] = (a[Y] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+        accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc_1G;
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
@@ -113,9 +119,9 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
 
     // Saving old zeropoints before measurement
     if (InflightcalibratingA == 50) {
-        accZero_saved[FD_ROLL] = accelerationTrims->raw[FD_ROLL];
-        accZero_saved[FD_PITCH] = accelerationTrims->raw[FD_PITCH];
-        accZero_saved[FD_YAW] = accelerationTrims->raw[FD_YAW];
+        accZero_saved[X] = accelerationTrims->raw[X];
+        accZero_saved[Y] = accelerationTrims->raw[Y];
+        accZero_saved[Z] = accelerationTrims->raw[Z];
         angleTrim_saved.values.roll = rollAndPitchTrims->values.roll;
         angleTrim_saved.values.pitch = rollAndPitchTrims->values.pitch;
     }
@@ -136,9 +142,9 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
             AccInflightCalibrationMeasurementDone = true;
             queueConfirmationBeep(5); // beeper to indicating the end of calibration
             // recover saved values to maintain current flight behaviour until new values are transferred
-            accelerationTrims->raw[FD_ROLL] = accZero_saved[FD_ROLL];
-            accelerationTrims->raw[FD_PITCH] = accZero_saved[FD_PITCH];
-            accelerationTrims->raw[FD_YAW] = accZero_saved[FD_YAW];
+            accelerationTrims->raw[X] = accZero_saved[X];
+            accelerationTrims->raw[Y] = accZero_saved[Y];
+            accelerationTrims->raw[Z] = accZero_saved[Z];
             rollAndPitchTrims->values.roll = angleTrim_saved.values.roll;
             rollAndPitchTrims->values.pitch = angleTrim_saved.values.pitch;
         }
@@ -147,9 +153,9 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
     // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
     if (AccInflightCalibrationSavetoEEProm) {      // the aircraft is landed, disarmed and the combo has been done again
         AccInflightCalibrationSavetoEEProm = false;
-        accelerationTrims->raw[FD_ROLL] = b[FD_ROLL] / 50;
-        accelerationTrims->raw[FD_PITCH] = b[FD_PITCH] / 50;
-        accelerationTrims->raw[FD_YAW] = b[FD_YAW] / 50 - acc_1G;    // for nunchuck 200=1G
+        accelerationTrims->raw[X] = b[X] / 50;
+        accelerationTrims->raw[Y] = b[Y] / 50;
+        accelerationTrims->raw[Z] = b[Z] / 50 - acc_1G;    // for nunchuck 200=1G
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
@@ -159,9 +165,9 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
 
 void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 {
-    accADC[FD_ROLL] -= accelerationTrims->raw[FD_ROLL];
-    accADC[FD_PITCH] -= accelerationTrims->raw[FD_PITCH];
-    accADC[FD_YAW] -= accelerationTrims->raw[FD_YAW];
+    accADC[X] -= accelerationTrims->raw[X];
+    accADC[Y] -= accelerationTrims->raw[Y];
+    accADC[Z] -= accelerationTrims->raw[Z];
 }
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)

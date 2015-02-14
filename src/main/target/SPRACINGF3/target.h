@@ -26,20 +26,24 @@
 #define BEEP_GPIO   GPIOC
 #define BEEP_PIN    Pin_15
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 
 #define GYRO
 #define USE_GYRO_MPU6050
+#define GYRO_MPU6050_ALIGN CW270_DEG
 
 #define ACC
 #define USE_ACC_MPU6050
+#define ACC_MPU6050_ALIGN CW270_DEG
 
 #define BARO
 #define USE_BARO_MS5611
 
 #define MAG
 #define USE_MAG_HMC5883
+#define MAG_HMC5883_ALIGN CW270_DEG
 
 #define BEEPER
 #define LED0
@@ -49,6 +53,15 @@
 #define USE_USART3
 #define SERIAL_PORT_COUNT 3
 
+#ifndef UART1_GPIO
+#define UART1_TX_PIN        GPIO_Pin_9  // PA9
+#define UART1_RX_PIN        GPIO_Pin_10 // PA10
+#define UART1_GPIO          GPIOA
+#define UART1_GPIO_AF       GPIO_AF_7
+#define UART1_TX_PINSOURCE  GPIO_PinSource9
+#define UART1_RX_PINSOURCE  GPIO_PinSource10
+#endif
+
 #define UART2_TX_PIN        GPIO_Pin_14 // PA14 / SWCLK
 #define UART2_RX_PIN        GPIO_Pin_15 // PA15
 #define UART2_GPIO          GPIOA
@@ -56,11 +69,42 @@
 #define UART2_TX_PINSOURCE  GPIO_PinSource14
 #define UART2_RX_PINSOURCE  GPIO_PinSource15
 
+#ifndef UART3_GPIO
+#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
+#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
+#define UART2_GPIO_AF       GPIO_AF_7
+#define UART3_GPIO          GPIOB
+#define UART3_TX_PINSOURCE  GPIO_PinSource10
+#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#endif
+
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 //#define USE_SPI
 //#define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
+
+#define USE_ADC
+
+#define ADC_INSTANCE                ADC2
+#define ADC_DMA_CHANNEL             DMA2_Channel1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
+
+#define VBAT_ADC_GPIO               GPIOA
+#define VBAT_ADC_GPIO_PIN           GPIO_Pin_4
+#define VBAT_ADC_CHANNEL            ADC_Channel_1
+
+#define CURRENT_METER_ADC_GPIO      GPIOA
+#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_5
+#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_2
+
+#define RSSI_ADC_GPIO               GPIOB
+#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
+#define RSSI_ADC_CHANNEL            ADC_Channel_12
+
+#define RSSI_ADC_GPIO               GPIOB
+#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
+#define RSSI_ADC_CHANNEL            ADC_Channel_12
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1
@@ -83,4 +127,4 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
-
+#define DISPLAY

@@ -17,8 +17,6 @@ Flyable!
 Tested with revision 1 board. 
 
 ## TODO
-* Baro - detection works but sending bad readings, disabled for now.
-* LED Strip
 * ADC
 * Sonar
 * Display (via Flex port)

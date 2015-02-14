@@ -25,38 +25,37 @@
 #include "platform.h"
 
 #include "common/maths.h"
+#include "common/axis.h"
 
 #include "drivers/system.h"
-
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "io/serial.h"
-
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 
-#include "common/axis.h"
-#include "flight/flight.h"
-
 #include "sensors/sensors.h"
+
+#include "io/serial.h"
+#include "io/gps.h"
+#include "io/rc_controls.h"
+
+#include "flight/pid.h"
+#include "flight/navigation.h"
+#include "flight/gps_conversion.h"
+
+#include "rx/rx.h"
+
 
 #include "config/config.h"
 #include "config/runtime_config.h"
 
-#include "flight/gps_conversion.h"
-#include "io/gps.h"
-
-#include "rx/rx.h"
-#include "io/rc_controls.h"
-
-#include "flight/navigation.h"
+extern int16_t magHold;
 
 #ifdef GPS
 
 extern int16_t debug[4];
 
 bool areSticksInApModePosition(uint16_t ap_mode);
-
 
 // **********************
 // GPS

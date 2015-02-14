@@ -24,7 +24,6 @@ extern "C" {
 
     #include "common/color.h"
     #include "common/axis.h"
-    #include "flight/flight.h"
 
     #include "sensors/battery.h"
     #include "config/runtime_config.h"

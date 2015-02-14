@@ -25,7 +25,6 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "flight/flight.h"
 #include "sensors/sensors.h"
 #include "io/statusindicator.h"
 #include "sensors/boardalignment.h"
@@ -33,6 +32,8 @@
 #include "sensors/gyro.h"
 
 uint16_t calibratingG = 0;
+int16_t gyroADC[XYZ_AXIS_COUNT];
+int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static gyroConfig_t *gyroConfig;
 
@@ -108,7 +109,7 @@ static void applyGyroZero(void)
     }
 }
 
-void gyroGetADC(void)
+void gyroUpdate(void)
 {
     // FIXME When gyro.read() fails due to i2c or other error gyroZero is continually re-applied to gyroADC resulting in a old reading that gets worse over time.
 

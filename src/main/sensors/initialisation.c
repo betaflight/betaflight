@@ -52,7 +52,6 @@
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 
-#include "flight/flight.h"
 #include "config/runtime_config.h"
 
 #include "sensors/sensors.h"

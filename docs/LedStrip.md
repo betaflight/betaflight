@@ -178,7 +178,7 @@ Note: Armed State cannot be used with Flight Mode.
 
 This mode fades the LED current LED color to the previous/next color in the HSB color space depending on throttle stick position.  When the
 throttle is in the middle position the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and throttle at
-the same time.
+the same time.  Thrust should normally be combined with Color or Mode/Orientation.
 
 #### Thrust ring state
 

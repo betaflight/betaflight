@@ -44,11 +44,8 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
-#include "flight/flight.h"
-#include "flight/mixer.h"
-#include "flight/navigation.h"
-#include "flight/failsafe.h"
-#include "rx/rx.h"
+
+
 #include "io/escservo.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
@@ -56,7 +53,10 @@
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
+
+#include "rx/rx.h"
 #include "rx/spektrum.h"
+
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -64,6 +64,13 @@
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/barometer.h"
+
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
+#include "flight/failsafe.h"
+
 #include "telemetry/telemetry.h"
 
 #include "config/runtime_config.h"
@@ -171,7 +178,7 @@ const clicmd_t cmdTable[] = {
     { "color", "configure colors", cliColor },
 #endif
     { "defaults", "reset to defaults and reboot", cliDefaults },
-    { "dump", "print configurable settings in a pastable form", cliDump },
+    { "dump", "dump configuration", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
 #ifdef USE_FLASHFS
@@ -263,7 +270,7 @@ const clivalue_t valueTable[] = {
     { "serial_port_2_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[1], 0, SERIAL_PORT_SCENARIO_MAX },
 #if (SERIAL_PORT_COUNT > 2)
     { "serial_port_3_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[2], 0, SERIAL_PORT_SCENARIO_MAX },
-#if !defined(CC3D)
+#if (SERIAL_PORT_COUNT > 3)
     { "serial_port_4_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[3], 0, SERIAL_PORT_SCENARIO_MAX },
 #if (SERIAL_PORT_COUNT > 4)
     { "serial_port_5_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[4], 0, SERIAL_PORT_SCENARIO_MAX },
@@ -384,7 +391,7 @@ const clivalue_t valueTable[] = {
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, 0, MAG_NONE },
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, -18000, 18000 },
 
-    { "pid_controller",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidController, 0, 5 },
+    { "pid_controller",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidController, 0, 5 },
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], 0, 200 },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], 0, 200 },
@@ -422,9 +429,11 @@ const clivalue_t valueTable[] = {
     { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], 0, 200 },
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], 0, 200 },
 
-    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_device, 0, 1 },
+#ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, 1, 32 },
     { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, 1, 32 },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_device, 0, 1 },
+#endif
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
@@ -1476,7 +1485,13 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("Cleanflight/%s %s / %s (%s)", targetName, buildDate, buildTime, shortGitRevision);
+    printf("Cleanflight/%s %s %s / %s (%s)",
+        targetName,
+        FC_VERSION_STRING,
+        buildDate,
+        buildTime,
+        shortGitRevision
+    );
 }
 
 void cliProcess(void)
