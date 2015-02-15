@@ -772,7 +772,12 @@ static void cliFlashErase(char *cmdline)
 
     printf("Erasing, please wait...\r\n");
     flashfsEraseCompletely();
-    printf("Erased flash chip.\r\n");
+
+    while (!flashfsIsReady()) {
+        delay(100);
+    }
+
+    printf("Done.\r\n");
 }
 
 static void cliFlashWrite(char *cmdline)

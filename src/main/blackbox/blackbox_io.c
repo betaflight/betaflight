@@ -415,7 +415,7 @@ void blackboxDeviceFlush(void)
         break;
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
-            flashfsFlushSync();
+            flashfsFlushAsync();
         break;
 #endif
     }
@@ -503,8 +503,7 @@ bool isBlackboxDeviceIdle(void)
 
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
-            flashfsFlushSync();
-            return true;
+            return flashfsFlushAsync();
 #endif
 
         default:

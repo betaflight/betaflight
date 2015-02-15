@@ -295,12 +295,14 @@ static void flashfsAdvanceTailInBuffer(uint32_t delta)
 /**
  * If the flash is ready to accept writes, flush the buffer to it, otherwise schedule
  * a flush for later and return immediately.
+ *
+ * Returns true if all data in the buffer has been flushed to the device.
  */
-void flashfsFlushAsync()
+bool flashfsFlushAsync()
 {
     if (flashfsBufferIsEmpty()) {
         shouldFlush = false;
-        return; // Nothing to flush
+        return true; // Nothing to flush
     }
 
     uint8_t const * buffers[2];
@@ -312,6 +314,8 @@ void flashfsFlushAsync()
     flashfsAdvanceTailInBuffer(bytesWritten);
 
     shouldFlush = !flashfsBufferIsEmpty();
+
+    return flashfsBufferIsEmpty();
 }
 
 /**

@@ -43,7 +43,7 @@ void flashfsWrite(const uint8_t *data, unsigned int len, bool sync);
 
 int flashfsReadAbs(uint32_t offset, uint8_t *data, unsigned int len);
 
-void flashfsFlushAsync();
+bool flashfsFlushAsync();
 void flashfsFlushSync();
 
 void flashfsInit();

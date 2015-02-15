@@ -52,7 +52,6 @@
 
 #include "io/serial.h"
 #include "io/flashfs.h"
-
 #include "io/gps.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
