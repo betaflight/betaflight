@@ -178,6 +178,8 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
+    mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
+
     memset(&pwm_params, 0, sizeof(pwm_params));
     // when using airplane/wing mixer, servo/motor outputs are remapped
     if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING)
@@ -314,14 +316,12 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-
-    imuInit();
-    mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
-
 #ifdef MAG
     if (sensors(SENSOR_MAG))
         compassInit();
 #endif
+
+    imuInit();
 
     serialInit(&masterConfig.serialConfig);
 
