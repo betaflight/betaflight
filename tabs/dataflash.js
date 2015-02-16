@@ -71,20 +71,27 @@ TABS.dataflash.initialize = function (callback) {
     }
     
     function create_html() {
+        var
+            supportsDataflash = DATAFLASH.totalSize > 0;
+        
         // translate to user-selected language
         localize();
 
-        // UI hooks
-        $('.tab-dataflash a.erase-flash').click(ask_to_erase_flash);
+        $(".tab-dataflash").toggleClass("supported", supportsDataflash);
         
-        $('.tab-dataflash a.erase-flash-confirm').click(flash_erase);
-        $('.tab-dataflash a.erase-flash-cancel').click(flash_erase_cancel);
-
-        $('.tab-dataflash a.save-flash').click(flash_save_begin);
-        $('.tab-dataflash a.save-flash-cancel').click(flash_save_cancel);
-        $('.tab-dataflash a.save-flash-dismiss').click(dismiss_saving_dialog);
-        
-        update_html();
+        if (supportsDataflash) {
+            // UI hooks
+            $('.tab-dataflash a.erase-flash').click(ask_to_erase_flash);
+            
+            $('.tab-dataflash a.erase-flash-confirm').click(flash_erase);
+            $('.tab-dataflash a.erase-flash-cancel').click(flash_erase_cancel);
+    
+            $('.tab-dataflash a.save-flash').click(flash_save_begin);
+            $('.tab-dataflash a.save-flash-cancel').click(flash_save_cancel);
+            $('.tab-dataflash a.save-flash-dismiss').click(dismiss_saving_dialog);
+            
+            update_html();
+        }
         
         if (callback) callback();
     }

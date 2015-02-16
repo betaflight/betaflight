@@ -177,3 +177,16 @@
 .dataflash-saving.done .dataflash-saving-after {
     display:block;
 }
+
+.require-dataflash {
+    display:none;
+}
+.tab-dataflash.supported .require-dataflash {
+    display:block;
+}
+.require-no-dataflash {
+    display:block;
+}
+.tab-dataflash.supported .require-no-dataflash {
+    display:none;
+}

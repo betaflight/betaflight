@@ -846,7 +846,10 @@
     },
 
     "dataflashNote": {
-        "message": "Blackbox flight logs can be stored on the onboard dataflash chip if your flight controller supports one."
+        "message": "Blackbox flight logs can be recorded to your flight controller's onboard dataflash chip."
+    },
+    "dataflashNotSupportedNote": {
+        "message": "Your flight controller does not have a compatible dataflash chip available."
     },
     "dataflashButtonSaveFile": {
         "message": "Save flash to file..."
