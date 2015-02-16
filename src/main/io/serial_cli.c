@@ -120,7 +120,7 @@ static void cliMixer(char *cmdline);
 #endif
 
 #ifdef USE_FLASHFS
-static void cliFlashIdent(char *cmdline);
+static void cliFlashInfo(char *cmdline);
 static void cliFlashErase(char *cmdline);
 static void cliFlashWrite(char *cmdline);
 static void cliFlashRead(char *cmdline);
@@ -183,7 +183,7 @@ const clicmd_t cmdTable[] = {
     { "feature", "list or -val or val", cliFeature },
 #ifdef USE_FLASHFS
     { "flash_erase", "erase flash chip", cliFlashErase },
-    { "flash_ident", "get flash chip details", cliFlashIdent },
+    { "flash_info", "get flash chip details", cliFlashInfo },
     { "flash_read", "read text from the given address", cliFlashRead },
     { "flash_write", "write text to the given address", cliFlashWrite },
 #endif
@@ -756,7 +756,7 @@ static void cliColor(char *cmdline)
 
 #ifdef USE_FLASHFS
 
-static void cliFlashIdent(char *cmdline)
+static void cliFlashInfo(char *cmdline)
 {
     const flashGeometry_t *layout = flashfsGetGeometry();
 
