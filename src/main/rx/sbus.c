@@ -45,7 +45,9 @@
 
 #define SBUS_TIME_NEEDED_PER_FRAME 3000
 
+#ifndef CJMCU
 #define DEBUG_SBUS_PACKETS
+#endif
 
 #ifdef DEBUG_SBUS_PACKETS
 static uint16_t sbusStateFlags = 0;
@@ -183,7 +185,7 @@ bool sbusFrameComplete(void)
         // internal failsafe enabled and rx failsafe flag set
 #ifdef DEBUG_SBUS_PACKETS
         sbusStateFlags |= SBUS_STATE_SIGNALLOSS;
-        debug[0] = sbusStateFlags;
+        debug[0] |= SBUS_STATE_SIGNALLOSS;
 #endif
     }
     if (sbusFrame.frame.flags & SBUS_FLAG_FAILSAFE_ACTIVE) {
