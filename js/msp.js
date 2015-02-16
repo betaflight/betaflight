@@ -488,9 +488,9 @@ var MSP = {
                 BF_CONFIG.mixerConfiguration = data.getUint8(0);
                 BF_CONFIG.features = data.getUint32(1, 1);
                 BF_CONFIG.serialrx_type = data.getUint8(5);
-                BF_CONFIG.board_align_roll = data.getInt16(6, 1);
-                BF_CONFIG.board_align_pitch = data.getInt16(8, 1);
-                BF_CONFIG.board_align_yaw = data.getInt16(10, 1);
+                BF_CONFIG.board_align_roll = data.getInt16(6, 1); // -180 - 360
+                BF_CONFIG.board_align_pitch = data.getInt16(8, 1); // -180 - 360
+                BF_CONFIG.board_align_yaw = data.getInt16(10, 1); // -180 - 360
                 BF_CONFIG.currentscale = data.getInt16(12, 1);
                 BF_CONFIG.currentoffset = data.getUint16(14, 1);
                 break;
@@ -559,8 +559,8 @@ var MSP = {
             case MSP_codes.MSP_CF_SERIAL_CONFIG:
                 SERIAL_CONFIG.ports = [];
                 var offset = 0;
-                var serialPortCount = data.byteLength - (4 * 4);
-                for (var i = 0; offset < serialPortCount; i++) {
+                var serialPortCount = (data.byteLength - (4 * 4)) / 2;
+                for (var i = 0; i < serialPortCount; i++) {
                     var serialPort = {
                         identifier: data.getUint8(offset++, 1),
                         scenario: data.getUint8(offset++, 1)
@@ -622,7 +622,12 @@ var MSP = {
                 break;
             case MSP_codes.MSP_CHANNEL_FORWARDING:
                 for (var i = 0; i < 8; i ++) {
-                    SERVO_CONFIG[i].indexOfChannelToForward = data.getUint8(i);
+                    var channelIndex = data.getUint8(i);
+                    if (channelIndex < 255) {
+                        SERVO_CONFIG[i].indexOfChannelToForward;
+                    } else {
+                        SERVO_CONFIG[i].indexOfChannelToForward = undefined;
+                    }
                 }
                 break;
 
@@ -931,7 +936,11 @@ MSP.crunch = function (code) {
             break;
         case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
-                buffer.push(SERVO_CONFIG[i].indexOfChannelToForward);
+                var out = SERVO_CONFIG[i].indexOfChannelToForward;
+                if (out == undefined) {
+                    out = 255; // Cleanflight defines "CHANNEL_FORWARDING_DISABLED" as "(uint8_t)0xFF"
+                }
+                buffer.push(out);
             }
             break;
         case MSP_codes.MSP_SET_CF_SERIAL_CONFIG:

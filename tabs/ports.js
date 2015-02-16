@@ -61,7 +61,7 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         var ports_e = $('.tab-ports .ports');
         var port_configuration_template_e = $('#tab-ports-templates .portConfiguration');
         
-        for (var portIndex = 0; portIndex < board_definition.serialPortCount; portIndex++) {
+        for (var portIndex = 0; portIndex < SERIAL_CONFIG.ports.length; portIndex++) {
             var port_configuration_e = port_configuration_template_e.clone();
             
             var serialPort = SERIAL_CONFIG.ports[portIndex];

@@ -163,9 +163,12 @@ TABS.servos.initialize = function (callback) {
 
 
                 var selection = $('.channel input', this);
-                var val = selection.index(selection.filter(':checked'));
-
-                SERVO_CONFIG[info.obj].indexOfChannelToForward = parseInt(val);
+                var channelIndex = parseInt(selection.index(selection.filter(':checked')));
+                if (channelIndex == -1) {
+                    channelIndex = undefined;
+                }
+                
+                SERVO_CONFIG[info.obj].indexOfChannelToForward = channelIndex;
 
                 
                 SERVO_CONFIG[info.obj].middle = parseInt($('.middle input', this).val());
