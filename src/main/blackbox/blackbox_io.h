@@ -46,9 +46,8 @@ void blackboxWriteTag2_3S32(int32_t *values);
 void blackboxWriteTag8_4S16(int32_t *values);
 void blackboxWriteTag8_8SVB(int32_t *values, int valueCount);
 
-void blackboxDeviceFlush(void);
+bool blackboxDeviceFlush(void);
 bool blackboxDeviceOpen(void);
 void blackboxDeviceClose(void);
 
-bool isBlackboxDeviceIdle(void);
 bool isBlackboxDeviceFull(void);

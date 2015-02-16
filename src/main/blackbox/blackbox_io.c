@@ -405,19 +405,24 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
 }
 
 /**
- * If there is data waiting to be written to the blackbox device, attempt to write that now.
+ * If there is data waiting to be written to the blackbox device, attempt to write (a portion of) that now.
+ * 
+ * Returns true if all data has been flushed to the device.
  */
-void blackboxDeviceFlush(void)
+bool blackboxDeviceFlush(void)
 {
     switch (masterConfig.blackbox_device) {
         case BLACKBOX_DEVICE_SERIAL:
-            //Presently a no-op on serial, as serial is continuously being drained out of its buffer
-        break;
+            //Nothing to speed up flushing on serial, as serial is continuously being drained out of its buffer
+            return isSerialTransmitBufferEmpty(blackboxPort);
+
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
-            flashfsFlushAsync();
-        break;
+            return flashfsFlushAsync();
 #endif
+
+        default:
+            return false;
     }
 }
 
@@ -470,6 +475,9 @@ bool blackboxDeviceOpen(void)
     }
 }
 
+/**
+ * Close the Blackbox logging device immediately without attempting to flush any remaining data.
+ */
 void blackboxDeviceClose(void)
 {
     switch (masterConfig.blackbox_device) {
@@ -487,27 +495,6 @@ void blackboxDeviceClose(void)
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
         break;
-#ifdef USE_FLASHFS
-        case BLACKBOX_DEVICE_FLASH:
-            flashfsFlushSync();
-        break;
-#endif
-    }
-}
-
-bool isBlackboxDeviceIdle(void)
-{
-    switch (masterConfig.blackbox_device) {
-        case BLACKBOX_DEVICE_SERIAL:
-            return isSerialTransmitBufferEmpty(blackboxPort);
-
-#ifdef USE_FLASHFS
-        case BLACKBOX_DEVICE_FLASH:
-            return flashfsFlushAsync();
-#endif
-
-        default:
-            return false;
     }
 }
 

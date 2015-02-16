@@ -278,6 +278,11 @@ int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length)
     return length;
 }
 
+/**
+ * Fetch information about the detected flash chip layout.
+ *
+ * Can be called before calling m25p16_init() (the result would have totalSize = 0).
+ */
 const flashGeometry_t* m25p16_getGeometry()
 {
     return &geometry;

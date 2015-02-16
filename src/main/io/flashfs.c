@@ -555,6 +555,7 @@ bool flashfsIsEOF() {
  */
 void flashfsInit()
 {
+    // If we have a flash chip present at all
     if (flashfsGetSize() > 0) {
         // Start the file pointer off at the beginning of free space so caller can start writing immediately
         flashfsSeekAbs(flashfsIdentifyStartOfFreeSpace());

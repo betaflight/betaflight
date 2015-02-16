@@ -644,6 +644,9 @@ void startBlackbox(void)
     }
 }
 
+/**
+ * Begin Blackbox shutdown.
+ */
 void finishBlackbox(void)
 {
     if (blackboxState == BLACKBOX_STATE_RUNNING) {
@@ -1123,7 +1126,7 @@ void handleBlackbox(void)
              *
              * Don't wait longer than it could possibly take if something funky happens.
              */
-            if (millis() > xmitState.u.startTime + 200 || isBlackboxDeviceIdle()) {
+            if (millis() > xmitState.u.startTime + 200 || blackboxDeviceFlush()) {
                 blackboxDeviceClose();
                 blackboxSetState(BLACKBOX_STATE_STOPPED);
             }
