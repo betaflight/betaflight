@@ -292,7 +292,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     accAlt = accAlt * barometerConfig->baro_cf_alt + (float)BaroAlt * (1.0f - barometerConfig->baro_cf_alt);    // complementary filter for altitude estimation (baro & acc)
     vel += vel_acc;
 
-#if 1
+#ifdef DEBUG_ALT_HOLD
     debug[1] = accSum[2] / accSumCount; // acceleration
     debug[2] = vel;                     // velocity
     debug[3] = accAlt;                  // height
