@@ -675,10 +675,18 @@ var MSP = {
                 console.log('Led strip config saved');
                 break;
             case MSP_codes.MSP_DATAFLASH_SUMMARY:
-                DATAFLASH.ready = (data.getUint8(0) & 1) != 0;
-                DATAFLASH.sectors = data.getUint32(1, 1);
-                DATAFLASH.totalSize = data.getUint32(5, 1);
-                DATAFLASH.usedSize = data.getUint32(9, 1);
+                if (data.byteLength >= 13) {
+                    DATAFLASH.ready = (data.getUint8(0) & 1) != 0;
+                    DATAFLASH.sectors = data.getUint32(1, 1);
+                    DATAFLASH.totalSize = data.getUint32(5, 1);
+                    DATAFLASH.usedSize = data.getUint32(9, 1);
+                } else {
+                    // Firmware version too old to support MSP_DATAFLASH_SUMMARY
+                    DATAFLASH.ready = false;
+                    DATAFLASH.sectors = 0;
+                    DATAFLASH.totalSize = 0;
+                    DATAFLASH.usedSize = 0;
+                }
                 break;
             case MSP_codes.MSP_DATAFLASH_READ:
                 // No-op, let callback handle it
