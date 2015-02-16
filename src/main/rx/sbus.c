@@ -226,6 +226,7 @@ bool sbusFrameComplete(void)
 
 #ifdef DEBUG_SBUS_PACKETS
     sbusStateFlags = 0;
+    debug[0] = sbusStateFlags;
 #endif
     return true;
 }
