@@ -105,7 +105,7 @@ baud,escape,esc#,mode,verb,echo,ignoreRX
 
 #### Serial port
 
-A 115200 baud serial port is required to connect the OpenLog to your flight controller (such as serial_port_1 on the
+A 115200 baud serial port is required to connect the OpenLog to your flight controller (such as `serial_port_1` on the
 Naze32, the two-pin Tx/Rx header in the center of the board). The Blackbox can not be used with softserial ports as they
 are too slow.
 
@@ -132,10 +132,11 @@ pressing enter. Now choose the device that you want to log to:
 ### OpenLog serial data logger
 Enter `set blackbox_device=0` to switch to logging to a serial port (this is the default).
 
-You then need to let Cleanflight know which of [your serial ports][] you connected the Blackbox to. A 115200 baud port
-is required (such as serial_port_1 on the Naze32, the two-pin Tx/Rx header in the center of the board).
+You then need to let Cleanflight know which of [your serial ports][] you connected the OpenLog to. A 115200 baud port
+is required (such as `serial_port_1` on the Naze32, the two-pin Tx/Rx header in the center of the board).
 
-For example, use `set serial_port_1_scenario=11` to switch the main serial port to MSP, CLI, Blackbox and GPS Passthrough.
+For example, use `set serial_port_1_scenario=11` to switch the main serial port to MSP, CLI, Blackbox and GPS
+Passthrough. You can also use the GUI to configure a port for the Blackbox feature on the Ports tab.
 
 ### Onboard dataflash
 Enter `set blackbox_device=1` to switch to logging to an onboard dataflash chip, if your flight controller has one.
