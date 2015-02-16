@@ -222,12 +222,7 @@ TABS.setup.initialize3D = function (compatibility) {
 
     loader = new THREE.JSONLoader();
     loader.load('./resources/models/' + model_file + '.json', function (geometry, materials) {
-        if (useWebGlRenderer & !useLegacyCustomModel) {
-            model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
-        } else {
-            materials = THREE.ImageUtils.loadTexture('./resources/textures/fallback_texture.png');
-            model = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({map: materials, overdraw: true}));
-        }
+        model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
 
         model.scale.set(10, 10, 10);
 
