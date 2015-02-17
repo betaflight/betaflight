@@ -97,6 +97,7 @@ static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
 static void cliSave(char *cmdline);
+static void cliServo(char *cmdline);
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
@@ -189,6 +190,7 @@ const clicmd_t cmdTable[] = {
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
+    { "servo", "get/set servo configuration", cliServo },
     { "set", "name=value or blank or * for list", cliSet },
     { "status", "show system status", cliStatus },
     { "version", "", cliVersion },
@@ -705,7 +707,7 @@ static void cliLed(char *cmdline)
         if (i < MAX_LED_STRIP_LENGTH) {
             ptr = strchr(cmdline, ' ');
             if (!parseLedStripConfig(i, ++ptr)) {
-                printf("Parse error\r\n", MAX_LED_STRIP_LENGTH);
+                printf("Parse error\r\n");
             }
         } else {
             printf("Invalid led index: must be < %u\r\n", MAX_LED_STRIP_LENGTH);
@@ -738,6 +740,80 @@ static void cliColor(char *cmdline)
     }
 }
 #endif
+
+static void cliServo(char *cmdline)
+{
+    enum { SERVO_ARGUMENT_COUNT = 6 };
+    int16_t arguments[SERVO_ARGUMENT_COUNT];
+
+    servoParam_t *servo;
+
+    int i;
+    uint8_t len;
+    char *ptr;
+
+    len = strlen(cmdline);
+    if (len == 0) {
+        // print out servo settings
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            servo = &currentProfile->servoConf[i];
+
+            printf("servo %u %d %d %d %d %d\r\n",
+                i,
+                servo->min,
+                servo->max,
+                servo->middle,
+                servo->rate,
+                servo->forwardFromChannel
+            );
+        }
+    } else {
+        int validArgumentCount = 0;
+
+        ptr = cmdline;
+
+        // Command line is integers (possibly negative) separated by spaces, no other characters allowed.
+
+        // If command line doesn't fit the format, don't modify the config
+        while (*ptr) {
+            if (*ptr == '-' || (*ptr >= '0' && *ptr <= '9')) {
+                if (validArgumentCount >= SERVO_ARGUMENT_COUNT) {
+                    printf("Wrong argument count\r\n");
+                    return;
+                }
+
+                arguments[validArgumentCount++] = atoi(ptr);
+
+                do {
+                    ptr++;
+                } while (*ptr >= '0' && *ptr <= '9');
+            } else if (*ptr == ' ') {
+                ptr++;
+            } else {
+                printf("Bad argument\r\n");
+                return;
+            }
+        }
+
+        if (validArgumentCount != SERVO_ARGUMENT_COUNT) {
+            printf("Wrong argument count\r\n");
+            return;
+        }
+
+        if (arguments[0] < 0 || arguments[0] >= MAX_SUPPORTED_SERVOS) {
+            printf("Bad argument\r\n");
+            return;
+        }
+
+        servo = &currentProfile->servoConf[arguments[0]];
+
+        servo->min = arguments[1];
+        servo->max = arguments[2];
+        servo->middle = arguments[3];
+        servo->rate = arguments[4];
+        servo->forwardFromChannel = arguments[5];
+    }
+}
 
 static void dumpValues(uint16_t mask)
 {
@@ -873,6 +949,10 @@ static void cliDump(char *cmdline)
         printf("\r\n# adjrange\r\n");
 
         cliAdjustmentRange("");
+
+        printf("\r\n# servo\r\n");
+
+        cliServo("");
 
         printSectionBreak();
 
