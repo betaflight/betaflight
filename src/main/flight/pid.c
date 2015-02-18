@@ -60,6 +60,7 @@ uint8_t dynP8[3], dynI8[3], dynD8[3];
 static int32_t errorGyroI[3] = { 0, 0, 0 };
 static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 static int32_t errorAngleI[2] = { 0, 0 };
+static float errorAngleIf[2] = { 0.0f, 0.0f };
 
 static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
@@ -73,6 +74,9 @@ void resetErrorAngle(void)
 {
     errorAngleI[ROLL] = 0;
     errorAngleI[PITCH] = 0;
+
+    errorAngleIf[ROLL] = 0;
+    errorAngleIf[PITCH] = 0;
 }
 
 void resetErrorGyro(void)
@@ -554,19 +558,19 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             PTermACC = error * (float)pidProfile->P8[PIDLEVEL] * 0.008f;
             tmp0flt = (float)pidProfile->D8[PIDLEVEL] * 5.0f;
             PTermACC = constrain(PTermACC, -tmp0flt, +tmp0flt);
-            errorAngleI[axis] = constrain(errorAngleI[axis] + error * ACCDeltaTimeINS, -30.0f, +30.0f);
-            ITermACC = errorAngleI[axis] * (float)pidProfile->I8[PIDLEVEL] * 0.08f;
+            errorAngleIf[axis] = constrain(errorAngleIf[axis] + error * ACCDeltaTimeINS, -30.0f, +30.0f);
+            ITermACC = errorAngleIf[axis] * (float)pidProfile->I8[PIDLEVEL] * 0.08f;
         }
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
             if (ABS((int16_t)gyroData[axis]) > 2560) {
-                errorGyroI[axis] = 0.0f;
+                errorGyroIf[axis] = 0.0f;
             } else {
                 error = (rcCommandAxis * 320.0f / (float)pidProfile->P8[axis]) - gyroData[axis];
-                errorGyroI[axis] = constrain(errorGyroI[axis] + error * ACCDeltaTimeINS, -192.0f, +192.0f);
+                errorGyroIf[axis] = constrainf(errorGyroIf[axis] + error * ACCDeltaTimeINS, -192.0f, +192.0f);
             }
 
-            ITermGYRO = errorGyroI[axis] * (float)pidProfile->I8[axis] * 0.01f;
+            ITermGYRO = errorGyroIf[axis] * (float)pidProfile->I8[axis] * 0.01f;
 
             if (FLIGHT_MODE(HORIZON_MODE)) {
                 PTerm = PTermACC + prop * (rcCommandAxis - PTermACC);
