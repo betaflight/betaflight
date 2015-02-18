@@ -104,8 +104,11 @@ static uint8_t hottMsgCrc;
 #define HOTT_INITIAL_PORT_MODE MODE_RX
 
 static serialPort_t *hottPort = NULL;
+static serialPortConfig_t *portConfig;
 
 static telemetryConfig_t *telemetryConfig;
+static bool hottTelemetryEnabled =  false;
+static portSharing_e hottPortSharing;
 
 static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
@@ -253,18 +256,20 @@ void freeHoTTTelemetryPort(void)
 {
     closeSerialPort(hottPort);
     hottPort = NULL;
+    hottTelemetryEnabled = false;
 }
 
 void initHoTTTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
+    portConfig = findSerialPortConfig(FUNCTION_HOTT_TELEMETRY);
+    hottPortSharing = determinePortSharing(portConfig, FUNCTION_HOTT_TELEMETRY);
 
     initialiseMessages();
 }
 
 void configureHoTTTelemetryPort(void)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_HOTT_TELEMETRY);
     if (!portConfig) {
         return;
     }
@@ -285,6 +290,7 @@ void configureHoTTTelemetryPort(void)
         useSoftserialRxFailureWorkaround = true;
     }
 #endif
+    hottTelemetryEnabled = true;
 }
 
 static void hottSendResponse(uint8_t *buffer, int length)
@@ -449,11 +455,29 @@ static inline bool shouldCheckForHoTTRequest()
     return true;
 }
 
+void checkHoTTTelemetryState(void)
+{
+    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(hottPortSharing);
+
+    if (newTelemetryEnabledValue == hottTelemetryEnabled) {
+        return;
+    }
+
+    if (newTelemetryEnabledValue)
+        configureHoTTTelemetryPort();
+    else
+        freeHoTTTelemetryPort();
+}
+
 void handleHoTTTelemetry(void)
 {
     static uint32_t serialTimer;
-    uint32_t now = micros();
 
+    if (!hottTelemetryEnabled) {
+        return;
+    }
+
+    uint32_t now = micros();
 
     if (shouldPrepareHoTTMessages(now)) {
         hottPrepareMessages();

@@ -362,8 +362,9 @@ void init(void)
 #endif
 
 #ifdef TELEMETRY
-    if (feature(FEATURE_TELEMETRY))
+    if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
+    }
 #endif
 
 #ifdef BLACKBOX

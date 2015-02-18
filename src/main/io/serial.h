@@ -18,16 +18,21 @@
 #pragma once
 
 typedef enum {
+    PORTSHARING_UNUSED = 0,
+    PORTSHARING_NOT_SHARED,
+    PORTSHARING_SHARED
+} portSharing_e;
+
+typedef enum {
     FUNCTION_NONE                = 0,
     FUNCTION_MSP                 = (1 << 0),
-    FUNCTION_CLI                 = (1 << 1),
+    FUNCTION_GPS                 = (1 << 1),
     FUNCTION_FRSKY_TELEMETRY     = (1 << 2),
     FUNCTION_HOTT_TELEMETRY      = (1 << 3),
     FUNCTION_MSP_TELEMETRY       = (1 << 4),
     FUNCTION_SMARTPORT_TELEMETRY = (1 << 5),
     FUNCTION_SERIAL_RX           = (1 << 6),
-    FUNCTION_GPS                 = (1 << 7),
-    FUNCTION_BLACKBOX            = (1 << 8)
+    FUNCTION_BLACKBOX            = (1 << 7)
 } serialPortFunction_e;
 
 // serial port identifiers are now fixed, these values are used by MSP commands.
@@ -62,7 +67,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 
 typedef struct serialPortConfig_s {
     serialPortIdentifier_e identifier;
-    serialPortFunction_e functionMask;
+    uint16_t functionMask;
     uint32_t baudrate; // not used for all functions, e.g. HoTT only works at 19200.
 } serialPortConfig_t;
 
@@ -79,6 +84,10 @@ bool isSerialConfigValid(serialConfig_t *serialConfig);
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function);
 serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
+
+portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function);
+bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
+
 
 
 //

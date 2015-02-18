@@ -24,6 +24,8 @@
 
 #include "build_config.h"
 
+#include "common/utils.h"
+
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
@@ -118,6 +120,19 @@ typedef struct findSharedSerialPortState_s {
     uint8_t lastIndex;
 } findSharedSerialPortState_t;
 
+portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function)
+{
+    if (!portConfig || (portConfig->functionMask & function) == 0) {
+        return PORTSHARING_UNUSED;
+    }
+    return portConfig->functionMask == function ? PORTSHARING_NOT_SHARED : PORTSHARING_SHARED;
+}
+
+bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction)
+{
+    return (portConfig) && (portConfig->functionMask & sharedWithFunction) && (portConfig->functionMask & functionMask);
+}
+
 static findSharedSerialPortState_t findSharedSerialPortState;
 
 serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
@@ -132,7 +147,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
     while (findSharedSerialPortState.lastIndex < SERIAL_PORT_COUNT) {
         serialPortConfig_t *candidate = &serialConfig->portConfigs[findSharedSerialPortState.lastIndex++];
 
-        if ((candidate->functionMask & sharedWithFunction) && (candidate->functionMask & functionMask)) {
+        if (isSerialPortShared(candidate, functionMask, sharedWithFunction)) {
             serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(candidate->identifier);
             if (!serialPortUsage) {
                 continue;
@@ -143,10 +158,50 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
     return NULL;
 }
 
+#define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_FRSKY_TELEMETRY | FUNCTION_HOTT_TELEMETRY | FUNCTION_MSP_TELEMETRY | FUNCTION_SMARTPORT_TELEMETRY)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
+
 bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
 {
     UNUSED(serialConfigToCheck);
-    return true; // FIXME implement rules - 1 MSP port minimum.
+    /*
+     * rules:
+     * - 1 MSP port minimum, max MSP ports is defined and must be adhered to.
+     * - Only MSP is allowed to be shared with EITHER any telemetry OR blackbox.
+     * - No other sharing combinations are valid.
+     */
+    uint8_t mspPortCount = 0;
+
+    uint8_t index;
+    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
+        serialPortConfig_t *portConfig = &serialConfigToCheck->portConfigs[index];
+
+        if (portConfig->functionMask & FUNCTION_MSP) {
+            mspPortCount++;
+        }
+
+        uint8_t bitCount = BITCOUNT(portConfig->functionMask);
+        if (bitCount > 1) {
+            // shared
+            if (bitCount > 2) {
+                return false;
+            }
+
+            if (!(portConfig->functionMask & FUNCTION_MSP)) {
+                return false;
+            }
+
+            if (!(portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
+                // some other bit must have been set.
+                return false;
+            }
+        }
+    }
+
+    if (mspPortCount == 0 || mspPortCount > MAX_MSP_PORT_COUNT) {
+        return false;
+    }
+    return true;
 }
 
 bool doesConfigurationUsePort(serialPortIdentifier_e identifier)

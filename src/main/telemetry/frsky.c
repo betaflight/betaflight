@@ -62,10 +62,15 @@
 #include "telemetry/frsky.h"
 
 static serialPort_t *frskyPort = NULL;
+static serialPortConfig_t *portConfig;
+
 #define FRSKY_BAUDRATE 9600
 #define FRSKY_INITIAL_PORT_MODE MODE_TX
 
 static telemetryConfig_t *telemetryConfig;
+static bool frskyTelemetryEnabled =  false;
+static portSharing_e frskyPortSharing;
+
 
 extern batteryConfig_t *batteryConfig;
 
@@ -402,22 +407,29 @@ static void sendHeading(void)
 void initFrSkyTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
+    portConfig = findSerialPortConfig(FUNCTION_FRSKY_TELEMETRY);
+    frskyPortSharing = determinePortSharing(portConfig, FUNCTION_FRSKY_TELEMETRY);
 }
 
 void freeFrSkyTelemetryPort(void)
 {
     closeSerialPort(frskyPort);
     frskyPort = NULL;
+    frskyTelemetryEnabled = false;
 }
 
 void configureFrSkyTelemetryPort(void)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_FRSKY_TELEMETRY);
     if (!portConfig) {
         return;
     }
 
     frskyPort = openSerialPort(portConfig->identifier, FUNCTION_FRSKY_TELEMETRY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig->telemetry_inversion);
+    if (!frskyPort) {
+        return;
+    }
+
+    frskyTelemetryEnabled = true;
 }
 
 
@@ -431,8 +443,26 @@ bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
     return currentMillis - lastCycleTime >= CYCLETIME;
 }
 
+void checkFrSkyTelemetryState(void)
+{
+    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(frskyPortSharing);
+
+    if (newTelemetryEnabledValue == frskyTelemetryEnabled) {
+        return;
+    }
+
+    if (newTelemetryEnabledValue)
+        configureFrSkyTelemetryPort();
+    else
+        freeFrSkyTelemetryPort();
+}
+
 void handleFrSkyTelemetry(void)
 {
+    if (!frskyTelemetryEnabled) {
+        return;
+    }
+
     if (!canSendFrSkyTelemetry()) {
         return;
     }

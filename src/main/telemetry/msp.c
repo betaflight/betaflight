@@ -32,13 +32,18 @@
 #ifdef TELEMETRY
 
 #include "drivers/serial.h"
-#include "telemetry/telemetry.h"
 #include "io/serial.h"
 #include "io/serial_msp.h"
 
-static telemetryConfig_t *telemetryConfig;
+#include "telemetry/telemetry.h"
+#include "telemetry/msp.h"
 
-#define MSP_TELEMETRY_BAUDRATE 19200 // TODO make this configurable
+static telemetryConfig_t *telemetryConfig;
+static serialPortConfig_t *portConfig;
+
+static bool mspTelemetryEnabled =  false;
+static portSharing_e mspPortSharing;
+
 #define MSP_TELEMETRY_INITIAL_PORT_MODE MODE_TX
 
 static serialPort_t *mspTelemetryPort = NULL;
@@ -46,10 +51,30 @@ static serialPort_t *mspTelemetryPort = NULL;
 void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
+    portConfig = findSerialPortConfig(FUNCTION_MSP_TELEMETRY);
+    mspPortSharing = determinePortSharing(portConfig, FUNCTION_MSP_TELEMETRY);
+}
+
+void checkMSPTelemetryState(void)
+{
+    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(mspPortSharing);
+
+    if (newTelemetryEnabledValue == mspTelemetryEnabled) {
+        return;
+    }
+
+    if (newTelemetryEnabledValue)
+        configureMSPTelemetryPort();
+    else
+        freeMSPTelemetryPort();
 }
 
 void handleMSPTelemetry(void)
 {
+    if (!mspTelemetryEnabled) {
+        return;
+    }
+
     if (!mspTelemetryPort) {
         return;
     }
@@ -61,21 +86,23 @@ void freeMSPTelemetryPort(void)
 {
     closeSerialPort(mspTelemetryPort);
     mspTelemetryPort = NULL;
+    mspTelemetryEnabled = false;
 }
 
 void configureMSPTelemetryPort(void)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP_TELEMETRY);
     if (!portConfig) {
         return;
     }
 
-    mspTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_MSP_TELEMETRY, NULL, MSP_TELEMETRY_BAUDRATE, MSP_TELEMETRY_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+    mspTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_MSP_TELEMETRY, NULL, portConfig->baudrate, MSP_TELEMETRY_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
     if (!mspTelemetryPort) {
         return;
     }
     mspSetTelemetryPort(mspTelemetryPort);
+
+    mspTelemetryEnabled = true;
 }
 
 #endif

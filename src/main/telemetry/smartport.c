@@ -139,7 +139,11 @@ const uint16_t frSkyDataIdTable[] = {
 #define SMARTPORT_NOT_CONNECTED_TIMEOUT_MS 7000
 
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
+static serialPortConfig_t *portConfig;
+
 static telemetryConfig_t *telemetryConfig;
+static bool smartPortTelemetryEnabled =  false;
+static portSharing_e smartPortPortSharing;
 
 extern void serialInit(serialConfig_t *); // from main.c // FIXME remove this dependency
 
@@ -210,6 +214,8 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
 void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
+    portConfig = findSerialPortConfig(FUNCTION_SMARTPORT_TELEMETRY);
+    smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_SMARTPORT_TELEMETRY);
 }
 
 void freeSmartPortTelemetryPort(void)
@@ -218,11 +224,11 @@ void freeSmartPortTelemetryPort(void)
     smartPortSerialPort = NULL;
 
     smartPortState = SPSTATE_UNINITIALIZED;
+    smartPortTelemetryEnabled = false;
 }
 
 void configureSmartPortTelemetryPort(void)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_SMARTPORT_TELEMETRY);
     if (!portConfig) {
         return;
     }
@@ -234,6 +240,7 @@ void configureSmartPortTelemetryPort(void)
     }
 
     smartPortState = SPSTATE_INITIALIZED;
+    smartPortTelemetryEnabled = true;
 }
 
 bool canSendSmartPortTelemetry(void)
@@ -246,8 +253,26 @@ bool isSmartPortTimedOut(void)
     return smartPortState >= SPSTATE_TIMEDOUT;
 }
 
+void checkSmartPortTelemetryState(void)
+{
+    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(smartPortPortSharing);
+
+    if (newTelemetryEnabledValue == smartPortTelemetryEnabled) {
+        return;
+    }
+
+    if (newTelemetryEnabledValue)
+        configureSmartPortTelemetryPort();
+    else
+        freeSmartPortTelemetryPort();
+}
+
 void handleSmartPortTelemetry(void)
 {
+    if (!smartPortTelemetryEnabled) {
+        return;
+    }
+
     if (!canSendSmartPortTelemetry()) {
         return;
     }

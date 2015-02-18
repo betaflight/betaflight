@@ -47,8 +47,8 @@ typedef struct telemetryConfig_s {
 void checkTelemetryState(void);
 void handleTelemetry(void);
 
+bool determineNewTelemetryEnabledState(portSharing_e portSharing);
+
 void useTelemetryConfig(telemetryConfig_t *telemetryConfig);
-bool telemetryAllowsOtherSerial(int serialPortFunction);
-bool isTelemetryPortShared(void);
 
 #endif /* TELEMETRY_COMMON_H_ */

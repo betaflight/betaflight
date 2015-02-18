@@ -80,8 +80,6 @@ static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
 static serialPort_t *sBusPort = NULL;
 
-static uint32_t sbusSignalLostEventCount = 0;
-
 bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     int b;

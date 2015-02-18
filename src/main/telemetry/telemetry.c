@@ -41,9 +41,6 @@
 #include "telemetry/msp.h"
 #include "telemetry/smartport.h"
 
-
-static bool telemetryEnabled = false;
-
 static telemetryConfig_t *telemetryConfig;
 
 void useTelemetryConfig(telemetryConfig_t *telemetryConfigToUse)
@@ -51,77 +48,40 @@ void useTelemetryConfig(telemetryConfig_t *telemetryConfigToUse)
     telemetryConfig = telemetryConfigToUse;
 }
 
-void telemetryInit()
+void telemetryInit(void)
 {
     initFrSkyTelemetry(telemetryConfig);
-
     initHoTTTelemetry(telemetryConfig);
-
     initMSPTelemetry(telemetryConfig);
-
     initSmartPortTelemetry(telemetryConfig);
 
     checkTelemetryState();
 }
 
-bool determineNewTelemetryEnabledState(void)
+bool determineNewTelemetryEnabledState(portSharing_e portSharing)
 {
-    bool enabled = true;
+    bool enabled = portSharing == PORTSHARING_NOT_SHARED;
 
-    if (telemetryConfig->telemetry_switch)
-        enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
-    else
-        enabled = ARMING_FLAG(ARMED);
+    if (portSharing == PORTSHARING_SHARED) {
+        if (telemetryConfig->telemetry_switch)
+            enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
+        else
+            enabled = ARMING_FLAG(ARMED);
+    }
 
     return enabled;
 }
 
-bool shouldChangeTelemetryStateNow(bool newState)
-{
-    return newState != telemetryEnabled;
-}
-
-static void configureTelemetryPort(void)
-{
-    configureFrSkyTelemetryPort();
-    configureHoTTTelemetryPort();
-    configureMSPTelemetryPort();
-    configureSmartPortTelemetryPort();
-}
-
-void freeTelemetryPort(void)
-{
-    freeFrSkyTelemetryPort();
-    freeHoTTTelemetryPort();
-    freeMSPTelemetryPort();
-    freeSmartPortTelemetryPort();
-}
-
 void checkTelemetryState(void)
 {
-    bool newEnabledState = determineNewTelemetryEnabledState();
-
-    if (!shouldChangeTelemetryStateNow(newEnabledState)) {
-        return;
-    }
-
-    if (newEnabledState)
-        configureTelemetryPort();
-    else
-        freeTelemetryPort();
-
-    telemetryEnabled = newEnabledState;
+    checkFrSkyTelemetryState();
+    checkHoTTTelemetryState();
+    checkMSPTelemetryState();
+    checkSmartPortTelemetryState();
 }
 
 void handleTelemetry(void)
 {
-    if (!determineNewTelemetryEnabledState())
-        return;
-
-    if (!telemetryEnabled) {
-        return;
-    }
-
     handleFrSkyTelemetry();
     handleHoTTTelemetry();
     handleMSPTelemetry();
