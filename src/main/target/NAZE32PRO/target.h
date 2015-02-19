@@ -40,8 +40,6 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
-#define SENSORS_SET (SENSOR_ACC)
-
 #define GPS
 #define BLACKBOX
 #define TELEMETRY

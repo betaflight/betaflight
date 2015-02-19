@@ -18,7 +18,7 @@
 #pragma once
 
 // Type of accelerometer used/detected
-typedef enum MagSensors {
+typedef enum {
     MAG_DEFAULT = 0,
     MAG_HMC5883 = 1,
     MAG_AK8975 = 2,

@@ -233,11 +233,10 @@ retry:
             }
 #endif
         case ACC_NONE: // disable ACC
-            sensorsClear(SENSOR_ACC);
             break;
         case ACC_DEFAULT: // autodetect
-#ifdef USE_ACC_ADXL345
         case ACC_ADXL345: // ADXL345
+#ifdef USE_ACC_ADXL345
             acc_params.useFifo = false;
             acc_params.dataRate = 800; // unused currently
 #ifdef NAZE
@@ -252,10 +251,10 @@ retry:
                 if (accHardwareToUse == ACC_ADXL345)
                     break;
             }
-            ; // fallthrough
 #endif
-#ifdef USE_ACC_LSM303DLHC
+            ; // fallthrough
         case ACC_LSM303DLHC:
+#ifdef USE_ACC_LSM303DLHC
             if (lsm303dlhcAccDetect(&acc)) {
 #ifdef ACC_LSM303DLHC_ALIGN
                 accAlign = ACC_LSM303DLHC_ALIGN;
@@ -264,10 +263,10 @@ retry:
                 if (accHardwareToUse == ACC_LSM303DLHC)
                     break;
             }
-            ; // fallthrough
 #endif
-#ifdef USE_ACC_MPU6050
+            ; // fallthrough
         case ACC_MPU6050: // MPU6050
+#ifdef USE_ACC_MPU6050
             if (mpu6050AccDetect(selectMPU6050Config(), &acc)) {
 #ifdef ACC_MPU6050_ALIGN
                 accAlign = ACC_MPU6050_ALIGN;
@@ -276,10 +275,10 @@ retry:
                 if (accHardwareToUse == ACC_MPU6050)
                     break;
             }
-            ; // fallthrough
 #endif
-#ifdef USE_ACC_MMA8452
+            ; // fallthrough
         case ACC_MMA8452: // MMA8452
+#ifdef USE_ACC_MMA8452
 #ifdef NAZE
             // Not supported with this frequency
             if (hardwareRevision < NAZE32_REV5 && mma8452Detect(&acc)) {
@@ -293,10 +292,10 @@ retry:
                 if (accHardwareToUse == ACC_MMA8452)
                     break;
             }
-            ; // fallthrough
 #endif
-#ifdef USE_ACC_BMA280
+            ; // fallthrough
         case ACC_BMA280: // BMA280
+#ifdef USE_ACC_BMA280
             if (bma280Detect(&acc)) {
 #ifdef ACC_BMA280_ALIGN
                 accAlign = ACC_BMA280_ALIGN;
@@ -305,10 +304,10 @@ retry:
                 if (accHardwareToUse == ACC_BMA280)
                     break;
             }
-            ; // fallthrough
 #endif
-#ifdef USE_ACC_SPI_MPU6000
+            ; // fallthrough
         case ACC_SPI_MPU6000:
+#ifdef USE_ACC_SPI_MPU6000
             if (mpu6000SpiAccDetect(&acc)) {
 #ifdef ACC_SPI_MPU6000_ALIGN
                 accAlign = ACC_SPI_MPU6000_ALIGN;
@@ -317,10 +316,10 @@ retry:
                 if (accHardwareToUse == ACC_SPI_MPU6000)
                     break;
             }
-            ; // fallthrough
 #endif
-#ifdef USE_ACC_SPI_MPU6500
+            ; // fallthrough
         case ACC_SPI_MPU6500:
+#ifdef USE_ACC_SPI_MPU6500
 #ifdef NAZE
             if (hardwareRevision == NAZE32_SP && mpu6500SpiAccDetect(&acc)) {
 #else
@@ -333,9 +332,8 @@ retry:
                 if (accHardwareToUse == ACC_SPI_MPU6500)
                     break;
             }
-            ; // fallthrough
 #endif
-            ; // prevent compiler error
+            ; // fallthrough
     }
 
     // Found anything? Check if error or ACC is really missing.
@@ -344,18 +342,21 @@ retry:
             // Nothing was found and we have a forced sensor that isn't present.
             accHardwareToUse = ACC_DEFAULT;
             goto retry;
-        } else {
-            // No ACC was detected
-            sensorsClear(SENSOR_ACC);
         }
+    }
+
+    if (accHardware != ACC_NONE) {
+        sensorsSet(SENSOR_ACC);
     }
 }
 
 static void detectBaro()
 {
+#ifdef BARO
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
-    #ifdef BARO
+    baroHardware = BARO_DEFAULT;
+
 #ifdef USE_BARO_BMP085
 
     const bmp085Config_t *bmp085Config = NULL;
@@ -379,24 +380,37 @@ static void detectBaro()
 
 #endif
 
-#ifdef USE_BARO_MS5611
-    if (ms5611Detect(&baro)) {
-        sensorsSet(SENSOR_BARO);
-        return;
-    }
-#endif
+    switch (baroHardware) {
+        case BARO_DEFAULT:
+            ; // fallthough
 
+        case BARO_MS5611:
+#ifdef USE_BARO_MS5611
+            if (ms5611Detect(&baro)) {
+                baroHardware = BARO_MS5611;
+                break;
+            }
+#endif
+            ; // fallthough
+        case BARO_BMP085:
 #ifdef USE_BARO_BMP085
-    if (bmp085Detect(bmp085Config, &baro)) {
-        sensorsSet(SENSOR_BARO);
-        return;
+            if (bmp085Detect(bmp085Config, &baro)) {
+                baroHardware = BARO_BMP085;
+                break;
+            }
+#endif
+            baroHardware = BARO_NONE; // nothing detected or enabled.
+        case BARO_NONE:
+            break;
     }
-#endif
-#endif
-    sensorsClear(SENSOR_BARO);
+
+    if (baroHardware != BARO_NONE) {
+        sensorsSet(SENSOR_BARO);
+    }
+    #endif
 }
 
-static void detectMag(uint8_t magHardwareToUse)
+static void detectMag(magSensor_e magHardwareToUse)
 {
 #ifdef USE_MAG_HMC5883
     static hmc5883Config_t *hmc5883Config = 0;
@@ -435,12 +449,11 @@ retry:
 
     switch(magHardwareToUse) {
         case MAG_NONE: // disable MAG
-            sensorsClear(SENSOR_MAG);
             break;
         case MAG_DEFAULT: // autodetect
 
-#ifdef USE_MAG_HMC5883
         case MAG_HMC5883:
+#ifdef USE_MAG_HMC5883
             if (hmc5883lDetect(&mag, hmc5883Config)) {
                 sensorsSet(SENSOR_MAG);
 #ifdef MAG_HMC5883_ALIGN
@@ -451,11 +464,11 @@ retry:
                     break;
 
             }
-            ; // fallthrough
 #endif
+            ; // fallthrough
 
-#ifdef USE_MAG_AK8975
         case MAG_AK8975:
+#ifdef USE_MAG_AK8975
             if (ak8975detect(&mag)) {
 
                 sensorsSet(SENSOR_MAG);
@@ -466,9 +479,8 @@ retry:
                 if (magHardwareToUse == MAG_AK8975)
                     break;
             }
-            ; // fallthrough
 #endif
-            ; // prevent compiler error.
+            ; // fallthrough
     }
 
     if (magHardware == MAG_DEFAULT) {
@@ -476,10 +488,11 @@ retry:
             // Nothing was found and we have a forced sensor that isn't present.
             magHardwareToUse = MAG_DEFAULT;
             goto retry;
-        } else {
-            // No MAG was detected
-            sensorsClear(SENSOR_MAG);
         }
+    }
+
+    if (magHardware != MAG_NONE) {
+        sensorsSet(SENSOR_MAG);
     }
 
 }

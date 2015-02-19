@@ -40,7 +40,7 @@
 #endif
 
 mag_t mag;                   // mag access functions
-uint8_t magHardware = MAG_DEFAULT;
+magSensor_e magHardware = MAG_DEFAULT;
 
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
