@@ -432,12 +432,6 @@ void configureFrSkyTelemetryPort(void)
     frskyTelemetryEnabled = true;
 }
 
-
-bool canSendFrSkyTelemetry(void)
-{
-    return frskyPort && serialTotalBytesWaiting(frskyPort) == 0;
-}
-
 bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
 {
     return currentMillis - lastCycleTime >= CYCLETIME;
@@ -460,10 +454,6 @@ void checkFrSkyTelemetryState(void)
 void handleFrSkyTelemetry(void)
 {
     if (!frskyTelemetryEnabled) {
-        return;
-    }
-
-    if (!canSendFrSkyTelemetry()) {
         return;
     }
 

@@ -288,6 +288,8 @@ void closeSerialPort(serialPort_t *serialPort) {
         return;
     }
 
+    // TODO wait until data has been transmitted.
+
     serialPort->callback = NULL;
 
     serialPortUsage->function = FUNCTION_NONE;
