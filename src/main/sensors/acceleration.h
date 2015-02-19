@@ -18,7 +18,7 @@
 #pragma once
 
 // Type of accelerometer used/detected
-typedef enum AccelSensors {
+typedef enum {
     ACC_DEFAULT = 0,
     ACC_ADXL345 = 1,
     ACC_MPU6050 = 2,
@@ -29,9 +29,8 @@ typedef enum AccelSensors {
     ACC_SPI_MPU6500 = 7,
     ACC_FAKE = 8,
     ACC_NONE = 9
-} accelSensor_e;
+} accelerationSensor_e;
 
-extern uint8_t accHardware;
 extern sensor_align_e accAlign;
 extern acc_t acc;
 extern uint16_t acc_1G;

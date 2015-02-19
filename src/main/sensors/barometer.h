@@ -17,6 +17,13 @@
 
 #pragma once
 
+typedef enum {
+    BARO_NONE = 0,
+    BARO_DEFAULT = 1,
+    BARO_BMP085 = 2,
+    BARO_MS5611 = 3
+} baroSensor_e;
+
 #define BARO_SAMPLE_COUNT_MAX   48
 
 typedef struct barometerConfig_s {
