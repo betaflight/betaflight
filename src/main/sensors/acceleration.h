@@ -31,7 +31,6 @@ typedef enum {
     ACC_NONE = 9
 } accelerationSensor_e;
 
-extern uint8_t accHardware;
 extern sensor_align_e accAlign;
 extern acc_t acc;
 extern uint16_t acc_1G;

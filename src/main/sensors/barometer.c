@@ -41,7 +41,6 @@ static int32_t baroGroundPressure = 0;
 static uint32_t baroPressureSum = 0;
 
 barometerConfig_t *barometerConfig;
-baroSensor_e baroHardware;
 
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse)
 {
