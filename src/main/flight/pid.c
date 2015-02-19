@@ -522,10 +522,9 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     UNUSED(rxConfig);
 
-    float delta, RCfactor, rcCommandAxis, MainDptCut;
+    float delta, RCfactor, rcCommandAxis, MainDptCut, gyroDataQuant;
     float PTerm = 0.0f, ITerm = 0.0f, DTerm = 0.0f, PTermACC = 0.0f, ITermACC = 0.0f, ITermGYRO = 0.0f, error = 0.0f, prop = 0.0f;
     static float lastGyro[2] = { 0.0f, 0.0f }, lastDTerm[2] = { 0.0f, 0.0f };
-    float gyroDataQuant[2] = { 0.0f, 0.0f };
     float tmp0flt;
     int32_t tmp0;
     uint8_t axis;
@@ -544,7 +543,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 
     for (axis = 0; axis < 2; axis++) {
         tmp0 = (int32_t)((float)gyroData[axis] * 0.3125f);                     // Multiwii masks out the last 2 bits, this has the same idea
-        gyroDataQuant[axis] = (float)tmp0 * 3.2f;                              // but delivers more accuracy and also reduces jittery flight
+        gyroDataQuant = (float)tmp0 * 3.2f;                                    // but delivers more accuracy and also reduces jittery flight
         rcCommandAxis = (float)rcCommand[axis];                                // Calculate common values for pid controllers
         if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
 #ifdef GPS
@@ -569,7 +568,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             if (ABS((int16_t)gyroData[axis]) > 2560) {
                 errorGyroIf[axis] = 0.0f;
             } else {
-                error = (rcCommandAxis * 320.0f / (float)pidProfile->P8[axis]) - gyroDataQuant[axis];
+                error = (rcCommandAxis * 320.0f / (float)pidProfile->P8[axis]) - gyroDataQuant;
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis] + error * ACCDeltaTimeINS, -192.0f, +192.0f);
             }
 
@@ -587,10 +586,10 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             ITerm = ITermACC;
         }
 
-        PTerm -= gyroDataQuant[axis] * dynP8[axis] * 0.003f;
-        delta = (gyroDataQuant[axis] - lastGyro[axis]) / ACCDeltaTimeINS;
+        PTerm -= gyroDataQuant * dynP8[axis] * 0.003f;
+        delta = (gyroDataQuant - lastGyro[axis]) / ACCDeltaTimeINS;
 
-        lastGyro[axis] = gyroDataQuant[axis];
+        lastGyro[axis] = gyroDataQuant;
         lastDTerm[axis] += RCfactor * (delta - lastDTerm[axis]);
         DTerm = lastDTerm[axis] * dynD8[axis] * 0.00007f;
 
