@@ -381,12 +381,14 @@ static void detectBaro()
 
 #ifdef USE_BARO_MS5611
     if (ms5611Detect(&baro)) {
+        sensorsSet(SENSOR_BARO);
         return;
     }
 #endif
 
 #ifdef USE_BARO_BMP085
     if (bmp085Detect(bmp085Config, &baro)) {
+        sensorsSet(SENSOR_BARO);
         return;
     }
 #endif
@@ -440,6 +442,7 @@ retry:
 #ifdef USE_MAG_HMC5883
         case MAG_HMC5883:
             if (hmc5883lDetect(&mag, hmc5883Config)) {
+                sensorsSet(SENSOR_MAG);
 #ifdef MAG_HMC5883_ALIGN
                 magAlign = MAG_HMC5883_ALIGN;
 #endif
@@ -455,6 +458,7 @@ retry:
         case MAG_AK8975:
             if (ak8975detect(&mag)) {
 
+                sensorsSet(SENSOR_MAG);
 #ifdef MAG_AK8975_ALIGN
                 magAlign = MAG_AK8975_ALIGN;
 #endif
