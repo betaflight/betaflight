@@ -75,8 +75,8 @@ void resetErrorAngle(void)
     errorAngleI[ROLL] = 0;
     errorAngleI[PITCH] = 0;
 
-    errorAngleIf[ROLL] = 0;
-    errorAngleIf[PITCH] = 0;
+    errorAngleIf[ROLL] = 0.0f;
+    errorAngleIf[PITCH] = 0.0f;
 }
 
 void resetErrorGyro(void)
@@ -85,9 +85,9 @@ void resetErrorGyro(void)
     errorGyroI[PITCH] = 0;
     errorGyroI[YAW] = 0;
 
-    errorGyroIf[ROLL] = 0;
-    errorGyroIf[PITCH] = 0;
-    errorGyroIf[YAW] = 0;
+    errorGyroIf[ROLL] = 0.0f;
+    errorGyroIf[PITCH] = 0.0f;
+    errorGyroIf[YAW] = 0.0f;
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -523,13 +523,14 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     UNUSED(rxConfig);
 
     float delta, RCfactor, rcCommandAxis, MainDptCut;
-    float PTerm = 0, ITerm = 0, DTerm = 0, PTermACC = 0, ITermACC = 0, ITermGYRO = 0, error = 0, prop = 0;
-    static float lastGyro[2] = {0, 0}, lastDTerm[2] = {0, 0};
+    float PTerm = 0.0f, ITerm = 0.0f, DTerm = 0.0f, PTermACC = 0.0f, ITermACC = 0.0f, ITermGYRO = 0.0f, error = 0.0f, prop = 0.0f;
+    static float lastGyro[2] = { 0.0f, 0.0f }, lastDTerm[2] = { 0.0f, 0.0f };
+    float gyroDataQuant[2] = { 0.0f, 0.0f };
     float tmp0flt;
     int32_t tmp0;
     uint8_t axis;
-    float ACCDeltaTimeINS = 0;
-    float FLOATcycleTime = 0;
+    float ACCDeltaTimeINS = 0.0f;
+    float FLOATcycleTime = 0.0f;
 
 //    MainDptCut = RCconstPI / (float)cfg.maincuthz;                           // Initialize Cut off frequencies for mainpid D
     MainDptCut = RCconstPI / MAIN_CUT_HZ;                                      // maincuthz (default 12Hz, Range 1-50Hz), hardcoded for now
@@ -542,6 +543,8 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     }
 
     for (axis = 0; axis < 2; axis++) {
+        tmp0 = (int32_t)((float)gyroData[axis] * 0.3125f);                     // Multiwii masks out the last 2 bits, this has the same idea
+        gyroDataQuant[axis] = (float)tmp0 * 3.2f;                              // but delivers more accuracy and also reduces jittery flight
         rcCommandAxis = (float)rcCommand[axis];                                // Calculate common values for pid controllers
         if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
 #ifdef GPS
@@ -566,7 +569,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             if (ABS((int16_t)gyroData[axis]) > 2560) {
                 errorGyroIf[axis] = 0.0f;
             } else {
-                error = (rcCommandAxis * 320.0f / (float)pidProfile->P8[axis]) - gyroData[axis];
+                error = (rcCommandAxis * 320.0f / (float)pidProfile->P8[axis]) - gyroDataQuant[axis];
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis] + error * ACCDeltaTimeINS, -192.0f, +192.0f);
             }
 
@@ -584,10 +587,10 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             ITerm = ITermACC;
         }
 
-        PTerm -= gyroData[axis] * dynP8[axis] * 0.003f;
-        delta = (gyroData[axis] - lastGyro[axis]) / ACCDeltaTimeINS;
+        PTerm -= gyroDataQuant[axis] * dynP8[axis] * 0.003f;
+        delta = (gyroDataQuant[axis] - lastGyro[axis]) / ACCDeltaTimeINS;
 
-        lastGyro[axis] = gyroData[axis];
+        lastGyro[axis] = gyroDataQuant[axis];
         lastDTerm[axis] += RCfactor * (delta - lastDTerm[axis]);
         DTerm = lastDTerm[axis] * dynD8[axis] * 0.00007f;
 
