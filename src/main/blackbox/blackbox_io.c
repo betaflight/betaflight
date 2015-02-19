@@ -63,6 +63,8 @@
 uint8_t blackboxWriteChunkSize = 16;
 
 static serialPort_t *blackboxPort = NULL;
+static portSharing_e blackboxPortSharing;
+
 
 void blackboxWrite(uint8_t value)
 {
@@ -389,6 +391,8 @@ bool blackboxDeviceOpen(void)
     if (!portConfig) {
         return false;
     }
+    blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
+
 
     blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
     if (!blackboxPort) {
@@ -410,7 +414,15 @@ bool blackboxDeviceOpen(void)
 void blackboxDeviceClose(void)
 {
     closeSerialPort(blackboxPort);
-
+    blackboxPort = NULL;
+    
+    /*
+     * Normally this would be handled by mw.c, but since we take an unknown amount
+     * of time to shut down asynchronously, we're the only ones that know when to call it.
+     */
+    if (blackboxPortSharing == PORTSHARING_SHARED) {
+        mspAllocateSerialPorts(&masterConfig.serialConfig);
+    }
 }
 
 bool isBlackboxDeviceIdle(void)

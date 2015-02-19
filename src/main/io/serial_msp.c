@@ -553,6 +553,7 @@ void mspAllocateSerialPorts(serialConfig_t *serialConfig)
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
         mspPort_t *mspPort = &mspPorts[portIndex];
         if (mspPort->mspPortUsage != UNUSED_PORT) {
+            portIndex++;
             continue;
         }
 
