@@ -47,7 +47,7 @@ static uint32_t sumhChannels[SUMH_MAX_CHANNEL_COUNT];
 static void sumhDataReceive(uint16_t c);
 static uint16_t sumhReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-static serialPort_t *sumhPort = NULL;
+static serialPort_t *sumhPort;
 
 
 static void sumhDataReceive(uint16_t c);

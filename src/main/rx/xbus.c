@@ -84,8 +84,6 @@ static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
 static void xBusDataReceive(uint16_t c);
 static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-static serialPort_t *xBusPort;
-
 bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     uint32_t baudRate;
@@ -125,7 +123,7 @@ bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
         return false;
     }
 
-    xBusPort = openSerialPort(portConfig->identifier, FUNCTION_SERIAL_RX, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
+    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, FUNCTION_SERIAL_RX, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
 
     return xBusPort != NULL;
 }
