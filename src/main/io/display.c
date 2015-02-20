@@ -35,6 +35,7 @@
 #include "common/printf.h"
 #include "common/maths.h"
 #include "common/axis.h"
+#include "common/typeconversion.h"
 
 #ifdef DISPLAY
 
@@ -384,20 +385,20 @@ void showBatteryPage(void)
 void showSensorsPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
-    static const char *format = "%c = %5d %5d %5d";
+    static const char *format = "%s %5d %5d %5d";
 
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string("        X     Y     Z");
 
     if (sensors(SENSOR_ACC)) {
-        tfp_sprintf(lineBuffer, format, 'A', accSmooth[X], accSmooth[Y], accSmooth[Z]);
+        tfp_sprintf(lineBuffer, format, "ACC", accSmooth[X], accSmooth[Y], accSmooth[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
 
     if (sensors(SENSOR_GYRO)) {
-        tfp_sprintf(lineBuffer, format, 'G', gyroADC[X], gyroADC[Y], gyroADC[Z]);
+        tfp_sprintf(lineBuffer, format, "GYR", gyroADC[X], gyroADC[Y], gyroADC[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
@@ -405,12 +406,42 @@ void showSensorsPage(void)
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-        tfp_sprintf(lineBuffer, format, 'M', magADC[X], magADC[Y], magADC[Z]);
+        tfp_sprintf(lineBuffer, format, "MAG", magADC[X], magADC[Y], magADC[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
 #endif
+
+    tfp_sprintf(lineBuffer, format, "I&H", inclination.values.rollDeciDegrees, inclination.values.pitchDeciDegrees, heading);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    uint8_t length;
+
+    ftoa(EstG.A[X], lineBuffer);
+    length = strlen(lineBuffer);
+    while (length < HALF_SCREEN_CHARACTER_COLUMN_COUNT) {
+        lineBuffer[length++] = ' ';
+        lineBuffer[length+1] = 0;
+    }
+    ftoa(EstG.A[Y], lineBuffer + length);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    ftoa(EstG.A[Z], lineBuffer);
+    length = strlen(lineBuffer);
+    while (length < HALF_SCREEN_CHARACTER_COLUMN_COUNT) {
+        lineBuffer[length++] = ' ';
+        lineBuffer[length+1] = 0;
+    }
+    ftoa(smallAngle, lineBuffer + length);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
 }
 
 #ifdef ENABLE_DEBUG_OLED_PAGE

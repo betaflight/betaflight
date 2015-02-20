@@ -154,14 +154,23 @@ static const char * const featureNames[] = {
     "BLACKBOX", NULL
 };
 
+#ifndef CJMCU
 // sync this with sensors_e
-static const char * const sensorNames[] = {
+static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
 };
 
-static const char * const accNames[] = {
-    "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", "None", NULL
+// FIXME the next time the EEPROM is bumped change the order of acc and gyro names so that "None" is second.
+
+#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
+
+static const char * const sensorHardwareNames[4][11] = {
+    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE", NULL },
+    { "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", "None", NULL },
+    { "", "None", "BMP085", "MS5611", NULL },
+    { "", "None", "HMC5883", "AK8975", NULL }
 };
+#endif
 
 typedef struct {
     const char *name;
@@ -1454,27 +1463,38 @@ static void cliGet(char *cmdline)
 
 static void cliStatus(char *cmdline)
 {
-    uint8_t i;
-    uint32_t mask;
-
     UNUSED(cmdline);
 
     printf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery)\r\n",
         millis() / 1000, vbat, batteryCellCount);
-    mask = sensorsMask();
 
-    printf("CPU %dMHz, detected sensors: ", (SystemCoreClock / 1000000));
+
+    printf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
+
+#ifndef CJMCU
+    uint8_t i;
+    uint32_t mask;
+    uint32_t detectedSensorsMask = sensorsMask();
+
     for (i = 0; ; i++) {
-        if (sensorNames[i] == NULL)
+
+        if (sensorTypeNames[i] == NULL)
             break;
-        if (mask & (1 << i))
-            printf("%s ", sensorNames[i]);
+
+        mask = (1 << i);
+        if ((detectedSensorsMask & mask) && (mask & SENSOR_NAMES_MASK)) {
+            const char *sensorHardware;
+            uint8_t sensorHardwareIndex = detectedSensors[i];
+            sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
+
+            printf(", %s=%s", sensorTypeNames[i], sensorHardware);
+
+            if (mask == SENSOR_ACC && acc.revisionCode) {
+                printf(".%c", acc.revisionCode);
+            }
+        }
     }
-    if (sensors(SENSOR_ACC)) {
-        printf("ACCHW: %s", accNames[accHardware]);
-        if (acc.revisionCode)
-            printf(".%c", acc.revisionCode);
-    }
+#endif
     cliPrint("\r\n");
 
 #ifdef USE_I2C
