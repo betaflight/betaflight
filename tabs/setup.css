@@ -22,7 +22,7 @@
 
     border: 1px solid silver;
     background-color: #ececec;
-    
+
     white-space: nowrap;
 }
 .tab-setup .section a:hover {
@@ -156,6 +156,7 @@
 }
 .tab-setup .block.gps {
     width: 185px;
+    margin-bottom: 10px;
 }
 .tab-setup .block.gps .fields {
     padding: 5px 5px 3px 5px;
@@ -177,6 +178,9 @@
     margin-bottom: 2px;
 
     line-height: 20px;
+}
+.tab-setup .block.instruments {
+    width: 185px;
 }
 .tab-setup .buttons {
     width: calc(100% - 20px);

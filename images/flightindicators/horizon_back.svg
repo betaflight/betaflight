@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="400.667px" height="400.666px" viewBox="0 0 400.667 400.666" enable-background="new 0 0 400.667 400.666"
+	 xml:space="preserve">
+	<linearGradient id="backHorizon_1_" gradientUnits="userSpaceOnUse" x1="200.667" y1="350.0991" x2="200.667" y2="50.5659">
+		<stop  offset="0.4999" style="stop-color:#503723"/>
+		<stop  offset="0.5001" style="stop-color:#558EBB"/>
+	</linearGradient>
+	<circle id="backHorizon" fill="url(#backHorizon_1_)" cx="200.667" cy="200.333" r="149.767"/>
+</svg>
