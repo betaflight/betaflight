@@ -6,12 +6,13 @@ It does this in two ways:
 
 1. Use a signal that varies between 125 µs and 250 µs (instead of the normal PWM timing of 1000µs to 2000µs)
 
-1. Only send a 'shot' once per flight controller loop, and do this as soon as the flight controller has calculated the required speed of the motors.
+2. Only send a 'shot' once per flight controller loop, and do this as soon as the flight controller has calculated the required speed of the motors.
 
 
 ## Supported ESCs
 
-At present, only the FlyDuino KISS ESCs are able to use the Oneshot125 protocol.
+FlyDuino KISS ESCs are able to use the Oneshot125 protocol out of the box. There is only one soldering needed.
+BLHeli rev13.0 also supports Oneshot125 and will be automatically selected by the ESC without additional work.
 
 ## Supported Boards
 
