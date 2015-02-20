@@ -163,8 +163,8 @@
 #ifdef ALIENWII32
 #undef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "AWF1" // AlienWii32 F1.
-#define BRUSHED_MOTORS
 #define HARDWARE_BIND_PLUG
+
 // Hardware bind plug at PB5 (Pin 41)
 #define BINDPLUG_PORT  GPIOB
 #define BINDPLUG_PIN   Pin_5

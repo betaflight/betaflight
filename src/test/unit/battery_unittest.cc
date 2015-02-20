@@ -39,6 +39,14 @@ TEST(BatteryTest, BatteryADCToVoltage)
 
     batteryConfig_t batteryConfig;
 
+    // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
+    memset(&batteryConfig, 0, sizeof(batteryConfig));
+
+    batteryConfig.vbatmaxcellvoltage = 43;
+    batteryConfig.vbatmincellvoltage = 33;
+    batteryConfig.vbatwarningcellvoltage = 35;
+    batteryConfig.vbatscale = VBAT_SCALE_DEFAULT;
+
     batteryInit(&batteryConfig);
 
     batteryAdcToVoltageExpectation_t batteryAdcToVoltageExpectations[] = {

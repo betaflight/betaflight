@@ -77,7 +77,7 @@ The status bar will show the upload progress and confirm that the upload is comp
 Disconnect and reconnect the board from USB and continue to configure it via the Cleanflight configurator as per normal
 
 
-## Via Device Firmware Upload (DFU, USB) - Mac OS X
+## Via Device Firmware Upload (DFU, USB) - Mac OS X / Linux
 
 These instructions are for dfu-util, tested using dfu-util 0.7 for OSX from the OpenTX project.
 
@@ -144,6 +144,13 @@ can't detach
 Resetting USB to switch back to runtime mode
 
 ```
+On Linux you might want to take care that the modemmanager isn't trying to use your sparky as modem getting it into bootloader mode while doing so. In doubt you probably want to uninstall it. It could also be good idea to get udev fixed. It looks like teensy did just that -> http://www.pjrc.com/teensy/49-teensy.rules (untested)
+
+To make a full chip erase you can use a file created by 
+```
+dd if=/dev/zero of=zero.bin bs=1 count=262144
+```
+This can be used by dfu-util.
 
 ## Via SWD
 
