@@ -199,7 +199,9 @@ const clicmd_t cmdTable[] = {
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
+#ifndef CJMCU
     { "servo", "servo config", cliServo },
+#endif
     { "set", "name=value or blank or * for list", cliSet },
     { "status", "show system status", cliStatus },
     { "version", "", cliVersion },
@@ -748,6 +750,9 @@ static void cliColor(char *cmdline)
 
 static void cliServo(char *cmdline)
 {
+#ifdef CJMCU
+    UNUSED(cmdline);
+#else
     enum { SERVO_ARGUMENT_COUNT = 6 };
     int16_t arguments[SERVO_ARGUMENT_COUNT];
 
@@ -812,6 +817,7 @@ static void cliServo(char *cmdline)
         servo->rate = arguments[4];
         servo->forwardFromChannel = arguments[5];
     }
+#endif
 }
 
 static void dumpValues(uint16_t mask)
