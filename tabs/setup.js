@@ -175,10 +175,7 @@ TABS.setup.initialize = function (callback) {
             MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, function () {
                 heading_e.text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
                 self.render3D();
-            });
-
-            MSP.send_message(MSP_codes.MSP_RAW_IMU, false, false, function () {
-              self.updateInstruments();
+                self.updateInstruments();
             });
         }
 
@@ -197,7 +194,7 @@ TABS.setup.initializeInstruments = function() {
     this.updateInstruments = function() {
         attitude.setRoll(SENSOR_DATA.kinematics[0]);
         attitude.setPitch(SENSOR_DATA.kinematics[1]);
-        heading.setHeading(SENSOR_DATA.magnetometer[0] * 360);
+        heading.setHeading(SENSOR_DATA.kinematics[2]);
     };
 };
 
