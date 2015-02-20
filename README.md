@@ -16,7 +16,7 @@ The MultiWii software, from which baseflight originated, violates many good soft
 Cleanflight also has additional features not found in baseflight.
 
 * Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
-* OneShot ESC support.
+* Oneshot ESC support.
 * Support for additional targets that use the STM32F3 processors (baseflight only supports STM32F1).
 * Support for the TauLabs Sparky board (~$35 STM32F303 I2C sensors, based board with acc/gyro/compass and baro!)
 * Support for the OpenPilot CC3D board. (~$20 STM32F103 board, SPI acc/gyro)

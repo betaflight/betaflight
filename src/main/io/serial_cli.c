@@ -99,6 +99,7 @@ static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
 static void cliSave(char *cmdline);
+static void cliServo(char *cmdline);
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
@@ -200,6 +201,9 @@ const clicmd_t cmdTable[] = {
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
+#ifndef CJMCU
+    { "servo", "servo config", cliServo },
+#endif
     { "set", "name=value or blank or * for list", cliSet },
     { "status", "show system status", cliStatus },
     { "version", "", cliVersion },
@@ -479,14 +483,18 @@ static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *
     return ptr;
 }
 
+// Check if a string's length is zero
+static bool isEmpty(const char *string)
+{
+    return *string == '\0';
+}
+
 static void cliAux(char *cmdline)
 {
     int i, val = 0;
-    uint8_t len;
     char *ptr;
 
-    len = strlen(cmdline);
-    if (len == 0) {
+    if (isEmpty(cmdline)) {
         // print out aux channel settings
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
@@ -535,11 +543,9 @@ static void cliAux(char *cmdline)
 static void cliAdjustmentRange(char *cmdline)
 {
     int i, val = 0;
-    uint8_t len;
     char *ptr;
 
-    len = strlen(cmdline);
-    if (len == 0) {
+    if (isEmpty(cmdline)) {
         // print out adjustment ranges channel settings
         for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             adjustmentRange_t *ar = &currentProfile->adjustmentRanges[i];
@@ -614,9 +620,7 @@ static void cliCMix(char *cmdline)
     float mixsum[3];
     char *ptr;
 
-    len = strlen(cmdline);
-
-    if (len == 0) {
+    if (isEmpty(cmdline)) {
         cliPrint("Custom mixer: \r\nMotor\tThr\tRoll\tPitch\tYaw\r\n");
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             if (masterConfig.customMixer[i].throttle == 0.0f)
@@ -700,12 +704,10 @@ static void cliCMix(char *cmdline)
 static void cliLed(char *cmdline)
 {
     int i;
-    uint8_t len;
     char *ptr;
     char ledConfigBuffer[20];
 
-    len = strlen(cmdline);
-    if (len == 0) {
+    if (isEmpty(cmdline)) {
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
             generateLedConfig(i, ledConfigBuffer, sizeof(ledConfigBuffer));
             printf("led %u %s\r\n", i, ledConfigBuffer);
@@ -716,7 +718,7 @@ static void cliLed(char *cmdline)
         if (i < MAX_LED_STRIP_LENGTH) {
             ptr = strchr(cmdline, ' ');
             if (!parseLedStripConfig(i, ++ptr)) {
-                printf("Parse error\r\n", MAX_LED_STRIP_LENGTH);
+                cliPrint("Parse error\r\n");
             }
         } else {
             printf("Invalid led index: must be < %u\r\n", MAX_LED_STRIP_LENGTH);
@@ -727,11 +729,9 @@ static void cliLed(char *cmdline)
 static void cliColor(char *cmdline)
 {
     int i;
-    uint8_t len;
     char *ptr;
 
-    len = strlen(cmdline);
-    if (len == 0) {
+    if (isEmpty(cmdline)) {
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
             printf("color %u %d,%u,%u\r\n", i, masterConfig.colors[i].h, masterConfig.colors[i].s, masterConfig.colors[i].v);
         }
@@ -741,7 +741,7 @@ static void cliColor(char *cmdline)
         if (i < CONFIGURABLE_COLOR_COUNT) {
             ptr = strchr(cmdline, ' ');
             if (!parseColor(i, ++ptr)) {
-                printf("Parse error\r\n", CONFIGURABLE_COLOR_COUNT);
+                cliPrint("Parse error\r\n");
             }
         } else {
             printf("Invalid color index: must be < %u\r\n", CONFIGURABLE_COLOR_COUNT);
@@ -749,6 +749,78 @@ static void cliColor(char *cmdline)
     }
 }
 #endif
+
+static void cliServo(char *cmdline)
+{
+#ifdef CJMCU
+    UNUSED(cmdline);
+#else
+    enum { SERVO_ARGUMENT_COUNT = 6 };
+    int16_t arguments[SERVO_ARGUMENT_COUNT];
+
+    servoParam_t *servo;
+
+    int i;
+    char *ptr;
+
+    if (isEmpty(cmdline)) {
+        // print out servo settings
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            servo = &currentProfile->servoConf[i];
+
+            printf("servo %u %d %d %d %d %d\r\n",
+                i,
+                servo->min,
+                servo->max,
+                servo->middle,
+                servo->rate,
+                servo->forwardFromChannel
+            );
+        }
+    } else {
+        int validArgumentCount = 0;
+
+        ptr = cmdline;
+
+        // Command line is integers (possibly negative) separated by spaces, no other characters allowed.
+
+        // If command line doesn't fit the format, don't modify the config
+        while (*ptr) {
+            if (*ptr == '-' || (*ptr >= '0' && *ptr <= '9')) {
+                if (validArgumentCount >= SERVO_ARGUMENT_COUNT) {
+                    cliPrint("Parse error\r\n");
+                    return;
+                }
+
+                arguments[validArgumentCount++] = atoi(ptr);
+
+                do {
+                    ptr++;
+                } while (*ptr >= '0' && *ptr <= '9');
+            } else if (*ptr == ' ') {
+                ptr++;
+            } else {
+                cliPrint("Parse error\r\n");
+                return;
+            }
+        }
+
+        // Check we got the right number of args and the servo index is correct (don't validate the other values)
+        if (validArgumentCount != SERVO_ARGUMENT_COUNT || arguments[0] < 0 || arguments[0] >= MAX_SUPPORTED_SERVOS) {
+            cliPrint("Parse error\r\n");
+            return;
+        }
+
+        servo = &currentProfile->servoConf[arguments[0]];
+
+        servo->min = arguments[1];
+        servo->max = arguments[2];
+        servo->middle = arguments[3];
+        servo->rate = arguments[4];
+        servo->forwardFromChannel = arguments[5];
+    }
+#endif
+}
 
 static void dumpValues(uint16_t mask)
 {
@@ -803,11 +875,11 @@ static void cliDump(char *cmdline)
 
     if (dumpMask & DUMP_MASTER) {
 
-        printf("\r\n# version\r\n");
+        cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
 
-        printf("\r\n# dump master\r\n");
-        printf("\r\n# mixer\r\n");
+        cliPrint("\r\n# dump master\r\n");
+        cliPrint("\r\n# mixer\r\n");
 
 #ifndef USE_QUAD_MIXER_ONLY
         printf("mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
@@ -822,23 +894,23 @@ static void cliDump(char *cmdline)
                 yaw = masterConfig.customMixer[i].yaw;
                 printf("cmix %d", i + 1);
                 if (thr < 0)
-                    printf(" ");
+                    cliWrite(' ');
                 printf("%s", ftoa(thr, buf));
                 if (roll < 0)
-                    printf(" ");
+                    cliWrite(' ');
                 printf("%s", ftoa(roll, buf));
                 if (pitch < 0)
-                    printf(" ");
+                    cliWrite(' ');
                 printf("%s", ftoa(pitch, buf));
                 if (yaw < 0)
-                    printf(" ");
+                    cliWrite(' ');
                 printf("%s\r\n", ftoa(yaw, buf));
             }
             printf("cmix %d 0 0 0 0\r\n", i + 1);
         }
 #endif
 
-        printf("\r\n\r\n# feature\r\n");
+        cliPrint("\r\n\r\n# feature\r\n");
 
         mask = featureMask();
         for (i = 0; ; i++) { // disable all feature first
@@ -853,7 +925,7 @@ static void cliDump(char *cmdline)
                 printf("feature %s\r\n", featureNames[i]);
         }
 
-        printf("\r\n\r\n# map\r\n");
+        cliPrint("\r\n\r\n# map\r\n");
 
         for (i = 0; i < 8; i++)
             buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
@@ -861,10 +933,10 @@ static void cliDump(char *cmdline)
         printf("map %s\r\n", buf);
 
 #ifdef LED_STRIP
-        printf("\r\n\r\n# led\r\n");
+        cliPrint("\r\n\r\n# led\r\n");
         cliLed("");
 
-        printf("\r\n\r\n# color\r\n");
+        cliPrint("\r\n\r\n# color\r\n");
         cliColor("");
 #endif
         printSectionBreak();
@@ -872,18 +944,22 @@ static void cliDump(char *cmdline)
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        printf("\r\n# dump profile\r\n");
+        cliPrint("\r\n# dump profile\r\n");
 
-        printf("\r\n# profile\r\n");
+        cliPrint("\r\n# profile\r\n");
         cliProfile("");
 
-        printf("\r\n# aux\r\n");
+        cliPrint("\r\n# aux\r\n");
 
         cliAux("");
 
-        printf("\r\n# adjrange\r\n");
+        cliPrint("\r\n# adjrange\r\n");
 
         cliAdjustmentRange("");
+
+        cliPrint("\r\n# servo\r\n");
+
+        cliServo("");
 
         printSectionBreak();
 
@@ -891,9 +967,9 @@ static void cliDump(char *cmdline)
     }
 
     if (dumpMask & DUMP_CONTROL_RATE_PROFILE) {
-        printf("\r\n# dump rates\r\n");
+        cliPrint("\r\n# dump rates\r\n");
 
-        printf("\r\n# rateprofile\r\n");
+        cliPrint("\r\n# rateprofile\r\n");
         cliRateProfile("");
 
         printSectionBreak();
@@ -1084,12 +1160,11 @@ static void cliMotor(char *cmdline)
 {
     int motor_index = 0;
     int motor_value = 0;
-    int len, index = 0;
+    int index = 0;
     char *pch = NULL;
 
-    len = strlen(cmdline);
-    if (len == 0) {
-        printf("Usage:\r\nmotor index [value] - show [or set] motor value\r\n");
+    if (isEmpty(cmdline)) {
+        cliPrint("Usage:\r\nmotor index [value] - show [or set] motor value\r\n");
         return;
     }
 
@@ -1118,7 +1193,7 @@ static void cliMotor(char *cmdline)
     }
 
     if (motor_value < PWM_RANGE_MIN || motor_value > PWM_RANGE_MAX) {
-        printf("Invalid motor value, 1000..2000\r\n");
+        cliPrint("Invalid motor value, 1000..2000\r\n");
         return;
     }
 
@@ -1128,11 +1203,9 @@ static void cliMotor(char *cmdline)
 
 static void cliProfile(char *cmdline)
 {
-    uint8_t len;
     int i;
 
-    len = strlen(cmdline);
-    if (len == 0) {
+    if (isEmpty(cmdline)) {
         printf("profile %d\r\n", getCurrentProfile());
         return;
     } else {
@@ -1148,11 +1221,9 @@ static void cliProfile(char *cmdline)
 
 static void cliRateProfile(char *cmdline)
 {
-    uint8_t len;
     int i;
 
-    len = strlen(cmdline);
-    if (len == 0) {
+    if (isEmpty(cmdline)) {
         printf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
     } else {
@@ -1346,7 +1417,7 @@ static void cliGet(char *cmdline)
             val = &valueTable[i];
             printf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
-            printf("\r\n");
+            cliPrint("\r\n");
 
             matchedCommands++;
         }
