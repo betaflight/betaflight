@@ -5,8 +5,7 @@ Oneshot allows faster communication between the Flight Controller and the ESCs t
 It does this in two ways:
 
 1. Use a signal that varies between 125 µs and 250 µs (instead of the normal PWM timing of 1000µs to 2000µs)
-
-2. Only send a 'shot' once per flight controller loop, and do this as soon as the flight controller has calculated the required speed of the motors.
+1. Only send a 'shot' once per flight controller loop, and do this as soon as the flight controller has calculated the required speed of the motors.
 
 
 ## Supported ESCs
@@ -43,19 +42,12 @@ Then you can safely power up your ESCs again.
 The process for calibrating oneshot ESCs is the same as any other ESC.
 
 1. Ensure that your ESCs are not powered up.
-
 1. Connect to the board using a USB cable, and change to the motor test page.
-
 1. Set the motor speed to maximum using the main slider.
-
 1. Connect power to your ESCs.  They will beep.
-
 1. Click on the slider to bring the motor speed down to zero.  The ESCs will beep again, usually a couple of times.
-
 1. Disconnect the power from your ESCs.
-
 1. Re-connect power to your ESCs, and verify that moving the motor slider makes your motors spin up normally.
-
 
 ## References
 
