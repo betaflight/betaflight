@@ -294,9 +294,6 @@ void init(void)
     }
 #endif
 
-    // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
-    sensorsSet(SENSORS_SET);
-    // drop out any sensors that don't seem to work, init all the others. halt if gyro is dead.
     sensorsOK = sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, masterConfig.mag_hardware, currentProfile->mag_declination);
 
     // if gyro was not detected due to whatever reason, we give up now.
