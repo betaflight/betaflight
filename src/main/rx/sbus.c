@@ -41,6 +41,10 @@
  * FrSky X8R
  * time between frames: 6ms.
  * time to send frame: 3ms.
+*
+ * Futaba R6208SB/R6303SB
+ * time between frames: 11ms.
+ * time to send frame: 3ms.
  */
 
 #define SBUS_TIME_NEEDED_PER_FRAME 3000
