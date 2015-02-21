@@ -21,6 +21,8 @@
 #include "platform.h"
 #include "version.h"
 
+#ifdef BLACKBOX
+
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
@@ -1141,3 +1143,5 @@ void initBlackbox(void)
         blackboxSetState(BLACKBOX_STATE_DISABLED);
     }
 }
+
+#endif
