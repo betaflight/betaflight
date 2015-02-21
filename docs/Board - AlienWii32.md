@@ -24,3 +24,9 @@ Here are the hardware specifications:
 Deltang receivers in serial mode will work like any other Spektrum satellite receiver (10bit, 22ms) only the bind process will be different. 
 
 The pin layout for the ALIENWIIF1 is very similar to NAZE32 or the related clones (MW32, Flip32, etc.). The hardware bind pin is connected to pin 41 (PB5). The pin layout for the ALIENWIIF3 is similar to Sparky. The hardware bind pin is connected to pin 25 (PB12). The AlienWii32 firmware will be built as target ALIENWIIF1 or ALIENWIIF3. The firmware image will come with alternative default settings which will give the user a plug and play experience. There is no computer needed to get this into the air with an small Quadcopter. An preconfigured custom mixer for an Octocopter is part of the default settings to allow clean straight wiring with the AlienWii32. The mixer can be activated with "mixer custom" in the CLI. To use the AlienWii32 in an Hexa- or Octocopter or to do some more tuning additional configuration changes can be done as usual in the CLI or the Cleanflight configurator. 
+
+## Flashing the firmware
+
+The AlienWii32 F1 board can be flashed like the Naze board or the related clones. All the different methods will work in the same way.
+
+The AlienWii32 F3 board needs to be flashed via the USB port in DFU mode. Flashing via the Cleanflight GUI is not possible yet. The DFU mode can be activated via setting the BOOT0 jumper during power on of the board. The second method is to connect with an terminal program (i.e. Putty) to the board and enter the character "R" immediately after connecting. Details about the flashing process can be found in the related section of the Sparky documentation. The BOOT0 jumper should be removed and the board needs to be repowerd after firmware flashing. Please be aware, during reboot of the AlienWii F3 board, the GUI will disconnect and an manual reconnect is required.

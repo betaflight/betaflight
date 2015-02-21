@@ -66,16 +66,24 @@ The 6 pin RC_Output connector has the following pinouts when used in RX_PARALLEL
 
 # Serial Ports
 
-| Value | Identifier   | Board Markings | Notes                                    |
-| ----- | ------------ | -------------- | -----------------------------------------|
-| 1     | VCP          | USB PORT       |                                          |
-| 2     | USART1       | MAIN PORT      | Has a hardware inverter for S.BUS        |
-| 3     | USART3       | FLEX PORT      |                                          |
-| 4     | SoftSerial   | RC connector   | Pins 4 and 5 (Tx and Rx respectively)    |
+| Value | Identifier   | Board Markings | Notes                                     |
+| ----- | ------------ | -------------- | ------------------------------------------|
+| 1     | VCP          | USB PORT       |                                           |
+| 2     | USART1       | MAIN PORT      | Connected to an MCU controllable inverter |
+| 3     | USART3       | FLEX PORT      |                                           |
+| 4     | SoftSerial   | RC connector   | Pins 4 and 5 (Tx and Rx respectively)     |
 
 The SoftSerial port is not available when RX_PARALLEL_PWM is used. The transmission data rate is limited to 19200 baud.
 
-To connect the GUI to the flight controller you just need a USB cable to use the Virtual Com Port (VCP).
+To connect the GUI to the flight controller you just need a USB cable to use the Virtual Com Port (VCP) or you can use UART1 (Main Port).
+
+CLI access is only available via the VCP by default.
+
+# Main Port
+
+The main port has MSP support enabled on it by default.
+
+The main port is connected to an inverter which is automatically enabled as required.  For example, if the main port is used for SBus Serial RX then an external inverter is not required.
 
 # Flex Port
 

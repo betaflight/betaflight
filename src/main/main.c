@@ -178,6 +178,44 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
+    mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
+
+    memset(&pwm_params, 0, sizeof(pwm_params));
+    // when using airplane/wing mixer, servo/motor outputs are remapped
+    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING)
+        pwm_params.airplane = true;
+    else
+        pwm_params.airplane = false;
+#if defined(USE_USART2) && defined(STM32F10X)
+    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+#endif
+    pwm_params.useVbat = feature(FEATURE_VBAT);
+    pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
+    pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
+    pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
+    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
+        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
+    pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
+    pwm_params.usePPM = feature(FEATURE_RX_PPM);
+    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
+    pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
+    pwm_params.useServos = isMixerUsingServos();
+    pwm_params.extraServos = currentProfile->gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
+    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
+    pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
+    pwm_params.idlePulse = PULSE_1MS; // standard PWM for brushless ESC (default, overridden below)
+    if (feature(FEATURE_3D))
+        pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
+    if (pwm_params.motorPwmRate > 500)
+        pwm_params.idlePulse = 0; // brushed motors
+    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
+
+    pwmRxInit(masterConfig.inputFilteringMode);
+
+    pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
+
+    mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
+
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
         .gpioPin = BEEP_PIN,
@@ -256,9 +294,6 @@ void init(void)
     }
 #endif
 
-    // We have these sensors; SENSORS_SET defined in board.h depending on hardware platform
-    sensorsSet(SENSORS_SET);
-    // drop out any sensors that don't seem to work, init all the others. halt if gyro is dead.
     sensorsOK = sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, masterConfig.mag_hardware, currentProfile->mag_declination);
 
     // if gyro was not detected due to whatever reason, we give up now.
@@ -278,52 +313,14 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-
-    imuInit();
-    mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
-
 #ifdef MAG
     if (sensors(SENSOR_MAG))
         compassInit();
 #endif
 
+    imuInit();
+
     serialInit(&masterConfig.serialConfig);
-
-    memset(&pwm_params, 0, sizeof(pwm_params));
-    // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING)
-        pwm_params.airplane = true;
-    else
-        pwm_params.airplane = false;
-#if defined(SERIAL_PORT_USART2) && defined(STM32F10X)
-    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
-#endif
-    pwm_params.useVbat = feature(FEATURE_VBAT);
-    pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
-    pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
-    pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
-    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
-        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
-    pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
-    pwm_params.usePPM = feature(FEATURE_RX_PPM);
-    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
-    pwm_params.useServos = isMixerUsingServos();
-    pwm_params.extraServos = currentProfile->gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
-    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
-    pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
-    pwm_params.idlePulse = PULSE_1MS; // standard PWM for brushless ESC (default, overridden below)
-    if (feature(FEATURE_3D))
-        pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500)
-        pwm_params.idlePulse = 0; // brushed motors
-    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
-
-    pwmRxInit(masterConfig.inputFilteringMode);
-
-    pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
-
-    mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
     failsafe = failsafeInit(&masterConfig.rxConfig);
     beepcodeInit(failsafe);

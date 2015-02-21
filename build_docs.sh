@@ -3,6 +3,7 @@
 filename=Manual
 doc_files=(
     'Introduction.md'
+    'Safety.md'
     'Installation.md'
     'Configuration.md'
     'Cli.md'
