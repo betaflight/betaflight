@@ -28,6 +28,8 @@ HIGH - the channel value for the mapped channel input is around 2000
 | Trim Acc Right                | HIGH     | CENTER  | CENTER | HIGH   |
 | Trim Acc Forwards             | HIGH     | CENTER  | HIGH   | CENTER |
 | Trim Acc Backwards            | HIGH     | CENTER  | LOW    | CENTER |
+| Disable LCD Page Cycling      | LOW      | CENTER  | HIGH   | LOW    |
+| Enable LCD Page Cycling       | LOW      | CENTER  | HIGH   | HIGH   |
 | Save setting                  | LOW      | LOW     | LOW    | HIGH   |
 
 
