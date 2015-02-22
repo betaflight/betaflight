@@ -365,10 +365,14 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
-    #ifdef NAZE
-        // naze32 rev5 and above have 16mbit of flash available
+#ifdef NAZE
+    if (hardwareRevision == NAZE32_REV5) {
         m25p16_init();
-    #endif
+    }
+#endif
+#ifdef SPRACINGF3
+    m25p16_init();
+#endif
     flashfsInit();
 #endif
 

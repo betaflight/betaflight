@@ -504,6 +504,8 @@ SPRACINGF3_SRC	 = \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.h \
+		   drivers/flash_m25p16.c \
+		   io/flashfs.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
