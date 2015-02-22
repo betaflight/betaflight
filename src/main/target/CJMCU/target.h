@@ -61,6 +61,8 @@
 // #define SOFT_I2C_PB67
 
 #define SERIAL_RX
+//#define BLACKBOX
+//#define USE_SERVOS
 
 #define SPEKTRUM_BIND
 // USART2, PA3

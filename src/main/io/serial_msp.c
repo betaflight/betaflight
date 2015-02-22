@@ -799,6 +799,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         for (i = 0; i < 3; i++)
             serialize16(magADC[i]);
         break;
+#ifdef USE_SERVOS
     case MSP_SERVO:
         s_struct((uint8_t *)&servo, 16);
         break;
@@ -817,6 +818,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(currentProfile->servoConf[i].forwardFromChannel);
         }
         break;
+#endif
     case MSP_MOTOR:
         s_struct((uint8_t *)motor, 16);
         break;
@@ -1324,6 +1326,7 @@ static bool processInCommand(void)
             motor_disarmed[i] = read16();
         break;
     case MSP_SET_SERVO_CONF:
+#ifdef USE_SERVOS
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             currentProfile->servoConf[i].min = read16();
             currentProfile->servoConf[i].max = read16();
@@ -1337,11 +1340,14 @@ static bool processInCommand(void)
             }
             currentProfile->servoConf[i].rate = read8();
         }
+#endif
         break;
     case MSP_SET_CHANNEL_FORWARDING:
+#ifdef USE_SERVOS
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             currentProfile->servoConf[i].forwardFromChannel = read8();
         }
+#endif
         break;
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {

@@ -197,18 +197,22 @@ void init(void)
         && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
-    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
+
+#ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.extraServos = currentProfile->gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
-    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
+    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
+#endif
+
+    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
+    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = PULSE_1MS; // standard PWM for brushless ESC (default, overridden below)
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
-    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
 
     pwmRxInit(masterConfig.inputFilteringMode);
 

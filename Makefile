@@ -397,6 +397,8 @@ CJMCU_SRC	 = \
 		   drivers/timer.c \
 		   drivers/timer_stm32f10x.c \
 		   hardware_revision.c \
+		   blackbox/blackbox.c \
+		   blackbox/blackbox_io.c \
 		   $(COMMON_SRC)
 
 CC3D_SRC	 = \

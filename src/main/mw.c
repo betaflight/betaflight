@@ -722,8 +722,12 @@ void loop(void)
         );
 
         mixTable();
+
+#ifdef USE_SERVOS
         filterServos();
         writeServos();
+#endif
+
         writeMotors();
 
 #ifdef BLACKBOX

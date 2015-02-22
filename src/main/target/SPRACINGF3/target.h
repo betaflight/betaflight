@@ -126,3 +126,4 @@
 #define SERIAL_RX
 #define AUTOTUNE
 #define DISPLAY
+#define USE_SERVOS

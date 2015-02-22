@@ -749,8 +749,10 @@ static void loadBlackboxState(void)
     blackboxCurrent->BaroAlt = BaroAlt;
 #endif
 
+#ifdef USE_SERVOS
     //Tail servo for tricopters
     blackboxCurrent->servo[5] = servo[5];
+#endif
 }
 
 /**

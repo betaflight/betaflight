@@ -45,6 +45,7 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
+#define USE_SERVOS
 
 #define SPEKTRUM_BIND
 // USART2, PA3

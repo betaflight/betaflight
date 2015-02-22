@@ -92,6 +92,7 @@
 #define GPS
 //#define DISPLAY
 #define AUTOTUNE
+#define USE_SERVOS
 
 
 #define SPEKTRUM_BIND

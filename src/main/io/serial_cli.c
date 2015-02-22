@@ -199,7 +199,7 @@ const clicmd_t cmdTable[] = {
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
-#ifndef CJMCU
+#ifdef USE_SERVOS
     { "servo", "servo config", cliServo },
 #endif
     { "set", "name=value or blank or * for list", cliSet },
@@ -353,10 +353,11 @@ const clivalue_t valueTable[] = {
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, -1, 1 },
     { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.yaw_direction, -1, 1 },
+#ifdef USE_SERVOS
     { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.tri_unarmed_servo, 0, 1 },
     { "servo_lowpass_freq",         VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.servo_lowpass_freq, 10, 400},
     { "servo_lowpass_enable",       VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.servo_lowpass_enable, 0, 1 },
-
+#endif
     { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE , &masterConfig.profile[0].defaultRateProfileIndex, 0, MAX_CONTROL_RATE_PROFILE_COUNT - 1 },
     { "rc_rate",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcRate8, 0, 250 },
     { "rc_expo",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcExpo8, 0, 100 },
@@ -373,7 +374,9 @@ const clivalue_t valueTable[] = {
     { "failsafe_min_usec",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_min_usec, 100, PWM_RANGE_MAX },
     { "failsafe_max_usec",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_max_usec, 100, PWM_RANGE_MAX + (PWM_RANGE_MAX - PWM_RANGE_MIN) },
 
+#ifdef USE_SERVOS
     { "gimbal_flags",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gimbalConfig.gimbal_flags, 0, 255},
+#endif
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, 0, ACC_NONE },
     { "acc_lpf_factor",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].acc_lpf_factor, 0, 250 },
@@ -752,7 +755,7 @@ static void cliColor(char *cmdline)
 
 static void cliServo(char *cmdline)
 {
-#ifdef CJMCU
+#ifndef USE_SERVOS
     UNUSED(cmdline);
 #else
     enum { SERVO_ARGUMENT_COUNT = 6 };
