@@ -92,6 +92,8 @@ extern int16_t debug[4];
 static uint32_t lastHoTTRequestCheckAt = 0;
 static uint32_t lastMessagesPreparedAt = 0;
 
+static uint32_t alarmSound_currentTime, previous_alarmSound_time;
+
 static bool hottIsSending = false;
 
 static uint8_t *hottMsg = NULL;
@@ -209,12 +211,34 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 }
 #endif
 
+static bool time_for_Voice_Alarm(void)
+{
+	return ((alarmSound_currentTime - previous_alarmSound_time) >= (useHottAlarmSoundPeriod() * 1000000));
+}
+
+static inline void checkAlarmBattery(HOTT_EAM_MSG_t *hottEAMMessage)
+{
+    if (time_for_Voice_Alarm()){
+		previous_alarmSound_time = alarmSound_currentTime;
+        if (vbat <= batteryWarningVoltage){
+        	hottEAMMessage->warning_beeps = 0x10;
+        	hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
+        }
+        else {
+        	hottEAMMessage->warning_beeps = HOTT_EAM_ALARM1_FLAG_NONE;
+        	hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_NONE;
+        }
+    }
+}
+
 static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     hottEAMMessage->main_voltage_L = vbat & 0xFF;
     hottEAMMessage->main_voltage_H = vbat >> 8;
     hottEAMMessage->batt1_voltage_L = vbat & 0xFF;
     hottEAMMessage->batt1_voltage_H = vbat >> 8;
+
+    checkAlarmBattery(hottEAMMessage);
 }
 
 static inline void hottEAMUpdateCurrentMeter(HOTT_EAM_MSG_t *hottEAMMessage)
@@ -465,6 +489,7 @@ void handleHoTTTelemetry(void)
 {
     static uint32_t serialTimer;
     uint32_t now = micros();
+    alarmSound_currentTime = now;
 
 
     if (shouldPrepareHoTTMessages(now)) {

@@ -220,6 +220,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->gpsNoFixLongitude = 0;
     telemetryConfig->frsky_coordinate_format = FRSKY_FORMAT_DMS;
     telemetryConfig->frsky_unit = FRSKY_UNIT_METRICS;
+    telemetryConfig->HottAlarmSoundPeriod = 5;
 }
 
 void resetBatteryConfig(batteryConfig_t *batteryConfig)
