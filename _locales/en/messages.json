@@ -102,7 +102,9 @@
     "tabLogging": {
         "message": "Logging"
     },
-
+    "tabDataflash": {
+        "message": "Dataflash"
+    },
     "tabAdjustments": {
         "message": "Adjustments"
     },
@@ -846,6 +848,45 @@
         "message": "Automatically loaded previous log file: <strong>$1</strong>"
     },
 
+    "dataflashNote": {
+        "message": "Blackbox flight logs can be recorded to your flight controller's onboard dataflash chip."
+    },
+    "dataflashNotSupportedNote": {
+        "message": "Your flight controller does not have a compatible dataflash chip available."
+    },
+    "dataflashButtonSaveFile": {
+        "message": "Save flash to file..."
+    },
+    "dataflashButtonErase": {
+        "message": "Erase flash"
+    },
+    "dataflashConfirmEraseTitle": {
+        "message": "Confirm dataflash erase"
+    },
+    "dataflashConfirmEraseNote": {
+        "message": "This will erase any Blackbox logs or other data contained in the dataflash which will take about 20 seconds, are you sure?"
+    },
+    "dataflashSavingTitle": {
+        "message": "Saving dataflash to file"
+    },
+    "dataflashSavingNote": {
+        "message": "Saving could take several minutes, please wait."
+    },
+    "dataflashSavingNoteAfter": {
+        "message": "Save completed! Press \"Ok\" to continue."
+    },
+    "dataflashButtonSaveCancel": {
+        "message": "Cancel"
+    },
+    "dataflashButtonSaveDismiss": {
+        "message": "Ok"
+    },
+    "dataflashButtonEraseConfirm": {
+        "message": "Yes, erase dataflash"
+    },
+    "dataflashButtonEraseCancel": {
+        "message": "Cancel"
+    },
     "firmwareFlasherReleaseSummaryHead": {
         "message": "Release info"
     },

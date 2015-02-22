@@ -153,6 +153,9 @@ $(document).ready(function () {
                     case 'logging':
                         TABS.logging.initialize(content_ready);
                         break;
+                    case 'dataflash':
+                        TABS.dataflash.initialize(content_ready);
+                        break;
                     case 'cli':
                         TABS.cli.initialize(content_ready);
                         break;

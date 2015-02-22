@@ -353,3 +353,14 @@ input[type="number"]::-webkit-inner-spin-button {
     text-align: center;
     font-weight: bold;
 }
+
+dialog {
+    background-color: white;
+    padding: 1em;
+    height: auto;
+    margin: auto auto;
+    position: absolute;
+    width: 50%;
+    border-radius: 5px;
+    border: 1px solid silver;
+}

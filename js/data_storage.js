@@ -149,3 +149,10 @@ var MISC = {
     vbatmaxcellvoltage:     0,
     vbatwarningcellvoltage: 0
 };
+
+var DATAFLASH = {
+    ready: false,
+    sectors: 0,
+    totalSize: 0,
+    usedSize: 0
+};
