@@ -19,6 +19,7 @@
 
 #define SPI_0_5625MHZ_CLOCK_DIVIDER 128
 #define SPI_18MHZ_CLOCK_DIVIDER     2
+#define SPI_9MHZ_CLOCK_DIVIDER      4
 
 bool spiInit(SPI_TypeDef *instance);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);

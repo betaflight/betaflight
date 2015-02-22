@@ -68,39 +68,12 @@ extern int16_t debug[4];
 
 #define BOOT                          ((uint8_t)0x80)
 
-#define SPI1_GPIO             GPIOA
-#define SPI1_SCK_PIN          GPIO_Pin_5
-#define SPI1_SCK_PIN_SOURCE   GPIO_PinSource5
-#define SPI1_SCK_CLK          RCC_AHBPeriph_GPIOA
-#define SPI1_MISO_PIN         GPIO_Pin_6
-#define SPI1_MISO_PIN_SOURCE  GPIO_PinSource6
-#define SPI1_MISO_CLK         RCC_AHBPeriph_GPIOA
-#define SPI1_MOSI_PIN         GPIO_Pin_7
-#define SPI1_MOSI_PIN_SOURCE  GPIO_PinSource7
-#define SPI1_MOSI_CLK         RCC_AHBPeriph_GPIOA
-
 static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
     SPI_InitTypeDef SPI_InitStructure;
 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-    RCC_AHBPeriphClockCmd(SPI1_SCK_CLK | SPI1_MISO_CLK | SPI1_MOSI_CLK, ENABLE);
-
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE, GPIO_AF_5);
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_MISO_PIN_SOURCE, GPIO_AF_5);
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_MOSI_PIN_SOURCE, GPIO_AF_5);
-
-    // Init pins
-    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-
-    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
-
-    RCC_AHBPeriphClockCmd(L3GD20_CS_GPIO_CLK, ENABLE);
+    RCC_AHBPeriphClockCmd(L3GD20_CS_GPIO_CLK_PERIPHERAL, ENABLE);
 
     GPIO_InitStructure.GPIO_Pin = L3GD20_CS_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -112,28 +85,11 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-    SPI_I2S_DeInit(SPIx);
-
-    SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-    SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-    SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-    SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
-    SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
-    SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;  // 36/4 = 9 MHz SPI Clock
-    SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
-    SPI_InitStructure.SPI_CRCPolynomial = 7;
-
-    SPI_Init(SPIx, &SPI_InitStructure);
-
-    SPI_RxFIFOThresholdConfig(SPIx, SPI_RxFIFOThreshold_QF);
-
-    SPI_Cmd(SPIx, ENABLE);
+    spiSetDivisor(L3GD20_SPI, SPI_9MHZ_CLOCK_DIVIDER);
 }
 
 void l3gd20GyroInit(void)
 {
-
     l3gd20SpiInit(L3GD20_SPI);
 
     GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
