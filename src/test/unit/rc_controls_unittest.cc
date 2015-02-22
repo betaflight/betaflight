@@ -705,6 +705,9 @@ void mwArm(void) {}
 void feature(uint32_t) {}
 void sensors(uint32_t) {}
 void mwDisarm(void) {}
+void displayDisablePageCycling() {}
+void displayEnablePageCycling() {}
+
 uint8_t getCurrentControlRateProfile(void) {
     return 0;
 }
