@@ -250,6 +250,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         return;
     }
 
+#ifdef DISPLAY
     if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_LO) {
         displayDisablePageCycling();
     }
@@ -257,6 +258,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_HI) {
         displayEnablePageCycling();
     }
+#endif
 
 }
 
