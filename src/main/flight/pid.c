@@ -539,8 +539,8 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     }
 
     for (axis = 0; axis < 2; axis++) {
-        int32_t tmp = (int32_t)((float)gyroData[axis] * 0.3125f);             // Multiwii masks out the last 2 bits, this has the same idea
-        gyroDataQuant = (float)tmp * 3.2f;                                    // but delivers more accuracy and also reduces jittery flight
+        int32_t tmp = (int32_t)((float)gyroData[axis] * 0.3125f);              // Multiwii masks out the last 2 bits, this has the same idea
+        gyroDataQuant = (float)tmp * 3.2f;                                     // but delivers more accuracy and also reduces jittery flight
         rcCommandAxis = (float)rcCommand[axis];                                // Calculate common values for pid controllers
         if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
 #ifdef GPS
@@ -557,7 +557,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             PTermACC = error * (float)pidProfile->P8[PIDLEVEL] * 0.008f;
             float limitf = (float)pidProfile->D8[PIDLEVEL] * 5.0f;
             PTermACC = constrain(PTermACC, -limitf, +limitf);
-            errorAngleIf[axis] = constrain(errorAngleIf[axis] + error * ACCDeltaTimeINS, -30.0f, +30.0f);
+            errorAngleIf[axis] = constrainf(errorAngleIf[axis] + error * ACCDeltaTimeINS, -30.0f, +30.0f);
             ITermACC = errorAngleIf[axis] * (float)pidProfile->I8[PIDLEVEL] * 0.08f;
         }
 
