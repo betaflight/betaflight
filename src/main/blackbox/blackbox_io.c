@@ -59,6 +59,8 @@
 
 #include "io/flashfs.h"
 
+#ifdef BLACKBOX
+
 #define BLACKBOX_BAUDRATE 115200
 #define BLACKBOX_INITIAL_PORT_MODE MODE_TX
 
@@ -513,3 +515,5 @@ bool isBlackboxDeviceFull(void)
             return false;
     }
 }
+
+#endif
