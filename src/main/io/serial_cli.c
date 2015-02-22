@@ -52,6 +52,7 @@
 #include "io/rc_controls.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/flashfs.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -119,6 +120,13 @@ static void cliColor(char *cmdline);
 static void cliMixer(char *cmdline);
 #endif
 
+#ifdef USE_FLASHFS
+static void cliFlashInfo(char *cmdline);
+static void cliFlashErase(char *cmdline);
+static void cliFlashWrite(char *cmdline);
+static void cliFlashRead(char *cmdline);
+#endif
+
 // signal that we're in cli mode
 uint8_t cliMode = 0;
 
@@ -183,6 +191,12 @@ const clicmd_t cmdTable[] = {
     { "dump", "dump configuration", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
+#ifdef USE_FLASHFS
+    { "flash_erase", "erase flash chip", cliFlashErase },
+    { "flash_info", "get flash chip details", cliFlashInfo },
+    { "flash_read", "read text from the given address", cliFlashRead },
+    { "flash_write", "write text to the given address", cliFlashWrite },
+#endif
     { "get", "get variable value", cliGet },
 #ifdef GPS
     { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
@@ -436,6 +450,7 @@ const clivalue_t valueTable[] = {
 #ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, 1, 32 },
     { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, 1, 32 },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_device, 0, 1 },
 #endif
 };
 
@@ -824,6 +839,88 @@ static void cliServo(char *cmdline)
     }
 #endif
 }
+
+#ifdef USE_FLASHFS
+
+static void cliFlashInfo(char *cmdline)
+{
+    const flashGeometry_t *layout = flashfsGetGeometry();
+
+    UNUSED(cmdline);
+
+    printf("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u, usedSize=%u\r\n",
+            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
+}
+
+static void cliFlashErase(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    printf("Erasing, please wait...\r\n");
+    flashfsEraseCompletely();
+
+    while (!flashfsIsReady()) {
+        delay(100);
+    }
+
+    printf("Done.\r\n");
+}
+
+static void cliFlashWrite(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+    char *text = strchr(cmdline, ' ');
+
+    if (!text) {
+        printf("Missing text to write.\r\n");
+    } else {
+        flashfsSeekAbs(address);
+        flashfsWrite((uint8_t*)text, strlen(text), true);
+        flashfsFlushSync();
+
+        printf("Wrote %u bytes at %u.\r\n", strlen(text), address);
+    }
+}
+
+static void cliFlashRead(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+    uint32_t length;
+    int i;
+
+    uint8_t buffer[32];
+
+    char *nextArg = strchr(cmdline, ' ');
+
+    if (!nextArg) {
+        printf("Missing length argument.\r\n");
+    } else {
+        length = atoi(nextArg);
+
+        printf("Reading %u bytes at %u:\r\n", length, address);
+
+        while (length > 0) {
+            int bytesRead;
+
+            bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
+
+            for (i = 0; i < bytesRead; i++) {
+                cliWrite(buffer[i]);
+            }
+
+            length -= bytesRead;
+            address += bytesRead;
+
+            if (bytesRead == 0) {
+                //Assume we reached the end of the volume or something fatal happened
+                break;
+            }
+        }
+        printf("\r\n");
+    }
+}
+
+#endif
 
 static void dumpValues(uint16_t mask)
 {

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "blackbox_io.h"
 
@@ -56,6 +57,8 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#include "io/flashfs.h"
+
 #define BLACKBOX_BAUDRATE 115200
 #define BLACKBOX_INITIAL_PORT_MODE MODE_TX
 
@@ -68,7 +71,17 @@ static uint32_t previousBaudRate;
 
 void blackboxWrite(uint8_t value)
 {
-    serialWrite(blackboxPort, value);
+    switch (masterConfig.blackbox_device) {
+#ifdef USE_FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+            flashfsWriteByte(value); // Write byte asynchronously
+        break;
+#endif
+        case BLACKBOX_DEVICE_SERIAL:
+        default:
+            serialWrite(blackboxPort, value);
+        break;
+    }
 }
 
 static void _putc(void *p, char c)
@@ -89,14 +102,31 @@ void blackboxPrintf(char *fmt, ...)
 // Print the null-terminated string 's' to the serial port and return the number of bytes written
 int blackboxPrint(const char *s)
 {
-    const char *pos = s;
+    int length;
+    const uint8_t *pos;
 
-    while (*pos) {
-        blackboxWrite(*pos);
-        pos++;
+    switch (masterConfig.blackbox_device) {
+
+#ifdef USE_FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+            length = strlen(s);
+            flashfsWrite((const uint8_t*) s, length, false); // Write asynchronously
+        break;
+#endif
+
+        case BLACKBOX_DEVICE_SERIAL:
+        default:
+            pos = (uint8_t*) s;
+            while (*pos) {
+                serialWrite(blackboxPort, *pos);
+                pos++;
+            }
+
+            length = pos - (uint8_t*) s;
+        break;
     }
 
-    return pos - s;
+    return length;
 }
 
 /**
@@ -375,11 +405,25 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
 }
 
 /**
- * If there is data waiting to be written to the blackbox device, attempt to write that now.
+ * If there is data waiting to be written to the blackbox device, attempt to write (a portion of) that now.
+ * 
+ * Returns true if all data has been flushed to the device.
  */
-void blackboxDeviceFlush(void)
+bool blackboxDeviceFlush(void)
 {
-    //Presently a no-op on serial
+    switch (masterConfig.blackbox_device) {
+        case BLACKBOX_DEVICE_SERIAL:
+            //Nothing to speed up flushing on serial, as serial is continuously being drained out of its buffer
+            return isSerialTransmitBufferEmpty(blackboxPort);
+
+#ifdef USE_FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+            return flashfsFlushAsync();
+#endif
+
+        default:
+            return false;
+    }
 }
 
 /**
@@ -387,23 +431,6 @@ void blackboxDeviceFlush(void)
  */
 bool blackboxDeviceOpen(void)
 {
-    blackboxPort = findOpenSerialPort(FUNCTION_BLACKBOX);
-    if (blackboxPort) {
-        previousPortMode = blackboxPort->mode;
-        previousBaudRate = blackboxPort->baudRate;
-
-        serialSetBaudRate(blackboxPort, BLACKBOX_BAUDRATE);
-        serialSetMode(blackboxPort, BLACKBOX_INITIAL_PORT_MODE);
-        beginSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
-    } else {
-        blackboxPort = openSerialPort(FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
-
-        if (blackboxPort) {
-            previousPortMode = blackboxPort->mode;
-            previousBaudRate = blackboxPort->baudRate;
-        }
-    }
-
     /*
      * We want to write at about 7200 bytes per second to give the OpenLog a good chance to save to disk. If
      * about looptime microseconds elapse between our writes, this is the budget of how many bytes we should
@@ -413,26 +440,76 @@ bool blackboxDeviceOpen(void)
      */
     blackboxWriteChunkSize = MAX((masterConfig.looptime * 9) / 1250, 4);
 
-    return blackboxPort != NULL;
-}
+    switch (masterConfig.blackbox_device) {
+        case BLACKBOX_DEVICE_SERIAL:
+            blackboxPort = findOpenSerialPort(FUNCTION_BLACKBOX);
+            if (blackboxPort) {
+                previousPortMode = blackboxPort->mode;
+                previousBaudRate = blackboxPort->baudRate;
 
-void blackboxDeviceClose(void)
-{
-    serialSetMode(blackboxPort, previousPortMode);
-    serialSetBaudRate(blackboxPort, previousBaudRate);
+                serialSetBaudRate(blackboxPort, BLACKBOX_BAUDRATE);
+                serialSetMode(blackboxPort, BLACKBOX_INITIAL_PORT_MODE);
+                beginSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
+            } else {
+                blackboxPort = openSerialPort(FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
-    endSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
+                if (blackboxPort) {
+                    previousPortMode = blackboxPort->mode;
+                    previousBaudRate = blackboxPort->baudRate;
+                }
+            }
 
-    /*
-     * Normally this would be handled by mw.c, but since we take an unknown amount
-     * of time to shut down asynchronously, we're the only ones that know when to call it.
-     */
-    if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
-        mspAllocateSerialPorts(&masterConfig.serialConfig);
+            return blackboxPort != NULL;
+        break;
+#ifdef USE_FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+            if (flashfsGetSize() == 0 || isBlackboxDeviceFull()) {
+                return false;
+            }
+
+            return true;
+        break;
+#endif
+        default:
+            return false;
     }
 }
 
-bool isBlackboxDeviceIdle(void)
+/**
+ * Close the Blackbox logging device immediately without attempting to flush any remaining data.
+ */
+void blackboxDeviceClose(void)
 {
-    return isSerialTransmitBufferEmpty(blackboxPort);
+    switch (masterConfig.blackbox_device) {
+        case BLACKBOX_DEVICE_SERIAL:
+            serialSetMode(blackboxPort, previousPortMode);
+            serialSetBaudRate(blackboxPort, previousBaudRate);
+
+            endSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
+
+            /*
+             * Normally this would be handled by mw.c, but since we take an unknown amount
+             * of time to shut down asynchronously, we're the only ones that know when to call it.
+             */
+            if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
+                mspAllocateSerialPorts(&masterConfig.serialConfig);
+            }
+        break;
+    }
+}
+
+bool isBlackboxDeviceFull(void)
+{
+    switch (masterConfig.blackbox_device) {
+        case BLACKBOX_DEVICE_SERIAL:
+            return false;
+
+#ifdef USE_FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+            return flashfsIsEOF();
+#endif
+
+        default:
+            return false;
+    }
 }

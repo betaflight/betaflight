@@ -88,6 +88,7 @@ typedef struct master_t {
 #ifdef BLACKBOX
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
+    uint8_t blackbox_device;
 #endif
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
