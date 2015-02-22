@@ -66,6 +66,8 @@ typedef struct mixer_t {
 typedef struct mixerConfig_s {
     int8_t yaw_direction;
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
+    int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
+    int8_t servo_lowpass_enable;            // enable/disable lowpass filter
 } mixerConfig_t;
 
 typedef struct flight3DConfig_s {
@@ -101,3 +103,4 @@ void mixerResetMotors(void);
 void mixTable(void);
 void writeServos(void);
 void writeMotors(void);
+void filterServos(void);

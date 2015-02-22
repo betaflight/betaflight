@@ -45,6 +45,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/lowpass.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -54,10 +55,14 @@
 
 #define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
+//#define MIXER_DEBUG
+
+extern int16_t debug[4];
+
 uint8_t motorCount = 0;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-int16_t servo[MAX_SUPPORTED_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
+int16_t servo[MAX_SUPPORTED_SERVOS];
 
 static int useServo;
 
@@ -73,6 +78,7 @@ static gimbalConfig_t *gimbalConfig;
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static mixerMode_e currentMixerMode;
+static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -514,6 +520,11 @@ void mixTable(void)
     int16_t maxMotor;
     uint32_t i;
 
+    // paranoia: give all servos a default command
+    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servo[i] = DEFAULT_SERVO_MIDDLE;
+    }
+
     if (motorCount > 3) {
         // prevent "yaw jump" during yaw correction
         axisPID[YAW] = constrain(axisPID[YAW], -100 - ABS(rcCommand[YAW]), +100 + ABS(rcCommand[YAW]));
@@ -660,3 +671,25 @@ bool isMixerUsingServos(void)
 {
     return useServo;
 }
+
+void filterServos(void)
+{
+    int16_t servoIdx;
+
+#if defined(MIXER_DEBUG)
+    uint32_t startTime = micros();
+#endif
+
+    if (mixerConfig->servo_lowpass_enable) {
+        for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
+            servo[servoIdx] = (int16_t)lowpassFixed(&lowpassFilters[servoIdx], servo[servoIdx], mixerConfig->servo_lowpass_freq);
+
+            // Sanity check
+            servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
+        }
+    }
+#if defined(MIXER_DEBUG)
+    debug[0] = (int16_t)(micros() - startTime);
+#endif
+}
+

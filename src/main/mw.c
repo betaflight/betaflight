@@ -722,6 +722,7 @@ void loop(void)
         );
 
         mixTable();
+        filterServos();
         writeServos();
         writeMotors();
 

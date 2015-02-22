@@ -354,6 +354,8 @@ const clivalue_t valueTable[] = {
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, -1, 1 },
     { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.yaw_direction, -1, 1 },
     { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.tri_unarmed_servo, 0, 1 },
+    { "servo_lowpass_freq",         VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.servo_lowpass_freq, 10, 400},
+    { "servo_lowpass_enable",       VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.servo_lowpass_enable, 0, 1 },
 
     { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE , &masterConfig.profile[0].defaultRateProfileIndex, 0, MAX_CONTROL_RATE_PROFILE_COUNT - 1 },
     { "rc_rate",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcRate8, 0, 250 },

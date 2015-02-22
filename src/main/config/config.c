@@ -445,6 +445,8 @@ static void resetConf(void)
 
     currentProfile->mixerConfig.yaw_direction = 1;
     currentProfile->mixerConfig.tri_unarmed_servo = 1;
+    currentProfile->mixerConfig.servo_lowpass_freq = 400;
+    currentProfile->mixerConfig.servo_lowpass_enable = 0;
 
     // gimbal
     currentProfile->gimbalConfig.gimbal_flags = GIMBAL_NORMAL;
