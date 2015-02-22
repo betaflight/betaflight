@@ -285,6 +285,11 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (feature(FEATURE_SERVO_TILT))
         useServo = 1;
+
+    // give all servos a default command
+    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servo[i] = DEFAULT_SERVO_MIDDLE;
+    }
 }
 
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
@@ -520,24 +525,21 @@ void mixTable(void)
     int16_t maxMotor;
     uint32_t i;
 
-    // paranoia: give all servos a default command
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = DEFAULT_SERVO_MIDDLE;
-    }
-
     if (motorCount > 3) {
         // prevent "yaw jump" during yaw correction
         axisPID[YAW] = constrain(axisPID[YAW], -100 - ABS(rcCommand[YAW]), +100 + ABS(rcCommand[YAW]));
     }
 
     // motors for non-servo mixes
-    if (motorCount > 1)
-        for (i = 0; i < motorCount; i++)
+    if (motorCount > 1) {
+        for (i = 0; i < motorCount; i++) {
             motor[i] =
                 rcCommand[THROTTLE] * currentMixer[i].throttle +
                 axisPID[PITCH] * currentMixer[i].pitch +
                 axisPID[ROLL] * currentMixer[i].roll +
                 -mixerConfig->yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
+        }
+    }
 
 #ifndef USE_QUAD_MIXER_ONLY
     // airplane / servo mixes
