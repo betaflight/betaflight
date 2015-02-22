@@ -23,14 +23,12 @@ Likewise, support for more than 32 LEDs is possible, it just requires additional
 
 ## Supported hardware
 
-Only strips of 32 WS2812 LEDs are supported currently.  If the strip is longer than 32 LEDs it does not matter,
+Only strips of 32 WS2811/WS2812 LEDs are supported currently.  If the strip is longer than 32 LEDs it does not matter,
 but only the first 32 are used.
 
 WS2812 LEDs require an 800khz signal and precise timings and thus requires the use of a dedicated hardware timer.
 
-Note: The initial code may work with WS2801 + External LEDs since the protocol is the same, WS2811/WS2812B should also work but
-may require very simple timing adjustments to be made in the source.
-Not all WS2812 ICs use the same timings, some batches use different timings.  
+Note: Not all WS2812 ICs use the same timings, some batches use different timings.  
 
 It could be possible to be able to specify the timings required via CLI if users request it.
 
@@ -63,14 +61,11 @@ Since RC5 is also used for SoftSerial on the Naze/Olimexino it means that you ca
 Additionally, since RC5 is also used for Parallel PWM RC input on both the Naze, Chebuzz and STM32F3Discovery targets, led strips
 can not be used at the same time at Parallel PWM.
 
-Ensure that your 5V supply is not too high, if the voltage at the input to the LED strip is to high then the LEDs may not light; The
-problem occurs because of the difference in voltage between the data signal and the power signal.
+If you have LEDs that are intermittent, flicker or show the wrong colors then drop the VIN to less than 4.7v, e.g. by using an inline
+diode on the VIN to the LED strip. The problem occurs because of the difference in voltage between the data signal and the power
+signal.  The WS2811 LED's require the data signal (Din) to be MAX 0.7 * VIN.  Data In on the LEDs will allways be around ~3.3v, 
+so the Vin MAX should be 4.7v (3.3v / 0.7 = 4.71v).  Some LEDs are more tolerant of this than others.
 
-If you are using an BEC from an ESC to for the 5v supply check the output is as close to 5v as possible.
-
-It was observed that a 5.4v supply from a BEC was fine for powering the FC and other devices but the LED strip would not light until
-the voltage was reduced, this was acheived by placing an IN4007 diode between the BEC 5v output and the 5V input pin of the LED strip.
-  
 
 ## Configuration
 
@@ -432,8 +427,5 @@ the current draw if your measurement equipment is fast enough.  Most 5050 LEDs w
 This also means that you can make sure that each R,G and B LED in each LED module on the strip is also functioning.
 
 After a short delay the LEDs will show the unarmed color sequence and or low-battery warning sequence.
-
-If the LEDs flash intermittently or do not show the correct colors verify all connections and check the specifications of the
-LEDs you have against the supported timings (for now, you'll have to look in the source).
 
 Also check that the feature `LED_STRIP` was correctly enabled and that it does not conflict with other features, as above.
