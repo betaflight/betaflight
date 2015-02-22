@@ -398,6 +398,7 @@ void init(void)
 #ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
         displayShowFixedPage(PAGE_GPS);
 #else
+        displayResetPageCycling();
         displayEnablePageCycling();
 #endif
     }
