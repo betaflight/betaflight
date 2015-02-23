@@ -109,3 +109,4 @@ void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerResetMotors(void);
 void mixTable(void);
 void writeMotors(void);
+void stopMotors(void);

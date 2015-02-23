@@ -1688,6 +1688,7 @@ void mspProcess(void)
             while (!isSerialTransmitBufferEmpty(candidatePort->port)) {
                 delay(50);
             }
+            stopMotors();
             systemReset();
         }
     }

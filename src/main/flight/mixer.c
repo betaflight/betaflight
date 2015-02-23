@@ -487,6 +487,13 @@ void writeAllMotors(int16_t mc)
     writeMotors();
 }
 
+void stopMotors(void)
+{
+    writeAllMotors(escAndServoConfig->mincommand);
+
+    delay(50); // give the timers and ESCs a chance to react.
+}
+
 #ifndef USE_QUAD_MIXER_ONLY
 static void airplaneMixer(void)
 {

@@ -127,11 +127,20 @@ void SetSysClock(void);
 void SetSysClock(bool overclock);
 #endif
 
+typedef enum {
+    SYSTEM_STATE_INITIALISING   = 0,
+    SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
+    SYSTEM_STATE_SENSORS_READY  = (1 << 1),
+    SYSTEM_STATE_MOTORS_READY   = (1 << 2),
+    SYSTEM_STATE_READY          = (1 << 7)
+} systemState_e;
+
+static uint8_t systemState = SYSTEM_STATE_INITIALISING;
+
 void init(void)
 {
     uint8_t i;
     drv_pwm_config_t pwm_params;
-    bool sensorsOK = false;
 
     printfSupportInit();
 
@@ -139,6 +148,8 @@ void init(void)
 
     ensureEEPROMContainsValidData();
     readEEPROM();
+
+    systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
 #ifdef STM32F303
     // start fpu
@@ -222,6 +233,8 @@ void init(void)
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
+    systemState |= SYSTEM_STATE_MOTORS_READY;
+
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
         .gpioPin = BEEP_PIN,
@@ -300,11 +313,12 @@ void init(void)
     }
 #endif
 
-    sensorsOK = sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, masterConfig.mag_hardware, currentProfile->mag_declination);
-
-    // if gyro was not detected due to whatever reason, we give up now.
-    if (!sensorsOK)
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, masterConfig.mag_hardware, currentProfile->mag_declination)) {
+        // if gyro was not detected due to whatever reason, we give up now.
         failureMode(3);
+    }
+
+    systemState |= SYSTEM_STATE_SENSORS_READY;
 
     LED1_ON;
     LED0_OFF;
@@ -329,7 +343,9 @@ void init(void)
     serialInit(&masterConfig.serialConfig);
 
     failsafe = failsafeInit(&masterConfig.rxConfig);
+
     beepcodeInit(failsafe);
+
     rxInit(&masterConfig.rxConfig, failsafe);
 
 #ifdef GPS
@@ -425,6 +441,8 @@ void init(void)
 #ifdef CJMCU
     LED2_ON;
 #endif
+
+    systemState |= SYSTEM_STATE_READY;
 }
 
 #ifdef SOFTSERIAL_LOOPBACK
@@ -453,6 +471,9 @@ int main(void) {
 void HardFault_Handler(void)
 {
     // fall out of the sky
-    writeAllMotors(masterConfig.escAndServoConfig.mincommand);
+    uint8_t requiredState = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
+    if ((systemState & requiredState) == requiredState) {
+        stopMotors();
+    }
     while (1);
 }
