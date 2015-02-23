@@ -13,7 +13,7 @@ TABS.gps.initialize = function (callback) {
         $('#content').load("./tabs/gps.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, load_html);
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, load_html);
 
     function process_html() {
         // translate to user-selected language
@@ -57,7 +57,14 @@ TABS.gps.initialize = function (callback) {
         }
 
         // enable data pulling
-        GUI.interval_add('gps_pull', get_raw_gps_data, 75, true);
+        GUI.interval_add('gps_pull', function gps_update() {
+            // avoid usage of the GPS commands until a GPS sensor is detected for targets that are compiled without GPS support.
+            if (!have_sensor(CONFIG.activeSensors, 'gps')) {
+                return;
+            }
+            
+            get_raw_gps_data();
+        }, 75, true);
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {

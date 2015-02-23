@@ -163,12 +163,14 @@ TABS.setup.initialize = function (callback) {
                 rssi_e.text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
             });
 
-            MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, function () {
-                gpsFix_e.html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
-                gpsSats_e.text(GPS_DATA.numSat);
-                gpsLat_e.text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
-                gpsLon_e.text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
-            });
+            if (have_sensor(CONFIG.activeSensors, 'gps')) {
+                MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, function () {
+                    gpsFix_e.html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
+                    gpsSats_e.text(GPS_DATA.numSat);
+                    gpsLat_e.text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
+                    gpsLon_e.text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
+                });
+            }
         }
 
         function get_fast_data() {
@@ -269,6 +271,10 @@ TABS.setup.initialize3D = function (compatibility) {
     scene.add(modelWrapper);
 
     this.render3D = function () {
+        if (!model) {
+            return;
+        }
+
         // compute the changes
         model.rotation.x = (SENSOR_DATA.kinematics[1] * -1.0) * 0.017453292519943295;
         modelWrapper.rotation.y = ((SENSOR_DATA.kinematics[2] * -1.0) - self.yaw_fix) * 0.017453292519943295;

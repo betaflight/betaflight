@@ -247,44 +247,67 @@ function sensor_status(sensors_detected) {
     }
 
     // update UI (if necessary)
-    if (sensor_status.previous_sensors_detected != sensors_detected) {
-        var e_sensor_status = $('div#sensor-status');
-
-        if (bit_check(sensors_detected, 0)) { // Gyroscope & accel detected
-            $('.gyro', e_sensor_status).addClass('on');
-            $('.accel', e_sensor_status).addClass('on');
-        } else {
-            $('.gyro', e_sensor_status).removeClass('on');
-            $('.accel', e_sensor_status).removeClass('on');
-        }
-
-        if (bit_check(sensors_detected, 1)) { // Barometer detected
-            $('.baro', e_sensor_status).addClass('on');
-        } else {
-            $('.baro', e_sensor_status).removeClass('on');
-        }
-
-        if (bit_check(sensors_detected, 2)) { // Magnetometer detected
-            $('.mag', e_sensor_status).addClass('on');
-        } else {
-            $('.mag', e_sensor_status).removeClass('on');
-        }
-
-        if (bit_check(sensors_detected, 3)) { // GPS detected
-            $('.gps', e_sensor_status).addClass('on');
-        } else {
-            $('.gps', e_sensor_status).removeClass('on');
-        }
-
-        if (bit_check(sensors_detected, 4)) { // Sonar detected
-            $('.sonar', e_sensor_status).addClass('on');
-        } else {
-            $('.sonar', e_sensor_status).removeClass('on');
-        }
-
-        // set current value
-        sensor_status.previous_sensors_detected = sensors_detected;
+    if (sensor_status.previous_sensors_detected == sensors_detected) {
+        return;
     }
+    
+    // set current value
+    sensor_status.previous_sensors_detected = sensors_detected;
+
+    var e_sensor_status = $('div#sensor-status');
+
+    if (have_sensor(sensors_detected, 'acc')) {
+        $('.accel', e_sensor_status).addClass('on');
+    } else {
+        $('.accel', e_sensor_status).removeClass('on');
+    }
+
+    if (have_sensor(sensors_detected, 'gyro')) {
+        $('.gyro', e_sensor_status).addClass('on');
+    } else {
+        $('.gyro', e_sensor_status).removeClass('on');
+    }
+
+    if (have_sensor(sensors_detected, 'baro')) {
+        $('.baro', e_sensor_status).addClass('on');
+    } else {
+        $('.baro', e_sensor_status).removeClass('on');
+    }
+
+    if (have_sensor(sensors_detected, 'mag')) {
+        $('.mag', e_sensor_status).addClass('on');
+    } else {
+        $('.mag', e_sensor_status).removeClass('on');
+    }
+
+    if (have_sensor(sensors_detected, 'gps')) {
+        $('.gps', e_sensor_status).addClass('on');
+    } else {
+        $('.gps', e_sensor_status).removeClass('on');
+    }
+
+    if (have_sensor(sensors_detected, 'sonar')) {
+        $('.sonar', e_sensor_status).addClass('on');
+    } else {
+        $('.sonar', e_sensor_status).removeClass('on');
+    }
+}
+
+function have_sensor(sensors_detected, sensor_code) {
+    switch(sensor_code) {
+        case 'acc':
+        case 'gyro':
+            return bit_check(sensors_detected, 0);
+        case 'baro':
+            return bit_check(sensors_detected, 1);
+        case 'mag':
+            return bit_check(sensors_detected, 2);
+        case 'gps':
+            return bit_check(sensors_detected, 3);
+        case 'sonar':
+            return bit_check(sensors_detected, 4);
+    }
+    return false;
 }
 
 function highByte(num) {
