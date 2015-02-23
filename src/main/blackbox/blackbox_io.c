@@ -145,12 +145,24 @@ void blackboxWriteUnsignedVB(uint32_t value)
 }
 
 /**
+ * ZigZag encoding maps all values of a signed integer into those of an unsigned integer in such
+ * a way that numbers of small absolute value correspond to small integers in the result.
+ *
+ * (Compared to just casting a signed to an unsigned which creates huge resulting numbers for
+ * small negative integers).
+ */
+static uint32_t zigzagEncode(int32_t value)
+{
+    return (uint32_t)((value << 1) ^ (value >> 31));
+}
+
+/**
  * Write a signed integer to the blackbox serial port using ZigZig and variable byte encoding.
  */
 void blackboxWriteSignedVB(int32_t value)
 {
     //ZigZag encode to make the value always positive
-    blackboxWriteUnsignedVB((uint32_t)((value << 1) ^ (value >> 31)));
+    blackboxWriteUnsignedVB(zigzagEncode(value));
 }
 
 void blackboxWriteS16(int16_t value)
@@ -496,6 +508,9 @@ void blackboxDeviceClose(void)
             if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
+        break;
+        case BLACKBOX_DEVICE_FLASH:
+            // No-op since the flash doesn't have a "close" and there's nobody else to hand control of it to.
         break;
     }
 }
