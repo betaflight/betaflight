@@ -509,9 +509,11 @@ void blackboxDeviceClose(void)
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
         break;
+#ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             // No-op since the flash doesn't have a "close" and there's nobody else to hand control of it to.
         break;
+#endif
     }
 }
 
