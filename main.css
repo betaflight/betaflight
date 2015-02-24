@@ -39,21 +39,33 @@ input[type="number"]::-webkit-inner-spin-button {
     height: calc(100% - 5px);
 }
 
+#content-watermark {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    overflow: hidden;
+    background-image: url("images/light-wide-1.svg");
+    background-repeat: no-repeat;
+    background-position: 50% 0%;
+    background-size: 600px;
+    height: 174px;
+    opacity: 0.25;
+}
+
 #watermark {
     position: absolute;
-    text-align: center;
-    top: 35px;
-    left: 0;
-    bottom: 0;
+    top: 30px;
+    height: 67px;
     right: 0;
     z-index: -1;
     overflow: hidden;
-
-    font-family: monospace;
-    color: grey;
-    font-size: 50px;
-    font-variant: small-caps;
-    letter-spacing: 0.5em;
+    background-image: url("images/light-wide-1.svg");
+    background-repeat: no-repeat;
+    width: 340px;
+    background-position: 0px 0px;
+    background-size: 85%;
 }
 
 #port-picker {
