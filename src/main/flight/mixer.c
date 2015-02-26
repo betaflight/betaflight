@@ -664,9 +664,7 @@ void mixTable(void)
 
     if (ARMING_FLAG(ARMED)) {
 
-        int16_t maxMotor;
-
-        maxMotor = 0;
+        int16_t maxMotor = motor[0];
         for (i = 1; i < motorCount; i++) {
             if (motor[i] > maxMotor) {
                 maxMotor = motor[i];
