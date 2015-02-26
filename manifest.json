@@ -24,6 +24,7 @@
         "https://*.githubusercontent.com/",
         "http://*.baseflight.net/",
         "http://*.cleanflight.com/",
+        "https://*.amazonaws.com/",
         "serial",
         "usb",
         "storage",
