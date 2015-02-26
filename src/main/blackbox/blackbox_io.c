@@ -4,12 +4,13 @@
 
 #include "blackbox_io.h"
 
-#include "platform.h"
 #include "version.h"
+#include "build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/encoding.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
@@ -150,7 +151,7 @@ void blackboxWriteUnsignedVB(uint32_t value)
 void blackboxWriteSignedVB(int32_t value)
 {
     //ZigZag encode to make the value always positive
-    blackboxWriteUnsignedVB((uint32_t)((value << 1) ^ (value >> 31)));
+    blackboxWriteUnsignedVB(zigzagEncode(value));
 }
 
 void blackboxWriteS16(int16_t value)
@@ -497,6 +498,11 @@ void blackboxDeviceClose(void)
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
         break;
+#ifdef USE_FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+            // No-op since the flash doesn't have a "close" and there's nobody else to hand control of it to.
+        break;
+#endif
     }
 }
 

@@ -199,6 +199,7 @@ COMMON_SRC	 = build_config.c \
 		   common/maths.c \
 		   common/printf.c \
 		   common/typeconversion.c \
+		   common/encoding.c \
 		   main.c \
 		   mw.c \
 		   flight/altitudehold.c \
