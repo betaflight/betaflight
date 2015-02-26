@@ -65,7 +65,11 @@ typedef struct mixer_t {
 
 typedef struct mixerConfig_s {
     int8_t yaw_direction;
+#ifdef USE_SERVOS
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
+    int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
+    int8_t servo_lowpass_enable;            // enable/disable lowpass filter
+#endif
 } mixerConfig_t;
 
 typedef struct flight3DConfig_s {
@@ -82,6 +86,7 @@ typedef struct airplaneConfig_t {
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
+#ifdef USE_SERVOS
 typedef struct servoParam_t {
     int16_t min;                            // servo min
     int16_t max;                            // servo max
@@ -90,14 +95,18 @@ typedef struct servoParam_t {
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 
+extern int16_t servo[MAX_SUPPORTED_SERVOS];
+bool isMixerUsingServos(void);
+void writeServos(void);
+void filterServos(void);
+#endif
+
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
-bool isMixerUsingServos(void);
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerResetMotors(void);
 void mixTable(void);
-void writeServos(void);
 void writeMotors(void);
+void stopMotors(void);

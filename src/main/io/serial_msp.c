@@ -50,6 +50,7 @@
 #include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/flashfs.h"
 
 #include "telemetry/telemetry.h"
 
@@ -231,6 +232,10 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 // DEPRECATED - Use MSP_BUILD_INFO instead
 #define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
+
+#define MSP_DATAFLASH_SUMMARY           70 //out message - get description of dataflash chip
+#define MSP_DATAFLASH_READ              71 //out message - get content of dataflash chip
+#define MSP_DATAFLASH_ERASE             72 //in message - erase dataflash chip
 
 //
 // Multwii original MSP commands
@@ -435,24 +440,24 @@ static uint32_t read32(void)
     return t;
 }
 
-static void headSerialResponse(uint8_t err, uint8_t s)
+static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
     currentPort->checksum = 0;               // start calculating a new checksum
-    serialize8(s);
+    serialize8(responseBodySize);
     serialize8(currentPort->cmdMSP);
 }
 
-static void headSerialReply(uint8_t s)
+static void headSerialReply(uint8_t responseBodySize)
 {
-    headSerialResponse(0, s);
+    headSerialResponse(0, responseBodySize);
 }
 
-static void headSerialError(uint8_t s)
+static void headSerialError(uint8_t responseBodySize)
 {
-    headSerialResponse(1, s);
+    headSerialResponse(1, responseBodySize);
 }
 
 static void tailSerialReply(void)
@@ -531,6 +536,46 @@ reset:
         goto reset;
     }
 }
+
+static void serializeDataflashSummaryReply(void)
+{
+    headSerialReply(1 + 3 * 4);
+#ifdef USE_FLASHFS
+    const flashGeometry_t *geometry = flashfsGetGeometry();
+    serialize8(flashfsIsReady() ? 1 : 0);
+    serialize32(geometry->sectors);
+    serialize32(geometry->totalSize);
+    serialize32(flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
+#else
+    serialize8(0);
+    serialize32(0);
+    serialize32(0);
+    serialize32(0);
+#endif
+}
+
+#ifdef USE_FLASHFS
+static void serializeDataflashReadReply(uint32_t address, uint8_t size)
+{
+    uint8_t buffer[128];
+    int bytesRead;
+
+    if (size > sizeof(buffer)) {
+        size = sizeof(buffer);
+    }
+
+    headSerialReply(4 + size);
+
+    serialize32(address);
+
+    // bytesRead will be lower than that requested if we reach end of volume
+    bytesRead = flashfsReadAbs(address, buffer, size);
+
+    for (int i = 0; i < bytesRead; i++) {
+        serialize8(buffer[i]);
+    }
+}
+#endif
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, mspPortUsage_e usage)
 {
@@ -783,6 +828,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         for (i = 0; i < 3; i++)
             serialize16(magADC[i]);
         break;
+#ifdef USE_SERVOS
     case MSP_SERVO:
         s_struct((uint8_t *)&servo, 16);
         break;
@@ -801,6 +847,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(currentProfile->servoConf[i].forwardFromChannel);
         }
         break;
+#endif
     case MSP_MOTOR:
         s_struct((uint8_t *)motor, 16);
         break;
@@ -1136,6 +1183,21 @@ static bool processOutCommand(uint8_t cmdMSP)
         }
         break;
 #endif
+
+    case MSP_DATAFLASH_SUMMARY:
+        serializeDataflashSummaryReply();
+        break;
+
+#ifdef USE_FLASHFS
+    case MSP_DATAFLASH_READ:
+        {
+            uint32_t readAddress = read32();
+
+            serializeDataflashReadReply(readAddress, 128);
+        }
+        break;
+#endif
+
     case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
@@ -1304,6 +1366,7 @@ static bool processInCommand(void)
             motor_disarmed[i] = read16();
         break;
     case MSP_SET_SERVO_CONF:
+#ifdef USE_SERVOS
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             currentProfile->servoConf[i].min = read16();
             currentProfile->servoConf[i].max = read16();
@@ -1317,11 +1380,14 @@ static bool processInCommand(void)
             }
             currentProfile->servoConf[i].rate = read8();
         }
+#endif
         break;
     case MSP_SET_CHANNEL_FORWARDING:
+#ifdef USE_SERVOS
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             currentProfile->servoConf[i].forwardFromChannel = read8();
         }
+#endif
         break;
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
@@ -1345,6 +1411,13 @@ static bool processInCommand(void)
         writeEEPROM();
         readEEPROM();
         break;
+
+#ifdef USE_FLASHFS
+    case MSP_DATAFLASH_ERASE:
+        flashfsEraseCompletely();
+        break;
+#endif
+
 #ifdef GPS
     case MSP_SET_RAW_GPS:
         if (read8()) {
@@ -1609,6 +1682,7 @@ void mspProcess(void)
             while (!isSerialTransmitBufferEmpty(candidatePort->port)) {
                 delay(50);
             }
+            stopMotors();
             systemReset();
         }
     }

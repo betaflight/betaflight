@@ -46,10 +46,12 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
+#include "drivers/flash_m25p16.h"
 
 #include "rx/rx.h"
 
 #include "io/serial.h"
+#include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
@@ -127,11 +129,20 @@ void SetSysClock(void);
 void SetSysClock(bool overclock);
 #endif
 
+typedef enum {
+    SYSTEM_STATE_INITIALISING   = 0,
+    SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
+    SYSTEM_STATE_SENSORS_READY  = (1 << 1),
+    SYSTEM_STATE_MOTORS_READY   = (1 << 2),
+    SYSTEM_STATE_READY          = (1 << 7)
+} systemState_e;
+
+static uint8_t systemState = SYSTEM_STATE_INITIALISING;
+
 void init(void)
 {
     uint8_t i;
     drv_pwm_config_t pwm_params;
-    bool sensorsOK = false;
 
     printfSupportInit();
 
@@ -139,6 +150,8 @@ void init(void)
 
     ensureEEPROMContainsValidData();
     readEEPROM();
+
+    systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
 #ifdef STM32F303
     // start fpu
@@ -199,24 +212,30 @@ void init(void)
         && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
-    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
+
+#ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.extraServos = currentProfile->gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
-    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
+    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
+#endif
+
+    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
+    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = PULSE_1MS; // standard PWM for brushless ESC (default, overridden below)
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
-    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
 
     pwmRxInit(masterConfig.inputFilteringMode);
 
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
+
+    systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
@@ -296,11 +315,12 @@ void init(void)
     }
 #endif
 
-    sensorsOK = sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, masterConfig.mag_hardware, currentProfile->mag_declination);
-
-    // if gyro was not detected due to whatever reason, we give up now.
-    if (!sensorsOK)
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, masterConfig.mag_hardware, currentProfile->mag_declination)) {
+        // if gyro was not detected due to whatever reason, we give up now.
         failureMode(3);
+    }
+
+    systemState |= SYSTEM_STATE_SENSORS_READY;
 
     LED1_ON;
     LED0_OFF;
@@ -328,7 +348,9 @@ void init(void)
     cliInit(&masterConfig.serialConfig);
 
     failsafe = failsafeInit(&masterConfig.rxConfig);
+
     beepcodeInit(failsafe);
+
     rxInit(&masterConfig.rxConfig, failsafe);
 
 #ifdef GPS
@@ -362,6 +384,18 @@ void init(void)
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
     }
+#endif
+
+#ifdef USE_FLASHFS
+#ifdef NAZE
+    if (hardwareRevision == NAZE32_REV5) {
+        m25p16_init();
+    }
+#endif
+#ifdef SPRACINGF3
+    m25p16_init();
+#endif
+    flashfsInit();
 #endif
 
 #ifdef BLACKBOX
@@ -404,6 +438,7 @@ void init(void)
 #ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
         displayShowFixedPage(PAGE_GPS);
 #else
+        displayResetPageCycling();
         displayEnablePageCycling();
 #endif
     }
@@ -412,6 +447,8 @@ void init(void)
 #ifdef CJMCU
     LED2_ON;
 #endif
+
+    systemState |= SYSTEM_STATE_READY;
 }
 
 #ifdef SOFTSERIAL_LOOPBACK
@@ -440,6 +477,9 @@ int main(void) {
 void HardFault_Handler(void)
 {
     // fall out of the sky
-    writeAllMotors(masterConfig.escAndServoConfig.mincommand);
+    uint8_t requiredState = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
+    if ((systemState & requiredState) == requiredState) {
+        stopMotors();
+    }
     while (1);
 }

@@ -17,4 +17,23 @@
 
 #pragma once
 
-bool l3gd20Detect(gyro_t *gyro, uint16_t lpf);
+#include <stdint.h>
+#include "flash.h"
+
+bool m25p16_init();
+
+void m25p16_eraseSector(uint32_t address);
+void m25p16_eraseCompletely();
+
+void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length);
+
+void m25p16_pageProgramBegin(uint32_t address);
+void m25p16_pageProgramContinue(const uint8_t *data, int length);
+void m25p16_pageProgramFinish();
+
+int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length);
+
+bool m25p16_isReady();
+bool m25p16_waitForReady(uint32_t timeoutMillis);
+
+const flashGeometry_t* m25p16_getGeometry();

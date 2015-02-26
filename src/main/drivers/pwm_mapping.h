@@ -49,14 +49,16 @@ typedef struct drv_pwm_config_t {
     bool useOneshot;
     bool useSoftSerial;
     bool useLEDStrip;
+#ifdef USE_SERVOS
     bool useServos;
     bool extraServos;    // configure additional 4 channels in PPM mode as servos, not motors
+    uint16_t servoPwmRate;
+    uint16_t servoCenterPulse;
+#endif
     bool airplane;       // fixed wing hardware config, lots of servos etc
     uint16_t motorPwmRate;
-    uint16_t servoPwmRate;
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
-    uint16_t servoCenterPulse;
 } drv_pwm_config_t;
 
 

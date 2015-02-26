@@ -47,6 +47,8 @@
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
 
+#include "io/display.h"
+
 #include "flight/pid.h"
 #include "flight/navigation.h"
 
@@ -247,6 +249,17 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         rcDelayCommand = 0; // allow autorepetition
         return;
     }
+
+#ifdef DISPLAY
+    if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_LO) {
+        displayDisablePageCycling();
+    }
+
+    if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_HI) {
+        displayEnablePageCycling();
+    }
+#endif
+
 }
 
 bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range) {
@@ -580,3 +593,9 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
         }
     }
 }
+
+void resetAdjustmentStates(void)
+{
+    memset(adjustmentStates, 0, sizeof(adjustmentStates));
+}
+

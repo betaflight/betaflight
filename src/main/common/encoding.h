@@ -17,4 +17,7 @@
 
 #pragma once
 
-bool l3gd20Detect(gyro_t *gyro, uint16_t lpf);
+#include <stdint.h>
+
+uint32_t castFloatBytesToInt(float f);
+uint32_t zigzagEncode(int32_t value);

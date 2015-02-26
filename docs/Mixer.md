@@ -45,14 +45,12 @@ You can also use the Command Line Interface (CLI) to set the mixer type:
 
 A low-pass filter can be enabled for the servos.  It may be useful for avoiding structural modes in the airframe, for example.  Currently it can only be configured via the CLI:
 
-1. Use `set servo_lowpass_freq_idx = nn` to select the cutoff frequency.  Valid values range from 0 to 99.
+1. Use `set servo_lowpass_freq = nnn` to select the cutoff frequency.  Valid values range from 10 to 400.  This is a fraction of the loop frequency in 1/1000ths. For example, `40` means `0.040`.
 2. Use `set servo_lowpass_enable = 1` to enable filtering.
 
-The actual cutoff frequency is determined by the value of the `looptime` variable and the selected index.  
-The formula is:
-`Frequency = 1000000 * (servo_lowpass_freq_idx + 1)*0.0025 / looptime )`
+The cutoff frequency can be determined by the following formula:
+`Frequency = 1000 * servo_lowpass_freq / looptime`
 
-
-For example, if `servo_lowpass_freq_idx` is set to 40, and looptime is set to the default of 3500 us (0.0035 s), the cutoff frequency will be 29.3 Hz.
+For example, if `servo_lowpass_freq` is set to 40, and looptime is set to the default of 3500 us, the cutoff frequency will be 11.43 Hz.
 
 

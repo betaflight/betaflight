@@ -36,8 +36,16 @@
 
 #define BEEPER_INVERTED
 
+#define USE_SPI
+#define USE_SPI_DEVICE_1
+
 #define GYRO
 #define USE_GYRO_L3GD20
+
+#define L3GD20_SPI                      SPI1
+#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
+#define L3GD20_CS_GPIO                  GPIOE
+#define L3GD20_CS_PIN                   GPIO_Pin_3
 
 #define GYRO_L3GD20_ALIGN CW90_DEG
 
@@ -88,3 +96,4 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
+#define USE_SERVOS

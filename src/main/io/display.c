@@ -578,7 +578,12 @@ void displaySetNextPageChangeAt(uint32_t futureMicros)
 void displayEnablePageCycling(void)
 {
     pageState.pageFlags |= PAGE_STATE_FLAG_CYCLE_ENABLED;
+}
+
+void displayResetPageCycling(void)
+{
     pageState.cycleIndex = CYCLE_PAGE_ID_COUNT - 1; // start at first page
+
 }
 
 void displayDisablePageCycling(void)

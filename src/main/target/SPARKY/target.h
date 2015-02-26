@@ -90,6 +90,7 @@
 #define SERIAL_RX
 #define GPS
 #define DISPLAY
+#define USE_SERVOS
 
 #define LED_STRIP
 #if 1

@@ -52,6 +52,7 @@
 #include "io/rc_controls.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/flashfs.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -121,6 +122,13 @@ static void cliColor(char *cmdline);
 static void cliMixer(char *cmdline);
 #endif
 
+#ifdef USE_FLASHFS
+static void cliFlashInfo(char *cmdline);
+static void cliFlashErase(char *cmdline);
+static void cliFlashWrite(char *cmdline);
+static void cliFlashRead(char *cmdline);
+#endif
+
 // signal that we're in cli mode
 uint8_t cliMode = 0;
 
@@ -155,13 +163,11 @@ static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
 };
 
-// FIXME the next time the EEPROM is bumped change the order of acc and gyro names so that "None" is second.
-
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 static const char * const sensorHardwareNames[4][11] = {
     { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE", NULL },
-    { "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", "None", NULL },
+    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", NULL },
     { "", "None", "BMP085", "MS5611", NULL },
     { "", "None", "HMC5883", "AK8975", NULL }
 };
@@ -185,6 +191,12 @@ const clicmd_t cmdTable[] = {
     { "dump", "dump configuration", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
+#ifdef USE_FLASHFS
+    { "flash_erase", "erase flash chip", cliFlashErase },
+    { "flash_info", "get flash chip details", cliFlashInfo },
+    { "flash_read", "read text from the given address", cliFlashRead },
+    { "flash_write", "write text to the given address", cliFlashWrite },
+#endif
     { "get", "get variable value", cliGet },
 #ifdef GPS
     { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
@@ -201,7 +213,7 @@ const clicmd_t cmdTable[] = {
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
-#ifndef CJMCU
+#ifdef USE_SERVOS
     { "servo", "servo config", cliServo },
 #endif
     { "set", "name=value or blank or * for list", cliSet },
@@ -355,8 +367,11 @@ const clivalue_t valueTable[] = {
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, -1, 1 },
     { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.yaw_direction, -1, 1 },
+#ifdef USE_SERVOS
     { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.tri_unarmed_servo, 0, 1 },
-
+    { "servo_lowpass_freq",         VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.servo_lowpass_freq, 10, 400},
+    { "servo_lowpass_enable",       VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.servo_lowpass_enable, 0, 1 },
+#endif
     { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE , &masterConfig.profile[0].defaultRateProfileIndex, 0, MAX_CONTROL_RATE_PROFILE_COUNT - 1 },
     { "rc_rate",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcRate8, 0, 250 },
     { "rc_expo",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcExpo8, 0, 100 },
@@ -373,7 +388,9 @@ const clivalue_t valueTable[] = {
     { "failsafe_min_usec",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_min_usec, 100, PWM_RANGE_MAX },
     { "failsafe_max_usec",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_max_usec, 100, PWM_RANGE_MAX + (PWM_RANGE_MAX - PWM_RANGE_MIN) },
 
+#ifdef USE_SERVOS
     { "gimbal_flags",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gimbalConfig.gimbal_flags, 0, 255},
+#endif
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, 0, ACC_NONE },
     { "acc_lpf_factor",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].acc_lpf_factor, 0, 250 },
@@ -433,6 +450,7 @@ const clivalue_t valueTable[] = {
 #ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, 1, 32 },
     { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, 1, 32 },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_device, 0, 1 },
 #endif
 };
 
@@ -752,7 +770,7 @@ static void cliColor(char *cmdline)
 
 static void cliServo(char *cmdline)
 {
-#ifdef CJMCU
+#ifndef USE_SERVOS
     UNUSED(cmdline);
 #else
     enum { SERVO_ARGUMENT_COUNT = 6 };
@@ -821,6 +839,88 @@ static void cliServo(char *cmdline)
     }
 #endif
 }
+
+#ifdef USE_FLASHFS
+
+static void cliFlashInfo(char *cmdline)
+{
+    const flashGeometry_t *layout = flashfsGetGeometry();
+
+    UNUSED(cmdline);
+
+    printf("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u, usedSize=%u\r\n",
+            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
+}
+
+static void cliFlashErase(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    printf("Erasing, please wait...\r\n");
+    flashfsEraseCompletely();
+
+    while (!flashfsIsReady()) {
+        delay(100);
+    }
+
+    printf("Done.\r\n");
+}
+
+static void cliFlashWrite(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+    char *text = strchr(cmdline, ' ');
+
+    if (!text) {
+        printf("Missing text to write.\r\n");
+    } else {
+        flashfsSeekAbs(address);
+        flashfsWrite((uint8_t*)text, strlen(text), true);
+        flashfsFlushSync();
+
+        printf("Wrote %u bytes at %u.\r\n", strlen(text), address);
+    }
+}
+
+static void cliFlashRead(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+    uint32_t length;
+    int i;
+
+    uint8_t buffer[32];
+
+    char *nextArg = strchr(cmdline, ' ');
+
+    if (!nextArg) {
+        printf("Missing length argument.\r\n");
+    } else {
+        length = atoi(nextArg);
+
+        printf("Reading %u bytes at %u:\r\n", length, address);
+
+        while (length > 0) {
+            int bytesRead;
+
+            bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
+
+            for (i = 0; i < bytesRead; i++) {
+                cliWrite(buffer[i]);
+            }
+
+            length -= bytesRead;
+            address += bytesRead;
+
+            if (bytesRead == 0) {
+                //Assume we reached the end of the volume or something fatal happened
+                break;
+            }
+        }
+        printf("\r\n");
+    }
+}
+
+#endif
 
 static void dumpValues(uint16_t mask)
 {
@@ -1238,6 +1338,7 @@ static void cliRateProfile(char *cmdline)
 static void cliReboot(void) {
     cliPrint("\r\nRebooting");
     waitForSerialPortToFinishTransmitting(cliPort);
+    stopMotors();
     systemReset();
 }
 

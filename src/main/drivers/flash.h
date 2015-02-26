@@ -17,4 +17,15 @@
 
 #pragma once
 
-bool l3gd20Detect(gyro_t *gyro, uint16_t lpf);
+#include <stdint.h>
+
+typedef struct flashGeometry_t {
+    uint8_t sectors;
+
+    uint16_t pagesPerSector;
+    uint16_t pageSize;
+
+    uint32_t sectorSize;
+
+    uint32_t totalSize;
+} flashGeometry_t;

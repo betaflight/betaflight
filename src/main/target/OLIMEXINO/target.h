@@ -111,3 +111,4 @@
 #define SERIAL_RX
 #define AUTOTUNE
 #define BLACKBOX
+#define USE_SERVOS

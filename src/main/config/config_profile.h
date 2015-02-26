@@ -47,17 +47,18 @@ typedef struct profile_s {
     uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
     uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
 
+#ifdef USE_SERVOS
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
+    // gimbal-related configuration
+    gimbalConfig_t gimbalConfig;
+#endif
 
     // Failsafe related configuration
     failsafeConfig_t failsafeConfig;
 
     // mixer-related configuration
     mixerConfig_t mixerConfig;
-
-    // gimbal-related configuration
-    gimbalConfig_t gimbalConfig;
 
 #ifdef GPS
     gpsProfile_t gpsProfile;

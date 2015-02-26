@@ -74,9 +74,17 @@
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
 void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
-void mixerUseConfigs(servoParam_t *servoConfToUse, flight3DConfig_t *flight3DConfigToUse,
-        escAndServoConfig_t *escAndServoConfigToUse, mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse, rxConfig_t *rxConfig, gimbalConfig_t *gimbalConfigToUse);
+void mixerUseConfigs(
+#ifdef USE_SERVOS
+        servoParam_t *servoConfToUse,
+        gimbalConfig_t *gimbalConfigToUse,
+#endif
+        flight3DConfig_t *flight3DConfigToUse,
+        escAndServoConfig_t *escAndServoConfigToUse,
+        mixerConfig_t *mixerConfigToUse,
+        airplaneConfig_t *airplaneConfigToUse,
+        rxConfig_t *rxConfig
+);
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800
@@ -111,7 +119,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 92;
+static const uint8_t EEPROM_CONF_VERSION = 93;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -310,7 +318,10 @@ static void setControlRateProfile(uint8_t profileIndex)
 static void resetConf(void)
 {
     int i;
-    int8_t servoRates[8] = { 30, 30, 100, 100, 100, 100, 100, 100 };
+#ifdef USE_SERVOS
+    int8_t servoRates[MAX_SUPPORTED_SERVOS] = { 30, 30, 100, 100, 100, 100, 100, 100 };
+    ;
+#endif
 
     // Clear all configuration
     memset(&masterConfig, 0, sizeof(master_t));
@@ -425,8 +436,9 @@ static void resetConf(void)
     currentProfile->failsafeConfig.failsafe_min_usec = 985;          // any of first 4 channels below this value will trigger failsafe
     currentProfile->failsafeConfig.failsafe_max_usec = 2115;         // any of first 4 channels above this value will trigger failsafe
 
+#ifdef USE_SERVOS
     // servos
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         currentProfile->servoConf[i].min = DEFAULT_SERVO_MIN;
         currentProfile->servoConf[i].max = DEFAULT_SERVO_MAX;
         currentProfile->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
@@ -436,9 +448,12 @@ static void resetConf(void)
 
     currentProfile->mixerConfig.yaw_direction = 1;
     currentProfile->mixerConfig.tri_unarmed_servo = 1;
+    currentProfile->mixerConfig.servo_lowpass_freq = 400;
+    currentProfile->mixerConfig.servo_lowpass_enable = 0;
 
     // gimbal
     currentProfile->gimbalConfig.gimbal_flags = GIMBAL_NORMAL;
+#endif
 
 #ifdef GPS
     resetGpsProfile(&currentProfile->gpsProfile);
@@ -454,6 +469,7 @@ static void resetConf(void)
 #endif
 
 #ifdef BLACKBOX
+    masterConfig.blackbox_device = 0;
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 #endif
@@ -595,6 +611,8 @@ void activateConfig(void)
 
     activateControlRateConfig();
 
+    resetAdjustmentStates();
+
     useRcControlsConfig(
         currentProfile->modeActivationConditions,
         &masterConfig.escAndServoConfig,
@@ -618,13 +636,15 @@ void activateConfig(void)
     setAccelerationTrims(&masterConfig.accZero);
 
     mixerUseConfigs(
+#ifdef USE_SERVOS
         currentProfile->servoConf,
+        &currentProfile->gimbalConfig,
+#endif
         &masterConfig.flight3DConfig,
         &masterConfig.escAndServoConfig,
         &currentProfile->mixerConfig,
         &masterConfig.airplaneConfig,
-        &masterConfig.rxConfig,
-        &currentProfile->gimbalConfig
+        &masterConfig.rxConfig
     );
 
     imuRuntimeConfig.gyro_cmpf_factor = masterConfig.gyro_cmpf_factor;
