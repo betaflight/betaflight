@@ -548,7 +548,7 @@ var MSP = {
                     identifier += String.fromCharCode(data.getUint8(offset));
                 }
                 CONFIG.boardIdentifier = identifier;
-                CONFIG.boardVersion = data.getUint16(offset);
+                CONFIG.boardVersion = data.getUint16(offset, 1);
                 offset+=2;
                 break;
 
