@@ -271,7 +271,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #tabs li {
     float: left;
-    margin-right: 5px;
+    margin-right: 4px;
 
     border: 1px solid #848484;
     border-bottom: 0;
@@ -282,9 +282,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
     height: 15px;
 
-    padding: 5px;
-    padding-left: 6px;
-    padding-right: 6px;
+    padding: 5px 4px;
 
     background-color: #d0d0d0;
 }
