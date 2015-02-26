@@ -620,6 +620,8 @@ void activateConfig(void)
 
     activateControlRateConfig();
 
+    resetAdjustmentStates();
+
     useRcControlsConfig(
         currentProfile->modeActivationConditions,
         &masterConfig.escAndServoConfig,
