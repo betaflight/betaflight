@@ -41,7 +41,7 @@ TABS.setup.initialize = function (callback) {
         if (CONFIG.apiVersion < CONFIGURATOR.backupRestoreMinApiVersionAccepted) {
             $('#content .backup').addClass('disabled');
             $('#content .restore').addClass('disabled');
-            
+
             GUI.log(chrome.i18n.getMessage('initialSetupBackupAndRestoreApiVersion', [CONFIG.apiVersion, CONFIGURATOR.backupRestoreMinApiVersionAccepted]));
         }
         // initialize 3D
@@ -54,6 +54,8 @@ TABS.setup.initialize = function (callback) {
         if (!bit_check(CONFIG.activeSensors, 2)) {
             $('a.calibrateMag').addClass('disabled');
         }
+
+        self.initializeInstruments();
 
         // UI Hooks
         $('a.calibrateAccel').click(function () {
@@ -153,7 +155,7 @@ TABS.setup.initialize = function (callback) {
 
         function get_slow_data() {
             MSP.send_message(MSP_codes.MSP_STATUS);
-            
+
             MSP.send_message(MSP_codes.MSP_ANALOG, false, false, function () {
                 bat_voltage_e.text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
                 bat_mah_drawn_e.text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.mAhdrawn]));
@@ -161,18 +163,21 @@ TABS.setup.initialize = function (callback) {
                 rssi_e.text(chrome.i18n.getMessage('initialSetupRSSIValue', [((ANALOG.rssi / 1023) * 100).toFixed(0)]));
             });
 
-            MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, function () {
-                gpsFix_e.html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
-                gpsSats_e.text(GPS_DATA.numSat);
-                gpsLat_e.text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
-                gpsLon_e.text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
-            });
+            if (have_sensor(CONFIG.activeSensors, 'gps')) {
+                MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, function () {
+                    gpsFix_e.html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
+                    gpsSats_e.text(GPS_DATA.numSat);
+                    gpsLat_e.text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
+                    gpsLon_e.text((GPS_DATA.lon / 10000000).toFixed(4) + ' deg');
+                });
+            }
         }
 
         function get_fast_data() {
             MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, function () {
                 heading_e.text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
                 self.render3D();
+                self.updateInstruments();
             });
         }
 
@@ -181,6 +186,18 @@ TABS.setup.initialize = function (callback) {
 
         if (callback) callback();
     }
+};
+
+TABS.setup.initializeInstruments = function() {
+    var options = {size:90, showBox : false, img_directory: 'images/flightindicators/'};
+    var attitude = $.flightIndicator('#attitude', 'attitude', options);
+    var heading = $.flightIndicator('#heading', 'heading', options);
+
+    this.updateInstruments = function() {
+        attitude.setRoll(SENSOR_DATA.kinematics[0]);
+        attitude.setPitch(SENSOR_DATA.kinematics[1]);
+        heading.setHeading(SENSOR_DATA.kinematics[2]);
+    };
 };
 
 TABS.setup.initialize3D = function (compatibility) {
@@ -199,7 +216,7 @@ TABS.setup.initialize3D = function (compatibility) {
         renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
         useWebGlRenderer = true;
     } else {
-    
+
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
     }
 
@@ -212,7 +229,7 @@ TABS.setup.initialize3D = function (compatibility) {
     } else {
         model_file = 'fallback'
     }
-    
+
     // Temporary workaround for 'custom' model until akfreak's custom model is merged.
     var useLegacyCustomModel = false;
     if (model_file == 'custom') {
@@ -254,6 +271,10 @@ TABS.setup.initialize3D = function (compatibility) {
     scene.add(modelWrapper);
 
     this.render3D = function () {
+        if (!model) {
+            return;
+        }
+
         // compute the changes
         model.rotation.x = (SENSOR_DATA.kinematics[1] * -1.0) * 0.017453292519943295;
         modelWrapper.rotation.y = ((SENSOR_DATA.kinematics[2] * -1.0) - self.yaw_fix) * 0.017453292519943295;

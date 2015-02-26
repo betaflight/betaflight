@@ -22,6 +22,9 @@ var MSP_codes = {
     MSP_SONAR:                  58,
     MSP_PID_CONTROLLER:         59,
     MSP_SET_PID_CONTROLLER:     60,
+    MSP_DATAFLASH_SUMMARY:      70,
+    MSP_DATAFLASH_READ:         71,
+    MSP_DATAFLASH_ERASE:        72,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -671,8 +674,26 @@ var MSP = {
             case MSP_codes.MSP_SET_LED_STRIP_CONFIG:
                 console.log('Led strip config saved');
                 break;
-
-
+            case MSP_codes.MSP_DATAFLASH_SUMMARY:
+                if (data.byteLength >= 13) {
+                    DATAFLASH.ready = (data.getUint8(0) & 1) != 0;
+                    DATAFLASH.sectors = data.getUint32(1, 1);
+                    DATAFLASH.totalSize = data.getUint32(5, 1);
+                    DATAFLASH.usedSize = data.getUint32(9, 1);
+                } else {
+                    // Firmware version too old to support MSP_DATAFLASH_SUMMARY
+                    DATAFLASH.ready = false;
+                    DATAFLASH.sectors = 0;
+                    DATAFLASH.totalSize = 0;
+                    DATAFLASH.usedSize = 0;
+                }
+                break;
+            case MSP_codes.MSP_DATAFLASH_READ:
+                // No-op, let callback handle it
+                break;
+            case MSP_codes.MSP_DATAFLASH_ERASE:
+                console.log("Data flash erase begun...");
+                break;
             case MSP_codes.MSP_SET_MODE_RANGE:
                 console.log('Mode range saved');
                 break;
@@ -798,6 +819,9 @@ var MSP = {
     }
 };
 
+/**
+ * Encode the request body for the MSP request with the given code and return it as an array of bytes.
+ */
 MSP.crunch = function (code) {
     var buffer = [];
 
@@ -959,6 +983,27 @@ MSP.crunch = function (code) {
     return buffer;
 };
 
+/**
+ * Send a request to read a block of data from the dataflash at the given address and pass that address and a dataview
+ * of the returned data to the given callback (or null for the data if an error occured).
+ */
+MSP.dataflashRead = function(address, onDataCallback) {
+    MSP.send_message(MSP_codes.MSP_DATAFLASH_READ, [address & 0xFF, (address >> 8) & 0xFF, (address >> 16) & 0xFF, (address >> 24) & 0xFF], 
+            false, function(response) {
+        var chunkAddress = response.data.getUint32(0, 1);
+        
+        // Verify that the address of the memory returned matches what the caller asked for
+        if (chunkAddress == address) {
+            /* Strip that address off the front of the reply and deliver it separately so the caller doesn't have to
+             * figure out the reply format:
+             */
+            onDataCallback(address, new DataView(response.data.buffer, response.data.byteOffset + 4, response.data.buffer.byteLength - 4));
+        } else {
+            // Report error
+            onDataCallback(address, null);
+        }
+    });
+} ;
 
 MSP.sendModeRanges = function(onCompleteCallback) {
     var nextFunction = send_next_mode_range; 

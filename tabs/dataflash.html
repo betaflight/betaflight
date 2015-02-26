@@ -1,0 +1,67 @@
+<div id="content-watermark"></div>
+<div class="tab-dataflash">
+    <div class="require-dataflash">
+        <div class="note" i18n="dataflashNote">
+        </div>
+        
+        <dialog class="dataflash-confirm-erase">
+            <h3 i18n="dataflashConfirmEraseTitle"></h3>
+            <div class="dataflash-confirm-erase-note" i18n="dataflashConfirmEraseNote">
+            </div>
+            
+            <div class="dataflash-erase-progress">
+                <div class="data-loading">
+                    <p>Erase in progress, please wait...</p>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <a href="#" class="erase-flash-cancel" i18n="dataflashButtonEraseCancel"></a>
+                <a href="#" class="erase-flash-confirm" i18n="dataflashButtonEraseConfirm"></a>
+            </div>
+        </dialog>
+        
+        <dialog class="dataflash-saving">
+            <h3 i18n="dataflashSavingTitle"></h3>
+            <div class="dataflash-saving-before">
+                <div i18n="dataflashSavingNote">
+                </div>
+                
+                <progress value="0" min="0" max="100"></progress>
+                
+                <div class="buttons">
+                    <a href="#" class="save-flash-cancel" i18n="dataflashButtonSaveCancel"></a>
+                </div>
+            </div>
+            <div class="dataflash-saving-after">
+                <div i18n="dataflashSavingNoteAfter">
+                </div>
+                
+                <div class="buttons">
+                    <a href="#" class="save-flash-dismiss" i18n="dataflashButtonSaveDismiss"></a>
+                </div>
+            </div>
+        </dialog>
+    
+        <h3>Dataflash contents</h3>
+        <ul class="dataflash-contents">
+            <li class="dataflash-used">
+                <div class="legend">
+                    Used space
+                </div>
+            </li>
+            <li class="dataflash-free">
+                <div class="legend">
+                    Free space
+                </div>
+            </li>
+        </ul>
+        
+        <div class="buttons">
+            <a href="#" class="erase-flash" i18n="dataflashButtonErase"></a>
+            <a href="#" class="save-flash" i18n="dataflashButtonSaveFile"></a>
+        </div>
+    </div>
+    <div class="note require-no-dataflash" i18n="dataflashNotSupportedNote">
+    </div>
+</div>

@@ -7,6 +7,7 @@
         <link type="text/css" rel="stylesheet" href="./main.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./js/libraries/jquery.nouislider.min.css">
         <link type="text/css" rel="stylesheet" href="./js/libraries/jquery.nouislider.pips.min.css">
+        <link type="text/css" rel="stylesheet" href="./js/libraries/flightindicators.css">
 
         <link type="text/css" rel="stylesheet" href="./tabs/landing.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/setup.css" media="all" />
@@ -22,6 +23,7 @@
         <link type="text/css" rel="stylesheet" href="./tabs/sensors.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/cli.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/logging.css" media="all" />
+        <link type="text/css" rel="stylesheet" href="./tabs/dataflash.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/firmware_flasher.css" media="all" />
 
         <link type="text/css" rel="stylesheet" href="./tabs/adjustments.css" media="all" />
@@ -35,6 +37,7 @@
         <script type="text/javascript" src="./js/libraries/three/three.min.js"></script>
         <script type="text/javascript" src="./js/libraries/three/Projector.js"></script>
         <script type="text/javascript" src="./js/libraries/three/CanvasRenderer.js"></script>
+        <script type="text/javascript" src="./js/libraries/jquery.flightindicators.js"></script>
         <script type="text/javascript" src="./js/port_handler.js"></script>
         <script type="text/javascript" src="./js/port_usage.js"></script>
         <script type="text/javascript" src="./js/serial.js"></script>
@@ -68,6 +71,7 @@
         <script type="text/javascript" src="./tabs/sensors.js"></script>
         <script type="text/javascript" src="./tabs/cli.js"></script>
         <script type="text/javascript" src="./tabs/logging.js"></script>
+        <script type="text/javascript" src="./tabs/dataflash.js"></script>
         <script type="text/javascript" src="./tabs/firmware_flasher.js"></script>
     </head>
     <body>
@@ -122,7 +126,7 @@
             </div>
             <div class="clear-both"></div>
             <div id="log">
-                <div id="watermark">CleanFlight</div>
+                <div id="watermark"></div>
                 <div class="wrapper">
                 </div>
             </div>
@@ -146,6 +150,7 @@
                     <li class="tab_led_strip"><a href="#" i18n="tabLedStrip"></a></li>
                     <li class="tab_sensors"><a href="#" i18n="tabRawSensorData"></a></li>
                     <li class="tab_logging"><a href="#" i18n="tabLogging"></a></li>
+                    <li class="tab_dataflash"><a href="#" i18n="tabDataflash"></a></li>
                     <li class="tab_cli"><a href="#" i18n="tabCLI"></a></li>
                 </ul>
                 <div class="clear-both"></div>
