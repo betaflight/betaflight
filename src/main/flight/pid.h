@@ -61,7 +61,9 @@ typedef struct pidProfile_s {
     float A_level;
     float H_level;
     uint8_t H_sensitivity;
+
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
+    uint8_t pid5_oldyw;                     // Old yaw behavior for PID5
     uint8_t dterm_cut_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
     uint8_t pterm_cut_hz;                   // Used for fitlering Pterm noise on noisy frames
     uint8_t gyro_cut_hz;                    // Used for soft gyro filtering

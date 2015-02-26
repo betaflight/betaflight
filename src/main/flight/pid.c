@@ -577,7 +577,11 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     uint8_t axis;
     float ACCDeltaTimeINS, FLOATcycleTime, Mwii3msTimescale;
 
-    MainDptCut = RCconstPI / constrain(pidProfile->dterm_cut_hz, 1, 50);       // maincuthz (default 0 (disabled), Range 1-50Hz)
+    if (pidProfile->dterm_cut_hz) {
+        MainDptCut = RCconstPI / constrain(pidProfile->dterm_cut_hz, 1, 50);   // dterm_cut_hz (default 0, Range 1-50Hz)
+    } else {
+        MainDptCut = RCconstPI / 12.0f;                                        // default is 12Hz to maintain initial behavior of PID5
+    }
     FLOATcycleTime  = (float)constrain(cycleTime, 1, 100000);                  // 1us - 100ms
     ACCDeltaTimeINS = FLOATcycleTime * 0.000001f;                              // ACCDeltaTimeINS is in seconds now
     RCfactor = ACCDeltaTimeINS / (MainDptCut + ACCDeltaTimeINS);               // used for pt1 element
@@ -589,7 +593,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     for (axis = 0; axis < 2; axis++) {
         int32_t tmp = (int32_t)((float)gyroADC[axis] * 0.3125f);              // Multiwii masks out the last 2 bits, this has the same idea
         gyroADCQuant = (float)tmp * 3.2f;                                     // but delivers more accuracy and also reduces jittery flight
-        rcCommandAxis = (float)rcCommand[axis];                                // Calculate common values for pid controllers
+        rcCommandAxis = (float)rcCommand[axis];                               // Calculate common values for pid controllers
         if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
 #ifdef GPS
             error = constrain(2.0f * rcCommandAxis + GPS_angle[axis], -((int) max_angle_inclination), +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
