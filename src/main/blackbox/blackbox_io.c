@@ -4,12 +4,13 @@
 
 #include "blackbox_io.h"
 
-#include "platform.h"
 #include "version.h"
+#include "build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/encoding.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
@@ -142,18 +143,6 @@ void blackboxWriteUnsignedVB(uint32_t value)
         value >>= 7;
     }
     blackboxWrite(value);
-}
-
-/**
- * ZigZag encoding maps all values of a signed integer into those of an unsigned integer in such
- * a way that numbers of small absolute value correspond to small integers in the result.
- *
- * (Compared to just casting a signed to an unsigned which creates huge resulting numbers for
- * small negative integers).
- */
-static uint32_t zigzagEncode(int32_t value)
-{
-    return (uint32_t)((value << 1) ^ (value >> 31));
 }
 
 /**

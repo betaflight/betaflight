@@ -26,6 +26,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/encoding.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
@@ -878,11 +879,6 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
  */
 static bool blackboxWriteSysinfo()
 {
-    union floatConvert_t {
-        float f;
-        uint32_t u;
-    } floatConvert;
-
     if (xmitState.headerIndex == 0) {
         xmitState.u.serialBudget = 0;
         xmitState.headerIndex = 1;
@@ -937,8 +933,7 @@ static bool blackboxWriteSysinfo()
             xmitState.u.serialBudget -= strlen("H maxthrottle:%d\n");
         break;
         case 8:
-            floatConvert.f = gyro.scale;
-            blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
+            blackboxPrintf("H gyro.scale:0x%x\n", castFloatBytesToInt(gyro.scale));
 
             xmitState.u.serialBudget -= strlen("H gyro.scale:0x\n") + 6;
         break;
