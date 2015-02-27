@@ -887,6 +887,9 @@
     "dataflashButtonEraseCancel": {
         "message": "Cancel"
     },
+    "dataflashFileWriteFailed": {
+        "message": "Failed to write to the file you selected, are the permissions on that folder okay?"
+    },
     "firmwareFlasherReleaseSummaryHead": {
         "message": "Release info"
     },

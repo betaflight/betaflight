@@ -139,31 +139,40 @@ TABS.dataflash.initialize = function (callback) {
                 show_saving_dialog();
                 
                 function onChunkRead(chunkAddress, chunkDataView) {
-                    // If we didn't get a zero-byte chunk (indicating end-of-file), request more
-                    if (chunkDataView.byteLength > 0) {
-                        nextAddress += chunkDataView.byteLength;
-                        
-                        $(".dataflash-saving progress").attr("value", nextAddress / maxBytes * 100);
-
-                        var 
-                            blob = new Blob([chunkDataView]);
-                        
-                        fileWriter.write(blob);
-
-                        if (saveCancelled || nextAddress >= maxBytes) {
-                            if (saveCancelled) {
-                                dismiss_saving_dialog();
-                            } else {
-                                mark_saving_dialog_done();
-                            }
+                    if (chunkDataView != null) {
+                        // Did we receive any data?
+                        if (chunkDataView.byteLength > 0) {
+                            nextAddress += chunkDataView.byteLength;
+                            
+                            $(".dataflash-saving progress").attr("value", nextAddress / maxBytes * 100);
+    
+                            var 
+                                blob = new Blob([chunkDataView]);
+                            
+                            fileWriter.onwriteend = function(e) {
+                                if (saveCancelled || nextAddress >= maxBytes) {
+                                    if (saveCancelled) {
+                                        dismiss_saving_dialog();
+                                    } else {
+                                        mark_saving_dialog_done();
+                                    }
+                                } else {
+                                    MSP.dataflashRead(nextAddress, onChunkRead);
+                                }
+                            };
+                            
+                            fileWriter.write(blob);
                         } else {
-                            MSP.dataflashRead(nextAddress, onChunkRead);
+                            // A zero-byte block indicates end-of-file, so we're done
+                            mark_saving_dialog_done();
                         }
                     } else {
-                        mark_saving_dialog_done();
+                        // There was an error with the received block (address didn't match the one we asked for), retry
+                        MSP.dataflashRead(nextAddress, onChunkRead);
                     }
                 }
                 
+                // Fetch the initial block
                 MSP.dataflashRead(nextAddress, onChunkRead);
             });
         }
@@ -178,11 +187,17 @@ TABS.dataflash.initialize = function (callback) {
         
         chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: filename, 
                 accepts: [{extensions: ['TXT']}]}, function(fileEntry) {
-            if (!fileEntry) {
-                console.log('No file selected');
+            var error = chrome.runtime.lastError;
+            
+            if (error) {
+                console.error(error.message);
+                
+                if (error.message != "User cancelled") {
+                    GUI.log(chrome.i18n.getMessage('dataflashFileWriteFailed'));
+                }
                 return;
             }
-
+            
             // echo/console log path specified
             chrome.fileSystem.getDisplayPath(fileEntry, function(path) {
                 console.log('Dataflash dump file path: ' + path);
@@ -199,6 +214,7 @@ TABS.dataflash.initialize = function (callback) {
             }, function (e) {
                 // File is not readable or does not exist!
                 console.error(e);
+                GUI.log(chrome.i18n.getMessage('dataflashFileWriteFailed'));
             });
         });
     }
