@@ -71,6 +71,7 @@
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/autotune.h"
+#include "flight/gtune.h"
 #include "flight/navigation.h"
 #include "flight/filter.h"
 
@@ -156,6 +157,30 @@ void updateAutotuneState(void)
 
     if (!ARMING_FLAG(ARMED) && autoTuneWasUsed) {
         landedAfterAutoTuning = true;
+    }
+}
+#endif
+
+#ifdef GTUNE
+
+void updateGtuneState(void)
+{
+    static bool GTuneWasUsed = false;
+
+    if (IS_RC_MODE_ACTIVE(BOXGTUNE)) {
+        if (!FLIGHT_MODE(GTUNE_MODE)) {
+        	ENABLE_FLIGHT_MODE(GTUNE_MODE);
+            init_Gtune(&currentProfile->pidProfile);
+            GTuneWasUsed = true;
+        }
+    } else {
+        if (FLIGHT_MODE(GTUNE_MODE)) {
+    	    DISABLE_FLIGHT_MODE(GTUNE_MODE);
+            if (!ARMING_FLAG(ARMED) && GTuneWasUsed) {
+                saveConfigAndNotify();
+                GTuneWasUsed = false;
+            }
+        }
     }
 }
 #endif
@@ -804,6 +829,10 @@ void loop(void)
         if (sensors(SENSOR_MAG)) {
         	updateMagHold();
         }
+#endif
+
+#ifdef GTUNE
+        updateGtuneState();
 #endif
 
 #if defined(BARO) || defined(SONAR)

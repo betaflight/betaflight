@@ -190,6 +190,16 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->pid5_oldyw = 0;
     pidProfile->pid5_maincuthz = 12;
+
+#ifdef GTUNE
+    pidProfile->gtune_lolimP[ROLL] = 20;          // [10..200] Lower limit of ROLL P during G tune.
+    pidProfile->gtune_lolimP[PITCH] = 20;         // [10..200] Lower limit of PITCH P during G tune.
+    pidProfile->gtune_lolimP[YAW] = 20;           // [10..200] Lower limit of YAW P during G tune.
+    pidProfile->gtune_hilimP[ROLL] = 70;          // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
+    pidProfile->gtune_hilimP[PITCH] = 70;         // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
+    pidProfile->gtune_hilimP[YAW] = 70;           // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
+    pidProfile->gtune_pwr = 0;                    // [0..10] Strength of adjustment
+#endif
 }
 
 #ifdef GPS
