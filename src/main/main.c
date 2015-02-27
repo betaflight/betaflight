@@ -386,7 +386,7 @@ void init(void)
         m25p16_init();
     }
 #endif
-#ifdef SPRACINGF3
+#if defined(SPRACINGF3) || defined(CC3D)
     m25p16_init();
 #endif
     flashfsInit();
