@@ -187,7 +187,7 @@ void serialSetMode(serialPort_t *instance, portMode_t mode) {
 }
 
 
-serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion) {
+serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, baudRate_e baudRateIndex, portMode_t mode, serialInversion_e inversion) {
     UNUSED(identifier);
     UNUSED(functionMask);
     UNUSED(baudRate);

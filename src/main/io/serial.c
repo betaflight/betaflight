@@ -68,6 +68,22 @@ serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #endif
 };
 
+uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200}; // see baudRate_e
+
+#define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
+
+baudRate_e lookupBaudRateIndex(uint32_t baudRate)
+{
+    uint8_t index;
+
+    for (index = 0; index < BAUD_RATE_COUNT; index++) {
+        if (baudRates[index] == baudRate) {
+            return index;
+        }
+    }
+    return 0;
+}
+
 static serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
 {
     uint8_t index;
@@ -220,7 +236,7 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
-    uint32_t baudRate,
+    baudRate_e baudRateIndex,
     portMode_t mode,
     serialInversion_e inversion)
 {
@@ -231,6 +247,8 @@ serialPort_t *openSerialPort(
     }
 
     serialPort_t *serialPort = NULL;
+
+    uint32_t baudRate = baudRates[baudRateIndex];
 
     switch(identifier) {
 #ifdef USE_VCP

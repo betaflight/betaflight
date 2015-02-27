@@ -35,6 +35,17 @@ typedef enum {
     FUNCTION_BLACKBOX            = (1 << 7)
 } serialPortFunction_e;
 
+typedef enum {
+    BAUD_AUTO = 0,
+    BAUD_9600,
+    BAUD_19200,
+    BAUD_38400,
+    BAUD_57600,
+    BAUD_115200
+} baudRate_e;
+
+extern uint32_t baudRates[];
+
 // serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
     SERIAL_PORT_USART1 = 0,
@@ -64,11 +75,13 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 //
 // configuration
 //
-
 typedef struct serialPortConfig_s {
     serialPortIdentifier_e identifier;
     uint16_t functionMask;
-    uint32_t baudrate; // not used for all functions, e.g. HoTT only works at 19200.
+    uint8_t msp_baudrateIndex;
+    uint8_t gps_baudrateIndex;
+    uint8_t blackbox_baudrateIndex;
+    uint8_t telemetry_baudrateIndex; // not used for all telemetry systems, e.g. HoTT only works at 19200.
 } serialPortConfig_t;
 
 typedef struct serialConfig_s {
@@ -97,13 +110,15 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
-    uint32_t baudrate,
+    baudRate_e baudrate,
     portMode_t mode,
     serialInversion_e inversion
 );
 void closeSerialPort(serialPort_t *serialPort);
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
+
+baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 
 //
 // msp/cli/bootloader

@@ -602,7 +602,7 @@ void mspAllocateSerialPorts(serialConfig_t *serialConfig)
             continue;
         }
 
-        serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, portConfig->baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
+        serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, portConfig->msp_baudrateIndex, MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort, FOR_GENERAL_MSP);
             portIndex++;
@@ -1151,12 +1151,15 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_CF_SERIAL_CONFIG:
         headSerialReply(
-            ((sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t)) * SERIAL_PORT_COUNT)
+            ((sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4)) * SERIAL_PORT_COUNT)
         );
         for (i = 0; i < SERIAL_PORT_COUNT; i++) {
             serialize8(masterConfig.serialConfig.portConfigs[i].identifier);
             serialize16(masterConfig.serialConfig.portConfigs[i].functionMask);
-            serialize32(masterConfig.serialConfig.portConfigs[i].baudrate);
+            serialize8(masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex);
+            serialize8(masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex);
+            serialize8(masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex);
+            serialize8(masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex);
         }
         break;
 
@@ -1529,7 +1532,7 @@ static bool processInCommand(void)
 
     case MSP_SET_CF_SERIAL_CONFIG:
         {
-            uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
+            uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);
 
             if ((SERIAL_PORT_COUNT * portConfigSize) != SERIAL_PORT_COUNT) {
                 headSerialError(0);
@@ -1538,7 +1541,10 @@ static bool processInCommand(void)
             for (i = 0; i < SERIAL_PORT_COUNT; i++) {
                 masterConfig.serialConfig.portConfigs[i].identifier = read8();
                 masterConfig.serialConfig.portConfigs[i].functionMask = read16();
-                masterConfig.serialConfig.portConfigs[i].baudrate = read32();
+                masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex = read8();
+                masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex = read8();
+                masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex = read8();
+                masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex = read8();
             }
         }
         break;

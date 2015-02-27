@@ -62,7 +62,7 @@
 
 #ifdef BLACKBOX
 
-#define BLACKBOX_BAUDRATE 115200
+#define BLACKBOX_BAUDRATE BAUD_115200
 #define BLACKBOX_INITIAL_PORT_MODE MODE_TX
 
 // How many bytes should we transmit per loop iteration?
