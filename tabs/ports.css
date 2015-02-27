@@ -35,6 +35,14 @@
     background-color: #ececec;
 }
 
+.tab-ports .function input {
+    vertical-align: -2px;
+}
+
+.tab-ports .function label {
+    margin-right: 5px;
+}
+
 .tab-ports select {
     border: 1px solid silver;
 }

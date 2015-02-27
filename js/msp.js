@@ -102,6 +102,15 @@ var MSP = {
     ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'],      // in LSB bit order
     ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c'], // in LSB bit order
 
+    supportedBaudRates: [ // 0 based index.
+        'AUTO',
+        '9600',
+        '19200',
+        '38400',
+        '57600',
+        '115200'
+    ],
+
     read: function (readInfo) {
         var data = new Uint8Array(readInfo.data);
 
@@ -557,24 +566,46 @@ var MSP = {
                 break;
 
             case MSP_codes.MSP_CF_SERIAL_CONFIG:
-                SERIAL_CONFIG.ports = [];
-                var offset = 0;
-                var serialPortCount = (data.byteLength - (4 * 4)) / 2;
-                for (var i = 0; i < serialPortCount; i++) {
-                    var serialPort = {
-                        identifier: data.getUint8(offset++, 1),
-                        scenario: data.getUint8(offset++, 1)
+                
+                if (CONFIG.apiVersion < 1.6) {
+                    SERIAL_CONFIG.ports = [];
+                    var offset = 0;
+                    var serialPortCount = (data.byteLength - (4 * 4)) / 2;
+                    for (var i = 0; i < serialPortCount; i++) {
+                        var serialPort = {
+                            identifier: data.getUint8(offset++, 1),
+                            scenario: data.getUint8(offset++, 1)
+                        }
+                        SERIAL_CONFIG.ports.push(serialPort); 
                     }
-                    SERIAL_CONFIG.ports.push(serialPort); 
+                    SERIAL_CONFIG.mspBaudRate = data.getUint32(offset, 1);
+                    offset+= 4;
+                    SERIAL_CONFIG.cliBaudRate = data.getUint32(offset, 1);
+                    offset+= 4;
+                    SERIAL_CONFIG.gpsBaudRate = data.getUint32(offset, 1);
+                    offset+= 4;
+                    SERIAL_CONFIG.gpsPassthroughBaudRate = data.getUint32(offset, 1);
+                    offset+= 4;
+                } else {
+                    SERIAL_CONFIG.ports = [];
+                    var offset = 0;
+                    var bytesPerPort = 1 + 2 + (1 * 4);
+                    var serialPortCount = data.byteLength / bytesPerPort;
+                    
+                    for (var i = 0; i < serialPortCount; i++) {
+                        var serialPort = {
+                            identifier: data.getUint8(offset, 1),
+                            functionMask: data.getUint16(offset + 1, 1),
+                            msp_baudrate: MSP.supportedBaudRates[data.getUint8(offset + 3, 1)],
+                            gps_baudrate: MSP.supportedBaudRates[data.getUint8(offset + 4, 1)],
+                            telemetry_baudrate: MSP.supportedBaudRates[data.getUint8(offset + 5, 1)],
+                            blackbox_baudrate: MSP.supportedBaudRates[data.getUint8(offset + 6, 1)]
+                        }
+                        
+                        offset += bytesPerPort;
+                        SERIAL_CONFIG.ports.push(serialPort);
+                    }
                 }
-                SERIAL_CONFIG.mspBaudRate = data.getUint32(offset, 1);
-                offset+= 4;
-                SERIAL_CONFIG.cliBaudRate = data.getUint32(offset, 1);
-                offset+= 4;
-                SERIAL_CONFIG.gpsBaudRate = data.getUint32(offset, 1);
-                offset+= 4;
-                SERIAL_CONFIG.gpsPassthroughBaudRate = data.getUint32(offset, 1);
-                offset+= 4;
                 break;
 
             case MSP_codes.MSP_SET_CF_SERIAL_CONFIG:
@@ -952,28 +983,33 @@ MSP.crunch = function (code) {
             }
             break;
         case MSP_codes.MSP_SET_CF_SERIAL_CONFIG:
-            for (var i = 0; i < SERIAL_CONFIG.ports.length; i++) {
-                buffer.push(SERIAL_CONFIG.ports[i].scenario);
+            if (CONFIG.apiVersion < 1.6) {
+
+                for (var i = 0; i < SERIAL_CONFIG.ports.length; i++) {
+                    buffer.push(SERIAL_CONFIG.ports[i].scenario);
+                }
+                buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 0));
+                buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 1));
+                buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 2));
+                buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 3));
+    
+                buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 0));
+                buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 1));
+                buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 2));
+                buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 3));
+    
+                buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 0));
+                buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 1));
+                buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 2));
+                buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 3));
+    
+                buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 0));
+                buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 1));
+                buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 2));
+                buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 3));
+            } else {
+                console.log('unsupported');
             }
-            buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 0));
-            buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 1));
-            buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 2));
-            buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 3));
-
-            buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 0));
-            buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 1));
-            buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 2));
-            buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 3));
-
-            buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 0));
-            buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 1));
-            buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 2));
-            buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 3));
-
-            buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 0));
-            buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 1));
-            buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 2));
-            buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 3));
             break;
             
         default:

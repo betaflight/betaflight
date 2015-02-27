@@ -6,7 +6,49 @@ TABS.ports.initialize = function (callback, scrollPosition) {
     var self = this;
 
     var board_definition = {};
-    
+
+    var functionRules = [
+         {name: 'MSP',          groups: ['data', 'msp'], maxPorts: 2},
+         {name: 'GPS',          groups: ['gps'], maxPorts: 1},
+         {name: 'FrSky',        groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1},
+         {name: 'HoTT',         groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1},
+         {name: 'MSP',          groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1},
+         {name: 'SmartPort',    groups: ['telemetry'], maxPorts: 1},
+         {name: 'Serial RX',    groups: ['rx'], maxPorts: 1},
+         {name: 'Blackbox',     groups: ['logging', 'blackbox'], sharableWith: ['msp'], notSharableWith: ['telemetry'], maxPorts: 1},
+    ];
+
+    var mspBaudRates = [
+        '9600',
+        '19200',
+        '38400',
+        '57600',
+        '115200'
+    ];
+
+    var gpsBaudRates = [
+        '9600',
+        '19200',
+        '38400',
+        '57600',
+        '115200'
+    ];
+
+    var telemetryBaudRates = [
+        'AUTO',
+        '9600',
+        '19200',
+        '38400',
+        '57600',
+        '115200'
+    ];
+
+    var blackboxBaudRates = [
+       '115200'
+    ];
+
+    var columns = ['data', 'logging', 'gps', 'telemetry', 'rx'];
+
     if (GUI.active_tab != 'ports') {
         GUI.active_tab = 'ports';
         googleAnalytics.sendAppView('Ports');
@@ -25,22 +67,8 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         }
     }
 
-    function addSerialPortScenarios() {
+    function update_ui() {
         
-        var scenarioNames = [
-            'Unused',
-            'MSP, CLI, Telemetry (when armed), GPS Passthrough',
-            'GPS',
-            'Serial RX',
-            'Telemetry',
-            'MSP, CLI, GPS Passthrough',
-            'CLI',
-            'GPS Passthrough',
-            'MSP',
-            'SmartPort Telemetry',
-            'Blackbox',
-            'MSP, CLI, Blackbox (when armed), GPS Passthrough'
-        ];
         
         var portIdentifierToNameMapping = {
            0: 'UART1',
@@ -51,13 +79,40 @@ TABS.ports.initialize = function (callback, scrollPosition) {
            30: 'SOFTSERIAL1',
            31: 'SOFTSERIAL2'
         };
-        
-        var scenario_e = $('#tab-ports-templates select.scenario');
-        
-        for (var i = 0; i < scenarioNames.length; i++) {
-            scenario_e.append('<option value="' + i + '">' + scenarioNames[i] + '</option>');
+
+        var gps_baudrate_e = $('select.gps_baudrate');
+        for (var i = 0; i < gpsBaudRates.length; i++) {
+            gps_baudrate_e.append('<option value="' + gpsBaudRates[i] + '">' + gpsBaudRates[i] + '</option>');
         }
-        
+
+        var msp_baudrate_e = $('select.msp_baudrate');
+        for (var i = 0; i < mspBaudRates.length; i++) {
+            msp_baudrate_e.append('<option value="' + mspBaudRates[i] + '">' + mspBaudRates[i] + '</option>');
+        }
+
+        var telemetry_baudrate_e = $('select.telemetry_baudrate');
+        for (var i = 0; i < telemetryBaudRates.length; i++) {
+            telemetry_baudrate_e.append('<option value="' + telemetryBaudRates[i] + '">' + telemetryBaudRates[i] + '</option>');
+        }
+
+        var blackbox_baudrate_e = $('select.blackbox_baudrate');
+        for (var i = 0; i < blackboxBaudRates.length; i++) {
+            blackbox_baudrate_e.append('<option value="' + blackboxBaudRates[i] + '">' + blackboxBaudRates[i] + '</option>');
+        }
+
+        for (var columnIndex = 0; columnIndex < columns.length; columnIndex++) {
+            var column = columns[columnIndex];
+            
+            var functions_e = $('#tab-ports-templates .functionsCell-' + column);
+            
+            for (var i = 0; i < functionRules.length; i++) {
+                if (functionRules[i].groups.indexOf(column) >= 0) {
+                    functions_e.prepend('<span class="function"><input type="checkbox" id="checkbox-' + columnIndex + '-' + i + '" value="' + i + '" /><label for="checkbox-' + columnIndex + '-' + i + '"> ' + functionRules[i].name + '</label></span>');
+                }
+                
+            }
+        }
+
         var ports_e = $('.tab-ports .ports');
         var port_configuration_template_e = $('#tab-ports-templates .portConfiguration');
         
@@ -65,8 +120,9 @@ TABS.ports.initialize = function (callback, scrollPosition) {
             var port_configuration_e = port_configuration_template_e.clone();
             
             var serialPort = SERIAL_CONFIG.ports[portIndex];
-            
-            port_configuration_e.find('select').val(serialPort.scenario);
+
+            // TODO check functions
+            // TODO set baudrate
             port_configuration_e.find('.identifier').text(portIdentifierToNameMapping[serialPort.identifier])
             
             port_configuration_e.data('index', portIndex);
@@ -80,7 +136,7 @@ TABS.ports.initialize = function (callback, scrollPosition) {
 
         localize();
         
-        addSerialPortScenarios();
+        update_ui();
 
         $('a.save').click(on_save_handler);
 

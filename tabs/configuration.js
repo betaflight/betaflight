@@ -15,7 +15,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_serial_config() {
-        MSP.send_message(MSP_codes.MSP_CF_SERIAL_CONFIG, false, false, load_rc_map);
+        if (CONFIG.apiVersion < 1.6) {
+            MSP.send_message(MSP_codes.MSP_CF_SERIAL_CONFIG, false, false, load_rc_map);
+        } else {
+            load_rc_map();
+        }
     }
 
     function load_rc_map() {
@@ -148,15 +152,25 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.gps_type = parseInt($(this).val());
         });
 
+        gps_protocol_e.val(MISC.gps_type);
+        
+        
         var gps_baudrate_e = $('select.gps_baudrate');
         for (var i = 0; i < gpsBaudRates.length; i++) {
             gps_baudrate_e.append('<option value="' + gpsBaudRates[i] + '">' + gpsBaudRates[i] + '</option>');
         }
-
-        gps_baudrate_e.change(function () {
-            SERIAL_CONFIG.gpsBaudRate = parseInt($(this).val());
-        });
-
+    
+        if (CONFIG.apiVersion < 1.6) {
+            gps_baudrate_e.change(function () {
+                SERIAL_CONFIG.gpsBaudRate = parseInt($(this).val());
+            });
+            gps_baudrate_e.val(SERIAL_CONFIG.gpsBaudRate);
+        } else {
+            gps_baudrate_e.prop("disabled", true);
+            gps_baudrate_e.parent().hide();
+        }
+        
+        
         var gps_ubx_sbas_e = $('select.gps_ubx_sbas');
         for (var i = 0; i < gpsSbas.length; i++) {
             gps_ubx_sbas_e.append('<option value="' + (i - 1) + '">' + gpsSbas[i] + '</option>');
@@ -166,10 +180,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.gps_ubx_sbas = parseInt($(this).val());
         });
 
-        // select current gps configuration
-        gps_protocol_e.val(MISC.gps_type);
-        gps_baudrate_e.val(SERIAL_CONFIG.gpsBaudRate);
         gps_ubx_sbas_e.val(MISC.gps_ubx_sbas);
+
 
         // generate serial RX
         var serialRXtypes = [
@@ -290,7 +302,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.multiwiicurrentoutput = ~~$('input[name="multiwiicurrentoutput"]').is(':checked'); // ~~ boolean to decimal conversion
 
             function save_serial_config() {
-                MSP.send_message(MSP_codes.MSP_SET_CF_SERIAL_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CF_SERIAL_CONFIG), false, save_misc);
+                if (CONFIG.apiVersion < 1.6) {
+                    MSP.send_message(MSP_codes.MSP_SET_CF_SERIAL_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CF_SERIAL_CONFIG), false, save_misc);
+                } else {
+                    save_misc();
+                }
             }
 
             function save_misc() {

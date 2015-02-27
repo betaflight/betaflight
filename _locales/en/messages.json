@@ -507,7 +507,7 @@
     },
 
     "portsHelp": {
-        "message": "Configure serial ports.  <strong>Note:</strong> that not all ports support all scenarios and not all combinations of scenarios are valid.  When the flight controller firmware detects this the serial port configuration will be reset."
+        "message": "Configure serial ports.  <strong>Note:</strong> not all combinations are valid.  When the flight controller firmware detects this the serial port configuration will be reset."
     },
     "portsButtonSave": {
         "message": "Save and Reboot"
