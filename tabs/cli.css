@@ -5,10 +5,15 @@
     padding: 5px;
     border: 1px dotted silver;
 }
-.tab-cli .window {
+.tab-cli .backdrop {
+    border: 1px solid silver;
+    background-color: black;
+
     margin-top: 10px;
     height: calc(100% - 80px); /* - (p, textarea) */
-
+}
+.tab-cli .window {
+    height:100%;
     padding: 5px;
 
     overflow-y: scroll;
@@ -17,9 +22,7 @@
     font-family: monospace;
     color: white;
 
-    border: 1px solid silver;
-    background-color: black;
-
+    box-sizing: border-box;
     -webkit-user-select: text;
 }
 .tab-cli textarea {
@@ -37,4 +40,7 @@
     border: 1px solid silver;
 
     resize: none;
+}
+.tab-cli #content-watermark {
+    z-index:0;
 }
