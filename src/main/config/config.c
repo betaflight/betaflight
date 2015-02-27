@@ -119,7 +119,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 92;
+static const uint8_t EEPROM_CONF_VERSION = 93;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -619,6 +619,8 @@ void activateConfig(void)
     static imuRuntimeConfig_t imuRuntimeConfig;
 
     activateControlRateConfig();
+
+    resetAdjustmentStates();
 
     useRcControlsConfig(
         currentProfile->modeActivationConditions,

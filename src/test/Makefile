@@ -53,6 +53,7 @@ TESTS = \
 	rc_controls_unittest \
 	ledstrip_unittest \
 	ws2811_unittest \
+	encoding_unittest \
 	lowpass_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
@@ -127,6 +128,25 @@ battery_unittest : \
 	$(OBJECT_DIR)/sensors/battery.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/battery_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+	
+$(OBJECT_DIR)/common/encoding.o : $(USER_DIR)/common/encoding.c $(USER_DIR)/common/encoding.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/encoding.c -o $@
+
+$(OBJECT_DIR)/encoding_unittest.o : \
+	$(TEST_DIR)/encoding_unittest.cc \
+	$(USER_DIR)/common/encoding.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/encoding_unittest.cc -o $@
+
+encoding_unittest : \
+	$(OBJECT_DIR)/common/encoding.o \
+	$(OBJECT_DIR)/encoding_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@

@@ -26,6 +26,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
@@ -487,6 +488,13 @@ void writeAllMotors(int16_t mc)
     writeMotors();
 }
 
+void stopMotors(void)
+{
+    writeAllMotors(escAndServoConfig->mincommand);
+
+    delay(50); // give the timers and ESCs a chance to react.
+}
+
 #ifndef USE_QUAD_MIXER_ONLY
 static void airplaneMixer(void)
 {
@@ -537,7 +545,6 @@ static void airplaneMixer(void)
 
 void mixTable(void)
 {
-    int16_t maxMotor;
     uint32_t i;
 
     if (motorCount > 3) {
@@ -655,29 +662,40 @@ void mixTable(void)
     }
 #endif
 
-    maxMotor = motor[0];
-    for (i = 1; i < motorCount; i++)
-        if (motor[i] > maxMotor)
-            maxMotor = motor[i];
-    for (i = 0; i < motorCount; i++) {
-        if (maxMotor > escAndServoConfig->maxthrottle)     // this is a way to still have good gyro corrections if at least one motor reaches its max.
-            motor[i] -= maxMotor - escAndServoConfig->maxthrottle;
-        if (feature(FEATURE_3D)) {
-            if ((rcData[THROTTLE]) > rxConfig->midrc) {
-                motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
-            } else {
-                motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
-            }
-        } else {
-            motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
-            if ((rcData[THROTTLE]) < rxConfig->mincheck) {
-                if (!feature(FEATURE_MOTOR_STOP))
-                    motor[i] = escAndServoConfig->minthrottle;
-                else
-                    motor[i] = escAndServoConfig->mincommand;
+    if (ARMING_FLAG(ARMED)) {
+
+        int16_t maxMotor = motor[0];
+        for (i = 1; i < motorCount; i++) {
+            if (motor[i] > maxMotor) {
+                maxMotor = motor[i];
             }
         }
-        if (!ARMING_FLAG(ARMED)) {
+
+        for (i = 0; i < motorCount; i++) {
+            if (maxMotor > escAndServoConfig->maxthrottle) {
+                // this is a way to still have good gyro corrections if at least one motor reaches its max.
+                motor[i] -= maxMotor - escAndServoConfig->maxthrottle;
+            }
+
+            if (feature(FEATURE_3D)) {
+                if ((rcData[THROTTLE]) > rxConfig->midrc) {
+                    motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
+                } else {
+                    motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
+                }
+            } else {
+                motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+                if ((rcData[THROTTLE]) < rxConfig->mincheck) {
+                    if (!feature(FEATURE_MOTOR_STOP))
+                        motor[i] = escAndServoConfig->minthrottle;
+                    else
+                        motor[i] = escAndServoConfig->mincommand;
+                }
+            }
+        }
+
+    } else {
+        for (i = 0; i < motorCount; i++) {
             motor[i] = motor_disarmed[i];
         }
     }
