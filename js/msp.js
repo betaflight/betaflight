@@ -624,7 +624,7 @@ var MSP = {
                 for (var i = 0; i < 8; i ++) {
                     var channelIndex = data.getUint8(i);
                     if (channelIndex < 255) {
-                        SERVO_CONFIG[i].indexOfChannelToForward;
+                        SERVO_CONFIG[i].indexOfChannelToForward = channelIndex;
                     } else {
                         SERVO_CONFIG[i].indexOfChannelToForward = undefined;
                     }
