@@ -24,13 +24,13 @@ TPA and G-Tune: It is not tested and will most likely not result into something 
 
 ## Parameters and their function:
 
-gtune_loP_rll  = 20 [10..200] Lower limit of ROLL P during G-Tune.  Note "20" means "2.0" in the GUI.
-gtune_loP_ptch = 20 [10..200] Lower limit of PITCH P during G-Tune. Note "20" means "2.0" in the GUI.
-gtune_loP_yw   = 20 [10..200] Lower limit of YAW P during G-Tune.   Note "20" means "2.0" in the GUI.
-gtune_hiP_rll  = 70 [0..200]  Higher limit of ROLL P during G-Tune. 0 Disables tuning for that axis.  Note "70" means "7.0" in the GUI.
-gtune_hiP_ptch = 70 [0..200]  Higher limit of PITCH P during G-Tune. 0 Disables tuning for that axis. Note "70" means "7.0" in the GUI.
-gtune_hiP_yw   = 70 [0..200]  Higher limit of YAW P during G-Tune. 0 Disables tuning for that axis.   Note "70" means "7.0" in the GUI.
-gtune_pwr      = 0  [0..10]   Strength of adjustment
+    gtune_loP_rll  = 20 [10..200] Lower limit of ROLL P during G-Tune.  Note "20" means "2.0" in the GUI.
+    gtune_loP_ptch = 20 [10..200] Lower limit of PITCH P during G-Tune. Note "20" means "2.0" in the GUI.
+    gtune_loP_yw   = 20 [10..200] Lower limit of YAW P during G-Tune.   Note "20" means "2.0" in the GUI.
+    gtune_hiP_rll  = 70 [0..200]  Higher limit of ROLL P during G-Tune. 0 Disables tuning for that axis.  Note "70" means "7.0" in the GUI.
+    gtune_hiP_ptch = 70 [0..200]  Higher limit of PITCH P during G-Tune. 0 Disables tuning for that axis. Note "70" means "7.0" in the GUI.
+    gtune_hiP_yw   = 70 [0..200]  Higher limit of YAW P during G-Tune. 0 Disables tuning for that axis.   Note "70" means "7.0" in the GUI.
+    gtune_pwr      = 0  [0..10]   Strength of adjustment
 
 So you have lower and higher limits for each P for every axis. The preset range (GUI: 2.0 - 7.0) is quiet broad to represent most setups.
 If you want tighter ranges change them here. The gtune_loP_XXX can not be lower than "10" that means a P of "1.0" in the GUI. So you can not have "Zero P",
