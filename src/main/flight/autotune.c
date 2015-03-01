@@ -270,7 +270,9 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
             firstPeakAngle = currentAngle;
             targetAngleAtPeak = targetAngle;
 
+#ifdef DEBUG_AUTOTUNE
             debug[3] = DEGREES_TO_DECIDEGREES(firstPeakAngle);
+#endif
 
         } else if (firstPeakAngle > 0) {
             switch (cycle) {
@@ -320,7 +322,9 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
 
         if (currentAngle < secondPeakAngle) {
             secondPeakAngle = currentAngle;
+#ifdef DEBUG_AUTOTUNE
             debug[3] = DEGREES_TO_DECIDEGREES(secondPeakAngle);
+#endif
         }
 
         float oscillationAmplitude = firstPeakAngle - secondPeakAngle;
@@ -395,9 +399,11 @@ float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclin
         }
     }
 
+#ifdef DEBUG_AUTOTUNE
     if (angleIndex == AI_ROLL) {
         debug[0] += 100;
     }
+#endif
 
     updateTargetAngle();
 
