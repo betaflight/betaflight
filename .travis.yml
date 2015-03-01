@@ -20,12 +20,12 @@ compiler: clang
 
 before_install: 
   - sudo apt-get update
-  # The PPA doesn't have a package for Trusty for 4.8, so manually download the Saucy build
-  - wget "http://ppa.launchpad.net/terry.guo/gcc-arm-embedded/ubuntu/pool/main/g/gcc-arm-none-eabi/gcc-arm-none-eabi_4-8-2014q2-0saucy9_amd64.deb"
+  - wget "https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q3-update/+download/gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2"
 
 install: 
-   - sudo apt-get install build-essential git
-   - sudo dpkg -i gcc-arm-none-eabi_4-8-2014q2-0saucy9_amd64.deb
+  - sudo apt-get install build-essential git libc6-i386
+  - tar -xf gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2
+  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_8-2014q3/bin
    
 before_script: arm-none-eabi-gcc --version
 script: ./.travis.sh
