@@ -103,7 +103,7 @@ void init_Gtune(pidProfile_t *pidProfileToTune)
         if ((pidProfile->gtune_hilimP[i] && pidProfile->gtune_lolimP[i] > pidProfile->gtune_hilimP[i]) || // User config error disable axisis for tuning
             (motorCount < 4 && i == FD_YAW)) pidProfile->gtune_hilimP[i] = 0;   // Disable Yawtuning for everything below a quadcopter
         if (floatPID) {
-            if(pidProfile->P_f[i] < pidProfile->gtune_lolimP[i]) pidProfile->P_f[i] = pidProfile->gtune_lolimP[i];
+            if((pidProfile->P_f[i] * 10) < pidProfile->gtune_lolimP[i]) pidProfile->P_f[i] = (float)(pidProfile->gtune_lolimP[i] / 10);
             result_P64[i] = (int16_t)pidProfile->P_f[i] << 6;                   // 6 bit extra resolution for P.
         } else {
             if(pidProfile->P8[i] < pidProfile->gtune_lolimP[i]) pidProfile->P8[i] = pidProfile->gtune_lolimP[i];
@@ -152,7 +152,7 @@ void calculate_Gtune(uint8_t axis)
                     if (ABS(diff_G) > threshP && axis != FD_YAW) result_P64[axis] -= 32; // Don't use antiwobble for YAW
                 }
                 result_P64[axis] = constrain(result_P64[axis], (int16_t)pidProfile->gtune_lolimP[axis] << 6, (int16_t)pidProfile->gtune_hilimP[axis] << 6);
-                if (floatPID) pidProfile->P_f[axis] = (float)(result_P64[axis] >> 6); // new P value for float PID
+                if (floatPID) pidProfile->P_f[axis] = (float)((result_P64[axis] >> 6) / 10); // new P value for float PID
                 else pidProfile->P8[axis] = result_P64[axis] >> 6;              // new P value
             }
             OldError[axis] = error;

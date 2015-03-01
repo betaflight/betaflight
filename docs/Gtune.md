@@ -19,7 +19,7 @@ The easiest way to tune all axes at once is to do some air-jumps with the copter
 You can set a too high P for the axes as default in the GUI, when the copter starts shaking the wobbles will be detected and P tuned down (be careful with the strength setting though - see below).
 Yaw tune is disabled in any copter with less than 4 motors (like tricopters).
 G-Tune in Horizon or Level mode will just affect Yaw axis (if more than 3 motors...)
-You will see the results in the GUI - the the tuning results will only be saved if you disable G-Tune mode while the copter is disarmed or you save the configuration in an alternative way (like hitting save button in the GUI, casting an eepromwrite with trimming, acc calibration etc.)
+You will see the results in the GUI - the tuning results will only be saved if you disable G-Tune mode while the copter is disarmed or you save the configuration in an alternative way (like hitting save button in the GUI, casting an eepromwrite with trimming, acc calibration etc.)
 TPA and G-Tune: It is not tested and will most likely not result into something good. However G-Tune might be able to replace TPA for you.
 
 ## Parameters and their function:
