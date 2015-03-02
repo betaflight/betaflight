@@ -114,6 +114,10 @@
 #define AUTOTUNE
 #define USE_SERVOS
 
+#if defined(OPBL)
+#undef AUTOTUNE // disabled for OPBL build due to code size.
+#endif
+
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
 #define BIND_PORT  GPIOB
