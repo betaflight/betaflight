@@ -108,6 +108,7 @@ typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS = 12,
     FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13,
     FLIGHT_LOG_EVENT_LOGGING_RESUME = 14,
+    FLIGHT_LOG_EVENT_GTUNE_RESULT = 20,
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;
 
@@ -148,10 +149,18 @@ typedef struct flightLogEvent_inflightAdjustment_t {
     float newFloatValue;
 } flightLogEvent_inflightAdjustment_t;
 
+<<<<<<< Upstream, based on origin/master
 typedef struct flightLogEvent_loggingResume_t {
     uint32_t logIteration;
     uint32_t currentTime;
 } flightLogEvent_loggingResume_t;
+=======
+typedef struct flightLogEvent_gtuneCycleResult_t {
+    uint8_t gtuneAxis;
+    uint32_t gtuneGyroAVG;
+    uint8_t gtuneNewP;
+} flightLogEvent_gtuneCycleResult_t;
+>>>>>>> 6f60c52 Add BlackBox recording for G-Tune
 
 typedef union flightLogEventData_t
 {
@@ -160,7 +169,11 @@ typedef union flightLogEventData_t
     flightLogEvent_autotuneCycleResult_t autotuneCycleResult;
     flightLogEvent_autotuneTargets_t autotuneTargets;
     flightLogEvent_inflightAdjustment_t inflightAdjustment;
+<<<<<<< Upstream, based on origin/master
     flightLogEvent_loggingResume_t loggingResume;
+=======
+    flightLogEvent_gtuneCycleResult_t gtuneCycleResult;
+>>>>>>> 6f60c52 Add BlackBox recording for G-Tune
 } flightLogEventData_t;
 
 typedef struct flightLogEvent_t

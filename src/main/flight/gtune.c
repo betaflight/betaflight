@@ -151,9 +151,22 @@ void calculate_Gtune(uint8_t axis)
                 } else {
                     if (ABS(diff_G) > threshP && axis != FD_YAW) result_P64[axis] -= 32; // Don't use antiwobble for YAW
                 }
-                result_P64[axis] = constrain(result_P64[axis], (int16_t)pidProfile->gtune_lolimP[axis] << 6, (int16_t)pidProfile->gtune_hilimP[axis] << 6);
-                if (floatPID) pidProfile->P_f[axis] = (float)((result_P64[axis] >> 6) / 10); // new P value for float PID
-                else pidProfile->P8[axis] = result_P64[axis] >> 6;              // new P value
+                int16_t newP = constrain((result_P64[axis] >> 6), (int16_t)pidProfile->gtune_lolimP[axis], (int16_t)pidProfile->gtune_hilimP[axis]);
+
+#ifdef BLACKBOX
+                if (feature(FEATURE_BLACKBOX)) {
+                	flightLogEvent_gtuneCycleResult_t eventData;
+
+                    eventData.gtuneAxis = axis;
+                    eventData.gtuneGyroAVG = AvgGyro[axis];
+                    eventData.gtuneNewP = newP;
+
+                    blackboxLogEvent(FLIGHT_LOG_EVENT_GTUNE_RESULT, (flightLogEventData_t*)&eventData);
+                }
+#endif
+
+                if (floatPID) pidProfile->P_f[axis] = (float)(newP / 10);     // new P value for float PID
+                else pidProfile->P8[axis] = newP;                             // new P value
             }
             OldError[axis] = error;
         }
