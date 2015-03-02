@@ -163,6 +163,51 @@ The mapping between modes led placement and colors is currently fixed and cannot
 
 This mode flashes LEDs that correspond to roll and pitch stick positions.  i.e.  they indicate the direction the craft is going to turn.
 
+| Mode | Direction | LED Color | Notes |
+|------------|--------|---------------------|---------------|
+|Orientation | North  | COLOR_WHITE			|   |
+|Orientation | East   | COLOR_DARK_VIOLET	|   |
+|Orientation | South  | COLOR_RED			|   |
+|Orientation | West   | COLOR_DEEP_PINK		|   |
+|Orientation | Up     | COLOR_BLUE			|   |
+|Orientation | Down   | COLOR_ORANGE		|   |
+
+|Head Free   | North  |                      |   |
+|Head Free   | East   |                      |   |
+|Head Free   | South  |                      |   |
+|Head Free   | West   |                      |   |
+|Head Free   | Up     |                      |   |
+|Head Free   | Down   |                      |   |
+
+|Horizon     | North  |                      |   |
+|Horizon     | East   |                      |   |
+|Horizon     | South  |                      |   |
+|Horizon     | West   |                      |   |
+|Horizon     | Up     |                      |   |
+|Horizon     | Down   |                      |   |
+
+|Angle       | North  |                      |   |
+|Angle       | East   |                      |   |
+|Angle       | South  |                      |   |
+|Angle       | West   |                      |   |
+|Angle       | Up     |                      |   |
+|Angle       | Down   |                      |   |
+
+|Mag         | North  |                      |   |
+|Mag         | East   |                      |   |
+|Mag         | South  |                      |   |
+|Mag         | West   |                      |   |
+|Mag         | Up     |                      |   |
+|Mag         | Down   |                      |   |
+
+|Baro        | North  |                      |   |
+|Baro        | East   |                      |   |
+|Baro        | South  |                      |   |
+|Baro        | West   |                      |   |
+|Baro        | Up     |                      |   |
+|Baro        | Down   |                      |   |
+
+
 #### Armed state
 
 This mode toggles LEDs between green and blue when disarmed and armed, respectively.
