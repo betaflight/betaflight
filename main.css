@@ -44,7 +44,7 @@ input[type="number"]::-webkit-inner-spin-button {
     bottom: 40px;
     left: 0;
     right: 0;
-    z-index: 1;
+    z-index: -1;
     overflow: hidden;
     background-image: url("images/light-wide-1.svg");
     background-repeat: no-repeat;

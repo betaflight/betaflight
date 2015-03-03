@@ -62,6 +62,9 @@
     "tabLanding": {
         "message": "Welcome"
     },
+    "tabHelp": {
+        "message": "Documentation & Support"
+    },
 
     "tabSetup": {
         "message": "Setup"
@@ -209,6 +212,12 @@
     },
     "defaultWelcomeText": {
         "message": "Welcome to <strong>Cleanflight - Configurator</strong>, a utility designed to simplify updating, configuring and tuning of your flight controller.<br /><br />The application supports all hardware that can run cleanflight (sparky, cc3d, acro naze, naze, afromini, flip32, flip32+, cjmcu, chebuzz f3, stm32f3discovery, naze32pro, etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/cleanflight/cleanflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/cleanflight/cleanflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com/\" target=\"_blank\">here</a><br />"
+    },
+    "defaultContributingHead": {
+        "message": "Contributing"
+    },
+    "defaultContributingText": {
+        "message": "If you would like to help make Cleanflight even better you can help in many ways, including:<br /><ul><li>Answering other users questions on the forums and IRC.</li><li>Contributing code to the firmware and configurator - new features, fixes, improvements</li><li>Testing <a href=\"https://github.com/cleanflight/cleanflight/pulls\" target=\"_blank\">new features/fixes</a> and providing feedback.</li><li>Helping out with <a href=\"https://github.com/cleanflight/cleanflight/issues\" target=\"_blank\">issues and commenting on feature requests</a>.</li></ul>"
     },
     "defaultChangelogHead": {
         "message": "Configurator - Changelog"
