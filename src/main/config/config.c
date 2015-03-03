@@ -265,10 +265,8 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
 
 #ifdef CC3D
-    // Temporary workaround for CC3D non-functional VCP when using OpenPilot bootloader.
-    // This allows MSP connection via USART so the board can be reconfigured.
+    // This allows MSP connection via USART & VCP so the board can be reconfigured.
     serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
-    serialConfig->portConfigs[1].baudrate = 115200;
 #endif
 
     serialConfig->reboot_character = 'R';
