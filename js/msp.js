@@ -110,6 +110,9 @@ var MSP = {
         '57600',
         '115200'
     ],
+    
+    serialPortFunctions: // in LSB bit order 
+        ['MSP', 'GPS', 'TELEMETRY_FRSKY', 'TELEMETRY_HOTT', 'TELEMETRY_MSP', 'TELEMETRY_SMARTPORT', 'RX_SERIAL', 'BLACKBOX'],
 
     read: function (readInfo) {
         var data = new Uint8Array(readInfo.data);
@@ -595,7 +598,7 @@ var MSP = {
                     for (var i = 0; i < serialPortCount; i++) {
                         var serialPort = {
                             identifier: data.getUint8(offset, 1),
-                            functionMask: data.getUint16(offset + 1, 1),
+                            functions: MSP.serialPortFunctionMaskToFunctions(data.getUint16(offset + 1, 1)),
                             msp_baudrate: MSP.supportedBaudRates[data.getUint8(offset + 3, 1)],
                             gps_baudrate: MSP.supportedBaudRates[data.getUint8(offset + 4, 1)],
                             telemetry_baudrate: MSP.supportedBaudRates[data.getUint8(offset + 5, 1)],
@@ -1008,7 +1011,20 @@ MSP.crunch = function (code) {
                 buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 2));
                 buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 3));
             } else {
-                console.log('unsupported');
+                for (var i = 0; i < SERIAL_CONFIG.ports.length; i++) {
+                    var serialPort = SERIAL_CONFIG.ports[i];
+                    
+                    buffer.push(serialPort.identifier);
+                    
+                    var functionMask = MSP.serialPortFunctionsToMask(serialPort.functions);
+                    buffer.push(specificByte(functionMask, 0));
+                    buffer.push(specificByte(functionMask, 1));
+                    
+                    buffer.push(MSP.supportedBaudRates.indexOf(serialPort.msp_baudrate));
+                    buffer.push(MSP.supportedBaudRates.indexOf(serialPort.gps_baudrate));
+                    buffer.push(MSP.supportedBaudRates.indexOf(serialPort.telemetry_baudrate));
+                    buffer.push(MSP.supportedBaudRates.indexOf(serialPort.blackbox_baudrate));
+                }
             }
             break;
             
@@ -1165,3 +1181,24 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
     }
 }
 
+MSP.serialPortFunctionMaskToFunctions = function(functionMask) {
+    var functions = [];
+    
+    for (var index = 0; index < MSP.serialPortFunctions.length; index++) {
+        if (bit_check(functionMask, index)) {
+            functions.push(MSP.serialPortFunctions[index]);
+        }
+    }
+    return functions;
+}
+
+MSP.serialPortFunctionsToMask = function(functions) {
+    var mask = 0;
+    for (var index = 0; index < functions.length; index++) {
+        var bitIndex = MSP.serialPortFunctions.indexOf(functions[index]);
+        if (bitIndex >= 0) {
+            mask = bit_set(mask, bitIndex);
+        }
+    }
+    return mask;
+}

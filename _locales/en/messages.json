@@ -521,6 +521,30 @@
     "portsButtonSave": {
         "message": "Save and Reboot"
     },
+    "portsFunction_MSP": {
+        "message": "MSP"
+    },
+    "portsFunction_GSP": {
+        "message": "GSP"
+    },
+    "portsFunction_TELEMETRY_FRSKY": {
+        "message": "FrSky"
+    },
+    "portsFunction_TELEMETRY_HOTT": {
+        "message": "HoTT"
+    },
+    "portsFunction_TELEMETRY_MSP": {
+        "message": "MSP"
+    },
+    "portsFunction_TELEMETRY_SMARTPORT": {
+        "message": "SmartPort"
+    },
+    "portsFunction_RX_SERIAL": {
+        "message": "Serial RX"
+    },
+    "portsFunction_BLACKBOX": {
+        "message": "Blackbox"
+    },
 
     "pidTuningUpgradeFirmwareToChangePidController": {
         "message": "<span style=\"color: red\">Changing PID controller disabled - you can change it via the CLI.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, but this functionality requires requires <span style=\"color: green\">$2</span>."
