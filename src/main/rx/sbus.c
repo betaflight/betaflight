@@ -50,7 +50,7 @@
 #define SBUS_TIME_NEEDED_PER_FRAME 3000
 
 #ifndef CJMCU
-#define DEBUG_SBUS_PACKETS
+//#define DEBUG_SBUS_PACKETS
 #endif
 
 #ifdef DEBUG_SBUS_PACKETS
