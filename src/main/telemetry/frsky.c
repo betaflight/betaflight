@@ -64,7 +64,7 @@
 static serialPort_t *frskyPort = NULL;
 static serialPortConfig_t *portConfig;
 
-#define FRSKY_BAUDRATE BAUD_9600
+#define FRSKY_BAUDRATE 9600
 #define FRSKY_INITIAL_PORT_MODE MODE_TX
 
 static telemetryConfig_t *telemetryConfig;

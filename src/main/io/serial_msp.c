@@ -602,7 +602,7 @@ void mspAllocateSerialPorts(serialConfig_t *serialConfig)
             continue;
         }
 
-        serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, portConfig->msp_baudrateIndex, MODE_RXTX, SERIAL_NOT_INVERTED);
+        serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort, FOR_GENERAL_MSP);
             portIndex++;

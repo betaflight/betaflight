@@ -43,7 +43,7 @@
 
 #define SPEK_FRAME_SIZE 16
 
-#define SPEKTRUM_BAUDRATE BAUD_115200
+#define SPEKTRUM_BAUDRATE 115200
 
 static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;

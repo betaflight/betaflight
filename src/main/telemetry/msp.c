@@ -100,7 +100,7 @@ void configureMSPTelemetryPort(void)
         baudRateIndex = BAUD_19200;
     }
 
-    mspTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_MSP_TELEMETRY, NULL, baudRateIndex, MSP_TELEMETRY_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+    mspTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_MSP_TELEMETRY, NULL, baudRates[baudRateIndex], MSP_TELEMETRY_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
     if (!mspTelemetryPort) {
         return;

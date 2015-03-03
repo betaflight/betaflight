@@ -100,7 +100,7 @@ static uint8_t hottMsgCrc;
 
 #define HOTT_CRC_SIZE (sizeof(hottMsgCrc))
 
-#define HOTT_BAUDRATE BAUD_19200
+#define HOTT_BAUDRATE 19200
 #define HOTT_INITIAL_PORT_MODE MODE_RX
 
 static serialPort_t *hottPort = NULL;

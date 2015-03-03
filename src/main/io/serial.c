@@ -236,7 +236,7 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
-    baudRate_e baudRateIndex,
+    uint32_t baudRate,
     portMode_t mode,
     serialInversion_e inversion)
 {
@@ -247,8 +247,6 @@ serialPort_t *openSerialPort(
     }
 
     serialPort_t *serialPort = NULL;
-
-    uint32_t baudRate = baudRates[baudRateIndex];
 
     switch(identifier) {
 #ifdef USE_VCP

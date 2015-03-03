@@ -110,7 +110,7 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
-    baudRate_e baudrate,
+    uint32_t baudrate,
     portMode_t mode,
     serialInversion_e inversion
 );
