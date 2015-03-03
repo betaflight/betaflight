@@ -44,15 +44,15 @@ static serialPortConfig_t *portConfig;
 static bool mspTelemetryEnabled =  false;
 static portSharing_e mspPortSharing;
 
-#define MSP_TELEMETRY_INITIAL_PORT_MODE MODE_TX
+#define TELEMETRY_MSP_INITIAL_PORT_MODE MODE_TX
 
 static serialPort_t *mspTelemetryPort = NULL;
 
 void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
-    portConfig = findSerialPortConfig(FUNCTION_MSP_TELEMETRY);
-    mspPortSharing = determinePortSharing(portConfig, FUNCTION_MSP_TELEMETRY);
+    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_MSP);
+    mspPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_MSP);
 }
 
 void checkMSPTelemetryState(void)
@@ -100,7 +100,7 @@ void configureMSPTelemetryPort(void)
         baudRateIndex = BAUD_19200;
     }
 
-    mspTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_MSP_TELEMETRY, NULL, baudRates[baudRateIndex], MSP_TELEMETRY_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+    mspTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MSP, NULL, baudRates[baudRateIndex], TELEMETRY_MSP_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
     if (!mspTelemetryPort) {
         return;

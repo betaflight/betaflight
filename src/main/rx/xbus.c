@@ -118,12 +118,12 @@ bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
         *callback = xBusReadRawRC;
     }
 
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_SERIAL_RX);
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;
     }
 
-    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, FUNCTION_SERIAL_RX, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
+    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
 
     return xBusPort != NULL;
 }

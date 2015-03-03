@@ -1707,7 +1707,7 @@ static const uint8_t mspTelemetryCommandSequence[] = {
     MSP_SERVO
 };
 
-#define MSP_TELEMETRY_COMMAND_SEQUENCE_ENTRY_COUNT (sizeof(mspTelemetryCommandSequence) / sizeof(mspTelemetryCommandSequence[0]))
+#define TELEMETRY_MSP_COMMAND_SEQUENCE_ENTRY_COUNT (sizeof(mspTelemetryCommandSequence) / sizeof(mspTelemetryCommandSequence[0]))
 
 static mspPort_t *mspTelemetryPort = NULL;
 
@@ -1758,7 +1758,7 @@ void sendMspTelemetry(void)
     tailSerialReply();
 
     sequenceIndex++;
-    if (sequenceIndex >= MSP_TELEMETRY_COMMAND_SEQUENCE_ENTRY_COUNT) {
+    if (sequenceIndex >= TELEMETRY_MSP_COMMAND_SEQUENCE_ENTRY_COUNT) {
         sequenceIndex = 0;
     }
 }

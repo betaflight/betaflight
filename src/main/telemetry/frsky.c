@@ -407,8 +407,8 @@ static void sendHeading(void)
 void initFrSkyTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
-    portConfig = findSerialPortConfig(FUNCTION_FRSKY_TELEMETRY);
-    frskyPortSharing = determinePortSharing(portConfig, FUNCTION_FRSKY_TELEMETRY);
+    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_FRSKY);
+    frskyPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_FRSKY);
 }
 
 void freeFrSkyTelemetryPort(void)
@@ -424,7 +424,7 @@ void configureFrSkyTelemetryPort(void)
         return;
     }
 
-    frskyPort = openSerialPort(portConfig->identifier, FUNCTION_FRSKY_TELEMETRY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig->telemetry_inversion);
+    frskyPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_FRSKY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig->telemetry_inversion);
     if (!frskyPort) {
         return;
     }

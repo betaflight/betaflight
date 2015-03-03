@@ -260,8 +260,8 @@ void freeHoTTTelemetryPort(void)
 void initHoTTTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
-    portConfig = findSerialPortConfig(FUNCTION_HOTT_TELEMETRY);
-    hottPortSharing = determinePortSharing(portConfig, FUNCTION_HOTT_TELEMETRY);
+    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_HOTT);
+    hottPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_HOTT);
 
     initialiseMessages();
 }
@@ -272,7 +272,7 @@ void configureHoTTTelemetryPort(void)
         return;
     }
 
-    hottPort = openSerialPort(portConfig->identifier, FUNCTION_HOTT_TELEMETRY, NULL, HOTT_BAUDRATE, HOTT_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+    hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, HOTT_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
     if (!hottPort) {
         return;

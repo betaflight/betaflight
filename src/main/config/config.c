@@ -484,9 +484,9 @@ static void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
     featureClear(FEATURE_VBAT);
 #ifdef ALIENWIIF3
-    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_SERIAL_RX;
+    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 #else
-    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_SERIAL_RX;
+    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;

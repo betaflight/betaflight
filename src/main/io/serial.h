@@ -27,11 +27,11 @@ typedef enum {
     FUNCTION_NONE                = 0,
     FUNCTION_MSP                 = (1 << 0),
     FUNCTION_GPS                 = (1 << 1),
-    FUNCTION_FRSKY_TELEMETRY     = (1 << 2),
-    FUNCTION_HOTT_TELEMETRY      = (1 << 3),
-    FUNCTION_MSP_TELEMETRY       = (1 << 4),
-    FUNCTION_SMARTPORT_TELEMETRY = (1 << 5),
-    FUNCTION_SERIAL_RX           = (1 << 6),
+    FUNCTION_TELEMETRY_FRSKY     = (1 << 2),
+    FUNCTION_TELEMETRY_HOTT      = (1 << 3),
+    FUNCTION_TELEMETRY_MSP       = (1 << 4),
+    FUNCTION_TELEMETRY_SMARTPORT = (1 << 5),
+    FUNCTION_RX_SERIAL           = (1 << 6),
     FUNCTION_BLACKBOX            = (1 << 7)
 } serialPortFunction_e;
 

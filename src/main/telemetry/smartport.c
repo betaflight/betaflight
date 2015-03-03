@@ -214,8 +214,8 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
 void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
-    portConfig = findSerialPortConfig(FUNCTION_SMARTPORT_TELEMETRY);
-    smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_SMARTPORT_TELEMETRY);
+    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
+    smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
 }
 
 void freeSmartPortTelemetryPort(void)
@@ -233,7 +233,7 @@ void configureSmartPortTelemetryPort(void)
         return;
     }
 
-    smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_SMARTPORT_TELEMETRY, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, telemetryConfig->telemetry_inversion);
+    smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_SMARTPORT, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, telemetryConfig->telemetry_inversion);
 
     if (!smartPortSerialPort) {
         return;
