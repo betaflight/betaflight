@@ -168,18 +168,18 @@ void updateGtuneState(void)
     static bool GTuneWasUsed = false;
 
     if (IS_RC_MODE_ACTIVE(BOXGTUNE)) {
-        if (!FLIGHT_MODE(GTUNE_MODE)) {
-        	ENABLE_FLIGHT_MODE(GTUNE_MODE);
+        if (!FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+            ENABLE_FLIGHT_MODE(GTUNE_MODE);
             init_Gtune(&currentProfile->pidProfile);
             GTuneWasUsed = true;
         }
+        if (!FLIGHT_MODE(GTUNE_MODE) && !ARMING_FLAG(ARMED) && GTuneWasUsed) {
+            saveConfigAndNotify();
+            GTuneWasUsed = false;
+        }
     } else {
-        if (FLIGHT_MODE(GTUNE_MODE)) {
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
     	    DISABLE_FLIGHT_MODE(GTUNE_MODE);
-            if (!ARMING_FLAG(ARMED) && GTuneWasUsed) {
-                saveConfigAndNotify();
-                GTuneWasUsed = false;
-            }
         }
     }
 }

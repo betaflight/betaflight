@@ -10,7 +10,7 @@ The G-Tune functionality for Cleanflight is ported from the Harakiri firmware.
 - Safety preamble: Use at your own risk -
 
 The implementation you have here is quiet different and just for adjusting the P values of ROLL/PITCH/YAW in Acro mode.
-When flying in Acro mode (yaw tune in other modes possible as well - see below) you can activate G-Tune with an AUX box (switch).
+When flying in Acro mode (yaw tune in other modes possible as well - see below) you can activate G-Tune with an AUX box (switch) while the copter is armed.
 It will start tuning the wanted / possible axes (see below) in a predefined range (see below).
 After activation you will probably notice nothing! That means G-Tune will not start shaking your copter, you will have to do it (or simply fly and let it work).
 The G-Tune is based on the gyro error so it is only active when you give no RC input (that would be an additional error). So if you just roll only pitch
@@ -19,7 +19,7 @@ The easiest way to tune all axes at once is to do some air-jumps with the copter
 You can set a too high P for the axes as default in the GUI, when the copter starts shaking the wobbles will be detected and P tuned down (be careful with the strength setting though - see below).
 Yaw tune is disabled in any copter with less than 4 motors (like tricopters).
 G-Tune in Horizon or Level mode will just affect Yaw axis (if more than 3 motors...)
-You will see the results in the GUI - the tuning results will only be saved if you disable G-Tune mode while the copter is disarmed or you save the configuration in an alternative way (like hitting save button in the GUI, casting an eepromwrite with trimming, acc calibration etc.)
+You will see the results in the GUI - the tuning results will only be saved if you enable G-Tune mode while the copter is disarmed and G-Tune was used before when armed. You also can save the configuration in an alternative way (like hitting save button in the GUI, casting an eepromwrite with trimming, acc calibration etc.)
 TPA and G-Tune: It is not tested and will most likely not result into something good. However G-Tune might be able to replace TPA for you.
 
 ## Parameters and their function:
