@@ -237,7 +237,7 @@ bool spiInit(SPI_TypeDef *instance)
     }
 #endif
 #ifdef USE_SPI_DEVICE_2
-    if (instance == SPI1) {
+    if (instance == SPI2) {
         initSpi2();
         return true;
     }

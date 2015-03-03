@@ -190,7 +190,7 @@ void serialSetMode(serialPort_t *instance, portMode_t mode) {
 serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, baudRate_e baudRateIndex, portMode_t mode, serialInversion_e inversion) {
     UNUSED(identifier);
     UNUSED(functionMask);
-    UNUSED(baudRate);
+    UNUSED(baudRateIndex);
     UNUSED(callback);
     UNUSED(mode);
     UNUSED(inversion);
@@ -211,6 +211,14 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
 bool sensors(uint32_t mask) {
     UNUSED(mask);
     return false;
+}
+
+bool determineNewTelemetryEnabledState(portSharing_e) {
+    return true;
+}
+
+portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {
+    return PORTSHARING_NOT_SHARED;
 }
 
 }

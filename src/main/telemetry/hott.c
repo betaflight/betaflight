@@ -113,8 +113,6 @@ static portSharing_e hottPortSharing;
 static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
 
-static bool useSoftserialRxFailureWorkaround = false;
-
 static void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
 {
     memset(msg, 0, size);
@@ -280,16 +278,6 @@ void configureHoTTTelemetryPort(void)
         return;
     }
 
-#ifdef USE_SOFTSERIAL1
-    if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL1) {
-        useSoftserialRxFailureWorkaround = true;
-    }
-#endif
-#ifdef USE_SOFTSERIAL2
-    if (hottPort->identifier == SERIAL_PORT_SOFTSERIAL2) {
-        useSoftserialRxFailureWorkaround = true;
-    }
-#endif
     hottTelemetryEnabled = true;
 }
 
@@ -372,18 +360,6 @@ static void hottCheckSerialData(uint32_t currentMicros)
 
     uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
 
-    if (useSoftserialRxFailureWorkaround) {
-        // FIXME The 0x80 is being read as 0x00 - softserial timing/syncronisation problem somewhere.
-        if (!bytesWaiting) {
-            return;
-        }
-
-        uint8_t incomingByte = serialRead(hottPort);
-        processBinaryModeRequest(incomingByte);
-
-        return;
-    }
-
     if (bytesWaiting <= 1) {
         return;
     }
@@ -410,7 +386,7 @@ static void hottCheckSerialData(uint32_t currentMicros)
     uint8_t requestId = serialRead(hottPort);
     uint8_t address = serialRead(hottPort);
 
-    if (requestId == HOTT_BINARY_MODE_REQUEST_ID) {
+    if ((requestId == 0) || (requestId == HOTT_BINARY_MODE_REQUEST_ID) || (address == HOTT_TELEMETRY_NO_SENSOR_ID)) {
         processBinaryModeRequest(address);
     }
 }
