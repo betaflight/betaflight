@@ -15,7 +15,8 @@ var GUI_control = function () {
     this.timeout_array = [];
     this.defaultAllowedTabsWhenDisconnected = [
         'landing',
-        'firmware_flasher'
+        'firmware_flasher',
+        'help'
     ];
     this.defaultAllowedTabsWhenConnected = [
         'adjustments',

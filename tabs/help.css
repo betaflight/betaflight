@@ -1,0 +1,64 @@
+.tab-help .left {
+    width: 60%;
+}
+.tab-help .right {
+    float: left;
+
+    margin-left: 10px;
+    width: calc(40% - 10px);
+}
+
+.tab-landing .section {
+    margin-bottom: 10px;
+}
+
+.left .section:last-child,
+.right .section:last-child {
+    margin-bottom: 0px;
+}
+
+.section .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+
+.documentation {
+    height: 447px;
+
+    border: 1px solid silver;
+}
+.documentation p {
+    padding: 5px;
+}
+.documentation p a {
+    font-weight: bold;
+}
+.documentation p a:hover {
+    text-decoration: underline;
+}
+.support {
+    height: 447px;
+
+    border: 1px solid silver;
+}
+.support p {
+    padding: 5px;
+}
+.support p a {
+    font-weight: bold;
+}
+.support p a:hover {
+    text-decoration: underline;
+}
+.support .wrapper {
+    height: 426px;
+
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
