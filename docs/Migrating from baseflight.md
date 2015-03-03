@@ -35,7 +35,7 @@ reason: unified baud rate configuration
 
 If an unsupported baud rate value is used the gps code will select 115200 baud.
 
-see `serial_port_x_baudrate`
+see `serial_port_x_gps_baudrate`
 
 ### gps_type
 reason: renamed to `gps_provider` for consistency
