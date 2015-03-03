@@ -1534,7 +1534,7 @@ static bool processInCommand(void)
         {
             uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);
 
-            if ((SERIAL_PORT_COUNT * portConfigSize) != SERIAL_PORT_COUNT) {
+            if ((SERIAL_PORT_COUNT * portConfigSize) != currentPort->dataSize) {
                 headSerialError(0);
                 break;
             }
