@@ -88,11 +88,11 @@ extern int16_t debug[4];
 #define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
 #define HOTT_RX_SCHEDULE 4000
 #define HOTT_TX_DELAY_US 3000
+#define MILLISECONDS_IN_A_SECOND 1000
 
 static uint32_t lastHoTTRequestCheckAt = 0;
 static uint32_t lastMessagesPreparedAt = 0;
-
-static uint32_t alarmSound_currentTime, previous_alarmSound_time;
+static uint32_t lastHottAlarmSoundTime = 0;
 
 static bool hottIsSending = false;
 
@@ -211,15 +211,15 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 }
 #endif
 
-static bool time_for_Voice_Alarm(void)
+static bool shouldTriggerVoiceAlarmNow(void)
 {
-	return ((alarmSound_currentTime - previous_alarmSound_time) >= (useHottAlarmSoundPeriod() * 1000000));
+	return ((millis() - lastHottAlarmSoundTime) >= (useHottAlarmSoundInterval() * MILLISECONDS_IN_A_SECOND));
 }
 
-static inline void checkAlarmBattery(HOTT_EAM_MSG_t *hottEAMMessage)
+static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    if (time_for_Voice_Alarm()){
-		previous_alarmSound_time = alarmSound_currentTime;
+    if (shouldTriggerVoiceAlarmNow()){
+		lastHottAlarmSoundTime = millis();
         if (vbat <= batteryWarningVoltage){
         	hottEAMMessage->warning_beeps = 0x10;
         	hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
@@ -238,7 +238,7 @@ static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
     hottEAMMessage->batt1_voltage_L = vbat & 0xFF;
     hottEAMMessage->batt1_voltage_H = vbat >> 8;
 
-    checkAlarmBattery(hottEAMMessage);
+    updateAlarmBatteryStatus(hottEAMMessage);
 }
 
 static inline void hottEAMUpdateCurrentMeter(HOTT_EAM_MSG_t *hottEAMMessage)
@@ -440,6 +440,12 @@ static void hottCheckSerialData(uint32_t currentMicros)
     uint8_t requestId = serialRead(hottPort);
     uint8_t address = serialRead(hottPort);
 
+    /*FIXME the first byte of the Hott request frame is ONLY either 0x80 (binary mode) or 0x7F (text mode).
+     The binary mode is read as 0x00 (error reading the upper bit) while the text mode is correctly decoded.
+     The (requestId == 0) test is a workaround for detecting the binary mode with no ambiguity as there is only
+     one other valid value (0x7F) for text mode.
+     The error reading for the upper bit should nevertheless be fixed */
+
     if (requestId == HOTT_BINARY_MODE_REQUEST_ID) {
         processBinaryModeRequest(address);
     }
@@ -489,7 +495,6 @@ void handleHoTTTelemetry(void)
 {
     static uint32_t serialTimer;
     uint32_t now = micros();
-    alarmSound_currentTime = now;
 
 
     if (shouldPrepareHoTTMessages(now)) {

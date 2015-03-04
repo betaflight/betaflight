@@ -50,7 +50,7 @@ typedef struct telemetryConfig_s {
     float gpsNoFixLongitude;  
     frskyGpsCoordFormat_e frsky_coordinate_format;   
     frskyUnit_e frsky_unit; 
-    uint8_t HottAlarmSoundPeriod;
+    uint8_t hottAlarmSoundInterval;
 } telemetryConfig_t;
 
 void checkTelemetryState(void);
@@ -60,6 +60,6 @@ uint32_t getTelemetryProviderBaudRate(void);
 void useTelemetryConfig(telemetryConfig_t *telemetryConfig);
 bool telemetryAllowsOtherSerial(int serialPortFunction);
 bool isTelemetryPortShared(void);
-uint8_t useHottAlarmSoundPeriod (void);
+uint8_t useHottAlarmSoundInterval (void);
 
 #endif /* TELEMETRY_COMMON_H_ */
