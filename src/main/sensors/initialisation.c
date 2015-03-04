@@ -457,10 +457,10 @@ static void detectMag(magSensor_e magHardwareToUse)
     magSensor_e magHardware;
 
 #ifdef USE_MAG_HMC5883
-    static hmc5883Config_t *hmc5883Config = 0;
+    hmc5883Config_t *hmc5883Config = 0;
 
 #ifdef NAZE
-    hmc5883Config_t nazeHmc5883Config;
+    static hmc5883Config_t nazeHmc5883Config;
 
     if (hardwareRevision < NAZE32_REV5) {
         nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOB;
@@ -476,7 +476,7 @@ static void detectMag(magSensor_e magHardwareToUse)
 #endif
 
 #ifdef SPRACINGF3
-    hmc5883Config_t spRacingF3Hmc5883Config = {
+    static hmc5883Config_t spRacingF3Hmc5883Config = {
         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
         .gpioPin = Pin_14,
         .gpioPort = GPIOC
