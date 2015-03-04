@@ -241,7 +241,7 @@ TABS.setup.initialize3D = function (compatibility) {
     loader.load('./resources/models/' + model_file + '.json', function (geometry, materials) {
         model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
 
-        model.scale.set(10, 10, 10);
+        model.scale.set(15, 15, 15);
 
         modelWrapper.add(model);
         scene.add(modelWrapper);
