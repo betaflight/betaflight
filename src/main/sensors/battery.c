@@ -17,18 +17,53 @@
 
 #include "stdbool.h"
 #include "stdint.h"
+#include <stdlib.h>
+
+#include "platform.h"
 
 #include "common/maths.h"
-
-#include "config/runtime_config.h"
+#include "common/axis.h"
+#include "common/color.h"
 
 #include "drivers/adc.h"
 #include "drivers/system.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+#include "drivers/gpio.h"
+#include "drivers/timer.h"
+#include "drivers/serial.h"
+#include "drivers/pwm_rx.h"
+
+#include "config/runtime_config.h"
+
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/barometer.h"
+
+#include "flight/mixer.h"
+#include "flight/failsafe.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/navigation.h"
 
 #include "rx/rx.h"
-#include "io/rc_controls.h"
 
-#include "sensors/battery.h"
+#include "io/rc_controls.h"
+#include "io/escservo.h"
+#include "io/serial.h"
+#include "io/gps.h"
+#include "io/gimbal.h"
+#include "io/ledstrip.h"
+
+#include "telemetry/telemetry.h"
+
+#include "config/runtime_config.h"
+#include "config/config.h"
+#include "config/config_profile.h"
+#include "config/config_master.h"
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count
@@ -130,6 +165,8 @@ void updateCurrentMeter(int32_t lastUpdateAt)
         case CURRENT_SENSOR_VIRTUAL:
             amperage = (int32_t)batteryConfig->currentMeterOffset;
             if(ARMING_FLAG(ARMED)) {
+                if((rcData[THROTTLE]) < masterConfig.rxConfig.mincheck && feature(FEATURE_MOTOR_STOP))
+                    throttleOffset = 0;
                 throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
                 amperage += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
             }
