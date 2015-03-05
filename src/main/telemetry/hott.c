@@ -213,7 +213,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 
 static bool shouldTriggerVoiceAlarmNow(void)
 {
-	return ((millis() - lastHottAlarmSoundTime) >= (useHottAlarmSoundInterval() * MILLISECONDS_IN_A_SECOND));
+	return ((millis() - lastHottAlarmSoundTime) >= (telemetryConfig->hottAlarmSoundInterval * MILLISECONDS_IN_A_SECOND));
 }
 
 static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)

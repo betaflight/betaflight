@@ -60,6 +60,5 @@ uint32_t getTelemetryProviderBaudRate(void);
 void useTelemetryConfig(telemetryConfig_t *telemetryConfig);
 bool telemetryAllowsOtherSerial(int serialPortFunction);
 bool isTelemetryPortShared(void);
-uint8_t useHottAlarmSoundInterval (void);
 
 #endif /* TELEMETRY_COMMON_H_ */

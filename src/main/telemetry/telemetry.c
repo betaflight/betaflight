@@ -48,11 +48,6 @@ static bool telemetryPortIsShared;
 
 static telemetryConfig_t *telemetryConfig;
 
-
-uint8_t useHottAlarmSoundInterval(void)
-{
-    return telemetryConfig->hottAlarmSoundInterval;
-}
 void useTelemetryConfig(telemetryConfig_t *telemetryConfigToUse)
 {
     telemetryConfig = telemetryConfigToUse;
