@@ -521,6 +521,9 @@
     "portsButtonSave": {
         "message": "Save and Reboot"
     },
+    "portsTelemetryDisabled": {
+        "message": "Disabled"
+    },
     "portsFunction_MSP": {
         "message": "MSP"
     },
