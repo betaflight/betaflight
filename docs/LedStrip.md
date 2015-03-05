@@ -165,47 +165,47 @@ This mode flashes LEDs that correspond to roll and pitch stick positions.  i.e. 
 
 | Mode | Direction | LED Color |
 |------------|--------|---------------------|
-|Orientation | North  | COLOR_WHITE			|
-|Orientation | East   | COLOR_DARK_VIOLET	|  
-|Orientation | South  | COLOR_RED			|
-|Orientation | West   | COLOR_DEEP_PINK		|
-|Orientation | Up     | COLOR_BLUE			|
-|Orientation | Down   | COLOR_ORANGE		|
+|Orientation | North  | WHITE			|
+|Orientation | East   | DARK VIOLET	|  
+|Orientation | South  | RED			|
+|Orientation | West   | DEEP PINK		|
+|Orientation | Up     | BLUE			|
+|Orientation | Down   | ORANGE		|
 | | | |
-|Head Free   | North  | COLOR_LIME_GREEN 	|
-|Head Free   | East   | COLOR_DARK_VIOLET 	|
-|Head Free   | South  | COLOR_ORANGE 		|
-|Head Free   | West   | COLOR_DEEP_PINK 	|
-|Head Free   | Up     | COLOR_BLUE 			|
-|Head Free   | Down   | COLOR_ORANGE 		|
+|Head Free   | North  | LIME GREEN 	|
+|Head Free   | East   | DARK VIOLET 	|
+|Head Free   | South  | ORANGE 		|
+|Head Free   | West   | DEEP PINK 	|
+|Head Free   | Up     | BLUE 			|
+|Head Free   | Down   | ORANGE 		|
 | | | |
-|Horizon     | North  | COLOR_BLUE			|
-|Horizon     | East   | COLOR_DARK_VIOLET 	|
-|Horizon     | South  | COLOR_YELLOW 		|
-|Horizon     | West   | COLOR_DEEP_PINK 	|
-|Horizon     | Up     | COLOR_BLUE 			|
-|Horizon     | Down   | COLOR_ORANGE 		|
+|Horizon     | North  | BLUE			|
+|Horizon     | East   | DARK VIOLET 	|
+|Horizon     | South  | YELLOW 		|
+|Horizon     | West   | DEEP PINK 	|
+|Horizon     | Up     | BLUE 			|
+|Horizon     | Down   | ORANGE 		|
 | | | |
-|Angle       | North  | COLOR_CYAN			|
-|Angle       | East   | COLOR_DARK_VIOLET 	|
-|Angle       | South  | COLOR_YELLOW 		|
-|Angle       | West   | COLOR_DEEP_PINK 	|
-|Angle       | Up     | COLOR_BLUE 			|
-|Angle       | Down   | COLOR_ORANGE 		|
+|Angle       | North  | CYAN			|
+|Angle       | East   | DARK VIOLET 	|
+|Angle       | South  | YELLOW 		|
+|Angle       | West   | DEEP PINK 	|
+|Angle       | Up     | BLUE 			|
+|Angle       | Down   | ORANGE 		|
 | | | |
-|Mag         | North  | COLOR_MINT_GREEN	|
-|Mag         | East   | COLOR_DARK_VIOLET 	|
-|Mag         | South  | COLOR_ORANGE 		|
-|Mag         | West   | COLOR_DEEP_PINK 	|
-|Mag         | Up     | COLOR_BLUE 			|
-|Mag         | Down   | COLOR_ORANGE 		|
+|Mag         | North  | MINT GREEN	|
+|Mag         | East   | DARK VIOLET 	|
+|Mag         | South  | ORANGE 		|
+|Mag         | West   | DEEP PINK 	|
+|Mag         | Up     | BLUE 			|
+|Mag         | Down   | ORANGE 		|
 | | | |
-|Baro        | North  | COLOR_LIGHT_BLUE 	|
-|Baro        | East   | COLOR_DARK_VIOLET 	|
-|Baro        | South  | COLOR_RED 			|
-|Baro        | West   | COLOR_DEEP_PINK 	|
-|Baro        | Up     | COLOR_BLUE 			|
-|Baro        | Down   | COLOR_ORANGE 		|
+|Baro        | North  | LIGHT BLUE 	|
+|Baro        | East   | DARK VIOLET 	|
+|Baro        | South  | RED 			|
+|Baro        | West   | DEEP PINK 	|
+|Baro        | Up     | BLUE 			|
+|Baro        | Down   | ORANGE 		|
 
 #### Armed state
 
