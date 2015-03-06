@@ -29,9 +29,9 @@ typedef enum {
     ACC_SPI_MPU6000 = 7,
     ACC_SPI_MPU6500 = 8,
     ACC_FAKE = 9,
-
-    ACC_MAX = ACC_FAKE
 } accelerationSensor_e;
+
+#define ACC_MAX  ACC_FAKE
 
 extern sensor_align_e accAlign;
 extern acc_t acc;
