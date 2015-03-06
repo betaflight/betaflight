@@ -62,9 +62,6 @@
 
 #ifdef BLACKBOX
 
-#define BLACKBOX_BAUDRATE 115200
-#define BLACKBOX_INITIAL_PORT_MODE MODE_TX
-
 // How many bytes should we transmit per loop iteration?
 uint8_t blackboxWriteChunkSize = 16;
 
@@ -447,12 +444,29 @@ bool blackboxDeviceOpen(void)
         case BLACKBOX_DEVICE_SERIAL:
             {
                 serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
+                baudRate_e baudRateIndex;
+                portMode_t portMode;
+
                 if (!portConfig) {
                     return false;
                 }
-                blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
 
-                blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+                blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
+                baudRateIndex = portConfig->blackbox_baudrateIndex;
+
+                portMode = MODE_TX;
+
+                if (baudRates[baudRateIndex] > 115200) {
+                    /*
+                     * OpenLog can't keep up faster baud rates without giving it a larger inter-character gap to
+                     * work with.
+                     */
+                    portMode |= MODE_STOPBITS2;
+                }
+
+                blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, baudRates[baudRateIndex],
+                    portMode, SERIAL_NOT_INVERTED);
+
                 return blackboxPort != NULL;
             }
             break;
