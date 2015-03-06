@@ -79,11 +79,13 @@ not a guarantee of better performance.
 
  - Generic 4GB Class 4 microSDHC card - the rate of missing frames is about 1%, and is concentrated around the most
    interesting parts of the log!
+ - Sandisk Ultra 32GB (unlike the smaller 16GB version, this version has poor write latency)
 
 ##### microSDHC cards known to have good performance
 
  - Transcend 16GB Class 10 UHS-I microSDHC (typical error rate < 0.1%)
  - Sandisk Extreme 16GB Class 10 UHS-I microSDHC (typical error rate < 0.1%)
+ - Sandisk Ultra 16GB (it performs only half as well as the Extreme in theory, but still very good)
 
 You should format any card you use with the [SD Association's special formatting tool][] , as it will give the OpenLog
 the best chance of writing at high speed. You must format it with either FAT, or with FAT32 (recommended).
