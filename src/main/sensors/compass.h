@@ -17,13 +17,15 @@
 
 #pragma once
 
-// Type of accelerometer used/detected
+// Type of magnetometer used/detected
 typedef enum {
     MAG_DEFAULT = 0,
     MAG_NONE = 1,
     MAG_HMC5883 = 2,
-    MAG_AK8975 = 3,
+    MAG_AK8975 = 3
 } magSensor_e;
+
+#define MAG_MAX  MAG_AK8975
 
 #ifdef MAG
 void compassInit(void);
