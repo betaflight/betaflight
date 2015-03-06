@@ -31,7 +31,9 @@ Both SoftSerial and UART ports can be connected to your computer via USB to UART
 
 ## Serial Configuration
 
-Serial port configuration is best done via the configurator. 
+Serial port configuration is best done via the configurator.  You can use the CLI too but the commands are reserved for developers and advanced users.
+
+Configure serial ports first, then enable/disable features that use the ports.
 
 ### Constraints
 
@@ -49,4 +51,15 @@ e.g. after configuring a port for GPS enable the GPS feature.
 * No other serial port sharing combinations are valid.
 * You can use as many telemetry systems as you like at the same time.
 
+### Baud Rates
 
+Each baud rate is assigned an identifier, they are as follows:
+
+| Identifier | Baud rate |
+| ---------- | --------- |
+| 0          | Auto      |
+| 1          | 9600      |
+| 2          | 19200     |
+| 3          | 38400     |
+| 4          | 57600     |
+| 5          | 115200    |

@@ -176,24 +176,9 @@ bool sbusFrameComplete(void)
     sbusFrameDone = false;
 
 #ifdef DEBUG_SBUS_PACKETS
+    sbusStateFlags = 0;
     debug[1] = sbusFrame.frame.flags;
 #endif
-
-    if (sbusFrame.frame.flags & SBUS_FLAG_SIGNAL_LOSS) {
-        // internal failsafe enabled and rx failsafe flag set
-#ifdef DEBUG_SBUS_PACKETS
-        sbusStateFlags |= SBUS_STATE_SIGNALLOSS;
-        debug[0] |= SBUS_STATE_SIGNALLOSS;
-#endif
-    }
-    if (sbusFrame.frame.flags & SBUS_FLAG_FAILSAFE_ACTIVE) {
-#ifdef DEBUG_SBUS_PACKETS
-        sbusStateFlags |= SBUS_STATE_FAILSAFE;
-        debug[0] = sbusStateFlags;
-#endif
-        // internal failsafe enabled and rx failsafe flag set
-        return false;
-    }
 
     sbusChannelData[0] = sbusFrame.frame.chan0;
     sbusChannelData[1] = sbusFrame.frame.chan1;
@@ -224,8 +209,23 @@ bool sbusFrameComplete(void)
         sbusChannelData[17] = SBUS_DIGITAL_CHANNEL_MIN;
     }
 
+    if (sbusFrame.frame.flags & SBUS_FLAG_SIGNAL_LOSS) {
 #ifdef DEBUG_SBUS_PACKETS
-    sbusStateFlags = 0;
+        sbusStateFlags |= SBUS_STATE_SIGNALLOSS;
+        debug[0] = sbusStateFlags;
+#endif
+    }
+    if (sbusFrame.frame.flags & SBUS_FLAG_FAILSAFE_ACTIVE) {
+        // internal failsafe enabled and rx failsafe flag set
+#ifdef DEBUG_SBUS_PACKETS
+        sbusStateFlags |= SBUS_STATE_FAILSAFE;
+        debug[0] = sbusStateFlags;
+#endif
+        // RX *should* still be sending valid channel data, so use it.
+        return false;
+    }
+
+#ifdef DEBUG_SBUS_PACKETS
     debug[0] = sbusStateFlags;
 #endif
     return true;

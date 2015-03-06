@@ -84,6 +84,7 @@ void handleMSPTelemetry(void)
 
 void freeMSPTelemetryPort(void)
 {
+    mspReleasePortIfAllocated(mspTelemetryPort);
     closeSerialPort(mspTelemetryPort);
     mspTelemetryPort = NULL;
     mspTelemetryEnabled = false;

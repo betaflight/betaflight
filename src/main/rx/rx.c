@@ -294,11 +294,9 @@ void processRxChannels(void)
 
 void processDataDrivenRx(void)
 {
-    if (!rcDataReceived) {
-        return;
+    if (rcDataReceived) {
+        failsafe->vTable->reset();
     }
-
-    failsafe->vTable->reset();
 
     processRxChannels();
 
