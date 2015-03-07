@@ -43,7 +43,7 @@ software was developed on a craft with a looptime of 2400. Any looptime smaller 
 data rate. The default looptime on Cleanflight is 3500. 
 
 If you're using a looptime of 2300 or smaller, you will probably need to reduce the sampling rate in the Blackbox
-settings, or increase your logger's baudrate to 230400. See the later section on configuring the Blackbox feature for
+settings, or increase your logger's baudrate to 250000. See the later section on configuring the Blackbox feature for
 details.
 
 ## Hardware
@@ -59,7 +59,7 @@ it should be reflashed with the [OpenLog Light firmware][] or the special [OpenL
 be version 2.0 or higher to allow configuration of baud rates). 
 
 The Blackbox variant of the firmware ensures that the OpenLog is using the correct settings, and defaults to 115200
-baud. If you are using a looptime of 2500 or smaller, you should set the baud rate to 230400 instead to eliminate
+baud. If you are using a looptime of 2500 or smaller, you should set the baud rate to 250000 instead to eliminate
 dropped frames.
 
 You can find the Blackbox version of the OpenLog firmware [here](https://github.com/cleanflight/blackbox-firmware), 
@@ -96,7 +96,7 @@ the best chance of writing at high speed. You must format it with either FAT, or
 
 Power up the OpenLog with a microSD card inside, wait 10 seconds or so, then power it down and plug the microSD card
 into your computer. You should find a "CONFIG.TXT" file on the card. You should see the baud rate that the OpenLog has
-been configured to. You probably want this to be set to either 115200 (the default) or 230400 (for craft with looptimes
+been configured to. You probably want this to be set to either 115200 (the default) or 250000 (for craft with looptimes
 smaller than 2500).
 
 Save the file and put the card back into your OpenLog, it should use those settings from now on.
@@ -158,7 +158,7 @@ Enter `set blackbox_device=1` to switch to logging to an onboard dataflash chip,
 
 ## Configuring the Blackbox
 
-If you are using a short looptime like 2500 or smaller, try switching your OpenLog to 230400 baud (instead of the 
+If you are using a short looptime like 2500 or smaller, try switching your OpenLog to 250000 baud (instead of the 
 default of 115200) and set that baud rate on the Blackbox's port in the Confgurator.
 
 The Blackbox currently provides two settings (`blackbox_rate_num` and `blackbox_rate_denom`) that allow you to control 

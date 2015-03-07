@@ -456,10 +456,10 @@ bool blackboxDeviceOpen(void)
 
                 portMode = MODE_TX;
 
-                if (baudRates[baudRateIndex] > 115200) {
+                if (baudRates[baudRateIndex] == 230400) {
                     /*
-                     * OpenLog can't keep up faster baud rates without giving it a larger inter-character gap to
-                     * work with.
+                     * OpenLog's 230400 baud rate is very inaccurate, so it requires a larger inter-character gap in
+                     * order to maintain synchronization.
                      */
                     portMode |= MODE_STOPBITS2;
                 }
