@@ -202,7 +202,7 @@ static const motorMixer_t mixerDualcopter[] = {
     { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
 };
 
-// Keep this synced with MultiType struct in mw.h!
+// Keep synced with mixerMode_e
 const mixer_t mixers[] = {
 //    Mo Se Mixtable
     { 0, 0, NULL },                // entry 0
