@@ -402,8 +402,14 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             generateThrottleCurve(controlRateConfig, escAndServoConfig);
             break;
         case ADJUSTMENT_PITCH_ROLL_RATE:
+        case ADJUSTMENT_PITCH_RATE:
             newValue = (int)controlRateConfig->rates[FD_PITCH] + delta;
             controlRateConfig->rates[FD_PITCH] = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            if (adjustmentFunction == ADJUSTMENT_PITCH_RATE) {
+                break;
+            }
+            // follow though for combined ADJUSTMENT_PITCH_ROLL_RATE
+        case ADJUSTMENT_ROLL_RATE:
             newValue = (int)controlRateConfig->rates[FD_ROLL] + delta;
             controlRateConfig->rates[FD_ROLL] = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             break;
