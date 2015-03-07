@@ -890,11 +890,12 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
         break;
     case MSP_RC_TUNING:
-        headSerialReply(7);
+        headSerialReply(8);
         serialize8(currentControlRateProfile->rcRate8);
         serialize8(currentControlRateProfile->rcExpo8);
-        serialize8(currentControlRateProfile->rollPitchRate);
-        serialize8(currentControlRateProfile->yawRate);
+        for (i = 0 ; i < 3; i++) {
+            serialize8(currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
+        }
         serialize8(currentControlRateProfile->dynThrPID);
         serialize8(currentControlRateProfile->thrMid8);
         serialize8(currentControlRateProfile->thrExpo8);
@@ -1325,13 +1326,18 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RC_TUNING:
-        currentControlRateProfile->rcRate8 = read8();
-        currentControlRateProfile->rcExpo8 = read8();
-        currentControlRateProfile->rollPitchRate = read8();
-        currentControlRateProfile->yawRate = read8();
-        currentControlRateProfile->dynThrPID = read8();
-        currentControlRateProfile->thrMid8 = read8();
-        currentControlRateProfile->thrExpo8 = read8();
+        if (currentPort->dataSize == 8) {
+            currentControlRateProfile->rcRate8 = read8();
+            currentControlRateProfile->rcExpo8 = read8();
+            for (i = 0; i < 3; i++) {
+                currentControlRateProfile->rates[i] = read8();
+            }
+            currentControlRateProfile->dynThrPID = read8();
+            currentControlRateProfile->thrMid8 = read8();
+            currentControlRateProfile->thrExpo8 = read8();
+        } else {
+            headSerialError(0);
+        }
         break;
     case MSP_SET_MISC:
         tmp = read16();

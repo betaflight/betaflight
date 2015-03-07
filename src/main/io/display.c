@@ -271,26 +271,22 @@ void showProfilePage(void)
 
     controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
 
-    tfp_sprintf(lineBuffer, "RC Expo: %d", controlRateConfig->rcExpo8);
+    tfp_sprintf(lineBuffer, "Expo: %d, Rate: %d",
+        controlRateConfig->rcExpo8,
+        controlRateConfig->rcRate8
+    );
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "RC Rate: %d", controlRateConfig->rcRate8);
+    tfp_sprintf(lineBuffer, "Rates R:%d P:%d Y:%d",
+        controlRateConfig->rates[FD_ROLL],
+        controlRateConfig->rates[FD_PITCH],
+        controlRateConfig->rates[FD_YAW]
+    );
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
-
-    tfp_sprintf(lineBuffer, "R&P Rate: %d", controlRateConfig->rollPitchRate);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
-
-    tfp_sprintf(lineBuffer, "Yaw Rate: %d", controlRateConfig->yawRate);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
-
 }
 #define SATELLITE_COUNT (sizeof(GPS_svinfo_cno) / sizeof(GPS_svinfo_cno[0]))
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)

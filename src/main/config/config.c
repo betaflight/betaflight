@@ -275,12 +275,15 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 90;
     controlRateConfig->rcExpo8 = 65;
-    controlRateConfig->rollPitchRate = 0;
-    controlRateConfig->yawRate = 0;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 0;
     controlRateConfig->tpa_breakpoint = 1500;
+
+    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
+        controlRateConfig->rates[axis] = 0;
+    }
+
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {

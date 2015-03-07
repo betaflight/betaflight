@@ -546,12 +546,6 @@ static void airplaneMixer(void)
 void mixTable(void)
 {
     uint32_t i;
-    int8_t yawDirection3D = 1;
-
-	// Reverse yaw servo when inverted in 3D mode
-	if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->midrc)) {
-		yawDirection3D = -1;
-	}
 
     if (motorCount > 3) {
         // prevent "yaw jump" during yaw correction
@@ -570,6 +564,13 @@ void mixTable(void)
     }
 
 #if !defined(USE_QUAD_MIXER_ONLY) || defined(USE_SERVOS)
+    int8_t yawDirection3D = 1;
+
+    // Reverse yaw servo when inverted in 3D mode
+    if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->midrc)) {
+        yawDirection3D = -1;
+    }
+
     // airplane / servo mixes
     switch (currentMixerMode) {
         case MIXER_BI:
