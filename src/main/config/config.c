@@ -119,7 +119,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 93;
+static const uint8_t EEPROM_CONF_VERSION = 94;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -293,6 +293,16 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     rcControlsConfig->alt_hold_fast_change = 1;
 }
 
+void resetMixerConfig(mixerConfig_t *mixerConfig) {
+    mixerConfig->pid_at_min_throttle = 1;
+    mixerConfig->yaw_direction = 1;
+#ifdef USE_SERVOS
+    mixerConfig->tri_unarmed_servo = 1;
+    mixerConfig->servo_lowpass_freq = 400;
+    mixerConfig->servo_lowpass_enable = 0;
+#endif
+}
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -378,8 +388,8 @@ static void resetConf(void)
     masterConfig.disarm_kill_switch = 1;
     masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;
-    masterConfig.pid_at_min_throttle = 1;
 
+    resetMixerConfig(&masterConfig.mixerConfig);
 
     masterConfig.airplaneConfig.flaps_speed = 0;
     masterConfig.airplaneConfig.fixedwing_althold_dir = 1;
@@ -451,11 +461,6 @@ static void resetConf(void)
         currentProfile->servoConf[i].rate = servoRates[i];
         currentProfile->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
-
-    currentProfile->mixerConfig.yaw_direction = 1;
-    currentProfile->mixerConfig.tri_unarmed_servo = 1;
-    currentProfile->mixerConfig.servo_lowpass_freq = 400;
-    currentProfile->mixerConfig.servo_lowpass_enable = 0;
 
     // gimbal
     currentProfile->gimbalConfig.gimbal_flags = GIMBAL_NORMAL;
@@ -648,7 +653,7 @@ void activateConfig(void)
 #endif
         &masterConfig.flight3DConfig,
         &masterConfig.escAndServoConfig,
-        &currentProfile->mixerConfig,
+        &masterConfig.mixerConfig,
         &masterConfig.airplaneConfig,
         &masterConfig.rxConfig
     );

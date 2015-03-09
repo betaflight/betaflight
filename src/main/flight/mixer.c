@@ -25,17 +25,14 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
-#include "common/color.h"
 
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/serial.h"
 #include "drivers/system.h"
 
 #include "rx/rx.h"
@@ -43,30 +40,17 @@
 #include "io/gimbal.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
-#include "io/gps.h"
-#include "io/serial.h"
-#include "io/ledstrip.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
-#include "sensors/boardalignment.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
-#include "sensors/barometer.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/lowpass.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
-
-#include "telemetry/telemetry.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
 #define GIMBAL_SERVO_PITCH 0
 #define GIMBAL_SERVO_ROLL 1
@@ -718,7 +702,7 @@ void mixTable(void)
                 if ((rcData[THROTTLE]) < rxConfig->mincheck) {
                     if (feature(FEATURE_MOTOR_STOP)) {
                         motor[i] = escAndServoConfig->mincommand;
-                    } else if (masterConfig.pid_at_min_throttle == 0) {
+                    } else if (mixerConfig->pid_at_min_throttle == 0) {
                         motor[i] = escAndServoConfig->minthrottle;
                     }
                 }

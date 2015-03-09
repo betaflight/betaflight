@@ -274,7 +274,6 @@ const clivalue_t valueTable[] = {
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.disarm_kill_switch, 0, 1 },
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.auto_disarm_delay, 0, 60 },
     { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.small_angle, 0, 180 },
-    { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_at_min_throttle, 0, 1 },
 
     { "flaps_speed",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.airplaneConfig.flaps_speed, 0, 100 },
 
@@ -382,12 +381,15 @@ const clivalue_t valueTable[] = {
     { "throttle_correction_angle",  VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].throttle_correction_angle, 1, 900 },
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, -1, 1 },
-    { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.yaw_direction, -1, 1 },
+
+    { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.mixerConfig.pid_at_min_throttle, 0, 1 },
+    { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.mixerConfig.yaw_direction, -1, 1 },
 #ifdef USE_SERVOS
-    { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.tri_unarmed_servo, 0, 1 },
-    { "servo_lowpass_freq",         VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.servo_lowpass_freq, 10, 400},
-    { "servo_lowpass_enable",       VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.servo_lowpass_enable, 0, 1 },
+    { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.mixerConfig.tri_unarmed_servo, 0, 1 },
+    { "servo_lowpass_freq",         VAR_INT16  | PROFILE_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, 10, 400},
+    { "servo_lowpass_enable",       VAR_INT8   | PROFILE_VALUE, &masterConfig.mixerConfig.servo_lowpass_enable, 0, 1 },
 #endif
+
     { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE , &masterConfig.profile[0].defaultRateProfileIndex, 0, MAX_CONTROL_RATE_PROFILE_COUNT - 1 },
     { "rc_rate",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcRate8, 0, 250 },
     { "rc_expo",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcExpo8, 0, 100 },
