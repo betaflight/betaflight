@@ -31,6 +31,7 @@
 #include "accgyro.h"
 
 #include "adc.h"
+#include "adc_impl.h"
 
 // Driver for STM32F103CB onboard ADC
 //
@@ -43,8 +44,6 @@
 //
 // CC3D Only one ADC channel supported currently, for battery on S5_IN/PA0
 
-extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
-extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 void adcInit(drv_adc_config_t *init)
 {

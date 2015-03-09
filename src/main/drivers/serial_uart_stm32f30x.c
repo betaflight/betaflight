@@ -35,6 +35,7 @@
 
 #include "serial.h"
 #include "serial_uart.h"
+#include "serial_uart_impl.h"
 
 // Using RX DMA disables the use of receive callbacks
 #define USE_USART1_RX_DMA
@@ -70,12 +71,17 @@
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 #endif
 
+#ifdef USE_USART1
 static uartPort_t uartPort1;
+#endif
+#ifdef USE_USART2
 static uartPort_t uartPort2;
+#endif
+#ifdef USE_USART3
 static uartPort_t uartPort3;
+#endif
 
-void uartStartTxDMA(uartPort_t *s);
-
+#ifdef USE_USART1
 uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 {
     uartPort_t *s;
@@ -148,7 +154,9 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 
     return s;
 }
+#endif
 
+#ifdef USE_USART2
 uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 {
     uartPort_t *s;
@@ -227,7 +235,9 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 
     return s;
 }
+#endif
 
+#ifdef USE_USART3
 uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode)
 {
     uartPort_t *s;
@@ -306,6 +316,7 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode)
 
     return s;
 }
+#endif
 
 static void handleUsartTxDma(uartPort_t *s)
 {
@@ -338,7 +349,7 @@ void DMA1_Channel7_IRQHandler(void)
 #endif
 
 // USART3 Tx DMA Handler
-#ifdef USE_USART2_TX_DMA
+#ifdef USE_USART3_TX_DMA
 void DMA1_Channel2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort3;
@@ -381,24 +392,29 @@ void usartIrqHandler(uartPort_t *s)
     }
 }
 
+#ifdef USE_USART1
 void USART1_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
 
     usartIrqHandler(s);
 }
+#endif
 
+#ifdef USE_USART2
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort2;
 
     usartIrqHandler(s);
 }
+#endif
 
+#ifdef USE_USART3
 void USART3_IRQHandler(void)
 {
     uartPort_t *s = &uartPort3;
 
     usartIrqHandler(s);
 }
-
+#endif

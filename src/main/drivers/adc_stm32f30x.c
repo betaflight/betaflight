@@ -28,9 +28,7 @@
 #include "accgyro.h"
 
 #include "adc.h"
-
-extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
-extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
+#include "adc_impl.h"
 
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1

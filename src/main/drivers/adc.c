@@ -24,6 +24,7 @@
 #include "system.h"
 
 #include "adc.h"
+#include "adc_impl.h"
 
 //#define DEBUG_ADC_CHANNELS
 

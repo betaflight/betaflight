@@ -37,7 +37,17 @@ TEST(BatteryTest, BatteryADCToVoltage)
 {
     // given
 
-    batteryConfig_t batteryConfig;
+    batteryConfig_t batteryConfig = {
+        .vbatscale = 110,
+        .vbatmaxcellvoltage = 43,
+        .vbatmincellvoltage = 33,
+        .vbatwarningcellvoltage = 35,
+        .currentMeterScale = 400,
+        .currentMeterOffset = 0,
+        .currentMeterType = CURRENT_SENSOR_NONE,
+        .multiwiiCurrentMeterOutput = 0,
+        .batteryCapacity = 2200,
+    };
 
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
     memset(&batteryConfig, 0, sizeof(batteryConfig));
