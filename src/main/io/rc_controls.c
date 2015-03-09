@@ -58,16 +58,19 @@
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;
 
+// true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+
 bool isUsingSticksForArming(void)
 {
     return isUsingSticksToArm;
 }
+
 
 bool areSticksInApModePosition(uint16_t ap_mode)
 {

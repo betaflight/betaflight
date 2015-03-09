@@ -525,12 +525,10 @@ void processRx(void)
     }
     // When armed and motors aren't spinning, disarm board after delay so users without buzzer won't lose fingers.
     // mixTable constrains motor commands, so checking  throttleStatus is enough
-    if (
-        ARMING_FLAG(ARMED)
+    if (ARMING_FLAG(ARMED)
         && feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING)
         && masterConfig.auto_disarm_delay != 0
-        && isUsingSticksForArming()
-    ) {
+        && isUsingSticksForArming()) {
         if (throttleStatus == THROTTLE_LOW) {
             if ((int32_t)(disarmAt - millis()) < 0)  // delay is over
                 mwDisarm();
@@ -701,6 +699,15 @@ void loop(void)
             }
         }
 #endif
+
+        // If we're armed, at minimum throttle, and we do arming via the
+        // sticks, do not process yaw input from the rx.  We do this so the
+        // motors do not spin up while we are trying to arm or disarm.
+        if (isUsingSticksForArming() &&
+                rcData[THROTTLE] <= masterConfig.rxConfig.mincheck) {
+            rcCommand[YAW] = 0;
+        }
+
 
         if (currentProfile->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
             rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile->throttle_correction_value);
