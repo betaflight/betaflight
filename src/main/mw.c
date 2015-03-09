@@ -102,7 +102,6 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
-extern failsafe_t *failsafe;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
@@ -511,11 +510,11 @@ void processRx(void)
 
     if (feature(FEATURE_FAILSAFE)) {
 
-        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafe->vTable->isEnabled()) {
-            failsafe->vTable->enable();
+        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsEnabled()) {
+            failsafeEnable();
         }
 
-        failsafe->vTable->updateState();
+        failsafeUpdateState();
     }
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
@@ -555,7 +554,7 @@ void processRx(void)
 
     bool canUseHorizonMode = true;
 
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeHasTimerElapsed())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
     	canUseHorizonMode = false;
 

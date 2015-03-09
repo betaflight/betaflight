@@ -38,17 +38,15 @@
  * enable() should be called after system initialisation.
  */
 
-static failsafe_t failsafe;
+static failsafeState_t failsafeState;
 
 static failsafeConfig_t *failsafeConfig;
 
 static rxConfig_t *rxConfig;
 
-const failsafeVTable_t failsafeVTable[];
-
-void reset(void)
+void failsafeReset(void)
 {
-    failsafe.counter = 0;
+    failsafeState.counter = 0;
 }
 
 /*
@@ -57,129 +55,118 @@ void reset(void)
 void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse)
 {
     failsafeConfig = failsafeConfigToUse;
-    reset();
+    failsafeReset();
 }
 
-failsafe_t* failsafeInit(rxConfig_t *intialRxConfig)
+failsafeState_t* failsafeInit(rxConfig_t *intialRxConfig)
 {
     rxConfig = intialRxConfig;
 
-    failsafe.vTable = failsafeVTable;
-    failsafe.events = 0;
-    failsafe.enabled = false;
+    failsafeState.events = 0;
+    failsafeState.enabled = false;
 
-    return &failsafe;
+    return &failsafeState;
 }
 
-bool isIdle(void)
+bool failsafeIsIdle(void)
 {
-    return failsafe.counter == 0;
+    return failsafeState.counter == 0;
 }
 
-bool isEnabled(void)
+bool failsafeIsEnabled(void)
 {
-    return failsafe.enabled;
+    return failsafeState.enabled;
 }
 
-void enable(void)
+void failsafeEnable(void)
 {
-    failsafe.enabled = true;
+    failsafeState.enabled = true;
 }
 
-bool hasTimerElapsed(void)
+bool failsafeHasTimerElapsed(void)
 {
-    return failsafe.counter > (5 * failsafeConfig->failsafe_delay);
+    return failsafeState.counter > (5 * failsafeConfig->failsafe_delay);
 }
 
-bool shouldForceLanding(bool armed)
+bool failsafeShouldForceLanding(bool armed)
 {
-    return hasTimerElapsed() && armed;
+    return failsafeHasTimerElapsed() && armed;
 }
 
-bool shouldHaveCausedLandingByNow(void)
+bool failsafeShouldHaveCausedLandingByNow(void)
 {
-    return failsafe.counter > 5 * (failsafeConfig->failsafe_delay + failsafeConfig->failsafe_off_delay);
+    return failsafeState.counter > 5 * (failsafeConfig->failsafe_delay + failsafeConfig->failsafe_off_delay);
 }
 
-void failsafeAvoidRearm(void)
+static void failsafeAvoidRearm(void)
 {
     // This will prevent the automatic rearm if failsafe shuts it down and prevents
     // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
     ENABLE_ARMING_FLAG(PREVENT_ARMING);
 }
 
-void onValidDataReceived(void)
+static void failsafeOnValidDataReceived(void)
 {
-    if (failsafe.counter > 20)
-        failsafe.counter -= 20;
+    if (failsafeState.counter > 20)
+        failsafeState.counter -= 20;
     else
-        failsafe.counter = 0;
+        failsafeState.counter = 0;
 }
 
-void updateState(void)
+void failsafeUpdateState(void)
 {
     uint8_t i;
 
-    if (!hasTimerElapsed()) {
+    if (!failsafeHasTimerElapsed()) {
         return;
     }
 
-    if (!isEnabled()) {
-        reset();
+    if (!failsafeIsEnabled()) {
+        failsafeReset();
         return;
     }
 
-    if (shouldForceLanding(ARMING_FLAG(ARMED))) { // Stabilize, and set Throttle to specified level
+    if (failsafeShouldForceLanding(ARMING_FLAG(ARMED))) { // Stabilize, and set Throttle to specified level
         failsafeAvoidRearm();
 
         for (i = 0; i < 3; i++) {
             rcData[i] = rxConfig->midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
         }
         rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
-        failsafe.events++;
+        failsafeState.events++;
     }
 
-    if (shouldHaveCausedLandingByNow() || !ARMING_FLAG(ARMED)) {
+    if (failsafeShouldHaveCausedLandingByNow() || !ARMING_FLAG(ARMED)) {
         mwDisarm();
     }
 }
 
-void incrementCounter(void)
+/**
+ * Should be called once each time RX data is processed by the system.
+ */
+void failsafeOnRxCycle(void)
 {
-    failsafe.counter++;
+    failsafeState.counter++;
 }
+
+#define REQUIRED_CHANNEL_MASK 0x0F // first 4 channels
 
 // pulse duration is in micro secons (usec)
 void failsafeCheckPulse(uint8_t channel, uint16_t pulseDuration)
 {
-    static uint8_t goodChannelMask;
+    static uint8_t goodChannelMask = 0;
 
     if (channel < 4 &&
         pulseDuration > failsafeConfig->failsafe_min_usec &&
         pulseDuration < failsafeConfig->failsafe_max_usec
-    )
-        goodChannelMask |= (1 << channel);       // if signal is valid - mark channel as OK
+    ) {
+        // if signal is valid - mark channel as OK
+        goodChannelMask |= (1 << channel);
+    }
 
-    if (goodChannelMask == 0x0F) {               // If first four channels have good pulses, clear FailSafe counter
+    if (goodChannelMask == REQUIRED_CHANNEL_MASK) {
         goodChannelMask = 0;
-        onValidDataReceived();
+        failsafeOnValidDataReceived();
     }
 }
-
-
-const failsafeVTable_t failsafeVTable[] = {
-    {
-        reset,
-        shouldForceLanding,
-        hasTimerElapsed,
-        shouldHaveCausedLandingByNow,
-        incrementCounter,
-        updateState,
-        isIdle,
-        failsafeCheckPulse,
-        isEnabled,
-        enable
-    }
-};
-
 
