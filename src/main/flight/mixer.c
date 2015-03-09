@@ -701,6 +701,8 @@ void mixTable(void)
                 if ((rcData[THROTTLE]) < rxConfig->mincheck) {
                     if (feature(FEATURE_MOTOR_STOP)) {
                         motor[i] = escAndServoConfig->mincommand;
+                    } else if (masterConfig.disable_pid_at_min_throttle != 0) {
+                        motor[i] = escAndServoConfig->minthrottle;
                     }
                 }
             }

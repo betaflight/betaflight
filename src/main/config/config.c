@@ -380,6 +380,7 @@ static void resetConf(void)
     masterConfig.small_angle = 25;
     masterConfig.disable_pid_at_min_throttle = 0;
 
+
     masterConfig.airplaneConfig.flaps_speed = 0;
     masterConfig.airplaneConfig.fixedwing_althold_dir = 1;
 
