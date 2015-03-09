@@ -378,6 +378,7 @@ static void resetConf(void)
     masterConfig.disarm_kill_switch = 1;
     masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;
+    masterConfig.disable_pid_at_min_throttle = 0;
 
     masterConfig.airplaneConfig.flaps_speed = 0;
     masterConfig.airplaneConfig.fixedwing_althold_dir = 1;

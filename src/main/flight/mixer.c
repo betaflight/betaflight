@@ -671,8 +671,12 @@ void mixTable(void)
 
     if (ARMING_FLAG(ARMED)) {
 
+        // Find the maximum motor output.
         int16_t maxMotor = motor[0];
         for (i = 1; i < motorCount; i++) {
+            // If one motor is above the maxthrottle threshold, we reduce the value
+            // of all motors by the amount of overshoot.  That way, only one motor
+            // is at max and the relative power of each motor is preserved.
             if (motor[i] > maxMotor) {
                 maxMotor = motor[i];
             }
@@ -691,16 +695,16 @@ void mixTable(void)
                     motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
                 }
             } else {
+                // Don't spin the motors if FEATURE_MOTOR_STOP is enabled and we're
+                // at minimum throttle.
                 motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
                 if ((rcData[THROTTLE]) < rxConfig->mincheck) {
-                    if (!feature(FEATURE_MOTOR_STOP))
-                        motor[i] = escAndServoConfig->minthrottle;
-                    else
+                    if (feature(FEATURE_MOTOR_STOP)) {
                         motor[i] = escAndServoConfig->mincommand;
+                    }
                 }
             }
         }
-
     } else {
         for (i = 0; i < motorCount; i++) {
             motor[i] = motor_disarmed[i];
