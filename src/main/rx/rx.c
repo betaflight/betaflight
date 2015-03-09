@@ -79,41 +79,14 @@ static rxConfig_t *rxConfig;
 
 void serialRxInit(rxConfig_t *rxConfig);
 
-static failsafe_t *failsafe;
-
 void useRxConfig(rxConfig_t *rxConfigToUse)
 {
     rxConfig = rxConfigToUse;
 }
 
-#ifdef SERIAL_RX
-void updateSerialRxFunctionConstraint(functionConstraint_t *functionConstraintToUpdate)
-{
-    switch (rxConfig->serialrx_provider) {
-        case SERIALRX_SPEKTRUM1024:
-        case SERIALRX_SPEKTRUM2048:
-            spektrumUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-        case SERIALRX_SBUS:
-            sbusUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-        case SERIALRX_SUMD:
-            sumdUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-        case SERIALRX_SUMH:
-            sumhUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-        case SERIALRX_XBUS_MODE_B:
-        case SERIALRX_XBUS_MODE_B_RJ01:
-            xBusUpdateSerialRxFunctionConstraint(functionConstraintToUpdate);
-            break;
-    }
-}
-#endif
-
 #define STICK_CHANNEL_COUNT 4
 
-void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
+void rxInit(rxConfig_t *rxConfig)
 {
     uint8_t i;
 
@@ -122,8 +95,6 @@ void rxInit(rxConfig_t *rxConfig, failsafe_t *initialFailsafe)
     for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rcData[i] = rxConfig->midrc;
     }
-
-    failsafe = initialFailsafe;
 
 #ifdef SERIAL_RX
     if (feature(FEATURE_RX_SERIAL)) {
@@ -230,7 +201,7 @@ void updateRx(void)
 
     if (rcDataReceived) {
         if (feature(FEATURE_FAILSAFE)) {
-            failsafe->vTable->reset();
+            failsafeReset();
         }
     }
 }
@@ -302,7 +273,7 @@ void processRxChannels(void)
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
 
         if (feature(FEATURE_FAILSAFE) && shouldCheckPulse) {
-            failsafe->vTable->checkPulse(chan, sample);
+            failsafeCheckPulse(chan, sample);
         }
 
         // validate the range
@@ -319,11 +290,9 @@ void processRxChannels(void)
 
 void processDataDrivenRx(void)
 {
-    if (!rcDataReceived) {
-        return;
+    if (rcDataReceived) {
+        failsafeReset();
     }
-
-    failsafe->vTable->reset();
 
     processRxChannels();
 
@@ -342,7 +311,7 @@ void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
     rxUpdateAt = currentTime + DELAY_50_HZ;
 
     if (feature(FEATURE_FAILSAFE)) {
-        failsafe->vTable->incrementCounter();
+        failsafeOnRxCycle();
     }
 
     if (isRxDataDriven()) {

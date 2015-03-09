@@ -66,11 +66,6 @@ typedef struct gpsConfig_s {
     gpsAutoBaud_e autoBaud;
 } gpsConfig_t;
 
-typedef enum {
-    GPS_PASSTHROUGH_ENABLED = 1,
-    GPS_PASSTHROUGH_NO_SERIAL_PORT
-} gpsEnablePassthroughResult_e;
-
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
     int16_t mmmm;
@@ -124,5 +119,4 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 
 void gpsThread(void);
 bool gpsNewFrame(uint8_t c);
-gpsEnablePassthroughResult_e gpsEnablePassthrough(void);
 void updateGpsIndicator(uint32_t currentTime);

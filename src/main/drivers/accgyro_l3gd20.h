@@ -17,10 +17,4 @@
 
 #pragma once
 
-#define L3GD20_SPI          SPI1
-
-#define L3GD20_CS_GPIO      GPIOE
-#define L3GD20_CS_PIN       GPIO_Pin_3
-#define L3GD20_CS_GPIO_CLK  RCC_AHBPeriph_GPIOE
-
 bool l3gd20Detect(gyro_t *gyro, uint16_t lpf);

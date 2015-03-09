@@ -18,63 +18,33 @@
 #pragma once
 
 typedef enum {
+    PORTSHARING_UNUSED = 0,
+    PORTSHARING_NOT_SHARED,
+    PORTSHARING_SHARED
+} portSharing_e;
+
+typedef enum {
     FUNCTION_NONE                = 0,
     FUNCTION_MSP                 = (1 << 0),
-    FUNCTION_CLI                 = (1 << 1),
-    FUNCTION_TELEMETRY           = (1 << 2),
-    FUNCTION_SMARTPORT_TELEMETRY = (1 << 3),
-    FUNCTION_SERIAL_RX           = (1 << 4),
-    FUNCTION_GPS                 = (1 << 5),
-    FUNCTION_GPS_PASSTHROUGH     = (1 << 6),
+    FUNCTION_GPS                 = (1 << 1),
+    FUNCTION_TELEMETRY_FRSKY     = (1 << 2),
+    FUNCTION_TELEMETRY_HOTT      = (1 << 3),
+    FUNCTION_TELEMETRY_MSP       = (1 << 4),
+    FUNCTION_TELEMETRY_SMARTPORT = (1 << 5),
+    FUNCTION_RX_SERIAL           = (1 << 6),
     FUNCTION_BLACKBOX            = (1 << 7)
 } serialPortFunction_e;
 
 typedef enum {
-    NO_AUTOBAUD = 0,
-    AUTOBAUD
-} autoBaud_e;
+    BAUD_AUTO = 0,
+    BAUD_9600,
+    BAUD_19200,
+    BAUD_38400,
+    BAUD_57600,
+    BAUD_115200
+} baudRate_e;
 
-typedef struct functionConstraint_s {
-    serialPortFunction_e function;
-    uint32_t minBaudRate;
-    uint32_t maxBaudRate;
-    autoBaud_e autoBaud;
-    uint8_t requiredSerialPortFeatures;
-} functionConstraint_t;
-
-typedef enum {
-    SCENARIO_UNUSED                             = FUNCTION_NONE,
-
-    SCENARIO_CLI_ONLY                           = FUNCTION_CLI,
-    SCENARIO_GPS_ONLY                           = FUNCTION_GPS,
-    SCENARIO_GPS_PASSTHROUGH_ONLY               = FUNCTION_GPS_PASSTHROUGH,
-    SCENARIO_MSP_ONLY                           = FUNCTION_MSP,
-    SCENARIO_MSP_CLI_GPS_PASTHROUGH             = FUNCTION_CLI | FUNCTION_MSP | FUNCTION_GPS_PASSTHROUGH,
-    SCENARIO_MSP_CLI_TELEMETRY_GPS_PASTHROUGH   = FUNCTION_MSP | FUNCTION_CLI | FUNCTION_TELEMETRY | FUNCTION_SMARTPORT_TELEMETRY | FUNCTION_GPS_PASSTHROUGH,
-    SCENARIO_SERIAL_RX_ONLY                     = FUNCTION_SERIAL_RX,
-    SCENARIO_TELEMETRY_ONLY                     = FUNCTION_TELEMETRY,
-    SCENARIO_SMARTPORT_TELEMETRY_ONLY           = FUNCTION_SMARTPORT_TELEMETRY,
-    SCENARIO_BLACKBOX_ONLY                      = FUNCTION_BLACKBOX,
-    SCENARIO_MSP_CLI_BLACKBOX_GPS_PASTHROUGH    = FUNCTION_CLI | FUNCTION_MSP | FUNCTION_BLACKBOX | FUNCTION_GPS_PASSTHROUGH
-} serialPortFunctionScenario_e;
-
-#define SERIAL_PORT_SCENARIO_COUNT 12
-#define SERIAL_PORT_SCENARIO_MAX (SERIAL_PORT_SCENARIO_COUNT - 1)
-extern const serialPortFunctionScenario_e serialPortScenarios[SERIAL_PORT_SCENARIO_COUNT];
-
-typedef enum {
-    SERIAL_PORT_1 = 0,
-    SERIAL_PORT_2,
-#if (SERIAL_PORT_COUNT > 2)
-    SERIAL_PORT_3,
-#if (SERIAL_PORT_COUNT > 3)
-    SERIAL_PORT_4,
-#if (SERIAL_PORT_COUNT > 4)
-    SERIAL_PORT_5
-#endif
-#endif
-#endif
-} serialPortIndex_e;
+extern uint32_t baudRates[];
 
 // serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
@@ -88,64 +58,70 @@ typedef enum {
     SERIAL_PORT_IDENTIFIER_MAX = SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;
 
+serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
-// bitmask
-typedef enum {
-    SPF_NONE                   = 0,
-    SPF_SUPPORTS_CALLBACK      = (1 << 0),
-    SPF_SUPPORTS_SBUS_MODE     = (1 << 1),
-    SPF_SUPPORTS_BIDIR_MODE    = (1 << 2),
-    SPF_IS_SOFTWARE_INVERTABLE = (1 << 3)
-} serialPortFeature_t;
-
-typedef struct serialPortConstraint_s {
-    const serialPortIdentifier_e identifier;
-    uint32_t minBaudRate;
-    uint32_t maxBaudRate;
-    serialPortFeature_t feature;
-} serialPortConstraint_t;
-extern const serialPortConstraint_t serialPortConstraints[SERIAL_PORT_COUNT];
-
-typedef struct serialPortFunction_s {
+//
+// runtime
+//
+typedef struct serialPortUsage_s {
     serialPortIdentifier_e identifier;
-    serialPort_t *port; // a NULL values indicates the port has not been opened yet.
-    serialPortFunctionScenario_e scenario;
-    serialPortFunction_e currentFunction;
-} serialPortFunction_t;
+    serialPort_t *serialPort;
+    serialPortFunction_e function;
+} serialPortUsage_t;
 
-typedef struct serialPortFunctionList_s {
-    uint8_t serialPortCount;
-    serialPortFunction_t *functions;
-} serialPortFunctionList_t;
+serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction);
+serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction);
+
+//
+// configuration
+//
+typedef struct serialPortConfig_s {
+    serialPortIdentifier_e identifier;
+    uint16_t functionMask;
+    uint8_t msp_baudrateIndex;
+    uint8_t gps_baudrateIndex;
+    uint8_t blackbox_baudrateIndex;
+    uint8_t telemetry_baudrateIndex; // not used for all telemetry systems, e.g. HoTT only works at 19200.
+} serialPortConfig_t;
 
 typedef struct serialConfig_s {
-    uint8_t serial_port_scenario[SERIAL_PORT_COUNT];
-    uint32_t msp_baudrate;
-    uint32_t cli_baudrate;
-    uint32_t gps_baudrate;
-    uint32_t gps_passthrough_baudrate;
-
     uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
+    serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
 } serialConfig_t;
 
-uint8_t lookupScenarioIndex(serialPortFunctionScenario_e scenario);
 
-serialPort_t *findOpenSerialPort(uint16_t functionMask);
-serialPort_t *openSerialPort(serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion);
+//
+// configuration
+//
+bool isSerialConfigValid(serialConfig_t *serialConfig);
+bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function);
+serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
 
-bool canOpenSerialPort(serialPortFunction_e function);
-void beginSerialPortFunction(serialPort_t *port, serialPortFunction_e function);
-void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function);
+portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function);
+bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
+
+
+
+//
+// runtime
+//
+serialPort_t *openSerialPort(
+    serialPortIdentifier_e identifier,
+    serialPortFunction_e function,
+    serialReceiveCallbackPtr callback,
+    uint32_t baudrate,
+    portMode_t mode,
+    serialInversion_e inversion
+);
+void closeSerialPort(serialPort_t *serialPort);
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 
-void applySerialConfigToPortFunctions(serialConfig_t *serialConfig);
-bool isSerialConfigValid(serialConfig_t *serialConfig);
-bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
-bool isSerialPortFunctionShared(serialPortFunction_e functionToUse, uint16_t functionMask);
-serialPort_t *findSharedSerialPort(serialPortFunction_e functionToUse, uint16_t functionMask);
+baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 
-const serialPortFunctionList_t *getSerialPortFunctionList(void);
-
-void evaluateOtherData(uint8_t sr);
+//
+// msp/cli/bootloader
+//
+void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar);
 void handleSerial(void);

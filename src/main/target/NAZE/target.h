@@ -56,9 +56,18 @@
 #define NAZE_SPI_CS_GPIO      GPIOB
 #define NAZE_SPI_CS_PIN       GPIO_Pin_12
 
+// We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:
+#define M25P16_CS_GPIO        NAZE_SPI_CS_GPIO
+#define M25P16_CS_PIN         NAZE_SPI_CS_PIN
+#define M25P16_SPI_INSTANCE   NAZE_SPI_INSTANCE
+
 #define MPU6500_CS_GPIO       NAZE_SPI_CS_GPIO
 #define MPU6500_CS_PIN        NAZE_SPI_CS_PIN
 #define MPU6500_SPI_INSTANCE  NAZE_SPI_INSTANCE
+
+#define USE_FLASHFS
+
+#define USE_FLASH_M25P16
 
 #define GYRO
 #define USE_GYRO_MPU3050
@@ -144,6 +153,7 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
+#define USE_SERVOS
 
 #define SPEKTRUM_BIND
 // USART2, PA3

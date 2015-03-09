@@ -186,22 +186,9 @@ void serialSetMode(serialPort_t *instance, portMode_t mode) {
     UNUSED(mode);
 }
 
-void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate) {
-    UNUSED(instance);
-    UNUSED(baudRate);
-}
 
-void beginSerialPortFunction(serialPort_t *port, serialPortFunction_e function) {
-    UNUSED(port);
-    UNUSED(function);
-}
-
-void endSerialPortFunction(serialPort_t *port, serialPortFunction_e function) {
-    UNUSED(port);
-    UNUSED(function);
-}
-
-serialPort_t *openSerialPort(serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion) {
+serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion) {
+    UNUSED(identifier);
     UNUSED(functionMask);
     UNUSED(baudRate);
     UNUSED(callback);
@@ -211,14 +198,27 @@ serialPort_t *openSerialPort(serialPortFunction_e functionMask, serialReceiveCal
     return NULL;
 }
 
-serialPort_t *findOpenSerialPort(uint16_t functionMask) {
-    UNUSED(functionMask);
+void closeSerialPort(serialPort_t *serialPort) {
+    UNUSED(serialPort);
+}
+
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
+    UNUSED(function);
+
     return NULL;
 }
 
 bool sensors(uint32_t mask) {
     UNUSED(mask);
     return false;
+}
+
+bool determineNewTelemetryEnabledState(portSharing_e) {
+    return true;
+}
+
+portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {
+    return PORTSHARING_NOT_SHARED;
 }
 
 }

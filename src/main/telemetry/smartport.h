@@ -16,9 +16,6 @@ void checkSmartPortTelemetryState(void);
 void configureSmartPortTelemetryPort(void);
 void freeSmartPortTelemetryPort(void);
 
-uint32_t getSmartPortTelemetryProviderBaudRate(void);
-
-bool canSmartPortAllowOtherSerial(void);
 bool isSmartPortTimedOut(void);
 
 #endif /* TELEMETRY_SMARTPORT_H_ */

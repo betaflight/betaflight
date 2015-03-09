@@ -19,12 +19,13 @@
 
 #define SPI_0_5625MHZ_CLOCK_DIVIDER 128
 #define SPI_18MHZ_CLOCK_DIVIDER     2
+#define SPI_9MHZ_CLOCK_DIVIDER      4
 
 bool spiInit(SPI_TypeDef *instance);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in);
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, uint8_t *in, int len);
+bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len);
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);

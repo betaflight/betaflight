@@ -110,7 +110,7 @@ const mpu6050Config_t *selectMPU6050Config(void)
 #ifdef USE_FAKE_GYRO
 static void fakeGyroInit(void) {}
 static void fakeGyroRead(int16_t *gyroData) {
-    UNUSED(gyroData);
+    memset(gyroData, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
 }
 static void fakeGyroReadTemp(int16_t *tempData) {
     UNUSED(tempData);
@@ -129,7 +129,7 @@ bool fakeGyroDetect(gyro_t *gyro, uint16_t lpf)
 #ifdef USE_FAKE_ACC
 static void fakeAccInit(void) {}
 static void fakeAccRead(int16_t *accData) {
-    UNUSED(accData);
+    memset(accData, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
 }
 
 bool fakeAccDetect(acc_t *acc)
@@ -267,14 +267,6 @@ retry:
     switch (accHardwareToUse) {
         case ACC_DEFAULT:
             ; // fallthrough
-        case ACC_FAKE:
-#ifdef USE_FAKE_ACC
-            if (fakeAccDetect(&acc)) {
-                accHardware = ACC_FAKE;
-                break;
-            }
-#endif
-            ; // fallthrough
         case ACC_ADXL345: // ADXL345
 #ifdef USE_ACC_ADXL345
             acc_params.useFifo = false;
@@ -363,6 +355,14 @@ retry:
                 accAlign = ACC_SPI_MPU6500_ALIGN;
 #endif
                 accHardware = ACC_SPI_MPU6500;
+                break;
+            }
+#endif
+            ; // fallthrough
+        case ACC_FAKE:
+#ifdef USE_FAKE_ACC
+            if (fakeAccDetect(&acc)) {
+                accHardware = ACC_FAKE;
                 break;
             }
 #endif
@@ -457,26 +457,28 @@ static void detectMag(magSensor_e magHardwareToUse)
     magSensor_e magHardware;
 
 #ifdef USE_MAG_HMC5883
-    static hmc5883Config_t *hmc5883Config = 0;
+    const hmc5883Config_t *hmc5883Config = 0;
 
 #ifdef NAZE
-    hmc5883Config_t nazeHmc5883Config;
-
+    static const hmc5883Config_t nazeHmc5883Config_v1_v4 = {
+            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOB,
+            .gpioPin = Pin_12,
+            .gpioPort = GPIOB
+    };
+    static const hmc5883Config_t nazeHmc5883Config_v5 = {
+            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
+            .gpioPin = Pin_14,
+            .gpioPort = GPIOC
+    };
     if (hardwareRevision < NAZE32_REV5) {
-        nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOB;
-        nazeHmc5883Config.gpioPin = Pin_12;
-        nazeHmc5883Config.gpioPort = GPIOB;
+        hmc5883Config = &nazeHmc5883Config_v1_v4;
     } else {
-        nazeHmc5883Config.gpioAPB2Peripherals = RCC_APB2Periph_GPIOC;
-        nazeHmc5883Config.gpioPin = Pin_14;
-        nazeHmc5883Config.gpioPort = GPIOC;
+        hmc5883Config = &nazeHmc5883Config_v5;
     }
-
-    hmc5883Config = &nazeHmc5883Config;
 #endif
 
 #ifdef SPRACINGF3
-    hmc5883Config_t spRacingF3Hmc5883Config = {
+    static const hmc5883Config_t spRacingF3Hmc5883Config = {
         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
         .gpioPin = Pin_14,
         .gpioPort = GPIOC

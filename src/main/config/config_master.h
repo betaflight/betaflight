@@ -66,6 +66,9 @@ typedef struct master_t {
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
     uint8_t small_angle;
 
+    // mixer-related configuration
+    mixerConfig_t mixerConfig;
+
     airplaneConfig_t airplaneConfig;
 
 #ifdef GPS
@@ -88,6 +91,7 @@ typedef struct master_t {
 #ifdef BLACKBOX
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
+    uint8_t blackbox_device;
 #endif
 
     uint8_t magic_ef;                       // magic number, should be 0xEF

@@ -18,4 +18,3 @@
 #pragma once
 
 bool sumhFrameComplete(void);
-void sumhUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint);

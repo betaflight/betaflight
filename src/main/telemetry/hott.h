@@ -23,8 +23,8 @@
  * Texmode add-on by Michi (mamaretti32@gmail.com)
  */
 
-#ifndef TELEMETRY_HOTT_H_
-#define TELEMETRY_HOTT_H_
+#ifndef HOTT_TELEMETRY_H_
+#define HOTT_TELEMETRY_H_
 
 
 #define HOTTV4_RXTX 4
@@ -173,8 +173,8 @@ typedef struct HOTT_GAM_MSG_s {
     uint8_t batt1_H;             //#14
     uint8_t batt2_L;             //#15 battery 2 voltage LSB value. 0.1V steps. 50 = 5.5V
     uint8_t batt2_H;             //#16
-    uint8_t temperature1;        //#17 temperature 1. offset of 20. a value of 20 = 0°C
-    uint8_t temperature2;        //#18 temperature 2. offset of 20. a value of 20 = 0°C
+    uint8_t temperature1;        //#17 temperature 1. offset of 20. a value of 20 = 0ï¿½C
+    uint8_t temperature2;        //#18 temperature 2. offset of 20. a value of 20 = 0ï¿½C
     uint8_t fuel_procent;        //#19 Fuel capacity in %. Values 0--100
                                 // graphical display ranges: 0-25% 50% 75% 100%
     uint8_t fuel_ml_L;           //#20 Fuel in ml scale. Full = 65535!
@@ -249,7 +249,7 @@ typedef struct HOTT_VARIO_MSG_s {
     uint8_t free_char1;          //#39 Free ASCII character.  appears right to home distance
     uint8_t free_char2;          //#40 Free ASCII character.  appears right to home direction
     uint8_t free_char3;          //#41 Free ASCII character.  appears? TODO: Check where this char appears
-    uint8_t compass_direction;   //#42 Compass heading in 2° steps. 1 = 2°
+    uint8_t compass_direction;   //#42 Compass heading in 2ï¿½ steps. 1 = 2ï¿½
     uint8_t version;             //#43 version number TODO: more info?
     uint8_t stop_byte;           //#44 stop uint8_t, constant value 0x7d
 } HOTT_VARIO_MSG_t;
@@ -321,7 +321,7 @@ typedef struct HOTT_EAM_MSG_s {
     uint8_t batt2_voltage_L;     //#23 battery 2 voltage lower value in 100mv steps, 50=5V. optionally cell8_H value. 0.02V steps
     uint8_t batt2_voltage_H;     //#24
 
-    uint8_t temp1;               //#25 Temperature sensor 1. 20=0°, 46=26° - offset of 20.
+    uint8_t temp1;               //#25 Temperature sensor 1. 20=0ï¿½, 46=26ï¿½ - offset of 20.
     uint8_t temp2;               //#26 temperature sensor 2
 
     uint8_t altitude_L;          //#27 Attitude lower value. unit: meters. Value of 500 = 0m
@@ -379,13 +379,13 @@ typedef struct HOTT_GPS_MSG_s {
   uint8_t gps_speed_H;   //#09
 
   uint8_t pos_NS;        //#10 north = 0, south = 1
-  uint8_t pos_NS_dm_L;   //#11 degree minutes ie N48°39’988
+  uint8_t pos_NS_dm_L;   //#11 degree minutes ie N48ï¿½39ï¿½988
   uint8_t pos_NS_dm_H;   //#12
   uint8_t pos_NS_sec_L;  //#13 position seconds
   uint8_t pos_NS_sec_H;  //#14
 
   uint8_t pos_EW;        //#15 east = 0, west = 1
-  uint8_t pos_EW_dm_L;   //#16 degree minutes ie. E9°25’9360
+  uint8_t pos_EW_dm_L;   //#16 degree minutes ie. E9ï¿½25ï¿½9360
   uint8_t pos_EW_dm_H;   //#17
   uint8_t pos_EW_sec_L;  //#18 position seconds
   uint8_t pos_EW_sec_H;  //#19
@@ -407,7 +407,7 @@ typedef struct HOTT_GPS_MSG_s {
   uint8_t home_direction;//#29 direction from starting point to Model position (2 degree steps)
   uint8_t angle_roll;    //#30 angle roll in 2 degree steps
   uint8_t angle_nick;    //#31 angle in 2degree steps
-  uint8_t angle_compass; //#32 angle in 2degree steps. 1 = 2°, 255 = - 2° (1 uint8_t) North = 0°
+  uint8_t angle_compass; //#32 angle in 2degree steps. 1 = 2ï¿½, 255 = - 2ï¿½ (1 uint8_t) North = 0ï¿½
 
   uint8_t gps_time_h;    //#33 UTC time hours
   uint8_t gps_time_m;    //#34 UTC time minutes
@@ -488,7 +488,7 @@ typedef struct HOTT_AIRESC_MSG_s {
 } HOTT_AIRESC_MSG_t;
 
 void handleHoTTTelemetry(void);
-void checkTelemetryState(void);
+void checkHoTTTelemetryState(void);
 
 void initHoTTTelemetry(telemetryConfig_t *telemetryConfig);
 void configureHoTTTelemetryPort(void);
@@ -498,4 +498,4 @@ uint32_t getHoTTTelemetryProviderBaudRate(void);
 
 void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage);
 
-#endif /* TELEMETRY_HOTT_H_ */
+#endif /* HOTT_TELEMETRY_H_ */

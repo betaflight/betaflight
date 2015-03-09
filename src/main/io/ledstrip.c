@@ -52,8 +52,6 @@
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
 
-static failsafe_t* failsafe;
-
 static void ledStripDisable(void);
 
 //#define USE_LED_ANIMATION
@@ -663,7 +661,7 @@ void applyLedWarningLayer(uint8_t updateNow)
         if (feature(FEATURE_VBAT) && calculateBatteryState() != BATTERY_OK) {
             warningFlags |= WARNING_FLAG_LOW_BATTERY;
         }
-        if (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed()) {
+        if (feature(FEATURE_FAILSAFE) && failsafeHasTimerElapsed()) {
             warningFlags |= WARNING_FLAG_FAILSAFE;
         }
         if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM)) {
@@ -1031,11 +1029,10 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
     reevalulateLedConfig();
 }
 
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse)
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse)
 {
     ledConfigs = ledConfigsToUse;
     colors = colorsToUse;
-    failsafe = failsafeToUse;
     ledStripInitialised = false;
 }
 

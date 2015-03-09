@@ -113,9 +113,9 @@
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
-static hmc5883Config_t *hmc5883Config = NULL;
+static const hmc5883Config_t *hmc5883Config = NULL;
 
-bool hmc5883lDetect(mag_t* mag, hmc5883Config_t *hmc5883ConfigToUse)
+bool hmc5883lDetect(mag_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
 {
     bool ack = false;
     uint8_t sig = 0;

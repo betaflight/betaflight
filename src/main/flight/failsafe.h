@@ -27,27 +27,26 @@ typedef struct failsafeConfig_s {
     uint16_t failsafe_max_usec;
 } failsafeConfig_t;
 
-typedef struct failsafeVTable_s {
-    void (*reset)(void);
-    bool (*shouldForceLanding)(bool armed);
-    bool (*hasTimerElapsed)(void);
-    bool (*shouldHaveCausedLandingByNow)(void);
-    void (*incrementCounter)(void);
-    void (*updateState)(void);
-    bool (*isIdle)(void);
-    void (*checkPulse)(uint8_t channel, uint16_t pulseDuration);
-    bool (*isEnabled)(void);
-    void (*enable)(void);
 
-} failsafeVTable_t;
-
-typedef struct failsafe_s {
-    const failsafeVTable_t *vTable;
-
+typedef struct failsafeState_s {
     int16_t counter;
     int16_t events;
     bool enabled;
-} failsafe_t;
+} failsafeState_t;
 
 void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse);
+
+void failsafeEnable(void);
+void failsafeOnRxCycle(void);
+void failsafeCheckPulse(uint8_t channel, uint16_t pulseDuration);
+void failsafeUpdateState(void);
+
+void failsafeReset(void);
+
+
+bool failsafeIsEnabled(void);
+bool failsafeIsIdle(void);
+bool failsafeHasTimerElapsed(void);
+bool failsafeShouldForceLanding(bool armed);
+bool failsafeShouldHaveCausedLandingByNow(void);
 

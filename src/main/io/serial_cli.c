@@ -52,6 +52,7 @@
 #include "io/rc_controls.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/flashfs.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -82,6 +83,8 @@
 #include "serial_cli.h"
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
+
+void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
 
 static serialPort_t *cliPort;
 
@@ -119,6 +122,13 @@ static void cliColor(char *cmdline);
 static void cliMixer(char *cmdline);
 #endif
 
+#ifdef USE_FLASHFS
+static void cliFlashInfo(char *cmdline);
+static void cliFlashErase(char *cmdline);
+static void cliFlashWrite(char *cmdline);
+static void cliFlashRead(char *cmdline);
+#endif
+
 // signal that we're in cli mode
 uint8_t cliMode = 0;
 
@@ -153,13 +163,11 @@ static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
 };
 
-// FIXME the next time the EEPROM is bumped change the order of acc and gyro names so that "None" is second.
-
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 static const char * const sensorHardwareNames[4][11] = {
     { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE", NULL },
-    { "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", "None", NULL },
+    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", NULL },
     { "", "None", "BMP085", "MS5611", NULL },
     { "", "None", "HMC5883", "AK8975", NULL }
 };
@@ -183,6 +191,12 @@ const clicmd_t cmdTable[] = {
     { "dump", "dump configuration", cliDump },
     { "exit", "", cliExit },
     { "feature", "list or -val or val", cliFeature },
+#ifdef USE_FLASHFS
+    { "flash_erase", "erase flash chip", cliFlashErase },
+    { "flash_info", "get flash chip details", cliFlashInfo },
+    { "flash_read", "read text from the given address", cliFlashRead },
+    { "flash_write", "write text to the given address", cliFlashWrite },
+#endif
     { "get", "get variable value", cliGet },
 #ifdef GPS
     { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
@@ -199,7 +213,7 @@ const clicmd_t cmdTable[] = {
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
-#ifndef CJMCU
+#ifdef USE_SERVOS
     { "servo", "servo config", cliServo },
 #endif
     { "set", "name=value or blank or * for list", cliSet },
@@ -240,7 +254,7 @@ const clivalue_t valueTable[] = {
     { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "max_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.maxcheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },
     { "rssi_channel",               VAR_INT8   | MASTER_VALUE,  &masterConfig.rxConfig.rssi_channel, 0, MAX_SUPPORTED_RC_CHANNEL_COUNT },
-    { "rssi_scale",                 VAR_UINT8   | MASTER_VALUE,  &masterConfig.rxConfig.rssi_scale, RSSI_SCALE_MIN, RSSI_SCALE_MAX },
+    { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rssi_scale, RSSI_SCALE_MIN, RSSI_SCALE_MAX },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE,  &masterConfig.inputFilteringMode, 0, 1 },
 
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, PWM_RANGE_ZERO, PWM_RANGE_MAX },
@@ -265,31 +279,47 @@ const clivalue_t valueTable[] = {
 
     { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &masterConfig.airplaneConfig.fixedwing_althold_dir, -1, 1 },
 
-    { "serial_port_1_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[0], 0, SERIAL_PORT_SCENARIO_MAX },
-    { "serial_port_2_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[1], 0, SERIAL_PORT_SCENARIO_MAX },
-#if (SERIAL_PORT_COUNT > 2)
-    { "serial_port_3_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[2], 0, SERIAL_PORT_SCENARIO_MAX },
-#if (SERIAL_PORT_COUNT > 3)
-    { "serial_port_4_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[3], 0, SERIAL_PORT_SCENARIO_MAX },
-#if (SERIAL_PORT_COUNT > 4)
-    { "serial_port_5_scenario",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.serial_port_scenario[4], 0, SERIAL_PORT_SCENARIO_MAX },
+    { "serial_port_1_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].functionMask, 0, 0xFFFF },
+    { "serial_port_1_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
+    { "serial_port_1_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
+    { "serial_port_1_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_1_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
+#if (SERIAL_PORT_COUNT >= 2)
+    { "serial_port_2_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].functionMask, 0, 0xFFFF },
+    { "serial_port_2_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
+    { "serial_port_2_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
+    { "serial_port_2_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_2_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
+#if (SERIAL_PORT_COUNT >= 3)
+    { "serial_port_3_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].functionMask, 0, 0xFFFF},
+    { "serial_port_3_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
+    { "serial_port_3_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
+    { "serial_port_3_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_3_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
+#if (SERIAL_PORT_COUNT >= 4)
+    { "serial_port_4_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].functionMask, 0, 0xFFFF },
+    { "serial_port_4_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
+    { "serial_port_4_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
+    { "serial_port_4_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_4_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
+#if (SERIAL_PORT_COUNT >= 5)
+    { "serial_port_5_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].functionMask, 0, 0xFFFF },
+    { "serial_port_5_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
+    { "serial_port_5_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
+    { "serial_port_5_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_5_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
+#endif
 #endif
 #endif
 #endif
 
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.reboot_character, 48, 126 },
-    { "msp_baudrate",               VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.msp_baudrate, 1200, 115200 },
-    { "cli_baudrate",               VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.cli_baudrate, 1200, 115200 },
 
 #ifdef GPS
-    { "gps_baudrate",               VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.gps_baudrate, 0, 115200 },
-    { "gps_passthrough_baudrate",   VAR_UINT32 | MASTER_VALUE,  &masterConfig.serialConfig.gps_passthrough_baudrate, 1200, 115200 },
-
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.provider, 0, GPS_PROVIDER_MAX },
     { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.sbasMode, 0, SBAS_MODE_MAX },
     { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.autoConfig, GPS_AUTOCONFIG_OFF, GPS_AUTOCONFIG_ON },
     { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gpsConfig.autoBaud, GPS_AUTOBAUD_OFF, GPS_AUTOBAUD_ON },
-
 
     { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDPOS], 0, 200 },
     { "gps_pos_i",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDPOS], 0, 200 },
@@ -310,7 +340,6 @@ const clivalue_t valueTable[] = {
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.serialrx_provider, 0, SERIALRX_PROVIDER_MAX },
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, SPEKTRUM_SAT_BIND_DISABLED, SPEKTRUM_SAT_BIND_MAX},
 
-    { "telemetry_provider",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_provider, 0, TELEMETRY_PROVIDER_MAX },
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_switch, 0, 1 },
     { "telemetry_inversion",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.telemetry_inversion, 0, 1 },
     { "frsky_default_lattitude",    VAR_FLOAT  | MASTER_VALUE,  &masterConfig.telemetryConfig.gpsNoFixLatitude, -90.0, 90.0 },
@@ -352,16 +381,23 @@ const clivalue_t valueTable[] = {
     { "throttle_correction_angle",  VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].throttle_correction_angle, 1, 900 },
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, -1, 1 },
-    { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.yaw_direction, -1, 1 },
-    { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.profile[0].mixerConfig.tri_unarmed_servo, 0, 1 },
+
+    { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.mixerConfig.pid_at_min_throttle, 0, 1 },
+    { "yaw_direction",              VAR_INT8   | PROFILE_VALUE, &masterConfig.mixerConfig.yaw_direction, -1, 1 },
+#ifdef USE_SERVOS
+    { "tri_unarmed_servo",          VAR_INT8   | PROFILE_VALUE, &masterConfig.mixerConfig.tri_unarmed_servo, 0, 1 },
+    { "servo_lowpass_freq",         VAR_INT16  | PROFILE_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, 10, 400},
+    { "servo_lowpass_enable",       VAR_INT8   | PROFILE_VALUE, &masterConfig.mixerConfig.servo_lowpass_enable, 0, 1 },
+#endif
 
     { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE , &masterConfig.profile[0].defaultRateProfileIndex, 0, MAX_CONTROL_RATE_PROFILE_COUNT - 1 },
     { "rc_rate",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcRate8, 0, 250 },
     { "rc_expo",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rcExpo8, 0, 100 },
     { "thr_mid",                    VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].thrMid8, 0, 100 },
     { "thr_expo",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].thrExpo8, 0, 100 },
-    { "roll_pitch_rate",            VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rollPitchRate, 0, 100 },
-    { "yaw_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].yawRate, 0, 100 },
+    { "roll_rate",                  VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rates[FD_ROLL], 0, 100 },
+    { "pitch_rate",                 VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rates[FD_PITCH], 0, 100 },
+    { "yaw_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].rates[FD_YAW], 0, 100 },
     { "tpa_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].dynThrPID, 0, 100},
     { "tpa_breakpoint",             VAR_UINT16 | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].tpa_breakpoint, PWM_RANGE_MIN, PWM_RANGE_MAX},
 
@@ -371,9 +407,11 @@ const clivalue_t valueTable[] = {
     { "failsafe_min_usec",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_min_usec, 100, PWM_RANGE_MAX },
     { "failsafe_max_usec",          VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].failsafeConfig.failsafe_max_usec, 100, PWM_RANGE_MAX + (PWM_RANGE_MAX - PWM_RANGE_MIN) },
 
+#ifdef USE_SERVOS
     { "gimbal_flags",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gimbalConfig.gimbal_flags, 0, 255},
+#endif
 
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, 0, ACC_NONE },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, 0, ACC_MAX },
     { "acc_lpf_factor",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].acc_lpf_factor, 0, 250 },
     { "accxy_deadband",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].accDeadband.xy, 0, 100 },
     { "accz_deadband",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].accDeadband.z, 0, 100 },
@@ -387,7 +425,7 @@ const clivalue_t valueTable[] = {
     { "baro_cf_vel",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_cf_vel, 0, 1 },
     { "baro_cf_alt",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_cf_alt, 0, 1 },
 
-    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, 0, MAG_NONE },
+    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, 0, MAG_MAX },
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, -18000, 18000 },
 
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidController, 0, 5 },
@@ -431,6 +469,7 @@ const clivalue_t valueTable[] = {
 #ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, 1, 32 },
     { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, 1, 32 },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_device, 0, 1 },
 #endif
 };
 
@@ -750,7 +789,7 @@ static void cliColor(char *cmdline)
 
 static void cliServo(char *cmdline)
 {
-#ifdef CJMCU
+#ifndef USE_SERVOS
     UNUSED(cmdline);
 #else
     enum { SERVO_ARGUMENT_COUNT = 6 };
@@ -819,6 +858,88 @@ static void cliServo(char *cmdline)
     }
 #endif
 }
+
+#ifdef USE_FLASHFS
+
+static void cliFlashInfo(char *cmdline)
+{
+    const flashGeometry_t *layout = flashfsGetGeometry();
+
+    UNUSED(cmdline);
+
+    printf("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u, usedSize=%u\r\n",
+            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
+}
+
+static void cliFlashErase(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    printf("Erasing, please wait...\r\n");
+    flashfsEraseCompletely();
+
+    while (!flashfsIsReady()) {
+        delay(100);
+    }
+
+    printf("Done.\r\n");
+}
+
+static void cliFlashWrite(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+    char *text = strchr(cmdline, ' ');
+
+    if (!text) {
+        printf("Missing text to write.\r\n");
+    } else {
+        flashfsSeekAbs(address);
+        flashfsWrite((uint8_t*)text, strlen(text), true);
+        flashfsFlushSync();
+
+        printf("Wrote %u bytes at %u.\r\n", strlen(text), address);
+    }
+}
+
+static void cliFlashRead(char *cmdline)
+{
+    uint32_t address = atoi(cmdline);
+    uint32_t length;
+    int i;
+
+    uint8_t buffer[32];
+
+    char *nextArg = strchr(cmdline, ' ');
+
+    if (!nextArg) {
+        printf("Missing length argument.\r\n");
+    } else {
+        length = atoi(nextArg);
+
+        printf("Reading %u bytes at %u:\r\n", length, address);
+
+        while (length > 0) {
+            int bytesRead;
+
+            bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
+
+            for (i = 0; i < bytesRead; i++) {
+                cliWrite(buffer[i]);
+            }
+
+            length -= bytesRead;
+            address += bytesRead;
+
+            if (bytesRead == 0) {
+                //Assume we reached the end of the volume or something fatal happened
+                break;
+            }
+        }
+        printf("\r\n");
+    }
+}
+
+#endif
 
 static void dumpValues(uint16_t mask)
 {
@@ -976,10 +1097,10 @@ static void cliDump(char *cmdline)
     }
 }
 
-static void cliEnter(void)
+void cliEnter(serialPort_t *serialPort)
 {
     cliMode = 1;
-    beginSerialPortFunction(cliPort, FUNCTION_CLI);
+    cliPort = serialPort;
     setPrintfSerialPort(cliPort);
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
     cliPrompt();
@@ -988,6 +1109,7 @@ static void cliEnter(void)
 static void cliExit(char *cmdline)
 {
     UNUSED(cmdline);
+
     cliPrint("\r\nLeaving CLI mode, unsaved changes lost.\r\n");
     *cliBuffer = '\0';
     bufferIndex = 0;
@@ -995,6 +1117,8 @@ static void cliExit(char *cmdline)
     // incase a motor was left running during motortest, clear it here
     mixerResetMotors();
     cliReboot();
+
+    cliPort = NULL;
 }
 
 static void cliFeature(char *cmdline)
@@ -1073,16 +1197,7 @@ static void cliGpsPassthrough(char *cmdline)
 {
     UNUSED(cmdline);
 
-    gpsEnablePassthroughResult_e result = gpsEnablePassthrough();
-
-    switch (result) {
-        case GPS_PASSTHROUGH_NO_SERIAL_PORT:
-            cliPrint("Error: Enable and plug in GPS first\r\n");
-            break;
-
-        default:
-            break;
-    }
+    gpsEnablePassthrough(cliPort);
 }
 #endif
 
@@ -1242,6 +1357,7 @@ static void cliRateProfile(char *cmdline)
 static void cliReboot(void) {
     cliPrint("\r\nRebooting");
     waitForSerialPortToFinishTransmitting(cliPort);
+    stopMotors();
     systemReset();
 }
 
@@ -1335,16 +1451,16 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
         case VAR_INT8:
-            *(char *)ptr = (char)value.int_value;
+            *(int8_t *)ptr = value.int_value;
             break;
 
         case VAR_UINT16:
         case VAR_INT16:
-            *(short *)ptr = (short)value.int_value;
+            *(int16_t *)ptr = value.int_value;
             break;
 
         case VAR_UINT32:
-            *(int *)ptr = (int)value.int_value;
+            *(uint32_t *)ptr = value.int_value;
             break;
 
         case VAR_FLOAT:
@@ -1493,10 +1609,10 @@ static void cliVersion(char *cmdline)
     );
 }
 
-void cliProcess(void)
+void cliProcess()
 {
-    if (!cliMode) {
-        cliEnter();
+    if (!cliPort) {
+        return;
     }
 
     while (serialTotalBytesWaiting(cliPort)) {
@@ -1537,7 +1653,7 @@ void cliProcess(void)
             }
             for (; i < bufferIndex; i++)
                 cliWrite(cliBuffer[i]);
-        } else if (!bufferIndex && c == 4) {
+        } else if (!bufferIndex && c == 4) {   // CTRL-D
             cliExit(cliBuffer);
             return;
         } else if (c == 12) {
@@ -1587,9 +1703,5 @@ void cliProcess(void)
 
 void cliInit(serialConfig_t *serialConfig)
 {
-    cliPort = findOpenSerialPort(FUNCTION_CLI);
-    if (!cliPort) {
-        cliPort = openSerialPort(FUNCTION_CLI, NULL, serialConfig->cli_baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
-    }
-
+    UNUSED(serialConfig);
 }
