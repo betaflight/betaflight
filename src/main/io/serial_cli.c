@@ -274,7 +274,7 @@ const clivalue_t valueTable[] = {
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.disarm_kill_switch, 0, 1 },
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.auto_disarm_delay, 0, 60 },
     { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.small_angle, 0, 180 },
-    { "disable_pid_at_min_throttle", VAR_UINT8  | MASTER_VALUE,  &masterConfig.disable_pid_at_min_throttle, 0, 1 },
+    { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_at_min_throttle, 0, 1 },
 
     { "flaps_speed",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.airplaneConfig.flaps_speed, 0, 100 },
 

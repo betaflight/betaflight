@@ -714,13 +714,11 @@ void mixTable(void)
             } else {
                 // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
                 // do not spin the motors.
-                // If we're at minimum throttle and disable_pid_at_min_throttle
-                // is enabled, spin motors at minimum throttle.
                 motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
                 if ((rcData[THROTTLE]) < rxConfig->mincheck) {
                     if (feature(FEATURE_MOTOR_STOP)) {
                         motor[i] = escAndServoConfig->mincommand;
-                    } else if (masterConfig.disable_pid_at_min_throttle != 0) {
+                    } else if (masterConfig.pid_at_min_throttle == 0) {
                         motor[i] = escAndServoConfig->minthrottle;
                     }
                 }
