@@ -703,8 +703,7 @@ void loop(void)
         // If we're armed, at minimum throttle, and we do arming via the
         // sticks, do not process yaw input from the rx.  We do this so the
         // motors do not spin up while we are trying to arm or disarm.
-        if (isUsingSticksForArming() &&
-                rcData[THROTTLE] <= masterConfig.rxConfig.mincheck) {
+        if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck) {
             rcCommand[YAW] = 0;
         }
 
