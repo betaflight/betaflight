@@ -27,6 +27,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/encoding.h"
+#include "common/utils.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
@@ -88,11 +89,6 @@
     typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
 
 // Some macros to make writing FLIGHT_LOG_FIELD_* constants shorter:
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
-
-#define CONCAT_HELPER(x,y) x ## y
-#define CONCAT(x,y) CONCAT_HELPER(x, y)
 
 #define PREDICT(x) CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x)
 #define ENCODING(x) CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x)

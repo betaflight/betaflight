@@ -720,16 +720,12 @@ void validateAndFixConfig(void)
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     if (feature(FEATURE_SOFTSERIAL) && (
+            0
 #ifdef USE_SOFTSERIAL1
-            (LED_STRIP_TIMER == SOFTSERIAL_1_TIMER)
-#else
-            0
+            || (LED_STRIP_TIMER == SOFTSERIAL_1_TIMER)
 #endif
-            ||
 #ifdef USE_SOFTSERIAL2
-            (LED_STRIP_TIMER == SOFTSERIAL_2_TIMER)
-#else
-            0
+            || (LED_STRIP_TIMER == SOFTSERIAL_2_TIMER)
 #endif
     )) {
         // led strip needs the same timer as softserial

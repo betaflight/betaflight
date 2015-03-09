@@ -92,23 +92,20 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
         delay((32 / BATTERY_SAMPLE_COUNT) * 10);
     }
 
-    // autodetect cell count, going from 1S..8S
-    for (i = 1; i < 8; i++) {
-        if (vbat < i * batteryConfig->vbatmaxcellvoltage)
-            break;
-    }
-
-    batteryCellCount = i;
+    unsigned cells = (vbat / batteryConfig->vbatmaxcellvoltage) + 1;
+    if(cells > 8)            // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
+        cells = 8;
+    batteryCellCount = cells;
     batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
     batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
 }
 
-#define ADCVREF 33L
+#define ADCVREF 3300   // in mV
 int32_t currentSensorToCentiamps(uint16_t src)
 {
     int32_t millivolts;
 
-    millivolts = ((uint32_t)src * ADCVREF * 100) / 4095;
+    millivolts = ((uint32_t)src * ADCVREF) / 4096;
     millivolts -= batteryConfig->currentMeterOffset;
 
     return (millivolts * 1000) / (int32_t)batteryConfig->currentMeterScale; // current in 0.01A steps

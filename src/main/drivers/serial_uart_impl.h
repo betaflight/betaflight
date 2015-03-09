@@ -17,13 +17,13 @@
 
 #pragma once
 
-#ifdef INVERTER
-#define INVERTER_OFF digitalLo(INVERTER_GPIO, INVERTER_PIN)
-#define INVERTER_ON digitalHi(INVERTER_GPIO, INVERTER_PIN)
-#else
-#define INVERTER_OFF do {} while(0)
-#define INVERTER_ON do {} while(0)
-#endif
+// device specific uart implementation is defined here
 
-void initInverter(void);
+extern const struct serialPortVTable uartVTable[];
+
+void uartStartTxDMA(uartPort_t *s);
+
+uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode);
+uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode);
+uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode);
 

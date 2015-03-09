@@ -17,13 +17,5 @@
 
 #pragma once
 
-#ifdef INVERTER
-#define INVERTER_OFF digitalLo(INVERTER_GPIO, INVERTER_PIN)
-#define INVERTER_ON digitalHi(INVERTER_GPIO, INVERTER_PIN)
-#else
-#define INVERTER_OFF do {} while(0)
-#define INVERTER_ON do {} while(0)
-#endif
-
-void initInverter(void);
-
+extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
+extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];

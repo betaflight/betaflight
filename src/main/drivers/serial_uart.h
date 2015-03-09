@@ -44,8 +44,6 @@ typedef struct {
     USART_TypeDef *USARTx;
 } uartPort_t;
 
-extern const struct serialPortVTable uartVTable[];
-
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion);
 
 // serialPort API

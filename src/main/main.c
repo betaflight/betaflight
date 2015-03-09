@@ -175,7 +175,7 @@ void init(void)
 
     ledInit();
 
-    #ifdef SPEKTRUM_BIND
+#ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
         switch (masterConfig.rxConfig.serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
