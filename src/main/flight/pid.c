@@ -70,7 +70,7 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
 
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
-void resetErrorAngle(void)
+void pidResetErrorAngle(void)
 {
     errorAngleI[ROLL] = 0;
     errorAngleI[PITCH] = 0;
@@ -79,7 +79,7 @@ void resetErrorAngle(void)
     errorAngleIf[PITCH] = 0.0f;
 }
 
-void resetErrorGyro(void)
+void pidResetErrorGyro(void)
 {
     errorGyroI[ROLL] = 0;
     errorGyroI[PITCH] = 0;
@@ -742,7 +742,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     }
 }
 
-void setPIDController(int type)
+void pidSetController(int type)
 {
     switch (type) {
         case 0:

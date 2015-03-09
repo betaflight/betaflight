@@ -520,8 +520,8 @@ void processRx(void)
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
     if (throttleStatus == THROTTLE_LOW) {
-        resetErrorAngle();
-        resetErrorGyro();
+        pidResetErrorAngle();
+        pidResetErrorGyro();
     }
     // When armed and motors aren't spinning, disarm board after delay so users without buzzer won't lose fingers.
     // mixTable constrains motor commands, so checking  throttleStatus is enough
@@ -557,7 +557,7 @@ void processRx(void)
     	canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-            resetErrorAngle();
+            pidResetErrorAngle();
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
@@ -569,7 +569,7 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-            resetErrorAngle();
+            pidResetErrorAngle();
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {
