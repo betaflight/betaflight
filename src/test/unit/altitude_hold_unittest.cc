@@ -20,6 +20,8 @@
 
 #include <limits.h>
 
+//#define DEBUG_ALTITUDE_HOLD
+
 #define BARO
 
 extern "C" {
@@ -87,7 +89,9 @@ TEST(AltitudeHoldTest, IsThrustFacingDownwards)
 
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         inclinationExpectation_t *angleInclinationExpectation = &inclinationExpectations[index];
+#ifdef DEBUG_ALTITUDE_HOLD
         printf("iteration: %d\n", index);
+#endif
         bool result = isThrustFacingDownwards(&angleInclinationExpectation->inclination);
         EXPECT_EQ(angleInclinationExpectation->expectDownwardsThrust, result);
     }

@@ -18,6 +18,8 @@
 
 #include <limits.h>
 
+//#define DEBUG_RC_CONTROLS
+
 extern "C" {
     #include "platform.h"
 
@@ -69,7 +71,9 @@ TEST(RcControlsTest, updateActivatedModesWithAllInputsAtMidde)
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
+#ifdef DEBUG_RC_CONTROLS
         printf("iteration: %d\n", index);
+#endif
         EXPECT_EQ(false, IS_RC_MODE_ACTIVE(index));
     }
 }
@@ -160,7 +164,9 @@ TEST(RcControlsTest, updateActivatedModesUsingValidAuxConfigurationAndRXValues)
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
+#ifdef DEBUG_RC_CONTROLS
         printf("iteration: %d\n", index);
+#endif
         EXPECT_EQ(expectedMask & (1 << index), rcModeActivationMask & (1 << index));
     }
 }

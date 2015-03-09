@@ -18,6 +18,8 @@
 
 #include <limits.h>
 
+//#define DEBUG_BATTERY
+
 extern "C" {
     #include "sensors/battery.h"
 }
@@ -76,11 +78,12 @@ TEST(BatteryTest, BatteryADCToVoltage)
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToVoltageExpectation_t *batteryAdcToVoltageExpectation = &batteryAdcToVoltageExpectations[index];
         batteryConfig.vbatscale = batteryAdcToVoltageExpectation->scale;
+#ifdef DEBUG_BATTERY
         printf("adcReading: %d, vbatscale: %d\n",
                 batteryAdcToVoltageExpectation->adcReading,
                 batteryAdcToVoltageExpectation->scale
         );
-
+#endif
         uint16_t pointOneVoltSteps = batteryAdcToVoltage(batteryAdcToVoltageExpectation->adcReading);
 
         EXPECT_EQ(pointOneVoltSteps, batteryAdcToVoltageExpectation->expectedVoltageInDeciVoltSteps);
