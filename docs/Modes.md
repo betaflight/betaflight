@@ -3,30 +3,30 @@
 Cleanflight has various modes that can be toggled on or off.  Modes can be enabled/disabled by stick positions,
 auxillary receiver channels and other events such as failsafe detection.
 
-| MSP ID  | Short Name | Function                                                             |
-| ------- | ---------- | -------------------------------------------------------------------- |
-| 0       | ARM        | Enables motors and flight stabilisation                              |
-| 1       | ANGLE      | Legacy auto-level flight mode                                        |
-| 2       | HORIZON    | Auto-level flight mode                                               |
-| 3       | BARO       | Altitude hold mode (Requires barometer sensor)                       |
-| 5       | MAG        | Heading lock                                                         |
-| 6       | HEADFREE   | Head Free - When enabled yaw has no effect on pitch/roll inputs      |
-| 7       | HEADADJ    | Heading Adjust - Sets a new yaw origin for HEADFREE mode             |
-| 8       | CAMSTAB    | Camera Stabilisation                                                 |
-| 9       | CAMTRIG    |                                                                      |
-| 10      | GPSHOME    | Autonomous flight to HOME position                                   |
-| 11      | GPSHOLD    | Maintain the same longitude/lattitude                                |
-| 12      | PASSTHRU   |                                                                      |
-| 13      | BEEPERON   | Enable beeping - useful for locating a crashed aircraft              |
-| 14      | LEDMAX     |                                                                      |
-| 15      | LEDLOW     |                                                                      |
-| 16      | LLIGHTS    |                                                                      |
-| 17      | CALIB      |                                                                      |
-| 18      | GOV        |                                                                      |
-| 19      | OSD        | Enable/Disable On-Screen-Display (OSD)                               |
-| 20      | TELEMETRY  | Enable telemetry via switch                                          |
-| 21      | AUTOTUNE   | Autotune Pitch/Roll PIDs                                             |
-| 22      | SONAR      | Altitude hold mode (sonar sensor only)                               |
+| MSP ID  | CLI ID | Short Name | Function                                                             |
+| ------- | ------ | ---------- | -------------------------------------------------------------------- |
+| 0       | 0      | ARM        | Enables motors and flight stabilisation                              |
+| 1       | 1      | ANGLE      | Legacy auto-level flight mode                                        |
+| 2       | 2      | HORIZON    | Auto-level flight mode                                               |
+| 3       | 3      | BARO       | Altitude hold mode (Requires barometer sensor)                       |
+| 5       | 4      | MAG        | Heading lock                                                         |
+| 6       | 5      | HEADFREE   | Head Free - When enabled yaw has no effect on pitch/roll inputs      |
+| 7       | 6      | HEADADJ    | Heading Adjust - Sets a new yaw origin for HEADFREE mode             |
+| 8       | 7      | CAMSTAB    | Camera Stabilisation                                                 |
+| 9       | 8      | CAMTRIG    |                                                                      |
+| 10      | 9      | GPSHOME    | Autonomous flight to HOME position                                   |
+| 11      | 10     | GPSHOLD    | Maintain the same longitude/lattitude                                |
+| 12      | 11     | PASSTHRU   |                                                                      |
+| 13      | 12     | BEEPERON   | Enable beeping - useful for locating a crashed aircraft              |
+| 14      | 13     | LEDMAX     |                                                                      |
+| 15      | 14     | LEDLOW     |                                                                      |
+| 16      | 15     | LLIGHTS    |                                                                      |
+| 17      | 16     | CALIB      |                                                                      |
+| 18      | 17     | GOV        |                                                                      |
+| 19      | 18     | OSD        | Enable/Disable On-Screen-Display (OSD)                               |
+| 20      | 19     | TELEMETRY  | Enable telemetry via switch                                          |
+| 21      | 20     | AUTOTUNE   | Autotune Pitch/Roll PIDs                                             |
+| 22      | 21     | SONAR      | Altitude hold mode (sonar sensor only)                               |
 
 ## Mode details
 
