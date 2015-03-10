@@ -188,6 +188,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.rate-tpa input[name="roll-pitch"]').val(RC_tuning.roll_pitch_rate.toFixed(2));
         $('.rate-tpa input[name="yaw"]').val(RC_tuning.yaw_rate.toFixed(2));
         $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
+        $('.rate-tpa input[name="tpa-breakpoint"]').val(RC_tuning.dynamic_THR_breakpoint);
 
         var pidController_e = $('select[name="controller"]');
         
@@ -282,6 +283,7 @@ TABS.pid_tuning.initialize = function (callback) {
             RC_tuning.roll_pitch_rate = parseFloat($('.rate-tpa input[name="roll-pitch"]').val());
             RC_tuning.yaw_rate = parseFloat($('.rate-tpa input[name="yaw"]').val());
             RC_tuning.dynamic_THR_PID = parseFloat($('.rate-tpa input[name="tpa"]').val());
+            RC_tuning.dynamic_THR_breakpoint = parseInt($('.rate-tpa input[name="tpa-breakpoint"]').val());
 
             var pidController_e = $('select[name="controller"]');
             
