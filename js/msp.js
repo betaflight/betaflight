@@ -283,6 +283,7 @@ var MSP = {
                 RC_tuning.dynamic_THR_PID = parseFloat((data.getUint8(4) / 100).toFixed(2));
                 RC_tuning.throttle_MID = parseFloat((data.getUint8(5) / 100).toFixed(2));
                 RC_tuning.throttle_EXPO = parseFloat((data.getUint8(6) / 100).toFixed(2));
+                RC_tuning.dynamic_THR_breakpoint = parseInt(data.getUint16(7, 1));
                 break;
             case MSP_codes.MSP_PID:
                 // PID data arrived, we need to scale it and save to appropriate bank / array
@@ -883,6 +884,8 @@ MSP.crunch = function (code) {
             buffer.push(parseInt(RC_tuning.dynamic_THR_PID * 100));
             buffer.push(parseInt(RC_tuning.throttle_MID * 100));
             buffer.push(parseInt(RC_tuning.throttle_EXPO * 100));
+            buffer.push(lowByte(RC_tuning.dynamic_THR_breakpoint));
+            buffer.push(highByte(RC_tuning.dynamic_THR_breakpoint));
             break;
         // Disabled, cleanflight does not use MSP_SET_BOX.
         /*
