@@ -37,10 +37,9 @@ typedef struct batteryAdcToVoltageExpectation_s {
 
 TEST(BatteryTest, BatteryADCToVoltage)
 {
-    // given
-
+    // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
     batteryConfig_t batteryConfig = {
-        .vbatscale = 110,
+        .vbatscale = VBAT_SCALE_DEFAULT,
         .vbatmaxcellvoltage = 43,
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
@@ -50,14 +49,6 @@ TEST(BatteryTest, BatteryADCToVoltage)
         .multiwiiCurrentMeterOutput = 0,
         .batteryCapacity = 2200,
     };
-
-    // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
-    memset(&batteryConfig, 0, sizeof(batteryConfig));
-
-    batteryConfig.vbatmaxcellvoltage = 43;
-    batteryConfig.vbatmincellvoltage = 33;
-    batteryConfig.vbatwarningcellvoltage = 35;
-    batteryConfig.vbatscale = VBAT_SCALE_DEFAULT;
 
     batteryInit(&batteryConfig);
 
