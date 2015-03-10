@@ -77,6 +77,7 @@ int32_t GPS_coord[2];               // LAT/LON
 uint8_t GPS_numSat;
 uint16_t GPS_hdop = 9999;           // Compute GPS quality signal
 uint32_t GPS_packetCount = 0;
+uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments each time SV info is received.
 uint8_t GPS_update = 0;             // it's a binary toggle to distinct a GPS position update
 
 uint16_t GPS_altitude;              // altitude in 0.1m
@@ -644,6 +645,9 @@ static bool gpsNewFrameNMEA(char c)
                             GPS_svinfo_quality[svSatNum - 1] = 0; // only used by ublox
                             break;
                     }
+
+                    GPS_svInfoReceivedCount++;
+
                     break;
             }
 
@@ -915,6 +919,7 @@ static bool UBLOX_parse_gps(void)
             GPS_svinfo_quality[i]=_buffer.svinfo.channel[i].quality;
             GPS_svinfo_cno[i]= _buffer.svinfo.channel[i].cno;
         }
+        GPS_svInfoReceivedCount++;
         break;
     default:
         return false;

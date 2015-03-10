@@ -80,6 +80,9 @@ static rxConfig_t *rxConfig;
 
 static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 
+#define HALF_SCREEN_CHARACTER_COLUMN_COUNT (SCREEN_CHARACTER_COLUMN_COUNT / 2)
+#define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
+
 const char* pageTitles[] = {
     "CLEANFLIGHT",
     "ARMED",
@@ -112,7 +115,7 @@ const uint8_t cyclePageIds[] = {
 
 #define CYCLE_PAGE_ID_COUNT (sizeof(cyclePageIds) / sizeof(cyclePageIds[0]))
 
-static const char* tickerCharacters = "|/-\\";
+static const char* tickerCharacters = "|/-\\"; // use 2/4/8 characters so that the divide is optimal.
 #define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
 
 typedef enum {
@@ -146,6 +149,17 @@ void padLineBuffer(void)
     while (length < sizeof(lineBuffer) - 1) {
         lineBuffer[length++] = ' ';
     }
+    lineBuffer[length] = 0;
+}
+
+void padHalfLineBuffer(void)
+{
+    uint8_t halfLineIndex = sizeof(lineBuffer) / 2;
+    uint8_t length = strlen(lineBuffer);
+    while (length < halfLineIndex - 1) {
+        lineBuffer[length++] = ' ';
+    }
+    lineBuffer[length] = 0;
 }
 
 // LCDbar(n,v) : draw a bar graph - n number of chars for width, v value in % to display
@@ -178,6 +192,7 @@ void fillScreenWithCharacters()
     }
 }
 #endif
+
 
 void updateTicker(void)
 {
@@ -214,9 +229,6 @@ void drawRxChannel(uint8_t channelIndex, uint8_t width)
     percentage = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
     drawHorizonalPercentageBar(width - 1, percentage);
 }
-
-#define HALF_SCREEN_CHARACTER_COLUMN_COUNT (SCREEN_CHARACTER_COLUMN_COUNT / 2)
-#define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
 
 #define RX_CHANNELS_PER_PAGE_COUNT 14
 void showRxPage(void)
@@ -295,43 +307,70 @@ void showProfilePage(void)
 void showGpsPage() {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
+    static uint8_t gpsTicker = 0;
+    static uint32_t lastGPSSvInfoReceivedCount = 0;
+    if (GPS_svInfoReceivedCount != lastGPSSvInfoReceivedCount) {
+        lastGPSSvInfoReceivedCount = GPS_svInfoReceivedCount;
+        gpsTicker++;
+        gpsTicker = gpsTicker % TICKER_CHARACTER_COUNT;
+    }
+
+    i2c_OLED_set_xy(0, rowIndex);
+    i2c_OLED_send_char(tickerCharacters[gpsTicker]);
+
     i2c_OLED_set_xy(MAX(0, SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
 
     uint32_t index;
     for (index = 0; index < SATELLITE_COUNT && index < SCREEN_CHARACTER_COLUMN_COUNT; index++) {
-        uint8_t bargraphValue = ((uint16_t) GPS_svinfo_cno[index] * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
-        bargraphValue = MIN(bargraphValue, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
-        i2c_OLED_send_char(VERTICAL_BARGRAPH_ZERO_CHARACTER + bargraphValue);
+        uint8_t bargraphOffset = ((uint16_t) GPS_svinfo_cno[index] * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
+        bargraphOffset = MIN(bargraphOffset, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
+        i2c_OLED_send_char(VERTICAL_BARGRAPH_ZERO_CHARACTER + bargraphOffset);
     }
 
+
     char fixChar = STATE(GPS_FIX) ? 'Y' : 'N';
-    tfp_sprintf(lineBuffer, "Satellites: %d Fix: %c", GPS_numSat, fixChar);
+    tfp_sprintf(lineBuffer, "Sats: %d Fix: %c", GPS_numSat, fixChar);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Lat: %d Lon: %d", GPS_coord[LAT] / GPS_DEGREES_DIVIDER, GPS_coord[LON] / GPS_DEGREES_DIVIDER);
+    tfp_sprintf(lineBuffer, "La/Lo: %d/%d", GPS_coord[LAT] / GPS_DEGREES_DIVIDER, GPS_coord[LON] / GPS_DEGREES_DIVIDER);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Spd: %d cm/s GC: %d", GPS_speed, GPS_ground_course);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
+    tfp_sprintf(lineBuffer, "Spd: %d", GPS_speed);
+    padHalfLineBuffer();
+    i2c_OLED_set_line(rowIndex);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "RX: %d Delta: %d", GPS_packetCount, gpsData.lastMessage - gpsData.lastLastMessage);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
+    tfp_sprintf(lineBuffer, "GC: %d", GPS_ground_course);
+    padHalfLineBuffer();
+    i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "ERRs: %d TOs: %d", gpsData.errors, gpsData.timeouts);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
+    tfp_sprintf(lineBuffer, "RX: %d", GPS_packetCount);
+    padHalfLineBuffer();
+    i2c_OLED_set_line(rowIndex);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "ERRs: %d", gpsData.errors, gpsData.timeouts);
+    padHalfLineBuffer();
+    i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "Delta: %d", gpsData.lastMessage - gpsData.lastLastMessage);
+    padHalfLineBuffer();
+    i2c_OLED_set_line(rowIndex);
+    i2c_OLED_send_string(lineBuffer);
+
+    tfp_sprintf(lineBuffer, "TOs: %d", gpsData.timeouts);
+    padHalfLineBuffer();
+    i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
     strncpy(lineBuffer, gpsPacketLog, GPS_PACKET_LOG_ENTRY_COUNT);
-    padLineBuffer();
+    padHalfLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
