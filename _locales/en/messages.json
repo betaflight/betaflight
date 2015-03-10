@@ -537,6 +537,9 @@
     "pidTuningTPA": {
         "message": "TPA"
     },
+    "pidTuningTPABreakPoint": {
+        "message": "TPA Breakpoint"
+    },
     "pidTuningButtonSave": {
         "message": "Save"
     },
