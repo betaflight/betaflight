@@ -50,7 +50,7 @@
 #define SBUS_TIME_NEEDED_PER_FRAME 3000
 
 #ifndef CJMCU
-#define DEBUG_SBUS_PACKETS
+//#define DEBUG_SBUS_PACKETS
 #endif
 
 #ifdef DEBUG_SBUS_PACKETS
@@ -78,27 +78,21 @@ static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
-static serialPort_t *sBusPort;
-
-
-void sbusUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
-{
-    functionConstraint->minBaudRate = SBUS_BAUDRATE;
-    functionConstraint->maxBaudRate = SBUS_BAUDRATE;
-    functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK | SPF_SUPPORTS_SBUS_MODE;
-}
-
 bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     int b;
-
-    sBusPort = openSerialPort(FUNCTION_SERIAL_RX, sbusDataReceive, SBUS_BAUDRATE, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_INVERTED);
-
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
         sbusChannelData[b] = (1.6f * rxConfig->midrc) - 1408;
     if (callback)
         *callback = sbusReadRawRC;
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
+
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+    serialPort_t *sBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sbusDataReceive, SBUS_BAUDRATE, (portMode_t)(MODE_RX | MODE_SBUS), SERIAL_INVERTED);
 
     return sBusPort != NULL;
 }
@@ -182,24 +176,9 @@ bool sbusFrameComplete(void)
     sbusFrameDone = false;
 
 #ifdef DEBUG_SBUS_PACKETS
+    sbusStateFlags = 0;
     debug[1] = sbusFrame.frame.flags;
 #endif
-
-    if (sbusFrame.frame.flags & SBUS_FLAG_SIGNAL_LOSS) {
-        // internal failsafe enabled and rx failsafe flag set
-#ifdef DEBUG_SBUS_PACKETS
-        sbusStateFlags |= SBUS_STATE_SIGNALLOSS;
-        debug[0] |= SBUS_STATE_SIGNALLOSS;
-#endif
-    }
-    if (sbusFrame.frame.flags & SBUS_FLAG_FAILSAFE_ACTIVE) {
-#ifdef DEBUG_SBUS_PACKETS
-        sbusStateFlags |= SBUS_STATE_FAILSAFE;
-        debug[0] = sbusStateFlags;
-#endif
-        // internal failsafe enabled and rx failsafe flag set
-        return false;
-    }
 
     sbusChannelData[0] = sbusFrame.frame.chan0;
     sbusChannelData[1] = sbusFrame.frame.chan1;
@@ -230,8 +209,23 @@ bool sbusFrameComplete(void)
         sbusChannelData[17] = SBUS_DIGITAL_CHANNEL_MIN;
     }
 
+    if (sbusFrame.frame.flags & SBUS_FLAG_SIGNAL_LOSS) {
 #ifdef DEBUG_SBUS_PACKETS
-    sbusStateFlags = 0;
+        sbusStateFlags |= SBUS_STATE_SIGNALLOSS;
+        debug[0] = sbusStateFlags;
+#endif
+    }
+    if (sbusFrame.frame.flags & SBUS_FLAG_FAILSAFE_ACTIVE) {
+        // internal failsafe enabled and rx failsafe flag set
+#ifdef DEBUG_SBUS_PACKETS
+        sbusStateFlags |= SBUS_STATE_FAILSAFE;
+        debug[0] = sbusStateFlags;
+#endif
+        // RX *should* still be sending valid channel data, so use it.
+        return false;
+    }
+
+#ifdef DEBUG_SBUS_PACKETS
     debug[0] = sbusStateFlags;
 #endif
     return true;

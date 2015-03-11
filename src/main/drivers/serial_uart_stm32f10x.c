@@ -34,6 +34,7 @@
 
 #include "serial.h"
 #include "serial_uart.h"
+#include "serial_uart_impl.h"
 
 #ifdef USE_USART1
 static uartPort_t uartPort1;
@@ -53,8 +54,6 @@ static uartPort_t uartPort3;
 #if defined(CC3D) // FIXME move board specific code to target.h files.
 #undef USE_USART1_RX_DMA
 #endif
-
-void uartStartTxDMA(uartPort_t *s);
 
 void usartIrqCallback(uartPort_t *s)
 {

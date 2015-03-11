@@ -70,7 +70,7 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
 
 pidControllerFuncPtr pid_controller = pidMultiWii; // which pid controller are we using, defaultMultiWii
 
-void resetErrorAngle(void)
+void pidResetErrorAngle(void)
 {
     errorAngleI[ROLL] = 0;
     errorAngleI[PITCH] = 0;
@@ -79,7 +79,7 @@ void resetErrorAngle(void)
     errorAngleIf[PITCH] = 0.0f;
 }
 
-void resetErrorGyro(void)
+void pidResetErrorGyro(void)
 {
     errorGyroI[ROLL] = 0;
     errorGyroI[PITCH] = 0;
@@ -139,9 +139,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
         // -----Get the desired angle rate depending on flight mode
+        uint8_t rate = controlRateConfig->rates[axis];
+
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
-            AngleRate = (float)((controlRateConfig->yawRate + 10) * rcCommand[YAW]) / 50.0f;
+            AngleRate = (float)((rate + 10) * rcCommand[YAW]) / 50.0f;
          } else {
             // calculate error and limit the angle to the max inclination
 #ifdef GPS
@@ -163,7 +165,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
                 AngleRate = errorAngle * pidProfile->A_level;
             } else {
                 //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
-                AngleRate = (float)((controlRateConfig->rollPitchRate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max yaw rate
+                AngleRate = (float)((rate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max yaw rate
                 if (FLIGHT_MODE(HORIZON_MODE)) {
                     // mix up angle error to desired AngleRate to add a little auto-level feel
                     AngleRate += errorAngle * pidProfile->H_level * horizonLevelStrength;
@@ -310,14 +312,21 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     static int32_t delta1[2] = { 0, 0 }, delta2[2] = { 0, 0 };
     int32_t delta;
 
-    if (FLIGHT_MODE(HORIZON_MODE)) prop = MIN(MAX(ABS(rcCommand[PITCH]), ABS(rcCommand[ROLL])), 512);
+    if (FLIGHT_MODE(HORIZON_MODE)) {
+        prop = MIN(MAX(ABS(rcCommand[PITCH]), ABS(rcCommand[ROLL])), 512);
+    }
 
     // PITCH & ROLL
     for (axis = 0; axis < 2; axis++) {
+
         rc = rcCommand[axis] << 1;
+
         error = rc - (gyroData[axis] / 4);
         errorGyroI[axis]  = constrain(errorGyroI[axis] + error, -16000, +16000);   // WindUp   16 bits is ok here
-        if (ABS(gyroData[axis]) > (640 * 4)) errorGyroI[axis] = 0;
+
+        if (ABS(gyroData[axis]) > (640 * 4)) {
+            errorGyroI[axis] = 0;
+        }
 
         ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
 
@@ -372,7 +381,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     }
 
     //YAW
-    rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
+    rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->rates[FD_YAW] + 30)  >> 5;
 #ifdef ALIENWII32
     error = rc - gyroData[FD_YAW];
 #else
@@ -483,7 +492,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 #endif
     }
     //YAW
-    rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->yawRate + 30)  >> 5;
+    rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->rates[FD_YAW] + 30)  >> 5;
 #ifdef ALIENWII32
     error = rc - gyroData[FD_YAW];
 #else
@@ -603,7 +612,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     Mwii3msTimescale /= 3000.0f;
 
     if (OLD_YAW) { // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw. hardcoded for now
-        PTerm = ((int32_t)pidProfile->P8[FD_YAW] * (100 - (int32_t)controlRateConfig->yawRate * (int32_t)ABS(rcCommand[FD_YAW]) / 500)) / 100;
+        PTerm = ((int32_t)pidProfile->P8[FD_YAW] * (100 - (int32_t)controlRateConfig->rates[FD_YAW] * (int32_t)ABS(rcCommand[FD_YAW]) / 500)) / 100;
         int32_t tmp = lrintf(gyroData[FD_YAW] * 0.25f);
         PTerm = rcCommand[FD_YAW] - tmp * PTerm / 80;
         if ((ABS(tmp) > 640) || (ABS(rcCommand[FD_YAW]) > 100)) {
@@ -614,7 +623,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             ITerm = (errorGyroI[FD_YAW] / 125 * pidProfile->I8[FD_YAW]) >> 6;
         }
     } else {
-        int32_t tmp = ((int32_t)rcCommand[FD_YAW] * (((int32_t)controlRateConfig->yawRate << 1) + 40)) >> 5;
+        int32_t tmp = ((int32_t)rcCommand[FD_YAW] * (((int32_t)controlRateConfig->rates[FD_YAW] << 1) + 40)) >> 5;
         error = tmp - lrintf(gyroData[FD_YAW] * 0.25f);                       // Less Gyrojitter works actually better
 
         if (ABS(tmp) > 50) {
@@ -657,9 +666,11 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
+        uint8_t rate = controlRateConfig->rates[axis];
+
         // -----Get the desired angle rate depending on flight mode
         if (axis == FD_YAW) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = (((int32_t)(controlRateConfig->yawRate + 27) * rcCommand[YAW]) >> 5);
+            AngleRateTmp = (((int32_t)(rate + 27) * rcCommand[YAW]) >> 5);
         } else {
             // calculate error and limit the angle to max configured inclination
 #ifdef GPS
@@ -677,7 +688,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 #endif
 
             if (!FLIGHT_MODE(ANGLE_MODE)) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
-                AngleRateTmp = ((int32_t)(controlRateConfig->rollPitchRate + 27) * rcCommand[axis]) >> 4;
+                AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
                 if (FLIGHT_MODE(HORIZON_MODE)) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel
                     AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL]) >> 8;
@@ -731,7 +742,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     }
 }
 
-void setPIDController(int type)
+void pidSetController(int type)
 {
     switch (type) {
         case 0:

@@ -197,9 +197,21 @@ When the switch is high, rate profile 2 is selcted.
 The following 5 images show valid configurations.  In all cales the enture usable range for the Range Channel is used.
 
 ![Configurator example 1](Screenshots/adjustments-rate-profile-selection-via-3pos.png)
+
+---
+
 ![Configurator example 2](Screenshots/adjustments-pitch-and-roll-rate-adjustment-via-3pos.png)
+
+---
+
 ![Configurator example 3](Screenshots/adjustments-pid-via-two-3pos.png)
+
+---
+
 ![Configurator example 4](Screenshots/adjustments-pid-via-6pos-and-3pos.png)
+
+---
+
 ![Configurator example 5](Screenshots/adjustments-rates-via-a-2pos-and-3pos.png)
 
 The following examples shows __incorrect__ configuration - the entire usable range for the Range Channel is not used in both cases.

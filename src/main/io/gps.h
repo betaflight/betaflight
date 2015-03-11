@@ -66,11 +66,6 @@ typedef struct gpsConfig_s {
     gpsAutoBaud_e autoBaud;
 } gpsConfig_t;
 
-typedef enum {
-    GPS_PASSTHROUGH_ENABLED = 1,
-    GPS_PASSTHROUGH_NO_SERIAL_PORT
-} gpsEnablePassthroughResult_e;
-
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
     int16_t mmmm;
@@ -109,6 +104,7 @@ extern uint8_t GPS_numSat;
 extern uint16_t GPS_hdop;                  // GPS signal quality
 extern uint8_t GPS_update;                 // it's a binary toogle to distinct a GPS position update
 extern uint32_t GPS_packetCount;
+extern uint32_t GPS_svInfoReceivedCount;
 extern uint16_t GPS_altitude;              // altitude in 0.1m
 extern uint16_t GPS_speed;                 // speed in 0.1m/s
 extern uint16_t GPS_ground_course;         // degrees * 10
@@ -124,5 +120,4 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 
 void gpsThread(void);
 bool gpsNewFrame(uint8_t c);
-gpsEnablePassthroughResult_e gpsEnablePassthrough(void);
 void updateGpsIndicator(uint32_t currentTime);

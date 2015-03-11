@@ -18,6 +18,8 @@
 
 #include <limits.h>
 
+//#define DEBUG_BATTERY
+
 extern "C" {
     #include "sensors/battery.h"
 }
@@ -35,17 +37,18 @@ typedef struct batteryAdcToVoltageExpectation_s {
 
 TEST(BatteryTest, BatteryADCToVoltage)
 {
-    // given
-
-    batteryConfig_t batteryConfig;
-
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
-    memset(&batteryConfig, 0, sizeof(batteryConfig));
-
-    batteryConfig.vbatmaxcellvoltage = 43;
-    batteryConfig.vbatmincellvoltage = 33;
-    batteryConfig.vbatwarningcellvoltage = 35;
-    batteryConfig.vbatscale = VBAT_SCALE_DEFAULT;
+    batteryConfig_t batteryConfig = {
+        .vbatscale = VBAT_SCALE_DEFAULT,
+        .vbatmaxcellvoltage = 43,
+        .vbatmincellvoltage = 33,
+        .vbatwarningcellvoltage = 35,
+        .currentMeterScale = 400,
+        .currentMeterOffset = 0,
+        .currentMeterType = CURRENT_SENSOR_NONE,
+        .multiwiiCurrentMeterOutput = 0,
+        .batteryCapacity = 2200,
+    };
 
     batteryInit(&batteryConfig);
 
@@ -66,11 +69,12 @@ TEST(BatteryTest, BatteryADCToVoltage)
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToVoltageExpectation_t *batteryAdcToVoltageExpectation = &batteryAdcToVoltageExpectations[index];
         batteryConfig.vbatscale = batteryAdcToVoltageExpectation->scale;
+#ifdef DEBUG_BATTERY
         printf("adcReading: %d, vbatscale: %d\n",
                 batteryAdcToVoltageExpectation->adcReading,
                 batteryAdcToVoltageExpectation->scale
         );
-
+#endif
         uint16_t pointOneVoltSteps = batteryAdcToVoltage(batteryAdcToVoltageExpectation->adcReading);
 
         EXPECT_EQ(pointOneVoltSteps, batteryAdcToVoltageExpectation->expectedVoltageInDeciVoltSteps);

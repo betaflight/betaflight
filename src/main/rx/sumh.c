@@ -54,21 +54,22 @@ static void sumhDataReceive(uint16_t c);
 static uint16_t sumhReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 
-void sumhUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint)
-{
-    functionConstraint->minBaudRate = SUMH_BAUDRATE;
-    functionConstraint->maxBaudRate = SUMH_BAUDRATE;
-    functionConstraint->requiredSerialPortFeatures = SPF_SUPPORTS_CALLBACK;
-}
 
 bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     UNUSED(rxConfig);
-    sumhPort = openSerialPort(FUNCTION_SERIAL_RX, sumhDataReceive, SUMH_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+
     if (callback)
         *callback = sumhReadRawRC;
 
     rxRuntimeConfig->channelCount = SUMH_MAX_CHANNEL_COUNT;
+
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, SUMH_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
 
     return sumhPort != NULL;
 }

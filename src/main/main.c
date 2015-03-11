@@ -97,24 +97,24 @@ extern uint32_t previousTime;
 serialPort_t *loopbackPort;
 #endif
 
-failsafe_t *failsafe;
-
 void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
 void serialInit(serialConfig_t *initialSerialConfig);
-failsafe_t* failsafeInit(rxConfig_t *intialRxConfig);
+void mspInit(serialConfig_t *serialConfig);
+void cliInit(serialConfig_t *serialConfig);
+void failsafeInit(rxConfig_t *intialRxConfig);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMixers);
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
-void rxInit(rxConfig_t *rxConfig, failsafe_t *failsafe);
-void beepcodeInit(failsafe_t *initialFailsafe);
+void rxInit(rxConfig_t *rxConfig);
+void beepcodeInit(void);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int8_t magHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, failsafe_t* failsafeToUse);
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void loop(void);
 void spektrumBind(rxConfig_t *rxConfig);
 
@@ -173,7 +173,7 @@ void init(void)
 
     ledInit();
 
-    #ifdef SPEKTRUM_BIND
+#ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
         switch (masterConfig.rxConfig.serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
@@ -342,11 +342,14 @@ void init(void)
 
     serialInit(&masterConfig.serialConfig);
 
-    failsafe = failsafeInit(&masterConfig.rxConfig);
+    mspInit(&masterConfig.serialConfig);
+    cliInit(&masterConfig.serialConfig);
 
-    beepcodeInit(failsafe);
+    failsafeInit(&masterConfig.rxConfig);
 
-    rxInit(&masterConfig.rxConfig, failsafe);
+    beepcodeInit();
+
+    rxInit(&masterConfig.rxConfig);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
@@ -368,7 +371,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors, failsafe);
+    ledStripInit(masterConfig.ledConfigs, masterConfig.colors);
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
@@ -376,8 +379,9 @@ void init(void)
 #endif
 
 #ifdef TELEMETRY
-    if (feature(FEATURE_TELEMETRY))
+    if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
+    }
 #endif
 
 #ifdef USE_FLASHFS

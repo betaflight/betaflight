@@ -31,6 +31,8 @@ typedef enum {
     ACC_FAKE = 9,
 } accelerationSensor_e;
 
+#define ACC_MAX  ACC_FAKE
+
 extern sensor_align_e accAlign;
 extern acc_t acc;
 extern uint16_t acc_1G;

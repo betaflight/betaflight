@@ -64,6 +64,7 @@ typedef struct mixer_t {
 } mixer_t;
 
 typedef struct mixerConfig_s {
+    uint8_t pid_at_min_throttle;            // when enabled pids are used at minimum throttle
     int8_t yaw_direction;
 #ifdef USE_SERVOS
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed

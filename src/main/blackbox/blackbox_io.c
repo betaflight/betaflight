@@ -68,9 +68,9 @@
 // How many bytes should we transmit per loop iteration?
 uint8_t blackboxWriteChunkSize = 16;
 
-static serialPort_t *blackboxPort;
-static portMode_t previousPortMode;
-static uint32_t previousBaudRate;
+static serialPort_t *blackboxPort = NULL;
+static portSharing_e blackboxPortSharing;
+
 
 void blackboxWrite(uint8_t value)
 {
@@ -445,25 +445,17 @@ bool blackboxDeviceOpen(void)
 
     switch (masterConfig.blackbox_device) {
         case BLACKBOX_DEVICE_SERIAL:
-            blackboxPort = findOpenSerialPort(FUNCTION_BLACKBOX);
-            if (blackboxPort) {
-                previousPortMode = blackboxPort->mode;
-                previousBaudRate = blackboxPort->baudRate;
-
-                serialSetBaudRate(blackboxPort, BLACKBOX_BAUDRATE);
-                serialSetMode(blackboxPort, BLACKBOX_INITIAL_PORT_MODE);
-                beginSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
-            } else {
-                blackboxPort = openSerialPort(FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
-
-                if (blackboxPort) {
-                    previousPortMode = blackboxPort->mode;
-                    previousBaudRate = blackboxPort->baudRate;
+            {
+                serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
+                if (!portConfig) {
+                    return false;
                 }
-            }
+                blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
 
-            return blackboxPort != NULL;
-        break;
+                blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, BLACKBOX_BAUDRATE, BLACKBOX_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+                return blackboxPort != NULL;
+            }
+            break;
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             if (flashfsGetSize() == 0 || isBlackboxDeviceFull()) {
@@ -485,23 +477,21 @@ void blackboxDeviceClose(void)
 {
     switch (masterConfig.blackbox_device) {
         case BLACKBOX_DEVICE_SERIAL:
-            serialSetMode(blackboxPort, previousPortMode);
-            serialSetBaudRate(blackboxPort, previousBaudRate);
-
-            endSerialPortFunction(blackboxPort, FUNCTION_BLACKBOX);
+            closeSerialPort(blackboxPort);
+            blackboxPort = NULL;
 
             /*
              * Normally this would be handled by mw.c, but since we take an unknown amount
              * of time to shut down asynchronously, we're the only ones that know when to call it.
              */
-            if (isSerialPortFunctionShared(FUNCTION_BLACKBOX, FUNCTION_MSP)) {
+            if (blackboxPortSharing == PORTSHARING_SHARED) {
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
-        break;
+            break;
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             // No-op since the flash doesn't have a "close" and there's nobody else to hand control of it to.
-        break;
+            break;
 #endif
     }
 }

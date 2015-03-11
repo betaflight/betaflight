@@ -17,6 +17,7 @@ Cleanflight also has additional features not found in baseflight.
 
 * Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
 * Oneshot ESC support.
+* Blackbox flight recorder logging (to onboard flash or external SD card).
 * Support for additional targets that use the STM32F3 processors (baseflight only supports STM32F1).
 * Support for the TauLabs Sparky board (~$35 STM32F303 I2C sensors, based board with acc/gyro/compass and baro!)
 * Support for the OpenPilot CC3D board. (~$20 STM32F103 board, SPI acc/gyro)
@@ -36,7 +37,8 @@ Cleanflight also has additional features not found in baseflight.
 * Rate profiles and in-flight selection of them.
 * Graupner PPM failsafe.
 * Graupner HoTT telemetry.
-* Configurable serial port scenarios for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
+* Multiple simultantious telemetry providers.
+* Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
 + more many minor bug fixes.
 
 For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documenation.

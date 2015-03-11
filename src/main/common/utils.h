@@ -21,6 +21,12 @@
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
+#define CONCAT_HELPER(x,y) x ## y
+#define CONCAT(x,y) CONCAT_HELPER(x, y)
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 /*
 http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
 */

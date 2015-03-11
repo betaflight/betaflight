@@ -21,4 +21,3 @@
 #define SPEKTRUM_SAT_BIND_MAX 10
 
 bool spektrumFrameComplete(void);
-void spektrumUpdateSerialRxFunctionConstraint(functionConstraint_t *functionConstraint);
