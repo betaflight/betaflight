@@ -890,7 +890,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
         break;
     case MSP_RC_TUNING:
-        headSerialReply(8);
+        headSerialReply(8 + 2);//allow for returning tpa_breakpoint
         serialize8(currentControlRateProfile->rcRate8);
         serialize8(currentControlRateProfile->rcExpo8);
         for (i = 0 ; i < 3; i++) {
@@ -899,6 +899,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(currentControlRateProfile->dynThrPID);
         serialize8(currentControlRateProfile->thrMid8);
         serialize8(currentControlRateProfile->thrExpo8);
+        //Configurator pid-tuning can allow tpa_breakpoint update, agnostic if older Configurator versions are used
+        serialize16(currentControlRateProfile->tpa_breakpoint);
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
@@ -1326,7 +1328,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RC_TUNING:
-        if (currentPort->dataSize == 8) {
+        if (currentPort->dataSize == 10) {//allow for tpa_breakpoint
             currentControlRateProfile->rcRate8 = read8();
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
@@ -1335,6 +1337,7 @@ static bool processInCommand(void)
             currentControlRateProfile->dynThrPID = read8();
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
+            currentControlRateProfile->tpa_breakpoint = read16();
         } else {
             headSerialError(0);
         }
