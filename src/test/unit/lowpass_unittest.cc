@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <limits.h>
 
+//#define DEBUG_LOWPASS
+
 extern "C" {
     #include "flight/lowpass.h" 
 }
@@ -97,8 +99,9 @@ TEST(LowpassTest, Lowpass)
 
     // Test all frequencies
     for (freq = 10; freq <= 400; freq++) {
+#ifdef DEBUG_LOWPASS
         printf("*** Testing freq: %d (%f)\n", freq, ((float)freq * 0.001f));
-
+#endif
         // Run tests
         for (sampleIdx = 0; sampleIdx < sampleCount; sampleIdx++) 
         {

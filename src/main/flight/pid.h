@@ -55,8 +55,8 @@ typedef struct pidProfile_s {
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
-void setPIDController(int type);
-void resetErrorAngle(void);
-void resetErrorGyro(void);
+void pidSetController(int type);
+void pidResetErrorAngle(void);
+void pidResetErrorGyro(void);
 
 

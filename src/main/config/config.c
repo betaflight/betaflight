@@ -73,7 +73,6 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-void setPIDController(int type); // FIXME PID code needs to be in flight_pid.c/h
 void mixerUseConfigs(
 #ifdef USE_SERVOS
         servoParam_t *servoConfToUse,
@@ -119,7 +118,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 93;
+static const uint8_t EEPROM_CONF_VERSION = 94;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -275,12 +274,15 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 90;
     controlRateConfig->rcExpo8 = 65;
-    controlRateConfig->rollPitchRate = 0;
-    controlRateConfig->yawRate = 0;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 0;
     controlRateConfig->tpa_breakpoint = 1500;
+
+    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
+        controlRateConfig->rates[axis] = 0;
+    }
+
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
@@ -288,6 +290,16 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     rcControlsConfig->yaw_deadband = 0;
     rcControlsConfig->alt_hold_deadband = 40;
     rcControlsConfig->alt_hold_fast_change = 1;
+}
+
+void resetMixerConfig(mixerConfig_t *mixerConfig) {
+    mixerConfig->pid_at_min_throttle = 1;
+    mixerConfig->yaw_direction = 1;
+#ifdef USE_SERVOS
+    mixerConfig->tri_unarmed_servo = 1;
+    mixerConfig->servo_lowpass_freq = 400;
+    mixerConfig->servo_lowpass_enable = 0;
+#endif
 }
 
 uint8_t getCurrentProfile(void)
@@ -376,6 +388,8 @@ static void resetConf(void)
     masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;
 
+    resetMixerConfig(&masterConfig.mixerConfig);
+
     masterConfig.airplaneConfig.flaps_speed = 0;
     masterConfig.airplaneConfig.fixedwing_althold_dir = 1;
 
@@ -447,11 +461,6 @@ static void resetConf(void)
         currentProfile->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
-    currentProfile->mixerConfig.yaw_direction = 1;
-    currentProfile->mixerConfig.tri_unarmed_servo = 1;
-    currentProfile->mixerConfig.servo_lowpass_freq = 400;
-    currentProfile->mixerConfig.servo_lowpass_enable = 0;
-
     // gimbal
     currentProfile->gimbalConfig.gimbal_flags = GIMBAL_NORMAL;
 #endif
@@ -499,9 +508,9 @@ static void resetConf(void)
     currentProfile->failsafeConfig.failsafe_off_delay = 0;
     currentProfile->failsafeConfig.failsafe_throttle = 1000;
     currentControlRateProfile->rcRate8 = 130;
-    currentControlRateProfile->rollPitchRate = 20;
-    currentControlRateProfile->yawRate = 60;
-    currentControlRateProfile->yawRate = 100;
+    currentControlRateProfile->rates[FD_PITCH] = 20;
+    currentControlRateProfile->rates[FD_ROLL] = 20;
+    currentControlRateProfile->rates[FD_YAW] = 100;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.5f,  1.0f, -1.0f },          // REAR_R
@@ -626,7 +635,7 @@ void activateConfig(void)
     useTelemetryConfig(&masterConfig.telemetryConfig);
 #endif
 
-    setPIDController(currentProfile->pidProfile.pidController);
+    pidSetController(currentProfile->pidProfile.pidController);
 
 #ifdef GPS
     gpsUseProfile(&currentProfile->gpsProfile);
@@ -643,7 +652,7 @@ void activateConfig(void)
 #endif
         &masterConfig.flight3DConfig,
         &masterConfig.escAndServoConfig,
-        &currentProfile->mixerConfig,
+        &masterConfig.mixerConfig,
         &masterConfig.airplaneConfig,
         &masterConfig.rxConfig
     );
@@ -717,16 +726,12 @@ void validateAndFixConfig(void)
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     if (feature(FEATURE_SOFTSERIAL) && (
+            0
 #ifdef USE_SOFTSERIAL1
-            (LED_STRIP_TIMER == SOFTSERIAL_1_TIMER)
-#else
-            0
+            || (LED_STRIP_TIMER == SOFTSERIAL_1_TIMER)
 #endif
-            ||
 #ifdef USE_SOFTSERIAL2
-            (LED_STRIP_TIMER == SOFTSERIAL_2_TIMER)
-#else
-            0
+            || (LED_STRIP_TIMER == SOFTSERIAL_2_TIMER)
 #endif
     )) {
         // led strip needs the same timer as softserial

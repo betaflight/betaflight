@@ -19,6 +19,8 @@
 
 #include <limits.h>
 
+//#define DEBUG_LEDSTRIP
+
 extern "C" {
     #include "build_config.h"
 
@@ -165,8 +167,9 @@ TEST(LedStripTest, parseLedStripConfig)
 
     // and
     for (uint8_t index = 0; index < WS2811_LED_STRIP_LENGTH; index++) {
+#ifdef DEBUG_LEDSTRIP
         printf("iteration: %d\n", index);
-
+#endif
         EXPECT_EQ(expectedLedStripConfig[index].xy, ledConfigs[index].xy);
         EXPECT_EQ(expectedLedStripConfig[index].flags, ledConfigs[index].flags);
         EXPECT_EQ(expectedLedStripConfig[index].color, ledConfigs[index].color);
@@ -324,14 +327,19 @@ TEST(ColorTest, parseColor)
 
     // when
     for (uint8_t index = 0; index < TEST_COLOR_COUNT; index++) {
+#ifdef DEBUG_LEDSTRIP
         printf("parse iteration: %d\n", index);
+#endif
+
         parseColor(index, testColors[index]);
     }
 
     // then
 
     for (uint8_t index = 0; index < TEST_COLOR_COUNT; index++) {
+#ifdef DEBUG_LEDSTRIP
         printf("iteration: %d\n", index);
+#endif
 
         EXPECT_EQ(expectedColors[index].h, colors[index].h);
         EXPECT_EQ(expectedColors[index].s, colors[index].s);
@@ -409,5 +417,7 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
 
     return 0;
 }
+
+bool failsafeHasTimerElapsed(void) { }
 
 }

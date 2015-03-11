@@ -102,7 +102,6 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
-extern failsafe_t *failsafe;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
@@ -201,7 +200,7 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->rollPitchRate * tmp / 500;
+            prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         } else if (axis == YAW) {
             if (currentProfile->rcControlsConfig.yaw_deadband) {
@@ -212,7 +211,7 @@ void annexCode(void)
                 }
             }
             rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->yawRate * ABS(tmp) / 500;
+            prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
         dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
@@ -511,27 +510,25 @@ void processRx(void)
 
     if (feature(FEATURE_FAILSAFE)) {
 
-        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafe->vTable->isEnabled()) {
-            failsafe->vTable->enable();
+        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsEnabled()) {
+            failsafeEnable();
         }
 
-        failsafe->vTable->updateState();
+        failsafeUpdateState();
     }
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
     if (throttleStatus == THROTTLE_LOW) {
-        resetErrorAngle();
-        resetErrorGyro();
+        pidResetErrorAngle();
+        pidResetErrorGyro();
     }
     // When armed and motors aren't spinning, disarm board after delay so users without buzzer won't lose fingers.
     // mixTable constrains motor commands, so checking  throttleStatus is enough
-    if (
-        ARMING_FLAG(ARMED)
+    if (ARMING_FLAG(ARMED)
         && feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING)
         && masterConfig.auto_disarm_delay != 0
-        && isUsingSticksForArming()
-    ) {
+        && isUsingSticksForArming()) {
         if (throttleStatus == THROTTLE_LOW) {
             if ((int32_t)(disarmAt - millis()) < 0)  // delay is over
                 mwDisarm();
@@ -555,12 +552,12 @@ void processRx(void)
 
     bool canUseHorizonMode = true;
 
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafe->vTable->hasTimerElapsed())) && (sensors(SENSOR_ACC))) {
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeHasTimerElapsed())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
     	canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-            resetErrorAngle();
+            pidResetErrorAngle();
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
@@ -572,7 +569,7 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-            resetErrorAngle();
+            pidResetErrorAngle();
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {
@@ -702,6 +699,14 @@ void loop(void)
             }
         }
 #endif
+
+        // If we're armed, at minimum throttle, and we do arming via the
+        // sticks, do not process yaw input from the rx.  We do this so the
+        // motors do not spin up while we are trying to arm or disarm.
+        if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck) {
+            rcCommand[YAW] = 0;
+        }
+
 
         if (currentProfile->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
             rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile->throttle_correction_value);

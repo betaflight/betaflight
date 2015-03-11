@@ -19,6 +19,8 @@
 
 #include <limits.h>
 
+//#ifdef DEBUG_GPS_CONVERSION
+
 extern "C" {
     #include "flight/gps_conversion.h"
 }
@@ -63,8 +65,9 @@ TEST(GpsConversionTest, GPSCoordToDegrees_NMEA_Values)
 
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         const gpsConversionExpectation_t *expectation = &gpsConversionExpectations[index];
+#ifdef DEBUG_GPS_CONVERSION
         printf("iteration: %d\n", index);
-
+#endif
         uint32_t result = GPS_coord_to_degrees(expectation->coord);
         EXPECT_EQ(result, expectation->degrees);
     }

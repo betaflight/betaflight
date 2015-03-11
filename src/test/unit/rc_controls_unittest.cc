@@ -18,6 +18,8 @@
 
 #include <limits.h>
 
+//#define DEBUG_RC_CONTROLS
+
 extern "C" {
     #include "platform.h"
 
@@ -69,7 +71,9 @@ TEST(RcControlsTest, updateActivatedModesWithAllInputsAtMidde)
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
+#ifdef DEBUG_RC_CONTROLS
         printf("iteration: %d\n", index);
+#endif
         EXPECT_EQ(false, IS_RC_MODE_ACTIVE(index));
     }
 }
@@ -160,7 +164,9 @@ TEST(RcControlsTest, updateActivatedModesUsingValidAuxConfigurationAndRXValues)
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
+#ifdef DEBUG_RC_CONTROLS
         printf("iteration: %d\n", index);
+#endif
         EXPECT_EQ(expectedMask & (1 << index), rcModeActivationMask & (1 << index));
     }
 }
@@ -229,8 +235,7 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
             .rcExpo8 = 0,
             .thrMid8 = 0,
             .thrExpo8 = 0,
-            .rollPitchRate = 0,
-            .yawRate = 0,
+            .rates = {0,0,0},
             .dynThrPID = 0,
             .tpa_breakpoint = 0
     };
@@ -273,8 +278,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
             .rcExpo8 = 0,
             .thrMid8 = 0,
             .thrExpo8 = 0,
-            .rollPitchRate = 0,
-            .yawRate = 0,
+            .rates = {0,0,0},
             .dynThrPID = 0,
             .tpa_breakpoint = 0
     };
@@ -440,8 +444,7 @@ TEST(RcControlsTest, processRcRateProfileAdjustments)
             .rcExpo8 = 0,
             .thrMid8 = 0,
             .thrExpo8 = 0,
-            .rollPitchRate = 0,
-            .yawRate = 0,
+            .rates = {0,0,0},
             .dynThrPID = 0,
             .tpa_breakpoint = 0
     };
