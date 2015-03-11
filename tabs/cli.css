@@ -7,10 +7,14 @@
 }
 .tab-cli .backdrop {
     border: 1px solid silver;
-    background-color: black;
+    background-color: rgba(0,0,0,0.75);
 
     margin-top: 10px;
     height: calc(100% - 80px); /* - (p, textarea) */
+    background-image: url("../images/light-wide-1.svg");
+    background-repeat: no-repeat;
+    background-position: 50% 80%;
+    background-size: 600px;
 }
 .tab-cli .window {
     height:100%;

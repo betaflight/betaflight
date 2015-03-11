@@ -7,10 +7,18 @@
     margin-left: 10px;
     width: calc(40% - 10px);
 }
+
+.tab-landing .section {
+    margin-bottom: 10px;
+}
+
+.left .section:last-child,
+.right .section:last-child {
+    margin-bottom: 0px;
+}
+
 .tab-landing .optional_permissions {
     display: none;
-
-    margin-bottom: 10px;
 
     border: 1px solid silver;
 }
@@ -46,19 +54,32 @@
 .tab-landing .optional_permissions a:hover {
     background-color: #dedcdc;
 }
-.welcome {
-    height: 171px;
-    padding: 5px;
-    margin-bottom: 10px;
 
+.welcome {
+    height: 207px;
+}
+
+.contributing,
+.welcome {
+    padding: 5px;
     border: 1px solid silver;
 }
+
+.contributing a,
 .welcome a {
     font-weight: bold;
 }
+.contributing a:hover,
 .welcome a:hover {
     text-decoration: underline;
 }
+
+.contributing li {
+    list-style-type: disc;
+    list-style-position: initial;
+    margin-left: 20px;
+}
+
 .changelog {
     border: 1px solid silver;
 }
@@ -88,13 +109,13 @@
 .changelog .wrapper p {
     margin-bottom: 5px;
 }
+
 .donate {
     height: 105px;
-    margin-bottom: 10px;
-
     border: 1px solid silver;
 }
-.donate .title {
+
+.section .title {
     line-height: 20px;
 
     text-align: center;
@@ -117,18 +138,8 @@
 }
 
 .tab-landing .sponsors {
-    height: 105px;
+    height: 254px;
     border: 1px solid silver;
-}
-.tab-landing .sponsors .title {
-    line-height: 20px;
-
-    text-align: center;
-    font-weight: bold;
-    color: white;
-
-    border-bottom: 1px solid silver;
-    background-color: #3f4241;
 }
 .tab-landing .sponsors p {
     padding: 5px;
@@ -138,58 +149,4 @@
 }
 .tab-landing .sponsors p a:hover {
     text-decoration: underline;
-}
-.documentation {
-    height: 135px;
-
-    border: 1px solid silver;
-}
-.documentation .title {
-    line-height: 20px;
-
-    text-align: center;
-    font-weight: bold;
-    color: white;
-
-    border-bottom: 1px solid silver;
-    background-color: #3f4241;
-}
-.documentation p {
-    padding: 5px;
-}
-.documentation p a {
-    font-weight: bold;
-}
-.documentation p a:hover {
-    text-decoration: underline;
-}
-.support {
-    height: 135px;
-
-    border: 1px solid silver;
-}
-.support .title {
-    line-height: 20px;
-
-    text-align: center;
-    font-weight: bold;
-    color: white;
-
-    border-bottom: 1px solid silver;
-    background-color: #3f4241;
-}
-.support p {
-    padding: 5px;
-}
-.support p a {
-    font-weight: bold;
-}
-.support p a:hover {
-    text-decoration: underline;
-}
-.support .wrapper {
-    height: 114px;
-
-    overflow-y: scroll;
-    overflow-x: hidden;
 }
