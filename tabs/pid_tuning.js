@@ -39,7 +39,7 @@ TABS.pid_tuning.initialize = function (callback) {
     // requesting MSP_STATUS manually because it contains CONFIG.profile
     MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_controller);
 
-    function data_stoarage_to_form() {
+    function pid_and_rc_to_form() {
 // Fill in the data from PIDs array
         var i = 0;
         $('.pid_tuning .ROLL input').each(function () {
@@ -252,7 +252,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning tr:eq(9) td:first').text(PID_names[7]);
         $('.pid_tuning tr:eq(10) td:first').text(PID_names[8]);
 
-        data_stoarage_to_form();
+        pid_and_rc_to_form();
 
         var pidController_e = $('select[name="controller"]');
         var profile_e = $('select[name="profile"]');
