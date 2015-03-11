@@ -175,6 +175,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.rate-tpa input[name="roll-pitch"]').val(RC_tuning.roll_pitch_rate.toFixed(2));
         $('.rate-tpa input[name="yaw"]').val(RC_tuning.yaw_rate.toFixed(2));
         $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
+        $('.rate-tpa input[name="tpa-breakpoint"]').val(RC_tuning.dynamic_THR_breakpoint);
     }
 
     function form_to_pid_and_rc() {
@@ -233,6 +234,7 @@ TABS.pid_tuning.initialize = function (callback) {
         RC_tuning.roll_pitch_rate = parseFloat($('.rate-tpa input[name="roll-pitch"]').val());
         RC_tuning.yaw_rate = parseFloat($('.rate-tpa input[name="yaw"]').val());
         RC_tuning.dynamic_THR_PID = parseFloat($('.rate-tpa input[name="tpa"]').val());
+        RC_tuning.dynamic_THR_breakpoint = parseInt($('.rate-tpa input[name="tpa-breakpoint"]').val());
     }
 
     function process_html() {

@@ -90,6 +90,11 @@
     float: right;
     width: calc(40% - 10px); /* - ( "virtual" margin) */
 }
+.tab-pid_tuning .rate-tpa .tpa{
+    float: right;
+    border: 1px solid #ADDFAC; /*THEME CHANGE HERE*/
+    width: calc(100% - 10px); /* - ( "virtual" margin) */    
+}
 .tab-pid_tuning .buttons {
     width: calc(100% - 20px);
 
