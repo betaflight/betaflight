@@ -75,6 +75,13 @@ TABS.ports.initialize = function (callback, scrollPosition) {
 
     function update_ui() {
         
+        if (CONFIG.apiVersion < 1.6) {
+            
+            $(".tab-ports").removeClass("supported");
+            return;
+        }
+        
+        $(".tab-ports").addClass("supported");
         
         var portIdentifierToNameMapping = {
            0: 'UART1',
