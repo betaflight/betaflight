@@ -351,12 +351,9 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
     setup = hardwareMaps[i];
 
-    for (i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (i = 0; i < USABLE_TIMER_CHANNEL_COUNT && setup[i] != 0xFFFF; i++) {
         uint8_t timerIndex = setup[i] & 0x00FF;
         uint8_t type = (setup[i] & 0xFF00) >> 8;
-
-        if (setup[i] == 0xFFFF) // terminator
-            break;
 
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
 

@@ -54,11 +54,8 @@ typedef enum {
     FAILSAFE_FIND_ME
 } failsafeBeeperWarnings_e;
 
-static failsafe_t* failsafe;
-
-void beepcodeInit(failsafe_t *initialFailsafe)
+void beepcodeInit(void)
 {
-    failsafe = initialFailsafe;
 }
 
 void beepcodeUpdateState(batteryState_e batteryState)
@@ -77,19 +74,19 @@ void beepcodeUpdateState(batteryState_e batteryState)
     }
     //===================== Beeps for failsafe =====================
     if (feature(FEATURE_FAILSAFE)) {
-        if (failsafe->vTable->shouldForceLanding(ARMING_FLAG(ARMED))) {
+        if (failsafeShouldForceLanding(ARMING_FLAG(ARMED))) {
             warn_failsafe = FAILSAFE_LANDING;
 
-            if (failsafe->vTable->shouldHaveCausedLandingByNow()) {
+            if (failsafeShouldHaveCausedLandingByNow()) {
                 warn_failsafe = FAILSAFE_FIND_ME;
             }
         }
 
-        if (failsafe->vTable->hasTimerElapsed() && !ARMING_FLAG(ARMED)) {
+        if (failsafeHasTimerElapsed() && !ARMING_FLAG(ARMED)) {
             warn_failsafe = FAILSAFE_FIND_ME;
         }
 
-        if (failsafe->vTable->isIdle()) {
+        if (failsafeIsIdle()) {
             warn_failsafe = FAILSAFE_IDLE;      // turn off alarm if TX is okay
         }
     }

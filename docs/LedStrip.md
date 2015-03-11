@@ -163,6 +163,50 @@ The mapping between modes led placement and colors is currently fixed and cannot
 
 This mode flashes LEDs that correspond to roll and pitch stick positions.  i.e.  they indicate the direction the craft is going to turn.
 
+| Mode | Direction | LED Color |
+|------------|--------|---------------------|
+|Orientation | North  | WHITE			|
+|Orientation | East   | DARK VIOLET	|  
+|Orientation | South  | RED			|
+|Orientation | West   | DEEP PINK		|
+|Orientation | Up     | BLUE			|
+|Orientation | Down   | ORANGE		|
+| | | |
+|Head Free   | North  | LIME GREEN 	|
+|Head Free   | East   | DARK VIOLET 	|
+|Head Free   | South  | ORANGE 		|
+|Head Free   | West   | DEEP PINK 	|
+|Head Free   | Up     | BLUE 			|
+|Head Free   | Down   | ORANGE 		|
+| | | |
+|Horizon     | North  | BLUE			|
+|Horizon     | East   | DARK VIOLET 	|
+|Horizon     | South  | YELLOW 		|
+|Horizon     | West   | DEEP PINK 	|
+|Horizon     | Up     | BLUE 			|
+|Horizon     | Down   | ORANGE 		|
+| | | |
+|Angle       | North  | CYAN			|
+|Angle       | East   | DARK VIOLET 	|
+|Angle       | South  | YELLOW 		|
+|Angle       | West   | DEEP PINK 	|
+|Angle       | Up     | BLUE 			|
+|Angle       | Down   | ORANGE 		|
+| | | |
+|Mag         | North  | MINT GREEN	|
+|Mag         | East   | DARK VIOLET 	|
+|Mag         | South  | ORANGE 		|
+|Mag         | West   | DEEP PINK 	|
+|Mag         | Up     | BLUE 			|
+|Mag         | Down   | ORANGE 		|
+| | | |
+|Baro        | North  | LIGHT BLUE 	|
+|Baro        | East   | DARK VIOLET 	|
+|Baro        | South  | RED 			|
+|Baro        | West   | DEEP PINK 	|
+|Baro        | Up     | BLUE 			|
+|Baro        | Down   | ORANGE 		|
+
 #### Armed state
 
 This mode toggles LEDs between green and blue when disarmed and armed, respectively.

@@ -58,16 +58,19 @@
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;
 
+// true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+
 bool isUsingSticksForArming(void)
 {
     return isUsingSticksToArm;
 }
+
 
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
@@ -402,12 +405,20 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             generateThrottleCurve(controlRateConfig, escAndServoConfig);
             break;
         case ADJUSTMENT_PITCH_ROLL_RATE:
-            newValue = (int)controlRateConfig->rollPitchRate + delta;
-            controlRateConfig->rollPitchRate = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+        case ADJUSTMENT_PITCH_RATE:
+            newValue = (int)controlRateConfig->rates[FD_PITCH] + delta;
+            controlRateConfig->rates[FD_PITCH] = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            if (adjustmentFunction == ADJUSTMENT_PITCH_RATE) {
+                break;
+            }
+            // follow though for combined ADJUSTMENT_PITCH_ROLL_RATE
+        case ADJUSTMENT_ROLL_RATE:
+            newValue = (int)controlRateConfig->rates[FD_ROLL] + delta;
+            controlRateConfig->rates[FD_ROLL] = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             break;
         case ADJUSTMENT_YAW_RATE:
-            newValue = (int)controlRateConfig->yawRate + delta;
-            controlRateConfig->yawRate = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            newValue = (int)controlRateConfig->rates[FD_YAW] + delta;
+            controlRateConfig->rates[FD_YAW] = constrain(newValue, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             break;
         case ADJUSTMENT_PITCH_ROLL_P:
             if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {

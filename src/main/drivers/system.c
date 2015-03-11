@@ -31,7 +31,7 @@
 #include "system.h"
 
 // cycles per microsecond
-static volatile uint32_t usTicks = 0;
+static uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
 

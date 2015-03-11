@@ -57,9 +57,6 @@ typedef struct profile_s {
     // Failsafe related configuration
     failsafeConfig_t failsafeConfig;
 
-    // mixer-related configuration
-    mixerConfig_t mixerConfig;
-
 #ifdef GPS
     gpsProfile_t gpsProfile;
 #endif

@@ -33,6 +33,7 @@
 #include "drivers/pwm_mapping.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/system.h"
 
 #include "rx/rx.h"
 
@@ -202,7 +203,7 @@ static const motorMixer_t mixerDualcopter[] = {
     { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
 };
 
-// Keep this synced with MultiType struct in mw.h!
+// Keep synced with mixerMode_e
 const mixer_t mixers[] = {
 //    Mo Se Mixtable
     { 0, 0, NULL },                // entry 0
@@ -564,6 +565,13 @@ void mixTable(void)
     }
 
 #if !defined(USE_QUAD_MIXER_ONLY) || defined(USE_SERVOS)
+    int8_t yawDirection3D = 1;
+
+    // Reverse yaw servo when inverted in 3D mode
+    if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->midrc)) {
+        yawDirection3D = -1;
+    }
+
     // airplane / servo mixes
     switch (currentMixerMode) {
         case MIXER_BI:
@@ -572,7 +580,7 @@ void mixTable(void)
             break;
 
         case MIXER_TRI:
-            servo[5] = (servoDirection(5, 1) * axisPID[YAW]) + determineServoMiddleOrForwardFromChannel(5); // REAR
+            servo[5] = (servoDirection(5, 1) * axisPID[YAW] * yawDirection3D) + determineServoMiddleOrForwardFromChannel(5); // REAR
             break;
 
         case MIXER_GIMBAL:
@@ -664,8 +672,12 @@ void mixTable(void)
 
     if (ARMING_FLAG(ARMED)) {
 
+        // Find the maximum motor output.
         int16_t maxMotor = motor[0];
         for (i = 1; i < motorCount; i++) {
+            // If one motor is above the maxthrottle threshold, we reduce the value
+            // of all motors by the amount of overshoot.  That way, only one motor
+            // is at max and the relative power of each motor is preserved.
             if (motor[i] > maxMotor) {
                 maxMotor = motor[i];
             }
@@ -684,16 +696,18 @@ void mixTable(void)
                     motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
                 }
             } else {
+                // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
+                // do not spin the motors.
                 motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
                 if ((rcData[THROTTLE]) < rxConfig->mincheck) {
-                    if (!feature(FEATURE_MOTOR_STOP))
-                        motor[i] = escAndServoConfig->minthrottle;
-                    else
+                    if (feature(FEATURE_MOTOR_STOP)) {
                         motor[i] = escAndServoConfig->mincommand;
+                    } else if (mixerConfig->pid_at_min_throttle == 0) {
+                        motor[i] = escAndServoConfig->minthrottle;
+                    }
                 }
             }
         }
-
     } else {
         for (i = 0; i < motorCount; i++) {
             motor[i] = motor_disarmed[i];
