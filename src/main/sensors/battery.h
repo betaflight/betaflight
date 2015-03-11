@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "rx/rx.h"
+
 #define VBAT_SCALE_DEFAULT 110
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
@@ -62,7 +64,7 @@ batteryState_e calculateBatteryState(void);
 void updateBatteryVoltage(void);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 
-void updateCurrentMeter(int32_t lastUpdateAt);
+void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);
