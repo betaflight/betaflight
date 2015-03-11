@@ -288,14 +288,22 @@ var MSP = {
                 ANALOG.amperage = data.getInt16(5, 1) / 100; // A
                 break;
             case MSP_codes.MSP_RC_TUNING:
-                RC_tuning.RC_RATE = parseFloat((data.getUint8(0) / 100).toFixed(2));
-                RC_tuning.RC_EXPO = parseFloat((data.getUint8(1) / 100).toFixed(2));
-                RC_tuning.roll_pitch_rate = parseFloat((data.getUint8(2) / 100).toFixed(2));
-                RC_tuning.yaw_rate = parseFloat((data.getUint8(3) / 100).toFixed(2));
-                RC_tuning.dynamic_THR_PID = parseFloat((data.getUint8(4) / 100).toFixed(2));
-                RC_tuning.throttle_MID = parseFloat((data.getUint8(5) / 100).toFixed(2));
-                RC_tuning.throttle_EXPO = parseFloat((data.getUint8(6) / 100).toFixed(2));
-                RC_tuning.dynamic_THR_breakpoint = parseInt(data.getUint16(7, 1));
+                var offset = 0;
+                RC_tuning.RC_RATE = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                RC_tuning.RC_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                if (CONFIG.apiVersion < 1.7) {
+                    RC_tuning.roll_pitch_rate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                } else {
+                    RC_tuning.roll_rate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                    RC_tuning.pitch_rate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                }
+                RC_tuning.yaw_rate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                RC_tuning.dynamic_THR_PID = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                RC_tuning.throttle_MID = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                RC_tuning.throttle_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                if (CONFIG.apiVersion >= 1.7) {
+                    RC_tuning.dynamic_THR_breakpoint = data.getUint16(offset++, 1);
+                }
                 break;
             case MSP_codes.MSP_PID:
                 // PID data arrived, we need to scale it and save to appropriate bank / array
@@ -913,13 +921,20 @@ MSP.crunch = function (code) {
         case MSP_codes.MSP_SET_RC_TUNING:
             buffer.push(parseInt(RC_tuning.RC_RATE * 100));
             buffer.push(parseInt(RC_tuning.RC_EXPO * 100));
-            buffer.push(parseInt(RC_tuning.roll_pitch_rate * 100));
+            if (CONFIG.apiVersion < 1.7) {
+                buffer.push(parseInt(RC_tuning.roll_pitch_rate * 100));
+            } else {
+                buffer.push(parseInt(RC_tuning.roll_rate * 100));
+                buffer.push(parseInt(RC_tuning.pitch_rate * 100));
+            }
             buffer.push(parseInt(RC_tuning.yaw_rate * 100));
             buffer.push(parseInt(RC_tuning.dynamic_THR_PID * 100));
             buffer.push(parseInt(RC_tuning.throttle_MID * 100));
             buffer.push(parseInt(RC_tuning.throttle_EXPO * 100));
-            buffer.push(lowByte(RC_tuning.dynamic_THR_breakpoint));
-            buffer.push(highByte(RC_tuning.dynamic_THR_breakpoint));
+            if (CONFIG.apiVersion >= 1.7) {
+                buffer.push(lowByte(RC_tuning.dynamic_THR_breakpoint));
+                buffer.push(highByte(RC_tuning.dynamic_THR_breakpoint));
+            }
             break;
         // Disabled, cleanflight does not use MSP_SET_BOX.
         /*

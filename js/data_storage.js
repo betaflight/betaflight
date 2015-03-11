@@ -65,7 +65,9 @@ var RC = {
 var RC_tuning = {
     RC_RATE:         0,
     RC_EXPO:         0,
-    roll_pitch_rate: 0,
+    roll_pitch_rate: 0, // pre 1.7 api only
+    roll_rate:       0, 
+    pitch_rate:      0,
     yaw_rate:        0,
     dynamic_THR_PID: 0,
     throttle_MID:    0,

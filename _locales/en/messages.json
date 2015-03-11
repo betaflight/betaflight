@@ -567,6 +567,12 @@
     "pidTuningRollPitchRate": {
         "message": "ROLL &amp; PITCH rate"
     },
+    "pidTuningRollRate": {
+        "message": "ROLL rate"
+    },
+    "pidTuningPitchRate": {
+        "message": "PITCH rate"
+    },
     "pidTuningYawRate": {
         "message": "YAW rate"
     },
