@@ -50,7 +50,7 @@ typedef struct imuRuntimeConfig_s {
     uint8_t acc_unarmedcal;
     float gyro_cmpf_factor;
     float gyro_cmpfm_factor;
-    int8_t small_angle;
+    uint8_t small_angle;
 } imuRuntimeConfig_t;
 
 void imuConfigure(
