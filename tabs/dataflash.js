@@ -20,12 +20,12 @@ TABS.dataflash.initialize = function (callback) {
         log_buffer = [];
 
     if (CONFIGURATOR.connectionValid) {
-        if (CONFIG.apiVersion < 1.6) {
+        TABS.dataflash.available = (CONFIG.apiVersion >= 1.6)
+        
+        if (!TABS.dataflash.available) {
             load_html();
             return;
         }
-        
-        TABS.dataflash.available = true;
         
         MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false, load_html);
     }
@@ -107,6 +107,7 @@ TABS.dataflash.initialize = function (callback) {
                 $(".tab-dataflash .note").html(chrome.i18n.getMessage('dataflashNotSupportedNote'));
             }
         } else {
+            $(".tab-dataflash").removeClass("supported");
             $(".tab-dataflash .note").html(chrome.i18n.getMessage('dataflashFirmwareUpgradeRequired'));
         }
 
