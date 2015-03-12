@@ -38,6 +38,10 @@
 #define M25P16_STATUS_FLAG_WRITE_IN_PROGRESS 0x01
 #define M25P16_STATUS_FLAG_WRITE_ENABLED     0x02
 
+// Format is manufacturer, memory type, then capacity
+#define JEDEC_ID_MICRON_M25P16         0x202015
+#define JEDEC_ID_WINBOND_W25Q64        0xEF4017
+
 #define DISABLE_M25P16       GPIO_SetBits(M25P16_CS_GPIO,   M25P16_CS_PIN)
 #define ENABLE_M25P16        GPIO_ResetBits(M25P16_CS_GPIO, M25P16_CS_PIN)
 
@@ -124,6 +128,7 @@ static bool m25p16_readIdentification()
 {
     uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0};
     uint8_t in[4];
+    uint32_t chipID;
 
     delay(50); // short delay required after initialisation of SPI device instance.
 
@@ -139,29 +144,37 @@ static bool m25p16_readIdentification()
     // Clearing the CS bit terminates the command early so we don't have to read the chip UID:
     DISABLE_M25P16;
 
-    // Check manufacturer, memory type, and capacity
-    if (in[1] == 0x20 && in[2] == 0x20 && in[3] == 0x15) {
-        // In the future we can support other chip geometries here:
-        geometry.sectors = 32;
-        geometry.pagesPerSector = 256;
-        geometry.pageSize = 256;
+    // Manufacturer, memory type, and capacity
+    chipID = (in[1] << 16) | (in[2] << 8) | (in[3]);
 
-        geometry.sectorSize = geometry.pagesPerSector * geometry.pageSize;
-        geometry.totalSize = geometry.sectorSize * geometry.sectors;
+    switch (chipID) {
+        case JEDEC_ID_MICRON_M25P16:
+            geometry.sectors = 32;
+            geometry.pagesPerSector = 256;
+            geometry.pageSize = 256;
+        break;
+        case JEDEC_ID_WINBOND_W25Q64:
+            geometry.sectors = 128;
+            geometry.pagesPerSector = 256;
+            geometry.pageSize = 256;
+        break;
+        default:
+            // Unsupported chip or not an SPI NOR flash
+            geometry.sectors = 0;
+            geometry.pagesPerSector = 0;
+            geometry.pageSize = 0;
 
-        couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
-
-        return true;
+            geometry.sectorSize = 0;
+            geometry.totalSize = 0;
+            return false;
     }
 
-    geometry.sectors = 0;
-    geometry.pagesPerSector = 0;
-    geometry.pageSize = 0;
+    geometry.sectorSize = geometry.pagesPerSector * geometry.pageSize;
+    geometry.totalSize = geometry.sectorSize * geometry.sectors;
 
-    geometry.sectorSize = 0;
-    geometry.totalSize = 0;
+    couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 
-    return false;
+    return true;
 }
 
 /**

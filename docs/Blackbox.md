@@ -134,9 +134,17 @@ tubing instead.
 ![OpenLog installed](Wiring/blackbox-installation-1.jpg "OpenLog installed with double-sided tape, SDCard slot pointing outward")
 
 ### Onboard dataflash storage
-The full version of the Naze32 and the CC3D have an onboard "m25p16" 2 megayte dataflash storage chip which can be used
-to store flight logs instead of using an OpenLog. This is a small chip with 8 fat legs, which can be found at the base
-of the Naze32's direction arrow. This chip is not present on the "Acro" version of the Naze32.
+Some flight controllers have an onboard SPI NOR flash chip which can be used to store flight logs instead of using an 
+OpenLog.
+
+The full version of the Naze32 and the CC3D have an onboard "m25p16" 2 megayte dataflash storage chip. This is a small
+chip with 8 fat legs, which can be found at the base of the Naze32's direction arrow. This chip is not present on the
+"Acro" version of the Naze32.
+
+These chips are also supported:
+
+* Micron/ST M25P16 - 16 Mbit
+* Winbond W25Q64 - 64 Mbit
 
 ## Enabling the Blackbox (CLI)
 In the [Cleanflight Configurator][] , enter the CLI tab. Enable the Blackbox feature by typing in `feature BLACKBOX` and
