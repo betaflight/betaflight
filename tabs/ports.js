@@ -80,6 +80,13 @@ TABS.ports.initialize = function (callback, scrollPosition) {
 
     function update_ui() {
         
+        if (CONFIG.apiVersion < 1.6) {
+            
+            $(".tab-ports").removeClass("supported");
+            return;
+        }
+        
+        $(".tab-ports").addClass("supported");
         
         var portIdentifierToNameMapping = {
            0: 'UART1',
@@ -172,7 +179,8 @@ TABS.ports.initialize = function (callback, scrollPosition) {
                         if (select_e.size() == 0) {
                             functions_e.prepend('<span class="function"><select name="' + selectElementName + '" /></span>');
                             select_e = functions_e.find(selectElementSelector);
-                            select_e.append('<option value="">-- Select --</option>');
+                            var disabledText = chrome.i18n.getMessage('portsTelemetryDisabled');
+                            select_e.append('<option value="">' + disabledText + '</option>');
                         }
                         select_e.append('<option value="' + functionName + '">' + functionRule.displayName + '</option>');
 

@@ -3,9 +3,9 @@
 var CONFIGURATOR = {
     'releaseDate': 1424462791805, // new Date().getTime() - 2015.02.20
     'apiVersionAccepted': 1.2,
-    'backupRestoreMinApiVersionAccepted': 1.6,
+    'backupRestoreMinApiVersionAccepted': 1.5,
     'pidControllerChangeMinApiVersion': 1.5,
-    'backupFileMinVersionAccepted': '0.63', // chrome.runtime.getManifest().version is stored as string, so does this one
+    'backupFileMinVersionAccepted': '0.55', // chrome.runtime.getManifest().version is stored as string, so does this one
     'connectionValid': false,
     'connectionValidCliOnly': false,
     'cliActive': false,
@@ -65,11 +65,14 @@ var RC = {
 var RC_tuning = {
     RC_RATE:         0,
     RC_EXPO:         0,
-    roll_pitch_rate: 0,
+    roll_pitch_rate: 0, // pre 1.7 api only
+    roll_rate:       0, 
+    pitch_rate:      0,
     yaw_rate:        0,
     dynamic_THR_PID: 0,
     throttle_MID:    0,
-    throttle_EXPO:   0
+    throttle_EXPO:   0,
+    dynamic_THR_breakpoint: 0
 };
 
 var AUX_CONFIG = [];
@@ -86,6 +89,8 @@ var SERVO_CONFIG = [];
 
 var SERIAL_CONFIG = {
     ports: [],
+    
+    // pre 1.6 settings
     mspBaudRate: 0,
     gpsBaudRate: 0,
     gpsPassthroughBaudRate: 0,

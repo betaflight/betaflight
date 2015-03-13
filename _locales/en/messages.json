@@ -518,8 +518,14 @@
     "portsHelp": {
         "message": "Configure serial ports.  <strong>Note:</strong> not all combinations are valid.  When the flight controller firmware detects this the serial port configuration will be reset."
     },
+    "portsFirmwareUpgradeRequired": {
+        "message": "Firmware upgrade <span style=\"color: red\">required</span>.  Serial port configurations of firmware &lt; 1.8.0 is not supported."
+    },
     "portsButtonSave": {
         "message": "Save and Reboot"
+    },
+    "portsTelemetryDisabled": {
+        "message": "Disabled"
     },
     "portsFunction_MSP": {
         "message": "MSP"
@@ -564,11 +570,20 @@
     "pidTuningRollPitchRate": {
         "message": "ROLL &amp; PITCH rate"
     },
+    "pidTuningRollRate": {
+        "message": "ROLL rate"
+    },
+    "pidTuningPitchRate": {
+        "message": "PITCH rate"
+    },
     "pidTuningYawRate": {
         "message": "YAW rate"
     },
     "pidTuningTPA": {
         "message": "TPA"
+    },
+    "pidTuningTPABreakPoint": {
+        "message": "TPA Breakpoint"
     },
     "pidTuningButtonSave": {
         "message": "Save"
@@ -886,6 +901,9 @@
     },
     "dataflashNotSupportedNote": {
         "message": "Your flight controller does not have a compatible dataflash chip available."
+    },
+    "dataflashFirmwareUpgradeRequired": {
+        "message": "Dataflash requires firmware &gt;= 1.8.0."
     },
     "dataflashButtonSaveFile": {
         "message": "Save flash to file..."
