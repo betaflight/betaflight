@@ -65,3 +65,21 @@
 .tab-ports .save:hover {
     background-color: #dedcdc;
 }
+
+.tab-ports .note {
+    padding: 5px;
+    border: 1px dashed silver;
+    margin-bottom: 8px;
+}
+.require-support {
+    display:none;
+}
+.tab-ports.supported .require-support {
+    display:block;
+}
+.require-upgrade {
+    display:block;
+}
+.tab-ports.supported .require-upgrade {
+    display:none;
+}

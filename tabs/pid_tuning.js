@@ -39,8 +39,8 @@ TABS.pid_tuning.initialize = function (callback) {
     // requesting MSP_STATUS manually because it contains CONFIG.profile
     MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_controller);
 
-    function data_stoarage_to_form() {
-// Fill in the data from PIDs array
+    function pid_and_rc_to_form() {
+        // Fill in the data from PIDs array
         var i = 0;
         $('.pid_tuning .ROLL input').each(function () {
             switch (i) {
@@ -173,13 +173,15 @@ TABS.pid_tuning.initialize = function (callback) {
 
         // Fill in data from RC_tuning object
         $('.rate-tpa input[name="roll-pitch"]').val(RC_tuning.roll_pitch_rate.toFixed(2));
+        $('.rate-tpa input[name="roll"]').val(RC_tuning.roll_rate.toFixed(2));
+        $('.rate-tpa input[name="pitch"]').val(RC_tuning.pitch_rate.toFixed(2));
         $('.rate-tpa input[name="yaw"]').val(RC_tuning.yaw_rate.toFixed(2));
         $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
         $('.rate-tpa input[name="tpa-breakpoint"]').val(RC_tuning.dynamic_THR_breakpoint);
     }
 
     function form_to_pid_and_rc() {
-// Catch all the changes and stuff the inside PIDs array
+        // Catch all the changes and stuff the inside PIDs array
         var i = 0;
         $('table.pid_tuning tr.ROLL input').each(function () {
             PIDs[0][i++] = parseFloat($(this).val());
@@ -232,6 +234,8 @@ TABS.pid_tuning.initialize = function (callback) {
 
         // catch RC_tuning changes
         RC_tuning.roll_pitch_rate = parseFloat($('.rate-tpa input[name="roll-pitch"]').val());
+        RC_tuning.roll_rate = parseFloat($('.rate-tpa input[name="roll"]').val());
+        RC_tuning.pitch_rate = parseFloat($('.rate-tpa input[name="pitch"]').val());
         RC_tuning.yaw_rate = parseFloat($('.rate-tpa input[name="yaw"]').val());
         RC_tuning.dynamic_THR_PID = parseFloat($('.rate-tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.rate-tpa input[name="tpa-breakpoint"]').val());
@@ -254,7 +258,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning tr:eq(9) td:first').text(PID_names[7]);
         $('.pid_tuning tr:eq(10) td:first').text(PID_names[8]);
 
-        data_stoarage_to_form();
+        pid_and_rc_to_form();
 
         var pidController_e = $('select[name="controller"]');
         var profile_e = $('select[name="profile"]');
@@ -269,6 +273,14 @@ TABS.pid_tuning.initialize = function (callback) {
             pidController_e.append('<option value="">Unknown</option>');
 
             pidController_e.prop('disabled', true);
+        }
+        
+        if (CONFIG.apiVersion < 1.7) {
+            $('.rate-tpa .tpa-breakpoint').hide();
+            $('.rate-tpa .roll').hide();
+            $('.rate-tpa .pitch').hide();
+        } else {
+            $('.rate-tpa .roll-pitch').hide();
         }
 
         // Fill in currently selected profile
@@ -313,11 +325,12 @@ TABS.pid_tuning.initialize = function (callback) {
 
         // update == save.
         $('a.update').click(function () {
-
             form_to_pid_and_rc();
 
             function send_pids() {
-                if (!TABS.pid_tuning.controllerChanged) MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, send_rc_tuning_changes);
+                if (!TABS.pid_tuning.controllerChanged) {
+                    MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, send_rc_tuning_changes);
+                }
             }
 
             function send_rc_tuning_changes() {
@@ -348,10 +361,14 @@ TABS.pid_tuning.initialize = function (callback) {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
-        if (callback) callback();
+        if (callback) {
+            callback();
+        }
     }
 };
 
 TABS.pid_tuning.cleanup = function (callback) {
-    if (callback) callback();
+    if (callback) {
+        callback();
+    }
 };

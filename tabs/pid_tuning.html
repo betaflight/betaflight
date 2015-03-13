@@ -12,7 +12,6 @@
         </select>
     </div>
     <div class="clear-both"></div>
-
     <form name="pid-tuning" id="pid-tuning">
         <table class="pid_tuning">
             <tr>
@@ -80,21 +79,28 @@
             </tr>
         </table>
         <table class="rate-tpa">
-            <tr>
-                <th i18n="pidTuningRollPitchRate"></th>
-                <th i18n="pidTuningYawRate"></th>
-                <th i18n="pidTuningTPA"></th>
-                <th i18n="pidTuningTPABreakPoint" class="tpa"></th>
-            </tr>
-            <tr>
-                <td><input type="number" name="roll-pitch" step="0.01" min="0" max="2.55"/></td>
-                <td><input type="number" name="yaw" step="0.01" min="0" max="2.55"/></td>
-                <td><input type="number" name="tpa" step="0.01" min="0" max="2.55"/></td>
-                <td><input type="number" name="tpa-breakpoint" step="10" min="1000" max="2000" /></td>
-            </tr>
+            <thead>
+                <tr>
+                    <th class="roll-pitch" i18n="pidTuningRollPitchRate"></th>
+                    <th class="roll" i18n="pidTuningRollRate"></th>
+                    <th class="pitch" i18n="pidTuningPitchRate"></th>
+                    <th i18n="pidTuningYawRate"></th>
+                    <th i18n="pidTuningTPA"></th>
+                    <th class="tpa-breakpoint" i18n="pidTuningTPABreakPoint"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="roll-pitch" ><input type="number" name="roll-pitch" step="0.01" min="0" max="2.55"/></td>
+                    <td class="roll" ><input type="number" name="roll" step="0.01" min="0" max="2.55"/></td>
+                    <td class="pitch" ><input type="number" name="pitch" step="0.01" min="0" max="2.55"/></td>
+                    <td><input type="number" name="yaw" step="0.01" min="0" max="2.55"/></td>
+                    <td><input type="number" name="tpa" step="0.01" min="0" max="2.55"/></td>
+                    <td class="tpa-breakpoint"><input type="number" name="tpa-breakpoint" step="10" min="1000" max="2000" /></td>
+                </tr>
+            </tbody>
         </table>
     </form>
-
     <div class="clear-both"></div>
     <div class="profile">
         <span class="head" i18n="pidTuningProfileHead"></span>

@@ -48,7 +48,12 @@ TABS.ports.initialize = function (callback, scrollPosition) {
     ];
 
     var blackboxBaudRates = [
-       '115200'
+        '19200',
+        '38400',
+        '57600',
+        '115200',
+        '230400',
+        '250000',
     ];
 
     var columns = ['data', 'logging', 'gps', 'telemetry', 'rx'];
@@ -75,6 +80,13 @@ TABS.ports.initialize = function (callback, scrollPosition) {
 
     function update_ui() {
         
+        if (CONFIG.apiVersion < 1.6) {
+            
+            $(".tab-ports").removeClass("supported");
+            return;
+        }
+        
+        $(".tab-ports").addClass("supported");
         
         var portIdentifierToNameMapping = {
            0: 'UART1',

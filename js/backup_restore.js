@@ -102,7 +102,7 @@ function configuration_backup(callback) {
                 configuration.RCMAP = jQuery.extend(true, [], RC_MAP);
                 configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
                 configuration.SERIAL_CONFIG = jQuery.extend(true, {}, SERIAL_CONFIG);
-                configuration.LED_STRIP = jQuery.extend(true, {}, LED_STRIP);
+                configuration.LED_STRIP = jQuery.extend(true, [], LED_STRIP);
 
                 save();
             }
@@ -314,7 +314,7 @@ function configuration_restore(callback) {
             GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
             appliedMigrationsCount++;
         }
-
+        
         if (!compareVersions(migratedVersion, '0.61.0')) {
             
             // Changing PID controller via UI was added.
@@ -326,6 +326,77 @@ function configuration_restore(callback) {
             }
             
             migratedVersion = '0.61.0';
+            GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
+            appliedMigrationsCount++;
+        }
+
+        if (!compareVersions(migratedVersion, '0.63.0')) {
+            
+            // LED Strip was saved as object instead of array.
+            if (typeof(configuration.LED_STRIP) == 'object') {
+                var fixed_led_strip = [];
+
+                var index = 0;
+                while (configuration.LED_STRIP[index]) {
+                    fixed_led_strip.push(configuration.LED_STRIP[index++]);
+                }
+                configuration.LED_STRIP = fixed_led_strip;
+            }
+
+            
+            // Serial configuation redesigned
+            var ports = [];
+            for (var portIndex = 0; portIndex < configuration.SERIAL_CONFIG.ports.length; portIndex++) {
+                var oldPort = configuration.SERIAL_CONFIG.ports[portIndex];
+
+                var newPort = {
+                    identifier: oldPort.identifier,
+                    functionMask: 0,
+                    msp_baudrate: configuration.SERIAL_CONFIG.mspBaudRate,
+                    gps_baudrate: configuration.SERIAL_CONFIG.gpsBaudRate,
+                    telemetry_baudrate: 0, // auto
+                    blackbox_baudrate: 5, // 115200
+                };
+                
+                switch(oldPort.scenario) {
+                    case 1: // MSP, CLI, TELEMETRY, SMARTPORT TELEMETRY, GPS-PASSTHROUGH
+                    case 5: // MSP, CLI, GPS-PASSTHROUGH
+                    case 8: // MSP ONLY
+                        newPort.functionMask = 1; // FUCNTION_MSP
+                    break;
+                    case 2: // GPS 
+                        newPort.functionMask = 2; // FUNCTION_GPS
+                    break;
+                    case 3: // RX_SERIAL 
+                        newPort.functionMask = 64; // FUNCTION_RX_SERIAL
+                    break;
+                    case 10: // BLACKBOX ONLY
+                        newPort.functionMask = 128; // FUNCTION_BLACKBOX
+                    break;
+                    case 11: // MSP, CLI, BLACKBOX, GPS-PASSTHROUGH
+                        newPort.functionMask = 1 + 128; // FUNCTION_BLACKBOX
+                    break;
+                }
+                
+                ports.push(newPort);
+            }
+            configuration.SERIAL_CONFIG = { 
+                ports: ports 
+            };
+            
+            for (var profileIndex = 0; profileIndex < 3; profileIndex++) {
+                var RC = configuration.profiles[profileIndex].RC;
+                // TPA breakpoint was added
+                if (!RC.dynamic_THR_breakpoint) {
+                    RC.dynamic_THR_breakpoint = 1500; // firmware default
+                }
+                
+                // Roll and pitch rates were split
+                RC.roll_rate = RC.roll_pitch_rate;
+                RC.pitch_rate = RC.roll_pitch_rate;
+            }
+            
+            migratedVersion = '0.63.0';
             GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
             appliedMigrationsCount++;
         }

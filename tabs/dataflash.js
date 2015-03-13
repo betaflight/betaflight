@@ -1,6 +1,8 @@
 'use strict';
 
-TABS.dataflash = {};
+TABS.dataflash = {
+    available: false
+};
 TABS.dataflash.initialize = function (callback) {
     var 
         self = this,
@@ -18,10 +20,19 @@ TABS.dataflash.initialize = function (callback) {
         log_buffer = [];
 
     if (CONFIGURATOR.connectionValid) {
-        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false, function() {
-            $('#content').load("./tabs/dataflash.html", function() {
-                create_html();
-            });
+        TABS.dataflash.available = (CONFIG.apiVersion >= 1.6)
+        
+        if (!TABS.dataflash.available) {
+            load_html();
+            return;
+        }
+        
+        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false, load_html);
+    }
+    
+    function load_html() {
+        $('#content').load("./tabs/dataflash.html", function() {
+            create_html();
         });
     }
     
@@ -71,27 +82,35 @@ TABS.dataflash.initialize = function (callback) {
     }
     
     function create_html() {
-        var
-            supportsDataflash = DATAFLASH.totalSize > 0;
         
         // translate to user-selected language
         localize();
+       
+        if (TABS.dataflash.available) {
+            var supportsDataflash = DATAFLASH.totalSize > 0;
+            
+            $(".tab-dataflash").toggleClass("supported", supportsDataflash);
 
-        $(".tab-dataflash").toggleClass("supported", supportsDataflash);
+            if (supportsDataflash) {
+                // UI hooks
+                $('.tab-dataflash a.erase-flash').click(ask_to_erase_flash);
+                
+                $('.tab-dataflash a.erase-flash-confirm').click(flash_erase);
+                $('.tab-dataflash a.erase-flash-cancel').click(flash_erase_cancel);
         
-        if (supportsDataflash) {
-            // UI hooks
-            $('.tab-dataflash a.erase-flash').click(ask_to_erase_flash);
-            
-            $('.tab-dataflash a.erase-flash-confirm').click(flash_erase);
-            $('.tab-dataflash a.erase-flash-cancel').click(flash_erase_cancel);
-    
-            $('.tab-dataflash a.save-flash').click(flash_save_begin);
-            $('.tab-dataflash a.save-flash-cancel').click(flash_save_cancel);
-            $('.tab-dataflash a.save-flash-dismiss').click(dismiss_saving_dialog);
-            
-            update_html();
+                $('.tab-dataflash a.save-flash').click(flash_save_begin);
+                $('.tab-dataflash a.save-flash-cancel').click(flash_save_cancel);
+                $('.tab-dataflash a.save-flash-dismiss').click(dismiss_saving_dialog);
+                
+                update_html();
+            } else {
+                $(".tab-dataflash .note").html(chrome.i18n.getMessage('dataflashNotSupportedNote'));
+            }
+        } else {
+            $(".tab-dataflash").removeClass("supported");
+            $(".tab-dataflash .note").html(chrome.i18n.getMessage('dataflashFirmwareUpgradeRequired'));
         }
+
         
         if (callback) callback();
     }
