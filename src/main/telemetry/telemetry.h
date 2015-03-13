@@ -42,7 +42,7 @@ typedef struct telemetryConfig_s {
     float gpsNoFixLongitude;  
     frskyGpsCoordFormat_e frsky_coordinate_format;   
     frskyUnit_e frsky_unit;
-    uint8_t frsky_hiprec_vfas;
+    uint8_t frsky_vfas_precision;
 } telemetryConfig_t;
 
 void checkTelemetryState(void);

@@ -372,7 +372,7 @@ static void sendVoltage(void)
  */
 static void sendVoltageAmp(void)
 {
-    if (telemetryConfig->frsky_hiprec_vfas) {
+    if (telemetryConfig->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
         /*
          * Use new ID 0x39 to send voltage directly in 0.1 volts resolution
          */

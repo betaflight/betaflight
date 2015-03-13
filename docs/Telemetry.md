@@ -52,12 +52,12 @@ set telemetry_inversion = 1
 Cleanflight can send VFAS (FrSky Ampere Sensor Voltage) in two ways:
 
 ```
-set frsky_hiprec_vfas  = 0
+set frsky_vfas_precision  = 0
 ```
 This is default setting which supports VFAS resolution of 0.2 volts and is supported on all FrSky hardware.
 
 ```
-set frsky_hiprec_vfas  = 1
+set frsky_vfas_precision  = 1
 ```
 This is new setting which supports VFAS resolution of 0.1 volts and is only supported by OpenTX radios (this method uses custom ID 0x39).
 
