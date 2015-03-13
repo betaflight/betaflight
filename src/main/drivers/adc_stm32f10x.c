@@ -42,7 +42,6 @@
 //
 // NAZE rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
 //
-// CC3D Only one ADC channel supported currently, for battery on S5_IN/PA0
 
 
 void adcInit(drv_adc_config_t *init)
@@ -64,12 +63,14 @@ void adcInit(drv_adc_config_t *init)
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AIN;
 
 #ifdef VBAT_ADC_GPIO
-    GPIO_InitStructure.GPIO_Pin = VBAT_ADC_GPIO_PIN;
-    GPIO_Init(VBAT_ADC_GPIO, &GPIO_InitStructure);
-    adcConfig[ADC_BATTERY].adcChannel = VBAT_ADC_CHANNEL;
-    adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
-    adcConfig[ADC_BATTERY].enabled = true;
-    adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
+    if (init->enableVBat) {
+        GPIO_InitStructure.GPIO_Pin = VBAT_ADC_GPIO_PIN;
+        GPIO_Init(VBAT_ADC_GPIO, &GPIO_InitStructure);
+        adcConfig[ADC_BATTERY].adcChannel = VBAT_ADC_CHANNEL;
+        adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
+        adcConfig[ADC_BATTERY].enabled = true;
+        adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
+    }
 #endif
 
 #ifdef EXTERNAL1_ADC_GPIO
