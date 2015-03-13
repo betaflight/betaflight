@@ -41,7 +41,9 @@ typedef enum {
     BAUD_19200,
     BAUD_38400,
     BAUD_57600,
-    BAUD_115200
+    BAUD_115200,
+    BAUD_230400,
+    BAUD_250000,
 } baudRate_e;
 
 extern uint32_t baudRates[];

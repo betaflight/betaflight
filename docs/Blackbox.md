@@ -40,8 +40,10 @@ flight logs from other craft, and I can add support for them!)
 
 Cleanflight's `looptime` setting will decide how many times per second an update is saved to the flight log. The
 software was developed on a craft with a looptime of 2400. Any looptime smaller than this will put more strain on the
-data rate. The default looptime on Cleanflight is 3500. If you're using a looptime of 2000 or smaller, you will probably
-need to reduce the sampling rate in the Blackbox settings, see the later section on configuring the Blackbox feature for
+data rate. The default looptime on Cleanflight is 3500. 
+
+If you're using a looptime of 2300 or smaller, you will probably need to reduce the sampling rate in the Blackbox
+settings, or increase your logger's baudrate to 250000. See the later section on configuring the Blackbox feature for
 details.
 
 ## Hardware
@@ -53,9 +55,12 @@ compatible flight controller you can store the logs on the onboard dataflash sto
 ### OpenLog serial data logger
 
 The OpenLog ships with standard OpenLog 3 firmware installed. However, in order to reduce the number of dropped frames,
-it should be reflashed with the [OpenLog Light firmware][] or the special [OpenLog Blackbox firmware][] . The Blackbox
-variant of the firmware ensures that the OpenLog is running at the correct baud-rate and does away for the need for a 
-`CONFIG.TXT` file to set up the OpenLog.
+it should be reflashed with the [OpenLog Light firmware][] or the special [OpenLog Blackbox firmware][] (this needs to
+be version 2.0 or higher to allow configuration of baud rates). 
+
+The Blackbox variant of the firmware ensures that the OpenLog is using the correct settings, and defaults to 115200
+baud. If you are using a looptime of 2500 or smaller, you should set the baud rate to 250000 instead to eliminate
+dropped frames.
 
 You can find the Blackbox version of the OpenLog firmware [here](https://github.com/cleanflight/blackbox-firmware), 
 along with instructions for installing it onto your OpenLog.
@@ -74,11 +79,13 @@ not a guarantee of better performance.
 
  - Generic 4GB Class 4 microSDHC card - the rate of missing frames is about 1%, and is concentrated around the most
    interesting parts of the log!
+ - Sandisk Ultra 32GB (unlike the smaller 16GB version, this version has poor write latency)
 
 ##### microSDHC cards known to have good performance
 
  - Transcend 16GB Class 10 UHS-I microSDHC (typical error rate < 0.1%)
  - Sandisk Extreme 16GB Class 10 UHS-I microSDHC (typical error rate < 0.1%)
+ - Sandisk Ultra 16GB (it performs only half as well as the Extreme in theory, but still very good)
 
 You should format any card you use with the [SD Association's special formatting tool][] , as it will give the OpenLog
 the best chance of writing at high speed. You must format it with either FAT, or with FAT32 (recommended).
@@ -87,16 +94,22 @@ the best chance of writing at high speed. You must format it with either FAT, or
 
 #### OpenLog configuration
 
-This section applies only if you are using the OpenLog or OpenLog Light original firmware on the OpenLog. If you flashed
-it with the special OpenLog Blackbox firmware, you don't need to configure it further.
-
 Power up the OpenLog with a microSD card inside, wait 10 seconds or so, then power it down and plug the microSD card
-into your computer. You should find a "CONFIG.TXT" file on the card. Edit it in a text editor to set the first number
-(baud) to 115200. Set esc# to 0, mode to 0, and echo to 0. Save the file and put the card back into your OpenLog, it
-should use those settings from now on.
+into your computer. You should find a "CONFIG.TXT" file on the card. You should see the baud rate that the OpenLog has
+been configured to. You probably want this to be set to either 115200 (the default) or 250000 (for craft with looptimes
+smaller than 2500).
+
+Save the file and put the card back into your OpenLog, it should use those settings from now on.
 
 If your OpenLog didn't write a CONFIG.TXT file, create a CONFIG.TXT file with these contents and store it in the root
 of the MicroSD card:
+
+```
+115200
+baud
+```
+
+If you are using the official OpenLog Light firmware, use this configuration instead:
 
 ```
 115200,26,0,0,1,0,1
@@ -105,7 +118,7 @@ baud,escape,esc#,mode,verb,echo,ignoreRX
 
 #### Serial port
 
-A 115200 baud serial port is required to connect the OpenLog to your flight controller (such as `serial_port_1` on the
+A hardware serial port is required to connect the OpenLog to your flight controller (such as `serial_port_1` on the
 Naze32, the two-pin Tx/Rx header in the center of the board). The Blackbox can not be used with softserial ports as they
 are too slow.
 
@@ -145,16 +158,19 @@ Enter `set blackbox_device=1` to switch to logging to an onboard dataflash chip,
 
 ## Configuring the Blackbox
 
+If you are using a short looptime like 2500 or smaller, try switching your OpenLog to 250000 baud (instead of the 
+default of 115200) and set that baud rate on the Blackbox's port in the Confgurator.
+
 The Blackbox currently provides two settings (`blackbox_rate_num` and `blackbox_rate_denom`) that allow you to control 
 the rate at which data is logged. These two together form a fraction (`blackbox_rate_num / blackbox_rate_denom`) which
 decides what portion of the flight controller's control loop iterations should be logged. The default is 1/1 which logs 
 every iteration.
 
-If you are using a short looptime like 2000 or faster, or you're using a slower MicroSD card, you will need to reduce
-this rate to reduce the number of corrupted logged frames that `blackbox_decode` complains about. A rate of 1/2 is likely
-to work for most craft.
+If you're using a slower MicroSD card, you may need to reduce your logging rate to reduce the number of corrupted
+logged frames that `blackbox_decode` complains about. A rate of 1/2 is likely to work for most craft.
 
-You can change these settings by entering the CLI tab in the [Cleanflight Configurator][] and using the `set` command, like so:
+You can change the logging rate settings by entering the CLI tab in the [Cleanflight Configurator][] and using the `set`
+command, like so:
 
 ```
 set blackbox_rate_num = 1
