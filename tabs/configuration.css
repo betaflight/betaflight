@@ -139,6 +139,21 @@
 .tab-configuration .current .checkbox span {
     margin-left: 15px;
 }
+.tab-configuration .disarm .checkbox {
+    margin-top: 2px;
+}
+.tab-configuration .disarm .checkbox div {
+    float: left;
+    width: 60px;
+    margin-bottom: 5px;
+}
+.tab-configuration .disarm .checkbox div input {
+    display: block;
+    margin: 2px auto 0 auto;
+}
+.tab-configuration .disarm .checkbox span {
+    margin-left: 15px;
+}
 
 .tab-configuration .save {
     display: block;
