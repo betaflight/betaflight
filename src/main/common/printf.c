@@ -56,29 +56,36 @@ typedef void (*putcf) (void *, char);
 static putcf stdout_putf;
 static void *stdout_putp;
 
-static void putchw(void *putp, putcf putf, int n, char z, char *bf)
+// print bf, padded from left to at least n characters. 
+// padding is zero ('0') if z!=0, space (' ') otherwise
+static int putchw(void *putp, putcf putf, int n, char z, char *bf)
 {
+    int written = 0;
     char fc = z ? '0' : ' ';
     char ch;
     char *p = bf;
     while (*p++ && n > 0)
         n--;
-    while (n-- > 0)
-        putf(putp, fc);
-    while ((ch = *bf++))
-        putf(putp, ch);
+    while (n-- > 0) {
+        putf(putp, fc); written++;
+    }
+    while ((ch = *bf++)) {
+        putf(putp, ch); written++;
+    }
+    return written;
 }
 
-void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
+// retrun number of bytes written
+int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 {
     char bf[12];
-
+    int written = 0;
     char ch;
 
     while ((ch = *(fmt++))) {
-        if (ch != '%')
-            putf(putp, ch);
-        else {
+        if (ch != '%') {
+            putf(putp, ch); written++;
+        } else {
             char lz = 0;
 #ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
             char lng = 0;
@@ -108,7 +115,7 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                     else
 #endif
                         ui2a(va_arg(va, unsigned int), 10, 0, bf);
-                    putchw(putp, putf, w, lz, bf);
+                    written += putchw(putp, putf, w, lz, bf);
                     break;
                 }
             case 'd':{
@@ -118,7 +125,7 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                     else
 #endif
                         i2a(va_arg(va, int), bf);
-                    putchw(putp, putf, w, lz, bf);
+                    written += putchw(putp, putf, w, lz, bf);
                     break;
                 }
             case 'x':
@@ -129,16 +136,16 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                 else
 #endif
                     ui2a(va_arg(va, unsigned int), 16, (ch == 'X'), bf);
-                putchw(putp, putf, w, lz, bf);
+                written += putchw(putp, putf, w, lz, bf);
                 break;
             case 'c':
-                putf(putp, (char) (va_arg(va, int)));
+                putf(putp, (char) (va_arg(va, int))); written++;
                 break;
             case 's':
-                putchw(putp, putf, w, 0, va_arg(va, char *));
+                written += putchw(putp, putf, w, 0, va_arg(va, char *));
                 break;
             case '%':
-                putf(putp, ch);
+                putf(putp, ch); written++;
                 break;
             default:
                 break;
@@ -146,6 +153,7 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
         }
     }
   abort:;
+    return written;
 }
 
 void init_printf(void *putp, void (*putf) (void *, char))
@@ -154,13 +162,14 @@ void init_printf(void *putp, void (*putf) (void *, char))
     stdout_putp = putp;
 }
 
-void tfp_printf(const char *fmt, ...)
+int tfp_printf(const char *fmt, ...)
 {
     va_list va;
     va_start(va, fmt);
-    tfp_format(stdout_putp, stdout_putf, fmt, va);
+    int written = tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
     while (!isSerialTransmitBufferEmpty(printfSerialPort));
+    return written;
 }
 
 static void putcp(void *p, char c)
@@ -168,14 +177,15 @@ static void putcp(void *p, char c)
     *(*((char **) p))++ = c;
 }
 
-void tfp_sprintf(char *s, const char *fmt, ...)
+int tfp_sprintf(char *s, const char *fmt, ...)
 {
     va_list va;
 
     va_start(va, fmt);
-    tfp_format(&s, putcp, fmt, va);
+    int written = tfp_format(&s, putcp, fmt, va);
     putcp(&s, 0);
     va_end(va);
+    return written;
 }
 
 
@@ -196,7 +206,7 @@ void printfSupportInit(void)
 int fputc(int c, FILE *f)
 {
     // let DMA catch up a bit when using set or dump, we're too fast.
-    while (!isSerialTransmitBufferEmpty(serialPorts.mainport));
+    while (!isSerialTransmitBufferEmpty(printfSerialPort));
     serialWrite(printfSerialPort, c);
     return c;
 }
