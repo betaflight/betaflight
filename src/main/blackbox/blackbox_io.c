@@ -91,12 +91,13 @@ static void _putc(void *p, char c)
 }
 
 //printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
-void blackboxPrintf(char *fmt, ...)
+int blackboxPrintf(const char *fmt, ...)
 {
     va_list va;
     va_start(va, fmt);
-    tfp_format(NULL, _putc, fmt, va);
+    int written = tfp_format(NULL, _putc, fmt, va);
     va_end(va);
+    return written;
 }
 
 // Print the null-terminated string 's' to the serial port and return the number of bytes written
