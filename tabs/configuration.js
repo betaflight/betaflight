@@ -90,14 +90,41 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         for (var i = 0; i < features.length; i++) {
             var row_e;
             
-            if (features[i].mode == 'group') {
-                row_e = $('<tr><td><input class="feature" id="feature-' + i + '" value="' + features[i].bit + '" title="' + features[i].name + '" type="radio" name="' + features[i].group + '" /></td><td><label for="feature-' + i + '">' + features[i].name + '</label></td><td>' + features[i].description + '</td>');
+            if (features[i].mode === 'group') {
+                row_e = $('<tr><td><input class="feature" id="feature-'
+                        + i
+                        + '" value="'
+                        + features[i].bit
+                        + '" title="'
+                        + features[i].name
+                        + '" type="radio" name="'
+                        + features[i].group
+                        + '" /></td><td><label for="feature-'
+                        + i
+                        + '">'
+                        + features[i].name
+                        + '</label></td><td>'
+                        + features[i].description
+                        + '</td>');
                 radioGroups.push(features[i].group);
             } else {
-                row_e = $('<tr><td><input class="feature" id="feature-' + i + '" title="' + features[i].name + '" type="checkbox" /></td><td><label for="feature-' + i + '">' + features[i].name + '</label></td><td>' + features[i].description + '</td>');
-                var feature_e = row_e.find('input.feature');
-                feature_e.data('bit', features[i].bit);
+                var feature_e = row_e.find('input.feature');                
+                row_e = $('<tr><td><input class="feature" id="feature-'
+                        + i
+                        + '" name="'
+                        + features[i].name
+                        + '" title="'
+                        + features[i].name
+                        + '" type="checkbox" /></td><td><label for="feature-'
+                        + i
+                        + '">'
+                        + features[i].name
+                        + '</label></td><td>'
+                        + features[i].description
+                        + '</td>');
+                
                 feature_e.prop('checked', bit_check(BF_CONFIG.features, features[i].bit));
+                feature_e.data('bit', features[i].bit);
             }
 
             features_e.each(function () {
