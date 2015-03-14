@@ -223,6 +223,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // fill magnetometer
         $('input[name="mag_declination"]').val(MISC.mag_declination);
 
+        //fill motor disarm params
+        $('input[name="autodisarmdelay"]').val(MISC.auto_disarm_delay);
+        $('input[name="disarmkillswitch"]').prop('checked', MISC.disarm_kill_switch);
+        if(bit_check(BF_CONFIG.features, 4 + 1))//MOTOR_STOP
+            $('div.disarmdelay').slideDown();
+            
         // fill throttle
         $('input[name="minthrottle"]').val(MISC.minthrottle);
         $('input[name="midthrottle"]').val(MISC.midrc);
@@ -250,8 +256,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             if (state) {
                 BF_CONFIG.features = bit_set(BF_CONFIG.features, index);
+                if(element.attr('name') === 'MOTOR_STOP')                    
+                    $('div.disarmdelay').slideDown();
             } else {
                 BF_CONFIG.features = bit_clear(BF_CONFIG.features, index);
+                if(element.attr('name') === 'MOTOR_STOP')
+                    $('div.disarmdelay').slideUp();
             }
         });
 
@@ -285,6 +295,10 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
             CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
             MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val());
+            
+            // motor disarm
+            MISC.auto_disarm_delay = parseInt($('input[name="autodisarmdelay"]').val());
+            MISC.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
 
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
             MISC.midrc = parseInt($('input[name="midthrottle"]').val());
