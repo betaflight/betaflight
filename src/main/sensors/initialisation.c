@@ -374,7 +374,7 @@ retry:
     }
 
     // Found anything? Check if error or ACC is really missing.
-    if (accHardwareToUse != ACC_DEFAULT && accHardware == ACC_NONE) {
+    if (accHardware == ACC_NONE && accHardwareToUse != ACC_DEFAULT && accHardwareToUse != ACC_NONE) {
         // Nothing was found and we have a forced sensor that isn't present.
         accHardwareToUse = ACC_DEFAULT;
         goto retry;
@@ -526,7 +526,7 @@ retry:
             break;
     }
 
-    if (magHardwareToUse != MAG_DEFAULT && magHardware == MAG_NONE) {
+    if (magHardware == MAG_NONE && magHardwareToUse != MAG_DEFAULT && magHardwareToUse != MAG_NONE) {
         // Nothing was found and we have a forced sensor that isn't present.
         magHardwareToUse = MAG_DEFAULT;
         goto retry;
