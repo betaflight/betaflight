@@ -147,6 +147,9 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             case '%':
                 putf(putp, ch); written++;
                 break;
+            case 'n':
+                *va_arg(va, int*) = written;
+                break;
             default:
                 break;
             }
