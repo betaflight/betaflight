@@ -109,9 +109,9 @@ static void spektrumDataReceive(uint16_t c)
     }
 }
 
-bool spektrumFrameComplete(void)
+uint8_t spektrumFrameStatus(void)
 {
-    return rcFrameComplete;
+    return rcFrameComplete ? SERIAL_RX_FRAME_COMPLETE : SERIAL_RX_FRAME_PENDING;
 }
 
 static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)

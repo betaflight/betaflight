@@ -292,9 +292,9 @@ static void xBusDataReceive(uint16_t c)
 }
 
 // Indicate time to read a frame from the data...
-bool xBusFrameComplete(void)
+uint8_t xBusFrameStatus(void)
 {
-    return xBusFrameReceived;
+    return xBusFrameReceived ? SERIAL_RX_FRAME_COMPLETE : SERIAL_RX_FRAME_PENDING;
 }
 
 static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)

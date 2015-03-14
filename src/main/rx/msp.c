@@ -46,11 +46,12 @@ void rxMspFrameRecieve(void)
 
 bool rxMspFrameComplete(void)
 {
-    if (rxMspFrameDone) {
-        rxMspFrameDone = false;
-        return true;
+    if (!rxMspFrameDone) {
+        return false;
     }
-    return false;
+
+    rxMspFrameDone = false;
+    return true;
 }
 
 bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
