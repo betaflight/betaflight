@@ -348,7 +348,7 @@ var MSP = {
                 }
                 break;
             */
-            case MSP_codes.MSP_MISC: // 22 bytes
+            case MSP_codes.MSP_MISC: // 24 bytes
                 MISC.midrc = data.getInt16(0, 1);
                 MISC.minthrottle = data.getUint16(2, 1); // 0-2000
                 MISC.maxthrottle = data.getUint16(4, 1); // 0-2000
@@ -365,6 +365,8 @@ var MSP = {
                 MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
                 MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
                 MISC.vbatwarningcellvoltage = data.getUint8(21, 1) / 10; // 10-50
+                MISC.auto_disarm_delay = data.getUint8(22, 1);//tri
+                MISC.disarm_kill_switch = data.getUint8(23);
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
@@ -981,6 +983,8 @@ MSP.crunch = function (code) {
             buffer.push(MISC.vbatmincellvoltage * 10);
             buffer.push(MISC.vbatmaxcellvoltage * 10);
             buffer.push(MISC.vbatwarningcellvoltage * 10);
+            buffer.push(MISC.auto_disarm_delay);
+            buffer.push(MISC.disarm_kill_switch);
             break;
         case MSP_codes.MSP_SET_SERVO_CONF:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
