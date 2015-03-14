@@ -152,7 +152,9 @@ var MISC = {
     vbatscale:              0,
     vbatmincellvoltage:     0,
     vbatmaxcellvoltage:     0,
-    vbatwarningcellvoltage: 0
+    vbatwarningcellvoltage: 0,
+    auto_disarm_delay:      0,
+    disarm_kill_switch:     0
 };
 
 var DATAFLASH = {
