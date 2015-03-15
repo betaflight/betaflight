@@ -58,7 +58,7 @@ extern softSerial_t softSerialPorts[];
 
 extern const struct serialPortVTable softSerialVTable[];
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint32_t baud, serialInversion_e inversion);
+serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint32_t baud, portOptions_t options);
 
 // serialPort API
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);

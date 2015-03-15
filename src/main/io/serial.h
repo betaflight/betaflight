@@ -114,7 +114,7 @@ serialPort_t *openSerialPort(
     serialReceiveCallbackPtr callback,
     uint32_t baudrate,
     portMode_t mode,
-    serialInversion_e inversion
+    portOptions_t options
 );
 void closeSerialPort(serialPort_t *serialPort);
 

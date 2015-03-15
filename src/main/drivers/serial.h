@@ -17,19 +17,21 @@
 
 #pragma once
 
-typedef enum {
-    SERIAL_NOT_INVERTED = 0,
-    SERIAL_INVERTED
-} serialInversion_e;
-
 typedef enum portMode_t {
     MODE_RX = 1 << 0,
     MODE_TX = 1 << 1,
     MODE_RXTX = MODE_RX | MODE_TX,
-    MODE_SBUS = 1 << 2,
-    MODE_BIDIR = 1 << 3,
-    MODE_STOPBITS2 = 1 << 4,
+    MODE_BIDIR = 1 << 3
 } portMode_t;
+
+typedef enum portOptions_t {
+    SERIAL_NOT_INVERTED  = 0 << 0,
+    SERIAL_INVERTED      = 1 << 0,
+    SERIAL_STOPBITS_1    = 0 << 1,
+    SERIAL_STOPBITS_2    = 1 << 1,
+    SERIAL_PARITY_NO     = 0 << 2,
+    SERIAL_PARITY_EVEN   = 1 << 2,
+} portOptions_t;
 
 typedef void (*serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
 
@@ -39,7 +41,8 @@ typedef struct serialPort {
 
     uint8_t identifier;
     portMode_t mode;
-    serialInversion_e inversion;
+    portOptions_t options;
+
     uint32_t baudRate;
 
     uint32_t rxBufferSize;

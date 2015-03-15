@@ -39,10 +39,11 @@
 static void usartConfigurePinInversion(uartPort_t *uartPort) {
 #if !defined(INVERTER) && !defined(STM32F303xC)
     UNUSED(uartPort);
-#endif
+#else
+    bool inverted = (uartPort->port.options & SERIAL_INVERTED) == SERIAL_INVERTED;
 
 #ifdef INVERTER
-    if (uartPort->port.inversion == SERIAL_INVERTED && uartPort->USARTx == INVERTER_USART) {
+    if (inverted && uartPort->USARTx == INVERTER_USART) {
         // Enable hardware inverter if available.
         INVERTER_ON;
     }
@@ -60,9 +61,9 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
 
     // Note: inversion when using MODE_BIDIR not supported yet.
 
-    USART_InvPinCmd(uartPort->USARTx, inversionPins, uartPort->port.inversion == SERIAL_INVERTED ? ENABLE : DISABLE);
+    USART_InvPinCmd(uartPort->USARTx, inversionPins, inverted ? ENABLE : DISABLE);
 #endif
-
+#endif
 }
 
 static void uartReconfigure(uartPort_t *uartPort)
@@ -72,17 +73,10 @@ static void uartReconfigure(uartPort_t *uartPort)
 
     USART_InitStructure.USART_BaudRate = uartPort->port.baudRate;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    if (uartPort->port.mode & MODE_SBUS) {
-        USART_InitStructure.USART_StopBits = USART_StopBits_2;
-        USART_InitStructure.USART_Parity = USART_Parity_Even;
-    } else {
-        if (uartPort->port.mode & MODE_STOPBITS2)
-            USART_InitStructure.USART_StopBits = USART_StopBits_2;
-        else
-            USART_InitStructure.USART_StopBits = USART_StopBits_1;
 
-        USART_InitStructure.USART_Parity = USART_Parity_No;
-    }
+    USART_InitStructure.USART_StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? USART_StopBits_2 : USART_StopBits_1;
+    USART_InitStructure.USART_Parity   = (uartPort->port.options & SERIAL_PARITY_EVEN) ? USART_Parity_Even : USART_Parity_No;
+
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode = 0;
     if (uartPort->port.mode & MODE_RX)
@@ -99,7 +93,7 @@ static void uartReconfigure(uartPort_t *uartPort)
     USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, serialInversion_e inversion)
+serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s = NULL;
 
@@ -125,7 +119,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     s->port.callback = callback;
     s->port.mode = mode;
     s->port.baudRate = baudRate;
-    s->port.inversion = inversion;
+    s->port.options = options;
 
     uartReconfigure(s);
 
