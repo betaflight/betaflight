@@ -255,6 +255,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="disarmkillswitch"]').prop('checked', MISC.disarm_kill_switch);
         if(bit_check(BF_CONFIG.features, 4 + 1))//MOTOR_STOP
             $('div.disarmdelay').slideDown();
+        
+        if (CONFIG.apiVersion < 1.8)
+            $('div.disarm').hide();
             
         // fill throttle
         $('input[name="minthrottle"]').val(MISC.minthrottle);
