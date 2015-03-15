@@ -41,3 +41,17 @@ When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two
 | 8   | 6          | SOFTSERIAL1 TX |                                  |
 | 9   | 7          | SOFTSERIAL2 RX |                                  |
 | 10  | 8          | SOFTSERIAL2 TX |                                  |
+
+# Recovery
+
+Short the two pads labelled 'Boot' and plug in the board, flash with the Cleanflight configurator. 
+/-------------------\
+|O                 O|
+| []5V              |
+| [][]Boot          |
+|                   |
+|                   |
+|                   |
+|                   |
+|O                 O|
+\-------[USB]-------/
