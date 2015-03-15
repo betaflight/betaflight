@@ -52,7 +52,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 
 void setTxSignal(softSerial_t *softSerial, uint8_t state)
 {
-    if ((softSerial->port.options & SERIAL_INVERTED) == SERIAL_INVERTED) {
+    if (softSerial->port.options & SERIAL_INVERTED) {
         state = !state;
     }
 
@@ -122,7 +122,7 @@ static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, portOptions_t options)
 {
     // start bit is usually a FALLING signal
-    serialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, (options & SERIAL_INVERTED) == SERIAL_INVERTED ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
+    serialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, (options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
     timerChCCHandlerInit(&softSerialPorts[reference].edgeCb, onSerialRxPinChange);
     timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].edgeCb, NULL);
 }
@@ -258,7 +258,7 @@ void prepareForNextRxByte(softSerial_t *softSerial)
         serialICConfig(
             softSerial->rxTimerHardware->tim,
             softSerial->rxTimerHardware->channel,
-            (softSerial->port.options & SERIAL_INVERTED) == SERIAL_INVERTED ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling
+            (softSerial->port.options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling
         );
     }
 }
@@ -328,7 +328,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     UNUSED(capture);
 
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, edgeCb);
-    bool inverted = (softSerial->port.options & SERIAL_INVERTED) == SERIAL_INVERTED;
+    bool inverted = softSerial->port.options & SERIAL_INVERTED;
 
     if ((softSerial->port.mode & MODE_RX) == 0) {
         return;

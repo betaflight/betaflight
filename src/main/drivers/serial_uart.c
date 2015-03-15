@@ -40,7 +40,7 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
 #if !defined(INVERTER) && !defined(STM32F303xC)
     UNUSED(uartPort);
 #else
-    bool inverted = (uartPort->port.options & SERIAL_INVERTED) == SERIAL_INVERTED;
+    bool inverted = uartPort->port.options & SERIAL_INVERTED;
 
 #ifdef INVERTER
     if (inverted && uartPort->USARTx == INVERTER_USART) {
