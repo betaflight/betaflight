@@ -54,6 +54,7 @@ Select the correct hardware and the desired release of the Clearflight firmware
 Put a check in the "No reboot sequence" 
 Flash
 
+```
 /-------------------\
 |O                 O|
 | []5V              |
@@ -64,3 +65,4 @@ Flash
 |                   |
 |O                 O|
 \-------[USB]-------/
+```
