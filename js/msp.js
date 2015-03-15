@@ -349,24 +349,33 @@ var MSP = {
                 break;
             */
             case MSP_codes.MSP_MISC: // 24 bytes
-                MISC.midrc = data.getInt16(0, 1);
-                MISC.minthrottle = data.getUint16(2, 1); // 0-2000
-                MISC.maxthrottle = data.getUint16(4, 1); // 0-2000
-                MISC.mincommand = data.getUint16(6, 1); // 0-2000
-                MISC.failsafe_throttle = data.getUint16(8, 1); // 1000-2000
-                MISC.gps_type = data.getUint8(10);
-                MISC.gps_baudrate = data.getUint8(11);
-                MISC.gps_ubx_sbas = data.getInt8(12);
-                MISC.multiwiicurrentoutput = data.getUint8(13);
-                MISC.rssi_channel = data.getUint8(14);
-                MISC.placeholder2 = data.getUint8(15);
-                MISC.mag_declination = data.getInt16(16, 1) / 10; // -18000-18000
-                MISC.vbatscale = data.getUint8(18, 1); // 10-200
-                MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
-                MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
-                MISC.vbatwarningcellvoltage = data.getUint8(21, 1) / 10; // 10-50
-                MISC.auto_disarm_delay = data.getUint8(22, 1);//tri
-                MISC.disarm_kill_switch = data.getUint8(23);
+                var offset = 0;
+                MISC.midrc = data.getInt16(offset, 1);
+                offset += 2;
+                MISC.minthrottle = data.getUint16(offset, 1); // 0-2000
+                offset += 2;
+                MISC.maxthrottle = data.getUint16(offset, 1); // 0-2000
+                offset += 2;
+                MISC.mincommand = data.getUint16(offset, 1); // 0-2000
+                offset += 2;
+                MISC.failsafe_throttle = data.getUint16(offset, 1); // 1000-2000
+                offset += 2;
+                MISC.gps_type = data.getUint8(offset);
+                MISC.gps_baudrate = data.getUint8(++offset);
+                MISC.gps_ubx_sbas = data.getInt8(++offset);
+                MISC.multiwiicurrentoutput = data.getUint8(++offset);
+                MISC.rssi_channel = data.getUint8(++offset);
+                MISC.placeholder2 = data.getUint8(++offset);
+                MISC.mag_declination = data.getInt16(++offset, 1) / 10; // -18000-18000
+                offset += 2;
+                MISC.vbatscale = data.getUint8(offset, 1); // 10-200
+                MISC.vbatmincellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
+                MISC.vbatmaxcellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
+                MISC.vbatwarningcellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
+                if (CONFIG.apiVersion >= 1.8) {
+                    MISC.auto_disarm_delay = data.getUint8(++offset, 1);//tri
+                    MISC.disarm_kill_switch = data.getUint8(++offset);
+                }
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
@@ -983,8 +992,10 @@ MSP.crunch = function (code) {
             buffer.push(MISC.vbatmincellvoltage * 10);
             buffer.push(MISC.vbatmaxcellvoltage * 10);
             buffer.push(MISC.vbatwarningcellvoltage * 10);
-            buffer.push(MISC.auto_disarm_delay);
-            buffer.push(MISC.disarm_kill_switch);
+            if (CONFIG.apiVersion >= 1.8) {
+                buffer.push(MISC.auto_disarm_delay);
+                buffer.push(MISC.disarm_kill_switch);
+            }
             break;
         case MSP_codes.MSP_SET_SERVO_CONF:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
