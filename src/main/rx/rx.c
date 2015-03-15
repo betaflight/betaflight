@@ -259,9 +259,13 @@ static void processRxChannels(void)
 
     bool shouldCheckPulse = true;
 
-    if (feature(FEATURE_FAILSAFE) && feature(FEATURE_RX_PPM)) {
-        shouldCheckPulse = isPPMDataBeingReceived();
-        resetPPMDataReceivedState();
+    if (feature(FEATURE_FAILSAFE)) {
+        if (feature(FEATURE_RX_PPM)) {
+            shouldCheckPulse = isPPMDataBeingReceived();
+            resetPPMDataReceivedState();
+        } else {
+            shouldCheckPulse = !isRxDataDriven();
+        }
     }
 
     for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
