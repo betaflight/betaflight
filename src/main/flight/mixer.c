@@ -27,8 +27,6 @@
 #include "common/maths.h"
 
 #include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/sensor.h"
@@ -78,7 +76,7 @@ static mixerMode_e currentMixerMode;
 static gimbalConfig_t *gimbalConfig;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
-static uint8_t servoCount;
+STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
 static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 #endif
@@ -404,6 +402,25 @@ void mixerResetMotors(void)
 }
 
 #ifdef USE_SERVOS
+
+STATIC_UNIT_TESTED void forwardAuxChannelsToServos(void)
+{
+    // offset servos based off number already used in mixer types
+    // airplane and servo_tilt together can't be used
+    int8_t firstServo = servoCount - AUX_FORWARD_CHANNEL_TO_SERVO_COUNT;
+
+    // start forwarding from this channel
+    uint8_t channelOffset = AUX1;
+
+    int8_t servoOffset;
+    for (servoOffset = 0; servoOffset < AUX_FORWARD_CHANNEL_TO_SERVO_COUNT; servoOffset++) {
+        if (firstServo + servoOffset < 0) {
+            continue; // there are not enough servos to forward all the AUX channels.
+        }
+        pwmWriteServo(firstServo + servoOffset, rcData[channelOffset++]);
+    }
+}
+
 static void updateGimbalServos(void)
 {
     pwmWriteServo(0, servo[0]);
@@ -653,20 +670,7 @@ void mixTable(void)
 
     // forward AUX1-4 to servo outputs (not constrained)
     if (gimbalConfig->gimbal_flags & GIMBAL_FORWARDAUX) {
-        // offset servos based off number already used in mixer types
-        // airplane and servo_tilt together can't be used
-        int8_t firstServo = servoCount - AUX_FORWARD_CHANNEL_TO_SERVO_COUNT;
-
-        // start forwarding from this channel
-        uint8_t channelOffset = AUX1;
-
-        int8_t servoOffset;
-        for (servoOffset = 0; servoOffset < AUX_FORWARD_CHANNEL_TO_SERVO_COUNT; servoOffset++) {
-            if (firstServo + servoOffset < 0) {
-                continue; // there are not enough servos to forward all the AUX channels.
-            }
-            pwmWriteServo(firstServo + servoOffset, rcData[channelOffset++]);
-        }
+        forwardAuxChannelsToServos();
     }
 #endif
 

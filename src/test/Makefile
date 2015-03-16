@@ -46,6 +46,7 @@ CXX_FLAGS = $(COMMON_FLAGS) \
 TESTS = \
 	battery_unittest \
 	flight_imu_unittest \
+	flight_mixer_unittest \
 	altitude_hold_unittest \
 	maths_unittest \
 	gps_conversion_unittest \
@@ -360,6 +361,30 @@ $(OBJECT_DIR)/lowpass_unittest.o : \
 lowpass_unittest : \
 	$(OBJECT_DIR)/flight/lowpass.o \
 	$(OBJECT_DIR)/lowpass_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/flight/mixer.o : \
+	$(USER_DIR)/flight/mixer.c \
+	$(USER_DIR)/flight/mixer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
+
+$(OBJECT_DIR)/flight_mixer_unittest.o : \
+	$(TEST_DIR)/flight_mixer_unittest.cc \
+	$(USER_DIR)/flight/mixer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_mixer_unittest.cc -o $@
+
+flight_mixer_unittest : \
+	$(OBJECT_DIR)/flight/mixer.o \
+	$(OBJECT_DIR)/flight_mixer_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
