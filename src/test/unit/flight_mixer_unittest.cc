@@ -65,7 +65,6 @@ uint8_t lastOneShotUpdateMotorCount;
 TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithNoServos)
 {
     // given
-    memset(&motors, 0, sizeof(motors));
     memset(&servos, 0, sizeof(servos));
     servoCount = 0;
 
@@ -81,6 +80,58 @@ TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithNoServos)
     for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         EXPECT_EQ(servos[i].value, 0);
     }
+}
+
+TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithMaxServos)
+{
+    // given
+    memset(&servos, 0, sizeof(servos));
+    servoCount = MAX_SUPPORTED_SERVOS;
+
+    rcData[AUX1] = 1000;
+    rcData[AUX2] = 1250;
+    rcData[AUX3] = 1750;
+    rcData[AUX4] = 2000;
+
+    // when
+    forwardAuxChannelsToServos();
+
+    // then
+    uint8_t i;
+    for (i = 0; i < MAX_SUPPORTED_SERVOS - 4; i++) {
+        EXPECT_EQ(servos[i].value, 0);
+    }
+
+    // -1 for zero based offset
+    EXPECT_EQ(servos[MAX_SUPPORTED_SERVOS - 3 - 1].value, 1000);
+    EXPECT_EQ(servos[MAX_SUPPORTED_SERVOS - 2 - 1].value, 1250);
+    EXPECT_EQ(servos[MAX_SUPPORTED_SERVOS - 1 - 1].value, 1750);
+    EXPECT_EQ(servos[MAX_SUPPORTED_SERVOS - 0 - 1].value, 2000);
+}
+
+TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithLessServosThanAuxChannelsToForward)
+{
+    // given
+    memset(&servos, 0, sizeof(servos));
+    servoCount = 2;
+
+    rcData[AUX1] = 1000;
+    rcData[AUX2] = 1250;
+    rcData[AUX3] = 1750;
+    rcData[AUX4] = 2000;
+
+    // when
+    forwardAuxChannelsToServos();
+
+    // then
+    uint8_t i;
+    for (i = 2; i < MAX_SUPPORTED_SERVOS; i++) {
+        EXPECT_EQ(servos[i].value, 0);
+    }
+
+    // -1 for zero based offset
+    EXPECT_EQ(servos[0].value, 1000);
+    EXPECT_EQ(servos[1].value, 1250);
 }
 
 // STUBS
