@@ -47,10 +47,25 @@ For 2 and 3 use the CLI command as follows:
 set telemetry_inversion = 1
 ```
 
+### Precision setting for VFAS
+
+Cleanflight can send VFAS (FrSky Ampere Sensor Voltage) in two ways:
+
+```
+set frsky_vfas_precision  = 0
+```
+This is default setting which supports VFAS resolution of 0.2 volts and is supported on all FrSky hardware.
+
+```
+set frsky_vfas_precision  = 1
+```
+This is new setting which supports VFAS resolution of 0.1 volts and is only supported by OpenTX radios (this method uses custom ID 0x39).
+
+
 ### Notes
 
 RPM shows throttle output when armed.
-RPM shows when diarmed.
+RPM shows when disarmed.
 TEMP2 shows Satellite Signal Quality when GPS is enabled.
 
 RPM requires that the 'blades' setting is set to 12 on your receiver/display - tested with Taranis/OpenTX.

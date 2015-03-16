@@ -16,7 +16,7 @@ auxillary receiver channels and other events such as failsafe detection.
 | 9       | 8      | CAMTRIG    |                                                                      |
 | 10      | 9      | GPSHOME    | Autonomous flight to HOME position                                   |
 | 11      | 10     | GPSHOLD    | Maintain the same longitude/lattitude                                |
-| 12      | 11     | PASSTHRU   |                                                                      |
+| 12      | 11     | PASSTHRU   | Pass roll, yaw, and pitch directly from rx to servos in airplane mix |
 | 13      | 12     | BEEPERON   | Enable beeping - useful for locating a crashed aircraft              |
 | 14      | 13     | LEDMAX     |                                                                      |
 | 15      | 14     | LEDLOW     |                                                                      |

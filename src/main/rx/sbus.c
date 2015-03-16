@@ -168,10 +168,10 @@ static void sbusDataReceive(uint16_t c)
     }
 }
 
-bool sbusFrameComplete(void)
+uint8_t sbusFrameStatus(void)
 {
     if (!sbusFrameDone) {
-        return false;
+        return SERIAL_RX_FRAME_PENDING;
     }
     sbusFrameDone = false;
 
@@ -222,13 +222,13 @@ bool sbusFrameComplete(void)
         debug[0] = sbusStateFlags;
 #endif
         // RX *should* still be sending valid channel data, so use it.
-        return false;
+        return SERIAL_RX_FRAME_COMPLETE | SERIAL_RX_FRAME_FAILSAFE;
     }
 
 #ifdef DEBUG_SBUS_PACKETS
     debug[0] = sbusStateFlags;
 #endif
-    return true;
+    return SERIAL_RX_FRAME_COMPLETE;
 }
 
 static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)

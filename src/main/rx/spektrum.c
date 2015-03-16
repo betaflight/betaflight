@@ -49,15 +49,18 @@ static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
 static bool spekHiRes = false;
-static bool spekDataIncoming = false;
 
 static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static void spektrumDataReceive(uint16_t c);
 static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
+static rxRuntimeConfig_t *rxRuntimeConfigPtr;
+
 bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
+    rxRuntimeConfigPtr = rxRuntimeConfig;
+
     switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM2048:
             // 11 bit frames
@@ -95,7 +98,6 @@ static void spektrumDataReceive(uint16_t c)
     static uint32_t spekTimeLast, spekTimeInterval;
     static uint8_t spekFramePosition;
 
-    spekDataIncoming = true;
     spekTime = micros();
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime;
@@ -109,27 +111,33 @@ static void spektrumDataReceive(uint16_t c)
     }
 }
 
-bool spektrumFrameComplete(void)
+static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
+
+uint8_t spektrumFrameStatus(void)
 {
-    return rcFrameComplete;
+    uint8_t b;
+
+    if (!rcFrameComplete) {
+        return SERIAL_RX_FRAME_PENDING;
+    }
+
+    rcFrameComplete = false;
+
+    for (b = 3; b < SPEK_FRAME_SIZE; b += 2) {
+        uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
+        if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
+            spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
+        }
+    }
+
+    return SERIAL_RX_FRAME_COMPLETE;
 }
 
 static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     uint16_t data;
-    static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
-    uint8_t b;
 
-    if (rcFrameComplete) {
-        for (b = 3; b < SPEK_FRAME_SIZE; b += 2) {
-            uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
-            if (spekChannel < rxRuntimeConfig->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT)
-                spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
-        }
-        rcFrameComplete = false;
-    }
-
-    if (chan >= rxRuntimeConfig->channelCount || !spekDataIncoming) {
+    if (chan >= rxRuntimeConfig->channelCount) {
         return 0;
     }
 

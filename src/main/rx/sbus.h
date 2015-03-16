@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool sbusFrameComplete(void);
+uint8_t sbusFrameStatus(void);

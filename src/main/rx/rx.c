@@ -143,32 +143,32 @@ void serialRxInit(rxConfig_t *rxConfig)
     }
 }
 
-bool isSerialRxFrameComplete(rxConfig_t *rxConfig)
+uint8_t serialRxFrameStatus(rxConfig_t *rxConfig)
 {
     /**
-     * FIXME: Each of the xxxxFrameComplete() methods MUST be able to survive being called without the
+     * FIXME: Each of the xxxxFrameStatus() methods MUST be able to survive being called without the
      * corresponding xxxInit() method having been called first.
      *
      * This situation arises when the cli or the msp changes the value of rxConfig->serialrx_provider
      *
-     * A solution is for the ___Init() to configure the serialRxFrameComplete function pointer which
+     * A solution is for the ___Init() to configure the serialRxFrameStatus function pointer which
      * should be used instead of the switch statement below.
      */
     switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
-            return spektrumFrameComplete();
+            return spektrumFrameStatus();
         case SERIALRX_SBUS:
-            return sbusFrameComplete();
+            return sbusFrameStatus();
         case SERIALRX_SUMD:
-            return sumdFrameComplete();
+            return sumdFrameStatus();
         case SERIALRX_SUMH:
-            return sumhFrameComplete();
+            return sumhFrameStatus();
         case SERIALRX_XBUS_MODE_B:
         case SERIALRX_XBUS_MODE_B_RJ01:
-            return xBusFrameComplete();
+            return xBusFrameStatus();
     }
-    return false;
+    return SERIAL_RX_FRAME_PENDING;
 }
 #endif
 
@@ -181,6 +181,7 @@ uint8_t calculateChannelRemapping(uint8_t *channelMap, uint8_t channelMapEntryCo
 }
 
 static bool rcDataReceived = false;
+
 static uint32_t rxUpdateAt = 0;
 
 
@@ -189,18 +190,21 @@ void updateRx(void)
     rcDataReceived = false;
 
 #ifdef SERIAL_RX
-    // calculate rc stuff from serial-based receivers (spek/sbus)
     if (feature(FEATURE_RX_SERIAL)) {
-        rcDataReceived = isSerialRxFrameComplete(rxConfig);
+        uint8_t frameStatus = serialRxFrameStatus(rxConfig);
+
+        if (frameStatus & SERIAL_RX_FRAME_COMPLETE) {
+            rcDataReceived = true;
+            if ((frameStatus & SERIAL_RX_FRAME_FAILSAFE) == 0 && feature(FEATURE_FAILSAFE)) {
+                failsafeReset();
+            }
+        }
     }
 #endif
 
     if (feature(FEATURE_RX_MSP)) {
         rcDataReceived = rxMspFrameComplete();
-    }
-
-    if (rcDataReceived) {
-        if (feature(FEATURE_FAILSAFE)) {
+        if (rcDataReceived && feature(FEATURE_FAILSAFE)) {
             failsafeReset();
         }
     }
@@ -217,7 +221,7 @@ static bool isRxDataDriven(void) {
 
 static uint8_t rcSampleIndex = 0;
 
-uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
+static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
 {
     static int16_t rcSamples[MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT][PPM_AND_PWM_SAMPLE_COUNT];
     static int16_t rcDataMean[MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT];
@@ -245,7 +249,7 @@ uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
     return rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
 }
 
-void processRxChannels(void)
+static void processRxChannels(void)
 {
     uint8_t chan;
 
@@ -255,9 +259,13 @@ void processRxChannels(void)
 
     bool shouldCheckPulse = true;
 
-    if (feature(FEATURE_FAILSAFE) && feature(FEATURE_RX_PPM)) {
-        shouldCheckPulse = isPPMDataBeingReceived();
-        resetPPMDataReceivedState();
+    if (feature(FEATURE_FAILSAFE)) {
+        if (feature(FEATURE_RX_PPM)) {
+            shouldCheckPulse = isPPMDataBeingReceived();
+            resetPPMDataReceivedState();
+        } else {
+            shouldCheckPulse = !isRxDataDriven();
+        }
     }
 
     for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
@@ -288,18 +296,12 @@ void processRxChannels(void)
     }
 }
 
-void processDataDrivenRx(void)
+static void processDataDrivenRx(void)
 {
-    if (rcDataReceived) {
-        failsafeReset();
-    }
-
     processRxChannels();
-
-    rcDataReceived = false;
 }
 
-void processNonDataDrivenRx(void)
+static void processNonDataDrivenRx(void)
 {
     rcSampleIndex++;
 

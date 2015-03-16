@@ -27,6 +27,12 @@
 #define DEFAULT_SERVO_MAX 2000
 
 typedef enum {
+    SERIAL_RX_FRAME_PENDING = 0,
+    SERIAL_RX_FRAME_COMPLETE = (1 << 0),
+    SERIAL_RX_FRAME_FAILSAFE = (1 << 1)
+} serialrxFrameState_t;
+
+typedef enum {
     SERIALRX_SPEKTRUM1024 = 0,
     SERIALRX_SPEKTRUM2048 = 1,
     SERIALRX_SBUS = 2,
@@ -93,6 +99,6 @@ bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
-bool isSerialRxFrameComplete(rxConfig_t *rxConfig);
+uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
 
 void updateRSSI(uint32_t currentTime);

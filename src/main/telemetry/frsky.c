@@ -109,6 +109,7 @@ extern int16_t telemTemperature1; // FIXME dependency on mw.c
 #define ID_ACC_X              0x24
 #define ID_ACC_Y              0x25
 #define ID_ACC_Z              0x26
+#define ID_VOLTAGE_AMP        0x39
 #define ID_VOLTAGE_AMP_BP     0x3A
 #define ID_VOLTAGE_AMP_AP     0x3B
 #define ID_CURRENT            0x28
@@ -334,7 +335,6 @@ static void sendVario(void)
 static void sendVoltage(void)
 {
     static uint16_t currentCell = 0;
-    uint16_t cellNumber;
     uint32_t cellVoltage;
     uint16_t payload;
 
@@ -345,16 +345,14 @@ static void sendVoltage(void)
      *  l: Low voltage bits
      *  h: High voltage bits
      *  c: Cell number (starting at 0)
+     *
+     * The actual value sent for cell voltage has resolution of 0.002 volts
+     * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
      */
-    cellVoltage = vbat / batteryCellCount;
-
-    // Map to 12 bit range
-    cellVoltage = (cellVoltage * 2100) / 42;
-
-    cellNumber = currentCell % batteryCellCount;
+    cellVoltage = ((uint32_t)vbat * 100 + batteryCellCount) / (batteryCellCount * 2);
 
     // Cell number is at bit 9-12
-    payload = (cellNumber << 4);
+    payload = (currentCell << 4);
 
     // Lower voltage bits are at bit 0-8
     payload |= ((cellVoltage & 0x0ff) << 8);
@@ -374,12 +372,20 @@ static void sendVoltage(void)
  */
 static void sendVoltageAmp(void)
 {
-    uint16_t voltage = (vbat * 110) / 21;
+    if (telemetryConfig->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
+        /*
+         * Use new ID 0x39 to send voltage directly in 0.1 volts resolution
+         */
+        sendDataHead(ID_VOLTAGE_AMP);
+        serialize16(vbat);
+    } else {
+        uint16_t voltage = (vbat * 110) / 21;
 
-    sendDataHead(ID_VOLTAGE_AMP_BP);
-    serialize16(voltage / 100);
-    sendDataHead(ID_VOLTAGE_AMP_AP);
-    serialize16(((voltage % 100) + 5) / 10);
+        sendDataHead(ID_VOLTAGE_AMP_BP);
+        serialize16(voltage / 100);
+        sendDataHead(ID_VOLTAGE_AMP_AP);
+        serialize16(((voltage % 100) + 5) / 10);
+    }
 }
 
 static void sendAmperage(void)

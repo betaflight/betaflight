@@ -290,6 +290,7 @@ void init(void)
 #ifdef USE_ADC
     drv_adc_config_t adc_params;
 
+    adc_params.enableVBat = feature(FEATURE_VBAT);
     adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
     adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
     adc_params.enableExternal1 = false;

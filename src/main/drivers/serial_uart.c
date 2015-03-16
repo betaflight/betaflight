@@ -76,7 +76,11 @@ static void uartReconfigure(uartPort_t *uartPort)
         USART_InitStructure.USART_StopBits = USART_StopBits_2;
         USART_InitStructure.USART_Parity = USART_Parity_Even;
     } else {
-        USART_InitStructure.USART_StopBits = USART_StopBits_1;
+        if (uartPort->port.mode & MODE_STOPBITS2)
+            USART_InitStructure.USART_StopBits = USART_StopBits_2;
+        else
+            USART_InitStructure.USART_StopBits = USART_StopBits_1;
+
         USART_InitStructure.USART_Parity = USART_Parity_No;
     }
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;

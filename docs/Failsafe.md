@@ -2,8 +2,8 @@
 
 There are two types of failsafe:
 
-1. receiver based failsafe
-2. flight controller based failsafe
+1. Receiver based failsafe
+2. Flight controller based failsafe
 
 Receiver based failsafe is where you, from your transmitter and receiver, configure channels to output desired signals if your receiver detects signal loss.
 The idea is that you set throttle and other controls so the aircraft descends in a controlled manner.  See your receiver's documentation for this method.
@@ -14,11 +14,11 @@ It is possible to use both types at the same time which may be desirable.  Fligh
 
 ## Flight controller failsafe system 
 
-The failsafe system is not activated until 5 seconds after the flight controller boots up.  This is to prevent failsafe from activating in the case of TX/RX gear with long bind procedures before they send out valid data.
+The failsafe system is not activated until 5 seconds after the flight controller boots up.  This is to prevent failsafe from activating, as in the case of TX/RX gear with long bind procedures, before the RX sends out valid data.
 
 After the failsafe has forced a landing, the flight controller cannot be armed and has to be reset.
  
-The failsafe system attempts to detect when your receiver loses signal.  It then attempts to prevent your aircraft from flying away uncontrollably.
+The failsafe system attempts to detect when your receiver loses signal.  It then attempts to prevent your aircraft from flying away uncontrollably by enabling an auto-level mode and setting the throttle that should allow the craft to come to a safter landing.
 
 The failsafe is activated when:
 
@@ -30,7 +30,52 @@ b) the first 4 Parallel PWM/PPM channels do not have valid signals.
 
 And when:
 
-c) the failsafe guard time specified by `failsafe_delay` has elapsed. 
+c) the failsafe guard time specified by `failsafe_delay` has elapsed.
+
+Note that:
+
+d) The failsafe system will be activated regardless of current throttle position.
+
+e) The craft may already be on the ground with motors stopped and that motors and props could spin again - the software does not currently detect if the craft is on the ground.  Take care when using MOTOR_STOP feature.
+
+### Testing
+
+Bench test the failsafe system before flying - remove props while doing so.
+
+1. Arm the craft.
+1. Turn off transmitter or unplug RX.
+1. Observe motors spin at configured throttle setting for configured duration.
+1. Observe motors turn off after configured duration.
+1. Ensure that when you turn on your TX again or reconnect the RX that you cannot re-arm once the motors have stopped.
+1. Power cycle the FC.
+1. Arm the craft.
+1. Turn off transmitter or unplug RX.
+1. Observe motors spin at configured throttle setting for configured duration.
+1. Turn on TX or reconnect RX.
+1. Ensure that your switch positions don't now cause the craft to disarm (otherwise it would fall out of the sky on regained signal).
+1. Observe that normal flight behaviour is resumed.
+1. Disarm.
+ 
+Field test the failsafe system
+
+1. Perform bench testing first!
+1. On a calm day go to an un-populated area away from buildings or test indoors in a safe controlled environment - e.g. inside a big net.
+1. Arm the craft.
+1. Hover over something soft (long grass, ferns, heather, foam, etc).
+1. Descend the craft and observe throttle position and record throttle value from your TX channel monitor.  Ideally 1500 should be hover. So your value should be less than 1500.
+1. Stop, disarm.
+1. Set failsafe thottle to the recorded value.
+1. Arm, hover over something soft again.
+1. Turn off TX (!)
+1. Observe craft descends and motors continue to spin for the configurated duration.
+1. Observe FC disarms after the configured duration.
+1. Remove flight battery.
+
+If craft descends too quickly then increase failsafe throttle setting.
+
+Ensure that the duration is long enough for your craft to land at the altitudes you normally fly at.
+
+
 
 ## Configuration
 

@@ -63,3 +63,5 @@ Each baud rate is assigned an identifier, they are as follows:
 | 3          | 38400     |
 | 4          | 57600     |
 | 5          | 115200    |
+| 6          | 230400    |
+| 7          | 250000    |

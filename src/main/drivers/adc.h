@@ -35,6 +35,7 @@ typedef struct adc_config_t {
 } adc_config_t;
 
 typedef struct drv_adc_config_t {
+    bool enableVBat;
     bool enableRSSI;
     bool enableCurrentMeter;
     bool enableExternal1;

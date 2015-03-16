@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool sumhFrameComplete(void);
+uint8_t sumhFrameStatus(void);
