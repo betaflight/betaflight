@@ -45,4 +45,3 @@ typedef struct
 } TIM_TypeDef;
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
-

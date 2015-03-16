@@ -308,7 +308,20 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
     return rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
 }
 
-static void processRxChannels(void)
+STATIC_UNIT_TESTED uint16_t applyRxCalibration(int sample, int minrc, int maxrc)
+{
+    // Check special condition sample = PPM_RCVR_TIMEOUT, allow no signal value to avoid being corrupted by calibration
+    if (sample == 0) {
+        return 0;
+    }
+
+    sample = scaleRange(sample, minrc, maxrc, PWM_RANGE_MIN, PWM_RANGE_MAX); 
+    sample = MIN(MAX(PWM_PULSE_MIN, sample), PWM_PULSE_MAX);
+
+    return sample;
+}
+
+void processRxChannels(void)
 {
     uint8_t chan;
 
@@ -327,6 +340,11 @@ static void processRxChannels(void)
 
         // sample the channel
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
+
+        // apply the rx calibration
+        if (chan < MAX_CALIBRATED_RX_CHANNELS) {
+            sample = applyRxCalibration(sample, rxConfig->calibration[chan].minrc, rxConfig->calibration[chan].maxrc);
+        }
 
         if (shouldCheckPulse) {
             rxCheckPulse(chan, sample);
