@@ -101,9 +101,9 @@
 #define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
 #define VBAT_ADC_CHANNEL     ADC_Channel_1
 
-#define BLACKBOX
+//#define BLACKBOX
 #define SERIAL_RX
-#define GPS
+//#define GPS
 //#define DISPLAY
 #define AUTOTUNE
 #define USE_SERVOS
