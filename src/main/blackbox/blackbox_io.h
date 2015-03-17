@@ -36,7 +36,7 @@ uint8_t blackboxWriteChunkSize;
 
 void blackboxWrite(uint8_t value);
 
-void blackboxPrintf(char *fmt, ...);
+int blackboxPrintf(const char *fmt, ...);
 int blackboxPrint(const char *s);
 
 void blackboxWriteUnsignedVB(uint32_t value);
