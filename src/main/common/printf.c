@@ -155,7 +155,7 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             }
         }
     }
-  abort:;
+abort:
     return written;
 }
 

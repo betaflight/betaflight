@@ -885,68 +885,41 @@ static bool blackboxWriteSysinfo()
             xmitState.u.serialBudget -= blackboxPrint("H Firmware type:Cleanflight\n");
         break;
         case 2:
-            blackboxPrintf("H Firmware revision:%s\n", shortGitRevision);
-
-            xmitState.u.serialBudget -= strlen("H Firmware revision:\n") + strlen(shortGitRevision);
+            xmitState.u.serialBudget -= blackboxPrintf("H Firmware revision:%s\n", shortGitRevision);
         break;
         case 3:
-            blackboxPrintf("H Firmware date:%s %s\n", buildDate, buildTime);
-
-            xmitState.u.serialBudget -= strlen("H Firmware date: \n") + strlen(buildDate) + strlen(buildTime);
+            xmitState.u.serialBudget -= blackboxPrintf("H Firmware date:%s %s\n", buildDate, buildTime);
         break;
         case 4:
-            blackboxPrintf("H P interval:%d/%d\n", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
-
-            /* Don't need to be super exact about the budget so don't mind the fact that we're using the length of
-             * the placeholder "%d" instead of the actual integer size.
-             */
-            xmitState.u.serialBudget -= strlen("H P interval:%d/%d\n");
+            xmitState.u.serialBudget -= blackboxPrintf("H P interval:%d/%d\n", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
         break;
         case 5:
-            blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
-
-            xmitState.u.serialBudget -= strlen("H rcRate:%d\n");
+            xmitState.u.serialBudget -= blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
         break;
         case 6:
-            blackboxPrintf("H minthrottle:%d\n", masterConfig.escAndServoConfig.minthrottle);
-
-            xmitState.u.serialBudget -= strlen("H minthrottle:%d\n");
+            xmitState.u.serialBudget -= blackboxPrintf("H minthrottle:%d\n", masterConfig.escAndServoConfig.minthrottle);
         break;
         case 7:
-            blackboxPrintf("H maxthrottle:%d\n", masterConfig.escAndServoConfig.maxthrottle);
-
-            xmitState.u.serialBudget -= strlen("H maxthrottle:%d\n");
+            xmitState.u.serialBudget -= blackboxPrintf("H maxthrottle:%d\n", masterConfig.escAndServoConfig.maxthrottle);
         break;
         case 8:
-            blackboxPrintf("H gyro.scale:0x%x\n", castFloatBytesToInt(gyro.scale));
-
-            xmitState.u.serialBudget -= strlen("H gyro.scale:0x\n") + 6;
+            xmitState.u.serialBudget -= blackboxPrintf("H gyro.scale:0x%x\n", castFloatBytesToInt(gyro.scale));
         break;
         case 9:
-            blackboxPrintf("H acc_1G:%u\n", acc_1G);
-            
-            xmitState.u.serialBudget -= strlen("H acc_1G:%u\n");
+            xmitState.u.serialBudget -= blackboxPrintf("H acc_1G:%u\n", acc_1G);
         break;
         case 10:
-            blackboxPrintf("H vbatscale:%u\n", masterConfig.batteryConfig.vbatscale);
-
-            xmitState.u.serialBudget -= strlen("H vbatscale:%u\n");
+            xmitState.u.serialBudget -= blackboxPrintf("H vbatscale:%u\n", masterConfig.batteryConfig.vbatscale);
         break;
         case 11:
-            blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", masterConfig.batteryConfig.vbatmincellvoltage,
+            xmitState.u.serialBudget -= blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", masterConfig.batteryConfig.vbatmincellvoltage,
                 masterConfig.batteryConfig.vbatwarningcellvoltage, masterConfig.batteryConfig.vbatmaxcellvoltage);
-
-            xmitState.u.serialBudget -= strlen("H vbatcellvoltage:%u,%u,%u\n");
         break;
         case 12:
-            blackboxPrintf("H vbatref:%u\n", vbatReference);
-
-            xmitState.u.serialBudget -= strlen("H vbatref:%u\n");
+            xmitState.u.serialBudget -= blackboxPrintf("H vbatref:%u\n", vbatReference);
         break;
         case 13:
-            blackboxPrintf("H currentMeter:%d,%d\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
-
-            xmitState.u.serialBudget -= strlen("H currentMeter:%d,%d\n");
+            xmitState.u.serialBudget -= blackboxPrintf("H currentMeter:%d,%d\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
         break;
         default:
             return true;
