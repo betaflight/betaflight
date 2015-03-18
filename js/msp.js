@@ -48,7 +48,9 @@ var MSP_codes = {
     MSP_WP:                 118,
     MSP_BOXIDS:             119,
     MSP_SERVO_CONF:         120,
-
+    MSP_ARM_CONFIG:         123,    //like #define in serial_msp.c
+    MSP_LOOP_TIME:          124,
+    
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
     MSP_SET_PID:            202,
@@ -63,7 +65,9 @@ var MSP_codes = {
     MSP_SET_HEAD:           211,
     MSP_SET_SERVO_CONF:     212,
     MSP_SET_MOTOR:          214,
-
+    MSP_SET_ARM_CONFIG:     216,    //like #define in serial_msp.c
+    MSP_SET_LOOP_TIME:      217,
+    
     // MSP_BIND:               240,
 
     MSP_EEPROM_WRITE:       250,
@@ -348,7 +352,18 @@ var MSP = {
                 }
                 break;
             */
-            case MSP_codes.MSP_MISC: // 24 bytes
+            case MSP_codes.MSP_ARM_CONFIG:
+                if (CONFIG.apiVersion >= 1.8) {
+                    ARM_CONFIG.auto_disarm_delay = data.getUint8(0, 1);
+                    ARM_CONFIG.disarm_kill_switch = data.getUint8(1);
+                }
+                break;
+            case MSP_codes.MSP_LOOP_TIME:
+                if (CONFIG.apiVersion >= 1.8) {
+                    LOOP_TIME = data.getInt16(0, 1);
+                }
+                break;
+            case MSP_codes.MSP_MISC: // 22 bytes
                 var offset = 0;
                 MISC.midrc = data.getInt16(offset, 1);
                 offset += 2;
@@ -372,10 +387,6 @@ var MSP = {
                 MISC.vbatmincellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
                 MISC.vbatmaxcellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
                 MISC.vbatwarningcellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
-                if (CONFIG.apiVersion >= 1.8) {
-                    MISC.auto_disarm_delay = data.getUint8(++offset, 1);//tri
-                    MISC.disarm_kill_switch = data.getUint8(++offset);
-                }
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
@@ -969,6 +980,18 @@ MSP.crunch = function (code) {
             buffer.push(lowByte(CONFIG.accelerometerTrims[1]));
             buffer.push(highByte(CONFIG.accelerometerTrims[1]));
             break;
+        case MSP_codes.MSP_SET_ARM_CONFIG:
+            if (CONFIG.apiVersion >= 1.8) {
+                buffer.push(ARM_CONFIG.auto_disarm_delay);
+                buffer.push(ARM_CONFIG.disarm_kill_switch);
+            }
+            break;
+        case MSP_codes.MSP_SET_LOOP_TIME:
+            if (CONFIG.apiVersion >= 1.8) {
+                buffer.push(lowByte(LOOP_TIME));
+                buffer.push(highByte(LOOP_TIME));
+            }
+            break;
         case MSP_codes.MSP_SET_MISC:
             buffer.push(lowByte(MISC.midrc));
             buffer.push(highByte(MISC.midrc));
@@ -992,10 +1015,6 @@ MSP.crunch = function (code) {
             buffer.push(MISC.vbatmincellvoltage * 10);
             buffer.push(MISC.vbatmaxcellvoltage * 10);
             buffer.push(MISC.vbatwarningcellvoltage * 10);
-            if (CONFIG.apiVersion >= 1.8) {
-                buffer.push(MISC.auto_disarm_delay);
-                buffer.push(MISC.disarm_kill_switch);
-            }
             break;
         case MSP_codes.MSP_SET_SERVO_CONF:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
