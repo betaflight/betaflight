@@ -31,7 +31,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_acc_trim() {
-        MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false
+                        , CONFIG.apiVersion >= 1.8 ? load_arm_config : load_html);
+    }
+
+    function load_arm_config() {
+        MSP.send_message(MSP_codes.MSP_ARM_CONFIG, false, false, load_html);
     }
 
     function load_html() {
@@ -250,15 +255,16 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // fill magnetometer
         $('input[name="mag_declination"]').val(MISC.mag_declination);
 
-        //fill motor disarm params
-        $('input[name="autodisarmdelay"]').val(MISC.auto_disarm_delay);
-        $('input[name="disarmkillswitch"]').prop('checked', MISC.disarm_kill_switch);
-        if(bit_check(BF_CONFIG.features, 4 + 1))//MOTOR_STOP
-            $('div.disarmdelay').slideDown();
-        
-        if (CONFIG.apiVersion < 1.8)
+        //fill motor disarm params        
+        $('input[name="autodisarmdelay"]').val(ARM_CONFIG.auto_disarm_delay);
+        $('input[name="disarmkillswitch"]').prop('checked', ARM_CONFIG.disarm_kill_switch);
+        if(CONFIG.apiVersion >= 1.8) {
+            if(bit_check(BF_CONFIG.features, 4 + 1))//MOTOR_STOP
+                $('div.disarmdelay').slideDown();
+        }
+        else       
             $('div.disarm').hide();
-            
+        
         // fill throttle
         $('input[name="minthrottle"]').val(MISC.minthrottle);
         $('input[name="midthrottle"]').val(MISC.midrc);
@@ -327,8 +333,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val());
             
             // motor disarm
-            MISC.auto_disarm_delay = parseInt($('input[name="autodisarmdelay"]').val());
-            MISC.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
+            ARM_CONFIG.auto_disarm_delay = parseInt($('input[name="autodisarmdelay"]').val());
+            ARM_CONFIG.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
 
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
             MISC.midrc = parseInt($('input[name="midthrottle"]').val());
@@ -358,7 +364,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
 
             function save_acc_trim() {
-                MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false, save_to_eeprom);
+                MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false
+                                , CONFIG.apiVersion >= 1.8 ? save_arm_config : save_to_eeprom);
+            }
+
+            function save_arm_config() {
+                MSP.send_message(MSP_codes.MSP_SET_ARM_CONFIG, MSP.crunch(MSP_codes.MSP_SET_ARM_CONFIG), false, save_to_eeprom);
             }
 
             function save_to_eeprom() {
