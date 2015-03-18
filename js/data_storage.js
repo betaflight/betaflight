@@ -139,7 +139,8 @@ var ANALOG = {
 var ARM_CONFIG = {
     auto_disarm_delay:      0,
     disarm_kill_switch:     0
-}
+};
+
 var LOOP_TIME = 0;
 
 var MISC = {
