@@ -131,7 +131,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   7 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   8 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -267,6 +267,8 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SERVO_CONF           120    //out message         Servo settings
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
+#define MSP_ARM_CONFIG           123    //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
+#define MSP_LOOP_TIME            124    //out message         Returns FC cycle time i.e looptime parameter
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -283,6 +285,8 @@ const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_SERVO_CONF       212    //in message          Servo settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
+#define MSP_SET_ARM_CONFIG       216    //in message          Sets auto_disarm_delay and disarm_kill_switch parameters
+#define MSP_SET_LOOP_TIME        217    //in message          Sets FC cycle time i.e looptime parameter
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -889,6 +893,15 @@ static bool processOutCommand(uint8_t cmdMSP)
         } else
             serialize16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
         break;
+        case MSP_ARM_CONFIG:
+        headSerialReply(2);
+        serialize8(masterConfig.auto_disarm_delay); 
+        serialize8(masterConfig.disarm_kill_switch);
+        break;
+    case MSP_LOOP_TIME:
+        headSerialReply(2);
+        serialize16(masterConfig.looptime);
+        break;
     case MSP_RC_TUNING:
         headSerialReply(10);
         serialize8(currentControlRateProfile->rcRate8);
@@ -1255,6 +1268,13 @@ static bool processInCommand(void)
     case MSP_SET_ACC_TRIM:
         currentProfile->accelerometerTrims.values.pitch = read16();
         currentProfile->accelerometerTrims.values.roll  = read16();
+        break;
+    case MSP_SET_ARM_CONFIG:
+        masterConfig.auto_disarm_delay = read8();
+        masterConfig.disarm_kill_switch = read8();
+        break;
+    case MSP_SET_LOOP_TIME:
+        masterConfig.looptime = read16();        
         break;
     case MSP_SET_PID_CONTROLLER:
         currentProfile->pidProfile.pidController = read8();
