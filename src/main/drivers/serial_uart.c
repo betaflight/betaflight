@@ -52,14 +52,19 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
 #ifdef STM32F303xC
     uint32_t inversionPins = 0;
 
-    if (uartPort->port.mode & MODE_TX) {
-        inversionPins |= USART_InvPin_Tx;
+    // Inversion when using OPTION_BIDIR not supported yet.
+    if (uartPort->port.options & SERIAL_BIDIR) {
+        // Clear inversion on both Tx and Rx
+        inversionPins |= USART_InvPin_Tx | USART_InvPin_Rx;
+        inverted = false;
+    } else {
+        if (uartPort->port.mode & MODE_TX) {
+            inversionPins |= USART_InvPin_Tx;
+        }
+        if (uartPort->port.mode & MODE_RX) {
+            inversionPins |= USART_InvPin_Rx;
+        }
     }
-    if (uartPort->port.mode & MODE_RX) {
-        inversionPins |= USART_InvPin_Rx;
-    }
-
-    // Note: inversion when using MODE_BIDIR not supported yet.
 
     USART_InvPinCmd(uartPort->USARTx, inversionPins, inverted ? ENABLE : DISABLE);
 #endif
@@ -83,8 +88,6 @@ static void uartReconfigure(uartPort_t *uartPort)
         USART_InitStructure.USART_Mode |= USART_Mode_Rx;
     if (uartPort->port.mode & MODE_TX)
         USART_InitStructure.USART_Mode |= USART_Mode_Tx;
-    if (uartPort->port.mode & MODE_BIDIR)
-        USART_InitStructure.USART_Mode |= USART_Mode_Tx | USART_Mode_Rx;
 
     USART_Init(uartPort->USARTx, &USART_InitStructure);
 
@@ -98,14 +101,14 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     uartPort_t *s = NULL;
 
     if (USARTx == USART1) {
-        s = serialUSART1(baudRate, mode);
+        s = serialUSART1(baudRate, mode, options);
 #ifdef USE_USART2
     } else if (USARTx == USART2) {
-        s = serialUSART2(baudRate, mode);
+        s = serialUSART2(baudRate, mode, options);
 #endif
 #ifdef USE_USART3
     } else if (USARTx == USART3) {
-        s = serialUSART3(baudRate, mode);
+        s = serialUSART3(baudRate, mode, options);
 #endif
     } else {
         return (serialPort_t *)s;
@@ -125,7 +128,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 
     // Receive DMA or IRQ
     DMA_InitTypeDef DMA_InitStructure;
-    if ((mode & MODE_RX) || (mode & MODE_BIDIR)) {
+    if (mode & MODE_RX) {
         if (s->rxDMAChannel) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_PeripheralBaseAddr = s->rxDMAPeripheralBaseAddr;
@@ -152,7 +155,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     }
 
     // Transmit DMA or IRQ
-    if ((mode & MODE_TX) || (mode & MODE_BIDIR)) {
+    if (mode & MODE_TX) {
         if (s->txDMAChannel) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_PeripheralBaseAddr = s->txDMAPeripheralBaseAddr;
@@ -179,7 +182,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 
     USART_Cmd(s->USARTx, ENABLE);
 
-    if (mode & MODE_BIDIR)
+    if (options & SERIAL_BIDIR)
         USART_HalfDuplexCmd(s->USARTx, ENABLE);
     else
         USART_HalfDuplexCmd(s->USARTx, DISABLE);

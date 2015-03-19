@@ -82,7 +82,7 @@ static uartPort_t uartPort3;
 #endif
 
 #ifdef USE_USART1
-uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
+uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
@@ -118,23 +118,23 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 
-    if (mode & MODE_TX) {
-        GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
-        GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
-    }
-
-    if (mode & MODE_RX) {
-        GPIO_InitStructure.GPIO_Pin = UART1_RX_PIN;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, UART1_GPIO_AF);
-        GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
-    }
-
-    if (mode & MODE_BIDIR) {
+    if (options & SERIAL_BIDIR) {
         GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
         GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
         GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
         GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+    } else {
+        if (mode & MODE_TX) {
+            GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
+            GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
+            GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+        }
+
+        if (mode & MODE_RX) {
+            GPIO_InitStructure.GPIO_Pin = UART1_RX_PIN;
+            GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, UART1_GPIO_AF);
+            GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+        }
     }
 
     // DMA TX Interrupt
@@ -157,7 +157,7 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode)
 #endif
 
 #ifdef USE_USART2
-uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
+uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
@@ -197,23 +197,23 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
 
-    if (mode & MODE_TX) {
-        GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
-        GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
-    }
-
-    if (mode & MODE_RX) {
-        GPIO_InitStructure.GPIO_Pin = UART2_RX_PIN;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, UART2_GPIO_AF);
-        GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
-    }
-
-    if (mode & MODE_BIDIR) {
+    if (options & SERIAL_BIDIR) {
         GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
         GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
         GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
         GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
+    } else {
+        if (mode & MODE_TX) {
+            GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
+            GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
+            GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
+        }
+
+        if (mode & MODE_RX) {
+            GPIO_InitStructure.GPIO_Pin = UART2_RX_PIN;
+            GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, UART2_GPIO_AF);
+            GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
+        }
     }
 
 #ifdef USE_USART2_TX_DMA
@@ -238,7 +238,7 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode)
 #endif
 
 #ifdef USE_USART3
-uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode)
+uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
@@ -278,23 +278,23 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode)
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
 
-    if (mode & MODE_TX) {
-        GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
-        GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, UART3_GPIO_AF);
-        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
-    }
-
-    if (mode & MODE_RX) {
-        GPIO_InitStructure.GPIO_Pin = UART3_RX_PIN;
-        GPIO_PinAFConfig(UART3_GPIO, UART3_RX_PINSOURCE, UART3_GPIO_AF);
-        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
-    }
-
-    if (mode & MODE_BIDIR) {
+    if (options & SERIAL_BIDIR) {
         GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
         GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
         GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, UART3_GPIO_AF);
         GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+    } else {
+        if (mode & MODE_TX) {
+            GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
+            GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, UART3_GPIO_AF);
+            GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+        }
+
+        if (mode & MODE_RX) {
+            GPIO_InitStructure.GPIO_Pin = UART3_RX_PIN;
+            GPIO_PinAFConfig(UART3_GPIO, UART3_RX_PINSOURCE, UART3_GPIO_AF);
+            GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+        }
     }
 
 #ifdef USE_USART3_TX_DMA
