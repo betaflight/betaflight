@@ -26,7 +26,7 @@ Disconnect main power, connect to cli via USB/FTDI.
 
 dump using cli
 
-`rate profile 0`
+`rateprofile 0`
 `profile 0`
 `dump`
 
@@ -40,10 +40,10 @@ dump profiles using cli if you use them
 
 dump rate profiles using cli if you use them
 
-`rate profile 1`
+`rateprofile 1`
 `dump rates`
 
-`rate profile 2`
+`rateprofile 2`
 `dump rates`
 
 copy screen output to a file and save it.
