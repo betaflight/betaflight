@@ -1331,9 +1331,9 @@ static bool processInCommand(void)
             currentControlRateProfile->rcRate8 = read8();
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
-                currentControlRateProfile->rates[i] = read8();
+                currentControlRateProfile->rates[i] = MIN(read8(), i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
             }
-            currentControlRateProfile->dynThrPID = read8();
+            currentControlRateProfile->dynThrPID = MIN(read8(), CONTROL_RATE_CONFIG_TPA_MAX);
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
             currentControlRateProfile->tpa_breakpoint = read16();
