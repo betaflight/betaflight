@@ -69,6 +69,15 @@ void sonarInit(void)
         .exti_irqn = EXTI1_IRQn
     };
     hcsr04_init(&sonarHardware);
+#elif defined(SPRACINGF3)
+    static const sonarHardware_t const sonarHardware = {
+        .trigger_pin = Pin_0,   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+        .echo_pin = Pin_1,      // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+        .exti_line = EXTI_Line1,
+        .exti_pin_source = EXTI_PinSource1,
+        .exti_irqn = EXTI1_IRQn
+    };
+    hcsr04_init(&sonarHardware);
 #else
 #error Sonar not defined for target
 #endif

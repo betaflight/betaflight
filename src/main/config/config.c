@@ -758,6 +758,12 @@ void validateAndFixConfig(void)
     }
 #endif
 
+#if defined(SPRACINGF3) && defined(SONAR)
+    if (feature(FEATURE_RX_PARALLEL_PWM) && feature(FEATURE_SONAR) ) {
+        featureClear(FEATURE_SONAR);
+    }
+#endif
+
     useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
