@@ -8,8 +8,8 @@ function configuration_backup(callback) {
 
     var configuration = {
         'generatedBy': chrome.runtime.getManifest().version,
-        'profiles': [],
         'apiVersion': CONFIG.apiVersion,
+        'profiles': [],
     };
 
     MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
