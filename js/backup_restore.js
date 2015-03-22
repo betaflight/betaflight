@@ -8,7 +8,8 @@ function configuration_backup(callback) {
 
     var configuration = {
         'generatedBy': chrome.runtime.getManifest().version,
-        'profiles': []
+        'apiVersion': CONFIG.apiVersion,
+        'profiles': [],
     };
 
     MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
@@ -240,11 +241,9 @@ function configuration_restore(callback) {
                     // validate
                     if (typeof configuration.generatedBy !== 'undefined' && compareVersions(configuration.generatedBy, CONFIGURATOR.backupFileMinVersionAccepted)) {
                                                 
-                        if (configuration.generatedBy != chrome.runtime.getManifest().version) {
-                            if (!migrate(configuration)) {
-                                GUI.log(chrome.i18n.getMessage('backupFileUnmigratable'));
-                                return;
-                            }
+                        if (!migrate(configuration)) {
+                            GUI.log(chrome.i18n.getMessage('backupFileUnmigratable'));
+                            return;
                         }
                         
                         configuration_upload(configuration, callback);
@@ -262,6 +261,9 @@ function configuration_restore(callback) {
     });
 
     function compareVersions(generated, required) {
+        if (generated == undefined) {
+            return false;
+        }
         var a = generated.split('.'),
             b = required.split('.');
 
@@ -344,46 +346,6 @@ function configuration_restore(callback) {
             }
 
             
-            // Serial configuation redesigned
-            var ports = [];
-            for (var portIndex = 0; portIndex < configuration.SERIAL_CONFIG.ports.length; portIndex++) {
-                var oldPort = configuration.SERIAL_CONFIG.ports[portIndex];
-
-                var newPort = {
-                    identifier: oldPort.identifier,
-                    functionMask: 0,
-                    msp_baudrate: configuration.SERIAL_CONFIG.mspBaudRate,
-                    gps_baudrate: configuration.SERIAL_CONFIG.gpsBaudRate,
-                    telemetry_baudrate: 0, // auto
-                    blackbox_baudrate: 5, // 115200
-                };
-                
-                switch(oldPort.scenario) {
-                    case 1: // MSP, CLI, TELEMETRY, SMARTPORT TELEMETRY, GPS-PASSTHROUGH
-                    case 5: // MSP, CLI, GPS-PASSTHROUGH
-                    case 8: // MSP ONLY
-                        newPort.functionMask = 1; // FUCNTION_MSP
-                    break;
-                    case 2: // GPS 
-                        newPort.functionMask = 2; // FUNCTION_GPS
-                    break;
-                    case 3: // RX_SERIAL 
-                        newPort.functionMask = 64; // FUNCTION_RX_SERIAL
-                    break;
-                    case 10: // BLACKBOX ONLY
-                        newPort.functionMask = 128; // FUNCTION_BLACKBOX
-                    break;
-                    case 11: // MSP, CLI, BLACKBOX, GPS-PASSTHROUGH
-                        newPort.functionMask = 1 + 128; // FUNCTION_BLACKBOX
-                    break;
-                }
-                
-                ports.push(newPort);
-            }
-            configuration.SERIAL_CONFIG = { 
-                ports: ports 
-            };
-            
             for (var profileIndex = 0; profileIndex < 3; profileIndex++) {
                 var RC = configuration.profiles[profileIndex].RC;
                 // TPA breakpoint was added
@@ -401,7 +363,54 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
 
-        GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
+        if (compareVersions(migratedVersion, '0.63.0') && !compareVersions(configuration.apiVersion, '1.7')) {
+            // Serial configuation redesigned, 0.63.0 saves old and new configurations.
+            var ports = [];
+            for (var portIndex = 0; portIndex < configuration.SERIAL_CONFIG.ports.length; portIndex++) {
+                var oldPort = configuration.SERIAL_CONFIG.ports[portIndex];
+
+                var newPort = {
+                    identifier: oldPort.identifier,
+                    functions: [],
+                    msp_baudrate: String(configuration.SERIAL_CONFIG.mspBaudRate),
+                    gps_baudrate: String(configuration.SERIAL_CONFIG.gpsBaudRate),
+                    telemetry_baudrate: 'AUTO',
+                    blackbox_baudrate: '115200',
+                };
+                
+                switch(oldPort.scenario) {
+                    case 1: // MSP, CLI, TELEMETRY, SMARTPORT TELEMETRY, GPS-PASSTHROUGH
+                    case 5: // MSP, CLI, GPS-PASSTHROUGH
+                    case 8: // MSP ONLY
+                        newPort.functions.push('MSP');
+                    break;
+                    case 2: // GPS 
+                        newPort.functions.push('GPS');
+                    break;
+                    case 3: // RX_SERIAL 
+                        newPort.functions.push('RX_SERIAL');
+                    break;
+                    case 10: // BLACKBOX ONLY
+                        newPort.functions.push('BLACKBOX');
+                    break;
+                    case 11: // MSP, CLI, BLACKBOX, GPS-PASSTHROUGH
+                        newPort.functions.push('MSP');
+                        newPort.functions.push('BLACKBOX');
+                    break;
+                }
+                
+                ports.push(newPort);
+            }
+            configuration.SERIAL_CONFIG = { 
+                ports: ports 
+            };
+            
+            appliedMigrationsCount++;
+        }
+        
+        if (appliedMigrationsCount > 0) {
+            GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
+        }
         return true;
     }
     
