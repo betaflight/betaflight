@@ -7,6 +7,9 @@ Ublox Neo-M8N GPS with Compass
 Ublox Neo-7M GPS with Compass and Pedestal Mount
 http://www.hobbyking.com/hobbyking/store/__55558__Ublox_Neo_7M_GPS_with_Compass_and_Pedestal_Mount.html
 
+Ublox NEO-6M GPS with Compass
+http://www.ebay.com/itm/111585855757
+
 
 ###Serial NMEA
 RY825AI 18Hz UART USB interface GPS Glonass BeiDou QZSS antenna module flash
