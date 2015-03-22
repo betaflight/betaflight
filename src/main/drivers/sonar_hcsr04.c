@@ -22,6 +22,7 @@
 
 #include "system.h"
 #include "gpio.h"
+#include "nvic.h"
 
 #include "sonar_hcsr04.h"
 
@@ -74,22 +75,37 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware)
 
     sonarHardware = initialSonarHardware;
 
+#ifdef STM32F10X
     // enable AFIO for EXTI support
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+#endif
 
-    // tp - trigger pin
+#ifdef STM32F303xC
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+
+    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+#endif
+
+    // trigger pin
     gpio.pin = sonarHardware->trigger_pin;
     gpio.mode = Mode_Out_PP;
     gpio.speed = Speed_2MHz;
     gpioInit(GPIOB, &gpio);
 
-    // ep - echo pin
+    // echo pin
     gpio.pin = sonarHardware->echo_pin;
     gpio.mode = Mode_IN_FLOATING;
     gpioInit(GPIOB, &gpio);
 
+#ifdef STM32F10X
     // setup external interrupt on echo pin
     gpioExtiLineConfig(GPIO_PortSourceGPIOB, sonarHardware->exti_pin_source);
+#endif
+
+#ifdef STM32F303xC
+    gpioExtiLineConfig(EXTI_PortSourceGPIOB, sonarHardware->exti_pin_source);
+#endif
 
     EXTI_ClearITPendingBit(sonarHardware->exti_line);
 
@@ -99,7 +115,13 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware)
     EXTIInit.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTIInit);
 
-    NVIC_EnableIRQ(sonarHardware->exti_irqn);
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    NVIC_InitStructure.NVIC_IRQChannel = sonarHardware->exti_irqn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SONAR_ECHO);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SONAR_ECHO);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 
     lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()
 }
