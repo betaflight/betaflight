@@ -20,9 +20,6 @@
 #define TARGET_BOARD_IDENTIFIER "CJM1" // CJMCU
 #define USE_HARDWARE_REVISION_DETECTION
 
-#define FLASH_PAGE_COUNT 64
-#define FLASH_PAGE_SIZE ((uint16_t)0x400)
-
 #define LED0_GPIO GPIOC
 #define LED0_PIN Pin_14 // PC14 (LED)
 #define LED0
@@ -61,7 +58,6 @@
 // #define SOFT_I2C_PB67
 
 #define SERIAL_RX
-//#define BLACKBOX
 //#define USE_SERVOS
 
 #define SPEKTRUM_BIND
@@ -71,3 +67,7 @@
 
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY
+
+#if (FLASH_SIZE > 64)
+#define BLACKBOX
+#endif

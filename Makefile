@@ -29,6 +29,9 @@ DEBUG ?=
 # Serial port/Device for flashing
 SERIAL_DEVICE	?= /dev/ttyUSB0
 
+# Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
+FLASH_SIZE ?=
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -39,6 +42,19 @@ VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU 
 
 # Valid targets for OP BootLoader support
 OPBL_VALID_TARGETS = CC3D
+
+# Configure default flash sizes for the targets
+ifeq ($(FLASH_SIZE),)
+ifeq ($(TARGET),$(filter $(TARGET),CJMCU))
+FLASH_SIZE = 64
+else ifeq ($(TARGET),$(filter $(TARGET),NAZE CC3D ALIENWIIF1 SPRACINGF3 OLIMEXINO))
+FLASH_SIZE = 128
+else ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC PORT103R STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPARKY ALIENWIIF3))
+FLASH_SIZE = 256
+else
+$(error FLASH_SIZE not configured for target)
+endif
+endif
 
 REVISION = $(shell git log -1 --format="%h")
 
@@ -92,7 +108,7 @@ DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC)\
 
 endif
 
-LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_256k.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS = -DSTM32F303xC -DSTM32F303
@@ -125,7 +141,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM3/CoreSupport \
 		   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
-LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_256k.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
@@ -169,12 +185,16 @@ DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC) \
 
 endif
 
-LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_128k.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
 DEVICE_FLAGS = -DSTM32F10X_MD -DSTM32F10X
 
+endif
+
+ifneq ($(FLASH_SIZE),)
+DEVICE_FLAGS := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
 endif
 
 TARGET_DIR = $(ROOT)/src/main/target/$(TARGET)
@@ -368,14 +388,10 @@ OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
-ifeq ($(TARGET),CJMCU)
-LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_64k.ld
-endif
-
 ifeq ($(OPBL),yes)
 ifneq ($(filter $(TARGET),$(OPBL_VALID_TARGETS)),)
 TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
-LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_128k_opbl.ld
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
 .DEFAULT_GOAL := binary
 else
 $(error OPBL specified with a unsupported target)
@@ -513,10 +529,6 @@ SPRACINGF3_SRC	 = \
 		   io/flashfs.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
-
-ifeq ($(TARGET),SPRACINGF3)
-LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_128k.ld
-endif
 
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src

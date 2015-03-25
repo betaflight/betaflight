@@ -88,24 +88,44 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800
 
-#ifndef FLASH_PAGE_COUNT
-#ifdef STM32F303xC
-#define FLASH_PAGE_COUNT 128
-#define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
+#if !defined(FLASH_SIZE)
+#error "Flash size not defined for target. (specify in KB)"
 #endif
 
-#ifdef STM32F10X_MD
-#define FLASH_PAGE_COUNT 128
-#define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
+
+#ifndef FLASH_PAGE_SIZE
+    #ifdef STM32F303xC
+        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
+    #endif
+
+    #ifdef STM32F10X_MD
+        #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
+    #endif
+
+    #ifdef STM32F10X_HD
+        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
+    #endif
 #endif
 
-#ifdef STM32F10X_HD
-#define FLASH_PAGE_COUNT 128
-#define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-#endif
+#if !defined(FLASH_SIZE) && !defined(FLASH_PAGE_COUNT)
+    #ifdef STM32F10X_MD
+        #define FLASH_PAGE_COUNT 128
+    #endif
+
+    #ifdef STM32F10X_HD
+        #define FLASH_PAGE_COUNT 128
+    #endif
 #endif
 
-#if !defined(FLASH_PAGE_COUNT) || !defined(FLASH_PAGE_SIZE)
+#if defined(FLASH_SIZE)
+#define FLASH_PAGE_COUNT ((FLASH_SIZE * 0x400) / FLASH_PAGE_SIZE)
+#endif
+
+#if !defined(FLASH_PAGE_SIZE)
+#error "Flash page size not defined for target."
+#endif
+
+#if !defined(FLASH_PAGE_COUNT)
 #error "Flash page count not defined for target."
 #endif
 
