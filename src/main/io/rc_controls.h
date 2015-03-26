@@ -103,10 +103,8 @@ typedef enum {
 // Roll/pitch rates are a proportion used for mixing, so it tops out at 1.0:
 #define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  100
 
-/* Meaningful yaw rates are effectively unbounded because they are treated as a rotation rate multiplier,
- * but we'll limit it to 1.0:
- */
-#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         100
+/* Meaningful yaw rates are effectively unbounded because they are treated as a rotation rate multiplier: */
+#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         255
 
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
