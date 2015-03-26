@@ -26,7 +26,7 @@ Disconnect main power, connect to cli via USB/FTDI.
 
 dump using cli
 
-`rate profile 0`
+`rateprofile 0`
 `profile 0`
 `dump`
 
@@ -40,10 +40,10 @@ dump profiles using cli if you use them
 
 dump rate profiles using cli if you use them
 
-`rate profile 1`
+`rateprofile 1`
 `dump rates`
 
-`rate profile 2`
+`rateprofile 2`
 `dump rates`
 
 copy screen output to a file and save it.
@@ -142,7 +142,6 @@ Re-apply any new defaults as desired.
 | nav_slew_rate                 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 0      | 100    | 30            | Profile      | UINT8    |
 | serialrx_provider             | When feature SERIALRX is enabled, this allows connection to several receivers which output data via digital interface resembling serial. See RX section.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 0      | 6      | 0             | Master       | UINT8    |
 | spektrum_sat_bind             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 0      | 10     | 0             | Master       | UINT8    |
-| telemetry_provider            | Choose what type of telemetry to output. See Telemetry section.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 0      | 3      | 0             | Master       | UINT8    |
 | telemetry_switch              | Which aux channel to use to change serial output & baud rate (MSP / Telemetry). It disables automatic switching to Telemetry when armed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 0      | 1      | 0             | Master       | UINT8    |
 | telemetry_inversion           |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 0      | 1      | 0             | Master       | UINT8    |
 | frsky_default_lattitude       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | -90    | 90     | 0             | Master       | FLOAT    |

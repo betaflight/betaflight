@@ -203,7 +203,7 @@ static const motorMixer_t mixerDualcopter[] = {
 
 // Keep synced with mixerMode_e
 const mixer_t mixers[] = {
-//    Mo Se Mixtable
+    // motors, servos, motor mixer
     { 0, 0, NULL },                // entry 0
     { 3, 1, mixerTri },            // MIXER_TRI
     { 4, 0, mixerQuadP },          // MIXER_QUADP
@@ -224,7 +224,7 @@ const mixer_t mixers[] = {
     { 4, 0, mixerVtail4 },         // MIXER_VTAIL4
     { 6, 0, mixerHex6H },          // MIXER_HEX6H
     { 0, 1, NULL },                // * MIXER_PPM_TO_SERVO
-    { 2, 1, mixerDualcopter  },    // MIXER_DUALCOPTER
+    { 2, 1, mixerDualcopter },     // MIXER_DUALCOPTER
     { 1, 1, NULL },                // MIXER_SINGLECOPTER
     { 4, 0, mixerAtail4 },         // MIXER_ATAIL4
     { 0, 0, NULL },                // MIXER_CUSTOM
@@ -665,9 +665,11 @@ void mixTable(void)
     }
 
     // constrain servos
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++)
-        servo[i] = constrain(servo[i], servoConf[i].min, servoConf[i].max); // limit the values
-
+    if (useServo) {
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            servo[i] = constrain(servo[i], servoConf[i].min, servoConf[i].max); // limit the values
+        }
+    }
     // forward AUX1-4 to servo outputs (not constrained)
     if (gimbalConfig->gimbal_flags & GIMBAL_FORWARDAUX) {
         forwardAuxChannelsToServos();

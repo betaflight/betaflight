@@ -2,7 +2,7 @@
 
 Telemetry allows you to know what is happening on your aircraft while you are flying it.  Among other things you can receive battery voltages and GPS positions on your transmitter.
 
-Telemetry can be either always on, or enabled when armed.  If no serial port is set to be telemetry-only then telemetry will only be enabled when armed.
+Telemetry can be either always on, or enabled when armed.  If a serial port for telemetry is shared with other functionality then then telemetry will only be enabled when armed on that port.
 
 Telemetry is enabled using the 'TELEMETRY` feature.
 
@@ -10,24 +10,9 @@ Telemetry is enabled using the 'TELEMETRY` feature.
 feature TELEMETRY
 ```
 
-Multiple telemetry providers are currently supported, FrSky (the default), Graupner HoTT V4, SmartPort (S.Port) and MultiWii Serial Protocol (MSP)
+Multiple telemetry providers are currently supported, FrSky, Graupner HoTT V4, SmartPort (S.Port) and MultiWii Serial Protocol (MSP)
 
-Use the `telemetry_provider` cli command to select one.
-
-| Value | Meaning         |
-| ----- | --------------- |
-| 0     | FrSky (Default) |
-| 1     | HoTT            |
-| 2     | MSP             |
-| 3     | SmartPort       |
-
-Example:
-
-```
-set telemetry_provider = 1
-```
-
-There are further examples in the Configuration section of the documentation.
+All telemetry systems use serial ports, configure serial ports to use the telemetry system required.
 
 ## FrSky telemetry
 
@@ -72,11 +57,14 @@ RPM requires that the 'blades' setting is set to 12 on your receiver/display - t
 
 ## HoTT telemetry
 
-HoTT telemetry can be used when the TX and RX pins of a serial port are connected using a diode and a single wire to the T port on a HoTT receiver.
+Only Electric Air Modules and GPS Modules are emulated.
 
-Only Electric Air Modules and GPS Modules are emulated, remember to enable them on your transmitter - in the Telemetry Menu on the MX-20.
+Use the latest Graupner firmware for your transmitter and receiver.
+
+Older HoTT transmitters required the EAM and GPS modules to be enabled in the telemetry menu of the transmitter. (e.g. on MX-20)
  
-Serial ports use two wires but HoTT uses a single wire so some electronics are required so that the signals don't get mixed up.
+Serial ports use two wires but HoTT uses a single wire so some electronics are required so that the signals don't get mixed up.  The TX and RX pins of
+a serial port should be connected using a diode and a single wire to the `T` port on a HoTT receiver.
 
 Connect as follows:
 
@@ -93,11 +81,11 @@ The diode should be arranged to allow the data signals to flow the right way
 
 As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC 24FJ64GA-002, which has 5V tolerant digital pins.
 
-Note: The SoftSerial ports are not listed as 5V tolerant in the STM32F103xx data sheet pinouts and pin description section.  Verify if you require a 5v/3.3v level shifters.
+Note: The SoftSerial ports may not be 5V tolerant on your board.  Verify if you require a 5v/3.3v level shifters.
 
 ## MultiWii Serial Protocol (MSP)
 
-MSP Telemetry simply transmitts MSP packets in sequence to any MSP device attached to the telemetry port.  It rotates though a fixes sequence of command responses.
+MSP Telemetry simply transmits MSP packets in sequence to any MSP device attached to the telemetry port.  It rotates though a fixes sequence of command responses.
 
 It is transmit only, it can work at any supported baud rate.
 
