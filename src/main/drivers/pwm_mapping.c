@@ -455,9 +455,17 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 
         if (init->extraServos && !init->airplane) {
-            // remap PWM5..8 as servos when used in extended servo mode
-            if (timerIndex >= PWM5 && timerIndex <= PWM8)
-                type = MAP_TO_SERVO_OUTPUT;
+#if defined(NAZE) && defined(LED_STRIP_TIMER)
+            // if LED strip is active, PWM5-8 are unavailable, so map AUX1+AUX2 to PWM13+PWM14
+            if (init->useLEDStrip) { 
+                if (timerIndex >= PWM13 && timerIndex <= PWM14) {
+                  type = MAP_TO_SERVO_OUTPUT;
+                }
+            } else
+#endif
+                // remap PWM5..8 as servos when used in extended servo mode
+                if (timerIndex >= PWM5 && timerIndex <= PWM8)
+                    type = MAP_TO_SERVO_OUTPUT;
         }
 #endif
 
