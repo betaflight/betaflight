@@ -366,7 +366,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
 
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = period - 1; // AKA TIMx_ARR
+    TIM_TimeBaseStructure.TIM_Period = (period - 1) & 0xffff; // AKA TIMx_ARR
 
     // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
@@ -383,6 +383,24 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
     timerNVICConfigure(timerHardwarePtr->irq);
+    // HACK - enable second IRQ on timers that need it
+    switch(timerHardwarePtr->irq) {
+#if defined(STM32F10X)
+    case TIM1_CC_IRQn:
+        timerNVICConfigure(TIM1_UP_IRQn);
+        break;
+#endif
+#ifdef STM32F303xC
+    case TIM1_CC_IRQn:
+        timerNVICConfigure(TIM1_UP_TIM16_IRQn);
+        break;
+#endif
+#if defined(STM32F10X_XL)
+    case TIM8_CC_IRQn:
+        timerNVICConfigure(TIM8_UP_IRQn);
+        break;
+#endif
+    }
 }
 
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
