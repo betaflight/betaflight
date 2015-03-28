@@ -22,6 +22,10 @@ var MSP_codes = {
     MSP_SONAR:                  58,
     MSP_PID_CONTROLLER:         59,
     MSP_SET_PID_CONTROLLER:     60,
+    MSP_ARMING_CONFIG:          61,
+    MSP_SET_ARMING_CONFIG:      62,
+    MSP_LOOP_TIME:              63,
+    MSP_SET_LOOP_TIME:          64,
     MSP_DATAFLASH_SUMMARY:      70,
     MSP_DATAFLASH_READ:         71,
     MSP_DATAFLASH_ERASE:        72,
@@ -48,8 +52,6 @@ var MSP_codes = {
     MSP_WP:                 118,
     MSP_BOXIDS:             119,
     MSP_SERVO_CONF:         120,
-    MSP_ARM_CONFIG:         123,    //like #define in serial_msp.c
-    MSP_LOOP_TIME:          124,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -65,8 +67,6 @@ var MSP_codes = {
     MSP_SET_HEAD:           211,
     MSP_SET_SERVO_CONF:     212,
     MSP_SET_MOTOR:          214,
-    MSP_SET_ARM_CONFIG:     216,    //like #define in serial_msp.c
-    MSP_SET_LOOP_TIME:      217,
     
     // MSP_BIND:               240,
 
@@ -352,10 +352,10 @@ var MSP = {
                 }
                 break;
             */
-            case MSP_codes.MSP_ARM_CONFIG:
+            case MSP_codes.MSP_ARMING_CONFIG:
                 if (CONFIG.apiVersion >= 1.8) {
-                    ARM_CONFIG.auto_disarm_delay = data.getUint8(0, 1);
-                    ARM_CONFIG.disarm_kill_switch = data.getUint8(1);
+                    ARMING_CONFIG.auto_disarm_delay = data.getUint8(0, 1);
+                    ARMING_CONFIG.disarm_kill_switch = data.getUint8(1);
                 }
                 break;
             case MSP_codes.MSP_LOOP_TIME:
@@ -980,10 +980,10 @@ MSP.crunch = function (code) {
             buffer.push(lowByte(CONFIG.accelerometerTrims[1]));
             buffer.push(highByte(CONFIG.accelerometerTrims[1]));
             break;
-        case MSP_codes.MSP_SET_ARM_CONFIG:
+        case MSP_codes.MSP_SET_ARMING_CONFIG:
             if (CONFIG.apiVersion >= 1.8) {
-                buffer.push(ARM_CONFIG.auto_disarm_delay);
-                buffer.push(ARM_CONFIG.disarm_kill_switch);
+                buffer.push(ARMING_CONFIG.auto_disarm_delay);
+                buffer.push(ARMING_CONFIG.disarm_kill_switch);
             }
             break;
         case MSP_codes.MSP_SET_LOOP_TIME:
