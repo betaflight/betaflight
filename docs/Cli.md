@@ -26,24 +26,29 @@ Disconnect main power, connect to cli via USB/FTDI.
 
 dump using cli
 
-    rateprofile 0
-    profile 0
-    dump
+```
+rateprofile 0
+profile 0
+dump
+```
 
 dump profiles using cli if you use them
 
-    profile 1
-    dump profile
-    profile 2
-    dump profile
+```
+profile 1
+dump profile
+profile 2
+dump profile
+```
 
 dump rate profiles using cli if you use them
 
-    rateprofile 1
-    dump rates
-    rateprofile 2
-    dump rates
-
+```
+rateprofile 1
+dump rates
+rateprofile 2
+dump rates
+```
 copy screen output to a file and save it.
 
 ## Restore via CLI.
