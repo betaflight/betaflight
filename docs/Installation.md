@@ -1,7 +1,7 @@
 # Installation
 
 ## Using the configurator
-This is a generic procedure to flash a board using the configurator. The configurator does not yet support all boards, so please check the docs corresponding to your board before proceeding.
+This is a generic procedure to flash a board using the configurator. The configurator does not yet support all boards, so please check the documentation corresponding to your board before proceeding.
 
 Make sure you have the [Cleanflight Configurator](https://github.com/cleanflight/cleanflight-configurator) installed, then:
 
@@ -15,7 +15,7 @@ Make sure you have the [Cleanflight Configurator](https://github.com/cleanflight
 * If this is the first time Cleanflight is flashed to the board, tick the "Full Chip Erase" checkbox.
 * Connect the flight controller board to the PC.  Ensure the correct serial port is selected.
 * Click on the "Flash Firmware" button and hold still (do not breathe, too).
-* When the progress becomes green and reads "Programming: SUCCESSFUL" you are done!
+* When the progress bar becomes green and reads "Programming: SUCCESSFUL" you are done!
 
 ## Manually
 
