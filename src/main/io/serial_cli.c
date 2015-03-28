@@ -1667,6 +1667,12 @@ void cliProcess()
             clicmd_t *cmd = NULL;
             clicmd_t target;
             cliPrint("\r\n");
+
+            // Strip trailing whitespace
+            while (bufferIndex > 0 && cliBuffer[bufferIndex - 1] == ' ') {
+                bufferIndex--;
+            }
+
             cliBuffer[bufferIndex] = 0; // null terminate
 
             if (cliBuffer[0] != '#') {
@@ -1695,8 +1701,8 @@ void cliProcess()
                 cliPrint("\010 \010");
             }
         } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
-            if (!bufferIndex && c == 32)
-                continue;
+            if (!bufferIndex && c == ' ')
+                continue; // Ignore leading spaces
             cliBuffer[bufferIndex++] = c;
             cliWrite(c);
         }
