@@ -136,7 +136,7 @@ var ANALOG = {
     amperage:   0
 };
 
-var ARM_CONFIG = {
+var ARMING_CONFIG = {
     auto_disarm_delay:      0,
     disarm_kill_switch:     0
 };
