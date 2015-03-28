@@ -283,7 +283,7 @@ void showProfilePage(void)
 
     controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
 
-    tfp_sprintf(lineBuffer, "Expo: %d, Rate: %d",
+    tfp_sprintf(lineBuffer, "RCE: %d, RCR: %d",
         controlRateConfig->rcExpo8,
         controlRateConfig->rcRate8
     );
@@ -291,7 +291,7 @@ void showProfilePage(void)
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Rates R:%d P:%d Y:%d",
+    tfp_sprintf(lineBuffer, "RR:%d PR:%d YR:%d",
         controlRateConfig->rates[FD_ROLL],
         controlRateConfig->rates[FD_PITCH],
         controlRateConfig->rates[FD_YAW]
