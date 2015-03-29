@@ -154,7 +154,7 @@ U-blox Neo-7M w/Compass | [HobbyKing](http://www.hobbyking.com/hobbyking/store/_
 #### NEO-7
 Module | Comments
 -------|--------
-Ublox NEO-6M GPS with Compass | [HobbyKing](http://www.ebay.com/itm/111585855757)
+Ublox NEO-6M GPS with Compass | [eBay](http://www.ebay.com/itm/111585855757)
 
 
 ### Serial NMEA
