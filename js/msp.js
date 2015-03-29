@@ -375,18 +375,18 @@ var MSP = {
                 offset += 2;
                 MISC.failsafe_throttle = data.getUint16(offset, 1); // 1000-2000
                 offset += 2;
-                MISC.gps_type = data.getUint8(offset);
-                MISC.gps_baudrate = data.getUint8(++offset);
-                MISC.gps_ubx_sbas = data.getInt8(++offset);
-                MISC.multiwiicurrentoutput = data.getUint8(++offset);
-                MISC.rssi_channel = data.getUint8(++offset);
-                MISC.placeholder2 = data.getUint8(++offset);
-                MISC.mag_declination = data.getInt16(++offset, 1) / 10; // -18000-18000
+                MISC.gps_type = data.getUint8(offset++);
+                MISC.gps_baudrate = data.getUint8(offset++);
+                MISC.gps_ubx_sbas = data.getInt8(offset++);
+                MISC.multiwiicurrentoutput = data.getUint8(offset++);
+                MISC.rssi_channel = data.getUint8(offset++);
+                MISC.placeholder2 = data.getUint8(offset++);
+                MISC.mag_declination = data.getInt16(offset, 1) / 10; // -18000-18000
                 offset += 2;
-                MISC.vbatscale = data.getUint8(offset, 1); // 10-200
-                MISC.vbatmincellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
-                MISC.vbatmaxcellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
-                MISC.vbatwarningcellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
+                MISC.vbatscale = data.getUint8(offset++, 1); // 10-200
+                MISC.vbatmincellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
+                MISC.vbatmaxcellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
+                MISC.vbatwarningcellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
