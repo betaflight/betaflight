@@ -29,69 +29,98 @@ TABS.firmware_flasher.initialize = function (callback) {
             worker.postMessage(str);
         }
 
-        var processReleases = function (releases){
-            var releases_e = $('select[name="release"]').empty();
 
+        $('input.show_development_releases').click(function(){
+            buildFirmwareOptions();
+        });
+
+        var buildFirmwareOptions = function(){
+            var releases_e = $('select[name="release"]').empty();
+            var showDevReleases = ($('input.show_development_releases').is(':checked'));
+            var optionIndex = 0;
             releases_e.append($("<option value='0'>{0}</option>".format(chrome.i18n.getMessage('firmwareFlasherOptionLabelSelectFirmware'))));
 
-            for(var releaseIndex = 0; releaseIndex < releases.length; releaseIndex++){
-                $.get(releases[releaseIndex].assets_url).done(
-                    (function (releases, releaseIndex, releases_e, assets){
-                        var release = releases[releaseIndex];
-                        for (var assetIndex = 0; assetIndex < assets.length; assetIndex++) {
+            TABS.firmware_flasher.releases.forEach(function(release){
+                release.assets.forEach(function(asset){
+                    optionIndex++;
+                    var targetFromFilenameExpression = /.*_(.*)\.(.*)/;
+                    var match = targetFromFilenameExpression.exec(asset.name);
 
-                            var asset = assets[assetIndex];
-                            var targetFromFilenameExpression = /.*_(.*)\.(.*)/;
-                            var match = targetFromFilenameExpression.exec(asset.name);
-                            if (!match) {
-                                continue;
-                            }
-                            var target = match[1];
-                            var format = match[2];
+                    if (!showDevReleases && release.prerelease) {
+                        return;
+                    }
 
-                            if (format != 'hex') {
-                                continue;
-                            }
+                    if (!match) {
+                        return;
+                    }
 
-                            var date = new Date(release.published_at);
-                            var formattedDate = "{0}-{1}-{2} {3}:{4}".format(
-                                date.getFullYear(),
-                                date.getMonth() + 1,
-                                date.getDate(),
-                                date.getUTCHours(),
-                                date.getMinutes()
-                            );
-                            
-                            var summary = {
-                                "releaseUrl": release.html_url,
-                                "name"      : release.name,
-                                "url"       : asset.browser_download_url,
-                                "file"      : asset.name,
-                                "target"    : target,
-                                "date"      : formattedDate,
-                                "notes"     : release.body,
-                                "status"    : release.prerelease ? "release-candidate" : "stable"
-                            };
+                    var target = match[1];
+                    var format = match[2];
 
-                            var select_e = 
-                                $("<option value='{0}_{1}'>{2} {3} {4} ({5})</option>".format(
-                                    releaseIndex,
-                                    assetIndex,
+                    if (format != 'hex') {
+                        return;
+                    }
+
+                    var date = new Date(release.published_at);
+                    var formattedDate = "{0}-{1}-{2} {3}:{4}".format(
+                            date.getFullYear(),
+                            date.getMonth() + 1,
+                            date.getDate(),
+                            date.getUTCHours(),
+                            date.getMinutes()
+                    );
+
+                    var summary = {
+                        "releaseUrl": release.html_url,
+                        "name"      : release.name,
+                        "url"       : asset.browser_download_url,
+                        "file"      : asset.name,
+                        "target"    : target,
+                        "date"      : formattedDate,
+                        "notes"     : release.body,
+                        "status"    : release.prerelease ? "release-candidate" : "stable"
+                    };
+
+                    var select_e =
+                            $("<option value='{0}'>{1} {2} {3} ({4})</option>".format(
+                                    optionIndex,
                                     summary.name,
                                     summary.target,
                                     summary.date,
                                     summary.status
-                                )).data('summary', summary);
-                            
-                            releases_e.append(select_e);
+                            )).data('summary', summary);
+
+                    releases_e.append(select_e);
+                });
+            });
+        };
+
+
+        var processReleases = function (releases){
+            var promises = [];
+            releases.forEach(function(release){
+                var promise = Q.defer();
+                promises.push(promise);
+                $.get(release.assets_url).
+                done(function(assets){
+                            release.assets = assets;
+                            promise.resolve(assets);
                         }
-                    }).bind(this, releases, releaseIndex, releases_e)
+                ).
+                fail(function(reason){
+                            promise.reject(reason);
+                        }
                 );
-            }
+            });
+
+            Q.all(promises).then(function(){
+                buildFirmwareOptions();
+            })
         };
 
         $.get('https://api.github.com/repos/cleanflight/cleanflight/releases', function (releases){
             processReleases(releases);
+            TABS.firmware_flasher.releases = releases;
             
             // bind events
             $('select[name="release"]').change(function() {
