@@ -333,9 +333,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val());
             
             // motor disarm
-            ARMING_CONFIG.auto_disarm_delay = parseInt($('input[name="autodisarmdelay"]').val());
-            ARMING_CONFIG.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
-
+            if(CONFIG.apiVersion >= 1.8) {
+                ARMING_CONFIG.auto_disarm_delay = parseInt($('input[name="autodisarmdelay"]').val());
+                ARMING_CONFIG.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
+            }
+            
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
             MISC.midrc = parseInt($('input[name="midthrottle"]').val());
             MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
