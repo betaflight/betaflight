@@ -113,7 +113,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + '</td>');
                 radioGroups.push(features[i].group);
             } else {
-                var feature_e = row_e.find('input.feature');                
                 row_e = $('<tr><td><input class="feature" id="feature-'
                         + i
                         + '" name="'
@@ -128,6 +127,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + features[i].description
                         + '</td>');
                 
+                var feature_e = row_e.find('input.feature');
+
                 feature_e.prop('checked', bit_check(BF_CONFIG.features, features[i].bit));
                 feature_e.data('bit', features[i].bit);
             }
