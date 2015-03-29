@@ -18,7 +18,7 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function get_rc_map() {
-        MSP.send_message(MSP_codes.MSP_RCMAP, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_RX_MAP, false, false, load_html);
     }
 
     function load_html() {
@@ -281,7 +281,7 @@ TABS.receiver.initialize = function (callback) {
             MISC.rssi_channel = parseInt($('select[name="rssi_channel"]').val());
 
             function save_rc_map() {
-                MSP.send_message(MSP_codes.MSP_SET_RCMAP, MSP.crunch(MSP_codes.MSP_SET_RCMAP), false, save_misc);
+                MSP.send_message(MSP_codes.MSP_SET_RX_MAP, MSP.crunch(MSP_codes.MSP_SET_RX_MAP), false, save_misc);
             }
 
             function save_misc() {

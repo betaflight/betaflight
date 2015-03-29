@@ -74,20 +74,25 @@ function configuration_backup(callback) {
     }
 
     var uniqueData = [
-        // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
-        /*
-        MSP_codes.MSP_BOX,
-        */
         MSP_codes.MSP_MISC,
-        MSP_codes.MSP_RCMAP,
+        MSP_codes.MSP_RX_MAP,
         MSP_codes.MSP_BF_CONFIG,
         MSP_codes.MSP_CF_SERIAL_CONFIG,
         MSP_codes.MSP_LED_STRIP_CONFIG
     ];
 
+    function update_unique_data_list() {
+        if (CONFIG.apiVersion >= 1.8) {
+            uniqueData.push(MSP_codes.MSP_LOOP_TIME);
+            uniqueData.push(MSP_codes.MSP_ARMING_CONFIG);
+        }
+    }
+    
+    update_unique_data_list();
+
     function fetch_unique_data() {
         var codeKey = 0;
-
+        
         function fetch_unique_data_item() {
             if (codeKey < uniqueData.length) {
                 MSP.send_message(uniqueData[codeKey], false, false, function () {
@@ -95,20 +100,18 @@ function configuration_backup(callback) {
                     fetch_unique_data_item();
                 });
             } else {
-                // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
-                /*
-                configuration.AUX = jQuery.extend(true, [], AUX_CONFIG_values);
-                */
                 configuration.MISC = jQuery.extend(true, {}, MISC);
                 configuration.RCMAP = jQuery.extend(true, [], RC_MAP);
                 configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
                 configuration.SERIAL_CONFIG = jQuery.extend(true, {}, SERIAL_CONFIG);
                 configuration.LED_STRIP = jQuery.extend(true, [], LED_STRIP);
+                configuration.FC_CONFIG = jQuery.extend(true, {}, FC_CONFIG);
+                configuration.ARMING_CONFIG = jQuery.extend(true, {}, ARMING_CONFIG);
 
                 save();
             }
         }
-
+        
         // start fetching
         fetch_unique_data_item();
     }
@@ -408,9 +411,28 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
         
+        if (compareVersions(migratedVersion, '0.63.0') && !compareVersions(configuration.apiVersion, '1.8')) {
+            // api 1.8 exposes looptime and arming config
+            
+            if (configuration.FC_CONFIG == undefined) {
+                configuration.FC_CONFIG = {
+                    loopTime: 3500
+                };
+            }
+
+            if (configuration.ARMING_CONFIG == undefined) {
+                configuration.ARMING_CONFIG = {
+                    auto_disarm_delay:      5,
+                    disarm_kill_switch:     1
+                };
+            }
+            appliedMigrationsCount++;
+        }
+        
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         }
+                
         return true;
     }
     
@@ -496,26 +518,27 @@ function configuration_restore(callback) {
                 var codeKey = 0;
 
                 var uniqueData = [
-                    // Not used by cleanflight, and it's wrong anyway - AUX settings are per-profile in baseflight.
-                    /*
-                    MSP_codes.MSP_SET_BOX,
-                    */
                     MSP_codes.MSP_SET_MISC,
-                    MSP_codes.MSP_SET_RCMAP,
+                    MSP_codes.MSP_SET_RX_MAP,
                     MSP_codes.MSP_SET_BF_CONFIG,
                     MSP_codes.MSP_SET_CF_SERIAL_CONFIG
                 ];
-
+                
+                function update_unique_data_list() {
+                    if (CONFIG.apiVersion >= 1.8) {
+                        uniqueData.push(MSP_codes.MSP_SET_LOOP_TIME);
+                        uniqueData.push(MSP_codes.MSP_SET_ARMING_CONFIG);
+                    }
+                }
+                
                 function load_objects() {
-                    // Disabled, cleanflight does not use MSP_BOX.
-                    /*
-                    AUX_CONFIG_values = configuration.AUX;
-                    */
                     MISC = configuration.MISC;
                     RC_MAP = configuration.RCMAP;
                     BF_CONFIG = configuration.BF_CONFIG;
                     SERIAL_CONFIG = configuration.SERIAL_CONFIG;
                     LED_STRIP = configuration.LED_STRIP;
+                    ARMING_CONFIG = configuration.ARMING_CONFIG;
+                    FC_CONFIG = configuration.FC_CONFIG;
                 }
 
                 function send_unique_data_item() {
@@ -530,7 +553,9 @@ function configuration_restore(callback) {
                 }
 
                 load_objects();
-                
+
+                update_unique_data_list();
+
                 // start uploading
                 send_unique_data_item();
             }

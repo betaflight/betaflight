@@ -452,10 +452,10 @@
         "message": "Magnetometer Declination [deg]"
     },
     "configurationAutoDisarmDelay": {
-        "message": "Disarm motors after set delay(Seconds)- Only if feature MOTOR_STOP enabled"
+        "message": "Disarm motors after set delay(Seconds) (Requires MOTOR_STOP feature)"
     },
     "configurationDisarmKillSwitch": {
-        "message": "Disarm motors regardless of throttle value - Only when arming and disarming via AUX channel"
+        "message": "Disarm motors regardless of throttle value (When arming via AUX channel)"
     }, 
     "configurationThrottleMinimum": {
         "message": "Minimum Throttle"

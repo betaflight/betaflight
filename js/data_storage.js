@@ -77,10 +77,6 @@ var RC_tuning = {
 
 var AUX_CONFIG = [];
 var AUX_CONFIG_IDS = [];
-//Disabled, cleanflight does not use MSP_BOX.
-/*
-var AUX_CONFIG_values = [];
-*/
 
 var MODE_RANGES = [];
 var ADJUSTMENT_RANGES = [];
@@ -141,7 +137,9 @@ var ARMING_CONFIG = {
     disarm_kill_switch:     0
 };
 
-var LOOP_TIME = 0;
+var FC_CONFIG = {
+    loopTime: 0
+};
 
 var MISC = {
     midrc:                  0,

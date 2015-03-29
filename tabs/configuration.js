@@ -23,7 +23,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_rc_map() {
-        MSP.send_message(MSP_codes.MSP_RCMAP, false, false, load_misc);
+        MSP.send_message(MSP_codes.MSP_RX_MAP, false, false, load_misc);
     }
 
     function load_misc() {
@@ -260,7 +260,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             $('input[name="autodisarmdelay"]').val(ARMING_CONFIG.auto_disarm_delay);
             $('input[name="disarmkillswitch"]').prop('checked', ARMING_CONFIG.disarm_kill_switch);
             if(bit_check(BF_CONFIG.features, 4 + 1))//MOTOR_STOP
-                $('div.disarmdelay').slideDown();
+                $('div.disarmdelay').show();
         }
         else       
             $('div.disarm').hide();
@@ -293,11 +293,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             if (state) {
                 BF_CONFIG.features = bit_set(BF_CONFIG.features, index);
                 if(element.attr('name') === 'MOTOR_STOP')                    
-                    $('div.disarmdelay').slideDown();
+                    $('div.disarmdelay').show();
             } else {
                 BF_CONFIG.features = bit_clear(BF_CONFIG.features, index);
                 if(element.attr('name') === 'MOTOR_STOP')
-                    $('div.disarmdelay').slideUp();
+                    $('div.disarmdelay').hide();
             }
         });
 

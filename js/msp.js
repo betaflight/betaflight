@@ -24,11 +24,11 @@ var MSP_codes = {
     MSP_SET_PID_CONTROLLER:     60,
     MSP_ARMING_CONFIG:          61,
     MSP_SET_ARMING_CONFIG:      62,
-    MSP_LOOP_TIME:              63,
-    MSP_SET_LOOP_TIME:          64,
     MSP_DATAFLASH_SUMMARY:      70,
     MSP_DATAFLASH_READ:         71,
     MSP_DATAFLASH_ERASE:        72,
+    MSP_LOOP_TIME:              73,
+    MSP_SET_LOOP_TIME:          74,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -82,8 +82,8 @@ var MSP_codes = {
     MSP_GPS_SV_INFO:        164, // get Signal Strength
 
     // Additional private MSP for baseflight configurator (yes thats us \o/)
-    MSP_RCMAP:              64, // get channel map (also returns number of channels total)
-    MSP_SET_RCMAP:          65, // set rc map, numchannels to set comes from MSP_RCMAP
+    MSP_RX_MAP:              64, // get channel map (also returns number of channels total)
+    MSP_SET_RX_MAP:          65, // set rc map, numchannels to set comes from MSP_RX_MAP
     MSP_BF_CONFIG:             66, // baseflight-specific settings that aren't covered elsewhere
     MSP_SET_BF_CONFIG:         67, // baseflight-specific settings save
     MSP_SET_REBOOT:         68, // reboot settings
@@ -360,7 +360,7 @@ var MSP = {
                 break;
             case MSP_codes.MSP_LOOP_TIME:
                 if (CONFIG.apiVersion >= 1.8) {
-                    LOOP_TIME = data.getInt16(0, 1);
+                    FC_CONFIG.loopTime = data.getInt16(0, 1);
                 }
                 break;
             case MSP_codes.MSP_MISC: // 22 bytes
@@ -519,14 +519,14 @@ var MSP = {
                 }
                 break;
             // Additional private MSP for baseflight configurator
-            case MSP_codes.MSP_RCMAP:
+            case MSP_codes.MSP_RX_MAP:
                 RC_MAP = []; // empty the array as new data is coming in
 
                 for (var i = 0; i < data.byteLength; i++) {
                     RC_MAP.push(data.getUint8(i));
                 }
                 break;
-            case MSP_codes.MSP_SET_RCMAP:
+            case MSP_codes.MSP_SET_RX_MAP:
                 console.log('RCMAP saved');
                 break;
             case MSP_codes.MSP_BF_CONFIG:
@@ -774,8 +774,13 @@ var MSP = {
             case MSP_codes.MSP_SET_PID_CONTROLLER:
                 console.log('PID controller changed');
                 break;
-
-
+            case MSP_codes.MSP_SET_LOOP_TIME:
+                console.log('Looptime saved');
+                break;
+            case MSP_codes.MSP_SET_ARMING_CONFIG:
+                console.log('Arming config saved');
+                break;
+                
             default:
                 console.log('Unknown code detected: ' + code);
         }
@@ -969,7 +974,7 @@ MSP.crunch = function (code) {
             }
             break;
         */
-        case MSP_codes.MSP_SET_RCMAP:
+        case MSP_codes.MSP_SET_RX_MAP:
             for (var i = 0; i < RC_MAP.length; i++) {
                 buffer.push(RC_MAP[i]);
             }
@@ -981,16 +986,12 @@ MSP.crunch = function (code) {
             buffer.push(highByte(CONFIG.accelerometerTrims[1]));
             break;
         case MSP_codes.MSP_SET_ARMING_CONFIG:
-            if (CONFIG.apiVersion >= 1.8) {
-                buffer.push(ARMING_CONFIG.auto_disarm_delay);
-                buffer.push(ARMING_CONFIG.disarm_kill_switch);
-            }
+            buffer.push(ARMING_CONFIG.auto_disarm_delay);
+            buffer.push(ARMING_CONFIG.disarm_kill_switch);
             break;
         case MSP_codes.MSP_SET_LOOP_TIME:
-            if (CONFIG.apiVersion >= 1.8) {
-                buffer.push(lowByte(LOOP_TIME));
-                buffer.push(highByte(LOOP_TIME));
-            }
+            buffer.push(lowByte(FC_CONFIG.loopTime));
+            buffer.push(highByte(FC_CONFIG.loopTime));
             break;
         case MSP_codes.MSP_SET_MISC:
             buffer.push(lowByte(MISC.midrc));
