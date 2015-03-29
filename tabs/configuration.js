@@ -31,7 +31,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_acc_trim() {
-        MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false
+                        , CONFIG.apiVersion >= 1.8 ? load_arming_config : load_html);
+    }
+
+    function load_arming_config() {
+        MSP.send_message(MSP_codes.MSP_ARMING_CONFIG, false, false, load_html);
     }
 
     function load_html() {
@@ -90,14 +95,41 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         for (var i = 0; i < features.length; i++) {
             var row_e;
             
-            if (features[i].mode == 'group') {
-                row_e = $('<tr><td><input class="feature" id="feature-' + i + '" value="' + features[i].bit + '" title="' + features[i].name + '" type="radio" name="' + features[i].group + '" /></td><td><label for="feature-' + i + '">' + features[i].name + '</label></td><td>' + features[i].description + '</td>');
+            if (features[i].mode === 'group') {
+                row_e = $('<tr><td><input class="feature" id="feature-'
+                        + i
+                        + '" value="'
+                        + features[i].bit
+                        + '" title="'
+                        + features[i].name
+                        + '" type="radio" name="'
+                        + features[i].group
+                        + '" /></td><td><label for="feature-'
+                        + i
+                        + '">'
+                        + features[i].name
+                        + '</label></td><td>'
+                        + features[i].description
+                        + '</td>');
                 radioGroups.push(features[i].group);
             } else {
-                row_e = $('<tr><td><input class="feature" id="feature-' + i + '" title="' + features[i].name + '" type="checkbox" /></td><td><label for="feature-' + i + '">' + features[i].name + '</label></td><td>' + features[i].description + '</td>');
-                var feature_e = row_e.find('input.feature');
-                feature_e.data('bit', features[i].bit);
+                var feature_e = row_e.find('input.feature');                
+                row_e = $('<tr><td><input class="feature" id="feature-'
+                        + i
+                        + '" name="'
+                        + features[i].name
+                        + '" title="'
+                        + features[i].name
+                        + '" type="checkbox" /></td><td><label for="feature-'
+                        + i
+                        + '">'
+                        + features[i].name
+                        + '</label></td><td>'
+                        + features[i].description
+                        + '</td>');
+                
                 feature_e.prop('checked', bit_check(BF_CONFIG.features, features[i].bit));
+                feature_e.data('bit', features[i].bit);
             }
 
             features_e.each(function () {
@@ -223,6 +255,16 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // fill magnetometer
         $('input[name="mag_declination"]').val(MISC.mag_declination);
 
+        //fill motor disarm params        
+        if(CONFIG.apiVersion >= 1.8) {
+            $('input[name="autodisarmdelay"]').val(ARMING_CONFIG.auto_disarm_delay);
+            $('input[name="disarmkillswitch"]').prop('checked', ARMING_CONFIG.disarm_kill_switch);
+            if(bit_check(BF_CONFIG.features, 4 + 1))//MOTOR_STOP
+                $('div.disarmdelay').slideDown();
+        }
+        else       
+            $('div.disarm').hide();
+        
         // fill throttle
         $('input[name="minthrottle"]').val(MISC.minthrottle);
         $('input[name="midthrottle"]').val(MISC.midrc);
@@ -250,8 +292,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             if (state) {
                 BF_CONFIG.features = bit_set(BF_CONFIG.features, index);
+                if(element.attr('name') === 'MOTOR_STOP')                    
+                    $('div.disarmdelay').slideDown();
             } else {
                 BF_CONFIG.features = bit_clear(BF_CONFIG.features, index);
+                if(element.attr('name') === 'MOTOR_STOP')
+                    $('div.disarmdelay').slideUp();
             }
         });
 
@@ -285,7 +331,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             CONFIG.accelerometerTrims[1] = parseInt($('input[name="roll"]').val());
             CONFIG.accelerometerTrims[0] = parseInt($('input[name="pitch"]').val());
             MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val());
-
+            
+            // motor disarm
+            if(CONFIG.apiVersion >= 1.8) {
+                ARMING_CONFIG.auto_disarm_delay = parseInt($('input[name="autodisarmdelay"]').val());
+                ARMING_CONFIG.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
+            }
+            
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
             MISC.midrc = parseInt($('input[name="midthrottle"]').val());
             MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
@@ -314,7 +366,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
 
             function save_acc_trim() {
-                MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false, save_to_eeprom);
+                MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false
+                                , CONFIG.apiVersion >= 1.8 ? save_arming_config : save_to_eeprom);
+            }
+
+            function save_arming_config() {
+                MSP.send_message(MSP_codes.MSP_SET_ARMING_CONFIG, MSP.crunch(MSP_codes.MSP_SET_ARMING_CONFIG), false, save_to_eeprom);
             }
 
             function save_to_eeprom() {

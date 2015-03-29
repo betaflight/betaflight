@@ -22,6 +22,10 @@ var MSP_codes = {
     MSP_SONAR:                  58,
     MSP_PID_CONTROLLER:         59,
     MSP_SET_PID_CONTROLLER:     60,
+    MSP_ARMING_CONFIG:          61,
+    MSP_SET_ARMING_CONFIG:      62,
+    MSP_LOOP_TIME:              63,
+    MSP_SET_LOOP_TIME:          64,
     MSP_DATAFLASH_SUMMARY:      70,
     MSP_DATAFLASH_READ:         71,
     MSP_DATAFLASH_ERASE:        72,
@@ -48,7 +52,7 @@ var MSP_codes = {
     MSP_WP:                 118,
     MSP_BOXIDS:             119,
     MSP_SERVO_CONF:         120,
-
+    
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
     MSP_SET_PID:            202,
@@ -63,7 +67,7 @@ var MSP_codes = {
     MSP_SET_HEAD:           211,
     MSP_SET_SERVO_CONF:     212,
     MSP_SET_MOTOR:          214,
-
+    
     // MSP_BIND:               240,
 
     MSP_EEPROM_WRITE:       250,
@@ -348,23 +352,41 @@ var MSP = {
                 }
                 break;
             */
+            case MSP_codes.MSP_ARMING_CONFIG:
+                if (CONFIG.apiVersion >= 1.8) {
+                    ARMING_CONFIG.auto_disarm_delay = data.getUint8(0, 1);
+                    ARMING_CONFIG.disarm_kill_switch = data.getUint8(1);
+                }
+                break;
+            case MSP_codes.MSP_LOOP_TIME:
+                if (CONFIG.apiVersion >= 1.8) {
+                    LOOP_TIME = data.getInt16(0, 1);
+                }
+                break;
             case MSP_codes.MSP_MISC: // 22 bytes
-                MISC.midrc = data.getInt16(0, 1);
-                MISC.minthrottle = data.getUint16(2, 1); // 0-2000
-                MISC.maxthrottle = data.getUint16(4, 1); // 0-2000
-                MISC.mincommand = data.getUint16(6, 1); // 0-2000
-                MISC.failsafe_throttle = data.getUint16(8, 1); // 1000-2000
-                MISC.gps_type = data.getUint8(10);
-                MISC.gps_baudrate = data.getUint8(11);
-                MISC.gps_ubx_sbas = data.getInt8(12);
-                MISC.multiwiicurrentoutput = data.getUint8(13);
-                MISC.rssi_channel = data.getUint8(14);
-                MISC.placeholder2 = data.getUint8(15);
-                MISC.mag_declination = data.getInt16(16, 1) / 10; // -18000-18000
-                MISC.vbatscale = data.getUint8(18, 1); // 10-200
-                MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
-                MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
-                MISC.vbatwarningcellvoltage = data.getUint8(21, 1) / 10; // 10-50
+                var offset = 0;
+                MISC.midrc = data.getInt16(offset, 1);
+                offset += 2;
+                MISC.minthrottle = data.getUint16(offset, 1); // 0-2000
+                offset += 2;
+                MISC.maxthrottle = data.getUint16(offset, 1); // 0-2000
+                offset += 2;
+                MISC.mincommand = data.getUint16(offset, 1); // 0-2000
+                offset += 2;
+                MISC.failsafe_throttle = data.getUint16(offset, 1); // 1000-2000
+                offset += 2;
+                MISC.gps_type = data.getUint8(offset);
+                MISC.gps_baudrate = data.getUint8(++offset);
+                MISC.gps_ubx_sbas = data.getInt8(++offset);
+                MISC.multiwiicurrentoutput = data.getUint8(++offset);
+                MISC.rssi_channel = data.getUint8(++offset);
+                MISC.placeholder2 = data.getUint8(++offset);
+                MISC.mag_declination = data.getInt16(++offset, 1) / 10; // -18000-18000
+                offset += 2;
+                MISC.vbatscale = data.getUint8(offset, 1); // 10-200
+                MISC.vbatmincellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
+                MISC.vbatmaxcellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
+                MISC.vbatwarningcellvoltage = data.getUint8(++offset, 1) / 10; // 10-50
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
@@ -957,6 +979,18 @@ MSP.crunch = function (code) {
             buffer.push(highByte(CONFIG.accelerometerTrims[0]));
             buffer.push(lowByte(CONFIG.accelerometerTrims[1]));
             buffer.push(highByte(CONFIG.accelerometerTrims[1]));
+            break;
+        case MSP_codes.MSP_SET_ARMING_CONFIG:
+            if (CONFIG.apiVersion >= 1.8) {
+                buffer.push(ARMING_CONFIG.auto_disarm_delay);
+                buffer.push(ARMING_CONFIG.disarm_kill_switch);
+            }
+            break;
+        case MSP_codes.MSP_SET_LOOP_TIME:
+            if (CONFIG.apiVersion >= 1.8) {
+                buffer.push(lowByte(LOOP_TIME));
+                buffer.push(highByte(LOOP_TIME));
+            }
             break;
         case MSP_codes.MSP_SET_MISC:
             buffer.push(lowByte(MISC.midrc));

@@ -136,6 +136,13 @@ var ANALOG = {
     amperage:   0
 };
 
+var ARMING_CONFIG = {
+    auto_disarm_delay:      0,
+    disarm_kill_switch:     0
+};
+
+var LOOP_TIME = 0;
+
 var MISC = {
     midrc:                  0,
     minthrottle:            0,
