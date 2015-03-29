@@ -188,13 +188,20 @@
 .tab-led-strip .color-14 {}
 .tab-led-strip .color-15 {}
 
-.tab-led-strip .colors .btnOn {box-shadow: dimgray -1px -2px 3px;}
-.tab-led-strip .colors button:hover {
-	border-color: inherit;
-	border-style: solid;
+.tab-led-strip .directions button.btnOn,
+.tab-led-strip .functions button.btnOn,
+.tab-led-strip .colors .btnOn {
+    border-color: #000;
 }
-	
-.tab-led-strip .directions .btnOn {background: #FFF; color: #000;}
+
+.tab-led-strip .colors button:hover {
+    border-color: inherit;
+    border-style: solid;
+}
+
+.tab-led-strip .directions .btnOn {
+    background: #FFF; color: #000;
+}
 
 .tab-led-strip .indicators {
     position: relative;
