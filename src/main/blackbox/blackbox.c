@@ -188,7 +188,7 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
     {"rcCommand",   3, UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
     {"vbatLatest",    -1, UNSIGNED, .Ipredict = PREDICT(VBATREF),  .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
-    {"amperageLatest",-1, UNSIGNED, .Ipredict = PREDICT(0),        .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE},
+    {"amperageLatest",-1, UNSIGNED, .Ipredict = PREDICT(0),        .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC},
 
 #ifdef MAG
     {"magADC",      0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
@@ -343,8 +343,8 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_VBAT:
             return feature(FEATURE_VBAT);
 
-        case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE:
-            return feature(FEATURE_CURRENT_METER);
+        case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
+            return feature(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
 
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
             return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
@@ -446,7 +446,7 @@ static void writeIntraframe(void)
         blackboxWriteUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
     }
 
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
         // 12bit value directly from ADC
         blackboxWriteUnsignedVB(blackboxCurrent->amperageLatest);
     }
@@ -554,7 +554,7 @@ static void writeInterframe(void)
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->vbatLatest - blackboxLast->vbatLatest;
     }
 
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
     }
 
@@ -909,7 +909,11 @@ static bool blackboxWriteSysinfo()
             xmitState.u.serialBudget -= blackboxPrintf("H acc_1G:%u\n", acc_1G);
         break;
         case 10:
-            xmitState.u.serialBudget -= blackboxPrintf("H vbatscale:%u\n", masterConfig.batteryConfig.vbatscale);
+            if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
+                xmitState.u.serialBudget -= blackboxPrintf("H vbatscale:%u\n", masterConfig.batteryConfig.vbatscale);
+            } else {
+                xmitState.headerIndex += 2; // Skip the next two vbat fields too
+            }
         break;
         case 11:
             xmitState.u.serialBudget -= blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", masterConfig.batteryConfig.vbatmincellvoltage,
@@ -919,7 +923,10 @@ static bool blackboxWriteSysinfo()
             xmitState.u.serialBudget -= blackboxPrintf("H vbatref:%u\n", vbatReference);
         break;
         case 13:
-            xmitState.u.serialBudget -= blackboxPrintf("H currentMeter:%d,%d\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+            //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
+            if (feature(FEATURE_CURRENT_METER)) {
+                xmitState.u.serialBudget -= blackboxPrintf("H currentMeter:%d,%d\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+            }
         break;
         default:
             return true;
