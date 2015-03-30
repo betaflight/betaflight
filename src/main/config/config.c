@@ -369,6 +369,7 @@ static void resetConf(void)
     featureSet(FEATURE_RX_PPM);
 #endif
     featureSet(FEATURE_VBAT);
+    featureSet(FEATURE_FAILSAFE);
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
@@ -468,7 +469,7 @@ static void resetConf(void)
     // Failsafe Variables
     currentProfile->failsafeConfig.failsafe_delay = 10;              // 1sec
     currentProfile->failsafeConfig.failsafe_off_delay = 200;         // 20sec
-    currentProfile->failsafeConfig.failsafe_throttle = 1200;         // decent default which should always be below hover throttle for people.
+    currentProfile->failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
     currentProfile->failsafeConfig.failsafe_min_usec = 985;          // any of first 4 channels below this value will trigger failsafe
     currentProfile->failsafeConfig.failsafe_max_usec = 2115;         // any of first 4 channels above this value will trigger failsafe
 

@@ -91,7 +91,7 @@ See your receiver's documentation for direction on how to accomplish one of thes
 
 2.  Set 'failsafe_off_delay' to an appropriate value based on how high you fly
 
-3.  Set 'failsafe_throttle' to a value that allows the aircraft to descend at approximately one meter per second.
+3.  Set 'failsafe_throttle' to a value that allows the aircraft to descend at approximately one meter per second (default is 1000 which should be throttle off).
 
 4.  Enable 'FAILSAFE' feature in Cleanflight GUI or via CLI using `feature FAILSAFE`
 
@@ -116,7 +116,7 @@ Delay after failsafe activates before motors finally turn off.  This is the amou
 
 ### `failsafe_throttle`
 
-Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec.
+Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec. Default is set to 1000 which should correspond to throttle off.
 
 Use standard RX usec values.  See RX documentation.
 
