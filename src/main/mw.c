@@ -246,7 +246,7 @@ void annexCode(void)
             }
 
             if (feature(FEATURE_CURRENT_METER)) {
-                updateCurrentMeter(vbatCycleTime);
+                updateCurrentMeter(vbatCycleTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
             }
             vbatCycleTime = 0;
         }

@@ -22,6 +22,8 @@
 
 extern "C" {
     #include "sensors/battery.h"
+    
+    #include "io/rc_controls.h"
 }
 
 #include "unittest_macros.h"
@@ -87,6 +89,19 @@ extern "C" {
 
 uint8_t armingFlags = 0;
 int16_t rcCommand[4] = {0,0,0,0};
+
+bool feature(uint32_t mask)
+{
+    UNUSED(mask);
+    return false;
+}
+
+throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+{
+    UNUSED(*rxConfig);
+    UNUSED(deadband3d_throttle);
+    return THROTTLE_HIGH;
+}
 
 uint16_t adcGetChannel(uint8_t channel)
 {
