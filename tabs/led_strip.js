@@ -9,6 +9,8 @@ TABS.led_strip = {
 TABS.led_strip.initialize = function (callback, scrollPosition) {
     var self = this;
 
+    TABS.led_strip.wireMode = false;
+
     if (GUI.active_tab != 'led_strip') {
         GUI.active_tab = 'led_strip';
         googleAnalytics.sendAppView('LED Strip');
@@ -153,8 +155,8 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         });
 
         $('.funcWire').click(function() {
-            (TABS.led_strip.wireMode) ? TABS.led_strip.wireMode=false : TABS.led_strip.wireMode=true;
             $(this).toggleClass('btnOn');
+            TABS.led_strip.wireMode = $(this).hasClass('btnOn'); 
             $('.mainGrid').toggleClass('gridWire');
         });
 
