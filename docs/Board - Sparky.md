@@ -10,13 +10,10 @@ The Sparky is a very low cost and very powerful board.
 * MPU9150 I2C Acc/Gyro/Mag
 * Baro
 
-# Status
-
-Flyable!
-
-Tested with revision 1 board. 
+Tested with revision 1 & 2 boards. 
 
 ## TODO
+
 * Sonar
 * Display (via Flex port)
 * SoftSerial - though having 3 hardware serial ports makes it a little redundant.
@@ -180,3 +177,31 @@ USB VCP *can* be used at the same time as other serial ports (unlike Naze32).
 All USART ports all support automatic hardware inversion which allows direct connection of serial rx receivers like the FrSky X4RSB - no external inverter needed.
 
 
+# Battery Monitoring Connections
+
+| Pin  | Signal | Function        |
+| ---- | ------ | --------------- |
+| PWM9 | PA4    | Battery Voltage |
+| PWM8 | PA7    | Current Meter   |
+
+## Voltage Monitoring
+
+The Sparky has no battery divider cricuit, PWM9 has an inline 10k resistor which has to be factored into the resistor calculations.
+The divider circuit should eventally create a voltage between 0v and 3.3v (MAX) at the MCU input pin.
+
+WARNING: Double check the output of your voltage divider using a voltmeter *before* connecting to the FC.
+
+### Example Circuit
+
+For a 3Cell battery divider the following circuit works:
+
+`Battery (+) ---< R1 >--- PWM9 ---< R2 >--- Battery (-)`
+ 
+* R1 = 8k2 (Grey Red Red)
+* R2 = 2k0 (Red Black Red)
+ 
+This gives a 2.2k for an 11.2v battery.  The `vbat_scale` for this divider should be set around `52`.
+
+## Current Monitoring
+
+Connect a current sensor to PWM8/PA7 that gives a range between 0v and 3.3v out (MAX). 

@@ -36,7 +36,11 @@ fully charged and connect the output from it to S5_IN/PA0/RC5.
 S5_IN/PA0/RC5 is Pin 7 on the 8 pin connector, second to last pin, opposite end from the GND/+5/PPM signal input.
 
 Note: When battery monitoring is enabled on the CC3D RC5 can no-longer be used for PWM input.
- 
+
+### Sparky
+
+See Sparky board chapter.
+
 ## Configuration
 
 Enable the `VBAT` feature.
