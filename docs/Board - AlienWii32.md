@@ -6,18 +6,19 @@ Here are the hardware specifications:
 
 - STM32F103CBT6 MCU (ALIENWIIF1)
 - STM32F303CCT6 MCU (ALIENWIIF3)
-- optional integrated serial/ppm receiver (ALIENWIIF3 only, future enhancement)
 - MPU6050 accelerometer/gyro sensor unit
 - 8x 4.2A brushed ESCs, integrated, to run the strongest micro motors
 - extra-wide traces on the PCB, for maximum power throughput
 - USB port, integrated
-- (*) serial connection for external DSM2/DSMX sat receiver (e.g. Spektrum SAT, OrangeRx R100 or Lemon RX)
-- alternatively PPM receiver connection (i.e. Deltang Rx31)
+- (*) serial connection for external DSM2/DSMX sat receiver (e.g. Spektrum SAT, OrangeRx R100, Lemon RX or Deltang Rx31)
 - ground and 3.3V for the receiver
 - hardware bind plug for easy binding
 - motor connections are at the corners for a clean look with reduced wiring
 - dimensions: 29x33mm
 - direct operation from an single cell lipoly battery
+- 3.3V LDO power regulator (ALIENWIIF1 only)
+- 3.3V buck-boost power converter (ALIENWIIF3 only)
+- battery monitoring with an white LED for buzzer functionality (ALIENWIIF3 only)
 
 (*) Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings (DSM2, 11bit, 11ms is preset). 
 

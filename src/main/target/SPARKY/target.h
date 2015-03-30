@@ -86,6 +86,20 @@
 #define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
+#define USE_ADC
+
+#define ADC_INSTANCE                ADC2
+#define ADC_DMA_CHANNEL             DMA2_Channel1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
+
+#define VBAT_ADC_GPIO               GPIOA
+#define VBAT_ADC_GPIO_PIN           GPIO_Pin_4
+#define VBAT_ADC_CHANNEL            ADC_Channel_1
+
+#define CURRENT_METER_ADC_GPIO      GPIOA
+#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_7
+#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
+
 #define BLACKBOX
 #define SERIAL_RX
 #define GPS

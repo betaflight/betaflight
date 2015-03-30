@@ -17,11 +17,14 @@ Flyable!
 Tested with revision 1 board. 
 
 ## TODO
-* ADC
 * Sonar
 * Display (via Flex port)
 * SoftSerial - though having 3 hardware serial ports makes it a little redundant.
 * Airplane PWM mappings.
+
+# Voltage and current monitoring (ADC support)
+
+Voltage monitoring is possible when enabled via PWM9 pin and current can be monitored via PWM8 pin. The voltage divider and current sensor need to be connected externally. The vbatscale cli parameter need to be adjusted to fit the sensor specification. For more details regarding the sensor hardware you can check here: https://github.com/TauLabs/TauLabs/wiki/User-Guide:-Battery-Configuration
 
 # Flashing
 
@@ -165,11 +168,11 @@ Flashing cleanflight will erase the TauLabs bootloader, this is not a problem an
 
 # Serial Ports
 
-| Value | Identifier   | RX        | TX         | Notes                                                                                       |
-| ----- | ------------ | --------- | ---------- | ------------------------------------------------------------------------------------------- |
-| 1     | USB VCP      | RX (USB)  | TX (USB)   |  |
-| 2     | USART1       | RX / PB7  | TX / PB6   | Conn1 / Flexi Port. |
-| 3     | USART2       | RX / PA3  | PWM6 / PA2 | On RX is on INPUT header.  Best port for Serial RX input |
+| Value | Identifier   | RX        | TX         | Notes                                                          |
+| ----- | ------------ | --------- | ---------- | -------------------------------------------------------------- |
+| 1     | USB VCP      | RX (USB)  | TX (USB)   |                                                                |
+| 2     | USART1       | RX / PB7  | TX / PB6   | Conn1 / Flexi Port.                                            |
+| 3     | USART2       | RX / PA3  | PWM6 / PA2 | On RX is on INPUT header.  Best port for Serial RX input       |
 | 4     | USART3       | RX / PB11 | TX / PB10  | RX/TX is on one end of the 6-pin header about the PWM outputs. |
 
 USB VCP *can* be used at the same time as other serial ports (unlike Naze32).
