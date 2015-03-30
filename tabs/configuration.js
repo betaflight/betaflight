@@ -260,11 +260,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         if(CONFIG.apiVersion >= 1.8) {
             $('input[name="autodisarmdelay"]').val(ARMING_CONFIG.auto_disarm_delay);
             $('input[name="disarmkillswitch"]').prop('checked', ARMING_CONFIG.disarm_kill_switch);
-            if(bit_check(BF_CONFIG.features, 4 + 1))//MOTOR_STOP
+            $('div.disarm').show();            
+            if(bit_check(BF_CONFIG.features, 4))//MOTOR_STOP
                 $('div.disarmdelay').show();
+            else
+                $('div.disarmdelay').hide();
         }
-        else       
-            $('div.disarm').hide();
         
         // fill throttle
         $('input[name="minthrottle"]').val(MISC.minthrottle);
