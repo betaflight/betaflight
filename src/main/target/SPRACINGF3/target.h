@@ -121,10 +121,6 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
 #define RSSI_ADC_CHANNEL            ADC_Channel_12
 
-#define RSSI_ADC_GPIO               GPIOB
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
-#define RSSI_ADC_CHANNEL            ADC_Channel_12
-
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1
 
