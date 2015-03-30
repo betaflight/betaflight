@@ -144,6 +144,7 @@ chip with 8 fat legs, which can be found at the base of the Naze32's direction a
 These chips are also supported:
 
 * Micron/ST M25P16 - 16 Mbit
+* Micron N25Q064 - 64 Mbit
 * Winbond W25Q64 - 64 Mbit
 
 ## Enabling the Blackbox (CLI)
