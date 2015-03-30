@@ -20,10 +20,10 @@
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
 #define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_4 // Blue LEDs - PB4
+#define LED0_PIN    Pin_4  // Blue (Rev 1 & 2) - PB4
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
 #define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_5  // Green LEDs - PB5
+#define LED1_PIN    Pin_5  // Green (Rev 1) / Red (Rev 2) - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
