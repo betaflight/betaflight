@@ -25,6 +25,9 @@
 #define LED1_GPIO   GPIOB
 #define LED1_PIN    Pin_5  // Green LEDs - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define BEEP_GPIO   GPIOA
+#define BEEP_PIN    Pin_5  // White LEDs - PA5
+#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
@@ -49,6 +52,7 @@
 
 #define MAG_AK8975_ALIGN CW0_DEG_FLIP
 
+#define BEEPER
 #define LED0
 #define LED1
 
@@ -87,9 +91,19 @@
 #define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
-#define BLACKBOX
+#define USE_ADC
+
+#define ADC_INSTANCE         ADC2
+#define ADC_DMA_CHANNEL      DMA2_Channel1
+#define ADC_AHB_PERIPHERAL   RCC_AHBPeriph_DMA2
+
+#define VBAT_ADC_GPIO        GPIOA
+#define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
+#define VBAT_ADC_CHANNEL     ADC_Channel_1
+
+//#define BLACKBOX
 #define SERIAL_RX
-#define GPS
+//#define GPS
 //#define DISPLAY
 #define AUTOTUNE
 #define USE_SERVOS
