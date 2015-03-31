@@ -16,8 +16,9 @@
  */
 
 #pragma once
+#include "sensors/battery.h"
 
-void sonarInit(void);
+void sonarInit(batteryConfig_t *batteryConfig);
 void sonarUpdate(void);
 
 int32_t sonarRead(void);

@@ -37,7 +37,7 @@
 
 static int32_t calculatedAltitude;
 
-void sonarInit(void)
+void sonarInit(batteryConfig_t *batteryConfig)
 {
 #if defined(NAZE) || defined(EUSTM32F103RC) || defined(PORT103R)
     static const sonarHardware_t const sonarPWM56 = {
@@ -54,8 +54,8 @@ void sonarInit(void)
         .exti_pin_source = GPIO_PinSource1,
         .exti_irqn = EXTI1_IRQn
     };
-    // If we are using parallel PWM for our receiver, then use motor pins 5 and 6 for sonar, otherwise use rc pins 7 and 8
-    if (feature(FEATURE_RX_PARALLEL_PWM)) {
+    // If we are using parallel PWM for our receiver or ADC current sensor, then use motor pins 5 and 6 for sonar, otherwise use rc pins 7 and 8
+    if (feature(FEATURE_RX_PARALLEL_PWM ) || (feature(FEATURE_CURRENT_METER) && batteryConfig->currentMeterType == CURRENT_SENSOR_ADC) ) {
         hcsr04_init(&sonarPWM56);
     } else {
         hcsr04_init(&sonarRC78);
