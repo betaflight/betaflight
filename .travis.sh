@@ -4,9 +4,10 @@ if [ $RUNTESTS ] ; then
 	cd ./src/test && make test
 else
 	if [ $PUBLISH_URL ] ; then
-
 		make -j2
 
+		BRANCH=$(git rev-parse --abbrev-ref HEAD)
+		REVISION=$(git rev-parse HEAD)
 		TARGET_FILE=obj/cleanflight_${TARGET}
 
 		if [ -f ${TARGET_FILE}.bin ];
@@ -20,7 +21,7 @@ else
 			exit 1
                 fi
 	
-		curl -F file=@${TARGET_FILE} ${PUBLISH_URL}
+		curl --form "file=@${TARGET_FILE}" --form "revision=${REVISION}" --form "branch=${BRANCH}" ${PUBLISH_URL}
 	else
 		make -j2
 	fi
