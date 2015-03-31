@@ -52,18 +52,11 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
 #ifdef STM32F303xC
     uint32_t inversionPins = 0;
 
-    // Inversion when using OPTION_BIDIR not supported yet.
-    if (uartPort->port.options & SERIAL_BIDIR) {
-        // Clear inversion on both Tx and Rx
-        inversionPins |= USART_InvPin_Tx | USART_InvPin_Rx;
-        inverted = false;
-    } else {
-        if (uartPort->port.mode & MODE_TX) {
-            inversionPins |= USART_InvPin_Tx;
-        }
-        if (uartPort->port.mode & MODE_RX) {
-            inversionPins |= USART_InvPin_Rx;
-        }
+    if (uartPort->port.mode & MODE_TX) {
+        inversionPins |= USART_InvPin_Tx;
+    }
+    if (uartPort->port.mode & MODE_RX) {
+        inversionPins |= USART_InvPin_Rx;
     }
 
     USART_InvPinCmd(uartPort->USARTx, inversionPins, inverted ? ENABLE : DISABLE);
@@ -92,6 +85,11 @@ static void uartReconfigure(uartPort_t *uartPort)
     USART_Init(uartPort->USARTx, &USART_InitStructure);
 
     usartConfigurePinInversion(uartPort);
+
+    if(uartPort->port.options & SERIAL_BIDIR)
+        USART_HalfDuplexCmd(uartPort->USARTx, ENABLE);
+    else
+        USART_HalfDuplexCmd(uartPort->USARTx, DISABLE);
 
     USART_Cmd(uartPort->USARTx, ENABLE);
 }
@@ -181,11 +179,6 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     }
 
     USART_Cmd(s->USARTx, ENABLE);
-
-    if (options & SERIAL_BIDIR)
-        USART_HalfDuplexCmd(s->USARTx, ENABLE);
-    else
-        USART_HalfDuplexCmd(s->USARTx, DISABLE);
 
     return (serialPort_t *)s;
 }
