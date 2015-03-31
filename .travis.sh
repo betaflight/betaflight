@@ -7,7 +7,8 @@ else
 		make -j2
 
 		BRANCH=$(git rev-parse --abbrev-ref HEAD)
-		REVISION=$(git rev-parse HEAD)
+		REVISION=$(git rev-parse --short HEAD)
+		RECENT_COMMITS=$(git log -n 10)
 		TARGET_FILE=obj/cleanflight_${TARGET}
 
 		if [ -f ${TARGET_FILE}.bin ];
@@ -21,7 +22,11 @@ else
 			exit 1
                 fi
 	
-		curl --form "file=@${TARGET_FILE}" --form "revision=${REVISION}" --form "branch=${BRANCH}" ${PUBLISH_URL}
+		curl \
+			--form "file=@${TARGET_FILE}" \
+			--form "revision=${REVISION}" \
+			--form "branch=${BRANCH}" \
+			--form "recent_commits=${RECENT_COMMITS}" ${PUBLISH_URL}
 	else
 		make -j2
 	fi
