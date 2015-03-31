@@ -8,7 +8,7 @@ else
 
 		BRANCH=$(git rev-parse --abbrev-ref HEAD)
 		REVISION=$(git rev-parse --short HEAD)
-		RECENT_COMMITS=$(git log -n 10)
+		RECENT_COMMITS=$(git shortlog -n25)
 		TARGET_FILE=obj/cleanflight_${TARGET}
 
 		if [ -f ${TARGET_FILE}.bin ];
