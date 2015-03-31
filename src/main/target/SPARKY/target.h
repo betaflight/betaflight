@@ -91,6 +91,7 @@
 #define GPS
 #define DISPLAY
 #define USE_SERVOS
+#define TELEMETRY
 
 #define LED_STRIP
 #if 1
