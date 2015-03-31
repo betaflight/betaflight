@@ -49,7 +49,8 @@ e.g. after configuring a port for GPS enable the GPS feature.
 * MSP/CLI can be shared with EITHER Blackbox OR telemetry.  In shared mode blackbox or telemetry will be output only when armed.
 * Smartport telemetry cannot be shared with MSP.
 * No other serial port sharing combinations are valid.
-* You can use as many telemetry systems as you like at the same time.
+* You can use as many different telemetry systems as you like at the same time.
+* You can only use each telemetry system once.  e.g.  FrSky telemetry cannot be used on two port, but MSP Telemetry + FrSky on different ports is fine.
 
 ### Baud Rates
 
