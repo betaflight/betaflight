@@ -9,18 +9,20 @@ TARGET_FILE=obj/cleanflight_${TARGET}
 if [ $RUNTESTS ] ; then
 	cd ./src/test && make test
 
-elif [ $PUBLISHMETA ] && [ $PUBLISH_URL ] ; then
-	RECENT_COMMITS=$(git shortlog -n25)
-	curl \
-		--form "recent_commits=${RECENT_COMMITS}" \
-		--form "revision=${REVISION}" \
-		--form "branch=${BRANCH}" \
-		--form "last_commit_date=${LAST_COMMIT_DATE}" \
-		--form "travis_build_number=${TRAVIS_BUILD_NUMBER}" \
-		${PUBLISH_URL}
+elif [ $PUBLISHMETA ] ; then
+	if [ $PUBLISH_URL ] ; then
+		RECENT_COMMITS=$(git shortlog -n25)
+		curl \
+			--form "recent_commits=${RECENT_COMMITS}" \
+			--form "revision=${REVISION}" \
+			--form "branch=${BRANCH}" \
+			--form "last_commit_date=${LAST_COMMIT_DATE}" \
+			--form "travis_build_number=${TRAVIS_BUILD_NUMBER}" \
+			${PUBLISH_URL}
+	fi
 else
 	if [ $PUBLISH_URL ] ; then
-		make -j4
+		make -j2
 
 
 		if   [ -f ${TARGET_FILE}.bin ] ; then
