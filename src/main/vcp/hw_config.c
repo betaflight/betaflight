@@ -39,6 +39,9 @@
 #include "drivers/system.h"
 #include "drivers/nvic.h"
 
+#include "build_config.h"
+
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -222,6 +225,7 @@ void USB_Interrupts_Config(void)
  *******************************************************************************/
 void USB_Cable_Config(FunctionalState NewState)
 {
+    UNUSED(NewState);
 }
 
 /*******************************************************************************
