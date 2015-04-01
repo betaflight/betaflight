@@ -6,9 +6,6 @@ REVISION=$(git rev-parse --short HEAD)
 LAST_COMMIT_DATE=$(git log -1 --date=short --format="%cd")
 TARGET_FILE=obj/cleanflight_${TARGET}
 
-echo "dumping all env vars"
-set
-
 if [ $RUNTESTS ] ; then
 	cd ./src/test && make test
 
