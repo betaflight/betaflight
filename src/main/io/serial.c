@@ -27,12 +27,18 @@
 #include "common/utils.h"
 
 #include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/serial.h"
+#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 #include "drivers/serial_softserial.h"
+#endif
+
+#if defined(USE_USART1) || defined(USE_USART2) || defined(USE_USART3)
 #include "drivers/serial_uart.h"
+#endif
+
+#if defined(USE_VCP)
 #include "drivers/serial_usb_vcp.h"
+#endif
 
 #include "io/serial.h"
 #include "serial_cli.h"

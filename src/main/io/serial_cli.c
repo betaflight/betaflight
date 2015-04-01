@@ -1611,7 +1611,7 @@ static void cliVersion(char *cmdline)
     );
 }
 
-void cliProcess()
+void cliProcess(void)
 {
     if (!cliPort) {
         return;

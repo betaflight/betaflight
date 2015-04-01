@@ -55,6 +55,7 @@ TESTS = \
 	ledstrip_unittest \
 	ws2811_unittest \
 	encoding_unittest \
+	io_serial_unittest \
 	lowpass_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
@@ -389,6 +390,28 @@ flight_mixer_unittest : \
 
 	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/io/serial.o : \
+	$(USER_DIR)/io/serial.c \
+	$(USER_DIR)/io/serial.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/serial.c -o $@
+
+$(OBJECT_DIR)/io_serial_unittest.o : \
+	$(TEST_DIR)/io_serial_unittest.cc \
+	$(USER_DIR)/io/serial.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/io_serial_unittest.cc -o $@
+
+io_serial_unittest : \
+	$(OBJECT_DIR)/io/serial.o \
+	$(OBJECT_DIR)/io_serial_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
 
 test: $(TESTS)
 	set -e && for test in $(TESTS) ; do \

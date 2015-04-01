@@ -45,6 +45,41 @@
 #define MAX_SOFTSERIAL_PORTS 1
 #endif
 
+typedef struct softSerial_s {
+    serialPort_t     port;
+
+    const timerHardware_t *rxTimerHardware;
+    volatile uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
+
+    const timerHardware_t *txTimerHardware;
+    volatile uint8_t txBuffer[SOFTSERIAL_BUFFER_SIZE];
+
+    uint8_t          isSearchingForStartBit;
+    uint8_t          rxBitIndex;
+    uint8_t          rxLastLeadingEdgeAtBitIndex;
+    uint8_t          rxEdge;
+
+    uint8_t          isTransmittingData;
+    int8_t           bitsLeftToTransmit;
+
+    uint16_t         internalTxBuffer;  // includes start and stop bits
+    uint16_t         internalRxBuffer;  // includes start and stop bits
+
+    uint16_t         transmissionErrors;
+    uint16_t         receiveErrors;
+
+    uint8_t          softSerialPortIndex;
+
+    timerCCHandlerRec_t timerCb;
+    timerCCHandlerRec_t edgeCb;
+} softSerial_t;
+
+extern timerHardware_t* serialTimerHardware;
+extern softSerial_t softSerialPorts[];
+
+extern const struct serialPortVTable softSerialVTable[];
+
+
 softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 
 void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture);

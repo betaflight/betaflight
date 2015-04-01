@@ -60,7 +60,7 @@ typedef enum {
     SERIAL_PORT_IDENTIFIER_MAX = SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;
 
-serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
+extern serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
 //
 // runtime

@@ -418,6 +418,6 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
     return 0;
 }
 
-bool failsafeHasTimerElapsed(void) { }
+bool failsafeHasTimerElapsed(void) { return false; }
 
 }
