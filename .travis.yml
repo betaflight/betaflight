@@ -1,5 +1,6 @@
 env:
   - RUNTESTS=True
+  - PUBLISHMETA=True
   - TARGET=CC3D
   - TARGET=CC3D OPBL=yes 
   - TARGET=CHEBUZZF3
