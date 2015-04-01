@@ -241,8 +241,8 @@ serialPort_t *openSerialPort(
     portOptions_t options)
 {
     serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(identifier);
-    if (!serialPortUsage->enabled || serialPortUsage->function != FUNCTION_NONE) {
-        // already in use
+    if (!serialPortUsage || serialPortUsage->function != FUNCTION_NONE) {
+        // not available / already in use
         return NULL;
     }
 
@@ -323,19 +323,18 @@ void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled)
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
 
-        serialPortUsageList[index].enabled = true;
-
+        if (!softserialEnabled) {
+            if (0
 #ifdef USE_SOFTSERIAL1
-        if (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) {
-            serialPortUsageList[index].enabled = softserialEnabled;
-        }
+                || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
 #endif
-
 #ifdef USE_SOFTSERIAL2
-        if (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2) {
-            serialPortUsageList[index].enabled = softserialEnabled;
-        }
+                || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
 #endif
+            ) {
+                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            }
+        }
     }
 }
 

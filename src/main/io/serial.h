@@ -50,6 +50,7 @@ extern uint32_t baudRates[];
 
 // serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
+    SERIAL_PORT_NONE = -1,
     SERIAL_PORT_USART1 = 0,
     SERIAL_PORT_USART2,
     SERIAL_PORT_USART3,
@@ -69,7 +70,6 @@ typedef struct serialPortUsage_s {
     serialPortIdentifier_e identifier;
     serialPort_t *serialPort;
     serialPortFunction_e function;
-    bool enabled;
 } serialPortUsage_t;
 
 serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction);
