@@ -19,7 +19,7 @@ elif [ $PUBLISHMETA ] && [ $PUBLISH_URL ] ; then
 		--form "revision=${REVISION}" \
 		--form "branch=${BRANCH}" \
 		--form "last_commit_date=${LAST_COMMIT_DATE}" \
-		--form "travis_job_id=${TRAVIS_JOB_ID}" \
+		--form "travis_build_number=${TRAVIS_BUILD_NUMBER}" \
 		${PUBLISH_URL}
 else
 	if [ $PUBLISH_URL ] ; then
@@ -40,7 +40,7 @@ else
 			--form "revision=${REVISION}" \
 			--form "branch=${BRANCH}" \
 			--form "last_commit_date=${LAST_COMMIT_DATE}" \
-            --form "travis_job_id=${TRAVIS_JOB_ID}" \
+            --form "travis_build_number=${TRAVIS_BUILD_NUMBER}" \
 			${PUBLISH_URL}
 	else
 		make -j2
