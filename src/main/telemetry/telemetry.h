@@ -21,6 +21,7 @@
  *  Created on: 6 Apr 2014
  *      Author: Hydra
  */
+#include "rx/rx.h"
 
 #ifndef TELEMETRY_COMMON_H_
 #define TELEMETRY_COMMON_H_
@@ -46,7 +47,7 @@ typedef struct telemetryConfig_s {
 } telemetryConfig_t;
 
 void checkTelemetryState(void);
-void handleTelemetry(void);
+void handleTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 
 bool determineNewTelemetryEnabledState(portSharing_e portSharing);
 
