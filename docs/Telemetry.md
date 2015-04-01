@@ -93,6 +93,14 @@ It is transmit only, it can work at any supported baud rate.
 
 Smartport is a telemetry system used by newer FrSky transmitters and receivers such as the Taranis/XJR and X8R, X6R and X4R(SB).
 
-Smartport telemetry is currently experimental, more information can be found here: https://github.com/frank26080115/cleanflight/wiki/Using-Smart-Port
+More information about the implementation can be found here: https://github.com/frank26080115/cleanflight/wiki/Using-Smart-Port
 
 In time this documentation will be updated with further details.
+
+Smartport devices can be connected directly to STM32F3 boards such as the SPRacingF3 and Sparky, with a single straight through cable without the need for any hardware modifications on the FC or the receiver.
+
+For Smartport on F3 based boards, enable the telemetry inversion setting.
+
+```
+set telemetry_inversion = 1
+```
