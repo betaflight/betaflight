@@ -17,7 +17,7 @@
 
 #pragma once
 
-#if defined(STM32F10X) || defined(UNIT_TEST)
+#if defined(STM32F10X)
 typedef enum
 {
     Mode_AIN = 0x0,
