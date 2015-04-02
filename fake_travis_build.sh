@@ -6,10 +6,12 @@ targets=("PUBLISHMETA=True" "RUNTESTS=True" \
 "TARGET=OLIMEXINO" "TARGET=PORT103R" "TARGET=SPARKY" "TARGET=STM32F3DISCOVERY" \
 "TARGET=ALIENWIIF1" "TARGET=ALIENWIIF3")
 
+#fake a travis build number
 export TRAVIS_BUILD_NUMBER=$(date +%s)
+
 for target in "${targets[@]}"
 do
-    unset RUNTESTS PUBLISHMETA TARGET OPBL
+	unset RUNTESTS PUBLISHMETA TARGET OPBL
 	eval "export $target"
 	make clean
 	./.travis.sh
