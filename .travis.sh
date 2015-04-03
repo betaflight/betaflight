@@ -13,13 +13,7 @@ if [ $RUNTESTS ] ; then
 elif [ $PUBLISHDOCS ] ; then
 	if [ $PUBLISH_URL ] ; then
 
-		#sudo apt-get install ruby1.9.1 ruby1.9.1-dev rubygems zlib1g-dev libssl-dev
 		sudo apt-get install zlib1g-dev libssl-dev wkhtmltopdf libxml2-dev libxslt-dev #ruby-rvm
-		# rvmsudo gem1.9.1 install gimli
-
-    #rvmsudo rvm package install openssl
-		#rvmsudo rvm install 1.9.3-p551 -j 4
-    #rvmsudo rvm use --default 1.9.3-p551
     rvmsudo gem install gimli
 
 		./build_docs.sh
@@ -68,3 +62,4 @@ else
 		make -j2
 	fi
 fi
+

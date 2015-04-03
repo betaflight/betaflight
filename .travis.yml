@@ -1,28 +1,25 @@
 env:
-#  - RUNTESTS=True
-#  - PUBLISHMETA=True
+  - RUNTESTS=True
+  - PUBLISHMETA=True
   - PUBLISHDOCS=True
-#  - TARGET=CC3D
-#  - TARGET=CC3D OPBL=yes
-#  - TARGET=CHEBUZZF3
-#  - TARGET=CJMCU
-#  - TARGET=EUSTM32F103RC
-#  - TARGET=SPRACINGF3
-#  - TARGET=NAZE
-#  - TARGET=NAZE32PRO
-#  - TARGET=OLIMEXINO
-#  - TARGET=PORT103R
-#  - TARGET=SPARKY
-#  - TARGET=STM32F3DISCOVERY
-#  - TARGET=ALIENWIIF1
-#  - TARGET=ALIENWIIF3
+  - TARGET=CC3D
+  - TARGET=CC3D OPBL=yes
+  - TARGET=CHEBUZZF3
+  - TARGET=CJMCU
+  - TARGET=EUSTM32F103RC
+  - TARGET=SPRACINGF3
+  - TARGET=NAZE
+  - TARGET=NAZE32PRO
+  - TARGET=OLIMEXINO
+  - TARGET=PORT103R
+  - TARGET=SPARKY
+  - TARGET=STM32F3DISCOVERY
+  - TARGET=ALIENWIIF1
+  - TARGET=ALIENWIIF3
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp
 compiler: clang
-
-rvm:
-  - 1.9.1
 
 before_install:
   - sudo apt-get update
@@ -36,7 +33,7 @@ install:
 before_script: arm-none-eabi-gcc --version
 script: ./.travis.sh
 
-#notifications:
-#  irc: "chat.freenode.net#cleanflight"
-#  use_notice: true
-#  skip_join: true
+notifications:
+  irc: "chat.freenode.net#cleanflight"
+  use_notice: true
+  skip_join: true
