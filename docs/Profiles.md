@@ -6,7 +6,7 @@ Currently three profiles are supported. The default profile is profile `0`.
 
 ## Changing profiles
 
-Profiles can be slected using a GUI or the following stick combinations
+Profiles can be selected using a GUI or the following stick combinations:
 
 | Profile | Throttle | Yaw   | Pitch  | Roll   |
 | ------- | -------- | ----- | ------ | ------ |
