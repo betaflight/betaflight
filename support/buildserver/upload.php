@@ -3,7 +3,9 @@
 
 	$baseDir = "/var/www/builds/";
 
-	$myFile = $_FILES["file"];
+	$firmwareFile = $_FILES["file"];
+	$manualFile = $_FILES["manual"];
+
 	$recentCommits = $_POST["recent_commits"];
 	$travisJobId = sanitize($_POST["travis_build_number"]);
 	$lastCommitDate = sanitize($_POST["last_commit_date"]);
@@ -13,11 +15,21 @@
 	$uploadDir = $baseDir . "/" . $lastCommitDate . "/";
 	$prefix = $uploadDir . $travisJobId . "_" . $revision;
 
-	if(!file_exists($uploadDir)) mkdir($uploadDir, 0660, true);
+	if(!file_exists($uploadDir)) mkdir($uploadDir, 0770, true);
 
-	if($myFile) {
-		$uploadfile = $prefix . "_" . (basename($myFile['name']));
-		if(move_uploaded_file($myFile['tmp_name'], $uploadfile)) {
+	if($firmwareFile) {
+		$uploadfile = $prefix . "_" . (basename($firmwareFile['name']));
+		if(move_uploaded_file($firmwareFile['tmp_name'], $uploadfile)) {
+			echo "upload succeeded.\n";
+		}
+		else {
+			echo "upload failed $uploadfile\n";
+		}
+	}
+
+	if($manualFile) {
+		$uploadfile = $prefix . "_" . (basename($manualFile['name']));
+		if(move_uploaded_file($manualFile['tmp_name'], $uploadfile)) {
 			echo "upload succeeded.\n";
 		}
 		else {
