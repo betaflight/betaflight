@@ -1,8 +1,9 @@
 env:
   - RUNTESTS=True
   - PUBLISHMETA=True
+  - PUBLISHDOCS=True
   - TARGET=CC3D
-  - TARGET=CC3D OPBL=yes 
+  - TARGET=CC3D OPBL=yes
   - TARGET=CHEBUZZF3
   - TARGET=CJMCU
   - TARGET=EUSTM32F103RC
@@ -15,11 +16,12 @@ env:
   - TARGET=STM32F3DISCOVERY
   - TARGET=ALIENWIIF1
   - TARGET=ALIENWIIF3
+
 # We use cpp for unit tests, and c for the main project.
 language: cpp
 compiler: clang
 
-before_install: 
+before_install:
   - sudo apt-get update
   - wget "https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q3-update/+download/gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2"
 

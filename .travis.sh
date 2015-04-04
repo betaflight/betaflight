@@ -9,6 +9,24 @@ TARGET_FILE=obj/cleanflight_${TARGET}
 if [ $RUNTESTS ] ; then
 	cd ./src/test && make test
 
+	# A hacky way of running the unit tests at the same time as the normal builds.
+elif [ $PUBLISHDOCS ] ; then
+	if [ $PUBLISH_URL ] ; then
+
+		sudo apt-get install zlib1g-dev libssl-dev wkhtmltopdf libxml2-dev libxslt-dev #ruby-rvm
+    rvmsudo gem install gimli
+
+		./build_docs.sh
+
+		curl -k \
+			--form "manual=@docs/Manual.pdf" \
+			--form "revision=${REVISION}" \
+			--form "branch=${BRANCH}" \
+			--form "last_commit_date=${LAST_COMMIT_DATE}" \
+			--form "travis_build_number=${TRAVIS_BUILD_NUMBER}" \
+			${PUBLISH_URL}
+	fi
+
 elif [ $PUBLISHMETA ] ; then
 	if [ $PUBLISH_URL ] ; then
 		RECENT_COMMITS=$(git shortlog -n25)
@@ -20,13 +38,14 @@ elif [ $PUBLISHMETA ] ; then
 			--form "travis_build_number=${TRAVIS_BUILD_NUMBER}" \
 			${PUBLISH_URL}
 	fi
+
 else
 	if [ $PUBLISH_URL ] ; then
 		make -j2
 		if   [ -f ${TARGET_FILE}.bin ] ; then
-                        TARGET_FILE=${TARGET_FILE}.bin
+			TARGET_FILE=${TARGET_FILE}.bin
 		elif [ -f ${TARGET_FILE}.hex ] ; then
-                        TARGET_FILE=${TARGET_FILE}.hex
+			TARGET_FILE=${TARGET_FILE}.hex
 		else
 			echo "build artifact (hex or bin) for ${TARGET_FILE} not found, aborting";
 			exit 1
@@ -43,3 +62,4 @@ else
 		make -j2
 	fi
 fi
+

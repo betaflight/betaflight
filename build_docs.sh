@@ -2,12 +2,12 @@
 
 filename=Manual
 doc_files=(
-    'Introduction.md'
-    'Safety.md'
-    'Installation.md'
-    'Configuration.md'
-    'Cli.md'
-    'Serial.md'
+	'Introduction.md'
+	'Safety.md'
+	'Installation.md'
+	'Configuration.md'
+	'Cli.md'
+	'Serial.md'
 	'Rx.md'
 	'Spektrum bind.md'
 	'Failsafe.md'
@@ -17,23 +17,23 @@ doc_files=(
 	'Telemetry.md'
 	'LedStrip.md'
 	'Display.md'
-    'Buzzer.md'
+	'Buzzer.md'
 	'Sonar.md'
 	'Profiles.md'
-    'Modes.md'
-    'Inflight Adjustments.md'
-    'Controls.md'
+	'Modes.md'
+	'Inflight Adjustments.md'
+	'Controls.md'
 	'Autotune.md'
 	'Blackbox.md'
 	'Migrating from baseflight.md'
 	'Boards.md'
-    'Board - AlienWii32.md'
-    'Board - CC3D.md'
-    'Board - CJMCU.md'
-    'Board - Naze32.md'
-    'Board - Sparky.md'
-    'Board - Olimexino.md'
-    'Board - CheBuzzF3.md'
+	'Board - AlienWii32.md'
+	'Board - CC3D.md'
+	'Board - CJMCU.md'
+	'Board - Naze32.md'
+	'Board - Sparky.md'
+	'Board - Olimexino.md'
+	'Board - ChebuzzF3.md'
 )
 
 if which gimli >/dev/null; then
@@ -47,7 +47,7 @@ if which gimli >/dev/null; then
 		cat "$i" >> ${filename}.md
 	done
 	rm -f ${filename}.pdf
-	gimli -f ${filename}.md
+	gimli -f ${filename}.md -stylesheet override.css
 	rm ${filename}.md 
 	popd >/dev/null
 else
