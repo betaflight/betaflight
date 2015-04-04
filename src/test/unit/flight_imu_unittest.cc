@@ -90,6 +90,15 @@ int16_t accADC[XYZ_AXIS_COUNT];
 int16_t gyroADC[XYZ_AXIS_COUNT];
 
 
+uint16_t enableFlightMode(flightModeFlags_e mask)
+{
+    return flightModeFlags |= (mask);
+}
+
+uint16_t disableFlightMode(flightModeFlags_e mask)
+{
+    return flightModeFlags &= ~(mask);
+}
 
 void gyroUpdate(void) {};
 bool sensors(uint32_t mask)

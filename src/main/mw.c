@@ -243,6 +243,11 @@ void annexCode(void)
             if (feature(FEATURE_VBAT)) {
                 updateBatteryVoltage();
                 batteryState = calculateBatteryState();
+                //handle beepers for battery levels
+                if (batteryState == BATTERY_CRITICAL)
+                    beeper(BEEPER_BAT_CRIT_LOW);    //critically low battery
+                else if (batteryState == BATTERY_WARNING)
+                    beeper(BEEPER_BAT_LOW);         //low battery
             }
 
             if (feature(FEATURE_CURRENT_METER)) {
@@ -252,7 +257,7 @@ void annexCode(void)
         }
     }
 
-    beepcodeUpdateState(batteryState);
+    beeperUpdate();          //call periodic beeper handler
 
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
@@ -318,6 +323,8 @@ void mwDisarm(void)
             finishBlackbox();
         }
 #endif
+
+        beeper(BEEPER_DISARMING);      // emit disarm tone
     }
 }
 
@@ -356,6 +363,16 @@ void mwArm(void)
 #endif
             disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
+            //beep to indicate arming
+#ifdef GPS
+            if (feature(FEATURE_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5)
+                beeper(BEEPER_ARMING_GPS_FIX);
+            else
+                beeper(BEEPER_ARMING);
+#else
+            beeper(BEEPER_ARMING);
+#endif
+
             return;
         }
     }
@@ -381,9 +398,9 @@ void handleInflightCalibrationStickPosition(void)
     } else {
         AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
         if (AccInflightCalibrationArmed) {
-            queueConfirmationBeep(4);
+            beeper(BEEPER_ACC_CALIBRATION);
         } else {
-            queueConfirmationBeep(6);
+            beeper(BEEPER_ACC_CALIBRATION_FAIL);
         }
     }
 }
@@ -498,6 +515,8 @@ void executePeriodicTasks(void)
 
 void processRx(void)
 {
+    static bool armedBeeperOn = false;
+
     calculateRxChannelsAndUpdateFailsafe(currentTime);
 
     // in 3D mode, we need to be able to disarm by switch at any time
@@ -523,17 +542,41 @@ void processRx(void)
         pidResetErrorAngle();
         pidResetErrorGyro();
     }
-    // When armed and motors aren't spinning, disarm board after delay so users without buzzer won't lose fingers.
+    // When armed and motors aren't spinning, do beeps and then disarm
+    // board after delay so users without buzzer won't lose fingers.
     // mixTable constrains motor commands, so checking  throttleStatus is enough
     if (ARMING_FLAG(ARMED)
-        && feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING)
-        && masterConfig.auto_disarm_delay != 0
-        && isUsingSticksForArming()) {
+                     && feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING)) {
+        if (isUsingSticksForArming()) {
+            if (throttleStatus == THROTTLE_LOW) {  //throttle is low; disarm after delay
+                if (masterConfig.auto_disarm_delay != 0 &&
+                                       (int32_t)(disarmAt - millis()) < 0) {
+                    mwDisarm();   //disarm configured and delay is over
+                    armedBeeperOn = false;  //track beep status
+                }
+                else {  //still armed; do warning beeps while armed
+                    beeper(BEEPER_ARMED);
+                    armedBeeperOn = true;   //track beep status
+                }
+            }
+            else {  //throttle is not low
+                if (masterConfig.auto_disarm_delay != 0)  //extend disarm time
+                    disarmAt = millis() + masterConfig.auto_disarm_delay*1000;
+                if (armedBeeperOn) {        //if BEEPER_ARMED in progress then
+                    beeper(BEEPER_STOP);    //stop trailing beep
+                    armedBeeperOn = false;  //track beep status
+                }
+            }
+        }
+        else {  //arming is via AUX switch; beep while throttle low
         if (throttleStatus == THROTTLE_LOW) {
-            if ((int32_t)(disarmAt - millis()) < 0)  // delay is over
-                mwDisarm();
-        } else {
-            disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // extend delay
+                beeper(BEEPER_ARMED);
+                armedBeeperOn = true;       //track beep status
+            } else if (armedBeeperOn) {  //if BEEPER_ARMED in progress then
+                beeper(BEEPER_STOP);     //stop trailing beep
+                armedBeeperOn = false;   //track beep status
+            }
+
         }
     }
 

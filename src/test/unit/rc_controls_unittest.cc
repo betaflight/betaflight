@@ -191,6 +191,10 @@ void queueConfirmationBeep(uint8_t) {
     callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]++;
 }
 
+void beeper(uint8_t mode) {
+    UNUSED(mode);
+}
+
 void changeControlRateProfile(uint8_t) {
     callCounts[COUNTER_CHANGE_CONTROL_RATE_PROFILE]++;
 }

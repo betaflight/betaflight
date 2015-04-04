@@ -21,6 +21,7 @@
 #include "common/axis.h"
 
 #include "rx/rx.h"
+#include "io/beeper.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "config/runtime_config.h"
@@ -133,11 +134,15 @@ void failsafeUpdateState(void)
             rcData[i] = rxConfig->midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
         }
         rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
+        // beep SOS tones (armed and TX signal lost; autolanding/autodisarm)
+        beeper(BEEPER_TX_LOST_ARMED);
         failsafeState.events++;
     }
 
     if (failsafeShouldHaveCausedLandingByNow() || !ARMING_FLAG(ARMED)) {
         mwDisarm();
+        // beep to indicate TX signal lost (repeat until TX is okay)
+        beeper(BEEPER_TX_LOST);
     }
 }
 
