@@ -24,6 +24,7 @@
 #include "common/maths.h"
 
 #include "drivers/barometer.h"
+#include "drivers/system.h"
 #include "config/config.h"
 
 #include "sensors/barometer.h"
@@ -104,8 +105,7 @@ void baroUpdate(uint32_t currentTime)
     if ((int32_t)(currentTime - baroDeadline) < 0)
         return;
 
-    baroDeadline = currentTime;
-
+    baroDeadline = 0;
     switch (state) {
         case BAROMETER_NEEDS_SAMPLES:
             baro.get_ut();
@@ -127,6 +127,7 @@ void baroUpdate(uint32_t currentTime)
             baroPressureSum = recalculateBarometerTotal(barometerConfig->baro_sample_count, baroPressureSum, baroPressure);
         break;
     }
+    baroDeadline += micros();        // make sure deadline is set after calling baro callbacks
 }
 
 int32_t baroCalculateAltitude(void)
