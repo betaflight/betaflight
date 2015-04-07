@@ -152,6 +152,9 @@ int16_t debug[4];
 
 uint8_t stateFlags;
 
+uint16_t batteryWarningVoltage;
+uint8_t useHottAlarmSoundPeriod (void) { return 0; }
+
 
 uint8_t GPS_numSat;
 int32_t GPS_coord[2];
