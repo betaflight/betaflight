@@ -787,6 +787,14 @@ void validateAndFixConfig(void)
     }
 #endif
 
+    /*
+     * The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
+     * The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
+     */
+    if (masterConfig.retarded_arm && masterConfig.mixerConfig.pid_at_min_throttle) {
+        masterConfig.mixerConfig.pid_at_min_throttle = 0;
+    }
+
     useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
