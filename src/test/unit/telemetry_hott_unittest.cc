@@ -167,6 +167,12 @@ int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 int32_t amperage;
 int32_t mAhDrawn;
 
+uint32_t fixedMillis = 0;
+
+uint32_t millis(void) {
+    return fixedMillis;
+}
+
 uint32_t micros(void) { return 0; }
 
 uint8_t serialTotalBytesWaiting(serialPort_t *instance) {
