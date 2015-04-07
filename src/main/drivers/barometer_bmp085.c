@@ -31,17 +31,19 @@
 
 #include "barometer_bmp085.h"
 
-#if defined(BARO) && defined(BARO_EOC_GPIO)
+#ifdef BARO
+
+#if defined(BARO_EOC_GPIO)
 // BMP085, Standard address 0x77
-static bool convDone = false;
-static uint16_t convOverrun = 0;
+static bool isConversionComplete = false;
+static uint16_t bmp085ConversionOverrun = 0;
 
 // EXTI14 for BMP085 End of Conversion Interrupt
 void EXTI15_10_IRQHandler(void)
 {
     if (EXTI_GetITStatus(EXTI_Line14) == SET) {
         EXTI_ClearITPendingBit(EXTI_Line14);
-        convDone = true;
+        isConversionComplete = true;
     }
 }
 #endif
@@ -151,7 +153,7 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
     if (bmp085InitDone)
         return true;
 
-#if defined(BARO) && defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
+#if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
     if (config) {
         EXTI_InitTypeDef EXTI_InitStructure;
         NVIC_InitTypeDef NVIC_InitStructure;
@@ -265,8 +267,8 @@ static int32_t bmp085_get_pressure(uint32_t up)
 
 static void bmp085_start_ut(void)
 {
-#if defined(BARO) && defined(BARO_EOC_GPIO)
-    convDone = false;
+#if defined(BARO_EOC_GPIO)
+    isConversionComplete = false;
 #endif
     i2cWrite(BMP085_I2C_ADDR, BMP085_CTRL_MEAS_REG, BMP085_T_MEASURE);
 }
@@ -275,10 +277,9 @@ static void bmp085_get_ut(void)
 {
     uint8_t data[2];
 
-#if defined(BARO) && defined(BARO_EOC_GPIO)
-    // wait in case of cockup
-    if (!convDone) {
-        convOverrun++;
+#if defined(BARO_EOC_GPIO)
+    if (!isConversionComplete) {
+        bmp085ConversionOverrun++;
         return; // keep old value
     }
 #endif
@@ -293,8 +294,8 @@ static void bmp085_start_up(void)
 
     ctrl_reg_data = BMP085_P_MEASURE + (bmp085.oversampling_setting << 6);
 
-#if defined(BARO) && defined(BARO_EOC_GPIO)    
-    convDone = false;
+#if defined(BARO_EOC_GPIO)
+    isConversionComplete = false;
 #endif
 
     i2cWrite(BMP085_I2C_ADDR, BMP085_CTRL_MEAS_REG, ctrl_reg_data);
@@ -308,10 +309,10 @@ static void bmp085_get_up(void)
 {
     uint8_t data[3];
 
-#if defined(BARO) && defined(BARO_EOC_GPIO)
+#if  defined(BARO_EOC_GPIO)
     // wait in case of cockup
-    if (!convDone) {
-        convOverrun++;
+    if (!isConversionComplete) {
+        bmp085ConversionOverrun++;
         return; // keep old value
     }
 #endif
@@ -354,3 +355,5 @@ static void bmp085_get_cal_param(void)
     bmp085.cal_param.mc = (data[18] << 8) | data[19];
     bmp085.cal_param.md = (data[20] << 8) | data[21];
 }
+
+#endif
