@@ -57,7 +57,7 @@ Use the cli `defaults` command first.
 
 When restoring from a backup it is a good idea to do a dump of the latest defaults so you know what has changed - if you do this each time a firmware release is created youwill be able to see the cli changes between firmware versions.  For instance, in December 2014 the default GPS navigation PIDs changed.  If you blindly restore your backup you would not benefit from these new defaults.
 
-Use the CLI and send all the output from the saved from the backup commands.
+Use the CLI and send all the output from the saved backup commands.
 
 Do not send the file too fast, if you do the FC might not be able to keep up when using USART adapters (including built in ones) since there is no hardware serial flow control.
 
