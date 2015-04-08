@@ -143,9 +143,11 @@ void delay(uint32_t ms)
 // FIXME replace mode with an enum so usage can be tracked, currently mode is a magic number
 void failureMode(uint8_t mode)
 {
+    uint8_t flashesRemaining = 10;
+
     LED1_ON;
     LED0_OFF;
-    while (1) {
+    while (flashesRemaining--) {
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(475 * mode - 2);
@@ -153,6 +155,8 @@ void failureMode(uint8_t mode)
         delay(25);
         BEEP_OFF;
     }
+
+    systemResetToBootloader();
 }
 
 
