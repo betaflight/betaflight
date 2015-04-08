@@ -66,9 +66,8 @@ uint8_t detectSpiDevice(void)
     uint8_t in[4];
     uint32_t flash_id;
 
-    delay(50); // short delay required after initialisation of SPI device instance.
-
     // try autodetect flash chip
+    delay(50); // short delay required after initialisation of SPI device instance.
     ENABLE_SPI_CS;
     spiTransfer(NAZE_SPI_INSTANCE, in, out, sizeof(out));
     DISABLE_SPI_CS;
@@ -77,7 +76,9 @@ uint8_t detectSpiDevice(void)
     if (flash_id == FLASH_M25P16_ID)
         return SPI_DEVICE_FLASH;
 
+
     // try autodetect MPU
+    delay(50);
     ENABLE_SPI_CS;
     spiTransferByte(NAZE_SPI_INSTANCE, MPU6500_RA_WHOAMI | MPU6500_BIT_RESET);
     in[0] = spiTransferByte(NAZE_SPI_INSTANCE, 0xff);
