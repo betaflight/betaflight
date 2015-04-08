@@ -248,7 +248,7 @@ static void sendSpeed(void)
     serialize16(uint16_t(GPS_speed * 0.0194384449));
     sendDataHead(ID_GPS_SPEED_AP);
     //get 2 digits for AP
-    serialize16((uint16_t(GPS_speed * 0.0194384449)*100)%100);
+    serialize16(uint16_t((GPS_speed * 0.0194384449)*100)%100);
 }
 #endif
 
