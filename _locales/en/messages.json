@@ -217,7 +217,7 @@
         "message": "Contributing"
     },
     "defaultContributingText": {
-        "message": "If you would like to help make Cleanflight even better you can help in many ways, including:<br /><ul><li>Answering other users questions on the forums and IRC.</li><li>Contributing code to the firmware and configurator - new features, fixes, improvements</li><li>Testing <a href=\"https://github.com/cleanflight/cleanflight/pulls\" target=\"_blank\">new features/fixes</a> and providing feedback.</li><li>Helping out with <a href=\"https://github.com/cleanflight/cleanflight/issues\" target=\"_blank\">issues and commenting on feature requests</a>.</li></ul>"
+        "message": "If you would like to help make Cleanflight even better you can help in many ways, including:<br /><ul><li>Answering other users questions on the forums and IRC.</li><li>Contributing code to the firmware and configurator - new features, fixes, improvements</li><li>Testing <a href=\"https://github.com/cleanflight/cleanflight/pulls\" target=\"_blank\">new features/fixes</a> and providing feedback.</li><li>Helping out with <a href=\"https://github.com/cleanflight/cleanflight/issues\" target=\"_blank\">issues and commenting on feature requests</a>.</li><li><a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSQKVT6UYKGL6\" target=\"_blank\" title=\"Donate\">Donating</a> and <a href=\"http://www.bcmultirotors.com/#!/Cleanflight/c/12311211/offset=0&sort=nameAsc\" title=\"www.bcmultirotors.com\" target=\"_blank\">buying a T-Shirt</a></li></ul>"
     },
     "defaultChangelogHead": {
         "message": "Configurator - Changelog"
