@@ -23,6 +23,8 @@
 
 #include "common/maths.h"
 
+#include "nvic.h"
+
 #include "system.h"
 #include "gpio.h"
 #include "bus_i2c.h"
@@ -31,12 +33,16 @@
 #include "accgyro.h"
 #include "accgyro_mpu6050.h"
 
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+
 // MPU6050, Standard address 0x68
-// MPU_INT on PB13 on rev4 hardware
+// MPU_INT on PB13 on rev4 Naze32 hardware
 #define MPU6050_ADDRESS         0x68
 
 #define DMP_MEM_START_ADDR 0x6E
 #define DMP_MEM_R_W 0x6F
+
+// RA = Register Address
 
 #define MPU_RA_XG_OFFS_TC       0x00    //[7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD
 #define MPU_RA_YG_OFFS_TC       0x01    //[7] PWR_MODE, [6:1] YG_OFFS_TC, [0] OTP_BNK_VLD
@@ -127,6 +133,9 @@
 #define MPU_RA_FIFO_R_W         0x74
 #define MPU_RA_WHO_AM_I         0x75
 
+// RF = Register Flag
+#define MPU_RF_DATA_RDY_EN (1 << 0)
+
 #define MPU6050_SMPLRT_DIV      0       // 8000Hz
 
 enum lpf_e {
@@ -175,8 +184,76 @@ static mpu6050Resolution_e mpuAccelTrim;
 
 static const mpu6050Config_t *mpu6050Config = NULL;
 
+void MPU_DATA_READY_EXTI_Handler(void)
+{
+    EXTI_ClearITPendingBit(mpu6050Config->exti_line);
+
+#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
+    // Measure the delta in micro seconds between calls to the interrupt handler
+    static uint32_t lastCalledAt = 0;
+    static int32_t callDelta = 0;
+
+    uint32_t now = micros();
+    callDelta = now - lastCalledAt;
+
+    UNUSED(callDelta);
+
+    lastCalledAt = now;
+#endif
+
+}
+
+void configureMPUDataReadyInterruptHandling(void)
+{
+#ifdef USE_MPU_DATA_READY_SIGNAL
+
+#ifdef STM32F10X
+    // enable AFIO for EXTI support
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+#endif
+
+#ifdef STM32F303xC
+    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+#endif
+
+#ifdef STM32F10X
+    gpioExtiLineConfig(mpu6050Config->exti_port_source, mpu6050Config->exti_pin_source);
+#endif
+
+#ifdef STM32F303xC
+    gpioExtiLineConfig(mpu6050Config->exti_port_source, mpu6050Config->exti_pin_source);
+#endif
+
+    registerExti15_10_CallbackHandler(MPU_DATA_READY_EXTI_Handler);
+
+    EXTI_ClearITPendingBit(mpu6050Config->exti_line);
+
+    EXTI_InitTypeDef EXTIInit;
+    EXTIInit.EXTI_Line = mpu6050Config->exti_line;
+    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTIInit.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTIInit.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTIInit);
+
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    NVIC_InitStructure.NVIC_IRQChannel = mpu6050Config->exti_irqn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_MPU_DATA_READY);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_MPU_DATA_READY);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
+}
+
 void mpu6050GpioInit(void) {
     gpio_config_t gpio;
+
+    static bool mpu6050GpioInitDone = false;
+
+    if (mpu6050GpioInitDone || !mpu6050Config) {
+        return;
+    }
 
 #ifdef STM32F303
         if (mpu6050Config->gpioAHBPeripherals) {
@@ -189,11 +266,14 @@ void mpu6050GpioInit(void) {
         }
 #endif
 
-
     gpio.pin = mpu6050Config->gpioPin;
     gpio.speed = Speed_2MHz;
     gpio.mode = Mode_IN_FLOATING;
     gpioInit(mpu6050Config->gpioPort, &gpio);
+
+    configureMPUDataReadyInterruptHandling();
+
+    mpu6050GpioInitDone = true;
 }
 
 static bool mpu6050Detect(void)
@@ -297,10 +377,7 @@ bool mpu6050GyroDetect(const mpu6050Config_t *configToUse, gyro_t *gyro, uint16_
 
 static void mpu6050AccInit(void)
 {
-    if (mpu6050Config) {
-        mpu6050GpioInit();
-        mpu6050Config = NULL; // avoid re-initialisation of GPIO;
-    }
+    mpu6050GpioInit();
 
     switch (mpuAccelTrim) {
         case MPU_6050_HALF_RESOLUTION:
@@ -327,10 +404,7 @@ static void mpu6050AccRead(int16_t *accData)
 
 static void mpu6050GyroInit(void)
 {
-    if (mpu6050Config) {
-        mpu6050GpioInit();
-        mpu6050Config = NULL; // avoid re-initialisation of GPIO;
-    }
+    mpu6050GpioInit();
 
     i2cWrite(MPU6050_ADDRESS, MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(100);
@@ -345,6 +419,10 @@ static void mpu6050GyroInit(void)
 
     i2cWrite(MPU6050_ADDRESS, MPU_RA_INT_PIN_CFG,
             0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
+
+#ifdef USE_MPU_DATA_READY_SIGNAL
+    i2cWrite(MPU6050_ADDRESS, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
+#endif
 }
 
 static void mpu6050GyroRead(int16_t *gyroData)

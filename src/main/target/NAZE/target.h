@@ -69,6 +69,8 @@
 
 #define USE_FLASH_M25P16
 
+#define USE_MPU_DATA_READY_SIGNAL
+
 #define GYRO
 #define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050

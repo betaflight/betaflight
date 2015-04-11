@@ -39,13 +39,13 @@ static bool isConversionComplete = false;
 static uint16_t bmp085ConversionOverrun = 0;
 
 // EXTI14 for BMP085 End of Conversion Interrupt
-void EXTI15_10_IRQHandler(void)
-{
+void BMP085_EOC_EXTI_Handler(void) {
     if (EXTI_GetITStatus(EXTI_Line14) == SET) {
         EXTI_ClearITPendingBit(EXTI_Line14);
         isConversionComplete = true;
     }
 }
+
 #endif
 
 typedef struct {
@@ -165,6 +165,8 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
         gpio.mode = Mode_IN_FLOATING;
         gpioInit(config->eocGpioPort, &gpio);
         BMP085_ON;
+
+        registerExti15_10_CallbackHandler(BMP085_EOC_EXTI_Handler);
 
         // EXTI interrupt for barometer EOC
         gpioExtiLineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource14);

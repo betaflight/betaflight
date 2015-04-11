@@ -41,7 +41,7 @@ static uint32_t lastMeasurementAt;
 static volatile int32_t measurement = -1;
 static sonarHardware_t const *sonarHardware;
 
-void ECHO_EXTI_IRQHandler(void)
+static void ECHO_EXTI_IRQHandler(void)
 {
     static uint32_t timing_start;
     uint32_t timing_stop;
