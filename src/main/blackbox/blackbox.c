@@ -1164,8 +1164,8 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
             }
         case FLIGHT_LOG_EVENT_GTUNE_RESULT:
             blackboxWrite(data->gtuneCycleResult.gtuneAxis);
-            blackboxWrite(data->gtuneCycleResult.gtuneGyroAVG);
-            blackboxWrite(data->gtuneCycleResult.gtuneNewP);
+            blackboxWriteSignedVB(data->gtuneCycleResult.gtuneGyroAVG);
+            blackboxWriteS16(data->gtuneCycleResult.gtuneNewP);
         break;
         case FLIGHT_LOG_EVENT_LOGGING_RESUME:
             blackboxWriteUnsignedVB(data->loggingResume.logIteration);

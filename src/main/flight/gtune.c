@@ -159,7 +159,8 @@ void calculate_Gtune(uint8_t axis)
 
                     eventData.gtuneAxis = axis;
                     eventData.gtuneGyroAVG = AvgGyro[axis];
-                    eventData.gtuneNewP = newP;
+                    if (floatPID) eventData.gtuneNewP = newP / 10;
+                    else eventData.gtuneNewP = newP;
 
                     blackboxLogEvent(FLIGHT_LOG_EVENT_GTUNE_RESULT, (flightLogEventData_t*)&eventData);
                 }

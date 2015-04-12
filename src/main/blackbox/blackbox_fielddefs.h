@@ -157,8 +157,8 @@ typedef struct flightLogEvent_loggingResume_t {
 =======
 typedef struct flightLogEvent_gtuneCycleResult_t {
     uint8_t gtuneAxis;
-    uint32_t gtuneGyroAVG;
-    uint8_t gtuneNewP;
+    int32_t gtuneGyroAVG;
+    int16_t gtuneNewP;
 } flightLogEvent_gtuneCycleResult_t;
 >>>>>>> 6f60c52 Add BlackBox recording for G-Tune
 
