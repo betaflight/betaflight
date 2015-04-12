@@ -108,6 +108,7 @@
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
 
 #define AUTOTUNE
+#define GTUNE
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX

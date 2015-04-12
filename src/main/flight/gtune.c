@@ -155,7 +155,7 @@ void calculate_Gtune(uint8_t axis)
 
 #ifdef BLACKBOX
                 if (feature(FEATURE_BLACKBOX)) {
-                	flightLogEvent_gtuneCycleResult_t eventData;
+                    flightLogEvent_gtuneCycleResult_t eventData;
 
                     eventData.gtuneAxis = axis;
                     eventData.gtuneGyroAVG = AvgGyro[axis];
