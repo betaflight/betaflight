@@ -6,7 +6,7 @@ As many can attest, multirotors and RC models in general can be very dangerous, 
 
 ## Before installing the Flight Controller in your craft
 
-Please consult the [Cli](Cli.md), [Controls](Controls.md), [Failsafe](Failsafe.md) and [Modes](Modes.md) documentation 
+Please consult the [Cli](Cli.md), [Controls](Controls.md), [Failsafe](Failsafe.md) and [Modes](Modes.md) 
 pages for further important information.
 
 You are highly advised to use the Receiver tab in CleanFlight Configurator, making sure your Rx channel values are centered at 1500 (1520 for Futaba RC) and Min/Max values are reached when controls are operated.
@@ -14,5 +14,9 @@ The referenced values for each channel, have marked impact on the operation of F
 
 You may have to adjust your channel endpoints and trims/sub-trims, on your RC transmitter, to achieve the expected values.
 
-## Feature MOTOR_STOP
-The default Cleanflight configuration has the MOTOR_STOP feature DISABLED by default. What this means is that as soon as the controller is armed, the propellers *WILL* begin spinning at low speed. It is recommended that this setting be retained as it provides a good visual indication that the craft is armed. You can read more about arming and setting the MOTOR_STOP feature if desired in the relevant sections of the manual. 
+## Props Spinning When Armed
+With the default configuration, when the controller is armed, the propellers *WILL* begin spinning at low speed.
+We recommend keeping this setting as it provides a good visual indication the craft is armed.
+
+If you wish to change this behavior, see the MOTOR_STOP feature in the Configurator and relevant docuemntation pages.
+Enabling this feature will stop the props from spinning when armed.
