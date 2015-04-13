@@ -6,7 +6,8 @@ As many can attest, multirotors and RC models in general can be very dangerous, 
 
 ## Before installing the Flight Controller in your craft
 
-Please consult the Cli.md, Controls.md, Failsafe.md and Modes.md, documentations for further important information and familiarisation with CleanFlight's terminolgies.
+Please consult the [Cli](Cli.md), [Controls](Controls.md), [Failsafe](Failsafe.md) and [Modes](Modes.md) documentation 
+pages for further important information.
 
 You are highly advised to use the Receiver tab in CleanFlight Configurator, making sure your Rx channel values are centered at 1500 (1520 for Futaba RC) and Min/Max values are reached when controls are operated.
 The referenced values for each channel, have marked impact on the operation of Flight Controller and its Flight Modes.
