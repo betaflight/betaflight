@@ -25,10 +25,10 @@ Hardware support:
 + [Telemetry](Telemetry.md)
 
 Configuring and tuning:
-+ [Configuration](Configuation.md)
++ [Configuration](Configuration.md)
 + [Command Line Interface (CLI)](Cli.md)
 + [Autotune](Autotune.md)
-+ [Inflight Adjustments](Inflight adjustments.md)
++ [Inflight Adjustments](Inflight Adjustments.md)
 + [Flight modes](Modes.md)
 + [PID Tuning](PID tuning.md)
 + [Blackbox](Blackbox.md) (logging)
