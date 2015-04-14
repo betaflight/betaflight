@@ -39,6 +39,8 @@ extern "C" {
 
     #include "config/runtime_config.h"
 
+    #include "rx/rx.h"
+
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
@@ -75,6 +77,7 @@ TEST(FlightImuTest, TestCalculateHeading)
 extern "C" {
 uint32_t rcModeActivationMask;
 int16_t rcCommand[4];
+int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 uint16_t acc_1G;
 int16_t heading;
