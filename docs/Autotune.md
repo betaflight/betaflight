@@ -2,7 +2,7 @@
 
 Autotune helps to automatically tune your multirotor.
 
-WARNING: Autotune is an experimental feature.  Currently enough feedback has been gathered and we do not recommend that anyone uses it until this warning is removed.  Autotune may be replaces by G-Tune, Please see https://github.com/cleanflight/cleanflight/pull/568 for details.
+WARNING: Autotune is an experimental feature.  Currently enough feedback has been gathered and we do not recommend that anyone uses it until this warning is removed.  Autotune may be replaced by G-Tune, Please see https://github.com/cleanflight/cleanflight/pull/568 for details.
 
 ## Configuration.
 
