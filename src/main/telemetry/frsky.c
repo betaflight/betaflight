@@ -242,11 +242,12 @@ static void sendSpeed(void)
     if (!STATE(GPS_FIX)) {
         return;
     }
-    //Speed should be sent in m/s (GPS speed is in cm/s)
+    //Speed should be sent in knots (GPS speed is in cm/s)
     sendDataHead(ID_GPS_SPEED_BP);
-    serialize16((GPS_speed * 0.01 + 0.5));
+    //convert to knots: 1cm/s = 0.0194384449 knots
+    serialize16(GPS_speed * 1944 / 10000);
     sendDataHead(ID_GPS_SPEED_AP);
-    serialize16(0); //Not dipslayed
+    serialize16((GPS_speed * 1944 / 100) % 100);
 }
 #endif
 
