@@ -57,8 +57,8 @@
 #include <string.h>
 
 #include "platform.h"
-
 #include "build_config.h"
+#include "debug.h"
 
 #ifdef TELEMETRY
 
@@ -80,8 +80,6 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/hott.h"
-
-extern int16_t debug[4];
 
 //#define HOTT_DEBUG
 

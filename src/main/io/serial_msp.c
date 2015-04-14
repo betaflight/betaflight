@@ -22,6 +22,7 @@
 #include <math.h>
 
 #include "build_config.h"
+#include "debug.h"
 
 #include "platform.h"
 
@@ -88,7 +89,6 @@ static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
-extern int16_t debug[4]; // FIXME dependency on mw.c
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
@@ -1077,10 +1077,12 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #endif
     case MSP_DEBUG:
-        headSerialReply(8);
-        // make use of this crap, output some useful QA statistics
-        //debug[3] = ((hse_value / 1000000) * 1000) + (SystemCoreClock / 1000000);         // XX0YY [crystal clock : core clock]
-        for (i = 0; i < 4; i++)
+        headSerialReply(DEBUG16_VALUE_COUNT * sizeof(debug[0]));
+
+        // output some useful QA statistics
+        // debug[x] = ((hse_value / 1000000) * 1000) + (SystemCoreClock / 1000000);         // XX0YY [crystal clock : core clock]
+
+        for (i = 0; i < DEBUG16_VALUE_COUNT; i++)
             serialize16(debug[i]);      // 4 variables are here for general monitoring purpose
         break;
 

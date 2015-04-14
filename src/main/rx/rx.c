@@ -21,9 +21,10 @@
 
 #include <string.h>
 
-#include "build_config.h"
-
 #include "platform.h"
+#include "build_config.h"
+#include "debug.h"
+
 
 #include "common/maths.h"
 
@@ -47,8 +48,6 @@
 #include "rx/xbus.h"
 
 #include "rx/rx.h"
-
-extern int16_t debug[4];
 
 void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 

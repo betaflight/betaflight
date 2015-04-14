@@ -23,6 +23,7 @@
 #include <math.h>
 
 #include "platform.h"
+#include "debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -52,8 +53,6 @@
 extern int16_t magHold;
 
 #ifdef GPS
-
-extern int16_t debug[4];
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 

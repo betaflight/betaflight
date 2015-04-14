@@ -23,6 +23,7 @@
 
 
 #include "platform.h"
+#include "debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -45,8 +46,6 @@
 #include "flight/imu.h"
 
 #include "config/runtime_config.h"
-
-extern int16_t debug[4];
 
 int32_t setVelocity = 0;
 uint8_t velocityControl = 0;

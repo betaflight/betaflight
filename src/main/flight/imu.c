@@ -23,7 +23,8 @@
 
 #include "common/maths.h"
 
-#include <platform.h>
+#include "platform.h"
+#include "debug.h"
 
 #include "common/axis.h"
 
@@ -44,9 +45,6 @@
 #include "flight/imu.h"
 
 #include "config/runtime_config.h"
-
-
-extern int16_t debug[4];
 
 int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];

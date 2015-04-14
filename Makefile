@@ -212,6 +212,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 VPATH		:= $(VPATH):$(TARGET_DIR)
 
 COMMON_SRC	 = build_config.c \
+		   debug.c \
 		   version.c \
 		   $(TARGET_SRC) \
 		   config/config.c \

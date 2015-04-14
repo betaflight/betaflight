@@ -25,6 +25,8 @@
 #define BARO
 
 extern "C" {
+    #include "debug.h"
+
     #include "common/axis.h"
     #include "common/maths.h"
 
@@ -145,7 +147,7 @@ rollAndPitchInclination_t inclination;
 int32_t accSum[XYZ_AXIS_COUNT];
 //int16_t magADC[XYZ_AXIS_COUNT];
 int32_t BaroAlt;
-int16_t debug[4];
+int16_t debug[DEBUG16_VALUE_COUNT];
 
 uint8_t stateFlags;
 uint16_t flightModeFlags;
