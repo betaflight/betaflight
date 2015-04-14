@@ -97,6 +97,8 @@
 #define ADC_DMA_CHANNEL      DMA2_Channel1
 #define ADC_AHB_PERIPHERAL   RCC_AHBPeriph_DMA2
 
+#define BOARD_HAS_VOLTAGE_DIVIDER
+
 #define VBAT_ADC_GPIO        GPIOA
 #define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
 #define VBAT_ADC_CHANNEL     ADC_Channel_1
