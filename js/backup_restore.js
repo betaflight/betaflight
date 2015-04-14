@@ -105,8 +105,11 @@ function configuration_backup(callback) {
                 configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
                 configuration.SERIAL_CONFIG = jQuery.extend(true, {}, SERIAL_CONFIG);
                 configuration.LED_STRIP = jQuery.extend(true, [], LED_STRIP);
-                configuration.FC_CONFIG = jQuery.extend(true, {}, FC_CONFIG);
-                configuration.ARMING_CONFIG = jQuery.extend(true, {}, ARMING_CONFIG);
+                
+                if (CONFIG.apiVersion >= 1.8) {
+                    configuration.FC_CONFIG = jQuery.extend(true, {}, FC_CONFIG);
+                    configuration.ARMING_CONFIG = jQuery.extend(true, {}, ARMING_CONFIG);
+                }
 
                 save();
             }
@@ -430,7 +433,7 @@ function configuration_restore(callback) {
         }
         
         if (compareVersions(migratedVersion, '0.63.0')) {
-            // backups created with 0.63.0 for firmwares with api < 1.8.0 were saved with incorrect looptime
+            // backups created with 0.63.0 for firmwares with api < 1.8 were saved with incorrect looptime
             if (configuration.FC_CONFIG.loopTime == 0) {
                 //reset it to the default
                 configuration.FC_CONFIG.loopTime = 3500;
