@@ -151,7 +151,7 @@ void failsafeOnRxCycle(void)
 
 #define REQUIRED_CHANNEL_MASK 0x0F // first 4 channels
 
-// pulse duration is in micro secons (usec)
+// pulse duration is in micro seconds (usec)
 void failsafeCheckPulse(uint8_t channel, uint16_t pulseDuration)
 {
     static uint8_t goodChannelMask = 0;
