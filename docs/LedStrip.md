@@ -63,9 +63,11 @@ can not be used at the same time at Parallel PWM.
 
 If you have LEDs that are intermittent, flicker or show the wrong colors then drop the VIN to less than 4.7v, e.g. by using an inline
 diode on the VIN to the LED strip. The problem occurs because of the difference in voltage between the data signal and the power
-signal.  The WS2811 LED's require the data signal (Din) to be MAX 0.7 * VIN.  Data In on the LEDs will allways be around ~3.3v, 
-so the Vin MAX should be 4.7v (3.3v / 0.7 = 4.71v).  Some LEDs are more tolerant of this than others.
+signal.  The WS2811 LED's require the data signal (Din) to be between 0.3 * Vin (Max) and 0.7 * VIN (Min) to register valid logic
+low/high signals.  The LED pin on the CPU will always be between 0v to ~3.3v, so the Vin should be 4.7v (3.3v / 0.7 = 4.71v).
+Some LEDs are more tolerant of this than others.
 
+The datasheet can be found here: http://www.adafruit.com/datasheets/WS2812.pdf
 
 ## Configuration
 
