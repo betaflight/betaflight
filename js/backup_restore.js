@@ -429,6 +429,14 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
         
+        if (compareVersions(migratedVersion, '0.63.0')) {
+            // backups created with 0.63.0 for firmwares with api < 1.8.0 were saved with incorrect looptime
+            if (configuration.FC_CONFIG.loopTime == 0) {
+                //reset it to the default
+                configuration.FC_CONFIG.loopTime = 3500;
+            }
+        }
+        
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         }
