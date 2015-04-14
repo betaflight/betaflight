@@ -1,7 +1,7 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1427641210170, // new Date().getTime() - Sun Mar 29 2015 16:00:25 GMT+0100 (BST)
+    'releaseDate': 1429014724688, // new Date().getTime() - Tue Apr 14 2015 13:32:17 GMT+0100 (BST)
     'apiVersionAccepted': 1.2,
     'backupRestoreMinApiVersionAccepted': 1.5,
     'pidControllerChangeMinApiVersion': 1.5,
