@@ -54,9 +54,6 @@ typedef struct profile_s {
     gimbalConfig_t gimbalConfig;
 #endif
 
-    // Failsafe related configuration
-    failsafeConfig_t failsafeConfig;
-
 #ifdef GPS
     gpsProfile_t gpsProfile;
 #endif

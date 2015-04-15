@@ -23,30 +23,37 @@ typedef struct failsafeConfig_s {
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
     uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
-    uint16_t failsafe_min_usec;
-    uint16_t failsafe_max_usec;
 } failsafeConfig_t;
 
+typedef enum {
+    FAILSAFE_IDLE = 0,
+    FAILSAFE_RX_LOSS_DETECTED,
+    FAILSAFE_LANDING,
+    FAILSAFE_LANDED
+} failsafePhase_e;
 
 typedef struct failsafeState_s {
     int16_t counter;
     int16_t events;
-    bool enabled;
+    bool monitoring;
+    bool active;
+    failsafePhase_e phase;
 } failsafeState_t;
 
 void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse);
 
-void failsafeEnable(void);
-void failsafeOnRxCycle(void);
-void failsafeCheckPulse(uint8_t channel, uint16_t pulseDuration);
+void failsafeStartMonitoring(void);
 void failsafeUpdateState(void);
 
-void failsafeReset(void);
+failsafePhase_e failsafePhase();
+bool failsafeIsMonitoring(void);
+bool failsafeIsActive(void);
+bool failsafeIsReceivingRxData(void);
+
+void failsafeOnValidDataReceived(void);
+void failsafeOnRxCycleStarted(void);
 
 
-bool failsafeIsEnabled(void);
-bool failsafeIsIdle(void);
-bool failsafeHasTimerElapsed(void);
-bool failsafeShouldForceLanding(bool armed);
-bool failsafeShouldHaveCausedLandingByNow(void);
+
+
 

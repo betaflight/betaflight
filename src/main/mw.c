@@ -509,8 +509,8 @@ void processRx(void)
 
     if (feature(FEATURE_FAILSAFE)) {
 
-        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsEnabled()) {
-            failsafeEnable();
+        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
+            failsafeStartMonitoring();
         }
 
         failsafeUpdateState();
@@ -527,7 +527,8 @@ void processRx(void)
     if (ARMING_FLAG(ARMED)
         && feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING)
         && masterConfig.auto_disarm_delay != 0
-        && isUsingSticksForArming()) {
+        && isUsingSticksForArming())
+    {
         if (throttleStatus == THROTTLE_LOW) {
             if ((int32_t)(disarmAt - millis()) < 0)  // delay is over
                 mwDisarm();
@@ -551,7 +552,7 @@ void processRx(void)
 
     bool canUseHorizonMode = true;
 
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeHasTimerElapsed())) && (sensors(SENSOR_ACC))) {
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
     	canUseHorizonMode = false;
 
@@ -628,7 +629,7 @@ void loop(void)
     static bool haveProcessedAnnexCodeOnce = false;
 #endif
 
-    updateRx();
+    updateRx(currentTime);
 
     if (shouldProcessRx(currentTime)) {
         processRx();

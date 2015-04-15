@@ -51,6 +51,7 @@
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
+#include "flight/failsafe.h"
 
 #include "mw.h"
 
@@ -124,7 +125,8 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
             }
         } else {
             // Disarming via ARM BOX
-            if (ARMING_FLAG(ARMED)) {
+
+            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
                 if (disarm_kill_switch) {
                     mwDisarm();
                 } else if (throttleStatus == THROTTLE_LOW) {
