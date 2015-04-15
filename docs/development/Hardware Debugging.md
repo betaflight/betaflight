@@ -2,11 +2,13 @@
 
 The code can be compiled with debugging information, you can then upload a debug version to a board via a JLink/St-Link debug adapter and step through the code in your IDE.
 
-More information about the necessary hardware can and setting up the eclipse IDE can be found int the wiki:
-https://github.com/cleanflight/cleanflight/wiki/Debugging-in-Eclipse
+More information about the necessary hardware and setting up the eclipse IDE can be found [here](Hardware Debugging in Eclipse.md)
 
 A guide for visual studio can be found here:
 http://visualgdb.com/tutorials/arm/st-link/
+
+This video is also helpful in understanding the proces:
+https://www.youtube.com/watch?v=kjvqySyNw20
 
 ## Compilation options
 
