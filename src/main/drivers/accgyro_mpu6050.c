@@ -20,6 +20,8 @@
 #include <stdlib.h>
 
 #include "platform.h"
+#include "build_config.h"
+#include "debug.h"
 
 #include "common/maths.h"
 
@@ -196,7 +198,8 @@ void MPU_DATA_READY_EXTI_Handler(void)
     uint32_t now = micros();
     callDelta = now - lastCalledAt;
 
-    UNUSED(callDelta);
+    //UNUSED(callDelta);
+    debug[0] = callDelta;
 
     lastCalledAt = now;
 #endif
