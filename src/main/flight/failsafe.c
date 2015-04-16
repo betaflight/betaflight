@@ -59,14 +59,14 @@ void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse)
     failsafeReset();
 }
 
-failsafeState_t* failsafeInit(rxConfig_t *intialRxConfig)
+void failsafeInit(rxConfig_t *intialRxConfig)
 {
     rxConfig = intialRxConfig;
 
     failsafeState.events = 0;
     failsafeState.monitoring = false;
 
-    return &failsafeState;
+    return;
 }
 
 failsafePhase_e failsafePhase()
@@ -101,7 +101,7 @@ static bool failsafeHasTimerElapsed(void)
     return failsafeState.counter > (5 * failsafeConfig->failsafe_delay);
 }
 
-bool failsafeShouldForceLanding(bool armed)
+static bool failsafeShouldForceLanding(bool armed)
 {
     return failsafeHasTimerElapsed() && armed;
 }

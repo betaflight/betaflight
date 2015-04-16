@@ -47,6 +47,7 @@ TESTS = \
 	battery_unittest \
 	flight_imu_unittest \
 	flight_mixer_unittest \
+	flight_failsafe_unittest \
 	altitude_hold_unittest \
 	maths_unittest \
 	gps_conversion_unittest \
@@ -385,6 +386,30 @@ $(OBJECT_DIR)/flight_mixer_unittest.o : \
 flight_mixer_unittest : \
 	$(OBJECT_DIR)/flight/mixer.o \
 	$(OBJECT_DIR)/flight_mixer_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/flight/failsafe.o : \
+	$(USER_DIR)/flight/failsafe.c \
+	$(USER_DIR)/flight/failsafe.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/failsafe.c -o $@
+
+$(OBJECT_DIR)/flight_failsafe_unittest.o : \
+	$(TEST_DIR)/flight_failsafe_unittest.cc \
+	$(USER_DIR)/flight/failsafe.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_failsafe_unittest.cc -o $@
+
+flight_failsafe_unittest : \
+	$(OBJECT_DIR)/flight/failsafe.o \
+	$(OBJECT_DIR)/flight_failsafe_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
