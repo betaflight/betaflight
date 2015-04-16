@@ -534,9 +534,9 @@ static void resetConf(void)
     currentProfile->pidProfile.pidController = 3;
     currentProfile->pidProfile.P8[ROLL] = 36;
     currentProfile->pidProfile.P8[PITCH] = 36;
-    currentProfile->failsafeConfig.failsafe_delay = 2;
-    currentProfile->failsafeConfig.failsafe_off_delay = 0;
-    currentProfile->failsafeConfig.failsafe_throttle = 1000;
+    masterConfig.failsafeConfig.failsafe_delay = 2;
+    masterConfig.failsafeConfig.failsafe_off_delay = 0;
+    masterConfig.failsafeConfig.failsafe_throttle = 1000;
     currentControlRateProfile->rcRate8 = 130;
     currentControlRateProfile->rates[FD_PITCH] = 20;
     currentControlRateProfile->rates[FD_ROLL] = 20;
