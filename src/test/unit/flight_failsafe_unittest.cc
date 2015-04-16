@@ -162,19 +162,23 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenReceivingData)
 
 TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
 {
+
     // given
     ENABLE_ARMING_FLAG(ARMED);
 
-    // FIXME one more cycle currently needed
     // when
     failsafeOnRxCycleStarted();
     // no call to failsafeOnValidDataReceived();
+
     failsafeUpdateState();
 
     // then
     EXPECT_EQ(false, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 
+    //
+    // currently one cycle must occur (above) so that the next cycle (below) can detect the lack of an update.
+    //
 
     // when
     for (int i = 0; i < FAILSAFE_UPDATE_HZ - 1; i++) {
@@ -190,7 +194,10 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
 
     }
 
-    // FIXME one more cycle currently needed
+    //
+    // one more cycle currently needed before the counter is re-checked.
+    //
+
     // when
     failsafeOnRxCycleStarted();
     // no call to failsafeOnValidDataReceived();
@@ -220,7 +227,6 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
 
     }
 
-    // FIXME one more cycle currently needed
     // when
     failsafeOnRxCycleStarted();
     // no call to failsafeOnValidDataReceived();
@@ -230,15 +236,6 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     EXPECT_EQ(false, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_LANDED, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    // FIXME one more cycle currently needed
-    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
-
-    // when
-    failsafeOnRxCycleStarted();
-    // no call to failsafeOnValidDataReceived();
-    failsafeUpdateState();
-
-    // then
     EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
 
 }

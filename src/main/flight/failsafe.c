@@ -145,42 +145,59 @@ void failsafeUpdateState(void)
         failsafeState.active = false;
     }
 
-    switch (failsafeState.phase) {
-        case FAILSAFE_IDLE:
-            if (!receivingRxData && armed) {
-                failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
-            }
-            break;
 
-        case FAILSAFE_RX_LOSS_DETECTED:
-            if (failsafeShouldForceLanding(armed)) {
-                // Stabilize, and set Throttle to specified level
-                failsafeActivate();
-            }
-            break;
+    bool reprocessState;
 
-        case FAILSAFE_LANDING:
-            if (armed) {
-                failsafeApplyControlInput();
-            }
+    do {
+        reprocessState = false;
 
-            if (failsafeShouldHaveCausedLandingByNow() || !armed) {
+        switch (failsafeState.phase) {
+            case FAILSAFE_IDLE:
+                if (!receivingRxData && armed) {
+                    failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
 
-                failsafeState.phase = FAILSAFE_LANDED;
+                    reprocessState = true;
+                }
+                break;
+
+            case FAILSAFE_RX_LOSS_DETECTED:
+                if (failsafeShouldForceLanding(armed)) {
+                    // Stabilize, and set Throttle to specified level
+                    failsafeActivate();
+
+                    reprocessState = true;
+                }
+                break;
+
+            case FAILSAFE_LANDING:
+                if (armed) {
+                    failsafeApplyControlInput();
+                }
+
+                if (failsafeShouldHaveCausedLandingByNow() || !armed) {
+
+                    failsafeState.phase = FAILSAFE_LANDED;
+
+                    reprocessState = true;
+
+                }
+                break;
+
+            case FAILSAFE_LANDED:
+
+                // This will prevent the automatic rearm if failsafe shuts it down and prevents
+                // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
+                ENABLE_ARMING_FLAG(PREVENT_ARMING);
+
                 failsafeState.active = false;
                 mwDisarm();
-            }
-            break;
 
-        case FAILSAFE_LANDED:
-            // This will prevent the automatic rearm if failsafe shuts it down and prevents
-            // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
-            ENABLE_ARMING_FLAG(PREVENT_ARMING);
-            break;
+                break;
 
-        default:
-            break;
-    }
+            default:
+                break;
+        }
+    } while (reprocessState);
 
 }
 
