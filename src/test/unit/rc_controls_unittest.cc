@@ -711,6 +711,9 @@ void mwDisarm(void) {}
 void displayDisablePageCycling() {}
 void displayEnablePageCycling() {}
 
+bool failsafeIsActive() { return false; }
+bool rxIsReceivingSignal() { return true; }
+
 uint8_t getCurrentControlRateProfile(void) {
     return 0;
 }
