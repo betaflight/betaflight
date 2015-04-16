@@ -127,7 +127,7 @@ void systemInit(void)
     cycleCounterInit();
 
 
-    memset(exti15_10_handlers, 0, sizeof(exti15_10_handlers));
+    memset(&exti15_10_handlers, 0x00, sizeof(exti15_10_handlers));
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
 }
