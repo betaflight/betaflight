@@ -87,6 +87,10 @@ a)  Upon signal loss, send no signal/pulses over the channels
 
 b)  Send an invalid signal over the channels (for example, send values lower than 'rx_min_usec')
 
+and
+
+c)  Ensure your receiver does not send out channel data that would cause a disarm by switch or sticks to be registered by the FC. This is especially important for those using a switch to arm.
+
 See your receiver's documentation for direction on how to accomplish one of these.
 
 2.  Set 'failsafe_off_delay' to an appropriate value based on how high you fly
@@ -94,6 +98,7 @@ See your receiver's documentation for direction on how to accomplish one of thes
 3.  Set 'failsafe_throttle' to a value that allows the aircraft to descend at approximately one meter per second (default is 1000 which should be throttle off).
 
 4.  Enable 'FAILSAFE' feature in Cleanflight GUI or via CLI using `feature FAILSAFE`
+
 
 
 These are the basic steps for flight controller failsafe configuration; see Failsafe Settings below for additional settings that may be changed.
