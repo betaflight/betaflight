@@ -90,7 +90,6 @@ enum {
 /* for VBAT monitoring frequency */
 #define VBATFREQ 6        // to read battery voltage - nth number of loop iterations
 
-int16_t debug[4];
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop

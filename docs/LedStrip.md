@@ -63,12 +63,25 @@ can not be used at the same time at Parallel PWM.
 
 If you have LEDs that are intermittent, flicker or show the wrong colors then drop the VIN to less than 4.7v, e.g. by using an inline
 diode on the VIN to the LED strip. The problem occurs because of the difference in voltage between the data signal and the power
-signal.  The WS2811 LED's require the data signal (Din) to be MAX 0.7 * VIN.  Data In on the LEDs will allways be around ~3.3v, 
-so the Vin MAX should be 4.7v (3.3v / 0.7 = 4.71v).  Some LEDs are more tolerant of this than others.
+signal.  The WS2811 LED's require the data signal (Din) to be between 0.3 * Vin (Max) and 0.7 * VIN (Min) to register valid logic
+low/high signals.  The LED pin on the CPU will always be between 0v to ~3.3v, so the Vin should be 4.7v (3.3v / 0.7 = 4.71v).
+Some LEDs are more tolerant of this than others.
 
+The datasheet can be found here: http://www.adafruit.com/datasheets/WS2812.pdf
 
 ## Configuration
 
+The led strip feature can be configured via the GUI
+
+GUI:
+Enable the Led Strip feature via the GUI under setup.
+
+Configure the leds from the Led Strip tab in the cleanflight GUI.
+First setup how the led's are laid out so that you can visualize it later as you configure and so the flight controller knows how many led's there are available.
+
+There is a step by step guide on how to use the GUI to configure the Led Strip feature using the GUI http://blog.oscarliang.net/setup-rgb-led-cleanflight/ which was published early 2015 by Oscar Liang which may or may not be up-to-date by the time you read this.
+
+CLI:
 Enable the `LED_STRIP` feature via the cli:
 
 ```

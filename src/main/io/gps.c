@@ -23,8 +23,8 @@
 #include <math.h>
 
 #include "platform.h"
-
 #include "build_config.h"
+#include "debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -50,9 +50,6 @@
 
 
 #ifdef GPS
-
-extern int16_t debug[4];
-
 
 #define LOG_ERROR        '?'
 #define LOG_IGNORED      '!'

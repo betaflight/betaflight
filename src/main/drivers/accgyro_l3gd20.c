@@ -19,8 +19,8 @@
 #include <stdint.h>
 
 #include "platform.h"
-
 #include "build_config.h"
+#include "debug.h"
 
 #include "common/maths.h"
 
@@ -31,8 +31,6 @@
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_l3gd20.h"
-
-extern int16_t debug[4];
 
 #define READ_CMD               ((uint8_t)0x80)
 #define MULTIPLEBYTE_CMD       ((uint8_t)0x40)

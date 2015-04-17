@@ -21,6 +21,8 @@
 #include <limits.h>
 
 extern "C" {
+    #include "debug.h"
+
     #include "platform.h"
 
     #include "common/axis.h"
@@ -293,7 +295,7 @@ int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 uint32_t rcModeActivationMask;
-int16_t debug[4];
+int16_t debug[DEBUG16_VALUE_COUNT];
 
 uint8_t stateFlags;
 uint16_t flightModeFlags;

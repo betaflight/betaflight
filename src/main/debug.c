@@ -15,23 +15,13 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "stdint.h"
 
-#define UNUSED(x) (void)(x)
-#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
-#ifdef UNIT_TEST
-#define STATIC_UNIT_TESTED // make visible to unit test
-#define UNIT_TESTED
-#else
-#define STATIC_UNIT_TESTED static
-#define UNIT_TESTED
+#include "debug.h"
+
+int16_t debug[DEBUG16_VALUE_COUNT];
+
+#ifdef DEBUG_SECTION_TIMES
+uint32_t sectionTimes[2][4];
 #endif
-
-//#define SOFT_I2C // enable to test software i2c
-
-#ifndef __CC_ARM
-#define REQUIRE_CC_ARM_PRINTF_SUPPORT
-#define REQUIRE_PRINTF_LONG_SUPPORT
-#endif
-

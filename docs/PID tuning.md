@@ -160,4 +160,20 @@ The PID controller is flight tested and running well with the default PID settin
 Yaw authority is also quite good.
 
 
+## RC rate, Pitch and Roll Rates (P/R rate before they were separated), and Yaw rate
 
+### RC Rate
+
+An overall multiplier on the RC stick inputs for pitch, rol;, and yaw. 
+
+On PID Controllers 0, and 3-5 can be used to set the "feel" around center stick for small control movements. (RC Expo also affects this).For PID Controllers 1 and 2, this basically sets the baseline stick sensitivity
+
+### Pitch and Roll rates
+
+In PID Controllers 0 and 3-5, the affect of the PID error terms for P and D are gradually lessened as the control sticks are moved away from center, ie 0.3 rate gives a 30% reduction of those terms at full throw, effectively making the stabilizing effect of the PID controller less at stick extremes. This results in faster rotation rates. So for these controllers, you can set center stick sensitivity to control movement with RC rate above, and yet have much faster rotation rates at stick extremes.
+
+For PID Controllers 1 and 2, this is an multiplier on overall stick sensitivity, like RC rate, but for roll and pitch independently. Stablility (to outside factors like turbulence) is not reduced at stick extremes. A zero value is no increase in stick sensitivity over that set by RC rate above. Higher values increases stick sensitivity across the entire stick movement range.
+
+### Yaw Rate
+
+In PID Controllers 0 and 5, it acts as a PID reduction as explained above. In PID Controllers 1-4, it acts as a stick sensitivity multiplier, as explained above.

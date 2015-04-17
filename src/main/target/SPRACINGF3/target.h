@@ -106,6 +106,8 @@
 #define M25P16_SPI_INSTANCE     SPI2
 
 #define USE_ADC
+#define BOARD_HAS_VOLTAGE_DIVIDER
+
 
 #define ADC_INSTANCE                ADC2
 #define ADC_DMA_CHANNEL             DMA2_Channel1

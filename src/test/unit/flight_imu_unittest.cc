@@ -23,6 +23,8 @@
 #define BARO
 
 extern "C" {
+    #include "debug.h"
+
     #include "common/axis.h"
     #include "common/maths.h"
 
@@ -36,6 +38,8 @@ extern "C" {
     #include "sensors/barometer.h"
 
     #include "config/runtime_config.h"
+
+    #include "rx/rx.h"
 
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -73,13 +77,14 @@ TEST(FlightImuTest, TestCalculateHeading)
 extern "C" {
 uint32_t rcModeActivationMask;
 int16_t rcCommand[4];
+int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 uint16_t acc_1G;
 int16_t heading;
 gyro_t gyro;
 int16_t magADC[XYZ_AXIS_COUNT];
 int32_t BaroAlt;
-int16_t debug[4];
+int16_t debug[DEBUG16_VALUE_COUNT];
 
 uint8_t stateFlags;
 uint16_t flightModeFlags;

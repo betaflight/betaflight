@@ -18,9 +18,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "build_config.h"
-
 #include "platform.h"
+#include "build_config.h"
+#include "debug.h"
+
 #include "system.h"
 
 #include "adc.h"
@@ -32,7 +33,6 @@
 adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
-extern int16_t debug[4];
 
 uint16_t adcGetChannel(uint8_t channel)
 {

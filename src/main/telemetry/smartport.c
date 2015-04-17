@@ -322,8 +322,7 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_VFAS       :
-                smartPortSendPackage(id, vbat * 83); // supposedly given in 0.1V, unknown requested unit
-                // multiplying by 83 seems to make Taranis read correctly
+                smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_CURRENT    :

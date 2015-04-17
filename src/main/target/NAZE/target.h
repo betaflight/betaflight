@@ -20,13 +20,14 @@
 #define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
 #define USE_HARDWARE_REVISION_DETECTION
 
+#define BOARD_HAS_VOLTAGE_DIVIDER
+
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3 // PB3 (LED)
 #define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
 #define LED1_GPIO   GPIOB
 #define LED1_PIN    Pin_4 // PB4 (LED)
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
-
 
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_12 // PA12 (Beeper)
@@ -69,6 +70,7 @@
 
 #define USE_FLASH_M25P16
 
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU data ready and BMP085 EOC
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define GYRO

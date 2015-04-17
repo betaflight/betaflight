@@ -20,6 +20,8 @@
 #include <stdlib.h>
 
 #include "platform.h"
+#include "build_config.h"
+#include "debug.h"
 
 #include "common/maths.h"
 
@@ -196,7 +198,8 @@ void MPU_DATA_READY_EXTI_Handler(void)
     uint32_t now = micros();
     callDelta = now - lastCalledAt;
 
-    UNUSED(callDelta);
+    //UNUSED(callDelta);
+    debug[0] = callDelta;
 
     lastCalledAt = now;
 #endif
@@ -223,6 +226,13 @@ void configureMPUDataReadyInterruptHandling(void)
 
 #ifdef STM32F303xC
     gpioExtiLineConfig(mpu6050Config->exti_port_source, mpu6050Config->exti_pin_source);
+#endif
+
+#ifdef ENSURE_MPU_DATA_READY_IS_LOW
+    uint8_t status = GPIO_ReadInputDataBit(mpu6050Config->gpioPort, mpu6050Config->gpioPin);
+    if (status) {
+        return;
+    }
 #endif
 
     registerExti15_10_CallbackHandler(MPU_DATA_READY_EXTI_Handler);

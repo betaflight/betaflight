@@ -369,7 +369,13 @@ static void resetConf(void)
 #if defined(CJMCU) || defined(SPARKY)
     featureSet(FEATURE_RX_PPM);
 #endif
+
+#ifdef BOARD_HAS_VOLTAGE_DIVIDER
+    // only enable the VBAT feature by default if the board has a voltage divider otherwise
+    // the user may see incorrect readings and unexpected issues with pin mappings may occur.
     featureSet(FEATURE_VBAT);
+#endif
+
     featureSet(FEATURE_FAILSAFE);
 
     // global settings
@@ -516,7 +522,6 @@ static void resetConf(void)
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     masterConfig.batteryConfig.vbatscale = 20;
 #else
-    featureClear(FEATURE_VBAT);
     masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
     masterConfig.rxConfig.serialrx_provider = 1;

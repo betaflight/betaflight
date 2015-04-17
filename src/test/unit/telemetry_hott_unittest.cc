@@ -22,6 +22,8 @@
 #include <limits.h>
 
 extern "C" {
+    #include "debug.h"
+
     #include "platform.h"
 
     #include "common/axis.h"
@@ -148,7 +150,7 @@ TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
 
 extern "C" {
 
-int16_t debug[4];
+int16_t debug[DEBUG16_VALUE_COUNT];
 
 uint8_t stateFlags;
 

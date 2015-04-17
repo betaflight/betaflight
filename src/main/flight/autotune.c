@@ -21,6 +21,8 @@
 #include <math.h>
 
 #include "platform.h"
+#include "build_config.h"
+#include "debug.h"
 
 #ifdef AUTOTUNE
 
@@ -39,8 +41,6 @@
 
 #include "config/config.h"
 #include "blackbox/blackbox.h"
-
-extern int16_t debug[4];
 
 /*
  * Authors

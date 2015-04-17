@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include "platform.h"
+#include "debug.h"
 
 #include "build_config.h"
 
@@ -56,8 +57,6 @@
 #define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
 
 //#define MIXER_DEBUG
-
-extern int16_t debug[4];
 
 uint8_t motorCount = 0;
 int16_t motor[MAX_SUPPORTED_MOTORS];

@@ -19,6 +19,8 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "build_config.h"
+#include "debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -30,8 +32,6 @@
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_lsm303dlhc.h"
-
-extern int16_t debug[4];
 
 // Addresses (7 bit address format)
 
