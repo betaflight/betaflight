@@ -238,6 +238,20 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
 
+    // given
+    DISABLE_ARMING_FLAG(ARMED);
+
+    // when
+    failsafeOnRxCycleStarted();
+    // no call to failsafeOnValidDataReceived();
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_LANDED, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM)); // disarm not called repeatedly.
+    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+
 }
 
 // STUBS
