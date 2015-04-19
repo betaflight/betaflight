@@ -212,7 +212,7 @@ void updateRxStatus(void)
 
 void updateFailsafeStatus(void)
 {
-    char failsafeIndicator;
+    char failsafeIndicator = '?';
     switch (failsafePhase()) {
         case FAILSAFE_IDLE:
             failsafeIndicator = '-';
