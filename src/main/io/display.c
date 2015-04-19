@@ -73,6 +73,7 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 #define PAGE_CYCLE_FREQUENCY (MILLISECONDS_IN_A_SECOND * 5)
 
 static uint32_t nextDisplayUpdateAt = 0;
+static bool displayPresent = false;
 
 static rxConfig_t *rxConfig;
 
@@ -136,7 +137,7 @@ typedef struct pageState_s {
 static pageState_t pageState;
 
 void resetDisplay(void) {
-    ug2864hsweg01InitI2C();
+    displayPresent = ug2864hsweg01InitI2C();
 }
 
 void LCDprint(uint8_t i) {
@@ -211,11 +212,6 @@ void showTitle()
 
 void handlePageChange(void)
 {
-    // Some OLED displays do not respond on the first initialisation so refresh the display
-    // when the page changes in the hopes the hardware responds.  This also allows the
-    // user to power off/on the display or connect it while powered.
-    resetDisplay();
-
     i2c_OLED_clear_display_quick();
     showTitle();
 }
@@ -533,9 +529,22 @@ void updateDisplay(void)
     }
 
     if (pageState.pageChanging) {
-        handlePageChange();
         pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
         pageState.nextPageAt = now + PAGE_CYCLE_FREQUENCY;
+
+        // Some OLED displays do not respond on the first initialisation so refresh the display
+        // when the page changes in the hopes the hardware responds.  This also allows the
+        // user to power off/on the display or connect it while powered.
+        resetDisplay();
+
+        if (!displayPresent) {
+            return;
+        }
+        handlePageChange();
+    }
+
+    if (!displayPresent) {
+        return;
     }
 
     switch(pageState.pageId) {
