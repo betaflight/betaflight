@@ -59,6 +59,15 @@ void resetCallCounters(void) {
 rxConfig_t rxConfig;
 failsafeConfig_t failsafeConfig;
 
+void configureFailsafe(void)
+{
+    memset(&rxConfig, 0, sizeof(rxConfig));
+    rxConfig.midrc = TEST_MID_RC;
+
+    memset(&failsafeConfig, 0, sizeof(failsafeConfig));
+    failsafeConfig.failsafe_delay = 10; // 1 second
+    failsafeConfig.failsafe_off_delay = 50; // 5 seconds
+}
 //
 // Stepwise tests
 //
@@ -66,13 +75,9 @@ failsafeConfig_t failsafeConfig;
 TEST(FlightFailsafeTest, TestFailsafeInitialState)
 {
     // given
-    memset(&rxConfig, 0, sizeof(rxConfig));
-    rxConfig.midrc = TEST_MID_RC;
-
+    configureFailsafe();
     // and
-    memset(&failsafeConfig, 0, sizeof(failsafeConfig));
-    failsafeConfig.failsafe_delay = 10; // 1 second
-    failsafeConfig.failsafe_off_delay = 50; // 5 seconds
+    DISABLE_ARMING_FLAG(ARMED);
 
     // when
     useFailsafeConfig(&failsafeConfig);
@@ -95,8 +100,11 @@ TEST(FlightFailsafeTest, TestFailsafeStartMonitoring)
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 }
 
-TEST(FlightFailsafeTest, TestFailsafeFirstCycle)
+TEST(FlightFailsafeTest, TestFailsafeFirstArmedCycle)
 {
+    // given
+    ENABLE_ARMING_FLAG(ARMED);
+
     // when
     failsafeOnRxCycleStarted();
     failsafeOnValidDataReceived();
@@ -253,6 +261,42 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
 
 }
+
+//
+// Additional non-stepwise tests
+//
+
+TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected)
+{
+    // given
+    configureFailsafe();
+
+    // and
+    useFailsafeConfig(&failsafeConfig);
+    failsafeInit(&rxConfig);
+
+    // and
+    DISABLE_ARMING_FLAG(ARMED);
+
+    // when
+    failsafeStartMonitoring();
+
+    // and
+    int callsToMakeToSimulateTenSeconds = FAILSAFE_UPDATE_HZ * 10;
+
+    for (int i = 0; i < callsToMakeToSimulateTenSeconds; i++) {
+        failsafeOnRxCycleStarted();
+        // no call to failsafeOnValidDataReceived();
+
+        failsafeUpdateState();
+
+        // then
+        EXPECT_EQ(true, failsafeIsMonitoring());
+        EXPECT_EQ(false, failsafeIsActive());
+        EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    }
+}
+
 
 // STUBS
 
