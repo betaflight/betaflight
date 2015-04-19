@@ -53,6 +53,7 @@ TESTS = \
 	gps_conversion_unittest \
 	telemetry_hott_unittest \
 	rc_controls_unittest \
+	rx_rx_unittest \
 	ledstrip_unittest \
 	ws2811_unittest \
 	encoding_unittest \
@@ -434,6 +435,30 @@ $(OBJECT_DIR)/io_serial_unittest.o : \
 io_serial_unittest : \
 	$(OBJECT_DIR)/io/serial.o \
 	$(OBJECT_DIR)/io_serial_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/rx/rx.o : \
+	$(USER_DIR)/rx/rx.c \
+	$(USER_DIR)/rx/rx.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/rx/rx.c -o $@
+
+$(OBJECT_DIR)/rx_rx_unittest.o : \
+	$(TEST_DIR)/rx_rx_unittest.cc \
+	$(USER_DIR)/rx/rx.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rx_rx_unittest.cc -o $@
+
+rx_rx_unittest : \
+	$(OBJECT_DIR)/rx/rx.o \
+	$(OBJECT_DIR)/rx_rx_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) -lpthread $^ -o $(OBJECT_DIR)/$@

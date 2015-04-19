@@ -56,7 +56,7 @@ bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
 bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
-bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
@@ -91,17 +91,16 @@ void useRxConfig(rxConfig_t *rxConfigToUse)
     rxConfig = rxConfigToUse;
 }
 
-#define STICK_CHANNEL_COUNT 4
 #define REQUIRED_CHANNEL_MASK 0x0F // first 4 channels
 
 // pulse duration is in micro seconds (usec)
-void rxCheckPulse(uint8_t channel, uint16_t pulseDuration)
+STATIC_UNIT_TESTED void rxCheckPulse(uint8_t channel, uint16_t pulseDuration)
 {
     static uint8_t goodChannelMask = 0;
 
     if (channel < 4 &&
-        pulseDuration > rxConfig->rx_min_usec &&
-        pulseDuration < rxConfig->rx_max_usec
+        pulseDuration >= rxConfig->rx_min_usec &&
+        pulseDuration <= rxConfig->rx_max_usec
     ) {
         // if signal is valid - mark channel as OK
         goodChannelMask |= (1 << channel);
