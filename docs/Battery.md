@@ -28,6 +28,8 @@ has a voltage divider that is capable of measuring your particular battery volta
 
 The Naze32 has an on-board battery divider circuit, connect your main battery to the VBAT connector.
 
+**CAUTION:** When connecting the main battery to the VBAT connector, make absolutely sure that you first **disconnect the main battery and the USB connector from the board!**  Connecting VBAT without first connecting its associated GND pin will cause current to flow from the main battery through the Naze32 to USB GND, which will instantly destroy several components on the board.  This will also result in expensive-looking smoke.
+
 ### CC3D
 
 The CC3D has no battery divider, create one that gives you a 3.3v MAXIMUM output when your battery is
