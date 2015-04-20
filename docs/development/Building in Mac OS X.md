@@ -107,3 +107,12 @@ git pull
 make clean TARGET=NAZE
 make TARGET=NAZE
 ```
+
+Or in the case of CC3D in need of a `obj/cleanflight_CC3D.bin`
+```
+git reset --hard
+git pull
+
+make clean TARGET=CC3D
+make TARGET=CC3D OPBL=yes
+```
