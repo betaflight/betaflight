@@ -2,6 +2,7 @@
 
 filename=Manual
 doc_files=(
+    'README.md'
 	'Introduction.md'
 	'Safety.md'
 	'Installation.md'
