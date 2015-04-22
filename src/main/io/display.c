@@ -51,6 +51,7 @@
 
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/failsafe.h"
 
 #ifdef GPS
 #include "io/gps.h"
@@ -202,6 +203,33 @@ void updateTicker(void)
     i2c_OLED_send_char(tickerCharacters[tickerIndex]);
     tickerIndex++;
     tickerIndex = tickerIndex % TICKER_CHARACTER_COUNT;
+}
+
+void updateRxStatus(void)
+{
+    i2c_OLED_set_xy(SCREEN_CHARACTER_COLUMN_COUNT - 2, 0);
+    i2c_OLED_send_char(rxIsReceivingSignal() ? 'R' : '!');
+}
+
+void updateFailsafeStatus(void)
+{
+    char failsafeIndicator = '?';
+    switch (failsafePhase()) {
+        case FAILSAFE_IDLE:
+            failsafeIndicator = '-';
+            break;
+        case FAILSAFE_RX_LOSS_DETECTED:
+            failsafeIndicator = 'R';
+            break;
+        case FAILSAFE_LANDING:
+            failsafeIndicator = 'l';
+            break;
+        case FAILSAFE_LANDED:
+            failsafeIndicator = 'L';
+            break;
+    }
+    i2c_OLED_set_xy(SCREEN_CHARACTER_COLUMN_COUNT - 3, 0);
+    i2c_OLED_send_char(failsafeIndicator);
 }
 
 void showTitle()
@@ -582,8 +610,11 @@ void updateDisplay(void)
 #endif
     }
     if (!armedState) {
+        updateFailsafeStatus();
+        updateRxStatus();
         updateTicker();
     }
+
 }
 
 void displaySetPage(pageId_e pageId)

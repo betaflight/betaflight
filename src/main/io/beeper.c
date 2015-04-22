@@ -49,9 +49,9 @@ static void beep_code(char first, char second, char third, char pause);
 static uint8_t toggleBeep = 0;
 
 typedef enum {
-    FAILSAFE_IDLE = 0,
-    FAILSAFE_LANDING,
-    FAILSAFE_FIND_ME
+    FAILSAFE_WARNING_NONE = 0,
+    FAILSAFE_WARNING_LANDING,
+    FAILSAFE_WARNING_FIND_ME
 } failsafeBeeperWarnings_e;
 
 void beepcodeInit(void)
@@ -64,7 +64,7 @@ void beepcodeUpdateState(batteryState_e batteryState)
 #ifdef GPS
     static uint8_t warn_noGPSfix = 0;
 #endif
-    static failsafeBeeperWarnings_e warn_failsafe = FAILSAFE_IDLE;
+    static failsafeBeeperWarnings_e warn_failsafe = FAILSAFE_WARNING_NONE;
 
     //=====================  BeeperOn via rcOptions =====================
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {       // unconditional beeper on via AUXn switch
@@ -74,20 +74,19 @@ void beepcodeUpdateState(batteryState_e batteryState)
     }
     //===================== Beeps for failsafe =====================
     if (feature(FEATURE_FAILSAFE)) {
-        if (failsafeShouldForceLanding(ARMING_FLAG(ARMED))) {
-            warn_failsafe = FAILSAFE_LANDING;
-
-            if (failsafeShouldHaveCausedLandingByNow()) {
-                warn_failsafe = FAILSAFE_FIND_ME;
-            }
+        switch (failsafePhase()) {
+            case FAILSAFE_LANDING:
+                warn_failsafe = FAILSAFE_WARNING_LANDING;
+                break;
+            case FAILSAFE_LANDED:
+                warn_failsafe = FAILSAFE_WARNING_FIND_ME;
+                break;
+            default:
+                warn_failsafe = FAILSAFE_WARNING_NONE;
         }
 
-        if (failsafeHasTimerElapsed() && !ARMING_FLAG(ARMED)) {
-            warn_failsafe = FAILSAFE_FIND_ME;
-        }
-
-        if (failsafeIsIdle()) {
-            warn_failsafe = FAILSAFE_IDLE;      // turn off alarm if TX is okay
+        if (rxIsReceivingSignal()) {
+            warn_failsafe = FAILSAFE_WARNING_NONE;
         }
     }
 

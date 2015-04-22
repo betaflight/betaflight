@@ -418,6 +418,7 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
     return 0;
 }
 
-bool failsafeHasTimerElapsed(void) { return false; }
+bool failsafeIsActive() { return false; }
+bool rxIsReceivingSignal() { return true; }
 
 }

@@ -1003,7 +1003,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.escAndServoConfig.maxthrottle);
         serialize16(masterConfig.escAndServoConfig.mincommand);
 
-        serialize16(currentProfile->failsafeConfig.failsafe_throttle);
+        serialize16(masterConfig.failsafeConfig.failsafe_throttle);
 
 #ifdef GPS
         serialize8(masterConfig.gpsConfig.provider); // gps_type
@@ -1378,7 +1378,7 @@ static bool processInCommand(void)
         masterConfig.escAndServoConfig.maxthrottle = read16();
         masterConfig.escAndServoConfig.mincommand = read16();
 
-        currentProfile->failsafeConfig.failsafe_throttle = read16();
+        masterConfig.failsafeConfig.failsafe_throttle = read16();
 
 #ifdef GPS
         masterConfig.gpsConfig.provider = read8(); // gps_type
