@@ -704,7 +704,10 @@ void loop(void)
         // motors do not spin up while we are trying to arm or disarm.
         // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
-                && !(masterConfig.mixerMode == MIXER_TRI && masterConfig.mixerConfig.tri_unarmed_servo)) {
+#ifndef USE_QUAD_MIXER_ONLY
+                && !(masterConfig.mixerMode == MIXER_TRI && masterConfig.mixerConfig.tri_unarmed_servo)
+#endif
+        ) {
             rcCommand[YAW] = 0;
         }
 
