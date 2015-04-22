@@ -2,8 +2,8 @@
 
 filename=Manual
 doc_files=(
-    'README.md'
 	'Introduction.md'
+    'Getting Started.md'
 	'Safety.md'
 	'Installation.md'
 	'Configuration.md'
