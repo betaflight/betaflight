@@ -28,6 +28,8 @@ has a voltage divider that is capable of measuring your particular battery volta
 
 The Naze32 has an on-board battery divider circuit, connect your main battery to the VBAT connector.
 
+**CAUTION:**  When installing connection from main battery to the VBAT connector, be sure to first disconnect the main battery from the frame / power distribution board.  Check the wiring very carefully before connecting battery again.  Incorrect connections can immediately and completely destroy the flight controller and connected peripherals (ESC, GPS, Receiver etc.)
+
 ### CC3D
 
 The CC3D has no battery divider, create one that gives you a 3.3v MAXIMUM output when your battery is
