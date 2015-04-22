@@ -56,11 +56,18 @@ bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
 bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
-bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 uint16_t rssi = 0;                  // range: [0;1023]
+
+static bool rxDataReceived = false;
+static bool rxSignalReceived = false;
+static bool shouldCheckPulse = true;
+
+static uint32_t rxUpdateAt = 0;
+static uint32_t needRxSignalBefore = 0;
 
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
@@ -70,6 +77,7 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 #define PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
 
 #define DELAY_50_HZ (1000000 / 50)
+#define DELAY_10_HZ (1000000 / 10)
 
 static rcReadRawDataPtr rcReadRawFunc = NULL;  // receive data from default (pwm/ppm) or additional (spek/sbus/?? receiver drivers)
 
@@ -83,7 +91,28 @@ void useRxConfig(rxConfig_t *rxConfigToUse)
     rxConfig = rxConfigToUse;
 }
 
-#define STICK_CHANNEL_COUNT 4
+#define REQUIRED_CHANNEL_MASK 0x0F // first 4 channels
+
+// pulse duration is in micro seconds (usec)
+STATIC_UNIT_TESTED void rxCheckPulse(uint8_t channel, uint16_t pulseDuration)
+{
+    static uint8_t goodChannelMask = 0;
+
+    if (channel < 4 &&
+        pulseDuration >= rxConfig->rx_min_usec &&
+        pulseDuration <= rxConfig->rx_max_usec
+    ) {
+        // if signal is valid - mark channel as OK
+        goodChannelMask |= (1 << channel);
+    }
+
+    if (goodChannelMask == REQUIRED_CHANNEL_MASK) {
+        goodChannelMask = 0;
+        failsafeOnValidDataReceived();
+        rxSignalReceived = true;
+    }
+}
+
 
 void rxInit(rxConfig_t *rxConfig)
 {
@@ -179,43 +208,71 @@ uint8_t calculateChannelRemapping(uint8_t *channelMap, uint8_t channelMapEntryCo
     return channelToRemap;
 }
 
-static bool rcDataReceived = false;
-
-static uint32_t rxUpdateAt = 0;
-
-
-void updateRx(void)
+bool rxIsReceivingSignal(void)
 {
-    rcDataReceived = false;
+    return rxSignalReceived;
+}
+
+static bool isRxDataDriven(void) {
+    return !(feature(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM));
+}
+
+void updateRx(uint32_t currentTime)
+{
+    rxDataReceived = false;
+    shouldCheckPulse = true;
+
+    if (rxSignalReceived) {
+        if (((int32_t)(currentTime - needRxSignalBefore) >= 0)) {
+            rxSignalReceived = false;
+        }
+    }
 
 #ifdef SERIAL_RX
     if (feature(FEATURE_RX_SERIAL)) {
         uint8_t frameStatus = serialRxFrameStatus(rxConfig);
 
         if (frameStatus & SERIAL_RX_FRAME_COMPLETE) {
-            rcDataReceived = true;
-            if ((frameStatus & SERIAL_RX_FRAME_FAILSAFE) == 0 && feature(FEATURE_FAILSAFE)) {
-                failsafeReset();
+            rxDataReceived = true;
+            rxSignalReceived = (frameStatus & SERIAL_RX_FRAME_FAILSAFE) == 0;
+            if (rxSignalReceived && feature(FEATURE_FAILSAFE)) {
+                shouldCheckPulse = false;
+
+                failsafeOnValidDataReceived();
             }
+        } else {
+            shouldCheckPulse = false;
         }
     }
 #endif
 
     if (feature(FEATURE_RX_MSP)) {
-        rcDataReceived = rxMspFrameComplete();
-        if (rcDataReceived && feature(FEATURE_FAILSAFE)) {
-            failsafeReset();
+        rxDataReceived = rxMspFrameComplete();
+        if (rxDataReceived) {
+
+            if (feature(FEATURE_FAILSAFE)) {
+                failsafeOnValidDataReceived();
+            }
         }
+    }
+
+    if (feature(FEATURE_RX_SERIAL | FEATURE_RX_MSP) && rxDataReceived) {
+        needRxSignalBefore = currentTime + DELAY_10_HZ;
+    }
+
+    if (feature(FEATURE_RX_PPM)) {
+        if (isPPMDataBeingReceived()) {
+            rxSignalReceived = true;
+            needRxSignalBefore = currentTime + DELAY_10_HZ;
+            resetPPMDataReceivedState();
+        }
+        shouldCheckPulse = rxSignalReceived;
     }
 }
 
 bool shouldProcessRx(uint32_t currentTime)
 {
-    return rcDataReceived || ((int32_t)(currentTime - rxUpdateAt) >= 0); // data driven or 50Hz
-}
-
-static bool isRxDataDriven(void) {
-    return !(feature(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM));
+    return rxDataReceived || ((int32_t)(currentTime - rxUpdateAt) >= 0); // data driven or 50Hz
 }
 
 static uint8_t rcSampleIndex = 0;
@@ -256,17 +313,6 @@ static void processRxChannels(void)
         return; // rcData will have already been updated by MSP_SET_RAW_RC
     }
 
-    bool shouldCheckPulse = true;
-
-    if (feature(FEATURE_FAILSAFE)) {
-        if (feature(FEATURE_RX_PPM)) {
-            shouldCheckPulse = isPPMDataBeingReceived();
-            resetPPMDataReceivedState();
-        } else {
-            shouldCheckPulse = !isRxDataDriven();
-        }
-    }
-
     for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
 
         if (!rcReadRawFunc) {
@@ -279,8 +325,8 @@ static void processRxChannels(void)
         // sample the channel
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
 
-        if (feature(FEATURE_FAILSAFE) && shouldCheckPulse) {
-            failsafeCheckPulse(chan, sample);
+        if (shouldCheckPulse) {
+            rxCheckPulse(chan, sample);
         }
 
         // validate the range
@@ -311,9 +357,7 @@ void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
 {
     rxUpdateAt = currentTime + DELAY_50_HZ;
 
-    if (feature(FEATURE_FAILSAFE)) {
-        failsafeOnRxCycle();
-    }
+    failsafeOnRxCycleStarted();
 
     if (isRxDataDriven()) {
         processDataDrivenRx();

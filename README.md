@@ -19,8 +19,9 @@ Cleanflight also has additional features not found in baseflight.
 * Oneshot ESC support.
 * Blackbox flight recorder logging (to onboard flash or external SD card).
 * Support for additional targets that use the STM32F3 processors (baseflight only supports STM32F1).
-* Support for the TauLabs Sparky board (~$35 STM32F303 I2C sensors, based board with acc/gyro/compass and baro!)
-* Support for the OpenPilot CC3D board. (~$20 STM32F103 board, SPI acc/gyro)
+* Support for the Seriously Pro Racing F3 board (STM32F303, I2C sensors, large flash, excellent I/O.)
+* Support for the TauLabs Sparky board (STM32F303, I2C sensors, based board with acc/gyro/compass and baro, ~$35)
+* Support for the OpenPilot CC3D board. (STM32F103, board, SPI acc/gyro, ~$20)
 * Support for the CJMCU nano quadcopter board.
 * Support for developer breakout boards: (Port103R, EUSTM32F103RC, Olimexino, STM32F3Discovery).
 * Support for more than 8 RC channels - (e.g. 16 Channels via FrSky X4RSB SBus).
@@ -30,6 +31,7 @@ Cleanflight also has additional features not found in baseflight.
 * Better PWM and PPM input and failsafe detection than baseflight.
 * Better FrSky Telemetry than baseflight.
 * MSP Telemetry.
+* Smartport Telemetry.
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
 * Autotune - ported from BradWii, experimental - feedback welcomed.
 * OLED Displays - Display information on: Battery voltage, profile, rate profile, version, sensors, RC, etc.

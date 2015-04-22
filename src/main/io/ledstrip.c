@@ -661,7 +661,7 @@ void applyLedWarningLayer(uint8_t updateNow)
         if (feature(FEATURE_VBAT) && calculateBatteryState() != BATTERY_OK) {
             warningFlags |= WARNING_FLAG_LOW_BATTERY;
         }
-        if (feature(FEATURE_FAILSAFE) && failsafeHasTimerElapsed()) {
+        if (feature(FEATURE_FAILSAFE) && failsafeIsActive()) {
             warningFlags |= WARNING_FLAG_FAILSAFE;
         }
         if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM)) {
@@ -714,6 +714,9 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
     const ledConfig_t *ledConfig;
     static const hsvColor_t *flashColor;
 
+    if (!rxIsReceivingSignal()) {
+        return;
+    }
 
     if (indicatorFlashState == 0) {
         flashColor = &hsv_orange;
