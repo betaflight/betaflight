@@ -702,7 +702,12 @@ void loop(void)
         // If we're armed, at minimum throttle, and we do arming via the
         // sticks, do not process yaw input from the rx.  We do this so the
         // motors do not spin up while we are trying to arm or disarm.
-        if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck) {
+        // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
+        if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
+#ifndef USE_QUAD_MIXER_ONLY
+                && !(masterConfig.mixerMode == MIXER_TRI && masterConfig.mixerConfig.tri_unarmed_servo)
+#endif
+        ) {
             rcCommand[YAW] = 0;
         }
 
