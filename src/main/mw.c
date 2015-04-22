@@ -175,7 +175,7 @@ void annexCode(void)
     static uint8_t vbatTimer = 0;
     static int32_t vbatCycleTime = 0;
 
-    // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
+    // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop2 = 100;
     } else {
