@@ -9,8 +9,8 @@ By default arming and disarming is done using stick positions.  Arming with stic
 
 ## Stick positions
 
-LOW - the channel value for the mapped channel input is around 1000
-CENTER - the channel value for the mapped channel input is around 1500
+LOW - the channel value for the mapped channel input is around 1000  
+CENTER - the channel value for the mapped channel input is around 1500  
 HIGH - the channel value for the mapped channel input is around 2000
 
 | Function                      | Throttle | Yaw     | Pitch  | Roll   |
