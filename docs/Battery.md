@@ -28,7 +28,7 @@ has a voltage divider that is capable of measuring your particular battery volta
 
 The Naze32 has an on-board battery divider circuit, connect your main battery to the VBAT connector.
 
-**CAUTION:** When connecting the main battery to the VBAT connector, make absolutely sure that you first **disconnect the main battery and the USB connector from the board!**  Connecting VBAT without first connecting its associated GND pin will cause current to flow from the main battery through the Naze32 to USB GND, which will instantly destroy several components on the board.  This will also result in expensive-looking smoke.
+**CAUTION:**  When installing connection from main battery to the VBAT connector, be sure to first disconnect the main battery from the frame / power distribution board.  Check the wiring very carefully before connecting battery again.  Incorrect connections can immediately and completely destroy the flight controller and connected peripherals (ESC, GPS, Receiver etc.)
 
 ### CC3D
 
