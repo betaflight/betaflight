@@ -106,7 +106,6 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMixers);
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig);
-void beepcodeInit(void);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int8_t magHardwareToUse, int16_t magDeclinationFromConfig);
@@ -345,8 +344,6 @@ void init(void)
     cliInit(&masterConfig.serialConfig);
 
     failsafeInit(&masterConfig.rxConfig);
-
-    beepcodeInit();
 
     rxInit(&masterConfig.rxConfig);
 

@@ -21,6 +21,7 @@
 #include "common/axis.h"
 
 #include "rx/rx.h"
+#include "io/beeper.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "config/runtime_config.h"
@@ -161,6 +162,8 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_RX_LOSS_DETECTED:
+                beeper(BEEPER_TX_LOST_ARMED);
+
                 if (failsafeShouldForceLanding(armed)) {
                     // Stabilize, and set Throttle to specified level
                     failsafeActivate();
@@ -185,9 +188,12 @@ void failsafeUpdateState(void)
 
             case FAILSAFE_LANDED:
 
+                beeper(BEEPER_TX_LOST);
+
                 if (!armed) {
                     break;
                 }
+
                 // This will prevent the automatic rearm if failsafe shuts it down and prevents
                 // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
                 ENABLE_ARMING_FLAG(PREVENT_ARMING);
@@ -200,7 +206,6 @@ void failsafeUpdateState(void)
                 break;
         }
     } while (reprocessState);
-
 }
 
 /**
