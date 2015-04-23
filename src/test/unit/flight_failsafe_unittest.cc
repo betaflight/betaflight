@@ -30,6 +30,8 @@ extern "C" {
 
     #include "config/runtime_config.h"
 
+    #include "io/beeper.h"
+
     #include "rx/rx.h"
     #include "flight/failsafe.h"
 
@@ -313,5 +315,7 @@ bool feature(uint32_t mask) {
 void mwDisarm(void) {
     callCounts[COUNTER_MW_DISARM]++;
 }
+
+void beeper(beeperMode_e mode) { }
 
 }

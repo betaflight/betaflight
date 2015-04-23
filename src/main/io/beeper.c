@@ -129,7 +129,7 @@ static void beeperCalculations(void);
  * Called to activate/deactive beeper, using the given "BEEPER_..." value.
  * This function returns immediately (does not block).
  */
-void beeper(uint8_t mode)
+void beeper(beeperMode_e mode)
 {
 #ifdef GPS
     uint8_t i;
@@ -174,12 +174,12 @@ void beeper(uint8_t mode)
             beeperPtr = beep_3shortBeeps;
             beeperMode = mode;
             break;
-        case BEEPER_TX_LOST_ARMED:
+        case BEEPER_RX_LOST_LANDING:
             beeperPtr = beep_sos;
             beeperMode = mode;
             beeperNextToggleTime = 0;
             break;
-        case BEEPER_TX_LOST:
+        case BEEPER_RX_LOST:
             beeperPtr = beep_txLostBeep;
             beeperMode = mode;
             beeperNextToggleTime = 0;
@@ -213,7 +213,7 @@ void beeper(uint8_t mode)
             beeperMode = mode;
             beeperNextToggleTime = 0;
             break;
-        case BEEPER_TX_SET:
+        case BEEPER_RX_SET:
 #ifdef GPS         // if GPS fix then beep out number of satellites
             if (feature(FEATURE_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5) {
                 i = 0;
@@ -272,8 +272,8 @@ void beeperUpdate(void)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
-        if (beeperMode > BEEPER_TX_SET)
-            beeper(BEEPER_TX_SET);
+        if (beeperMode > BEEPER_RX_SET)
+            beeper(BEEPER_RX_SET);
     }
 
     // Beeper routine doesn't need to update if there aren't any sounds ongoing

@@ -140,10 +140,13 @@ void failsafeUpdateState(void)
 {
     bool receivingRxData = failsafeIsReceivingRxData();
     bool armed = ARMING_FLAG(ARMED);
+    beeperMode_e beeperMode = BEEPER_STOPPED;
 
     if (receivingRxData) {
         failsafeState.phase = FAILSAFE_IDLE;
         failsafeState.active = false;
+    } else {
+        beeperMode = BEEPER_RX_LOST;
     }
 
 
@@ -162,7 +165,6 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_RX_LOSS_DETECTED:
-                beeper(BEEPER_TX_LOST_ARMED);
 
                 if (failsafeShouldForceLanding(armed)) {
                     // Stabilize, and set Throttle to specified level
@@ -175,6 +177,7 @@ void failsafeUpdateState(void)
             case FAILSAFE_LANDING:
                 if (armed) {
                     failsafeApplyControlInput();
+                    beeperMode = BEEPER_RX_LOST_LANDING;
                 }
 
                 if (failsafeShouldHaveCausedLandingByNow() || !armed) {
@@ -187,8 +190,6 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_LANDED:
-
-                beeper(BEEPER_TX_LOST);
 
                 if (!armed) {
                     break;
@@ -206,6 +207,10 @@ void failsafeUpdateState(void)
                 break;
         }
     } while (reprocessState);
+
+    if (beeperMode != BEEPER_STOPPED) {
+        beeper(beeperMode);
+    }
 }
 
 /**
