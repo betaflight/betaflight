@@ -61,7 +61,7 @@ Now, there are two ways to [configure CF](Configuration.md); via  the Configurat
     * Minimum Throttle - Set this to the minimum throttle level that enables all motors to start reliably. If this is too low, some motors may not start properly after spindowns, which can cause loss of stability and control. A typical value would be 1100.
     * Middle Throttle - The throttle level for middle stick position. Many radios use 1500, but some (e.g. Futaba) may use 1520 or other values.
     * Maximum Throttle - The maximum throttle level that the ESCs should receive. A typical value would be 2000.
-    * Minimum Command - This is the lowest signal level that the FC expects from the radio/transmitter (lowest throttle) or outputs to the ESCs. It should match the radio's low throttle signal, and be the lowest number of them all. A typical value would be 1000.
+    * Minimum Command - This is the "idle" signal level that will be sent to the ESCs when the craft is disarmed, which should not cause the motors to spin. A typical value would be 1000.
   * Finally, click Save and Reboot.
 
 * Receiver tab: Check that the channel inputs move according to your Tx inputs. Check that the Channel map is correct, along with the RSSI Channel, if you use that. You can also set EXPO here instead of your Tx. Click Save!
