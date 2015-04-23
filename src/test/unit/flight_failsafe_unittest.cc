@@ -30,6 +30,8 @@ extern "C" {
 
     #include "config/runtime_config.h"
 
+    #include "io/beeper.h"
+
     #include "rx/rx.h"
     #include "flight/failsafe.h"
 
@@ -174,22 +176,27 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
     // given
     ENABLE_ARMING_FLAG(ARMED);
 
-    // when
-    failsafeOnRxCycleStarted();
-    // no call to failsafeOnValidDataReceived();
-
-    failsafeUpdateState();
-
-    // then
-    EXPECT_EQ(false, failsafeIsActive());
-    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
-
     //
-    // currently one cycle must occur (above) so that the next cycle (below) can detect the lack of an update.
+    // currently 20 cycles must occur before the lack of an update triggers RX loss detection.
     //
+    // FIXME see comments about RX_SERIAL/RX_MSP above, the test should likely deal with time rather than counters.
+    int failsafeCounterThreshold = 20;
 
     // when
-    for (int i = 0; i < FAILSAFE_UPDATE_HZ - 1; i++) {
+    for (int i = 0; i < failsafeCounterThreshold; i++) {
+
+        failsafeOnRxCycleStarted();
+        // no call to failsafeOnValidDataReceived();
+
+        failsafeUpdateState();
+
+        // then
+        EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+        EXPECT_EQ(false, failsafeIsActive());
+    }
+
+    // when
+    for (int i = 0; i < FAILSAFE_UPDATE_HZ - failsafeCounterThreshold; i++) {
 
         failsafeOnRxCycleStarted();
         // no call to failsafeOnValidDataReceived();
@@ -199,7 +206,6 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
         // then
         EXPECT_EQ(FAILSAFE_RX_LOSS_DETECTED, failsafePhase());
         EXPECT_EQ(false, failsafeIsActive());
-
     }
 
     //
@@ -303,6 +309,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
 extern "C" {
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 uint8_t armingFlags;
+int16_t debug[DEBUG16_VALUE_COUNT];
 
 void delay(uint32_t) {}
 
@@ -312,6 +319,10 @@ bool feature(uint32_t mask) {
 
 void mwDisarm(void) {
     callCounts[COUNTER_MW_DISARM]++;
+}
+
+void beeper(beeperMode_e mode) {
+    UNUSED(mode);
 }
 
 }

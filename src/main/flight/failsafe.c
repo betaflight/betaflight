@@ -18,9 +18,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "debug.h"
+
 #include "common/axis.h"
 
 #include "rx/rx.h"
+#include "io/beeper.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "config/runtime_config.h"
@@ -74,11 +77,11 @@ failsafePhase_e failsafePhase()
     return failsafeState.phase;
 }
 
-#define MAX_COUNTER_VALUE_WHEN_RX_IS_RECEIVED_AFTER_RX_CYCLE 1
+#define FAILSAFE_COUNTER_THRESHOLD 20
 
 bool failsafeIsReceivingRxData(void)
 {
-    return failsafeState.counter <= MAX_COUNTER_VALUE_WHEN_RX_IS_RECEIVED_AFTER_RX_CYCLE;
+    return failsafeState.counter <= FAILSAFE_COUNTER_THRESHOLD;
 }
 
 bool failsafeIsMonitoring(void)
@@ -129,8 +132,8 @@ static void failsafeApplyControlInput(void)
 
 void failsafeOnValidDataReceived(void)
 {
-    if (failsafeState.counter > 20)
-        failsafeState.counter -= 20;
+    if (failsafeState.counter > FAILSAFE_COUNTER_THRESHOLD)
+        failsafeState.counter -= FAILSAFE_COUNTER_THRESHOLD;
     else
         failsafeState.counter = 0;
 }
@@ -139,10 +142,13 @@ void failsafeUpdateState(void)
 {
     bool receivingRxData = failsafeIsReceivingRxData();
     bool armed = ARMING_FLAG(ARMED);
+    beeperMode_e beeperMode = BEEPER_STOPPED;
 
     if (receivingRxData) {
         failsafeState.phase = FAILSAFE_IDLE;
         failsafeState.active = false;
+    } else {
+        beeperMode = BEEPER_RX_LOST;
     }
 
 
@@ -161,6 +167,7 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_RX_LOSS_DETECTED:
+
                 if (failsafeShouldForceLanding(armed)) {
                     // Stabilize, and set Throttle to specified level
                     failsafeActivate();
@@ -172,6 +179,7 @@ void failsafeUpdateState(void)
             case FAILSAFE_LANDING:
                 if (armed) {
                     failsafeApplyControlInput();
+                    beeperMode = BEEPER_RX_LOST_LANDING;
                 }
 
                 if (failsafeShouldHaveCausedLandingByNow() || !armed) {
@@ -188,6 +196,7 @@ void failsafeUpdateState(void)
                 if (!armed) {
                     break;
                 }
+
                 // This will prevent the automatic rearm if failsafe shuts it down and prevents
                 // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
                 ENABLE_ARMING_FLAG(PREVENT_ARMING);
@@ -201,6 +210,9 @@ void failsafeUpdateState(void)
         }
     } while (reprocessState);
 
+    if (beeperMode != BEEPER_STOPPED) {
+        beeper(beeperMode);
+    }
 }
 
 /**

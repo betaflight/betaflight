@@ -225,6 +225,9 @@ void updateRx(uint32_t currentTime)
     if (rxSignalReceived) {
         if (((int32_t)(currentTime - needRxSignalBefore) >= 0)) {
             rxSignalReceived = false;
+#ifdef DEBUG_RX_SIGNAL_LOSS
+            debug[0]++;
+#endif
         }
     }
 
