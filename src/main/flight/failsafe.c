@@ -18,6 +18,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "debug.h"
+
 #include "common/axis.h"
 
 #include "rx/rx.h"
@@ -75,11 +77,11 @@ failsafePhase_e failsafePhase()
     return failsafeState.phase;
 }
 
-#define MAX_COUNTER_VALUE_WHEN_RX_IS_RECEIVED_AFTER_RX_CYCLE 1
+#define FAILSAFE_COUNTER_THRESHOLD 20
 
 bool failsafeIsReceivingRxData(void)
 {
-    return failsafeState.counter <= MAX_COUNTER_VALUE_WHEN_RX_IS_RECEIVED_AFTER_RX_CYCLE;
+    return failsafeState.counter <= FAILSAFE_COUNTER_THRESHOLD;
 }
 
 bool failsafeIsMonitoring(void)
@@ -130,8 +132,8 @@ static void failsafeApplyControlInput(void)
 
 void failsafeOnValidDataReceived(void)
 {
-    if (failsafeState.counter > 20)
-        failsafeState.counter -= 20;
+    if (failsafeState.counter > FAILSAFE_COUNTER_THRESHOLD)
+        failsafeState.counter -= FAILSAFE_COUNTER_THRESHOLD;
     else
         failsafeState.counter = 0;
 }
