@@ -452,6 +452,7 @@ HIGHEND_SRC = \
             telemetry/frsky.c \
             telemetry/hott.c \
             telemetry/smartport.c \
+		    telemetry/mavlink.c \
             telemetry/ltm.c
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))

@@ -226,7 +226,6 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT  GPIOA
