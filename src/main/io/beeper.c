@@ -128,7 +128,7 @@ static uint32_t armingBeepTimeMicros = 0;
 static void beeperCalculations(void);
 
 /*
- * Called to activate/deactive beeper, using the given "BEEPER_..." value.
+ * Called to activate/deactivate beeper, using the given "BEEPER_..." value.
  * This function returns immediately (does not block).
  */
 void beeper(beeperMode_e mode)
@@ -143,15 +143,12 @@ void beeper(beeperMode_e mode)
             break;
         case BEEPER_ARMING:
             beeperPtr = beep_armingBeep;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_DISARMING:
             beeperPtr = beep_disarmBeep;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_DISARM_REPEAT:
             beeperPtr = beep_disarmRepeatBeep;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_ACC_CALIBRATION:
             beeperPtr = beep_2shortBeeps;
@@ -161,34 +158,27 @@ void beeper(beeperMode_e mode)
             break;
         case BEEPER_RX_LOST_LANDING:
             beeperPtr = beep_sos;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_RX_LOST:
             beeperPtr = beep_txLostBeep;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_BAT_LOW:
             beeperPtr = beep_lowBatteryBeep;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_BAT_CRIT_LOW:
             beeperPtr = beep_critBatteryBeep;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_ARMED:
             beeperPtr = beep_armedBeep;
             break;
         case BEEPER_ARMING_GPS_FIX:
             beeperPtr = beep_armedGpsFix;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_CONFIRM_BEEP:
             beeperPtr = beep_confirmBeep;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_MULTI_BEEPS:
             beeperPtr = beep_multiBeeps;
-            beeperNextToggleTime = 0;
             break;
         case BEEPER_RX_SET:
 #ifdef GPS
@@ -206,7 +196,6 @@ void beeper(beeperMode_e mode)
             }
 #endif
             beeperPtr = beep_shortBeep;
-            beeperNextToggleTime = 0;
             break;
 
         default:
@@ -214,14 +203,16 @@ void beeper(beeperMode_e mode)
     }
     beeperPos = 0;
     beeperMode = mode;
+    beeperNextToggleTime = 0;
 }
 
 void beeperSilence(void)
 {
-    beeperMode = BEEPER_STOPPED;
-    beeperNextToggleTime = millis();
     BEEP_OFF;
     beeperIsOn = 0;
+
+    beeperMode = BEEPER_STOPPED;
+    beeperNextToggleTime = 0;
     beeperPtr = NULL;
     beeperPos = 0;
 }
