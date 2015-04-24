@@ -36,8 +36,7 @@
  * BEEPER_ARMED - Warning beeps when board is armed. (repeats until board is disarmed or throttle is increased)
  */
 typedef enum {
-    BEEPER_STOP = 0, // Highest priority command which is used only for stopping the beeper
-    BEEPER_RX_LOST_LANDING,
+    BEEPER_RX_LOST_LANDING = 0,
     BEEPER_RX_LOST,
     BEEPER_DISARMING,
     BEEPER_ARMING,
@@ -56,6 +55,7 @@ typedef enum {
 } beeperMode_e;
 
 void beeper(beeperMode_e mode);
+void beeperSilence(void);
 void beeperUpdate(void);
 void queueConfirmationBeep(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);

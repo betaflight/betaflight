@@ -570,7 +570,7 @@ void processRx(void)
                 }
 
                 if (armedBeeperOn) {
-                    beeper(BEEPER_STOP);
+                    beeperSilence();
                     armedBeeperOn = false;
                 }
             }
@@ -580,7 +580,7 @@ void processRx(void)
                 beeper(BEEPER_ARMED);
                 armedBeeperOn = true;
             } else if (armedBeeperOn) {
-                beeper(BEEPER_STOP);
+                beeperSilence();
                 armedBeeperOn = false;
             }
         }
