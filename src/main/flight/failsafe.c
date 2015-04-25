@@ -142,7 +142,7 @@ void failsafeUpdateState(void)
 {
     bool receivingRxData = failsafeIsReceivingRxData();
     bool armed = ARMING_FLAG(ARMED);
-    beeperMode_e beeperMode = BEEPER_STOPPED;
+    beeperMode_e beeperMode = BEEPER_SILENCE;
 
     if (receivingRxData) {
         failsafeState.phase = FAILSAFE_IDLE;
@@ -210,7 +210,7 @@ void failsafeUpdateState(void)
         }
     } while (reprocessState);
 
-    if (beeperMode != BEEPER_STOPPED) {
+    if (beeperMode != BEEPER_SILENCE) {
         beeper(beeperMode);
     }
 }

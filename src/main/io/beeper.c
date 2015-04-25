@@ -110,14 +110,11 @@ static const uint8_t beep_3shortBeeps[] = {
     5, 5, 5, 5, 5, 5, BEEPER_COMMAND_STOP
 };
 // array used for variable # of beeps (reporting GPS sat count, etc)
-static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS+2];
+static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
 
-// Current Beeper mode
-static uint8_t beeperMode = BEEPER_STOPPED;
 // Beeper off = 0 Beeper on = 1
 static uint8_t beeperIsOn = 0;
-// Pointer to current sequence
-static const uint8_t *beeperPtr = NULL;
+
 // Place in current sequence
 static uint16_t beeperPos = 0;
 // Time when beeper routine must act next time
@@ -125,7 +122,36 @@ static uint32_t beeperNextToggleTime = 0;
 // Time of last arming beep in microseconds (for blackbox)
 static uint32_t armingBeepTimeMicros = 0;
 
-static void beeperCalculations(void);
+static void beeperProcessCommand(void);
+
+typedef struct beeperTableEntry_s {
+    uint8_t mode;
+    uint8_t priority; // 0 = Highest
+    const uint8_t *sequence;
+} beeperTableEntry_t;
+
+static const beeperTableEntry_t const beeperTable[] = {
+    { BEEPER_RX_LOST_LANDING,       0, beep_sos },
+    { BEEPER_RX_LOST,               1, beep_txLostBeep },
+    { BEEPER_DISARMING,             2, beep_disarmBeep },
+    { BEEPER_ARMING,                3, beep_armingBeep },
+    { BEEPER_ARMING_GPS_FIX,        4, beep_armedGpsFix },
+    { BEEPER_BAT_CRIT_LOW,          5, beep_critBatteryBeep },
+    { BEEPER_BAT_LOW,               6, beep_lowBatteryBeep },
+    { BEEPER_GPS_STATUS,            7, beep_multiBeeps },
+    { BEEPER_RX_SET,                8, beep_shortBeep },
+    { BEEPER_DISARM_REPEAT,         9, beep_disarmRepeatBeep },
+    { BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps },
+    { BEEPER_ACC_CALIBRATION_FAIL,  11, beep_3shortBeeps },
+    { BEEPER_READY_BEEP,            12, beep_readyBeep },
+    { BEEPER_CONFIRM_BEEP,          13, beep_confirmBeep },
+    { BEEPER_MULTI_BEEPS,           14, beep_multiBeeps }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ARMED,                 15, beep_armedBeep },
+};
+
+static const beeperTableEntry_t *currentBeeperEntry = NULL;
+
+#define BEEPER_TABLE_ENTRY_COUNT (sizeof(beeperTable) / sizeof(beeperTableEntry_t))
 
 /*
  * Called to activate/deactivate beeper, using the given "BEEPER_..." value.
@@ -133,76 +159,37 @@ static void beeperCalculations(void);
  */
 void beeper(beeperMode_e mode)
 {
-    // Just return if same or higher priority sound is active.
-    if (beeperMode <= mode)
+    if (mode == BEEPER_SILENCE) {
+        beeperSilence();
         return;
-
-    switch (mode) {
-        case BEEPER_READY_BEEP:
-            beeperPtr = beep_readyBeep;
-            break;
-        case BEEPER_ARMING:
-            beeperPtr = beep_armingBeep;
-            break;
-        case BEEPER_DISARMING:
-            beeperPtr = beep_disarmBeep;
-            break;
-        case BEEPER_DISARM_REPEAT:
-            beeperPtr = beep_disarmRepeatBeep;
-            break;
-        case BEEPER_ACC_CALIBRATION:
-            beeperPtr = beep_2shortBeeps;
-            break;
-        case BEEPER_ACC_CALIBRATION_FAIL:
-            beeperPtr = beep_3shortBeeps;
-            break;
-        case BEEPER_RX_LOST_LANDING:
-            beeperPtr = beep_sos;
-            break;
-        case BEEPER_RX_LOST:
-            beeperPtr = beep_txLostBeep;
-            break;
-        case BEEPER_BAT_LOW:
-            beeperPtr = beep_lowBatteryBeep;
-            break;
-        case BEEPER_BAT_CRIT_LOW:
-            beeperPtr = beep_critBatteryBeep;
-            break;
-        case BEEPER_ARMED:
-            beeperPtr = beep_armedBeep;
-            break;
-        case BEEPER_ARMING_GPS_FIX:
-            beeperPtr = beep_armedGpsFix;
-            break;
-        case BEEPER_CONFIRM_BEEP:
-            beeperPtr = beep_confirmBeep;
-            break;
-        case BEEPER_MULTI_BEEPS:
-            beeperPtr = beep_multiBeeps;
-            break;
-        case BEEPER_RX_SET:
-#ifdef GPS
-            // if GPS fix then beep out number of satellites
-            if (feature(FEATURE_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5) {
-                uint8_t i = 0;
-                do {
-                    beep_multiBeeps[i++] = 5;
-                    beep_multiBeeps[i++] = 10;
-                } while (i < MAX_MULTI_BEEPS && GPS_numSat > i / 2);
-                beep_multiBeeps[i-1] = 50;    // extend last pause
-                beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
-                beeperPtr = beep_multiBeeps;
-                break;
-            }
-#endif
-            beeperPtr = beep_shortBeep;
-            break;
-
-        default:
-            return;
     }
+
+    const beeperTableEntry_t *selectedCandidate = NULL;
+    for (uint32_t i = 0; i < BEEPER_TABLE_ENTRY_COUNT; i++) {
+        const beeperTableEntry_t *candidate = &beeperTable[i];
+        if (candidate->mode != mode) {
+            continue;
+        }
+
+        if (!currentBeeperEntry) {
+            selectedCandidate = candidate;
+            break;
+        }
+
+        if (candidate->priority < currentBeeperEntry->priority) {
+            selectedCandidate = candidate;
+        }
+
+        break;
+    }
+
+    if (!selectedCandidate) {
+        return;
+    }
+
+    currentBeeperEntry = selectedCandidate;
+
     beeperPos = 0;
-    beeperMode = mode;
     beeperNextToggleTime = 0;
 }
 
@@ -211,10 +198,10 @@ void beeperSilence(void)
     BEEP_OFF;
     beeperIsOn = 0;
 
-    beeperMode = BEEPER_STOPPED;
     beeperNextToggleTime = 0;
-    beeperPtr = NULL;
     beeperPos = 0;
+
+    currentBeeperEntry = NULL;
 }
 /*
  * Emits the given number of 20ms beeps (with 200ms spacing).
@@ -241,6 +228,24 @@ void queueConfirmationBeep(uint8_t beepCount)
     }
 }
 
+void beeperGpsStatus(void)
+{
+    // if GPS fix then beep out number of satellites
+    if (STATE(GPS_FIX) && GPS_numSat >= 5) {
+        uint8_t i = 0;
+        do {
+            beep_multiBeeps[i++] = 5;
+            beep_multiBeeps[i++] = 10;
+        } while (i < MAX_MULTI_BEEPS && GPS_numSat > i / 2);
+
+        beep_multiBeeps[i-1] = 50; // extend last pause
+        beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
+
+        beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
+    } else {
+        beeper(BEEPER_RX_SET);
+    }
+}
 /*
  * Beeper handler function to be called periodically in loop. Updates beeper
  * state via time schedule.
@@ -249,12 +254,19 @@ void beeperUpdate(void)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
-        if (beeperMode > BEEPER_RX_SET)
+#ifdef GPS
+        if (feature(FEATURE_GPS)) {
+            beeperGpsStatus();
+        } else {
             beeper(BEEPER_RX_SET);
+        }
+#else
+        beeper(BEEPER_RX_SET);
+#endif
     }
 
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
-    if (beeperMode == BEEPER_STOPPED || beeperPtr == NULL) {
+    if (currentBeeperEntry == NULL) {
         return;
     }
 
@@ -265,38 +277,38 @@ void beeperUpdate(void)
 
     if (!beeperIsOn) {
         beeperIsOn = 1;
-        if (beeperPtr[beeperPos] != 0) {
+        if (currentBeeperEntry->sequence[beeperPos] != 0) {
             BEEP_ON;
                    //if this was arming beep then mark time (for blackbox)
-            if (beeperPos == 0 && (beeperMode == BEEPER_ARMING ||
-                                   beeperMode == BEEPER_ARMING_GPS_FIX)) {
+            if (
+                beeperPos == 0
+                && (currentBeeperEntry->mode == BEEPER_ARMING || currentBeeperEntry->mode == BEEPER_ARMING_GPS_FIX)
+            ) {
                 armingBeepTimeMicros = micros();
             }
         }
     } else {
         beeperIsOn = 0;
-        if (beeperPtr[beeperPos] != 0) {
+        if (currentBeeperEntry->sequence[beeperPos] != 0) {
             BEEP_OFF;
         }
     }
 
-    beeperCalculations();
+    beeperProcessCommand();
 }
 
 /*
  * Calculates array position when next to change beeper state is due.
  */
-void beeperCalculations(void)
+static void beeperProcessCommand(void)
 {
-    if (beeperPtr[beeperPos] == BEEPER_COMMAND_REPEAT) {
+    if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_REPEAT) {
         beeperPos = 0;
-    } else if (beeperPtr[beeperPos] == BEEPER_COMMAND_STOP) {
-        beeperMode = BEEPER_STOPPED;
-        BEEP_OFF;
-        beeperIsOn = 0;
+    } else if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_STOP) {
+        beeperSilence();
     } else {
         // Otherwise advance the sequence and calculate next toggle time
-        beeperNextToggleTime = millis() + 10 * beeperPtr[beeperPos];
+        beeperNextToggleTime = millis() + 10 * currentBeeperEntry->sequence[beeperPos];
         beeperPos++;
     }
 }

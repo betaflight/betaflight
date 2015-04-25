@@ -19,14 +19,16 @@
 
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
+    BEEPER_SILENCE = 0,             // Silence, see beeperSilence()
 
-    BEEPER_RX_LOST_LANDING = 0,     // Beeps SOS when armed and TX is turned off or signal lost (autolanding/autodisarm)
+    BEEPER_RX_LOST_LANDING,         // Beeps SOS when armed and TX is turned off or signal lost (autolanding/autodisarm)
     BEEPER_RX_LOST,                 // Beeps when TX is turned off or signal lost (repeat until TX is okay)
     BEEPER_DISARMING,               // Beep when disarming the board
     BEEPER_ARMING,                  // Beep when arming the board
     BEEPER_ARMING_GPS_FIX,          // Beep a tone when arming the board and GPS has fix
     BEEPER_BAT_CRIT_LOW,            // Faster warning beeps when battery is critically low (repeats)
     BEEPER_BAT_LOW,                 // Warning beeps when battery is getting low (repeats)
+    BEEPER_GPS_STATUS,
     BEEPER_RX_SET,                  // Beeps when aux channel is set for beep or beep sequence how many satellites has found if GPS enabled.
     BEEPER_DISARM_REPEAT,           // Beeps sounded while stick held in disarm position
     BEEPER_ACC_CALIBRATION,         // ACC inflight calibration completed confirmation
@@ -35,7 +37,6 @@ typedef enum {
     BEEPER_CONFIRM_BEEP,            // Single short confirmation beep.
     BEEPER_MULTI_BEEPS,             // Internal value used by 'queueConfirmationBeep()'.
     BEEPER_ARMED,                   // Warning beeps when board is armed. (repeats until board is disarmed or throttle is increased)
-    BEEPER_STOPPED                  // State which is used when beeper is in idle mode
 } beeperMode_e;
 
 void beeper(beeperMode_e mode);
