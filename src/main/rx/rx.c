@@ -385,10 +385,21 @@ void updateRSSIPWM(void)
     int16_t pwmRssi = 0;
     // Read value of AUX channel as rssi
     pwmRssi = rcData[rxConfig->rssi_channel - 1];
-
-
+	
+	// RSSI_Invert option	
+	if (rxConfig->rssi_ppm_invert) {
+		if (pwmRssi < 1000) {
+			pwmRssi = 1000;
+		}
+		if (pwmRssi > 2000) {
+			pwmRssi = 2000;
+		}
+		
+		pwmRssi = ((2000 - pwmRssi) + 1000);
+	}
+	
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-    rssi = (uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
+		rssi = (uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
 }
 
 #define RSSI_ADC_SAMPLE_COUNT 16
