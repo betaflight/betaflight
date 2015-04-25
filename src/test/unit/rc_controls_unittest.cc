@@ -32,6 +32,7 @@ extern "C" {
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
 
+    #include "io/beeper.h"
     #include "io/escservo.h"
     #include "io/rc_controls.h"
 
@@ -187,11 +188,11 @@ void generatePitchRollCurve(controlRateConfig_t *) {
     callCounts[COUNTER_GENERATE_PITCH_ROLL_CURVE]++;
 }
 
-void queueConfirmationBeep(uint8_t) {
+void beeperConfirmationBeeps(uint8_t) {
     callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]++;
 }
 
-void beeper(uint8_t mode) {
+void beeper(beeperMode_e mode) {
     UNUSED(mode);
 }
 
