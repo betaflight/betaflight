@@ -34,13 +34,12 @@ typedef enum {
     BEEPER_ACC_CALIBRATION,         // ACC inflight calibration completed confirmation
     BEEPER_ACC_CALIBRATION_FAIL,    // ACC inflight calibration failed
     BEEPER_READY_BEEP,              // Ring a tone when board is ready to flight (GPS ready).
-    BEEPER_CONFIRM_BEEP,            // Single short confirmation beep.
-    BEEPER_MULTI_BEEPS,             // Internal value used by 'queueConfirmationBeep()'.
+    BEEPER_MULTI_BEEPS,             // Internal value used by 'beeperConfirmationBeeps()'.
     BEEPER_ARMED,                   // Warning beeps when board is armed. (repeats until board is disarmed or throttle is increased)
 } beeperMode_e;
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
 void beeperUpdate(void);
-void queueConfirmationBeep(uint8_t beepCount);
+void beeperConfirmationBeeps(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);

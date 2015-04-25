@@ -37,7 +37,7 @@ uint16_t enableFlightMode(flightModeFlags_e mask)
 
     flightModeFlags |= (mask);
     if (flightModeFlags != oldVal)
-        queueConfirmationBeep(1);
+        beeperConfirmationBeeps(1);
     return flightModeFlags;
 }
 
@@ -51,7 +51,7 @@ uint16_t disableFlightMode(flightModeFlags_e mask)
 
     flightModeFlags &= ~(mask);
     if (flightModeFlags != oldVal)
-        queueConfirmationBeep(1);
+        beeperConfirmationBeeps(1);
     return flightModeFlags;
 }
 

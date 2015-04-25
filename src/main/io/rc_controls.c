@@ -397,9 +397,9 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
     float newFloatValue;
 
     if (delta > 0) {
-        queueConfirmationBeep(2);
+        beeperConfirmationBeeps(2);
     } else {
-        queueConfirmationBeep(1);
+        beeperConfirmationBeeps(1);
     }
     switch(adjustmentFunction) {
         case ADJUSTMENT_RC_RATE:
@@ -520,7 +520,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
     }
 
     if (applied) {
-        queueConfirmationBeep(position + 1);
+        beeperConfirmationBeeps(position + 1);
     }
 }
 

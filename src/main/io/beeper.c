@@ -81,10 +81,7 @@ static const uint8_t beep_lowBatteryBeep[] = {
 static const uint8_t beep_critBatteryBeep[] = {
     50, 2, BEEPER_COMMAND_STOP
 };
-// single confirmation beep
-static const uint8_t beep_confirmBeep[] = {
-    2, 20, BEEPER_COMMAND_STOP
-};
+
 // transmitter-signal-lost tone
 static const uint8_t beep_txLostBeep[] = {
     50, 50, BEEPER_COMMAND_STOP
@@ -111,6 +108,10 @@ static const uint8_t beep_3shortBeeps[] = {
 };
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
+
+#define BEEPER_CONFIRMATION_BEEP_DURATION 2
+#define BEEPER_CONFIRMATION_BEEP_GAP_DURATION 20
+
 
 // Beeper off = 0 Beeper on = 1
 static uint8_t beeperIsOn = 0;
@@ -144,9 +145,8 @@ static const beeperTableEntry_t const beeperTable[] = {
     { BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps },
     { BEEPER_ACC_CALIBRATION_FAIL,  11, beep_3shortBeeps },
     { BEEPER_READY_BEEP,            12, beep_readyBeep },
-    { BEEPER_CONFIRM_BEEP,          13, beep_confirmBeep },
-    { BEEPER_MULTI_BEEPS,           14, beep_multiBeeps }, // FIXME having this listed makes no sense since the beep array will not be initialised.
-    { BEEPER_ARMED,                 15, beep_armedBeep },
+    { BEEPER_MULTI_BEEPS,           13, beep_multiBeeps }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ARMED,                 14, beep_armedBeep },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -207,25 +207,21 @@ void beeperSilence(void)
  * Emits the given number of 20ms beeps (with 200ms spacing).
  * This function returns immediately (does not block).
  */
-void queueConfirmationBeep(uint8_t beepCount)
+void beeperConfirmationBeeps(uint8_t beepCount)
 {
     int i;
     int cLimit;
 
-    if(beepCount <= 1)                 //if single beep then
-        beeper(BEEPER_CONFIRM_BEEP);   //use dedicated array
-    else {
-        i = 0;
-        cLimit = beepCount * 2;
-        if(cLimit > MAX_MULTI_BEEPS)
-            cLimit = MAX_MULTI_BEEPS;  //stay within array size
-        do {
-            beep_multiBeeps[i++] = 2;       //20ms beep
-            beep_multiBeeps[i++] = 20;      //200ms pause
-        } while (i < cLimit);
-        beep_multiBeeps[i] = BEEPER_COMMAND_STOP;     //sequence end
-        beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
-    }
+    i = 0;
+    cLimit = beepCount * 2;
+    if(cLimit > MAX_MULTI_BEEPS)
+        cLimit = MAX_MULTI_BEEPS;  //stay within array size
+    do {
+        beep_multiBeeps[i++] = BEEPER_CONFIRMATION_BEEP_DURATION;       // 20ms beep
+        beep_multiBeeps[i++] = BEEPER_CONFIRMATION_BEEP_GAP_DURATION;   // 200ms pause
+    } while (i < cLimit);
+    beep_multiBeeps[i] = BEEPER_COMMAND_STOP;     //sequence end
+    beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
 }
 
 void beeperGpsStatus(void)
