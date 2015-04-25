@@ -224,6 +224,7 @@ void beeperConfirmationBeeps(uint8_t beepCount)
     beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
 }
 
+#ifdef GPS
 void beeperGpsStatus(void)
 {
     // if GPS fix then beep out number of satellites
@@ -242,6 +243,8 @@ void beeperGpsStatus(void)
         beeper(BEEPER_RX_SET);
     }
 }
+#endif
+
 /*
  * Beeper handler function to be called periodically in loop. Updates beeper
  * state via time schedule.
