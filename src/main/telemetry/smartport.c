@@ -322,21 +322,29 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_VFAS       :
-                smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
-                smartPortHasRequest = 0;
+                if (feature(FEATURE_VBAT)) {
+                    smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
+                    smartPortHasRequest = 0;
+                }
                 break;
             case FSSP_DATAID_CURRENT    :
-                smartPortSendPackage(id, amperage); // given in 10mA steps, unknown requested unit
-                smartPortHasRequest = 0;
+                if (feature(FEATURE_CURRENT_METER)) {
+                    smartPortSendPackage(id, amperage); // given in 10mA steps, unknown requested unit
+                    smartPortHasRequest = 0;
+                }
                 break;
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
-                smartPortSendPackage(id, BaroAlt); // unknown given unit, requested 100 = 1 meter
-                smartPortHasRequest = 0;
+                if (sensors(SENSOR_BARO)) {
+                    smartPortSendPackage(id, BaroAlt); // unknown given unit, requested 100 = 1 meter
+                    smartPortHasRequest = 0;
+                }
                 break;
             case FSSP_DATAID_FUEL       :
-                smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
-                smartPortHasRequest = 0;
+                if (feature(FEATURE_CURRENT_METER)) {
+                    smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
+                    smartPortHasRequest = 0;
+                }
                 break;
             //case FSSP_DATAID_ADC1       :
             //case FSSP_DATAID_ADC2       :
@@ -369,8 +377,10 @@ void handleSmartPortTelemetry(void)
 #endif
             //case FSSP_DATAID_CAP_USED   :
             case FSSP_DATAID_VARIO      :
-                smartPortSendPackage(id, vario); // unknown given unit but requested in 100 = 1m/s
-                smartPortHasRequest = 0;
+                if (sensors(SENSOR_BARO)) {
+                    smartPortSendPackage(id, vario); // unknown given unit but requested in 100 = 1m/s
+                    smartPortHasRequest = 0;
+                }
                 break;
             case FSSP_DATAID_HEADING    :
                 smartPortSendPackage(id, heading * 100); // given in deg, requested in 10000 = 100 deg
@@ -444,7 +454,7 @@ void handleSmartPortTelemetry(void)
                     smartPortHasRequest = 0;
 #endif
                 }
-                else {
+                else if (feature(FEATURE_GPS)) {
                     smartPortSendPackage(id, 0);
                     smartPortHasRequest = 0;
                 }
