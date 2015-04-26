@@ -299,7 +299,7 @@ void handleSmartPortTelemetry(void)
     if ((now - smartPortLastServiceTime) < SMARTPORT_SERVICE_DELAY_MS)
         return;
 
-    if (smartPortHasRequest) {
+    while (smartPortHasRequest) {
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
@@ -469,7 +469,7 @@ void handleSmartPortTelemetry(void)
 #endif
             default:
                 break;
-                // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just wait for the next loop
+                // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just loop back to the start
         }
     }
 }
