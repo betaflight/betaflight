@@ -297,7 +297,6 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     }
 }
 
-#define GYRO_P_MAX 300
 #define GYRO_I_MAX 256
 
 static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
@@ -394,9 +393,8 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6; // TODO: Bitwise shift on a signed integer is not recommended
 
     // Constrain YAW by D value if not servo driven in that case servolimits apply
-    if(motorCount > 3) {
-        int16_t limit = GYRO_P_MAX - pidProfile->D8[FD_YAW];
-        PTerm = constrain(PTerm, -limit, +limit);
+    if(motorCount >= 4 && pidProfile->yaw_p_limit) {
+        PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
     }
 
     ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
@@ -505,9 +503,8 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
     PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6;
 
     // Constrain YAW by D value if not servo driven in that case servolimits apply
-    if(motorCount > 3) {
-        int16_t limit = GYRO_P_MAX - pidProfile->D8[FD_YAW];
-        PTerm = constrain(PTerm, -limit, +limit);
+    if(motorCount >= 4 && pidProfile->yaw_p_limit) {
+        PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
     }
 
     ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
@@ -635,10 +632,8 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
         ITerm = constrain(errorGyroI[FD_YAW] >> 13, -GYRO_I_MAX, +GYRO_I_MAX);
         PTerm = ((int32_t)error * (int32_t)pidProfile->P8[FD_YAW]) >> 6;
 
-        if (motorCount >= 4) { // Constrain FD_YAW by D value if not servo driven in that case servolimits apply
-            int32_t limit = 300;
-            if (pidProfile->D8[FD_YAW]) limit -= (int32_t)pidProfile->D8[FD_YAW];
-            PTerm = constrain(PTerm, -limit, limit);
+        if(motorCount >= 4 && pidProfile->yaw_p_limit) {                       // Constrain FD_YAW by D value if not servo driven in that case servolimits apply
+            PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
         }
     }
     axisPID[FD_YAW] = PTerm + ITerm;

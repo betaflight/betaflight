@@ -47,6 +47,7 @@ typedef struct pidProfile_s {
     float A_level;
     float H_level;
     uint8_t H_sensitivity;
+    uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
 } pidProfile_t;
 
 #define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
