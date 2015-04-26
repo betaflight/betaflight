@@ -161,8 +161,8 @@ static void smartPortDataReceive(uint16_t c)
     static uint8_t lastChar;
     if (lastChar == FSSP_START_STOP) {
         smartPortState = SPSTATE_WORKING;
-        smartPortLastRequestTime = now;
-        if (c == FSSP_SENSOR_ID1) {
+        if (c == FSSP_SENSOR_ID1 && (serialTotalBytesWaiting(smartPortSerialPort) == 0)) {
+            smartPortLastRequestTime = now;
             smartPortHasRequest = 1;
             // we only responde to these IDs
             // the X4R-SB does send other IDs, we ignore them, but take note of the time
