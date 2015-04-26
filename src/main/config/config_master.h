@@ -25,6 +25,7 @@ typedef struct master_t {
 
     uint8_t mixerMode;
     uint32_t enabledFeatures;
+    uint8_t persistentFlags;
     uint16_t looptime;                      // imu loop time in us
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
     uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
@@ -48,8 +49,10 @@ typedef struct master_t {
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
-    uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
-    uint16_t gyro_cmpfm_factor;             // Set the Gyro Weight for Gyro/Magnetometer complementary filter. Increasing this value would reduce and delay Magnetometer influence on the output of the filter
+    uint16_t dcm_kp_acc;                    // DCM filter proportional gain ( x 10000) for accelerometer
+    uint16_t dcm_ki_acc;                    // DCM filter integral gain ( x 10000) for accelerometer
+    uint16_t dcm_kp_mag;                    // DCM filter proportional gain ( x 10000) for magnetometer and GPS heading
+    uint16_t dcm_ki_mag;                    // DCM filter integral gain ( x 10000) for magnetometer and GPS heading
 
     gyroConfig_t gyroConfig;
 
@@ -57,8 +60,9 @@ typedef struct master_t {
     uint8_t baro_hardware;                  // Barometer hardware to use
 
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
-    flightDynamicsTrims_t accZero;
-    flightDynamicsTrims_t magZero;
+    flightDynamicsTrims_t accZero;          // Accelerometer offset
+    flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
+    flightDynamicsTrims_t magZero;          // Compass offset
 
     batteryConfig_t batteryConfig;
 
@@ -75,10 +79,9 @@ typedef struct master_t {
     // mixer-related configuration
     mixerConfig_t mixerConfig;
 
-    airplaneConfig_t airplaneConfig;
-
 #ifdef GPS
     gpsConfig_t gpsConfig;
+    navConfig_t navConfig;
 #endif
 
     serialConfig_t serialConfig;

@@ -212,7 +212,7 @@ static const modeColorIndexes_t magModeColors = {
 };
 #endif
 
-static const modeColorIndexes_t baroModeColors = {
+static const modeColorIndexes_t navigationModeColors = {
         COLOR_LIGHT_BLUE,
         COLOR_DARK_VIOLET,
         COLOR_RED,
@@ -628,8 +628,8 @@ void applyLedModeLayer(void)
             applyDirectionalModeColor(ledIndex, ledConfig, &magModeColors);
 #endif
 #ifdef BARO
-        } else if (FLIGHT_MODE(BARO_MODE)) {
-            applyDirectionalModeColor(ledIndex, ledConfig, &baroModeColors);
+        } else if (FLIGHT_MODE(NAV_ALTHOLD_MODE | NAV_POSHOLD_MODE | NAV_RTH_MODE | NAV_WP_MODE)) {
+            applyDirectionalModeColor(ledIndex, ledConfig, &navigationModeColors);
 #endif
         } else if (FLIGHT_MODE(HORIZON_MODE)) {
             applyDirectionalModeColor(ledIndex, ledConfig, &horizonModeColors);

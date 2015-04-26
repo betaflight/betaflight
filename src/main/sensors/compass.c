@@ -17,10 +17,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "platform.h"
 
 #include "common/axis.h"
+#include "common/maths.h"
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
@@ -47,6 +49,7 @@ int16_t magADC[XYZ_AXIS_COUNT];
 sensor_align_e magAlign = 0;
 #ifdef MAG
 static uint8_t magInit = 0;
+static uint8_t magUpdatedAtLeastOnce = 0;
 
 void compassInit(void)
 {
@@ -57,13 +60,19 @@ void compassInit(void)
     magInit = 1;
 }
 
-#define COMPASS_UPDATE_FREQUENCY_10HZ (1000 * 100)
+bool isCompassReady(void)
+{
+    return magUpdatedAtLeastOnce;
+}
+
+static sensorCalibrationState_t calState;
+
+#define COMPASS_UPDATE_FREQUENCY_10HZ   (1000 * 100)
 
 void updateCompass(flightDynamicsTrims_t *magZero)
 {
-    static uint32_t nextUpdateAt, tCal = 0;
-    static flightDynamicsTrims_t magZeroTempMin;
-    static flightDynamicsTrims_t magZeroTempMax;
+    static uint32_t nextUpdateAt, calStartedAt = 0;
+    static int16_t magPrev[XYZ_AXIS_COUNT];
     uint32_t axis;
 
     if ((int32_t)(currentTime - nextUpdateAt) < 0)
@@ -72,15 +81,16 @@ void updateCompass(flightDynamicsTrims_t *magZero)
     nextUpdateAt = currentTime + COMPASS_UPDATE_FREQUENCY_10HZ;
 
     mag.read(magADC);
-    alignSensors(magADC, magADC, magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
-        tCal = nextUpdateAt;
+        calStartedAt = nextUpdateAt;
+
         for (axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
-            magZeroTempMin.raw[axis] = magADC[axis];
-            magZeroTempMax.raw[axis] = magADC[axis];
+            magPrev[axis] = 0;
         }
+
+        sensorCalibrationResetState(&calState);
         DISABLE_STATE(CALIBRATE_MAG);
     }
 
@@ -90,23 +100,42 @@ void updateCompass(flightDynamicsTrims_t *magZero)
         magADC[Z] -= magZero->raw[Z];
     }
 
-    if (tCal != 0) {
-        if ((nextUpdateAt - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
+    if (calStartedAt != 0) {
+        if ((nextUpdateAt - calStartedAt) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
             LED0_TOGGLE;
+
+            float diffMag = 0;
+            float avgMag = 0;
+
             for (axis = 0; axis < 3; axis++) {
-                if (magADC[axis] < magZeroTempMin.raw[axis])
-                    magZeroTempMin.raw[axis] = magADC[axis];
-                if (magADC[axis] > magZeroTempMax.raw[axis])
-                    magZeroTempMax.raw[axis] = magADC[axis];
-            }
-        } else {
-            tCal = 0;
-            for (axis = 0; axis < 3; axis++) {
-                magZero->raw[axis] = (magZeroTempMin.raw[axis] + magZeroTempMax.raw[axis]) / 2; // Calculate offsets
+                diffMag += (magADC[axis] - magPrev[axis]) * (magADC[axis] - magPrev[axis]);
+                avgMag += (magADC[axis] + magPrev[axis]) * (magADC[axis] + magPrev[axis]) / 4.0f;
             }
 
+            // sqrtf(diffMag / avgMag) is a rough approximation of tangent of angle between magADC and magPrev. tan(8 deg) = 0.14
+            if ((avgMag > 0.01f) && ((diffMag / avgMag) > (0.14f * 0.14f))) {
+                sensorCalibrationPushSampleForOffsetCalculation(&calState, magADC);
+
+                for (axis = 0; axis < 3; axis++) {
+                    magPrev[axis] = magADC[axis];
+                }
+            }
+        } else {
+            float magZerof[3];
+            sensorCalibrationSolveForOffset(&calState, magZerof);
+
+            for (axis = 0; axis < 3; axis++) {
+                magZero->raw[axis] = lrintf(magZerof[axis]);
+            }
+
+            calStartedAt = 0;
+            persistentFlagSet(FLAG_MAG_CALIBRATION_DONE);
             saveConfigAndNotify();
         }
     }
+
+    alignSensors(magADC, magADC, magAlign);
+
+    magUpdatedAtLeastOnce = 1;
 }
 #endif

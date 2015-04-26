@@ -179,8 +179,8 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 {
     static int32_t amperageRaw = 0;
     static int64_t mAhdrawnRaw = 0;
-    int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
     int32_t throttleFactor = 0;
+    int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
     switch(batteryConfig->currentMeterType) {
         case CURRENT_SENSOR_ADC:

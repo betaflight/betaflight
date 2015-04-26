@@ -199,8 +199,7 @@ void MPU_DATA_READY_EXTI_Handler(void)
     uint32_t now = micros();
     callDelta = now - lastCalledAt;
 
-    //UNUSED(callDelta);
-    debug[0] = callDelta;
+    UNUSED(callDelta);
 
     lastCalledAt = now;
 #endif

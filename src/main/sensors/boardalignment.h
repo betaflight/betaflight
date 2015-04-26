@@ -18,10 +18,11 @@
 #pragma once
 
 typedef struct boardAlignment_s {
-    int16_t rollDegrees;
-    int16_t pitchDegrees;
-    int16_t yawDegrees;
+    int16_t rollDeciDegrees;
+    int16_t pitchDeciDegrees;
+    int16_t yawDeciDegrees;
 } boardAlignment_t;
 
 void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation);
 void initBoardAlignment(boardAlignment_t *boardAlignment);
+void updateBoardAlignment(boardAlignment_t *boardAlignment, int16_t roll, int16_t pitch);

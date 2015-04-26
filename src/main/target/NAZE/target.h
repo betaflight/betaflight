@@ -170,6 +170,7 @@
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
 #define GPS
+#define NAV
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
@@ -179,6 +180,8 @@
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
+
+#define SKIP_CLI_COMMAND_HELP
 
 #define SPEKTRUM_BIND
 // USART2, PA3

@@ -25,16 +25,11 @@ typedef struct profile_s {
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
 
-    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
-
     // sensor-related stuff
-    uint8_t acc_lpf_factor;                 // Set the Low Pass Filter factor for ACC. Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
-    float accz_lpf_cutoff;                  // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
-    accDeadband_t accDeadband;
+    uint8_t gyro_soft_filter;               // Used for soft gyro filtering
+    uint8_t acc_soft_filter;                // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
 
     barometerConfig_t barometerConfig;
-
-    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
 
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
@@ -44,17 +39,12 @@ typedef struct profile_s {
 
     rcControlsConfig_t rcControlsConfig;
 
-    uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
-    uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
+    uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
 
 #ifdef USE_SERVOS
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
-#endif
-
-#ifdef GPS
-    gpsProfile_t gpsProfile;
 #endif
 } profile_t;

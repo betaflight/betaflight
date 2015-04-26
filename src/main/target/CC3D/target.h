@@ -108,8 +108,9 @@
 #define RSSI_ADC_CHANNEL            ADC_Channel_1
 
 #define GPS
-#define LED_STRIP
-#define LED_STRIP_TIMER TIM3
+#define NAV
+//#define LED_STRIP
+//#define LED_STRIP_TIMER TIM3
 
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT

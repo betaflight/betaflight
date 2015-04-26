@@ -154,26 +154,32 @@ void baroUpdate(uint32_t currentTime)
     baroDeadline += micros();        // make sure deadline is set after calling baro callbacks
 }
 
-int32_t baroCalculateAltitude(void)
-{
-    int32_t BaroAlt_tmp;
-
-    // calculates height from ground via baro readings
-    // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-    BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
-    BaroAlt_tmp -= baroGroundAltitude;
-    BaroAlt = lrintf((float)BaroAlt * barometerConfig->baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - barometerConfig->baro_noise_lpf)); // additional LPF to reduce baro noise
-
-    return BaroAlt;
-}
-
-void performBaroCalibrationCycle(void)
+static void performBaroCalibrationCycle(void)
 {
     baroGroundPressure -= baroGroundPressure / 8;
     baroGroundPressure += baroPressureSum / PRESSURE_SAMPLE_COUNT;
     baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
 
     calibratingB--;
+}
+
+int32_t baroCalculateAltitude(void)
+{
+    if (!isBaroCalibrationComplete()) {
+        performBaroCalibrationCycle();
+        BaroAlt = 0;
+    }
+    else {
+        int32_t BaroAlt_tmp;
+
+        // calculates height from ground via baro readings
+        // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
+        BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
+        BaroAlt_tmp -= baroGroundAltitude;
+        BaroAlt = lrintf((float)BaroAlt * barometerConfig->baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - barometerConfig->baro_noise_lpf)); // additional LPF to reduce baro noise
+    }
+
+    return BaroAlt;
 }
 
 #endif /* BARO */

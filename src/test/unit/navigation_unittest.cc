@@ -16,62 +16,75 @@
  */
 
 #include <stdint.h>
-#include <stdbool.h>
 
 #include <limits.h>
 
-//#define DEBUG_ALTITUDE_HOLD
-
-#define BARO
+#define SERIAL_PORT_COUNT   1
 
 extern "C" {
     #include "debug.h"
 
     #include "common/axis.h"
+    #include "common/color.h"
     #include "common/maths.h"
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
+    #include "drivers/serial.h"
+
+    //#include "drivers/pwm_rx.h"
+    typedef enum {
+        INPUT_FILTERING_DISABLED = 0,
+        INPUT_FILTERING_ENABLED
+    } inputFilteringMode_e;
+
 
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
+    #include "sensors/gyro.h"
+
+    #include "sensors/battery.h"
+    #include "sensors/boardalignment.h"
 
     #include "io/escservo.h"
     #include "io/rc_controls.h"
+    #include "io/serial.h"
+
+    #include "telemetry/telemetry.h"
 
     #include "rx/rx.h"
 
-    #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
-    #include "flight/altitudehold.h"
+    #include "flight/mixer.h"
+    #include "flight/failsafe.h"
+    #include "flight/gps_conversion.h"
+    #include "flight/navigation_rewrite.h"
 
     #include "config/runtime_config.h"
-
+    #include "config/config.h"
+    #include "config/config_profile.h"
+    #include "config/config_master.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-#define DOWNWARDS_THRUST true
-#define UPWARDS_THRUST false
-
-
 extern "C" {
     bool isThrustFacingDownwards(rollAndPitchInclination_t *inclinations);
-    uint16_t calculateTiltAngle(rollAndPitchInclination_t *inclinations);
 }
 
+#define DOWNWARDS_THRUST true
+#define UPWARDS_THRUST false
 typedef struct inclinationExpectation_s {
     rollAndPitchInclination_t inclination;
     bool expectDownwardsThrust;
 } inclinationExpectation_t;
 
-TEST(AltitudeHoldTest, IsThrustFacingDownwards)
+TEST(NavigationTest, IsThrustFacingDownwards)
 {
     // given
-
     inclinationExpectation_t inclinationExpectations[] = {
             { {{    0,    0 }}, DOWNWARDS_THRUST },
             { {{  799,  799 }}, DOWNWARDS_THRUST },
@@ -88,50 +101,60 @@ TEST(AltitudeHoldTest, IsThrustFacingDownwards)
     uint8_t testIterationCount = sizeof(inclinationExpectations) / sizeof(inclinationExpectation_t);
 
     // expect
-
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         inclinationExpectation_t *angleInclinationExpectation = &inclinationExpectations[index];
-#ifdef DEBUG_ALTITUDE_HOLD
-        printf("iteration: %d\n", index);
-#endif
         bool result = isThrustFacingDownwards(&angleInclinationExpectation->inclination);
         EXPECT_EQ(angleInclinationExpectation->expectDownwardsThrust, result);
     }
 }
 
-typedef struct inclinationAngleExpectations_s {
-    rollAndPitchInclination_t inclination;
-    uint16_t expected_angle;
-} inclinationAngleExpectations_t;
+typedef struct coordConversionExpectation_s {
+    gpsLocation_t llh;
+    t_fp_vector pos;
+} coordConversionExpectation_t;
 
-TEST(AltitudeHoldTest, TestCalculateTiltAngle)
+TEST(NavigationTest, CoordinateConversion)
 {
-    inclinationAngleExpectations_t inclinationAngleExpectations[] = {
-        { {{ 0,  0}}, 0},
-        { {{ 1,  0}}, 1},
-        { {{ 0,  1}}, 1},
-        { {{ 0, -1}}, 1},
-        { {{-1,  0}}, 1},
-        { {{-1, -2}}, 2},
-        { {{-2, -1}}, 2},
-        { {{ 1,  2}}, 2},
-        { {{ 2,  1}}, 2}
+    // given
+    coordConversionExpectation_t testExpectations[] = {
+        { {505498090, 1370165690, 10},      {0.0f, 0.0f, 0.0f} },    // this would be origin
+        { {505498100, 1370165700, 20},      {11.131949f, 7.0733223f, 10.0f} },
+        { {505498080, 1370165680, 0},       {-11.131949f, -7.0733223f, -10.0f} },
     };
 
-    rollAndPitchInclination_t inclination = {{0, 0}};
-    uint16_t tilt_angle = calculateTiltAngle(&inclination);
-    EXPECT_EQ(tilt_angle, 0);
+    uint8_t testIterationCount = sizeof(testExpectations) / sizeof(testExpectations[0]);
+    gpsOrigin_s origin;
+    origin.valid = false;
 
-    for (uint8_t i = 0; i < 9; i++) {
-        inclinationAngleExpectations_t *expectation = &inclinationAngleExpectations[i];
-        uint16_t result = calculateTiltAngle(&expectation->inclination);
-        EXPECT_EQ(expectation->expected_angle, result);
+    // expect
+    for (uint8_t index = 0; index < testIterationCount; index ++) {
+        coordConversionExpectation_t * testExpectation = &testExpectations[index];
+
+        t_fp_vector pos;
+        gpsConvertGeodeticToLocal(&origin, &testExpectation->llh, &pos);
+
+        EXPECT_FLOAT_EQ(testExpectation->pos.V.X, pos.V.X);
+        EXPECT_FLOAT_EQ(testExpectation->pos.V.Y, pos.V.Y);
+        EXPECT_FLOAT_EQ(testExpectation->pos.V.Z, pos.V.Z);
+
+        gpsLocation_t llh;
+        gpsConvertLocalToGeodetic(&origin, &testExpectation->pos, &llh);
+        
+        EXPECT_EQ(testExpectation->llh.lat, llh.lat);
+        EXPECT_EQ(testExpectation->llh.lon, llh.lon);
+        EXPECT_EQ(testExpectation->llh.alt, llh.alt);
     }
+
 }
+
+
+
 
 // STUBS
 
 extern "C" {
+master_t masterConfig;
+
 uint32_t rcModeActivationMask;
 int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -140,22 +163,26 @@ uint32_t accTimeSum ;        // keep track for integration of acc
 int accSumCount;
 float accVelScale;
 
-rollAndPitchInclination_t inclination;
-
-//uint16_t acc_1G;
-//int16_t heading;
-//gyro_t gyro;
+uint16_t acc_1G;
+int16_t heading;
+gyro_t gyro;
 int32_t accSum[XYZ_AXIS_COUNT];
-//int16_t magADC[XYZ_AXIS_COUNT];
-int32_t BaroAlt;
+int16_t accADC[XYZ_AXIS_COUNT];
+int16_t gyroADC[XYZ_AXIS_COUNT];
+int16_t magADC[XYZ_AXIS_COUNT];
 int16_t debug[DEBUG16_VALUE_COUNT];
 
 uint8_t stateFlags;
 uint16_t flightModeFlags;
 uint8_t armingFlags;
 
-int32_t sonarAlt;
+uint8_t GPS_numSat;
 
+bool persistentFlag(uint8_t mask)
+{
+    UNUSED(mask);
+    return true;
+}
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {
@@ -168,29 +195,21 @@ uint16_t disableFlightMode(flightModeFlags_e mask)
 }
 
 void gyroUpdate(void) {};
+
 bool sensors(uint32_t mask)
 {
     UNUSED(mask);
     return false;
 };
+
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     UNUSED(rollAndPitchTrims);
 }
 
-void imuResetAccelerationSum(void) {};
-
-int32_t applyDeadband(int32_t, int32_t) { return 0; }
 uint32_t micros(void) { return 0; }
-bool isBaroCalibrationComplete(void) { return true; }
-void performBaroCalibrationCycle(void) {}
-int32_t baroCalculateAltitude(void) { return 0; }
-int constrain(int amt, int low, int high)
-{
-    UNUSED(amt);
-    UNUSED(low);
-    UNUSED(high);
-    return 0;
-}
 
+bool isBaroCalibrationComplete(void) { return true; }
+
+int32_t baroCalculateAltitude(void) { return 0; }
 }

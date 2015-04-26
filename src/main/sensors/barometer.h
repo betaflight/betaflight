@@ -31,8 +31,6 @@ typedef enum {
 typedef struct barometerConfig_s {
     uint8_t baro_sample_count;              // size of baro filter array
     float baro_noise_lpf;                   // additional LPF to reduce baro noise
-    float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
-    float baro_cf_alt;                      // apply CF to use ACC for height estimation
 } barometerConfig_t;
 
 extern int32_t BaroAlt;
@@ -45,5 +43,4 @@ void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void baroUpdate(uint32_t currentTime);
 bool isBaroReady(void);
 int32_t baroCalculateAltitude(void);
-void performBaroCalibrationCycle(void);
 #endif

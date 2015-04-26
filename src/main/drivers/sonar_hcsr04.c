@@ -25,6 +25,7 @@
 #include "nvic.h"
 
 #include "sonar_hcsr04.h"
+#include "sensors/sonar.h"
 
 #ifdef SONAR
 
@@ -164,7 +165,7 @@ int32_t hcsr04_get_distance(void)
     int32_t distance = measurement / 59;
 
     // this sonar range is up to 4meter , but 3meter is the safe working range (+tilted and roll)
-    if (distance > 300)
+    if (distance > SONAR_MAX_RANGE)
         distance = -1;
 
     return distance;

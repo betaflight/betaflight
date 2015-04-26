@@ -34,15 +34,15 @@ typedef enum {
     ANGLE_MODE      = (1 << 0),
     HORIZON_MODE    = (1 << 1),
     MAG_MODE        = (1 << 2),
-    BARO_MODE       = (1 << 3),
-    GPS_HOME_MODE   = (1 << 4),
-    GPS_HOLD_MODE   = (1 << 5),
+    NAV_ALTHOLD_MODE= (1 << 3), // old BARO
+    NAV_RTH_MODE    = (1 << 4), // old GPS_HOME
+    NAV_POSHOLD_MODE= (1 << 5), // old GPS_HOLD
     HEADFREE_MODE   = (1 << 6),
     UNUSED_MODE     = (1 << 7), // old autotune
     PASSTHRU_MODE   = (1 << 8),
-    SONAR_MODE      = (1 << 9),
     FAILSAFE_MODE   = (1 << 10),
     GTUNE_MODE      = (1 << 11),
+    NAV_WP_MODE     = (1 << 12),
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;

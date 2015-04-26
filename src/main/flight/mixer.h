@@ -86,10 +86,6 @@ typedef struct flight3DConfig_s {
     uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
 } flight3DConfig_t;
 
-typedef struct airplaneConfig_s {
-    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
-
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
 #ifdef USE_SERVOS
@@ -205,8 +201,7 @@ void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
         struct escAndServoConfig_s *escAndServoConfigToUse,
         mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        struct rxConfig_s *rxConfigToUse);
+		struct rxConfig_s *rxConfigToUse);
 
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);

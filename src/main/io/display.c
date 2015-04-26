@@ -55,7 +55,7 @@
 
 #ifdef GPS
 #include "io/gps.h"
-#include "flight/navigation.h"
+#include "flight/navigation_rewrite.h"
 #endif
 
 #include "config/runtime_config.h"
@@ -224,6 +224,9 @@ void updateFailsafeStatus(void)
             break;
         case FAILSAFE_RX_LOSS_DETECTED:
             failsafeIndicator = 'R';
+            break;
+        case FAILSAFE_RETURN_TO_HOME:
+            failsafeIndicator = 'H';
             break;
         case FAILSAFE_LANDING:
             failsafeIndicator = 'l';
@@ -459,7 +462,7 @@ void showSensorsPage(void)
     i2c_OLED_send_string("        X     Y     Z");
 
     if (sensors(SENSOR_ACC)) {
-        tfp_sprintf(lineBuffer, format, "ACC", accSmooth[X], accSmooth[Y], accSmooth[Z]);
+        tfp_sprintf(lineBuffer, format, "ACC", accADC[X], accADC[Y], accADC[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
@@ -481,11 +484,12 @@ void showSensorsPage(void)
     }
 #endif
 
-    tfp_sprintf(lineBuffer, format, "I&H", inclination.values.rollDeciDegrees, inclination.values.pitchDeciDegrees, heading);
+    tfp_sprintf(lineBuffer, format, "I&H", attitude.values.roll, attitude.values.pitch, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
+    /*
     uint8_t length;
 
     ftoa(EstG.A[X], lineBuffer);
@@ -509,6 +513,7 @@ void showSensorsPage(void)
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
+    */
 
 }
 

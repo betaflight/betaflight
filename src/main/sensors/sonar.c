@@ -108,12 +108,38 @@ void sonarUpdate(void)
     hcsr04_start_reading();
 }
 
+#define SONAR_SAMPLES_MEDIAN 3
+
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, -1 is returned instead.
  */
 int32_t sonarRead(void)
 {
-    return hcsr04_get_distance();
+    static int32_t sonarFilterSamples[SONAR_SAMPLES_MEDIAN];
+    static int currentFilterSampleIndex = 0;
+    static bool medianFilterReady = false;
+
+    int32_t newSonarReading = hcsr04_get_distance();
+    int nextSampleIndex;
+
+    if (newSonarReading > 0) {
+        nextSampleIndex = (currentFilterSampleIndex + 1);
+        if (nextSampleIndex == SONAR_SAMPLES_MEDIAN) {
+            nextSampleIndex = 0;
+            medianFilterReady = true;
+        }
+
+        sonarFilterSamples[currentFilterSampleIndex] = newSonarReading;
+        currentFilterSampleIndex = nextSampleIndex;
+
+        if (medianFilterReady)
+            return quickMedianFilter3(sonarFilterSamples);
+        else
+            return newSonarReading;
+    }
+    else {
+        return -1;
+    }
 }
 
 /**
@@ -122,13 +148,16 @@ int32_t sonarRead(void)
  *
  * When the ground is too far away or the tilt is too strong, -1 is returned instead.
  */
-int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle)
+int32_t sonarCalculateAltitude(int32_t sonarAlt, float cosTiltAngle)
 {
-    // calculate sonar altitude only if the sonar is facing downwards(<25deg)
-    if (tiltAngle > 250)
+    if (sonarAlt < 0)
+        return sonarAlt;
+
+    // calculate sonar altitude only if the sonar is facing downwards(<30deg)
+    if (cosTiltAngle < 0.866f)
         calculatedAltitude = -1;
     else
-        calculatedAltitude = sonarAlt * (900.0f - tiltAngle) / 900.0f;
+        calculatedAltitude = sonarAlt * cosTiltAngle;
 
     return calculatedAltitude;
 }

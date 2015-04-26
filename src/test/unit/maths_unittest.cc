@@ -20,6 +20,8 @@
 
 #include <limits.h>
 
+#include <math.h>
+
 #define BARO
 
 extern "C" {
@@ -145,3 +147,86 @@ TEST(MathsUnittest, TestRotateVectorAroundAxis)
 
     expectVectorsAreEqual(&vector, &expected_result);
 }
+
+#if defined(FAST_MATH) || defined(VERY_FAST_MATH)
+TEST(MathsUnittest, TestFastTrigonometrySinCos)
+{
+    EXPECT_NEAR(sin_approx(0.0f),                        0.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(M_PIf / 2),                   1.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(-M_PIf / 2),                 -1.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(M_PIf),                       0.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(-M_PIf),                      0.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(3 * M_PIf / 2),              -1.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(-3 * M_PIf / 2),              1.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(2 * M_PIf),                   0.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(-2 * M_PIf),                  0.0f, 1e-6);
+    EXPECT_NEAR(sin_approx(3 * M_PIf / 4),               0.707106781f, 1e-6);
+    EXPECT_NEAR(sin_approx(-3 * M_PIf / 4),             -0.707106781f, 1e-6);
+    EXPECT_NEAR(sin_approx(2 * M_PIf + 3 * M_PIf / 4),   0.707106781f, 1e-6);
+    EXPECT_NEAR(sin_approx(-2 * M_PIf - 3 * M_PIf / 4), -0.707106781f, 1e-6);
+
+    EXPECT_NEAR(cos_approx(0.0f),                        1.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(M_PIf / 2),                   0.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(-M_PIf / 2),                  0.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(M_PIf),                      -1.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(-M_PIf),                     -1.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(3 * M_PIf / 2),               0.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(-3 * M_PIf / 2),              0.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(2 * M_PIf),                   1.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(-2 * M_PIf),                  1.0f, 1e-6);
+    EXPECT_NEAR(cos_approx(3 * M_PIf / 4),              -0.707106781f, 1e-6);
+    EXPECT_NEAR(cos_approx(-3 * M_PIf / 4),             -0.707106781f, 1e-6);
+    EXPECT_NEAR(cos_approx(2 * M_PIf + 3 * M_PIf / 4),  -0.707106781f, 1e-6);
+    EXPECT_NEAR(cos_approx(-2 * M_PIf - 3 * M_PIf / 4), -0.707106781f, 1e-6);
+}
+
+TEST(MathsUnittest, TestFastTrigonometryATan2)
+{
+    EXPECT_NEAR(atan2_approx(1, 1),          M_PIf / 4, 1e-6);
+    EXPECT_NEAR(atan2_approx(-1, 1),        -M_PIf / 4, 1e-6);
+    EXPECT_NEAR(atan2_approx(1, -1),     3 * M_PIf / 4, 1e-6);
+    EXPECT_NEAR(atan2_approx(-1, -1),   -3 * M_PIf / 4, 1e-6);
+    EXPECT_NEAR(atan2_approx(0, 1),                  0, 1e-6);
+    EXPECT_NEAR(atan2_approx(0, -1),             M_PIf, 1e-6);
+    EXPECT_NEAR(atan2_approx(1, 0),          M_PIf / 2, 1e-6);
+    EXPECT_NEAR(atan2_approx(-1, 0),        -M_PIf / 2, 1e-6);
+}
+
+TEST(MathsUnittest, TestFastTrigonometryACos)
+{
+    EXPECT_NEAR(acos_approx(0.0f),              M_PIf / 2, 1e-4);
+    EXPECT_NEAR(acos_approx(1.0f),                      0, 1e-4);
+    EXPECT_NEAR(acos_approx(-1.0f),                 M_PIf, 1e-4);
+    EXPECT_NEAR(acos_approx(0.707106781f),      M_PIf / 4, 1e-4);
+    EXPECT_NEAR(acos_approx(-0.707106781f), 3 * M_PIf / 4, 1e-4);
+}
+
+TEST(MathsUnittest, TestSensorScaleUnitTest)
+{
+    sensorCalibrationState_t calState;
+    float result[3];
+
+    int16_t samples[6][3] = {
+        {  2896,  2896,      0 },
+        { -2897,  2896,      0 },
+        {     0,  4096,      0 },
+        {     0, -4096,      0 },
+        {     0,  2895,  -2897 },
+        {     0,     0,  -4096 } };
+
+    /* Given */
+    sensorCalibrationResetState(&calState);
+    sensorCalibrationPushSampleForScaleCalculation(&calState, 0, samples[0], 4096 );
+    sensorCalibrationPushSampleForScaleCalculation(&calState, 0, samples[1], 4096 );
+    sensorCalibrationPushSampleForScaleCalculation(&calState, 1, samples[2], 4096 );
+    sensorCalibrationPushSampleForScaleCalculation(&calState, 1, samples[3], 4096 );
+    sensorCalibrationPushSampleForScaleCalculation(&calState, 2, samples[4], 4096 );
+    sensorCalibrationPushSampleForScaleCalculation(&calState, 2, samples[5], 4096 );
+    sensorCalibrationSolveForScale(&calState, result);
+    
+    EXPECT_NEAR(result[0], 1, 1e-4);
+    EXPECT_NEAR(result[1], 1, 1e-4);
+    EXPECT_NEAR(result[2], 1, 1e-4);
+}
+
+#endif

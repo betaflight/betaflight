@@ -49,27 +49,51 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-#define DOWNWARDS_THRUST true
-#define UPWARDS_THRUST false
+extern float q0, q1, q2, q3;
+extern "C" { 
+void imuCompureRotationMatrix(void);
+void imuUpdateEulerAngles(void);
+void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw);
+}
 
-
-TEST(FlightImuTest, TestCalculateHeading)
+TEST(FlightImuTest, TestQuaternionAndRPYConversions)
 {
-    //TODO: Add test cases using the Z dimension.
-    t_fp_vector north = {.A={1.0f, 0.0f, 0.0f}};
-    EXPECT_EQ(imuCalculateHeading(&north), 0);
+    imuComputeQuaternionFromRPY(0, 0, 170);
+    imuUpdateEulerAngles();
+    EXPECT_EQ(attitude.values.roll, 0);
+    EXPECT_EQ(attitude.values.pitch, 0);
+    EXPECT_EQ(attitude.values.yaw, 170);
+}
 
-    t_fp_vector east = {.A={0.0f, 1.0f, 0.0f}};
-    EXPECT_EQ(imuCalculateHeading(&east), 90);
+TEST(FlightImuTest, TestEulerAngleCalculation)
+{
+    q0 = 1; q1 = 0; q2 = 0; q3 = 0;
+    imuCompureRotationMatrix();
+    imuUpdateEulerAngles();
+    EXPECT_EQ(attitude.values.roll, 0);
+    EXPECT_EQ(attitude.values.pitch, 0);
+    EXPECT_EQ(attitude.values.yaw, 0);
 
-    t_fp_vector south = {.A={-1.0f, 0.0f, 0.0f}};
-    EXPECT_EQ(imuCalculateHeading(&south), 180);
+    q0 = -1; q1 = 0; q2 = 0; q3 = 0;
+    imuCompureRotationMatrix();
+    imuUpdateEulerAngles();
+    EXPECT_EQ(attitude.values.roll, 0);
+    EXPECT_EQ(attitude.values.pitch, 0);
+    EXPECT_EQ(attitude.values.yaw, 0);
 
-    t_fp_vector west = {.A={0.0f, -1.0f, 0.0f}};
-    EXPECT_EQ(imuCalculateHeading(&west), 270);
+    q0 = 0; q1 = 0; q2 = 0; q3 = 1;
+    imuCompureRotationMatrix();
+    imuUpdateEulerAngles();
+    EXPECT_EQ(attitude.values.roll, 0);
+    EXPECT_EQ(attitude.values.pitch, 0);
+    EXPECT_EQ(attitude.values.yaw, 1801);
 
-    t_fp_vector north_east = {.A={1.0f, 1.0f, 0.0f}};
-    EXPECT_EQ(imuCalculateHeading(&north_east), 45);
+    q0 = 0; q1 = 0; q2 = 0; q3 = -1;
+    imuCompureRotationMatrix();
+    imuUpdateEulerAngles();
+    EXPECT_EQ(attitude.values.roll, 0);
+    EXPECT_EQ(attitude.values.pitch, 0);
+    EXPECT_EQ(attitude.values.yaw, 1801);
 }
 
 // STUBS
@@ -94,6 +118,11 @@ int32_t sonarAlt;
 int16_t accADC[XYZ_AXIS_COUNT];
 int16_t gyroADC[XYZ_AXIS_COUNT];
 
+int16_t GPS_speed;
+int16_t GPS_ground_course;
+int16_t GPS_numSat;
+int16_t cycleTime = 2000;
+
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {
@@ -111,13 +140,15 @@ bool sensors(uint32_t mask)
     UNUSED(mask);
     return false;
 };
-void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
+void updateAccelerationReadings(void)
 {
-    UNUSED(rollAndPitchTrims);
 }
-
+bool isGyroCalibrationComplete(void) { return 1; }
+bool isCompassReady(void) { return 1; }
 uint32_t micros(void) { return 0; }
+uint32_t millis(void) { return 0; }
 bool isBaroCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
+
 }

@@ -25,8 +25,8 @@
 // Chebyshev http://stackoverflow.com/questions/345085/how-do-trigonometric-functions-work/345117#345117
 // Thanks for ledvinap for making such accuracy possible! See: https://github.com/cleanflight/cleanflight/issues/940#issuecomment-110323384
 // https://github.com/Crashpilot1000/HarakiriWebstore1/blob/master/src/mw.c#L1235
-#if defined(FAST_TRIGONOMETRY) || defined(EVEN_FASTER_TRIGONOMETRY)
-#if defined(EVEN_FASTER_TRIGONOMETRY)
+#if defined(FAST_MATH) || defined(VERY_FAST_MATH)
+#if defined(VERY_FAST_MATH)
 #define sinPolyCoef3 -1.666568107e-1f
 #define sinPolyCoef5  8.312366210e-3f
 #define sinPolyCoef7 -1.849218155e-4f
@@ -54,7 +54,66 @@ float cos_approx(float x)
 {
     return sin_approx(x + (0.5f * M_PIf));
 }
+
+// https://github.com/Crashpilot1000/HarakiriWebstore1/blob/396715f73c6fcf859e0db0f34e12fe44bace6483/src/mw.c#L1292
+// http://http.developer.nvidia.com/Cg/atan2.html (not working correctly!)
+// Poly coefficients by @ledvinap (https://github.com/cleanflight/cleanflight/pull/1107)
+// Max absolute error 0,000027 degree
+float atan2_approx(float y, float x)
+{
+    #define atanPolyCoef1  3.14551665884836e-07f
+    #define atanPolyCoef2  0.99997356613987f
+    #define atanPolyCoef3  0.14744007058297684f
+    #define atanPolyCoef4  0.3099814292351353f
+    #define atanPolyCoef5  0.05030176425872175f
+    #define atanPolyCoef6  0.1471039133652469f
+    #define atanPolyCoef7  0.6444640676891548f
+
+    float res, absX, absY;
+    absX = fabsf(x);
+    absY = fabsf(y);
+    res  = MAX(absX, absY);
+    if (res) res = MIN(absX, absY) / res;
+    else res = 0.0f;
+    res = -((((atanPolyCoef5 * res - atanPolyCoef4) * res - atanPolyCoef3) * res - atanPolyCoef2) * res - atanPolyCoef1) / ((atanPolyCoef7 * res + atanPolyCoef6) * res + 1.0f);
+    if (absY > absX) res = (M_PIf / 2.0f) - res;
+    if (x < 0) res = M_PIf - res;
+    if (y < 0) res = -res;
+    return res;
+}
+
+// http://http.developer.nvidia.com/Cg/acos.html
+// Handbook of Mathematical Functions
+// M. Abramowitz and I.A. Stegun, Ed.
+// Absolute error <= 6.7e-5
+float acos_approx(float x)
+{
+    float xa = fabsf(x);
+    float result = sqrtf(1.0f - xa) * (1.5707288f + xa * (-0.2121144f + xa * (0.0742610f + (-0.0187293f * xa))));
+    if (x < 0.0f)
+        return M_PIf - result;
+    else
+        return result;
+}
 #endif
+
+int32_t wrap_18000(int32_t angle)
+{
+    if (angle > 18000)
+        angle -= 36000;
+    if (angle < -18000)
+        angle += 36000;
+    return angle;
+}
+
+int32_t wrap_36000(int32_t angle)
+{
+    if (angle > 36000)
+        angle -= 36000;
+    if (angle < 0)
+        angle += 36000;
+    return angle;
+}
 
 int32_t applyDeadband(int32_t value, int32_t deadband)
 {
@@ -206,7 +265,7 @@ int32_t quickMedianFilter5(int32_t * v)
 
     QMF_SORT(p[0], p[1]); QMF_SORT(p[3], p[4]); QMF_SORT(p[0], p[3]);
     QMF_SORT(p[1], p[4]); QMF_SORT(p[1], p[2]); QMF_SORT(p[2], p[3]);
-    QMF_SORT(p[1], p[2]); 
+    QMF_SORT(p[1], p[2]);
     return p[2];
 }
 
@@ -242,5 +301,231 @@ void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count)
 {
     for (int i = 0; i < count; i++) {
         dest[i] = array1[i] - array2[i];
+    }
+}
+
+// Base functions for FIR filters
+void filterWithBufferReset(filterWithBufferState_t * state)
+{
+    int i;
+    state->sample_index = 0;
+    for (i = 0; i < state->filter_size; i++) {
+        state->samples[i].value = 0.0f;
+        state->samples[i].timestamp = 0;
+    }
+}
+
+void filterWithBufferInit(filterWithBufferState_t * state, filterWithBufferSample_t * buffer, uint16_t size)
+{
+    state->samples = buffer;
+    state->filter_size = size;
+    filterWithBufferReset(state);
+}
+
+void filterWithBufferUpdate(filterWithBufferState_t * state, float sample, uint32_t timestamp)
+{
+    uint16_t old_sample_index;
+
+    if (state->sample_index == 0)
+        old_sample_index = state->filter_size - 1;
+    else
+        old_sample_index = state->sample_index - 1;
+
+    if (state->samples[old_sample_index].timestamp  == timestamp) {
+        return;
+    }
+
+    state->samples[state->sample_index].timestamp = timestamp;
+    state->samples[state->sample_index].value = sample;
+    state->sample_index++;
+
+    if (state->sample_index >= state->filter_size)
+        state->sample_index = 0;
+}
+
+// An implementation of a derivative (slope) filter
+// Code mostly taken from ArduPilot's DerivativeFilter.cpp
+// http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
+float filterWithBufferApply_Derivative(filterWithBufferState_t * state)
+{
+    float result = 0;
+
+    // use f() to make the code match the maths a bit better. Note
+    // that unlike an average filter, we care about the order of the elements
+    #define f(i) (state->samples[(((state->sample_index - 1) + i + 1) + 3 * state->filter_size / 2) % state->filter_size].value)
+    #define x(i) (state->samples[(((state->sample_index - 1) + i + 1) + 3 * state->filter_size / 2) % state->filter_size].timestamp)
+
+    if (state->samples[state->filter_size - 1].timestamp == state->samples[state->filter_size - 2].timestamp) {
+        return 0;
+    }
+
+    switch (state->filter_size) {
+    case 5:
+        result = 2*2*(f(1) - f(-1)) / (x(1) - x(-1))
+                 + 4*1*(f(2) - f(-2)) / (x(2) - x(-2));
+        result /= 8;
+        break;
+    case 7:
+        result = 2*5*(f(1) - f(-1)) / (x(1) - x(-1))
+                 + 4*4*(f(2) - f(-2)) / (x(2) - x(-2))
+                 + 6*1*(f(3) - f(-3)) / (x(3) - x(-3));
+        result /= 32;
+        break;
+    case 9:
+        result = 2*14*(f(1) - f(-1)) / (x(1) - x(-1))
+                 + 4*14*(f(2) - f(-2)) / (x(2) - x(-2))
+                 + 6* 6*(f(3) - f(-3)) / (x(3) - x(-3))
+                 + 8* 1*(f(4) - f(-4)) / (x(4) - x(-4));
+        result /= 128;
+        break;
+    case 11:
+        result =  2*42*(f(1) - f(-1)) / (x(1) - x(-1))
+                 +  4*48*(f(2) - f(-2)) / (x(2) - x(-2))
+                 +  6*27*(f(3) - f(-3)) / (x(3) - x(-3))
+                 +  8* 8*(f(4) - f(-4)) / (x(4) - x(-4))
+                 + 10* 1*(f(5) - f(-5)) / (x(5) - x(-5));
+        result /= 512;
+        break;
+    default:
+        result = 0;
+        break;
+    }
+
+    return result;
+}
+
+/**
+ * Sensor offset calculation code based on Freescale's AN4246
+ * Initial implementation by @HaukeRa
+ * Modified to be re-usable by @DigitalEntity
+ */
+void sensorCalibrationResetState(sensorCalibrationState_t * state)
+{
+	for(int i = 0; i < 4; i++){
+		for(int j = 0; j < 4; j++){
+			state->XtX[i][j] = 0;
+		}
+
+        state->XtY[i] = 0;
+	}
+}
+
+void sensorCalibrationPushSampleForOffsetCalculation(sensorCalibrationState_t * state, int16_t sample[3])
+{
+	state->XtX[0][0] += (float)sample[0] * sample[0];
+	state->XtX[0][1] += (float)sample[0] * sample[1];
+	state->XtX[0][2] += (float)sample[0] * sample[2];
+	state->XtX[0][3] += (float)sample[0];
+
+	state->XtX[1][0] += (float)sample[1] * sample[0];
+	state->XtX[1][1] += (float)sample[1] * sample[1];
+	state->XtX[1][2] += (float)sample[1] * sample[2];
+	state->XtX[1][3] += (float)sample[1];
+
+	state->XtX[2][0] += (float)sample[2] * sample[0];
+	state->XtX[2][1] += (float)sample[2] * sample[1];
+	state->XtX[2][2] += (float)sample[2] * sample[2];
+	state->XtX[2][3] += (float)sample[2];
+
+	state->XtX[3][0] += (float)sample[0];
+	state->XtX[3][1] += (float)sample[1];
+	state->XtX[3][2] += (float)sample[2];
+	state->XtX[3][3] += 1;
+
+	float squareSum = ((float)sample[0] * sample[0]) + ((float)sample[1] * sample[1]) + ((float)sample[2] * sample[2]);
+	state->XtY[0] += sample[0] * squareSum;
+	state->XtY[1] += sample[1] * squareSum;
+	state->XtY[2] += sample[2] * squareSum;
+	state->XtY[3] += squareSum;
+}
+
+void sensorCalibrationPushSampleForScaleCalculation(sensorCalibrationState_t * state, int axis, int16_t sample[3], int target)
+{
+    for (int i = 0; i < 3; i++) {
+        float scaledSample = (float)sample[i] / (float)target;
+        state->XtX[axis][i] += scaledSample * scaledSample;
+        state->XtX[3][i] += scaledSample * scaledSample;
+    }
+
+    state->XtX[axis][3] += 1;
+    state->XtY[axis] += 1;
+    state->XtY[3] += 1;
+}
+
+static void sensorCalibration_gaussLR(float mat[4][4]) {
+	uint8_t n = 4;
+	int i, j, k;
+	for (i = 0; i < 4; i++) {
+		// Determine R
+		for (j = i; j < 4; j++) {
+			for (k = 0; k < i; k++) {
+				mat[i][j] -= mat[i][k] * mat[k][j];
+			}
+		}
+		// Determine L
+		for (j = i + 1; j < n; j++) {
+			for (k = 0; k < i; k++) {
+				mat[j][i] -= mat[j][k] * mat[k][i];
+			}
+			mat[j][i] /= mat[i][i];
+		}
+	}
+}
+
+void sensorCalibration_ForwardSubstitution(float LR[4][4], float y[4], float b[4]) {
+	int i, k;
+	for (i = 0; i < 4; ++i) {
+		y[i] = b[i];
+		for (k = 0; k < i; ++k) {
+			y[i] -= LR[i][k] * y[k];
+		}
+		//y[i] /= MAT_ELEM_AT(LR,i,i); //Do not use, LR(i,i) is 1 anyways and not stored in this matrix
+	}
+}
+
+void sensorCalibration_BackwardSubstitution(float LR[4][4], float x[4], float y[4]) {
+	int i, k;
+	for (i = 3 ; i >= 0; --i) {
+		x[i] = y[i];
+		for (k = i + 1; k < 4; ++k) {
+			x[i] -= LR[i][k] * x[k];
+		}
+		x[i] /= LR[i][i];
+	}
+}
+
+// solve linear equation
+// https://en.wikipedia.org/wiki/Gaussian_elimination
+static void sensorCalibration_SolveLGS(float A[4][4], float x[4], float b[4]) {
+	int i;
+	float y[4];
+
+	sensorCalibration_gaussLR(A);
+
+	for (i = 0; i < 4; ++i) {
+		y[i] = 0;
+	}
+
+	sensorCalibration_ForwardSubstitution(A, y, b);
+	sensorCalibration_BackwardSubstitution(A, x, y);
+}
+
+void sensorCalibrationSolveForOffset(sensorCalibrationState_t * state, float result[3])
+{
+    float beta[4];
+    sensorCalibration_SolveLGS(state->XtX, beta, state->XtY);
+
+    for (int i = 0; i < 3; i++) {
+        result[i] = beta[i] / 2;
+    }
+}
+
+void sensorCalibrationSolveForScale(sensorCalibrationState_t * state, float result[3])
+{
+    float beta[4];
+    sensorCalibration_SolveLGS(state->XtX, beta, state->XtY);
+
+    for (int i = 0; i < 3; i++) {
+        result[i] = sqrtf(beta[i]);
     }
 }

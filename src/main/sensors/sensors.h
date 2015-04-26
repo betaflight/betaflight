@@ -69,5 +69,3 @@ typedef struct sensorAlignmentConfig_s {
     sensor_align_e acc_align;               // acc alignment
     sensor_align_e mag_align;               // mag alignment
 } sensorAlignmentConfig_t;
-
-extern int16_t heading;

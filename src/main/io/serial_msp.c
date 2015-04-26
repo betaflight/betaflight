@@ -68,8 +68,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/navigation.h"
-#include "flight/altitudehold.h"
+#include "flight/navigation_rewrite.h"
 
 #include "mw.h"
 
@@ -318,7 +317,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define INBUF_SIZE 64
 
 typedef struct box_e {
-    const uint8_t boxId;         // see boxId_e
+    const uint8_t boxId;            // see boxId_e
     const char *boxName;            // GUI-readable box name
     const uint8_t permanentId;      //
 } box_t;
@@ -328,31 +327,30 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },
-    { BOXBARO, "BARO;", 3 },
-    //{ BOXVARIO, "VARIO;", 4 },
+    { BOXNAVALTHOLD, "NAV ALTHOLD;", 3 },   // old BARO
     { BOXMAG, "MAG;", 5 },
     { BOXHEADFREE, "HEADFREE;", 6 },
     { BOXHEADADJ, "HEADADJ;", 7 },
     { BOXCAMSTAB, "CAMSTAB;", 8 },
     { BOXCAMTRIG, "CAMTRIG;", 9 },
-    { BOXGPSHOME, "GPS HOME;", 10 },
-    { BOXGPSHOLD, "GPS HOLD;", 11 },
+    { BOXNAVRTH, "NAV RTH;", 10 },         // old GPS HOME
+    { BOXNAVPOSHOLD, "NAV POSHOLD;", 11 },     // old GPS HOLD
     { BOXPASSTHRU, "PASSTHRU;", 12 },
     { BOXBEEPERON, "BEEPER;", 13 },
     { BOXLEDMAX, "LEDMAX;", 14 },
     { BOXLEDLOW, "LEDLOW;", 15 },
     { BOXLLIGHTS, "LLIGHTS;", 16 },
-    { BOXCALIB, "CALIB;", 17 },
+    //{ BOXCALIB, "CALIB;", 17 },
     { BOXGOV, "GOVERNOR;", 18 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
     { BOXGTUNE, "GTUNE;", 21 },
-    { BOXSONAR, "SONAR;", 22 },
     { BOXSERVO1, "SERVO1;", 23 },
     { BOXSERVO2, "SERVO2;", 24 },
     { BOXSERVO3, "SERVO3;", 25 },
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
+    { BOXNAVWP, "NAV WP;", 28 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -644,10 +642,6 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
 
-    if (sensors(SENSOR_BARO)) {
-        activeBoxIds[activeBoxIdCount++] = BOXBARO;
-    }
-
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         activeBoxIds[activeBoxIdCount++] = BOXMAG;
         activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
@@ -658,13 +652,21 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
 
 #ifdef GPS
-    if (feature(FEATURE_GPS)) {
-        activeBoxIds[activeBoxIdCount++] = BOXGPSHOME;
-        activeBoxIds[activeBoxIdCount++] = BOXGPSHOLD;
+    bool isFixedWing = masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE;
+
+    if (sensors(SENSOR_BARO) || (isFixedWing && feature(FEATURE_GPS))) {
+        activeBoxIds[activeBoxIdCount++] = BOXNAVALTHOLD;
+    }
+    if ((feature(FEATURE_GPS) && sensors(SENSOR_MAG) && sensors(SENSOR_ACC)) || (isFixedWing && feature(FEATURE_GPS)) || (sensors(SENSOR_ACC) && masterConfig.navConfig.inav.enable_dead_reckoning)) {
+        activeBoxIds[activeBoxIdCount++] = BOXNAVPOSHOLD;
+    }
+    if ((feature(FEATURE_GPS) && sensors(SENSOR_ACC) && sensors(SENSOR_MAG) && (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR))) || (isFixedWing && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
+        activeBoxIds[activeBoxIdCount++] = BOXNAVRTH;
+        activeBoxIds[activeBoxIdCount++] = BOXNAVWP;
     }
 #endif
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE)
+    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
 
     activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
@@ -675,17 +677,10 @@ void mspInit(serialConfig_t *serialConfig)
     }
 #endif
 
-    if (feature(FEATURE_INFLIGHT_ACC_CAL))
-        activeBoxIds[activeBoxIdCount++] = BOXCALIB;
-
     activeBoxIds[activeBoxIdCount++] = BOXOSD;
 
     if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch)
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
-
-    if (feature(FEATURE_SONAR)){
-        activeBoxIds[activeBoxIdCount++] = BOXSONAR;
-    }
 
 #ifdef USE_SERVOS
     if (masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
@@ -720,8 +715,15 @@ static bool processOutCommand(uint8_t cmdMSP)
     uint32_t i, tmp, junk;
 
 #ifdef GPS
-    uint8_t wp_no;
-    int32_t lat = 0, lon = 0;
+    struct {
+        uint8_t  wp_no;
+        uint8_t  action;
+        int32_t  lat;
+        int32_t  lon;
+        int32_t  alt;
+        int16_t  p1, p2, p3;
+        uint8_t  flag;
+    } msp_wp;
 #endif
 
     switch (cmdMSP) {
@@ -792,7 +794,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(MW_VERSION);
         serialize8(masterConfig.mixerMode);
         serialize8(MSP_PROTOCOL_VERSION);
-        serialize32(CAP_DYNBALANCE); // "capability"
+        serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | CAP_FLAPS | CAP_NAVCAP | CAP_EXTAUX); // "capability"
         break;
 
     case MSP_STATUS:
@@ -810,28 +812,27 @@ static bool processOutCommand(uint8_t cmdMSP)
         junk = 0;
         tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
             IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-            IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
             IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
             IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
-            IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
-            IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
             IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
-            IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
             IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
-            IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE;
+            IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
+            IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE)) << BOXNAVALTHOLD |
+            IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)) << BOXNAVPOSHOLD |
+            IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
+            IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP;
         for (i = 0; i < activeBoxIdCount; i++) {
             int flag = (tmp & (1 << activeBoxIds[i]));
             if (flag)
@@ -847,7 +848,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         uint8_t scale = (acc_1G > 1024) ? 8 : 1;
 
         for (i = 0; i < 3; i++)
-            serialize16(accSmooth[i] / scale);
+            serialize16(accADC[i] / scale);
         for (i = 0; i < 3; i++)
             serialize16(gyroADC[i]);
         for (i = 0; i < 3; i++)
@@ -893,18 +894,19 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ATTITUDE:
         headSerialReply(6);
-        for (i = 0; i < 2; i++)
-            serialize16(inclination.raw[i]);
-        serialize16(heading);
+        serialize16(attitude.values.roll);
+        serialize16(attitude.values.pitch);
+        serialize16(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
         break;
     case MSP_ALTITUDE:
         headSerialReply(6);
-#if defined(BARO) || defined(SONAR)
-        serialize32(altitudeHoldGetEstimatedAltitude());
+#if defined(NAV)
+        serialize32((uint32_t)lrintf(getEstimatedActualPosition(Z)));
+        serialize16((uint32_t)lrintf(getEstimatedActualVelocity(Z)));
 #else
         serialize32(0);
+        serialize16(0);
 #endif
-        serialize16(vario);
         break;
     case MSP_SONAR_ALTITUDE:
         headSerialReply(4);
@@ -1079,22 +1081,18 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(GPS_update & 1);
         break;
     case MSP_WP:
-        wp_no = read8();    // get the wp number
-        headSerialReply(18);
-        if (wp_no == 0) {
-            lat = GPS_home[LAT];
-            lon = GPS_home[LON];
-        } else if (wp_no == 16) {
-            lat = GPS_hold[LAT];
-            lon = GPS_hold[LON];
-        }
-        serialize8(wp_no);
-        serialize32(lat);
-        serialize32(lon);
-        serialize32(AltHold);           // altitude (cm) will come here -- temporary implementation to test feature with apps
-        serialize16(0);                 // heading  will come here (deg)
-        serialize16(0);                 // time to stay (ms) will come here
-        serialize8(0);                  // nav flag will come here
+        msp_wp.wp_no = read8();    // get the wp number
+        getWaypoint(msp_wp.wp_no, &msp_wp.lat, &msp_wp.lon, &msp_wp.alt);
+        headSerialReply(21);
+        serialize8(msp_wp.wp_no);   // wp_no
+        serialize8(1);              // action (WAYPOINT)
+        serialize32(msp_wp.lat);    // lat
+        serialize32(msp_wp.lon);    // lon
+        serialize32(msp_wp.alt);    // altitude (cm)
+        serialize16(0);             // P1
+        serialize16(0);             // P2
+        serialize16(0);             // P3
+        serialize8(0);              // flags
         break;
     case MSP_GPSSVINFO:
         headSerialReply(1 + (GPS_numCh * 4));
@@ -1117,13 +1115,6 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize16(debug[i]);      // 4 variables are here for general monitoring purpose
         break;
 
-    // Additional commands that are not compatible with MultiWii
-    case MSP_ACC_TRIM:
-        headSerialReply(4);
-        serialize16(currentProfile->accelerometerTrims.values.pitch);
-        serialize16(currentProfile->accelerometerTrims.values.roll);
-        break;
-
     case MSP_UID:
         headSerialReply(12);
         serialize32(U_ID_0);
@@ -1138,9 +1129,9 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_BOARD_ALIGNMENT:
         headSerialReply(6);
-        serialize16(masterConfig.boardAlignment.rollDegrees);
-        serialize16(masterConfig.boardAlignment.pitchDegrees);
-        serialize16(masterConfig.boardAlignment.yawDegrees);
+        serialize16(masterConfig.boardAlignment.rollDeciDegrees);
+        serialize16(masterConfig.boardAlignment.pitchDeciDegrees);
+        serialize16(masterConfig.boardAlignment.yawDeciDegrees);
         break;
 
     case MSP_VOLTAGE_METER_CONFIG:
@@ -1209,9 +1200,9 @@ static bool processOutCommand(uint8_t cmdMSP)
 
         serialize8(masterConfig.rxConfig.serialrx_provider);
 
-        serialize16(masterConfig.boardAlignment.rollDegrees);
-        serialize16(masterConfig.boardAlignment.pitchDegrees);
-        serialize16(masterConfig.boardAlignment.yawDegrees);
+        serialize16(masterConfig.boardAlignment.rollDeciDegrees);
+        serialize16(masterConfig.boardAlignment.pitchDeciDegrees);
+        serialize16(masterConfig.boardAlignment.yawDeciDegrees);
 
         serialize16(masterConfig.batteryConfig.currentMeterScale);
         serialize16(masterConfig.batteryConfig.currentMeterOffset);
@@ -1299,9 +1290,17 @@ static bool processInCommand(void)
     uint32_t i;
     uint16_t tmp;
     uint8_t rate;
+
 #ifdef GPS
-    uint8_t wp_no;
-    int32_t lat = 0, lon = 0, alt = 0;
+    struct {
+        uint8_t  wp_no;
+        uint8_t  action;
+        int32_t  lat;
+        int32_t  lon;
+        int32_t  alt;
+        int16_t  p1, p2, p3;
+        uint8_t  flag;
+    } msp_wp;
 #endif
 
     switch (currentPort->cmdMSP) {
@@ -1334,10 +1333,6 @@ static bool processInCommand(void)
             }
         }
         break;
-    case MSP_SET_ACC_TRIM:
-        currentProfile->accelerometerTrims.values.pitch = read16();
-        currentProfile->accelerometerTrims.values.roll  = read16();
-        break;
     case MSP_SET_ARMING_CONFIG:
         masterConfig.auto_disarm_delay = read8();
         masterConfig.disarm_kill_switch = read8();
@@ -1346,7 +1341,7 @@ static bool processInCommand(void)
         masterConfig.looptime = read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-        currentProfile->pidProfile.pidController = read8();
+        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);  // Temporary configurator compatibility
         pidSetController(currentProfile->pidProfile.pidController);
         break;
     case MSP_SET_PID:
@@ -1558,31 +1553,20 @@ static bool processInCommand(void)
         GPS_coord[LON] = read32();
         GPS_altitude = read16();
         GPS_speed = read16();
-        GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
+        // Feed data to navigation
+        onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude, 0, 0, 0, false, false, 9999);
         break;
     case MSP_SET_WP:
-        wp_no = read8();    //get the wp number
-        lat = read32();
-        lon = read32();
-        alt = read32();     // to set altitude (cm)
-        read16();           // future: to set heading (deg)
-        read16();           // future: to set time to stay (ms)
-        read8();            // future: to set nav flag
-        if (wp_no == 0) {
-            GPS_home[LAT] = lat;
-            GPS_home[LON] = lon;
-            DISABLE_FLIGHT_MODE(GPS_HOME_MODE);        // with this flag, GPS_set_next_wp will be called in the next loop -- OK with SERIAL GPS / OK with I2C GPS
-            ENABLE_STATE(GPS_FIX_HOME);
-            if (alt != 0)
-                AltHold = alt;          // temporary implementation to test feature with apps
-        } else if (wp_no == 16) {       // OK with SERIAL GPS  --  NOK for I2C GPS / needs more code dev in order to inject GPS coord inside I2C GPS
-            GPS_hold[LAT] = lat;
-            GPS_hold[LON] = lon;
-            if (alt != 0)
-                AltHold = alt;          // temporary implementation to test feature with apps
-            nav_mode = NAV_MODE_WP;
-            GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
-        }
+        msp_wp.wp_no = read8();     // get the wp number
+        msp_wp.action = read8();    // action
+        msp_wp.lat = read32();      // lat
+        msp_wp.lon = read32();      // lon
+        msp_wp.alt = read32();      // to set altitude (cm)
+        msp_wp.p1 = read16();       // P1
+        msp_wp.p2 = read16();       // P2
+        msp_wp.p3 = read16();       // P3
+        msp_wp.flag = read8();      // future: to set nav flag
+        setWaypoint(msp_wp.wp_no, msp_wp.lat, msp_wp.lon, msp_wp.alt);
         break;
 #endif
     case MSP_SET_FEATURE:
@@ -1591,9 +1575,9 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_BOARD_ALIGNMENT:
-        masterConfig.boardAlignment.rollDegrees = read16();
-        masterConfig.boardAlignment.pitchDegrees = read16();
-        masterConfig.boardAlignment.yawDegrees = read16();
+        masterConfig.boardAlignment.rollDeciDegrees = read16();
+        masterConfig.boardAlignment.pitchDeciDegrees = read16();
+        masterConfig.boardAlignment.yawDeciDegrees = read16();
         break;
 
     case MSP_SET_VOLTAGE_METER_CONFIG:
@@ -1671,9 +1655,9 @@ static bool processInCommand(void)
 
         masterConfig.rxConfig.serialrx_provider = read8(); // serialrx_type
 
-        masterConfig.boardAlignment.rollDegrees = read16(); // board_align_roll
-        masterConfig.boardAlignment.pitchDegrees = read16(); // board_align_pitch
-        masterConfig.boardAlignment.yawDegrees = read16(); // board_align_yaw
+        masterConfig.boardAlignment.rollDeciDegrees = read16(); // board_align_roll
+        masterConfig.boardAlignment.pitchDeciDegrees = read16(); // board_align_pitch
+        masterConfig.boardAlignment.yawDeciDegrees = read16(); // board_align_yaw
 
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();

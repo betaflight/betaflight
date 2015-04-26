@@ -225,7 +225,6 @@ COMMON_SRC = build_config.c \
 		   common/filter.c \
 		   main.c \
 		   mw.c \
-		   flight/altitudehold.c \
 		   flight/failsafe.c \
 		   flight/pid.c \
 		   flight/imu.c \
@@ -263,7 +262,11 @@ COMMON_SRC = build_config.c \
 
 HIGHEND_SRC = \
 		   flight/gtune.c \
-		   flight/navigation.c \
+           flight/navigation_rewrite.c \
+           flight/navigation_rewrite_multicopter.c \
+           flight/navigation_rewrite_fixedwing.c \
+           flight/navigation_rewrite_pos_estimator.c \
+           flight/navigation_rewrite_geo.c \
 		   flight/gps_conversion.c \
 		   common/colorconversion.c \
 		   io/gps.c \
@@ -645,6 +648,7 @@ LDFLAGS		 = -lm \
 		   -static \
 		   -Wl,-gc-sections,-Map,$(TARGET_MAP) \
 		   -Wl,-L$(LINKER_DIR) \
+           -Wl,--cref \
 		   -T$(LD_SCRIPT)
 
 ###############################################################################

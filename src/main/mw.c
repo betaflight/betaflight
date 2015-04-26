@@ -21,6 +21,7 @@
 #include <math.h>
 
 #include "platform.h"
+#include "debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -70,10 +71,9 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
-#include "flight/navigation.h"
+#include "flight/navigation_rewrite.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -111,17 +111,9 @@ extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 static bool isRXDataNew;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
+        uint16_t max_angle_inclination, rxConfig_t *rxConfig);            // pid controller function prototype
 
 extern pidControllerFuncPtr pid_controller;
-
-void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
-{
-    currentProfile->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    currentProfile->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
-
-    saveConfigAndNotify();
-}
 
 #ifdef GTUNE
 
@@ -228,7 +220,7 @@ void annexCode(void)
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        float radDiff = degreesToRadians(heading - headFreeModeHold);
+        float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
         float cosDiff = cos_approx(radDiff);
         float sinDiff = sin_approx(radDiff);
         int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
@@ -332,7 +324,7 @@ void mwArm(void)
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
-            headFreeModeHold = heading;
+            headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
@@ -364,58 +356,44 @@ void mwArm(void)
     }
 }
 
-// Automatic ACC Offset Calibration
-bool AccInflightCalibrationArmed = false;
-bool AccInflightCalibrationMeasurementDone = false;
-bool AccInflightCalibrationSavetoEEProm = false;
-bool AccInflightCalibrationActive = false;
-uint16_t InflightcalibratingA = 0;
-
-void handleInflightCalibrationStickPosition(void)
+void applyMagHold(void)
 {
-    if (AccInflightCalibrationMeasurementDone) {
-        // trigger saving into eeprom after landing
-        AccInflightCalibrationMeasurementDone = false;
-        AccInflightCalibrationSavetoEEProm = true;
-    } else {
-        AccInflightCalibrationArmed = !AccInflightCalibrationArmed;
-        if (AccInflightCalibrationArmed) {
-            beeper(BEEPER_ACC_CALIBRATION);
-        } else {
-            beeper(BEEPER_ACC_CALIBRATION_FAIL);
-        }
-    }
-}
+    int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHold;
 
-void updateInflightCalibrationState(void)
-{
-    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
-        InflightcalibratingA = 50;
-        AccInflightCalibrationArmed = false;
+    if (dif <= -180) {
+        dif += 360;
     }
-    if (IS_RC_MODE_ACTIVE(BOXCALIB)) {      // Use the Calib Option to activate : Calib = TRUE Meausrement started, Land and Calib = 0 measurement stored
-        if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
-            InflightcalibratingA = 50;
-        AccInflightCalibrationActive = true;
-    } else if (AccInflightCalibrationMeasurementDone && !ARMING_FLAG(ARMED)) {
-        AccInflightCalibrationMeasurementDone = false;
-        AccInflightCalibrationSavetoEEProm = true;
+
+    if (dif >= +180) {
+        dif -= 360;
+    }
+
+    dif *= masterConfig.yaw_control_direction;
+
+    if (STATE(SMALL_ANGLE)) {
+        rcCommand[YAW] = dif * currentProfile->pidProfile.P8[PIDMAG] / 30;
     }
 }
 
 void updateMagHold(void)
 {
+#if defined(NAV)
+    int navHeadingState = naivationGetHeadingControlState();
+    // NAV will prevent MAG_MODE from activating, but require heading control
+    if (navHeadingState != NAV_HEADING_CONTROL_NONE) {
+        // Apply maghold only if heading control is in auto mode
+        if (navHeadingState == NAV_HEADING_CONTROL_AUTO) {
+            applyMagHold();
+        }
+    }
+    else
+#endif
     if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
-        int16_t dif = heading - magHold;
-        if (dif <= -180)
-            dif += 360;
-        if (dif >= +180)
-            dif -= 360;
-        dif *= -masterConfig.yaw_control_direction;
-        if (STATE(SMALL_ANGLE))
-            rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
-    } else
-        magHold = heading;
+        applyMagHold();
+    }
+    else {
+        magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+    }
 }
 
 typedef enum {
@@ -427,9 +405,6 @@ typedef enum {
 #endif
 #ifdef SONAR
     UPDATE_SONAR_TASK,
-#endif
-#if defined(BARO) || defined(SONAR)
-    CALCULATE_ALTITUDE_TASK,
 #endif
     UPDATE_DISPLAY_TASK
 } periodicTasks;
@@ -458,20 +433,6 @@ void executePeriodicTasks(void)
         break;
 #endif
 
-#if defined(BARO) || defined(SONAR)
-    case CALCULATE_ALTITUDE_TASK:
-        if (false
-#if defined(BARO)
-            || (sensors(SENSOR_BARO) && isBaroReady())
-#endif
-#if defined(SONAR)
-            || sensors(SENSOR_SONAR)
-#endif
-            ) {
-            calculateEstimatedAltitude(currentTime);
-        }
-        break;
-#endif
 #ifdef SONAR
     case UPDATE_SONAR_TASK:
         if (sensors(SENSOR_SONAR)) {
@@ -569,10 +530,6 @@ void processRx(void)
 
     processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
 
-    if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-        updateInflightCalibrationState();
-    }
-
     updateActivatedModes(currentProfile->modeActivationConditions);
 
     if (!cliMode) {
@@ -582,7 +539,7 @@ void processRx(void)
 
     bool canUseHorizonMode = true;
 
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive())) && (sensors(SENSOR_ACC))) {
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive()) || naivationRequiresAngleMode()) && sensors(SENSOR_ACC)) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
 
@@ -612,33 +569,37 @@ void processRx(void)
         LED1_OFF;
     }
 
-#ifdef  MAG
-    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-        if (IS_RC_MODE_ACTIVE(BOXMAG)) {
-            if (!FLIGHT_MODE(MAG_MODE)) {
-                ENABLE_FLIGHT_MODE(MAG_MODE);
-                magHold = heading;
+#if defined(MAG)
+#if defined(NAV)
+    if (naivationGetHeadingControlState() != NAV_HEADING_CONTROL_NONE) {
+        DISABLE_FLIGHT_MODE(MAG_MODE);
+        DISABLE_FLIGHT_MODE(HEADFREE_MODE);
+    }
+    else {
+#endif
+        if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+            if (IS_RC_MODE_ACTIVE(BOXMAG)) {
+                if (!FLIGHT_MODE(MAG_MODE)) {
+                    ENABLE_FLIGHT_MODE(MAG_MODE);
+                    magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+                }
+            } else {
+                DISABLE_FLIGHT_MODE(MAG_MODE);
             }
-        } else {
-            DISABLE_FLIGHT_MODE(MAG_MODE);
-        }
-        if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
-            if (!FLIGHT_MODE(HEADFREE_MODE)) {
-                ENABLE_FLIGHT_MODE(HEADFREE_MODE);
+            if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
+                if (!FLIGHT_MODE(HEADFREE_MODE)) {
+                    ENABLE_FLIGHT_MODE(HEADFREE_MODE);
+                }
+            } else {
+                DISABLE_FLIGHT_MODE(HEADFREE_MODE);
             }
-        } else {
-            DISABLE_FLIGHT_MODE(HEADFREE_MODE);
+            if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
+                headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // acquire new heading
+            }
         }
-        if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-            headFreeModeHold = heading; // acquire new heading
-        }
+#if defined(NAV)        
     }
 #endif
-
-#ifdef GPS
-    if (sensors(SENSOR_GPS)) {
-        updateGpsWaypointsAndMode();
-    }
 #endif
 
     if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
@@ -647,7 +608,7 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
+    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 
@@ -667,7 +628,7 @@ void processRx(void)
 
 }
 
-void filterRc(void){
+void filterRc(bool isRXDataNew){
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
@@ -686,7 +647,6 @@ void filterRc(void){
             lastCommand[channel] = rcCommand[channel];
         }
 
-        isRXDataNew = false;
         factor = rcInterpolationFactor - 1;
     } else {
         factor--;
@@ -702,58 +662,15 @@ void filterRc(void){
     }
 }
 
-// Gyro Low Pass
-void filterGyro(void) {
-    int axis;
-    static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
-
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        if (masterConfig.looptime > 0) {
-            // Static dT calculation based on configured looptime
-            if (!gyroADCState[axis].constdT) {
-                gyroADCState[axis].constdT = (float)masterConfig.looptime * 0.000001f;
-            }
-
-            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, gyroADCState[axis].constdT);
-        }
-
-        else {
-            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dT);
-        }
-    }
-}
-
 void loop(void)
 {
     static uint32_t loopTime;
-#if defined(BARO) || defined(SONAR)
-    static bool haveProcessedAnnexCodeOnce = false;
-#endif
 
     updateRx(currentTime);
 
     if (shouldProcessRx(currentTime)) {
-        processRx();
         isRXDataNew = true;
-
-#ifdef BARO
-        // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-        if (haveProcessedAnnexCodeOnce) {
-            if (sensors(SENSOR_BARO)) {
-                updateAltHoldState();
-            }
-        }
-#endif
-
-#ifdef SONAR
-        // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-        if (haveProcessedAnnexCodeOnce) {
-            if (sensors(SENSOR_SONAR)) {
-                updateSonarAltHoldState();
-            }
-        }
-#endif
-
+        processRx();
     } else {
         // not processing rx this iteration
         executePeriodicTasks();
@@ -772,44 +689,38 @@ void loop(void)
     if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
         loopTime = currentTime + masterConfig.looptime;
 
-        imuUpdate(&currentProfile->accelerometerTrims);
+        imuUpdate();
 
         // Measure loop rate just after reading the sensors
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
 
-        dT = (float)cycleTime * 0.000001f;
-
-        if (currentProfile->pidProfile.gyro_cut_hz) {
-            filterGyro();
-        }
-
         annexCode();
 
         if (masterConfig.rxConfig.rcSmoothing) {
-            filterRc();
+            filterRc(isRXDataNew);
         }
 
-#if defined(BARO) || defined(SONAR)
-        haveProcessedAnnexCodeOnce = true;
+#if defined(NAV)
+        updateWaypointsAndNavigationMode(isRXDataNew);
 #endif
 
-#ifdef MAG
-        if (sensors(SENSOR_MAG)) {
-            updateMagHold();
-        }
-#endif
+        isRXDataNew = false;
 
 #ifdef GTUNE
         updateGtuneState();
 #endif
 
-#if defined(BARO) || defined(SONAR)
-        if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
-            if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-                applyAltHold(&masterConfig.airplaneConfig);
-            }
+#if defined(NAV)
+        updatePositionEstimator();
+        applyWaypointNavigationAndAltitudeHold();
+#endif
+
+#ifdef MAG
+        // Apply this after navigation (iNav needs rcCommand to hold actual values)
+        if (sensors(SENSOR_MAG)) {
+            updateMagHold();
         }
 #endif
 
@@ -822,30 +733,34 @@ void loop(void)
                 && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
                 && masterConfig.mixerMode != MIXER_AIRPLANE
                 && masterConfig.mixerMode != MIXER_FLYING_WING
+                && masterConfig.mixerMode != MIXER_CUSTOM_AIRPLANE
 #endif
         ) {
             rcCommand[YAW] = 0;
         }
 
+        // Apply throttle tilt compensation
+        if (!STATE(FIXED_WING)) {
+            int16_t thrTiltCompStrength = 0;
 
-        if (currentProfile->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile->throttle_correction_value);
-        }
+            if (navigationRequiresThrottleTiltCompensation()) {
+                thrTiltCompStrength = 100;
+            }
+            else if (currentProfile->throttle_tilt_compensation_strength && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+                thrTiltCompStrength = currentProfile->throttle_tilt_compensation_strength;
+            }
 
-#ifdef GPS
-        if (sensors(SENSOR_GPS)) {
-            if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
-                updateGpsStateForHomeAndHoldMode();
+            if (thrTiltCompStrength) {
+                rcCommand[THROTTLE] = masterConfig.escAndServoConfig.minthrottle
+                                       + (rcCommand[THROTTLE] - masterConfig.escAndServoConfig.minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength);
             }
         }
-#endif
 
         // PID - note this is function pointer set by setPIDController()
         pid_controller(
             &currentProfile->pidProfile,
             currentControlRateProfile,
             masterConfig.max_angle_inclination,
-            &currentProfile->accelerometerTrims,
             &masterConfig.rxConfig
         );
 

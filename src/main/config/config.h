@@ -25,7 +25,7 @@
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,
-    FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
+    //FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
     FEATURE_RX_SERIAL = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,
     FEATURE_SERVO_TILT = 1 << 5,
@@ -49,11 +49,21 @@ typedef enum {
 void handleOneshotFeatureChangeOnRestart(void);
 void latchActiveFeatures(void);
 bool featureConfigured(uint32_t mask);
+
+typedef enum {
+    FLAG_MAG_CALIBRATION_DONE = 1 << 0,
+} persistent_flags_e;
+
 bool feature(uint32_t mask);
 void featureSet(uint32_t mask);
 void featureClear(uint32_t mask);
 void featureClearAll(void);
 uint32_t featureMask(void);
+
+bool persistentFlag(uint8_t mask);
+void persistentFlagSet(uint8_t mask);
+void persistentFlagClear(uint8_t mask);
+void persistentFlagClearAll();
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
@@ -72,5 +82,7 @@ uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
+
+void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);
 
 uint16_t getCurrentMinthrottle(void);

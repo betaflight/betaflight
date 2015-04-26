@@ -161,6 +161,7 @@
 
 #define DISPLAY
 #define GPS
+#define NAV
 #define GTUNE
 #define SERIAL_RX
 #define TELEMETRY

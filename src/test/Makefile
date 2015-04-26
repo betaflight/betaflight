@@ -152,6 +152,14 @@ $(OBJECT_DIR)/flight/imu.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/imu.c -o $@
 
+$(OBJECT_DIR)/common/filter.o : \
+	$(USER_DIR)/common/filter.c \
+	$(USER_DIR)/common/filter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/filter.c -o $@
+
 $(OBJECT_DIR)/flight_imu_unittest.o : \
 	$(TEST_DIR)/flight_imu_unittest.cc \
 	$(USER_DIR)/flight/imu.h \
@@ -162,8 +170,8 @@ $(OBJECT_DIR)/flight_imu_unittest.o : \
 
 $(OBJECT_DIR)/flight_imu_unittest : \
 	$(OBJECT_DIR)/flight/imu.o \
-	$(OBJECT_DIR)/flight/altitudehold.o \
 	$(OBJECT_DIR)/flight_imu_unittest.o \
+    $(OBJECT_DIR)/common/filter.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -179,29 +187,6 @@ $(OBJECT_DIR)/maths_unittest.o : \
 $(OBJECT_DIR)/maths_unittest : \
 	$(OBJECT_DIR)/maths_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/flight/altitudehold.o : \
-	$(USER_DIR)/flight/altitudehold.c \
-	$(USER_DIR)/flight/altitudehold.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/altitudehold.c -o $@
-
-$(OBJECT_DIR)/altitude_hold_unittest.o : \
-	$(TEST_DIR)/altitude_hold_unittest.cc \
-	$(USER_DIR)/flight/altitudehold.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/altitude_hold_unittest.cc -o $@
-
-$(OBJECT_DIR)/altitude_hold_unittest : \
-	$(OBJECT_DIR)/flight/altitudehold.o \
-	$(OBJECT_DIR)/altitude_hold_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@

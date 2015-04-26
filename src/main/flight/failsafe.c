@@ -34,6 +34,8 @@
 
 #include "flight/failsafe.h"
 
+#include "flight/navigation_rewrite.h"
+
 /*
  * Usage:
  *
@@ -177,6 +179,7 @@ void failsafeUpdateState(void)
     }
 
     bool reprocessState;
+    bool rthIdleOrLanded;
 
     do {
         reprocessState = false;
@@ -222,11 +225,55 @@ void failsafeUpdateState(void)
                 if (receivingRxData) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                 } else {
-                    // Stabilize, and set Throttle to specified level
-                    failsafeActivate();
+                    switch (failsafeConfig->failsafe_procedure) {
+                        default:
+                        case FAILSAFE_PROCEDURE_AUTO_LANDING:
+                            // Stabilize, and set Throttle to specified level
+                            failsafeActivate();
+                            break;
+
+#if defined(NAV)
+                        case FAILSAFE_PROCEDURE_RTH:
+                            // Proceed to handling & monitoring RTH navigation
+                            failsafeActivate();
+                            activateForcedRTH();
+                            failsafeState.phase = FAILSAFE_RETURN_TO_HOME;
+                            break;
+#endif
+                    }
                 }
                 reprocessState = true;
                 break;
+
+#if defined(NAV)
+            case FAILSAFE_RETURN_TO_HOME:
+                if (receivingRxData) {
+                    abortForcedRTH();
+                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                    reprocessState = true;
+                }
+                if (armed) {
+                    beeperMode = BEEPER_RX_LOST_LANDING;
+                }
+                switch (getStateOfForcedRTH()) {
+                    case RTH_IN_PROGRESS_OK:
+                    case RTH_IN_PROGRESS_LOST_GPS:
+                        rthIdleOrLanded = false;
+                        break;
+
+                    default:
+                    case RTH_IDLE:
+                    case RTH_HAS_LANDED:
+                        rthIdleOrLanded = true;
+                        break;
+                }
+                if (rthIdleOrLanded || !armed) {
+                    failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_30_SECONDS; // require 30 seconds of valid rxData
+                    failsafeState.phase = FAILSAFE_LANDED;
+                    reprocessState = true;
+                }
+                break;
+#endif
 
             case FAILSAFE_LANDING:
                 if (receivingRxData) {

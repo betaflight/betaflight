@@ -48,7 +48,7 @@
 
 #include "flight/gps_conversion.h"
 #include "flight/pid.h"
-#include "flight/navigation.h"
+#include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
 #include "config/runtime_config.h"
@@ -83,8 +83,11 @@ uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments 
 uint8_t GPS_update = 0;             // it's a binary toggle to distinct a GPS position update
 
 uint16_t GPS_altitude;              // altitude in 0.1m
-uint16_t GPS_speed;                 // speed in 0.1m/s
+uint16_t GPS_speed;                 // speed in cm/s
 uint16_t GPS_ground_course = 0;     // degrees * 10
+int16_t GPS_velned[3];             // cm/s
+bool GPS_have_horizontal_velocity = false;
+bool GPS_have_vertical_velocity = false;
 
 uint8_t GPS_numCh;                          // Number of channels
 uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS];     // Channel number
@@ -124,12 +127,16 @@ static const gpsInitData_t gpsInitData[] = {
 
 #define DEFAULT_BAUD_RATE_INDEX 0
 
-static const uint8_t ubloxInit[] = {
+static const uint8_t ubloxInit6[] = {
 
-    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x03, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
-    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Pedistrian and
-    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // capturing the data from the U-Center binary console.
-    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0xC2,
+    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x02, 0x00,           // CFG-NAV5 - Set engine settings
+    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Airborne <1G 3D fix only
+    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x51, 0xC7,
+
+    0xB5, 0x62, 0x06, 0x23, 0x28, 0x00, 0x00, 0x00, 0x4C, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // CFG-NAVX5 min 5 SV
+    0x05, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7C, 0xCD,
 
     // DISABLE NMEA messages
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x05, 0x00, 0xFF, 0x19,           // VGS: Course over ground and Ground speed
@@ -185,6 +192,16 @@ typedef enum {
 
 gpsData_t gpsData;
 
+static void gpsFillVelNED(void)
+{
+    float gpsHeadingRad = GPS_ground_course * M_PIf / 1800.0f;
+
+    GPS_velned[X] = GPS_speed * cos_approx(gpsHeadingRad);
+    GPS_velned[Y] = GPS_speed * sin_approx(gpsHeadingRad);
+    GPS_velned[Z] = 0;
+    GPS_have_horizontal_velocity = true;
+    GPS_have_vertical_velocity = false;
+}
 
 static void shiftPacketLog(void)
 {
@@ -342,8 +359,8 @@ void gpsInitUblox(void)
 
             if (gpsData.messageState == GPS_MESSAGE_STATE_INIT) {
 
-                if (gpsData.state_position < sizeof(ubloxInit)) {
-                    serialWrite(gpsPort, ubloxInit[gpsData.state_position]);
+                if (gpsData.state_position < sizeof(ubloxInit6)) {
+                    serialWrite(gpsPort, ubloxInit6[gpsData.state_position]);
                     gpsData.state_position++;
                 } else {
                     gpsData.state_position = 0;
@@ -430,6 +447,9 @@ void gpsReadNewDataI2C(void)
                     GPS_ground_course = gpsMsg.ground_course;
                     GPS_coord[LAT] = gpsMsg.latitude;
                     GPS_coord[LON] = gpsMsg.longitude;
+
+                    // Calculate NED velocities
+                    gpsFillVelNED();
                 }
                 else {
                 }
@@ -441,11 +461,11 @@ void gpsReadNewDataI2C(void)
                 else
                     GPS_update = 1;
 
-                onGpsNewData();
-
                 // new data received and parsed, we're in business
                 gpsData.lastLastMessage = gpsData.lastMessage;
                 gpsData.lastMessage = millis();
+
+                onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude * 100, GPS_velned[X], GPS_velned[Y], GPS_velned[Z], GPS_have_horizontal_velocity, GPS_have_vertical_velocity, GPS_hdop);
             }
 
             sensorsSet(SENSOR_GPS);
@@ -489,7 +509,6 @@ void gpsReadNewData(void)
 
 void gpsThread(void)
 {
-    // read out available GPS bytes
     gpsReadNewData();
 
     switch (gpsData.state) {
@@ -549,7 +568,7 @@ static void gpsNewDataSerial(uint16_t c)
     debug[3] = GPS_update;
 #endif
 
-    onGpsNewData();
+    onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude * 100, GPS_velned[X], GPS_velned[Y], GPS_velned[Z], GPS_have_horizontal_velocity, GPS_have_vertical_velocity, GPS_hdop);
 }
 
 bool gpsNewFrameFromSerial(uint8_t c)
@@ -811,6 +830,7 @@ static bool gpsNewFrameNMEA(char c)
                         *gpsPacketLogChar = LOG_NMEA_RMC;
                         GPS_speed = gps_Msg.speed;
                         GPS_ground_course = gps_Msg.ground_course;
+                        gpsFillVelNED();
                         break;
                     } // end switch
                 } else {
@@ -1033,9 +1053,13 @@ static bool UBLOX_parse_gps(void)
         break;
     case MSG_VELNED:
         *gpsPacketLogChar = LOG_UBLOX_VELNED;
-        // speed_3d                        = _buffer.velned.speed_3d;  // cm/s
         GPS_speed = _buffer.velned.speed_2d;    // cm/s
         GPS_ground_course = (uint16_t) (_buffer.velned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        GPS_velned[X] = _buffer.velned.ned_north;
+        GPS_velned[Y] = _buffer.velned.ned_east;
+        GPS_velned[Z] = _buffer.velned.ned_down;
+        GPS_have_horizontal_velocity = true;
+        GPS_have_vertical_velocity = true;
         _new_speed = true;
         break;
     case MSG_SVINFO:
