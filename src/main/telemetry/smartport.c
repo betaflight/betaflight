@@ -135,6 +135,7 @@ const uint16_t frSkyDataIdTable[] = {
 #define __USE_C99_MATH // for roundf()
 #define SMARTPORT_BAUD 57600
 #define SMARTPORT_UART_MODE MODE_RXTX
+#define SMARTPORT_SERVICE_TIMEOUT_MS 1 // max allowed time to find a value to send
 #define SMARTPORT_NOT_CONNECTED_TIMEOUT_MS 7000
 
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
@@ -270,6 +271,8 @@ void checkSmartPortTelemetryState(void)
 
 void handleSmartPortTelemetry(void)
 {
+    uint32_t smartPortLastServiceTime = millis();
+    
     if (!smartPortTelemetryEnabled) {
         return;
     }
@@ -292,6 +295,12 @@ void handleSmartPortTelemetry(void)
     }
 
     while (smartPortHasRequest) {
+        // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
+        if ((millis() - smartPortLastServiceTime) > SMARTPORT_SERVICE_TIMEOUT_MS) {
+            smartPortHasRequest = 0;
+            return;
+        }
+         
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
