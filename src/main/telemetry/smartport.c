@@ -135,7 +135,6 @@ const uint16_t frSkyDataIdTable[] = {
 #define __USE_C99_MATH // for roundf()
 #define SMARTPORT_BAUD 57600
 #define SMARTPORT_UART_MODE MODE_RXTX
-#define SMARTPORT_SERVICE_DELAY_MS 5 // telemetry requests comes in at roughly 12 ms intervals, keep this under that
 #define SMARTPORT_NOT_CONNECTED_TIMEOUT_MS 7000
 
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
@@ -151,7 +150,6 @@ char smartPortState = SPSTATE_UNINITIALIZED;
 static uint8_t smartPortHasRequest = 0;
 static uint8_t smartPortIdCnt = 0;
 static uint32_t smartPortLastRequestTime = 0;
-static uint32_t smartPortLastServiceTime = 0;
 
 static void smartPortDataReceive(uint16_t c)
 {
@@ -204,8 +202,6 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortSendByte(u8p[2], &crc);
     smartPortSendByte(u8p[3], &crc);
     smartPortSendByte(0xFF - (uint8_t)crc, NULL);
-
-    smartPortLastServiceTime = millis();
 }
 
 void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
@@ -294,10 +290,6 @@ void handleSmartPortTelemetry(void)
         smartPortState = SPSTATE_TIMEDOUT;
         return;
     }
-
-    // limit the rate at which we send responses, we don't want to affect flight characteristics
-    if ((now - smartPortLastServiceTime) < SMARTPORT_SERVICE_DELAY_MS)
-        return;
 
     while (smartPortHasRequest) {
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
