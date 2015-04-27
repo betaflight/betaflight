@@ -14,6 +14,24 @@ If the arm/disarm is via the control stick, holding the stick in the disarm posi
 
 There is a special arming tone used if a GPS fix has been attained, and there's a "ready" tone sounded after a GPS fix has been attained (only happens once).  The tone sounded via the TX-AUX-switch will count out the number of satellites (if GPS fix).
 
+The CLI command `play_sound` is useful for demonstrating the buzzer tones. Repeatedly entering the command will play the various tones in turn. Entering the command with a numeric-index parameter will play the associated tone.
+
+Available buzzer tones include the following:
+
+    RX_LOST_LANDING       Beeps SOS when armed and TX is turned off or signal lost (autolanding/autodisarm)
+    RX_LOST               Beeps when TX is turned off or signal lost (repeat until TX is okay)
+    DISARMING             Beep when disarming the board
+    ARMING                Beep when arming the board
+    ARMING_GPS_FIX        Beep a special tone when arming the board and GPS has fix
+    BAT_CRIT_LOW          Longer warning beeps when battery is critically low (repeats)
+    BAT_LOW               Warning beeps when battery is getting low (repeats)
+    RX_SET                Beeps when aux channel is set for beep or beep sequence how many satellites has found if GPS enabled
+    DISARM_REPEAT         Beeps sounded while stick held in disarm position
+    ACC_CALIBRATION       ACC inflight calibration completed confirmation
+    ACC_CALIBRATION_FAIL  ACC inflight calibration failed
+    READY_BEEP            Ring a tone when GPS is locked and ready
+    ARMED                 Warning beeps when board is armed (repeats until board is disarmed or throttle is increased)
+
 Buzzer is enabled by default on platforms that have buzzer connections.
 
 ## Types of buzzer supported
