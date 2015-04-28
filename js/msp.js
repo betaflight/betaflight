@@ -868,7 +868,7 @@ var MSP = {
         // always send messages with data payload (even when there is a message already in the queue)
         if (data || !requestExists) {
             serial.send(bufferOut, function (sendInfo) {
-                if (sendInfo.bytesSent == bufferOut.length) {
+                if (sendInfo.bytesSent == bufferOut.byteLength) {
                     if (callback_sent) callback_sent();
                 }
             });
