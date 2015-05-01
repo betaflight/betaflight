@@ -564,7 +564,7 @@ void mixTable(void)
 {
     uint32_t i;
 
-    if (motorCount >= 4 &&  mixerConfig->yaw_jump_prevention_limit) {
+    if (motorCount >= 4) {
         // prevent "yaw jump" during yaw correction
         axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
     }

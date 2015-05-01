@@ -319,7 +319,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->pid_at_min_throttle = 1;
     mixerConfig->yaw_direction = 1;
-    mixerConfig->yaw_jump_prevention_limit = 0;
+    mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
     mixerConfig->tri_unarmed_servo = 1;
     mixerConfig->servo_lowpass_freq = 400;
