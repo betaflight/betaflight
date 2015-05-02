@@ -209,6 +209,10 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
         return true;
     }
 
+#ifdef BARO_EOC_GPIO
+    unregisterExti15_10_CallbackHandler(BMP085_EOC_EXTI_Handler);
+#endif
+
     BMP085_OFF;
 
     return false;

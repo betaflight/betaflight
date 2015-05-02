@@ -44,7 +44,19 @@ void registerExti15_10_CallbackHandler(extiCallbackHandler *fn)
         extiCallbackHandler *candidate = exti15_10_handlers[index];
         if (!candidate) {
             exti15_10_handlers[index] = fn;
-            break;
+            return;
+        }
+    }
+    failureMode(15); // EXTI15_10_CALLBACK_HANDLER_COUNT is too low for the amount of handlers required.
+}
+
+void unregisterExti15_10_CallbackHandler(extiCallbackHandler *fn)
+{
+    for (int index = 0; index < EXTI15_10_CALLBACK_HANDLER_COUNT; index++) {
+        extiCallbackHandler *candidate = exti15_10_handlers[index];
+        if (candidate == fn) {
+            exti15_10_handlers[index] = 0;
+            return;
         }
     }
 }
@@ -127,7 +139,7 @@ void systemInit(void)
     cycleCounterInit();
 
 
-    memset(exti15_10_handlers, 0, sizeof(exti15_10_handlers));
+    memset(&exti15_10_handlers, 0x00, sizeof(exti15_10_handlers));
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
 }

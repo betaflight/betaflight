@@ -38,7 +38,6 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
-#include "drivers/sound_beeper.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -324,7 +323,11 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
-            return currentProfile->pidProfile.D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
+            if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) {
+                return currentProfile->pidProfile.D_f[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
+            } else {
+                return currentProfile->pidProfile.D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
+            }
 
         case FLIGHT_LOG_FIELD_CONDITION_MAG:
 #ifdef MAG
@@ -981,22 +984,15 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
     }
 }
 
-// Beep the buzzer and write the current time to the log as a synchronization point
-static void blackboxPlaySyncBeep()
+// Write the time of the last arming beep to the log as a synchronization point
+static void blackboxLogArmingBeep()
 {
     flightLogEvent_syncBeep_t eventData;
 
-    eventData.time = micros();
+    // Get time of last arming beep (in system-uptime microseconds)
+    eventData.time = getArmingBeepTimeMicros();
 
-    /*
-     * The regular beep routines aren't going to work for us, because they queue up the beep to be executed later.
-     * Our beep is timing sensitive, so start beeping now without setting the beeperIsOn flag.
-     */
-    BEEP_ON;
-
-    // Have the regular beeper code turn off the beep for us eventually, since that's not timing-sensitive
-    queueConfirmationBeep(1);
-
+    // Write the time to the log
     blackboxLogEvent(FLIGHT_LOG_EVENT_SYNC_BEEP, (flightLogEventData_t *) &eventData);
 }
 
@@ -1064,7 +1060,7 @@ void handleBlackbox(void)
         case BLACKBOX_STATE_PRERUN:
             blackboxSetState(BLACKBOX_STATE_RUNNING);
 
-            blackboxPlaySyncBeep();
+            blackboxLogArmingBeep();
         break;
         case BLACKBOX_STATE_RUNNING:
             // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0

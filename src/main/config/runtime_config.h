@@ -45,8 +45,8 @@ typedef enum {
 
 extern uint16_t flightModeFlags;
 
-#define DISABLE_FLIGHT_MODE(mask) (flightModeFlags &= ~(mask))
-#define ENABLE_FLIGHT_MODE(mask) (flightModeFlags |= (mask))
+#define DISABLE_FLIGHT_MODE(mask) disableFlightMode(mask)
+#define ENABLE_FLIGHT_MODE(mask) enableFlightMode(mask)
 #define FLIGHT_MODE(mask) (flightModeFlags & (mask))
 
 typedef enum {
@@ -63,6 +63,8 @@ typedef enum {
 
 extern uint8_t stateFlags;
 
+uint16_t enableFlightMode(flightModeFlags_e mask);
+uint16_t disableFlightMode(flightModeFlags_e mask);
 
 bool sensors(uint32_t mask);
 void sensorsSet(uint32_t mask);

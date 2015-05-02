@@ -55,7 +55,7 @@ Example: to use RSSI on AUX1 in Cleanflight use `set rssi_channel = 5`, since 5 
 ### failsafe_detect_threshold
 reason: improved functionality
 
-See `failsafe_min_usec` and `failsafe_max_usec` in Failsafe documentation.
+See `rx_min_usec` and `rx_max_usec` in Failsafe documentation.
 
 ### emfavoidance
 reason: renamed to `emf_avoidance` for consistency

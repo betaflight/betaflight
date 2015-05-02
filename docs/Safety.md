@@ -4,14 +4,26 @@ As many can attest, multirotors and RC models in general can be very dangerous, 
 * **NEVER** arm your model with propellers fitted unless you intend to fly!
 * **Always** remove your propellers if you are setting up for the first time, flashing firmware, or if in any doubt.
 
-## Before installing the Flight Controller in your craft
+## Before Installing
 
-Please consult the Cli.md, Controls.md, Failsafe.md and Modes.md, documentations for further important information and familiarisation with CleanFlight's terminolgies.
+Please consult the [Cli](Cli.md), [Controls](Controls.md), [Failsafe](Failsafe.md) and [Modes](Modes.md) 
+pages for further important information.
 
-You are highly advised to use the Receiver tab in CleanFlight Configurator, making sure your Rx channel values are centered at 1500 (1520 for Futaba RC) and Min/Max values are reached when controls are operated.
-The referenced values for each channel, have marked impact on the operation of Flight Controller and its Flight Modes.
+You are highly advised to use the Receiver tab in the CleanFlight Configurator, making sure your Rx channel 
+values are centered at 1500 (1520 for Futaba RC) with minimum & maximums of 1000 and 2000 (respectively) 
+are reached when controls are operated.  Failure to configure these ranges properly can create
+problems, such as inability to arm (because you can't reach the endpoints) or immediate activation of
+[failsafe](failsafe.md).
 
-You may have to adjust your channel endpoints and trims/sub-trims, on your RC transmitter, to achieve the expected values.
+You may have to adjust your channel endpoints and trims/sub-trims on your RC transmitter to achieve the 
+expected range of 1000 to 2000.
 
-## Feature MOTOR_STOP
-The default Cleanflight configuration has the MOTOR_STOP feature DISABLED by default. What this means is that as soon as the controller is armed, the propellers *WILL* begin spinning at low speed. It is recommended that this setting be retained as it provides a good visual indication that the craft is armed. You can read more about arming and setting the MOTOR_STOP feature if desired in the relevant sections of the manual. 
+The referenced values for each channel have marked impact on the operation of the flight controller and the 
+different flight modes.
+
+## Props Spinning When Armed
+With the default configuration, when the controller is armed, the propellers *WILL* begin spinning at low speed.
+We recommend keeping this setting as it provides a good visual indication the craft is armed.
+
+If you wish to change this behavior, see the MOTOR_STOP feature in the Configurator and relevant docuemntation pages.
+Enabling this feature will stop the props from spinning when armed.

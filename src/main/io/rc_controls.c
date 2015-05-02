@@ -51,6 +51,7 @@
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
+#include "flight/failsafe.h"
 
 #include "mw.h"
 
@@ -124,7 +125,8 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
             }
         } else {
             // Disarming via ARM BOX
-            if (ARMING_FLAG(ARMED)) {
+
+            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
                 if (disarm_kill_switch) {
                     mwDisarm();
                 } else if (throttleStatus == THROTTLE_LOW) {
@@ -138,18 +140,29 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         return;
     }
 
-    if (ARMING_FLAG(ARMED)) {
-        // actions during armed
-
         if (isUsingSticksToArm) {
             // Disarm on throttle down + yaw
-            if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE)
+        if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) {
+            if (ARMING_FLAG(ARMED))         //board was armed
                 mwDisarm();
-
-            // Disarm on roll (only when retarded_arm is enabled)
-            if (retarded_arm && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO))
-                mwDisarm();
+            else {  //board was not armed
+                beeper(BEEPER_DISARM_REPEAT);    //sound tone while stick held
+                rcDelayCommand = 0;         //reset so disarm tone will repeat
+            }
         }
+            // Disarm on roll (only when retarded_arm is enabled)
+        if (retarded_arm && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO)) {
+            if (ARMING_FLAG(ARMED))         //board was armed
+                mwDisarm();
+            else {  //board was not armed
+                beeper(BEEPER_DISARM_REPEAT);    //sound tone while stick held
+                rcDelayCommand = 0;         //reset so disarm tone will repeat
+            }
+        }
+    }
+
+    if (ARMING_FLAG(ARMED)) {
+        // actions during armed
         return;
     }
 
@@ -384,9 +397,9 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
     float newFloatValue;
 
     if (delta > 0) {
-        queueConfirmationBeep(2);
+        beeperConfirmationBeeps(2);
     } else {
-        queueConfirmationBeep(1);
+        beeperConfirmationBeeps(1);
     }
     switch(adjustmentFunction) {
         case ADJUSTMENT_RC_RATE:
@@ -507,7 +520,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
     }
 
     if (applied) {
-        queueConfirmationBeep(position + 1);
+        beeperConfirmationBeeps(position + 1);
     }
 }
 

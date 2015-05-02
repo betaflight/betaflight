@@ -2,16 +2,24 @@
 
 ## Arming
 
-When armed the aircraft is ready to fly and any motors attached will spin when throttle is applied.
+When armed, the aircraft is ready to fly and the motors will spin when throttle is applied.  The motors will 
+spin at a slow speed when armed (this feature may be disabled by setting MOTOR_STOP, but for safety reasons,
+that is not recommended).
 
-By default arming and disarming is done using stick positions.  Arming with stick positions is disabled when using a switch to arm.
+By default, arming and disarming is done using stick positions.  (NOTE: this feature is disabled when using a 
+switch to arm.)
 
+## Stick Positions
 
-## Stick positions
+The three stick positions are:
 
-LOW - the channel value for the mapped channel input is around 1000
-CENTER - the channel value for the mapped channel input is around 1500
-HIGH - the channel value for the mapped channel input is around 2000
+|Position        | Approx. Channel Input|
+|----------------|----------------------|
+|LOW             | 1000                 |
+|CENTER          | 1500                 |
+|HIGH            | 2000                 |
+
+The stick positions are combined to activate different functions:
 
 | Function                      | Throttle | Yaw     | Pitch  | Roll   |
 | ----------------------------- | -------- | ------- | ------ | ------ |
@@ -33,6 +41,5 @@ HIGH - the channel value for the mapped channel input is around 2000
 | Save setting                  | LOW      | LOW     | LOW    | HIGH   |
 
 
-##### Download a graphic [pdf cheat-sheet](https://multiwii.googlecode.com/svn/branches/Hamburger/MultiWii-StickConfiguration-23_v0-5772156649.pdf) with TX stick commands.
-
-The Latest version of this pdf can always be found [Here](https://code.google.com/p/multiwii/source/browse/#svn%2Fbranches%2FHamburger)
+Download a graphic [cheat sheet](https://multiwii.googlecode.com/svn/branches/Hamburger/MultiWii-StickConfiguration-23_v0-5772156649.pdf) with Tx stick commands (the latest version can always be found 
+[here](https://code.google.com/p/multiwii/source/browse/#svn%2Fbranches%2FHamburger)).

@@ -54,12 +54,10 @@ bool rxMspFrameComplete(void)
     return true;
 }
 
-bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     UNUSED(rxConfig);
     rxRuntimeConfig->channelCount = 8; // Limited to 8 channels due to MSP_SET_RAW_RC command.
     if (callback)
         *callback = rxMspReadRawRC;
-
-    return true;
 }

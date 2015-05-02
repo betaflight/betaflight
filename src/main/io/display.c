@@ -51,6 +51,7 @@
 
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/failsafe.h"
 
 #ifdef GPS
 #include "io/gps.h"
@@ -73,6 +74,7 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 #define PAGE_CYCLE_FREQUENCY (MILLISECONDS_IN_A_SECOND * 5)
 
 static uint32_t nextDisplayUpdateAt = 0;
+static bool displayPresent = false;
 
 static rxConfig_t *rxConfig;
 
@@ -136,7 +138,7 @@ typedef struct pageState_s {
 static pageState_t pageState;
 
 void resetDisplay(void) {
-    ug2864hsweg01InitI2C();
+    displayPresent = ug2864hsweg01InitI2C();
 }
 
 void LCDprint(uint8_t i) {
@@ -203,6 +205,33 @@ void updateTicker(void)
     tickerIndex = tickerIndex % TICKER_CHARACTER_COUNT;
 }
 
+void updateRxStatus(void)
+{
+    i2c_OLED_set_xy(SCREEN_CHARACTER_COLUMN_COUNT - 2, 0);
+    i2c_OLED_send_char(rxIsReceivingSignal() ? 'R' : '!');
+}
+
+void updateFailsafeStatus(void)
+{
+    char failsafeIndicator = '?';
+    switch (failsafePhase()) {
+        case FAILSAFE_IDLE:
+            failsafeIndicator = '-';
+            break;
+        case FAILSAFE_RX_LOSS_DETECTED:
+            failsafeIndicator = 'R';
+            break;
+        case FAILSAFE_LANDING:
+            failsafeIndicator = 'l';
+            break;
+        case FAILSAFE_LANDED:
+            failsafeIndicator = 'L';
+            break;
+    }
+    i2c_OLED_set_xy(SCREEN_CHARACTER_COLUMN_COUNT - 3, 0);
+    i2c_OLED_send_char(failsafeIndicator);
+}
+
 void showTitle()
 {
     i2c_OLED_set_line(0);
@@ -211,11 +240,6 @@ void showTitle()
 
 void handlePageChange(void)
 {
-    // Some OLED displays do not respond on the first initialisation so refresh the display
-    // when the page changes in the hopes the hardware responds.  This also allows the
-    // user to power off/on the display or connect it while powered.
-    resetDisplay();
-
     i2c_OLED_clear_display_quick();
     showTitle();
 }
@@ -533,9 +557,22 @@ void updateDisplay(void)
     }
 
     if (pageState.pageChanging) {
-        handlePageChange();
         pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
         pageState.nextPageAt = now + PAGE_CYCLE_FREQUENCY;
+
+        // Some OLED displays do not respond on the first initialisation so refresh the display
+        // when the page changes in the hopes the hardware responds.  This also allows the
+        // user to power off/on the display or connect it while powered.
+        resetDisplay();
+
+        if (!displayPresent) {
+            return;
+        }
+        handlePageChange();
+    }
+
+    if (!displayPresent) {
+        return;
     }
 
     switch(pageState.pageId) {
@@ -573,8 +610,11 @@ void updateDisplay(void)
 #endif
     }
     if (!armedState) {
+        updateFailsafeStatus();
+        updateRxStatus();
         updateTicker();
     }
+
 }
 
 void displaySetPage(pageId_e pageId)

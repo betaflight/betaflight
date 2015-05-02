@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define STICK_CHANNEL_COUNT 4
+
 #define PWM_RANGE_ZERO 0 // FIXME should all usages of this be changed to use PWM_RANGE_MIN?
 #define PWM_RANGE_MIN 1000
 #define PWM_RANGE_MAX 2000
@@ -79,6 +81,10 @@ typedef struct rxConfig_s {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+
+    uint16_t rx_min_usec;
+    uint16_t rx_max_usec;
+
 } rxConfig_t;
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
@@ -94,7 +100,8 @@ void useRxConfig(rxConfig_t *rxConfigToUse);
 
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 
-void updateRx(void);
+void updateRx(uint32_t currentTime);
+bool rxIsReceivingSignal(void);
 bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
