@@ -68,10 +68,10 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
 //#define ENABLE_DEBUG_OLED_PAGE
 
-#define MILLISECONDS_IN_A_SECOND (1000 * 1000)
+#define MICROSECONDS_IN_A_SECOND (1000 * 1000)
 
-#define DISPLAY_UPDATE_FREQUENCY (MILLISECONDS_IN_A_SECOND / 5)
-#define PAGE_CYCLE_FREQUENCY (MILLISECONDS_IN_A_SECOND * 5)
+#define DISPLAY_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
+#define PAGE_CYCLE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 5)
 
 static uint32_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
