@@ -70,9 +70,11 @@ typedef struct pidProfile_s {
     uint8_t pid5_oldyw;                     // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw
 
 #ifdef GTUNE
-    uint8_t  gtune_lolimP[3];               // [10..200] Lower limit of P during G tune
+    uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
     uint8_t  gtune_hilimP[3];               // [0..200] Higher limit of P during G tune. 0 Disables tuning for that axis.
-    int8_t   gtune_pwr;                     // [0..10] Strength of adjustment
+    uint8_t  gtune_pwr;                     // [0..10] Strength of adjustment
+    uint16_t gtune_settle_time;             // [200..1000] Settle time in ms
+    uint8_t  gtune_average_cycles;          // [8..128] Number of looptime cycles used for gyro average calculation
 #endif
 } pidProfile_t;
 

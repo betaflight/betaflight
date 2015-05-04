@@ -524,7 +524,9 @@ const clivalue_t valueTable[] = {
     { "gtune_hiP_rll",              VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_hilimP[FD_ROLL], 0, 200 },
     { "gtune_hiP_ptch",             VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_hilimP[FD_PITCH], 0, 200 },
     { "gtune_hiP_yw",               VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_hilimP[FD_YAW], 0, 200 },
-    { "gtune_pwr",                  VAR_INT8   | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_pwr, 0, 10 },
+    { "gtune_pwr",                  VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_pwr, 0, 10 },
+    { "gtune_settle_time",          VAR_UINT16 | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_settle_time, 200, 1000 },
+    { "gtune_average_cycles",       VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_average_cycles, 8, 128 },
 #endif
 
 #ifdef BLACKBOX

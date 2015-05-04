@@ -44,6 +44,7 @@
 
 #include "config/runtime_config.h"
 
+extern uint16_t cycleTime;
 extern uint8_t motorCount;
 
 /*
@@ -77,20 +78,28 @@ extern uint8_t motorCount;
    Gyrosetting 2000DPS
    GyroScale = (1 / 16,4 ) * RADX(see board.h) = 0,001064225154 digit per rad/s
 
-    pidProfile->gtune_lolimP[ROLL]   = 20; [10..200] Lower limit of ROLL P during G tune.
-    pidProfile->gtune_lolimP[PITCH]  = 20; [10..200] Lower limit of PITCH P during G tune.
-    pidProfile->gtune_lolimP[YAW]    = 20; [10..200] Lower limit of YAW P during G tune.
-    pidProfile->gtune_hilimP[ROLL]   = 70; [0..200]  Higher limit of ROLL P during G tune. 0 Disables tuning for that axisis.
-    pidProfile->gtune_hilimP[PITCH]  = 70; [0..200]  Higher limit of PITCH P during G tune. 0 Disables tuning for that axisis.
-    pidProfile->gtune_hilimP[YAW]    = 70; [0..200]  Higher limit of YAW P during G tune. 0 Disables tuning for that axisis.
-    pidProfile->gtune_pwr            = 0;  [0..10] Strength of adjustment
+    pidProfile->gtune_lolimP[ROLL]   = 10;  [0..200] Lower limit of ROLL P during G tune.
+    pidProfile->gtune_lolimP[PITCH]  = 10;  [0..200] Lower limit of PITCH P during G tune.
+    pidProfile->gtune_lolimP[YAW]    = 10;  [0..200] Lower limit of YAW P during G tune.
+    pidProfile->gtune_hilimP[ROLL]   = 100; [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axisis.
+    pidProfile->gtune_hilimP[PITCH]  = 100; [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axisis.
+    pidProfile->gtune_hilimP[YAW]    = 100; [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axisis.
+    pidProfile->gtune_pwr            = 0;   [0..10] Strength of adjustment
+    pidProfile->gtune_settle_time    = 450; [200..1000] Settle time in ms
+    pidProfile->gtune_average_cycles = 16;  [8..128] Number of looptime cycles used for gyro average calculation
 */
 
 static pidProfile_t *pidProfile;
-static int8_t time_skip[3];
+static int16_t delay_cycles;
+static int16_t time_skip[3];
 static int16_t OldError[3], result_P64[3];
 static int32_t AvgGyro[3];
 static bool floatPID;
+
+void updateDelayCycles(void)
+{
+    delay_cycles = -(((int32_t)pidProfile->gtune_settle_time * 1000) / cycleTime);
+}
 
 void init_Gtune(pidProfile_t *pidProfileToTune)
 {
@@ -99,9 +108,10 @@ void init_Gtune(pidProfile_t *pidProfileToTune)
     pidProfile = pidProfileToTune;
 	if (pidProfile->pidController == 2) floatPID = true;                        // LuxFloat is using float values for PID settings
 	else floatPID = false;
+	updateDelayCycles();
 	for (i = 0; i < 3; i++) {
         if ((pidProfile->gtune_hilimP[i] && pidProfile->gtune_lolimP[i] > pidProfile->gtune_hilimP[i]) || // User config error disable axisis for tuning
-            (motorCount < 4 && i == FD_YAW)) pidProfile->gtune_hilimP[i] = 0;   // Disable Yawtuning for everything below a quadcopter
+            (motorCount < 4 && i == FD_YAW)) pidProfile->gtune_hilimP[i] = 0;   // Disable yawtuning for everything below a quadcopter
         if (floatPID) {
             if((pidProfile->P_f[i] * 10) < pidProfile->gtune_lolimP[i]) pidProfile->P_f[i] = (float)(pidProfile->gtune_lolimP[i] / 10);
             result_P64[i] = (int16_t)pidProfile->P_f[i] << 6;                   // 6 bit extra resolution for P.
@@ -110,7 +120,7 @@ void init_Gtune(pidProfile_t *pidProfileToTune)
             result_P64[i] = (int16_t)pidProfile->P8[i] << 6;                    // 6 bit extra resolution for P.
         }
         OldError[i] = 0;
-        time_skip[i] = -125;
+        time_skip[i] = delay_cycles;
     }
 }
 
@@ -118,9 +128,9 @@ void calculate_Gtune(uint8_t axis)
 {
     int16_t error, diff_G, threshP;
 
-    if(rcCommand[axis] || (axis != FD_YAW && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)))) {  // Block Tuning on stickinput. Always allow Gtune on YAW, Roll & Pitch only in acromode
+    if(rcCommand[axis] || (axis != FD_YAW && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)))) {  // Block tuning on stick input. Always allow G-Tune on YAW, Roll & Pitch only in acromode
         OldError[axis] = 0;
-        time_skip[axis] = -125;                                                 // Some settletime after stick center. (125 + 16)* 3ms clycle = 423ms (ca.)
+        time_skip[axis] = delay_cycles;                                         // Some settle time after stick center. default 450ms
     } else {
         if (!time_skip[axis]) AvgGyro[axis] = 0;
         time_skip[axis]++;
@@ -128,7 +138,7 @@ void calculate_Gtune(uint8_t axis)
             if (axis == FD_YAW) AvgGyro[axis] += 32 * ((int16_t)gyroData[axis] / 32); // Chop some jitter and average
             else AvgGyro[axis] += 128 * ((int16_t)gyroData[axis] / 128);        // Chop some jitter and average
         }
-        if (time_skip[axis] == 16) {                                            // ca 48 ms
+        if (time_skip[axis] == pidProfile->gtune_average_cycles) {              // Looptime cycles for gyro average calculation. default 16.
             AvgGyro[axis] /= time_skip[axis];                                   // AvgGyro[axis] has now very clean gyrodata
             time_skip[axis] = 0;
             if (axis == FD_YAW) {
@@ -166,8 +176,8 @@ void calculate_Gtune(uint8_t axis)
                 }
 #endif
 
-                if (floatPID) pidProfile->P_f[axis] = (float)(newP / 10);     // new P value for float PID
-                else pidProfile->P8[axis] = newP;                             // new P value
+                if (floatPID) pidProfile->P_f[axis] = (float)(newP / 10);       // new P value for float PID
+                else pidProfile->P8[axis] = newP;                               // new P value
             }
             OldError[axis] = error;
         }
