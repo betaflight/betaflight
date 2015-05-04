@@ -1136,7 +1136,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_RX_CONFIG:
-        headSerialReply(8);
+        headSerialReply(12);
         serialize8(masterConfig.rxConfig.serialrx_provider);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
