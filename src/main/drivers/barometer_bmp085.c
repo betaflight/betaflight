@@ -149,9 +149,14 @@ void bmp085Disable(const bmp085Config_t *config)
 bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 {
     uint8_t data;
+    bool ack;
 
     if (bmp085InitDone)
         return true;
+
+    ack = i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
+    if(!ack)
+        return false;
 
 #if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
     if (config) {
@@ -187,9 +192,6 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
     UNUSED(config);
 #endif
 
-    delay(20); // datasheet says 10ms, we'll be careful and do 20.
-
-    i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
     bmp085.oversampling_setting = 3;
 
