@@ -53,6 +53,7 @@
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
+#include "io/beeper.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -97,6 +98,7 @@ static void cliDump(char *cmdLine);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
 static void cliMotor(char *cmdline);
+static void cliPlaySound(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
@@ -211,6 +213,7 @@ const clicmd_t cmdTable[] = {
     { "mixer", "mixer name or list", cliMixer },
 #endif
     { "motor", "get/set motor output value", cliMotor },
+    { "play_sound", "index, or none for next", cliPlaySound },
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
@@ -1325,6 +1328,39 @@ static void cliMotor(char *cmdline)
 
     printf("Setting motor %d to %d\r\n", motor_index, motor_value);
     motor_disarmed[motor_index] = motor_value;
+}
+
+static void cliPlaySound(char *cmdline)
+{
+    int i;
+    const char *name;
+    static int lastSoundIdx = -1;
+
+    if (isEmpty(cmdline)) {
+        i = lastSoundIdx + 1;     //next sound index
+        if ((name=beeperNameForTableIndex(i)) == NULL) {
+            while (true) {   //no name for index; try next one
+                if (++i >= beeperTableEntryCount())
+                    i = 0;   //if end then wrap around to first entry
+                if ((name=beeperNameForTableIndex(i)) != NULL)
+                    break;   //if name OK then play sound below
+                if (i == lastSoundIdx + 1) {     //prevent infinite loop
+                    printf("Error playing sound\r\n");
+                    return;
+                }
+            }
+        }
+    } else {       //index value was given
+        i = atoi(cmdline);
+        if ((name=beeperNameForTableIndex(i)) == NULL) {
+            printf("No sound for index %d\r\n", i);
+            return;
+        }
+    }
+    lastSoundIdx = i;
+    beeperSilence();
+    printf("Playing sound %d: %s\r\n", i, name);
+    beeper(beeperModeForTableIndex(i));
 }
 
 static void cliProfile(char *cmdline)

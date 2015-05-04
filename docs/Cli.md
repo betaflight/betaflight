@@ -88,6 +88,7 @@ Re-apply any new defaults as desired.
 | map            | mapping of rc channel order                    |
 | mixer          | mixer name or list                             |
 | motor          | get/set motor output value                     |
+| play_sound     | index, or none for next                        |
 | profile        | index (0 to 2)                                 |
 | rateprofile    | index (0 to 2)                                 |
 | save           | save and reboot                                |

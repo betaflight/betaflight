@@ -24,7 +24,6 @@
 #include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
-#include "flight/failsafe.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
@@ -102,9 +101,9 @@ static const uint8_t beep_readyBeep[] = {
 static const uint8_t beep_2shortBeeps[] = {
     5, 5, 5, 5, BEEPER_COMMAND_STOP
 };
-// 3 fast short beeps
-static const uint8_t beep_3shortBeeps[] = {
-    5, 5, 5, 5, 5, 5, BEEPER_COMMAND_STOP
+// 2 longer beeps
+static const uint8_t beep_2longerBeeps[] = {
+    20, 15, 35, 5, BEEPER_COMMAND_STOP
 };
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
@@ -129,24 +128,25 @@ typedef struct beeperTableEntry_s {
     uint8_t mode;
     uint8_t priority; // 0 = Highest
     const uint8_t *sequence;
+    const char *name;
 } beeperTableEntry_t;
 
 static const beeperTableEntry_t const beeperTable[] = {
-    { BEEPER_RX_LOST_LANDING,       0, beep_sos },
-    { BEEPER_RX_LOST,               1, beep_txLostBeep },
-    { BEEPER_DISARMING,             2, beep_disarmBeep },
-    { BEEPER_ARMING,                3, beep_armingBeep },
-    { BEEPER_ARMING_GPS_FIX,        4, beep_armedGpsFix },
-    { BEEPER_BAT_CRIT_LOW,          5, beep_critBatteryBeep },
-    { BEEPER_BAT_LOW,               6, beep_lowBatteryBeep },
-    { BEEPER_GPS_STATUS,            7, beep_multiBeeps },
-    { BEEPER_RX_SET,                8, beep_shortBeep },
-    { BEEPER_DISARM_REPEAT,         9, beep_disarmRepeatBeep },
-    { BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps },
-    { BEEPER_ACC_CALIBRATION_FAIL,  11, beep_3shortBeeps },
-    { BEEPER_READY_BEEP,            12, beep_readyBeep },
-    { BEEPER_MULTI_BEEPS,           13, beep_multiBeeps }, // FIXME having this listed makes no sense since the beep array will not be initialised.
-    { BEEPER_ARMED,                 14, beep_armedBeep },
+    { BEEPER_RX_LOST_LANDING,       0, beep_sos,              "RX_LOST_LANDING" },
+    { BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST" },
+    { BEEPER_DISARMING,             2, beep_disarmBeep,       "DISARMING" },
+    { BEEPER_ARMING,                3, beep_armingBeep,       "ARMING"  },
+    { BEEPER_ARMING_GPS_FIX,        4, beep_armedGpsFix,      "ARMING_GPS_FIX" },
+    { BEEPER_BAT_CRIT_LOW,          5, beep_critBatteryBeep,  "BAT_CRIT_LOW" },
+    { BEEPER_BAT_LOW,               6, beep_lowBatteryBeep,   "BAT_LOW" },
+    { BEEPER_GPS_STATUS,            7, beep_multiBeeps,       NULL },
+    { BEEPER_RX_SET,                8, beep_shortBeep,        "RX_SET" },
+    { BEEPER_DISARM_REPEAT,         9, beep_disarmRepeatBeep, "DISARM_REPEAT" },
+    { BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION" },
+    { BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL" },
+    { BEEPER_READY_BEEP,            12, beep_readyBeep,       "READY_BEEP" },
+    { BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      NULL }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ARMED,                 14, beep_armedBeep,       "ARMED" },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -319,4 +319,31 @@ static void beeperProcessCommand(void)
 uint32_t getArmingBeepTimeMicros(void)
 {
   return armingBeepTimeMicros;
+}
+
+/*
+ * Returns the 'beeperMode_e' value for the given beeper-table index,
+ * or BEEPER_SILENCE if none.
+ */
+beeperMode_e beeperModeForTableIndex(int idx)
+{
+  return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ?
+                                     beeperTable[idx].mode : BEEPER_SILENCE;
+}
+
+/*
+ * Returns the name for the given beeper-table index, or NULL if none.
+ */
+const char *beeperNameForTableIndex(int idx)
+{
+  return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ?
+                                               beeperTable[idx].name : NULL;
+}
+
+/*
+ * Returns the number of entries in the beeper-sounds table.
+ */
+int beeperTableEntryCount(void)
+{
+    return (int)BEEPER_TABLE_ENTRY_COUNT;
 }
