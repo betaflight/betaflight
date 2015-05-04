@@ -154,11 +154,6 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
     if (bmp085InitDone)
         return true;
 
-    delay(20); // datasheet says 10ms, we'll be careful and do 20.
-    ack = i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
-    if(!ack)
-        return false;
-
 #if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
     if (config) {
         EXTI_InitTypeDef EXTI_InitStructure;
@@ -193,26 +188,37 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
     UNUSED(config);
 #endif
 
-    bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
-    bmp085.oversampling_setting = 3;
+    delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
-    if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
-        i2cRead(BMP085_I2C_ADDR, BMP085_VERSION_REG, 1, &data); /* read Version reg */
-        bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
-        bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
-        bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
-        bmp085InitDone = true;
-        baro->ut_delay = 6000; // 1.5ms margin according to the spec (4.5ms T conversion time)
-        baro->up_delay = 27000; // 6000+21000=27000 1.5ms margin according to the spec (25.5ms P conversion time with OSS=3)
-        baro->start_ut = bmp085_start_ut;
-        baro->get_ut = bmp085_get_ut;
-        baro->start_up = bmp085_start_up;
-        baro->get_up = bmp085_get_up;
-        baro->calculate = bmp085_calculate;
-        return true;
+    ack = i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */ 
+    if (ack) {
+	    bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
+	    bmp085.oversampling_setting = 3;
+
+	    if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
+		i2cRead(BMP085_I2C_ADDR, BMP085_VERSION_REG, 1, &data); /* read Version reg */
+		bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
+		bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
+		bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
+		bmp085InitDone = true;
+		baro->ut_delay = 6000; // 1.5ms margin according to the spec (4.5ms T conversion time)
+		baro->up_delay = 27000; // 6000+21000=27000 1.5ms margin according to the spec (25.5ms P conversion time with OSS=3)
+		baro->start_ut = bmp085_start_ut;
+		baro->get_ut = bmp085_get_ut;
+		baro->start_up = bmp085_start_up;
+		baro->get_up = bmp085_get_up;
+		baro->calculate = bmp085_calculate;
+		return true;
+	    }
     }
 
 #ifdef BARO_EOC_GPIO
+    EXTI_InitTypeDef EXTI_InitStructure;
+    // Disable EXTI interrupt for barometer EOC
+    EXTI_InitStructure.EXTI_Line = EXTI_Line14;
+    EXTI_InitStructure.EXTI_LineCmd = DISABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
     unregisterExti15_10_CallbackHandler(BMP085_EOC_EXTI_Handler);
 #endif
 
