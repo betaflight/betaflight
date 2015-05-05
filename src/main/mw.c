@@ -209,7 +209,8 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
-            rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
+            tmp2 = tmp / 100;
+            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.

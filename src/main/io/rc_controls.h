@@ -132,6 +132,7 @@ typedef struct controlRateConfig_s {
     uint8_t thrExpo8;
     uint8_t rates[3];
     uint8_t dynThrPID;
+    uint8_t rcYawExpo8;
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
 } controlRateConfig_t;
 

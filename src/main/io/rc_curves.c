@@ -25,6 +25,7 @@
 #include "io/rc_curves.h"
 
 int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
+int16_t lookupYawRC[YAW_LOOKUP_LENGTH];     // lookup table for expo & RC rate YAW
 int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 
 
@@ -34,6 +35,14 @@ void generatePitchRollCurve(controlRateConfig_t *controlRateConfig)
 
     for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
         lookupPitchRollRC[i] = (2500 + controlRateConfig->rcExpo8 * (i * i - 25)) * i * (int32_t) controlRateConfig->rcRate8 / 2500;
+}
+
+void generateYawCurve(controlRateConfig_t *controlRateConfig)
+{
+    uint8_t i;
+
+    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
+        lookupYawRC[i] = (2500 + controlRateConfig->rcYawExpo8 * (i * i - 25)) * i / 25;
 }
 
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
