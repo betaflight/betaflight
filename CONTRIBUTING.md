@@ -40,7 +40,7 @@ The primary thing to remember is that separate pull requests should be created f
 
 Later, you can get the changes from the cleanflight repo into your `master` branch by adding cleanflight as a git remote and merging from it as follows:
 
-1. `git add remote cleanflight https://github.com/cleanflight/cleanflight.git`
+1. `git remote add cleanflight https://github.com/cleanflight/cleanflight.git`
 2. `git checkout master`
 3. `git fetch cleanflight`
 4. `git merge cleanflight/master`
