@@ -441,10 +441,11 @@ static void detectAndApplySignalLossBehaviour(void)
 
     rxFlightChannelsValid = rxHaveValidFlightChannels();
 
-    if (rxFlightChannelsValid) {
+    if ((rxFlightChannelsValid) && !IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
         failsafeOnValidDataReceived();
     } else {
         rxSignalReceived = false;
+        failsafeOnValidDataFailed();
 
         for (channel = 0; channel < rxRuntimeConfig.channelCount; channel++) {
             rcData[channel] = getRxfailValue(channel);
@@ -457,8 +458,6 @@ void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
 {
     rxUpdateAt = currentTime + DELAY_50_HZ;
 
-    failsafeOnRxCycleStarted();
-
     if (!feature(FEATURE_RX_MSP)) {
         // rcData will have already been updated by MSP_SET_RAW_RC
 
@@ -469,7 +468,6 @@ void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
 
     readRxChannelsApplyRanges();
     detectAndApplySignalLossBehaviour();
-
 }
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig)

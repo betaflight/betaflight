@@ -73,3 +73,4 @@ void changeControlRateProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
 
+uint16_t getCurrentMinthrottle(void);
