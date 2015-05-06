@@ -201,6 +201,9 @@ void init(void)
 #if defined(USE_USART2) && defined(STM32F10X)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
+#ifdef STM32F303xC
+    pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
+#endif
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
