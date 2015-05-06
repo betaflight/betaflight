@@ -1,11 +1,18 @@
 # Buzzer
 
-Cleanflight supports a buzzer which is used for the following purposes, and more:
+Cleanflight supports a buzzer which is used for the following purposes:
 
- * Low Battery alarm (when battery monitoring enabled)
- * Notification of calibration complete status.
- * AUX operated beeping - useful for locating your aircraft after a crash.
- * Failsafe status.
+ * Low and critical battery alarms (when battery monitoring enabled)
+ * Arm/disarm tones (and warning beeps while armed)
+ * Notification of calibration complete status
+ * TX-AUX operated beeping - useful for locating your aircraft after a crash
+ * Failsafe status
+ * Flight mode change
+ * Rate profile change (via TX-AUX switch)
+
+If the arm/disarm is via the control stick, holding the stick in the disarm position will sound a repeating tone.  This can be used as a lost-model locator.
+
+There is a special arming tone used if a GPS fix has been attained, and there's a "ready" tone sounded after a GPS fix has been attained (only happens once).  The tone sounded via the TX-AUX-switch will count out the number of satellites (if GPS fix).
 
 Buzzer is enabled by default on platforms that have buzzer connections.
 

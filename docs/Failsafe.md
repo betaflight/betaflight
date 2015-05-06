@@ -85,7 +85,11 @@ When configuring the flight controller failsafe, use the following steps:
 
 a)  Upon signal loss, send no signal/pulses over the channels
 
-b)  Send an invalid signal over the channels (for example, send values lower than 'failsafe_min_usec')
+b)  Send an invalid signal over the channels (for example, send values lower than 'rx_min_usec')
+
+and
+
+c)  Ensure your receiver does not send out channel data that would cause a disarm by switch or sticks to be registered by the FC. This is especially important for those using a switch to arm.
 
 See your receiver's documentation for direction on how to accomplish one of these.
 
@@ -94,6 +98,7 @@ See your receiver's documentation for direction on how to accomplish one of thes
 3.  Set 'failsafe_throttle' to a value that allows the aircraft to descend at approximately one meter per second (default is 1000 which should be throttle off).
 
 4.  Enable 'FAILSAFE' feature in Cleanflight GUI or via CLI using `feature FAILSAFE`
+
 
 
 These are the basic steps for flight controller failsafe configuration; see Failsafe Settings below for additional settings that may be changed.
@@ -120,19 +125,15 @@ Throttle level used for landing.  Specify a value that causes the aircraft to de
 
 Use standard RX usec values.  See RX documentation.
 
-### `failsafe_min_usec`
+### `rx_min_usec`
 
-The shortest PWM/PPM pulse considered valid.
+The lowest channel value considered valid.  e.g. PWM/PPM pulse length 
 
-Only valid when using Parallel PWM or PPM receivers.
+### `rx_max_usec`
 
-### `failsafe_max_usec`
+The highest channel value considered valid.  e.g. PWM/PPM pulse length 
 
-The longest PWM/PPM pulse considered valid.
-
-Only valid when using Parallel PWM or PPM receivers.
-
-This setting helps detect when your RX stops sending any data when the RX looses signal.
+The `rx_min_usec` and `rx_max_usec` settings helps detect when your RX stops sending any data, enters failsafe mode or when the RX looses signal.
 
 With a Graupner GR-24 configured for PWM output with failsafe on channels 1-4 set to OFF in the receiver settings then this setting, at its default value, will allow failsafe to be activated.
 

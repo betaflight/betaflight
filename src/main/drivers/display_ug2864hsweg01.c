@@ -169,14 +169,15 @@ static const uint8_t const multiWiiFont[][5] = { // Refer to "Times New Roman" F
         };
 
 #define OLED_address   0x3C     // OLED at address 0x3C in 7bit
-void i2c_OLED_send_cmd(uint8_t command)
+
+static bool i2c_OLED_send_cmd(uint8_t command)
 {
-    i2cWrite(OLED_address, 0x80, command);
+    return i2cWrite(OLED_address, 0x80, command);
 }
 
-static void i2c_OLED_send_byte(uint8_t val)
+static bool i2c_OLED_send_byte(uint8_t val)
 {
-    i2cWrite(OLED_address, 0x40, val);
+    return i2cWrite(OLED_address, 0x40, val);
 }
 
 void i2c_OLED_clear_display(void)
@@ -247,9 +248,14 @@ void i2c_OLED_send_string(const char *string)
 * according to http://www.adafruit.com/datasheets/UG-2864HSWEG01.pdf Chapter 4.4 Page 15
 */
 #if 1
-void ug2864hsweg01InitI2C(void)
+bool ug2864hsweg01InitI2C(void)
 {
-    i2c_OLED_send_cmd(0xAE); // Set display OFF
+
+    // Set display OFF
+    if (!i2c_OLED_send_cmd(0xAE)) {
+        return false;
+    }
+
     i2c_OLED_send_cmd(0xD4); // Set Display Clock Divide Ratio / OSC Frequency
     i2c_OLED_send_cmd(0x80); // Display Clock Divide Ratio / OSC Frequency
     i2c_OLED_send_cmd(0xA8); // Set Multiplex Ratio
@@ -272,7 +278,10 @@ void ug2864hsweg01InitI2C(void)
     i2c_OLED_send_cmd(0xA4); // Set all pixels OFF
     i2c_OLED_send_cmd(0xA6); // Set display not inverted
     i2c_OLED_send_cmd(0xAF); // Set display On
+
     i2c_OLED_clear_display();
+
+    return true;
 }
 #else
 void ug2864hsweg01InitI2C(void)

@@ -18,9 +18,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "debug.h"
+
 #include "common/axis.h"
 
 #include "rx/rx.h"
+#include "io/beeper.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "config/runtime_config.h"
@@ -44,9 +47,10 @@ static failsafeConfig_t *failsafeConfig;
 
 static rxConfig_t *rxConfig;
 
-void failsafeReset(void)
+static void failsafeReset(void)
 {
     failsafeState.counter = 0;
+    failsafeState.phase = FAILSAFE_IDLE;
 }
 
 /*
@@ -58,115 +62,163 @@ void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse)
     failsafeReset();
 }
 
-failsafeState_t* failsafeInit(rxConfig_t *intialRxConfig)
+void failsafeInit(rxConfig_t *intialRxConfig)
 {
     rxConfig = intialRxConfig;
 
     failsafeState.events = 0;
-    failsafeState.enabled = false;
+    failsafeState.monitoring = false;
 
-    return &failsafeState;
+    return;
 }
 
-bool failsafeIsIdle(void)
+failsafePhase_e failsafePhase()
 {
-    return failsafeState.counter == 0;
+    return failsafeState.phase;
 }
 
-bool failsafeIsEnabled(void)
+#define FAILSAFE_COUNTER_THRESHOLD 20
+
+bool failsafeIsReceivingRxData(void)
 {
-    return failsafeState.enabled;
+    return failsafeState.counter <= FAILSAFE_COUNTER_THRESHOLD;
 }
 
-void failsafeEnable(void)
+bool failsafeIsMonitoring(void)
 {
-    failsafeState.enabled = true;
+    return failsafeState.monitoring;
 }
 
-bool failsafeHasTimerElapsed(void)
+bool failsafeIsActive(void)
+{
+    return failsafeState.active;
+}
+
+void failsafeStartMonitoring(void)
+{
+    failsafeState.monitoring = true;
+}
+
+static bool failsafeHasTimerElapsed(void)
 {
     return failsafeState.counter > (5 * failsafeConfig->failsafe_delay);
 }
 
-bool failsafeShouldForceLanding(bool armed)
+static bool failsafeShouldForceLanding(bool armed)
 {
     return failsafeHasTimerElapsed() && armed;
 }
 
-bool failsafeShouldHaveCausedLandingByNow(void)
+static bool failsafeShouldHaveCausedLandingByNow(void)
 {
     return failsafeState.counter > 5 * (failsafeConfig->failsafe_delay + failsafeConfig->failsafe_off_delay);
 }
 
-static void failsafeAvoidRearm(void)
+static void failsafeActivate(void)
 {
-    // This will prevent the automatic rearm if failsafe shuts it down and prevents
-    // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
-    ENABLE_ARMING_FLAG(PREVENT_ARMING);
+    failsafeState.active = true;
+    failsafeState.phase = FAILSAFE_LANDING;
+
+    failsafeState.events++;
 }
 
-static void failsafeOnValidDataReceived(void)
+static void failsafeApplyControlInput(void)
 {
-    if (failsafeState.counter > 20)
-        failsafeState.counter -= 20;
+    for (int i = 0; i < 3; i++) {
+        rcData[i] = rxConfig->midrc;
+    }
+    rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
+}
+
+void failsafeOnValidDataReceived(void)
+{
+    if (failsafeState.counter > FAILSAFE_COUNTER_THRESHOLD)
+        failsafeState.counter -= FAILSAFE_COUNTER_THRESHOLD;
     else
         failsafeState.counter = 0;
 }
 
 void failsafeUpdateState(void)
 {
-    uint8_t i;
+    bool receivingRxData = failsafeIsReceivingRxData();
+    bool armed = ARMING_FLAG(ARMED);
+    beeperMode_e beeperMode = BEEPER_SILENCE;
 
-    if (!failsafeHasTimerElapsed()) {
-        return;
+    if (receivingRxData) {
+        failsafeState.phase = FAILSAFE_IDLE;
+        failsafeState.active = false;
+    } else {
+        beeperMode = BEEPER_RX_LOST;
     }
 
-    if (!failsafeIsEnabled()) {
-        failsafeReset();
-        return;
-    }
 
-    if (failsafeShouldForceLanding(ARMING_FLAG(ARMED))) { // Stabilize, and set Throttle to specified level
-        failsafeAvoidRearm();
+    bool reprocessState;
 
-        for (i = 0; i < 3; i++) {
-            rcData[i] = rxConfig->midrc;      // after specified guard time after RC signal is lost (in 0.1sec)
+    do {
+        reprocessState = false;
+
+        switch (failsafeState.phase) {
+            case FAILSAFE_IDLE:
+                if (!receivingRxData && armed) {
+                    failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
+
+                    reprocessState = true;
+                }
+                break;
+
+            case FAILSAFE_RX_LOSS_DETECTED:
+
+                if (failsafeShouldForceLanding(armed)) {
+                    // Stabilize, and set Throttle to specified level
+                    failsafeActivate();
+
+                    reprocessState = true;
+                }
+                break;
+
+            case FAILSAFE_LANDING:
+                if (armed) {
+                    failsafeApplyControlInput();
+                    beeperMode = BEEPER_RX_LOST_LANDING;
+                }
+
+                if (failsafeShouldHaveCausedLandingByNow() || !armed) {
+
+                    failsafeState.phase = FAILSAFE_LANDED;
+
+                    reprocessState = true;
+
+                }
+                break;
+
+            case FAILSAFE_LANDED:
+
+                if (!armed) {
+                    break;
+                }
+
+                // This will prevent the automatic rearm if failsafe shuts it down and prevents
+                // to restart accidently by just reconnect to the tx - you will have to switch off first to rearm
+                ENABLE_ARMING_FLAG(PREVENT_ARMING);
+
+                failsafeState.active = false;
+                mwDisarm();
+                break;
+
+            default:
+                break;
         }
-        rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
-        failsafeState.events++;
-    }
+    } while (reprocessState);
 
-    if (failsafeShouldHaveCausedLandingByNow() || !ARMING_FLAG(ARMED)) {
-        mwDisarm();
+    if (beeperMode != BEEPER_SILENCE) {
+        beeper(beeperMode);
     }
 }
 
 /**
- * Should be called once each time RX data is processed by the system.
+ * Should be called once when RX data is processed by the system.
  */
-void failsafeOnRxCycle(void)
+void failsafeOnRxCycleStarted(void)
 {
     failsafeState.counter++;
 }
-
-#define REQUIRED_CHANNEL_MASK 0x0F // first 4 channels
-
-// pulse duration is in micro seconds (usec)
-void failsafeCheckPulse(uint8_t channel, uint16_t pulseDuration)
-{
-    static uint8_t goodChannelMask = 0;
-
-    if (channel < 4 &&
-        pulseDuration > failsafeConfig->failsafe_min_usec &&
-        pulseDuration < failsafeConfig->failsafe_max_usec
-    ) {
-        // if signal is valid - mark channel as OK
-        goodChannelMask |= (1 << channel);
-    }
-
-    if (goodChannelMask == REQUIRED_CHANNEL_MASK) {
-        goodChannelMask = 0;
-        failsafeOnValidDataReceived();
-    }
-}
-

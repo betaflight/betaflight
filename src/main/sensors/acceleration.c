@@ -139,7 +139,7 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
         if (InflightcalibratingA == 1) {
             AccInflightCalibrationActive = false;
             AccInflightCalibrationMeasurementDone = true;
-            queueConfirmationBeep(5); // beeper to indicating the end of calibration
+            beeper(BEEPER_ACC_CALIBRATION); // indicate end of calibration
             // recover saved values to maintain current flight behaviour until new values are transferred
             accelerationTrims->raw[X] = accZero_saved[X];
             accelerationTrims->raw[Y] = accZero_saved[Y];

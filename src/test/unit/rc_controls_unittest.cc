@@ -32,6 +32,7 @@ extern "C" {
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
 
+    #include "io/beeper.h"
     #include "io/escservo.h"
     #include "io/rc_controls.h"
 
@@ -187,8 +188,12 @@ void generatePitchRollCurve(controlRateConfig_t *) {
     callCounts[COUNTER_GENERATE_PITCH_ROLL_CURVE]++;
 }
 
-void queueConfirmationBeep(uint8_t) {
+void beeperConfirmationBeeps(uint8_t) {
     callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]++;
+}
+
+void beeper(beeperMode_e mode) {
+    UNUSED(mode);
 }
 
 void changeControlRateProfile(uint8_t) {
@@ -710,6 +715,9 @@ void sensors(uint32_t) {}
 void mwDisarm(void) {}
 void displayDisablePageCycling() {}
 void displayEnablePageCycling() {}
+
+bool failsafeIsActive() { return false; }
+bool rxIsReceivingSignal() { return true; }
 
 uint8_t getCurrentControlRateProfile(void) {
     return 0;

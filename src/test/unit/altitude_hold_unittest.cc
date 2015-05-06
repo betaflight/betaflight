@@ -157,6 +157,16 @@ uint8_t armingFlags;
 int32_t sonarAlt;
 
 
+uint16_t enableFlightMode(flightModeFlags_e mask)
+{
+    return flightModeFlags |= (mask);
+}
+
+uint16_t disableFlightMode(flightModeFlags_e mask)
+{
+    return flightModeFlags &= ~(mask);
+}
+
 void gyroUpdate(void) {};
 bool sensors(uint32_t mask)
 {
