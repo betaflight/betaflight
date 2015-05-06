@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -61,6 +62,7 @@ void sonarInit(batteryConfig_t *batteryConfig)
         hcsr04_init(&sonarRC78);
     }
 #elif defined(OLIMEXINO)
+    UNUSED(batteryConfig);
     static const sonarHardware_t const sonarHardware = {
         .trigger_pin = Pin_0,   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
         .echo_pin = Pin_1,      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
@@ -70,6 +72,7 @@ void sonarInit(batteryConfig_t *batteryConfig)
     };
     hcsr04_init(&sonarHardware);
 #elif defined(SPRACINGF3)
+    UNUSED(batteryConfig);
     static const sonarHardware_t const sonarHardware = {
         .trigger_pin = Pin_0,   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
         .echo_pin = Pin_1,      // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
