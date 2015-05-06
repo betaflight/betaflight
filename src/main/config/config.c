@@ -512,7 +512,12 @@ static void resetConf(void)
 #endif
 
 #ifdef BLACKBOX
+#ifdef SPRACINGF3
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = 1;
+#else
     masterConfig.blackbox_device = 0;
+#endif
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 #endif
