@@ -213,6 +213,9 @@ void init(void)
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
+#ifdef SONAR
+    pwm_params.useSonar = feature(FEATURE_SONAR);
+#endif
 
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();

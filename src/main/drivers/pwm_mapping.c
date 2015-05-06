@@ -381,6 +381,29 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
+#ifdef SONAR
+        // skip Sonar pins
+        // FIXME - Hack - See sonar.c sonarInit() and sonarHardware_t
+        if (init->useSonar && timerHardwarePtr->gpio == GPIOB) {
+#if defined(SPRACINGF3) || defined(OLIMEXINO)
+            if (timerHardwarePtr->pin == GPIO_Pin_0 || timerHardwarePtr->pin == GPIO_Pin_1) {
+                continue;
+            }
+#endif
+#if defined(NAZE)
+            if (init->useParallelPWM) {
+                if (timerHardwarePtr->pin == GPIO_Pin_8 || timerHardwarePtr->pin == GPIO_Pin_9) {
+                    continue;
+                }
+            } else {
+                if (timerHardwarePtr->pin == GPIO_Pin_0 || timerHardwarePtr->pin == GPIO_Pin_1) {
+                    continue;
+                }
+            }
+#endif
+        }
+#endif
+
 #ifdef SOFTSERIAL_1_TIMER
         if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL_1_TIMER)
             continue;

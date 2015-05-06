@@ -52,6 +52,9 @@ typedef struct drv_pwm_config_t {
     bool useOneshot;
     bool useSoftSerial;
     bool useLEDStrip;
+#ifdef SONAR
+    bool useSonar;
+#endif
 #ifdef USE_SERVOS
     bool useServos;
     bool extraServos;    // configure additional 4 channels in PPM mode as servos, not motors
