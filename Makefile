@@ -675,4 +675,3 @@ $(TARGET_OBJS) : Makefile
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
-TARGETNAME := obj\main\cleanflight_SPARKY.elf
