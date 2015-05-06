@@ -908,7 +908,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.looptime);
         break;
     case MSP_RC_TUNING:
-        headSerialReply(10);
+        headSerialReply(11);
         serialize8(currentControlRateProfile->rcRate8);
         serialize8(currentControlRateProfile->rcExpo8);
         for (i = 0 ; i < 3; i++) {
@@ -1365,7 +1365,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RC_TUNING:
-        if (currentPort->dataSize >= 11) {//allow for yaw expo
+        if (currentPort->dataSize >= 10) {
             currentControlRateProfile->rcRate8 = read8();
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
@@ -1377,7 +1377,9 @@ static bool processInCommand(void)
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
             currentControlRateProfile->tpa_breakpoint = read16();
-            currentControlRateProfile->rcYawExpo8 = read8();
+            if (currentPort->dataSize >= 11) {
+                currentControlRateProfile->rcYawExpo8 = read8();
+            }
         } else {
             headSerialError(0);
         }
