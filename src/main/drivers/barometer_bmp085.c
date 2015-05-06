@@ -149,6 +149,7 @@ void bmp085Disable(const bmp085Config_t *config)
 bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 {
     uint8_t data;
+    bool ack;
 
     if (bmp085InitDone)
         return true;
@@ -189,11 +190,12 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 
     delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
-    i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
-    bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
-    bmp085.oversampling_setting = 3;
+    ack = i2cRead(BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */ 
+    if (ack) {
+        bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
+        bmp085.oversampling_setting = 3;
 
-    if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
+        if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
         i2cRead(BMP085_I2C_ADDR, BMP085_VERSION_REG, 1, &data); /* read Version reg */
         bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
         bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
@@ -207,9 +209,16 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
         baro->get_up = bmp085_get_up;
         baro->calculate = bmp085_calculate;
         return true;
+        }
     }
 
 #ifdef BARO_EOC_GPIO
+    EXTI_InitTypeDef EXTI_InitStructure;
+    EXTI_StructInit(&EXTI_InitStructure);
+    EXTI_InitStructure.EXTI_Line = EXTI_Line14;
+    EXTI_InitStructure.EXTI_LineCmd = DISABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
     unregisterExti15_10_CallbackHandler(BMP085_EOC_EXTI_Handler);
 #endif
 
