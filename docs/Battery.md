@@ -19,7 +19,7 @@ All targets support battery voltage monitoring unless status.
 
 When dealing with batteries **ALWAYS CHECK POLARITY!**
 
-Measure expected voltages **first** and then connect to flight controller.  Powering the flight controller with
+Measure expected voltages **first** and then connect to the flight controller.  Powering the flight controller with
 incorrect voltage or reversed polarity will likely fry your flight controller. Ensure your flight controller
 has a voltage divider capable of measuring your particular battery voltage.
 
@@ -43,7 +43,7 @@ Notes:
 
 ### Sparky
 
-See the (Sparky board chapter)[Board - Sparky.md].
+See the [Sparky board chapter](Board - Sparky.md).
 
 ## Configuration
 
@@ -133,14 +133,41 @@ current_meter_scale = (Imax - Imin) * 100000 / (Tmax + (Tmax * Tmax / 50))
 current_meter_offset = Imin * 100 = 280
 ```
 #### Tuning Using Battery Charger Measurement
-If you cannot measure current draw directly, you can approximate it indirectly using your battery charger.  The general method is:
+If you cannot measure current draw directly, you can approximate it indirectly using your battery charger.  
+However, note it may be difficult to adjust `current_meter_offset` using this method unless you can 
+measure the actual current draw with the craft disarmed.
+
+Note:
++ This method depends on the accuracy of your battery charger; results may vary.
++ If you add or replace equipment that changes the in-flight current draw (e.g. video transmitter, 
+  camera, gimbal, motors, prop pitch/sizes, ESCs, etc.), you should recalibrate.
+
+The general method is:
 
 1. Fully charge your flight battery
 2. Fly your craft, using >50% of your battery pack capacity (estimated)
 3. Note Cleanflight's reported mAh draw
 4. Re-charge your flight battery, noting the mAh charging data needed to restore the pack to fully charged
-5. Adjust `current_meter_scale` to according to the ratio of actual mAh (given by the charger) to reported mAh (reported by Cleanflight)
+5. Adjust `current_meter_scale` to according to the formula given below
 6. Repeat and test
 
-Note: it may be difficult to adjust `current_meter_offset` using this method unless you can measure the actual current draw with the craft disarmed.
+Given (a) the reported mAh draw and the (b) mAh charging data, calculate a new `current_meter_scale` value as follows:
+```
+current_meter_scale = (charging_data_mAh / reported_draw_mAh) * old_current_meter_scale
+```
+For example, assuming:
++ A Cleanflight reported current draw of 1260 mAh
++ Charging data to restore full charge of 1158 mAh
++ A existing `current_meter_scale` value of 400 (the default)
+
+Then the updated `current_meter_scale` is:
+```
+current_meter_scale = (charging_data_mAh / reported_draw_mAh) * old_current_meter_scale
+                    = (1158 / 1260) * 400
+                    = 368
+```
+
+
+
+
 
