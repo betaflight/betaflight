@@ -70,6 +70,13 @@
 #define UART2_TX_PINSOURCE  GPIO_PinSource2
 #define UART2_RX_PINSOURCE  GPIO_PinSource3
 
+#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
+#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
+#define UART3_GPIO_AF       GPIO_AF_7
+#define UART3_GPIO          GPIOB
+#define UART3_TX_PINSOURCE  GPIO_PinSource10
+#define UART3_RX_PINSOURCE  GPIO_PinSource11
+
 // Note: PA5 and PA0 are N/C on the sparky - potentially use for ADC or LED STRIP?
 
 #define USE_I2C
