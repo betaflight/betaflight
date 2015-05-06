@@ -107,6 +107,7 @@
 #define DISPLAY
 #define USE_SERVOS
 #define TELEMETRY
+#define SONAR
 
 #define LED_STRIP
 #if 1

@@ -41,15 +41,19 @@ void sonarInit(void)
 {
 #if defined(NAZE) || defined(EUSTM32F103RC) || defined(PORT103R)
     static const sonarHardware_t const sonarPWM56 = {
-        .trigger_pin = Pin_8,   // PWM5 (PB8) - 5v tolerant
-        .echo_pin = Pin_9,      // PWM6 (PB9) - 5v tolerant
+		.trigger_pin = Pin_8,   // PWM5 (PB8) - 5v tolerant
+		.trigger_gpio = GPIOB,
+		.echo_pin = Pin_9,      // PWM6 (PB9) - 5v tolerant
+		.echo_gpio = GPIOB,
         .exti_line = EXTI_Line9,
         .exti_pin_source = GPIO_PinSource9,
         .exti_irqn = EXTI9_5_IRQn
     };
     static const sonarHardware_t const sonarRC78 = {
         .trigger_pin = Pin_0,   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+		.trigger_gpio = GPIOB,
         .echo_pin = Pin_1,      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+		.echo_gpio = GPIOB,
         .exti_line = EXTI_Line1,
         .exti_pin_source = GPIO_PinSource1,
         .exti_irqn = EXTI1_IRQn
@@ -63,7 +67,9 @@ void sonarInit(void)
 #elif defined(OLIMEXINO)
     static const sonarHardware_t const sonarHardware = {
         .trigger_pin = Pin_0,   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+		.trigger_gpio = GPIOB,
         .echo_pin = Pin_1,      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+		.echo_gpio = GPIOB,
         .exti_line = EXTI_Line1,
         .exti_pin_source = GPIO_PinSource1,
         .exti_irqn = EXTI1_IRQn
@@ -72,12 +78,25 @@ void sonarInit(void)
 #elif defined(SPRACINGF3)
     static const sonarHardware_t const sonarHardware = {
         .trigger_pin = Pin_0,   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+		.trigger_gpio = GPIOB,
         .echo_pin = Pin_1,      // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+		.echo_gpio = GPIOB,
         .exti_line = EXTI_Line1,
         .exti_pin_source = EXTI_PinSource1,
         .exti_irqn = EXTI1_IRQn
     };
     hcsr04_init(&sonarHardware);
+#elif defined(SPARKY)
+	static const sonarHardware_t const sonarHardware = {
+		.trigger_pin = Pin_2,   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
+		.trigger_gpio = GPIOA,
+		.echo_pin = Pin_1,      // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+		.echo_gpio = GPIOB,
+		.exti_line = EXTI_Line1,
+		.exti_pin_source = EXTI_PinSource1,
+		.exti_irqn = EXTI1_IRQn
+	};
+	hcsr04_init(&sonarHardware);
 #else
 #error Sonar not defined for target
 #endif
