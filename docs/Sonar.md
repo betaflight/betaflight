@@ -14,10 +14,10 @@ Currently the only supported sensor is the HCSR04 sensor.
 
 ### Naze/Flip32+
 
-| Mode          | Trigger       | Echo          | Inline 1k resistors |
-| ------------- | ------------- | ------------- | ------------------- |
-| Parallel PWM  | PB8 / Motor 5 | PB9 / Motor 6 | NO (5v tolerant)    |
-| PPM/Serial RX | PB0 / RC7     | PB1 / RC8     | YES (3.3v input)    |
+| Mode                            | Trigger       | Echo          | Inline 1k resistors |
+| ------------------------------- | ------------- | ------------- | ------------------- |
+| Parallel PWM/ADC current sensor | PB8 / Motor 5 | PB9 / Motor 6 | NO (5v tolerant)    |
+| PPM/Serial RX                   | PB0 / RC7     | PB1 / RC8     | YES (3.3v input)    |
 
 Current meter cannot be used in conjunction with Parallel PWM and Sonar.
 
