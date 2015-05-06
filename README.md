@@ -104,19 +104,9 @@ Before creating new issues please check to see if there is an existing one, sear
 
 ## Developers
 
-There is a developers section in the `docs/development` folder.
+Please refer to the development section in the `docs/development` folder.
 
-Before making any code contributions, take a note of the https://github.com/multiwii/baseflight/wiki/CodingStyle
-
-For this fork it is also advised to read about clean code, here are some useful links:
-
-* http://cleancoders.com/
-* http://en.wikipedia.org/wiki/SOLID_%28object-oriented_design%29
-* http://en.wikipedia.org/wiki/Code_smell
-* http://en.wikipedia.org/wiki/Code_refactoring
-* http://www.amazon.co.uk/Working-Effectively-Legacy-Robert-Martin/dp/0131177052
-
-TravisCI is also used to run automatic builds
+TravisCI is used to run automatic builds
 
 https://travis-ci.org/cleanflight/cleanflight
 
