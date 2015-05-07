@@ -142,7 +142,7 @@ function onOpen(openInfo) {
         MSP.send_message(MSP_codes.MSP_API_VERSION, false, false, function () {
             GUI.log(chrome.i18n.getMessage('apiVersionReceived', [CONFIG.apiVersion]));
 
-            if (CONFIG.apiVersion >= CONFIGURATOR.apiVersionAccepted) {
+            if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.apiVersionAccepted)) {
 
                 MSP.send_message(MSP_codes.MSP_FC_VARIANT, false, false, function () {
                     
@@ -167,11 +167,11 @@ function onOpen(openInfo) {
                                     // continue as usually
                                     CONFIGURATOR.connectionValid = true;
                                     GUI.allowedTabs = GUI.defaultAllowedTabsWhenConnected.slice();
-                                    if (CONFIG.apiVersion < 1.4) {
+                                    if (semver.lt(CONFIG.apiVersion, "1.4.0")) {
                                         GUI.allowedTabs.splice(GUI.allowedTabs.indexOf('led_strip'), 1);
                                     }
                                     
-                                    GUI.canChangePidController = CONFIG.apiVersion >= CONFIGURATOR.pidControllerChangeMinApiVersion;
+                                    GUI.canChangePidController = semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion);
 
                                     onConnect();
                                     

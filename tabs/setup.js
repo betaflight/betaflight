@@ -38,7 +38,7 @@ TABS.setup.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-        if (CONFIG.apiVersion < CONFIGURATOR.backupRestoreMinApiVersionAccepted) {
+        if (semver.lt(CONFIG.apiVersion, CONFIGURATOR.backupRestoreMinApiVersionAccepted)) {
             $('#content .backup').addClass('disabled');
             $('#content .restore').addClass('disabled');
 

@@ -82,7 +82,7 @@ function configuration_backup(callback) {
     ];
 
     function update_unique_data_list() {
-        if (CONFIG.apiVersion >= 1.8) {
+        if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
             uniqueData.push(MSP_codes.MSP_LOOP_TIME);
             uniqueData.push(MSP_codes.MSP_ARMING_CONFIG);
         }
@@ -106,7 +106,7 @@ function configuration_backup(callback) {
                 configuration.SERIAL_CONFIG = jQuery.extend(true, {}, SERIAL_CONFIG);
                 configuration.LED_STRIP = jQuery.extend(true, [], LED_STRIP);
                 
-                if (CONFIG.apiVersion >= 1.8) {
+                if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
                     configuration.FC_CONFIG = jQuery.extend(true, {}, FC_CONFIG);
                     configuration.ARMING_CONFIG = jQuery.extend(true, {}, ARMING_CONFIG);
                 }
@@ -270,29 +270,7 @@ function configuration_restore(callback) {
         if (generated == undefined) {
             return false;
         }
-        var a = generated.split('.'),
-            b = required.split('.');
-
-        for (var i = 0; i < a.length; ++i) {
-            a[i] = Number(a[i]);
-        }
-        for (var i = 0; i < b.length; ++i) {
-            b[i] = Number(b[i]);
-        }
-        if (a.length == 2) {
-            a[2] = 0;
-        }
-
-        if (a[0] > b[0]) return true;
-        if (a[0] < b[0]) return false;
-
-        if (a[1] > b[1]) return true;
-        if (a[1] < b[1]) return false;
-
-        if (a[2] > b[2]) return true;
-        if (a[2] < b[2]) return false;
-
-        return true;
+        return semver.gte(generated, required);
     }
 
     function migrate(configuration) {
@@ -369,7 +347,17 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
 
-        if (compareVersions(migratedVersion, '0.63.0') && !compareVersions(configuration.apiVersion, '1.7')) {
+        if (configuration.apiVersion == undefined) {
+            configuration.apiVersion = "1.0.0" // a guess that will satisfy the rest of the code
+        }
+        // apiVersion previously stored without patchlevel
+        if (!semver.parse(configuration.apiVersion)) {
+            configuration.apiVersion += ".0";
+            if (!semver.parse(configuration.apiVersion)) {
+                return false;
+            }
+        }
+        if (compareVersions(migratedVersion, '0.63.0') && !compareVersions(configuration.apiVersion, '1.7.0')) {
             // Serial configuation redesigned, 0.63.0 saves old and new configurations.
             var ports = [];
             for (var portIndex = 0; portIndex < configuration.SERIAL_CONFIG.ports.length; portIndex++) {
@@ -414,7 +402,7 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
         
-        if (compareVersions(migratedVersion, '0.63.0') && !compareVersions(configuration.apiVersion, '1.8')) {
+        if (compareVersions(migratedVersion, '0.63.0') && !compareVersions(configuration.apiVersion, '1.8.0')) {
             // api 1.8 exposes looptime and arming config
             
             if (configuration.FC_CONFIG == undefined) {
@@ -536,7 +524,7 @@ function configuration_restore(callback) {
                 ];
                 
                 function update_unique_data_list() {
-                    if (CONFIG.apiVersion >= 1.8) {
+                    if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
                         uniqueData.push(MSP_codes.MSP_SET_LOOP_TIME);
                         uniqueData.push(MSP_codes.MSP_SET_ARMING_CONFIG);
                     }

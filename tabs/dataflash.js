@@ -20,7 +20,7 @@ TABS.dataflash.initialize = function (callback) {
         log_buffer = [];
 
     if (CONFIGURATOR.connectionValid) {
-        TABS.dataflash.available = (CONFIG.apiVersion >= 1.6)
+        TABS.dataflash.available = semver.gte(CONFIG.apiVersion, "1.6.0");
         
         if (!TABS.dataflash.available) {
             load_html();

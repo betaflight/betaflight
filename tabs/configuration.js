@@ -15,7 +15,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_serial_config() {
-        if (CONFIG.apiVersion < 1.6) {
+        if (semver.lt(CONFIG.apiVersion, "1.6.0")) {
             MSP.send_message(MSP_codes.MSP_CF_SERIAL_CONFIG, false, false, load_rc_map);
         } else {
             load_rc_map();
@@ -32,7 +32,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
     function load_acc_trim() {
         MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false
-                        , CONFIG.apiVersion >= 1.8 ? load_arming_config : load_html);
+                        , semver.gte(CONFIG.apiVersion, "1.8.0") ? load_arming_config : load_html);
     }
 
     function load_arming_config() {
@@ -193,7 +193,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             gps_baudrate_e.append('<option value="' + gpsBaudRates[i] + '">' + gpsBaudRates[i] + '</option>');
         }
     
-        if (CONFIG.apiVersion < 1.6) {
+        if (semver.lt(CONFIG.apiVersion, "1.6.0")) {
             gps_baudrate_e.change(function () {
                 SERIAL_CONFIG.gpsBaudRate = parseInt($(this).val());
             });
@@ -257,7 +257,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="mag_declination"]').val(MISC.mag_declination);
 
         //fill motor disarm params        
-        if(CONFIG.apiVersion >= 1.8) {
+        if(semver.gte(CONFIG.apiVersion, "1.8.0")) {
             $('input[name="autodisarmdelay"]').val(ARMING_CONFIG.auto_disarm_delay);
             $('input[name="disarmkillswitch"]').prop('checked', ARMING_CONFIG.disarm_kill_switch);
             $('div.disarm').show();            
@@ -335,7 +335,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.mag_declination = parseFloat($('input[name="mag_declination"]').val());
             
             // motor disarm
-            if(CONFIG.apiVersion >= 1.8) {
+            if(semver.gte(CONFIG.apiVersion, "1.8.0")) {
                 ARMING_CONFIG.auto_disarm_delay = parseInt($('input[name="autodisarmdelay"]').val());
                 ARMING_CONFIG.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
             }
@@ -356,7 +356,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.multiwiicurrentoutput = ~~$('input[name="multiwiicurrentoutput"]').is(':checked'); // ~~ boolean to decimal conversion
 
             function save_serial_config() {
-                if (CONFIG.apiVersion < 1.6) {
+                if (semver.lt(CONFIG.apiVersion, "1.6.0")) {
                     MSP.send_message(MSP_codes.MSP_SET_CF_SERIAL_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CF_SERIAL_CONFIG), false, save_misc);
                 } else {
                     save_misc();
@@ -369,7 +369,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             function save_acc_trim() {
                 MSP.send_message(MSP_codes.MSP_SET_ACC_TRIM, MSP.crunch(MSP_codes.MSP_SET_ACC_TRIM), false
-                                , CONFIG.apiVersion >= 1.8 ? save_arming_config : save_to_eeprom);
+                                , semver.gte(CONFIG.apiVersion, "1.8.0") ? save_arming_config : save_to_eeprom);
             }
 
             function save_arming_config() {

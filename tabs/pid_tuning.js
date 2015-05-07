@@ -275,7 +275,7 @@ TABS.pid_tuning.initialize = function (callback) {
             pidController_e.prop('disabled', true);
         }
         
-        if (CONFIG.apiVersion < 1.7) {
+        if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
             $('.rate-tpa .tpa-breakpoint').hide();
             $('.rate-tpa .roll').hide();
             $('.rate-tpa .pitch').hide();
