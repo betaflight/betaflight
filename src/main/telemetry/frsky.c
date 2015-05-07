@@ -302,28 +302,6 @@ static void sendLatLong(int32_t coord[2])
     serialize16(coord[LON] < 0 ? 'W' : 'E');
 }
 
-#ifdef GPS
-static void sendGPSLatLong(void)
-{
-    int32_t localGPS_coord[2] = {0,0};
-    // Don't set dummy GPS data, if we already had a GPS fix
-    // it can be usefull to keep last valid coordinates
-    static uint8_t gpsFixOccured = 0;
-
-    //Dummy data if no 3D fix, this way we can display heading in Taranis
-    if (STATE(GPS_FIX) || gpsFixOccured == 1) {
-        localGPS_coord[LAT] = GPS_coord[LAT];
-        localGPS_coord[LON] = GPS_coord[LON];
-        gpsFixOccured = 1;
-    } else {
-        // Send dummy GPS Data in order to display compass value
-        localGPS_coord[LAT] = (telemetryConfig->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
-        localGPS_coord[LON] = (telemetryConfig->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
-    }
-
-    sendLatLong(localGPS_coord);
-}
-#endif
 
 static void sendFakeLatLong(void)
 {
@@ -333,6 +311,24 @@ static void sendFakeLatLong(void)
 
     sendLatLong(coord);
 }
+
+#ifdef GPS
+static void sendGPSLatLong(void)
+{
+    // Don't set dummy GPS data, if we already had a GPS fix
+    // it can be usefull to keep last valid coordinates
+    static uint8_t gpsFixOccured = 0;
+
+    //Dummy data if no 3D fix, this way we can display heading in Taranis
+    if (STATE(GPS_FIX) || gpsFixOccured == 1) {
+        gpsFixOccured = 1;
+        sendLatLong(GPS_coord);
+    } else {
+        // Send dummy GPS Data in order to display compass value
+        sendFakeLatLong();
+    }
+}
+#endif
 
 /*
  * Send vertical speed for opentx. ID_VERT_SPEED
