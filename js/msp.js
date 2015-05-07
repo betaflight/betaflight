@@ -434,15 +434,17 @@ var MSP = {
             case MSP_codes.MSP_SERVO_CONF:
                 SERVO_CONFIG = []; // empty the array as new data is coming in
 
-                for (var i = 0; i < 56; i += 7) {
-                    var arr = {
-                        'min': data.getInt16(i, 1),
-                        'max': data.getInt16(i + 2, 1),
-                        'middle': data.getInt16(i + 4, 1),
-                        'rate': data.getInt8(i + 6)
-                    };
-
-                    SERVO_CONFIG.push(arr);
+                if (data.byteLength % 7 == 0) {
+                    for (var i = 0; i < data.byteLength; i += 7) {
+                        var arr = {
+                            'min': data.getInt16(i, 1),
+                            'max': data.getInt16(i + 2, 1),
+                            'middle': data.getInt16(i + 4, 1),
+                            'rate': data.getInt8(i + 6)
+                        };
+    
+                        SERVO_CONFIG.push(arr);
+                    }
                 }
                 break;
             case MSP_codes.MSP_SET_RAW_RC:
@@ -688,7 +690,7 @@ var MSP = {
                 }
                 break;
             case MSP_codes.MSP_CHANNEL_FORWARDING:
-                for (var i = 0; i < 8; i ++) {
+                for (var i = 0; i < data.byteLength && i < SERVO_CONFIG.length; i ++) {
                     var channelIndex = data.getUint8(i);
                     if (channelIndex < 255) {
                         SERVO_CONFIG[i].indexOfChannelToForward = channelIndex;
