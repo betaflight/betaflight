@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "stm32f30x_gpio.h"
-
 typedef struct sonarHardware_s {
     uint16_t trigger_pin;
 	GPIO_TypeDef* trigger_gpio;
