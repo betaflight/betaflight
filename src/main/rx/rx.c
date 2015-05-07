@@ -388,18 +388,11 @@ void updateRSSIPWM(void)
 	
 	// RSSI_Invert option	
 	if (rxConfig->rssi_ppm_invert) {
-		if (pwmRssi < 1000) {
-			pwmRssi = 1000;
-		}
-		if (pwmRssi > 2000) {
-			pwmRssi = 2000;
-		}
-		
-		pwmRssi = ((2000 - pwmRssi) + 1000);
+	    pwmRssi = ((2000 - pwmRssi) + 1000);
 	}
 	
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-		rssi = (uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
+    rssi = (uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
 }
 
 #define RSSI_ADC_SAMPLE_COUNT 16
