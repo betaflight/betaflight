@@ -66,8 +66,6 @@
 
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
-//#define ENABLE_DEBUG_OLED_PAGE
-
 #define MICROSECONDS_IN_A_SECOND (1000 * 1000)
 
 #define DISPLAY_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
