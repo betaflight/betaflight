@@ -182,6 +182,8 @@ All USART ports all support automatic hardware inversion which allows direct con
 | PWM6 | PA2    | Trigger pin     | 1K Ohm      |
 | PWM7 | PB1    | Echo pin        | 1K Ohm      |
 
+WARNING: Both PWM6 and PWM7 pins are NOT 5 volt tolerant, so a 1K Ohm resistor is required between the sensor and the FC pins.
+
 # Battery Monitoring Connections
 
 | Pin  | Signal | Function        |
