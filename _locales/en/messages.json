@@ -625,6 +625,9 @@
     "receiverRcExpo": {
         "message": "RC Expo"
     },
+	"receiverRcYawExpo": {
+        "message": "RC Yaw Expo"
+    },
     "receiverChannelMap": {
         "message": "Channel Map"
     },

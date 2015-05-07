@@ -310,6 +310,9 @@ var MSP = {
                 if (semver.gte(CONFIG.apiVersion, "1.7.0")) {
                     RC_tuning.dynamic_THR_breakpoint = data.getUint16(offset++, 1);
                 }
+				if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
+                    RC_tuning.RC_YAW_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                }
                 break;
             case MSP_codes.MSP_PID:
                 // PID data arrived, we need to scale it and save to appropriate bank / array
@@ -965,6 +968,9 @@ MSP.crunch = function (code) {
             if (semver.gte(CONFIG.apiVersion, "1.7.0")) {
                 buffer.push(lowByte(RC_tuning.dynamic_THR_breakpoint));
                 buffer.push(highByte(RC_tuning.dynamic_THR_breakpoint));
+            }
+			if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
+                buffer.push(parseInt(RC_tuning.RC_YAW_EXPO * 100));
             }
             break;
         // Disabled, cleanflight does not use MSP_SET_BOX.
