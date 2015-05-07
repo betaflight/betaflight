@@ -263,7 +263,6 @@ static void sendTime(void)
     serialize16(seconds % 60);
 }
 
-#ifdef GPS
 // Frsky pdf: dddmm.mmmm
 // .mmmm is returned in decimal fraction of minutes.
 static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
@@ -283,7 +282,28 @@ static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
     result->mmmm  = (absgps - min * GPS_DEGREES_DIVIDER) / 1000;
 }
 
-static void sendGPS(void)
+static void sendLatLong(int32_t coord[2])
+{
+    gpsCoordinateDDDMMmmmm_t coordinate;
+    GPStoDDDMM_MMMM(coord[LAT], &coordinate);
+    sendDataHead(ID_LATITUDE_BP);
+    serialize16(coordinate.dddmm);
+    sendDataHead(ID_LATITUDE_AP);
+    serialize16(coordinate.mmmm);
+    sendDataHead(ID_N_S);
+    serialize16(coord[LAT] < 0 ? 'S' : 'N');
+
+    GPStoDDDMM_MMMM(coord[LON], &coordinate);
+    sendDataHead(ID_LONGITUDE_BP);
+    serialize16(coordinate.dddmm);
+    sendDataHead(ID_LONGITUDE_AP);
+    serialize16(coordinate.mmmm);
+    sendDataHead(ID_E_W);
+    serialize16(coord[LON] < 0 ? 'W' : 'E');
+}
+
+#ifdef GPS
+static void sendGPSLatLong(void)
 {
     int32_t localGPS_coord[2] = {0,0};
     // Don't set dummy GPS data, if we already had a GPS fix
@@ -301,25 +321,18 @@ static void sendGPS(void)
         localGPS_coord[LON] = (telemetryConfig->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
     }
 
-    gpsCoordinateDDDMMmmmm_t coordinate;
-    GPStoDDDMM_MMMM(localGPS_coord[LAT], &coordinate);
-    sendDataHead(ID_LATITUDE_BP);
-    serialize16(coordinate.dddmm);
-    sendDataHead(ID_LATITUDE_AP);
-    serialize16(coordinate.mmmm);
-    sendDataHead(ID_N_S);
-    serialize16(localGPS_coord[LAT] < 0 ? 'S' : 'N');
-
-    GPStoDDDMM_MMMM(localGPS_coord[LON], &coordinate);
-    sendDataHead(ID_LONGITUDE_BP);
-    serialize16(coordinate.dddmm);
-    sendDataHead(ID_LONGITUDE_AP);
-    serialize16(coordinate.mmmm);
-    sendDataHead(ID_E_W);
-    serialize16(localGPS_coord[LON] < 0 ? 'W' : 'E');
+    sendLatLong(localGPS_coord);
 }
 #endif
 
+static void sendFakeLatLong(void)
+{
+    int32_t coord[2] = {0,0};
+    coord[LAT] = (telemetryConfig->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
+    coord[LON] = (telemetryConfig->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
+
+    sendLatLong(coord);
+}
 
 /*
  * Send vertical speed for opentx. ID_VERT_SPEED
@@ -510,13 +523,18 @@ void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
             sendSpeed();
             sendGpsAltitude();
             sendSatalliteSignalQualityAsTemperature2();
+            sendGPSLatLong();
+        }
+        else if (telemetryConfig->gpsNoFixLatitude != 0 && telemetryConfig->gpsNoFixLongitude != 0) {
+            sendFakeLatLong();
+        }
+#else
+        //  Send GPS information to display compass information
+        if (telemetryConfig->gpsNoFixLatitude != 0 && telemetryConfig->gpsNoFixLongitude != 0) {
+            sendFakeLatLong();
         }
 #endif
 
-        //  Send GPS information to display compass information
-        if (sensors(SENSOR_GPS) || (telemetryConfig->gpsNoFixLatitude != 0 && telemetryConfig->gpsNoFixLongitude != 0)) {
-            sendGPS();
-        }
         sendTelemetryTail();
     }
 
