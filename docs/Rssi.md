@@ -17,6 +17,12 @@ e.g. if you used channel 9 then you would set:
 ```
 set rssi_channel = 9
 ```
+Note: Some systems such as EZUHF invert the RSSI ( 0 = Full signal / 100 = Lost signal). To correct this problem you can invert the channel input so you will get a correct reading by using command:
+
+```
+set rssi_ppm_invert = 1
+```
+Default is set to "0" for normal operation ( 100 = Full signal / 0 = Lost signal).
 
 ## RSSI via Parallel PWM channel
 
