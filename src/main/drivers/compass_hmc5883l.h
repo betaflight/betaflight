@@ -26,6 +26,11 @@ typedef struct hmc5883Config_s {
 #endif
     uint16_t gpioPin;
     GPIO_TypeDef *gpioPort;
+
+    uint8_t exti_port_source;
+    uint32_t exti_line;
+    uint8_t exti_pin_source;
+    IRQn_Type exti_irqn;
 } hmc5883Config_t;
 
 bool hmc5883lDetect(mag_t* mag, const hmc5883Config_t *hmc5883ConfigToUse);

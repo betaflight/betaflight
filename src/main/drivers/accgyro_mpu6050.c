@@ -188,6 +188,10 @@ static const mpu6050Config_t *mpu6050Config = NULL;
 
 void MPU_DATA_READY_EXTI_Handler(void)
 {
+    if (EXTI_GetITStatus(mpu6050Config->exti_line) == RESET) {
+        return;
+    }
+
     EXTI_ClearITPendingBit(mpu6050Config->exti_line);
 
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
@@ -203,7 +207,6 @@ void MPU_DATA_READY_EXTI_Handler(void)
 
     lastCalledAt = now;
 #endif
-
 }
 
 void configureMPUDataReadyInterruptHandling(void)
