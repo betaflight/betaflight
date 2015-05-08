@@ -175,6 +175,7 @@
 #ifdef ALIENWII32
 #undef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "AWF1" // AlienWii32 F1.
+#undef BOARD_HAS_VOLTAGE_DIVIDER
 #define HARDWARE_BIND_PLUG
 
 // Hardware bind plug at PB5 (Pin 41)
