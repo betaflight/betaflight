@@ -106,17 +106,25 @@ void init_Gtune(pidProfile_t *pidProfileToTune)
     uint8_t i;
 
     pidProfile = pidProfileToTune;
-	if (pidProfile->pidController == 2) floatPID = true;                        // LuxFloat is using float values for PID settings
-	else floatPID = false;
+	if (pidProfile->pidController == 2) {
+	    floatPID = true;                        // LuxFloat is using float values for PID settings
+	} else {
+	    floatPID = false;
+	}
 	updateDelayCycles();
 	for (i = 0; i < 3; i++) {
-        if ((pidProfile->gtune_hilimP[i] && pidProfile->gtune_lolimP[i] > pidProfile->gtune_hilimP[i]) || // User config error disable axisis for tuning
-            (motorCount < 4 && i == FD_YAW)) pidProfile->gtune_hilimP[i] = 0;   // Disable yawtuning for everything below a quadcopter
+        if ((pidProfile->gtune_hilimP[i] && pidProfile->gtune_lolimP[i] > pidProfile->gtune_hilimP[i]) || (motorCount < 4 && i == FD_YAW)) { // User config error disable axisis for tuning
+            pidProfile->gtune_hilimP[i] = 0;                                    // Disable yawtuning for everything below a quadcopter
+        }
         if (floatPID) {
-            if((pidProfile->P_f[i] * 10) < pidProfile->gtune_lolimP[i]) pidProfile->P_f[i] = (float)(pidProfile->gtune_lolimP[i] / 10);
+            if((pidProfile->P_f[i] * 10) < pidProfile->gtune_lolimP[i]) {
+                pidProfile->P_f[i] = (float)(pidProfile->gtune_lolimP[i] / 10);
+            }
             result_P64[i] = (int16_t)pidProfile->P_f[i] << 6;                   // 6 bit extra resolution for P.
         } else {
-            if(pidProfile->P8[i] < pidProfile->gtune_lolimP[i]) pidProfile->P8[i] = pidProfile->gtune_lolimP[i];
+            if(pidProfile->P8[i] < pidProfile->gtune_lolimP[i]) {
+                pidProfile->P8[i] = pidProfile->gtune_lolimP[i];
+            }
             result_P64[i] = (int16_t)pidProfile->P8[i] << 6;                    // 6 bit extra resolution for P.
         }
         OldError[i] = 0;
@@ -135,8 +143,11 @@ void calculate_Gtune(uint8_t axis)
         if (!time_skip[axis]) AvgGyro[axis] = 0;
         time_skip[axis]++;
         if (time_skip[axis] > 0) {
-            if (axis == FD_YAW) AvgGyro[axis] += 32 * ((int16_t)gyroData[axis] / 32); // Chop some jitter and average
-            else AvgGyro[axis] += 128 * ((int16_t)gyroData[axis] / 128);        // Chop some jitter and average
+            if (axis == FD_YAW) {
+                AvgGyro[axis] += 32 * ((int16_t)gyroData[axis] / 32);           // Chop some jitter and average
+            } else {
+                AvgGyro[axis] += 128 * ((int16_t)gyroData[axis] / 128);         // Chop some jitter and average
+            }
         }
         if (time_skip[axis] == pidProfile->gtune_average_cycles) {              // Looptime cycles for gyro average calculation. default 16.
             AvgGyro[axis] /= time_skip[axis];                                   // AvgGyro[axis] has now very clean gyrodata
@@ -151,15 +162,25 @@ void calculate_Gtune(uint8_t axis)
             if (pidProfile->gtune_hilimP[axis] && error && OldError[axis] && error != OldError[axis]) {  // Don't run when not needed or pointless to do so
                 diff_G = ABS(error) - ABS(OldError[axis]);
                 if ((error > 0 && OldError[axis] > 0) || (error < 0 && OldError[axis] < 0)) {
-                    if (diff_G > threshP) result_P64[axis] += 64 + pidProfile->gtune_pwr; // Shift balance a little on the plus side.
-                    else {
+                    if (diff_G > threshP) {
+                        if (axis == FD_YAW) {
+                            result_P64[axis] += 256 + pidProfile->gtune_pwr;    // YAW ends up at low limit on PID2, give it some more to work with.
+                        } else {
+                            result_P64[axis] += 64 + pidProfile->gtune_pwr;     // Shift balance a little on the plus side.
+                        }
+                    } else {
                         if (diff_G < -threshP) {
-                            if (axis == FD_YAW) result_P64[axis] -= 64 + pidProfile->gtune_pwr;
-                            else result_P64[axis] -= 32;
+                            if (axis == FD_YAW) {
+                                result_P64[axis] -= 64 + pidProfile->gtune_pwr;
+                            } else {
+                                result_P64[axis] -= 32;
+                            }
                         }
                     }
                 } else {
-                    if (ABS(diff_G) > threshP && axis != FD_YAW) result_P64[axis] -= 32; // Don't use antiwobble for YAW
+                    if (ABS(diff_G) > threshP && axis != FD_YAW) {
+                        result_P64[axis] -= 32;                                 // Don't use antiwobble for YAW
+                    }
                 }
                 int16_t newP = constrain((result_P64[axis] >> 6), (int16_t)pidProfile->gtune_lolimP[axis], (int16_t)pidProfile->gtune_hilimP[axis]);
 
@@ -169,15 +190,20 @@ void calculate_Gtune(uint8_t axis)
 
                     eventData.gtuneAxis = axis;
                     eventData.gtuneGyroAVG = AvgGyro[axis];
-                    if (floatPID) eventData.gtuneNewP = newP / 10;
-                    else eventData.gtuneNewP = newP;
-
+                    if (floatPID) {
+                        eventData.gtuneNewP = newP / 10;
+                    } else {
+                        eventData.gtuneNewP = newP;
+                    }
                     blackboxLogEvent(FLIGHT_LOG_EVENT_GTUNE_RESULT, (flightLogEventData_t*)&eventData);
                 }
 #endif
 
-                if (floatPID) pidProfile->P_f[axis] = (float)(newP / 10);       // new P value for float PID
-                else pidProfile->P8[axis] = newP;                               // new P value
+                if (floatPID) {
+                    pidProfile->P_f[axis] = (float)(newP / 10);                 // new P value for float PID
+                } else {
+                    pidProfile->P8[axis] = newP;                                // new P value
+                }
             }
             OldError[axis] = error;
         }
