@@ -100,7 +100,7 @@ int16_t headFreeModeHold;
 int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
-extern uint8_t dynP8[3], dynI8[3], dynD8[3], redP8[3], redI8[3], redD8[3];
+extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDscaler[3];
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
@@ -218,10 +218,8 @@ void annexCode(void)
         dynI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop1 / 100;
         dynD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop1 / 100;
 
-        // non coupled PID reduction used in PID controller 1
-        redP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop2 / 100;
-        redI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop2 / 100;
-        redD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop2 / 100;
+        // non coupled PID reduction used in PID controller 1 and PID controller 2
+        PIDscaler[axis] = prop2;
 
         if (rcData[axis] < masterConfig.rxConfig.midrc)
             rcCommand[axis] = -rcCommand[axis];
