@@ -55,7 +55,7 @@ int16_t axisPID[3];
 int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
-uint8_t dynP8[3], dynI8[3], dynD8[3];
+uint8_t dynP8[3], dynI8[3], dynD8[3], redP8[3], redI8[3], redD8[3];
 
 static int32_t errorGyroI[3] = { 0, 0, 0 };
 static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
@@ -700,13 +700,13 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         RateError = AngleRateTmp - (gyroData[axis] / 4);
 
         // -----calculate P component
-        PTerm = (RateError * pidProfile->P8[axis]) >> 7;
+        PTerm = (RateError * redP8[axis]) >> 7;
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * pidProfile->I8[axis];
+        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * redI8[axis];
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -724,7 +724,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         deltaSum = delta1[axis] + delta2[axis] + delta;
         delta2[axis] = delta1[axis];
         delta1[axis] = delta;
-        DTerm = (deltaSum * pidProfile->D8[axis]) >> 8;
+        DTerm = (deltaSum * redD8[axis]) >> 8;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
