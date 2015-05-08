@@ -842,7 +842,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         s_struct((uint8_t *)&servo, 16);
         break;
     case MSP_SERVO_CONF:
-        headSerialReply(56);
+        headSerialReply(MAX_SUPPORTED_SERVOS * 7);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize16(currentProfile->servoConf[i].min);
             serialize16(currentProfile->servoConf[i].max);
