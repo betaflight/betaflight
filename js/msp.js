@@ -310,8 +310,8 @@ var MSP = {
                 if (semver.gte(CONFIG.apiVersion, "1.7.0")) {
                     RC_tuning.dynamic_THR_breakpoint = data.getUint16(offset++, 1);
                 }
-				if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
-                    RC_tuning.RC_YAW_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+				        if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
+                  RC_tuning.RC_YAW_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                 }
                 break;
             case MSP_codes.MSP_PID:
