@@ -184,8 +184,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDscaler[axis] / 100;
-        // -----calculate I component. Note that PIDscaler is divided by 1000, because it is simplified formule from the previous multiply by 10
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * PIDscaler[axis] / 1000, -250.0f, 250.0f);
+        // -----calculate I component. Note that PIDscaler is divided by 10, because it is simplified formule from the previous multiply by 10
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * PIDscaler[axis] / 10, -250.0f, 250.0f);
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
