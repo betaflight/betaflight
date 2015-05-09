@@ -55,6 +55,7 @@ int16_t axisPID[3];
 int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
+// PIDscaler is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 1.0x scale means no PID reduction
 uint8_t dynP8[3], dynI8[3], dynD8[3], PIDscaler[3];
 
 static int32_t errorGyroI[3] = { 0, 0, 0 };
