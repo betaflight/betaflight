@@ -107,18 +107,18 @@ void init_Gtune(pidProfile_t *pidProfileToTune)
 
     pidProfile = pidProfileToTune;
 	if (pidProfile->pidController == 2) {
-	    floatPID = true;                        // LuxFloat is using float values for PID settings
+	    floatPID = true;                                                        // LuxFloat is using float values for PID settings
 	} else {
 	    floatPID = false;
 	}
 	updateDelayCycles();
 	for (i = 0; i < 3; i++) {
         if ((pidProfile->gtune_hilimP[i] && pidProfile->gtune_lolimP[i] > pidProfile->gtune_hilimP[i]) || (motorCount < 4 && i == FD_YAW)) { // User config error disable axisis for tuning
-            pidProfile->gtune_hilimP[i] = 0;                                    // Disable yawtuning for everything below a quadcopter
+            pidProfile->gtune_hilimP[i] = 0;                                    // Disable YAW tuning for everything below a quadcopter
         }
         if (floatPID) {
-            if((pidProfile->P_f[i] * 10) < pidProfile->gtune_lolimP[i]) {
-                pidProfile->P_f[i] = (float)(pidProfile->gtune_lolimP[i] / 10);
+            if((pidProfile->P_f[i] * 10.0f) < pidProfile->gtune_lolimP[i]) {
+                pidProfile->P_f[i] = (float)(pidProfile->gtune_lolimP[i] / 10.0f);
             }
             result_P64[i] = (int16_t)pidProfile->P_f[i] << 6;                   // 6 bit extra resolution for P.
         } else {
@@ -164,7 +164,7 @@ void calculate_Gtune(uint8_t axis)
                 if ((error > 0 && OldError[axis] > 0) || (error < 0 && OldError[axis] < 0)) {
                     if (diff_G > threshP) {
                         if (axis == FD_YAW) {
-                            result_P64[axis] += 256 + pidProfile->gtune_pwr;    // YAW ends up at low limit on PID2, give it some more to work with.
+                            result_P64[axis] += 256 + pidProfile->gtune_pwr;    // YAW ends up at low limit on float PID, give it some more to work with.
                         } else {
                             result_P64[axis] += 64 + pidProfile->gtune_pwr;     // Shift balance a little on the plus side.
                         }
@@ -190,17 +190,13 @@ void calculate_Gtune(uint8_t axis)
 
                     eventData.gtuneAxis = axis;
                     eventData.gtuneGyroAVG = AvgGyro[axis];
-                    if (floatPID) {
-                        eventData.gtuneNewP = newP / 10;
-                    } else {
-                        eventData.gtuneNewP = newP;
-                    }
+                    eventData.gtuneNewP = newP;                                 // for float PID the logged P value is still mutiplyed by 10
                     blackboxLogEvent(FLIGHT_LOG_EVENT_GTUNE_RESULT, (flightLogEventData_t*)&eventData);
                 }
 #endif
 
                 if (floatPID) {
-                    pidProfile->P_f[axis] = (float)(newP / 10);                 // new P value for float PID
+                    pidProfile->P_f[axis] = (float)newP / 10.0f;                // new P value for float PID
                 } else {
                     pidProfile->P8[axis] = newP;                                // new P value
                 }
