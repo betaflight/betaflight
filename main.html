@@ -83,6 +83,7 @@
                 <ul>
                     <li class="port">
                         <select id="port" title="Port">
+                            <option vlaue="manual">Manual</option>
                             <!-- port list gets generated here -->
                         </select>
                     </li>
@@ -99,6 +100,9 @@
                             <option value="2400">2400</option>
                             <option value="1200">1200</option>
                         </select>
+                    </li>
+                    <li id="port-override-option">
+                        <label for="port-override">Port: </label><input id="port-override" type="text" value="/dev/rfcomm0"/>
                     </li>
                     <li>
                         <a class="connect" href="#" i18n="connect"></a>

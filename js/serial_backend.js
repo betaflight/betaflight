@@ -1,11 +1,34 @@
 'use strict';
 
 $(document).ready(function () {
+
+    $('#port-override-option').hide();
+
+    $('#port-override').change(function () {
+        chrome.storage.local.set({'portOverride': $('#port-override').val()});
+    });
+
+    chrome.storage.local.get('portOverride', function (data) {
+        $('#port-override').val(data.portOverride);
+    });
+
+    $('div#port-picker #port').change(function (target) {
+        if ($('div#port-picker #port option:selected').data().isManual) {
+            $('#port-override-option').show();
+        }
+        else {
+            $('#port-override-option').hide();
+        }
+    });
+
     $('div#port-picker a.connect').click(function () {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
-            var clicks = $(this).data('clicks'),
-                selected_port = String($('div#port-picker #port').val()),
-                selected_baud = parseInt($('div#port-picker #baud').val());
+
+            var clicks = $(this).data('clicks');
+            var selected_baud = parseInt($('div#port-picker #baud').val());
+            var selected_port = $('div#port-picker #port option:selected').data().isManual ?
+                    $('#port-override').val() :
+                    String($('div#port-picker #port').val());
 
             if (selected_port != '0' && selected_port != 'DFU') {
                 if (!clicks) {
