@@ -2,7 +2,16 @@
 
 $(document).ready(function () {
 
-    $('#port-override-option').hide();
+    var updateManualPortVisibility = function(){
+        if ($('div#port-picker #port option:selected').data().isManual) {
+            $('#port-override-option').show();
+        }
+        else {
+            $('#port-override-option').hide();
+        }
+    };
+
+    updateManualPortVisibility();
 
     $('#port-override').change(function () {
         chrome.storage.local.set({'portOverride': $('#port-override').val()});
@@ -13,12 +22,7 @@ $(document).ready(function () {
     });
 
     $('div#port-picker #port').change(function (target) {
-        if ($('div#port-picker #port option:selected').data().isManual) {
-            $('#port-override-option').show();
-        }
-        else {
-            $('#port-override-option').hide();
-        }
+        updateManualPortVisibility();
     });
 
     $('div#port-picker a.connect').click(function () {
