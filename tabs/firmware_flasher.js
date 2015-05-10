@@ -37,12 +37,11 @@ TABS.firmware_flasher.initialize = function (callback) {
         var buildFirmwareOptions = function(){
             var releases_e = $('select[name="release"]').empty();
             var showDevReleases = ($('input.show_development_releases').is(':checked'));
-            var optionIndex = 0;
             releases_e.append($("<option value='0'>{0}</option>".format(chrome.i18n.getMessage('firmwareFlasherOptionLabelSelectFirmware'))));
 
+            var releaseDescritpors = [];
             TABS.firmware_flasher.releases.forEach(function(release){
                 release.assets.forEach(function(asset){
-                    optionIndex++;
                     var targetFromFilenameExpression = /.*_(.*)\.(.*)/;
                     var match = targetFromFilenameExpression.exec(asset.name);
 
@@ -70,9 +69,10 @@ TABS.firmware_flasher.initialize = function (callback) {
                             date.getMinutes()
                     );
 
-                    var summary = {
+                    var descriptor = {
                         "releaseUrl": release.html_url,
-                        "name"      : release.name,
+                        "name"      : semver.clean(release.name),
+                        "version"   : release.tag_name,
                         "url"       : asset.browser_download_url,
                         "file"      : asset.name,
                         "target"    : target,
@@ -81,17 +81,32 @@ TABS.firmware_flasher.initialize = function (callback) {
                         "status"    : release.prerelease ? "release-candidate" : "stable"
                     };
 
-                    var select_e =
-                            $("<option value='{0}'>{1} {2} {3} ({4})</option>".format(
-                                    optionIndex,
-                                    summary.name,
-                                    summary.target,
-                                    summary.date,
-                                    summary.status
-                            )).data('summary', summary);
-
-                    releases_e.append(select_e);
+                    releaseDescritpors.push(descriptor);
                 });
+            });
+
+            releaseDescritpors.sort(function(o1,o2){
+                // compare versions descending
+                var cmpVal = semver(o2.version).compare(semver(o1.version));
+                if (cmpVal == 0){
+                    // compare target names ascending
+                    cmpVal = (o1.target<o2.target?-1:(o1.target>o2.target?1:0));
+                }
+                return cmpVal;
+            });
+
+            var optionIndex = 0;
+            releaseDescritpors.forEach(function(descriptor){
+                var select_e =
+                        $("<option value='{0}'>{1} {2} {3} ({4})</option>".format(
+                                optionIndex++,
+                                descriptor.name,
+                                descriptor.target,
+                                descriptor.date,
+                                descriptor.status
+                        )).data('summary', descriptor);
+
+                releases_e.append(select_e);
             });
         };
 
