@@ -720,7 +720,7 @@ void loop(void)
     if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
         loopTime = currentTime + masterConfig.looptime;
 
-        imuUpdate(&currentProfile->accelerometerTrims, masterConfig.mixerMode);
+        imuUpdate(&currentProfile->accelerometerTrims);
 
         // Measure loop rate just after reading the sensors
         currentTime = micros();

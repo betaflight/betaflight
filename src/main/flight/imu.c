@@ -298,11 +298,13 @@ static void imuCalculateEstimatedAttitude(void)
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
 }
 
-void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
+void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
 {
-    static int16_t gyroYawSmooth = 0;
-
     gyroUpdate();
+    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
+    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
+    gyroData[FD_YAW] = gyroADC[FD_YAW];
+
     if (sensors(SENSOR_ACC)) {
         updateAccelerationReadings(accelerometerTrims); // TODO rename to accelerometerUpdate and rename many other 'Acceleration' references to be 'Accelerometer'
         imuCalculateEstimatedAttitude();
@@ -310,16 +312,6 @@ void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode)
         accADC[X] = 0;
         accADC[Y] = 0;
         accADC[Z] = 0;
-    }
-
-    gyroData[FD_ROLL] = gyroADC[FD_ROLL];
-    gyroData[FD_PITCH] = gyroADC[FD_PITCH];
-
-    if (mixerMode == MIXER_TRI) {
-        gyroData[FD_YAW] = (gyroYawSmooth * 2 + gyroADC[FD_YAW]) / 3;
-        gyroYawSmooth = gyroData[FD_YAW];
-    } else {
-        gyroData[FD_YAW] = gyroADC[FD_YAW];
     }
 }
 
