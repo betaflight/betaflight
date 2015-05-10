@@ -135,6 +135,7 @@ PortHandler.check = function () {
             check_usb_devices();
         }
 
+        GUI.updateManualPortVisibility();
         setTimeout(function () {
             self.check();
         }, 250);
