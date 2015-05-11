@@ -45,6 +45,7 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
+#define GTUNE
 #define USE_SERVOS
 #define USE_CLI
 
