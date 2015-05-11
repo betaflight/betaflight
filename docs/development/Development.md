@@ -93,6 +93,7 @@ Later, you can get the changes from the cleanflight repo into your `master` bran
 2. `git checkout master`
 3. `git fetch cleanflight`
 4. `git merge cleanflight/master`
+5. `git push origin master` is an optional step that will update your fork on github
  
 
 You can also perform the git commands using the git client inside Eclipse.  Refer to the Eclipse git manual.
