@@ -28,6 +28,7 @@ auxillary receiver channels and other events such as failsafe detection.
 | 21      | 20     | AUTOTUNE   | Autotune Pitch/Roll PIDs                                             |
 | 22      | 21     | SONAR      | Altitude hold mode (sonar sensor only)                               |
 | 26      | 25     | BLACKBOX   | Enable BlackBox logging                                              |
+| 27      | 26     | GTUNE      | G-Tune - auto tuning of Pitch/Roll/Yaw P values                      |
 
 ## Mode details
 
