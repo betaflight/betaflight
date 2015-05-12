@@ -246,6 +246,7 @@ void configureSmartPortTelemetryPort(void)
 
     smartPortState = SPSTATE_INITIALIZED;
     smartPortTelemetryEnabled = true;
+    smartPortLastRequestTime = millis();
 }
 
 bool canSendSmartPortTelemetry(void)
@@ -348,19 +349,14 @@ void handleSmartPortTelemetry(void)
                     // the MSB of the sent uint32_t helps FrSky keep track
                     // the even/odd bit of our counter helps us keep track
                     if (smartPortIdCnt & 1) {
-                        tmpui = tmpi = GPS_coord[LON];
-                        if (tmpi < 0) {
-                            tmpui = -tmpi;
-                            tmpui |= 0x40000000;
-                        }
-                        tmpui |= 0x80000000;
+                        tmpui = abs(GPS_coord[LON]);  // now we have unsigned value and one bit to spare
+                        tmpui = (tmpui + tmpui / 2) / 25 | 0x80000000;  // 6/100 = 1.5/25, division by power of 2 is fast
+                        if (GPS_coord[LON] < 0) tmpui |= 0x40000000;
                     }
                     else {
-                        tmpui = tmpi = GPS_coord[LAT];
-                        if (tmpi < 0) {
-                            tmpui = -tmpi;
-                            tmpui |= 0x40000000;
-                        }
+                        tmpui = abs(GPS_coord[LAT]);  // now we have unsigned value and one bit to spare
+                        tmpui = (tmpui + tmpui / 2) / 25;  // 6/100 = 1.5/25, division by power of 2 is fast
+                        if (GPS_coord[LAT] < 0) tmpui |= 0x40000000;
                     }
                     smartPortSendPackage(id, tmpui);
                     smartPortHasRequest = 0;
@@ -452,7 +448,7 @@ void handleSmartPortTelemetry(void)
 #ifdef GPS
             case FSSP_DATAID_GPS_ALT    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-                    smartPortSendPackage(id, GPS_altitude * 1000); // given in 0.1m , requested in 100 = 1m
+                    smartPortSendPackage(id, GPS_altitude * 100); // given in 0.1m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)
                     smartPortHasRequest = 0;
                 }
                 break;
