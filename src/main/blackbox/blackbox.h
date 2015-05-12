@@ -43,6 +43,9 @@ typedef struct blackboxValues_t {
 #ifdef MAG
     int16_t magADC[XYZ_AXIS_COUNT];
 #endif
+#ifdef SONAR
+    int32_t sonarRaw;
+#endif
 } blackboxValues_t;
 
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);

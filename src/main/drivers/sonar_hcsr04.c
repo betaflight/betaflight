@@ -145,6 +145,10 @@ void hcsr04_start_reading(void)
     digitalLo(GPIOB, sonarHardware->trigger_pin);
 }
 
+/**
+ * Get the distance that was measured by the last pulse, in centimeters. When the ground is too far away to be
+ * reliably read by the sonar, -1 is returned instead.
+ */
 int32_t hcsr04_get_distance(void)
 {
     // The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.

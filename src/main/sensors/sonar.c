@@ -94,11 +94,20 @@ void sonarUpdate(void)
     hcsr04_start_reading();
 }
 
+/**
+ * Get the last distance measured by the sonar in centimeters. When the ground is too far away, -1 is returned instead.
+ */
 int32_t sonarRead(void)
 {
     return hcsr04_get_distance();
 }
 
+/**
+ * Apply tilt correction to the given raw sonar reading in order to compensate for the tilt of the craft when estimating
+ * the altitude. Returns the computed altitude in centimeters.
+ *
+ * When the ground is too far away or the tilt is too strong, -1 is returned instead.
+ */
 int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle)
 {
     // calculate sonar altitude only if the sonar is facing downwards(<25deg)
@@ -110,6 +119,10 @@ int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle)
     return calculatedAltitude;
 }
 
+/**
+ * Get the latest altitude that was computed by a call to sonarCalculateAltitude(), or -1 if sonarCalculateAltitude
+ * has never been called.
+ */
 int32_t sonarGetLatestAltitude(void)
 {
     return calculatedAltitude;

@@ -197,6 +197,9 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
 #ifdef BARO
     {"BaroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_BARO},
 #endif
+#ifdef SONAR
+    {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
+#endif
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
     {"gyroData",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -349,6 +352,13 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
             return feature(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
 
+        case FLIGHT_LOG_FIELD_CONDITION_SONAR:
+#ifdef SONAR
+            return feature(FEATURE_SONAR);
+#else
+            return false;
+#endif
+
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
             return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
 
@@ -468,6 +478,12 @@ static void writeIntraframe(void)
         }
 #endif
 
+#ifdef SONAR
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
+            blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
+        }
+#endif
+
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->gyroData[x]);
     }
@@ -550,7 +566,7 @@ static void writeInterframe(void)
 
     blackboxWriteTag8_4S16(deltas);
 
-    //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, Amperage, MAG, BARO
+    //Check for sensors that are updated periodically (so deltas are normally zero)
     int optionalFieldCount = 0;
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
@@ -574,6 +590,13 @@ static void writeInterframe(void)
         deltas[optionalFieldCount++] = blackboxCurrent->BaroAlt - blackboxLast->BaroAlt;
     }
 #endif
+
+#ifdef SONAR
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
+        deltas[optionalFieldCount++] = blackboxCurrent->sonarRaw - blackboxLast->sonarRaw;
+    }
+#endif
+
     blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
 
     //Since gyros, accs and motors are noisy, base the prediction on the average of the history:
@@ -773,6 +796,11 @@ static void loadBlackboxState(void)
 
 #ifdef BARO
     blackboxCurrent->BaroAlt = BaroAlt;
+#endif
+
+#ifdef SONAR
+    // Store the raw sonar value without applying tilt correction
+    blackboxCurrent->sonarRaw = sonarRead();
 #endif
 
 #ifdef USE_SERVOS
