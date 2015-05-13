@@ -659,6 +659,36 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     static int32_t lastError[3] = { 0, 0, 0 };
     int32_t AngleRateTmp, RateError;
 
+    int8_t horizonLevelStrength = 100;
+    int32_t stickPosAil, stickPosEle, mostDeflectedPos;
+
+    if (FLIGHT_MODE(HORIZON_MODE)) {
+
+        // Figure out the raw stick positions
+        stickPosAil = getRcStickDeflection(FD_ROLL, rxConfig->midrc);
+        stickPosEle = getRcStickDeflection(FD_PITCH, rxConfig->midrc);
+
+        if(ABS(stickPosAil) > ABS(stickPosEle)){
+            mostDeflectedPos = ABS(stickPosAil);
+        }
+        else {
+            mostDeflectedPos = ABS(stickPosEle);
+        }
+
+        // Progressively turn off the horizon self level strength as the stick is banged over
+        horizonLevelStrength = (500 - mostDeflectedPos) / 5;  // 100 at centre stick, 0 = max stick deflection
+
+        // PID D Level Term is used for Horizon Sensitivity. It is adjusted so the default value of 100 works pretty well.
+        // Default Level D term of 100 equals to 80% sensitivity and 125 and above is 100% sensitivity
+        if(pidProfile->D8[PIDLEVEL] == 0){
+            horizonLevelStrength = 0;
+        } else if (pidProfile->D8[PIDLEVEL] >= 125){
+        	horizonLevelStrength = 100;
+        } else {
+            horizonLevelStrength = constrainf(((horizonLevelStrength - 100) * (125 / pidProfile->D8[PIDLEVEL])) + 100, 0, 100);
+        }
+    }
+
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
         uint8_t rate = controlRateConfig->rates[axis];
@@ -685,8 +715,8 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             if (!FLIGHT_MODE(ANGLE_MODE)) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
                 AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
                 if (FLIGHT_MODE(HORIZON_MODE)) {
-                    // mix up angle error to desired AngleRateTmp to add a little auto-level feel
-                    AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL]) >> 8;
+                    // mix up angle error to desired AngleRateTmp to add a little auto-level feel. horizonLevelStrength is scaled to the stick input
+                	AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
                 }
             } else { // it's the ANGLE mode - control is angle based, so control loop is needed
                 AngleRateTmp = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
