@@ -1717,15 +1717,14 @@ void cliProcess(void)
                 bufferIndex = (uint32_t)(p - cliBuffer);
             }
 
+            // Strip trailing whitespace
+            while (bufferIndex > 0 && cliBuffer[bufferIndex - 1] == ' ') {
+                bufferIndex--;
+            }
+
             // Process non-empty lines
             if (bufferIndex > 0) {
-                // Strip trailing whitespace
-                while (bufferIndex > 0 && cliBuffer[bufferIndex - 1] == ' ') {
-                    bufferIndex--;
-                }
-
                 cliBuffer[bufferIndex] = 0; // null terminate
-
                 target.name = cliBuffer;
                 target.param = NULL;
 
@@ -1734,10 +1733,10 @@ void cliProcess(void)
                     cmd->func(cliBuffer + strlen(cmd->name) + 1);
                 else
                     cliPrint("Unknown command, try 'help'");
+                bufferIndex = 0;
             }
 
             memset(cliBuffer, 0, sizeof(cliBuffer));
-            bufferIndex = 0;
 
             // 'exit' will reset this flag, so we don't need to print prompt again
             if (!cliMode)
