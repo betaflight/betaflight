@@ -1644,7 +1644,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("Cleanflight/%s %s %s / %s (%s)",
+    printf("# Cleanflight/%s %s %s / %s (%s)",
         targetName,
         FC_VERSION_STRING,
         buildDate,
@@ -1709,6 +1709,13 @@ void cliProcess(void)
             clicmd_t *cmd = NULL;
             clicmd_t target;
             cliPrint("\r\n");
+
+            // Strip comment starting with # from line
+            char *p = cliBuffer;
+            p = strchr(++p, '#');
+            if (NULL != p) {
+                bufferIndex = (uint32_t)(p - cliBuffer);
+            }
 
             // Strip trailing whitespace
             while (bufferIndex > 0 && cliBuffer[bufferIndex - 1] == ' ') {
