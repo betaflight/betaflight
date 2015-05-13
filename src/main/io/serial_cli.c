@@ -1712,19 +1712,20 @@ void cliProcess(void)
 
             // Strip comment starting with # from line
             char *p = cliBuffer;
-            p = strchr(++p, '#');
+            p = strchr(p, '#');
             if (NULL != p) {
                 bufferIndex = (uint32_t)(p - cliBuffer);
             }
 
-            // Strip trailing whitespace
-            while (bufferIndex > 0 && cliBuffer[bufferIndex - 1] == ' ') {
-                bufferIndex--;
-            }
+            // Process non-empty lines
+            if (bufferIndex > 0) {
+                // Strip trailing whitespace
+                while (bufferIndex > 0 && cliBuffer[bufferIndex - 1] == ' ') {
+                    bufferIndex--;
+                }
 
-            cliBuffer[bufferIndex] = 0; // null terminate
+                cliBuffer[bufferIndex] = 0; // null terminate
 
-            if (cliBuffer[0] != '#') {
                 target.name = cliBuffer;
                 target.param = NULL;
 
