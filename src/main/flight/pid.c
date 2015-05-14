@@ -679,13 +679,13 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         horizonLevelStrength = (500 - mostDeflectedPos) / 5;  // 100 at centre stick, 0 = max stick deflection
 
         // PID D Level Term is used for Horizon Sensitivity. It is adjusted so the default value of 100 works pretty well.
-        // Default Level D term of 100 equals to 80% sensitivity and 125 and above is 100% sensitivity
+        // Default Level D term of 100 equals to 80% sensitivity and 125 and above is 100% sensitivity. It is scaled to prevent too much truncating n integers
         if(pidProfile->D8[PIDLEVEL] == 0){
             horizonLevelStrength = 0;
         } else if (pidProfile->D8[PIDLEVEL] >= 125){
         	horizonLevelStrength = 100;
         } else {
-            horizonLevelStrength = constrainf(((horizonLevelStrength - 100) * (125 / pidProfile->D8[PIDLEVEL])) + 100, 0, 100);
+        	horizonLevelStrength = constrain((10 * (horizonLevelStrength - 100) * (10 * pidProfile->D8[PIDLEVEL] / 125) / 100) + 100, 0, 100);
         }
     }
 
