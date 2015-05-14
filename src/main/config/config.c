@@ -138,7 +138,7 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 98;
+static const uint8_t EEPROM_CONF_VERSION = 99;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -416,6 +416,7 @@ static void resetConf(void)
 
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
+    masterConfig.rxConfig.rssi_ppm_invert = 0;
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
