@@ -302,18 +302,24 @@ static void sendLatLong(int32_t coord[2])
     serialize16(coord[LON] < 0 ? 'W' : 'E');
 }
 
-static void sendFakeLatLong(bool useGpsNoFixValues)
+static void sendFakeLatLong(void)
 {
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
     int32_t coord[2] = {0,0};
     
-    if (useGpsNoFixValues) {
-        coord[LAT] = (telemetryConfig->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
-        coord[LON] = (telemetryConfig->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
-    } else {
-        coord[LAT] = (1 * GPS_DEGREES_DIVIDER);
-        coord[LON] = (1 * GPS_DEGREES_DIVIDER);
-    }
+    coord[LAT] = (telemetryConfig->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
+    coord[LON] = (telemetryConfig->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
+
+    sendLatLong(coord);
+}
+
+static void sendFakeLatLongThaAllowsHeadingDisplay(void)
+{
+    // Heading is only displayed on OpenTX if non-zero lat/long is also sent
+    int32_t coord[2] = {
+        1 * GPS_DEGREES_DIVIDER,
+        1 * GPS_DEGREES_DIVIDER
+    };
 
     sendLatLong(coord);
 }
@@ -329,7 +335,7 @@ static void sendGPSLatLong(void)
         sendLatLong(GPS_coord);
     } else {
         // otherwise send fake lat/long in order to display compass value
-        sendFakeLatLong(true);
+        sendFakeLatLong();
     }
 }
 #endif
@@ -526,7 +532,7 @@ void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
             sendGPSLatLong();
         }
         else {
-            sendFakeLatLong(false);
+            sendFakeLatLongThaAllowsHeadingDisplay();
         }
 #else
         sendFakeLatLong(false);
