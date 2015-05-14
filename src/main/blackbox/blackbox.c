@@ -517,7 +517,7 @@ static void writeIntraframe(void)
 static void writeInterframe(void)
 {
     int x;
-    int32_t deltas[5];
+    int32_t deltas[7];
 
     blackboxValues_t *blackboxCurrent = blackboxHistory[0];
     blackboxValues_t *blackboxLast = blackboxHistory[1];
