@@ -7,7 +7,7 @@ Low battery warnings can:
 * Help ensure you have time to safely land the aircraft
 * Help maintain the life and safety of your LiPo/LiFe batteries, which should not be discharged below manufacturer recommendations
 
-Minimum and maximum cell voltages can be set, and these voltages are used to detect the number of cells you are using.
+Minimum and maximum cell voltages can be set, and these voltages are used to auto-detect the number of cells in the battery when it is first connected.
 
 Per-cell monitoring is not supported, as we only use one ADC to read the battery voltage.
   
