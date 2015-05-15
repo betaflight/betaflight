@@ -56,8 +56,4 @@ Connect a supported buzzer directly to the BUZZ pins. Observe polarity. Also if 
 
 ### CC3D
 
-Buzzer support on the CC3D requires that a buzzer circuit be created to which the input is PA15.
-PA15 is unused and not connected according to the CC3D Revision A schematic.
-Connecting to PA15 requires careful soldering.
-
-See the [CC3D - buzzer circuit.pdf](Wiring/CC3D - buzzer circuit.pdf) for details.
+Connect a supported buzzer to the '-' and 'Sig' of Pin 6 on RC_Output connector. Observe polarity. Please note that RC_Output can provide no more than 25mA current, so you should use a buzzer with rated current of no more than 25mA or use a buzzer with additional driver circuit like this one [Active Buzzer module on eBay](http://www.ebay.com/itm/221686970259)

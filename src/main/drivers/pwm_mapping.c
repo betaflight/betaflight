@@ -151,7 +151,7 @@ static const uint16_t multiPPM[] = {
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
+    //PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
     PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
@@ -171,7 +171,7 @@ static const uint16_t multiPWM[] = {
     PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1 or #3
     PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #4 or #6
+    //PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #4 or #6
     0xFFFF
 };
 
@@ -182,7 +182,7 @@ static const uint16_t airPPM[] = {
     PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM10 | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
+    //PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM2  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM3  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM4  | (MAP_TO_SERVO_OUTPUT  << 8),
@@ -203,7 +203,7 @@ static const uint16_t airPWM[] = {
     PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #1
     PWM10 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #2
     PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #3
-    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #4
+    //PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #4
     0xFFFF
 };
 #endif
