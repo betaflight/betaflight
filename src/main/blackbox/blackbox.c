@@ -97,7 +97,6 @@
 
 static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-    "H Blackbox version:1\n"
     "H Data version:2\n"
     "H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
 
