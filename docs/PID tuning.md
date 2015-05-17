@@ -31,9 +31,13 @@ set too high, the craft will oscillate (but with slower oscillations than with P
 
 ##TPA and TPA Breakpoint
 
+TPA stands for Throttle PID Attenuation and according to [AlexYork.net](http://blog.alexyorke.net/what-is-tpa/):
+
+> "TPA basically allows an aggressively tuned multi-rotor (one that feels very locked in) to reduce its PID gains when throttle is applied beyond the TPA threshold/breakpoint in order to eliminate fast oscillations.."
+
 Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  tpa_breakpoint is set via CLI
 
-Also note that TPA and tpa_breakpoint may not be used in certain PID Contorllers.  Check the description on the individual controller.
+Also note that TPA and tpa_breakpoint may not be used in certain PID Controllers.  Check the description on the individual controller.
 
 TPA applies a PID value reduction in relation to full Throttle. It is used to apply dampening of PID values as full throttle is reached.
 
