@@ -243,7 +243,8 @@ static const blackboxSimpleFieldDefinition_t blackboxGpsHFields[] = {
 // Rarely-updated fields
 static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
     {"flightModeFlags",   -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"stateFlags",        -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)}
+    {"stateFlags",        -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
+    {"failsafePhase",     -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)}
 };
 
 typedef enum BlackboxState {
@@ -294,6 +295,7 @@ typedef struct blackboxGpsState_t {
 typedef struct blackboxSlowState_t {
     uint16_t flightModeFlags;
     uint8_t stateFlags;
+    uint8_t failsafePhase;
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
 //From mixer.c:
@@ -686,6 +688,7 @@ static void writeSlowFrame(void)
 
     blackboxWriteUnsignedVB(slowHistory.flightModeFlags);
     blackboxWriteUnsignedVB(slowHistory.stateFlags);
+    blackboxWriteUnsignedVB(slowHistory.failsafePhase);
 
     blackboxSlowFrameIterationTimer = 0;
 }
@@ -697,6 +700,7 @@ static void loadSlowState(blackboxSlowState_t *slow)
 {
     slow->flightModeFlags = flightModeFlags;
     slow->stateFlags = stateFlags;
+    slow->failsafePhase = failsafePhase();
 }
 
 static void writeSlowFrameIfNeeded(void)
