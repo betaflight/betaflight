@@ -29,7 +29,7 @@ typedef struct blackboxValues_t {
     int32_t axisPID_P[XYZ_AXIS_COUNT], axisPID_I[XYZ_AXIS_COUNT], axisPID_D[XYZ_AXIS_COUNT];
 
     int16_t rcCommand[4];
-    int16_t gyroData[XYZ_AXIS_COUNT];
+    int16_t gyroADC[XYZ_AXIS_COUNT];
     int16_t accSmooth[XYZ_AXIS_COUNT];
     int16_t motor[MAX_SUPPORTED_MOTORS];
     int16_t servo[MAX_SUPPORTED_SERVOS];

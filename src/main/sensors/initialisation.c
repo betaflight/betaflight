@@ -122,8 +122,8 @@ const mpu6050Config_t *selectMPU6050Config(void)
 
 #ifdef USE_FAKE_GYRO
 static void fakeGyroInit(void) {}
-static void fakeGyroRead(int16_t *gyroData) {
-    memset(gyroData, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
+static void fakeGyroRead(int16_t *gyroADC) {
+    memset(gyroADC, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
 }
 static void fakeGyroReadTemp(int16_t *tempData) {
     UNUSED(tempData);

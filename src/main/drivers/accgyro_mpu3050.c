@@ -58,7 +58,7 @@
 static uint8_t mpuLowPassFilter = MPU3050_DLPF_42HZ;
 
 static void mpu3050Init(void);
-static void mpu3050Read(int16_t *gyroData);
+static void mpu3050Read(int16_t *gyroADC);
 static void mpu3050ReadTemp(int16_t *tempData);
 
 bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
@@ -121,15 +121,15 @@ static void mpu3050Init(void)
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
-static void mpu3050Read(int16_t *gyroData)
+static void mpu3050Read(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
     i2cRead(MPU3050_ADDRESS, MPU3050_GYRO_OUT, 6, buf);
 
-    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]);
-    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]);
-    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]);
+    gyroADC[0] = (int16_t)((buf[0] << 8) | buf[1]);
+    gyroADC[1] = (int16_t)((buf[2] << 8) | buf[3]);
+    gyroADC[2] = (int16_t)((buf[4] << 8) | buf[5]);
 }
 
 static void mpu3050ReadTemp(int16_t *tempData)

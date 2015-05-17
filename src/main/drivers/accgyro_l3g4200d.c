@@ -57,7 +57,7 @@
 static uint8_t mpuLowPassFilter = L3G4200D_DLPF_32HZ;
 
 static void l3g4200dInit(void);
-static void l3g4200dRead(int16_t *gyroData);
+static void l3g4200dRead(int16_t *gyroADC);
 
 bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
 {
@@ -110,13 +110,13 @@ static void l3g4200dInit(void)
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
-static void l3g4200dRead(int16_t *gyroData)
+static void l3g4200dRead(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
     i2cRead(L3G4200D_ADDRESS, L3G4200D_AUTOINCR | L3G4200D_GYRO_OUT, 6, buf);
 
-    gyroData[X] = (int16_t)((buf[0] << 8) | buf[1]);
-    gyroData[Y] = (int16_t)((buf[2] << 8) | buf[3]);
-    gyroData[Z] = (int16_t)((buf[4] << 8) | buf[5]);
+    gyroADC[X] = (int16_t)((buf[0] << 8) | buf[1]);
+    gyroADC[Y] = (int16_t)((buf[2] << 8) | buf[3]);
+    gyroADC[Z] = (int16_t)((buf[4] << 8) | buf[5]);
 }

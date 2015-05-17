@@ -16,5 +16,5 @@
 bool mpu6000SpiAccDetect(acc_t *acc);
 bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf);
 
-void mpu6000SpiGyroRead(int16_t *gyroData);
-void mpu6000SpiAccRead(int16_t *gyroData);
+void mpu6000SpiGyroRead(int16_t *gyroADC);
+void mpu6000SpiAccRead(int16_t *gyroADC);
