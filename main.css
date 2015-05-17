@@ -96,11 +96,12 @@ input[type="number"]::-webkit-inner-spin-button {
     width: 60px;
 }
 #port-picker #port-override{
-    height: 20px;
+    height: 18px;
     line-height: 20px;
     margin-right: 5px;
     width: 120px;
-    padding: 0;
+    padding: 0 5px;
+    border: 1px solid silver;
 }
 
 #port-picker a {
