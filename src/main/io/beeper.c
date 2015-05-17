@@ -20,6 +20,7 @@
 #include "stdlib.h"
 
 #include "platform.h"
+#include "build_config.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
@@ -38,6 +39,10 @@
 #include "config/config.h"
 
 #include "io/beeper.h"
+
+#if FLASH_SIZE > 64
+#define BEEPER_NAMES
+#endif
 
 #define MAX_MULTI_BEEPS 20   //size limit for 'beep_multiBeeps[]'
 
@@ -128,25 +133,33 @@ typedef struct beeperTableEntry_s {
     uint8_t mode;
     uint8_t priority; // 0 = Highest
     const uint8_t *sequence;
+#ifdef BEEPER_NAMES
     const char *name;
+#endif
 } beeperTableEntry_t;
 
+#ifdef BEEPER_NAMES
+#define BEEPER_ENTRY(a,b,c,d) a,b,c,d
+#else
+#define BEEPER_ENTRY(a,b,c,d) a,b,c
+#endif
+
 static const beeperTableEntry_t const beeperTable[] = {
-    { BEEPER_RX_LOST_LANDING,       0, beep_sos,              "RX_LOST_LANDING" },
-    { BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST" },
-    { BEEPER_DISARMING,             2, beep_disarmBeep,       "DISARMING" },
-    { BEEPER_ARMING,                3, beep_armingBeep,       "ARMING"  },
-    { BEEPER_ARMING_GPS_FIX,        4, beep_armedGpsFix,      "ARMING_GPS_FIX" },
-    { BEEPER_BAT_CRIT_LOW,          5, beep_critBatteryBeep,  "BAT_CRIT_LOW" },
-    { BEEPER_BAT_LOW,               6, beep_lowBatteryBeep,   "BAT_LOW" },
-    { BEEPER_GPS_STATUS,            7, beep_multiBeeps,       NULL },
-    { BEEPER_RX_SET,                8, beep_shortBeep,        "RX_SET" },
-    { BEEPER_DISARM_REPEAT,         9, beep_disarmRepeatBeep, "DISARM_REPEAT" },
-    { BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION" },
-    { BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL" },
-    { BEEPER_READY_BEEP,            12, beep_readyBeep,       "READY_BEEP" },
-    { BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      NULL }, // FIXME having this listed makes no sense since the beep array will not be initialised.
-    { BEEPER_ARMED,                 14, beep_armedBeep,       "ARMED" },
+    { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       0, beep_sos,              "RX_LOST_LANDING") },
+    { BEEPER_ENTRY(BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST") },
+    { BEEPER_ENTRY(BEEPER_DISARMING,             2, beep_disarmBeep,       "DISARMING") },
+    { BEEPER_ENTRY(BEEPER_ARMING,                3, beep_armingBeep,       "ARMING")  },
+    { BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX,        4, beep_armedGpsFix,      "ARMING_GPS_FIX") },
+    { BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW,          5, beep_critBatteryBeep,  "BAT_CRIT_LOW") },
+    { BEEPER_ENTRY(BEEPER_BAT_LOW,               6, beep_lowBatteryBeep,   "BAT_LOW") },
+    { BEEPER_ENTRY(BEEPER_GPS_STATUS,            7, beep_multiBeeps,       NULL) },
+    { BEEPER_ENTRY(BEEPER_RX_SET,                8, beep_shortBeep,        "RX_SET") },
+    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         9, beep_disarmRepeatBeep, "DISARM_REPEAT") },
+    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION") },
+    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
+    { BEEPER_ENTRY(BEEPER_READY_BEEP,            12, beep_readyBeep,       "READY_BEEP") },
+    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      NULL) }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ENTRY(BEEPER_ARMED,                 14, beep_armedBeep,       "ARMED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -318,7 +331,7 @@ static void beeperProcessCommand(void)
  */
 uint32_t getArmingBeepTimeMicros(void)
 {
-  return armingBeepTimeMicros;
+    return armingBeepTimeMicros;
 }
 
 /*
@@ -327,8 +340,7 @@ uint32_t getArmingBeepTimeMicros(void)
  */
 beeperMode_e beeperModeForTableIndex(int idx)
 {
-  return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ?
-                                     beeperTable[idx].mode : BEEPER_SILENCE;
+    return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ? beeperTable[idx].mode : BEEPER_SILENCE;
 }
 
 /*
@@ -336,8 +348,12 @@ beeperMode_e beeperModeForTableIndex(int idx)
  */
 const char *beeperNameForTableIndex(int idx)
 {
-  return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ?
-                                               beeperTable[idx].name : NULL;
+#ifndef BEEPER_NAME
+    UNUSED(idx);
+    return NULL;
+#else
+    return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ? beeperTable[idx].name : NULL;
+#endif
 }
 
 /*

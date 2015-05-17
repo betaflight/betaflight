@@ -1334,6 +1334,9 @@ static void cliMotor(char *cmdline)
 
 static void cliPlaySound(char *cmdline)
 {
+#if FLASH_SIZE <= 64
+    UNUSED(cmdline);
+#else
     int i;
     const char *name;
     static int lastSoundIdx = -1;
@@ -1363,6 +1366,7 @@ static void cliPlaySound(char *cmdline)
     beeperSilence();
     printf("Playing sound %d: %s\r\n", i, name);
     beeper(beeperModeForTableIndex(i));
+#endif
 }
 
 static void cliProfile(char *cmdline)
