@@ -1,12 +1,10 @@
 'use strict';
 
 var PortHandler = new function () {
-    this.main_timeout_reference;
     this.initial_ports = false;
-
     this.port_detected_callbacks = [];
     this.port_removed_callbacks = [];
-}
+};
 
 PortHandler.initialize = function () {
     // start listening, check after 250ms
@@ -137,7 +135,8 @@ PortHandler.check = function () {
             check_usb_devices();
         }
 
-        self.main_timeout_reference = setTimeout(function () {
+        GUI.updateManualPortVisibility();
+        setTimeout(function () {
             self.check();
         }, 250);
     });
@@ -161,13 +160,11 @@ PortHandler.check = function () {
 PortHandler.update_port_select = function (ports) {
     $('div#port-picker #port').html(''); // drop previous one
 
-    if (ports.length > 0) {
-        for (var i = 0; i < ports.length; i++) {
-            $('div#port-picker #port').append($("<option/>", {value: ports[i], text: ports[i]}));
-        }
-    } else {
-        $('div#port-picker #port').append($("<option/>", {value: 0, text: 'No Ports'}));
+    for (var i = 0; i < ports.length; i++) {
+        $('div#port-picker #port').append($("<option/>", {value: ports[i], text: ports[i], data: {isManual: false}}));
     }
+
+    $('div#port-picker #port').append($("<option/>", {value: 'manual', text: 'Manual Selection', data: {isManual: true}}));
 };
 
 PortHandler.port_detected = function(name, code, timeout, ignore_timeout) {

@@ -1,11 +1,38 @@
 'use strict';
 
 $(document).ready(function () {
+
+    GUI.updateManualPortVisibility = function(){
+        if ($('div#port-picker #port option:selected').data().isManual) {
+            $('#port-override-option').show();
+        }
+        else {
+            $('#port-override-option').hide();
+        }
+    };
+
+    GUI.updateManualPortVisibility();
+
+    $('#port-override').change(function () {
+        chrome.storage.local.set({'portOverride': $('#port-override').val()});
+    });
+
+    chrome.storage.local.get('portOverride', function (data) {
+        $('#port-override').val(data.portOverride);
+    });
+
+    $('div#port-picker #port').change(function (target) {
+        GUI.updateManualPortVisibility();
+    });
+
     $('div#port-picker a.connect').click(function () {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
-            var clicks = $(this).data('clicks'),
-                selected_port = String($('div#port-picker #port').val()),
-                selected_baud = parseInt($('div#port-picker #baud').val());
+
+            var clicks = $(this).data('clicks');
+            var selected_baud = parseInt($('div#port-picker #baud').val());
+            var selected_port = $('div#port-picker #port option:selected').data().isManual ?
+                    $('#port-override').val() :
+                    String($('div#port-picker #port').val());
 
             if (selected_port != '0' && selected_port != 'DFU') {
                 if (!clicks) {
@@ -26,7 +53,7 @@ $(document).ready(function () {
                     serial.disconnect(onClosed);
 
                     var wasConnected = CONFIGURATOR.connectionValid;
-                    
+
                     GUI.connected_to = false;
                     CONFIGURATOR.connectionValid = false;
                     GUI.allowedTabs = GUI.defaultAllowedTabsWhenDisconnected.slice();
@@ -52,7 +79,7 @@ $(document).ready(function () {
                         // detach listeners and remove element data
                         $('#content').empty();
                     }
-                    
+
                     $('#tabs .tab_landing a').click();
                 }
 
@@ -145,36 +172,36 @@ function onOpen(openInfo) {
             if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.apiVersionAccepted)) {
 
                 MSP.send_message(MSP_codes.MSP_FC_VARIANT, false, false, function () {
-                    
+
                     MSP.send_message(MSP_codes.MSP_FC_VERSION, false, false, function () {
-                        
+
                         googleAnalytics.sendEvent('Firmware', 'Variant', CONFIG.flightControllerIdentifier + ',' + CONFIG.flightControllerVersion);
                         GUI.log(chrome.i18n.getMessage('fcInfoReceived', [CONFIG.flightControllerIdentifier, CONFIG.flightControllerVersion]));
-                        
+
                         MSP.send_message(MSP_codes.MSP_BUILD_INFO, false, false, function () {
-                            
+
                             googleAnalytics.sendEvent('Firmware', 'Using', CONFIG.buildInfo);
                             GUI.log(chrome.i18n.getMessage('buildInfoReceived', [CONFIG.buildInfo]));
-                            
+
                             MSP.send_message(MSP_codes.MSP_BOARD_INFO, false, false, function () {
-                                
+
                                 googleAnalytics.sendEvent('Board', 'Using', CONFIG.boardIdentifier + ',' + CONFIG.boardVersion);
                                 GUI.log(chrome.i18n.getMessage('boardInfoReceived', [CONFIG.boardIdentifier, CONFIG.boardVersion]));
-                                
+
                                 MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
                                     GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
-                                    
+
                                     // continue as usually
                                     CONFIGURATOR.connectionValid = true;
                                     GUI.allowedTabs = GUI.defaultAllowedTabsWhenConnected.slice();
                                     if (semver.lt(CONFIG.apiVersion, "1.4.0")) {
                                         GUI.allowedTabs.splice(GUI.allowedTabs.indexOf('led_strip'), 1);
                                     }
-                                    
+
                                     GUI.canChangePidController = semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion);
 
                                     onConnect();
-                                    
+
                                     $('#tabs ul.mode-connected .tab_setup a').click();
                                 });
                             });
@@ -227,7 +254,7 @@ function onClosed(result) {
 
     $('#tabs ul.mode-connected').hide();
     $('#tabs ul.mode-disconnected').show();
-    
+
     var documentationButton = $('#button-documentation');
     documentationButton.hide();
 }
@@ -250,7 +277,7 @@ function sensor_status(sensors_detected) {
     if (sensor_status.previous_sensors_detected == sensors_detected) {
         return;
     }
-    
+
     // set current value
     sensor_status.previous_sensors_detected = sensors_detected;
 
