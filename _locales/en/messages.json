@@ -259,7 +259,7 @@
         "message": "Calibrate Magnetometer"
     },
     "initialSetupCalibrateMagText": {
-        "message": "Move multirotor atleast <strong>360</strong> degrees on all axis of rotation, you have 30 seconds to perform this task"
+        "message": "Move multirotor at least <strong>360</strong> degrees on all axis of rotation, you have 30 seconds to perform this task"
     },
     "initialSetupButtonReset": {
         "message": "Reset Settings"
