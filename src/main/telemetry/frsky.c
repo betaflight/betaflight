@@ -313,7 +313,7 @@ static void sendFakeLatLong(void)
     sendLatLong(coord);
 }
 
-static void sendFakeLatLongThaAllowsHeadingDisplay(void)
+static void sendFakeLatLongThatAllowsHeadingDisplay(void)
 {
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
     int32_t coord[2] = {
@@ -532,10 +532,10 @@ void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
             sendGPSLatLong();
         }
         else {
-            sendFakeLatLongThaAllowsHeadingDisplay();
+            sendFakeLatLongThatAllowsHeadingDisplay();
         }
 #else
-        sendFakeLatLong(false);
+        sendFakeLatLongThatAllowsHeadingDisplay();
 #endif
 
         sendTelemetryTail();
