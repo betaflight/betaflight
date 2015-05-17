@@ -528,14 +528,12 @@ static void resetConf(void)
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
-    featureSet(FEATURE_FAILSAFE);
 #ifdef ALIENWIIF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     masterConfig.batteryConfig.vbatscale = 20;
 #else
     masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
-    masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
