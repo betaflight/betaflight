@@ -703,10 +703,16 @@ static void loadSlowState(blackboxSlowState_t *slow)
     slow->failsafePhase = failsafePhase();
 }
 
-static void writeSlowFrameIfNeeded(void)
+/**
+ * If the data in the slow frame has changed, log a slow frame.
+ *
+ * If allowPeriodicWrite is true, the frame is also logged if it has been more than SLOW_FRAME_INTERVAL logging iterations
+ * since the field was last logged.
+ */
+static void writeSlowFrameIfNeeded(bool allowPeriodicWrite)
 {
     // Write the slow frame peridocially so it can be recovered if we ever lose sync
-    bool shouldWrite = blackboxSlowFrameIterationTimer >= SLOW_FRAME_INTERVAL;
+    bool shouldWrite = allowPeriodicWrite && blackboxSlowFrameIterationTimer >= SLOW_FRAME_INTERVAL;
 
     if (shouldWrite) {
         loadSlowState(&slowHistory);
@@ -1166,10 +1172,10 @@ static void blackboxLogIteration()
     // Write a keyframe every BLACKBOX_I_INTERVAL frames so we can resynchronise upon missing frames
     if (blackboxPFrameIndex == 0) {
         /*
-         * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
-         * So only log slow frames during loop iterations where we log a main frame.
+         * Don't log a slow frame if the slow data didn't change ("I" frames are already large enough without adding
+         * an additional item to write at the same time)
          */
-        writeSlowFrameIfNeeded();
+        writeSlowFrameIfNeeded(false);
 
         loadMainState();
         writeIntraframe();
@@ -1177,7 +1183,11 @@ static void blackboxLogIteration()
         blackboxCheckAndLogArmingBeep();
         
         if (blackboxShouldLogPFrame(blackboxPFrameIndex)) {
-            writeSlowFrameIfNeeded();
+            /*
+             * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
+             * So only log slow frames during loop iterations where we log a main frame.
+             */
+            writeSlowFrameIfNeeded(true);
 
             loadMainState();
             writeInterframe();
