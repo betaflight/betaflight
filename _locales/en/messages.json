@@ -756,6 +756,30 @@
     "adjustmentsFunction12": {
         "message": "Rate Profile Selection"
     },
+    "adjustmentsFunction13": {
+        "message": "Pitch Rate"
+    },
+    "adjustmentsFunction14": {
+        "message": "Roll Rate"
+    },
+    "adjustmentsFunction15": {
+        "message": "Pitch P Adjustment"
+    },
+    "adjustmentsFunction16": {
+        "message": "Pitch I Adjustment"
+    },
+    "adjustmentsFunction17": {
+        "message": "Pitch D Adjustment"
+    },
+    "adjustmentsFunction18": {
+        "message": "Roll P Adjustment"
+    },
+    "adjustmentsFunction19": {
+        "message": "Roll I Adjustment"
+    },
+    "adjustmentsFunction20": {
+        "message": "Roll D Adjustment"
+    },
     "adjustmentsSave": {
         "message": "Save"
     },
