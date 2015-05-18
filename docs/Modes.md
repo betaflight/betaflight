@@ -34,7 +34,7 @@ auxillary receiver channels and other events such as failsafe detection.
 
 In this mode, the "head" of the multicopter is always pointing to the same direction as when the feature was activated. This means that when the multicopter rotates around the Z axis (yaw), the controls will always respond according the same "head" direction.
 
-With this mode is easier to control the multicopter, even fly it with the physical head towards you since the controls always respond the same. This is a friendly mode to new users of multicopters and can prevent losing the control when you don't know the head direction. 
+With this mode it is easier to control the multicopter, even fly it with the physical head towards you since the controls always respond the same. This is a friendly mode to new users of multicopters and can prevent losing the control when you don't know the head direction. 
 
 ## GPS Return To Home
 
@@ -62,8 +62,9 @@ Requires a 3D GPS fix and minimum of 5 satellites in view.
 
 Spare auxillary receiver channels can be used to enable/disable modes.  Some modes can only be enabled this way.
 
-Configure your transmitter so that switches or dial (pots) send channel data on channels 5 and upwards.
-e.g. You can configure a 3 position switch to send 1000 when the switch is low, 1500 when the switch is in the middle and 2000 when the switch is high.
+Configure your transmitter so that switches or dials (potentiometers) send channel data on channels 5 and upwards (the first 4 channels are usually occupied by the throttle, aileron, rudder, and elevator channels).
+
+_e.g. You can configure a 3 position switch to send 1000 when the switch is low, 1500 when the switch is in the middle and 2000 when the switch is high._
 
 Configure your tx/rx channel limits to use values between 1000 and 2000.
 
