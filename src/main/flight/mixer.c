@@ -44,6 +44,7 @@
 #include "sensors/acceleration.h"
 
 #include "flight/mixer.h"
+#include "flight/failsafe.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/lowpass.h"
@@ -677,6 +678,8 @@ void mixTable(void)
 
     if (ARMING_FLAG(ARMED)) {
 
+        bool isFailsafeActive = failsafeIsActive();
+
         // Find the maximum motor output.
         int16_t maxMotor = motor[0];
         for (i = 1; i < motorCount; i++) {
@@ -704,7 +707,7 @@ void mixTable(void)
                 // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
                 // do not spin the motors.
                 motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
-                if ((rcData[THROTTLE]) < rxConfig->mincheck) {
+                if ((rcData[THROTTLE]) < rxConfig->mincheck && !isFailsafeActive) {
                     if (feature(FEATURE_MOTOR_STOP)) {
                         motor[i] = escAndServoConfig->mincommand;
                     } else if (mixerConfig->pid_at_min_throttle == 0) {
