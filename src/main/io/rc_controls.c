@@ -588,6 +588,9 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
     uint8_t adjustmentIndex;
     uint32_t now = millis();
 
+    bool canUseRxData = rxIsReceivingSignal();
+
+
     for (adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
         adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
 
@@ -607,6 +610,9 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
             MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
         }
 
+        if (!canUseRxData) {
+            continue;
+        }
 
         uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentState->auxChannelIndex;
 
