@@ -1750,6 +1750,7 @@ void mspProcess(void)
                 delay(50);
             }
             stopMotors();
+            handleOneshotFeatureChangeOnRestart();
             systemReset();
         }
     }

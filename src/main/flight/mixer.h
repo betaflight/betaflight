@@ -115,3 +115,4 @@ void mixerResetMotors(void);
 void mixTable(void);
 void writeMotors(void);
 void stopMotors(void);
+void StopPwmAllMotors(void);

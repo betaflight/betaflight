@@ -134,6 +134,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
+static uint32_t activeFeaturesLatch = 0;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
@@ -724,26 +725,26 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    if (!(feature(FEATURE_RX_PARALLEL_PWM) || feature(FEATURE_RX_PPM) || feature(FEATURE_RX_SERIAL) || feature(FEATURE_RX_MSP))) {
+    if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
         featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
     }
 
-    if (feature(FEATURE_RX_PPM)) {
+    if (featureConfigured(FEATURE_RX_PPM)) {
         featureClear(FEATURE_RX_PARALLEL_PWM);
     }
 
-    if (feature(FEATURE_RX_MSP)) {
+    if (featureConfigured(FEATURE_RX_MSP)) {
         featureClear(FEATURE_RX_SERIAL);
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_PPM);
     }
 
-    if (feature(FEATURE_RX_SERIAL)) {
+    if (featureConfigured(FEATURE_RX_SERIAL)) {
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_PPM);
     }
 
-    if (feature(FEATURE_RX_PARALLEL_PWM)) {
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
 #if defined(STM32F10X)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
@@ -764,7 +765,7 @@ void validateAndFixConfig(void)
 
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-    if (feature(FEATURE_SOFTSERIAL) && (
+    if (featureConfigured(FEATURE_SOFTSERIAL) && (
             0
 #ifdef USE_SOFTSERIAL1
             || (LED_STRIP_TIMER == SOFTSERIAL_1_TIMER)
@@ -779,7 +780,7 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(NAZE) && defined(SONAR)
-    if (feature(FEATURE_RX_PARALLEL_PWM) && feature(FEATURE_SONAR) && feature(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
     }
 #endif
@@ -937,9 +938,28 @@ void changeControlRateProfile(uint8_t profileIndex)
     activateControlRateConfig();
 }
 
-bool feature(uint32_t mask)
+void handleOneshotFeatureChangeOnRestart(void)
+{
+    // When OneShot125 feature changed state, shutdown PWM on all motors and apply a delay before
+    if ((masterConfig.enabledFeatures ^ activeFeaturesLatch) & FEATURE_ONESHOT125) {
+        StopPwmAllMotors();
+        delay(ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS);
+    }
+}
+
+void latchActiveFeatures()
+{
+    activeFeaturesLatch = masterConfig.enabledFeatures;
+}
+
+bool featureConfigured(uint32_t mask)
 {
     return masterConfig.enabledFeatures & mask;
+}
+
+bool feature(uint32_t mask)
+{
+    return activeFeaturesLatch & mask;
 }
 
 void featureSet(uint32_t mask)

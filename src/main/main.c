@@ -168,6 +168,9 @@ void init(void)
 
     systemInit();
 
+    // Set active features to be used for feature() in the remainder of init().
+    latchActiveFeatures();
+
     ledInit();
 
 #ifdef SPEKTRUM_BIND
@@ -450,6 +453,9 @@ void init(void)
 #ifdef CJMCU
     LED2_ON;
 #endif
+
+    // Set active features AGAIN since some may be modified by init().
+    latchActiveFeatures();
 
     systemState |= SYSTEM_STATE_READY;
 }

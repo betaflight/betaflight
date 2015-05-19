@@ -1410,6 +1410,7 @@ static void cliReboot(void) {
     cliPrint("\r\nRebooting");
     waitForSerialPortToFinishTransmitting(cliPort);
     stopMotors();
+    handleOneshotFeatureChangeOnRestart();
     systemReset();
 }
 

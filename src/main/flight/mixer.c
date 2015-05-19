@@ -513,6 +513,11 @@ void stopMotors(void)
     delay(50); // give the timers and ESCs a chance to react.
 }
 
+void StopPwmAllMotors()
+{
+    pwmShutdownPulsesForAllMotors(motorCount);
+}
+
 #ifndef USE_QUAD_MIXER_ONLY
 static void airplaneMixer(void)
 {
