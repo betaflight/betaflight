@@ -19,6 +19,9 @@
 
 #define MAX_SUPPORTED_MOTORS 12
 #define MAX_SUPPORTED_SERVOS 8
+#define YAW_JUMP_PREVENTION_LIMIT_LOW 80
+#define YAW_JUMP_PREVENTION_LIMIT_HIGH 500
+
 
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
 typedef enum mixerMode
