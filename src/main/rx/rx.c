@@ -75,9 +75,6 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
 #define PPM_AND_PWM_SAMPLE_COUNT 4
 
-#define PULSE_MIN   750       // minimum PWM pulse width which is considered valid
-#define PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
-
 #define DELAY_50_HZ (1000000 / 50)
 #define DELAY_10_HZ (1000000 / 10)
 
@@ -336,7 +333,7 @@ static void processRxChannels(void)
         }
 
         // validate the range
-        if (sample < PULSE_MIN || sample > PULSE_MAX)
+        if (sample < rxConfig->rx_min_usec || sample > rxConfig->rx_max_usec)
             sample = rxConfig->midrc;
 
         if (isRxDataDriven()) {
