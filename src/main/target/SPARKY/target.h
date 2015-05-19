@@ -109,11 +109,12 @@
 
 #define AUTOTUNE
 #define BLACKBOX
+#define TELEMETRY
 #define SERIAL_RX
 #define GPS
 #define DISPLAY
 #define USE_SERVOS
-#define TELEMETRY
+#define USE_CLI
 
 #define LED_STRIP
 #if 1

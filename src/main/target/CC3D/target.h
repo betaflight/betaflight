@@ -113,6 +113,7 @@
 #define SERIAL_RX
 #define AUTOTUNE
 #define USE_SERVOS
+#define USE_CLI
 
 #if defined(OPBL)
 #undef AUTOTUNE // disabled for OPBL build due to code size.

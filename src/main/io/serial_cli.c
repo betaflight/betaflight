@@ -84,6 +84,12 @@
 
 #include "serial_cli.h"
 
+// FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
+// signal that we're in cli mode
+uint8_t cliMode = 0;
+
+#ifdef USE_CLI
+
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
@@ -131,9 +137,6 @@ static void cliFlashErase(char *cmdline);
 static void cliFlashWrite(char *cmdline);
 static void cliFlashRead(char *cmdline);
 #endif
-
-// signal that we're in cli mode
-uint8_t cliMode = 0;
 
 // buffer
 static char cliBuffer[48];
@@ -1767,3 +1770,4 @@ void cliInit(serialConfig_t *serialConfig)
 {
     UNUSED(serialConfig);
 }
+#endif

@@ -347,7 +347,10 @@ void init(void)
     imuInit();
 
     mspInit(&masterConfig.serialConfig);
+
+#ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);
+#endif
 
     failsafeInit(&masterConfig.rxConfig);
 

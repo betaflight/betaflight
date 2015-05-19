@@ -59,6 +59,7 @@
 
 #define SERIAL_RX
 //#define USE_SERVOS
+#define USE_CLI
 
 #define SPEKTRUM_BIND
 // USART2, PA3
@@ -68,6 +69,10 @@
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY
 
+
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
 #endif
+
+//#undef USE_CLI
+//#define BLACKBOX

@@ -116,7 +116,7 @@
 //#define DISPLAY
 #define AUTOTUNE
 #define USE_SERVOS
-
+#define USE_CLI
 
 #define SPEKTRUM_BIND
 // USART2, PA3
