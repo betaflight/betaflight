@@ -97,9 +97,7 @@ See your receiver's documentation for direction on how to accomplish one of thes
 
 3.  Set 'failsafe_throttle' to a value that allows the aircraft to descend at approximately one meter per second (default is 1000 which should be throttle off).
 
-4.  Ensure that your `failsafe_throttle` is greater or equal to the `min_check` setting.  Note: If you are using `MOTOR_STOP` the motors will use the `min_command` instead of `min_throttle` when `failsafe_throttle` is less than `min_check`.
-
-5.  Enable 'FAILSAFE' feature in Cleanflight GUI or via CLI using `feature FAILSAFE`
+4.  Enable 'FAILSAFE' feature in Cleanflight GUI or via CLI using `feature FAILSAFE`
 
 
 
