@@ -323,4 +323,8 @@ void pwmWriteServo(uint8_t index, uint16_t value) {
     servos[index].value = value;
 }
 
+bool failsafeIsActive(void) {
+    return false;
+}
+
 }
