@@ -304,6 +304,8 @@ STM32_protocol.prototype.verify_chip_signature = function (signature) {
             break;
         case 0x422: // not tested
             console.log('Chip recognized as F3 STM32F30xxx, STM32F31xxx');
+            this.available_flash_size =  0x40000;
+            this.page_size = 2048;
             break;
     }
 
@@ -341,6 +343,8 @@ STM32_protocol.prototype.verify_flash = function (first_array, second_array) {
 // step = value depending on current state of upload_procedure
 STM32_protocol.prototype.upload_procedure = function (step) {
     var self = this;
+
+    var extendedErase=false;
 
     switch (step) {
         case 1:
@@ -389,6 +393,9 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                     self.retrieve(data[1] + 1 + 1, function (data) { // data[1] = number of bytes that will follow [– 1 except current and ACKs]
                         console.log('STM32 - Bootloader version: ' + (parseInt(data[0].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
 
+
+                         extendedErase=data[7]==0x44;
+
                         // proceed to next step
                         self.upload_procedure(3);
                     });
@@ -417,6 +424,26 @@ STM32_protocol.prototype.upload_procedure = function (step) {
         case 4:
             // erase memory
             $('span.progressLabel').text('Erasing ...');
+
+
+            if(extendedErase)
+            {
+                 console.log('Executing global chip extended erase');
+
+                   self.send([0x44, 0xBB], 1, function (reply) {
+                        if (self.verify_response(self.status.ACK, reply)) {
+                              self.send( [0xFF, 0xFF, 0x00], 1, function (reply){ 
+                                if (self.verify_response(self.status.ACK, reply)){
+                                        console.log('Executing global chip extended erase - done');
+                                        self.upload_procedure(5);
+                                }
+                            });
+                        }
+                    });
+                          
+
+
+            }else{
 
             if (self.options.erase_chip) {
                 console.log('Executing global chip erase');
@@ -461,6 +488,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                         });
                     }
                 });
+            }
             }
             break;
         case 5:
