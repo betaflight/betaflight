@@ -67,8 +67,8 @@ TABS.adjustments.initialize = function (callback) {
         
         if (semver.gte(CONFIG.flightControllerVersion, '1.8.0')) {
             availableFunctionCount += 2; // pitch and roll rate
-            if (semver.gte(CONFIG.flightControllerVersion, '1.9.1')) {
-                availableFunctionCount += 5; // pitch p,i,d and roll p,i,d
+            if (semver.gte(CONFIG.flightControllerVersion, '1.9.0')) {
+                availableFunctionCount += 6; // pitch p,i,d and roll p,i,d
             }
         }
         
