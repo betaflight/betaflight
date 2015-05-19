@@ -180,7 +180,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
-    pidProfile->yaw_p_limit = 0;
+    pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
 
     pidProfile->P_f[ROLL] = 2.5f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.6f;
