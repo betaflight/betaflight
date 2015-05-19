@@ -65,7 +65,6 @@ static uint16_t sbusStateFlags = 0;
 #define SBUS_FRAME_SIZE 25
 
 #define SBUS_FRAME_BEGIN_BYTE 0x0F
-#define SBUS_FRAME_END_BYTE 0x00
 
 #define SBUS_BAUDRATE 100000
 #define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN | SERIAL_INVERTED)
@@ -123,6 +122,13 @@ struct sbusFrame_s {
     unsigned int chan14 : 11;
     unsigned int chan15 : 11;
     uint8_t flags;
+    /**
+     * The endByte is 0x00 on FrSky and some futaba RX's, on Some SBUS2 RX's the value indicates the telemetry byte that is sent after every 4th sbus frame.
+     *
+     * See https://github.com/cleanflight/cleanflight/issues/590#issuecomment-101027349
+     * and
+     * https://github.com/cleanflight/cleanflight/issues/590#issuecomment-101706023
+     */
     uint8_t endByte;
 } __attribute__ ((__packed__));
 
@@ -158,12 +164,11 @@ static void sbusDataReceive(uint16_t c)
     sbusFramePosition++;
 
     if (sbusFramePosition == SBUS_FRAME_SIZE) {
-        if (sbusFrame.frame.endByte == SBUS_FRAME_END_BYTE) {
-            sbusFrameDone = true;
+        // endByte currently ignored
+        sbusFrameDone = true;
 #ifdef DEBUG_SBUS_PACKETS
-            debug[2] = sbusFrameTime;
+        debug[2] = sbusFrameTime;
 #endif
-        }
     } else {
         sbusFrameDone = false;
     }
