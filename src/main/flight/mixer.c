@@ -704,14 +704,18 @@ void mixTable(void)
                     motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
                 }
             } else {
-                // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
-                // do not spin the motors.
-                motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
-                if ((rcData[THROTTLE]) < rxConfig->mincheck && !isFailsafeActive) {
-                    if (feature(FEATURE_MOTOR_STOP)) {
-                        motor[i] = escAndServoConfig->mincommand;
-                    } else if (mixerConfig->pid_at_min_throttle == 0) {
-                        motor[i] = escAndServoConfig->minthrottle;
+                if (isFailsafeActive) {
+                    motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+                } else {
+                    // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
+                    // do not spin the motors.
+                    motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+                    if ((rcData[THROTTLE]) < rxConfig->mincheck) {
+                        if (feature(FEATURE_MOTOR_STOP)) {
+                            motor[i] = escAndServoConfig->mincommand;
+                        } else if (mixerConfig->pid_at_min_throttle == 0) {
+                            motor[i] = escAndServoConfig->minthrottle;
+                        }
                     }
                 }
             }
