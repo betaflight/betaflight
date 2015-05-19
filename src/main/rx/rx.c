@@ -49,6 +49,8 @@
 
 #include "rx/rx.h"
 
+//#define DEBUG_RX_SIGNAL_LOSS
+
 void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
@@ -259,7 +261,8 @@ void updateRx(uint32_t currentTime)
         }
     }
 
-    if (feature(FEATURE_RX_SERIAL | FEATURE_RX_MSP) && rxDataReceived) {
+    if ((feature(FEATURE_RX_SERIAL | FEATURE_RX_MSP) && rxDataReceived)
+         || feature(FEATURE_RX_PARALLEL_PWM)) {
         needRxSignalBefore = currentTime + DELAY_10_HZ;
     }
 
