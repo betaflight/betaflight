@@ -1,5 +1,11 @@
 # GPS
 
+GPS features in Cleanflight are experimental.  Please share your findings with the developers.
+
+GPS works best if the GPS receiver is mounted above and away from other sources of interference.
+
+The compass/mag sensor should be well away from sources of magnetic interference, e.g. keep it away from power wires, motors, ESCs.
+
 Two GPS protocols are supported. NMEA text and UBLOX binary.
 
 ## Configuration
