@@ -520,12 +520,6 @@ static void cliShowArgumentRangeError(char *name, int min, int max)
     printf("%s must be between %d and %d\r\n", name, min, max);
 }
 
-static int cliCompare(const void *a, const void *b)
-{
-    const clicmd_t *ca = a, *cb = b;
-    return strncasecmp(ca->name, cb->name, strlen(cb->name));
-}
-
 static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
 {
     int val;
@@ -1990,14 +1984,12 @@ void cliProcess(void)
         } else if (!bufferIndex && c == 4) {   // CTRL-D
             cliExit(cliBuffer);
             return;
-        } else if (c == 12) {
+        } else if (c == 12) {                  // NewPage / CTRL-L
             // clear screen
             cliPrint("\033[2J\033[1;1H");
             cliPrompt();
         } else if (bufferIndex && (c == '\n' || c == '\r')) {
             // enter pressed
-            clicmd_t *cmd = NULL;
-            clicmd_t target;
             cliPrint("\r\n");
 
             // Strip comment starting with # from line
@@ -2015,11 +2007,14 @@ void cliProcess(void)
             // Process non-empty lines
             if (bufferIndex > 0) {
                 cliBuffer[bufferIndex] = 0; // null terminate
-                target.name = cliBuffer;
-                target.args = NULL;
 
-                cmd = bsearch(&target, cmdTable, CMD_COUNT, sizeof cmdTable[0], cliCompare);
-                if (cmd)
+                const clicmd_t *cmd;
+                for (cmd = cmdTable; cmd < cmdTable + CMD_COUNT; cmd++) {
+                    if(!strncasecmp(cliBuffer, cmd->name, strlen(cmd->name))   // command names match
+                       && !isalnum((unsigned)cliBuffer[strlen(cmd->name)]))    // next characted in bufffer is not alphanumeric (command is correctly terminated)
+                        break;
+                }
+                if(cmd < cmdTable + CMD_COUNT)
                     cmd->func(cliBuffer + strlen(cmd->name) + 1);
                 else
                     cliPrint("Unknown command, try 'help'");
