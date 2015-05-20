@@ -483,6 +483,8 @@ static void resetConf(void)
         currentProfile->servoConf[i].max = DEFAULT_SERVO_MAX;
         currentProfile->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
         currentProfile->servoConf[i].rate = servoRates[i];
+        currentProfile->servoConf[i].minLimit = DEFAULT_SERVO_MIN_LIMIT;
+        currentProfile->servoConf[i].maxLimit = DEFAULT_SERVO_MAX_LIMIT;
         currentProfile->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 

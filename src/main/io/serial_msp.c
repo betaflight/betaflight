@@ -292,6 +292,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_SERVO_CONF       212    //in message          Servo settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
+#define MSP_SET_SERVO_LIMIT      216    //in message          Servo settings limits
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -828,12 +829,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         s_struct((uint8_t *)&servo, MAX_SUPPORTED_SERVOS * 2);
         break;
     case MSP_SERVO_CONF:
-        headSerialReply(MAX_SUPPORTED_SERVOS * 7);
+        headSerialReply(MAX_SUPPORTED_SERVOS * 9);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize16(currentProfile->servoConf[i].min);
             serialize16(currentProfile->servoConf[i].max);
             serialize16(currentProfile->servoConf[i].middle);
             serialize8(currentProfile->servoConf[i].rate);
+            serialize8(currentProfile->servoConf[i].minLimit);
+            serialize8(currentProfile->servoConf[i].maxLimit);
         }
         break;
     case MSP_CHANNEL_FORWARDING:
@@ -1430,6 +1433,14 @@ static bool processInCommand(void)
                 }
                 currentProfile->servoConf[i].rate = read8();
             }
+        }
+#endif
+        break;
+    case MSP_SET_SERVO_LIMIT:
+#ifdef USE_SERVOS
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            currentProfile->servoConf[i].minLimit = read8();
+            currentProfile->servoConf[i].maxLimit = read8();
         }
 #endif
         break;

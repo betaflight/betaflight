@@ -27,9 +27,11 @@
 #define PWM_PULSE_MIN   750       // minimum PWM pulse width which is considered valid
 #define PWM_PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
 
-#define DEFAULT_SERVO_MIN 1020
+#define DEFAULT_SERVO_MIN 1000
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
+#define DEFAULT_SERVO_MIN_LIMIT -90
+#define DEFAULT_SERVO_MAX_LIMIT 90
 
 typedef enum {
     SERIAL_RX_FRAME_PENDING = 0,
