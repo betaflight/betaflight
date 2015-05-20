@@ -64,7 +64,12 @@ Now, there are two ways to [configure CF](Configuration.md); via  the Configurat
     * Minimum Command - This is the "idle" signal level that will be sent to the ESCs when the craft is disarmed, which should not cause the motors to spin. A typical value would be 1000.
   * Finally, click Save and Reboot.
 
-* Receiver tab: Check that the channel inputs move according to your Tx inputs. Check that the Channel map is correct, along with the RSSI Channel, if you use that. You can also set EXPO here instead of your Tx. Click Save!
+* Receiver tab: 
+    * Check that the channel inputs move according to your Tx inputs. 
+    * Check that the Channel map is correct along with the RSSI Channel, if you use that.
+    * Verify the range of each channel goes from ~1000 to ~2000.  See also [controls](Controls.md). and `rx_min_usec` and `rx_max_usec`.
+    * You can also set EXPO here instead of your Tx. 
+    * Click Save!
 * Modes tab: Setup the desired modes. See the [modes](Modes.md) chapter for what each mode does, but for the beginning you mainly need HORIZON, if any.
 
 * Before finishing this section, you should calibrate the ESCs, install the FC to the frame, and connect the RSSI cable, buzzer and battery if you have chosen to use those.

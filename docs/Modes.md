@@ -36,7 +36,7 @@ In this mode, the "head" of the multicopter is always pointing to the same direc
 
 With this mode it is easier to control the multicopter, even fly it with the physical head towards you since the controls always respond the same. This is a friendly mode to new users of multicopters and can prevent losing the control when you don't know the head direction. 
 
-## GPS Return To Home
+### GPS Return To Home
 
 WORK-IN-PROGRESS.  This mode is not reliable yet, please share your experiences with the developers.
 
@@ -46,7 +46,7 @@ This mode should be enabled in conjunction with Angle or Horizon modes and an Al
 
 Requires a 3D GPS fix and minimum of 5 satellites in view.
 
-## GPS Position Hold
+### GPS Position Hold
 
 WORK-IN-PROGRESS.  This mode is not reliable yet, please share your experiences with the developers.
 
@@ -66,7 +66,7 @@ Configure your transmitter so that switches or dials (potentiometers) send chann
 
 _e.g. You can configure a 3 position switch to send 1000 when the switch is low, 1500 when the switch is in the middle and 2000 when the switch is high._
 
-Configure your tx/rx channel limits to use values between 1000 and 2000.
+Configure your tx/rx channel limits to use values between 1000 and 2000.  The range used by mode ranges is fixed to 900 to 2100.
 
 When a channel is within a specifed range the corresponding mode is enabled.
 
