@@ -373,6 +373,16 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .data.selectConfig.switchPositions = 3
     },
     {
+        .adjustmentFunction = ADJUSTMENT_PITCH_RATE,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_ROLL_RATE,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data.stepConfig.step = 1
+    },
+    {
         .adjustmentFunction = ADJUSTMENT_PITCH_P,
         .mode = ADJUSTMENT_MODE_STEP,
         .data.stepConfig.step = 1
