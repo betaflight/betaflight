@@ -110,6 +110,14 @@ this reason ensure that you define enough ranges to cover the range channel's us
 | 10    | YAW_I |
 | 11    | YAW_D |
 | 12    | RATE_PROFILE | Switch between 3 rate profiles using a 3 position switch. |
+| 13    | PITCH_RATE |
+| 14    | ROLL_RATE |
+| 15    | PITCH_P |
+| 16    | PITCH_I |
+| 17    | PITCH_D |
+| 18    | ROLL_P |
+| 19    | ROLL_I |
+| 20    | ROLL_D |
 
 ## Examples
 
