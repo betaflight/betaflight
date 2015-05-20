@@ -154,5 +154,5 @@ uint8_t calculateBatteryCapacityRemainingPercentage(void)
 {
     uint16_t batteryCapacity = batteryConfig->batteryCapacity;
 
-    return constrain((batteryCapacity - constrain(mAhDrawn, 0, 0xFFFF)) * 100.0 / batteryCapacity , 0, 100);
+    return constrain((batteryCapacity - constrain(mAhDrawn, 0, 0xFFFF)) * 100.0f / batteryCapacity , 0, 100);
 }

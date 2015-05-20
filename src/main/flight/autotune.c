@@ -184,10 +184,10 @@ static void autotuneLogAngleTargets(float currentAngle)
         eventData.targetAngleAtPeak = (int) targetAngleAtPeak;
 
         // currentAngle is integer decidegrees divided by 10, so just reverse that process to get an integer again:
-        eventData.currentAngle = round(currentAngle * 10);
+        eventData.currentAngle = roundf(currentAngle * 10);
         // the peak angles are only ever set to currentAngle, so they get the same treatment:
-        eventData.firstPeakAngle = round(firstPeakAngle * 10);
-        eventData.secondPeakAngle = round(secondPeakAngle * 10);
+        eventData.firstPeakAngle = roundf(firstPeakAngle * 10);
+        eventData.secondPeakAngle = roundf(secondPeakAngle * 10);
 
         blackboxLogEvent(FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS, (flightLogEventData_t*)&eventData);
     }
