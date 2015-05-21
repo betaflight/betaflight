@@ -242,6 +242,7 @@ TEST(RcControlsTest, processRcAdjustmentsSticksInMiddle)
             .thrExpo8 = 0,
             .rates = {0,0,0},
             .dynThrPID = 0,
+            .rcYawExpo8 = 0,
             .tpa_breakpoint = 0
     };
 
@@ -285,6 +286,7 @@ TEST(RcControlsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
             .thrExpo8 = 0,
             .rates = {0,0,0},
             .dynThrPID = 0,
+            .rcYawExpo8 = 0,
             .tpa_breakpoint = 0
     };
 
@@ -451,6 +453,7 @@ TEST(RcControlsTest, processRcRateProfileAdjustments)
             .thrExpo8 = 0,
             .rates = {0,0,0},
             .dynThrPID = 0,
+            .rcYawExpo8 = 0,
             .tpa_breakpoint = 0
     };
 
