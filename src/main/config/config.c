@@ -940,9 +940,11 @@ void changeControlRateProfile(uint8_t profileIndex)
 
 void handleOneshotFeatureChangeOnRestart(void)
 {
-    // When OneShot125 feature changed state, shutdown PWM on all motors and apply a delay before
+    // Shutdown PWM on all motors prior to soft restart
+    StopPwmAllMotors();
+    delay(50);
+    // When OneShot125 feature changed state apply additional delay
     if ((masterConfig.enabledFeatures ^ activeFeaturesLatch) & FEATURE_ONESHOT125) {
-        StopPwmAllMotors();
         delay(ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS);
     }
 }
