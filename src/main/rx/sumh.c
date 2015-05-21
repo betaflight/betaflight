@@ -112,9 +112,8 @@ uint8_t sumhFrameStatus(void)
     }
 
     for (channelIndex = 0; channelIndex < SUMH_MAX_CHANNEL_COUNT; channelIndex++) {
-
         sumhChannels[channelIndex] = (((uint32_t)(sumhFrame[(channelIndex << 1) + 3]) << 8)
-                + sumhFrame[(channelIndex << 1) + 4]) / 6.4 - 375;
+                + sumhFrame[(channelIndex << 1) + 4]) / 6.4f - 375;
     }
     return SERIAL_RX_FRAME_COMPLETE;
 }
