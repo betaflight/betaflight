@@ -90,6 +90,7 @@
 #include "debug.h"
 
 extern uint32_t previousTime;
+extern uint8_t motorControlEnable;
 
 #ifdef SOFTSERIAL_LOOPBACK
 serialPort_t *loopbackPort;
@@ -240,6 +241,9 @@ void init(void)
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
+
+    if (!feature(FEATURE_ONESHOT125))
+        motorControlEnable = true;
 
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
@@ -456,6 +460,7 @@ void init(void)
 
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
+    motorControlEnable = true;
 
     systemState |= SYSTEM_STATE_READY;
 }
