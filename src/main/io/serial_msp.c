@@ -851,7 +851,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         }
         break;
     case MSP_CHANNEL_FORWARDING:
-        headSerialReply(8);
+        headSerialReply(MAX_SUPPORTED_SERVOS);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize8(currentProfile->servoConf[i].forwardFromChannel);
         }
