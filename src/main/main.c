@@ -168,7 +168,7 @@ void init(void)
 
     systemInit();
 
-    // Set active features to be used for feature() in the remainder of init().
+    // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
     ledInit();
@@ -454,7 +454,7 @@ void init(void)
     LED2_ON;
 #endif
 
-    // Set active features AGAIN since some may be modified by init().
+    // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
 
     systemState |= SYSTEM_STATE_READY;
