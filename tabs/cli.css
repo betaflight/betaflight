@@ -48,3 +48,6 @@
 .tab-cli #content-watermark {
     z-index:0;
 }
+.tab-cli .window .wrapper {
+    white-space: pre-wrap;
+}
