@@ -31,12 +31,23 @@
             </label>
             <span class="description" i18n="firmwareFlasherFullChipEraseDescription"></span>
         </div>
-        <div class="option">
+        <div class="option manual_baud_rate">
             <label>
-                <input class="flash_slowly" type="checkbox" />
-                <span i18n="firmwareFlasherFlashSlowly"></span>
+                <input class="flash_manual_baud" type="checkbox" />
+                <span i18n="firmwareFlasherManualBaud"></span>
+                <select id="flash_manual_baud_rate" title="Baud Rate">
+                    <option value="921600">921600</option>
+                    <option value="460800">460800</option>
+                    <option value="256000" selected="selected">256000</option>
+                    <option value="230400">230400</option>
+                    <option value="115200">115200</option>
+                    <option value="57600">57600</option>
+                    <option value="38400">38400</option>
+                    <option value="28800">28800</option>
+                    <option value="19200">19200</option>
+                </select>
             </label>
-            <span class="description" i18n="firmwareFlasherFlashSlowlyDescription"></span>
+            <span class="description" i18n="firmwareFlasherManualBaudDescription"></span>
         </div>
         <div class="option">
             <label>

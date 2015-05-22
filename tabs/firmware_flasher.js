@@ -336,9 +336,10 @@ TABS.firmware_flasher.initialize = function (callback) {
                                     options.erase_chip = true;
                                 }
 
-                                if ($('input.flash_slowly').is(':checked')) {
-                                    options.flash_slowly = true;
+                                if ($('input.flash_manual_baud').is(':checked')) {
+                                    baud = parseInt($('#flash_manual_baud_rate').val());
                                 }
+
 
                                 STM32.connect(port, baud, parsed_hex, options);
                             } else {
@@ -423,6 +424,35 @@ TABS.firmware_flasher.initialize = function (callback) {
             });
         });
 
+        chrome.storage.local.get('flash_manual_baud', function (result) {
+            if (result.flash_manual_baud) {
+                $('input.flash_manual_baud').prop('checked', true);
+            } else {
+                $('input.flash_manual_baud').prop('checked', false);
+            }
+
+            // bind UI hook so the status is saved on change
+            $('input.flash_manual_baud').change(function() {
+                var status = $(this).is(':checked');
+
+                chrome.storage.local.set({'flash_manual_baud': status});
+            });
+            
+            $('input.flash_manual_baud').change();
+        });
+
+        chrome.storage.local.get('flash_manual_baud_rate', function (result) {
+            $('#flash_manual_baud_rate').val(result.flash_manual_baud_rate);
+            
+            // bind UI hook so the status is saved on change
+            $('#flash_manual_baud_rate').change(function() {
+                var baud = parseInt($('#flash_manual_baud_rate').val());
+                chrome.storage.local.set({'flash_manual_baud_rate': baud});
+            });
+            
+            $('input.flash_manual_baud_rate').change();
+        });
+
         chrome.storage.local.get('flash_on_connect', function (result) {
             if (result.flash_on_connect) {
                 $('input.flash_on_connect').prop('checked', true);
@@ -474,19 +504,6 @@ TABS.firmware_flasher.initialize = function (callback) {
             // bind UI hook so the status is saved on change
             $('input.erase_chip').change(function () {
                 chrome.storage.local.set({'erase_chip': $(this).is(':checked')});
-            });
-        });
-
-        chrome.storage.local.get('flash_slowly', function (result) {
-            if (result.flash_slowly) {
-                $('input.flash_slowly').prop('checked', true);
-            } else {
-                $('input.flash_slowly').prop('checked', false);
-            }
-
-            // bind UI hook so the status is saved on change
-            $('input.flash_slowly').change(function () {
-                chrome.storage.local.set({'flash_slowly': $(this).is(':checked')});
             });
         });
 

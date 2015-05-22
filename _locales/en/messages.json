@@ -1047,11 +1047,11 @@
     "firmwareFlasherFlashDevelopmentFirmwareDescription": {
         "message": "Flash most recent (untested) development firmware"
     },
-    "firmwareFlasherFlashSlowly": {
-        "message": "Flash slowly"
+    "firmwareFlasherManualBaud": {
+        "message": "Manual Baud Rate"
     },
-    "firmwareFlasherFlashSlowlyDescription": {
-        "message": "Use 115200 baudrate for flashing (useful for flashing via bluetooth)"
+    "firmwareFlasherManualBaudDescription": {
+        "message": "Manual selection of baud rate for boards that don't support the default speed or for flashing via bluetooth."
     },
     "firmwareFlasherShowDevelopmentReleases":{
       "message": "Show unstable releases"

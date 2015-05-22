@@ -60,8 +60,7 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options, callback)
     self.options = {
         no_reboot:      false,
         reboot_baud:    false,
-        erase_chip:     false,
-        flash_slowly:   false
+        erase_chip:     false
     };
 
     if (options.no_reboot) {
@@ -72,11 +71,6 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options, callback)
 
     if (options.erase_chip) {
         self.options.erase_chip = true;
-    }
-
-    if (options.flash_slowly) {
-        self.options.flash_slowly = true;
-        self.baud = 115200;
     }
 
     if (self.options.no_reboot) {

@@ -71,11 +71,15 @@
     margin-left: 6px;
 }
 .tab-firmware_flasher .options select {
-    width: 280px;
     height: 20px;
 
     border: 1px solid silver;
 }
+
+.tab-firmware_flasher .options .releases select {
+    width: 280px;
+}
+
 .tab-firmware_flasher .option.releases {
     margin: 0 0 2px 0;
     line-height: 20px;
@@ -89,6 +93,10 @@
 }
 .tab-firmware_flasher .options .flash_on_connect_wrapper {
     display: none;
+}
+
+.tab-firmware_flasher .options .manual_baud_rate select {
+    width: 70px;
 }
 
 .tab-firmware_flasher .release_info {
