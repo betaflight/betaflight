@@ -34,12 +34,12 @@ Please refer to the satellite receiver documentation for more details of the spe
 
 ## Table with spektrum_sat_bind parameter value
 
-| Value | Receiver mode  | Notes              |
-| ----- | ---------------| -------------------|
-| 3     | DSM2 1024/22ms |                    |
-| 5     | DSM2 2048/11ms | default AlienWii32 |
-| 7     | DSMX 22ms      |                    |
-| 9     | DSMX 11ms      |                    |
+| Value | Receiver mode     | Notes              |
+| ----- | ------------------| -------------------|
+| 3     | DSM2 1024bit/22ms |                    |
+| 5     | DSM2 2048bit/11ms | default AlienWii32 |
+| 7     | DSMX 1024bit/22ms |                    |
+| 9     | DSMX 2048bit/11ms |                    |
 
 More detailed information regarding the satellite binding process can be found here:
 http://wiki.openpilot.org/display/Doc/Spektrum+Satellite
@@ -50,15 +50,15 @@ NAZE, NAZE32PRO, CJMCU, SPARKY, EUSTM32F103RC, CC3D targets and ALIENWIIF1, ALIE
 
 ### Connecting a Spektrum-compatible satellite to a Flip32+ flight controller
 
-The Flip32+ is wired in a rather strange way, i.e. the dedicated connector for the satellite module uses the same UART pins as the USB adapter. This means that you can't use that connector as it maps to UART1 which you really shouldn't assign to SERIAL_RX as that will break USB functionality.
+The Flip32/Flip32+ is wired in a rather strange way, i.e. the dedicated connector for the satellite module uses the same UART pins as the USB adapter. This means that you can't use that connector as it maps to UART1 which you really shouldn't assign to SERIAL_RX as that will break USB functionality. (Looks this problem is fixed in later versions of the Flip32/Flip32+)
 
 In order to connect the satellite to a Flip32+, you have to wire the serial data pin to RC_CH4. This is the fourth pin from the top in the left column of the 3x6 header on the right side of the board. GND and +3.3V may either be obtained from the dedicated SAT connector or from any ground pin and pin 1 of the BOOT connector which also provides 3.3V.
 
 #### Tested satellite transmitter combinations
 
-| Satellite            | Remote         | Remark                                     |
-| -------------------- | -------------- | ------------------------------------------ |
-| Orange R100          | Spektrum DX6i  | Bind value 3                               |
-| Lemon RX DSM2/DSMX   | Spektrum DX8   |                                            |
-| Lemon RX DSMX        | Walkera Devo10 | Deviation firmware 4.01 up to 12 channels  |
-| Lemon RX DSM2        | Walkera Devo7  | Deviation firmware                         |
+| Satellite            | Remote         | Remark                                                   |
+| -------------------- | -------------- | -------------------------------------------------------- |
+| Orange R100          | Spektrum DX6i  | Bind value 3                                             |
+| Lemon RX DSM2/DSMX   | Spektrum DX8   | Bind value 5                                             |
+| Lemon RX DSMX        | Walkera Devo10 | Bind value 9, Deviation firmware 4.01 up to 12 channels  |
+| Lemon RX DSM2        | Walkera Devo7  | Bind value 9, Deviation firmware                         |
