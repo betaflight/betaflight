@@ -28,6 +28,7 @@
 
 #include "common/maths.h"
 #include "common/axis.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -185,7 +186,7 @@ static void shiftPacketLog(void)
 {
     uint32_t i;
 
-    for (i = sizeof(gpsPacketLog) - 1; i > 0 ; i--) {
+    for (i = ARRAYLEN(gpsPacketLog) - 1; i > 0 ; i--) {
         gpsPacketLog[i] = gpsPacketLog[i-1];
     }
 }
