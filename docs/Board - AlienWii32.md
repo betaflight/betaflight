@@ -20,7 +20,7 @@ Here are the hardware specifications:
 - 3.3V buck-boost power converter (newer prototypes and production versions)
 - battery monitoring with an LED for buzzer functionality (actualy for an ALIENWIIF3 variant)
 
-(*) Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings (DSM2, 11bit, 11ms is preset). This is chosen for maximum compatibility. For optimal connection it is recommended to adjust settings to match the capabilities if you transmitter and satellite receiver. If possible it is recommended to use the DSMX protocol since it is known as more reliable. Also to make use of additional channels you should adjust the following two parameters with the Cleanflight Configurator.
+(*) Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings (DSM2, 11bit, 11ms is preset). This is chosen for maximum compatibility. For optimal connection it is recommended to adjust settings to match the capabilities of your transmitter and satellite receiver. If possible it is recommended to use the DSMX protocol since it is known as more reliable. Also to make use of additional channels you should adjust the following two parameters with the Cleanflight Configurator.
 
     set serialrx_provider = 1   (0 for 1024bit, 1 for 2048bit) 
     set spektrum_sat_bind = 5
