@@ -170,14 +170,14 @@ static const ubloxSbas_t ubloxSbas[] = {
 };
 
 
-enum {
+typedef enum {
     GPS_UNKNOWN,
     GPS_INITIALIZING,
     GPS_CHANGE_BAUD,
     GPS_CONFIGURE,
     GPS_RECEIVING_DATA,
     GPS_LOST_COMMUNICATION,
-};
+} gpsState_e;
 
 gpsData_t gpsData;
 
@@ -195,7 +195,7 @@ static void gpsNewData(uint16_t c);
 static bool gpsNewFrameNMEA(char c);
 static bool gpsNewFrameUBLOX(uint8_t data);
 
-static void gpsSetState(uint8_t state)
+static void gpsSetState(gpsState_e state)
 {
     gpsData.state = state;
     gpsData.state_position = 0;
