@@ -25,13 +25,13 @@
 
 #define MW_VERSION              231
 
-extern char* targetName;
+extern const char* const targetName;
 
 #define GIT_SHORT_REVISION_LENGTH   7 // lower case hexadecimal digits.
-extern char* shortGitRevision;
+extern const char* const shortGitRevision;
 
 #define BUILD_DATE_LENGTH 11
-extern char* buildDate;  // "MMM DD YYYY" MMM = Jan/Feb/...
+extern const char* const buildDate;  // "MMM DD YYYY" MMM = Jan/Feb/...
 
 #define BUILD_TIME_LENGTH 8
-extern char* buildTime;  // "HH:MM:SS"
+extern const char* const buildTime;  // "HH:MM:SS"
