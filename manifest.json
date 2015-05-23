@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "minimum_chrome_version": "38",
-    "version": "0.64.0",
+    "version": "0.65.0",
     "author": "Hydra",
     "name": "Cleanflight - Configurator",
     "short_name": "cleanflight",
