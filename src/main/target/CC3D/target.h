@@ -117,7 +117,9 @@
 #define USE_CLI
 
 #if defined(OPBL)
-#undef AUTOTUNE // disabled for OPBL build due to code size.
+// disabled some features for OPBL build due to code size.
+#undef AUTOTUNE
+#undef SONAR
 #endif
 
 
