@@ -73,17 +73,6 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-void mixerUseConfigs(
-#ifdef USE_SERVOS
-        servoParam_t *servoConfToUse,
-        gimbalConfig_t *gimbalConfigToUse,
-#endif
-        flight3DConfig_t *flight3DConfigToUse,
-        escAndServoConfig_t *escAndServoConfigToUse,
-        mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        rxConfig_t *rxConfig
-);
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800

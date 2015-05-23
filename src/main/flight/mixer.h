@@ -96,6 +96,10 @@ typedef struct servoParam_t {
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 
+struct gimbalConfig_s;
+struct escAndServoConfig_s;
+struct rxConfig_s;
+
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 bool isMixerUsingServos(void);
 void writeServos(void);
@@ -104,6 +108,17 @@ void filterServos(void);
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+
+void mixerUseConfigs(
+#ifdef USE_SERVOS
+        servoParam_t *servoConfToUse,
+        struct gimbalConfig_s *gimbalConfigToUse,
+#endif
+        flight3DConfig_t *flight3DConfigToUse,
+		struct escAndServoConfig_s *escAndServoConfigToUse,
+        mixerConfig_t *mixerConfigToUse,
+        airplaneConfig_t *airplaneConfigToUse,
+		struct rxConfig_s *rxConfigToUse);
 
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
