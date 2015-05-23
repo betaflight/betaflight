@@ -299,7 +299,10 @@ var MSP = {
                 RC_tuning.RC_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                 if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
                     RC_tuning.roll_pitch_rate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                    RC_tuning.pitch_rate = 0;
+                    RC_tuning.roll_rate = 0;
                 } else {
+                    RC_tuning.roll_pitch_rate = 0;
                     RC_tuning.roll_rate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                     RC_tuning.pitch_rate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                 }
@@ -309,6 +312,8 @@ var MSP = {
                 RC_tuning.throttle_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                 if (semver.gte(CONFIG.apiVersion, "1.7.0")) {
                     RC_tuning.dynamic_THR_breakpoint = data.getUint16(offset++, 1);
+                } else {
+                    RC_tuning.dynamic_THR_breakpoint = 0;
                 }
                 break;
             case MSP_codes.MSP_PID:
