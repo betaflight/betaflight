@@ -1,15 +1,19 @@
 .tab-landing .left {
     width: 60%;
+    position: relative;
 }
 .tab-landing .right {
     float: left;
 
     margin-left: 10px;
     width: calc(40% - 10px);
+    position: relative;
 }
 
 .tab-landing .section {
     margin-bottom: 10px;
+    width: 100%;
+    overflow: auto;
 }
 
 .left .section:last-child,
@@ -55,14 +59,31 @@
     background-color: #dedcdc;
 }
 
+.tab-landing .row {
+    margin-bottom: 10px;
+    float: left;
+    width: 100%;
+}
+.tab-landing .row:last-child {
+    margin-bottom: 0px;
+}
+
 .welcome {
-    height: 207px;
+    height: 196px;
 }
 
 .contributing,
 .welcome {
-    padding: 5px;
     border: 1px solid silver;
+}
+
+.contributing_and_sponsors .right,
+.contributing_and_sponsors .left {
+    min-height: 260px
+}
+
+.section-content {
+    margin: 5px;
 }
 
 .contributing a,
@@ -94,7 +115,7 @@
     background-color: #3f4241;
 }
 .changelog .wrapper {
-    height: 150px;
+    height: 165px;
 
     padding: 5px;
 
@@ -111,8 +132,11 @@
 }
 
 .donate {
-    height: 92px;
     border: 1px solid silver;
+}
+
+.donate .buttons {
+    margin-bottom: 10px;
 }
 
 .section .title {
@@ -134,11 +158,28 @@
     width: 74px;
     height: 21px;
 
-    margin: auto;
+    margin: auto;    
+}
+
+.contributing_and_sponsors .left .section {
+    position: absolute;
+}
+
+.contributing_and_sponsors .left .contributing {
+    top: 0%;
+    height: 50%;
+}
+
+.contributing_and_sponsors .left .donate {
+    top: 50%;
+    margin-top: 10px;
+    height: calc(50% - 10px);
 }
 
 .tab-landing .sponsors {
-    height: 254px;
+    position: absolute;
+    width: 100%;
+    height: 100%;
     border: 1px solid silver;
 }
 .tab-landing .sponsors p {
