@@ -396,38 +396,22 @@ static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static mspPort_t *currentPort;
 
-static void serialize32(uint32_t a)
-{
-    static uint8_t t;
-    t = a;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-    t = a >> 8;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-    t = a >> 16;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-    t = a >> 24;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-}
-
-static void serialize16(int16_t a)
-{
-    static uint8_t t;
-    t = a;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-    t = a >> 8 & 0xff;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-}
-
 static void serialize8(uint8_t a)
 {
     serialWrite(mspSerialPort, a);
     currentPort->checksum ^= a;
+}
+
+static void serialize16(uint16_t a)
+{
+    serialize8((uint8_t)(a >> 0));
+    serialize8((uint8_t)(a >> 8));
+}
+
+static void serialize32(uint32_t a)
+{
+    serialize16((uint16_t)(a >> 0));
+    serialize16((uint16_t)(a >> 16));
 }
 
 static uint8_t read8(void)
