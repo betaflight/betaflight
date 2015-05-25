@@ -1,11 +1,12 @@
-.tab-motors .wrapper.modelAndAccel {
+.tab-motors .modelAndAccel {
     float: left;
     width: 100%;
+    margin-bottom: 10px;
 }
 
-.tab-motors .wrapper.accel {
+.tab-motors #accel {
     float: left;
-    width: calc(100% - 120px);
+    width: calc(100% - 282px);
 }
 
 .tab-motors .mixerPreview {
@@ -18,7 +19,7 @@
 }
 
 .tab-motors .plot_control {
-    float: right;
+    float: left;
 
     width: 158px;
 
@@ -231,6 +232,12 @@
 
     border: 1px dotted silver;
 }
+
+.tab-motors .motor_testing .notice p {
+    margin-bottom: 10px;
+}
+
 .tab-motors .motor_testing .notice input[type="checkbox"] {
     vertical-align: middle;
+    margin-right: 10px;
 }

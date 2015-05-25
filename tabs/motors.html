@@ -4,7 +4,13 @@
         <div class="mixerPreview">
             <img src="./resources/motor_order/custom.svg" />
         </div>
-    <div class="wrapper accel">
+        <svg id="accel">
+            <g class="grid x" transform="translate(40, 120)"></g>
+            <g class="grid y" transform="translate(40, 10)"></g>
+            <g class="data" transform="translate(41, 10)"></g>
+            <g class="axis x" transform="translate(40, 120)"></g>
+            <g class="axis y" transform="translate(40, 10)"></g>
+        </svg>
         <div class="plot_control">
             <div class="title">Accelerometer - <a class="reset_accel_max" href="#" title="Reset overtime maximum">[Reset]</a></div>
             <dl>
@@ -40,15 +46,6 @@
                 <dt>Z:</dt><dd class="z">0</dd>
             </dl>
         </div>
-        <svg id="accel">
-            <g class="grid x" transform="translate(40, 120)"></g>
-            <g class="grid y" transform="translate(40, 10)"></g>
-            <g class="data" transform="translate(41, 10)"></g>
-            <g class="axis x" transform="translate(40, 120)"></g>
-            <g class="axis y" transform="translate(40, 10)"></g>
-        </svg>
-        <div class="clear-both"></div>
-    </div>
     </div>
 
     <div class="left motors">
@@ -109,7 +106,10 @@
                 </ul>
             </div>
         </div>
-        <div class="notice" i18n="motorsNotice"></div>
+        <div class="notice">
+            <p i18n="motorsNotice"></p>
+            <input id="motorsEnableTestMode" type="checkbox" /><label for="motorsEnableTestMode" i18n="motorsEnableControl"></label>
+        </div>
         <div class="cler-both"></div>
     </div>
 </div>
