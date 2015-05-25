@@ -119,6 +119,13 @@
 .tab-receiver .tunings .throttle {
     margin-bottom: 10px;
 }
+.tab-receiver .tunings .rate {
+    margin-bottom: 10px;
+}
+.tab-receiver .tunings .yaw_rate {
+    margin-left:  127px;
+    margin-bottom: 10px;
+}
 .tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
     padding: 4px;
     border: 1px solid #8b8b8b;

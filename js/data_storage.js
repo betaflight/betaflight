@@ -75,7 +75,8 @@ var RC_tuning = {
     dynamic_THR_PID: 0,
     throttle_MID:    0,
     throttle_EXPO:   0,
-    dynamic_THR_breakpoint: 0
+    dynamic_THR_breakpoint: 0,
+	RC_YAW_EXPO:         0
 };
 
 var AUX_CONFIG = [];
