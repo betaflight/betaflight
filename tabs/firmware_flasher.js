@@ -95,7 +95,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                 return cmpVal;
             });
 
-            var optionIndex = 0;
+            var optionIndex = 1;
             releaseDescritpors.forEach(function(descriptor){
                 var select_e =
                         $("<option value='{0}'>{1} {2} {3} ({4})</option>".format(
