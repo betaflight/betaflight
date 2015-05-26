@@ -499,6 +499,9 @@
     "configurationBatteryMultiwiiCurrent": {
         "message": "Enable support for legacy Multiwii MSP current output"
     },
+    "configurationLoopTimeHead": {
+        "message": "Flight Controller Loop Time"
+    },
     "configurationGPS": {
         "message": "GPS"
     },
