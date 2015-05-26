@@ -355,7 +355,7 @@ int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 uint32_t rcModeActivationMask;
 
-batteryState_e calculateBatteryState(void) {
+batteryState_e getBatteryState(void) {
     return BATTERY_OK;
 }
 

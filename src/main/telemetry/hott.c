@@ -217,9 +217,12 @@ static bool shouldTriggerBatteryAlarmNow(void)
 
 static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 {
+    batteryState_e batteryState;
+
     if (shouldTriggerBatteryAlarmNow()){
         lastHottAlarmSoundTime = millis();
-        if (vbat <= batteryWarningVoltage){
+        batteryState = getBatteryState();
+        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL){
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
         }

@@ -24,6 +24,8 @@ extern "C" {
     #include "sensors/battery.h"
     
     #include "io/rc_controls.h"
+    #include "flight/lowpass.h"
+    #include "io/beeper.h"
 }
 
 #include "unittest_macros.h"
@@ -83,12 +85,116 @@ TEST(BatteryTest, BatteryADCToVoltage)
     }
 }
 
+uint16_t currentADCReading;
+
+
+typedef struct batteryAdcToBatteryStateExpectation_s
+{
+    uint16_t adcReading;
+    uint16_t expectedVoltageInDeciVoltSteps;
+    batteryState_e expectedBatteryState;
+    uint8_t scale;
+} batteryAdcToBatteryStateExpectation_t;
+
+/* Test the battery state and hysteresis code */
+TEST(BatteryTest, BatteryState)
+{
+    // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
+    batteryConfig_t batteryConfig = {
+        .vbatscale = VBAT_SCALE_DEFAULT,
+        .vbatmaxcellvoltage = 43,
+        .vbatmincellvoltage = 33,
+        .vbatwarningcellvoltage = 35,
+        .currentMeterScale = 400,
+        .currentMeterOffset = 0,
+        .currentMeterType = CURRENT_SENSOR_NONE,
+        .multiwiiCurrentMeterOutput = 0,
+        .batteryCapacity = 2200,
+    };
+
+    batteryInit(&batteryConfig);
+
+    batteryAdcToBatteryStateExpectation_t batteryAdcToBatteryStateExpectations[] = {
+            {1420, 126, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+		/* fall down to battery warning level */
+            {1185, 105, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+		/* creep back up to battery ok */
+            {1185, 105, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1195, 106, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1207, 107, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+		/* fall down to battery critical level */
+            {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1108, 98, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+		/* creep back up to battery warning */
+            {1115, 99, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1130, 100, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1145, 101, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+
+    };
+    uint8_t testIterationCount = sizeof(batteryAdcToBatteryStateExpectations) / sizeof(batteryAdcToBatteryStateExpectation_t);
+
+    // expect
+    for (uint8_t index = 0; index < testIterationCount; index ++) {
+        batteryAdcToBatteryStateExpectation_t *batteryAdcToBatteryStateExpectation = &batteryAdcToBatteryStateExpectations[index];
+        batteryConfig.vbatscale = batteryAdcToBatteryStateExpectation->scale;
+        currentADCReading = batteryAdcToBatteryStateExpectation->adcReading;
+	updateBattery( );
+	batteryState_e batteryState = getBatteryState();
+        EXPECT_EQ(batteryAdcToBatteryStateExpectation->expectedBatteryState, batteryState);
+    }
+}
+
+typedef struct batteryAdcToCellCountExpectation_s
+{
+    uint16_t adcReading;
+    uint16_t expectedVoltageInDeciVoltSteps;
+    uint8_t scale;
+    uint8_t cellCount;
+} batteryAdcToCellCountExpectation_t;
+
+/* Test the cell count is correctly detected if we start at 0V */
+TEST(BatteryTest, CellCount)
+{
+    // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
+    batteryConfig_t batteryConfig = {
+        .vbatscale = VBAT_SCALE_DEFAULT,
+        .vbatmaxcellvoltage = 43,
+        .vbatmincellvoltage = 33,
+        .vbatwarningcellvoltage = 35,
+        .currentMeterScale = 400,
+        .currentMeterOffset = 0,
+        .currentMeterType = CURRENT_SENSOR_NONE,
+        .multiwiiCurrentMeterOutput = 0,
+        .batteryCapacity = 2200,
+    };
+
+    batteryInit(&batteryConfig);
+
+    batteryAdcToCellCountExpectation_t batteryAdcToCellCountExpectations[] = {
+            {0, 0, ELEVEN_TO_ONE_VOLTAGE_DIVIDER, 1},
+            {1420, 126, ELEVEN_TO_ONE_VOLTAGE_DIVIDER, 3},
+    };
+    uint8_t testIterationCount = sizeof(batteryAdcToCellCountExpectations) / sizeof(batteryAdcToCellCountExpectation_t);
+
+    // expect
+    for (uint8_t index = 0; index < testIterationCount; index ++) {
+        batteryAdcToCellCountExpectation_t *batteryAdcToCellCountExpectation = &batteryAdcToCellCountExpectations[index];
+        batteryConfig.vbatscale = batteryAdcToCellCountExpectation->scale;
+        currentADCReading = batteryAdcToCellCountExpectation->adcReading;
+	updateBattery( );
+        EXPECT_EQ(batteryAdcToCellCountExpectation->cellCount, batteryCellCount);
+    }
+}
+
+
 // STUBS
 
 extern "C" {
 
 uint8_t armingFlags = 0;
 int16_t rcCommand[4] = {0,0,0,0};
+
 
 bool feature(uint32_t mask)
 {
@@ -106,7 +212,7 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
 uint16_t adcGetChannel(uint8_t channel)
 {
     UNUSED(channel);
-    return 0;
+    return currentADCReading;
 }
 
 void delay(uint32_t ms)
@@ -114,4 +220,17 @@ void delay(uint32_t ms)
     UNUSED(ms);
     return;
 }
+
+int32_t lowpassFixed(lowpass_t *filter, int32_t in, int16_t freq)
+{
+    UNUSED(filter);
+    UNUSED(freq);
+    return in;
+}
+
+void beeper(beeperMode_e mode)
+{
+    UNUSED(mode);
+}
+
 }
