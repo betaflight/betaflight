@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_ALWAYS = 0,
     FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1,

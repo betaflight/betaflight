@@ -17,10 +17,6 @@
 
 #pragma once
 
-#include <stdint.h>
-
-#include "common/axis.h"
-#include "flight/mixer.h"
 #include "blackbox/blackbox_fielddefs.h"
 
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
