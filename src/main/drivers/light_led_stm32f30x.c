@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
+
 #include "gpio.h"
 
 #include "light_led.h"
