@@ -1,22 +1,22 @@
 # Board - Naze32
 
-The Naze32 target supports all Naze hardware revisions.  Revison 4 and Revision 5 are used and
+The Naze32 target supports all Naze hardware revisions.  Revision 4 and 5 are used and
 frequently flown by the primary maintainer.  Previous Naze hardware revisions may have issues,
 if found please report via the [github issue tracker](https://github.com/cleanflight/cleanflight/issues).
 
-# Serial Ports
+## Serial Ports
 
 | Value | Identifier   | RX         | TX                 | Notes                                                                                       |
 | ----- | ------------ | ---------- | ------------------ | ------------------------------------------------------------------------------------------- |
 | 1     | USART1       | RX  / PA10 | TX  / PA9 / TELEM  | TELEM output is always inverted (for FrSky). Internally connected to USB port via CP2102 IC |
 | 2     | USART2       | RC4 / PA3  | RC3 / PA2          |                                                                                             |
-| 3     | SOFTSERIAL1  | RC5 / PA6  | RC6 / PA7          |                                                                                             |
-| 4     | SOFTSERIAL2  | RC7 / PB0  | RC8 / PB1          |                                                                                             |
+| 4     | SOFTSERIAL1  | RC5 / PA6  | RC6 / PA7          |                                                                                             |
+| 5     | SOFTSERIAL2  | RC7 / PB0  | RC8 / PB1          |                                                                                             |
 
 * You cannot use USART1/TX/TELEM pins at the same time. 
 * You may encounter flashing problems if you have something connected to the RX/TX pins.  Try disconnecting RX/TX.
 
-# Pinouts
+## Pinouts
 
 The 10 pin RC I/O connector has the following pinouts when used in RX_PPM/RX_SERIAL mode.
 
@@ -42,14 +42,14 @@ When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two
 | 9   | 7          | SOFTSERIAL2 RX |                                  |
 | 10  | 8          | SOFTSERIAL2 TX |                                  |
 
-# Recovery
+## Recovery
 
-## Board
+### Board
 + Short the two pads labelled 'Boot' **taking extra care not to touch the 5V pad**
 + Apply power to the board
 + Remove the short on the board
 
-## Cleanflight configurator
+### Cleanflight configurator
 + Select the correct hardware and the desired release of the Clearflight firmware
 + Put a check in the "No reboot sequence" 
 + Flash firmware
