@@ -290,31 +290,31 @@ const clivalue_t valueTable[] = {
     { "serial_port_1_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].functionMask, 0, 0xFFFF },
     { "serial_port_1_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
     { "serial_port_1_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_1_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_1_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
     { "serial_port_1_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
 #if (SERIAL_PORT_COUNT >= 2)
     { "serial_port_2_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].functionMask, 0, 0xFFFF },
     { "serial_port_2_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
     { "serial_port_2_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_2_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_2_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
     { "serial_port_2_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
 #if (SERIAL_PORT_COUNT >= 3)
     { "serial_port_3_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].functionMask, 0, 0xFFFF},
     { "serial_port_3_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
     { "serial_port_3_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_3_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_3_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
     { "serial_port_3_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
 #if (SERIAL_PORT_COUNT >= 4)
     { "serial_port_4_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].functionMask, 0, 0xFFFF },
     { "serial_port_4_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
     { "serial_port_4_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_4_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_4_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
     { "serial_port_4_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
 #if (SERIAL_PORT_COUNT >= 5)
     { "serial_port_5_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].functionMask, 0, 0xFFFF },
     { "serial_port_5_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
     { "serial_port_5_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_5_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].blackbox_baudrateIndex,    BAUD_9600, BAUD_115200 },
+    { "serial_port_5_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
     { "serial_port_5_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
 #endif
 #endif
