@@ -13,11 +13,11 @@ a dedicated USB to UART adapter.  VCP does not 'use' a physical UART port.
 * UART - A pair of dedicated hardware transmit and receive pins with signal detection and generation done in hardware.
 * SoftSerial - A pair of hardware transmit and receive pins with signal detection and generation done in software.
 
-UART is the most efficent in terms of CPU usage.
-SoftSerial is the least efficient and slowest, SoftSerial should only be used for low-bandwith usages, such as telemetry transmission.
+UART is the most efficient in terms of CPU usage.
+SoftSerial is the least efficient and slowest, SoftSerial should only be used for low-bandwidth usages, such as telemetry transmission.
 
 UART ports are sometimes exposed via on-board USB to UART converters, such as the CP2102 as found on the Naze and Flip32 boards.
-If the flight controller does not have an onboard USB to UART converter and doesn't support VCP then an external USB to UART board is required.
+If the flight controller does not have an on-board USB to UART converter and doesn't support VCP then an external USB to UART board is required.
 These are sometimes referred to as FTDI boards.  FTDI is just a common manufacturer of a chip (the FT232RL) used on USB to UART boards.
 
 When selecting a USB to UART converter choose one that has DTR exposed as well as a selector for 3.3v and 5v since they are more useful.
@@ -33,7 +33,7 @@ Both SoftSerial and UART ports can be connected to your computer via USB to UART
 
 Serial port configuration is best done via the configurator.  You can use the CLI too but the commands are reserved for developers and advanced users.
 
-Configure serial ports first, then enable/disable features that use the ports.
+Configure serial ports first, then enable/disable features that use the ports.  To configure SoftSerial ports the SOFTSERIAL feature must be also be enabled. 
 
 ### Constraints
 
