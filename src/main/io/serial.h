@@ -46,7 +46,7 @@ typedef enum {
     BAUD_250000,
 } baudRate_e;
 
-extern const uint32_t const baudRates[];
+extern const uint32_t baudRates[];
 
 // serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
@@ -61,7 +61,7 @@ typedef enum {
     SERIAL_PORT_IDENTIFIER_MAX = SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;
 
-extern const serialPortIdentifier_e const serialPortIdentifiers[SERIAL_PORT_COUNT];
+extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
 //
 // runtime
