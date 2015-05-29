@@ -38,6 +38,7 @@ C_FLAGS = $(COMMON_FLAGS) \
 
 # Flags passed to the C++ compiler.
 CXX_FLAGS = $(COMMON_FLAGS) \
+	-lpthread
 	-std=c++11
 
 # All tests produced by this Makefile.  Remember to add new tests you
