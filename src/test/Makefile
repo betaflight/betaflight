@@ -26,6 +26,7 @@ OBJECT_DIR = ../../obj/test
 COMMON_FLAGS = \
 	-g \
 	-Wall \
+	-pthread \
 	-Wextra \
 	-ggdb3 \
 	-O0 \
@@ -38,8 +39,7 @@ C_FLAGS = $(COMMON_FLAGS) \
 
 # Flags passed to the C++ compiler.
 CXX_FLAGS = $(COMMON_FLAGS) \
-	-lpthread
-	-std=c++11
+	-std=gnu++11
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
