@@ -97,6 +97,8 @@ uint16_t cycleTime = 0;         // this is the number in micro second to achieve
 int16_t magHold;
 int16_t headFreeModeHold;
 
+uint8_t motorControlEnable = false;
+
 int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
@@ -801,7 +803,9 @@ void loop(void)
         writeServos();
 #endif
 
-        writeMotors();
+        if (motorControlEnable) {
+            writeMotors();
+        }
 
 #ifdef BLACKBOX
         if (!cliMode && feature(FEATURE_BLACKBOX)) {

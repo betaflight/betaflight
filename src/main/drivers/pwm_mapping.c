@@ -543,7 +543,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             channelIndex++;
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
             if (init->useOneshot) {
-                pwmOneshotMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->idlePulse);
+                pwmOneshotMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, 0);
             } else if (init->motorPwmRate > 500) {
                 pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
             } else {

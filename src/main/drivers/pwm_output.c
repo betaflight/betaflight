@@ -142,6 +142,16 @@ void pwmWriteMotor(uint8_t index, uint16_t value)
         motors[index]->pwmWritePtr(index, value);
 }
 
+void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
+{
+    uint8_t index;
+
+    for(index = 0; index < motorCount; index++){
+        // Set the compare register to 0, which stops the output pulsing if the timer overflows
+        *motors[index]->ccr = 0;
+    }
+}
+
 void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
     uint8_t index;

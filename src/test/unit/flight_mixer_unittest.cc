@@ -315,6 +315,15 @@ void pwmWriteMotor(uint8_t index, uint16_t value) {
     motors[index].value = value;
 }
 
+void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
+{
+    uint8_t index;
+
+    for(index = 0; index < motorCount; index++){
+        motors[index].value = 0;
+    }
+}
+
 void pwmCompleteOneshotMotorUpdate(uint8_t motorCount) {
     lastOneShotUpdateMotorCount = motorCount;
 }
