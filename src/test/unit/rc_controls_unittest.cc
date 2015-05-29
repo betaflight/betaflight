@@ -236,6 +236,17 @@ static const adjustmentConfig_t rateAdjustmentConfig = {
 
 class RcControlsAdjustmentsTest : public ::testing::Test {
 protected:
+    controlRateConfig_t controlRateConfig = {
+            .rcRate8 = 90,
+            .rcExpo8 = 0,
+            .thrMid8 = 0,
+            .thrExpo8 = 0,
+            .rcYawExpo8 = 0,
+            .rates = {0,0,0},
+            .dynThrPID = 0,
+            .tpa_breakpoint = 0
+    };
+
     virtual void SetUp() {
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
@@ -250,17 +261,6 @@ protected:
 TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
 {
     // given
-    controlRateConfig_t controlRateConfig = {
-            .rcRate8 = 90,
-            .rcExpo8 = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0,0,0},
-            .dynThrPID = 0,
-            .tpa_breakpoint = 0
-    };
-
-    // and
     configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
@@ -286,17 +286,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
 TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 {
     // given
-    controlRateConfig_t controlRateConfig = {
-            .rcRate8 = 90,
-            .rcExpo8 = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0,0,0},
-            .dynThrPID = 0,
-            .tpa_breakpoint = 0
-    };
-
-    // and
     configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
@@ -444,16 +433,6 @@ static const adjustmentConfig_t rateProfileAdjustmentConfig = {
 TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
 {
     // given
-    controlRateConfig_t controlRateConfig = {
-            .rcRate8 = 90,
-            .rcExpo8 = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0,0,0},
-            .dynThrPID = 0,
-            .tpa_breakpoint = 0
-    };
-
     int adjustmentIndex = 3;
     configureAdjustment(adjustmentIndex, AUX4 - NON_AUX_CHANNEL_COUNT, &rateProfileAdjustmentConfig);
 
