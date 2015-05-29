@@ -84,12 +84,7 @@ typedef enum {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
-#define MAX_MODE_ACTIVATION_CONDITION_COUNT 40
-// 40 is enough for 1 mode for each position of 11 * 3 position switches and a 6 pos switch.
-// however, that is unlikely because you don't define the 'off' positions, so for a 3 position
-// switch it's normal that only 2 values would be configured.
-// this leaves plenty of 'slots' free for cases where you enable multiple modes for a switch
-// position (like gps rth + horizon + baro + beeper)
+#define MAX_MODE_ACTIVATION_CONDITION_COUNT 20
 
 #define CHANNEL_RANGE_MIN 900
 #define CHANNEL_RANGE_MAX 2100
