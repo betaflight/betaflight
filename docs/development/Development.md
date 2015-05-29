@@ -61,6 +61,8 @@ You can also step-debug the tests in eclipse and you can use the GoogleTest test
 
 The tests are currently always compiled with debugging information enabled, there may be additional warnings, if you see any warnings please attempt to fix them and submit pull requests with the fixes.
 
+Tests are verified and working with GCC 4.9.2.
+
 ## Using git and github
 
 Ensure you understand the github workflow: https://guides.github.com/introduction/flow/index.html
