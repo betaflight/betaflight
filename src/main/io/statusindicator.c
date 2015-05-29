@@ -27,44 +27,63 @@
 
 #include "statusindicator.h"
 
-void blinkLedAndSoundBeeper(uint8_t num, uint8_t wait, uint8_t repeat)
-{
-    uint8_t i, r;
-
-    for (r = 0; r < repeat; r++) {
-        for (i = 0; i < num; i++) {
-            LED0_TOGGLE;            // switch LEDPIN state
-            BEEP_ON;
-            delay(wait);
-            BEEP_OFF;
-        }
-        delay(60);
-    }
-}
-
-
 static uint32_t warningLedTimer = 0;
 
-void enableWarningLed(uint32_t currentTime)
-{
-    if (warningLedTimer != 0) {
-        return; // already enabled
-    }
-    warningLedTimer = currentTime + 500000;
-    LED0_ON;
+typedef enum {
+    WARNING_LED_OFF = 0,
+    WARNING_LED_ON,
+    WARNING_LED_FLASH
+} warningLedState_e;
+
+static warningLedState_e warningLedState = WARNING_LED_OFF;
+
+void warningLedResetTimer(void) {
+    uint32_t now = millis();
+    warningLedTimer = now + 500000;
 }
 
-void disableWarningLed(void)
+void warningLedEnable(void)
 {
-    warningLedTimer = 0;
-    LED0_OFF;
+    warningLedState = WARNING_LED_ON;
 }
 
-void updateWarningLed(uint32_t currentTime)
+void warningLedDisable(void)
 {
-    if (warningLedTimer && (int32_t)(currentTime - warningLedTimer) >= 0) {
-        LED0_TOGGLE;
-        warningLedTimer = warningLedTimer + 500000;
-    }
+    warningLedState = WARNING_LED_OFF;
 }
+
+void warningLedFlash(void)
+{
+    warningLedState = WARNING_LED_FLASH;
+}
+
+void warningLedRefresh(void)
+{
+    switch (warningLedState) {
+        case WARNING_LED_OFF:
+            LED0_OFF;
+            break;
+        case WARNING_LED_ON:
+            LED0_ON;
+            break;
+        case WARNING_LED_FLASH:
+            LED0_TOGGLE;
+            break;
+    }
+
+    uint32_t now = micros();
+    warningLedTimer = now + 500000;
+}
+
+void warningLedUpdate(void)
+{
+    uint32_t now = micros();
+
+    if ((int32_t)(now - warningLedTimer) < 0) {
+        return;
+    }
+
+    warningLedRefresh();
+}
+
 

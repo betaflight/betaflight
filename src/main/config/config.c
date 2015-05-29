@@ -44,7 +44,7 @@
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
 
-#include "io/statusindicator.h"
+#include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
@@ -852,7 +852,7 @@ void readEEPROMAndNotify(void)
 {
     // re-read written data
     readEEPROM();
-    blinkLedAndSoundBeeper(15, 20, 1);
+    beeperConfirmationBeeps(1);
 }
 
 void writeEEPROM(void)
@@ -933,7 +933,7 @@ void changeProfile(uint8_t profileIndex)
     masterConfig.current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
-    blinkLedAndSoundBeeper(2, 40, profileIndex + 1);
+    beeperConfirmationBeeps(profileIndex + 1);
 }
 
 void changeControlRateProfile(uint8_t profileIndex)

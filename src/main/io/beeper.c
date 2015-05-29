@@ -30,6 +30,7 @@
 
 #include "rx/rx.h"
 #include "io/rc_controls.h"
+#include "io/statusindicator.h"
 
 #ifdef GPS
 #include "io/gps.h"
@@ -37,6 +38,7 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
+
 
 #include "io/beeper.h"
 
@@ -75,7 +77,7 @@ static const uint8_t beep_disarmBeep[] = {
 };
 // beeps while stick held in disarm position (after pause)
 static const uint8_t beep_disarmRepeatBeep[] = {
-    0, 35, 40, 5, BEEPER_COMMAND_STOP
+    0, 100, 10, BEEPER_COMMAND_STOP
 };
 // Long beep and pause after that
 static const uint8_t beep_lowBatteryBeep[] = {
@@ -110,6 +112,11 @@ static const uint8_t beep_2shortBeeps[] = {
 static const uint8_t beep_2longerBeeps[] = {
     20, 15, 35, 5, BEEPER_COMMAND_STOP
 };
+// 3 beeps
+static const uint8_t beep_gyroCalibrated[] = {
+    20, 10, 20, 10, 20, 10, BEEPER_COMMAND_STOP
+};
+
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
 
@@ -145,21 +152,22 @@ typedef struct beeperTableEntry_s {
 #endif
 
 static const beeperTableEntry_t const beeperTable[] = {
-    { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       0, beep_sos,              "RX_LOST_LANDING") },
-    { BEEPER_ENTRY(BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST") },
-    { BEEPER_ENTRY(BEEPER_DISARMING,             2, beep_disarmBeep,       "DISARMING") },
-    { BEEPER_ENTRY(BEEPER_ARMING,                3, beep_armingBeep,       "ARMING")  },
-    { BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX,        4, beep_armedGpsFix,      "ARMING_GPS_FIX") },
-    { BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW,          5, beep_critBatteryBeep,  "BAT_CRIT_LOW") },
-    { BEEPER_ENTRY(BEEPER_BAT_LOW,               6, beep_lowBatteryBeep,   "BAT_LOW") },
-    { BEEPER_ENTRY(BEEPER_GPS_STATUS,            7, beep_multiBeeps,       NULL) },
-    { BEEPER_ENTRY(BEEPER_RX_SET,                8, beep_shortBeep,        "RX_SET") },
-    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         9, beep_disarmRepeatBeep, "DISARM_REPEAT") },
+    { BEEPER_ENTRY(BEEPER_GYRO_CALIBRATED,       0, beep_gyroCalibrated,   "GYRO_CALIBRATED") },
+    { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       1, beep_sos,              "RX_LOST_LANDING") },
+    { BEEPER_ENTRY(BEEPER_RX_LOST,               2, beep_txLostBeep,       "RX_LOST") },
+    { BEEPER_ENTRY(BEEPER_DISARMING,             3, beep_disarmBeep,       "DISARMING") },
+    { BEEPER_ENTRY(BEEPER_ARMING,                4, beep_armingBeep,       "ARMING")  },
+    { BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX,        5, beep_armedGpsFix,      "ARMING_GPS_FIX") },
+    { BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW,          6, beep_critBatteryBeep,  "BAT_CRIT_LOW") },
+    { BEEPER_ENTRY(BEEPER_BAT_LOW,               7, beep_lowBatteryBeep,   "BAT_LOW") },
+    { BEEPER_ENTRY(BEEPER_GPS_STATUS,            8, beep_multiBeeps,       NULL) },
+    { BEEPER_ENTRY(BEEPER_RX_SET,                9, beep_shortBeep,        "RX_SET") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
     { BEEPER_ENTRY(BEEPER_READY_BEEP,            12, beep_readyBeep,       "READY_BEEP") },
     { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      NULL) }, // FIXME having this listed makes no sense since the beep array will not be initialised.
-    { BEEPER_ENTRY(BEEPER_ARMED,                 14, beep_armedBeep,       "ARMED") },
+    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         14, beep_disarmRepeatBeep, "DISARM_REPEAT") },
+    { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -209,6 +217,10 @@ void beeper(beeperMode_e mode)
 void beeperSilence(void)
 {
     BEEP_OFF;
+    warningLedDisable();
+    warningLedRefresh();
+
+
     beeperIsOn = 0;
 
     beeperNextToggleTime = 0;
@@ -291,7 +303,9 @@ void beeperUpdate(void)
         beeperIsOn = 1;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             BEEP_ON;
-                   //if this was arming beep then mark time (for blackbox)
+            warningLedEnable();
+            warningLedRefresh();
+            // if this was arming beep then mark time (for blackbox)
             if (
                 beeperPos == 0
                 && (currentBeeperEntry->mode == BEEPER_ARMING || currentBeeperEntry->mode == BEEPER_ARMING_GPS_FIX)
@@ -303,6 +317,8 @@ void beeperUpdate(void)
         beeperIsOn = 0;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             BEEP_OFF;
+            warningLedDisable();
+            warningLedRefresh();
         }
     }
 
@@ -348,7 +364,7 @@ beeperMode_e beeperModeForTableIndex(int idx)
  */
 const char *beeperNameForTableIndex(int idx)
 {
-#ifndef BEEPER_NAME
+#ifndef BEEPER_NAMES
     UNUSED(idx);
     return NULL;
 #else

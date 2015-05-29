@@ -21,6 +21,7 @@ typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
     BEEPER_SILENCE = 0,             // Silence, see beeperSilence()
 
+    BEEPER_GYRO_CALIBRATED,
     BEEPER_RX_LOST_LANDING,         // Beeps SOS when armed and TX is turned off or signal lost (autolanding/autodisarm)
     BEEPER_RX_LOST,                 // Beeps when TX is turned off or signal lost (repeat until TX is okay)
     BEEPER_DISARMING,               // Beep when disarming the board
