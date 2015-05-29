@@ -24,7 +24,6 @@ extern float accVelScale;
 extern t_fp_vector EstG;
 extern int16_t accSmooth[XYZ_AXIS_COUNT];
 extern int32_t accSum[XYZ_AXIS_COUNT];
-extern int16_t gyroData[FLIGHT_DYNAMICS_INDEX_COUNT];
 extern int16_t smallAngle;
 
 typedef struct rollAndPitchInclination_s {
@@ -62,7 +61,7 @@ void imuConfigure(
 );
 
 void calculateEstimatedAltitude(uint32_t currentTime);
-void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t mixerMode);
+void imuUpdate(rollAndPitchTrims_t *accelerometerTrims);
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);

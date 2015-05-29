@@ -125,8 +125,8 @@ static bool mpuSpi6000InitDone = false;
 #define DISABLE_MPU6000       GPIO_SetBits(MPU6000_CS_GPIO,   MPU6000_CS_PIN)
 #define ENABLE_MPU6000        GPIO_ResetBits(MPU6000_CS_GPIO, MPU6000_CS_PIN)
 
-void mpu6000SpiGyroRead(int16_t *gyroData);
-void mpu6000SpiAccRead(int16_t *gyroData);
+void mpu6000SpiGyroRead(int16_t *gyroADC);
+void mpu6000SpiAccRead(int16_t *gyroADC);
 
 static void mpu6000WriteRegister(uint8_t reg, uint8_t data)
 {

@@ -120,7 +120,7 @@ void l3gd20GyroInit(void)
     delay(100);
 }
 
-static void l3gd20GyroRead(int16_t *gyroData)
+static void l3gd20GyroRead(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
@@ -134,9 +134,9 @@ static void l3gd20GyroRead(int16_t *gyroData)
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-    gyroData[0] = (int16_t)((buf[0] << 8) | buf[1]);
-    gyroData[1] = (int16_t)((buf[2] << 8) | buf[3]);
-    gyroData[2] = (int16_t)((buf[4] << 8) | buf[5]);
+    gyroADC[0] = (int16_t)((buf[0] << 8) | buf[1]);
+    gyroADC[1] = (int16_t)((buf[2] << 8) | buf[3]);
+    gyroADC[2] = (int16_t)((buf[4] << 8) | buf[5]);
 
 #if 0
     debug[0] = (int16_t)((buf[1] << 8) | buf[0]);

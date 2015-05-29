@@ -1,8 +1,8 @@
 ### IO variables
 
-`gyroData/8192*2000 = deg/s`
+`gyroADC/8192*2000 = deg/s`
 
-`gyroData/4 ~ deg/s`
+`gyroADC/4 ~ deg/s`
 
 `rcCommand` - `<-500 - 500>` nominal, but is scaled with `rcRate/100`, max +-1250
 
@@ -23,7 +23,7 @@ Iacc = intergrate(error, limit +-10000) * I8[PIDLEVEL] / 4096
 #### Gyro term
 ```
 Pgyro = rcCommand[axis];
-error = rcCommand[axis] * 10 * 8 / pidProfile->P8[axis] - gyroData[axis] / 4; (conversion so that error is in deg/s ?)
+error = rcCommand[axis] * 10 * 8 / pidProfile->P8[axis] - gyroADC[axis] / 4; (conversion so that error is in deg/s ?)
 Igyro = integrate(error, limit +-16000) / 10 / 8  * I8[axis] / 100 (conversion back to mixer units ?)
 ```
 
@@ -52,12 +52,12 @@ reset I term if
 #### Gyro stabilization
 
 ```
-P -=  gyroData[axis] / 4 * dynP8 / 10 / 8
-D = -mean(diff(gyroData[axis] / 4), over 3 samples) * 3 * dynD8 / 32
+P -=  gyroADC[axis] / 4 * dynP8 / 10 / 8
+D = -mean(diff(gyroADC[axis] / 4), over 3 samples) * 3 * dynD8 / 32
 [equivalent to :]
-D = - (gyroData[axis]/4 - (<3 loops old>gyroData[axis]/4)) * dynD8 / 32
+D = - (gyroADC[axis]/4 - (<3 loops old>gyroADC[axis]/4)) * dynD8 / 32
 ```
 
 This can be seen as sum of
- - PI controller (handles rcCommand, HORIZON/ANGLE); `Igyro` is only output based on gyroData
- - PD controller(parameters dynP8/dynD8) with zero setpoint acting on gyroData
+ - PI controller (handles rcCommand, HORIZON/ANGLE); `Igyro` is only output based on gyroADC
+ - PD controller(parameters dynP8/dynD8) with zero setpoint acting on gyroADC

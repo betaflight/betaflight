@@ -817,7 +817,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                 serialize16(accSmooth[i]);
         }
         for (i = 0; i < 3; i++)
-            serialize16(gyroData[i]);
+            serialize16(gyroADC[i]);
         for (i = 0; i < 3; i++)
             serialize16(magADC[i]);
         break;
