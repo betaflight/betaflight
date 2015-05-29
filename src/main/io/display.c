@@ -83,7 +83,7 @@ static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 #define HALF_SCREEN_CHARACTER_COLUMN_COUNT (SCREEN_CHARACTER_COLUMN_COUNT / 2)
 #define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
 
-const char* pageTitles[] = {
+static const char* const pageTitles[] = {
     "CLEANFLIGHT",
     "ARMED",
     "BATTERY",

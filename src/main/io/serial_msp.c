@@ -140,12 +140,12 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define BASEFLIGHT_IDENTIFIER "BAFL";
 
 #define FLIGHT_CONTROLLER_IDENTIFIER_LENGTH 4
-static const char *flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 
 #define FLIGHT_CONTROLLER_VERSION_LENGTH    3
 #define FLIGHT_CONTROLLER_VERSION_MASK      0xFFF
 
-const char *boardIdentifier = TARGET_BOARD_IDENTIFIER;
+static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define BOARD_IDENTIFIER_LENGTH             4 // 4 UPPER CASE alpha numeric characters that identify the board being used.
 #define BOARD_HARDWARE_REVISION_LENGTH      2
 
@@ -396,38 +396,22 @@ static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static mspPort_t *currentPort;
 
-static void serialize32(uint32_t a)
-{
-    static uint8_t t;
-    t = a;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-    t = a >> 8;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-    t = a >> 16;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-    t = a >> 24;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-}
-
-static void serialize16(int16_t a)
-{
-    static uint8_t t;
-    t = a;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-    t = a >> 8 & 0xff;
-    serialWrite(mspSerialPort, t);
-    currentPort->checksum ^= t;
-}
-
 static void serialize8(uint8_t a)
 {
     serialWrite(mspSerialPort, a);
     currentPort->checksum ^= a;
+}
+
+static void serialize16(uint16_t a)
+{
+    serialize8((uint8_t)(a >> 0));
+    serialize8((uint8_t)(a >> 8));
+}
+
+static void serialize32(uint32_t a)
+{
+    serialize16((uint16_t)(a >> 0));
+    serialize16((uint16_t)(a >> 16));
 }
 
 static uint8_t read8(void)

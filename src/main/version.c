@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-char *targetName = __TARGET__;
-char *shortGitRevision = __REVISION__;
-char *buildDate = __DATE__;
-char *buildTime = __TIME__;
+const char * const targetName = __TARGET__;
+const char * const shortGitRevision = __REVISION__;
+const char * const buildDate = __DATE__;
+const char * const buildTime = __TIME__;
