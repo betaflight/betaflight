@@ -48,18 +48,6 @@ extern "C" {
     extern uint8_t servoCount;
     void forwardAuxChannelsToServos(void);
 
-    void mixerUseConfigs(
-#ifdef USE_SERVOS
-            servoParam_t *servoConfToUse,
-            gimbalConfig_t *gimbalConfigToUse,
-#endif
-            flight3DConfig_t *flight3DConfigToUse,
-            escAndServoConfig_t *escAndServoConfigToUse,
-            mixerConfig_t *mixerConfigToUse,
-            airplaneConfig_t *airplaneConfigToUse,
-            rxConfig_t *rxConfigToUse
-    );
-
     void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers);
     void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
 }
