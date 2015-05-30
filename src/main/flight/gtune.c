@@ -32,6 +32,7 @@
 #include "drivers/accgyro.h"
 
 #include "sensors/sensors.h"
+#include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
 #include "flight/pid.h"
@@ -144,9 +145,9 @@ void calculate_Gtune(uint8_t axis)
         time_skip[axis]++;
         if (time_skip[axis] > 0) {
             if (axis == FD_YAW) {
-                AvgGyro[axis] += 32 * ((int16_t)gyroData[axis] / 32);           // Chop some jitter and average
+                AvgGyro[axis] += 32 * ((int16_t)gyroADC[axis] / 32);           // Chop some jitter and average
             } else {
-                AvgGyro[axis] += 128 * ((int16_t)gyroData[axis] / 128);         // Chop some jitter and average
+                AvgGyro[axis] += 128 * ((int16_t)gyroADC[axis] / 128);         // Chop some jitter and average
             }
         }
         if (time_skip[axis] == pidProfile->gtune_average_cycles) {              // Looptime cycles for gyro average calculation. default 16.
