@@ -89,6 +89,32 @@ void sonarInit(batteryConfig_t *batteryConfig)
     calculatedAltitude = -1;
 }
 
+#define DISTANCE_SAMPLES_MEDIAN 5
+
+static int32_t applySonarMedianFilter(int32_t newSonarReading)
+{
+    static int32_t sonarFilterSamples[DISTANCE_SAMPLES_MEDIAN];
+    static int currentFilterSampleIndex = 0;
+    static bool medianFilterReady = false;
+    int nextSampleIndex;
+
+    if (newSonarReading > -1) // only accept samples that are in range
+    {
+        nextSampleIndex = (currentFilterSampleIndex + 1);
+        if (nextSampleIndex == DISTANCE_SAMPLES_MEDIAN) {
+            nextSampleIndex = 0;
+            medianFilterReady = true;
+        }
+
+        sonarFilterSamples[currentFilterSampleIndex] = newSonarReading;
+        currentFilterSampleIndex = nextSampleIndex;
+    }
+    if (medianFilterReady)
+        return quickMedianFilter5(sonarFilterSamples);
+    else
+        return newSonarReading;
+}
+
 void sonarUpdate(void)
 {
     hcsr04_start_reading();
@@ -99,7 +125,7 @@ void sonarUpdate(void)
  */
 int32_t sonarRead(void)
 {
-    return hcsr04_get_distance();
+    return applySonarMedianFilter(hcsr04_get_distance());
 }
 
 /**
