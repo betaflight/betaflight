@@ -31,7 +31,7 @@ Both SoftSerial and UART ports can be connected to your computer via USB to UART
 
 ## Serial Configuration
 
-Serial port configuration is best done via the configurator.  You can use the CLI too but the commands are reserved for developers and advanced users.
+Serial port configuration is best done via the configurator.
 
 Configure serial ports first, then enable/disable features that use the ports.  To configure SoftSerial ports the SOFTSERIAL feature must be also be enabled. 
 
@@ -52,9 +52,23 @@ e.g. after configuring a port for GPS enable the GPS feature.
 * You can use as many different telemetry systems as you like at the same time.
 * You can only use each telemetry system once.  e.g.  FrSky telemetry cannot be used on two port, but MSP Telemetry + FrSky on different ports is fine.
 
+### Configuration via CLI
+
+You can use the CLI for configuration but the commands are reserved for developers and advanced users.
+
+The `serial` CLI command takes 6 arguments.
+
+1. Identifier
+1. Function bitmask (see serialPortFunction_e in the source) 
+1. MSP baud rate
+1. GPS baud rate
+1. Telemetry baud rate (auto baud allowed)
+1. Blackbox baud rate
+
+
 ### Baud Rates
 
-Each baud rate is assigned an identifier, they are as follows:
+The allowable baud rates are as follows:
 
 | Identifier | Baud rate |
 | ---------- | --------- |
@@ -66,3 +80,4 @@ Each baud rate is assigned an identifier, they are as follows:
 | 5          | 115200    |
 | 6          | 230400    |
 | 7          | 250000    |
+

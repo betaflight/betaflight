@@ -89,7 +89,7 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate)
             return index;
         }
     }
-    return 0;
+    return BAUD_AUTO;
 }
 
 static serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)

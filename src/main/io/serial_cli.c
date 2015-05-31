@@ -109,6 +109,7 @@ static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
 static void cliSave(char *cmdline);
+static void cliSerial(char *cmdline);
 static void cliServo(char *cmdline);
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
@@ -220,6 +221,7 @@ const clicmd_t cmdTable[] = {
     { "profile", "index (0 to 2)", cliProfile },
     { "rateprofile", "index (0 to 2)", cliRateProfile },
     { "save", "save and reboot", cliSave },
+    { "serial", "show/set serial settings", cliSerial },
 #ifdef USE_SERVOS
     { "servo", "servo config", cliServo },
 #endif
@@ -286,40 +288,6 @@ const clivalue_t valueTable[] = {
     { "flaps_speed",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.airplaneConfig.flaps_speed, 0, 100 },
 
     { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &masterConfig.airplaneConfig.fixedwing_althold_dir, -1, 1 },
-
-    { "serial_port_1_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].functionMask, 0, 0xFFFF },
-    { "serial_port_1_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
-    { "serial_port_1_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_1_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
-    { "serial_port_1_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[0].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
-#if (SERIAL_PORT_COUNT >= 2)
-    { "serial_port_2_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].functionMask, 0, 0xFFFF },
-    { "serial_port_2_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
-    { "serial_port_2_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_2_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
-    { "serial_port_2_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[1].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
-#if (SERIAL_PORT_COUNT >= 3)
-    { "serial_port_3_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].functionMask, 0, 0xFFFF},
-    { "serial_port_3_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
-    { "serial_port_3_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_3_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
-    { "serial_port_3_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[2].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
-#if (SERIAL_PORT_COUNT >= 4)
-    { "serial_port_4_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].functionMask, 0, 0xFFFF },
-    { "serial_port_4_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
-    { "serial_port_4_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_4_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
-    { "serial_port_4_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[3].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
-#if (SERIAL_PORT_COUNT >= 5)
-    { "serial_port_5_functions",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].functionMask, 0, 0xFFFF },
-    { "serial_port_5_msp_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].msp_baudrateIndex,         BAUD_9600, BAUD_115200 },
-    { "serial_port_5_telemetry_baudrate",   VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].telemetry_baudrateIndex,   BAUD_AUTO, BAUD_115200 },
-    { "serial_port_5_blackbox_baudrate",    VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].blackbox_baudrateIndex,    BAUD_9600, BAUD_250000 },
-    { "serial_port_5_gps_baudrate",         VAR_UINT8 | MASTER_VALUE,  &masterConfig.serialConfig.portConfigs[4].gps_baudrateIndex,         BAUD_9600, BAUD_115200 },
-#endif
-#endif
-#endif
-#endif
 
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.reboot_character, 48, 126 },
 
@@ -591,6 +559,102 @@ static void cliAux(char *cmdline)
     }
 }
 
+static void cliSerial(char *cmdline)
+{
+    int i, val;
+    char *ptr;
+
+    if (isEmpty(cmdline)) {
+        for (i = 0; i < SERIAL_PORT_COUNT; i++) {
+            if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
+                continue;
+            };
+            printf("serial %d %d %ld %ld %ld %ld\r\n" ,
+                masterConfig.serialConfig.portConfigs[i].identifier,
+                masterConfig.serialConfig.portConfigs[i].functionMask,
+                baudRates[masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex],
+                baudRates[masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex],
+                baudRates[masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex],
+                baudRates[masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex]
+            );
+        }
+        return;
+    }
+
+    serialPortConfig_t portConfig;
+    memset(&portConfig, 0 , sizeof(portConfig));
+
+    serialPortConfig_t *currentConfig;
+
+    uint8_t validArgumentCount = 0;
+
+    ptr = cmdline;
+
+    val = atoi(ptr++);
+    currentConfig = serialFindPortConfiguration(val);
+    if (currentConfig) {
+        portConfig.identifier = val;
+        validArgumentCount++;
+    }
+
+    ptr = strchr(ptr, ' ');
+    if (ptr) {
+        val = atoi(++ptr);
+        portConfig.functionMask = val & 0xFFFF;
+        validArgumentCount++;
+    }
+
+    for (i = 0; i < 4; i ++) {
+        ptr = strchr(ptr, ' ');
+        if (!ptr) {
+            break;
+        }
+
+        val = atoi(++ptr);
+
+        uint8_t baudRateIndex = lookupBaudRateIndex(val);
+        if (baudRates[baudRateIndex] != (uint32_t) val) {
+            break;
+        }
+
+        switch(i) {
+            case 0:
+                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
+                    continue;
+                }
+                portConfig.msp_baudrateIndex = baudRateIndex;
+                break;
+            case 1:
+                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
+                    continue;
+                }
+                portConfig.gps_baudrateIndex = baudRateIndex;
+                break;
+            case 2:
+                if (baudRateIndex != BAUD_AUTO || baudRateIndex > BAUD_115200) {
+                    continue;
+                }
+                portConfig.telemetry_baudrateIndex = baudRateIndex;
+                break;
+            case 3:
+                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_250000) {
+                    continue;
+                }
+                portConfig.blackbox_baudrateIndex = baudRateIndex;
+                break;
+        }
+
+        validArgumentCount++;
+    }
+
+    if (validArgumentCount < 6) {
+        cliPrint("Parse error\r\n");
+        return;
+    }
+
+    memcpy(currentConfig, &portConfig, sizeof(portConfig));
+
+}
 
 static void cliAdjustmentRange(char *cmdline)
 {
@@ -1065,6 +1129,9 @@ static void cliDump(char *cmdline)
             buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
         buf[i] = '\0';
         printf("map %s\r\n", buf);
+
+        cliPrint("\r\n\r\n# serial\r\n");
+        cliSerial("");
 
 #ifdef LED_STRIP
         cliPrint("\r\n\r\n# led\r\n");
