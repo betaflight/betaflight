@@ -240,16 +240,18 @@ var MSP = {
                 SENSOR_DATA.magnetometer[2] = data.getInt16(16, 1) / 1090;
                 break;
             case MSP_codes.MSP_SERVO:
+                var servoCount = message_length / 2;
                 var needle = 0;
-                for (var i = 0; i < 8; i++) {
+                for (var i = 0; i < servoCount; i++) {
                     SERVO_DATA[i] = data.getUint16(needle, 1);
 
                     needle += 2;
                 }
                 break;
             case MSP_codes.MSP_MOTOR:
+                var motorCount = message_length / 2;
                 var needle = 0;
-                for (var i = 0; i < 8; i++) {
+                for (var i = 0; i < motorCount; i++) {
                     MOTOR_DATA[i] = data.getUint16(needle, 1);
 
                     needle += 2;
