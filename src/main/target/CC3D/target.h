@@ -58,6 +58,7 @@
 #define BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
+#define USE_BARO_BMP280
 
 // External I2C MAG
 #define MAG
