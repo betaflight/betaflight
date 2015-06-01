@@ -48,6 +48,7 @@
 
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
+#include "drivers/barometer_bmp280.h"
 #include "drivers/barometer_ms5611.h"
 
 #include "drivers/compass.h"
@@ -446,6 +447,14 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
 #ifdef USE_BARO_BMP085
             if (bmp085Detect(bmp085Config, &baro)) {
                 baroHardware = BARO_BMP085;
+                break;
+            }
+#endif
+	    ; // fallthough
+        case BARO_BMP280:
+#ifdef USE_BARO_BMP280
+            if (bmp280Detect(&baro)) {
+                baroHardware = BARO_BMP280;
                 break;
             }
 #endif
