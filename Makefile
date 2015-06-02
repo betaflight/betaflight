@@ -235,6 +235,7 @@ COMMON_SRC = build_config.c \
 		   drivers/serial.c \
 		   drivers/sound_beeper.c \
 		   drivers/system.c \
+           drivers/gps_i2cnav.c \
 		   io/beeper.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \

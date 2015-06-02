@@ -24,10 +24,11 @@
 
 typedef enum {
     GPS_NMEA = 0,
-    GPS_UBLOX
+    GPS_UBLOX,
+    GPS_I2C
 } gpsProvider_e;
 
-#define GPS_PROVIDER_MAX GPS_UBLOX
+#define GPS_PROVIDER_MAX GPS_I2C
 
 typedef enum {
     SBAS_AUTO = 0,
@@ -119,5 +120,5 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 
 
 void gpsThread(void);
-bool gpsNewFrame(uint8_t c);
+bool gpsNewFrameFromSerial(uint8_t c);
 void updateGpsIndicator(uint32_t currentTime);
