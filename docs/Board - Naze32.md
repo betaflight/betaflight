@@ -20,18 +20,18 @@ if found please report via the [github issue tracker](https://github.com/cleanfl
 
 The 10 pin RC I/O connector has the following pinouts when used in RX_PPM/RX_SERIAL mode.
 
-| Pin | Identifier | Function       | Notes                            |
-| --- | ---------- | -------------- | -------------------------------- |
-| 1   |            | Ground         |                                  |
-| 2   | Circle     | +5V            |                                  |
-| 3   | 1          | RX_PPM         | Enable `feature RX_PPM`          | 
-| 4   | 2          | RSSI_ADC       | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input | 
-| 5   | 3          | USART2 TX      |                                  | 
-| 6   | 4          | USART2 RX      |                                  | 
-| 7   | 5          | LED_STRIP      | Enable `feature LED_STRIP`       |
-| 8   | 6          | unused         |                                  |
-| 9   | 7          | unused         |                                  |
-| 10  | 8          | CURRENT        | Enable `feature CURRENT_METER`  Connect to the output of a current sensor, 0v-3.3v input |
+| Pin | Identifier | Function                    | Notes                            |
+| --- | ---------- | --------------------------- | -------------------------------- |
+| 1   |            | Ground                      |                                  |
+| 2   | Circle     | +5V                         |                                  |
+| 3   | 1          | RX_PPM                      | Enable `feature RX_PPM`          | 
+| 4   | 2          | RSSI_ADC                    | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input | 
+| 5   | 3          | USART2 TX                   |                                  | 
+| 6   | 4          | USART2 RX                   |                                  | 
+| 7   | 5          | LED_STRIP                   | Enable `feature LED_STRIP`       |
+| 8   | 6          | unused                      |                                  |
+| 9   | 7          | Sonar Trigger               |                                  |
+| 10  | 8          | Sonar Echo / CURRENT        | Enable `feature CURRENT_METER`  Connect to the output of a current sensor, 0v-3.3v input |
 
 When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two SoftSerial ports are made available to use instead.
 
