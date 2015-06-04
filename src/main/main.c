@@ -207,9 +207,9 @@ void init(void)
     if (feature(FEATURE_SONAR)) {
         sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
         sonarGPIOConfig_t sonarGPIOConfig = {
-                .echoPin = sonarHardware->trigger_pin,
-                .triggerPin = sonarHardware->echo_pin,
-                .gpio = SONAR_GPIO
+            .gpio = SONAR_GPIO,
+            .triggerPin = sonarHardware->echo_pin,
+            .echoPin = sonarHardware->trigger_pin,
         };
         pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
     }
@@ -267,9 +267,9 @@ void init(void)
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
+        .gpioPeripheral = BEEP_PERIPHERAL,
         .gpioPin = BEEP_PIN,
         .gpioPort = BEEP_GPIO,
-        .gpioPeripheral = BEEP_PERIPHERAL,
 #ifdef BEEPER_INVERTED
         .gpioMode = Mode_Out_PP,
         .isInverted = true

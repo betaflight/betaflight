@@ -315,102 +315,102 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
     {
         .adjustmentFunction = ADJUSTMENT_RC_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_RC_EXPO,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_THROTTLE_EXPO,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_YAW_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_YAW_P,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_YAW_I,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_YAW_D,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
         .mode = ADJUSTMENT_MODE_SELECT,
-        .data.selectConfig.switchPositions = 3
+        .data = { .selectConfig = { .switchPositions = 3 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_ROLL_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_P,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_I,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_PITCH_D,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_ROLL_P,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_ROLL_I,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     },
     {
         .adjustmentFunction = ADJUSTMENT_ROLL_D,
         .mode = ADJUSTMENT_MODE_STEP,
-        .data.stepConfig.step = 1
+        .data = { .stepConfig = { .step = 1 }}
     }
 };
 
