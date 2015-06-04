@@ -96,9 +96,9 @@ typedef struct servoParam_t {
     int16_t min;                            // servo min
     int16_t max;                            // servo max
     int16_t middle;                         // servo middle
-    int8_t rate;                            // range [-100;+100] ; can be used to ajust a rate 0-100% and a direction
-    int8_t minLimit;                        // range [-90;90] ; can be used to adjust a rate 0-100% and a direction
-    int8_t maxLimit;                        // range [-90;90] ; can be used to adjust a rate 0-100% and a direction
+    int8_t rate;                            // range [-100;+100] ; can be used to adjust a rate 0-100% and a direction
+    uint8_t angleAtMin;                       // range [0;180] the measured angle in degrees from the middle when the servo is at the 'min' value.
+    uint8_t angleAtMax;                       // range [0;180] the measured angle in degrees from the middle when the servo is at the 'max' value.
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 

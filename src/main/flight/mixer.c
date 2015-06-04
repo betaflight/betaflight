@@ -87,8 +87,6 @@ typedef enum {
 #define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
 #define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
 
-#define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT
-
 //#define MIXER_DEBUG
 
 uint8_t motorCount = 0;
@@ -484,7 +482,6 @@ void writeServos(void)
         case MIXER_AIRPLANE:
             for (int i = SERVO_PLANE_INDEX_MIN; i <= SERVO_PLANE_INDEX_MAX; i++) {
                 pwmWriteServo(servoIndex++, servo[i]);
-
             }
             break;
 
@@ -504,7 +501,7 @@ void writeServos(void)
         servoIndex += 2;
     }
 
-    // forward AUX1-4 to servo outputs (not constrained)
+    // forward AUX to remaining servo outputs (not constrained)
     if (gimbalConfig->gimbal_flags & GIMBAL_FORWARDAUX) {
         forwardAuxChannelsToServos(servoIndex);
         servoIndex += MAX_AUX_CHANNEL_COUNT;

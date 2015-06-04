@@ -131,7 +131,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   10 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   11 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -292,7 +292,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_SERVO_CONF       212    //in message          Servo settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
-#define MSP_SET_SERVO_LIMIT      216    //in message          Servo settings limits
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -835,8 +834,8 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize16(currentProfile->servoConf[i].max);
             serialize16(currentProfile->servoConf[i].middle);
             serialize8(currentProfile->servoConf[i].rate);
-            serialize8(currentProfile->servoConf[i].minLimit);
-            serialize8(currentProfile->servoConf[i].maxLimit);
+            serialize8(currentProfile->servoConf[i].angleAtMin);
+            serialize8(currentProfile->servoConf[i].angleAtMax);
         }
         break;
     case MSP_CHANNEL_FORWARDING:
@@ -1418,7 +1417,6 @@ static bool processInCommand(void)
             headSerialError(0);
         } else {
             uint8_t servoCount = currentPort->dataSize / SERVO_CHUNK_SIZE;
-
             for (i = 0; i < MAX_SUPPORTED_SERVOS && i < servoCount; i++) {
                 currentProfile->servoConf[i].min = read16();
                 currentProfile->servoConf[i].max = read16();
@@ -1432,15 +1430,9 @@ static bool processInCommand(void)
                     currentProfile->servoConf[i].middle = potentialServoMiddleOrChannelToForward;
                 }
                 currentProfile->servoConf[i].rate = read8();
+                currentProfile->servoConf[i].angleAtMin = read8();
+                currentProfile->servoConf[i].angleAtMax = read8();
             }
-        }
-#endif
-        break;
-    case MSP_SET_SERVO_LIMIT:
-#ifdef USE_SERVOS
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            currentProfile->servoConf[i].minLimit = read8();
-            currentProfile->servoConf[i].maxLimit = read8();
         }
 #endif
         break;
