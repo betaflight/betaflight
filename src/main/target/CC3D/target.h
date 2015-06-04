@@ -113,6 +113,7 @@
 #define SERIAL_RX
 #define SONAR
 #define AUTOTUNE
+#define GTUNE
 #define USE_SERVOS
 #define USE_CLI
 
@@ -120,6 +121,7 @@
 // disabled some features for OPBL build due to code size.
 #undef AUTOTUNE
 #undef DISPLAY
+#undef GTUNE
 #undef SONAR
 #define SKIP_CLI_COMMAND_HELP
 #endif
