@@ -68,6 +68,7 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
 #include "blackbox/blackbox.h"
@@ -110,7 +111,6 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 void rxInit(rxConfig_t *rxConfig);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, int8_t magHardwareToUse, int16_t magDeclinationFromConfig);
 void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);

@@ -21,7 +21,9 @@
  *
  ******************************************************************************/
 
-#include <stdint.h>
+// TODO(michaelh): needed for IRQn_Type which is chip specific.
+#include "stm32f10x_conf.h"
+#include "core_cm3.h"
 
 /* define compiler specific symbols */
 #if defined ( __CC_ARM   )

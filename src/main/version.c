@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "version.h"
+
 const char * const targetName = __TARGET__;
 const char * const shortGitRevision = __REVISION__;
 const char * const buildDate = __DATE__;

@@ -60,6 +60,7 @@
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/sonar.h"
+#include "sensors/initialisation.h"
 
 #ifdef NAZE
 #include "hardware_revision.h"
