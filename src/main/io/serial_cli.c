@@ -97,6 +97,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
 static serialPort_t *cliPort;
 
 static void cliAux(char *cmdline);
+static void cliRxFail(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
 static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
@@ -256,6 +257,7 @@ const clicmd_t cmdTable[] = {
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile",
         "[<index>]", cliRateProfile),
+    CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifdef USE_SERVOS
@@ -556,6 +558,43 @@ static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *
 static bool isEmpty(const char *string)
 {
     return *string == '\0';
+}
+
+static void cliRxFail(char *cmdline)
+{
+    uint8_t channel;
+    char buf[3];
+
+    if (isEmpty(cmdline)) {
+        // print out rxConfig failsafe settings
+        for (channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT-4; channel++) {
+            cliRxFail(itoa(channel, buf, 10));
+        }
+    } else {
+        uint16_t value;
+        char *ptr = cmdline;
+
+        channel = atoi(ptr++);
+        if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT-4)) {
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                value = atoi(++ptr);
+                value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
+                if (value > MAX_RXFAIL_RANGE_STEP) {
+                    cliPrint("Value out of range\r\n");
+                    return;
+                }
+                masterConfig.rxConfig.rx_fail_usec_steps[channel] = value;
+            }
+            // triple use of printf below
+            // 1. acknowledge interpretation on command,
+            // 2. query current setting on single item,
+            // 3. recursive use for full list.
+            printf("rxfail %u %d\r\n", channel, RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.rx_fail_usec_steps[channel]));
+        } else {
+            printf("channel must be < %u\r\n", MAX_SUPPORTED_RC_CHANNEL_COUNT-4);
+        }
+    }
 }
 
 static void cliAux(char *cmdline)
@@ -1379,6 +1418,9 @@ static void cliDump(char *cmdline)
 #endif
         printSectionBreak();
         dumpValues(MASTER_VALUE);
+
+        cliPrint("\r\n# rxfail\r\n");
+        cliRxFail("");
     }
 
     if (dumpMask & DUMP_PROFILE) {

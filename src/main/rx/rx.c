@@ -33,6 +33,7 @@
 #include "drivers/serial.h"
 #include "drivers/adc.h"
 #include "io/serial.h"
+#include "io/rc_controls.h"
 
 #include "flight/failsafe.h"
 
@@ -67,6 +68,7 @@ uint16_t rssi = 0;                  // range: [0;1023]
 static bool rxDataReceived = false;
 static bool rxSignalReceived = false;
 static bool shouldCheckPulse = true;
+static bool rxPwmFlightChannelsAreGood = false;
 
 static uint32_t rxUpdateAt = 0;
 static uint32_t needRxSignalBefore = 0;
@@ -109,6 +111,7 @@ STATIC_UNIT_TESTED void rxCheckPulse(uint8_t channel, uint16_t pulseDuration)
         goodChannelMask = 0;
         failsafeOnValidDataReceived();
         rxSignalReceived = true;
+        rxPwmFlightChannelsAreGood = true;
     }
 }
 
@@ -308,6 +311,21 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
     return rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
 }
 
+static uint16_t getRxfailValue(uint8_t chan)
+{
+    switch (chan) {
+    case ROLL:
+    case PITCH:
+    case YAW:
+        return rxConfig->midrc;
+    case THROTTLE:
+        if (feature(FEATURE_3D)) return rxConfig->midrc;
+        else return rxConfig->rx_min_usec;
+    default:
+        return RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig->rx_fail_usec_steps[chan-4]);
+    }
+}
+
 static void processRxChannels(void)
 {
     uint8_t chan;
@@ -316,10 +334,12 @@ static void processRxChannels(void)
         return; // rcData will have already been updated by MSP_SET_RAW_RC
     }
 
+    rxPwmFlightChannelsAreGood = false;
+
     for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
 
         if (!rcReadRawFunc) {
-            rcData[chan] = rxConfig->midrc;
+            rcData[chan] = getRxfailValue(chan);
             continue;
         }
 
@@ -332,14 +352,23 @@ static void processRxChannels(void)
             rxCheckPulse(chan, sample);
         }
 
-        // validate the range
-        if (sample < rxConfig->rx_min_usec || sample > rxConfig->rx_max_usec)
-            sample = rxConfig->midrc;
+        // validate the range and check if rx signal is received
+        if (sample < rxConfig->rx_min_usec || sample > rxConfig->rx_max_usec || !rxSignalReceived) {
+            sample = getRxfailValue(chan);
+        }
 
         if (isRxDataDriven()) {
             rcData[chan] = sample;
         } else {
             rcData[chan] = calculateNonDataDrivenChannel(chan, sample);
+        }
+    }
+
+    // Using PARALLEL PWM and one of the 4 control channels is out of range:
+    // Probably one of the cables came loose, all channels are set to rxfail values
+    if ((rxPwmFlightChannelsAreGood == false) && feature(FEATURE_RX_PARALLEL_PWM)) {
+        for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
+            rcData[chan] = getRxfailValue(chan);
         }
     }
 }
