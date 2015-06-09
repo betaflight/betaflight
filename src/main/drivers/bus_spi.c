@@ -34,6 +34,7 @@ static volatile uint16_t spi3ErrorCount = 0;
 
 #ifdef USE_SPI_DEVICE_1
 
+#ifndef SPI1_GPIO
 #define SPI1_GPIO               GPIOA
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 #define SPI1_SCK_PIN            GPIO_Pin_5
@@ -45,6 +46,7 @@ static volatile uint16_t spi3ErrorCount = 0;
 #define SPI1_MOSI_PIN           GPIO_Pin_7
 #define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource7
 #define SPI1_MOSI_CLK           RCC_AHBPeriph_GPIOA
+#endif
 
 void initSpi1(void)
 {

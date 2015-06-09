@@ -99,6 +99,7 @@ static bool mpu6500Detect(void)
     uint8_t tmp;
 
     mpu6500ReadRegister(MPU6500_RA_WHOAMI, &tmp, 1);
+
     if (tmp != MPU6500_WHO_AM_I_CONST)
         return false;
 
@@ -165,7 +166,6 @@ static void mpu6500AccRead(int16_t *accData)
 
 static void mpu6500GyroInit(void)
 {
-
 #ifdef NAZE
     gpio_config_t gpio;
     // MPU_INT output on rev5 hardware (PC13). rev4 was on PB13, conflicts with SPI devices

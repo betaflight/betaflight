@@ -31,27 +31,30 @@
 
 #include "hardware_revision.h"
 
-static const char * const hardwareRevisionNames[] = {
-        "Unknown",
-        "R1",
-        "R2"
-};
-
-uint8_t hardwareRevision = UNKNOWN;
-
 void detectHardwareRevision(void)
 {
-    if (GPIOC->IDR & GPIO_Pin_15) {
-        hardwareRevision = REV_2;
-    } else {
-        hardwareRevision = REV_1;
-    }
 }
 
 void updateHardwareRevision(void)
 {
 }
 
+
 void spiBusInit(void)
 {
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	RCC_AHBPeriphClockCmd(MPU6500_CS_GPIO_CLK_PERIPHERAL, ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = MPU6500_CS_PIN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+
+	GPIO_Init(MPU6500_CS_GPIO, &GPIO_InitStructure);
+
+	GPIO_SetBits(MPU6500_CS_GPIO,   MPU6500_CS_PIN);
+
+	spiSetDivisor(MPU6500_SPI, SPI_9MHZ_CLOCK_DIVIDER);
 }
