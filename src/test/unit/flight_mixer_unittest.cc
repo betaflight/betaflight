@@ -46,7 +46,7 @@ extern "C" {
     #include "io/rc_controls.h"
 
     extern uint8_t servoCount;
-    void forwardAuxChannelsToServos(void);
+    void forwardAuxChannelsToServos(uint8_t firstServoIndex);
 
     void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers);
     void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
@@ -90,7 +90,7 @@ TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithNoServos)
     rcData[AUX4] = TEST_RC_MID;
 
     // when
-    forwardAuxChannelsToServos();
+    forwardAuxChannelsToServos(MAX_SUPPORTED_SERVOS);
 
     // then
     for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -110,26 +110,20 @@ TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithMaxServos)
     rcData[AUX4] = 2000;
 
     // when
-    forwardAuxChannelsToServos();
+    forwardAuxChannelsToServos(MAX_SUPPORTED_SERVOS);
 
     // then
     uint8_t i;
-    for (i = 0; i < MAX_SUPPORTED_SERVOS - 4; i++) {
-        EXPECT_EQ(servos[i].value, 0);
+    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        EXPECT_EQ(0, servos[i].value);
     }
-
-    // -1 for zero based offset
-    EXPECT_EQ(1000, servos[MAX_SUPPORTED_SERVOS - 3 - 1].value);
-    EXPECT_EQ(1250, servos[MAX_SUPPORTED_SERVOS - 2 - 1].value);
-    EXPECT_EQ(1750, servos[MAX_SUPPORTED_SERVOS - 1 - 1].value);
-    EXPECT_EQ(2000, servos[MAX_SUPPORTED_SERVOS - 0 - 1].value);
 }
 
-TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithLessServosThanAuxChannelsToForward)
+TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithLessRemainingServosThanAuxChannelsToForward)
 {
     // given
     memset(&servos, 0, sizeof(servos));
-    servoCount = 2;
+    servoCount = MAX_SUPPORTED_SERVOS - 2;
 
     rcData[AUX1] = 1000;
     rcData[AUX2] = 1250;
@@ -137,17 +131,17 @@ TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithLessServosThanAuxChannel
     rcData[AUX4] = 2000;
 
     // when
-    forwardAuxChannelsToServos();
+    forwardAuxChannelsToServos(MAX_SUPPORTED_SERVOS - 2);
 
     // then
     uint8_t i;
-    for (i = 2; i < MAX_SUPPORTED_SERVOS; i++) {
-        EXPECT_EQ(servos[i].value, 0);
+    for (i = 0; i < MAX_SUPPORTED_SERVOS - 2; i++) {
+        EXPECT_EQ(0, servos[i].value);
     }
 
     // -1 for zero based offset
-    EXPECT_EQ(1000, servos[0].value);
-    EXPECT_EQ(1250, servos[1].value);
+    EXPECT_EQ(1000, servos[MAX_SUPPORTED_SERVOS - 1 - 1].value);
+    EXPECT_EQ(1250, servos[MAX_SUPPORTED_SERVOS - 0 - 1].value);
 }
 
 TEST(FlightMixerTest, TestTricopterServo)
@@ -317,7 +311,13 @@ void pwmCompleteOneshotMotorUpdate(uint8_t motorCount) {
 }
 
 void pwmWriteServo(uint8_t index, uint16_t value) {
-    servos[index].value = value;
+    // FIXME logic in test, mimic's production code.
+    // Perhaps the solution is to remove the logic from the production code version and assume that
+    // anything calling calling pwmWriteServo always uses a valid index?
+    // See MAX_SERVOS in pwm_output (driver) and MAX_SUPPORTED_SERVOS (flight)
+    if (index < MAX_SERVOS) {
+        servos[index].value = value;
+    }
 }
 
 bool failsafeIsActive(void) {
