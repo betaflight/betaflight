@@ -315,7 +315,7 @@ typedef struct box_e {
 } box_t;
 
 // FIXME remove ;'s
-static const box_t const boxes[CHECKBOX_ITEM_COUNT + 1] = {
+static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },

@@ -31,7 +31,7 @@
 
 unsigned char CHAR_FORMAT = NORMAL_CHAR_FORMAT;
 
-static const uint8_t const multiWiiFont[][5] = { // Refer to "Times New Roman" Font Database... 5 x 7 font
+static const uint8_t multiWiiFont[][5] = { // Refer to "Times New Roman" Font Database... 5 x 7 font
         { 0x00, 0x00, 0x00, 0x00, 0x00 }, { 0x00, 0x00, 0x4F, 0x00, 0x00 }, //   (  1)  ! - 0x0021 Exclamation Mark
                 { 0x00, 0x07, 0x00, 0x07, 0x00 }, //   (  2)  " - 0x0022 Quotation Mark
                 { 0x14, 0x7F, 0x14, 0x7F, 0x14 }, //   (  3)  # - 0x0023 Number Sign

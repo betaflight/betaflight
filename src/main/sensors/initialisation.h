@@ -15,9 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "version.h"
+#pragma once
 
-const char * const targetName = __TARGET__;
-const char * const shortGitRevision = __REVISION__;
-const char * const buildDate = __DATE__;
-const char * const buildTime = __TIME__;
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, int16_t magDeclinationFromConfig);

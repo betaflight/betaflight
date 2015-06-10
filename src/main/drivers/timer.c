@@ -675,7 +675,7 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
         tim->SR = mask;
         tim_status &= mask;
         switch(bit) {
-        case __builtin_clz(TIM_IT_Update):
+        case __builtin_clz(TIM_IT_Update): {
 
         	if(timerConfig->forcedOverflowTimerValue != 0){
         		capture = timerConfig->forcedOverflowTimerValue - 1;
@@ -690,6 +690,7 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
                 cb = cb->next;
             }
             break;
+        }
         case __builtin_clz(TIM_IT_CC1):
             timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim->CCR1);
             break;

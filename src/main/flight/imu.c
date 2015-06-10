@@ -65,9 +65,9 @@ float gyroScaleRad;
 rollAndPitchInclination_t inclination = { { 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 float anglerad[2] = { 0.0f, 0.0f };    // absolute angle inclination in radians
 
-imuRuntimeConfig_t *imuRuntimeConfig;
-pidProfile_t *pidProfile;
-accDeadband_t *accDeadband;
+static imuRuntimeConfig_t *imuRuntimeConfig;
+static pidProfile_t *pidProfile;
+static accDeadband_t *accDeadband;
 
 void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,

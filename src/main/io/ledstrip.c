@@ -74,8 +74,6 @@ static uint32_t nextRotationUpdateAt = 0;
 #error "Led strip length must match driver"
 #endif
 
-hsvColor_t *colors;
-
 //                          H    S    V
 #define LED_BLACK        {  0,   0,   0}
 #define LED_WHITE        {  0, 255, 255}
@@ -892,11 +890,11 @@ void updateLedStrip(void)
 
     uint32_t now = micros();
 
-    bool indicatorFlashNow = indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
-    bool warningFlashNow = warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
+    bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
+    bool warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
     bool rotationUpdateNow = (int32_t)(now - nextRotationUpdateAt) >= 0L;
 #ifdef USE_LED_ANIMATION
-    bool animationUpdateNow = animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
+    bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
 #endif
     if (!(
             indicatorFlashNow ||

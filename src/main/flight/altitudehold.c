@@ -55,10 +55,10 @@ int32_t AltHold;
 int32_t vario = 0;                      // variometer in cm/s
 
 
-barometerConfig_t *barometerConfig;
-pidProfile_t *pidProfile;
-rcControlsConfig_t *rcControlsConfig;
-escAndServoConfig_t *escAndServoConfig;
+static barometerConfig_t *barometerConfig;
+static pidProfile_t *pidProfile;
+static rcControlsConfig_t *rcControlsConfig;
+static escAndServoConfig_t *escAndServoConfig;
 
 void configureAltitudeHold(
         pidProfile_t *initialPidProfile,

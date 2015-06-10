@@ -32,7 +32,7 @@ typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_END
 } BlackboxDevice;
 
-uint8_t blackboxWriteChunkSize;
+extern uint8_t blackboxWriteChunkSize;
 
 void blackboxWrite(uint8_t value);
 
