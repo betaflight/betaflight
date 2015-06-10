@@ -40,6 +40,7 @@
 #include "telemetry/hott.h"
 #include "telemetry/msp.h"
 #include "telemetry/smartport.h"
+#include "telemetry/ltm.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -54,6 +55,7 @@ void telemetryInit(void)
     initHoTTTelemetry(telemetryConfig);
     initMSPTelemetry(telemetryConfig);
     initSmartPortTelemetry(telemetryConfig);
+    initLtmTelemetry(telemetryConfig);
 
     telemetryCheckState();
 }
@@ -78,6 +80,7 @@ void telemetryCheckState(void)
     checkHoTTTelemetryState();
     checkMSPTelemetryState();
     checkSmartPortTelemetryState();
+    checkLtmTelemetryState();
 }
 
 void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -86,6 +89,7 @@ void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
     handleHoTTTelemetry();
     handleMSPTelemetry();
     handleSmartPortTelemetry();
+    handleLtmTelemetry();
 }
 
 #endif
