@@ -275,33 +275,22 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
     int16_t data[3];
 
     // default lpf is 42Hz
-    switch (lpf) {
-        case 256:
-            mpuLowPassFilter = BITS_DLPF_CFG_256HZ;
-            break;
-        case 188:
-            mpuLowPassFilter = BITS_DLPF_CFG_188HZ;
-            break;
-        case 98:
-            mpuLowPassFilter = BITS_DLPF_CFG_98HZ;
-            break;
-        default:
-        case 42:
-            mpuLowPassFilter = BITS_DLPF_CFG_42HZ;
-            break;
-        case 20:
-            mpuLowPassFilter = BITS_DLPF_CFG_20HZ;
-            break;
-        case 10:
-            mpuLowPassFilter = BITS_DLPF_CFG_10HZ;
-            break;
-        case 5:
-            mpuLowPassFilter = BITS_DLPF_CFG_5HZ;
-            break;
-        case 0:
-            mpuLowPassFilter = BITS_DLPF_CFG_2100HZ_NOLPF;
-            break;
-    }
+    if (lpf == 256)
+        mpuLowPassFilter = BITS_DLPF_CFG_256HZ;
+    else if (lpf >= 188)
+        mpuLowPassFilter = BITS_DLPF_CFG_188HZ;
+    else if (lpf >= 98)
+        mpuLowPassFilter = BITS_DLPF_CFG_98HZ;
+    else if (lpf >= 42)
+        mpuLowPassFilter = BITS_DLPF_CFG_42HZ;
+    else if (lpf >= 20)
+        mpuLowPassFilter = BITS_DLPF_CFG_20HZ;
+    else if (lpf >= 10)
+        mpuLowPassFilter = BITS_DLPF_CFG_10HZ;
+    else if (lpf > 0)
+        mpuLowPassFilter = BITS_DLPF_CFG_5HZ;
+    else
+        mpuLowPassFilter = BITS_DLPF_CFG_256HZ;
 
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
 

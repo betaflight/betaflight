@@ -72,6 +72,7 @@
 #include "flight/failsafe.h"
 #include "flight/autotune.h"
 #include "flight/navigation.h"
+#include "flight/filter.h"
 
 
 #include "config/runtime_config.h"
@@ -739,6 +740,16 @@ void loop(void)
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
+
+        // Gyro Low Pass
+        if (currentProfile->pidProfile.gyro_cut_hz) {
+            int axis;
+            static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
+
+            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        	    gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz);
+            }
+        }
 
         annexCode();
 #if defined(BARO) || defined(SONAR)
