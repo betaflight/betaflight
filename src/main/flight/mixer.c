@@ -442,10 +442,10 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     }
 }
 
-static void updateGimbalServos(void)
+static void updateGimbalServos(uint8_t firstServoIndex)
 {
-    pwmWriteServo(0, servo[SERVO_GIMBAL_PITCH]);
-    pwmWriteServo(1, servo[SERVO_GIMBAL_ROLL]);
+    pwmWriteServo(firstServoIndex + 0, servo[SERVO_GIMBAL_PITCH]);
+    pwmWriteServo(firstServoIndex + 1, servo[SERVO_GIMBAL_ROLL]);
 }
 
 void writeServos(void)
@@ -479,11 +479,6 @@ void writeServos(void)
             pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_2]);
             break;
 
-        case MIXER_GIMBAL:
-            updateGimbalServos();
-            servoIndex += 2;
-            break;
-
         case MIXER_DUALCOPTER:
             pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_LEFT]);
             pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_RIGHT]);
@@ -503,12 +498,13 @@ void writeServos(void)
             break;
 
         default:
-            // Two servos for SERVO_TILT, if enabled
-            if (feature(FEATURE_SERVO_TILT)) {
-                updateGimbalServos();
-                servoIndex += 2;
-            }
             break;
+    }
+
+    // Two servos for SERVO_TILT, if enabled
+    if (feature(FEATURE_SERVO_TILT)) {
+        updateGimbalServos(servoIndex);
+        servoIndex += 2;
     }
 
     // forward AUX1-4 to servo outputs (not constrained)

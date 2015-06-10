@@ -827,7 +827,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #ifdef USE_SERVOS
     case MSP_SERVO:
-        s_struct((uint8_t *)&servo, 16);
+        s_struct((uint8_t *)&servo, MAX_SUPPORTED_SERVOS * 2);
         break;
     case MSP_SERVO_CONF:
         headSerialReply(MAX_SUPPORTED_SERVOS * 7);
