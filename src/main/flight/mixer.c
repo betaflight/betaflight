@@ -731,11 +731,14 @@ void mixTable(void)
             }
         }
 
+        int16_t maxThrottleDifference = 0;
+        if (maxMotor > escAndServoConfig->maxthrottle) {
+            maxThrottleDifference = maxMotor - escAndServoConfig->maxthrottle;
+        }
+
         for (i = 0; i < motorCount; i++) {
-            if (maxMotor > escAndServoConfig->maxthrottle) {
-                // this is a way to still have good gyro corrections if at least one motor reaches its max.
-                motor[i] -= maxMotor - escAndServoConfig->maxthrottle;
-            }
+            // this is a way to still have good gyro corrections if at least one motor reaches its max.
+            motor[i] -= maxThrottleDifference;
 
             if (feature(FEATURE_3D)) {
                 if ((rcData[THROTTLE]) > rxConfig->midrc) {
