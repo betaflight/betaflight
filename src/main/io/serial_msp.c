@@ -308,6 +308,8 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #define INBUF_SIZE 64
 
+#define SERVO_CHUNK_SIZE 7
+
 typedef struct box_e {
     const uint8_t boxId;         // see boxId_e
     const char *boxName;            // GUI-readable box name
@@ -619,6 +621,8 @@ void mspReleasePortIfAllocated(serialPort_t *serialPort)
 
 void mspInit(serialConfig_t *serialConfig)
 {
+    BUILD_BUG_ON((SERVO_CHUNK_SIZE * MAX_SUPPORTED_SERVOS) > INBUF_SIZE);
+
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
 
@@ -1408,18 +1412,26 @@ static bool processInCommand(void)
         break;
     case MSP_SET_SERVO_CONF:
 #ifdef USE_SERVOS
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            currentProfile->servoConf[i].min = read16();
-            currentProfile->servoConf[i].max = read16();
-            // provide temporary support for old clients that try and send a channel index instead of a servo middle
-            uint16_t potentialServoMiddleOrChannelToForward = read16();
-            if (potentialServoMiddleOrChannelToForward < MAX_SUPPORTED_SERVOS) {
-                currentProfile->servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
+        if (currentPort->dataSize % SERVO_CHUNK_SIZE != 0) {
+            debug[0] = currentPort->dataSize;
+            headSerialError(0);
+        } else {
+            uint8_t servoCount = currentPort->dataSize / SERVO_CHUNK_SIZE;
+
+            for (i = 0; i < MAX_SUPPORTED_SERVOS && i < servoCount; i++) {
+                currentProfile->servoConf[i].min = read16();
+                currentProfile->servoConf[i].max = read16();
+
+                // provide temporary support for old clients that try and send a channel index instead of a servo middle
+                uint16_t potentialServoMiddleOrChannelToForward = read16();
+                if (potentialServoMiddleOrChannelToForward < MAX_SUPPORTED_SERVOS) {
+                    currentProfile->servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
+                }
+                if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
+                    currentProfile->servoConf[i].middle = potentialServoMiddleOrChannelToForward;
+                }
+                currentProfile->servoConf[i].rate = read8();
             }
-            if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
-                currentProfile->servoConf[i].middle = potentialServoMiddleOrChannelToForward;
-            }
-            currentProfile->servoConf[i].rate = read8();
         }
 #endif
         break;
