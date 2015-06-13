@@ -61,22 +61,21 @@ If you are getting oscillations starting at say 3/4 throttle, set tpa breakpoint
 
 ## PID controllers
 
-Cleanflight has 6 built-in PID controllers which each have different flight behavior. Each controller requires
+Cleanflight has 4 built-in PID controllers which each have different flight behavior. Each controller requires
 different PID settings for best performance, so if you tune your craft using one PID controller, those settings will
 likely not work well on any of the other controllers.
 
 You can change between PID controllers by running `set pid_controller=n` on the CLI tab of the Cleanflight
 Configurator, where `n` is the number of the controller you want to use. Please read these notes first before trying one
 out.
+Note that older Cleanflight versions had 6 pid controllers and that with some versions you may have different pid controller indexes.
 
-### PID controller 0, "MultiWii" (default)
+### PID controller 0, "MultiWii23" (default)
 
 PID Controller 0 is the default controller in Cleanflight, and Cleanflight's default PID settings are tuned to be
-middle-of-the-road settings for this controller. It originates from the old MultiWii PID controller from MultiWii 2.2
-and earlier.
+middle-of-the-road settings for this controller. PID Controller 3 is an direct port of the PID controller from MultiWii 2.3 and later.
 
-One of the quirks with this controller is that if you increase the P value for an axis, the maximum rotation rates for
-that axis are lowered. Hence you need to crank up the pitch or roll rates if you have higher and higher P values.
+The algorithm is handling roll and pitch differently to yaw. Users with problems on yaw authority should try this one.
 
 In Horizon and Angle modes, this controller uses both the LEVEL "P" and "I" settings in order to tune the 
 auto-leveling corrections in a similar way to the way that P and I settings are applied to roll and yaw axes in the acro
@@ -130,23 +129,7 @@ stick, 50% self-leveling will be applied at 50% stick, and no self-leveling will
 sensitivity is decreased to 75, 100% self-leveling will be applied at center stick, 50% will be applied at 63%
 stick, and no self-leveling will be applied at 75% stick and onwards.
 
-### PID controller 3, "MultiWii23" (default for the ALIENWIIF1 and ALIENWIIF3 targets)
-
-PID Controller 3 is an direct port of the PID controller from MultiWii 2.3 and later.
-
-The algorithm is handling roll and pitch differently to yaw. Users with problems on yaw authority should try this one.
-
-For the ALIENWII32 targets the gyroscale is removed for even more yaw authority. This will provide best performance on very small multicopters with brushed motors.
-
-### PID controller 4, "MultiWiiHybrid"
-
-PID Controller 4 is an hybrid version of two MultiWii PID controllers. Roll and pitch is using the MultiWii 2.2 algorithm and yaw is using the 2.3 algorithm. 
-
-This PID controller was initialy implemented for testing purposes but is also performing quite well.
-
-For the ALIENWII32 targets the gyroscale is removed for more yaw authority. This will provide best performance on very small multicopters with brushed motors.
-
-### PID controller 5, "Harakiri"
+### PID controller 3, "Harakiri"
 
 PID Controller 5 is an port of the PID controller from the Harakiri firmware.
 
@@ -167,14 +150,14 @@ Yaw authority is also quite good.
 
 An overall multiplier on the RC stick inputs for pitch, rol;, and yaw. 
 
-On PID Controllers 0, and 3-5 can be used to set the "feel" around center stick for small control movements. (RC Expo also affects this).For PID Controllers 1 and 2, this basically sets the baseline stick sensitivity
+On PID Controllers 0, and 3 can be used to set the "feel" around center stick for small control movements. (RC Expo also affects this).For PID Controllers 1 and 2, this basically sets the baseline stick sensitivity
 
 ### Pitch and Roll rates
 
-In PID Controllers 0 and 3-5, the affect of the PID error terms for P and D are gradually lessened as the control sticks are moved away from center, ie 0.3 rate gives a 30% reduction of those terms at full throw, effectively making the stabilizing effect of the PID controller less at stick extremes. This results in faster rotation rates. So for these controllers, you can set center stick sensitivity to control movement with RC rate above, and yet have much faster rotation rates at stick extremes.
+In PID Controllers 0 and 3, the affect of the PID error terms for P and D are gradually lessened as the control sticks are moved away from center, ie 0.3 rate gives a 30% reduction of those terms at full throw, effectively making the stabilizing effect of the PID controller less at stick extremes. This results in faster rotation rates. So for these controllers, you can set center stick sensitivity to control movement with RC rate above, and yet have much faster rotation rates at stick extremes.
 
 For PID Controllers 1 and 2, this is an multiplier on overall stick sensitivity, like RC rate, but for roll and pitch independently. Stablility (to outside factors like turbulence) is not reduced at stick extremes. A zero value is no increase in stick sensitivity over that set by RC rate above. Higher values increases stick sensitivity across the entire stick movement range.
 
 ### Yaw Rate
 
-In PID Controllers 0 and 5, it acts as a PID reduction as explained above. In PID Controllers 1-4, it acts as a stick sensitivity multiplier, as explained above.
+In PID Controller 5, it acts as a PID reduction as explained above. In PID Controllers 1-2, it acts as a stick sensitivity multiplier, as explained above.
