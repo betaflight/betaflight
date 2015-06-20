@@ -201,7 +201,6 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
             bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
             bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
             bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
-            bmp085InitDone = true;
             baro->ut_delay = UT_DELAY;
             baro->up_delay = UP_DELAY;
             baro->start_ut = bmp085_start_ut;
@@ -212,6 +211,7 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 #if defined(BARO_EOC_GPIO)
             isEOCConnected = bmp085TestEOCConnected(config);
 #endif
+            bmp085InitDone = true;
             return true;
         }
     }
@@ -377,22 +377,16 @@ static void bmp085_get_cal_param(void)
 #if defined(BARO_EOC_GPIO)
 bool bmp085TestEOCConnected(const bmp085Config_t *config)
 {
-    uint32_t baroDeadline = 0;
-    uint32_t currentTime = micros();
+    if (!bmp085InitDone) {
+        bmp085_start_ut();
+        delayMicroseconds(UT_DELAY * 2); // wait twice as long as normal, just to be sure
 
-    baroDeadline += (UT_DELAY * 2); // wait twice as long as normal, just to be sure
-    bmp085_start_ut();
-    baroDeadline += micros();
-
-    while ((int32_t)(currentTime - baroDeadline) < 0) {
-         currentTime = micros();
-    }
-
-    // conversion should have finished now so check if EOC is high
-    uint8_t status = GPIO_ReadInputDataBit(config->eocGpioPort, config->eocGpioPin);
-    if (status) {
-        return true;
-    }
+        // conversion should have finished now so check if EOC is high
+        uint8_t status = GPIO_ReadInputDataBit(config->eocGpioPort, config->eocGpioPin);
+        if (status) {
+            return true;
+        }
+    } 
     return false; // assume EOC is not connected
 }
 #endif
