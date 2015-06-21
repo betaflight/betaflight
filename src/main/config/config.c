@@ -35,6 +35,7 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
+#include "drivers/flash_stm32.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -77,50 +78,6 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800
 
-#if !defined(FLASH_SIZE)
-#error "Flash size not defined for target. (specify in KB)"
-#endif
-
-
-#ifndef FLASH_PAGE_SIZE
-    #ifdef STM32F303xC
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #endif
-
-    #ifdef STM32F10X_MD
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-    #endif
-
-    #ifdef STM32F10X_HD
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #endif
-#endif
-
-#if !defined(FLASH_SIZE) && !defined(FLASH_PAGE_COUNT)
-    #ifdef STM32F10X_MD
-        #define FLASH_PAGE_COUNT 128
-    #endif
-
-    #ifdef STM32F10X_HD
-        #define FLASH_PAGE_COUNT 128
-    #endif
-#endif
-
-#if defined(FLASH_SIZE)
-#define FLASH_PAGE_COUNT ((FLASH_SIZE * 0x400) / FLASH_PAGE_SIZE)
-#endif
-
-#if !defined(FLASH_PAGE_SIZE)
-#error "Flash page size not defined for target."
-#endif
-
-#if !defined(FLASH_PAGE_COUNT)
-#error "Flash page count not defined for target."
-#endif
-
-// use the last flash pages for storage
-#define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
-
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 static uint32_t activeFeaturesLatch = 0;
@@ -129,6 +86,9 @@ static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
 static const uint8_t EEPROM_CONF_VERSION = 102;
+
+extern uint32_t __config_start;
+extern uint32_t __config_end;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -618,7 +578,7 @@ static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
 
 static bool isEEPROMContentValid(void)
 {
-    const master_t *temp = (const master_t *) CONFIG_START_FLASH_ADDRESS;
+    const master_t *temp = (const master_t *)&__config_start;
     uint8_t checksum = 0;
 
     // check version number
@@ -821,7 +781,7 @@ void readEEPROM(void)
         failureMode(10);
 
     // Read flash
-    memcpy(&masterConfig, (char *) CONFIG_START_FLASH_ADDRESS, sizeof(master_t));
+    memcpy(&masterConfig, (char *)&__config_start, sizeof(master_t));
 
     if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) // sanity check
         masterConfig.current_profile_index = 0;
@@ -848,10 +808,9 @@ void writeEEPROM(void)
 {
     // Generate compile time error if the config does not fit in the reserved area of flash.
     BUILD_BUG_ON(sizeof(master_t) > FLASH_TO_RESERVE_FOR_CONFIG);
-
-    FLASH_Status status = 0;
-    uint32_t wordOffset;
-    int8_t attemptsRemaining = 3;
+    
+    flash_stm32_writer_t writer;
+    flash_stm32_init(&writer);
 
     // prepare checksum/version constants
     masterConfig.version = EEPROM_CONF_VERSION;
@@ -862,36 +821,16 @@ void writeEEPROM(void)
     masterConfig.chk = calculateChecksum((const uint8_t *) &masterConfig, sizeof(master_t));
 
     // write it
-    FLASH_Unlock();
-    while (attemptsRemaining--) {
-#ifdef STM32F303
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
-#endif
-#ifdef STM32F10X
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
-#endif
-        for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
-            if (wordOffset % FLASH_PAGE_SIZE == 0) {
-                status = FLASH_ErasePage(CONFIG_START_FLASH_ADDRESS + wordOffset);
-                if (status != FLASH_COMPLETE) {
-                    break;
-                }
-            }
+    for (int attempt = 0; attempt < 3; attempt++) {
+        flash_stm32_start(&writer, (uintptr_t)&__config_start);
 
-            status = FLASH_ProgramWord(CONFIG_START_FLASH_ADDRESS + wordOffset,
-                    *(uint32_t *) ((char *) &masterConfig + wordOffset));
-            if (status != FLASH_COMPLETE) {
-                break;
-            }
-        }
-        if (status == FLASH_COMPLETE) {
+        if (flash_stm32_write(&writer, &masterConfig, sizeof(masterConfig)) == 0) {
             break;
         }
     }
-    FLASH_Lock();
 
     // Flash write failed - just die now
-    if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
+    if (flash_stm32_finish(&writer) != 0 || !isEEPROMContentValid()) {
         failureMode(10);
     }
 }

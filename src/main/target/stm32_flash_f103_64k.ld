@@ -27,6 +27,8 @@ MEMORY
   MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
+__config_start = ORIGIN(FLASH) + LENGTH(FLASH);
+
 /* Define output sections */
 SECTIONS
 {
