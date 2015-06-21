@@ -97,7 +97,6 @@ SECTIONS
     _sdata = .;        /* create a global symbol at data start */
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
-
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
@@ -110,7 +109,7 @@ SECTIONS
     _sbss = .;         /* define a global symbol at bss start */
     __bss_start__ = _sbss;
     *(.bss)
-    *(.bss*)
+    *(SORT_BY_ALIGNMENT(.bss*))
     *(COMMON)
 
     . = ALIGN(4);

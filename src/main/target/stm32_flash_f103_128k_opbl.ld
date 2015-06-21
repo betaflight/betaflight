@@ -111,7 +111,7 @@ SECTIONS
     _sbss = .;         /* define a global symbol at bss start */
     __bss_start__ = _sbss;
     *(.bss)
-    *(.bss*)
+    *(SORT_BY_ALIGNMENT(.bss*))
     *(COMMON)
 
     . = ALIGN(4);
