@@ -32,11 +32,30 @@ typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_END
 } BlackboxDevice;
 
-extern uint8_t blackboxWriteChunkSize;
+typedef enum {
+    BLACKBOX_RESERVE_SUCCESS,
+    BLACKBOX_RESERVE_TEMPORARY_FAILURE,
+    BLACKBOX_RESERVE_PERMANENT_FAILURE
+} blackboxBufferReserveStatus_e;
+
+/*
+ * We want to limit how bursty our writes to the device are. Note that this will also restrict the maximum size of a
+ * header write we can make:
+ */
+#define BLACKBOX_MAX_ACCUMULATED_HEADER_BUDGET 256
+
+/*
+ * Ideally, each iteration in which we are logging headers would write a similar amount of data to the device as a
+ * regular logging iteration. This way we won't hog the CPU by making a gigantic write:
+ */
+#define BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION 64
+
+extern int32_t blackboxHeaderBudget;
 
 void blackboxWrite(uint8_t value);
 
 int blackboxPrintf(const char *fmt, ...);
+void blackboxPrintfHeaderLine(const char *fmt, ...);
 int blackboxPrint(const char *s);
 
 void blackboxWriteUnsignedVB(uint32_t value);
@@ -55,3 +74,6 @@ bool blackboxDeviceOpen(void);
 void blackboxDeviceClose(void);
 
 bool isBlackboxDeviceFull(void);
+
+void blackboxReplenishHeaderBudget();
+blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes);
