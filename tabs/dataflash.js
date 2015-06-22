@@ -146,53 +146,66 @@ TABS.dataflash.initialize = function (callback) {
         $(".dataflash-saving").addClass("done");
     }
     
-    function flash_save_begin() {
-        var
-            maxBytes = DATAFLASH.usedSize;
-        
-        if (GUI.connected_to) {
-            prepare_file(function(fileWriter) {
-                var
-                    nextAddress = 0;
-                
-                show_saving_dialog();
-                
-                function onChunkRead(chunkAddress, chunkDataView) {
-                    if (chunkDataView != null) {
-                        // Did we receive any data?
-                        if (chunkDataView.byteLength > 0) {
-                            nextAddress += chunkDataView.byteLength;
-                            
-                            $(".dataflash-saving progress").attr("value", nextAddress / maxBytes * 100);
+    function flash_update_summary(onDone) {
+        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false, function() {
+            update_html();
+            
+            if (onDone) {
+                onDone();
+            }
+        });
+    }
     
-                            var 
-                                blob = new Blob([chunkDataView]);
-                            
-                            fileWriter.onwriteend = function(e) {
-                                if (saveCancelled || nextAddress >= maxBytes) {
-                                    if (saveCancelled) {
-                                        dismiss_saving_dialog();
-                                    } else {
-                                        mark_saving_dialog_done();
-                                    }
-                                } else {
-                                    MSP.dataflashRead(nextAddress, onChunkRead);
-                                }
-                            };
-                            
-                            fileWriter.write(blob);
-                        } else {
-                            // A zero-byte block indicates end-of-file, so we're done
-                            mark_saving_dialog_done();
-                        }
-                    } else {
-                        // There was an error with the received block (address didn't match the one we asked for), retry
-                        MSP.dataflashRead(nextAddress, onChunkRead);
-                    }
-                }
+    function flash_save_begin() {
+        if (GUI.connected_to) {
+            // Begin by refreshing the occupied size in case it changed while the tab was open
+            flash_update_summary(function() {
+                var
+                    maxBytes = DATAFLASH.usedSize;
                 
-                // Fetch the initial block
-                MSP.dataflashRead(nextAddress, onChunkRead);
+                prepare_file(function(fileWriter) {
+                    var
+                        nextAddress = 0;
+                    
+                    show_saving_dialog();
+                    
+                    function onChunkRead(chunkAddress, chunkDataView) {
+                        if (chunkDataView != null) {
+                            // Did we receive any data?
+                            if (chunkDataView.byteLength > 0) {
+                                nextAddress += chunkDataView.byteLength;
+                                
+                                $(".dataflash-saving progress").attr("value", nextAddress / maxBytes * 100);
+        
+                                var 
+                                    blob = new Blob([chunkDataView]);
+                                
+                                fileWriter.onwriteend = function(e) {
+                                    if (saveCancelled || nextAddress >= maxBytes) {
+                                        if (saveCancelled) {
+                                            dismiss_saving_dialog();
+                                        } else {
+                                            mark_saving_dialog_done();
+                                        }
+                                    } else {
+                                        MSP.dataflashRead(nextAddress, onChunkRead);
+                                    }
+                                };
+                                
+                                fileWriter.write(blob);
+                            } else {
+                                // A zero-byte block indicates end-of-file, so we're done
+                                mark_saving_dialog_done();
+                            }
+                        } else {
+                            // There was an error with the received block (address didn't match the one we asked for), retry
+                            MSP.dataflashRead(nextAddress, onChunkRead);
+                        }
+                    }
+                    
+                    // Fetch the initial block
+                    MSP.dataflashRead(nextAddress, onChunkRead);
+                });
             });
         }
     }
@@ -246,8 +259,7 @@ TABS.dataflash.initialize = function (callback) {
     }
 
     function poll_for_erase_completion() {
-        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false, function() {
-            update_html();
+        flash_update_summary(function() {
             if (!eraseCancelled) {
                 if (DATAFLASH.ready) {
                     $(".dataflash-confirm-erase")[0].close();
