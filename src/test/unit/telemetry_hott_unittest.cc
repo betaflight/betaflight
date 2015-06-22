@@ -177,7 +177,12 @@ uint32_t millis(void) {
 
 uint32_t micros(void) { return 0; }
 
-uint8_t serialTotalBytesWaiting(serialPort_t *instance) {
+uint8_t serialRxBytesWaiting(serialPort_t *instance) {
+    UNUSED(instance);
+    return 0;
+}
+
+uint8_t serialTxBytesFree(serialPort_t *instance) {
     UNUSED(instance);
     return 0;
 }

@@ -211,7 +211,7 @@ void uartStartTxDMA(uartPort_t *s)
     DMA_Cmd(s->txDMAChannel, ENABLE);
 }
 
-uint8_t uartTotalBytesWaiting(serialPort_t *instance)
+uint8_t uartTotalRxBytesWaiting(serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t*)instance;
     if (s->rxDMAChannel) {
@@ -228,6 +228,41 @@ uint8_t uartTotalBytesWaiting(serialPort_t *instance)
     } else {
         return s->port.rxBufferSize + s->port.rxBufferHead - s->port.rxBufferTail;
     }
+}
+
+uint8_t uartTotalTxBytesFree(serialPort_t *instance)
+{
+    uartPort_t *s = (uartPort_t*)instance;
+
+    uint32_t bytesUsed;
+
+    if (s->port.txBufferHead >= s->port.txBufferTail) {
+        bytesUsed = s->port.txBufferHead - s->port.txBufferTail;
+    } else {
+        bytesUsed = s->port.txBufferSize + s->port.txBufferHead - s->port.txBufferTail;
+    }
+
+    if (s->txDMAChannel) {
+        /*
+         * When we queue up a DMA request, we advance the Tx buffer tail before the transfer finishes, so we must add
+         * the remaining size of that in-progress transfer here instead:
+         */
+        bytesUsed += s->txDMAChannel->CNDTR;
+
+        /*
+         * If the Tx buffer is being written to very quickly, we might have advanced the head into the buffer
+         * space occupied by the current DMA transfer. In that case the "bytesUsed" total will actually end up larger
+         * than the total Tx buffer size, because we'll end up transmitting the same buffer region twice. (So we'll be
+         * transmitting a garbage mixture of old and new bytes).
+         *
+         * Be kind to callers and pretend like our buffer can only ever be 100% full.
+         */
+        if (bytesUsed >= s->port.txBufferSize - 1) {
+            return 0;
+        }
+    }
+
+    return (s->port.txBufferSize - 1) - bytesUsed;
 }
 
 bool isUartTransmitBufferEmpty(serialPort_t *instance)
@@ -281,7 +316,8 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
 const struct serialPortVTable uartVTable[] = {
     {
         uartWrite,
-        uartTotalBytesWaiting,
+        uartTotalRxBytesWaiting,
+        uartTotalTxBytesFree,
         uartRead,
         uartSetBaudRate,
         isUartTransmitBufferEmpty,

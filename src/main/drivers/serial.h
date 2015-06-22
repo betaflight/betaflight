@@ -62,7 +62,8 @@ typedef struct serialPort {
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);
 
-    uint8_t (*serialTotalBytesWaiting)(serialPort_t *instance);
+    uint8_t (*serialTotalRxWaiting)(serialPort_t *instance);
+    uint8_t (*serialTotalTxFree)(serialPort_t *instance);
 
     uint8_t (*serialRead)(serialPort_t *instance);
 
@@ -75,7 +76,8 @@ struct serialPortVTable {
 };
 
 void serialWrite(serialPort_t *instance, uint8_t ch);
-uint8_t serialTotalBytesWaiting(serialPort_t *instance);
+uint8_t serialRxBytesWaiting(serialPort_t *instance);
+uint8_t serialTxBytesFree(serialPort_t *instance);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
 void serialSetMode(serialPort_t *instance, portMode_t mode);
