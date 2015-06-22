@@ -592,6 +592,7 @@ LDFLAGS		 = -lm \
 		   $(DEBUG_FLAGS) \
 		   -static \
 		   -Wl,-gc-sections,-Map,$(TARGET_MAP) \
+		   -Wl,-L$(LINKER_DIR) \
 		   -T$(LD_SCRIPT)
 
 ###############################################################################
