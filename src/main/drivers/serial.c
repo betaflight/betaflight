@@ -32,36 +32,42 @@ void serialPrint(serialPort_t *instance, const char *str)
 
 uint32_t serialGetBaudRate(serialPort_t *instance)
 {
+    if (!instance) return 0;
     return instance->baudRate;
 }
 
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
+    if (!instance) return;
     instance->vTable->serialWrite(instance, ch);
 }
 
 uint8_t serialTotalBytesWaiting(serialPort_t *instance)
 {
+    if (!instance) return 0;
     return instance->vTable->serialTotalBytesWaiting(instance);
 }
 
 uint8_t serialRead(serialPort_t *instance)
 {
+    if (!instance) return 0;
     return instance->vTable->serialRead(instance);
 }
 
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
+    if (!instance) return;
     instance->vTable->serialSetBaudRate(instance, baudRate);
 }
 
 bool isSerialTransmitBufferEmpty(serialPort_t *instance)
 {
+    if (!instance) return true;
     return instance->vTable->isSerialTransmitBufferEmpty(instance);
 }
 
 void serialSetMode(serialPort_t *instance, portMode_t mode)
 {
+    if (!instance) return;
     instance->vTable->setMode(instance, mode);
 }
-
