@@ -1,4 +1,4 @@
-<?
+<?php
 	// see docs/Travis.md, .travis.sh
 
 	$baseDir = "/var/www/builds/";
@@ -12,8 +12,11 @@
 	$revision = sanitize($_POST["revision"]);
 	$branch = sanitize($_POST["branch"]);
 
-	$uploadDir = $baseDir . "/" . $lastCommitDate . "/";
-	$prefix = $uploadDir . $travisJobId . "_" . $revision;
+	$github_repo = sanitize($_POST["github_repo"]);
+	$build_name = sanitize($_POST["build_name"]);
+
+	$uploadDir = $baseDir . "/" . $github_repo . "/" . $lastCommitDate . "/";
+	$prefix = $uploadDir . $travisJobId . "_" . $revision . "_" . $build_name;
 
 	if(!file_exists($uploadDir)) mkdir($uploadDir, 0770, true);
 
