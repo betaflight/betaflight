@@ -407,6 +407,21 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
     }
 }
 
+/** Write unsigned integer **/
+void blackboxWriteU32(int32_t value)
+{
+    blackboxWrite(value & 0xFF);
+    blackboxWrite((value >> 8) & 0xFF);
+    blackboxWrite((value >> 16) & 0xFF);
+    blackboxWrite((value >> 24) & 0xFF);
+}
+
+/** Write float value in the integer form **/
+void blackboxWriteFloat(float value)
+{
+    blackboxWriteU32(castFloatBytesToInt(value));
+}
+
 /**
  * If there is data waiting to be written to the blackbox device, attempt to write (a portion of) that now.
  * 

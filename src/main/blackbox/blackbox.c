@@ -1012,6 +1012,15 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
             blackboxWriteS16(data->autotuneTargets.firstPeakAngle);
             blackboxWriteS16(data->autotuneTargets.secondPeakAngle);
         break;
+        case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
+            if (data->inflightAdjustment.floatFlag) {
+                blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
+                blackboxWriteFloat(data->inflightAdjustment.newFloatValue);
+            } else {
+                blackboxWrite(data->inflightAdjustment.adjustmentFunction);
+                blackboxWriteSignedVB(data->inflightAdjustment.newValue);
+            }
+        break;
         case FLIGHT_LOG_EVENT_LOG_END:
             blackboxPrint("End of log");
             blackboxWrite(0);
