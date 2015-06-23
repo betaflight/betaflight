@@ -81,6 +81,8 @@ int flash_stm32_write(flash_stm32_writer_t *f, const void *p, uint32_t size)
             break;
         }
     }
+    f->address += size;
+
     return f->err;
 }
 

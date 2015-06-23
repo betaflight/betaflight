@@ -77,6 +77,27 @@
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
+// Header for the saved copy.
+typedef struct {
+    uint8_t format;
+    uint8_t pad1;
+    uint16_t pad2;
+} configHeader_t;
+
+// Header for each stored PG.
+typedef struct {
+    uint16_t size;
+    uint16_t pgn;
+    uint8_t pg[];
+} configRecord_t;
+
+// Footer for the saved copy.
+typedef struct {
+    uint16_t pad1;
+    uint8_t pad2;
+    uint8_t chk;
+} configFooter_t;
+
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800
 
 master_t masterConfig;                 // master config struct with data independent from profiles
@@ -86,10 +107,10 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 102;
+static const uint8_t EEPROM_CONF_VERSION = 200;
 
-extern uint32_t __config_start;
-extern uint32_t __config_end;
+extern uint8_t __config_start;
+extern uint8_t __config_end;
 
 extern const pgRegistry_t __pg_registry_start;
 extern const pgRegistry_t __pg_registry_end;
@@ -327,7 +348,6 @@ static void resetConf(void)
     setProfile(0);
     setControlRateProfile(0);
 
-    masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
 #if defined(CJMCU) || defined(SPARKY)
@@ -576,36 +596,92 @@ static void resetConf(void)
     }
 }
 
-static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
+static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
 {
-    uint8_t checksum = 0;
-    const uint8_t *byteOffset;
+    const uint8_t *p = (const uint8_t *)data;
+    const uint8_t *pend = p + length;
 
-    for (byteOffset = data; byteOffset < (data + length); byteOffset++)
-        checksum ^= *byteOffset;
-    return checksum;
+    for (; p != pend; p++) {
+        chk ^= *p;
+    }
+    return chk;
+}
+
+// Find a parameter group by PGN.  Returns NULL on not found.
+static const pgRegistry_t *findPGN(uint16_t pgn)
+{
+    for (const pgRegistry_t *reg = &__pg_registry_start;
+         reg < &__pg_registry_end;
+         reg++) {
+
+        if (reg->pgn == pgn) {
+            return reg;
+        }
+    }
+    return NULL;
+}
+
+// Load a PG into RAM, upgrading and downgrading as needed.
+static bool loadPG(const configRecord_t *record)
+{
+    const pgRegistry_t *reg = findPGN(record->pgn);
+
+    if (reg == NULL) {
+        return false;
+    }
+
+    // Clear the in-memory copy.  Sets any ungraded fields to zero.
+    memset(reg->base, 0, reg->size);
+    memcpy(reg->base, record->pg, MIN(reg->size, record->size - sizeof(*record)));
+    return true;
+}
+
+// Scan the EEPROM config.  Optionally also load into memory.  Returns
+// true if the config is valid.
+static bool scanEEPROM(bool andLoad)
+{
+    uint8_t chk = 0;
+    const uint8_t *p = &__config_start;
+    const configHeader_t *header = (const configHeader_t *)p;
+
+    if (header->format != EEPROM_CONF_VERSION) {
+        return false;
+    }
+    if (header->pad1 != 0 || header->pad2 != 0) {
+        return false;
+    }
+    chk = updateChecksum(chk, header, sizeof(*header));
+    p += sizeof(*header);
+
+    for (;;) {
+        const configRecord_t *record = (const configRecord_t *)p;
+
+        if (record->size == 0) {
+            // Found the end.  Stop scanning.
+            break;
+        }
+        if (record->size >= FLASH_TO_RESERVE_FOR_CONFIG
+            || record->size < sizeof(*record)) {
+            // Too big or too small.
+            return false;
+        }
+
+        chk = updateChecksum(chk, p, record->size);
+
+        if (andLoad) {
+            loadPG(record);
+        }
+        p += record->size;
+    }
+
+    const configFooter_t *footer = (const configFooter_t *)p;
+    chk = updateChecksum(chk, footer, sizeof(*footer));
+    return chk == 0xFF;
 }
 
 static bool isEEPROMContentValid(void)
 {
-    const master_t *temp = (const master_t *)&__config_start;
-    uint8_t checksum = 0;
-
-    // check version number
-    if (EEPROM_CONF_VERSION != temp->version)
-        return false;
-
-    // check size and magic numbers
-    if (temp->size != sizeof(master_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
-        return false;
-
-    // verify integrity of temporary copy
-    checksum = calculateChecksum((const uint8_t *) temp, sizeof(master_t));
-    if (checksum != 0)
-        return false;
-
-    // looks good, let's roll!
-    return true;
+    return scanEEPROM(false);
 }
 
 void activateControlRateConfig(void)
@@ -786,12 +862,10 @@ void initEEPROM(void)
 
 void readEEPROM(void)
 {
-    // Sanity check
-    if (!isEEPROMContentValid())
-        failureMode(10);
-
     // Read flash
-    memcpy(&masterConfig, (char *)&__config_start, sizeof(master_t));
+    if (!scanEEPROM(true)) {
+        failureMode(10);
+    }
 
     if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) // sanity check
         masterConfig.current_profile_index = 0;
@@ -814,33 +888,66 @@ void readEEPROMAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
+// Write a block of memory to flash, padding out to word length and
+// updating the checksum.
+static uint8_t write(flash_stm32_writer_t *f, const void *data, int length, uint8_t chk)
+{
+    uint8_t buf[sizeof(uint32_t)];
+    const uint8_t *p = (const uint8_t *)data;
+
+    chk = updateChecksum(chk, p, length);
+
+    for (; length > 0; length -= sizeof(buf), p += sizeof(buf)) {
+        memset(buf, 0, sizeof(buf));
+        memcpy(buf, p, MIN(length, (int)sizeof(buf)));
+        flash_stm32_write(f, buf, sizeof(buf));
+    }
+    return chk;
+}
+
 void writeEEPROM(void)
 {
     // Generate compile time error if the config does not fit in the reserved area of flash.
     BUILD_BUG_ON(sizeof(master_t) > FLASH_TO_RESERVE_FOR_CONFIG);
-    
+
     flash_stm32_writer_t writer;
     flash_stm32_init(&writer);
-
-    // prepare checksum/version constants
-    masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.size = sizeof(master_t);
-    masterConfig.magic_be = 0xBE;
-    masterConfig.magic_ef = 0xEF;
-    masterConfig.chk = 0; // erase checksum before recalculating
-    masterConfig.chk = calculateChecksum((const uint8_t *) &masterConfig, sizeof(master_t));
+    uint8_t chk = 0;
 
     // write it
     for (int attempt = 0; attempt < 3; attempt++) {
+        flash_stm32_start(&writer, (uintptr_t)&__config_start);
+
+        configHeader_t header = {
+            .format = EEPROM_CONF_VERSION,
+            .pad1 = 0,
+            .pad2 = 0,
+        };
+        BUILD_BUG_ON(sizeof(header) != 4);
+
+        chk = write(&writer, &header, sizeof(header), chk);
+
         for (const pgRegistry_t *reg = &__pg_registry_start;
              reg < &__pg_registry_end;
              reg++) {
 
-            flash_stm32_start(&writer, (uintptr_t)&__config_start);
+            configRecord_t record = {
+                .size = sizeof(configRecord_t) + reg->size,
+                .pgn = reg->pgn,
+            };
 
-            if (flash_stm32_write(&writer, &masterConfig, sizeof(masterConfig)) == 0) {
-                break;
-            }
+            chk = write(&writer, &record, sizeof(record), chk);
+            chk = write(&writer, reg->base, reg->size, chk);
+        }
+
+        configFooter_t footer = {
+            .pad1 = 0,
+            .pad2 = 0,
+            .chk = ~chk,
+        };
+
+        if (flash_stm32_write(&writer, &footer, sizeof(footer)) == 0) {
+            break;
         }
     }
 
