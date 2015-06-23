@@ -8,8 +8,8 @@ targets=("PUBLISHMETA=True" "RUNTESTS=True" \
 
 #fake a travis build environment
 export TRAVIS_BUILD_NUMBER=$(date +%s)
-export BUILDNAME=fake_travis
-export TRAVIS_REPO_SLUG=$USER/simulated
+export BUILDNAME=${BUILDNAME:=fake_travis}
+export TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/simulated}
 
 for target in "${targets[@]}"
 do
