@@ -105,6 +105,10 @@ regs Kusti, 23.10.2004
 #ifndef __TFP_PRINTF__
 #define __TFP_PRINTF__
 
+#include <stdarg.h>
+
+#include "drivers/serial.h"
+
 void init_printf(void *putp, void (*putf) (void *, char));
 
 int tfp_printf(const char *fmt, ...);
