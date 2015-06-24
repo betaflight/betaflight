@@ -435,7 +435,16 @@ static void detectBaro()
 
     switch (baroHardware) {
         case BARO_DEFAULT:
-            ; // fallthough
+            ; // fallthrough
+
+        case BARO_BMP085: // Always test before MS5611 as some BMP180's can pass MS5611 CRC test
+#ifdef USE_BARO_BMP085
+            if (bmp085Detect(bmp085Config, &baro)) {
+                baroHardware = BARO_BMP085;
+                break;
+            }
+#endif
+            ; // fallthrough
 
         case BARO_MS5611:
 #ifdef USE_BARO_MS5611
@@ -444,14 +453,8 @@ static void detectBaro()
                 break;
             }
 #endif
-            ; // fallthough
-        case BARO_BMP085:
-#ifdef USE_BARO_BMP085
-            if (bmp085Detect(bmp085Config, &baro)) {
-                baroHardware = BARO_BMP085;
-                break;
-            }
-#endif
+            ; // fallthrough
+
         case BARO_NONE:
             baroHardware = BARO_NONE;
             break;
