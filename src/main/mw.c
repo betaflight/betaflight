@@ -299,7 +299,7 @@ void annexCode(void)
     }
 
 #ifdef TELEMETRY
-    checkTelemetryState();
+    telemetryCheckState();
 #endif
 
     handleSerial();
@@ -331,6 +331,14 @@ void mwDisarm(void)
 }
 
 #define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_MSP | FUNCTION_TELEMETRY_SMARTPORT)
+
+void releaseSharedTelemetryPorts(void) {
+    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+    while (sharedPort) {
+        mspReleasePortIfAllocated(sharedPort);
+        sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+    }
+}
 
 void mwArm(void)
 {
@@ -662,20 +670,17 @@ void processRx(void)
     }
 
 #ifdef TELEMETRY
-	if (feature(FEATURE_TELEMETRY)) {
-		if ((!masterConfig.telemetryConfig.telemetry_switch && ARMING_FLAG(ARMED)) ||
-		    (masterConfig.telemetryConfig.telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
-			serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
-			while (sharedPort) {
-				mspReleasePortIfAllocated(sharedPort);
-				sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
-			}
-		} else {
+    if (feature(FEATURE_TELEMETRY)) {
+        if ((!masterConfig.telemetryConfig.telemetry_switch && ARMING_FLAG(ARMED)) ||
+                (masterConfig.telemetryConfig.telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
+
+            releaseSharedTelemetryPorts();
+        } else {
             // the telemetry state must be checked immediately so that shared serial ports are released.
-            checkTelemetryState();
+            telemetryCheckState();
             mspAllocateSerialPorts(&masterConfig.serialConfig);
-		}
-	}
+        }
+    }
 #endif
 
 }
@@ -814,7 +819,7 @@ void loop(void)
 
 #ifdef TELEMETRY
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        handleTelemetry(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+        telemetryProcess(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
     }
 #endif
 

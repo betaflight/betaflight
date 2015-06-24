@@ -261,7 +261,7 @@ bool isSmartPortTimedOut(void)
 
 void checkSmartPortTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(smartPortPortSharing);
+    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(smartPortPortSharing);
 
     if (newTelemetryEnabledValue == smartPortTelemetryEnabled) {
         return;

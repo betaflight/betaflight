@@ -662,7 +662,7 @@ void activateConfig(void)
     useGyroConfig(&masterConfig.gyroConfig);
 
 #ifdef TELEMETRY
-    useTelemetryConfig(&masterConfig.telemetryConfig);
+    telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
 
     pidSetController(currentProfile->pidProfile.pidController);

@@ -472,7 +472,7 @@ bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
 
 void checkFrSkyTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(frskyPortSharing);
+    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(frskyPortSharing);
 
     if (newTelemetryEnabledValue == frskyTelemetryEnabled) {
         return;
