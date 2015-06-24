@@ -38,6 +38,31 @@
 #define LSM303DLHC_ACCEL_ADDRESS 0x19
 #define LSM303DLHC_MAG_ADDRESS 0x1E
 
+/**
+ * Address Auto Increment  - See LSM303DLHC datasheet, Section 5.1.1 I2C operation.
+ * http://www.st.com/web/en/resource/technical/document/datasheet/DM00027543.pdf
+ *
+ * "The I2C embedded inside the LSM303DLHC behaves like a slave device and the following protocol must be adhered to.
+ * After the START condition (ST) a slave address is sent, once a slave acknowledge (SAK) has been returned, an 8-bit
+ * sub-address (SUB) is transmitted; the 7 LSBs represent the actual register address while the MSB enables address
+ * autoincrement.
+ *
+ * If the MSB of the SUB field is ‘1’, the SUB (register address) is automatically increased to allow multiple data
+ * Read/Write.
+ *
+ * To minimize the communication between the master and magnetic digital interface of LSM303DLHC, the address pointer
+ * updates automatically without master intervention.  This automatic address pointer update has two additional
+ * features. First, when address 12 or higher is accessed, the pointer updates to address 00, and secondly, when
+ * address 08 is reached, the pointer rolls back to address 03. Logically, the address pointer operation functions
+ * as shown below.
+ * 1) If (address pointer = 08) then the address pointer = 03
+ * Or else, if (address pointer >= 12) then the address pointer = 0
+ * Or else, (address pointer) = (address pointer) + 1
+ *
+ * The address pointer value itself cannot be read via the I2C bus"
+ */
+#define AUTO_INCREMENT_ENABLE 0x80
+
 // Registers
 
 #define CTRL_REG1_A 0x20
@@ -110,7 +135,7 @@ static void lsm303dlhcAccRead(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
-    bool ok = i2cRead(LSM303DLHC_ACCEL_ADDRESS, OUT_X_L_A, 6, buf);
+    bool ok = i2cRead(LSM303DLHC_ACCEL_ADDRESS, AUTO_INCREMENT_ENABLE | OUT_X_L_A, 6, buf);
 
     if (!ok)
         return;
