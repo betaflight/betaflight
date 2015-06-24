@@ -320,14 +320,6 @@ void mwDisarm(void)
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
 
-#ifdef TELEMETRY
-        if (feature(FEATURE_TELEMETRY)) {
-            // the telemetry state must be checked immediately so that shared serial ports are released.
-            checkTelemetryState();
-            mspAllocateSerialPorts(&masterConfig.serialConfig);
-        }
-#endif
-
 #ifdef BLACKBOX
         if (feature(FEATURE_BLACKBOX)) {
             finishBlackbox();
@@ -349,18 +341,6 @@ void mwArm(void)
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
             headFreeModeHold = heading;
-
-#ifdef TELEMETRY
-            if (feature(FEATURE_TELEMETRY)) {
-
-
-                serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
-                while (sharedPort) {
-                    mspReleasePortIfAllocated(sharedPort);
-                    sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
-                }
-            }
-#endif
 
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
@@ -680,6 +660,24 @@ void processRx(void)
     if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
+
+#ifdef TELEMETRY
+	if (feature(FEATURE_TELEMETRY)) {
+		if ((!masterConfig.telemetryConfig.telemetry_switch && ARMING_FLAG(ARMED)) ||
+		    (masterConfig.telemetryConfig.telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
+			serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+			while (sharedPort) {
+				mspReleasePortIfAllocated(sharedPort);
+				sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+			}
+		} else {
+            // the telemetry state must be checked immediately so that shared serial ports are released.
+            checkTelemetryState();
+            mspAllocateSerialPorts(&masterConfig.serialConfig);
+		}
+	}
+#endif
+
 }
 
 void loop(void)
