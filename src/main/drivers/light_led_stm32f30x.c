@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
+
 #include "gpio.h"
 
 #include "light_led.h"
@@ -47,7 +49,7 @@ void ledInit(void)
 #endif
     };
 
-    uint8_t gpio_count = sizeof(gpio_setup) / sizeof(gpio_setup[0]);
+    uint8_t gpio_count = ARRAYLEN(gpio_setup);
 
 #ifdef LED0
     RCC_AHBPeriphClockCmd(LED0_PERIPHERAL, ENABLE);
