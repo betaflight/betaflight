@@ -756,26 +756,26 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     }
 }
 
-void pidSetController(int type)
+void pidSetController(pidControllerType_e type)
 {
     switch (type) {
-        case 0:
+        case PID_CONTROLLER_MULTI_WII:
         default:
             pid_controller = pidMultiWii;
             break;
-        case 1:
+        case PID_CONTROLLER_REWRITE:
             pid_controller = pidRewrite;
             break;
-        case 2:
+        case PID_CONTROLLER_LUX_FLOAT:
             pid_controller = pidLuxFloat;
             break;
-        case 3:
+        case PID_CONTROLLER_MULTI_WII_23:
             pid_controller = pidMultiWii23;
             break;
-        case 4:
+        case PID_CONTROLLER_MULTI_WII_HYBRID:
             pid_controller = pidMultiWiiHybrid;
             break;
-        case 5:
+        case PID_CONTROLLER_HARAKIRI:
             pid_controller = pidHarakiri;
     }
 }

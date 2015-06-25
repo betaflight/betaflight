@@ -224,7 +224,7 @@ bool sensors(uint32_t mask) {
     return false;
 }
 
-bool determineNewTelemetryEnabledState(portSharing_e) {
+bool telemetryDetermineEnabledState(portSharing_e) {
     return true;
 }
 

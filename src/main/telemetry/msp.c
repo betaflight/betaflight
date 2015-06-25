@@ -57,7 +57,7 @@ void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig)
 
 void checkMSPTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(mspPortSharing);
+    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mspPortSharing);
 
     if (newTelemetryEnabledValue == mspTelemetryEnabled) {
         return;

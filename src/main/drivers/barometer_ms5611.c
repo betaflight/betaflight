@@ -26,6 +26,8 @@
 #include "system.h"
 #include "bus_i2c.h"
 
+#include "build_config.h"
+
 // MS5611, Standard address 0x77
 #define MS5611_ADDR                 0x77
 
@@ -44,7 +46,7 @@
 
 static void ms5611_reset(void);
 static uint16_t ms5611_prom(int8_t coef_num);
-static int8_t ms5611_crc(uint16_t *prom);
+STATIC_UNIT_TESTED int8_t ms5611_crc(uint16_t *prom);
 static uint32_t ms5611_read_adc(void);
 static void ms5611_start_ut(void);
 static void ms5611_get_ut(void);
@@ -102,7 +104,7 @@ static uint16_t ms5611_prom(int8_t coef_num)
     return rxbuf[0] << 8 | rxbuf[1];
 }
 
-static int8_t ms5611_crc(uint16_t *prom)
+STATIC_UNIT_TESTED int8_t ms5611_crc(uint16_t *prom)
 {
     int32_t i, j;
     uint32_t res = 0;

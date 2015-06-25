@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "axis.h"
 #include "maths.h"
 
 int32_t applyDeadband(int32_t value, int32_t deadband)
@@ -105,12 +106,8 @@ void normalizeV(struct fp_vector *src, struct fp_vector *dest)
     }
 }
 
-// Rotate a vector *v by the euler angles defined by the 3-vector *delta.
-void rotateV(struct fp_vector *v, fp_angles_t *delta)
+void buildRotationMatrix(fp_angles_t *delta, float matrix[3][3])
 {
-    struct fp_vector v_tmp = *v;
-
-    float mat[3][3];
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, sinzcosx, coszsinx, sinzsinx;
 
@@ -126,19 +123,29 @@ void rotateV(struct fp_vector *v, fp_angles_t *delta)
     coszsinx = sinx * cosz;
     sinzsinx = sinx * sinz;
 
-    mat[0][0] = cosz * cosy;
-    mat[0][1] = -cosy * sinz;
-    mat[0][2] = siny;
-    mat[1][0] = sinzcosx + (coszsinx * siny);
-    mat[1][1] = coszcosx - (sinzsinx * siny);
-    mat[1][2] = -sinx * cosy;
-    mat[2][0] = (sinzsinx) - (coszcosx * siny);
-    mat[2][1] = (coszsinx) + (sinzcosx * siny);
-    mat[2][2] = cosy * cosx;
+    matrix[0][X] = cosz * cosy;
+    matrix[0][Y] = -cosy * sinz;
+    matrix[0][Z] = siny;
+    matrix[1][X] = sinzcosx + (coszsinx * siny);
+    matrix[1][Y] = coszcosx - (sinzsinx * siny);
+    matrix[1][Z] = -sinx * cosy;
+    matrix[2][X] = (sinzsinx) - (coszcosx * siny);
+    matrix[2][Y] = (coszsinx) + (sinzcosx * siny);
+    matrix[2][Z] = cosy * cosx;
+}
 
-    v->X = v_tmp.X * mat[0][0] + v_tmp.Y * mat[1][0] + v_tmp.Z * mat[2][0];
-    v->Y = v_tmp.X * mat[0][1] + v_tmp.Y * mat[1][1] + v_tmp.Z * mat[2][1];
-    v->Z = v_tmp.X * mat[0][2] + v_tmp.Y * mat[1][2] + v_tmp.Z * mat[2][2];
+// Rotate a vector *v by the euler angles defined by the 3-vector *delta.
+void rotateV(struct fp_vector *v, fp_angles_t *delta)
+{
+    struct fp_vector v_tmp = *v;
+
+    float matrix[3][3];
+
+    buildRotationMatrix(delta, matrix);
+
+    v->X = v_tmp.X * matrix[0][X] + v_tmp.Y * matrix[1][X] + v_tmp.Z * matrix[2][X];
+    v->Y = v_tmp.X * matrix[0][Y] + v_tmp.Y * matrix[1][Y] + v_tmp.Z * matrix[2][Y];
+    v->Z = v_tmp.X * matrix[0][Z] + v_tmp.Y * matrix[1][Z] + v_tmp.Z * matrix[2][Z];
 }
 
 // Quick median filter implementation

@@ -812,14 +812,11 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
-        // Hack due to choice of units for sensor data in multiwii
-        if (acc_1G > 1024) {
-            for (i = 0; i < 3; i++)
-                serialize16(accSmooth[i] / 8);
-        } else {
-            for (i = 0; i < 3; i++)
-                serialize16(accSmooth[i]);
-        }
+        // Hack scale due to choice of units for sensor data in multiwii
+        uint8_t scale = acc_1G > 1024 ? 8 : 0;
+
+        for (i = 0; i < 3; i++)
+            serialize16(accSmooth[i] / scale);
         for (i = 0; i < 3; i++)
             serialize16(gyroADC[i]);
         for (i = 0; i < 3; i++)

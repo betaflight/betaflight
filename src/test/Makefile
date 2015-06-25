@@ -58,7 +58,8 @@ TESTS = \
 	ws2811_unittest \
 	encoding_unittest \
 	io_serial_unittest \
-	lowpass_unittest
+	lowpass_unittest \
+    baro_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -459,6 +460,29 @@ rx_rx_unittest : \
 	$(OBJECT_DIR)/rx/rx.o \
 	$(OBJECT_DIR)/rx_rx_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/drivers/barometer_ms5611.o : \
+    $(USER_DIR)/drivers/barometer_ms5611.c \
+    $(USER_DIR)/drivers/barometer_ms5611.h \
+    $(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/barometer_ms5611.c -o $@
+
+$(OBJECT_DIR)/baro_unittest.o : \
+	$(TEST_DIR)/baro_unittest.cc \
+	$(USER_DIR)/drivers/barometer_ms5611.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/baro_unittest.cc -o $@
+
+baro_unittest : \
+	$(OBJECT_DIR)/drivers/barometer_ms5611.o \
+	$(OBJECT_DIR)/baro_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@

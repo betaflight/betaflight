@@ -38,6 +38,15 @@ typedef enum {
     PID_ITEM_COUNT
 } pidIndex_e;
 
+typedef enum {
+    PID_CONTROLLER_MULTI_WII,
+    PID_CONTROLLER_REWRITE,
+    PID_CONTROLLER_LUX_FLOAT,
+    PID_CONTROLLER_MULTI_WII_23,
+    PID_CONTROLLER_MULTI_WII_HYBRID,
+    PID_CONTROLLER_HARAKIRI,
+} pidControllerType_e;
+
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
 
 typedef struct pidProfile_s {
@@ -63,7 +72,7 @@ typedef struct pidProfile_s {
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
-void pidSetController(int type);
+void pidSetController(pidControllerType_e type);
 void pidResetErrorAngle(void);
 void pidResetErrorGyro(void);
 

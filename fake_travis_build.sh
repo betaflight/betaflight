@@ -6,8 +6,10 @@ targets=("PUBLISHMETA=True" "RUNTESTS=True" \
 "TARGET=OLIMEXINO" "TARGET=PORT103R" "TARGET=SPARKY" "TARGET=STM32F3DISCOVERY" \
 "TARGET=ALIENWIIF1" "TARGET=ALIENWIIF3")
 
-#fake a travis build number
+#fake a travis build environment
 export TRAVIS_BUILD_NUMBER=$(date +%s)
+export BUILDNAME=${BUILDNAME:=fake_travis}
+export TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/simulated}
 
 for target in "${targets[@]}"
 do
@@ -16,6 +18,3 @@ do
 	make clean
 	./.travis.sh
 done
-
-
-

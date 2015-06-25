@@ -135,7 +135,7 @@ const uint16_t frSkyDataIdTable[] = {
 #define __USE_C99_MATH // for roundf()
 #define SMARTPORT_BAUD 57600
 #define SMARTPORT_UART_MODE MODE_RXTX
-#define SMARTPORT_SERVICE_DELAY_MS 5 // telemetry requests comes in at roughly 12 ms intervals, keep this under that
+#define SMARTPORT_SERVICE_TIMEOUT_MS 1 // max allowed time to find a value to send
 #define SMARTPORT_NOT_CONNECTED_TIMEOUT_MS 7000
 
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
@@ -151,7 +151,6 @@ char smartPortState = SPSTATE_UNINITIALIZED;
 static uint8_t smartPortHasRequest = 0;
 static uint8_t smartPortIdCnt = 0;
 static uint32_t smartPortLastRequestTime = 0;
-static uint32_t smartPortLastServiceTime = 0;
 
 static void smartPortDataReceive(uint16_t c)
 {
@@ -161,8 +160,8 @@ static void smartPortDataReceive(uint16_t c)
     static uint8_t lastChar;
     if (lastChar == FSSP_START_STOP) {
         smartPortState = SPSTATE_WORKING;
-        smartPortLastRequestTime = now;
-        if (c == FSSP_SENSOR_ID1) {
+        if (c == FSSP_SENSOR_ID1 && (serialTotalBytesWaiting(smartPortSerialPort) == 0)) {
+            smartPortLastRequestTime = now;
             smartPortHasRequest = 1;
             // we only responde to these IDs
             // the X4R-SB does send other IDs, we ignore them, but take note of the time
@@ -204,8 +203,6 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortSendByte(u8p[2], &crc);
     smartPortSendByte(u8p[3], &crc);
     smartPortSendByte(0xFF - (uint8_t)crc, NULL);
-
-    smartPortLastServiceTime = millis();
 }
 
 void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
@@ -246,6 +243,7 @@ void configureSmartPortTelemetryPort(void)
 
     smartPortState = SPSTATE_INITIALIZED;
     smartPortTelemetryEnabled = true;
+    smartPortLastRequestTime = millis();
 }
 
 bool canSendSmartPortTelemetry(void)
@@ -260,7 +258,7 @@ bool isSmartPortTimedOut(void)
 
 void checkSmartPortTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(smartPortPortSharing);
+    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(smartPortPortSharing);
 
     if (newTelemetryEnabledValue == smartPortTelemetryEnabled) {
         return;
@@ -274,6 +272,8 @@ void checkSmartPortTelemetryState(void)
 
 void handleSmartPortTelemetry(void)
 {
+    uint32_t smartPortLastServiceTime = millis();
+    
     if (!smartPortTelemetryEnabled) {
         return;
     }
@@ -295,11 +295,13 @@ void handleSmartPortTelemetry(void)
         return;
     }
 
-    // limit the rate at which we send responses, we don't want to affect flight characteristics
-    if ((now - smartPortLastServiceTime) < SMARTPORT_SERVICE_DELAY_MS)
-        return;
-
-    if (smartPortHasRequest) {
+    while (smartPortHasRequest) {
+        // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
+        if ((millis() - smartPortLastServiceTime) > SMARTPORT_SERVICE_TIMEOUT_MS) {
+            smartPortHasRequest = 0;
+            return;
+        }
+         
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
@@ -322,21 +324,29 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_VFAS       :
-                smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
-                smartPortHasRequest = 0;
+                if (feature(FEATURE_VBAT)) {
+                    smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
+                    smartPortHasRequest = 0;
+                }
                 break;
             case FSSP_DATAID_CURRENT    :
-                smartPortSendPackage(id, amperage); // given in 10mA steps, unknown requested unit
-                smartPortHasRequest = 0;
+                if (feature(FEATURE_CURRENT_METER)) {
+                    smartPortSendPackage(id, amperage); // given in 10mA steps, unknown requested unit
+                    smartPortHasRequest = 0;
+                }
                 break;
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
-                smartPortSendPackage(id, BaroAlt); // unknown given unit, requested 100 = 1 meter
-                smartPortHasRequest = 0;
+                if (sensors(SENSOR_BARO)) {
+                    smartPortSendPackage(id, BaroAlt); // unknown given unit, requested 100 = 1 meter
+                    smartPortHasRequest = 0;
+                }
                 break;
             case FSSP_DATAID_FUEL       :
-                smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
-                smartPortHasRequest = 0;
+                if (feature(FEATURE_CURRENT_METER)) {
+                    smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
+                    smartPortHasRequest = 0;
+                }
                 break;
             //case FSSP_DATAID_ADC1       :
             //case FSSP_DATAID_ADC2       :
@@ -348,19 +358,14 @@ void handleSmartPortTelemetry(void)
                     // the MSB of the sent uint32_t helps FrSky keep track
                     // the even/odd bit of our counter helps us keep track
                     if (smartPortIdCnt & 1) {
-                        tmpui = tmpi = GPS_coord[LON];
-                        if (tmpi < 0) {
-                            tmpui = -tmpi;
-                            tmpui |= 0x40000000;
-                        }
-                        tmpui |= 0x80000000;
+                        tmpui = abs(GPS_coord[LON]);  // now we have unsigned value and one bit to spare
+                        tmpui = (tmpui + tmpui / 2) / 25 | 0x80000000;  // 6/100 = 1.5/25, division by power of 2 is fast
+                        if (GPS_coord[LON] < 0) tmpui |= 0x40000000;
                     }
                     else {
-                        tmpui = tmpi = GPS_coord[LAT];
-                        if (tmpi < 0) {
-                            tmpui = -tmpi;
-                            tmpui |= 0x40000000;
-                        }
+                        tmpui = abs(GPS_coord[LAT]);  // now we have unsigned value and one bit to spare
+                        tmpui = (tmpui + tmpui / 2) / 25;  // 6/100 = 1.5/25, division by power of 2 is fast
+                        if (GPS_coord[LAT] < 0) tmpui |= 0x40000000;
                     }
                     smartPortSendPackage(id, tmpui);
                     smartPortHasRequest = 0;
@@ -369,8 +374,10 @@ void handleSmartPortTelemetry(void)
 #endif
             //case FSSP_DATAID_CAP_USED   :
             case FSSP_DATAID_VARIO      :
-                smartPortSendPackage(id, vario); // unknown given unit but requested in 100 = 1m/s
-                smartPortHasRequest = 0;
+                if (sensors(SENSOR_BARO)) {
+                    smartPortSendPackage(id, vario); // unknown given unit but requested in 100 = 1m/s
+                    smartPortHasRequest = 0;
+                }
                 break;
             case FSSP_DATAID_HEADING    :
                 smartPortSendPackage(id, heading * 100); // given in deg, requested in 10000 = 100 deg
@@ -444,7 +451,7 @@ void handleSmartPortTelemetry(void)
                     smartPortHasRequest = 0;
 #endif
                 }
-                else {
+                else if (feature(FEATURE_GPS)) {
                     smartPortSendPackage(id, 0);
                     smartPortHasRequest = 0;
                 }
@@ -452,14 +459,14 @@ void handleSmartPortTelemetry(void)
 #ifdef GPS
             case FSSP_DATAID_GPS_ALT    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-                    smartPortSendPackage(id, GPS_altitude * 1000); // given in 0.1m , requested in 100 = 1m
+                    smartPortSendPackage(id, GPS_altitude * 100); // given in 0.1m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)
                     smartPortHasRequest = 0;
                 }
                 break;
 #endif
             default:
                 break;
-                // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just wait for the next loop
+                // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just loop back to the start
         }
     }
 }

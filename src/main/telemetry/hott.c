@@ -462,7 +462,7 @@ static inline bool shouldCheckForHoTTRequest()
 
 void checkHoTTTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(hottPortSharing);
+    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(hottPortSharing);
 
     if (newTelemetryEnabledValue == hottTelemetryEnabled) {
         return;
