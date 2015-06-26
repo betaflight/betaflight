@@ -1,5 +1,7 @@
 # Cleanflight
 
+![Cleanflight](assets/cleanflight/cleanflight-logo-light-wide-1-240px.jpg)
+
 Welcome to CleanFlight!
 
 Cleanflight is an community project which attempts to deliver flight controller firmware and related tools.
