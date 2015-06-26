@@ -43,6 +43,10 @@ http://uk.farnell.com/jsp/search/productdetail.jsp?sku=2144328
 
 #### CJMCU-STM32 Singlechip Development Board Jlink Downloader Jlink ARM Programmer
 
+![CJMCU-STM32 Jlink ARM Programmer Front](assets/hardware/cjmcu-jlink-front.jpg)
+
+![CJMCU-STM32 Jlink ARM Programmer Back](assets/hardware/cjmcu-jlink-back.jpg)
+
 http://www.goodluckbuy.com/cjmcu-stm32-singlechip-development-board-jlink-downloader-jlink-arm-programmer.html
 
 
