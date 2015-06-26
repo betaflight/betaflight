@@ -19,6 +19,11 @@
 extern "C" {
 
 int8_t ms5611_crc(uint16_t *prom);
+void ms5611_calculate(int32_t *pressure, int32_t *temperature);
+
+extern uint16_t ms5611_c[8];
+extern uint32_t ms5611_up;
+extern uint32_t ms5611_ut;
 
 }
 
@@ -80,6 +85,66 @@ TEST(baroTest, TestMs5611AllOnesProm)
 
     // then
     EXPECT_EQ(-1, result);
+
+}
+
+TEST(baroTest, TestMs5611CalculatePressureGT20Deg)
+{
+
+    // given
+    int32_t pressure, temperature;
+    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet 
+    memcpy(&ms5611_c, &ms5611_c_test, sizeof(ms5611_c_test));
+
+    ms5611_up = 9085466; // Digital pressure value from MS5611 datasheet
+    ms5611_ut = 8569150; // Digital temperature value from MS5611 datasheet
+
+    // when
+    ms5611_calculate(&pressure, &temperature);
+
+    // then
+    EXPECT_EQ(2007, temperature); // 20.07 deg C
+    EXPECT_EQ(100009, pressure);  // 1000.09 mbar
+
+}
+
+TEST(baroTest, TestMs5611CalculatePressureLT20Deg)
+{
+
+    // given
+    int32_t pressure, temperature;
+    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet 
+    memcpy(&ms5611_c, &ms5611_c_test, sizeof(ms5611_c_test));
+
+    ms5611_up = 9085466; // Digital pressure value from MS5611 datasheet
+    ms5611_ut = 8069150; // Digital temperature value
+
+    // when
+    ms5611_calculate(&pressure, &temperature);
+
+    // then
+    EXPECT_EQ(205, temperature); // 2.05 deg C
+    EXPECT_EQ(96512, pressure);  // 965.12 mbar
+
+}
+
+TEST(baroTest, TestMs5611CalculatePressureLTMinus15Deg)
+{
+
+    // given
+    int32_t pressure, temperature;
+    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet 
+    memcpy(&ms5611_c, &ms5611_c_test, sizeof(ms5611_c_test));
+
+    ms5611_up = 9085466; // Digital pressure value from MS5611 datasheet
+    ms5611_ut = 7369150; // Digital temperature value
+
+    // when
+    ms5611_calculate(&pressure, &temperature);
+
+    // then
+    EXPECT_EQ(-2710, temperature); // -27.10 deg C
+    EXPECT_EQ(90613, pressure);  // 906.13 mbar
 
 }
 
