@@ -675,34 +675,34 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
         tim->SR = mask;
         tim_status &= mask;
         switch(bit) {
-        case __builtin_clz(TIM_IT_Update): {
+            case __builtin_clz(TIM_IT_Update): {
 
-        	if(timerConfig->forcedOverflowTimerValue != 0){
-        		capture = timerConfig->forcedOverflowTimerValue - 1;
-        		timerConfig->forcedOverflowTimerValue = 0;
-        	} else {
-        		capture = tim->ARR;
-        	}
+                if(timerConfig->forcedOverflowTimerValue != 0){
+                    capture = timerConfig->forcedOverflowTimerValue - 1;
+                    timerConfig->forcedOverflowTimerValue = 0;
+                } else {
+                    capture = tim->ARR;
+                }
 
-            timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
-            while(cb) {
-                cb->fn(cb, capture);
-                cb = cb->next;
+                timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
+                while(cb) {
+                    cb->fn(cb, capture);
+                    cb = cb->next;
+                }
+                break;
             }
-            break;
-        }
-        case __builtin_clz(TIM_IT_CC1):
-            timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim->CCR1);
-            break;
-        case __builtin_clz(TIM_IT_CC2):
-            timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim->CCR2);
-            break;
-        case __builtin_clz(TIM_IT_CC3):
-            timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], tim->CCR3);
-            break;
-        case __builtin_clz(TIM_IT_CC4):
-            timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], tim->CCR4);
-            break;
+            case __builtin_clz(TIM_IT_CC1):
+                timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim->CCR1);
+                break;
+            case __builtin_clz(TIM_IT_CC2):
+                timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim->CCR2);
+                break;
+            case __builtin_clz(TIM_IT_CC3):
+                timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], tim->CCR3);
+                break;
+            case __builtin_clz(TIM_IT_CC4):
+                timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], tim->CCR4);
+                break;
         }
     }
 #else
