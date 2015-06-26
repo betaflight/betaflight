@@ -164,3 +164,8 @@
 #define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
+
+#define SPEKTRUM_BIND
+// USART3,
+#define BIND_PORT  GPIOB
+#define BIND_PIN   Pin_11
