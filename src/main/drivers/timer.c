@@ -721,7 +721,7 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
     }
     if (tim_status & (int)TIM_IT_CC2) {
         tim->SR = ~TIM_IT_CC2;
-        timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[1], tim->CCR2);
+        timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim->CCR2);
     }
     if (tim_status & (int)TIM_IT_CC3) {
         tim->SR = ~TIM_IT_CC3;
