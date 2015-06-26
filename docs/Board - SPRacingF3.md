@@ -63,12 +63,11 @@ When RX_PPM/RX_SERIAL is used the IO_1 pinout is as follows.
 | 1   | Ground         |                                              |
 | 2   | VCC_IN         | Voltage as-supplied by BEC.                  |
 | 3   | RX_PPM         | Enable `feature RX_PPM`                      |
-| 4   | GPIO | | 
-| 5   |  | | 
-| 6   |  | | 
+| 4   | GPIO           |                                              | 
+| 5   | SoftSerial1_RX |                                              | 
+| 6   | SoftSerial1_TX |                                              | 
 | 7   | LED_STRIP      | Enable `feature LED_STRIP`                   |
 | 8   | VCC            | 3.3v output for LOW CURRENT application only |
-
 
 ### IO_2
 
@@ -78,25 +77,25 @@ The 8 pin IO_2 connector has the following pinouts when used in RX_PARALLEL_PWM 
 | --- | ----------------- | -------------------------------------------- |
 | 1   | Ground            |                                              |
 | 2   | VCC_IN            | Voltage as-supplied by BEC.                  |
-| 3   | RC_CH3            | |
-| 4   | RC_CH4            | |
-| 5   | RC_CH7/SONAR_TRIG | |
-| 6   | RC_CH8/SONAR_ECHO | |
-| 7   | ADC_1             | Current Sensor |
-| 8   | ADC_2             | RSSI |
+| 3   | RC_CH3            |                                              |
+| 4   | RC_CH4            |                                              |
+| 5   | RC_CH7/SONAR_TRIG |                                              |
+| 6   | RC_CH8/SONAR_ECHO |                                              |
+| 7   | ADC_1             | Current Sensor                               |
+| 8   | ADC_2             | RSSI                                         |
 
 When RX_PPM/RX_SERIAL is used the IO_2 pinout is as follows.
 
-| Pin | Function       | Notes                                        |
-| --- | -------------- | -------------------------------------------- |
-| 1   | Ground         |                                              |
-| 2   | VCC_IN         | Voltage as-supplied by BEC.                  |
-| 3   | RX_SERIAL      | UART3 RX |
-| 4   |                | UART3_TX | 
-| 5   | SONAR_TRIG     | Enable `feature SONAR` | 
-| 6   | SONAR_ECHO     | Enable `feature SONAR` | 
-| 7   | ADC_1          | Current Sensor |
-| 8   | ADC_2          | RSSI |
+| Pin | Function                  | Notes                                        |
+| --- | --------00000000000------ | -------------------------------------------- |
+| 1   | Ground                    |                                              |
+| 2   | VCC_IN                    | Voltage as-supplied by BEC.                  |
+| 3   | RX_SERIAL                 | UART3 RX                                     |
+| 4   |                           | UART3_TX                                     | 
+| 5   | SONAR_TRIG/SoftSerial2_RX | Enable `feature SONAR/SOFTSERIAL`     | 
+| 6   | SONAR_ECHO/SoftSerial2_TX | Enable `feature SONAR/SOFTSERIAL`     | 
+| 7   | ADC_1                     | Current Sensor                               |
+| 8   | ADC_2                     | RSSI                                         |
 
 ### UART1/2/3
 
@@ -104,8 +103,8 @@ When RX_PPM/RX_SERIAL is used the IO_2 pinout is as follows.
 | --- | -------------- | -------------------------------------------- |
 | 1   | Ground         |                                              |
 | 2   | VCC_IN         | Voltage as-supplied by BEC.                  |
-| 3   | TXD            | |
-| 4   | RXD            | | 
+| 3   | TXD            |                                              |
+| 4   | RXD            |                                              |
 
 ### I2C
 
@@ -113,8 +112,8 @@ When RX_PPM/RX_SERIAL is used the IO_2 pinout is as follows.
 | --- | -------------- | -------------------------------------------- |
 | 1   | Ground         |                                              |
 | 2   | 5.0v           | Voltage as-supplied by BEC OR USB, always on |
-| 3   | SCL            | |
-| 4   | SDA            | | 
+| 3   | SCL            |                                              |
+| 4   | SDA            |                                              |
 
 ### SWD
 
@@ -124,5 +123,6 @@ The port cannot be used at the same time as UART2.
 | --- | -------------- | -------------------------------------------- |
 | 1   | Ground         |                                              |
 | 2   | NRST           | Voltage as-supplied by BEC OR USB, always on |
-| 3   | SWDIO          | |
-| 4   | SWDCLK         | | 
+| 3   | SWDIO          |                                              |
+| 4   | SWDCLK         |                                              |
+
