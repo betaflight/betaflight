@@ -24,9 +24,14 @@ typedef struct pgRegistry_s {
     uint16_t size;
     // The parameter group number.
     uint16_t pgn;
+    // The in-memory format number.  Bump when making incompatible
+    // changes to the PG.
+    uint8_t format;
 } pgRegistry_t;
 
 #define PG_REGISTRY_SECTION __attribute__((section(".pg_registry"), used))
+#define PG_REGISTRY_TAIL_SECTION __attribute__((section(".pg_registry_tail"), used))
+
 #define PG_PACKED __attribute__((packed))
 
 const pgRegistry_t* pgFind(uint8_t id);

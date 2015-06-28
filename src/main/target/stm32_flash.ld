@@ -82,10 +82,10 @@ SECTIONS
   } >FLASH
   .pg_registry :
   {
-    PROVIDE_HIDDEN (__pg_registry_start = .);
-    KEEP (*(.pg_registry*))
+    PROVIDE_HIDDEN (__pg_registry = .);
+    KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
-    PROVIDE_HIDDEN (__pg_registry_end = .);
+    KEEP (*(.pg_registry_tail))
   } >FLASH
 
   /* used by the startup to initialize data */

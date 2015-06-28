@@ -86,8 +86,11 @@ typedef struct {
 
 // Header for each stored PG.
 typedef struct {
+    // TODO(michaelh): shrink to uint8_t once masterConfig has been
+    // split up.
     uint16_t size;
-    uint16_t pgn;
+    uint8_t pgn;
+    uint8_t format;
     uint8_t pg[];
 } configRecord_t;
 
@@ -112,8 +115,8 @@ static const uint8_t EEPROM_CONF_VERSION = 200;
 extern uint8_t __config_start;
 extern uint8_t __config_end;
 
-extern const pgRegistry_t __pg_registry_start;
-extern const pgRegistry_t __pg_registry_end;
+extern const pgRegistry_t __pg_registry[];
+static const void *pg_registry_tail PG_REGISTRY_TAIL_SECTION;
 
 static const pgRegistry_t masterRegistry PG_REGISTRY_SECTION = {
     .base = &masterConfig,
@@ -607,13 +610,18 @@ static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
 }
 
 // Find a parameter group by PGN.  Returns NULL on not found.
-static const pgRegistry_t *findPGN(uint16_t pgn)
+static const pgRegistry_t *findPGN(const configRecord_t *record)
 {
-    for (const pgRegistry_t *reg = &__pg_registry_start;
-         reg < &__pg_registry_end;
+    // To save memory, the array is terminated by a single zero
+    // instead of a full pgRegistry_t.  This means that 'base' must be
+    // the first entry in the struct.
+    BUILD_BUG_ON(offsetof(pgRegistry_t, base) != 0);
+
+    for (const pgRegistry_t *reg = __pg_registry;
+         reg->base !=NULL;
          reg++) {
 
-        if (reg->pgn == pgn) {
+        if (reg->pgn == record->pgn && reg->format == record->format) {
             return reg;
         }
     }
@@ -623,7 +631,7 @@ static const pgRegistry_t *findPGN(uint16_t pgn)
 // Load a PG into RAM, upgrading and downgrading as needed.
 static bool loadPG(const configRecord_t *record)
 {
-    const pgRegistry_t *reg = findPGN(record->pgn);
+    const pgRegistry_t *reg = findPGN(record);
 
     if (reg == NULL) {
         return false;
@@ -926,13 +934,14 @@ void writeEEPROM(void)
 
         chk = write(&writer, &header, sizeof(header), chk);
 
-        for (const pgRegistry_t *reg = &__pg_registry_start;
-             reg < &__pg_registry_end;
+        for (const pgRegistry_t *reg = __pg_registry;
+             reg->base != NULL;
              reg++) {
 
             configRecord_t record = {
                 .size = sizeof(configRecord_t) + reg->size,
                 .pgn = reg->pgn,
+                .format = reg->format,
             };
 
             chk = write(&writer, &record, sizeof(record), chk);
