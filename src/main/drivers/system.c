@@ -76,6 +76,8 @@ void EXTI15_10_IRQHandler(void)
 static uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
+// cached value of RCC->CSR
+uint32_t cachedRccCsrValue;
 
 static void cycleCounterInit(void)
 {
@@ -123,6 +125,8 @@ void systemInit(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 #endif
 
+    // cache RCC->CSR value to use it in isMPUSoftreset() and others
+    cachedRccCsrValue = RCC->CSR;
     RCC_ClearFlag();
 
 

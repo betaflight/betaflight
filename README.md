@@ -1,5 +1,7 @@
 # Cleanflight
 
+![Cleanflight](docs/assets/cleanflight/cleanflight-logo-light-wide-1-240px.jpg)
+
 Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 
 This fork differs from baseflight in that it attempts to use modern software development practices which result in:

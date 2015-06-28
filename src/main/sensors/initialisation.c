@@ -586,8 +586,8 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
 {
     int16_t deg, min;
 
-    memset(&acc, sizeof(acc), 0);
-    memset(&gyro, sizeof(gyro), 0);
+    memset(&acc, 0, sizeof(acc));
+    memset(&gyro, 0, sizeof(gyro));
 
     if (!detectGyro(gyroLpf)) {
         return false;

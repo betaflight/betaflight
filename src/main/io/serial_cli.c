@@ -871,7 +871,7 @@ static void cliServo(char *cmdline)
 #ifndef USE_SERVOS
     UNUSED(cmdline);
 #else
-    enum { SERVO_ARGUMENT_COUNT = 6 };
+    enum { SERVO_ARGUMENT_COUNT = 8 };
     int16_t arguments[SERVO_ARGUMENT_COUNT];
 
     servoParam_t *servo;
@@ -884,11 +884,13 @@ static void cliServo(char *cmdline)
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             servo = &currentProfile->servoConf[i];
 
-            printf("servo %u %d %d %d %d %d\r\n",
+            printf("servo %u %d %d %d %d %d %d %d\r\n",
                 i,
                 servo->min,
                 servo->max,
                 servo->middle,
+                servo->angleAtMin,
+                servo->angleAtMax,
                 servo->rate,
                 servo->forwardFromChannel
             );
@@ -932,8 +934,10 @@ static void cliServo(char *cmdline)
         servo->min = arguments[1];
         servo->max = arguments[2];
         servo->middle = arguments[3];
-        servo->rate = arguments[4];
-        servo->forwardFromChannel = arguments[5];
+        servo->angleAtMin = arguments[4];
+        servo->angleAtMax = arguments[5];
+        servo->rate = arguments[6];
+        servo->forwardFromChannel = arguments[7];
     }
 #endif
 }

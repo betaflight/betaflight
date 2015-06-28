@@ -311,6 +311,13 @@ void init(void)
     }
 #endif
 
+#if defined(SPRACINGF3) && defined(SONAR) && defined(USE_SOFTSERIAL2)
+    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
+    }
+#endif
+
+
 #ifdef USE_I2C
 #if defined(NAZE)
     if (hardwareRevision != NAZE32_SP) {

@@ -131,7 +131,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   10 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   11 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -812,8 +812,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_RAW_IMU:
         headSerialReply(18);
+
         // Hack scale due to choice of units for sensor data in multiwii
-        uint8_t scale = acc_1G > 1024 ? 8 : 0;
+        uint8_t scale = (acc_1G > 1024) ? 8 : 1;
 
         for (i = 0; i < 3; i++)
             serialize16(accSmooth[i] / scale);
@@ -827,12 +828,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         s_struct((uint8_t *)&servo, MAX_SUPPORTED_SERVOS * 2);
         break;
     case MSP_SERVO_CONF:
-        headSerialReply(MAX_SUPPORTED_SERVOS * 7);
+        headSerialReply(MAX_SUPPORTED_SERVOS * 9);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize16(currentProfile->servoConf[i].min);
             serialize16(currentProfile->servoConf[i].max);
             serialize16(currentProfile->servoConf[i].middle);
             serialize8(currentProfile->servoConf[i].rate);
+            serialize8(currentProfile->servoConf[i].angleAtMin);
+            serialize8(currentProfile->servoConf[i].angleAtMax);
         }
         break;
     case MSP_CHANNEL_FORWARDING:
@@ -1414,7 +1417,6 @@ static bool processInCommand(void)
             headSerialError(0);
         } else {
             uint8_t servoCount = currentPort->dataSize / SERVO_CHUNK_SIZE;
-
             for (i = 0; i < MAX_SUPPORTED_SERVOS && i < servoCount; i++) {
                 currentProfile->servoConf[i].min = read16();
                 currentProfile->servoConf[i].max = read16();
@@ -1428,6 +1430,8 @@ static bool processInCommand(void)
                     currentProfile->servoConf[i].middle = potentialServoMiddleOrChannelToForward;
                 }
                 currentProfile->servoConf[i].rate = read8();
+                currentProfile->servoConf[i].angleAtMin = read8();
+                currentProfile->servoConf[i].angleAtMax = read8();
             }
         }
 #endif

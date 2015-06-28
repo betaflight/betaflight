@@ -297,6 +297,10 @@ static const uint16_t multiPPM[] = {
     PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM15 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM16 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
     0xFFFF
 };
 
