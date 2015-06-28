@@ -268,7 +268,8 @@ const mixer_t mixers[] = {
     { 1, 1, NULL },                // MIXER_SINGLECOPTER
     { 4, 0, mixerAtail4 },         // MIXER_ATAIL4
     { 0, 0, NULL },                // MIXER_CUSTOM
-    { 1, 1, NULL },                // MIXER_CUSTOM_PLANE
+    { 1, 1, NULL },                // MIXER_CUSTOM_AIRPLANE
+    { 3, 1, NULL },                // MIXER_CUSTOM_TRI
 };
 #endif
 
@@ -347,6 +348,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },                // MULTITYPE_ATAIL4
     { 0, NULL },                // MULTITYPE_CUSTOM
     { 0, NULL },                // MULTITYPE_CUSTOM_PLANE
+    { 0, NULL },                // MULTITYPE_CUSTOM_TRI
 };
 
 static servoMixer_t *customServoMixers;
@@ -445,7 +447,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 
     servoCount = pwmOutputConfiguration->servoCount;
 
-    if (currentMixerMode == MIXER_CUSTOM) {
+    if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
@@ -493,6 +495,9 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
             loadCustomServoMixer();
         }
     } else {
+        if (currentMixerMode == MIXER_CUSTOM_TRI) {
+            loadCustomServoMixer();
+        }
         DISABLE_STATE(FIXED_WING);
     }
 
@@ -595,6 +600,7 @@ void writeServos(void)
             break;
 
         case MIXER_TRI:
+        case MIXER_CUSTOM_TRI:
             if (mixerConfig->tri_unarmed_servo) {
                 // if unarmed flag set, we always move servo
                 pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
@@ -718,9 +724,6 @@ static void servoMixer(void)
     input[INPUT_GIMBAL_PITCH] = scaleRange(inclination.values.pitchDeciDegrees, -1800, 1800, -500, +500);
     input[INPUT_GIMBAL_ROLL] = scaleRange(inclination.values.rollDeciDegrees, -1800, 1800, -500, +500);
 
-    debug[0] = input[INPUT_GIMBAL_PITCH];
-    debug[1] = input[INPUT_GIMBAL_ROLL];
-
     input[INPUT_THROTTLE] = motor[0];
 
     // center the RC input value around the RC middle value
@@ -801,6 +804,7 @@ void mixTable(void)
         case MIXER_FLYING_WING:
         case MIXER_AIRPLANE:
         case MIXER_BI:
+        case MIXER_CUSTOM_TRI:
         case MIXER_TRI:
         case MIXER_DUALCOPTER:
         case MIXER_SINGLECOPTER:
