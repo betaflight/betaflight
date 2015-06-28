@@ -45,3 +45,16 @@ typedef struct
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
+typedef enum
+{
+  FLASH_BUSY = 1,
+  FLASH_ERROR_PG,
+  FLASH_ERROR_WRP,
+  FLASH_COMPLETE,
+  FLASH_TIMEOUT
+} FLASH_Status;
+
+void FLASH_Unlock(void);
+void FLASH_Lock(void);
+FLASH_Status FLASH_ErasePage(uint32_t Page_Address);
+FLASH_Status FLASH_ProgramWord(uint32_t Address, uint32_t Data);
