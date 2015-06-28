@@ -447,13 +447,16 @@ var MSP = {
             case MSP_codes.MSP_SERVO_CONF:
                 SERVO_CONFIG = []; // empty the array as new data is coming in
 
-                if (data.byteLength % 7 == 0) {
-                    for (var i = 0; i < data.byteLength; i += 7) {
+                if (data.byteLength % 13 == 0) {
+                    for (var i = 0; i < data.byteLength; i += 13) {
                         var arr = {
                             'min': data.getInt16(i, 1),
                             'max': data.getInt16(i + 2, 1),
                             'middle': data.getInt16(i + 4, 1),
-                            'rate': data.getInt8(i + 6)
+                            'rate': data.getInt8(i + 6),
+                            'angleAtMin': data.getInt8(i + 7),
+                            'angleAtMax': data.getInt8(i + 8),
+                            'reversedChannels': data.getInt32(i + 9)
                         };
     
                         SERVO_CONFIG.push(arr);
@@ -1047,6 +1050,18 @@ MSP.crunch = function (code) {
                 buffer.push(highByte(SERVO_CONFIG[i].middle));
 
                 buffer.push(lowByte(SERVO_CONFIG[i].rate));
+                
+                if (semver.gte(CONFIG.apiVersion, "1.11.0")) {
+                    buffer.push(SERVO_CONFIG[i].angleAtMin);
+                    buffer.push(SERVO_CONFIG[i].angleAtMax);
+                }
+
+                if (semver.gte(CONFIG.apiVersion, "1.12.0")) {
+                    buffer.push(specificByte(SERVO_CONFIG[i].reversedChannels, 0));
+                    buffer.push(specificByte(SERVO_CONFIG[i].reversedChannels, 1));
+                    buffer.push(specificByte(SERVO_CONFIG[i].reversedChannels, 2));
+                    buffer.push(specificByte(SERVO_CONFIG[i].reversedChannels, 3));
+                }
             }
             break;
         case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
