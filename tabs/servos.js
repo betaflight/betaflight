@@ -205,10 +205,11 @@ TABS.servos.initialize = function (callback) {
         $('div.tab-servos table.fields tr:not(:first)').remove();
 
         var model = $('div.tab-servos strong.model');
-        var supported_models = [1, 4, 5, 8, 14, 20, 21];
+        var supported_models = [1, 4, 5, 8, 14, 20, 21, 24, 25];
 
         switch (CONFIG.multiType) {
             case 1: // TRI
+            case 25: // CUSTOM_TRI
                 // looking ok so far
                 model.text('TRI');
 
@@ -249,6 +250,7 @@ TABS.servos.initialize = function (callback) {
                 process_servos('Right Wing', '', 4, false);
                 break;
             case 14: // Airplane
+            case 24: // Custom_Airplane
                 model.text('Airplane');
 
                 // rate
