@@ -31,7 +31,8 @@ COMMON_FLAGS = \
 	-ggdb3 \
 	-O0 \
 	-DUNIT_TEST \
-	-isystem $(GTEST_DIR)/inc
+	-isystem $(GTEST_DIR)/inc \
+	-MMD -MP
 
 # Flags passed to the C compiler.
 C_FLAGS = $(COMMON_FLAGS) \
@@ -129,6 +130,9 @@ LIBCLEANFLIGHT_SRC = \
 	telemetry/hott.c
 
 LIBCLEANFLIGHT_OBJ = $(LIBCLEANFLIGHT_SRC:%.c=$(OBJECT_DIR)/%.o)
+
+DEPS =	$(LIBCLEANFLIGHT_OBJ:%.o=%.d) \
+	$(TEST_BINARIES:%=%.d)
 
 LIBS = $(OBJECT_DIR)/libcleanflight.a $(OBJECT_DIR)/gtest_main.a
 
@@ -366,3 +370,5 @@ test: $(TESTS:%=test-%)
 
 test-%: $(OBJECT_DIR)/%
 	$<
+
+-include $(DEPS)
