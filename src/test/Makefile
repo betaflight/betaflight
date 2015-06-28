@@ -42,26 +42,9 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
-# All tests produced by this Makefile.  Remember to add new tests you
-# created to the list.
-TESTS = \
-	battery_unittest \
-	flight_imu_unittest \
-	flight_mixer_unittest \
-	flight_failsafe_unittest \
-	altitude_hold_unittest \
-	maths_unittest \
-	gps_conversion_unittest \
-	telemetry_hott_unittest \
-	rc_controls_unittest \
-	rx_rx_unittest \
-	ledstrip_unittest \
-	ws2811_unittest \
-	encoding_unittest \
-	io_serial_unittest \
-	lowpass_unittest \
-    baro_unittest
-
+# Gather up all of the tests.
+TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
+TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
 TEST_BINARIES = $(TESTS:%=$(OBJECT_DIR)/%)
 
 # All Google Test headers.  Usually you shouldn't change this
