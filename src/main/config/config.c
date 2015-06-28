@@ -35,7 +35,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
-#include "drivers/flash_stm32.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -68,6 +67,7 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/parameter_group.h"
+#include "config/config_streamer.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -100,6 +100,12 @@ typedef struct {
     uint8_t pad2;
     uint8_t chk;
 } configFooter_t;
+
+// Used to check the compiler packing at build time.
+typedef struct {
+    uint8_t byte;
+    uint32_t word;
+} PG_PACKED packingTest_t;
 
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x800
 
@@ -865,6 +871,10 @@ void validateAndFixConfig(void)
 
 void initEEPROM(void)
 {
+    // Verify that this architecture packs as expected.
+    BUILD_BUG_ON(offsetof(packingTest_t, byte) != 0);
+    BUILD_BUG_ON(offsetof(packingTest_t, word) != 1);
+    BUILD_BUG_ON(sizeof(packingTest_t) != 5);
 }
 
 void readEEPROM(void)
@@ -895,35 +905,17 @@ void readEEPROMAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-// Write a block of memory to flash, padding out to word length and
-// updating the checksum.
-static uint8_t write(flash_stm32_writer_t *f, const void *data, int length, uint8_t chk)
-{
-    uint8_t buf[sizeof(uint32_t)];
-    const uint8_t *p = (const uint8_t *)data;
-
-    chk = updateChecksum(chk, p, length);
-
-    for (; length > 0; length -= sizeof(buf), p += sizeof(buf)) {
-        memset(buf, 0, sizeof(buf));
-        memcpy(buf, p, MIN(length, (int)sizeof(buf)));
-        flash_stm32_write(f, buf, sizeof(buf));
-    }
-    return chk;
-}
-
 void writeEEPROM(void)
 {
     // Generate compile time error if the config does not fit in the reserved area of flash.
     BUILD_BUG_ON(sizeof(master_t) > FLASH_TO_RESERVE_FOR_CONFIG);
 
-    flash_stm32_writer_t writer;
-    flash_stm32_init(&writer);
-    uint8_t chk = 0;
+    config_streamer_t streamer;
+    config_streamer_init(&streamer);
 
     // write it
     for (int attempt = 0; attempt < 3; attempt++) {
-        flash_stm32_start(&writer, (uintptr_t)&__config_start);
+        config_streamer_start(&streamer, (uintptr_t)&__config_start);
 
         configHeader_t header = {
             .format = EEPROM_CONF_VERSION,
@@ -932,7 +924,7 @@ void writeEEPROM(void)
         };
         BUILD_BUG_ON(sizeof(header) != 4);
 
-        chk = write(&writer, &header, sizeof(header), chk);
+        config_streamer_write(&streamer, &header, sizeof(header));
 
         for (const pgRegistry_t *reg = __pg_registry;
              reg->base != NULL;
@@ -944,23 +936,23 @@ void writeEEPROM(void)
                 .format = reg->format,
             };
 
-            chk = write(&writer, &record, sizeof(record), chk);
-            chk = write(&writer, reg->base, reg->size, chk);
+            config_streamer_write(&streamer, &record, sizeof(record));
+            config_streamer_write(&streamer, reg->base, reg->size);
         }
 
         configFooter_t footer = {
             .pad1 = 0,
             .pad2 = 0,
-            .chk = ~chk,
+            .chk = ~config_streamer_chk(&streamer),
         };
 
-        if (flash_stm32_write(&writer, &footer, sizeof(footer)) == 0) {
+        if (config_streamer_write(&streamer, &footer, sizeof(footer)) == 0) {
             break;
         }
     }
 
     // Flash write failed - just die now
-    if (flash_stm32_finish(&writer) != 0 || !isEEPROMContentValid()) {
+    if (config_streamer_finish(&streamer) != 0 || !isEEPROMContentValid()) {
         failureMode(10);
     }
 }

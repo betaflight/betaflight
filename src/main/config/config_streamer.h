@@ -20,14 +20,24 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct flash_stm32_state_s {
+// Streams data out to the EEPROM, padding to the write size as
+// needed, and updating the checksum as it goes.
+
+typedef struct config_streamer_s {
     uintptr_t address;
+    union {
+        uint8_t b[4];
+        uint32_t w;
+    } buffer;
+    int at;
     int err;
+    uint8_t chk;
     bool unlocked;
-} flash_stm32_writer_t;
+} config_streamer_t;
 
-void flash_stm32_init(flash_stm32_writer_t *f);
+void config_streamer_init(config_streamer_t *c);
 
-int flash_stm32_start(flash_stm32_writer_t *f, uintptr_t base);
-int flash_stm32_write(flash_stm32_writer_t *f, const void *p, uint32_t size);
-int flash_stm32_finish(flash_stm32_writer_t *f);
+void config_streamer_start(config_streamer_t *c, uintptr_t base);
+int config_streamer_write(config_streamer_t *c, const void *p, uint32_t size);
+uint8_t config_streamer_chk(config_streamer_t *c);
+int config_streamer_finish(config_streamer_t *c);
