@@ -735,7 +735,6 @@ static void cliCMix(char *cmdline)
     int num_motors = 0;
     uint8_t len;
     char buf[16];
-    float mixsum[3];
     char *ptr;
 
     if (isEmpty(cmdline)) {
@@ -750,16 +749,6 @@ static void cliCMix(char *cmdline)
             printf("%s\t", ftoa(masterConfig.customMotorMixer[i].pitch, buf));
             printf("%s\r\n", ftoa(masterConfig.customMotorMixer[i].yaw, buf));
         }
-        mixsum[0] = mixsum[1] = mixsum[2] = 0.0f;
-        for (i = 0; i < num_motors; i++) {
-            mixsum[0] += masterConfig.customMotorMixer[i].roll;
-            mixsum[1] += masterConfig.customMotorMixer[i].pitch;
-            mixsum[2] += masterConfig.customMotorMixer[i].yaw;
-        }
-        cliPrint("Sanity check:\t");
-        for (i = 0; i < 3; i++)
-            cliPrint(fabsf(mixsum[i]) > 0.01f ? "NG\t" : "OK\t");
-        cliPrint("\r\n");
         return;
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
