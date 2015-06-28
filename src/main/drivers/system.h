@@ -40,3 +40,5 @@ typedef void extiCallbackHandler(void);
 
 void registerExti15_10_CallbackHandler(extiCallbackHandler *fn);
 void unregisterExti15_10_CallbackHandler(extiCallbackHandler *fn);
+
+extern uint32_t cachedRccCsrValue;

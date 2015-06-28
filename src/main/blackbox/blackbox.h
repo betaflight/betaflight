@@ -46,6 +46,7 @@ typedef struct blackboxValues_t {
 #ifdef SONAR
     int32_t sonarRaw;
 #endif
+    uint16_t rssi;
 } blackboxValues_t;
 
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);

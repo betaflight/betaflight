@@ -1,62 +1,14 @@
-# Hardware
+# Hardware Debugging In Eclipse
 
-Various debugging hardware solutions exist, the Segger J-Link clones are cheap and are known to work on Windows with both the Naze and Olimexino platforms.
+Build a binary with debugging information using command line or via Eclipse make target.
 
-USB-MiniJTAG J-Link JTAG/SWD Debugger/Emulator
-
-http://www.hotmcu.com/usbminijtag-jlink-jtagswd-debuggeremula%E2%80%8Btor-p-29.html?cPath=3_25&zenid=fdefvpnod186umrhsek225dc10
-
-![](https://raw.github.com/wiki/hydra/cleanflight/images/hardware/THAOYU USB-MiniJTAG.jpg)
-
-ARM-JTAG-20-10 adapter
-
-https://www.olimex.com/Products/ARM/JTAG/ARM-JTAG-20-10/
-http://uk.farnell.com/jsp/search/productdetail.jsp?sku=2144328
-
-![](https://raw.github.com/wiki/hydra/cleanflight/images/hardware/OLIMEX ARM-JTAG ADAPTER 2144328-40.jpg)
-
-The Segger J-Link server can be obtained from here
-
-http://www.segger.com/jlink-software.html
-
-# Build with DEBUG=GDB
-
-## Naze target (default)
-
-### via Command line
-
-```
-make clean TARGET=NAZE
-make TARGET=NAZE DEBUG=GDB
-```
-
-### via Eclipse make target
-
-![](https://raw.github.com/wiki/hydra/cleanflight/images/eclipse-gdb-debugging/make 2 - NAZE GDB.PNG)
-
-
-### via configuration
-use this method if you want to build automatically when launching the debug configuration
-
-![make debug](http://i.imgur.com/fA0m0xM.png)
-
-## Olimexino target
-
-### via command line
-```
-make clean TARGET=OLIMEXINO
-make TARGET=OLIMEXINO DEBUG=GDB
-```
-
-### via Eclipse make target
+Example Eclipse make target
 
 ![](https://raw.github.com/wiki/hydra/cleanflight/images/eclipse-gdb-debugging/make 1 - OLIMEXINO GDB.PNG)
 
 # GDB and OpenOCD
 
-start openocd:
-
-      openocd -f /usr/share/openocd/scripts/board/stm32vldiscovery.cfg
+start openocd
 
 Create a new debug configuration in eclipse :
 ![connect to openocd](http://i.imgur.com/somJLnq.png)

@@ -225,8 +225,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  GPIOA, Pin_0,  TIM_Channel_1, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource0,  GPIO_AF_1}, // RC_CH1 - PA0  - *TIM2_CH1
     { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource1,  GPIO_AF_1}, // RC_CH2 - PA1  - *TIM2_CH2, TIM15_CH1N
     // Production boards swapped RC_CH3/4 swapped to make it easier to use SerialRX using supplied cables - compared to first prototype.
-    { TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1}, // RC_CH3 - PB11 - *TIM2_CH4, USART3_RX (AF7)
-    { TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1}, // RC_CH4 - PB10 - *TIM2_CH3, USART3_TX (AF7)
+    { TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1}, // RC_CH3 - PB11 - *TIM2_CH4, USART3_RX (AF7)
+    { TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1}, // RC_CH4 - PB10 - *TIM2_CH3, USART3_TX (AF7)
     { TIM3,  GPIOB, Pin_4,  TIM_Channel_1, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource4,  GPIO_AF_2}, // RC_CH5 - PB4  - *TIM3_CH1
     { TIM3,  GPIOB, Pin_5,  TIM_Channel_2, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource5,  GPIO_AF_2}, // RC_CH6 - PB5  - *TIM3_CH2
     { TIM3,  GPIOB, Pin_0,  TIM_Channel_3, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource0,  GPIO_AF_2}, // RC_CH7 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
@@ -675,34 +675,34 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
         tim->SR = mask;
         tim_status &= mask;
         switch(bit) {
-        case __builtin_clz(TIM_IT_Update): {
+            case __builtin_clz(TIM_IT_Update): {
 
-        	if(timerConfig->forcedOverflowTimerValue != 0){
-        		capture = timerConfig->forcedOverflowTimerValue - 1;
-        		timerConfig->forcedOverflowTimerValue = 0;
-        	} else {
-        		capture = tim->ARR;
-        	}
+                if(timerConfig->forcedOverflowTimerValue != 0){
+                    capture = timerConfig->forcedOverflowTimerValue - 1;
+                    timerConfig->forcedOverflowTimerValue = 0;
+                } else {
+                    capture = tim->ARR;
+                }
 
-            timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
-            while(cb) {
-                cb->fn(cb, capture);
-                cb = cb->next;
+                timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
+                while(cb) {
+                    cb->fn(cb, capture);
+                    cb = cb->next;
+                }
+                break;
             }
-            break;
-        }
-        case __builtin_clz(TIM_IT_CC1):
-            timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim->CCR1);
-            break;
-        case __builtin_clz(TIM_IT_CC2):
-            timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim->CCR2);
-            break;
-        case __builtin_clz(TIM_IT_CC3):
-            timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], tim->CCR3);
-            break;
-        case __builtin_clz(TIM_IT_CC4):
-            timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], tim->CCR4);
-            break;
+            case __builtin_clz(TIM_IT_CC1):
+                timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim->CCR1);
+                break;
+            case __builtin_clz(TIM_IT_CC2):
+                timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim->CCR2);
+                break;
+            case __builtin_clz(TIM_IT_CC3):
+                timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], tim->CCR3);
+                break;
+            case __builtin_clz(TIM_IT_CC4):
+                timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], tim->CCR4);
+                break;
         }
     }
 #else
@@ -721,7 +721,7 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
     }
     if (tim_status & (int)TIM_IT_CC2) {
         tim->SR = ~TIM_IT_CC2;
-        timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[1], tim->CCR2);
+        timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim->CCR2);
     }
     if (tim_status & (int)TIM_IT_CC3) {
         tim->SR = ~TIM_IT_CC3;

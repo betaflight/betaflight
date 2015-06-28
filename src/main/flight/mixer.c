@@ -87,8 +87,6 @@ typedef enum {
 #define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
 #define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
 
-#define AUX_FORWARD_CHANNEL_TO_SERVO_COUNT 4
-
 //#define MIXER_DEBUG
 
 uint8_t motorCount = 0;
@@ -437,7 +435,7 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     uint8_t channelOffset = AUX1;
 
     uint8_t servoOffset;
-    for (servoOffset = 0; servoOffset < AUX_FORWARD_CHANNEL_TO_SERVO_COUNT; servoOffset++) {
+    for (servoOffset = 0; servoOffset < MAX_AUX_CHANNEL_COUNT && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
         pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
     }
 }
@@ -450,9 +448,6 @@ static void updateGimbalServos(uint8_t firstServoIndex)
 
 void writeServos(void)
 {
-    if (!useServo)
-        return;
-
     uint8_t servoIndex = 0;
 
     switch (currentMixerMode) {
@@ -487,7 +482,6 @@ void writeServos(void)
         case MIXER_AIRPLANE:
             for (int i = SERVO_PLANE_INDEX_MIN; i <= SERVO_PLANE_INDEX_MAX; i++) {
                 pwmWriteServo(servoIndex++, servo[i]);
-
             }
             break;
 
@@ -507,10 +501,10 @@ void writeServos(void)
         servoIndex += 2;
     }
 
-    // forward AUX1-4 to servo outputs (not constrained)
+    // forward AUX to remaining servo outputs (not constrained)
     if (gimbalConfig->gimbal_flags & GIMBAL_FORWARDAUX) {
         forwardAuxChannelsToServos(servoIndex);
-        servoIndex += AUX_FORWARD_CHANNEL_TO_SERVO_COUNT;
+        servoIndex += MAX_AUX_CHANNEL_COUNT;
     }
 }
 #endif

@@ -200,6 +200,7 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
 #ifdef SONAR
     {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
 #endif
+    {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_RSSI},
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
     {"gyroADC",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -264,6 +265,9 @@ extern uint8_t motorCount;
 
 //From mw.c:
 extern uint32_t currentTime;
+
+//From rx.c:
+extern uint16_t rssi;
 
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
@@ -359,6 +363,9 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 #else
             return false;
 #endif
+
+        case FLIGHT_LOG_FIELD_CONDITION_RSSI:
+            return masterConfig.rxConfig.rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
             return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
@@ -485,6 +492,10 @@ static void writeIntraframe(void)
         }
 #endif
 
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_RSSI)) {
+        blackboxWriteUnsignedVB(blackboxCurrent->rssi);
+    }
+
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->gyroADC[x]);
     }
@@ -518,7 +529,7 @@ static void writeIntraframe(void)
 static void writeInterframe(void)
 {
     int x;
-    int32_t deltas[7];
+    int32_t deltas[8];
 
     blackboxValues_t *blackboxCurrent = blackboxHistory[0];
     blackboxValues_t *blackboxLast = blackboxHistory[1];
@@ -597,6 +608,10 @@ static void writeInterframe(void)
         deltas[optionalFieldCount++] = blackboxCurrent->sonarRaw - blackboxLast->sonarRaw;
     }
 #endif
+
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_RSSI)) {
+        deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->rssi - blackboxLast->rssi;
+    }
 
     blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
 
@@ -809,6 +824,8 @@ static void loadBlackboxState(void)
     // Store the raw sonar value without applying tilt correction
     blackboxCurrent->sonarRaw = sonarRead();
 #endif
+
+    blackboxCurrent->rssi = rssi;
 
 #ifdef USE_SERVOS
     //Tail servo for tricopters

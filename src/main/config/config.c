@@ -128,7 +128,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 102;
+static const uint8_t EEPROM_CONF_VERSION = 103;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -483,6 +483,8 @@ static void resetConf(void)
         currentProfile->servoConf[i].max = DEFAULT_SERVO_MAX;
         currentProfile->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
         currentProfile->servoConf[i].rate = servoRates[i];
+        currentProfile->servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
+        currentProfile->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
         currentProfile->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
