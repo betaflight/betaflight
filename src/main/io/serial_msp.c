@@ -131,7 +131,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   11 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   12 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -305,10 +305,13 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
+#define MSP_SERVOMIX_CONF        241    //out message         Returns servo mixer configuration
+#define MSP_SET_SERVOMIX_CONF    242    //in message          Sets servo mixer configuration
 
-#define INBUF_SIZE 64
+#define SERVO_CHUNK_SIZE 13
 
-#define SERVO_CHUNK_SIZE 7
+// FIXME This is now too big!
+#define INBUF_SIZE (SERVO_CHUNK_SIZE * MAX_SUPPORTED_SERVOS)
 
 typedef struct box_e {
     const uint8_t boxId;         // see boxId_e
@@ -341,6 +344,10 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXTELEMETRY, "TELEMETRY;", 20 },
     { BOXAUTOTUNE, "AUTOTUNE;", 21 },
     { BOXSONAR, "SONAR;", 22 },
+    { BOXSERVO1, "SERVO1;", 23 },
+    { BOXSERVO2, "SERVO2;", 24 },
+    { BOXSERVO3, "SERVO3;", 25 },
+    
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -681,6 +688,14 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXSONAR;
     }
 
+#ifdef USE_SERVOS
+    if (masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+        activeBoxIds[activeBoxIdCount++] = BOXSERVO1;
+        activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
+        activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
+    }
+#endif
+
     memset(mspPorts, 0x00, sizeof(mspPorts));
     mspAllocateSerialPorts(serialConfig);
 }
@@ -764,7 +779,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(MW_VERSION);
         serialize8(masterConfig.mixerMode);
         serialize8(MSP_PROTOCOL_VERSION);
-        serialize32(CAP_DYNBALANCE | (masterConfig.airplaneConfig.flaps_speed ? CAP_FLAPS : 0)); // "capability"
+        serialize32(CAP_DYNBALANCE); // "capability"
         break;
 
     case MSP_STATUS:
@@ -828,7 +843,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         s_struct((uint8_t *)&servo, MAX_SUPPORTED_SERVOS * 2);
         break;
     case MSP_SERVO_CONF:
-        headSerialReply(MAX_SUPPORTED_SERVOS * 9);
+        headSerialReply(MAX_SUPPORTED_SERVOS * SERVO_CHUNK_SIZE);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize16(currentProfile->servoConf[i].min);
             serialize16(currentProfile->servoConf[i].max);
@@ -836,6 +851,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(currentProfile->servoConf[i].rate);
             serialize8(currentProfile->servoConf[i].angleAtMin);
             serialize8(currentProfile->servoConf[i].angleAtMax);
+            serialize32(currentProfile->servoConf[i].reversedChannels);
         }
         break;
     case MSP_CHANNEL_FORWARDING:
@@ -844,6 +860,19 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(currentProfile->servoConf[i].forwardFromChannel);
         }
         break;
+    case MSP_SERVOMIX_CONF:
+        headSerialReply(MAX_SERVO_RULES * sizeof(servoMixer_t));
+        for (i = 0; i < MAX_SERVO_RULES; i++) {
+            serialize8(masterConfig.customServoMixer[i].targetChannel);
+            serialize8(masterConfig.customServoMixer[i].fromChannel);
+            serialize8(masterConfig.customServoMixer[i].rate);
+            serialize8(masterConfig.customServoMixer[i].speed);
+            serialize8(masterConfig.customServoMixer[i].min);
+            serialize8(masterConfig.customServoMixer[i].max);
+            serialize8(masterConfig.customServoMixer[i].box);
+        }
+        break;
+        
 #endif
     case MSP_MOTOR:
         s_struct((uint8_t *)motor, 16);
@@ -1420,18 +1449,11 @@ static bool processInCommand(void)
             for (i = 0; i < MAX_SUPPORTED_SERVOS && i < servoCount; i++) {
                 currentProfile->servoConf[i].min = read16();
                 currentProfile->servoConf[i].max = read16();
-
-                // provide temporary support for old clients that try and send a channel index instead of a servo middle
-                uint16_t potentialServoMiddleOrChannelToForward = read16();
-                if (potentialServoMiddleOrChannelToForward < MAX_SUPPORTED_SERVOS) {
-                    currentProfile->servoConf[i].forwardFromChannel = potentialServoMiddleOrChannelToForward;
-                }
-                if (potentialServoMiddleOrChannelToForward >= PWM_RANGE_MIN && potentialServoMiddleOrChannelToForward <= PWM_RANGE_MAX) {
-                    currentProfile->servoConf[i].middle = potentialServoMiddleOrChannelToForward;
-                }
+                currentProfile->servoConf[i].middle = read16();
                 currentProfile->servoConf[i].rate = read8();
                 currentProfile->servoConf[i].angleAtMin = read8();
                 currentProfile->servoConf[i].angleAtMax = read8();
+                currentProfile->servoConf[i].reversedChannels = read32();
             }
         }
 #endif
@@ -1443,6 +1465,22 @@ static bool processInCommand(void)
         }
 #endif
         break;
+        
+    case MSP_SET_SERVOMIX_CONF:
+#ifdef USE_SERVOS
+        for (i = 0; i < MAX_SERVO_RULES; i++) {
+            masterConfig.customServoMixer[i].targetChannel = read8();
+            masterConfig.customServoMixer[i].fromChannel = read8();
+            masterConfig.customServoMixer[i].rate = read8();
+            masterConfig.customServoMixer[i].speed = read8();
+            masterConfig.customServoMixer[i].min = read8();
+            masterConfig.customServoMixer[i].max = read8();
+            masterConfig.customServoMixer[i].box = read8();
+        }
+        loadCustomServoMixer();
+#endif
+        break;
+        
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
             resetEEPROM();

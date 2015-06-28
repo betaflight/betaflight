@@ -43,12 +43,15 @@ typedef enum {
     BOXTELEMETRY,
     BOXAUTOTUNE,
     BOXSONAR,
+    BOXSERVO1,
+    BOXSERVO2,
+    BOXSERVO3,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
 extern uint32_t rcModeActivationMask;
 
-#define IS_RC_MODE_ACTIVE(modeId) ((1 << modeId) & rcModeActivationMask)
+#define IS_RC_MODE_ACTIVE(modeId) ((1 << (modeId)) & rcModeActivationMask)
 #define ACTIVATE_RC_MODE(modeId) (rcModeActivationMask |= (1 << modeId))
 
 typedef enum rc_alias {
