@@ -281,19 +281,18 @@ TABS.servos.initialize = function (callback) {
 
             default:
                 model.text(chrome.i18n.getMessage('servosModelNoSupport'));
-
-                // implementation of feature servo_tilt
-                if (AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
-                    // Gimbal on
-                    // needs to be verified
-                    model.text('Gimbal / Tilt Servos');
-
-                    // rate
-                    process_servos('Pitch Servo', '', 0, 2);
-                    process_servos('Roll Servo', '', 1, 2);
-                }
         }
 
+        // implementation of feature servo_tilt
+        if (AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
+            // Gimbal on
+            // needs to be verified
+
+            // rate
+            process_servos('Pitch Servo', '', 0, 2);
+            process_servos('Roll Servo', '', 1, 2);
+        }
+                
         // UI hooks for dynamically generated elements
         $('table.directions select, table.directions input, table.fields select, table.fields input').change(function () {
             if ($('div.live input').is(':checked')) {
