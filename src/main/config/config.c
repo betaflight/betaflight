@@ -189,7 +189,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->H_sensitivity = 75;
 
     pidProfile->pid5_oldyw = 0;
-    pidProfile->pid5_maincuthz = 12;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.

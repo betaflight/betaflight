@@ -152,7 +152,8 @@ PID Controller 5 is an port of the PID controller from the Harakiri firmware.
 
 The algorithm is leveraging more floating point math. This PID controller also compensates for different looptimes on roll and pitch. It likely don't need retuning of the PID values when looptime is changing. There are two additional settings which are configurable via the CLI in Harakiri:
 
-        set pid5_maincuthz = 12     [1-50Hz] Cut Off Frequency for D term of main Pid controller
+        set dterm_cut_hz = 0        [1-50Hz] Cut Off Frequency for D term of main PID controller
+                                    (default of 0 equals to 12Hz which was the hardcoded setting in previous Cleanflight versions)
         set pid5_oldyw = 0          [0/1] 0 = multiwii 2.3 yaw (default), 1 = older yaw
 
 The PID controller is flight tested and running well with the default PID settings. If you want do acrobatics start slowly.
