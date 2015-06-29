@@ -995,7 +995,7 @@ static void cliServoMix(char *cmdline)
             if (masterConfig.customServoMixer[i].rate == 0)
                 break;
 
-            cliPrint("Rule Servo Source Rate Speed Min Max Box\r\n");
+            cliPrint("Rule\tServo\tSource\tRate\tSpeed\tMin\tMax\tBox\r\n");
 
             printf("#%d:\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
                 i + 1,
