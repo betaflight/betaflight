@@ -4,7 +4,7 @@
   * @author    MCD Application Team
   * @version   V3.5.0
   * @date      11-March-2011
-  * @brief     STM32F10x Medium Density Devices vector table for Atollic toolchain.
+  * @brief     STM32F10x High Density Devices vector table for Atollic toolchain.
   *            This module performs:
   *                - Set the initial SP
   *                - Set the initial PC == Reset_Handler,
@@ -47,8 +47,9 @@ defined in linker script */
 .word	_sbss
 /* end address for the .bss section. defined in linker script */
 .word	_ebss
+/* stack used for SystemInit_ExtMemCtl; always internal RAM used */
 
-.equ  BootRAM, 0xF108F85F
+.equ  BootRAM, 0xF1E0F85F
 /**
  * @brief  This is the code that gets called when the processor first
  *          starts execution following a reset event. Only the absolutely
@@ -230,16 +231,69 @@ g_pfnVectors:
 	.word	EXTI15_10_IRQHandler
 	.word	RTCAlarm_IRQHandler
 	.word	USBWakeUp_IRQHandler
-  .word	0
+	.word	TIM8_BRK_IRQHandler
+	.word	TIM8_UP_IRQHandler
+	.word	TIM8_TRG_COM_IRQHandler
+	.word	TIM8_CC_IRQHandler
+	.word	ADC3_IRQHandler
+	.word	FSMC_IRQHandler
+	.word	SDIO_IRQHandler
+	.word	TIM5_IRQHandler
+	.word	SPI3_IRQHandler
+	.word	UART4_IRQHandler
+	.word	UART5_IRQHandler
+	.word	TIM6_IRQHandler
+	.word	TIM7_IRQHandler
+	.word	DMA2_Channel1_IRQHandler
+	.word	DMA2_Channel2_IRQHandler
+	.word	DMA2_Channel3_IRQHandler
+	.word	DMA2_Channel4_5_IRQHandler
 	.word	0
 	.word	0
 	.word	0
 	.word	0
 	.word	0
 	.word	0
-	.word	BootRAM          /* @0x108. This is for boot in RAM mode for
-                            STM32F10x Medium Density devices. */
-
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	BootRAM     /* @0x1E0. This is for boot in RAM mode for
+			               STM32F10x High Density devices. */
 /*******************************************************************************
 *
 * Provide weak aliases for each Exception handler to the Default_Handler.
@@ -403,6 +457,57 @@ g_pfnVectors:
 
 	.weak	USBWakeUp_IRQHandler
 	.thumb_set USBWakeUp_IRQHandler,Default_Handler
+
+	.weak  TIM8_BRK_IRQHandler
+	.thumb_set TIM8_BRK_IRQHandler,Default_Handler
+
+	.weak  TIM8_UP_IRQHandler
+	.thumb_set TIM8_UP_IRQHandler,Default_Handler
+
+	.weak  TIM8_TRG_COM_IRQHandler
+	.thumb_set TIM8_TRG_COM_IRQHandler,Default_Handler
+
+	.weak  TIM8_CC_IRQHandler
+	.thumb_set TIM8_CC_IRQHandler,Default_Handler
+
+	.weak  ADC3_IRQHandler
+	.thumb_set ADC3_IRQHandler,Default_Handler
+
+	.weak  FSMC_IRQHandler
+	.thumb_set FSMC_IRQHandler,Default_Handler
+
+	.weak  SDIO_IRQHandler
+	.thumb_set SDIO_IRQHandler,Default_Handler
+
+	.weak  TIM5_IRQHandler
+	.thumb_set TIM5_IRQHandler,Default_Handler
+
+	.weak  SPI3_IRQHandler
+	.thumb_set SPI3_IRQHandler,Default_Handler
+
+	.weak  UART4_IRQHandler
+	.thumb_set UART4_IRQHandler,Default_Handler
+
+	.weak  UART5_IRQHandler
+	.thumb_set UART5_IRQHandler,Default_Handler
+
+	.weak  TIM6_IRQHandler
+	.thumb_set TIM6_IRQHandler,Default_Handler
+
+	.weak  TIM7_IRQHandler
+	.thumb_set TIM7_IRQHandler,Default_Handler
+
+	.weak  DMA2_Channel1_IRQHandler
+	.thumb_set DMA2_Channel1_IRQHandler,Default_Handler
+
+	.weak  DMA2_Channel2_IRQHandler
+	.thumb_set DMA2_Channel2_IRQHandler,Default_Handler
+
+	.weak  DMA2_Channel3_IRQHandler
+	.thumb_set DMA2_Channel3_IRQHandler,Default_Handler
+
+	.weak  DMA2_Channel4_5_IRQHandler
+	.thumb_set DMA2_Channel4_5_IRQHandler,Default_Handler
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
 
