@@ -94,6 +94,7 @@ typedef struct airplaneConfig_t {
 
 #ifdef USE_SERVOS
 
+// These must be consecutive, see 'reversedSources'
 enum {
     INPUT_ROLL = 0,
     INPUT_PITCH,
@@ -109,12 +110,16 @@ enum {
     INPUT_RC_THROTTLE,
     INPUT_GIMBAL_PITCH,
     INPUT_GIMBAL_ROLL,
-    INPUT_ITEM_COUNT
-} servoInput_e;
+
+    INPUT_SOURCE_COUNT
+} inputSource_e;
 
 typedef struct servoMixer_t {
     uint8_t targetChannel;                  // servo that receives the output of the rule
+
+    // FIXME rename to inputSource
     uint8_t fromChannel;                    // input channel for this rule
+
     int8_t rate;                            // range [-125;+125] ; can be used to adjust a rate 0-125% and a direction
     uint8_t speed;                          // reduces the speed of the rule, 0=unlimited speed
     int8_t min;                             // lower bound of rule range [0;100]% of servo max-min
@@ -137,7 +142,7 @@ typedef struct servoParam_t {
     int16_t max;                            // servo max
     int16_t middle;                         // servo middle
     int8_t rate;                           // range [-125;+125] ; can be used to adjust a rate 0-125% and a direction
-    uint32_t reversedChannels;              // the direction of servo movement for each input channel of the servo mixer, bit set=inverted
+    uint32_t reversedSources;              // the direction of servo movement for each input source of the servo mixer, bit set=inverted
     uint8_t angleAtMin;                     // range [0;180] the measured angle in degrees from the middle when the servo is at the 'min' value.
     uint8_t angleAtMax;                     // range [0;180] the measured angle in degrees from the middle when the servo is at the 'max' value.
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED

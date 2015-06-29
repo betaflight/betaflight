@@ -98,7 +98,7 @@ static serialPort_t *cliPort;
 
 static void cliAux(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
-static void cliCMix(char *cmdline);
+static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
 static void cliDump(char *cmdLine);
 static void cliExit(char *cmdline);
@@ -183,55 +183,89 @@ static const char * const sensorHardwareNames[4][11] = {
 
 typedef struct {
     const char *name;
-    const char *param;
+    const char *description;
+    const char *args;
+
     void (*func)(char *cmdline);
 } clicmd_t;
 
+#ifndef SKIP_CLI_COMMAND_HELP
+#define CLI_COMMAND_DEF(name, description, args, method) \
+{ \
+    name , \
+    description , \
+    args , \
+    method \
+}
+#else
+#define CLI_COMMAND_DEF(name, description, args, method) \
+{ \
+    name, \
+    NULL, \
+    NULL, \
+    method \
+}
+#endif
+
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
-    { "adjrange", "show/set adjustment ranges settings", cliAdjustmentRange },
-    { "aux", "show/set aux settings", cliAux },
-    { "cmix", "design custom mixer", cliCMix },
+    CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
+    CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
 #ifdef LED_STRIP
-    { "color", "configure colors", cliColor },
+    CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
-    { "defaults", "reset to defaults and reboot", cliDefaults },
-    { "dump", "dump configuration", cliDump },
-    { "exit", "", cliExit },
-    { "feature", "list or -val or val", cliFeature },
+    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
+    CLI_COMMAND_DEF("dump", "dump configuration",
+        "[master|profile]", cliDump),
+    CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
+    CLI_COMMAND_DEF("feature", "configure features",
+        "list\r\n"
+        "\t<+|->[name]", cliFeature),
 #ifdef USE_FLASHFS
-    { "flash_erase", "erase flash chip", cliFlashErase },
-    { "flash_info", "get flash chip details", cliFlashInfo },
-    { "flash_read", "read text from the given address", cliFlashRead },
-    { "flash_write", "write text to the given address", cliFlashWrite },
+    CLI_COMMAND_DEF("flash_erase", "erase flash chip", NULL, cliFlashErase),
+    CLI_COMMAND_DEF("flash_info", "show flash chip info", NULL, cliFlashInfo),
+    CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
+    CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
-    { "get", "get variable value", cliGet },
+    CLI_COMMAND_DEF("get", "get variable value",
+            "[name]", cliGet),
 #ifdef GPS
-    { "gpspassthrough", "passthrough gps to serial", cliGpsPassthrough },
+    CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
-    { "help", "", cliHelp },
+    CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
 #ifdef LED_STRIP
-    { "led", "configure leds", cliLed },
+    CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif
-    { "map", "mapping of rc channel order", cliMap },
+    CLI_COMMAND_DEF("map", "configure rc channel order",
+        "[<map>]", cliMap),
 #ifndef USE_QUAD_MIXER_ONLY
-    { "mixer", "mixer name or list", cliMixer },
+    CLI_COMMAND_DEF("mixer", "configure mixer",
+        "list\r\n"
+        "\t<name>", cliMixer),
 #endif
-    { "motor", "get/set motor output value", cliMotor },
-    { "play_sound", "index, or none for next", cliPlaySound },
-    { "profile", "index (0 to 2)", cliProfile },
-    { "rateprofile", "index (0 to 2)", cliRateProfile },
-    { "save", "save and reboot", cliSave },
-    { "serial", "show/set serial settings", cliSerial },
+    CLI_COMMAND_DEF("motor",  "get/set motor",
+       "<index> [<value>]", cliMotor),
+    CLI_COMMAND_DEF("motormix", "custom motor mixer", NULL, cliMotorMix),
+    CLI_COMMAND_DEF("play_sound", NULL,
+        "[<index>]\r\n", cliPlaySound),
+    CLI_COMMAND_DEF("profile", "change profile",
+        "[<index>]", cliProfile),
+    CLI_COMMAND_DEF("rateprofile", "change rate profile",
+        "[<index>]", cliRateProfile),
+    CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
+    CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifdef USE_SERVOS
-    { "servo", "servo config", cliServo },
+    CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
+    CLI_COMMAND_DEF("servomix", "servo mixer",
+        "<rule> <servo> <source> <rate> <speed> <min> <max> <box>\r\n"
+        "\treset\r\n"
+        "\tload <mixer>\r\n"
+        "\treverse <servo> <source> -1|1", cliServoMix),
 #endif
-    { "set", "name=value or blank or * for list", cliSet },
-#ifdef USE_SERVOS
-    { "smix", "design custom servo mixer", cliServoMix },
-#endif
-    { "status", "show system status", cliStatus },
-    { "version", "", cliVersion },
+    CLI_COMMAND_DEF("set", "change setting",
+        "[<name>=<value>]", cliSet),
+    CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
+    CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
 
@@ -470,9 +504,20 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrint(const char *str);
 static void cliWrite(uint8_t ch);
+
 static void cliPrompt(void)
 {
     cliPrint("\r\n# ");
+}
+
+static void cliShowParseError(void)
+{
+    cliPrint("Parse error\r\n");
+}
+
+static void cliShowArgumentRangeError(char *name, int min, int max)
+{
+    printf("%s must be between %d and %d\r\n", name, min, max);
 }
 
 static int cliCompare(const void *a, const void *b)
@@ -484,24 +529,19 @@ static int cliCompare(const void *a, const void *b)
 static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
 {
     int val;
-    ptr = strchr(ptr, ' ');
-    if (ptr) {
-        val = atoi(++ptr);
-        val = CHANNEL_VALUE_TO_STEP(val);
-        if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
-            range->startStep = val;
-            (*validArgumentCount)++;
+
+    for (int argIndex = 0; argIndex < 2; argIndex++) {
+        ptr = strchr(ptr, ' ');
+        if (ptr) {
+            val = atoi(++ptr);
+            val = CHANNEL_VALUE_TO_STEP(val);
+            if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
+                range->startStep = val;
+                (*validArgumentCount)++;
+            }
         }
     }
-    ptr = strchr(ptr, ' ');
-    if (ptr) {
-        val = atoi(++ptr);
-        val = CHANNEL_VALUE_TO_STEP(val);
-        if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
-            range->endStep = val;
-            (*validArgumentCount)++;
-        }
-    }
+
     return ptr;
 }
 
@@ -556,7 +596,7 @@ static void cliAux(char *cmdline)
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
         } else {
-            printf("index: must be < %u\r\n", MAX_MODE_ACTIVATION_CONDITION_COUNT);
+            cliShowArgumentRangeError("index", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
         }
     }
 }
@@ -650,7 +690,7 @@ static void cliSerial(char *cmdline)
     }
 
     if (validArgumentCount < 6) {
-        cliPrint("Parse error\r\n");
+        cliShowParseError();
         return;
     }
 
@@ -683,6 +723,7 @@ static void cliAdjustmentRange(char *cmdline)
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = &currentProfile->adjustmentRanges[i];
             uint8_t validArgumentCount = 0;
+
             ptr = strchr(ptr, ' ');
             if (ptr) {
                 val = atoi(++ptr);
@@ -699,7 +740,9 @@ static void cliAdjustmentRange(char *cmdline)
                     validArgumentCount++;
                 }
             }
+
             ptr = processChannelRangeArgs(ptr, &ar->range, &validArgumentCount);
+
             ptr = strchr(ptr, ' ');
             if (ptr) {
                 val = atoi(++ptr);
@@ -719,14 +762,15 @@ static void cliAdjustmentRange(char *cmdline)
 
             if (validArgumentCount != 6) {
                 memset(ar, 0, sizeof(adjustmentRange_t));
+                cliShowParseError();
             }
         } else {
-            printf("index: must be < %u\r\n", MAX_ADJUSTMENT_RANGE_COUNT);
+            cliShowArgumentRangeError("index", 0, MAX_ADJUSTMENT_RANGE_COUNT - 1);
         }
     }
 }
 
-static void cliCMix(char *cmdline)
+static void cliMotorMix(char *cmdline)
 {
 #ifdef USE_QUAD_MIXER_ONLY
     UNUSED(cmdline);
@@ -738,7 +782,7 @@ static void cliCMix(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-        cliPrint("Custom mixer: \r\nMotor\tThr\tRoll\tPitch\tYaw\r\n");
+        cliPrint("Motor\tThr\tRoll\tPitch\tYaw\r\n");
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             if (masterConfig.customMotorMixer[i].throttle == 0.0f)
                 break;
@@ -760,13 +804,13 @@ static void cliCMix(char *cmdline)
             len = strlen(++ptr);
             for (i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrint("Invalid mixer type\r\n");
+                    cliPrint("Invalid name\r\n");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
                     mixerLoadMix(i, masterConfig.customMotorMixer);
-                    printf("Loaded %s mix\r\n", mixerNames[i]);
-                    cliCMix("");
+                    printf("Loaded %s\r\n", mixerNames[i]);
+                    cliMotorMix("");
                     break;
                 }
             }
@@ -796,12 +840,12 @@ static void cliCMix(char *cmdline)
                 check++;
             }
             if (check != 4) {
-                cliPrint("Wrong number of arguments, needs idx thr roll pitch yaw\r\n");
+                cliShowParseError();
             } else {
-                cliCMix("");
+                cliMotorMix("");
             }
         } else {
-            printf("Motor number must be between 1 and %d\r\n", MAX_SUPPORTED_MOTORS);
+            cliShowArgumentRangeError("index", 1, MAX_SUPPORTED_MOTORS);
         }
     }
 #endif
@@ -825,10 +869,10 @@ static void cliLed(char *cmdline)
         if (i < MAX_LED_STRIP_LENGTH) {
             ptr = strchr(cmdline, ' ');
             if (!parseLedStripConfig(i, ++ptr)) {
-                cliPrint("Parse error\r\n");
+                cliShowParseError();
             }
         } else {
-            printf("Invalid led index: must be < %u\r\n", MAX_LED_STRIP_LENGTH);
+            cliShowArgumentRangeError("index", 0, MAX_LED_STRIP_LENGTH - 1);
         }
     }
 }
@@ -840,7 +884,12 @@ static void cliColor(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
-            printf("color %u %d,%u,%u\r\n", i, masterConfig.colors[i].h, masterConfig.colors[i].s, masterConfig.colors[i].v);
+            printf("color %u %d,%u,%u\r\n",
+                i,
+                masterConfig.colors[i].h,
+                masterConfig.colors[i].s,
+                masterConfig.colors[i].v
+            );
         }
     } else {
         ptr = cmdline;
@@ -848,10 +897,10 @@ static void cliColor(char *cmdline)
         if (i < CONFIGURABLE_COLOR_COUNT) {
             ptr = strchr(cmdline, ' ');
             if (!parseColor(i, ++ptr)) {
-                cliPrint("Parse error\r\n");
+                cliShowParseError();
             }
         } else {
-            printf("Invalid color index: must be < %u\r\n", CONFIGURABLE_COLOR_COUNT);
+            cliShowArgumentRangeError("index", 0, CONFIGURABLE_COLOR_COUNT - 1);
         }
     }
 }
@@ -897,7 +946,7 @@ static void cliServo(char *cmdline)
         while (*ptr) {
             if (*ptr == '-' || (*ptr >= '0' && *ptr <= '9')) {
                 if (validArgumentCount >= SERVO_ARGUMENT_COUNT) {
-                    cliPrint("Parse error\r\n");
+                    cliShowParseError();
                     return;
                 }
 
@@ -909,14 +958,14 @@ static void cliServo(char *cmdline)
             } else if (*ptr == ' ') {
                 ptr++;
             } else {
-                cliPrint("Parse error\r\n");
+                cliShowParseError();
                 return;
             }
         }
 
         // Check we got the right number of args and the servo index is correct (don't validate the other values)
         if (validArgumentCount != SERVO_ARGUMENT_COUNT || arguments[0] < 0 || arguments[0] >= MAX_SUPPORTED_SERVOS) {
-            cliPrint("Parse error\r\n");
+            cliShowParseError();
             return;
         }
 
@@ -945,19 +994,23 @@ static void cliServoMix(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        printf("Custom servo mixer: \r\nchange mixer: smix rule\ttarget_channel\tinput_channel\trate\tspeed\t\tmin\tmax\tbox\r\n");
-        printf("reset mixer: smix reset\r\nload mixer: smix load\r\nchange direction of channel: smix direction\r\n");
+
         for (i = 0; i < MAX_SERVO_RULES; i++) {
             if (masterConfig.customServoMixer[i].rate == 0)
                 break;
-            printf("#%d:\t", i + 1);
-            printf("%d\t", masterConfig.customServoMixer[i].targetChannel + 1);
-            printf("%d\t", masterConfig.customServoMixer[i].fromChannel + 1);
-            printf("%d\t", masterConfig.customServoMixer[i].rate);
-            printf("%d\t", masterConfig.customServoMixer[i].speed);
-            printf("%d\t", masterConfig.customServoMixer[i].min);
-            printf("%d\t", masterConfig.customServoMixer[i].max);
-            printf("%d\r\n", masterConfig.customServoMixer[i].box);
+
+            cliPrint("Rule Servo Source Rate Speed Min Max Box\r\n");
+
+            printf("#%d:\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
+                i + 1,
+                masterConfig.customServoMixer[i].targetChannel + 1,
+                masterConfig.customServoMixer[i].fromChannel + 1,
+                masterConfig.customServoMixer[i].rate,
+                masterConfig.customServoMixer[i].speed,
+                masterConfig.customServoMixer[i].min,
+                masterConfig.customServoMixer[i].max,
+                masterConfig.customServoMixer[i].box
+            );
         }
         printf("\r\n");
         return;
@@ -965,7 +1018,7 @@ static void cliServoMix(char *cmdline)
         // erase custom mixer
         memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            currentProfile->servoConf[i].reversedChannels = 0;
+            currentProfile->servoConf[i].reversedSources = 0;
         }
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = strchr(cmdline, ' ');
@@ -973,34 +1026,33 @@ static void cliServoMix(char *cmdline)
             len = strlen(++ptr);
             for (i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    printf("Invalid mixer type...\r\n");
+                    printf("Invalid name\r\n");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
                     servoMixerLoadMix(i, masterConfig.customServoMixer);
-                    printf("Loaded %s mix...\r\n", mixerNames[i]);
+                    printf("Loaded %s\r\n", mixerNames[i]);
                     cliServoMix("");
                     break;
                 }
             }
         }
-    } else if (strncasecmp(cmdline, "direction", 9) == 0) {
-        enum {SERVO = 0, INPUT, DIRECTION, ARGS_COUNT};
-        int servoIndex, channel;
+    } else if (strncasecmp(cmdline, "reverse", 7) == 0) {
+        enum {SERVO = 0, INPUT, REVERSE, ARGS_COUNT};
+        int servoIndex, inputSource;
         ptr = strchr(cmdline, ' ');
 
         len = strlen(ptr);
         if (len == 0) {
-            printf("change the direction a servo reacts to a input channel: \r\nservo input -1|1\r\n");
             printf("s");
-            for (channel = 0; channel < INPUT_ITEM_COUNT; channel++)
-                printf("\ti%d", channel + 1);
+            for (inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
+                printf("\ti%d", inputSource + 1);
             printf("\r\n");
 
             for (servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
                 printf("%d", servoIndex + 1);
-                for (channel = 0; channel < INPUT_ITEM_COUNT; channel++)
-                    printf("\t%s  ", (currentProfile->servoConf[servoIndex].reversedChannels & (1 << channel)) ? "r" : "n");
+                for (inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
+                    printf("\t%s  ", (currentProfile->servoConf[servoIndex].reversedSources & (1 << inputSource)) ? "r" : "n");
                 printf("\r\n");
             }
             return;
@@ -1013,21 +1065,21 @@ static void cliServoMix(char *cmdline)
         }
 
         if (ptr != NULL || check != ARGS_COUNT) {
-            printf("Wrong number of arguments, needs servo input direction\r\n");
+            cliShowParseError();
             return;
         }
 
-        if (args[SERVO] >= 1 && args[SERVO] <= MAX_SUPPORTED_SERVOS && args[INPUT] >= 1 && args[INPUT] <= INPUT_ITEM_COUNT && (args[DIRECTION] == -1 || args[DIRECTION] == 1)) {
+        if (args[SERVO] >= 1 && args[SERVO] <= MAX_SUPPORTED_SERVOS && args[INPUT] >= 1 && args[INPUT] <= INPUT_SOURCE_COUNT && (args[REVERSE] == -1 || args[REVERSE] == 1)) {
             args[SERVO] -= 1;
             args[INPUT] -= 1;
-            if (args[DIRECTION] == -1)
-                currentProfile->servoConf[args[SERVO]].reversedChannels |= 1 << args[INPUT];
+            if (args[REVERSE] == -1)
+                currentProfile->servoConf[args[SERVO]].reversedSources |= 1 << args[INPUT];
             else
-                currentProfile->servoConf[args[SERVO]].reversedChannels &= ~(1 << args[INPUT]);
+                currentProfile->servoConf[args[SERVO]].reversedSources &= ~(1 << args[INPUT]);
         } else
-            printf("ERR: Wrong range for arguments\r\n");
+            cliShowParseError();
 
-        cliServoMix("direction");
+        cliServoMix("reverse");
     } else {
         enum {RULE = 0, TARGET, INPUT, RATE, SPEED, MIN, MAX, BOX, ARGS_COUNT};
         ptr = strtok(cmdline, " ");
@@ -1037,14 +1089,14 @@ static void cliServoMix(char *cmdline)
         }
 
         if (ptr != NULL || check != ARGS_COUNT) {
-            printf("ERR: Wrong number of arguments, needs rule target_channel input_channel rate speed min max box\r\n");
+            cliShowParseError();
             return;
         }
 
         i = args[RULE] - 1;
         if (i >= 0 && i < MAX_SERVO_RULES &&
             args[TARGET] > 0 && args[TARGET] <= MAX_SUPPORTED_SERVOS &&
-            args[INPUT] >= 1 && args[INPUT] <= INPUT_ITEM_COUNT &&
+            args[INPUT] >= 1 && args[INPUT] <= INPUT_SOURCE_COUNT &&
             args[RATE] >= -100 && args[RATE] <= 100 &&
             args[SPEED] >= 0 && args[SPEED] <= MAX_SERVO_SPEED &&
             args[MIN] >= 0 && args[MIN] <= 100 &&
@@ -1058,8 +1110,9 @@ static void cliServoMix(char *cmdline)
             masterConfig.customServoMixer[i].max = args[MAX];
             masterConfig.customServoMixer[i].box = args[BOX];
             cliServoMix("");
-        } else
-            printf("ERR: Wrong range for arguments\r\n");
+        } else {
+            cliShowParseError();
+        }
     }
 #endif
 }
@@ -1081,7 +1134,7 @@ static void cliFlashErase(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("Erasing, please wait...\r\n");
+    printf("Erasing...\r\n");
     flashfsEraseCompletely();
 
     while (!flashfsIsReady()) {
@@ -1097,7 +1150,7 @@ static void cliFlashWrite(char *cmdline)
     char *text = strchr(cmdline, ' ');
 
     if (!text) {
-        printf("Missing text to write.\r\n");
+        cliShowParseError();
     } else {
         flashfsSeekAbs(address);
         flashfsWrite((uint8_t*)text, strlen(text), true);
@@ -1118,7 +1171,7 @@ static void cliFlashRead(char *cmdline)
     char *nextArg = strchr(cmdline, ' ');
 
     if (!nextArg) {
-        printf("Missing length argument.\r\n");
+        cliShowParseError();
     } else {
         length = atoi(nextArg);
 
@@ -1255,23 +1308,11 @@ static void cliDump(char *cmdline)
 
         // print servo directions
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            for (channel = 0; channel < INPUT_ITEM_COUNT; channel++) {
-                if (currentProfile->servoConf[i].reversedChannels & (1 << channel)) {
-                    printf("smix direction %d %d -1\r\n", i + 1 , channel + 1);
-                }
+            for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
+                printf("smix direction %d %d -1\r\n", i + 1 , channel + 1);
             }
         }
 
-        // print servo config
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            printf("servo %d %d %d %d %d\r\n", i + 1,
-                currentProfile->servoConf[i].min,
-                currentProfile->servoConf[i].middle,
-                currentProfile->servoConf[i].max,
-                currentProfile->servoConf[i].rate
-            );
-        }
-        
 #endif
 
         cliPrint("\r\n\r\n# feature\r\n");
@@ -1379,7 +1420,7 @@ static void cliFeature(char *cmdline)
     mask = featureMask();
 
     if (len == 0) {
-        cliPrint("Enabled features: ");
+        cliPrint("Enabled: ");
         for (i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
@@ -1388,7 +1429,7 @@ static void cliFeature(char *cmdline)
         }
         cliPrint("\r\n");
     } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available features: ");
+        cliPrint("Available: ");
         for (i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
@@ -1407,7 +1448,7 @@ static void cliFeature(char *cmdline)
 
         for (i = 0; ; i++) {
             if (featureNames[i] == NULL) {
-                cliPrint("Invalid feature name\r\n");
+                cliPrint("Invalid name\r\n");
                 break;
             }
 
@@ -1416,24 +1457,24 @@ static void cliFeature(char *cmdline)
                 mask = 1 << i;
 #ifndef GPS
                 if (mask & FEATURE_GPS) {
-                    cliPrint("GPS unavailable\r\n");
+                    cliPrint("unavailable\r\n");
                     break;
                 }
 #endif
 #ifndef SONAR
                 if (mask & FEATURE_SONAR) {
-                    cliPrint("SONAR unavailable\r\n");
+                    cliPrint("unavailable\r\n");
                     break;
                 }
 #endif
                 if (remove) {
                     featureClear(mask);
-                    cliPrint("Disabled ");
+                    cliPrint("Disabled");
                 } else {
                     featureSet(mask);
-                    cliPrint("Enabled ");
+                    cliPrint("Enabled");
                 }
-                printf("%s\r\n", featureNames[i]);
+                printf(" %s\r\n", featureNames[i]);
                 break;
             }
         }
@@ -1455,9 +1496,16 @@ static void cliHelp(char *cmdline)
 
     UNUSED(cmdline);
 
-    cliPrint("Available commands:\r\n");
-    for (i = 0; i < CMD_COUNT; i++)
-        printf("%s\t%s\r\n", cmdTable[i].name, cmdTable[i].param);
+    for (i = 0; i < CMD_COUNT; i++) {
+        cliPrint(cmdTable[i].name);
+        if (cmdTable[i].description) {
+            printf(" - %s", cmdTable[i].description);
+        }
+        if (cmdTable[i].args) {
+            printf("\r\n\t%s", cmdTable[i].args);
+        }
+        cliPrint("\r\n");
+    }
 }
 
 static void cliMap(char *cmdline)
@@ -1475,12 +1523,12 @@ static void cliMap(char *cmdline)
         for (i = 0; i < 8; i++) {
             if (strchr(rcChannelLetters, cmdline[i]) && !strchr(cmdline + i + 1, cmdline[i]))
                 continue;
-            cliPrint("Must be any order of AETR1234\r\n");
+            cliShowParseError();
             return;
         }
         parseRcChannels(cmdline, &masterConfig.rxConfig);
     }
-    cliPrint("Current assignment: ");
+    cliPrint("Map: ");
     for (i = 0; i < 8; i++)
         out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
@@ -1496,7 +1544,7 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        printf("Current mixer: %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
+        printf("Mixer: %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
@@ -1511,15 +1559,16 @@ static void cliMixer(char *cmdline)
 
     for (i = 0; ; i++) {
         if (mixerNames[i] == NULL) {
-            cliPrint("Invalid mixer type\r\n");
-            break;
+            cliPrint("Invalid name\r\n");
+            return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
             masterConfig.mixerMode = i + 1;
-            printf("Mixer set to %s\r\n", mixerNames[i]);
             break;
         }
     }
+
+    cliMixer("");
 }
 #endif
 
@@ -1532,7 +1581,7 @@ static void cliMotor(char *cmdline)
     char *saveptr;
 
     if (isEmpty(cmdline)) {
-        cliPrint("Usage:\r\nmotor index [value] - show [or set] motor value\r\n");
+        cliShowParseError();
         return;
     }
 
@@ -1551,22 +1600,20 @@ static void cliMotor(char *cmdline)
     }
 
     if (motor_index < 0 || motor_index >= MAX_SUPPORTED_MOTORS) {
-        printf("No such motor, use a number [0, %d]\r\n", MAX_SUPPORTED_MOTORS);
+        cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS);
         return;
     }
 
-    if (index < 2) {
-        printf("Motor %d is set at %d\r\n", motor_index, motor_disarmed[motor_index]);
-        return;
+    if (index == 2) {
+        if (motor_value < PWM_RANGE_MIN || motor_value > PWM_RANGE_MAX) {
+            cliShowArgumentRangeError("value", 1000, 2000);
+            return;
+        } else {
+            motor_disarmed[motor_index] = motor_value;
+        }
     }
 
-    if (motor_value < PWM_RANGE_MIN || motor_value > PWM_RANGE_MAX) {
-        cliPrint("Invalid motor value, 1000..2000\r\n");
-        return;
-    }
-
-    printf("Setting motor %d to %d\r\n", motor_index, motor_value);
-    motor_disarmed[motor_index] = motor_value;
+    printf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
 }
 
 static void cliPlaySound(char *cmdline)
@@ -1806,7 +1853,7 @@ static void cliSet(char *cmdline)
                 return;
             }
         }
-        cliPrint("Unknown variable name\r\n");
+        cliPrint("Invalid name\r\n");
     } else {
         // no equals, check for matching variables.
     	cliGet(cmdline);
@@ -1835,7 +1882,7 @@ static void cliGet(char *cmdline)
     	return;
     }
 
-    cliPrint("Unknown variable name\r\n");
+    cliPrint("Invalid name\r\n");
 }
 
 static void cliStatus(char *cmdline)
@@ -1969,7 +2016,7 @@ void cliProcess(void)
             if (bufferIndex > 0) {
                 cliBuffer[bufferIndex] = 0; // null terminate
                 target.name = cliBuffer;
-                target.param = NULL;
+                target.args = NULL;
 
                 cmd = bsearch(&target, cmdTable, CMD_COUNT, sizeof cmdTable[0], cliCompare);
                 if (cmd)

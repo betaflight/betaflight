@@ -391,10 +391,11 @@ int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
     return servoConf[servoIndex].middle;
 }
 
+// FIXME rename 'fromChannel' to inputSource
 int servoDirection(int servoIndex, int fromChannel)
 {
     // determine the direction (reversed or not) from the direction bitfield of the servo
-    if (servoConf[servoIndex].reversedChannels & (1 << fromChannel))
+    if (servoConf[servoIndex].reversedSources & (1 << fromChannel))
         return -1;
     else
         return 1;
@@ -700,7 +701,7 @@ void StopPwmAllMotors()
 #ifndef USE_QUAD_MIXER_ONLY
 static void servoMixer(void)
 {
-    int16_t input[INPUT_ITEM_COUNT];
+    int16_t input[INPUT_SOURCE_COUNT];
     static int16_t currentOutput[MAX_SERVO_RULES];
     uint8_t i;
 
@@ -749,7 +750,7 @@ static void servoMixer(void)
         // consider rule if no box assigned or box is active
         if (currentServoMixer[i].box == 0 || IS_RC_MODE_ACTIVE(BOXSERVO1 + currentServoMixer[i].box - 1)) {
             uint8_t target = currentServoMixer[i].targetChannel;
-            uint8_t from = currentServoMixer[i].fromChannel;
+            uint8_t from = currentServoMixer[i].fromChannel;  // FIXME rename 'from' to inputSource
             uint16_t servo_width = servoConf[target].max - servoConf[target].min;
             int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
             int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
@@ -763,8 +764,6 @@ static void servoMixer(void)
                     currentOutput[i] = constrain(currentOutput[i] - currentServoMixer[i].speed, input[from], currentOutput[i]);
             }
 
-            // FIXME if the 'from' really only works for 0 to 8 currently.  e.g. See INPUT_ROLL and INPUT_RC_ROLL. (0 vs 8, the intention is likely to use 0 in both cases)
-            // Really, there should be a translation from INPUT_* to 'fromChannel' and servoDirection() should only be used if needed.
             servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);
         } else {
             currentOutput[i] = 0;

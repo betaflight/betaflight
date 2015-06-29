@@ -851,7 +851,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(currentProfile->servoConf[i].rate);
             serialize8(currentProfile->servoConf[i].angleAtMin);
             serialize8(currentProfile->servoConf[i].angleAtMax);
-            serialize32(currentProfile->servoConf[i].reversedChannels);
+            serialize32(currentProfile->servoConf[i].reversedSources);
         }
         break;
     case MSP_CHANNEL_FORWARDING:
@@ -1453,7 +1453,7 @@ static bool processInCommand(void)
                 currentProfile->servoConf[i].rate = read8();
                 currentProfile->servoConf[i].angleAtMin = read8();
                 currentProfile->servoConf[i].angleAtMax = read8();
-                currentProfile->servoConf[i].reversedChannels = read32();
+                currentProfile->servoConf[i].reversedSources = read32();
             }
         }
 #endif
