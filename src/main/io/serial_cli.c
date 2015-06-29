@@ -243,9 +243,9 @@ const clicmd_t cmdTable[] = {
         "list\r\n"
         "\t<name>", cliMixer),
 #endif
+    CLI_COMMAND_DEF("mmix", "custom motor mixer", NULL, cliMotorMix),
     CLI_COMMAND_DEF("motor",  "get/set motor",
        "<index> [<value>]", cliMotor),
-    CLI_COMMAND_DEF("motormix", "custom motor mixer", NULL, cliMotorMix),
     CLI_COMMAND_DEF("play_sound", NULL,
         "[<index>]\r\n", cliPlaySound),
     CLI_COMMAND_DEF("profile", "change profile",
@@ -256,14 +256,16 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
-    CLI_COMMAND_DEF("servomix", "servo mixer",
+#endif
+    CLI_COMMAND_DEF("set", "change setting",
+        "[<name>=<value>]", cliSet),
+#ifdef USE_SERVOS
+    CLI_COMMAND_DEF("smix", "servo mixer",
         "<rule> <servo> <source> <rate> <speed> <min> <max> <box>\r\n"
         "\treset\r\n"
         "\tload <mixer>\r\n"
         "\treverse <servo> <source> -1|1", cliServoMix),
 #endif
-    CLI_COMMAND_DEF("set", "change setting",
-        "[<name>=<value>]", cliSet),
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 };
@@ -1256,7 +1258,7 @@ static void cliDump(char *cmdline)
 #ifndef USE_QUAD_MIXER_ONLY
         printf("mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
 
-        printf("cmix reset\r\n");
+        printf("mmix reset\r\n");
 
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             if (masterConfig.customMotorMixer[i].throttle == 0.0f)
@@ -1265,7 +1267,7 @@ static void cliDump(char *cmdline)
             roll = masterConfig.customMotorMixer[i].roll;
             pitch = masterConfig.customMotorMixer[i].pitch;
             yaw = masterConfig.customMotorMixer[i].yaw;
-            printf("cmix %d", i + 1);
+            printf("mmix %d", i + 1);
             if (thr < 0)
                 cliWrite(' ');
             printf("%s", ftoa(thr, buf));
@@ -1303,7 +1305,9 @@ static void cliDump(char *cmdline)
         // print servo directions
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
-                printf("smix direction %d %d -1\r\n", i + 1 , channel + 1);
+                if (servoDirection(i, channel) < 0) {
+                    printf("smix reverse %d %d -1\r\n", i + 1 , channel + 1);
+                }
             }
         }
 
