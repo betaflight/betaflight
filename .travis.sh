@@ -9,9 +9,11 @@ TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/undefined}
 BUILDNAME=${BUILDNAME:=travis}
 TRAVIS_BUILD_NUMBER=${TRAVIS_BUILD_NUMBER:=undefined}
 
-CURLBASEOPTS=(
+CURL_BASEOPTS=(
 	"--retry" "10"
-	"--retry-max-time" "120"
+	"--retry-max-time" "120" )
+
+CURL_PUB_BASEOPTS=(
 	"--form" "revision=${REVISION}"
 	"--form" "branch=${BRANCH}"
 	"--form" "travis_build_number=${TRAVIS_BUILD_NUMBER}"
@@ -30,7 +32,7 @@ elif [ $PUBLISHDOCS ] ; then
 		sudo apt-get install zlib1g-dev libssl-dev wkhtmltopdf libxml2-dev libxslt-dev #ruby-rvm
 
 		# Patch Gimli to fix underscores_inside_words
-		curl -L https://github.com/walle/gimli/archive/v0.5.9.tar.gz | tar zxf -
+		curl -L "${CURL_BASEOPTS[@]}" https://github.com/walle/gimli/archive/v0.5.9.tar.gz | tar zxf -
 
 		sed -i 's/).render(/, :no_intra_emphasis => true).render(/' gimli-0.5.9/ext/github_markup.rb
 
@@ -40,13 +42,13 @@ elif [ $PUBLISHDOCS ] ; then
 
 		./build_docs.sh
 
-		curl -k "${CURLBASEOPTS[@]}" --form "manual=@docs/Manual.pdf" ${PUBLISH_URL} || true
+		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "manual=@docs/Manual.pdf" ${PUBLISH_URL} || true
 	fi
 
 elif [ $PUBLISHMETA ] ; then
 	if [ $PUBLISH_URL ] ; then
 		RECENT_COMMITS=$(git shortlog -n25)
-		curl -k "${CURLBASEOPTS[@]}" --form "recent_commits=${RECENT_COMMITS}" ${PUBLISH_URL} || true
+		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "recent_commits=${RECENT_COMMITS}" ${PUBLISH_URL} || true
 	fi
 
 else
@@ -61,7 +63,7 @@ else
 			exit 1
 		fi
 
-		curl -k "${CURLBASEOPTS[@]}" --form "file=@${TARGET_FILE}" ${PUBLISH_URL} || true
+		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "file=@${TARGET_FILE}" ${PUBLISH_URL} || true
 		exit 0;
 	else
 		make -j2
