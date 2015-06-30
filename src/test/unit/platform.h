@@ -44,6 +44,8 @@ typedef struct
 typedef struct DMA_Channel_Struct DMA_Channel_TypeDef;
 typedef struct USART_Struct USART_TypeDef;
 
+#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
+
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 typedef enum
