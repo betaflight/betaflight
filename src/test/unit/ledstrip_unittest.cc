@@ -307,7 +307,7 @@ TEST(ColorTest, parseColor)
 {
     // given
     colors = testColors;
-    memset(colors, 0, sizeof(colors) * CONFIGURABLE_COLOR_COUNT);
+    memset(colors, 0, sizeof(*colors) * CONFIGURABLE_COLOR_COUNT);
 
     // and
     const hsvColor_t expectedColors[TEST_COLOR_COUNT] = {
