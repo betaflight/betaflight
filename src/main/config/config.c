@@ -318,6 +318,12 @@ void resetMixerConfig(mixerConfig_t *mixerConfig) {
 #endif
 }
 
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+    rollAndPitchTrims->values.roll = 0;
+    rollAndPitchTrims->values.pitch = 0;
+}
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;

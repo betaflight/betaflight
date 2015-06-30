@@ -70,12 +70,6 @@ bool isOnFirstAccelerationCalibrationCycle(void)
     return calibratingA == CALIBRATING_ACC_CYCLES;
 }
 
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
-{
-    rollAndPitchTrims->values.roll = 0;
-    rollAndPitchTrims->values.pitch = 0;
-}
-
 void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
