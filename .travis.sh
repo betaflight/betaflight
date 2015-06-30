@@ -10,7 +10,7 @@ BUILDNAME=${BUILDNAME:=travis}
 TRAVIS_BUILD_NUMBER=${TRAVIS_BUILD_NUMBER:=undefined}
 
 CURLBASEOPTS=(
-	"--retry-delay" "10"
+	"--retry" "10"
 	"--retry-max-time" "120"
 	"--form" "revision=${REVISION}"
 	"--form" "branch=${BRANCH}"
