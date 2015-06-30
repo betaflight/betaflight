@@ -146,6 +146,8 @@ These chips are also supported:
 * Micron/ST M25P16 - 16 Mbit
 * Micron N25Q064 - 64 Mbit
 * Winbond W25Q64 - 64 Mbit
+* Micron N25Q0128 - 128 Mbit
+* Winbond W25Q128 - 128 Mbit
 
 ## Enabling the Blackbox (CLI)
 In the [Cleanflight Configurator][] , enter the CLI tab. Enable the Blackbox feature by typing in `feature BLACKBOX` and
