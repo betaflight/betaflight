@@ -505,7 +505,7 @@ enum EP_BUF_NUM
 
 
 #define _SetEPRxDblBuf0Count(bEpNum,wCount) {\
-    uint32_t *pdwReg = _pEPTxCount(bEpNum); \
+    __IO uint32_t *pdwReg = _pEPTxCount(bEpNum); \
     _SetEPCountRxReg(pdwReg, wCount);\
   }
 /*******************************************************************************
@@ -518,7 +518,7 @@ enum EP_BUF_NUM
 *******************************************************************************/
 #define _SetEPTxCount(bEpNum,wCount) (*_pEPTxCount(bEpNum) = wCount)
 #define _SetEPRxCount(bEpNum,wCount) {\
-    uint32_t *pdwReg = _pEPRxCount(bEpNum); \
+    __IO uint32_t *pdwReg = _pEPRxCount(bEpNum); \
     _SetEPCountRxReg(pdwReg, wCount);\
   }
 /*******************************************************************************
