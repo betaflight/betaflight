@@ -1215,6 +1215,9 @@ static void blackboxLogIteration()
 #endif
     }
 
+    //Flush every iteration so that our runtime variance is minimized
+    blackboxDeviceFlush();
+
     blackboxSlowFrameIterationTimer++;
     blackboxIteration++;
     blackboxPFrameIndex++;

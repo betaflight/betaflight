@@ -52,12 +52,9 @@ static uint32_t tailAddress = 0;
 // The index of the tail within the flash page it is inside
 static uint16_t tailIndexInPage = 0;
 
-static bool shouldFlush = false;
-
 static void flashfsClearBuffer()
 {
     bufferTail = bufferHead = 0;
-    shouldFlush = false;
 }
 
 static bool flashfsBufferIsEmpty()
@@ -293,15 +290,14 @@ static void flashfsAdvanceTailInBuffer(uint32_t delta)
 }
 
 /**
- * If the flash is ready to accept writes, flush the buffer to it, otherwise schedule
- * a flush for later and return immediately.
+ * If the flash is ready to accept writes, flush the buffer to it.
  *
- * Returns true if all data in the buffer has been flushed to the device.
+ * Returns true if all data in the buffer has been flushed to the device, or false if
+ * there is still data to be written (call flush again later).
  */
 bool flashfsFlushAsync()
 {
     if (flashfsBufferIsEmpty()) {
-        shouldFlush = false;
         return true; // Nothing to flush
     }
 
@@ -312,8 +308,6 @@ bool flashfsFlushAsync()
     flashfsGetDirtyDataBuffers(buffers, bufferSizes);
     bytesWritten = flashfsWriteBuffers(buffers, bufferSizes, 2, false);
     flashfsAdvanceTailInBuffer(bytesWritten);
-
-    shouldFlush = !flashfsBufferIsEmpty();
 
     return flashfsBufferIsEmpty();
 }
@@ -327,7 +321,6 @@ bool flashfsFlushAsync()
 void flashfsFlushSync()
 {
     if (flashfsBufferIsEmpty()) {
-        shouldFlush = false;
         return; // Nothing to flush
     }
 
@@ -366,7 +359,7 @@ void flashfsWriteByte(uint8_t byte)
         bufferHead = 0;
     }
 
-    if (shouldFlush || flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
+    if (flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
         flashfsFlushAsync();
     }
 }
@@ -393,7 +386,7 @@ void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
      * Would writing this data to our buffer cause our buffer to reach the flush threshold? If so try to write through
      * to the flash now
      */
-    if (shouldFlush || bufferSizes[0] + bufferSizes[1] + bufferSizes[2] >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
+    if (bufferSizes[0] + bufferSizes[1] + bufferSizes[2] >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
         uint32_t bytesWritten;
 
         // Attempt to write all three buffers through to the flash asynchronously
