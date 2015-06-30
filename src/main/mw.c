@@ -25,6 +25,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/filter.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -72,8 +73,6 @@
 #include "flight/failsafe.h"
 #include "flight/autotune.h"
 #include "flight/navigation.h"
-#include "flight/filter.h"
-
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -96,6 +95,7 @@ enum {
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+float dT;
 
 int16_t magHold;
 int16_t headFreeModeHold;
@@ -681,6 +681,27 @@ void processRx(void)
 
 }
 
+// Gyro Low Pass
+void filterGyro(void) {
+    int axis;
+    static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
+
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+    	if (masterConfig.looptime > 0) {
+    		// Static dT calculation based on configured looptime
+            if (!gyroADCState[axis].constdT) {
+                gyroADCState[axis].constdT = (float)masterConfig.looptime * 0.000001f;
+            }
+
+            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, gyroADCState[axis].constdT);
+    	}
+
+        else {
+	        gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dT);
+        }
+    }
+}
+
 void loop(void)
 {
     static uint32_t loopTime;
@@ -736,14 +757,10 @@ void loop(void)
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
 
-        // Gyro Low Pass
-        if (currentProfile->pidProfile.gyro_cut_hz) {
-            int axis;
-            static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
+        dT = (float)cycleTime * 0.000001f;
 
-            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        	    gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz);
-            }
+        if (currentProfile->pidProfile.gyro_cut_hz) {
+            filterGyro();
         }
 
         annexCode();
