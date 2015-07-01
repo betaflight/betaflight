@@ -17,13 +17,17 @@
 
 #pragma once
 
+typedef uint8_t pgn_t;
+
 typedef struct pgRegistry_s {
     // Base of the group in RAM.
     void *base;
     // Size of the group in RAM.
     uint16_t size;
     // The parameter group number.
-    uint16_t pgn;
+    pgn_t pgn;
+    // The MSP ID used when setting the parameter group.
+    pgn_t pgn_for_set;
     // The in-memory format number.  Bump when making incompatible
     // changes to the PG.
     uint8_t format;
@@ -34,6 +38,6 @@ typedef struct pgRegistry_s {
 
 #define PG_PACKED __attribute__((packed))
 
-const pgRegistry_t* pgFind(uint8_t id);
-const pgRegistry_t* pgFindForSet(uint8_t id);
-bool pgLoad(const pgRegistry_t* block, const void *from, uint8_t size);
+const pgRegistry_t* pgFind(pgn_t pgn);
+const pgRegistry_t* pgFindForSet(pgn_t pgn);
+void pgLoad(const pgRegistry_t* reg, const void *from, int size);
