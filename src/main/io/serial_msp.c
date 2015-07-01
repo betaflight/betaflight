@@ -828,7 +828,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.escAndServoConfig.maxthrottle);
         serialize16(masterConfig.escAndServoConfig.mincommand);
 
-        serialize16(masterConfig.failsafeConfig.failsafe_throttle);
+        serialize16(failsafeConfig.failsafe_throttle);
 
 #ifdef GPS
         serialize8(masterConfig.gpsConfig.provider); // gps_type
@@ -960,13 +960,6 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.spektrum_sat_bind);
         serialize16(masterConfig.rxConfig.rx_min_usec);
         serialize16(masterConfig.rxConfig.rx_max_usec);
-        break;
-
-    case MSP_FAILSAFE_CONFIG:
-        headSerialReply(4);
-        serialize8(masterConfig.failsafeConfig.failsafe_delay);
-        serialize8(masterConfig.failsafeConfig.failsafe_off_delay);
-        serialize16(masterConfig.failsafeConfig.failsafe_throttle);
         break;
 
     case MSP_RSSI_CONFIG:
@@ -1218,7 +1211,7 @@ static bool processInCommand(void)
         masterConfig.escAndServoConfig.maxthrottle = read16();
         masterConfig.escAndServoConfig.mincommand = read16();
 
-        masterConfig.failsafeConfig.failsafe_throttle = read16();
+        failsafeConfig.failsafe_throttle = read16();
 
 #ifdef GPS
         masterConfig.gpsConfig.provider = read8(); // gps_type
@@ -1380,12 +1373,6 @@ static bool processInCommand(void)
             masterConfig.rxConfig.rx_min_usec = read16();
             masterConfig.rxConfig.rx_max_usec = read16();
         }
-        break;
-
-    case MSP_SET_FAILSAFE_CONFIG:
-        masterConfig.failsafeConfig.failsafe_delay = read8();
-        masterConfig.failsafeConfig.failsafe_off_delay = read8();
-        masterConfig.failsafeConfig.failsafe_throttle = read16();
         break;
 
     case MSP_SET_RSSI_CONFIG:

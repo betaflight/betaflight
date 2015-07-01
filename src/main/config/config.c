@@ -473,9 +473,9 @@ static void resetConf(void)
     currentProfile->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
-    masterConfig.failsafeConfig.failsafe_delay = 10;              // 1sec
-    masterConfig.failsafeConfig.failsafe_off_delay = 200;         // 20sec
-    masterConfig.failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
+    failsafeConfig.failsafe_delay = 10;              // 1sec
+    failsafeConfig.failsafe_off_delay = 200;         // 20sec
+    failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
 
 #ifdef USE_SERVOS
     // servos
@@ -536,8 +536,8 @@ static void resetConf(void)
     currentProfile->pidProfile.pidController = 3;
     currentProfile->pidProfile.P8[ROLL] = 36;
     currentProfile->pidProfile.P8[PITCH] = 36;
-    masterConfig.failsafeConfig.failsafe_delay = 2;
-    masterConfig.failsafeConfig.failsafe_off_delay = 0;
+    failsafeConfig.failsafe_delay = 2;
+    failsafeConfig.failsafe_off_delay = 0;
     currentControlRateProfile->rcRate8 = 130;
     currentControlRateProfile->rates[FD_PITCH] = 20;
     currentControlRateProfile->rates[FD_ROLL] = 20;
@@ -729,7 +729,7 @@ void activateConfig(void)
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 
-    useFailsafeConfig(&masterConfig.failsafeConfig);
+    useFailsafeConfig();
     setAccelerationTrims(&masterConfig.accZero);
 
     mixerUseConfigs(

@@ -17,13 +17,15 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #define FAILSAFE_POWER_ON_DELAY_US (1000 * 1000 * 5)
 
 typedef struct failsafeConfig_s {
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
     uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
-} failsafeConfig_t;
+} PG_PACKED failsafeConfig_t;
 
 typedef enum {
     FAILSAFE_IDLE = 0,
@@ -40,7 +42,8 @@ typedef struct failsafeState_s {
     failsafePhase_e phase;
 } failsafeState_t;
 
-void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse);
+extern failsafeConfig_t failsafeConfig;
+void useFailsafeConfig();
 
 void failsafeStartMonitoring(void);
 void failsafeUpdateState(void);
@@ -52,8 +55,3 @@ bool failsafeIsReceivingRxData(void);
 
 void failsafeOnValidDataReceived(void);
 void failsafeOnRxCycleStarted(void);
-
-
-
-
-

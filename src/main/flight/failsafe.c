@@ -26,6 +26,7 @@
 #include "io/beeper.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
+#include "io/msp_protocol.h"
 #include "config/runtime_config.h"
 
 #include "flight/failsafe.h"
@@ -43,7 +44,15 @@
 
 static failsafeState_t failsafeState;
 
-static failsafeConfig_t *failsafeConfig;
+failsafeConfig_t failsafeConfig;
+
+static const pgRegistry_t failsafeConfigRegistry PG_REGISTRY_SECTION =
+{
+    .base = &failsafeConfig,
+    .size = sizeof(failsafeConfig),
+    .pgn = MSP_FAILSAFE_CONFIG,
+    .pgn_for_set = MSP_SET_FAILSAFE_CONFIG,
+};
 
 static rxConfig_t *rxConfig;
 
@@ -53,12 +62,8 @@ static void failsafeReset(void)
     failsafeState.phase = FAILSAFE_IDLE;
 }
 
-/*
- * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
- */
-void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse)
+void useFailsafeConfig()
 {
-    failsafeConfig = failsafeConfigToUse;
     failsafeReset();
 }
 
@@ -101,7 +106,7 @@ void failsafeStartMonitoring(void)
 
 static bool failsafeHasTimerElapsed(void)
 {
-    return failsafeState.counter > (5 * failsafeConfig->failsafe_delay);
+    return failsafeState.counter > (5 * failsafeConfig.failsafe_delay);
 }
 
 static bool failsafeShouldForceLanding(bool armed)
@@ -111,7 +116,7 @@ static bool failsafeShouldForceLanding(bool armed)
 
 static bool failsafeShouldHaveCausedLandingByNow(void)
 {
-    return failsafeState.counter > 5 * (failsafeConfig->failsafe_delay + failsafeConfig->failsafe_off_delay);
+    return failsafeState.counter > 5 * (failsafeConfig.failsafe_delay + failsafeConfig.failsafe_off_delay);
 }
 
 static void failsafeActivate(void)
@@ -127,7 +132,7 @@ static void failsafeApplyControlInput(void)
     for (int i = 0; i < 3; i++) {
         rcData[i] = rxConfig->midrc;
     }
-    rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
+    rcData[THROTTLE] = failsafeConfig.failsafe_throttle;
 }
 
 void failsafeOnValidDataReceived(void)
