@@ -38,6 +38,13 @@ typedef struct pgRegistry_s {
 
 #define PG_PACKED __attribute__((packed))
 
+extern const pgRegistry_t __pg_registry[];
+
+// Helper to iterate over the PG register.  Cheaper than a visitor
+// style callback.
+#define PG_FOREACH(_name) \
+    for (const pgRegistry_t *(_name) = __pg_registry; (_name)->base != NULL; (_name)++)
+
 const pgRegistry_t* pgFind(pgn_t pgn);
 const pgRegistry_t* pgFindForSet(pgn_t pgn);
 void pgLoad(const pgRegistry_t* reg, const void *from, int size);

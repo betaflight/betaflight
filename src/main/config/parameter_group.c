@@ -22,13 +22,8 @@
 #include "parameter_group.h"
 #include "common/maths.h"
 
-extern pgRegistry_t __pg_registry[];
-
-#define PG_FOREACH(_name) for ((_name) = __pg_registry; (_name)->base != NULL; (_name)++)
-
 const pgRegistry_t* pgFind(pgn_t pgn)
 {
-    const pgRegistry_t *reg;
     PG_FOREACH(reg) {
         if (reg->pgn == pgn) {
             return reg;
@@ -39,7 +34,6 @@ const pgRegistry_t* pgFind(pgn_t pgn)
 
 const pgRegistry_t* pgFindForSet(pgn_t pgn)
 {
-    const pgRegistry_t *reg;
     PG_FOREACH(reg) {
         if (reg->pgn_for_set == pgn) {
             return reg;
