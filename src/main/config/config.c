@@ -117,9 +117,7 @@ controlRateConfig_t *currentControlRateProfile;
 static const uint8_t EEPROM_CONF_VERSION = 200;
 
 extern uint8_t __config_start;
-extern uint8_t __config_end;
 
-extern const pgRegistry_t __pg_registry[];
 static const void *pg_registry_tail PG_REGISTRY_TAIL_SECTION;
 
 static const pgRegistry_t masterRegistry PG_REGISTRY_SECTION = {
@@ -357,7 +355,10 @@ static void resetConf(void)
 #endif
 
     // Clear all configuration
-    memset(&masterConfig, 0, sizeof(master_t));
+    PG_FOREACH(reg) {
+        memset(reg->base, 0, reg->size);
+    }
+
     setProfile(0);
     setControlRateProfile(0);
 
@@ -385,9 +386,6 @@ static void resetConf(void)
 
     resetSensorAlignment(&masterConfig.sensorAlignmentConfig);
 
-    masterConfig.boardAlignment.rollDegrees = 0;
-    masterConfig.boardAlignment.pitchDegrees = 0;
-    masterConfig.boardAlignment.yawDegrees = 0;
     masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     masterConfig.max_angle_inclination = 500;    // 50 degrees
     masterConfig.yaw_control_direction = 1;
@@ -629,10 +627,7 @@ static const pgRegistry_t *findPGN(const configRecord_t *record)
     // the first entry in the struct.
     BUILD_BUG_ON(offsetof(pgRegistry_t, base) != 0);
 
-    for (const pgRegistry_t *reg = __pg_registry;
-         reg->base !=NULL;
-         reg++) {
-
+    PG_FOREACH(reg) {
         if (reg->pgn == record->pgn && reg->format == record->format) {
             return reg;
         }
@@ -930,10 +925,7 @@ void writeEEPROM(void)
 
         config_streamer_write(&streamer, &header, sizeof(header));
 
-        for (const pgRegistry_t *reg = __pg_registry;
-             reg->base != NULL;
-             reg++) {
-
+        PG_FOREACH(reg) {
             configRecord_t record = {
                 .size = sizeof(configRecord_t) + reg->size,
                 .pgn = reg->pgn,

@@ -22,10 +22,21 @@
 
 #include "common/maths.h"
 #include "common/axis.h"
+#include "io/msp_protocol.h"
 
 #include "sensors.h"
 
 #include "boardalignment.h"
+
+boardAlignment_t boardAlignment;
+
+static const pgRegistry_t boardAlignmentRegistry PG_REGISTRY_SECTION =
+{
+    .base = &boardAlignment,
+    .size = sizeof(boardAlignment),
+    .pgn = MSP_BOARD_ALIGNMENT,
+    .pgn_for_set = MSP_SET_BOARD_ALIGNMENT,
+} ;
 
 static bool standardBoardAlignment = true;     // board orientation correction
 static float boardRotation[3][3];              // matrix
@@ -35,18 +46,18 @@ static bool isBoardAlignmentStandard(boardAlignment_t *boardAlignment)
     return !boardAlignment->rollDegrees && !boardAlignment->pitchDegrees && !boardAlignment->yawDegrees;
 }
 
-void initBoardAlignment(boardAlignment_t *boardAlignment)
+void initBoardAlignment()
 {
-    if (isBoardAlignmentStandard(boardAlignment)) {
+    if (isBoardAlignmentStandard(&boardAlignment)) {
         return;
     }
 
     standardBoardAlignment = false;
 
     fp_angles_t rotationAngles;
-    rotationAngles.angles.roll = degreesToRadians(boardAlignment->rollDegrees);
-    rotationAngles.angles.pitch = degreesToRadians(boardAlignment->pitchDegrees);
-    rotationAngles.angles.yaw = degreesToRadians(boardAlignment->yawDegrees);
+    rotationAngles.angles.roll = degreesToRadians(boardAlignment.rollDegrees);
+    rotationAngles.angles.pitch = degreesToRadians(boardAlignment.pitchDegrees);
+    rotationAngles.angles.yaw = degreesToRadians(boardAlignment.yawDegrees);
 
     buildRotationMatrix(&rotationAngles, boardRotation);
 }

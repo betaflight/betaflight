@@ -353,8 +353,7 @@ void init(void)
     adcInit(&adc_params);
 #endif
 
-
-    initBoardAlignment(&masterConfig.boardAlignment);
+    initBoardAlignment();
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
