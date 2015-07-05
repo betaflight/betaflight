@@ -49,8 +49,6 @@ static uint8_t bufferHead = 0, bufferTail = 0;
 
 // The position of the buffer's tail in the overall flash address space:
 static uint32_t tailAddress = 0;
-// The index of the tail within the flash page it is inside
-static uint16_t tailIndexInPage = 0;
 
 static void flashfsClearBuffer()
 {
@@ -65,10 +63,6 @@ static bool flashfsBufferIsEmpty()
 static void flashfsSetTailAddress(uint32_t address)
 {
     tailAddress = address;
-
-    if (m25p16_getGeometry()->pageSize > 0) {
-        tailIndexInPage = tailAddress % m25p16_getGeometry()->pageSize;
-    }
 }
 
 void flashfsEraseCompletely()
@@ -154,8 +148,6 @@ static uint32_t flashfsTransmitBufferUsed()
  */
 static uint32_t flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSizes, int bufferCount, bool sync)
 {
-    const flashGeometry_t *geometry = m25p16_getGeometry();
-
     uint32_t bytesTotal = 0;
 
     int i;
@@ -178,8 +170,8 @@ static uint32_t flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSiz
          * Each page needs to be saved in a separate program operation, so
          * if we would cross a page boundary, only write up to the boundary in this iteration:
          */
-        if (tailIndexInPage + bytesTotalRemaining > geometry->pageSize) {
-            bytesTotalThisIteration = geometry->pageSize - tailIndexInPage;
+        if (tailAddress % M25P16_PAGESIZE + bytesTotalRemaining > M25P16_PAGESIZE) {
+            bytesTotalThisIteration = M25P16_PAGESIZE - tailAddress % M25P16_PAGESIZE;
         } else {
             bytesTotalThisIteration = bytesTotalRemaining;
         }

@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include "flash.h"
 
+#define M25P16_PAGESIZE 256
+
 bool m25p16_init();
 
 void m25p16_eraseSector(uint32_t address);
