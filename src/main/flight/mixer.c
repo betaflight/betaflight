@@ -193,14 +193,14 @@ static const motorMixer_t mixerOctoFlatP[] = {
 };
 
 static const motorMixer_t mixerOctoFlatX[] = {
-    { 1.0f,  1.0f, -0.5f,  1.0f },          // MIDFRONT_L
-    { 1.0f, -0.5f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f, -1.0f,  0.5f,  1.0f },          // MIDREAR_R
-    { 1.0f,  0.5f,  1.0f,  1.0f },          // REAR_L
-    { 1.0f,  0.5f, -1.0f, -1.0f },          // FRONT_L
-    { 1.0f, -1.0f, -0.5f, -1.0f },          // MIDFRONT_R
-    { 1.0f, -0.5f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f,  1.0f,  0.5f, -1.0f },          // MIDREAR_L
+    { 1.0f,  1.0f, -0.414178f,  1.0f },      // MIDFRONT_L
+    { 1.0f, -0.414178f, -1.0f,  1.0f },      // FRONT_R
+    { 1.0f, -1.0f,  0.414178f,  1.0f },      // MIDREAR_R
+    { 1.0f,  0.414178f,  1.0f,  1.0f },      // REAR_L
+    { 1.0f,  0.414178f, -1.0f, -1.0f },      // FRONT_L
+    { 1.0f, -1.0f, -0.414178f, -1.0f },      // MIDFRONT_R
+    { 1.0f, -0.414178f,  1.0f, -1.0f },      // REAR_R
+    { 1.0f,  1.0f,  0.414178f, -1.0f },      // MIDREAR_L
 };
 
 static const motorMixer_t mixerVtail4[] = {
