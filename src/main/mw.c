@@ -240,8 +240,8 @@ void annexCode(void)
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(heading - headFreeModeHold);
-        float cosDiff = cosf(radDiff);
-        float sinDiff = sinf(radDiff);
+        float cosDiff = cos_approx(radDiff);
+        float sinDiff = sin_approx(radDiff);
         int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;

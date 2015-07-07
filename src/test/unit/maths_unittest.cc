@@ -73,33 +73,33 @@ TEST(MathsUnittest, TestConstrainNegatives)
 TEST(MathsUnittest, TestConstrainf)
 {
     // Within bounds.
-    EXPECT_EQ(constrainf(1.0f, 0.0f, 2.0f), 1.0f);
+    EXPECT_FLOAT_EQ(constrainf(1.0f, 0.0f, 2.0f), 1.0f);
 
     // Equal to bottom bound.
-    EXPECT_EQ(constrainf(1.0f, 1.0f, 2.0f), 1.0f);
+    EXPECT_FLOAT_EQ(constrainf(1.0f, 1.0f, 2.0f), 1.0f);
     // Equal to top bound.
-    EXPECT_EQ(constrainf(1.0f, 0.0f, 1.0f), 1.0f);
+    EXPECT_FLOAT_EQ(constrainf(1.0f, 0.0f, 1.0f), 1.0f);
 
     // Equal to both bottom and top bound.
-    EXPECT_EQ(constrainf(1.0f, 1.0f, 1.0f), 1.0f);
+    EXPECT_FLOAT_EQ(constrainf(1.0f, 1.0f, 1.0f), 1.0f);
 
     // Above top bound.
-    EXPECT_EQ(constrainf(2.0f, 0.0f, 1.0f), 1.0f);
+    EXPECT_FLOAT_EQ(constrainf(2.0f, 0.0f, 1.0f), 1.0f);
     // Below bottom bound.
-    EXPECT_EQ(constrainf(0, 1.0f, 2.0f), 1.0f);
+    EXPECT_FLOAT_EQ(constrainf(0, 1.0f, 2.0f), 1.0f);
 
     // Above bouth bounds.
-    EXPECT_EQ(constrainf(2.0f, 0.0f, 1.0f), 1.0f);
+    EXPECT_FLOAT_EQ(constrainf(2.0f, 0.0f, 1.0f), 1.0f);
     // Below bouth bounds.
-    EXPECT_EQ(constrainf(0, 1.0f, 2.0f), 1.0f);
+    EXPECT_FLOAT_EQ(constrainf(0, 1.0f, 2.0f), 1.0f);
 }
 
 TEST(MathsUnittest, TestDegreesToRadians)
 {
-    EXPECT_EQ(degreesToRadians(0), 0.0f);
-    EXPECT_EQ(degreesToRadians(90), 0.5f * M_PIf);
-    EXPECT_EQ(degreesToRadians(180), M_PIf);
-    EXPECT_EQ(degreesToRadians(-180), - M_PIf);
+    EXPECT_FLOAT_EQ(degreesToRadians(0), 0.0f);
+    EXPECT_FLOAT_EQ(degreesToRadians(90), 0.5f * M_PIf);
+    EXPECT_FLOAT_EQ(degreesToRadians(180), M_PIf);
+    EXPECT_FLOAT_EQ(degreesToRadians(-180), - M_PIf);
 }
 
 TEST(MathsUnittest, TestApplyDeadband)
@@ -118,9 +118,9 @@ TEST(MathsUnittest, TestApplyDeadband)
 
 void expectVectorsAreEqual(struct fp_vector *a, struct fp_vector *b)
 {
-    EXPECT_EQ(a->X, b->X);
-    EXPECT_EQ(a->Y, b->Y);
-    EXPECT_EQ(a->Z, b->Z);
+    EXPECT_FLOAT_EQ(a->X, b->X);
+    EXPECT_FLOAT_EQ(a->Y, b->Y);
+    EXPECT_FLOAT_EQ(a->Z, b->Z);
 }
 
 TEST(MathsUnittest, TestRotateVectorWithNoAngle)

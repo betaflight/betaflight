@@ -21,6 +21,44 @@
 #include "axis.h"
 #include "maths.h"
 
+// http://lolengine.net/blog/2011/12/21/better-function-approximations
+// Chebyshev http://stackoverflow.com/questions/345085/how-do-trigonometric-functions-work/345117#345117
+// Thanks for ledvinap for making such accuracy possible! See: https://github.com/cleanflight/cleanflight/issues/940#issuecomment-110323384
+// https://github.com/Crashpilot1000/HarakiriWebstore1/blob/master/src/mw.c#L1235
+#if defined(FAST_TRIGONOMETRY) || defined(EVEN_FASTER_TRIGONOMETRY)
+#if defined(EVEN_FASTER_TRIGONOMETRY)
+#define sinApproxCoef3 -1.666568107e-1f
+#define sinApproxCoef5  8.312366210e-3f
+#define sinApproxCoef7 -1.849218155e-4f
+#else
+#define sinApproxCoef3 -1.666665710e-1f                                          // Double: -1.666665709650470145824129400050267289858e-1
+#define sinApproxCoef5  8.333017292e-3f                                          // Double:  8.333017291562218127986291618761571373087e-3
+#define sinApproxCoef7 -1.980661520e-4f                                          // Double: -1.980661520135080504411629636078917643846e-4
+#define sinApproxCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
+#endif
+
+float sin_approx(float x)
+{
+    int32_t xint = x;
+    if (xint < -32 || xint > 32) return 0.0f;                               // Stop here on error input (5 * 360 Deg)
+    while (x >  M_PIf) x -= (2.0f * M_PIf);                                 // always wrap input angle to -PI..PI
+    while (x < -M_PIf) x += (2.0f * M_PIf);
+    if      (x >  (0.5f * M_PIf)) x =  (0.5f * M_PIf) - (x - (0.5f * M_PIf));   // We just pick -90..+90 Degree
+    else if (x < -(0.5f * M_PIf)) x = -(0.5f * M_PIf) - ((0.5f * M_PIf) + x);
+    float x2 = x * x;
+#if defined(EVEN_FASTER_TRIGONOMETRY)
+    return x + x * x2 * (sinApproxCoef3 + x2 * (sinApproxCoef5 + x2 * sinApproxCoef7));
+#else
+    return x + x * x2 * (sinApproxCoef3 + x2 * (sinApproxCoef5 + x2 * (sinApproxCoef7 + x2 * sinApproxCoef9)));
+#endif
+}
+
+float cos_approx(float x)
+{
+    return sin_approx(x + (0.5f * M_PIf));
+}
+#endif
+
 int32_t applyDeadband(int32_t value, int32_t deadband)
 {
     if (ABS(value) < deadband) {
@@ -111,12 +149,12 @@ void buildRotationMatrix(fp_angles_t *delta, float matrix[3][3])
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, sinzcosx, coszsinx, sinzsinx;
 
-    cosx = cosf(delta->angles.roll);
-    sinx = sinf(delta->angles.roll);
-    cosy = cosf(delta->angles.pitch);
-    siny = sinf(delta->angles.pitch);
-    cosz = cosf(delta->angles.yaw);
-    sinz = sinf(delta->angles.yaw);
+    cosx = cos_approx(delta->angles.roll);
+    sinx = sin_approx(delta->angles.roll);
+    cosy = cos_approx(delta->angles.pitch);
+    siny = sin_approx(delta->angles.pitch);
+    cosz = cos_approx(delta->angles.yaw);
+    sinz = sin_approx(delta->angles.yaw);
 
     coszcosx = cosz * cosx;
     sinzcosx = sinz * cosx;
