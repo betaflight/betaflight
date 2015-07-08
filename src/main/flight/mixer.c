@@ -391,11 +391,11 @@ int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
     return servoConf[servoIndex].middle;
 }
 
-// FIXME rename 'fromChannel' to inputSource
-int servoDirection(int servoIndex, int fromChannel)
+
+int servoDirection(int servoIndex, int inputSource)
 {
     // determine the direction (reversed or not) from the direction bitfield of the servo
-    if (servoConf[servoIndex].reversedSources & (1 << fromChannel))
+    if (servoConf[servoIndex].reversedSources & (1 << inputSource))
         return -1;
     else
         return 1;
@@ -701,7 +701,7 @@ void StopPwmAllMotors()
 #ifndef USE_QUAD_MIXER_ONLY
 static void servoMixer(void)
 {
-    int16_t input[INPUT_SOURCE_COUNT];
+    int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
     uint8_t i;
 
@@ -725,7 +725,7 @@ static void servoMixer(void)
     input[INPUT_GIMBAL_PITCH] = scaleRange(inclination.values.pitchDeciDegrees, -1800, 1800, -500, +500);
     input[INPUT_GIMBAL_ROLL] = scaleRange(inclination.values.rollDeciDegrees, -1800, 1800, -500, +500);
 
-    input[INPUT_STABILIZED_THROTTLE] = motor[0];
+    input[INPUT_STABILIZED_THROTTLE] = motor[0] - 1000 - 500;  // Since it derives from rcCommand or mincommand and must be [-500:+500]
 
     // center the RC input value around the RC middle value
     // by subtracting the RC middle value from the RC input value, we get:
