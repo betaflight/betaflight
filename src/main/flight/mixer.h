@@ -96,18 +96,18 @@ typedef struct airplaneConfig_t {
 
 // These must be consecutive, see 'reversedSources'
 enum {
-    INPUT_ROLL = 0,
-    INPUT_PITCH,
-    INPUT_YAW,
-    INPUT_THROTTLE,
-    INPUT_AUX1,
-    INPUT_AUX2,
-    INPUT_AUX3,
-    INPUT_AUX4,
+    INPUT_STABILIZED_ROLL = 0,
+    INPUT_STABILIZED_PITCH,
+    INPUT_STABILIZED_YAW,
+    INPUT_STABILIZED_THROTTLE,
     INPUT_RC_ROLL,
     INPUT_RC_PITCH,
     INPUT_RC_YAW,
     INPUT_RC_THROTTLE,
+    INPUT_RC_AUX1,
+    INPUT_RC_AUX2,
+    INPUT_RC_AUX3,
+    INPUT_RC_AUX4,
     INPUT_GIMBAL_PITCH,
     INPUT_GIMBAL_ROLL,
 

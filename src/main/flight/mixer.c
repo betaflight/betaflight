@@ -276,44 +276,44 @@ const mixer_t mixers[] = {
 #ifdef USE_SERVOS
 // mixer rule format servo, input, rate, speed, min, max, box
 static const servoMixer_t servoMixerAirplane[] = {
-    { SERVO_FLAPPERON_1, INPUT_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_RUDDER, INPUT_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_ELEVATOR, INPUT_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
+    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
-    { SERVO_FLAPPERON_1, INPUT_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_1, INPUT_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerBI[] = {
-    { SERVO_BIPLANE_LEFT, INPUT_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_BIPLANE_LEFT, INPUT_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_BIPLANE_RIGHT, INPUT_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_BIPLANE_RIGHT, INPUT_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_BIPLANE_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_BIPLANE_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_BIPLANE_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_BIPLANE_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerTri[] = {
-    { SERVO_RUDDER, INPUT_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerDual[] = {
-    { SERVO_DUALCOPTER_LEFT, INPUT_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_DUALCOPTER_RIGHT, INPUT_ROLL,  100, 0, 0, 100, 0 },
+    { SERVO_DUALCOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_DUALCOPTER_RIGHT, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerSingle[] = {
-    { SERVO_SINGLECOPTER_1, INPUT_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_1, INPUT_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_2, INPUT_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_2, INPUT_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_3, INPUT_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_3, INPUT_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_4, INPUT_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_SINGLECOPTER_4, INPUT_ROLL,  100, 0, 0, 100, 0 },
+    { SERVO_SINGLECOPTER_1, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_SINGLECOPTER_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_SINGLECOPTER_2, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_SINGLECOPTER_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_SINGLECOPTER_3, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_SINGLECOPTER_3, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
+    { SERVO_SINGLECOPTER_4, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_SINGLECOPTER_4, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerGimbal[] = {
@@ -707,25 +707,25 @@ static void servoMixer(void)
 
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         // Direct passthru from RX
-        input[INPUT_ROLL] = rcCommand[ROLL];
-        input[INPUT_PITCH] = rcCommand[PITCH];
-        input[INPUT_YAW] = rcCommand[YAW];
+        input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
+        input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
+        input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-        input[INPUT_ROLL] = axisPID[ROLL];
-        input[INPUT_PITCH] = axisPID[PITCH];
-        input[INPUT_YAW] = axisPID[YAW];
+        input[INPUT_STABILIZED_ROLL] = axisPID[ROLL];
+        input[INPUT_STABILIZED_PITCH] = axisPID[PITCH];
+        input[INPUT_STABILIZED_YAW] = axisPID[YAW];
 
         // Reverse yaw servo when inverted in 3D mode
         if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->midrc)) {
-            input[INPUT_YAW] *= -1;
+            input[INPUT_STABILIZED_YAW] *= -1;
         }
     }
 
     input[INPUT_GIMBAL_PITCH] = scaleRange(inclination.values.pitchDeciDegrees, -1800, 1800, -500, +500);
     input[INPUT_GIMBAL_ROLL] = scaleRange(inclination.values.rollDeciDegrees, -1800, 1800, -500, +500);
 
-    input[INPUT_THROTTLE] = motor[0];
+    input[INPUT_STABILIZED_THROTTLE] = motor[0];
 
     // center the RC input value around the RC middle value
     // by subtracting the RC middle value from the RC input value, we get:
@@ -733,14 +733,14 @@ static void servoMixer(void)
     // 2000 - 1500 = +500
     // 1500 - 1500 = 0
     // 1000 - 1500 = -500
-    input[INPUT_AUX1]        = rcData[AUX1]     - rxConfig->midrc;
-    input[INPUT_AUX2]        = rcData[AUX2]     - rxConfig->midrc;
-    input[INPUT_AUX3]        = rcData[AUX3]     - rxConfig->midrc;
-    input[INPUT_AUX4]        = rcData[AUX4]     - rxConfig->midrc;
     input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig->midrc;
     input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig->midrc;
     input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig->midrc;
     input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig->midrc;
+    input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig->midrc;
+    input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig->midrc;
+    input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig->midrc;
+    input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig->midrc;
 
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++)
         servo[i] = 0;
