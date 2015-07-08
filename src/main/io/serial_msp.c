@@ -173,9 +173,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 //
 // MSP commands for Cleanflight original features
 //
-#define MSP_CHANNEL_FORWARDING          32    //out message         Returns channel forwarding settings
-#define MSP_SET_CHANNEL_FORWARDING      33    //in message          Channel forwarding settings
-
 #define MSP_MODE_RANGES                 34    //out message         Returns all mode ranges
 #define MSP_SET_MODE_RANGE              35    //in message          Sets a single mode range
 
@@ -273,7 +270,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_PIDNAMES             117    //out message         the PID names
 #define MSP_WP                   118    //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold
 #define MSP_BOXIDS               119    //out message         get the permanent IDs associated to BOXes
-#define MSP_SERVO_CONF           120    //out message         Servo settings
+#define MSP_SERVO_CONFIGURATIONS 120    //out message         All servo configurations.
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
 
@@ -289,7 +286,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_WP               209    //in message          sets a given WP (WP#,lat, lon, alt, flags)
 #define MSP_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
 #define MSP_SET_HEAD             211    //in message          define a new heading hold direction
-#define MSP_SET_SERVO_CONF       212    //in message          Servo settings
+#define MSP_SET_SERVO_CONFIGURATION 212    //in message          Servo settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
 
@@ -305,13 +302,12 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
-#define MSP_SERVOMIX_CONF        241    //out message         Returns servo mixer configuration
-#define MSP_SET_SERVOMIX_CONF    242    //in message          Sets servo mixer configuration
+#define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
+#define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
 
-#define SERVO_CHUNK_SIZE 13
+#define SERVO_CHUNK_SIZE 14
 
-// FIXME This is now too big!
-#define INBUF_SIZE (SERVO_CHUNK_SIZE * MAX_SUPPORTED_SERVOS)
+#define INBUF_SIZE 64
 
 typedef struct box_e {
     const uint8_t boxId;         // see boxId_e
@@ -628,8 +624,6 @@ void mspReleasePortIfAllocated(serialPort_t *serialPort)
 
 void mspInit(serialConfig_t *serialConfig)
 {
-    BUILD_BUG_ON((SERVO_CHUNK_SIZE * MAX_SUPPORTED_SERVOS) > INBUF_SIZE);
-
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
 
@@ -842,7 +836,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_SERVO:
         s_struct((uint8_t *)&servo, MAX_SUPPORTED_SERVOS * 2);
         break;
-    case MSP_SERVO_CONF:
+    case MSP_SERVO_CONFIGURATIONS:
         headSerialReply(MAX_SUPPORTED_SERVOS * SERVO_CHUNK_SIZE);
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize16(currentProfile->servoConf[i].min);
@@ -852,19 +846,14 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(currentProfile->servoConf[i].angleAtMin);
             serialize8(currentProfile->servoConf[i].angleAtMax);
             serialize32(currentProfile->servoConf[i].reversedSources);
-        }
-        break;
-    case MSP_CHANNEL_FORWARDING:
-        headSerialReply(MAX_SUPPORTED_SERVOS);
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize8(currentProfile->servoConf[i].forwardFromChannel);
         }
         break;
-    case MSP_SERVOMIX_CONF:
+    case MSP_SERVO_MIX_RULES:
         headSerialReply(MAX_SERVO_RULES * sizeof(servoMixer_t));
         for (i = 0; i < MAX_SERVO_RULES; i++) {
             serialize8(masterConfig.customServoMixer[i].targetChannel);
-            serialize8(masterConfig.customServoMixer[i].fromChannel);
+            serialize8(masterConfig.customServoMixer[i].inputSource);
             serialize8(masterConfig.customServoMixer[i].rate);
             serialize8(masterConfig.customServoMixer[i].speed);
             serialize8(masterConfig.customServoMixer[i].min);
@@ -872,7 +861,6 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(masterConfig.customServoMixer[i].box);
         }
         break;
-        
 #endif
     case MSP_MOTOR:
         s_struct((uint8_t *)motor, 16);
@@ -1439,45 +1427,39 @@ static bool processInCommand(void)
         for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
             motor_disarmed[i] = read16();
         break;
-    case MSP_SET_SERVO_CONF:
+    case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
-        if (currentPort->dataSize % SERVO_CHUNK_SIZE != 0) {
-            debug[0] = currentPort->dataSize;
+        i = read8();
+        if (i >= MAX_SUPPORTED_SERVOS) {
             headSerialError(0);
         } else {
-            uint8_t servoCount = currentPort->dataSize / SERVO_CHUNK_SIZE;
-            for (i = 0; i < MAX_SUPPORTED_SERVOS && i < servoCount; i++) {
-                currentProfile->servoConf[i].min = read16();
-                currentProfile->servoConf[i].max = read16();
-                currentProfile->servoConf[i].middle = read16();
-                currentProfile->servoConf[i].rate = read8();
-                currentProfile->servoConf[i].angleAtMin = read8();
-                currentProfile->servoConf[i].angleAtMax = read8();
-                currentProfile->servoConf[i].reversedSources = read32();
-            }
-        }
-#endif
-        break;
-    case MSP_SET_CHANNEL_FORWARDING:
-#ifdef USE_SERVOS
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            currentProfile->servoConf[i].min = read16();
+            currentProfile->servoConf[i].max = read16();
+            currentProfile->servoConf[i].middle = read16();
+            currentProfile->servoConf[i].rate = read8();
+            currentProfile->servoConf[i].angleAtMin = read8();
+            currentProfile->servoConf[i].angleAtMax = read8();
+            currentProfile->servoConf[i].reversedSources = read32();
             currentProfile->servoConf[i].forwardFromChannel = read8();
         }
 #endif
         break;
         
-    case MSP_SET_SERVOMIX_CONF:
+    case MSP_SET_SERVO_MIX_RULE:
 #ifdef USE_SERVOS
-        for (i = 0; i < MAX_SERVO_RULES; i++) {
+        i = read8();
+        if (i >= MAX_SERVO_RULES) {
+            headSerialError(0);
+        } else {
             masterConfig.customServoMixer[i].targetChannel = read8();
-            masterConfig.customServoMixer[i].fromChannel = read8();
+            masterConfig.customServoMixer[i].inputSource = read8();
             masterConfig.customServoMixer[i].rate = read8();
             masterConfig.customServoMixer[i].speed = read8();
             masterConfig.customServoMixer[i].min = read8();
             masterConfig.customServoMixer[i].max = read8();
             masterConfig.customServoMixer[i].box = read8();
+            loadCustomServoMixer();
         }
-        loadCustomServoMixer();
 #endif
         break;
         

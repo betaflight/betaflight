@@ -786,7 +786,7 @@ static void cliMotorMix(char *cmdline)
             if (masterConfig.customMotorMixer[i].throttle == 0.0f)
                 break;
             num_motors++;
-            printf("#%d:\t", i + 1);
+            printf("#%d:\t", i);
             printf("%s\t", ftoa(masterConfig.customMotorMixer[i].throttle, buf));
             printf("%s\t", ftoa(masterConfig.customMotorMixer[i].roll, buf));
             printf("%s\t", ftoa(masterConfig.customMotorMixer[i].pitch, buf));
@@ -817,7 +817,7 @@ static void cliMotorMix(char *cmdline)
     } else {
         ptr = cmdline;
         i = atoi(ptr); // get motor number
-        if (--i < MAX_SUPPORTED_MOTORS) {
+        if (i < MAX_SUPPORTED_MOTORS) {
             ptr = strchr(ptr, ' ');
             if (ptr) {
                 masterConfig.customMotorMixer[i].throttle = fastA2F(++ptr);
@@ -1001,9 +1001,9 @@ static void cliServoMix(char *cmdline)
             cliPrint("Rule\tServo\tSource\tRate\tSpeed\tMin\tMax\tBox\r\n");
 
             printf("#%d:\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
-                i + 1,
-                masterConfig.customServoMixer[i].targetChannel + 1,
-                masterConfig.customServoMixer[i].fromChannel + 1,
+                i,
+                masterConfig.customServoMixer[i].targetChannel,
+                masterConfig.customServoMixer[i].inputSource,
                 masterConfig.customServoMixer[i].rate,
                 masterConfig.customServoMixer[i].speed,
                 masterConfig.customServoMixer[i].min,
@@ -1045,11 +1045,11 @@ static void cliServoMix(char *cmdline)
         if (len == 0) {
             printf("s");
             for (inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
-                printf("\ti%d", inputSource + 1);
+                printf("\ti%d", inputSource);
             printf("\r\n");
 
             for (servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
-                printf("%d", servoIndex + 1);
+                printf("%d", servoIndex);
                 for (inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
                     printf("\t%s  ", (currentProfile->servoConf[servoIndex].reversedSources & (1 << inputSource)) ? "r" : "n");
                 printf("\r\n");
@@ -1068,9 +1068,7 @@ static void cliServoMix(char *cmdline)
             return;
         }
 
-        if (args[SERVO] >= 1 && args[SERVO] <= MAX_SUPPORTED_SERVOS && args[INPUT] >= 1 && args[INPUT] <= INPUT_SOURCE_COUNT && (args[REVERSE] == -1 || args[REVERSE] == 1)) {
-            args[SERVO] -= 1;
-            args[INPUT] -= 1;
+        if (args[SERVO] >= 0 && args[SERVO] < MAX_SUPPORTED_SERVOS && args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT && (args[REVERSE] == -1 || args[REVERSE] == 1)) {
             if (args[REVERSE] == -1)
                 currentProfile->servoConf[args[SERVO]].reversedSources |= 1 << args[INPUT];
             else
@@ -1092,17 +1090,17 @@ static void cliServoMix(char *cmdline)
             return;
         }
 
-        i = args[RULE] - 1;
+        i = args[RULE];
         if (i >= 0 && i < MAX_SERVO_RULES &&
-            args[TARGET] > 0 && args[TARGET] <= MAX_SUPPORTED_SERVOS &&
-            args[INPUT] >= 1 && args[INPUT] <= INPUT_SOURCE_COUNT &&
+            args[TARGET] >= 0 && args[TARGET] < MAX_SUPPORTED_SERVOS &&
+            args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT &&
             args[RATE] >= -100 && args[RATE] <= 100 &&
             args[SPEED] >= 0 && args[SPEED] <= MAX_SERVO_SPEED &&
             args[MIN] >= 0 && args[MIN] <= 100 &&
             args[MAX] >= 0 && args[MAX] <= 100 && args[MIN] < args[MAX] &&
             args[BOX] >= 0 && args[BOX] <= MAX_SERVO_BOXES) {
-            masterConfig.customServoMixer[i].targetChannel = args[TARGET] - 1;
-            masterConfig.customServoMixer[i].fromChannel = args[INPUT] - 1;
+            masterConfig.customServoMixer[i].targetChannel = args[TARGET];
+            masterConfig.customServoMixer[i].inputSource = args[INPUT];
             masterConfig.customServoMixer[i].rate = args[RATE];
             masterConfig.customServoMixer[i].speed = args[SPEED];
             masterConfig.customServoMixer[i].min = args[MIN];
@@ -1270,7 +1268,7 @@ static void cliDump(char *cmdline)
             roll = masterConfig.customMotorMixer[i].roll;
             pitch = masterConfig.customMotorMixer[i].pitch;
             yaw = masterConfig.customMotorMixer[i].yaw;
-            printf("mmix %d", i + 1);
+            printf("mmix %d", i);
             if (thr < 0)
                 cliWrite(' ');
             printf("%s", ftoa(thr, buf));
@@ -1294,9 +1292,9 @@ static void cliDump(char *cmdline)
                 break;
 
             printf("smix %d %d %d %d %d %d %d %d\r\n",
-                i + 1,
-                masterConfig.customServoMixer[i].targetChannel + 1,
-                masterConfig.customServoMixer[i].fromChannel + 1,
+                i,
+                masterConfig.customServoMixer[i].targetChannel,
+                masterConfig.customServoMixer[i].inputSource,
                 masterConfig.customServoMixer[i].rate,
                 masterConfig.customServoMixer[i].speed,
                 masterConfig.customServoMixer[i].min,
@@ -1309,7 +1307,7 @@ static void cliDump(char *cmdline)
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 if (servoDirection(i, channel) < 0) {
-                    printf("smix reverse %d %d -1\r\n", i + 1 , channel + 1);
+                    printf("smix reverse %d %d -1\r\n", i , channel);
                 }
             }
         }

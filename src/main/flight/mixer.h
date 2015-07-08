@@ -116,10 +116,7 @@ enum {
 
 typedef struct servoMixer_t {
     uint8_t targetChannel;                  // servo that receives the output of the rule
-
-    // FIXME rename to inputSource
-    uint8_t fromChannel;                    // input channel for this rule
-
+    uint8_t inputSource;                    // input channel for this rule
     int8_t rate;                            // range [-125;+125] ; can be used to adjust a rate 0-125% and a direction
     uint8_t speed;                          // reduces the speed of the rule, 0=unlimited speed
     int8_t min;                             // lower bound of rule range [0;100]% of servo max-min

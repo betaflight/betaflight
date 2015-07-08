@@ -514,7 +514,7 @@ void servoMixerLoadMix(int index, servoMixer_t *customServoMixers)
     index++;
     // clear existing
     for (i = 0; i < MAX_SERVO_RULES; i++)
-        customServoMixers[i].targetChannel = customServoMixers[i].fromChannel = customServoMixers[i].rate = customServoMixers[i].box = 0;
+        customServoMixers[i].targetChannel = customServoMixers[i].inputSource = customServoMixers[i].rate = customServoMixers[i].box = 0;
 
     for (i = 0; i < servoMixers[index].servoRuleCount; i++)
         customServoMixers[i] = servoMixers[index].rule[i];
@@ -750,7 +750,7 @@ static void servoMixer(void)
         // consider rule if no box assigned or box is active
         if (currentServoMixer[i].box == 0 || IS_RC_MODE_ACTIVE(BOXSERVO1 + currentServoMixer[i].box - 1)) {
             uint8_t target = currentServoMixer[i].targetChannel;
-            uint8_t from = currentServoMixer[i].fromChannel;  // FIXME rename 'from' to inputSource
+            uint8_t from = currentServoMixer[i].inputSource;
             uint16_t servo_width = servoConf[target].max - servoConf[target].min;
             int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
             int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
