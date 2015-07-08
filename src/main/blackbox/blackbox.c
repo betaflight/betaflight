@@ -81,6 +81,7 @@
 
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
+#define SLOW_FRAME_INTERVAL 4096
 
 #define ARRAY_LENGTH(x) (sizeof((x))/sizeof((x)[0]))
 
@@ -97,34 +98,17 @@
 
 static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-    "H Blackbox version:1\n"
     "H Data version:2\n"
     "H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
 
-static const char* const blackboxMainHeaderNames[] = {
-    "I name",
-    "I signed",
-    "I predictor",
-    "I encoding",
-    "P predictor",
-    "P encoding"
+static const char* const blackboxFieldHeaderNames[] = {
+    "name",
+    "signed",
+    "predictor",
+    "encoding",
+    "predictor",
+    "encoding"
 };
-
-#ifdef GPS
-static const char* const blackboxGPSGHeaderNames[] = {
-    "G name",
-    "G signed",
-    "G predictor",
-    "G encoding"
-};
-
-static const char* const blackboxGPSHHeaderNames[] = {
-    "H name",
-    "H signed",
-    "H predictor",
-    "H encoding"
-};
-#endif
 
 /* All field definition structs should look like this (but with longer arrs): */
 typedef struct blackboxFieldDefinition_t {
@@ -136,7 +120,30 @@ typedef struct blackboxFieldDefinition_t {
     uint8_t arr[1];
 } blackboxFieldDefinition_t;
 
-typedef struct blackboxMainFieldDefinition_t {
+#define BLACKBOX_DELTA_FIELD_HEADER_COUNT       ARRAY_LENGTH(blackboxFieldHeaderNames)
+#define BLACKBOX_SIMPLE_FIELD_HEADER_COUNT      (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
+#define BLACKBOX_CONDITIONAL_FIELD_HEADER_COUNT (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
+
+typedef struct blackboxSimpleFieldDefinition_t {
+    const char *name;
+    int8_t fieldNameIndex;
+
+    uint8_t isSigned;
+    uint8_t predict;
+    uint8_t encode;
+} blackboxSimpleFieldDefinition_t;
+
+typedef struct blackboxConditionalFieldDefinition_t {
+    const char *name;
+    int8_t fieldNameIndex;
+
+    uint8_t isSigned;
+    uint8_t predict;
+    uint8_t encode;
+    uint8_t condition; // Decide whether this field should appear in the log
+} blackboxConditionalFieldDefinition_t;
+
+typedef struct blackboxDeltaFieldDefinition_t {
     const char *name;
     int8_t fieldNameIndex;
 
@@ -146,17 +153,7 @@ typedef struct blackboxMainFieldDefinition_t {
     uint8_t Ppredict;
     uint8_t Pencode;
     uint8_t condition; // Decide whether this field should appear in the log
-} blackboxMainFieldDefinition_t;
-
-typedef struct blackboxGPSFieldDefinition_t {
-    const char *name;
-    int8_t fieldNameIndex;
-
-    uint8_t isSigned;
-    uint8_t predict;
-    uint8_t encode;
-    uint8_t condition; // Decide whether this field should appear in the log
-} blackboxGPSFieldDefinition_t;
+} blackboxDeltaFieldDefinition_t;
 
 /**
  * Description of the blackbox fields we are writing in our main intra (I) and inter (P) frames. This description is
@@ -164,7 +161,7 @@ typedef struct blackboxGPSFieldDefinition_t {
  * the encoding to happen, we have to encode the flight log ourselves in write{Inter|Intra}frame() in a way that matches
  * the encoding we've promised here).
  */
-static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
+static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     /* loopIteration doesn't appear in P frames since it always increments */
     {"loopIteration",-1, UNSIGNED, .Ipredict = PREDICT(0),     .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
     /* Time advances pretty steadily so the P-frame prediction is a straight line */
@@ -226,7 +223,7 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
 
 #ifdef GPS
 // GPS position/vel frame
-static const blackboxGPSFieldDefinition_t blackboxGpsGFields[] = {
+static const blackboxConditionalFieldDefinition_t blackboxGpsGFields[] = {
     {"time",              -1, UNSIGNED, PREDICT(LAST_MAIN_FRAME_TIME), ENCODING(UNSIGNED_VB), CONDITION(NOT_LOGGING_EVERY_FRAME)},
     {"GPS_numSat",        -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_coord",          0, SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
@@ -237,28 +234,69 @@ static const blackboxGPSFieldDefinition_t blackboxGpsGFields[] = {
 };
 
 // GPS home frame
-static const blackboxGPSFieldDefinition_t blackboxGpsHFields[] = {
-    {"GPS_home",           0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
-    {"GPS_home",           1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)}
+static const blackboxSimpleFieldDefinition_t blackboxGpsHFields[] = {
+    {"GPS_home",           0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
+    {"GPS_home",           1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
 };
 #endif
+
+// Rarely-updated fields
+static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
+    {"flightModeFlags",   -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
+    {"stateFlags",        -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
+    {"failsafePhase",     -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)}
+};
 
 typedef enum BlackboxState {
     BLACKBOX_STATE_DISABLED = 0,
     BLACKBOX_STATE_STOPPED,
     BLACKBOX_STATE_SEND_HEADER,
-    BLACKBOX_STATE_SEND_FIELDINFO,
-    BLACKBOX_STATE_SEND_GPS_H_HEADERS,
-    BLACKBOX_STATE_SEND_GPS_G_HEADERS,
+    BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER,
+    BLACKBOX_STATE_SEND_GPS_H_HEADER,
+    BLACKBOX_STATE_SEND_GPS_G_HEADER,
+    BLACKBOX_STATE_SEND_SLOW_HEADER,
     BLACKBOX_STATE_SEND_SYSINFO,
     BLACKBOX_STATE_RUNNING,
     BLACKBOX_STATE_SHUTTING_DOWN
 } BlackboxState;
 
-typedef struct gpsState_t {
+typedef struct blackboxMainState_t {
+    uint32_t time;
+
+    int32_t axisPID_P[XYZ_AXIS_COUNT], axisPID_I[XYZ_AXIS_COUNT], axisPID_D[XYZ_AXIS_COUNT];
+
+    int16_t rcCommand[4];
+    int16_t gyroADC[XYZ_AXIS_COUNT];
+    int16_t accSmooth[XYZ_AXIS_COUNT];
+    int16_t motor[MAX_SUPPORTED_MOTORS];
+    int16_t servo[MAX_SUPPORTED_SERVOS];
+
+    uint16_t vbatLatest;
+    uint16_t amperageLatest;
+
+#ifdef BARO
+    int32_t BaroAlt;
+#endif
+#ifdef MAG
+    int16_t magADC[XYZ_AXIS_COUNT];
+#endif
+#ifdef SONAR
+    int32_t sonarRaw;
+#endif
+    uint16_t rssi;
+} blackboxMainState_t;
+
+typedef struct blackboxGpsState_t {
     int32_t GPS_home[2], GPS_coord[2];
     uint8_t GPS_numSat;
-} gpsState_t;
+} blackboxGpsState_t;
+
+// This data is updated really infrequently:
+typedef struct blackboxSlowState_t {
+    uint16_t flightModeFlags;
+    uint8_t stateFlags;
+    uint8_t failsafePhase;
+} __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
 //From mixer.c:
 extern uint8_t motorCount;
@@ -292,7 +330,8 @@ static uint32_t blackboxConditionCache;
 STATIC_ASSERT((sizeof(blackboxConditionCache) * 8) >= FLIGHT_LOG_FIELD_CONDITION_NEVER, too_many_flight_log_conditions);
 
 static uint32_t blackboxIteration;
-static uint32_t blackboxPFrameIndex, blackboxIFrameIndex;
+static uint16_t blackboxPFrameIndex, blackboxIFrameIndex;
+static uint16_t blackboxSlowFrameIterationTimer;
 
 /*
  * We store voltages in I-frames relative to this, which was the voltage when the blackbox was activated.
@@ -301,13 +340,14 @@ static uint32_t blackboxPFrameIndex, blackboxIFrameIndex;
  */
 static uint16_t vbatReference;
 
-static gpsState_t gpsHistory;
+static blackboxGpsState_t gpsHistory;
+static blackboxSlowState_t slowHistory;
 
 // Keep a history of length 2, plus a buffer for MW to store the new values into
-static blackboxValues_t blackboxHistoryRing[3];
+static blackboxMainState_t blackboxHistoryRing[3];
 
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
-static blackboxValues_t* blackboxHistory[3];
+static blackboxMainState_t* blackboxHistory[3];
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 {
@@ -403,9 +443,10 @@ static void blackboxSetState(BlackboxState newState)
             xmitState.headerIndex = 0;
             xmitState.u.startTime = millis();
         break;
-        case BLACKBOX_STATE_SEND_FIELDINFO:
-        case BLACKBOX_STATE_SEND_GPS_G_HEADERS:
-        case BLACKBOX_STATE_SEND_GPS_H_HEADERS:
+        case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
+        case BLACKBOX_STATE_SEND_GPS_G_HEADER:
+        case BLACKBOX_STATE_SEND_GPS_H_HEADER:
+        case BLACKBOX_STATE_SEND_SLOW_HEADER:
             xmitState.headerIndex = 0;
             xmitState.u.fieldIndex = -1;
         break;
@@ -416,6 +457,7 @@ static void blackboxSetState(BlackboxState newState)
             blackboxIteration = 0;
             blackboxPFrameIndex = 0;
             blackboxIFrameIndex = 0;
+            blackboxSlowFrameIterationTimer = SLOW_FRAME_INTERVAL; //Force a slow frame to be written on the first iteration
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
             xmitState.u.startTime = millis();
@@ -429,7 +471,7 @@ static void blackboxSetState(BlackboxState newState)
 
 static void writeIntraframe(void)
 {
-    blackboxValues_t *blackboxCurrent = blackboxHistory[0];
+    blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
     int x;
 
     blackboxWrite('I');
@@ -531,8 +573,8 @@ static void writeInterframe(void)
     int x;
     int32_t deltas[8];
 
-    blackboxValues_t *blackboxCurrent = blackboxHistory[0];
-    blackboxValues_t *blackboxLast = blackboxHistory[1];
+    blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
+    blackboxMainState_t *blackboxLast = blackboxHistory[1];
 
     blackboxWrite('P');
 
@@ -636,6 +678,60 @@ static void writeInterframe(void)
     blackboxHistory[2] = blackboxHistory[1];
     blackboxHistory[1] = blackboxHistory[0];
     blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
+}
+
+/* Write the contents of the global "slowHistory" to the log as an "S" frame. Because this data is logged so
+ * infrequently, delta updates are not reasonable, so we log independent frames. */
+static void writeSlowFrame(void)
+{
+    blackboxWrite('S');
+
+    blackboxWriteUnsignedVB(slowHistory.flightModeFlags);
+    blackboxWriteUnsignedVB(slowHistory.stateFlags);
+    blackboxWriteUnsignedVB(slowHistory.failsafePhase);
+
+    blackboxSlowFrameIterationTimer = 0;
+}
+
+/**
+ * Load rarely-changing values from the FC into the given structure
+ */
+static void loadSlowState(blackboxSlowState_t *slow)
+{
+    slow->flightModeFlags = flightModeFlags;
+    slow->stateFlags = stateFlags;
+    slow->failsafePhase = failsafePhase();
+}
+
+/**
+ * If the data in the slow frame has changed, log a slow frame.
+ *
+ * If allowPeriodicWrite is true, the frame is also logged if it has been more than SLOW_FRAME_INTERVAL logging iterations
+ * since the field was last logged.
+ */
+static void writeSlowFrameIfNeeded(bool allowPeriodicWrite)
+{
+    // Write the slow frame peridocially so it can be recovered if we ever lose sync
+    bool shouldWrite = allowPeriodicWrite && blackboxSlowFrameIterationTimer >= SLOW_FRAME_INTERVAL;
+
+    if (shouldWrite) {
+        loadSlowState(&slowHistory);
+    } else {
+        blackboxSlowState_t newSlowState;
+
+        loadSlowState(&newSlowState);
+
+        // Only write a slow frame if it was different from the previous state
+        if (memcmp(&newSlowState, &slowHistory, sizeof(slowHistory)) != 0) {
+            // Use the new state as our new history
+            memcpy(&slowHistory, &newSlowState, sizeof(slowHistory));
+            shouldWrite = true;
+        }
+    }
+
+    if (shouldWrite) {
+        writeSlowFrame();
+    }
 }
 
 static int gcd(int num, int denom)
@@ -774,9 +870,9 @@ static void writeGPSFrame()
 /**
  * Fill the current state of the blackbox using values read from the flight controller
  */
-static void loadBlackboxState(void)
+static void loadMainState(void)
 {
-    blackboxValues_t *blackboxCurrent = blackboxHistory[0];
+    blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
     int i;
 
     blackboxCurrent->time = currentTime;
@@ -839,6 +935,9 @@ static void loadBlackboxState(void)
  * H Field I name:a,b,c
  * H Field I predictor:0,1,2
  *
+ * For all header types, provide a "mainFrameChar" which is the name for the field and will be used to refer to it in the
+ * header (e.g. P, I etc). For blackboxDeltaField_t fields, also provide deltaFrameChar, otherwise set this to zero.
+ *
  * Provide an array 'conditions' of FlightLogFieldCondition enums if you want these conditions to decide whether a field
  * should be included or not. Otherwise provide NULL for this parameter and NULL for secondCondition.
  *
@@ -849,14 +948,21 @@ static void loadBlackboxState(void)
  *
  * Returns true if there is still header left to transmit (so call again to continue transmission).
  */
-static bool sendFieldDefinition(const char * const *headerNames, unsigned int headerCount, const void *fieldDefinitions,
+static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const void *fieldDefinitions,
         const void *secondFieldDefinition, int fieldCount, const uint8_t *conditions, const uint8_t *secondCondition)
 {
     const blackboxFieldDefinition_t *def;
     int charsWritten;
+    unsigned int headerCount;
     static bool needComma = false;
     size_t definitionStride = (char*) secondFieldDefinition - (char*) fieldDefinitions;
     size_t conditionsStride = (char*) secondCondition - (char*) conditions;
+
+    if (deltaFrameChar) {
+        headerCount = BLACKBOX_DELTA_FIELD_HEADER_COUNT;
+    } else {
+        headerCount = BLACKBOX_SIMPLE_FIELD_HEADER_COUNT;
+    }
 
     /*
      * We're chunking up the header data so we don't exceed our datarate. So we'll be called multiple times to transmit
@@ -867,10 +973,7 @@ static bool sendFieldDefinition(const char * const *headerNames, unsigned int he
             return false; //Someone probably called us again after we had already completed transmission
         }
 
-        charsWritten = blackboxPrint("H Field ");
-        charsWritten += blackboxPrint(headerNames[xmitState.headerIndex]);
-        blackboxWrite(':');
-        charsWritten++;
+        charsWritten = blackboxPrintf("H Field %c %s:", xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT ? deltaFrameChar : mainFrameChar, blackboxFieldHeaderNames[xmitState.headerIndex]);
 
         xmitState.u.fieldIndex++;
         needComma = false;
@@ -1051,6 +1154,80 @@ static void blackboxCheckAndLogArmingBeep()
     }
 }
 
+/* 
+ * Use the user's num/denom settings to decide if the P-frame of the given index should be logged, allowing the user to control
+ * the portion of logged loop iterations.
+ */
+static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
+{
+    /* Adding a magic shift of "masterConfig.blackbox_rate_num - 1" in here creates a better spread of
+     * recorded / skipped frames when the I frame's position is considered:
+     */
+    return (pFrameIndex + masterConfig.blackbox_rate_num - 1) % masterConfig.blackbox_rate_denom < masterConfig.blackbox_rate_num;
+}
+
+// Called once every FC loop in order to log the current state
+static void blackboxLogIteration()
+{
+    // Write a keyframe every BLACKBOX_I_INTERVAL frames so we can resynchronise upon missing frames
+    if (blackboxPFrameIndex == 0) {
+        /*
+         * Don't log a slow frame if the slow data didn't change ("I" frames are already large enough without adding
+         * an additional item to write at the same time)
+         */
+        writeSlowFrameIfNeeded(false);
+
+        loadMainState();
+        writeIntraframe();
+    } else {
+        blackboxCheckAndLogArmingBeep();
+        
+        if (blackboxShouldLogPFrame(blackboxPFrameIndex)) {
+            /*
+             * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
+             * So only log slow frames during loop iterations where we log a main frame.
+             */
+            writeSlowFrameIfNeeded(true);
+
+            loadMainState();
+            writeInterframe();
+        }
+#ifdef GPS
+        if (feature(FEATURE_GPS)) {
+            /*
+             * If the GPS home point has been updated, or every 128 intraframes (~10 seconds), write the
+             * GPS home position.
+             *
+             * We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
+             * still be interpreted correctly.
+             */
+            if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
+                || (blackboxPFrameIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIFrameIndex % 128 == 0)) {
+
+                writeGPSHomeFrame();
+                writeGPSFrame();
+            } else if (GPS_numSat != gpsHistory.GPS_numSat || GPS_coord[0] != gpsHistory.GPS_coord[0]
+                    || GPS_coord[1] != gpsHistory.GPS_coord[1]) {
+                //We could check for velocity changes as well but I doubt it changes independent of position
+                writeGPSFrame();
+            }
+        }
+#endif
+    }
+
+    //Flush every iteration so that our runtime variance is minimized
+    blackboxDeviceFlush();
+
+    blackboxSlowFrameIterationTimer++;
+    blackboxIteration++;
+    blackboxPFrameIndex++;
+
+    if (blackboxPFrameIndex == BLACKBOX_I_INTERVAL) {
+        blackboxPFrameIndex = 0;
+        blackboxIFrameIndex++;
+    }
+}
+
 /**
  * Call each flight loop iteration to perform blackbox logging.
  */
@@ -1072,38 +1249,45 @@ void handleBlackbox(void)
                 }
 
                 if (blackboxHeader[xmitState.headerIndex] == '\0') {
-                    blackboxSetState(BLACKBOX_STATE_SEND_FIELDINFO);
+                    blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
                 }
             }
         break;
-        case BLACKBOX_STATE_SEND_FIELDINFO:
+        case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition(blackboxMainHeaderNames, ARRAY_LENGTH(blackboxMainHeaderNames), blackboxMainFields, blackboxMainFields + 1,
-                    ARRAY_LENGTH(blackboxMainFields), &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
+            if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAY_LENGTH(blackboxMainFields),
+                    &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef GPS
                 if (feature(FEATURE_GPS)) {
-                    blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADERS);
+                    blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
                 } else
 #endif
-                    blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
+                    blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
             }
         break;
 #ifdef GPS
-        case BLACKBOX_STATE_SEND_GPS_H_HEADERS:
+        case BLACKBOX_STATE_SEND_GPS_H_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition(blackboxGPSHHeaderNames, ARRAY_LENGTH(blackboxGPSHHeaderNames), blackboxGpsHFields, blackboxGpsHFields + 1,
-                    ARRAY_LENGTH(blackboxGpsHFields), &blackboxGpsHFields[0].condition, &blackboxGpsHFields[1].condition)) {
-                blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADERS);
+            if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAY_LENGTH(blackboxGpsHFields),
+                    NULL, NULL)) {
+                blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
             }
         break;
-        case BLACKBOX_STATE_SEND_GPS_G_HEADERS:
+        case BLACKBOX_STATE_SEND_GPS_G_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition(blackboxGPSGHeaderNames, ARRAY_LENGTH(blackboxGPSGHeaderNames), blackboxGpsGFields, blackboxGpsGFields + 1,
-                    ARRAY_LENGTH(blackboxGpsGFields), &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
+            if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAY_LENGTH(blackboxGpsGFields),
+                    &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
+                blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
+            }
+        break;
+#endif
+        case BLACKBOX_STATE_SEND_SLOW_HEADER:
+            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+            if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAY_LENGTH(blackboxSlowFields),
+                    NULL, NULL)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
         break;
-#endif
         case BLACKBOX_STATE_SEND_SYSINFO:
             //On entry of this state, xmitState.headerIndex is 0
 
@@ -1115,51 +1299,7 @@ void handleBlackbox(void)
         case BLACKBOX_STATE_RUNNING:
             // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
 
-            // Write a keyframe every BLACKBOX_I_INTERVAL frames so we can resynchronise upon missing frames
-            if (blackboxPFrameIndex == 0) {
-                // Copy current system values into the blackbox
-                loadBlackboxState();
-                writeIntraframe();
-            } else {
-                blackboxCheckAndLogArmingBeep();
-
-                /* Adding a magic shift of "masterConfig.blackbox_rate_num - 1" in here creates a better spread of
-                 * recorded / skipped frames when the I frame's position is considered:
-                 */
-                if ((blackboxPFrameIndex + masterConfig.blackbox_rate_num - 1) % masterConfig.blackbox_rate_denom < masterConfig.blackbox_rate_num) {
-                    loadBlackboxState();
-                    writeInterframe();
-                }
-#ifdef GPS
-                if (feature(FEATURE_GPS)) {
-                    /*
-                     * If the GPS home point has been updated, or every 128 intraframes (~10 seconds), write the
-                     * GPS home position.
-                     *
-                     * We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
-                     * still be interpreted correctly.
-                     */
-                    if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
-                        || (blackboxPFrameIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIFrameIndex % 128 == 0)) {
-
-                        writeGPSHomeFrame();
-                        writeGPSFrame();
-                    } else if (GPS_numSat != gpsHistory.GPS_numSat || GPS_coord[0] != gpsHistory.GPS_coord[0]
-                            || GPS_coord[1] != gpsHistory.GPS_coord[1]) {
-                        //We could check for velocity changes as well but I doubt it changes independent of position
-                        writeGPSFrame();
-                    }
-                }
-#endif
-            }
-
-            blackboxIteration++;
-            blackboxPFrameIndex++;
-            
-            if (blackboxPFrameIndex == BLACKBOX_I_INTERVAL) {
-                blackboxPFrameIndex = 0;
-                blackboxIFrameIndex++;
-            }
+            blackboxLogIteration();
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
             //On entry of this state, startTime is set and a flush is performed

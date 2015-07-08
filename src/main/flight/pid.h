@@ -19,7 +19,6 @@
 
 #define GYRO_I_MAX 256                      // Gyro I limiter
 #define RCconstPI   0.159154943092f         // 0.5f / M_PI;
-#define MAIN_CUT_HZ 12.0f                   // (default 12Hz, Range 1-50Hz)
 #define OLD_YAW 0                           // [0/1] 0 = MultiWii 2.3 yaw, 1 = older yaw.
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
@@ -63,6 +62,9 @@ typedef struct pidProfile_s {
     float H_level;
     uint8_t H_sensitivity;
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
+    uint8_t dterm_cut_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
+    uint8_t pterm_cut_hz;                   // Used for fitlering Pterm noise on noisy frames
+    uint8_t gyro_cut_hz;                    // Used for soft gyro filtering
 } pidProfile_t;
 
 #define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
@@ -74,5 +76,4 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 void pidSetController(pidControllerType_e type);
 void pidResetErrorAngle(void);
 void pidResetErrorGyro(void);
-
 

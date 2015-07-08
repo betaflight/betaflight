@@ -42,6 +42,8 @@
 #define JEDEC_ID_MICRON_M25P16         0x202015
 #define JEDEC_ID_MICRON_N25Q064        0x20BA17
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
+#define JEDEC_ID_MICRON_N25Q128        0x20ba18
+#define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 
 #define DISABLE_M25P16       GPIO_SetBits(M25P16_CS_GPIO,   M25P16_CS_PIN)
 #define ENABLE_M25P16        GPIO_ResetBits(M25P16_CS_GPIO, M25P16_CS_PIN)
@@ -53,7 +55,7 @@
 #define SECTOR_ERASE_TIMEOUT_MILLIS  5000
 #define BULK_ERASE_TIMEOUT_MILLIS    21000
 
-static flashGeometry_t geometry;
+static flashGeometry_t geometry = {.pageSize = M25P16_PAGESIZE};
 
 /*
  * Whether we've performed an action that could have made the device busy for writes.
@@ -148,23 +150,27 @@ static bool m25p16_readIdentification()
     // Manufacturer, memory type, and capacity
     chipID = (in[1] << 16) | (in[2] << 8) | (in[3]);
 
+    // All supported chips use the same pagesize of 256 bytes
+
     switch (chipID) {
         case JEDEC_ID_MICRON_M25P16:
             geometry.sectors = 32;
             geometry.pagesPerSector = 256;
-            geometry.pageSize = 256;
         break;
         case JEDEC_ID_MICRON_N25Q064:
         case JEDEC_ID_WINBOND_W25Q64:
             geometry.sectors = 128;
             geometry.pagesPerSector = 256;
-            geometry.pageSize = 256;
+        break;
+        case JEDEC_ID_MICRON_N25Q128:
+        case JEDEC_ID_WINBOND_W25Q128:
+            geometry.sectors = 256;
+            geometry.pagesPerSector = 256;
         break;
         default:
             // Unsupported chip or not an SPI NOR flash
             geometry.sectors = 0;
             geometry.pagesPerSector = 0;
-            geometry.pageSize = 0;
 
             geometry.sectorSize = 0;
             geometry.totalSize = 0;

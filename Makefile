@@ -27,7 +27,7 @@ OPBL ?=no
 DEBUG ?=
 
 # Serial port/Device for flashing
-SERIAL_DEVICE	?= /dev/ttyUSB0
+SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
@@ -229,6 +229,7 @@ COMMON_SRC	 = build_config.c \
 		   flight/imu.c \
 		   flight/mixer.c \
 		   flight/lowpass.c \
+		   flight/filter.c \
 		   drivers/bus_i2c_soft.c \
 		   drivers/serial.c \
 		   drivers/sound_beeper.c \

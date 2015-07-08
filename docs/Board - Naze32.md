@@ -66,3 +66,4 @@ When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two
 |O                 O|
 \-------[USB]-------/
 ```
+
