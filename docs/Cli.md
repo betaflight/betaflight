@@ -75,7 +75,8 @@ Re-apply any new defaults as desired.
 |------------------|------------------------------------------------|
 | `adjrange`       | show/set adjustment ranges settings            |
 | `aux`            | show/set aux settings                          |
-| `cmix`           | design custom mixer                            |
+| `mmix`           | design custom motor mixer                      |
+| `smix`           | design custom servo mixer                      |
 | `color`          | configure colors                               |
 | `defaults`       | reset to defaults and reboot                   |
 | `dump`           | print configurable settings in a pastable form |
