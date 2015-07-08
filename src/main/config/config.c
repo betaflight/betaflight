@@ -546,52 +546,52 @@ static void resetConf(void)
     currentControlRateProfile->rates[FD_YAW] = 100;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
-    //  { 1.0f, -0.5f,  1.0f, -1.0f },          // REAR_R
+    //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
     masterConfig.customMixer[0].throttle = 1.0f;
-    masterConfig.customMixer[0].roll = -0.5f;
+    masterConfig.customMixer[0].roll = -0.414178f;
     masterConfig.customMixer[0].pitch = 1.0f;
     masterConfig.customMixer[0].yaw = -1.0f;
 
-    //  { 1.0f, -0.5f, -1.0f,  1.0f },          // FRONT_R
+    //  { 1.0f, -0.414178f, -1.0f,  1.0f },          // FRONT_R
     masterConfig.customMixer[1].throttle = 1.0f;
-    masterConfig.customMixer[1].roll = -0.5f;
+    masterConfig.customMixer[1].roll = -0.414178f;
     masterConfig.customMixer[1].pitch = -1.0f;
     masterConfig.customMixer[1].yaw = 1.0f;
 
-    //  { 1.0f,  0.5f,  1.0f,  1.0f },          // REAR_L
+    //  { 1.0f,  0.414178f,  1.0f,  1.0f },          // REAR_L
     masterConfig.customMixer[2].throttle = 1.0f;
-    masterConfig.customMixer[2].roll = 0.5f;
+    masterConfig.customMixer[2].roll = 0.414178f;
     masterConfig.customMixer[2].pitch = 1.0f;
     masterConfig.customMixer[2].yaw = 1.0f;
 
-    //  { 1.0f,  0.5f, -1.0f, -1.0f },          // FRONT_L
+    //  { 1.0f,  0.414178f, -1.0f, -1.0f },          // FRONT_L
     masterConfig.customMixer[3].throttle = 1.0f;
-    masterConfig.customMixer[3].roll = 0.5f;
+    masterConfig.customMixer[3].roll = 0.414178f;
     masterConfig.customMixer[3].pitch = -1.0f;
     masterConfig.customMixer[3].yaw = -1.0f;
 
-    //  { 1.0f, -1.0f, -0.5f, -1.0f },          // MIDFRONT_R
+    //  { 1.0f, -1.0f, -0.414178f, -1.0f },          // MIDFRONT_R
     masterConfig.customMixer[4].throttle = 1.0f;
     masterConfig.customMixer[4].roll = -1.0f;
-    masterConfig.customMixer[4].pitch = -0.5f;
+    masterConfig.customMixer[4].pitch = -0.414178f;
     masterConfig.customMixer[4].yaw = -1.0f;
 
-    //  { 1.0f,  1.0f, -0.5f,  1.0f },          // MIDFRONT_L
+    //  { 1.0f,  1.0f, -0.414178f,  1.0f },          // MIDFRONT_L
     masterConfig.customMixer[5].throttle = 1.0f;
     masterConfig.customMixer[5].roll = 1.0f;
-    masterConfig.customMixer[5].pitch = -0.5f;
+    masterConfig.customMixer[5].pitch = -0.414178f;
     masterConfig.customMixer[5].yaw = 1.0f;
 
-    //  { 1.0f, -1.0f,  0.5f,  1.0f },          // MIDREAR_R
+    //  { 1.0f, -1.0f,  0.414178f,  1.0f },          // MIDREAR_R
     masterConfig.customMixer[6].throttle = 1.0f;
     masterConfig.customMixer[6].roll = -1.0f;
-    masterConfig.customMixer[6].pitch = 0.5f;
+    masterConfig.customMixer[6].pitch = 0.414178f;
     masterConfig.customMixer[6].yaw = 1.0f;
 
-    //  { 1.0f,  1.0f,  0.5f, -1.0f },          // MIDREAR_L
+    //  { 1.0f,  1.0f,  0.414178f, -1.0f },          // MIDREAR_L
     masterConfig.customMixer[7].throttle = 1.0f;
     masterConfig.customMixer[7].roll = 1.0f;
-    masterConfig.customMixer[7].pitch = 0.5f;
+    masterConfig.customMixer[7].pitch = 0.414178f;
     masterConfig.customMixer[7].yaw = -1.0f;
 #endif
 
