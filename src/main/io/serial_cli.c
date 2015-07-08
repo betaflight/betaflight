@@ -994,11 +994,11 @@ static void cliServoMix(char *cmdline)
 
     if (len == 0) {
 
+        cliPrint("Rule\tServo\tSource\tRate\tSpeed\tMin\tMax\tBox\r\n");
+
         for (i = 0; i < MAX_SERVO_RULES; i++) {
             if (masterConfig.customServoMixer[i].rate == 0)
                 break;
-
-            cliPrint("Rule\tServo\tSource\tRate\tSpeed\tMin\tMax\tBox\r\n");
 
             printf("#%d:\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
                 i,

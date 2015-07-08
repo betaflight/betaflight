@@ -831,7 +831,7 @@ void mixTable(void)
             break;
     }
 
-    // do camstab
+    // camera stabilization
     if (feature(FEATURE_SERVO_TILT)) {
         // center at fixed position, or vary either pitch or roll by RC channel
         servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
