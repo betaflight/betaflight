@@ -243,33 +243,33 @@ static const motorMixer_t mixerThrustVector[] = {
 
 // Keep synced with mixerMode_e
 const mixer_t mixers[] = {
-    // motors, servos, motor mixer
-    { 0, 0, NULL },                // entry 0
-    { 3, 1, mixerTri },            // MIXER_TRI
-    { 4, 0, mixerQuadP },          // MIXER_QUADP
-    { 4, 0, mixerQuadX },          // MIXER_QUADX
-    { 2, 1, mixerBi },             // MIXER_BI
-    { 0, 1, NULL },                // * MIXER_GIMBAL
-    { 6, 0, mixerY6 },             // MIXER_Y6
-    { 6, 0, mixerHex6P },          // MIXER_HEX6
-    { 2, 1, mixerThrustVector },   // * MIXER_FLYING_WING
-    { 4, 0, mixerY4 },             // MIXER_Y4
-    { 6, 0, mixerHex6X },          // MIXER_HEX6X
-    { 8, 0, mixerOctoX8 },         // MIXER_OCTOX8
-    { 8, 0, mixerOctoFlatP },      // MIXER_OCTOFLATP
-    { 8, 0, mixerOctoFlatX },      // MIXER_OCTOFLATX
-    { 1, 1, NULL },                // * MIXER_AIRPLANE
-    { 0, 1, NULL },                // * MIXER_HELI_120_CCPM
-    { 0, 1, NULL },                // * MIXER_HELI_90_DEG
-    { 4, 0, mixerVtail4 },         // MIXER_VTAIL4
-    { 6, 0, mixerHex6H },          // MIXER_HEX6H
-    { 0, 1, NULL },                // * MIXER_PPM_TO_SERVO
-    { 2, 1, mixerDualcopter },     // MIXER_DUALCOPTER
-    { 1, 1, NULL },                // MIXER_SINGLECOPTER
-    { 4, 0, mixerAtail4 },         // MIXER_ATAIL4
-    { 0, 0, NULL },                // MIXER_CUSTOM
-    { 1, 1, NULL },                // MIXER_CUSTOM_AIRPLANE
-    { 3, 1, NULL },                // MIXER_CUSTOM_TRI
+    // motors, use servo, motor mixer
+    { 0, false, NULL },                // entry 0
+    { 3, true,  mixerTri },            // MIXER_TRI
+    { 4, false, mixerQuadP },          // MIXER_QUADP
+    { 4, false, mixerQuadX },          // MIXER_QUADX
+    { 2, true,  mixerBi },             // MIXER_BI
+    { 0, true,  NULL },                // * MIXER_GIMBAL
+    { 6, false, mixerY6 },             // MIXER_Y6
+    { 6, false, mixerHex6P },          // MIXER_HEX6
+    { 2, true,  mixerThrustVector },   // * MIXER_FLYING_WING
+    { 4, false, mixerY4 },             // MIXER_Y4
+    { 6, false, mixerHex6X },          // MIXER_HEX6X
+    { 8, false, mixerOctoX8 },         // MIXER_OCTOX8
+    { 8, false, mixerOctoFlatP },      // MIXER_OCTOFLATP
+    { 8, false, mixerOctoFlatX },      // MIXER_OCTOFLATX
+    { 1, true,  NULL },                // * MIXER_AIRPLANE
+    { 0, true,  NULL },                // * MIXER_HELI_120_CCPM
+    { 0, true,  NULL },                // * MIXER_HELI_90_DEG
+    { 4, false, mixerVtail4 },         // MIXER_VTAIL4
+    { 6, false, mixerHex6H },          // MIXER_HEX6H
+    { 0, true,  NULL },                // * MIXER_PPM_TO_SERVO
+    { 2, true,  mixerDualcopter },     // MIXER_DUALCOPTER
+    { 1, true,  NULL },                // MIXER_SINGLECOPTER
+    { 4, false, mixerAtail4 },         // MIXER_ATAIL4
+    { 0, false, NULL },                // MIXER_CUSTOM
+    { 1, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
+    { 3, true,  NULL },                // MIXER_CUSTOM_TRI
 };
 #endif
 
@@ -496,10 +496,11 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
             loadCustomServoMixer();
         }
     } else {
+        DISABLE_STATE(FIXED_WING);
+
         if (currentMixerMode == MIXER_CUSTOM_TRI) {
             loadCustomServoMixer();
         }
-        DISABLE_STATE(FIXED_WING);
     }
 
     mixerResetMotors();
