@@ -63,8 +63,8 @@ typedef enum {
     SERVO_ELEVATOR = 6,
     SERVO_THROTTLE = 7, // for internal combustion (IC) planes
 
-    SERVO_BIPLANE_LEFT = 4,
-    SERVO_BIPLANE_RIGHT = 5,
+    SERVO_BICOPTER_LEFT = 4,
+    SERVO_BICOPTER_RIGHT = 5,
 
     SERVO_DUALCOPTER_LEFT = 4,
     SERVO_DUALCOPTER_RIGHT = 5,
@@ -77,7 +77,7 @@ typedef enum {
 } servoIndex_e;
 
 #define SERVO_PLANE_INDEX_MIN SERVO_FLAPS
-#define SERVO_PLANE_INDEX_MAX SERVO_ELEVATOR
+#define SERVO_PLANE_INDEX_MAX SERVO_THROTTLE
 
 #define SERVO_DUALCOPTER_INDEX_MIN SERVO_DUALCOPTER_LEFT
 #define SERVO_DUALCOPTER_INDEX_MAX SERVO_DUALCOPTER_RIGHT
@@ -123,7 +123,7 @@ static const motorMixer_t mixerQuadX[] = {
     { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
 };
 #ifndef USE_QUAD_MIXER_ONLY
-static const motorMixer_t mixerTri[] = {
+static const motorMixer_t mixerTricopter[] = {
     { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
     { 1.0f, -1.0f, -0.666667f,  0.0f },     // RIGHT
     { 1.0f,  1.0f, -0.666667f,  0.0f },     // LEFT
@@ -136,7 +136,7 @@ static const motorMixer_t mixerQuadP[] = {
     { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
 };
 
-static const motorMixer_t mixerBi[] = {
+static const motorMixer_t mixerBicopter[] = {
     { 1.0f,  1.0f,  0.0f,  0.0f },          // LEFT
     { 1.0f, -1.0f,  0.0f,  0.0f },          // RIGHT
 };
@@ -245,10 +245,10 @@ static const motorMixer_t mixerThrustVector[] = {
 const mixer_t mixers[] = {
     // motors, use servo, motor mixer
     { 0, false, NULL },                // entry 0
-    { 3, true,  mixerTri },            // MIXER_TRI
+    { 3, true,  mixerTricopter },      // MIXER_TRI
     { 4, false, mixerQuadP },          // MIXER_QUADP
     { 4, false, mixerQuadX },          // MIXER_QUADX
-    { 2, true,  mixerBi },             // MIXER_BI
+    { 2, true,  mixerBicopter },       // MIXER_BICOPTER
     { 0, true,  NULL },                // * MIXER_GIMBAL
     { 6, false, mixerY6 },             // MIXER_Y6
     { 6, false, mixerHex6P },          // MIXER_HEX6
@@ -274,12 +274,15 @@ const mixer_t mixers[] = {
 #endif
 
 #ifdef USE_SERVOS
+
+#define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
 // mixer rule format servo, input, rate, speed, min, max, box
 static const servoMixer_t servoMixerAirplane[] = {
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
     { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
     { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
@@ -287,13 +290,14 @@ static const servoMixer_t servoMixerFlyingWing[] = {
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerBI[] = {
-    { SERVO_BIPLANE_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_BIPLANE_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_BIPLANE_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_BIPLANE_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerTri[] = {
@@ -324,27 +328,27 @@ static const servoMixer_t servoMixerGimbal[] = {
 
 const mixerRules_t servoMixers[] = {
     { 0, NULL },                // entry 0
-    { 1, servoMixerTri },       // MULTITYPE_TRI
+    { COUNT_SERVO_RULES(servoMixerTri), servoMixerTri },       // MULTITYPE_TRI
     { 0, NULL },                // MULTITYPE_QUADP
     { 0, NULL },                // MULTITYPE_QUADX
-    { 4, servoMixerBI },        // MULTITYPE_BI
-    { 2, servoMixerGimbal },    // * MULTITYPE_GIMBAL
+    { COUNT_SERVO_RULES(servoMixerBI), servoMixerBI },        // MULTITYPE_BI
+    { COUNT_SERVO_RULES(servoMixerGimbal), servoMixerGimbal },    // * MULTITYPE_GIMBAL
     { 0, NULL },                // MULTITYPE_Y6
     { 0, NULL },                // MULTITYPE_HEX6
-    { 4, servoMixerFlyingWing },// * MULTITYPE_FLYING_WING
+    { COUNT_SERVO_RULES(servoMixerFlyingWing), servoMixerFlyingWing },// * MULTITYPE_FLYING_WING
     { 0, NULL },                // MULTITYPE_Y4
     { 0, NULL },                // MULTITYPE_HEX6X
     { 0, NULL },                // MULTITYPE_OCTOX8
     { 0, NULL },                // MULTITYPE_OCTOFLATP
     { 0, NULL },                // MULTITYPE_OCTOFLATX
-    { 4, servoMixerAirplane },  // * MULTITYPE_AIRPLANE
+    { COUNT_SERVO_RULES(servoMixerAirplane), servoMixerAirplane },  // * MULTITYPE_AIRPLANE
     { 0, NULL },                // * MULTITYPE_HELI_120_CCPM
     { 0, NULL },                // * MULTITYPE_HELI_90_DEG
     { 0, NULL },                // MULTITYPE_VTAIL4
     { 0, NULL },                // MULTITYPE_HEX6H
     { 0, NULL },                // * MULTITYPE_PPM_TO_SERVO
-    { 2, servoMixerDual },      // MULTITYPE_DUALCOPTER
-    { 8, servoMixerSingle },    // MULTITYPE_SINGLECOPTER
+    { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },      // MULTITYPE_DUALCOPTER
+    { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle },    // MULTITYPE_SINGLECOPTER
     { 0, NULL },                // MULTITYPE_ATAIL4
     { 0, NULL },                // MULTITYPE_CUSTOM
     { 0, NULL },                // MULTITYPE_CUSTOM_PLANE
@@ -596,9 +600,9 @@ void writeServos(void)
     uint8_t servoIndex = 0;
 
     switch (currentMixerMode) {
-        case MIXER_BI:
-            pwmWriteServo(servoIndex++, servo[SERVO_BIPLANE_LEFT]);
-            pwmWriteServo(servoIndex++, servo[SERVO_BIPLANE_RIGHT]);
+        case MIXER_BICOPTER:
+            pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_LEFT]);
+            pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_RIGHT]);
             break;
 
         case MIXER_TRI:
@@ -625,6 +629,7 @@ void writeServos(void)
             pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_RIGHT]);
             break;
 
+        case MIXER_CUSTOM_AIRPLANE:
         case MIXER_AIRPLANE:
             for (int i = SERVO_PLANE_INDEX_MIN; i <= SERVO_PLANE_INDEX_MAX; i++) {
                 pwmWriteServo(servoIndex++, servo[i]);
@@ -635,15 +640,6 @@ void writeServos(void)
             for (int i = SERVO_SINGLECOPTER_INDEX_MIN; i <= SERVO_SINGLECOPTER_INDEX_MAX; i++) {
                 pwmWriteServo(servoIndex++, servo[i]);
             }
-            break;
-
-        case MIXER_CUSTOM_AIRPLANE:
-            pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_1]);
-            pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_2]);
-            pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
-            pwmWriteServo(servoIndex++, servo[SERVO_ELEVATOR]);
-            pwmWriteServo(servoIndex++, servo[SERVO_FLAPS]);
-            pwmWriteServo(servoIndex++, servo[SERVO_THROTTLE]);
             break;
 
         default:
@@ -812,7 +808,7 @@ void mixTable(void)
         case MIXER_CUSTOM_AIRPLANE:
         case MIXER_FLYING_WING:
         case MIXER_AIRPLANE:
-        case MIXER_BI:
+        case MIXER_BICOPTER:
         case MIXER_CUSTOM_TRI:
         case MIXER_TRI:
         case MIXER_DUALCOPTER:

@@ -29,7 +29,7 @@ typedef enum mixerMode
     MIXER_TRI = 1,
     MIXER_QUADP = 2,
     MIXER_QUADX = 3,
-    MIXER_BI = 4,
+    MIXER_BICOPTER = 4,
     MIXER_GIMBAL = 5,
     MIXER_Y6 = 6,
     MIXER_HEX6 = 7,
