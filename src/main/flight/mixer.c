@@ -797,6 +797,15 @@ void mixTable(void)
     }
 
 #if !defined(USE_QUAD_MIXER_ONLY) || defined(USE_SERVOS)
+
+    if (STATE(FIXED_WING)) {
+        if (!ARMING_FLAG(ARMED)) {
+            motor[0] = escAndServoConfig->mincommand; // Kill throttle when disarmed
+        } else {
+            motor[0] = rcCommand[THROTTLE];
+        }
+    }
+
     // airplane / servo mixes
     switch (currentMixerMode) {
         case MIXER_CUSTOM_AIRPLANE:
