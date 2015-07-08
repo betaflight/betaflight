@@ -162,7 +162,7 @@ static const char * const featureNames[] = {
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
-    "BLACKBOX", NULL
+    "BLACKBOX", "CHANNEL_FORWARDING", NULL
 };
 
 #ifndef CJMCU
@@ -427,7 +427,7 @@ const clivalue_t valueTable[] = {
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, PWM_PULSE_MIN, PWM_PULSE_MAX },
 
 #ifdef USE_SERVOS
-    { "gimbal_flags",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gimbalConfig.gimbal_flags, 0, 255},
+    { "gimbal_mode",                VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gimbalConfig.mode, 0, GIMBAL_MODE_MAX},
 #endif
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, 0, ACC_MAX },

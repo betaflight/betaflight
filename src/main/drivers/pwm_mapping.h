@@ -63,7 +63,7 @@ typedef struct drv_pwm_config_t {
 #endif
 #ifdef USE_SERVOS
     bool useServos;
-    bool extraServos;    // configure additional 4 channels in PPM mode as servos, not motors
+    bool useChannelForwarding;    // configure additional channels as servos
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
 #endif

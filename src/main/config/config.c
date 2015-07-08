@@ -487,7 +487,7 @@ static void resetConf(void)
     }
 
     // gimbal
-    currentProfile->gimbalConfig.gimbal_flags = GIMBAL_NORMAL;
+    currentProfile->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
 #endif
 
 #ifdef GPS

@@ -502,7 +502,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
         }
 
-        if (init->extraServos && !init->airplane) {
+        if (init->useChannelForwarding && !init->airplane) {
 #if defined(NAZE) && defined(LED_STRIP_TIMER)
             // if LED strip is active, PWM5-8 are unavailable, so map AUX1+AUX2 to PWM13+PWM14
             if (init->useLEDStrip) { 

@@ -657,7 +657,7 @@ void writeServos(void)
     }
 
     // forward AUX to remaining servo outputs (not constrained)
-    if (gimbalConfig->gimbal_flags & GIMBAL_FORWARDAUX) {
+    if (feature(FEATURE_CHANNEL_FORWARDING)) {
         forwardAuxChannelsToServos(servoIndex);
         servoIndex += MAX_AUX_CHANNEL_COUNT;
     }
@@ -839,7 +839,7 @@ void mixTable(void)
         servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
 
         if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
-            if (gimbalConfig->gimbal_flags & GIMBAL_MIXTILT) {
+            if (gimbalConfig->mode == GIMBAL_MODE_MIXTILT) {
                 servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * inclination.values.pitchDeciDegrees / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees / 50;
                 servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * inclination.values.pitchDeciDegrees / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees / 50;
             } else {

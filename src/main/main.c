@@ -249,7 +249,7 @@ void init(void)
 
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
-    pwm_params.extraServos = currentProfile->gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
+    pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
     pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
