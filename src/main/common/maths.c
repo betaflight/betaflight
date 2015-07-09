@@ -27,14 +27,15 @@
 // https://github.com/Crashpilot1000/HarakiriWebstore1/blob/master/src/mw.c#L1235
 #if defined(FAST_TRIGONOMETRY) || defined(EVEN_FASTER_TRIGONOMETRY)
 #if defined(EVEN_FASTER_TRIGONOMETRY)
-#define sinApproxCoef3 -1.666568107e-1f
-#define sinApproxCoef5  8.312366210e-3f
-#define sinApproxCoef7 -1.849218155e-4f
+#define sinPolyCoef3 -1.666568107e-1f
+#define sinPolyCoef5  8.312366210e-3f
+#define sinPolyCoef7 -1.849218155e-4f
+#define sinPolyCoef9  0
 #else
-#define sinApproxCoef3 -1.666665710e-1f                                          // Double: -1.666665709650470145824129400050267289858e-1
-#define sinApproxCoef5  8.333017292e-3f                                          // Double:  8.333017291562218127986291618761571373087e-3
-#define sinApproxCoef7 -1.980661520e-4f                                          // Double: -1.980661520135080504411629636078917643846e-4
-#define sinApproxCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
+#define sinPolyCoef3 -1.666665710e-1f                                          // Double: -1.666665709650470145824129400050267289858e-1
+#define sinPolyCoef5  8.333017292e-3f                                          // Double:  8.333017291562218127986291618761571373087e-3
+#define sinPolyCoef7 -1.980661520e-4f                                          // Double: -1.980661520135080504411629636078917643846e-4
+#define sinPolyCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
 #endif
 
 float sin_approx(float x)
@@ -43,14 +44,10 @@ float sin_approx(float x)
     if (xint < -32 || xint > 32) return 0.0f;                               // Stop here on error input (5 * 360 Deg)
     while (x >  M_PIf) x -= (2.0f * M_PIf);                                 // always wrap input angle to -PI..PI
     while (x < -M_PIf) x += (2.0f * M_PIf);
-    if      (x >  (0.5f * M_PIf)) x =  (0.5f * M_PIf) - (x - (0.5f * M_PIf));   // We just pick -90..+90 Degree
+    if (x >  (0.5f * M_PIf)) x =  (0.5f * M_PIf) - (x - (0.5f * M_PIf));   // We just pick -90..+90 Degree
     else if (x < -(0.5f * M_PIf)) x = -(0.5f * M_PIf) - ((0.5f * M_PIf) + x);
     float x2 = x * x;
-#if defined(EVEN_FASTER_TRIGONOMETRY)
-    return x + x * x2 * (sinApproxCoef3 + x2 * (sinApproxCoef5 + x2 * sinApproxCoef7));
-#else
-    return x + x * x2 * (sinApproxCoef3 + x2 * (sinApproxCoef5 + x2 * (sinApproxCoef7 + x2 * sinApproxCoef9)));
-#endif
+    return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
 }
 
 float cos_approx(float x)
