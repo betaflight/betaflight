@@ -176,7 +176,7 @@ void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
 #endif
-void mixerResetMotors(void);
+void mixerResetDisarmedMotors(void);
 void mixTable(void);
 void writeMotors(void);
 void stopMotors(void);

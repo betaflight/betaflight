@@ -506,7 +506,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
         }
     }
 
-    mixerResetMotors();
+    mixerResetDisarmedMotors();
 }
 
 
@@ -567,7 +567,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 }
 #endif
 
-void mixerResetMotors(void)
+void mixerResetDisarmedMotors(void)
 {
     int i;
     // set disarmed motor values
@@ -792,63 +792,6 @@ void mixTable(void)
             -mixerConfig->yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
     }
 
-#if !defined(USE_QUAD_MIXER_ONLY) || defined(USE_SERVOS)
-
-    if (STATE(FIXED_WING) && !ARMING_FLAG(ARMED)) {
-        // Kill throttle when disarmed
-        for (i = 0; i < motorCount; i++) {
-            motor[0] = escAndServoConfig->mincommand;
-        }
-    }
-
-    // airplane / servo mixes
-    switch (currentMixerMode) {
-        case MIXER_CUSTOM_AIRPLANE:
-        case MIXER_FLYING_WING:
-        case MIXER_AIRPLANE:
-        case MIXER_BICOPTER:
-        case MIXER_CUSTOM_TRI:
-        case MIXER_TRI:
-        case MIXER_DUALCOPTER:
-        case MIXER_SINGLECOPTER:
-        case MIXER_GIMBAL:
-            servoMixer();
-            break;
-
-        /*
-        case MIXER_GIMBAL:
-			servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * inclination.values.pitchDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
-            servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
-            break;
-        */
-
-        default:
-            break;
-    }
-
-    // camera stabilization
-    if (feature(FEATURE_SERVO_TILT)) {
-        // center at fixed position, or vary either pitch or roll by RC channel
-        servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
-        servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
-
-        if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
-            if (gimbalConfig->mode == GIMBAL_MODE_MIXTILT) {
-                servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * inclination.values.pitchDeciDegrees / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees / 50;
-                servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * inclination.values.pitchDeciDegrees / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees / 50;
-            } else {
-                servo[SERVO_GIMBAL_PITCH] += (int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * inclination.values.pitchDeciDegrees / 50;
-                servo[SERVO_GIMBAL_ROLL] += (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees  / 50;
-            }
-        }
-    }
-
-    // constrain servos
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = constrain(servo[i], servoConf[i].min, servoConf[i].max); // limit the values
-    }
-#endif
-
     if (ARMING_FLAG(ARMED)) {
 
         bool isFailsafeActive = failsafeIsActive();
@@ -901,6 +844,58 @@ void mixTable(void)
             motor[i] = motor_disarmed[i];
         }
     }
+
+    // motor outputs are used as sources for servo mixing, so motors must be calculated before servos.
+
+#if !defined(USE_QUAD_MIXER_ONLY) || defined(USE_SERVOS)
+
+    // airplane / servo mixes
+    switch (currentMixerMode) {
+        case MIXER_CUSTOM_AIRPLANE:
+        case MIXER_FLYING_WING:
+        case MIXER_AIRPLANE:
+        case MIXER_BICOPTER:
+        case MIXER_CUSTOM_TRI:
+        case MIXER_TRI:
+        case MIXER_DUALCOPTER:
+        case MIXER_SINGLECOPTER:
+        case MIXER_GIMBAL:
+            servoMixer();
+            break;
+
+        /*
+        case MIXER_GIMBAL:
+			servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * inclination.values.pitchDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
+            servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
+            break;
+        */
+
+        default:
+            break;
+    }
+
+    // camera stabilization
+    if (feature(FEATURE_SERVO_TILT)) {
+        // center at fixed position, or vary either pitch or roll by RC channel
+        servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
+        servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
+
+        if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
+            if (gimbalConfig->mode == GIMBAL_MODE_MIXTILT) {
+                servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * inclination.values.pitchDeciDegrees / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees / 50;
+                servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * inclination.values.pitchDeciDegrees / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees / 50;
+            } else {
+                servo[SERVO_GIMBAL_PITCH] += (int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * inclination.values.pitchDeciDegrees / 50;
+                servo[SERVO_GIMBAL_ROLL] += (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees  / 50;
+            }
+        }
+    }
+
+    // constrain servos
+    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servo[i] = constrain(servo[i], servoConf[i].min, servoConf[i].max); // limit the values
+    }
+#endif
 }
 
 #ifdef USE_SERVOS

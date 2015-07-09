@@ -1403,7 +1403,7 @@ static void cliExit(char *cmdline)
     bufferIndex = 0;
     cliMode = 0;
     // incase a motor was left running during motortest, clear it here
-    mixerResetMotors();
+    mixerResetDisarmedMotors();
     cliReboot();
 
     cliPort = NULL;
