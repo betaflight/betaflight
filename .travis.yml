@@ -23,13 +23,12 @@ compiler: clang
 
 before_install:
   - sudo apt-get update
-  - wget "https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q3-update/+download/gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2"
+  - curl --retry 10 --retry-max-time 120 -L "https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q2-update/+download/gcc-arm-none-eabi-4_9-2015q2-20150609-linux.tar.bz2" | tar xfj -
 
-install: 
+install:
   - sudo apt-get install build-essential git libc6-i386
-  - tar -xf gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2
-  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_8-2014q3/bin
-   
+  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2015q2/bin
+
 before_script: arm-none-eabi-gcc --version
 script: ./.travis.sh
 
