@@ -535,7 +535,11 @@ static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *
             val = atoi(++ptr);
             val = CHANNEL_VALUE_TO_STEP(val);
             if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
-                range->startStep = val;
+                if (argIndex == 0) {
+                    range->startStep = val;
+                } else {
+                    range->endStep = val;
+                }
                 (*validArgumentCount)++;
             }
         }
