@@ -169,7 +169,7 @@ TEST(FlightMixerTest, TestTricopterServo)
     servoConf[5].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
 
     gimbalConfig_t gimbalConfig = {
-        .gimbal_flags = 0
+        .mode = GIMBAL_MODE_NORMAL
     };
 
     mixerUseConfigs(
@@ -231,7 +231,7 @@ TEST(FlightMixerTest, TestQuadMotors)
     escAndServoConfig.mincommand = TEST_MIN_COMMAND;
 
     gimbalConfig_t gimbalConfig = {
-        .gimbal_flags = 0
+        .mode = GIMBAL_MODE_NORMAL
     };
 
     mixerUseConfigs(
