@@ -86,7 +86,7 @@ void imuConfigure(
 
 void imuInit()
 {
-    smallAngle = lrintf(acc_1G * cosf(degreesToRadians(imuRuntimeConfig->small_angle)));
+    smallAngle = lrintf(acc_1G * cos_approx(degreesToRadians(imuRuntimeConfig->small_angle)));
     accVelScale = 9.80665f / acc_1G / 10000.0f;
     gyroScaleRad = gyro.scale * (M_PIf / 180.0f) * 0.000001f;
 }
@@ -208,10 +208,10 @@ int16_t imuCalculateHeading(t_fp_vector *vec)
 {
     int16_t head;
 
-    float cosineRoll = cosf(anglerad[AI_ROLL]);
-    float sineRoll = sinf(anglerad[AI_ROLL]);
-    float cosinePitch = cosf(anglerad[AI_PITCH]);
-    float sinePitch = sinf(anglerad[AI_PITCH]);
+    float cosineRoll = cos_approx(anglerad[AI_ROLL]);
+    float sineRoll = sin_approx(anglerad[AI_ROLL]);
+    float cosinePitch = cos_approx(anglerad[AI_PITCH]);
+    float sinePitch = sin_approx(anglerad[AI_PITCH]);
     float Xh = vec->A[X] * cosinePitch + vec->A[Y] * sineRoll * sinePitch + vec->A[Z] * sinePitch * cosineRoll;
     float Yh = vec->A[Y] * cosineRoll - vec->A[Z] * sineRoll;
     //TODO: Replace this comment with an explanation of why Yh and Xh can never simultanoeusly be zero,
@@ -326,5 +326,5 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
     int angle = lrintf(acosf(cosZ) * throttleAngleScale);
     if (angle > 900)
         angle = 900;
-    return lrintf(throttle_correction_value * sinf(angle / (900.0f * M_PIf / 2.0f)));
+    return lrintf(throttle_correction_value * sin_approx(angle / (900.0f * M_PIf / 2.0f)));
 }

@@ -413,7 +413,7 @@ void gpsUsePIDs(pidProfile_t *pidProfile)
 static void GPS_calc_longitude_scaling(int32_t lat)
 {
     float rads = (ABS((float)lat) / 10000000.0f) * 0.0174532925f;
-    GPS_scaleLonDown = cosf(rads);
+    GPS_scaleLonDown = cos_approx(rads);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -559,8 +559,8 @@ static void GPS_calc_nav_rate(uint16_t max_speed)
 
     // nav_bearing includes crosstrack
     temp = (9000l - nav_bearing) * RADX100;
-    trig[GPS_X] = cosf(temp);
-    trig[GPS_Y] = sinf(temp);
+    trig[GPS_X] = cos_approx(temp);
+    trig[GPS_Y] = sin_approx(temp);
 
     for (axis = 0; axis < 2; axis++) {
         rate_error[axis] = (trig[axis] * max_speed) - actual_speed[axis];
@@ -583,7 +583,7 @@ static void GPS_update_crosstrack(void)
 {
     if (ABS(wrap_18000(target_bearing - original_target_bearing)) < 4500) {     // If we are too far off or too close we don't do track following
         float temp = (target_bearing - original_target_bearing) * RADX100;
-        crosstrack_error = sinf(temp) * (wp_distance * CROSSTRACK_GAIN); // Meters we are off track line
+        crosstrack_error = sin_approx(temp) * (wp_distance * CROSSTRACK_GAIN); // Meters we are off track line
         nav_bearing = target_bearing + constrain(crosstrack_error, -3000, 3000);
         nav_bearing = wrap_36000(nav_bearing);
     } else {
@@ -644,8 +644,8 @@ static int32_t wrap_36000(int32_t angle)
 
 void updateGpsStateForHomeAndHoldMode(void)
 {
-    float sin_yaw_y = sinf(heading * 0.0174532925f);
-    float cos_yaw_x = cosf(heading * 0.0174532925f);
+    float sin_yaw_y = sin_approx(heading * 0.0174532925f);
+    float cos_yaw_x = cos_approx(heading * 0.0174532925f);
     if (gpsProfile->nav_slew_rate) {
         nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -gpsProfile->nav_slew_rate, gpsProfile->nav_slew_rate); // TODO check this on uint8
         nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -gpsProfile->nav_slew_rate, gpsProfile->nav_slew_rate);
