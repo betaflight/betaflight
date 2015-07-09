@@ -109,7 +109,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float RateError, errorAngle, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
-    static float lastGyroRate[3];
+    static float lastError[3];
     static float delta1[3], delta2[3];
     float delta, deltaSum;
     float dT;
@@ -192,16 +192,17 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         if (pidProfile->pterm_cut_hz) {
             PTerm = filterApplyPt1(PTerm, &PTermState[axis], pidProfile->pterm_cut_hz);
         }
-        // -----calculate I component. Note that PIDweight is divided by 10, because it is simplified formule from the previous multiply by 10
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * PIDweight[axis] / 10, -250.0f, 250.0f);
+
+        // -----calculate I component.
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term
-        delta = gyroRate - lastGyroRate[axis];  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-        lastGyroRate[axis] = gyroRate;
+        delta = RateError - lastError[axis];
+        lastError[axis] = RateError;
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
@@ -219,12 +220,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         DTerm = constrainf((deltaSum / 3.0f) * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
 
         // -----calculate total PID output
-        axisPID[axis] = constrain(lrintf(PTerm + ITerm - DTerm), -1000, 1000);
+        axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
 
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
-        axisPID_D[axis] = -DTerm;
+        axisPID_D[axis] = DTerm;
 #endif
     }
 }
