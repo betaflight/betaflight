@@ -264,7 +264,7 @@ const clicmd_t cmdTable[] = {
         "<rule> <servo> <source> <rate> <speed> <min> <max> <box>\r\n"
         "\treset\r\n"
         "\tload <mixer>\r\n"
-        "\treverse <servo> <source> -1|1", cliServoMix),
+        "\treverse <servo> <source> r|n", cliServoMix),
 #endif
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
@@ -1058,18 +1058,20 @@ static void cliServoMix(char *cmdline)
         }
 
         ptr = strtok(ptr, " ");
-        while (ptr != NULL && check < ARGS_COUNT) {
+        while (ptr != NULL && check < ARGS_COUNT - 1) {
             args[check++] = atoi(ptr);
             ptr = strtok(NULL, " ");
         }
 
-        if (ptr != NULL || check != ARGS_COUNT) {
+        if (ptr == NULL || check != ARGS_COUNT - 1) {
             cliShowParseError();
             return;
         }
 
-        if (args[SERVO] >= 0 && args[SERVO] < MAX_SUPPORTED_SERVOS && args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT && (args[REVERSE] == -1 || args[REVERSE] == 1)) {
-            if (args[REVERSE] == -1)
+        if (args[SERVO] >= 0 && args[SERVO] < MAX_SUPPORTED_SERVOS
+                && args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT
+                && (*ptr == 'r' || *ptr == 'n')) {
+            if (*ptr == 'r')
                 currentProfile->servoConf[args[SERVO]].reversedSources |= 1 << args[INPUT];
             else
                 currentProfile->servoConf[args[SERVO]].reversedSources &= ~(1 << args[INPUT]);
@@ -1307,7 +1309,7 @@ static void cliDump(char *cmdline)
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 if (servoDirection(i, channel) < 0) {
-                    printf("smix reverse %d %d -1\r\n", i , channel);
+                    printf("smix reverse %d %d r\r\n", i , channel);
                 }
             }
         }
