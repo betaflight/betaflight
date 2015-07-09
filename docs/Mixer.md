@@ -91,9 +91,22 @@ The cmix statement has the following syntax: `cmix n THROTTLE ROLL PITCH YAW`
 | PITCH	| Indicates the pitch authority this motor has over the flight controller. Also accepts values nominally from 1.0 to -1.0. |
 | YAW	| Indicates the direction of the motor rotation in relationship with the flight controller. 1.0 = CCW -1.0 = CW. |
 
+Note: the `mmix` command may show a motor mix that is not active, custom motor mixes are only active for models that use custom mixers. 
+
 ## Custom Servo Mixing
 
 Custom servo mixing rules can be applied to each servo.  Rules are applied in the order they are defined.
+
+| id | Servo slot |
+| 0  | GIMBAL PITCH |
+| 1  | GIMBAL ROLL |
+| 2  | FLAPS |
+| 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
+| 4  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
+| 5  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
+| 6  | ELEVATOR / SINGLECOPTER_4 | 
+| 7  | THROTTLE (Based ONLY on the first motor output) | 
+
 
 | id | Input sources |
 | -- | ------------- |
@@ -111,6 +124,8 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 | 11 | RC AUX 4 |
 | 12 | GIMBAL PITCH |
 | 13 | GIMBAL ROLL |
+
+Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers. 
 
 ### Example 1: A KK2.0 wired motor setup 
 Here's an example of a X configuration quad, but the motors are still wired using the KK board motor numbering scheme. 
@@ -166,3 +181,15 @@ mmix 2 1.000 1.000 -0.667 0.000
 smix reset
 smix 0 6 3 100 0 0 100 0
 ```
+
+
+## Servo Reversing
+
+Servos are reversed using the `smix reverse` command.
+
+e.g. when using the TRI mixer to reverse the tail servo on a tricopter use this:
+
+`smix reverse 5 2 r`
+
+i.e. when mixing rudder servo slot (`5`) using Stabilised YAW input source (`2`) reverse the direction (`r`)
+  
