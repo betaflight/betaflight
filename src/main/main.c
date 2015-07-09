@@ -106,7 +106,11 @@ void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
 void failsafeInit(rxConfig_t *intialRxConfig);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMixers);
+#ifdef USE_SERVOS
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
+#else
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
+#endif
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
@@ -197,7 +201,11 @@ void init(void)
 
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
 
-    mixerInit(masterConfig.mixerMode, masterConfig.customMixer);
+#ifdef USE_SERVOS
+    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
+#else
+    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+#endif
 
     memset(&pwm_params, 0, sizeof(pwm_params));
 
@@ -216,7 +224,7 @@ void init(void)
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING)
+    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
@@ -241,7 +249,7 @@ void init(void)
 
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
-    pwm_params.extraServos = currentProfile->gimbalConfig.gimbal_flags & GIMBAL_FORWARDAUX;
+    pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
     pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif

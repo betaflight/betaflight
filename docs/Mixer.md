@@ -14,31 +14,33 @@ You can also use the Command Line Interface (CLI) to set the mixer type:
 
 ## Supported Mixer Types
 
-| Name          | Description               | Motors         | Servos           |
-| ------------- | ------------------------- | -------------- | ---------------- |
-| TRI           | Tricopter                 | M1-M3          | S1               |
-| QUADP         | Quadcopter-Plus           | M1-M4          | None             |
-| QUADX         | Quadcopter-X              | M1-M4          | None             |
-| BI            | Bicopter (left/right)     | M1-M2          | S1, S2           |
-| GIMBAL        | Gimbal control            | N/A            | S1, S2           |
-| Y6            | Y6-copter                 | M1-M6          | None             |
-| HEX6          | Hexacopter-Plus           | M1-M6          | None             |
-| FLYING_WING   | Fixed wing; elevons       | M1             | S1, S2           |
-| Y4            | Y4-copter                 | M1-M4          | None             |
-| HEX6X         | Hexacopter-X              | M1-M6          | None             |
-| OCTOX8        | Octocopter-X (over/under) | M1-M8          | None             |
-| OCTOFLATP     | Octocopter-FlatPlus       | M1-M8          | None             |
-| OCTOFLATX     | Octocopter-FlatX          | M1-M8          | None             |
-| AIRPLANE      | Fixed wing; Ax2, R, E     | M1             | S1, S2, S3, S4   |
-| HELI_120_CCPM |                           |                |                  |
-| HELI_90_DEG   |                           |                |                  |
-| VTAIL4        | Quadcopter with V-Tail    | M1-M4          | N/A              |
-| HEX6H         | Hexacopter-H              | M1-M6          | None             |
-| PPM_TO_SERVO  |                           |                |                  |
-| DUALCOPTER    | Dualcopter                | M1-M2          | S1, S2           |
-| SINGLECOPTER  | Conventional helicopter   | M1             | S1               |
-| ATAIL4        | Quadcopter with A-Tail    | M1-M4          | N/A              |
-| CUSTOM        | User-defined              |                |                  |
+| Name             | Description               | Motors         | Servos           |
+| ---------------- | ------------------------- | -------------- | ---------------- |
+| TRI              | Tricopter                 | M1-M3          | S1               |
+| QUADP            | Quadcopter-Plus           | M1-M4          | None             |
+| QUADX            | Quadcopter-X              | M1-M4          | None             |
+| BI               | Bicopter (left/right)     | M1-M2          | S1, S2           |
+| GIMBAL           | Gimbal control            | N/A            | S1, S2           |
+| Y6               | Y6-copter                 | M1-M6          | None             |
+| HEX6             | Hexacopter-Plus           | M1-M6          | None             |
+| FLYING_WING      | Fixed wing; elevons       | M1             | S1, S2           |
+| Y4               | Y4-copter                 | M1-M4          | None             |
+| HEX6X            | Hexacopter-X              | M1-M6          | None             |
+| OCTOX8           | Octocopter-X (over/under) | M1-M8          | None             |
+| OCTOFLATP        | Octocopter-FlatPlus       | M1-M8          | None             |
+| OCTOFLATX        | Octocopter-FlatX          | M1-M8          | None             |
+| AIRPLANE         | Fixed wing; Ax2, R, E     | M1             | S1, S2, S3, S4   |
+| HELI_120_CCPM    |                           |                |                  |
+| HELI_90_DEG      |                           |                |                  |
+| VTAIL4           | Quadcopter with V-Tail    | M1-M4          | N/A              |
+| HEX6H            | Hexacopter-H              | M1-M6          | None             |
+| PPM_TO_SERVO     |                           |                |                  |
+| DUALCOPTER       | Dualcopter                | M1-M2          | S1, S2           |
+| SINGLECOPTER     | Conventional helicopter   | M1             | S1               |
+| ATAIL4           | Quadcopter with A-Tail    | M1-M4          | N/A              |
+| CUSTOM           | User-defined              |                |                  |
+| CUSTOM AIRPLANE  | User-defined airplane     |                |                  |
+| CUSTOM TRICOPTER | User-defined tricopter    |                |                  |
 
 
 ## Servo filtering
@@ -76,8 +78,8 @@ Custom motor mixing allows for completely customized motor configurations. Each 
 Steps to configure custom mixer in the CLI:
 
 1. Use `mixer custom` to enable the custom mixing.
-2. Use `cmix reset` to erase the any existing custom mixing. 
-3. Issue a cmix statement for each motor. 
+2. Use `mmix reset` to erase the any existing custom mixing. 
+3. Issue a `mmix` statement for each motor. 
 
 The cmix statement has the following syntax: `cmix n THROTTLE ROLL PITCH YAW` 
 
@@ -88,6 +90,42 @@ The cmix statement has the following syntax: `cmix n THROTTLE ROLL PITCH YAW`
 | ROLL	| Indicates how much roll authority this motor imparts to the roll of the flight controller. Accepts values nominally from 1.0 to -1.0. |
 | PITCH	| Indicates the pitch authority this motor has over the flight controller. Also accepts values nominally from 1.0 to -1.0. |
 | YAW	| Indicates the direction of the motor rotation in relationship with the flight controller. 1.0 = CCW -1.0 = CW. |
+
+Note: the `mmix` command may show a motor mix that is not active, custom motor mixes are only active for models that use custom mixers. 
+
+## Custom Servo Mixing
+
+Custom servo mixing rules can be applied to each servo.  Rules are applied in the order they are defined.
+
+| id | Servo slot |
+| 0  | GIMBAL PITCH |
+| 1  | GIMBAL ROLL |
+| 2  | FLAPS |
+| 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
+| 4  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
+| 5  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
+| 6  | ELEVATOR / SINGLECOPTER_4 | 
+| 7  | THROTTLE (Based ONLY on the first motor output) | 
+
+
+| id | Input sources |
+| -- | ------------- |
+| 0  | Stabilised ROLL |
+| 1  | Stabilised PITCH |
+| 2  | Stabilised YAW |
+| 3  | Stabilised THROTTLE |
+| 4  | RC ROLL |
+| 5  | RC ITCH |
+| 6  | RC YAW |
+| 7  | RC THROTTLE |
+| 8  | RC AUX 1 |
+| 9  | RC AUX 2 |
+| 10 | RC AUX 3 |
+| 11 | RC AUX 4 |
+| 12 | GIMBAL PITCH |
+| 13 | GIMBAL ROLL |
+
+Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers. 
 
 ### Example 1: A KK2.0 wired motor setup 
 Here's an example of a X configuration quad, but the motors are still wired using the KK board motor numbering scheme. 
@@ -103,11 +141,11 @@ KK2.0 Motor Layout
 ```
 
 1. Use `mixer custom`
-2. Use `cmix reset`
-3. Use `cmix 1 1.0,  1.0, -1.0, -1.0` for the Front Left motor. It tells the flight controller the #1 motor is used, provides positive roll, provides negative pitch and is turning CW.  
-4. Use `cmix 2 1.0, -1.0, -1.0,  1.0` for the Front Right motor. It still provides a negative pitch authority, but unlike the front left, it provides negative roll authority and turns CCW.
-5. Use `cmix 3 1.0, -1.0,  1.0, -1.0` for the Rear Right motor. It has negative roll, provides positive pitch when the speed is increased and turns CW.
-6. Use `cmix 4 1.0,  1.0,  1.0,  1.0` for the Rear Left motor. Increasing motor speed imparts positive roll, positive pitch and turns CCW.
+2. Use `mmix reset`
+3. Use `mmix 0 1.0,  1.0, -1.0, -1.0` for the Front Left motor. It tells the flight controller the #1 motor is used, provides positive roll, provides negative pitch and is turning CW.  
+4. Use `mmix 1 1.0, -1.0, -1.0,  1.0` for the Front Right motor. It still provides a negative pitch authority, but unlike the front left, it provides negative roll authority and turns CCW.
+5. Use `mmix 2 1.0, -1.0,  1.0, -1.0` for the Rear Right motor. It has negative roll, provides positive pitch when the speed is increased and turns CW.
+6. Use `mmix 3 1.0,  1.0,  1.0,  1.0` for the Rear Left motor. Increasing motor speed imparts positive roll, positive pitch and turns CCW.
 
 ### Example 2: A HEX-U Copter 
 
@@ -121,13 +159,37 @@ HEX6-U
 .5...FC...2. 
 ............
 ...6....1...
-  
 ```
+
 |Command| Roll | Pitch | Yaw |
 | ----- | ---- | ----- | --- | 
-| Use `cmix 1 1.0, -0.5,  1.0, -1.0` | half negative | full positive | CW |
-| Use `cmix 2 1.0, -1.0,  0.0,  1.0` | full negative | none | CCW | 
-| Use `cmix 3 1.0, -1.0, -1.0, -1.0` | full negative | full negative | CW | 
-| Use `cmix 4 1.0,  1.0, -1.0,  1.0` | full positive | full negative | CCW  | 
-| Use `cmix 5 1.0,  1.0,  0.0, -1.0` | full positive | none | CW | 
-| Use `cmix 6 1.0,  0.5,  1.0,  1.0` | half positive | full positive | CCW | 
+| Use `mmix 1 1.0, -0.5,  1.0, -1.0` | half negative | full positive | CW |
+| Use `mmix 1 1.0, -1.0,  0.0,  1.0` | full negative | none | CCW | 
+| Use `mmix 2 1.0, -1.0, -1.0, -1.0` | full negative | full negative | CW | 
+| Use `mmix 3 1.0,  1.0, -1.0,  1.0` | full positive | full negative | CCW  | 
+| Use `mmix 4 1.0,  1.0,  0.0, -1.0` | full positive | none | CW | 
+| Use `mmix 5 1.0,  0.5,  1.0,  1.0` | half positive | full positive | CCW | 
+
+### Example 3: Custom tricopter
+
+```
+mixer CUSTOMTRI
+mmix reset
+mmix 0 1.000 0.000 1.333 0.000
+mmix 1 1.000 -1.000 -0.667 0.000
+mmix 2 1.000 1.000 -0.667 0.000
+smix reset
+smix 0 6 3 100 0 0 100 0
+```
+
+
+## Servo Reversing
+
+Servos are reversed using the `smix reverse` command.
+
+e.g. when using the TRI mixer to reverse the tail servo on a tricopter use this:
+
+`smix reverse 5 2 r`
+
+i.e. when mixing rudder servo slot (`5`) using Stabilised YAW input source (`2`) reverse the direction (`r`)
+  
