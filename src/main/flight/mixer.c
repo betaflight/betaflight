@@ -534,7 +534,7 @@ void writeAllMotors(int16_t mc)
 
 void stopMotors(void)
 {
-    writeAllMotors(escAndServoConfig->mincommand);
+    writeAllMotors(feature(FEATURE_3D) ? flight3DConfig->neutral3d : escAndServoConfig->mincommand);
 
     delay(50); // give the timers and ESCs a chance to react.
 }
