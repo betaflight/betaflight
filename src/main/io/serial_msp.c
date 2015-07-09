@@ -253,9 +253,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
 #define MSP_RAW_IMU              102    //out message         9 DOF
-#define MSP_SERVO                103    //out message         8 servos
-#define MSP_MOTOR                104    //out message         8 motors
-#define MSP_RC                   105    //out message         8 rc chan and more
+#define MSP_SERVO                103    //out message         servos
+#define MSP_MOTOR                104    //out message         motors
+#define MSP_RC                   105    //out message         rc channels and more
 #define MSP_RAW_GPS              106    //out message         fix, numsat, lat, lon, alt, speed, ground course
 #define MSP_COMP_GPS             107    //out message         distance home, direction home
 #define MSP_ATTITUDE             108    //out message         2 angles 1 heading
@@ -304,8 +304,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
-
-#define SERVO_CHUNK_SIZE 14
 
 #define INBUF_SIZE 64
 
@@ -837,7 +835,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         s_struct((uint8_t *)&servo, MAX_SUPPORTED_SERVOS * 2);
         break;
     case MSP_SERVO_CONFIGURATIONS:
-        headSerialReply(MAX_SUPPORTED_SERVOS * SERVO_CHUNK_SIZE);
+        headSerialReply(MAX_SUPPORTED_SERVOS * sizeof(servoParam_t));
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             serialize16(currentProfile->servoConf[i].min);
             serialize16(currentProfile->servoConf[i].max);
@@ -1033,7 +1031,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.batteryConfig.vbatmaxcellvoltage);
         serialize8(masterConfig.batteryConfig.vbatwarningcellvoltage);
         break;
+
     case MSP_MOTOR_PINS:
+        // FIXME This is hardcoded and should not be.
         headSerialReply(8);
         for (i = 0; i < 8; i++)
             serialize8(i + 1);
