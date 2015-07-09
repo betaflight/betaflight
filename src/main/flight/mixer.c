@@ -563,7 +563,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
         currentMixer[i] = mixerQuadX[i];
     }
 
-    mixerResetMotors();
+    mixerResetDisarmedMotors();
 }
 #endif
 
