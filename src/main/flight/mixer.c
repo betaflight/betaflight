@@ -236,9 +236,8 @@ static const motorMixer_t mixerDualcopter[] = {
     { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
 };
 
-static const motorMixer_t mixerThrustVector[] = {
-    { 1.0f,  0.0f,  0.0f, -0.5f },          // LEFT
-    { 1.0f,  0.0f,  0.0f,  0.5f },          // RIGHT
+static const motorMixer_t mixerSingleProp[] = {
+    { 1.0f,  0.0f,  0.0f, 0.0f },
 };
 
 // Keep synced with mixerMode_e
@@ -252,13 +251,13 @@ const mixer_t mixers[] = {
     { 0, true,  NULL },                // * MIXER_GIMBAL
     { 6, false, mixerY6 },             // MIXER_Y6
     { 6, false, mixerHex6P },          // MIXER_HEX6
-    { 2, true,  mixerThrustVector },   // * MIXER_FLYING_WING
+    { 1, true,  mixerSingleProp },     // * MIXER_FLYING_WING
     { 4, false, mixerY4 },             // MIXER_Y4
     { 6, false, mixerHex6X },          // MIXER_HEX6X
     { 8, false, mixerOctoX8 },         // MIXER_OCTOX8
     { 8, false, mixerOctoFlatP },      // MIXER_OCTOFLATP
     { 8, false, mixerOctoFlatX },      // MIXER_OCTOFLATX
-    { 1, true,  NULL },                // * MIXER_AIRPLANE
+    { 1, true,  mixerSingleProp },     // * MIXER_AIRPLANE
     { 0, true,  NULL },                // * MIXER_HELI_120_CCPM
     { 0, true,  NULL },                // * MIXER_HELI_90_DEG
     { 4, false, mixerVtail4 },         // MIXER_VTAIL4
@@ -268,7 +267,7 @@ const mixer_t mixers[] = {
     { 1, true,  NULL },                // MIXER_SINGLECOPTER
     { 4, false, mixerAtail4 },         // MIXER_ATAIL4
     { 0, false, NULL },                // MIXER_CUSTOM
-    { 1, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
+    { 2, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
     { 3, true,  NULL },                // MIXER_CUSTOM_TRI
 };
 #endif
@@ -452,7 +451,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 
     servoCount = pwmOutputConfiguration->servoCount;
 
-    if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI) {
+    if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
@@ -795,11 +794,10 @@ void mixTable(void)
 
 #if !defined(USE_QUAD_MIXER_ONLY) || defined(USE_SERVOS)
 
-    if (STATE(FIXED_WING)) {
-        if (!ARMING_FLAG(ARMED)) {
-            motor[0] = escAndServoConfig->mincommand; // Kill throttle when disarmed
-        } else {
-            motor[0] = rcCommand[THROTTLE];
+    if (STATE(FIXED_WING) && !ARMING_FLAG(ARMED)) {
+        // Kill throttle when disarmed
+        for (i = 0; i < motorCount; i++) {
+            motor[0] = escAndServoConfig->mincommand;
         }
     }
 
