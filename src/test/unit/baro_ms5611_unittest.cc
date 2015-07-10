@@ -88,7 +88,7 @@ TEST(baroMS5611Test, TestMs5611AllOnesProm)
 
 }
 
-TEST(baroTest, TestMs5611CalculatePressureGT20Deg)
+TEST(baroMS5611Test, TestMs5611CalculatePressureGT20Deg)
 {
 
     // given
@@ -108,7 +108,7 @@ TEST(baroTest, TestMs5611CalculatePressureGT20Deg)
 
 }
 
-TEST(baroTest, TestMs5611CalculatePressureLT20Deg)
+TEST(baroMS5611Test, TestMs5611CalculatePressureLT20Deg)
 {
 
     // given
@@ -128,7 +128,7 @@ TEST(baroTest, TestMs5611CalculatePressureLT20Deg)
 
 }
 
-TEST(baroTest, TestMs5611CalculatePressureLTMinus15Deg)
+TEST(baroMS5611Test, TestMs5611CalculatePressureLTMinus15Deg)
 {
 
     // given
