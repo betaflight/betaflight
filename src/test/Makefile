@@ -98,6 +98,7 @@ LIBCLEANFLIGHT_SRC = \
 	common/encoding.c \
 	common/maths.c \
 	drivers/barometer_ms5611.c \
+	drivers/barometer_bmp085.c \
 	drivers/light_ws2811strip.c \
 	flight/altitudehold.c \
 	flight/failsafe.c \

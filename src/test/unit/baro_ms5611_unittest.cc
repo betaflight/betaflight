@@ -27,7 +27,7 @@ int8_t ms5611_crc(uint16_t *prom);
 #include "gtest/gtest.h"
 
 
-TEST(baroTest, TestValidMs5611Crc)
+TEST(baroMS5611Test, TestValidMs5611Crc)
 {
 
     // given
@@ -41,7 +41,7 @@ TEST(baroTest, TestValidMs5611Crc)
 
 }
 
-TEST(baroTest, TestInvalidMs5611Crc)
+TEST(baroMS5611Test, TestInvalidMs5611Crc)
 {
 
     // given
@@ -55,7 +55,7 @@ TEST(baroTest, TestInvalidMs5611Crc)
 
 }
 
-TEST(baroTest, TestMs5611AllZeroProm)
+TEST(baroMS5611Test, TestMs5611AllZeroProm)
 {
 
     // given
@@ -69,7 +69,7 @@ TEST(baroTest, TestMs5611AllZeroProm)
 
 }
 
-TEST(baroTest, TestMs5611AllOnesProm)
+TEST(baroMS5611Test, TestMs5611AllOnesProm)
 {
 
     // given
