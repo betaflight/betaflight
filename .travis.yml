@@ -17,16 +17,29 @@ env:
   - TARGET=ALIENWIIF1
   - TARGET=ALIENWIIF3
 
+# use new docker environment
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - build-essential
+      - git
+      - libc6-i386
+      - zlib1g-dev
+      - libssl-dev
+      - wkhtmltopdf
+      - libxml2-dev
+      - libxslt-dev
+
 # We use cpp for unit tests, and c for the main project.
 language: cpp
 compiler: clang
 
 before_install:
-  - sudo apt-get update
   - curl --retry 10 --retry-max-time 120 -L "https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q2-update/+download/gcc-arm-none-eabi-4_9-2015q2-20150609-linux.tar.bz2" | tar xfj -
 
 install:
-  - sudo apt-get install build-essential git libc6-i386
   - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2015q2/bin
 
 before_script: arm-none-eabi-gcc --version
