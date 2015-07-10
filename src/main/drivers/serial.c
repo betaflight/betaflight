@@ -65,3 +65,14 @@ void serialSetMode(serialPort_t *instance, portMode_t mode)
     instance->vTable->setMode(instance, mode);
 }
 
+void serialBeginWrite(serialPort_t *instance)
+{
+    if (instance->vTable->beginWrite)
+        instance->vTable->beginWrite(instance);
+}
+
+void serialEndWrite(serialPort_t *instance)
+{
+    if (instance->vTable->endWrite)
+        instance->vTable->endWrite(instance);
+}

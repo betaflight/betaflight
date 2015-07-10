@@ -55,17 +55,17 @@
 #define ACC_SPI_MPU6000_ALIGN CW270_DEG
 
 // External I2C BARO
-#define BARO
-#define USE_BARO_MS5611
-#define USE_BARO_BMP085
+//#define BARO
+//#define USE_BARO_MS5611
+//#define USE_BARO_BMP085
 
 // External I2C MAG
-#define MAG
-#define USE_MAG_HMC5883
+//#define MAG
+//#define USE_MAG_HMC5883
 
 #define INVERTER
 #define BEEPER
-#define DISPLAY
+//#define DISPLAY
 
 #define USE_VCP
 #define USE_USART1
@@ -104,15 +104,15 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
 #define RSSI_ADC_CHANNEL            ADC_Channel_1
 
-#define GPS
-#define LED_STRIP
-#define LED_STRIP_TIMER TIM3
+//#define GPS
+//#define LED_STRIP
+//#define LED_STRIP_TIMER TIM3
 
 #define BLACKBOX
-#define TELEMETRY
+//#define TELEMETRY
 #define SERIAL_RX
-#define SONAR
-#define AUTOTUNE
+//#define SONAR
+//#define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI
 
@@ -125,7 +125,9 @@
 #endif
 
 
-#define SPEKTRUM_BIND
-// USART3, PB11 (Flexport)
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+//#define SPEKTRUM_BIND
+//// USART3, PB11 (Flexport)
+//#define BIND_PORT  GPIOB
+//#define BIND_PIN   Pin_11
+
+#define USE_QUATERNION

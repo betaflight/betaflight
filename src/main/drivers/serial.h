@@ -72,6 +72,10 @@ struct serialPortVTable {
     bool (*isSerialTransmitBufferEmpty)(serialPort_t *instance);
 
     void (*setMode)(serialPort_t *instance, portMode_t mode);
+
+    // Optional functions used to buffer large writes.
+    void (*beginWrite)(serialPort_t *instance);
+    void (*endWrite)(serialPort_t *instance);
 };
 
 void serialWrite(serialPort_t *instance, uint8_t ch);
@@ -82,3 +86,6 @@ void serialSetMode(serialPort_t *instance, portMode_t mode);
 bool isSerialTransmitBufferEmpty(serialPort_t *instance);
 void serialPrint(serialPort_t *instance, const char *str);
 uint32_t serialGetBaudRate(serialPort_t *instance);
+
+void serialBeginWrite(serialPort_t *instance);
+void serialEndWrite(serialPort_t *instance);
