@@ -31,7 +31,8 @@ COMMON_FLAGS = \
 	-ggdb3 \
 	-O0 \
 	-DUNIT_TEST \
-	-isystem $(GTEST_DIR)/inc
+	-isystem $(GTEST_DIR)/inc \
+	-MMD -MP
 
 # Flags passed to the C compiler.
 C_FLAGS = $(COMMON_FLAGS) \
@@ -41,25 +42,10 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
-# All tests produced by this Makefile.  Remember to add new tests you
-# created to the list.
-TESTS = \
-	battery_unittest \
-	flight_imu_unittest \
-	flight_mixer_unittest \
-	flight_failsafe_unittest \
-	altitude_hold_unittest \
-	maths_unittest \
-	gps_conversion_unittest \
-	telemetry_hott_unittest \
-	rc_controls_unittest \
-	rx_rx_unittest \
-	ledstrip_unittest \
-	ws2811_unittest \
-	encoding_unittest \
-	io_serial_unittest \
-	lowpass_unittest \
-    baro_unittest
+# Gather up all of the tests.
+TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
+TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
+TEST_BINARIES = $(TESTS:%=$(OBJECT_DIR)/%)
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -67,10 +53,10 @@ GTEST_HEADERS = $(GTEST_DIR)/inc/gtest/*.h
 
 # House-keeping build targets.
 
-all : $(TESTS)
+all : $(TEST_BINARIES)
 
 clean :
-	rm -rf $(TESTS) $(OBJECT_DIR)
+	rm -rf $(OBJECT_DIR)
 
 # Builds gtest.a and gtest_main.a.
 
@@ -108,387 +94,47 @@ TEST_INCLUDE_DIRS := $(TEST_DIR) \
 
 TEST_CFLAGS	 = $(addprefix -I,$(TEST_INCLUDE_DIRS))
 
-$(OBJECT_DIR)/common/maths.o : \
-	$(USER_DIR)/common/maths.c \
-	$(USER_DIR)/common/maths.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
-
-
-$(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
-
-$(OBJECT_DIR)/battery_unittest.o : \
-	$(TEST_DIR)/battery_unittest.cc \
-	$(USER_DIR)/sensors/battery.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/battery_unittest.cc -o $@
-
-battery_unittest : \
-	$(OBJECT_DIR)/sensors/battery.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/battery_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-	
-$(OBJECT_DIR)/common/encoding.o : $(USER_DIR)/common/encoding.c $(USER_DIR)/common/encoding.h $(GTEST_HEADERS)
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/encoding.c -o $@
-
-$(OBJECT_DIR)/encoding_unittest.o : \
-	$(TEST_DIR)/encoding_unittest.cc \
-	$(USER_DIR)/common/encoding.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/encoding_unittest.cc -o $@
-
-encoding_unittest : \
-	$(OBJECT_DIR)/common/encoding.o \
-	$(OBJECT_DIR)/encoding_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/flight/imu.o : \
-	$(USER_DIR)/flight/imu.c \
-	$(USER_DIR)/flight/imu.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/imu.c -o $@
-
-$(OBJECT_DIR)/flight_imu_unittest.o : \
-	$(TEST_DIR)/flight_imu_unittest.cc \
-	$(USER_DIR)/flight/imu.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_imu_unittest.cc -o $@
-
-flight_imu_unittest : \
-	$(OBJECT_DIR)/flight/imu.o \
-	$(OBJECT_DIR)/flight/altitudehold.o \
-	$(OBJECT_DIR)/flight_imu_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/maths_unittest.o : \
-	$(TEST_DIR)/maths_unittest.cc \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/maths_unittest.cc -o $@
-
-maths_unittest : \
-	$(OBJECT_DIR)/maths_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-
-
-$(OBJECT_DIR)/flight/altitudehold.o : \
-	$(USER_DIR)/flight/altitudehold.c \
-	$(USER_DIR)/flight/altitudehold.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/altitudehold.c -o $@
-
-$(OBJECT_DIR)/altitude_hold_unittest.o : \
-	$(TEST_DIR)/altitude_hold_unittest.cc \
-	$(USER_DIR)/flight/altitudehold.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/altitude_hold_unittest.cc -o $@
-
-altitude_hold_unittest : \
-	$(OBJECT_DIR)/flight/altitudehold.o \
-	$(OBJECT_DIR)/altitude_hold_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-
-$(OBJECT_DIR)/flight/gps_conversion.o : \
-	$(USER_DIR)/flight/gps_conversion.c \
-	$(USER_DIR)/flight/gps_conversion.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/gps_conversion.c -o $@
-
-$(OBJECT_DIR)/gps_conversion_unittest.o : \
-	$(TEST_DIR)/gps_conversion_unittest.cc \
-	$(USER_DIR)/flight/gps_conversion.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/gps_conversion_unittest.cc -o $@
-
-gps_conversion_unittest : \
-	$(OBJECT_DIR)/flight/gps_conversion.o \
-	$(OBJECT_DIR)/gps_conversion_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-
-
-$(OBJECT_DIR)/telemetry/hott.o : \
-	$(USER_DIR)/telemetry/hott.c \
-	$(USER_DIR)/telemetry/hott.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/hott.c -o $@
-
-$(OBJECT_DIR)/telemetry_hott_unittest.o : \
-	$(TEST_DIR)/telemetry_hott_unittest.cc \
-	$(USER_DIR)/telemetry/hott.h \
-	$(GTEST_HEADERS)
-	
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_hott_unittest.cc -o $@
-
-telemetry_hott_unittest : \
-	$(OBJECT_DIR)/telemetry/hott.o \
-	$(OBJECT_DIR)/telemetry_hott_unittest.o \
-	$(OBJECT_DIR)/flight/gps_conversion.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-
-
-$(OBJECT_DIR)/io/rc_controls.o : \
-	$(USER_DIR)/io/rc_controls.c \
-	$(USER_DIR)/io/rc_controls.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
-
-$(OBJECT_DIR)/rc_controls_unittest.o : \
-	$(TEST_DIR)/rc_controls_unittest.cc \
-	$(USER_DIR)/io/rc_controls.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rc_controls_unittest.cc -o $@
-
-rc_controls_unittest : \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/io/rc_controls.o \
-	$(OBJECT_DIR)/rc_controls_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-
-$(OBJECT_DIR)/io/ledstrip.o : \
-	$(USER_DIR)/io/ledstrip.c \
-	$(USER_DIR)/io/ledstrip.h \
-	$(GTEST_HEADERS)
-	
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/ledstrip.c -o $@
-
-$(OBJECT_DIR)/ledstrip_unittest.o : \
-	$(TEST_DIR)/ledstrip_unittest.cc \
-	$(USER_DIR)/io/ledstrip.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ledstrip_unittest.cc -o $@
-
-ledstrip_unittest : \
-	$(OBJECT_DIR)/io/ledstrip.o \
-	$(OBJECT_DIR)/ledstrip_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-
-
-$(OBJECT_DIR)/drivers/light_ws2811strip.o : \
-	$(USER_DIR)/drivers/light_ws2811strip.c \
-	$(USER_DIR)/drivers/light_ws2811strip.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/light_ws2811strip.c -o $@
-
-$(OBJECT_DIR)/ws2811_unittest.o : \
-	$(TEST_DIR)/ws2811_unittest.cc \
-	$(USER_DIR)/drivers/light_ws2811strip.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/ws2811_unittest.cc -o $@
-
-ws2811_unittest : \
-	$(OBJECT_DIR)/drivers/light_ws2811strip.o \
-	$(OBJECT_DIR)/ws2811_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-
-$(OBJECT_DIR)/flight/lowpass.o : \
-	$(USER_DIR)/flight/lowpass.c \
-	$(USER_DIR)/flight/lowpass.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/lowpass.c -o $@
-
-$(OBJECT_DIR)/lowpass_unittest.o : \
-	$(TEST_DIR)/lowpass_unittest.cc \
-	$(USER_DIR)/flight/lowpass.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/lowpass_unittest.cc -o $@
-
-lowpass_unittest : \
-	$(OBJECT_DIR)/flight/lowpass.o \
-	$(OBJECT_DIR)/lowpass_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/flight/mixer.o : \
-	$(USER_DIR)/flight/mixer.c \
-	$(USER_DIR)/flight/mixer.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
-
-$(OBJECT_DIR)/flight_mixer_unittest.o : \
-	$(TEST_DIR)/flight_mixer_unittest.cc \
-	$(USER_DIR)/flight/mixer.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_mixer_unittest.cc -o $@
-
-flight_mixer_unittest : \
-	$(OBJECT_DIR)/flight/mixer.o \
-	$(OBJECT_DIR)/flight_mixer_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/flight/failsafe.o : \
-	$(USER_DIR)/flight/failsafe.c \
-	$(USER_DIR)/flight/failsafe.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/failsafe.c -o $@
-
-$(OBJECT_DIR)/flight_failsafe_unittest.o : \
-	$(TEST_DIR)/flight_failsafe_unittest.cc \
-	$(USER_DIR)/flight/failsafe.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_failsafe_unittest.cc -o $@
-
-flight_failsafe_unittest : \
-	$(OBJECT_DIR)/flight/failsafe.o \
-	$(OBJECT_DIR)/flight_failsafe_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/io/serial.o : \
-	$(USER_DIR)/io/serial.c \
-	$(USER_DIR)/io/serial.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/serial.c -o $@
-
-$(OBJECT_DIR)/io_serial_unittest.o : \
-	$(TEST_DIR)/io_serial_unittest.cc \
-	$(USER_DIR)/io/serial.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/io_serial_unittest.cc -o $@
-
-io_serial_unittest : \
-	$(OBJECT_DIR)/io/serial.o \
-	$(OBJECT_DIR)/io_serial_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/rx/rx.o : \
-	$(USER_DIR)/rx/rx.c \
-	$(USER_DIR)/rx/rx.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/rx/rx.c -o $@
-
-$(OBJECT_DIR)/rx_rx_unittest.o : \
-	$(TEST_DIR)/rx_rx_unittest.cc \
-	$(USER_DIR)/rx/rx.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rx_rx_unittest.cc -o $@
-
-rx_rx_unittest : \
-	$(OBJECT_DIR)/rx/rx.o \
-	$(OBJECT_DIR)/rx_rx_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/drivers/barometer_ms5611.o : \
-    $(USER_DIR)/drivers/barometer_ms5611.c \
-    $(USER_DIR)/drivers/barometer_ms5611.h \
-    $(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/barometer_ms5611.c -o $@
-
-$(OBJECT_DIR)/baro_unittest.o : \
-	$(TEST_DIR)/baro_unittest.cc \
-	$(USER_DIR)/drivers/barometer_ms5611.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/baro_unittest.cc -o $@
-
-baro_unittest : \
-	$(OBJECT_DIR)/drivers/barometer_ms5611.o \
-	$(OBJECT_DIR)/baro_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-test: $(TESTS)
-	set -e && for test in $(TESTS) ; do \
-		$(OBJECT_DIR)/$$test; \
-	done
-
+LIBCLEANFLIGHT_SRC = \
+	common/encoding.c \
+	common/maths.c \
+	drivers/barometer_ms5611.c \
+	drivers/light_ws2811strip.c \
+	flight/altitudehold.c \
+	flight/failsafe.c \
+	flight/gps_conversion.c \
+	flight/imu.c \
+	flight/lowpass.c \
+	flight/mixer.c \
+	io/ledstrip.c \
+	io/rc_controls.c \
+	io/serial.c \
+	rx/rx.c \
+	sensors/battery.c \
+	telemetry/hott.c
+
+LIBCLEANFLIGHT_OBJ = $(LIBCLEANFLIGHT_SRC:%.c=$(OBJECT_DIR)/%.o)
+
+DEPS =	$(LIBCLEANFLIGHT_OBJ:%.o=%.d) \
+	$(TEST_BINARIES:%=%.d)
+
+LIBS = $(OBJECT_DIR)/libcleanflight.a $(OBJECT_DIR)/gtest_main.a
+
+$(OBJECT_DIR)/libcleanflight.a: $(LIBCLEANFLIGHT_OBJ)
+	$(AR) $(ARFLAGS) $@ $^
+
+# Build a module from the flight software.
+$(OBJECT_DIR)/%.o: $(USER_DIR)/%.c
+	mkdir -p $(@D)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $< -o $@
+
+# Build the unit test executable.
+$(OBJECT_DIR)/%: $(TEST_DIR)/%.cc $(LIBS)
+	@mkdir -p $(@D)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -o $@ $< $(LIBS)
+
+test: $(TESTS:%=test-%)
+
+test-%: $(OBJECT_DIR)/%
+	$<
+
+-include $(DEPS)
