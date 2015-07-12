@@ -966,13 +966,31 @@ static void cliServo(char *cmdline)
             }
         }
 
+        enum {INDEX = 0, MIN, MAX, MIDDLE, ANGLE_AT_MIN, ANGLE_AT_MAX, RATE, FORWARD};
+
+        i = arguments[INDEX];
+
         // Check we got the right number of args and the servo index is correct (don't validate the other values)
-        if (validArgumentCount != SERVO_ARGUMENT_COUNT || arguments[0] < 0 || arguments[0] >= MAX_SUPPORTED_SERVOS) {
+        if (validArgumentCount != SERVO_ARGUMENT_COUNT || i < 0 || i >= MAX_SUPPORTED_SERVOS) {
             cliShowParseError();
             return;
         }
 
-        servo = &currentProfile->servoConf[arguments[0]];
+        servo = &currentProfile->servoConf[i];
+
+        if (
+            arguments[MIN] < PWM_PULSE_MIN || arguments[MIN] > PWM_PULSE_MAX ||
+            arguments[MAX] < PWM_PULSE_MIN || arguments[MAX] > PWM_PULSE_MAX ||
+            arguments[MIDDLE] < arguments[MIN] || arguments[MIDDLE] > arguments[MAX] ||
+            arguments[MIN] > arguments[MAX] || arguments[MAX] < arguments[MIN] ||
+            arguments[RATE] < 100 || arguments[RATE] > 100 ||
+            arguments[FORWARD] >= MAX_SUPPORTED_RC_CHANNEL_COUNT ||
+            arguments[ANGLE_AT_MIN] < 0 || arguments[ANGLE_AT_MIN] > 180 ||
+            arguments[ANGLE_AT_MAX] < 0 || arguments[ANGLE_AT_MAX] > 180
+        ) {
+            cliShowParseError();
+            return;
+        }
 
         servo->min = arguments[1];
         servo->max = arguments[2];
