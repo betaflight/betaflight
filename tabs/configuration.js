@@ -73,7 +73,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             {bit: 3, group: 'rxMode', mode: 'group', name: 'RX_SERIAL', description: 'Serial-based receiver (SPEKSAT, SBUS, SUMD)'},
             {bit: 4, group: 'esc', name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
             {bit: 5, group: 'other', name: 'SERVO_TILT', description: 'Servo gimbal'},
-            {bit: 6, group: 'other', name: 'SOFTSERIAL', description: 'Enable CPU based serial ports (configure port scenario first)'},
+            {bit: 6, group: 'other', name: 'SOFTSERIAL', description: 'Enable CPU based serial ports'},
             {bit: 7, group: 'gps', name: 'GPS', description: 'GPS (configure port scenario first)'},
             {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE', description: 'Failsafe settings on RX signal loss'},
             {bit: 9, group: 'other', name: 'SONAR', description: 'Sonar'},
@@ -88,6 +88,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             {bit: 18, group: 'esc', name: 'ONESHOT125', description: 'ONESHOT ESC support (disconnect ESCs, remove props)'},
             {bit: 19, group: 'other', name: 'BLACKBOX', description: 'Blackbox flight data recorder'}
         ];
+        
+        if (semver.gte(CONFIG.apiVersion, "1.12.0")) {
+            features.push(
+                {bit: 20, group: 'other', name: 'CHANNEL_FORWARDING', description: 'Forward aux channels to remaining servo outputs'}
+            );
+        }
 
         var radioGroups = [];
         
