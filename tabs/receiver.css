@@ -3,6 +3,12 @@
 .tab-receiver input[type="number"]::-webkit-inner-spin-button {
     border: 0;
 }
+.tab-receiver .help {
+    padding: 10px;
+    background-color: #ffcb18;
+    margin-bottom: 10px;
+}
+
 .tab-receiver .bars {
     float: left;
     width: 45%;
