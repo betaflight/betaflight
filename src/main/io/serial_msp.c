@@ -843,8 +843,8 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(currentProfile->servoConf[i].rate);
             serialize8(currentProfile->servoConf[i].angleAtMin);
             serialize8(currentProfile->servoConf[i].angleAtMax);
-            serialize32(currentProfile->servoConf[i].reversedSources);
             serialize8(currentProfile->servoConf[i].forwardFromChannel);
+            serialize32(currentProfile->servoConf[i].reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
@@ -1429,6 +1429,10 @@ static bool processInCommand(void)
         break;
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
+        if (currentPort->dataSize != 1 + sizeof(servoParam_t)) {
+            headSerialError(0);
+            break;
+        }
         i = read8();
         if (i >= MAX_SUPPORTED_SERVOS) {
             headSerialError(0);
@@ -1439,8 +1443,8 @@ static bool processInCommand(void)
             currentProfile->servoConf[i].rate = read8();
             currentProfile->servoConf[i].angleAtMin = read8();
             currentProfile->servoConf[i].angleAtMax = read8();
-            currentProfile->servoConf[i].reversedSources = read32();
             currentProfile->servoConf[i].forwardFromChannel = read8();
+            currentProfile->servoConf[i].reversedSources = read32();
         }
 #endif
         break;
