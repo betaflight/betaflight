@@ -15,15 +15,25 @@ TABS.servos.initialize = function (callback) {
         googleAnalytics.sendAppView('Servos');
     }
 
-    function get_servo_conf_data() {
-        MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_channel_forwarding_data);
+    function get_servo_configurations() {
+        MSP.send_message(MSP_codes.MSP_SERVO_CONFIGURATIONS, false, false, get_servo_mix_rules);
     }
 
-    function get_channel_forwarding_data() {
-        MSP.send_message(MSP_codes.MSP_CHANNEL_FORWARDING, false, false, get_rc_data);
+    function get_servo_mix_rules() {
+        MSP.send_message(MSP_codes.MSP_SERVO_MIX_RULES, false, false, get_channel_forwarding);
     }
 
-   function get_rc_data() {
+    function get_channel_forwarding() {
+        var nextFunction = get_rc_data;
+        
+        if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
+            MSP.send_message(MSP_codes.MSP_CHANNEL_FORWARDING, false, false, nextFunction);
+        } else { 
+            nextFunction();
+        }
+    }
+
+    function get_rc_data() {
         MSP.send_message(MSP_codes.MSP_RC, false, false, get_boxnames_data);
     }
 
@@ -35,7 +45,7 @@ TABS.servos.initialize = function (callback) {
         $('#content').load("./tabs/servos.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
+    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_configurations);
 
     function process_html() {
 
@@ -104,10 +114,12 @@ TABS.servos.initialize = function (callback) {
 
             
 
-                    // translate to user-selected language
-        localize();
+            // translate to user-selected language
+            localize();
 
-            $('div.tab-servos table.fields tr:last td.channel input').eq(SERVO_CONFIG[obj].indexOfChannelToForward).prop('checked', true);
+            if (SERVO_CONFIG[obj].indexOfChannelToForward >= 0) {
+                $('div.tab-servos table.fields tr:last td.channel input').eq(SERVO_CONFIG[obj].indexOfChannelToForward).prop('checked', true);
+            }
 
             if (directions == true) {
                 $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(SERVO_CONFIG[obj].rate, 0));
@@ -146,7 +158,7 @@ TABS.servos.initialize = function (callback) {
             });
         }
 
-        function servos_update(save_to_eeprom) {
+        function servos_update(save_configuration_to_eeprom) {
             // update bitfields
             $('div.tab-servos table.directions tr:not(".main")').each(function () {
                 var info = $('select', this).data('info');
@@ -188,9 +200,27 @@ TABS.servos.initialize = function (callback) {
                 }
             });
             
+            //
+            // send data to FC
+            //
+            MSP.sendServoConfigurations(send_servo_mixer_rules);
+
+            function send_servo_mixer_rules() {
+                MSP.sendServoConfigurations(save_to_eeprom);
+            }
+            
+            function save_to_eeprom() {
+                if (save_configuration_to_eeprom) {
+                    MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                        GUI.log(chrome.i18n.getMessage('servosEepromSave'));
+                    });
+                }
+            }
+
+            /*
             MSP.send_message(MSP_codes.MSP_SET_CHANNEL_FORWARDING, MSP.crunch(MSP_codes.MSP_SET_CHANNEL_FORWARDING), false, function () {
                 MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, MSP.crunch(MSP_codes.MSP_SET_SERVO_CONF), false, function () {
-                    if (save_to_eeprom) {
+                    if (save_configuration_to_eeprom) {
                         // Save changes to EEPROM
                         MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                             GUI.log(chrome.i18n.getMessage('servosEepromSave'));
@@ -198,6 +228,7 @@ TABS.servos.initialize = function (callback) {
                     }
                 });
             });
+            */
 
         }
 

@@ -86,6 +86,7 @@ var MODE_RANGES = [];
 var ADJUSTMENT_RANGES = [];
 
 var SERVO_CONFIG = [];
+var SERVO_RULES = [];
 
 var SERIAL_CONFIG = {
     ports: [],
