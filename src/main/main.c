@@ -446,10 +446,10 @@ void init(void)
     if (hardwareRevision == NAZE32_REV5) {
         m25p16_init();
     }
-#endif
-#if defined(SPRACINGF3) || defined(CC3D)
+#elif defined(USE_FLASH_M25P16)
     m25p16_init();
 #endif
+
     flashfsInit();
 #endif
 

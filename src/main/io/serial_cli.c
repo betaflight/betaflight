@@ -136,8 +136,10 @@ static void cliMixer(char *cmdline);
 #ifdef USE_FLASHFS
 static void cliFlashInfo(char *cmdline);
 static void cliFlashErase(char *cmdline);
+#ifdef USE_FLASH_TOOLS
 static void cliFlashWrite(char *cmdline);
 static void cliFlashRead(char *cmdline);
+#endif
 #endif
 
 // buffer
@@ -224,8 +226,10 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_FLASHFS
     CLI_COMMAND_DEF("flash_erase", "erase flash chip", NULL, cliFlashErase),
     CLI_COMMAND_DEF("flash_info", "show flash chip info", NULL, cliFlashInfo),
+#ifdef USE_FLASH_TOOLS
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
+#endif
 #endif
     CLI_COMMAND_DEF("get", "get variable value",
             "[name]", cliGet),
@@ -1165,6 +1169,8 @@ static void cliFlashErase(char *cmdline)
     printf("Done.\r\n");
 }
 
+#ifdef USE_FLASH_TOOLS
+
 static void cliFlashWrite(char *cmdline)
 {
     uint32_t address = atoi(cmdline);
@@ -1219,6 +1225,7 @@ static void cliFlashRead(char *cmdline)
     }
 }
 
+#endif
 #endif
 
 static void dumpValues(uint16_t mask)
