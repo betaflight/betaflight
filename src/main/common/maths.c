@@ -188,12 +188,12 @@ void rotateV(struct fp_vector *v, fp_angles_t *delta)
 // http://ndevilla.free.fr/median/median.pdf
 #define QMF_SORT(a,b) { if ((a)>(b)) QMF_SWAP((a),(b)); }
 #define QMF_SWAP(a,b) { int32_t temp=(a);(a)=(b);(b)=temp; }
-#define QMP_COPY(p,v,n) { int32_t i; for (i=0; i<n; i++) p[i]=v[i]; }
+#define QMF_COPY(p,v,n) { int32_t i; for (i=0; i<n; i++) p[i]=v[i]; }
 
 int32_t quickMedianFilter3(int32_t * v)
 {
     int32_t p[3];
-    QMP_COPY(p, v, 3);
+    QMF_COPY(p, v, 3);
 
     QMF_SORT(p[0], p[1]); QMF_SORT(p[1], p[2]); QMF_SORT(p[0], p[1]) ;
     return p[1];
@@ -202,7 +202,7 @@ int32_t quickMedianFilter3(int32_t * v)
 int32_t quickMedianFilter5(int32_t * v)
 {
     int32_t p[5];
-    QMP_COPY(p, v, 5);
+    QMF_COPY(p, v, 5);
 
     QMF_SORT(p[0], p[1]); QMF_SORT(p[3], p[4]); QMF_SORT(p[0], p[3]);
     QMF_SORT(p[1], p[4]); QMF_SORT(p[1], p[2]); QMF_SORT(p[2], p[3]);
@@ -213,7 +213,7 @@ int32_t quickMedianFilter5(int32_t * v)
 int32_t quickMedianFilter7(int32_t * v)
 {
     int32_t p[7];
-    QMP_COPY(p, v, 7);
+    QMF_COPY(p, v, 7);
 
     QMF_SORT(p[0], p[5]); QMF_SORT(p[0], p[3]); QMF_SORT(p[1], p[6]);
     QMF_SORT(p[2], p[4]); QMF_SORT(p[0], p[1]); QMF_SORT(p[3], p[5]);
@@ -226,7 +226,7 @@ int32_t quickMedianFilter7(int32_t * v)
 int32_t quickMedianFilter9(int32_t * v)
 {
     int32_t p[9];
-    QMP_COPY(p, v, 9);
+    QMF_COPY(p, v, 9);
 
     QMF_SORT(p[1], p[2]); QMF_SORT(p[4], p[5]); QMF_SORT(p[7], p[8]);
     QMF_SORT(p[0], p[1]); QMF_SORT(p[3], p[4]); QMF_SORT(p[6], p[7]);
