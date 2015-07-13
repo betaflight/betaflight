@@ -789,7 +789,7 @@ void mixTable(void)
             rcCommand[THROTTLE] * currentMixer[i].throttle +
             axisPID[PITCH] * currentMixer[i].pitch +
             axisPID[ROLL] * currentMixer[i].roll +
-            -mixerConfig->yaw_direction * axisPID[YAW] * currentMixer[i].yaw;
+            -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
     }
 
     if (ARMING_FLAG(ARMED)) {
