@@ -131,19 +131,6 @@
             <p i18n="configurationSerialRXHelp"></p>
         </div>
         
-        <div class="groupTitle" i18n="configurationRSSI"></div>
-        <table>
-            <thead>
-                <tr>
-                    <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
-                    <th i18n="configurationFeatureDescription"></th>
-                </tr>
-            </thead>
-            <tbody class="features rssi">
-                <!-- table generated here -->
-            </tbody>
-        </table>
         <div class="groupTitle" i18n="configurationFailsafe"></div>
         <table>
             <thead>
@@ -163,8 +150,6 @@
                 <span i18n="configurationThrottleFailsafe"></span>
             </label>
         </div>
-        
-
     </div>
     <div class="rightWrapper current voltage">
         <div class="groupTitle" i18n="configurationBatteryVoltage"></div>
@@ -205,7 +190,7 @@
                 <span i18n="configurationBatteryScale"></span>
             </label>
         </div>
-                <div class="groupTitle" i18n="configurationCurrent"></div>
+        <div class="groupTitle" i18n="configurationCurrent"></div>
         <table>
             <thead>
                 <tr>
@@ -238,14 +223,41 @@
                 <span i18n="configurationBatteryMultiwiiCurrent"></span>
             </label>
         </div>
-        <div class="cycles" style="display: none;">
-            <div class="block looptime">
-                <span class="head" i18n="configurationLoopTimeHead"></span>
-                <input type="number" name="looptime" step="100" min="0" max="9000"/>
-                <span  class="looptimehz"></span>          
-            </div>
-        </div>
     </div>
+    <div class="clear-both"></div>
+    
+    <div class="leftWrapper rssi">
+        <div class="groupTitle" i18n="configurationRSSI"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th i18n="configurationFeatureEnabled"></th>
+                    <th i18n="configurationFeatureName"></th>
+                    <th i18n="configurationFeatureDescription"></th>
+                </tr>
+            </thead>
+            <tbody class="features rssi">
+                <!-- table generated here -->
+            </tbody>
+        </table>
+    </div>
+    <div class="rightWrapper system">
+        <div class="groupTitle" i18n="configurationSystem"></div>
+        <div class="number">
+            <label>
+                <input type="number" name="looptime" step="100" min="0" max="9000"/>
+                <span i18n="configurationLoopTime"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="text" name="looptimehz" readonly="readonly" class="disabled"/>
+                <span i18n="configurationCalculatedCyclesSec"></span>
+            </label>
+        </div>
+        <p class="help" i18n="configurationLoopTimeHelp"></p>
+    </div>
+    
     <div class="clear-both"></div>
     <div class="leftWrapper gps">
         <div class="groupTitle" i18n="configurationGPS"></div>
@@ -307,6 +319,7 @@
             </tbody>
         </table>
     </div>
+    
     <div class="clear-both"></div>
     <div class="buttons">
         <a class="save" href="#" i18n="configurationButtonSave"></a>

@@ -49,6 +49,17 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
     MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
 
+    function recalculate_cycles_sec() {
+        var looptime = $('input[name="looptime"]').val();
+
+        var message = 'Max';
+        if (looptime > 0) {
+            message = parseFloat((1 / looptime) * 1000 * 1000).toFixed(0);
+        }
+        
+        $('input[name="looptimehz"]').val(message);
+    }
+    
     function process_html() {
         // translate to user-selected language
         localize();
@@ -278,10 +289,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             
             // fill FC loop time
             $('input[name="looptime"]').val(FC_CONFIG.loopTime);
-            if(FC_CONFIG.loopTime > 0)
-                $('span.looptimehz').text(parseFloat((1/FC_CONFIG.loopTime)*1000*1000).toFixed(0) + '  Cycles per Sec');
-            else
-                $('span.looptimehz').text('Maximum Cycles per Sec');
+
+            recalculate_cycles_sec();
             
             $('div.cycles').show();
         }
@@ -307,11 +316,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
         // UI hooks
         $('input[name="looptime"]').change(function() {
-            FC_CONFIG.loopTime = parseInt($('input[name="looptime"]').val());
-            if(FC_CONFIG.loopTime > 0)
-                $('span.looptimehz').text(parseFloat((1/FC_CONFIG.loopTime)*1000*1000).toFixed(0) + '  Cycles per Sec');
-            else
-                $('span.looptimehz').text('Maximum Cycles per Sec');
+            recalculate_cycles_sec();
         });
 
         $('input[type="checkbox"].feature', features_e).change(function () {
