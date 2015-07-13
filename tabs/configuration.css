@@ -154,7 +154,27 @@
 .tab-configuration .disarm .checkbox span {
     margin-left: 15px;
 }
-
+.tab-configuration .cycles {      
+    border-bottom: 1px solid #dddddd;
+    margin-top: 16px;
+}
+.tab-configuration .block {
+    float: left;
+    display: block;    
+    border: 1px solid silver;
+}
+.tab-configuration .block .head {
+    display: block;
+    text-align: center;
+    line-height: 20px;
+    font-weight: bold;    
+    border-bottom: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-configuration .block.looptime {
+    width: 200px;
+    margin-top: 11px;
+}
 .tab-configuration .save {
     display: block;
     float: right;
