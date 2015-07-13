@@ -71,13 +71,13 @@
     border: 1px dashed silver;
     margin-bottom: 8px;
 }
-.require-support {
+.tab-ports .require-support {
     display:none;
 }
 .tab-ports.supported .require-support {
     display:block;
 }
-.require-upgrade {
+.tab-ports .require-upgrade {
     display:block;
 }
 .tab-ports.supported .require-upgrade {

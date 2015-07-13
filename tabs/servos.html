@@ -1,6 +1,5 @@
 <div class="tab-servos">
-    <span i18n="servosModel"></span> <strong class="model"></strong>
-    <div class="supported_wrapper">
+    <div class="require-support">
         <div class="title" i18n="servosChangeDirection"></div>
         <table class="fields">
             <tr class="main">
@@ -14,20 +13,14 @@
                 <th style="width: 40px">CH4</th>
             </tr>
         </table>
-        <div class="direction_wrapper">
-            <div class="title" style="width: 258px" i18n="servosGyroAccelDirection"></div>
-            <table class="directions" style="width: 260px">
-                <tr class="main">
-                    <th style="width: 200px" i18n="servosName"></th>
-                    <th i18n="servosDirection"></th>
-                </tr>
-            </table>
-        </div>
         <div class="live">
             <span i18n="servosLiveMode"></span> <input type="checkbox" />
         </div>
         <div class="buttons">
             <a class="update" href="#" i18n="servosButtonSave"></a>
         </div>
+    </div>
+    
+    <div class="note require-upgrade" i18n="servosFirmwareUpgradeRequired">
     </div>
 </div>

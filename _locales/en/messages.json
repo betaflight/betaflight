@@ -805,14 +805,12 @@
     },
 
 
-    "servosModel": {
-        "message": "Model:"
+    "servosFirmwareUpgradeRequired": {
+        "message": "Servos requires firmware &gt;= 1.10.0."
     },
+
     "servosChangeDirection": {
         "message": "Change Direction in TX To Match"
-    },
-    "servosGyroAccelDirection": {
-        "message": "Gyroscope / Accelerometer Direction"
     },
     "servosName": {
         "message": "Name"
@@ -826,17 +824,14 @@
     "servosMax": {
         "message": "MAX"
     },
-    "servosDirection": {
-        "message": "Direction"
+    "servosDirectionAndRate": {
+        "message": "Direction and rate"
     },
     "servosLiveMode": {
         "message": "Enable Live mode:"
     },
     "servosButtonSave": {
         "message": "Save"
-    },
-    "servosModelNoSupport": {
-        "message": "This model doesn't support servos"
     },
     "servosNormal": {
         "message": "Normal"

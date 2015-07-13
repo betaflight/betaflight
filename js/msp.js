@@ -477,7 +477,11 @@ var MSP = {
                                 'min':                      data.getInt16(i + 0, 1),
                                 'max':                      data.getInt16(i + 2, 1),
                                 'middle':                   data.getInt16(i + 4, 1),
-                                'rate':                     data.getInt8(i + 6)
+                                'rate':                     data.getInt8(i + 6),
+                                'angleAtMin':               90,
+                                'angleAtMax':               90,
+                                'indexOfChannelToForward':  undefined,
+                                'reversedInputSources':     0
                             };
 
                             SERVO_CONFIG.push(arr);
