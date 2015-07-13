@@ -29,15 +29,13 @@ if [ $RUNTESTS ] ; then
 elif [ $PUBLISHDOCS ] ; then
 	if [ $PUBLISH_URL ] ; then
 
-		sudo apt-get install zlib1g-dev libssl-dev wkhtmltopdf libxml2-dev libxslt-dev #ruby-rvm
-
 		# Patch Gimli to fix underscores_inside_words
 		curl -L "${CURL_BASEOPTS[@]}" https://github.com/walle/gimli/archive/v0.5.9.tar.gz | tar zxf -
 
 		sed -i 's/).render(/, :no_intra_emphasis => true).render(/' gimli-0.5.9/ext/github_markup.rb
 
 		cd gimli-0.5.9/
-		gem build gimli.gemspec && rvmsudo gem install gimli
+		gem build gimli.gemspec && gem install gimli
 		cd ../
 
 		./build_docs.sh
