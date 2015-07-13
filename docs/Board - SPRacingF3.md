@@ -87,7 +87,7 @@ The 8 pin IO_2 connector has the following pinouts when used in RX_PARALLEL_PWM 
 When RX_PPM/RX_SERIAL is used the IO_2 pinout is as follows.
 
 | Pin | Function                  | Notes                                        |
-| --- | --------00000000000------ | -------------------------------------------- |
+| --- | ------------------------- | -------------------------------------------- |
 | 1   | Ground                    |                                              |
 | 2   | VCC_IN                    | Voltage as-supplied by BEC.                  |
 | 3   | RX_SERIAL                 | UART3 RX                                     |
