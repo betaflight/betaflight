@@ -349,6 +349,8 @@ static blackboxMainState_t blackboxHistoryRing[3];
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
 static blackboxMainState_t* blackboxHistory[3];
 
+static bool blackboxModeActivationConditionPresent = false;
+
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 {
     switch (condition) {
@@ -771,6 +773,7 @@ static void validateBlackboxConfig()
  */
 void startBlackbox(void)
 {
+    blackboxModeActivationConditionPresent = isModeActivationConditionPresent(currentProfile->modeActivationConditions, BOXBLACKBOX);
     if (blackboxState == BLACKBOX_STATE_STOPPED) {
         validateBlackboxConfig();
 
@@ -1176,7 +1179,7 @@ static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
 }
 
 // Called once every FC loop in order to log the current state
-static void blackboxLogIteration()
+static void blackboxLogIteration(bool writeFrames)
 {
     // Write a keyframe every BLACKBOX_I_INTERVAL frames so we can resynchronise upon missing frames
     if (blackboxPFrameIndex == 0) {
@@ -1184,25 +1187,25 @@ static void blackboxLogIteration()
          * Don't log a slow frame if the slow data didn't change ("I" frames are already large enough without adding
          * an additional item to write at the same time)
          */
-        writeSlowFrameIfNeeded(false);
-
-        loadMainState();
-        writeIntraframe();
+        if (writeFrames) {
+            writeSlowFrameIfNeeded(false);
+            loadMainState();
+            writeIntraframe();
+        }
     } else {
         blackboxCheckAndLogArmingBeep();
         
-        if (blackboxShouldLogPFrame(blackboxPFrameIndex)) {
-            /*
+        if (blackboxShouldLogPFrame(blackboxPFrameIndex) && writeFrames) {
+             /*
              * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
              * So only log slow frames during loop iterations where we log a main frame.
              */
             writeSlowFrameIfNeeded(true);
-
             loadMainState();
             writeInterframe();
         }
 #ifdef GPS
-        if (feature(FEATURE_GPS)) {
+        if (feature(FEATURE_GPS) && writeFrames) {
             /*
              * If the GPS home point has been updated, or every 128 intraframes (~10 seconds), write the
              * GPS home position.
@@ -1307,8 +1310,16 @@ void handleBlackbox(void)
         break;
         case BLACKBOX_STATE_RUNNING:
             // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
-
-            blackboxLogIteration();
+            if (blackboxModeActivationConditionPresent) {
+                if (IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
+                    blackboxLogIteration(true);
+                } else {
+                    // Log only first I frame
+                    blackboxLogIteration(blackboxIteration == 0);
+                }
+            } else {
+                blackboxLogIteration(true);
+            }
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
             //On entry of this state, startTime is set and a flush is performed
