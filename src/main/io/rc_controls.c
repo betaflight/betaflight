@@ -23,6 +23,8 @@
 
 #include "platform.h"
 
+#include "build_config.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -70,7 +72,10 @@ uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
 
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
-#ifdef BLACKBOX
+#ifndef BLACKBOX
+    UNUSED(adjustmentFunction);
+    UNUSED(newValue);
+#else
     if (feature(FEATURE_BLACKBOX)) {
         flightLogEvent_inflightAdjustment_t eventData;
         eventData.adjustmentFunction = adjustmentFunction;
@@ -82,7 +87,10 @@ void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction,
 }
 
 void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue) {
-#ifdef BLACKBOX
+#ifndef BLACKBOX
+    UNUSED(adjustmentFunction);
+    UNUSED(newFloatValue);
+#else
     if (feature(FEATURE_BLACKBOX)) {
         flightLogEvent_inflightAdjustment_t eventData;
         eventData.adjustmentFunction = adjustmentFunction;

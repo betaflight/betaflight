@@ -114,6 +114,42 @@ enum {
     INPUT_SOURCE_COUNT
 } inputSource_e;
 
+// target servo channels
+typedef enum {
+    SERVO_GIMBAL_PITCH = 0,
+    SERVO_GIMBAL_ROLL = 1,
+    SERVO_FLAPS = 2,
+    SERVO_FLAPPERON_1 = 3,
+    SERVO_FLAPPERON_2 = 4,
+    SERVO_RUDDER = 5,
+    SERVO_ELEVATOR = 6,
+    SERVO_THROTTLE = 7, // for internal combustion (IC) planes
+
+    SERVO_BICOPTER_LEFT = 4,
+    SERVO_BICOPTER_RIGHT = 5,
+
+    SERVO_DUALCOPTER_LEFT = 4,
+    SERVO_DUALCOPTER_RIGHT = 5,
+
+    SERVO_SINGLECOPTER_1 = 3,
+    SERVO_SINGLECOPTER_2 = 4,
+    SERVO_SINGLECOPTER_3 = 5,
+    SERVO_SINGLECOPTER_4 = 6,
+
+} servoIndex_e; // FIXME rename to servoChannel_e
+
+#define SERVO_PLANE_INDEX_MIN SERVO_FLAPS
+#define SERVO_PLANE_INDEX_MAX SERVO_THROTTLE
+
+#define SERVO_DUALCOPTER_INDEX_MIN SERVO_DUALCOPTER_LEFT
+#define SERVO_DUALCOPTER_INDEX_MAX SERVO_DUALCOPTER_RIGHT
+
+#define SERVO_SINGLECOPTER_INDEX_MIN SERVO_SINGLECOPTER_1
+#define SERVO_SINGLECOPTER_INDEX_MAX SERVO_SINGLECOPTER_4
+
+#define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
+#define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
+
 typedef struct servoMixer_t {
     uint8_t targetChannel;                  // servo that receives the output of the rule
     uint8_t inputSource;                    // input channel for this rule

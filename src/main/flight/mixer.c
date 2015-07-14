@@ -53,44 +53,9 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
-typedef enum {
-    SERVO_GIMBAL_PITCH = 0,
-    SERVO_GIMBAL_ROLL = 1,
-    SERVO_FLAPS = 2,
-    SERVO_FLAPPERON_1 = 3,
-    SERVO_FLAPPERON_2 = 4,
-    SERVO_RUDDER = 5,
-    SERVO_ELEVATOR = 6,
-    SERVO_THROTTLE = 7, // for internal combustion (IC) planes
-
-    SERVO_BICOPTER_LEFT = 4,
-    SERVO_BICOPTER_RIGHT = 5,
-
-    SERVO_DUALCOPTER_LEFT = 4,
-    SERVO_DUALCOPTER_RIGHT = 5,
-    
-    SERVO_SINGLECOPTER_1 = 3,
-    SERVO_SINGLECOPTER_2 = 4,
-    SERVO_SINGLECOPTER_3 = 5,
-    SERVO_SINGLECOPTER_4 = 6,
-    
-} servoIndex_e;
-
-#define SERVO_PLANE_INDEX_MIN SERVO_FLAPS
-#define SERVO_PLANE_INDEX_MAX SERVO_THROTTLE
-
-#define SERVO_DUALCOPTER_INDEX_MIN SERVO_DUALCOPTER_LEFT
-#define SERVO_DUALCOPTER_INDEX_MAX SERVO_DUALCOPTER_RIGHT
-
-#define SERVO_SINGLECOPTER_INDEX_MIN SERVO_SINGLECOPTER_1
-#define SERVO_SINGLECOPTER_INDEX_MAX SERVO_SINGLECOPTER_4
-
-#define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
-#define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
-
 //#define MIXER_DEBUG
 
-uint8_t motorCount = 0;
+uint8_t motorCount;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
@@ -449,6 +414,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 {
     int i;
 
+    motorCount = 0;
     servoCount = pwmOutputConfiguration->servoCount;
 
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
@@ -695,7 +661,7 @@ void StopPwmAllMotors()
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
-static void servoMixer(void)
+STATIC_UNIT_TESTED void servoMixer(void)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
