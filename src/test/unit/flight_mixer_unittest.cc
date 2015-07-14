@@ -80,11 +80,17 @@ uint32_t testFeatureMask = 0;
 int updatedServoCount;
 int updatedMotorCount;
 
+class ChannelForwardingTest : public ::testing::Test {
+protected:
+    virtual void SetUp() {
+        memset(&servos, 0, sizeof(servos));
+    }
+};
 
-TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithNoServos)
+
+TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithNoServos)
 {
     // given
-    memset(&servos, 0, sizeof(servos));
     servoCount = 0;
 
     rcData[AUX1] = TEST_RC_MID;
@@ -101,10 +107,9 @@ TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithNoServos)
     }
 }
 
-TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithMaxServos)
+TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithMaxServos)
 {
     // given
-    memset(&servos, 0, sizeof(servos));
     servoCount = MAX_SUPPORTED_SERVOS;
 
     rcData[AUX1] = 1000;
@@ -122,10 +127,9 @@ TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithMaxServos)
     }
 }
 
-TEST(FlightMixerTest, TestForwardAuxChannelsToServosWithLessRemainingServosThanAuxChannelsToForward)
+TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithLessRemainingServosThanAuxChannelsToForward)
 {
     // given
-    memset(&servos, 0, sizeof(servos));
     servoCount = MAX_SUPPORTED_SERVOS - 2;
 
     rcData[AUX1] = 1000;
