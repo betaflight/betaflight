@@ -58,9 +58,7 @@ The OpenLog ships with standard OpenLog 3 firmware installed. However, in order 
 it should be reflashed with the [OpenLog Light firmware][] or the special [OpenLog Blackbox firmware][] (this needs to
 be version 2.0 or higher to allow configuration of baud rates). 
 
-The Blackbox variant of the firmware ensures that the OpenLog is using the correct settings, and defaults to 115200
-baud. If you are using a looptime of 2500 or smaller, you should set the baud rate to 250000 instead to eliminate
-dropped frames.
+The Blackbox variant of the firmware ensures that the OpenLog is using the correct settings, and defaults to 115200 baud. If you are using a looptime of 2500 or smaller, you should set the baud rate to 250000 instead to eliminate dropped frames. OpenLog boards from some vendors ship pre-flashed with the OpenLog Light firmware. This will work, but the OpenLog Blackbox firmware will be less likely to have configuration issues (e.g. wrong baud rate), so it should be used if possible.
 
 You can find the Blackbox version of the OpenLog firmware [here](https://github.com/cleanflight/blackbox-firmware), 
 along with instructions for installing it onto your OpenLog.
@@ -118,12 +116,7 @@ baud,escape,esc#,mode,verb,echo,ignoreRX
 
 #### Serial port
 
-A hardware serial port is required to connect the OpenLog to your flight controller (such as `serial_port_1` on the
-Naze32, the two-pin Tx/Rx header in the center of the board). The Blackbox can not be used with softserial ports as they
-are too slow.
-
-Connect the "TX" pin of the serial port you've chosen to the OpenLog's "RXI" pin. Don't connect the serial port's RX
-pin to the OpenLog.
+A hardware serial port is required to connect the OpenLog to your flight controller. The Blackbox can not be used with softserial ports as they are too slow. Connect the "TX" pin of the serial port you've chosen to the OpenLog's "RXI" pin. Don't connect the serial port's RX pin to the OpenLog.
 
 #### Protection
 
@@ -157,9 +150,19 @@ pressing enter. Now choose the device that you want to log to:
 Enter `set blackbox_device=0` to switch to logging to a serial port (this is the default).
 
 You then need to let Cleanflight know which of [your serial ports][] you connected the OpenLog to. A 115200 baud port
-is required (such as `serial_port_1` on the Naze32, the two-pin Tx/Rx header in the center of the board).
+is required (such as `serial_port_1` on the Naze32, the two-pin Tx/Rx header in the center of the board). If you are using the Blackbox OpenLog firmware, a baud rate of 250000 may be used, which will allow 1:1 logging of frames even at faster looptimes.
 
-You can use the GUI to configure a port for the Blackbox feature on the Ports tab.
+You can use the GUI to configure a port for the Blackbox feature on the Ports tab. The serial port used for Blackbox cannot be shared with any other function (e.g. GPS, telemetry) except the MSP protocol. If MSP is used on the same port as Blackbox, then MSP will be active when the board is disarmed, and Blackbox will be active when the board is armed. This will mean that you can't use the configurator GUI or any other function that requires MSP, such as an OSD or a Bluetooth wireless configuration app, while the board is armed. 
+
+On the Naze32, the TX/RX pins on top of the board are connected to UART1, and are shared with the USB connector. Therefore, MSP must be enabled on UART1 in order to use the configuration GUI over USB. If Blackbox is connected to the pins on top of the Naze32, the configurator GUI will not work when the board is armed.
+
+On the Naze32, pins RC3 and RC4 on the side of the board are connected to UART2. If Blackbox is configured on UART2, MSP can still be used on UART1 when the board is armed, which means that the configuration GUI will continue to work simultanous with Blackbox logging. However, pins RC3 and RC4 are only available for use by UART2 if the receiver mode is _not_ PARALLEL_PWM. In other words, a PPM or Serial receiver must be used. If a PWM receiver is used, pins RC3 and RC4 are used for channel input from the receiver. Sharing UART1 between Blackbox and MSP is the only way to use Blackbox on a Naze32 with a PWM receiver.
+
+Boards other than the Naze32 may have more accessible hardware serial devices, in which case refer to their documentation to decide how to wire up the logger. The key criteria are: 
+
+* Must be hardware serial device. Not SoftSerial.
+* Cannot be shared with any other function (GPS, telemetry) except MSP.
+* If MSP is used on the same UART, MSP will stop working when the board is armed.
 
 ### Onboard dataflash
 Enter `set blackbox_device=1` to switch to logging to an onboard dataflash chip, if your flight controller has one.
