@@ -74,7 +74,7 @@ static uint32_t needRxSignalBefore = 0;
 
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
-#define PPM_AND_PWM_SAMPLE_COUNT 4
+#define PPM_AND_PWM_SAMPLE_COUNT 3
 
 #define DELAY_50_HZ (1000000 / 50)
 #define DELAY_10_HZ (1000000 / 10)
