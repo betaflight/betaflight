@@ -2298,7 +2298,6 @@ static void cliStatus(char *cmdline)
         batteryCellCount,
         getBatteryStateString()
     );
-
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
 #ifndef CJMCU

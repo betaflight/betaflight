@@ -75,6 +75,9 @@ struct serialPortVTable {
     void (*setMode)(serialPort_t *instance, portMode_t mode);
 
     void (*writeBuf)(serialPort_t *instance, void *data, int count);
+    // Optional functions used to buffer large writes.
+    void (*beginWrite)(serialPort_t *instance);
+    void (*endWrite)(serialPort_t *instance);
 };
 
 void serialWrite(serialPort_t *instance, uint8_t ch);
@@ -90,3 +93,5 @@ uint32_t serialGetBaudRate(serialPort_t *instance);
 
 // A shim that adapts the bufWriter API to the serialWriteBuf() API.
 void serialWriteBufShim(void *instance, void *data, int count);
+void serialBeginWrite(serialPort_t *instance);
+void serialEndWrite(serialPort_t *instance);
