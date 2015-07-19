@@ -455,6 +455,8 @@ static uint32_t read32(void)
 
 static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
+    serialBeginWrite(mspSerialPort);
+    
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
@@ -476,6 +478,7 @@ static void headSerialError(uint8_t responseBodySize)
 static void tailSerialReply(void)
 {
     serialize8(currentPort->checksum);
+    serialEndWrite(mspSerialPort);
 }
 
 static void s_struct(uint8_t *cb, uint8_t siz)

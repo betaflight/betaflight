@@ -85,3 +85,15 @@ void serialWriteBufShim(void *instance, void *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);
 }
+
+void serialBeginWrite(serialPort_t *instance)
+{
+    if (instance->vTable->beginWrite)
+        instance->vTable->beginWrite(instance);
+}
+
+void serialEndWrite(serialPort_t *instance)
+{
+    if (instance->vTable->endWrite)
+        instance->vTable->endWrite(instance);
+}
