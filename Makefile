@@ -658,6 +658,11 @@ flash_$(TARGET): $(TARGET_HEX)
 
 flash: flash_$(TARGET)
 
+st-flash_$(TARGET): $(TARGET_BIN)
+	st-flash --reset write $< 0x08000000
+
+st-flash: st-flash_$(TARGET)
+
 binary: $(TARGET_BIN)
 
 unbrick_$(TARGET): $(TARGET_HEX)
