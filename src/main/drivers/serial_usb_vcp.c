@@ -38,7 +38,7 @@
 
 static vcpPort_t vcpPort;
 
-void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
+static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     UNUSED(instance);
     UNUSED(baudRate);
@@ -46,7 +46,7 @@ void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     // TODO implement
 }
 
-void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
+static void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
 {
     UNUSED(instance);
     UNUSED(mode);
@@ -54,20 +54,20 @@ void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
     // TODO implement
 }
 
-bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
+static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
 {
     UNUSED(instance);
     return true;
 }
 
-uint8_t usbVcpAvailable(serialPort_t *instance)
+static uint8_t usbVcpAvailable(serialPort_t *instance)
 {
     UNUSED(instance);
 
     return receiveLength & 0xFF; // FIXME use uint32_t return type everywhere
 }
 
-uint8_t usbVcpRead(serialPort_t *instance)
+static uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
 
@@ -82,21 +82,30 @@ uint8_t usbVcpRead(serialPort_t *instance)
     return buf[0];
 }
 
-void usbVcpWrite(serialPort_t *instance, uint8_t c)
+static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
 {
     UNUSED(instance);
 
-    uint32_t txed;
-    uint32_t start = millis();
 
     if (!(usbIsConnected() && usbIsConfigured())) {
         return;
     }
 
-    do {
-        txed = CDC_Send_DATA((uint8_t*)&c, 1);
-    } while (txed < 1 && (millis() - start < USB_TIMEOUT));
+    uint32_t start = millis();
+    for (uint8_t *p = data; count > 0; ) {
+        uint32_t txed = CDC_Send_DATA(p, count);
+        count -= txed;
+        p += txed;
 
+        if (millis() - start > USB_TIMEOUT) {
+            break;
+        }
+    }
+}
+
+static void usbVcpWrite(serialPort_t *instance, uint8_t c)
+{
+    usbVcpWriteBuf(instance, &c, sizeof(c));
 }
 
 uint8_t usbTxBytesFree() {
@@ -104,7 +113,7 @@ uint8_t usbTxBytesFree() {
     return 255;
 }
 
-const struct serialPortVTable usbVTable[] = { { usbVcpWrite, usbVcpAvailable, usbTxBytesFree, usbVcpRead, usbVcpSetBaudRate, isUsbVcpTransmitBufferEmpty, usbVcpSetMode } };
+const struct serialPortVTable usbVTable[] = { { usbVcpWrite, usbVcpAvailable, usbTxBytesFree, usbVcpRead, usbVcpSetBaudRate, isUsbVcpTransmitBufferEmpty, usbVcpSetMode, .writeBuf = usbVcpWriteBuf } };
 
 serialPort_t *usbVcpOpen(void)
 {

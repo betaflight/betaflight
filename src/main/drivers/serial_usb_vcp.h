@@ -21,14 +21,6 @@
 
 typedef struct {
     serialPort_t port;
-
 } vcpPort_t;
 
 serialPort_t *usbVcpOpen(void);
-
-uint8_t usbVcpAvailable(serialPort_t *instance);
-
-uint8_t usbVcpRead(serialPort_t *instance);
-
-void usbVcpWrite(serialPort_t *instance, uint8_t ch);
-void usbPrintStr(const char *str);
