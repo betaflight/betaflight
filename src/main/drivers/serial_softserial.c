@@ -479,9 +479,8 @@ const struct serialPortVTable softSerialVTable[] = {
         softSerialSetBaudRate,
         isSoftSerialTransmitBufferEmpty,
         softSerialSetMode,
-        .beginWrite = NULL,
-        .endWrite = NULL,
-  }
+        .writeBuf = NULL,
+    }
 };
 
 #endif
