@@ -15,24 +15,33 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#include "serial.h"
+#include "buf_writer.h"
 
-typedef struct {
-    serialPort_t port;
+bufWriter_t *bufWriterInit(uint8_t *b, int total_size, bufWrite_t writer, void *arg)
+{
+    bufWriter_t *buf = (bufWriter_t *)b;
+    buf->writer = writer;
+    buf->arg = arg;
+    buf->at = 0;
+    buf->capacity = total_size - sizeof(*buf);
 
-    // Buffer used during bulk writes.
-    uint8_t txBuf[20];
-    uint8_t txAt;
-    // Set if the port is in bulk write mode and can buffer.
-    bool buffering;
-} vcpPort_t;
+    return buf;
+}
 
-serialPort_t *usbVcpOpen(void);
+void bufWriterAppend(bufWriter_t *b, uint8_t ch)
+{
+    b->data[b->at++] = ch;
+    if (b->at >= b->capacity) {
+        bufWriterFlush(b);
+    }
+}
 
-uint8_t usbVcpAvailable(serialPort_t *instance);
-
-uint8_t usbVcpRead(serialPort_t *instance);
-
-void usbPrintStr(const char *str);
+void bufWriterFlush(bufWriter_t *b)
+{
+    if (b->at != 0) {
+        b->writer(b->arg, b->data, b->at);
+        b->at = 0;
+    }
+}

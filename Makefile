@@ -238,6 +238,7 @@ COMMON_SRC = build_config.c \
 		   drivers/system.c \
            drivers/gps_i2cnav.c \
 		   drivers/gyro_sync.c \
+		   drivers/buf_writer.c \
 		   io/beeper.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
