@@ -27,7 +27,6 @@
 #include "usb_core.h"
 #include "usb_init.h"
 #include "hw_config.h"
-#include "common/utils.h"
 
 #include "drivers/system.h"
 
@@ -83,49 +82,30 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     return buf[0];
 }
 
-static bool usbVcpFlush(vcpPort_t *port)
+static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
 {
-    uint8_t count = port->txAt;
-    port->txAt = 0;
+    UNUSED(instance);
 
-    if (count == 0) {
-        return true;
+
+    if (!(usbIsConnected() && usbIsConfigured())) {
+        return;
     }
-    if (!usbIsConnected() || !usbIsConfigured()) {
-        return false;
-    }
-    
-    uint32_t txed;
+
     uint32_t start = millis();
+    for (uint8_t *p = data; count > 0; ) {
+        uint32_t txed = CDC_Send_DATA(p, count);
+        count -= txed;
+        p += txed;
 
-    do {
-        txed = CDC_Send_DATA(port->txBuf, count);
-    } while (txed != count && (millis() - start < USB_TIMEOUT));
-
-    return txed == count;
+        if (millis() - start > USB_TIMEOUT) {
+            break;
+        }
+    }
 }
 
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)
 {
-    vcpPort_t *port = container_of(instance, vcpPort_t, port);
-
-    port->txBuf[port->txAt++] = c;
-    if (!port->buffering || port->txAt >= ARRAYLEN(port->txBuf)) {
-        usbVcpFlush(port);
-    }
-}
-
-static void usbVcpBeginWrite(serialPort_t *instance)
-{
-    vcpPort_t *port = container_of(instance, vcpPort_t, port);
-    port->buffering = true;
-}
-
-static void usbVcpEndWrite(serialPort_t *instance)
-{
-    vcpPort_t *port = container_of(instance, vcpPort_t, port);
-    port->buffering = false;
-    usbVcpFlush(port);
+    usbVcpWriteBuf(instance, &c, sizeof(c));
 }
 
 uint8_t usbTxBytesFree() {
@@ -133,7 +113,7 @@ uint8_t usbTxBytesFree() {
     return 255;
 }
 
-const struct serialPortVTable usbVTable[] = { { usbVcpWrite, usbVcpAvailable, usbTxBytesFree, usbVcpRead, usbVcpSetBaudRate, isUsbVcpTransmitBufferEmpty, usbVcpSetMode } };
+const struct serialPortVTable usbVTable[] = { { usbVcpWrite, usbVcpAvailable, usbTxBytesFree, usbVcpRead, usbVcpSetBaudRate, isUsbVcpTransmitBufferEmpty, usbVcpSetMode, .writeBuf = usbVcpWriteBuf } };
 
 serialPort_t *usbVcpOpen(void)
 {

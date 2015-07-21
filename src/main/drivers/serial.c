@@ -40,6 +40,17 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     instance->vTable->serialWrite(instance, ch);
 }
 
+void serialWriteBuf(serialPort_t *instance, void *data, int count)
+{
+    if (instance->vTable->writeBuf) {
+        instance->vTable->writeBuf(instance, data, count);
+    } else {
+        for (uint8_t *p = data; count > 0; count--, p++) {
+            serialWrite(instance, *p);
+        }
+    }
+}
+
 uint8_t serialRxBytesWaiting(serialPort_t *instance)
 {
     return instance->vTable->serialTotalRxWaiting(instance);
@@ -70,14 +81,7 @@ void serialSetMode(serialPort_t *instance, portMode_t mode)
     instance->vTable->setMode(instance, mode);
 }
 
-void serialBeginWrite(serialPort_t *instance)
+void serialWriteBufShim(void *instance, void *data, int count)
 {
-    if (instance->vTable->beginWrite)
-        instance->vTable->beginWrite(instance);
-}
-
-void serialEndWrite(serialPort_t *instance)
-{
-    if (instance->vTable->endWrite)
-        instance->vTable->endWrite(instance);
+    serialWriteBuf((serialPort_t *)instance, data, count);
 }
