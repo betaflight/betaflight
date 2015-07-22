@@ -214,6 +214,22 @@ static void ltm_aframe()
     ltm_finalise();
 }
 
+/*
+ * OSD additional data frame, 1 Hz rate
+ *  This frame will be ignored by Ghettostation, but processed by GhettOSD if it is used as standalone onboard OSD
+ *  home pos, home alt, direction to home
+ */
+static void ltm_oframe()
+{
+    ltm_initialise_packet('O');
+    ltm_serialise_32(GPS_home[LAT]);
+    ltm_serialise_32(GPS_home[LON]);
+    ltm_serialise_32(0);                // Don't have GPS home altitude
+    ltm_serialise_8(1);                 // OSD always ON
+    ltm_serialise_8(STATE(GPS_FIX_HOME) ? 1 : 0);
+    ltm_finalise();
+}
+
 static void process_ltm(void)
 {
     static uint8_t ltm_scheduler;
@@ -222,6 +238,8 @@ static void process_ltm(void)
         ltm_gframe();
     else
         ltm_sframe();
+    if (ltm_scheduler == 0)
+        ltm_oframe();
     ltm_scheduler++;
     ltm_scheduler %= 10;
 }
@@ -272,7 +290,7 @@ void configureLtmTelemetryPort(void)
 
 void checkLtmTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(ltmPortSharing);
+    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ltmPortSharing);
     if (newTelemetryEnabledValue == ltmEnabled)
         return;
     if (newTelemetryEnabledValue)
