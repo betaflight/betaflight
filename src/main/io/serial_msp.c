@@ -277,6 +277,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SERVO_CONFIGURATIONS 120    //out message         All servo configurations.
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
+#define MSP_PID_FLOAT            123    //out message         P I D Used for Luxfloat
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -293,6 +294,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_SERVO_CONFIGURATION 212    //in message          Servo settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
+#define MSP_SET_PID_FLOAT        216    //in message          P I D used for luxfloat
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -961,6 +963,26 @@ static bool processOutCommand(uint8_t cmdMSP)
             }
         }
         break;
+    case MSP_PID_FLOAT:
+        headSerialReply(3 * PID_ITEM_COUNT * 2);
+        for (i = 0; i < 3; i++) {
+            serialize16(lrintf(currentProfile->pidProfile.P_f[i] * 1000.0f));
+            serialize16(lrintf(currentProfile->pidProfile.I_f[i] * 1000.0f));
+            serialize16(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f));
+        }
+        for (i = 3; i < PID_ITEM_COUNT; i++) {
+            if (i == PIDLEVEL) {
+                serialize16(lrintf(currentProfile->pidProfile.A_level * 1000.0f));
+                serialize16(lrintf(currentProfile->pidProfile.H_level * 1000.0f));
+                serialize16(currentProfile->pidProfile.H_sensitivity);
+            }
+            else {
+                serialize16(currentProfile->pidProfile.P8[i]);
+                serialize16(currentProfile->pidProfile.I8[i]);
+                serialize16(currentProfile->pidProfile.D8[i]);
+            }
+        }
+        break;
     case MSP_PIDNAMES:
         headSerialReply(sizeof(pidnames) - 1);
         serializeNames(pidnames);
@@ -1348,6 +1370,25 @@ static bool processInCommand(void)
                 currentProfile->pidProfile.P8[i] = read8();
                 currentProfile->pidProfile.I8[i] = read8();
                 currentProfile->pidProfile.D8[i] = read8();
+            }
+        }
+        break;
+    case MSP_SET_PID_FLOAT:
+        for (i = 0; i < 3; i++) {
+            currentProfile->pidProfile.P_f[i] = (float)read16() / 1000.0f;
+            currentProfile->pidProfile.I_f[i] = (float)read16() / 1000.0f;
+            currentProfile->pidProfile.D_f[i] = (float)read16() / 1000.0f;
+        }
+        for (i = 3; i < PID_ITEM_COUNT; i++) {
+            if (i == PIDLEVEL) {
+                currentProfile->pidProfile.A_level = (float)read16() / 1000.0f;
+                currentProfile->pidProfile.H_level = (float)read16() / 1000.0f;
+                currentProfile->pidProfile.H_sensitivity = read16();
+            }
+            else {
+                currentProfile->pidProfile.P8[i] = read16();
+                currentProfile->pidProfile.I8[i] = read16();
+                currentProfile->pidProfile.D8[i] = read16();
             }
         }
         break;
