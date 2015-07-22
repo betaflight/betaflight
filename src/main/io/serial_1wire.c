@@ -25,7 +25,6 @@
 #ifdef USE_SERIAL_1WIRE
 
 #include "drivers/gpio.h"
-#include "drivers/inverter.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "io/serial_1wire.h"
@@ -75,7 +74,15 @@ static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
 }
 
 #ifdef STM32F10X
-static volatile uint32_t original_cr_mask, in_cr_mask, out_cr_mask;
+static volatile uint32_t in_cr_mask, out_cr_mask;
+
+void usb1WireInitialize()
+{
+   for (volatile uint8_t i = 0; i<ESC_COUNT ; i++){
+      gpio_set_mode(escHardware[i].gpio, (1U << escHardware[i].pinpos), Mode_IPU); //GPIO_Mode_IPU
+   }
+}
+
 static __IO uint32_t *cr;
 static void gpio_prep_vars(uint16_t escIndex)
 {
@@ -89,7 +96,7 @@ static void gpio_prep_vars(uint16_t escIndex)
   // offset to CNF and MODE portions of CRx register
   uint32_t shift = (pinpos % 8) * 4;
   // Read out current CRx value
-  original_cr_mask = in_cr_mask = out_cr_mask = *cr;
+  in_cr_mask = out_cr_mask = *cr;
   // Mask out 4 bits
   in_cr_mask &= ~(0xF << shift);
   out_cr_mask &= ~(0xF << shift);
@@ -164,19 +171,12 @@ void usb1WirePassthrough(int8_t escIndex)
   //Disable all interrupts
   disable_hardware_uart;
 
-  //Turn off the inverter, if necessary
-#if defined(INVERTER) && defined(SERIAL_1WIRE_USE_MAIN)
-  INVERTER_OFF;
-#endif
-
   // reset all the pins
   GPIO_ResetBits(S1W_RX_GPIO, S1W_RX_PIN);
   GPIO_ResetBits(S1W_TX_GPIO, S1W_TX_PIN);
-  GPIO_ResetBits(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos));
   // configure gpio
   gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
   gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_Out_PP);
-  gpio_set_mode(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos), Mode_IPU);
   // hey user, turn on your ESC now
 
 #ifdef STM32F10X
@@ -184,6 +184,9 @@ void usb1WirePassthrough(int8_t escIndex)
   gpio_prep_vars(escIndex);
 #endif
 
+  ESC_OUTPUT(escIndex);
+  ESC_SET_HI(escIndex);
+  TX_SET_HIGH;
   // Wait for programmer to go from 1 -> 0 indicating incoming data
   while(RX_HI);
   while(1) {
@@ -198,30 +201,28 @@ void usb1WirePassthrough(int8_t escIndex)
     RX_LED_OFF;
     TX_LED_ON;
     // Wait for programmer to go 0 -> 1
-    uint32_t ct=3000;
+    uint32_t ct=3333;
     while(!RX_HI) {
       ct--;
+      // check for low time ->ct=3333; //~600uS //byte Lo time for 0 @ 19200 baud -> 8*52 uS => 416uS
+      // App must send a 0 at 9600 baud (or lower) which has a LO time of at 104uS (or more)
       if (ct==0) {
-        // Programmer RX -- unneeded as we explicity set this mode above
-        // gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
+        // Set ESC line high again //restore Input with pull up
+        ESC_INPUT(escIndex);
         // Programmer TX
         gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
-#ifdef STM32F10X
-        *cr = original_cr_mask;
-#endif
-#if defined(INVERTER) && defined(SERIAL_1WIRE_USE_MAIN)
-        INVERTER_ON;
-#endif
         // Enable Hardware UART
         enable_hardware_uart;
+        // Wait a bit more (todo check if necessary...))
+        delay(50);
         return;
       }
     }
     // Programmer is high, end of bit
-    // Echo to the esc
+    // At first Echo to the esc, which helps to charge input capacities at ESC
     ESC_SET_HI(escIndex);
     // Listen to the escIndex, input mode, pullup resistor is on
-    ESC_INPUT(escIndex);
+    gpio_set_mode(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos), Mode_IPU);
     TX_LED_OFF;
     // Listen to the escIndex while there is no data from the programmer
     while (RX_HI) {
