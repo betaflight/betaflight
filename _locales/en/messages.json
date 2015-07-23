@@ -672,6 +672,9 @@
     "receiverButtonRefresh": {
         "message": "Refresh"
     },
+    "receiverButtonSticks": {
+        "message": "Control sticks"
+    },
     "receiverDataRefreshed": {
         "message": "RC Tuning data <strong>refreshed</strong>"
     },
@@ -1146,5 +1149,41 @@
     },
     "ledStripEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
+    },
+    "controlAxisRoll": {
+        "message": "Roll"
+    },
+    "controlAxisPitch": {
+        "message": "Pitch"
+    },
+    "controlAxisYaw": {
+        "message": "Yaw"
+    },
+    "controlAxisThrottle": {
+        "message": "Throttle"
+    },
+    "controlAxisAux1": {
+        "message": "AUX 1"
+    },
+    "controlAxisAux2": {
+        "message": "AUX 2"
+    },
+    "controlAxisAux3": {
+        "message": "AUX 3"
+    },
+    "controlAxisAux4": {
+        "message": "AUX 4"
+    },
+    "controlAxisAux5": {
+        "message": "AUX 5"
+    },
+    "controlAxisAux6": {
+        "message": "AUX 6"
+    },
+    "controlAxisAux7": {
+        "message": "AUX 7"
+    },
+    "controlAxisAux8": {
+        "message": "AUX 8"
     }
 }
