@@ -4,7 +4,7 @@ With Cleanflight it's possible to make adjustments to various settings by using 
 
 ## Warning
 
-Changing setting during flight can make your aircraft unstable and crash if you are not careful.
+Changing settings during flight can make your aircraft unstable and crash if you are not careful.
 
 ## Recommendations
 
@@ -33,9 +33,9 @@ The following adjustments can be made, in flight, as well as on the ground.
 
 Example scenarios:
 Up to 4 3-position switches or pots can be used to adjust 4 different settings at the same time.
-A single 2/3/4/5/6/x position switche can be used to make one 3 position switch adjust one setting at a time.
+A single 2/3/4/5/6/x position switch can be used to make one 3 position switch adjust one setting at a time.
 
-Any combination of switches and pots can be used.  So you could have 6 POS switch.
+Any combination of switches and pots can be used. So you could have 6 POS switch.
 
 Settings are not saved automatically, connect a GUI, refresh and save or save using stick position when disarmed.
 Powering off without saving will discard the adjustments.
@@ -90,7 +90,7 @@ to a single adjustment function regardless of other switch positions.
 The adjustment function is applied to the adjustment channel when range channel is between the range values.
 The adjustment is made when the adjustment channel is in the high or low position.  high = mid_rc + 200, low = mid_rc - 200.  by default this is 1700 and 1300 respectively.
 
-When the Range Channel does not fall into Start/End range the assigned slot will retain it's state and will continue to apply the adjustment.  For
+When the Range Channel does not fall into Start/End range the assigned slot will retain it's state and will continue to apply the adjustment. For
 this reason ensure that you define enough ranges to cover the range channel's usable range.
 
 ### Adjustment function
@@ -222,7 +222,7 @@ The following 5 images show valid configurations.  In all cales the enture usabl
 
 ![Configurator example 5](Screenshots/adjustments-rates-via-a-2pos-and-3pos.png)
 
-The following examples shows __incorrect__ configuration - the entire usable range for the Range Channel is not used in both cases.
+The following examples shows __incorrect__ configurations - the entire usable range for the Range Channel is not used in both cases.
 
 ![Configurator example 6](Screenshots/adjustments-incorrect-config-1.png)
 ![Configurator example 7](Screenshots/adjustments-incorrect-config-2.png)
