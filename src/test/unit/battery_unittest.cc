@@ -44,6 +44,8 @@ TEST(BatteryTest, BatteryADCToVoltage)
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
     batteryConfig_t batteryConfig = {
         .vbatscale = VBAT_SCALE_DEFAULT,
+        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
+        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
         .vbatmaxcellvoltage = 43,
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
@@ -102,6 +104,8 @@ TEST(BatteryTest, BatteryState)
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
     batteryConfig_t batteryConfig = {
         .vbatscale = VBAT_SCALE_DEFAULT,
+        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
+        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
         .vbatmaxcellvoltage = 43,
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
@@ -159,6 +163,8 @@ TEST(BatteryTest, CellCount)
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
     batteryConfig_t batteryConfig = {
         .vbatscale = VBAT_SCALE_DEFAULT,
+        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
+        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
         .vbatmaxcellvoltage = 43,
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
