@@ -237,3 +237,10 @@ int32_t quickMedianFilter9(int32_t * v)
     QMF_SORT(p[4], p[2]);
     return p[4];
 }
+
+void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count)
+{
+    for (int i = 0; i < count; i++) {
+        dest[i] = array1[i] - array2[i];
+    }
+}

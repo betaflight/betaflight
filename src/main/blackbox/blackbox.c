@@ -479,25 +479,24 @@ static void writeIntraframe(void)
     blackboxWriteUnsignedVB(blackboxIteration);
     blackboxWriteUnsignedVB(blackboxCurrent->time);
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->axisPID_P[x]);
-    }
+    blackboxWriteSignedVBArray(blackboxCurrent->axisPID_P, XYZ_AXIS_COUNT);
+    blackboxWriteSignedVBArray(blackboxCurrent->axisPID_I, XYZ_AXIS_COUNT);
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->axisPID_I[x]);
-    }
-
+    // Don't bother writing the current D term if the corresponding PID setting is zero
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
             blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x]);
         }
     }
 
-    for (x = 0; x < 3; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->rcCommand[x]);
-    }
+    // Write roll, pitch and yaw first:
+    blackboxWriteSigned16VBArray(blackboxCurrent->rcCommand, 3);
 
-    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[3] - masterConfig.escAndServoConfig.minthrottle); //Throttle lies in range [minthrottle..maxthrottle]
+    /*
+     * Write the throttle separately from the rest of the RC data so we can apply a predictor to it.
+     * Throttle lies in range [minthrottle..maxthrottle]:
+     */
+    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - masterConfig.escAndServoConfig.minthrottle);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         /*
@@ -516,9 +515,7 @@ static void writeIntraframe(void)
 
 #ifdef MAG
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
-            for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-                blackboxWriteSignedVB(blackboxCurrent->magADC[x]);
-            }
+            blackboxWriteSigned16VBArray(blackboxCurrent->magADC, XYZ_AXIS_COUNT);
         }
 #endif
 
@@ -538,24 +535,20 @@ static void writeIntraframe(void)
         blackboxWriteUnsignedVB(blackboxCurrent->rssi);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->gyroADC[x]);
-    }
-
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->accSmooth[x]);
-    }
+    blackboxWriteSigned16VBArray(blackboxCurrent->gyroADC, XYZ_AXIS_COUNT);
+    blackboxWriteSigned16VBArray(blackboxCurrent->accSmooth, XYZ_AXIS_COUNT);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
     blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - masterConfig.escAndServoConfig.minthrottle);
 
-    //Motors tend to be similar to each other
+    //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
     for (x = 1; x < motorCount; x++) {
         blackboxWriteSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
     }
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
-        blackboxWriteSignedVB(blackboxHistory[0]->servo[5] - 1500);
+        //Assume the tail spends most of its time around the center
+        blackboxWriteSignedVB(blackboxCurrent->servo[5] - 1500);
     }
 
     //Rotate our history buffers:
@@ -566,6 +559,20 @@ static void writeIntraframe(void)
     blackboxHistory[2] = blackboxHistory[0];
     //And advance the current state over to a blank space ready to be filled
     blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
+}
+
+static void blackboxWriteMainStateArrayUsingAveragePredictor(int arrOffsetInHistory, int count)
+{
+    int16_t *curr  = (int16_t*) ((char*) (blackboxHistory[0]) + arrOffsetInHistory);
+    int16_t *prev1 = (int16_t*) ((char*) (blackboxHistory[1]) + arrOffsetInHistory);
+    int16_t *prev2 = (int16_t*) ((char*) (blackboxHistory[2]) + arrOffsetInHistory);
+
+    for (int i = 0; i < count; i++) {
+        // Predictor is the average of the previous two history states
+        int32_t predictor = (prev1[i] + prev2[i]) / 2;
+
+        blackboxWriteSignedVB(curr[i] - predictor);
+    }
 }
 
 static void writeInterframe(void)
@@ -586,18 +593,14 @@ static void writeInterframe(void)
      */
     blackboxWriteSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->axisPID_P[x] - blackboxLast->axisPID_P[x]);
-    }
-
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        deltas[x] = blackboxCurrent->axisPID_I[x] - blackboxLast->axisPID_I[x];
-    }
+    arraySubInt32(deltas, blackboxCurrent->axisPID_P, blackboxLast->axisPID_P, XYZ_AXIS_COUNT);
+    blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
 
     /* 
      * The PID I field changes very slowly, most of the time +-2, so use an encoding
      * that can pack all three fields into one byte in that situation.
      */
+    arraySubInt32(deltas, blackboxCurrent->axisPID_I, blackboxLast->axisPID_I, XYZ_AXIS_COUNT);
     blackboxWriteTag2_3S32(deltas);
     
     /*
@@ -657,18 +660,10 @@ static void writeInterframe(void)
 
     blackboxWriteTag8_8SVB(deltas, optionalFieldCount);
 
-    //Since gyros, accs and motors are noisy, base the prediction on the average of the history:
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxHistory[0]->gyroADC[x] - (blackboxHistory[1]->gyroADC[x] + blackboxHistory[2]->gyroADC[x]) / 2);
-    }
-
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxHistory[0]->accSmooth[x] - (blackboxHistory[1]->accSmooth[x] + blackboxHistory[2]->accSmooth[x]) / 2);
-    }
-
-    for (x = 0; x < motorCount; x++) {
-        blackboxWriteSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
-    }
+    //Since gyros, accs and motors are noisy, base their predictions on the average of the history:
+    blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, gyroADC),   XYZ_AXIS_COUNT);
+    blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, accSmooth), XYZ_AXIS_COUNT);
+    blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, motor),     motorCount);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
         blackboxWriteSignedVB(blackboxCurrent->servo[5] - blackboxLast->servo[5]);
