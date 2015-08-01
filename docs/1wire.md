@@ -8,7 +8,7 @@ This is the option you need to select for the bootloader:
 
 ![Flashing BlHeli Bootloader](assets/images/blheli-bootloader.png)
 
-Currently supported on the STM32F3DISCOVERY, NAZE32 (including clones such as the FLIP32) and CC3D.
+Currently supported on the SPRACINGF3, STM32F3DISCOVERY, NAZE32 (including clones such as the FLIP32) and CC3D.
 
 ## Wiring
 
