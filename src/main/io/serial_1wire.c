@@ -30,36 +30,41 @@
 #include "drivers/system.h"
 #include "io/serial_1wire.h"
 
+const escHardware_t escHardware[ESC_COUNT] = {
 // Figure out esc clocks and pins, extrapolated from timer.c
 // Periphs could be pulled progmatically... but I'll leave that for another exercise
 #if defined(STM32F3DISCOVERY) && !(defined(CHEBUZZF3))
-const escHardware_t escHardware[ESC_COUNT] = {
   { GPIOD, 12 },
   { GPIOD, 13 },
   { GPIOD, 14 },
   { GPIOD, 15 },
   { GPIOA, 1 },
   { GPIOA, 2 }
-};
 #elif defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
-const escHardware_t escHardware[ESC_COUNT] = {
   { GPIOA, 8 },
   { GPIOA, 11 },
   { GPIOB, 6 },
   { GPIOB, 7 },
   { GPIOB, 8 },
   { GPIOB, 9 }
-};
 #elif CC3D
-const escHardware_t escHardware[ESC_COUNT] = {
   { GPIOB, 9 },
   { GPIOB, 8 },
   { GPIOB, 7 },
   { GPIOA, 8 },
   { GPIOB, 4 },
   { GPIOA, 2 }
-};
+#elif SPRACINGF3
+  { GPIOA, 6 },
+  { GPIOA, 7 },
+  { GPIOA, 11 },
+  { GPIOA, 12 },
+  { GPIOB, 8 },
+  { GPIOB, 9 },
+  { GPIOA, 2 },
+  { GPIOA, 3 }
 #endif
+};
 
 static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
   gpio_config_t cfg;
