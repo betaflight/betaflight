@@ -217,21 +217,23 @@ Set the RX for 'No Pulses'.  Turn OFF TX and RX, Turn ON RX.  Press and release 
 Set failsafe on channels 1-4 set to OFF in the receiver settings (via transmitter menu).
 
 
-## Receiver Calibration.
+## Receiver Channel Range Configuration.
 
 If you have a transmitter/receiver, that output a non-standard pulse range (i.e. 1070-1930 as some Spektrum receivers)
-you could use rc calibration to map actual range of your transmitter to 1000-2000 as expected by Cleanflight.
+you could use rx channel range configuration to map actual range of your transmitter to 1000-2000 as expected by Cleanflight.
 
-To do this you should figure out what range your transmitter outputs and feed these values to rc calibration control.
+The low and high value of a channel range are often referred to as 'End-points'.  e.g. 'End-point adjustments / EPA'.
+
+All attempts should be made to configure your transmitter/receiver to use the range 1000-2000 *before* using this feature
+as you will have less preceise control if it is used.
+
+To do this you should figure out what range your transmitter outputs and use these values for rx range configuration.
 You can do this in a few simple steps:
 
-If you have used rc calibration previously you should reset it to prevent it from altering rc input. Do so
-by entering the following commands in CLI:
+If you have used rc range configuration previously you should reset it to prevent it from altering rc input. Do so
+by entering the following command in CLI:
 ```
-rccal 0 1000 2000
-rccal 1 1000 2000
-rccal 2 1000 2000
-rccal 3 1000 2000
+rxrange reset
 save
 ```
 
@@ -241,11 +243,11 @@ a time.
 
 Go to CLI and set the min and max values with the following command:
 ```
-rccal <channel_number> <min> <max>
+rxrange <channel_number> <min> <max>
 ```
 
-For example, if you got 1070-1930 range for roll channel. Roll is `channel 0` so you should type `rccal 0 1070 1930` in
+For example, if you have the range 1070-1930 for the first channel you should use `rxrange 0 1070 1930` in
 the CLI. Be sure to enter the `save` command to save the settings.
 
-Use sub-trim on your transmitter to set the middle point of pitch, roll, yaw and throttle.
+After configuring channel ranges use the sub-trim on your transmitter to set the middle point of pitch, roll, yaw and throttle.
 

@@ -92,7 +92,7 @@ Re-apply any new defaults as desired.
 | `play_sound`     | index, or none for next                        |
 | `profile`        | index (0 to 2)                                 |
 | `rateprofile`    | index (0 to 2)                                 |
-| `rccal`          | Set R/C channel calibration (stick end points) |
+| `rxrange`        | configure rx channel ranges (end-points) |
 | `save`           | save and reboot                                |
 | `set`            | name=value or blank or * for list              |
 | `status`         | show system status                             |

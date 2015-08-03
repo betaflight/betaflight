@@ -22,6 +22,9 @@ typedef enum {
     INPUT_FILTERING_ENABLED
 } inputFilteringMode_e;
 
+#define PPM_RCVR_TIMEOUT            0
+
+
 void ppmInConfig(const timerHardware_t *timerHardwarePtr);
 void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer);
 

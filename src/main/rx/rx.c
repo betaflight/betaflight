@@ -116,6 +116,14 @@ STATIC_UNIT_TESTED void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pu
     }
 }
 
+void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration) {
+    // set default calibration to full range and 1:1 mapping
+    for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
+        rxChannelRangeConfiguration->min = PWM_RANGE_MIN;
+        rxChannelRangeConfiguration->max = PWM_RANGE_MAX;
+        rxChannelRangeConfiguration++;
+    }
+}
 
 void rxInit(rxConfig_t *rxConfig)
 {
@@ -339,14 +347,14 @@ static uint16_t getRxfailValue(uint8_t channel)
 
 }
 
-STATIC_UNIT_TESTED uint16_t applyRxCalibration(int sample, int minrc, int maxrc)
+STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfiguration_t range)
 {
-    // Check special condition sample = PPM_RCVR_TIMEOUT, allow no signal value to avoid being corrupted by calibration
-    if (sample == 0) {
-        return 0;
+    // Avoid corruption of channel with a value of PPM_RCVR_TIMEOUT
+    if (sample == PPM_RCVR_TIMEOUT) {
+        return PPM_RCVR_TIMEOUT;
     }
 
-    sample = scaleRange(sample, minrc, maxrc, PWM_RANGE_MIN, PWM_RANGE_MAX); 
+    sample = scaleRange(sample, range.min, range.max, PWM_RANGE_MIN, PWM_RANGE_MAX);
     sample = MIN(MAX(PWM_PULSE_MIN, sample), PWM_PULSE_MAX);
 
     return sample;
@@ -375,8 +383,8 @@ void processRxChannels(void)
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
 
         // apply the rx calibration
-        if (chan < MAX_CALIBRATED_RX_CHANNELS) {
-            sample = applyRxCalibration(sample, rxConfig->calibration[chan].minrc, rxConfig->calibration[chan].maxrc);
+        if (chan < NON_AUX_CHANNEL_COUNT) {
+            sample = applyRxChannelRangeConfiguraton(sample, rxConfig->channelRanges[chan]);
         }
 
         rxUpdateFlightChannelStatus(chan, sample);

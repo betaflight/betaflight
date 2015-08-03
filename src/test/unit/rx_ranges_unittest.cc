@@ -32,52 +32,54 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern "C" {
-extern uint16_t applyRxCalibration(int sample, int minrc, int maxrc);
+extern uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfiguration_t range);
 }
 
-TEST(RcCalibrationUnittest, TestRcCalibration)
+#define RANGE_CONFIGURATION(min, max) (rxChannelRangeConfiguration_t) {min, max}
+
+TEST(RxChannelRangeTest, TestRxChannelRanges)
 {
     // No signal, special condition
-    EXPECT_EQ(applyRxCalibration(0, 1000, 2000), 0);
-    EXPECT_EQ(applyRxCalibration(0, 1300, 1700), 0);
-    EXPECT_EQ(applyRxCalibration(0, 900, 2100), 0);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(0, RANGE_CONFIGURATION(1000, 2000)), 0);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(0, RANGE_CONFIGURATION(1300, 1700)), 0);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(0, RANGE_CONFIGURATION(900, 2100)), 0);
 
     // Exact mapping
-    EXPECT_EQ(applyRxCalibration(1000, 1000, 2000), 1000);
-    EXPECT_EQ(applyRxCalibration(1500, 1000, 2000), 1500);
-    EXPECT_EQ(applyRxCalibration(2000, 1000, 2000), 2000);
-    EXPECT_EQ(applyRxCalibration(700,  1000, 2000), 750);
-    EXPECT_EQ(applyRxCalibration(2500, 1000, 2000), 2250);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1000, RANGE_CONFIGURATION(1000, 2000)), 1000);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(1000, 2000)), 1500);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(2000, RANGE_CONFIGURATION(1000, 2000)), 2000);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1000, 2000)), 750);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1000, 2000)), 2250);
 
     // Shifted range
-    EXPECT_EQ(applyRxCalibration(900,  900, 1900), 1000);
-    EXPECT_EQ(applyRxCalibration(1400, 900, 1900), 1500);
-    EXPECT_EQ(applyRxCalibration(1900, 900, 1900), 2000);
-    EXPECT_EQ(applyRxCalibration(600,  900, 1900), 750);
-    EXPECT_EQ(applyRxCalibration(2500, 900, 1900), 2250);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(900, RANGE_CONFIGURATION(900, 1900)), 1000);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1400, RANGE_CONFIGURATION(900, 1900)), 1500);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1900, RANGE_CONFIGURATION(900, 1900)), 2000);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(600, RANGE_CONFIGURATION(900, 1900)), 750);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(900, 1900)), 2250);
     
     // Narrower range than expected
-    EXPECT_EQ(applyRxCalibration(1300, 1300, 1700), 1000);
-    EXPECT_EQ(applyRxCalibration(1500, 1300, 1700), 1500);
-    EXPECT_EQ(applyRxCalibration(1700, 1300, 1700), 2000);
-    EXPECT_EQ(applyRxCalibration(700,  1300, 1700), 750);
-    EXPECT_EQ(applyRxCalibration(2500, 1300, 1700), 2250);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1300, RANGE_CONFIGURATION(1300, 1700)), 1000);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(1300, 1700)), 1500);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1700, RANGE_CONFIGURATION(1300, 1700)), 2000);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1300, 1700)), 750);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1300, 1700)), 2250);
 
     // Wider range than expected
-    EXPECT_EQ(applyRxCalibration(900,  900, 2100), 1000);
-    EXPECT_EQ(applyRxCalibration(1500, 900, 2100), 1500);
-    EXPECT_EQ(applyRxCalibration(2100, 900, 2100), 2000);
-    EXPECT_EQ(applyRxCalibration(600,  900, 2100), 750);
-    EXPECT_EQ(applyRxCalibration(2700, 900, 2100), 2250);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(900, RANGE_CONFIGURATION(900, 2100)), 1000);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(900, 2100)), 1500);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(2100, RANGE_CONFIGURATION(900, 2100)), 2000);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(600, RANGE_CONFIGURATION(900, 2100)), 750);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(2700, RANGE_CONFIGURATION(900, 2100)), 2250);
     
     // extreme out of range
-    EXPECT_EQ(applyRxCalibration(1, 1000, 2000), 750);
-    EXPECT_EQ(applyRxCalibration(1, 1300, 1700), 750);
-    EXPECT_EQ(applyRxCalibration(1, 900, 2100), 750);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(1000, 2000)), 750);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(1300, 1700)), 750);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(900, 2100)), 750);
 
-    EXPECT_EQ(applyRxCalibration(10000, 1000, 2000), 2250);
-    EXPECT_EQ(applyRxCalibration(10000, 1300, 1700), 2250);
-    EXPECT_EQ(applyRxCalibration(10000, 900, 2100), 2250);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1000, 2000)), 2250);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1300, 1700)), 2250);
+    EXPECT_EQ(applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(900, 2100)), 2250);
 }
 
 
