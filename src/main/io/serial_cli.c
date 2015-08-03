@@ -571,11 +571,32 @@ static void cliRxFail(char *cmdline)
             cliRxFail(itoa(channel, buf, 10));
         }
     } else {
-        uint16_t value;
         char *ptr = cmdline;
 
         channel = atoi(ptr++);
         if ((channel < MAX_AUX_CHANNEL_COUNT)) {
+
+            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_aux_channel_configurations[channel];
+
+            uint16_t value;
+            rxFailsafeChannelMode_e mode;
+
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                switch (*(++ptr)) {
+                    case 'h':
+                        mode = RX_FAILSAFE_MODE_HOLD;
+                        break;
+
+                    case 's':
+                        mode = RX_FAILSAFE_MODE_SET;
+                        break;
+                    default:
+                        cliShowParseError();
+                        return;
+                }
+            }
+
             ptr = strchr(ptr, ' ');
             if (ptr) {
                 value = atoi(++ptr);
@@ -584,15 +605,21 @@ static void cliRxFail(char *cmdline)
                     cliPrint("Value out of range\r\n");
                     return;
                 }
-                masterConfig.rxConfig.rx_fail_usec_steps[channel] = value;
+
+                channelFailsafeConfiguration->mode = mode;
+                channelFailsafeConfiguration->step = value;
             }
+
+            char modeCharacter = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET ? 's' : 'h';
             // triple use of printf below
             // 1. acknowledge interpretation on command,
             // 2. query current setting on single item,
             // 3. recursive use for full list.
-            printf("rxfail %u %d\r\n",
+
+            printf("rxfail %u %c %d\r\n",
                 channel,
-                RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.rx_fail_usec_steps[channel])
+                modeCharacter,
+                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
             );
         } else {
             printf("channel must be < %u\r\n", MAX_AUX_CHANNEL_COUNT);

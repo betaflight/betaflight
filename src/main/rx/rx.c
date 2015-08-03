@@ -319,11 +319,24 @@ static uint16_t getRxfailValue(uint8_t channel)
         case YAW:
             return rxConfig->midrc;
         case THROTTLE:
-            if (feature(FEATURE_3D)) return rxConfig->midrc;
-            else return rxConfig->rx_min_usec;
-        default:
-            return RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig->rx_fail_usec_steps[channel - NON_AUX_CHANNEL_COUNT]);
+            if (feature(FEATURE_3D))
+                return rxConfig->midrc;
+            else
+                return rxConfig->rx_min_usec;
     }
+
+    rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_aux_channel_configurations[channel - NON_AUX_CHANNEL_COUNT];
+
+    switch(channelFailsafeConfiguration->mode) {
+        default:
+        case RX_FAILSAFE_MODE_HOLD:
+            return rcData[channel];
+
+        case RX_FAILSAFE_MODE_SET:
+            return RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step);
+
+    }
+
 }
 
 static void processRxChannels(void)

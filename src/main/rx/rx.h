@@ -81,6 +81,16 @@ extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2
 #define RSSI_SCALE_MAX 255
 #define RSSI_SCALE_DEFAULT 30
 
+typedef enum {
+    RX_FAILSAFE_MODE_HOLD = 0,
+    RX_FAILSAFE_MODE_SET
+} rxFailsafeChannelMode_e;
+
+typedef struct rxFailsafeChannelConfiguration_s {
+    uint8_t mode; // See rxFailsafeChannelMode_e
+    uint8_t step;
+} rxFailsafeChannelConfiguration_t;
+
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
@@ -94,7 +104,7 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    uint8_t rx_fail_usec_steps[MAX_AUX_CHANNEL_COUNT];
+    rxFailsafeChannelConfiguration_t failsafe_aux_channel_configurations[MAX_AUX_CHANNEL_COUNT];
 
 } rxConfig_t;
 
