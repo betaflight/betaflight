@@ -119,6 +119,7 @@
 #if defined(OPBL)
 // disabled some features for OPBL build due to code size.
 #undef AUTOTUNE
+#undef DISPLAY
 #undef SONAR
 #define SKIP_CLI_COMMAND_HELP
 #endif
