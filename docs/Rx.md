@@ -127,6 +127,41 @@ RX_MSP
 
 Only one receiver feature can be enabled at a time.
 
+### RX signal-loss detection
+
+The software has signal loss detection which is always enabled.  Signal loss detection is used for safety and failsafe reasons.
+
+The `rx_min_usec` and `rx_max_usec` settings helps detect when your RX stops sending any data, enters failsafe mode or when the RX looses signal.
+
+By default, when the signal loss is detected the FC will set pitch/roll/yaw to the value configured for `mid_rc`. The throttle will be set to the value configured for `rx_min_usec`.  Unless otherwise configured all AUX channels will HOLD the last value received.  You can use the `rxfail` cli command to change this behaviour.
+
+#### `rxfail`
+
+The `rxfail` command takes 3 arguments.
+* Index of aux channel (AUX1 = 0, AUX2 = 1,...)
+* A mode ('h' = HOLD, 's' = SET)
+* A value to use when in SET mode. (always required, even if using HOLD mode).
+
+Examples:
+
+To make AUX4 have a value of 2000 when RX loss is detected:
+
+`rxfail 3 s 2000`
+
+To make AUX8 hold it's value when RX loss is detected:
+
+`rxfail 7 h 1500`
+
+In the above example the '1500' will be ignored.
+
+#### `rx_min_usec`
+
+The lowest channel value considered valid.  e.g. PWM/PPM pulse length 
+
+#### `rx_max_usec`
+
+The highest channel value considered valid.  e.g. PWM/PPM pulse length 
+
 ### Serial RX
 
 See the Serial chapter for some some RX configuration examples.
@@ -159,4 +194,14 @@ Use the `input_filtering_mode` CLI setting to select a mode.
 | ----- | --------- |
 | 0     | Disabled  |
 | 1     | Enabled   |
+
+## Receiver configuration
+
+### FrSky D4R-II
+
+Set the RX for 'No Pulses'.  Turn OFF TX and RX, Turn ON RX.  Press and release F/S button on RX.  Turn off RX.
+
+### Graupner GR-24 PWM
+
+Set failsafe on channels 1-4 set to OFF in the receiver settings (via transmitter menu).
 

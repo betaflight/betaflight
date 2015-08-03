@@ -26,7 +26,7 @@ Either:
 
 a) no valid channel data from the RX is received via Serial RX.
 
-b) the first 4 Parallel PWM/PPM channels do not have valid signals.
+b) the first 4 channels do not have valid signals.
 
 And when:
 
@@ -124,16 +124,4 @@ Delay after failsafe activates before motors finally turn off.  This is the amou
 Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec. Default is set to 1000 which should correspond to throttle off.
 
 Use standard RX usec values.  See RX documentation.
-
-### `rx_min_usec`
-
-The lowest channel value considered valid.  e.g. PWM/PPM pulse length 
-
-### `rx_max_usec`
-
-The highest channel value considered valid.  e.g. PWM/PPM pulse length 
-
-The `rx_min_usec` and `rx_max_usec` settings helps detect when your RX stops sending any data, enters failsafe mode or when the RX looses signal.
-
-With a Graupner GR-24 configured for PWM output with failsafe on channels 1-4 set to OFF in the receiver settings then this setting, at its default value, will allow failsafe to be activated.
 
