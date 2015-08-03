@@ -81,7 +81,7 @@ Steps to configure custom mixer in the CLI:
 2. Use `mmix reset` to erase the any existing custom mixing. 
 3. Issue a `mmix` statement for each motor. 
 
-The cmix statement has the following syntax: `cmix n THROTTLE ROLL PITCH YAW` 
+The mmix statement has the following syntax: `mmix n THROTTLE ROLL PITCH YAW` 
 
 | Mixing table parameter | Definition | 
 | ---------------------- | ---------- |
