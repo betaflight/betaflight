@@ -154,6 +154,20 @@ void blackboxWriteSignedVB(int32_t value)
     blackboxWriteUnsignedVB(zigzagEncode(value));
 }
 
+void blackboxWriteSignedVBArray(int32_t *array, int count)
+{
+    for (int i = 0; i < count; i++) {
+        blackboxWriteSignedVB(array[i]);
+    }
+}
+
+void blackboxWriteSigned16VBArray(int16_t *array, int count)
+{
+    for (int i = 0; i < count; i++) {
+        blackboxWriteSignedVB(array[i]);
+    }
+}
+
 void blackboxWriteS16(int16_t value)
 {
     blackboxWrite(value & 0xFF);

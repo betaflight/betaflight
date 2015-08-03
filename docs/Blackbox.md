@@ -230,6 +230,14 @@ After downloading the log, be sure to erase the chip to make it ready for reuse 
 If you try to start recording a new flight when the dataflash is already full, Blackbox logging will be disabled and
 nothing will be recorded.
 
+### Usage - Logging switch
+If you're recording to an onboard flash chip, you probably want to disable Blackbox recording when not required in order
+to save storage space. To do this, you can add a Blackbox flight mode to one of your AUX channels on the Configurator's 
+modes tab. Once you've added a mode, Blackbox will only log flight data when the mode is active.
+
+A log header will always be recorded at arming time, even if logging is paused. You can freely pause and resume logging 
+while in flight.
+
 ## Converting logs to CSV or PNG
 After your flights, you'll have a series of flight log files with a .TXT extension. You'll need to decode these with
 the `blackbox_decode` tool to create CSV (comma-separated values) files for analysis, or render them into a series of PNG

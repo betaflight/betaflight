@@ -95,3 +95,5 @@ float cos_approx(float x);
 #define sin_approx(x)   sinf(x)
 #define cos_approx(x)   cosf(x)
 #endif
+
+void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);

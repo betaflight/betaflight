@@ -27,6 +27,7 @@ auxillary receiver channels and other events such as failsafe detection.
 | 20      | 19     | TELEMETRY  | Enable telemetry via switch                                          |
 | 21      | 20     | AUTOTUNE   | Autotune Pitch/Roll PIDs                                             |
 | 22      | 21     | SONAR      | Altitude hold mode (sonar sensor only)                               |
+| 26      | 25     | BLACKBOX   | Enable BlackBox logging                                              |
 
 ## Mode details
 
