@@ -227,6 +227,10 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #define MSP_FAILSAFE_CONFIG             75 //out message         Returns FC Fail-Safe settings
 #define MSP_SET_FAILSAFE_CONFIG         76 //in message          Sets FC Fail-Safe settings
+
+#define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
+#define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
+
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -1159,6 +1163,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.failsafeConfig.failsafe_throttle);
         break;
 
+    case MSP_RXFAIL_CONFIG:
+        headSerialReply(2 * (rxRuntimeConfig.channelCount-4));
+        for (i = 4; i < rxRuntimeConfig.channelCount; i++) {
+            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.rx_fail_usec_steps[i-4]));
+        }
+        break;
+
     case MSP_RSSI_CONFIG:
         headSerialReply(1);
         serialize8(masterConfig.rxConfig.rssi_channel);
@@ -1582,6 +1593,18 @@ static bool processInCommand(void)
         masterConfig.failsafeConfig.failsafe_delay = read8();
         masterConfig.failsafeConfig.failsafe_off_delay = read8();
         masterConfig.failsafeConfig.failsafe_throttle = read16();
+        break;
+
+    case MSP_SET_RXFAIL_CONFIG:
+        {
+            uint8_t channelCount = currentPort->dataSize / sizeof(uint16_t);
+            if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT-4) {
+                headSerialError(0);
+            } else {
+                for (i = 4; i < channelCount; i++)
+                    masterConfig.rxConfig.rx_fail_usec_steps[i-4] = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
+            }
+        }
         break;
 
     case MSP_SET_RSSI_CONFIG:
