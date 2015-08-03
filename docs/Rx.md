@@ -133,9 +133,19 @@ The software has signal loss detection which is always enabled.  Signal loss det
 
 The `rx_min_usec` and `rx_max_usec` settings helps detect when your RX stops sending any data, enters failsafe mode or when the RX looses signal.
 
-By default, when the signal loss is detected the FC will set pitch/roll/yaw to the value configured for `mid_rc`. The throttle will be set to the value configured for `rx_min_usec`.  Unless otherwise configured all AUX channels will HOLD the last value received.  You can use the `rxfail` cli command to change this behaviour.
+By default, when the signal loss is detected the FC will set pitch/roll/yaw to the value configured for `mid_rc`. The throttle will be set to the value configured for `rx_min_usec`.
+
+Signal loss can be detected when:
+
+1. no rx data is received (due to radio reception, recevier configuration or cabling issues).
+2. using Serial RX and receiver indicates failsafe condition.
+3. using any of the first 4 stick channels do not have a value in the range specified by `rx_min_usec` and `rx_max_usec`.
 
 #### `rxfail`
+
+The `rxfail` command is used to configure per-aux-channel rx-loss behaviour.  Unless otherwise configured all AUX channels will HOLD the last value received.  You can use the `rxfail` cli command to change this behaviour, a channel can either HOLD it's last value or be SET to a specific value.
+
+The rxfail command can be used in conjunction with mode ranges to trigger various actions.
 
 The `rxfail` command takes 3 arguments.
 * Index of aux channel (AUX1 = 0, AUX2 = 1,...)
@@ -153,6 +163,7 @@ To make AUX8 hold it's value when RX loss is detected:
 `rxfail 7 h 1500`
 
 In the above example the '1500' will be ignored.
+
 
 #### `rx_min_usec`
 
