@@ -311,18 +311,18 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
     return rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
 }
 
-static uint16_t getRxfailValue(uint8_t chan)
+static uint16_t getRxfailValue(uint8_t channel)
 {
-    switch (chan) {
-    case ROLL:
-    case PITCH:
-    case YAW:
-        return rxConfig->midrc;
-    case THROTTLE:
-        if (feature(FEATURE_3D)) return rxConfig->midrc;
-        else return rxConfig->rx_min_usec;
-    default:
-        return RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig->rx_fail_usec_steps[chan-4]);
+    switch (channel) {
+        case ROLL:
+        case PITCH:
+        case YAW:
+            return rxConfig->midrc;
+        case THROTTLE:
+            if (feature(FEATURE_3D)) return rxConfig->midrc;
+            else return rxConfig->rx_min_usec;
+        default:
+            return RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig->rx_fail_usec_steps[channel - NON_AUX_CHANNEL_COUNT]);
     }
 }
 

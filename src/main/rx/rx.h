@@ -94,7 +94,7 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    uint8_t rx_fail_usec_steps[MAX_SUPPORTED_RC_CHANNEL_COUNT-4];
+    uint8_t rx_fail_usec_steps[MAX_AUX_CHANNEL_COUNT];
 
 } rxConfig_t;
 
