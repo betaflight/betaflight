@@ -68,7 +68,6 @@ uint16_t rssi = 0;                  // range: [0;1023]
 static bool rxDataReceived = false;
 static bool rxSignalReceived = false;
 static bool shouldCheckPulse = true;
-static bool rxPwmFlightChannelsAreGood = false;
 
 static uint32_t rxUpdateAt = 0;
 static uint32_t needRxSignalBefore = 0;
@@ -94,24 +93,26 @@ void useRxConfig(rxConfig_t *rxConfigToUse)
 
 #define REQUIRED_CHANNEL_MASK 0x0F // first 4 channels
 
-// pulse duration is in micro seconds (usec)
-STATIC_UNIT_TESTED void rxCheckPulse(uint8_t channel, uint16_t pulseDuration)
-{
-    static uint8_t goodChannelMask = 0;
+static uint8_t validFlightChannelMask;
 
-    if (channel < 4 &&
+STATIC_UNIT_TESTED void rxResetFlightChannelStatus(void) {
+    validFlightChannelMask = 0;
+}
+
+STATIC_UNIT_TESTED bool rxHaveValidFlightChannels(void)
+{
+    return (validFlightChannelMask == REQUIRED_CHANNEL_MASK);
+}
+
+// pulse duration is in micro seconds (usec)
+STATIC_UNIT_TESTED void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration)
+{
+    if (channel < NON_AUX_CHANNEL_COUNT &&
         pulseDuration >= rxConfig->rx_min_usec &&
         pulseDuration <= rxConfig->rx_max_usec
     ) {
         // if signal is valid - mark channel as OK
-        goodChannelMask |= (1 << channel);
-    }
-
-    if (goodChannelMask == REQUIRED_CHANNEL_MASK) {
-        goodChannelMask = 0;
-        failsafeOnValidDataReceived();
-        rxSignalReceived = true;
-        rxPwmFlightChannelsAreGood = true;
+        validFlightChannelMask |= (1 << channel);
     }
 }
 
@@ -262,7 +263,7 @@ void updateRx(uint32_t currentTime)
     }
 
     if ((feature(FEATURE_RX_SERIAL | FEATURE_RX_MSP) && rxDataReceived)
-         || feature(FEATURE_RX_PARALLEL_PWM)) {
+          || feature(FEATURE_RX_PARALLEL_PWM)) {
         needRxSignalBefore = currentTime + DELAY_10_HZ;
     }
 
@@ -334,7 +335,6 @@ static uint16_t getRxfailValue(uint8_t channel)
 
         case RX_FAILSAFE_MODE_SET:
             return RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step);
-
     }
 
 }
@@ -347,7 +347,7 @@ static void processRxChannels(void)
         return; // rcData will have already been updated by MSP_SET_RAW_RC
     }
 
-    rxPwmFlightChannelsAreGood = false;
+    rxResetFlightChannelStatus();
 
     for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
 
@@ -361,11 +361,8 @@ static void processRxChannels(void)
         // sample the channel
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
 
-        if (shouldCheckPulse) {
-            rxCheckPulse(chan, sample);
-        }
+        rxUpdateFlightChannelStatus(chan, sample);
 
-        // validate the range and check if rx signal is received
         if (sample < rxConfig->rx_min_usec || sample > rxConfig->rx_max_usec || !rxSignalReceived) {
             sample = getRxfailValue(chan);
         }
@@ -377,9 +374,16 @@ static void processRxChannels(void)
         }
     }
 
-    // Using PARALLEL PWM and one of the 4 control channels is out of range:
-    // Probably one of the cables came loose, all channels are set to rxfail values
-    if ((rxPwmFlightChannelsAreGood == false) && feature(FEATURE_RX_PARALLEL_PWM)) {
+    if (rxHaveValidFlightChannels()) {
+        if (shouldCheckPulse) {
+            failsafeOnValidDataReceived();
+            rxSignalReceived = true;
+        }
+    } else {
+        if (feature(FEATURE_RX_PARALLEL_PWM)) {
+            rxSignalReceived = false;
+        }
+
         for (chan = 0; chan < rxRuntimeConfig.channelCount; chan++) {
             rcData[chan] = getRxfailValue(chan);
         }
