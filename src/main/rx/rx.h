@@ -76,6 +76,7 @@ extern const char rcChannelLetters[];
 extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
 
 #define MAX_MAPPABLE_RX_INPUTS 8
+#define MAX_CALIBRATED_RX_CHANNELS      NON_AUX_CHANNEL_COUNT
 
 #define RSSI_SCALE_MIN 1
 #define RSSI_SCALE_MAX 255
@@ -90,6 +91,11 @@ typedef struct rxFailsafeChannelConfiguration_s {
     uint8_t mode; // See rxFailsafeChannelMode_e
     uint8_t step;
 } rxFailsafeChannelConfiguration_t;
+
+typedef struct rxCalibration_s {
+    uint16_t minrc;
+    uint16_t maxrc;
+} rxCalibration_t;
 
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
@@ -106,6 +112,7 @@ typedef struct rxConfig_s {
     uint16_t rx_max_usec;
     rxFailsafeChannelConfiguration_t failsafe_aux_channel_configurations[MAX_AUX_CHANNEL_COUNT];
 
+    rxCalibration_t calibration[MAX_CALIBRATED_RX_CHANNELS];
 } rxConfig_t;
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))

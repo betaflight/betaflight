@@ -117,6 +117,7 @@ static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
 static void cliVersion(char *cmdline);
+static void cliRxCalibration(char *cmdline);
 
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
@@ -258,6 +259,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("rateprofile", "change rate profile",
         "[<index>]", cliRateProfile),
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
+    CLI_COMMAND_DEF("rxcal", "rc calibration", NULL, cliRxCalibration),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifdef USE_SERVOS
@@ -927,6 +929,46 @@ static void cliMotorMix(char *cmdline)
 #endif
 }
 
+static void cliRxCalibration(char *cmdline)
+{
+    int i, check = 0;
+    char *ptr;
+
+    if (isEmpty(cmdline)) {
+        for (i = 0; i < MAX_CALIBRATED_RX_CHANNELS; i++) {
+            printf("rccal %u %u %u\r\n", i, masterConfig.rxConfig.calibration[i].minrc, masterConfig.rxConfig.calibration[i].maxrc);
+        }
+    } else {
+        ptr = cmdline;
+        i = atoi(ptr);
+        if (i >= 0 && i < MAX_CALIBRATED_RX_CHANNELS) {
+            int minrc, maxrc;
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                minrc = atoi(++ptr);
+                check++;
+            }
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                maxrc = atoi(++ptr);
+                check++;
+            }
+            if (check != 2) {
+                printf("Wrong number of arguments, needs idx min max\r\n");
+            }
+            else if (minrc < 750 || minrc > 2250 || maxrc < 750 || maxrc > 2250 || minrc >= maxrc) {
+                printf("Parameters error. Should be: 750 <= minrc < maxrc <= 2250\r\n");
+            }
+            else {
+                masterConfig.rxConfig.calibration[i].minrc = minrc;
+                masterConfig.rxConfig.calibration[i].maxrc = maxrc;
+            }
+        } else {
+            printf("Invalid R/C channel: must be > 0 and < %u\r\n", MAX_CALIBRATED_RX_CHANNELS);
+        }
+    }
+}
+
 #ifdef LED_STRIP
 static void cliLed(char *cmdline)
 {
@@ -1466,6 +1508,10 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# adjrange\r\n");
 
         cliAdjustmentRange("");
+
+        printf("\r\n# rccal\r\n");
+
+        cliRxCalibration("");
 
         cliPrint("\r\n# servo\r\n");
 
