@@ -19,3 +19,4 @@
 
 typedef void (*sensorInitFuncPtr)(void);                    // sensor init prototype
 typedef void (*sensorReadFuncPtr)(int16_t *data);           // sensor read and align prototype
+typedef void (*sensorInterruptFuncPtr)(bool *data);         // sensor read and align prototype

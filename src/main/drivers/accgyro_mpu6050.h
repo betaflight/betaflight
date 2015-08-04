@@ -33,7 +33,17 @@ typedef struct mpu6050Config_s {
     IRQn_Type exti_irqn;
 } mpu6050Config_t;
 
+enum lpf_e {
+    INV_FILTER_256HZ_NOLPF2 = 0,
+    INV_FILTER_188HZ,
+    INV_FILTER_98HZ,
+    INV_FILTER_42HZ,
+    INV_FILTER_20HZ,
+    INV_FILTER_10HZ,
+    INV_FILTER_5HZ,
+    INV_FILTER_2100HZ_NOLPF,
+    NUM_FILTER
+};
+
 bool mpu6050AccDetect(const mpu6050Config_t *config,acc_t *acc);
 bool mpu6050GyroDetect(const mpu6050Config_t *config, gyro_t *gyro, uint16_t lpf);
-void mpu6050DmpLoop(void);
-void mpu6050DmpResetFifo(void);

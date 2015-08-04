@@ -37,6 +37,7 @@
 #include "drivers/serial.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -90,7 +91,8 @@ enum {
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)       
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)       
+#define IBATINTERVAL (6 * 3500)
+#define GYRO_WATCHDOG_DELAY 500  // Watchdog for boards without interrupt for gyro
 
 #define LOOP_DEADBAND 400 // Dead band for loop to modify to rcInterpolationFactor in RC Filtering for unstable looptimes
 
@@ -857,8 +859,8 @@ void loop(void)
     }
 
     currentTime = micros();
-    if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
-        loopTime = currentTime + masterConfig.looptime;
+    if (gyroSyncCheckUpdate() || (int32_t)(currentTime - loopTime) >= 0) {
+        loopTime = currentTime + targetLooptime + GYRO_WATCHDOG_DELAY;
 
         imuUpdate(&currentProfile->accelerometerTrims);
 
