@@ -91,6 +91,11 @@ typedef struct rxFailsafeChannelConfiguration_s {
     uint8_t step;
 } rxFailsafeChannelConfiguration_t;
 
+typedef struct rxChannelRangeConfiguration_s {
+    uint16_t min;
+    uint16_t max;
+} rxChannelRangeConfiguration_t;
+
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
@@ -106,6 +111,7 @@ typedef struct rxConfig_s {
     uint16_t rx_max_usec;
     rxFailsafeChannelConfiguration_t failsafe_aux_channel_configurations[MAX_AUX_CHANNEL_COUNT];
 
+    rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
@@ -130,3 +136,5 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
 
 void updateRSSI(uint32_t currentTime);
+void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
+

@@ -106,7 +106,6 @@ ppmDevice_t ppmDev;
 #define PPM_STABLE_FRAMES_REQUIRED_COUNT    25
 #define PPM_IN_MIN_NUM_CHANNELS     4
 #define PPM_IN_MAX_NUM_CHANNELS     PWM_PORTS_OR_PPM_CAPTURE_COUNT
-#define PPM_RCVR_TIMEOUT            0
 
 
 bool isPPMDataBeingReceived(void)

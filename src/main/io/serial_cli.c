@@ -117,6 +117,7 @@ static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
 static void cliVersion(char *cmdline);
+static void cliRxRange(char *cmdline);
 
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
@@ -257,6 +258,7 @@ const clicmd_t cmdTable[] = {
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile",
         "[<index>]", cliRateProfile),
+    CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
@@ -927,6 +929,51 @@ static void cliMotorMix(char *cmdline)
 #endif
 }
 
+static void cliRxRange(char *cmdline)
+{
+    int i, validArgumentCount = 0;
+    char *ptr;
+
+    if (isEmpty(cmdline)) {
+        for (i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
+            rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
+            printf("rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
+        }
+    } else if (strcasecmp(cmdline, "reset") == 0) {
+        resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
+    } else {
+        ptr = cmdline;
+        i = atoi(ptr);
+        if (i >= 0 && i < NON_AUX_CHANNEL_COUNT) {
+            int rangeMin, rangeMax;
+
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                rangeMin = atoi(++ptr);
+                validArgumentCount++;
+            }
+
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                rangeMax = atoi(++ptr);
+                validArgumentCount++;
+            }
+
+            if (validArgumentCount != 2) {
+                cliShowParseError();
+            } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX || rangeMin >= rangeMax) {
+                cliShowParseError();
+            } else {
+                rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
+                channelRangeConfiguration->min = rangeMin;
+                channelRangeConfiguration->max = rangeMax;
+            }
+        } else {
+            cliShowArgumentRangeError("channel", 0, NON_AUX_CHANNEL_COUNT - 1);
+        }
+    }
+}
+
 #ifdef LED_STRIP
 static void cliLed(char *cmdline)
 {
@@ -1466,6 +1513,10 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# adjrange\r\n");
 
         cliAdjustmentRange("");
+
+        printf("\r\n# rxrange\r\n");
+
+        cliRxRange("");
 
         cliPrint("\r\n# servo\r\n");
 

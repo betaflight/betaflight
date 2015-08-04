@@ -92,6 +92,7 @@ Re-apply any new defaults as desired.
 | `play_sound`     | index, or none for next                        |
 | `profile`        | index (0 to 2)                                 |
 | `rateprofile`    | index (0 to 2)                                 |
+| `rxrange`        | configure rx channel ranges (end-points) |
 | `save`           | save and reboot                                |
 | `set`            | name=value or blank or * for list              |
 | `status`         | show system status                             |
