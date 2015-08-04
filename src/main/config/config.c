@@ -384,8 +384,12 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(LUX_RACE)
+#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI)
     featureSet(FEATURE_RX_PPM);
+#endif
+
+#if defined(SPRACINGF3MINI)
+    featureSet(FEATURE_DISPLAY);
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
