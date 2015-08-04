@@ -23,6 +23,7 @@ typedef struct gyro_s {
     sensorInitFuncPtr init;                                 // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
+    sensorInterruptFuncPtr intStatus;
     float scale;                                            // scalefactor
 } gyro_t;
 

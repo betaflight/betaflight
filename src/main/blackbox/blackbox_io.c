@@ -22,6 +22,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -470,7 +471,7 @@ bool blackboxDeviceOpen(void)
      *
      * 9 / 1250 = 7200 / 1000000
      */
-    blackboxWriteChunkSize = MAX((masterConfig.looptime * 9) / 1250, 4);
+    blackboxWriteChunkSize = MAX((targetLooptime * 9) / 1250, 4);
 
     switch (masterConfig.blackbox_device) {
         case BLACKBOX_DEVICE_SERIAL:
