@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include "platform.h"
+#include "build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -73,19 +74,6 @@ void mpu6500GyroInit(uint16_t lpf)
 {
     mpuIntExtiInit();
 
-#ifdef NAZE
-    // FIXME target specific code in driver code.
-
-    gpio_config_t gpio;
-    // MPU_INT output on rev5 hardware (PC13). rev4 was on PB13, conflicts with SPI devices
-    if (hse_value == 12000000) {
-        gpio.pin = Pin_13;
-        gpio.speed = Speed_2MHz;
-        gpio.mode = Mode_IN_FLOATING;
-        gpioInit(GPIOC, &gpio);
-    }
-#endif
-
     uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
@@ -101,9 +89,12 @@ void mpu6500GyroInit(uint16_t lpf)
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0); // 1kHz S/R
 
     // Data ready interrupt configuration
+#ifdef USE_MPU9250_MAG
     mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+#else
+    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+#endif
 #ifdef USE_MPU_DATA_READY_SIGNAL
     mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
-
 }

@@ -35,7 +35,7 @@ FLASH_SIZE ?=
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 CC3D CHEBUZZF3 CJMCU COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY 
+VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 CC3D CHEBUZZF3 CJMCU COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 SPRACINGF3MINI STM32F3DISCOVERY 
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
@@ -43,7 +43,7 @@ ifeq ($(TARGET),$(filter $(TARGET),CJMCU))
 FLASH_SIZE = 64
 else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF1 CC3D NAZE OLIMEXINO RMDO))
 FLASH_SIZE = 128
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 STM32F3DISCOVERY))
+else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 SPRACINGF3MINI STM32F3DISCOVERY))
 FLASH_SIZE = 256
 else
 $(error FLASH_SIZE not configured for target)
@@ -65,10 +65,12 @@ LINKER_DIR	 = $(ROOT)/src/main/target
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
+FATFS_DIR	= $(ROOT)/lib/main/FatFS
+FATFS_SRC = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY))
+ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 SPRACINGF3MINI STM32F3DISCOVERY))
 
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 
@@ -102,6 +104,13 @@ VPATH := $(VPATH):$(USBFS_DIR)/src
 DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC)\
 		   $(USBPERIPH_SRC) 
 
+endif
+
+ifeq ($(TARGET),SPRACINGF3MINI)
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+		   $(FATFS_DIR) \
+
+VPATH := $(VPATH):$(FATFS_DIR)
 endif
 
 LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
@@ -585,6 +594,24 @@ MOTOLAB_SRC = \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
 		   $(VCP_SRC)
+
+SPRACINGF3MINI_SRC	 = \
+		   $(STM32F30x_COMMON_SRC) \
+		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_mpu6500.c \
+		   drivers/barometer_bmp280.c \
+		   drivers/compass_ak8975.c \
+		   drivers/compass_hmc5883l.c \
+		   drivers/display_ug2864hsweg01.h \
+		   drivers/flash_m25p16.c \
+		   drivers/serial_softserial.c \
+		   drivers/serial_usb_vcp.c \
+		   drivers/sonar_hcsr04.c \
+		   drivers/sdcard.c \
+		   $(HIGHEND_SRC) \
+		   $(COMMON_SRC) \
+		   $(VCP_SRC)
+#		   $(FATFS_SRC)
 
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src

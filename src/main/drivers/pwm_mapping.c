@@ -440,6 +440,51 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
+#ifdef SPRACINGF3MINI
+static const uint16_t multiPPM[] = {
+    PWM1  | (MAP_TO_PPM_INPUT    << 8), // PPM input
+
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
+    0xFFFF
+};
+
+static const uint16_t multiPWM[] = {
+    0xFFFF
+};
+
+static const uint16_t airPPM[] = {
+    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
+    PWM4  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
+    PWM5  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
+    PWM6  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
+    PWM7  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM8  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM13 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM2  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM3  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #10
+    0xFFFF
+};
+
+static const uint16_t airPWM[] = {
+    0xFFFF
+};
+#endif
+
 static const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
@@ -580,6 +625,12 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
+#if defined(SPRACINGF3MINI)
+            // remap PWM8+9 as servos
+            if ((timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM15)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
 #if defined(NAZE32PRO) || (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
             // remap PWM 5+6 or 9+10 as servos - softserial pin pairs require timer ports that use the same timer
             if (init->useSoftSerial) {
@@ -607,11 +658,15 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 }
             } else
 #endif
+
+#if defined(SPRACINGF3) || defined(NAZE)
                 // remap PWM5..8 as servos when used in extended servo mode
                 if (timerIndex >= PWM5 && timerIndex <= PWM8)
                     type = MAP_TO_SERVO_OUTPUT;
-        }
 #endif
+        }
+
+#endif // USE_SERVOS
 
 #ifdef CC3D
         if (init->useParallelPWM) {
