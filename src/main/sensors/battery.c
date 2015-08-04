@@ -146,7 +146,7 @@ batteryState_e getBatteryState(void)
     return batteryState;
 }
 
-const char * batteryStateStrings[] = {"OK", "WARNING", "CRITICAL", "NOT PRESENT"};
+const char * const batteryStateStrings[] = {"OK", "WARNING", "CRITICAL", "NOT PRESENT"};
 
 const char * getBatteryStateString(void)
 {
