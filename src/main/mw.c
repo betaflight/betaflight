@@ -178,7 +178,6 @@ void annexCode(void)
 
     static uint32_t vbatLastServiced = 0;
     static uint32_t ibatLastServiced = 0;
-    uint32_t ibatTimeSinceLastServiced;
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop2 = 100;
@@ -249,16 +248,15 @@ void annexCode(void)
     }
 
     if (feature(FEATURE_VBAT)) {
-        /* currentTime will rollover @ 70 minutes */
-        if ((currentTime - vbatLastServiced) >= VBATINTERVAL) {
-           vbatLastServiced = currentTime;
+        if ((int32_t)(currentTime - vbatLastServiced) >= VBATINTERVAL) {
+            vbatLastServiced = currentTime;
             updateBattery();
         }
     }
 
     if (feature(FEATURE_CURRENT_METER)) {
-        /* currentTime will rollover @ 70 minutes */
-        ibatTimeSinceLastServiced = (currentTime - ibatLastServiced);
+        int32_t ibatTimeSinceLastServiced = (int32_t) (currentTime - ibatLastServiced);
+
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
             updateCurrentMeter((ibatTimeSinceLastServiced / 1000), &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);

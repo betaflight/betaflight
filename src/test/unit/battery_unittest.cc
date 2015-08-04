@@ -116,17 +116,17 @@ TEST(BatteryTest, BatteryState)
 
     batteryAdcToBatteryStateExpectation_t batteryAdcToBatteryStateExpectations[] = {
             {1420, 126, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-		/* fall down to battery warning level */
+            /* fall down to battery warning level */
             {1185, 105, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-		/* creep back up to battery ok */
+            /* creep back up to battery ok */
             {1185, 105, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1195, 106, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1207, 107, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-		/* fall down to battery critical level */
+            /* fall down to battery critical level */
             {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1108, 98, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-		/* creep back up to battery warning */
+            /* creep back up to battery warning */
             {1115, 99, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1130, 100, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1145, 101, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
@@ -139,8 +139,8 @@ TEST(BatteryTest, BatteryState)
         batteryAdcToBatteryStateExpectation_t *batteryAdcToBatteryStateExpectation = &batteryAdcToBatteryStateExpectations[index];
         batteryConfig.vbatscale = batteryAdcToBatteryStateExpectation->scale;
         currentADCReading = batteryAdcToBatteryStateExpectation->adcReading;
-	updateBattery( );
-	batteryState_e batteryState = getBatteryState();
+        updateBattery( );
+        batteryState_e batteryState = getBatteryState();
         EXPECT_EQ(batteryAdcToBatteryStateExpectation->expectedBatteryState, batteryState);
     }
 }
@@ -182,9 +182,81 @@ TEST(BatteryTest, CellCount)
         batteryAdcToCellCountExpectation_t *batteryAdcToCellCountExpectation = &batteryAdcToCellCountExpectations[index];
         batteryConfig.vbatscale = batteryAdcToCellCountExpectation->scale;
         currentADCReading = batteryAdcToCellCountExpectation->adcReading;
-	updateBattery( );
+        updateBattery( );
         EXPECT_EQ(batteryAdcToCellCountExpectation->cellCount, batteryCellCount);
     }
+}
+
+/**
+ * These next two tests do not test any production code (!) but serves as an example of how to use a signed variable for timing purposes.
+ *
+ * The 'signed diff timing' pattern is followed in a few places in the production codebase.
+ */
+TEST(BatteryTest, RollOverPattern1)
+{
+    uint16_t now = 0;
+    uint16_t servicedAt = 0;
+    uint16_t serviceInterval = 5000;
+    int serviceCount = 0;
+    int rolloverCount = 0;
+
+    while(rolloverCount < 3) {
+
+        int16_t diff = (now - servicedAt);
+        if (diff >= serviceInterval) {
+
+            if (now < servicedAt) {
+                rolloverCount++;
+            }
+
+            servicedAt = now;
+#if 1
+            printf("servicedAt: %d, diff: %d\n", servicedAt, diff);
+#endif
+            serviceCount++;
+
+            EXPECT_GT(diff, 0);
+            EXPECT_GE(diff, serviceInterval); // service interval must have passed
+            EXPECT_LT(diff, serviceInterval + 95 + 10); // but never more than the service interval + ticks + jitter
+        }
+
+        now += 95 + (rand() % 10); // simulate 100 ticks +/- 5 ticks of jitter, this can rollover
+    }
+    EXPECT_GT(serviceCount, 0);
+}
+
+TEST(BatteryTest, RollOverPattern2)
+{
+    uint16_t now = 0;
+    uint16_t serviceAt = 0;
+    uint16_t serviceInterval = 5000;
+    int serviceCount = 0;
+    int rolloverCount = 0;
+
+    while(rolloverCount < 3) {
+
+        int16_t diff = (now - serviceAt);
+        if (diff >= 0) {
+
+            if (now < serviceAt) {
+                rolloverCount++;
+            }
+
+            serviceAt = now + serviceInterval; // this can rollover
+#if 1
+            printf("servicedAt: %d, nextServiceAt: %d, diff: %d\n", now, serviceAt, diff);
+#endif
+
+            serviceCount++;
+
+            EXPECT_GE(diff, 0);
+            EXPECT_LE(diff, serviceInterval);
+            EXPECT_LT(diff, 95 + 10); // never more than the ticks + jitter
+        }
+
+        now += 95 + (rand() % 10); // simulate 100 ticks +/- 5 ticks of jitter, this can rollover
+    }
+    EXPECT_GT(serviceCount, 0);
 }
 
 

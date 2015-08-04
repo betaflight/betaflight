@@ -34,7 +34,7 @@
 #include "flight/lowpass.h"
 #include "io/beeper.h"
 
-#define VBATT_DETECT    10
+#define VBATT_PRESENT_THRESHOLD_MV    10
 #define VBATT_LPF_FREQ  10
 
 // Battery monitoring stuff
@@ -81,7 +81,7 @@ void updateBattery(void)
     updateBatteryVoltage();
     
     /* battery has just been connected*/
-    if(batteryState == BATTERY_NOTPRESENT && vbat > VBATT_DETECT)
+    if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
     {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
@@ -93,16 +93,18 @@ void updateBattery(void)
         updateBatteryVoltage();
 
         unsigned cells = (batteryAdcToVoltage(vbatLatestADC) / batteryConfig->vbatmaxcellvoltage) + 1;
-        if(cells > 8)            // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
+        if (cells > 8) {
+            // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
             cells = 8;
+        }
         batteryCellCount = cells;
         batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
     }
-    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_DETECT */
-    else if(batteryState != BATTERY_NOTPRESENT && vbat <= VBATT_DETECT)
+    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD_MV */
+    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= VBATT_PRESENT_THRESHOLD_MV)
     {
-        batteryState = BATTERY_NOTPRESENT;
+        batteryState = BATTERY_NOT_PRESENT;
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
         batteryCriticalVoltage = 0;
@@ -111,33 +113,30 @@ void updateBattery(void)
     switch(batteryState)
     {
         case BATTERY_OK:
-            if(vbat <= (batteryWarningVoltage - VBATT_HYSTERESIS)){
+            if (vbat <= (batteryWarningVoltage - VBATT_HYSTERESIS)) {
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_WARNING:
-            if(vbat <= (batteryCriticalVoltage - VBATT_HYSTERESIS)){
+            if (vbat <= (batteryCriticalVoltage - VBATT_HYSTERESIS)) {
                 batteryState = BATTERY_CRITICAL;
-                 beeper(BEEPER_BAT_CRIT_LOW);
-            }
-            else if(vbat > (batteryWarningVoltage + VBATT_HYSTERESIS)){
+                beeper(BEEPER_BAT_CRIT_LOW);
+            } else if (vbat > (batteryWarningVoltage + VBATT_HYSTERESIS)){
                 batteryState = BATTERY_OK;
-            }
-            else{
-                 beeper(BEEPER_BAT_LOW);
+            } else {
+                beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_CRITICAL:
-            if(vbat > (batteryCriticalVoltage + VBATT_HYSTERESIS)){
+            if (vbat > (batteryCriticalVoltage + VBATT_HYSTERESIS)){
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
-            }
-            else{
-                 beeper(BEEPER_BAT_CRIT_LOW);
+            } else {
+                beeper(BEEPER_BAT_CRIT_LOW);
             }
             break;
-        case BATTERY_NOTPRESENT:
+        case BATTERY_NOT_PRESENT:
             break;
     }
 }
@@ -157,7 +156,7 @@ const char * getBatteryStateString(void)
 void batteryInit(batteryConfig_t *initialBatteryConfig)
 {
     batteryConfig = initialBatteryConfig;
-    batteryState = BATTERY_NOTPRESENT;
+    batteryState = BATTERY_NOT_PRESENT;
     batteryCellCount = 1;
     batteryWarningVoltage = 0;
     batteryCriticalVoltage = 0;
@@ -189,7 +188,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             break;
         case CURRENT_SENSOR_VIRTUAL:
             amperage = (int32_t)batteryConfig->currentMeterOffset;
-            if(ARMING_FLAG(ARMED)) {
+            if (ARMING_FLAG(ARMED)) {
                 throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
                 if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
                     throttleOffset = 0;

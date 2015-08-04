@@ -49,7 +49,7 @@ typedef enum {
     BATTERY_OK = 0,
     BATTERY_WARNING,
     BATTERY_CRITICAL,
-    BATTERY_NOTPRESENT
+    BATTERY_NOT_PRESENT
 } batteryState_e;
 
 extern uint16_t vbat;
