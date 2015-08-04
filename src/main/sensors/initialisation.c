@@ -117,7 +117,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #endif
 #endif
 
-#if defined(SPRACINGF3)
+#if defined(SPRACINGF3) || defined(SPRACINGF3MINI)
     static const extiConfig_t spRacingF3MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
             .gpioPort = GPIOC,

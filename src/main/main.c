@@ -344,19 +344,6 @@ void init(void)
 #endif
 #endif
 
-    SD_Error error;
-
-    SD_Detect_LowLevel_Init();
-    if (SD_Detect() == SD_PRESENT) {
-        while ((error = SD_Init()) != SD_RESPONSE_NO_ERROR) {
-
-        };
-
-        SD_DeInit();
-    }
-    SD_Detect_LowLevel_DeInit();
-
-
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
@@ -372,6 +359,12 @@ void init(void)
 #if defined(SPRACINGF3) && defined(SONAR) && defined(USE_SOFTSERIAL2)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
+    }
+#endif
+
+#if defined(SPRACINGF3MINI) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+        serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
 #endif
 

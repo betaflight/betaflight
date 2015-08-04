@@ -1591,7 +1591,6 @@ static void cliSdRead(char *cmdline)
 
     SD_DeInit();
 }
-
 #endif
 
 #ifdef USE_FLASHFS
