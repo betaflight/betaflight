@@ -38,6 +38,7 @@
 #include "drivers/serial.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -89,9 +90,10 @@ enum {
 };
 
 /* VBAT monitoring interval (in microseconds) - 1s*/
-#define VBATINTERVAL (6 * 3500)       
+#define VBATINTERVAL (6 * 3500)
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)       
+#define IBATINTERVAL (6 * 3500)
+#define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -667,6 +669,21 @@ void processRx(void)
 
 }
 
+// Function for loop trigger
+bool shouldRunLoop(uint32_t loopTime) {
+	bool loopTrigger = false;
+
+    if (masterConfig.gyroSync) {
+        if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
+            loopTrigger = true;
+        }
+    } else if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0){
+        loopTrigger = true;
+    }
+
+    return loopTrigger;
+}
+
 void filterRc(void){
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
@@ -748,8 +765,8 @@ void loop(void)
     }
 
     currentTime = micros();
-    if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
-        loopTime = currentTime + masterConfig.looptime;
+    if (shouldRunLoop(loopTime)) {
+        loopTime = currentTime + targetLooptime;
 
         imuUpdate(&currentProfile->accelerometerTrims);
 

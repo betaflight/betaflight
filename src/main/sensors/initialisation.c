@@ -45,6 +45,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
+#include "drivers/gyro_sync.h"
 
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
@@ -148,6 +149,19 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .exti_irqn = EXTI15_10_IRQn
     };
     return &MotolabF3MPUIntExtiConfig;
+#endif
+
+#if defined(COLIBRI_RACE)
+    static const extiConfig_t colibriRaceMPUIntExtiConfig = {
+         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+         .gpioPort = GPIOA,
+         .gpioPin = Pin_5,
+         .exti_port_source = EXTI_PortSourceGPIOA,
+         .exti_pin_source = EXTI_PinSource5,
+         .exti_line = EXTI_Line5,
+         .exti_irqn = EXTI9_5_IRQn
+    };
+    return &colibriRaceMPUIntExtiConfig;
 #endif
 
     return NULL;
@@ -630,8 +644,10 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse, int16_t magDeclinationFromConfig)
-{
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse,
+        int16_t magDeclinationFromConfig,
+        uint32_t looptime, uint8_t gyroSync, uint8_t gyroSyncDenominator) {
+
     int16_t deg, min;
 
     memset(&acc, 0, sizeof(acc));
@@ -656,6 +672,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
+    gyroUpdateSampleRate(looptime, gyroLpf, gyroSync, gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
     gyro.init(gyroLpf);
 
     detectMag(magHardwareToUse);
