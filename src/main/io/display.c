@@ -281,9 +281,8 @@ void showWelcomePage(void)
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Target: %s", targetName);
     i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
+    i2c_OLED_send_string(targetName);
 }
 
 void showArmedPage(void)
