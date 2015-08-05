@@ -341,6 +341,8 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
 
 uint16_t pwmRead(uint8_t channel)
 {
-    return captures[channel];
+    uint16_t capture = captures[channel];
+    captures[channel] = PPM_RCVR_TIMEOUT;
+    return capture;
 }
 
