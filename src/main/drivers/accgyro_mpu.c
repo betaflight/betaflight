@@ -167,6 +167,8 @@ static void mpu6050FindRevision(void)
             mpuDetectionResult.resolution = MPU_HALF_RESOLUTION;
         } else if (revision == 2) {
             mpuDetectionResult.resolution = MPU_FULL_RESOLUTION;
+        } else if ((revision == 3) || (revision == 7)) {
+            mpuDetectionResult.resolution = MPU_FULL_RESOLUTION;
         } else {
             failureMode(FAILURE_ACC_INCOMPATIBLE);
         }
