@@ -31,11 +31,9 @@ verify your aux config is correct - aux settings are not backwards compatible.
 In general all CLI commands use underscore characters to separate words for consistency.  In baseflight the format of CLI commands is somewhat haphazard.
 
 ### gps_baudrate
-reason: unified baud rate configuration
+reason: new serial port configuration.
 
-If an unsupported baud rate value is used the gps code will select 115200 baud.
-
-see `serial_port_x_gps_baudrate`
+See `serial` command.
 
 ### gps_type
 reason: renamed to `gps_provider` for consistency
