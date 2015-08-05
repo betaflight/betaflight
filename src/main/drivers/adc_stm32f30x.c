@@ -64,19 +64,6 @@ void adcInit(drv_adc_config_t *init)
     }
 #endif
 
-#ifdef CURRENT_METER_ADC_GPIO
-    if (init->enableCurrentMeter) {
-        GPIO_InitStructure.GPIO_Pin = CURRENT_METER_ADC_GPIO_PIN;
-        GPIO_Init(CURRENT_METER_ADC_GPIO, &GPIO_InitStructure);
-
-        adcConfig[ADC_CURRENT].adcChannel = CURRENT_METER_ADC_CHANNEL;
-        adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
-        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
-        adcConfig[ADC_CURRENT].enabled = true;
-        adcChannelCount++;
-    }
-#endif
-
 #ifdef RSSI_ADC_GPIO
     if (init->enableRSSI) {
         GPIO_InitStructure.GPIO_Pin = RSSI_ADC_GPIO_PIN;
@@ -86,6 +73,19 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
         adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
         adcConfig[ADC_RSSI].enabled = true;
+        adcChannelCount++;
+    }
+#endif
+
+#ifdef CURRENT_METER_ADC_GPIO
+    if (init->enableCurrentMeter) {
+        GPIO_InitStructure.GPIO_Pin = CURRENT_METER_ADC_GPIO_PIN;
+        GPIO_Init(CURRENT_METER_ADC_GPIO, &GPIO_InitStructure);
+
+        adcConfig[ADC_CURRENT].adcChannel = CURRENT_METER_ADC_CHANNEL;
+        adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
+        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
+        adcConfig[ADC_CURRENT].enabled = true;
         adcChannelCount++;
     }
 #endif
