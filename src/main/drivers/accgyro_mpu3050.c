@@ -28,6 +28,7 @@
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu3050.h"
+#include "gyro_sync.h"
 
 
 
@@ -60,6 +61,7 @@ static uint8_t mpuLowPassFilter = MPU3050_DLPF_42HZ;
 static void mpu3050Init(void);
 static void mpu3050Read(int16_t *gyroADC);
 static void mpu3050ReadTemp(int16_t *tempData);
+static void checkMPU3050Interrupt(bool *gyroIsUpdated);
 
 bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
 {
@@ -74,6 +76,7 @@ bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
     gyro->init = mpu3050Init;
     gyro->read = mpu3050Read;
     gyro->temperature = mpu3050ReadTemp;
+    gyro->intStatus = checkMPU3050Interrupt;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -138,4 +141,8 @@ static void mpu3050ReadTemp(int16_t *tempData)
     i2cRead(MPU3050_ADDRESS, MPU3050_TEMP_OUT, 2, buf);
 
     *tempData = 35 + ((int32_t)(buf[0] << 8 | buf[1]) + 13200) / 280;
+}
+
+void checkMPU3050Interrupt(bool *gyroIsUpdated) {
+    // TODO - Without interrupt looptime watchdog will still make it work
 }
