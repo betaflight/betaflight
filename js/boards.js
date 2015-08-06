@@ -32,6 +32,9 @@ var BOARD_DEFINITIONS = [
         name: "STM32F3Discovery",
         identifier: "SDF3"
     }, {
+        name: "Colibri Race",
+        identifier: "CLBR"
+    }, {
         name: "SP Racing F3",
         identifier: "SRF3"
     }

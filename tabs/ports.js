@@ -211,6 +211,16 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         if (callback) callback();
     }
 
+    function waitSeconds(iMilliSeconds) {
+        var counter= 0
+            , start = new Date().getTime()
+            , end = 0;
+        while (counter < iMilliSeconds) {
+            end = new Date().getTime();
+            counter = end - start;
+        }
+    }
+
     function on_save_handler() {
         
         // update configuration based on current ui state
@@ -271,6 +281,15 @@ TABS.ports.initialize = function (callback, scrollPosition) {
                 });
             }, rebootTimeoutDelay); 
         }
+
+        if(CONFIG.boardIdentifier == "CLBR") {
+            waitSeconds(200);
+            $('a.connect').click();
+
+            waitSeconds(500);
+            $('a.connect').click();
+        }
+
     }
 };
 
