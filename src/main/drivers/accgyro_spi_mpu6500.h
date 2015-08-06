@@ -25,6 +25,7 @@
 #define MPU6500_RA_ACCEL_CFG                (0x1C)
 #define MPU6500_RA_LPF                      (0x1A)
 #define MPU6500_RA_RATE_DIV                 (0x19)
+#define MPU6500_INT_STATUS                  (0x38)
 
 #define MPU6500_WHO_AM_I_CONST              (0x70)
 
