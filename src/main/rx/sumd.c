@@ -43,7 +43,7 @@
 #define SUMD_BAUDRATE 115200
 
 static bool sumdFrameDone = false;
-static uint32_t sumdChannels[SUMD_MAX_CHANNEL];
+static uint16_t sumdChannels[SUMD_MAX_CHANNEL];
 
 static void sumdDataReceive(uint16_t c);
 static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
