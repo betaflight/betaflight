@@ -155,7 +155,7 @@ Reyax RY825AI | NEO-M8N, 18Hz UART USB interface GPS Glonass BeiDou QZSS antenna
 #### NEO-7
 Module | Comments
 -------|--------
-U-blox Neo-7M w/Compass | [HobbyKing](http://www.hobbyking.com/hobbyking/store/__55558__Ublox_Neo_7M_GPS_with_Compass_and_Pedestal_Mount.html) Attention, you have to set align_mag to get the magnetometer work correctly: `set align_mag = 8` and don't forget to `save`.
+U-blox Neo-7M w/Compass | [HobbyKing](http://www.hobbyking.com/hobbyking/store/__55558__Ublox_Neo_7M_GPS_with_Compass_and_Pedestal_Mount.html) You have to set align_mag in the CLI to get the magnetometer working correctly: `set align_mag = 8` and don't forget to `save`.
 
 #### NEO-6
 Module | Comments
