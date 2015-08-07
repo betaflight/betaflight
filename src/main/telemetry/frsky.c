@@ -245,7 +245,7 @@ static void sendSpeed(void)
     //Speed should be sent in knots (GPS speed is in cm/s)
     sendDataHead(ID_GPS_SPEED_BP);
     //convert to knots: 1cm/s = 0.0194384449 knots
-    serialize16(GPS_speed * 1944 / 10000);
+    serialize16(GPS_speed * 1944 / 100000);
     sendDataHead(ID_GPS_SPEED_AP);
     serialize16((GPS_speed * 1944 / 100) % 100);
 }
