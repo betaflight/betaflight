@@ -52,15 +52,15 @@ void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf) {
         gyroSamplePeriod = 125;
 
         if(!sensors(SENSOR_ACC)) {
-            minLooptime = 500;  // Max refresh 2khz
+            minLooptime = 500;   // Max refresh 2khz
         }
         else {
-            minLooptime = 625;  // Max refresh 1,6khz
+            minLooptime = 625;   // Max refresh 1,6khz
         }
     }
     else {
         gyroSamplePeriod = 1000;
-        minLooptime = 1000;
+        minLooptime = 1000;      // Full sampling
     }
 #elif STM32F10X
     if (lpf == INV_FILTER_256HZ_NOLPF2) {
@@ -75,7 +75,12 @@ void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf) {
     }
     else {
         gyroSamplePeriod = 1000;
-        minLooptime = 2000;
+        if(!sensors(SENSOR_ACC)) {
+            minLooptime = 1000;  // Full sampling without ACC
+        }
+        else {
+            minLooptime = 2000;
+        }
     }
 #endif
     looptime = constrain(looptime, minLooptime, 4000);
