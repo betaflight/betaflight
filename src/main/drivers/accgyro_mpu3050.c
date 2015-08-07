@@ -43,6 +43,7 @@
 #define MPU3050_GYRO_OUT        0x1D
 #define MPU3050_USER_CTRL       0x3D
 #define MPU3050_PWR_MGM         0x3E
+#define MPU3050_INT_STATUS      0x1A
 
 // Bits
 #define MPU3050_FS_SEL_2000DPS  0x18
@@ -144,5 +145,9 @@ static void mpu3050ReadTemp(int16_t *tempData)
 }
 
 void checkMPU3050Interrupt(bool *gyroIsUpdated) {
-    // TODO - Without interrupt looptime watchdog will still make it work
+	uint8_t mpuIntStatus;
+
+	i2cRead(MPU3050_ADDRESS, MPU3050_INT_STATUS, 1, &mpuIntStatus);
+
+	(mpuIntStatus) ? (*gyroIsUpdated= true) : (*gyroIsUpdated= false);
 }
