@@ -67,7 +67,7 @@ void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf) {
         gyroSamplePeriod = 125;
 
         if(!sensors(SENSOR_ACC)) {
-            minLooptime = 500;   // Max refresh 2khz
+            minLooptime = 625;   // Max refresh 1,33khz
         }
         else {
             minLooptime = 1625;  // Max refresh 615hz
