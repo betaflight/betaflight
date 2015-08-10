@@ -742,6 +742,14 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RX_PPM);
     }
 
+    if (featureConfigured(FEATURE_ONESHOT125)) {
+        featureClear(FEATURE_FASTPWM);
+    }
+
+    if (featureConfigured(FEATURE_FASTPWM)) {
+        featureClear(FEATURE_ONESHOT125);
+    }
+
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
 #if defined(STM32F10X)
         // rssi adc needs the same ports
