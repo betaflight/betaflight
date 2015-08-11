@@ -248,6 +248,8 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 void resetBatteryConfig(batteryConfig_t *batteryConfig)
 {
     batteryConfig->vbatscale = VBAT_SCALE_DEFAULT;
+    batteryConfig->vbatresdivval = VBAT_RESDIVVAL_DEFAULT;
+    batteryConfig->vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT;
     batteryConfig->vbatmaxcellvoltage = 43;
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
