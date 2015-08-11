@@ -30,6 +30,7 @@ void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef 
 
 void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel);
 uint16_t pwmRead(uint8_t channel);
+uint16_t ppmRead(uint8_t channel);
 
 bool isPPMDataBeingReceived(void);
 void resetPPMDataReceivedState(void);
