@@ -111,6 +111,7 @@ LIBCLEANFLIGHT_SRC = \
 	io/serial.c \
 	rx/rx.c \
 	sensors/battery.c \
+	sensors/boardalignment.c \
 	telemetry/hott.c
 
 LIBCLEANFLIGHT_OBJ = $(LIBCLEANFLIGHT_SRC:%.c=$(OBJECT_DIR)/%.o)
