@@ -592,7 +592,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, int16_t magDeclinationFromConfig, uint32_t looptime)
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, int16_t magDeclinationFromConfig, uint32_t looptime, uint8_t syncGyroToLoop)
 {
     int16_t deg, min;
 
@@ -610,7 +610,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyroUpdateSampleRate(looptime, gyroLpf);  // Set gyro refresh rate before initialisation
+    gyroUpdateSampleRate(looptime, gyroLpf, syncGyroToLoop);  // Set gyro refresh rate before initialisation
     gyro.init();
 
     detectMag(magHardwareToUse);

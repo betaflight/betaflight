@@ -93,7 +93,6 @@ enum {
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 500  // Watchdog for boards without interrupt for gyro
-
 #define LOOP_DEADBAND 400 // Dead band for loop to modify to rcInterpolationFactor in RC Filtering for unstable looptimes
 
 uint32_t currentTime = 0;
@@ -693,18 +692,7 @@ void filterGyro(void) {
     static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
 
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-    	if (masterConfig.looptime > 0) {
-    		// Static dT calculation based on configured looptime
-            if (!gyroADCState[axis].constdT) {
-                gyroADCState[axis].constdT = (float)masterConfig.looptime * 0.000001f;
-            }
-
-            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, gyroADCState[axis].constdT);
-    	}
-
-        else {
-	        gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dT);
-        }
+        gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dT);
     }
 }
 void getArmingChannel(modeActivationCondition_t *modeActivationConditions, uint8_t *armingChannel) {
@@ -813,6 +801,29 @@ void filterRc(void){
     }
 }
 
+// Function for loop trigger
+bool runLoop(uint32_t loopTime) {
+	bool loopTrigger = false;
+
+    if (masterConfig.syncGyroToLoop) {
+        if (ARMING_FLAG(ARMED)) {
+            if (gyroSyncCheckUpdate() || (int32_t)(currentTime - loopTime + GYRO_WATCHDOG_DELAY) >= 0) {
+            	loopTrigger = true;
+            }
+        }
+        // Blheli arming workaround (stable looptime prior to arming)
+        else if (!ARMING_FLAG(ARMED) && ((int32_t)(currentTime - loopTime) >= 0)) {
+        	loopTrigger = true;
+        }
+    }
+
+    else if ((int32_t)(currentTime - loopTime) >= 0){
+    	loopTrigger = true;
+    }
+
+    return loopTrigger;
+}
+
 void loop(void)
 {
     static uint32_t loopTime;
@@ -859,8 +870,9 @@ void loop(void)
     }
 
     currentTime = micros();
-    if (gyroSyncCheckUpdate() || (int32_t)(currentTime - loopTime) >= 0) {
-        loopTime = currentTime + targetLooptime + GYRO_WATCHDOG_DELAY;
+    if (runLoop(loopTime)) {
+
+        loopTime = currentTime + targetLooptime;
 
         imuUpdate(&currentProfile->accelerometerTrims);
 
@@ -875,7 +887,9 @@ void loop(void)
             filterGyro();
         }
 
-        filterRc();
+        if (masterConfig.rcSmoothing) {
+            filterRc();
+        }
 
         annexCode();
 #if defined(BARO) || defined(SONAR)
