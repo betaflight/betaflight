@@ -43,7 +43,8 @@
 #define SUMD_BAUDRATE 115200
 
 static bool sumdFrameDone = false;
-static uint32_t sumdChannels[SUMD_MAX_CHANNEL];
+static uint16_t sumdChannels[SUMD_MAX_CHANNEL];
+static uint16_t crc;
 
 static void sumdDataReceive(uint16_t c);
 static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
@@ -67,6 +68,22 @@ bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
     return sumdPort != NULL;
 }
 
+#define CRC_POLYNOME 0x1021
+
+// CRC calculation, adds a 8 bit unsigned to 16 bit crc
+static void CRC16(uint8_t value)
+{
+    uint8_t i;
+
+    crc = crc ^ (int16_t)value << 8;
+    for (i = 0; i < 8; i++) {
+    if (crc & 0x8000)
+        crc = (crc << 1) ^ CRC_POLYNOME;
+    else
+        crc = (crc << 1);
+    }
+}
+
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
 static uint8_t sumdChannelCount;
 
@@ -86,17 +103,23 @@ static void sumdDataReceive(uint16_t c)
         if (c != SUMD_SYNCBYTE)
             return;
         else
+        {
             sumdFrameDone = false; // lazy main loop didnt fetch the stuff
+            crc = 0;
+        }
     }
     if (sumdIndex == 2)
         sumdChannelCount = (uint8_t)c;
     if (sumdIndex < SUMD_BUFFSIZE)
         sumd[sumdIndex] = (uint8_t)c;
     sumdIndex++;
-    if (sumdIndex == sumdChannelCount * 2 + 5) {
-        sumdIndex = 0;
-        sumdFrameDone = true;
-    }
+    if (sumdIndex < sumdChannelCount * 2 + 4)
+        CRC16((uint8_t)c);
+    else
+        if (sumdIndex == sumdChannelCount * 2 + 5) {
+            sumdIndex = 0;
+            sumdFrameDone = true;
+        }
 }
 
 #define SUMD_OFFSET_CHANNEL_1_HIGH 3
@@ -119,6 +142,10 @@ uint8_t sumdFrameStatus(void)
 
     sumdFrameDone = false;
 
+    // verify CRC
+    if (crc != ((sumd[SUMD_BYTES_PER_CHANNEL * sumdChannelCount + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
+            (sumd[SUMD_BYTES_PER_CHANNEL * sumdChannelCount + SUMD_OFFSET_CHANNEL_1_LOW])))
+        return frameStatus;
 
     switch (sumd[1]) {
         case SUMD_FRAME_STATE_FAILSAFE:
