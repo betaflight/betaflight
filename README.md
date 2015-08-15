@@ -45,7 +45,7 @@ Cleanflight also has additional features not found in baseflight.
 * Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
 + more many minor bug fixes.
 
-For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documenation.
+For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documentation.
 
 http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
 
