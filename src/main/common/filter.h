@@ -8,7 +8,6 @@
 typedef struct filterStatePt1_s {
 	float state;
 	float RC;
-	float constdT;
 } filterStatePt1_t;
 
 float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dt);
