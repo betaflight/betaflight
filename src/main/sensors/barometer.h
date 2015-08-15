@@ -18,12 +18,14 @@
 #pragma once
 
 typedef enum {
-    BARO_NONE = 0,
-    BARO_DEFAULT = 1,
+    BARO_DEFAULT = 0,
+    BARO_NONE = 1,
     BARO_BMP085 = 2,
     BARO_MS5611 = 3,
     BARO_BMP280 = 4
 } baroSensor_e;
+
+#define BARO_MAX BARO_BMP280
 
 #define BARO_SAMPLE_COUNT_MAX   48
 

@@ -405,12 +405,12 @@ retry:
     sensorsSet(SENSOR_ACC);
 }
 
-static void detectBaro()
+static void detectBaro(baroSensor_e baroHardwareToUse)
 {
 #ifdef BARO
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
-    baroSensor_e baroHardware = BARO_DEFAULT;
+    baroSensor_e baroHardware = baroHardwareToUse;
 
 #ifdef USE_BARO_BMP085
 
@@ -592,7 +592,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, int16_t magDeclinationFromConfig, uint32_t looptime, uint8_t syncGyroToLoop)
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse, int16_t magDeclinationFromConfig, uint32_t looptime, uint8_t syncGyroToLoop)
 {
     int16_t deg, min;
 
@@ -603,7 +603,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
         return false;
     }
     detectAcc(accHardwareToUse);
-    detectBaro();
+    detectBaro(baroHardwareToUse);
 
 
     // Now time to init things, acc first
