@@ -128,7 +128,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 104;
+static const uint8_t EEPROM_CONF_VERSION = 105;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -392,6 +392,7 @@ static void resetConf(void)
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     masterConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
+    masterConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
