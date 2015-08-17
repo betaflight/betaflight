@@ -689,15 +689,10 @@ void processRx(void)
 // Gyro Low Pass
 void filterGyro(void) {
     int axis;
-    static float dTGyro;
     static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
 
-    if (!dTGyro) {
-        dTGyro = (float)targetLooptime * 0.000001f;
-    }
-
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dTGyro);
+        gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dT);
     }
 }
 void getArmingChannel(modeActivationCondition_t *modeActivationConditions, uint8_t *armingChannel) {
@@ -812,7 +807,7 @@ bool runLoop(uint32_t loopTime) {
 
     if (masterConfig.syncGyroToLoop) {
         if (ARMING_FLAG(ARMED)) {
-            if (gyroSyncCheckUpdate() || (int32_t)(currentTime - loopTime + GYRO_WATCHDOG_DELAY) >= 0) {
+            if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
             	loopTrigger = true;
             }
         }
