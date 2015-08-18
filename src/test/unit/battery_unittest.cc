@@ -193,6 +193,7 @@ TEST(BatteryTest, CellCount)
     }
 }
 
+//#define DEBUG_ROLLOVER_PATTERNS
 /**
  * These next two tests do not test any production code (!) but serves as an example of how to use a signed variable for timing purposes.
  *
@@ -216,7 +217,7 @@ TEST(BatteryTest, RollOverPattern1)
             }
 
             servicedAt = now;
-#if 1
+#ifdef DEBUG_ROLLOVER_PATTERNS
             printf("servicedAt: %d, diff: %d\n", servicedAt, diff);
 #endif
             serviceCount++;
@@ -249,7 +250,7 @@ TEST(BatteryTest, RollOverPattern2)
             }
 
             serviceAt = now + serviceInterval; // this can rollover
-#if 1
+#ifdef DEBUG_ROLLOVER_PATTERNS
             printf("servicedAt: %d, nextServiceAt: %d, diff: %d\n", now, serviceAt, diff);
 #endif
 
