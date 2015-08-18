@@ -172,8 +172,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->gyro_cut_hz = 0;
-    pidProfile->pterm_cut_hz = 0;
-    pidProfile->dterm_cut_hz = 0;
+    pidProfile->pterm_cut_hz = 40;
+    pidProfile->dterm_cut_hz = 10;
 
     pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.4f;
@@ -377,7 +377,7 @@ static void resetConf(void)
     masterConfig.current_profile_index = 0;     // default profile
     masterConfig.gyro_cmpf_factor = 600;        // default MWC
     masterConfig.gyro_cmpfm_factor = 250;       // default MWC
-    masterConfig.gyro_lpf = 42;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    masterConfig.gyro_lpf = 188;                // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -450,7 +450,7 @@ static void resetConf(void)
 
     resetSerialConfig(&masterConfig.serialConfig);
 
-    masterConfig.looptime = 2000;
+    masterConfig.looptime = 0;
     masterConfig.emf_avoidance = 0;
     masterConfig.syncGyroToLoop = 1;
     masterConfig.rcSmoothing = 1;
@@ -542,7 +542,7 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
-    masterConfig.looptime = 2000;
+    masterConfig.looptime = 0;
     masterConfig.rcSmoothing = 1;
     currentProfile->pidProfile.pidController = 3;
     currentProfile->pidProfile.P8[ROLL] = 36;
