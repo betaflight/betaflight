@@ -5,6 +5,8 @@
  *      Author: borisb
  */
 
+#define YAW_PTERM_CUT_RATIO 2
+
 typedef struct filterStatePt1_s {
 	float state;
 	float RC;
