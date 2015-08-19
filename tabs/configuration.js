@@ -411,14 +411,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_serial_config);
 
-            if(CONFIG.boardIdentifier == "CLBR") {
-                waitSeconds(200);
-                $('a.connect').click();
-
-                waitSeconds(500);
-                $('a.connect').click();
-            }
-
         });
 
         // status data pulled via separate timer with static speed

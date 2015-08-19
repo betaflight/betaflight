@@ -282,14 +282,6 @@ TABS.ports.initialize = function (callback, scrollPosition) {
             }, rebootTimeoutDelay); 
         }
 
-        if(CONFIG.boardIdentifier == "CLBR") {
-            waitSeconds(200);
-            $('a.connect').click();
-
-            waitSeconds(500);
-            $('a.connect').click();
-        }
-
     }
 };
 
