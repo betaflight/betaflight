@@ -269,3 +269,5 @@ the CLI. Be sure to enter the `save` command to save the settings.
 
 After configuring channel ranges use the sub-trim on your transmitter to set the middle point of pitch, roll, yaw and throttle.
 
+
+You can also use rxrange to reverse the direction of an input channel, e.g. `rxrange 0 2000 1000`.

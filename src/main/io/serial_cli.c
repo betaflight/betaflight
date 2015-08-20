@@ -988,7 +988,7 @@ static void cliRxRange(char *cmdline)
 
             if (validArgumentCount != 2) {
                 cliShowParseError();
-            } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX || rangeMin >= rangeMax) {
+            } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
                 rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
