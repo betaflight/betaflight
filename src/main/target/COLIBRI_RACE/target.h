@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
-#define USE_HARDWARE_REVISION_DETECTION
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_15
@@ -37,11 +36,10 @@
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
 #define BEEPER_INVERTED
 
-#define MPU6500_SPI           		 SPI1
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6500_CS_GPIO       		 GPIOA
-#define MPU6500_CS_PIN        		 GPIO_Pin_4
-#define MPU6500_SPI_INSTANCE  		 SPI1
+#define MPU6500_CS_GPIO                  GPIOA
+#define MPU6500_CS_PIN                   GPIO_Pin_4
+#define MPU6500_SPI_INSTANCE             SPI1
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -50,13 +48,10 @@
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 #define SPI1_SCK_PIN            GPIO_Pin_3
 #define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
-#define SPI1_SCK_CLK            RCC_AHBPeriph_GPIOB
 #define SPI1_MISO_PIN           GPIO_Pin_4
 #define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
-#define SPI1_MISO_CLK           RCC_AHBPeriph_GPIOB
 #define SPI1_MOSI_PIN           GPIO_Pin_5
 #define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
-#define SPI1_MOSI_CLK           RCC_AHBPeriph_GPIOB
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
@@ -74,7 +69,6 @@
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
-//#define MAG_AK8975_ALIGN CW0_DEG_FLIP
 
 #define BEEPER
 #define LED0
