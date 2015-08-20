@@ -938,15 +938,15 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(3 * PID_ITEM_COUNT);
         if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
             for (i = 0; i < 3; i++) {
-                serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 250));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 250));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 100));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 255));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 255));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 255));
             }
             for (i = 3; i < PID_ITEM_COUNT; i++) {
                 if (i == PIDLEVEL) {
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 250));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 250));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 250));
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 255));
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 255));
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 255));
                 } else {
                     serialize8(currentProfile->pidProfile.P8[i]);
                     serialize8(currentProfile->pidProfile.I8[i]);
