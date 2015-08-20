@@ -91,6 +91,7 @@ static uint16_t nullReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channe
 }
 
 static rcReadRawDataPtr rcReadRawFunc = nullReadRawRC;
+static uint16_t rxRefreshRate;
 
 void serialRxInit(rxConfig_t *rxConfig);
 
@@ -161,6 +162,7 @@ void rxInit(rxConfig_t *rxConfig)
     }
 
     if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
+        rxRefreshRate = 20000;
         rxPwmInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
 
@@ -173,20 +175,28 @@ void serialRxInit(rxConfig_t *rxConfig)
     bool enabled = false;
     switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
+            rxRefreshRate = 22000;
+            enabled = spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            break;
         case SERIALRX_SPEKTRUM2048:
+            rxRefreshRate = 11000;
             enabled = spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_SBUS:
+            rxRefreshRate = 11000;
             enabled = sbusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_SUMD:
+            rxRefreshRate = 11000;
             enabled = sumdInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_SUMH:
+            rxRefreshRate = 11000;
             enabled = sumhInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_XBUS_MODE_B:
         case SERIALRX_XBUS_MODE_B_RJ01:
+            rxRefreshRate = 11000;
             enabled = xBusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
     }
@@ -545,4 +555,7 @@ void updateRSSI(uint32_t currentTime)
     }
 }
 
+void initRxRefreshRate(uint16_t *rxRefreshRatePtr) {
+    *rxRefreshRatePtr = rxRefreshRate;
+}
 
