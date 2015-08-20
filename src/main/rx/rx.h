@@ -129,6 +129,7 @@ typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t
 
 void updateRx(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
+bool rxAreFlightChannelsValid(void);
 bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 

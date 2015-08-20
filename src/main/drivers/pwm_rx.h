@@ -36,3 +36,5 @@ bool isPPMDataBeingReceived(void);
 void resetPPMDataReceivedState(void);
 
 void pwmRxInit(inputFilteringMode_e initialInputFilteringMode);
+
+bool isPWMDataBeingReceived(void);
