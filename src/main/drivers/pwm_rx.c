@@ -359,4 +359,3 @@ uint16_t pwmRead(uint8_t channel)
 {
     return captures[channel];
 }
-
