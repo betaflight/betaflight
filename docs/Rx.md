@@ -155,7 +155,7 @@ The default mode for all channels is AUTOMATIC.
 The rxfail command can be used in conjunction with mode ranges to trigger various actions.
 
 The `rxfail` command takes 2 or 3 arguments.
-* Index of aux channel (AUX1 = 0, AUX2 = 1,...)
+* Index of channel (See below)
 * Mode ('a' = AUTOMATIC, 'h' = HOLD, 's' = SET)
 * A value to use when in SET mode.
 
