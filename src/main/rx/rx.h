@@ -138,3 +138,4 @@ uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
 void updateRSSI(uint32_t currentTime);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
 
+void initRxRefreshRate(uint16_t *rxRefreshRatePtr);

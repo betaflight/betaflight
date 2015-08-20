@@ -93,7 +93,6 @@ enum {
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 500  // Watchdog for boards without interrupt for gyro
-#define LOOP_DEADBAND 400 // Dead band for loop to modify to rcInterpolationFactor in RC Filtering for unstable looptimes
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -110,7 +109,7 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 
-static bool isRXdataNew;
+static bool isRXDataNew;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
@@ -700,92 +699,29 @@ void filterGyro(void) {
         gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dTGyro);
     }
 }
-void getArmingChannel(modeActivationCondition_t *modeActivationConditions, uint8_t *armingChannel) {
-    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
-        if (modeActivationCondition->modeId == BOXARM && IS_RANGE_USABLE(&modeActivationCondition->range)) {
-            *armingChannel = modeActivationCondition->auxChannelIndex +  NON_AUX_CHANNEL_COUNT;
-            break;
-        }
-    }
-}
 
 void filterRc(void){
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
-    static int16_t loop[5] = { 0, 0, 0, 0, 0 };
-    static int16_t factor, rcInterpolationFactor, loopAvg;
-    static uint32_t rxRefreshRate;
-    static int16_t lastAux, deltaAux;                            // last arming AUX position and delta for arming AUX
-	static uint8_t auxChannelToFilter;                           // AUX channel used for arming needs filtering when used
-	static int loopCount;
+    static int16_t factor, rcInterpolationFactor;
+    static filterStatePt1_t filteredCycleTimeState;
+    uint16_t rxRefreshRate, filteredCycleTime;
 
     // Set RC refresh rate for sampling and channels to filter
-    if (!rxRefreshRate) {
-        if (feature(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
-            rxRefreshRate = 20000;
+   	initRxRefreshRate(&rxRefreshRate);
 
-            // AUX Channels to filter to replace PPM/PWM averaging
-            getArmingChannel(currentProfile->modeActivationConditions,&auxChannelToFilter);
+    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
+    rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
 
-        }
-
-        // TODO Are there more different refresh rates?
-        else {
-    	    switch (masterConfig.rxConfig.serialrx_provider) {
-    	        case SERIALRX_SPEKTRUM1024:
-    	            rxRefreshRate = 22000;
-    	            break;
-    	        case SERIALRX_SPEKTRUM2048:
-    	            rxRefreshRate = 11000;
-    	            break;
-    	        case SERIALRX_SBUS:
-    	            rxRefreshRate = 11000;
-    	            break;
-    	        default:
-    	            rxRefreshRate = 10000;
-    	            break;
-            }
-        }
-
-        rcInterpolationFactor = 1; // Initial Factor before looptime average is calculated
-
-    }
-
-    // Averaging of cycleTime for more precise sampling
-    loop[loopCount] = cycleTime;
-    loopCount++;
-
-    // Start recalculating new rcInterpolationFactor every 5 loop iterations
-    if (loopCount > 4) {
-        uint16_t tmp = (loop[0] + loop[1] + loop[2] + loop[3] + loop[4]) / 5;
-
-        // Jitter tolerance to prevent rcInterpolationFactor jump too much
-        if (tmp > (loopAvg + LOOP_DEADBAND) || tmp < (loopAvg - LOOP_DEADBAND))  {
-            loopAvg = tmp;
-            rcInterpolationFactor = rxRefreshRate / loopAvg + 1;
-        }
-
-        loopCount = 0;
-     }
-
-    if (isRXdataNew) {
+    if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
         	deltaRC[channel] = rcData[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
             lastCommand[channel] = rcData[channel];
         }
 
-        // Read AUX channel (arm/disarm guard enhancement)
-        if (auxChannelToFilter) {
-            deltaAux = rcData[auxChannelToFilter] - (lastAux - deltaAux * factor/rcInterpolationFactor);
-            lastAux = rcData[auxChannelToFilter];
-        }
-
-        isRXdataNew = false;
+        isRXDataNew = false;
         factor = rcInterpolationFactor - 1;
-        }
-
-    else {
+    } else {
         factor--;
     }
 
@@ -794,14 +730,7 @@ void filterRc(void){
         for (int channel=0; channel < 4; channel++) {
             rcData[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
          }
-
-        // Interpolate steps of Aux
-        if (auxChannelToFilter) {
-            rcData[auxChannelToFilter] = lastAux - deltaAux * factor/rcInterpolationFactor;
-        }
-    }
-
-    else {
+    } else {
         factor = 0;
     }
 }
@@ -840,7 +769,7 @@ void loop(void)
 
     if (shouldProcessRx(currentTime)) {
         processRx();
-        isRXdataNew = true;
+        isRXDataNew = true;
 
 #ifdef BARO
         // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
