@@ -46,16 +46,15 @@ Note: Tests are written in C++ and linked with with firmware's C code.
 
 ### Running the tests.
 
-The tests and test build system is very simple and based of the googletest example files, it will be improved in due course.
+The tests and test build system is very simple and based of the googletest example files, it will be improved in due course. From the root folder of the project simply do:
 
 ```
-cd test
-make
+make test
 ```
 
-This will build a set of executable files, one for each `*_unittest.cc` file.
+This will build a set of executable files in the `obj/test` folder, one for each `*_unittest.cc` file.
 
-You can run them on the command line to execute the tests and to see the test report.
+After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report.
 
 You can also step-debug the tests in eclipse and you can use the GoogleTest test runner to make building and re-running the tests simple.
 
