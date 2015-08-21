@@ -46,7 +46,7 @@ Note: Tests are written in C++ and linked with with firmware's C code.
 
 ### Running the tests.
 
-The tests and test build system is very simple and based of the googletest example files, it will be improved in due course. From the root folder of the project simply do:
+The tests and test build system is very simple and based off the googletest example files, it will be improved in due course. From the root folder of the project simply do:
 
 ```
 make test
