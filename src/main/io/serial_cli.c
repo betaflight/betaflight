@@ -2149,7 +2149,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("# BetaFlight/%s %s %s / %s (%s)",
+    printf("# CleanFlight/%s %s %s / %s (%s)",
         targetName,
         FC_VERSION_STRING,
         buildDate,
