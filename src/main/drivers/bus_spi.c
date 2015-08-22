@@ -34,17 +34,18 @@ static volatile uint16_t spi3ErrorCount = 0;
 
 #ifdef USE_SPI_DEVICE_1
 
+#ifndef SPI1_GPIO
 #define SPI1_GPIO               GPIOA
-#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOA
+#define SPI1_NSS_PIN            GPIO_Pin_4
+#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
 #define SPI1_SCK_PIN            GPIO_Pin_5
 #define SPI1_SCK_PIN_SOURCE     GPIO_PinSource5
-#define SPI1_SCK_CLK            RCC_AHBPeriph_GPIOA
 #define SPI1_MISO_PIN           GPIO_Pin_6
 #define SPI1_MISO_PIN_SOURCE    GPIO_PinSource6
-#define SPI1_MISO_CLK           RCC_AHBPeriph_GPIOA
 #define SPI1_MOSI_PIN           GPIO_Pin_7
 #define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource7
-#define SPI1_MOSI_CLK           RCC_AHBPeriph_GPIOA
+#endif
 
 void initSpi1(void)
 {
@@ -70,10 +71,20 @@ void initSpi1(void)
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_MISO_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_MOSI_PIN_SOURCE, GPIO_AF_5);
-
+#ifdef SPI1_NSS_PIN_SOURCE
+    GPIO_PinAFConfig(SPI1_GPIO, SPI1_NSS_PIN_SOURCE, GPIO_AF_5);
+#endif
     // Init pins
     GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+
+#ifdef SPI1_NSS_PIN
+    GPIO_InitStructure.GPIO_Pin = SPI1_NSS_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -81,21 +92,25 @@ void initSpi1(void)
     GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
 #endif
 
+#endif
+
 #ifdef STM32F10X
     gpio_config_t gpio;
     // MOSI + SCK as output
     gpio.mode = Mode_AF_PP;
-    gpio.pin = Pin_7 | Pin_5;
+    gpio.pin = SPI1_MOSI_PIN | SPI1_SCK_PIN;
     gpio.speed = Speed_50MHz;
     gpioInit(GPIOA, &gpio);
     // MISO as input
-    gpio.pin = Pin_6;
+    gpio.pin = SPI1_MISO_PIN;
     gpio.mode = Mode_IN_FLOATING;
     gpioInit(GPIOA, &gpio);
+#ifdef SPI1_NSS_PIN
     // NSS as gpio slave select
-    gpio.pin = Pin_4;
+    gpio.pin = SPI1_NSS_PIN;
     gpio.mode = Mode_Out_PP;
     gpioInit(GPIOA, &gpio);
+#endif
 #endif
 
     // Init SPI hardware
@@ -160,6 +175,9 @@ void initSpi2(void)
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_SCK_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_MISO_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_MOSI_PIN_SOURCE, GPIO_AF_5);
+#ifdef SPI2_NSS_PIN_SOURCE
+    GPIO_PinAFConfig(SPI2_GPIO, SPI2_NSS_PIN_SOURCE, GPIO_AF_5);
+#endif
 
     GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN | SPI2_MISO_PIN | SPI2_MOSI_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -168,6 +186,7 @@ void initSpi2(void)
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
 
+#ifdef SPI2_NSS_PIN
     GPIO_InitStructure.GPIO_Pin = SPI2_NSS_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -175,6 +194,7 @@ void initSpi2(void)
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
     GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+#endif
 
 #endif
 
@@ -191,10 +211,12 @@ void initSpi2(void)
     gpio.mode = Mode_IN_FLOATING;
     gpioInit(SPI2_GPIO, &gpio);
 
+#ifdef SPI2_NSS_PIN
     // NSS as gpio slave select
     gpio.pin = SPI2_NSS_PIN;
     gpio.mode = Mode_Out_PP;
     gpioInit(SPI2_GPIO, &gpio);
+#endif
 #endif
 
     // Init SPI2 hardware

@@ -174,6 +174,9 @@ static const char * const featureNames[] = {
     "BLACKBOX", "CHANNEL_FORWARDING", NULL
 };
 
+// sync this with rxFailsafeChannelMode_e
+static char rxFailsafeModes[RX_FAILSAFE_MODE_COUNT] = { 'a', 'h', 's'};
+
 #ifndef CJMCU
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
@@ -584,23 +587,28 @@ static void cliRxFail(char *cmdline)
 
     if (isEmpty(cmdline)) {
         // print out rxConfig failsafe settings
-        for (channel = 0; channel < MAX_AUX_CHANNEL_COUNT; channel++) {
+        for (channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
             cliRxFail(itoa(channel, buf, 10));
         }
     } else {
         char *ptr = cmdline;
-
         channel = atoi(ptr++);
-        if ((channel < MAX_AUX_CHANNEL_COUNT)) {
+        if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
-            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_aux_channel_configurations[channel];
+            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[channel];
 
             uint16_t value;
-            rxFailsafeChannelMode_e mode;
+            rxFailsafeChannelMode_e mode = channelFailsafeConfiguration->mode;
+            bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
 
+            // TODO optimize to use rxFailsafeModes - less logic.
             ptr = strchr(ptr, ' ');
             if (ptr) {
                 switch (*(++ptr)) {
+                    case 'a':
+                        mode = RX_FAILSAFE_MODE_AUTO;
+                        break;
+
                     case 'h':
                         mode = RX_FAILSAFE_MODE_HOLD;
                         break;
@@ -612,34 +620,49 @@ static void cliRxFail(char *cmdline)
                         cliShowParseError();
                         return;
                 }
-            }
 
-            ptr = strchr(ptr, ' ');
-            if (ptr) {
-                value = atoi(++ptr);
-                value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
-                if (value > MAX_RXFAIL_RANGE_STEP) {
-                    cliPrint("Value out of range\r\n");
-                    return;
+                requireValue = mode == RX_FAILSAFE_MODE_SET;
+
+                ptr = strchr(ptr, ' ');
+                if (ptr) {
+                    if (!requireValue) {
+                        cliShowParseError();
+                        return;
+                    }
+                    value = atoi(++ptr);
+                    value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
+                    if (value > MAX_RXFAIL_RANGE_STEP) {
+                        cliPrint("Value out of range\r\n");
+                        return;
+                    }
+
+                    channelFailsafeConfiguration->step = value;
                 }
-
                 channelFailsafeConfiguration->mode = mode;
-                channelFailsafeConfiguration->step = value;
+
             }
 
-            char modeCharacter = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET ? 's' : 'h';
+            char modeCharacter = rxFailsafeModes[channelFailsafeConfiguration->mode];
+
             // triple use of printf below
             // 1. acknowledge interpretation on command,
             // 2. query current setting on single item,
             // 3. recursive use for full list.
 
-            printf("rxfail %u %c %d\r\n",
-                channel,
-                modeCharacter,
-                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
-            );
+            if (requireValue) {
+                printf("rxfail %u %c %d\r\n",
+                    channel,
+                    modeCharacter,
+                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
+                );
+            } else {
+                printf("rxfail %u %c\r\n",
+                    channel,
+                    modeCharacter
+                );
+            }
         } else {
-            printf("channel must be < %u\r\n", MAX_AUX_CHANNEL_COUNT);
+            cliShowArgumentRangeError("channel", 0, MAX_SUPPORTED_RC_CHANNEL_COUNT - 1);
         }
     }
 }
@@ -976,7 +999,7 @@ static void cliRxRange(char *cmdline)
 
             if (validArgumentCount != 2) {
                 cliShowParseError();
-            } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX || rangeMin >= rangeMax) {
+            } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
                 rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];

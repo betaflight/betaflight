@@ -940,15 +940,15 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(3 * PID_ITEM_COUNT);
         if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
             for (i = 0; i < 3; i++) {
-                serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 250));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 250));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 100));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 255));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 255));
+                serialize8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 255));
             }
             for (i = 3; i < PID_ITEM_COUNT; i++) {
                 if (i == PIDLEVEL) {
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 250));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 250));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 250));
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 255));
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 255));
+                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 255));
                 } else {
                     serialize8(currentProfile->pidProfile.P8[i]);
                     serialize8(currentProfile->pidProfile.I8[i]);
@@ -1193,10 +1193,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_RXFAIL_CONFIG:
-        headSerialReply(3 * (rxRuntimeConfig.channelCount - NON_AUX_CHANNEL_COUNT));
-        for (i = NON_AUX_CHANNEL_COUNT; i < rxRuntimeConfig.channelCount; i++) {
-            serialize8(masterConfig.rxConfig.failsafe_aux_channel_configurations[i - NON_AUX_CHANNEL_COUNT].mode);
-            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_aux_channel_configurations[i - NON_AUX_CHANNEL_COUNT].step));
+        headSerialReply(3 * (rxRuntimeConfig.channelCount));
+        for (i = 0; i < rxRuntimeConfig.channelCount; i++) {
+            serialize8(masterConfig.rxConfig.failsafe_channel_configurations[i].mode);
+            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_channel_configurations[i].step));
         }
         break;
 
@@ -1647,12 +1647,12 @@ static bool processInCommand(void)
     case MSP_SET_RXFAIL_CONFIG:
         {
             uint8_t channelCount = currentPort->dataSize / 3;
-            if (channelCount > MAX_AUX_CHANNEL_COUNT) {
+            if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
                 headSerialError(0);
             } else {
-                for (i = NON_AUX_CHANNEL_COUNT; i < channelCount; i++) {
-                    masterConfig.rxConfig.failsafe_aux_channel_configurations[i - NON_AUX_CHANNEL_COUNT].mode = read8();
-                    masterConfig.rxConfig.failsafe_aux_channel_configurations[i - NON_AUX_CHANNEL_COUNT].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
+                for (i = 0; i < channelCount; i++) {
+                    masterConfig.rxConfig.failsafe_channel_configurations[i].mode = read8();
+                    masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
                 }
             }
         }

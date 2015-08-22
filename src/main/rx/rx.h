@@ -82,9 +82,12 @@ extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2
 #define RSSI_SCALE_DEFAULT 30
 
 typedef enum {
-    RX_FAILSAFE_MODE_HOLD = 0,
-    RX_FAILSAFE_MODE_SET
+    RX_FAILSAFE_MODE_AUTO = 0,
+    RX_FAILSAFE_MODE_HOLD,
+    RX_FAILSAFE_MODE_SET,
 } rxFailsafeChannelMode_e;
+
+#define RX_FAILSAFE_MODE_COUNT 3
 
 typedef struct rxFailsafeChannelConfiguration_s {
     uint8_t mode; // See rxFailsafeChannelMode_e
@@ -109,7 +112,7 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    rxFailsafeChannelConfiguration_t failsafe_aux_channel_configurations[MAX_AUX_CHANNEL_COUNT];
+    rxFailsafeChannelConfiguration_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
     rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
@@ -129,6 +132,7 @@ typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t
 
 void updateRx(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
+bool rxAreFlightChannelsValid(void);
 bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 

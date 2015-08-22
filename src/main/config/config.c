@@ -361,7 +361,7 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY)
+#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE)
     featureSet(FEATURE_RX_PPM);
 #endif
 
@@ -406,10 +406,9 @@ static void resetConf(void)
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
 
-    for (i = 0; i < MAX_AUX_CHANNEL_COUNT; i++) {
-        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_aux_channel_configurations[i];
-
-        channelFailsafeConfiguration->mode = RX_FAILSAFE_MODE_HOLD;
+    for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[i];
+        channelFailsafeConfiguration->mode = RX_FAILSAFE_MODE_AUTO;
         channelFailsafeConfiguration->step = CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.midrc);
     }
 

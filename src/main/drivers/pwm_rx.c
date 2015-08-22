@@ -227,6 +227,17 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
 
 #define MAX_MISSED_PWM_EVENTS 10
 
+bool isPWMDataBeingReceived(void)
+{
+    int channel;
+    for (channel = 0; channel < PWM_PORTS_OR_PPM_CAPTURE_COUNT; channel++) {
+        if (captures[channel] != PPM_RCVR_TIMEOUT) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static void pwmOverflowCallback(timerOvrHandlerRec_t* cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
@@ -339,8 +350,12 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
     timerChConfigCallbacks(timerHardwarePtr, &self->edgeCb, &self->overflowCb);
 }
 
-uint16_t pwmRead(uint8_t channel)
+uint16_t ppmRead(uint8_t channel)
 {
     return captures[channel];
 }
 
+uint16_t pwmRead(uint8_t channel)
+{
+    return captures[channel];
+}
