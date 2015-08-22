@@ -163,7 +163,7 @@ int32_t GPS_coord[2];
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 uint16_t GPS_altitude;              // altitude in 0.1m
-uint8_t vbat;
+uint16_t vbat;
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 
 int32_t amperage;
@@ -230,6 +230,10 @@ bool telemetryDetermineEnabledState(portSharing_e) {
 
 portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {
     return PORTSHARING_NOT_SHARED;
+}
+
+batteryState_e getBatteryState(void) {
+	return BATTERY_OK;
 }
 
 }

@@ -255,6 +255,18 @@ protected:
         rxConfig.mincheck = DEFAULT_MIN_CHECK;
         rxConfig.maxcheck = DEFAULT_MAX_CHECK;
         rxConfig.midrc = 1500;
+
+        controlRateConfig.rcRate8 = 90;
+        controlRateConfig.rcExpo8 = 0;
+        controlRateConfig.thrMid8 = 0;
+        controlRateConfig.thrExpo8 = 0;
+        controlRateConfig.rcYawExpo8 = 0;
+        controlRateConfig.rates[0] = 0;
+        controlRateConfig.rates[1] = 0;
+        controlRateConfig.rates[2] = 0;
+        controlRateConfig.dynThrPID = 0;
+        controlRateConfig.tpa_breakpoint = 0;
+
     }
 };
 

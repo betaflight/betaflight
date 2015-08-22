@@ -98,6 +98,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
 static serialPort_t *cliPort;
 
 static void cliAux(char *cmdline);
+static void cliRxFail(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
 static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
@@ -117,6 +118,7 @@ static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
 static void cliVersion(char *cmdline);
+static void cliRxRange(char *cmdline);
 
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
@@ -171,6 +173,9 @@ static const char * const featureNames[] = {
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
     "BLACKBOX", "CHANNEL_FORWARDING", NULL
 };
+
+// sync this with rxFailsafeChannelMode_e
+static char rxFailsafeModes[RX_FAILSAFE_MODE_COUNT] = { 'a', 'h', 's'};
 
 #ifndef CJMCU
 // sync this with sensors_e
@@ -264,6 +269,8 @@ const clicmd_t cmdTable[] = {
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile",
         "[<index>]", cliRateProfile),
+    CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
+    CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifdef USE_SERVOS
@@ -507,6 +514,10 @@ const clivalue_t valueTable[] = {
     { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, 1, 32 },
     { "blackbox_device",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_device, 0, 1 },
 #endif
+
+    { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[X], -32768, 32767 },
+    { "magzero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Y], -32768, 32767 },
+    { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], -32768, 32767 },
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
@@ -564,6 +575,93 @@ static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *
 static bool isEmpty(const char *string)
 {
     return *string == '\0';
+}
+
+static void cliRxFail(char *cmdline)
+{
+    uint8_t channel;
+    char buf[3];
+
+    if (isEmpty(cmdline)) {
+        // print out rxConfig failsafe settings
+        for (channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
+            cliRxFail(itoa(channel, buf, 10));
+        }
+    } else {
+        char *ptr = cmdline;
+        channel = atoi(ptr++);
+        if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
+
+            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[channel];
+
+            uint16_t value;
+            rxFailsafeChannelMode_e mode = channelFailsafeConfiguration->mode;
+            bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
+
+            // TODO optimize to use rxFailsafeModes - less logic.
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                switch (*(++ptr)) {
+                    case 'a':
+                        mode = RX_FAILSAFE_MODE_AUTO;
+                        break;
+
+                    case 'h':
+                        mode = RX_FAILSAFE_MODE_HOLD;
+                        break;
+
+                    case 's':
+                        mode = RX_FAILSAFE_MODE_SET;
+                        break;
+                    default:
+                        cliShowParseError();
+                        return;
+                }
+
+                requireValue = mode == RX_FAILSAFE_MODE_SET;
+
+                ptr = strchr(ptr, ' ');
+                if (ptr) {
+                    if (!requireValue) {
+                        cliShowParseError();
+                        return;
+                    }
+                    value = atoi(++ptr);
+                    value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
+                    if (value > MAX_RXFAIL_RANGE_STEP) {
+                        cliPrint("Value out of range\r\n");
+                        return;
+                    }
+
+                    channelFailsafeConfiguration->step = value;
+                }
+                channelFailsafeConfiguration->mode = mode;
+
+            }
+
+            char modeCharacter = rxFailsafeModes[channelFailsafeConfiguration->mode];
+
+            // triple use of printf below
+            // 1. acknowledge interpretation on command,
+            // 2. query current setting on single item,
+            // 3. recursive use for full list.
+
+            if (requireValue) {
+                printf("rxfail %u %c %d\r\n",
+                    channel,
+                    modeCharacter,
+                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
+                );
+            } else {
+                printf("rxfail %u %c\r\n",
+                    channel,
+                    modeCharacter
+                );
+            }
+        } else {
+            cliShowArgumentRangeError("channel", 0, MAX_SUPPORTED_RC_CHANNEL_COUNT - 1);
+        }
+    }
 }
 
 static void cliAux(char *cmdline)
@@ -864,6 +962,51 @@ static void cliMotorMix(char *cmdline)
         }
     }
 #endif
+}
+
+static void cliRxRange(char *cmdline)
+{
+    int i, validArgumentCount = 0;
+    char *ptr;
+
+    if (isEmpty(cmdline)) {
+        for (i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
+            rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
+            printf("rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
+        }
+    } else if (strcasecmp(cmdline, "reset") == 0) {
+        resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
+    } else {
+        ptr = cmdline;
+        i = atoi(ptr);
+        if (i >= 0 && i < NON_AUX_CHANNEL_COUNT) {
+            int rangeMin, rangeMax;
+
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                rangeMin = atoi(++ptr);
+                validArgumentCount++;
+            }
+
+            ptr = strchr(ptr, ' ');
+            if (ptr) {
+                rangeMax = atoi(++ptr);
+                validArgumentCount++;
+            }
+
+            if (validArgumentCount != 2) {
+                cliShowParseError();
+            } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
+                cliShowParseError();
+            } else {
+                rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
+                channelRangeConfiguration->min = rangeMin;
+                channelRangeConfiguration->max = rangeMax;
+            }
+        } else {
+            cliShowArgumentRangeError("channel", 0, NON_AUX_CHANNEL_COUNT - 1);
+        }
+    }
 }
 
 #ifdef LED_STRIP
@@ -1387,6 +1530,9 @@ static void cliDump(char *cmdline)
 #endif
         printSectionBreak();
         dumpValues(MASTER_VALUE);
+
+        cliPrint("\r\n# rxfail\r\n");
+        cliRxFail("");
     }
 
     if (dumpMask & DUMP_PROFILE) {
@@ -1402,6 +1548,10 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# adjrange\r\n");
 
         cliAdjustmentRange("");
+
+        printf("\r\n# rxrange\r\n");
+
+        cliRxRange("");
 
         cliPrint("\r\n# servo\r\n");
 
@@ -1927,8 +2077,8 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery)\r\n",
-        millis() / 1000, vbat, batteryCellCount);
+    printf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s)\r\n",
+        millis() / 1000, vbat, batteryCellCount, getBatteryStateString());
 
 
     printf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));

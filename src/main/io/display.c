@@ -206,7 +206,13 @@ void updateTicker(void)
 void updateRxStatus(void)
 {
     i2c_OLED_set_xy(SCREEN_CHARACTER_COLUMN_COUNT - 2, 0);
-    i2c_OLED_send_char(rxIsReceivingSignal() ? 'R' : '!');
+    char rxStatus = '!';
+    if (rxIsReceivingSignal()) {
+        rxStatus = 'r';
+    } if (rxAreFlightChannelsValid()) {
+        rxStatus = 'R';
+    }
+    i2c_OLED_send_char(rxStatus);
 }
 
 void updateFailsafeStatus(void)
@@ -281,9 +287,8 @@ void showWelcomePage(void)
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Target: %s", targetName);
     i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
+    i2c_OLED_send_string(targetName);
 }
 
 void showArmedPage(void)

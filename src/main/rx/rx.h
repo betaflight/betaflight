@@ -27,6 +27,10 @@
 #define PWM_PULSE_MIN   750       // minimum PWM pulse width which is considered valid
 #define PWM_PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
 
+#define RXFAIL_STEP_TO_CHANNEL_VALUE(step) (PWM_PULSE_MIN + 25 * step)
+#define CHANNEL_VALUE_TO_RXFAIL_STEP(channelValue) ((constrain(channelValue, PWM_PULSE_MIN, PWM_PULSE_MAX) - PWM_PULSE_MIN) / 25)
+#define MAX_RXFAIL_RANGE_STEP ((PWM_PULSE_MAX - PWM_PULSE_MIN) / 25)
+
 #define DEFAULT_SERVO_MIN 1000
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
@@ -77,6 +81,24 @@ extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2
 #define RSSI_SCALE_MAX 255
 #define RSSI_SCALE_DEFAULT 30
 
+typedef enum {
+    RX_FAILSAFE_MODE_AUTO = 0,
+    RX_FAILSAFE_MODE_HOLD,
+    RX_FAILSAFE_MODE_SET,
+} rxFailsafeChannelMode_e;
+
+#define RX_FAILSAFE_MODE_COUNT 3
+
+typedef struct rxFailsafeChannelConfiguration_s {
+    uint8_t mode; // See rxFailsafeChannelMode_e
+    uint8_t step;
+} rxFailsafeChannelConfiguration_t;
+
+typedef struct rxChannelRangeConfiguration_s {
+    uint16_t min;
+    uint16_t max;
+} rxChannelRangeConfiguration_t;
+
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
@@ -90,7 +112,9 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
+    rxFailsafeChannelConfiguration_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
+    rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
@@ -108,6 +132,7 @@ typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t
 
 void updateRx(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
+bool rxAreFlightChannelsValid(void);
 bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
@@ -115,3 +140,5 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
 
 void updateRSSI(uint32_t currentTime);
+void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
+

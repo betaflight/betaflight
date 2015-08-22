@@ -26,35 +26,25 @@ extern "C" {
     #include "rx/rx.h"
 
     void rxInit(rxConfig_t *rxConfig);
-    void rxCheckPulse(uint8_t channel, uint16_t pulseDuration);
+    void rxResetFlightChannelStatus(void);
+    bool rxHaveValidFlightChannels(void);
+    bool isPulseValid(uint16_t pulseDuration);
+    void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-enum {
-    COUNTER_FAILSAFE_ON_VALID_DATA_RECEIVED = 0,
-};
-#define CALL_COUNT_ITEM_COUNT 1
-
-static int callCounts[CALL_COUNT_ITEM_COUNT];
-
-#define CALL_COUNTER(item) (callCounts[item])
-
-void resetCallCounters(void) {
-    memset(&callCounts, 0, sizeof(callCounts));
-}
-
 typedef struct testData_s {
     bool isPPMDataBeingReceived;
+    bool isPWMDataBeingReceived;
 } testData_t;
 
 static testData_t testData;
 
-TEST(RxTest, TestFailsafeInformedOfValidData)
+TEST(RxTest, TestValidFlightChannels)
 {
     // given
-    resetCallCounters();
     memset(&testData, 0, sizeof(testData));
 
     // and
@@ -67,15 +57,18 @@ TEST(RxTest, TestFailsafeInformedOfValidData)
     // when
     rxInit(&rxConfig);
 
+    rxResetFlightChannelStatus();
+
     for (uint8_t channelIndex = 0; channelIndex < MAX_SUPPORTED_RC_CHANNEL_COUNT; channelIndex++) {
-        rxCheckPulse(channelIndex, 1500);
+        bool validPulse = isPulseValid(1500);
+        rxUpdateFlightChannelStatus(channelIndex, validPulse);
     }
 
     // then
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_FAILSAFE_ON_VALID_DATA_RECEIVED));
+    EXPECT_TRUE(rxHaveValidFlightChannels());
 }
 
-TEST(RxTest, TestFailsafeNotInformedOfValidDataWhenStickChannelsAreBad)
+TEST(RxTest, TestInvalidFlightChannels)
 {
     // given
     memset(&testData, 0, sizeof(testData));
@@ -99,36 +92,38 @@ TEST(RxTest, TestFailsafeNotInformedOfValidDataWhenStickChannelsAreBad)
     for (uint8_t stickChannelIndex = 0; stickChannelIndex < STICK_CHANNEL_COUNT; stickChannelIndex++) {
 
         // given
-        resetCallCounters();
+        rxResetFlightChannelStatus();
 
-        for (uint8_t channelIndex = 0; channelIndex < STICK_CHANNEL_COUNT; channelIndex++) {
-            channelPulses[stickChannelIndex] = rxConfig.rx_min_usec;
+        for (uint8_t otherStickChannelIndex = 0; otherStickChannelIndex < STICK_CHANNEL_COUNT; otherStickChannelIndex++) {
+            channelPulses[otherStickChannelIndex] = rxConfig.rx_min_usec;
         }
         channelPulses[stickChannelIndex] = rxConfig.rx_min_usec - 1;
 
         // when
         for (uint8_t channelIndex = 0; channelIndex < MAX_SUPPORTED_RC_CHANNEL_COUNT; channelIndex++) {
-            rxCheckPulse(channelIndex, channelPulses[channelIndex]);
+            bool validPulse = isPulseValid(channelPulses[channelIndex]);
+            rxUpdateFlightChannelStatus(channelIndex, validPulse);
         }
 
         // then
-        EXPECT_EQ(0, CALL_COUNTER(COUNTER_FAILSAFE_ON_VALID_DATA_RECEIVED));
+        EXPECT_FALSE(rxHaveValidFlightChannels());
 
         // given
-        resetCallCounters();
+        rxResetFlightChannelStatus();
 
-        for (uint8_t channelIndex = 0; channelIndex < STICK_CHANNEL_COUNT; channelIndex++) {
-            channelPulses[stickChannelIndex] = rxConfig.rx_max_usec;
+        for (uint8_t otherStickChannelIndex = 0; otherStickChannelIndex < STICK_CHANNEL_COUNT; otherStickChannelIndex++) {
+            channelPulses[otherStickChannelIndex] = rxConfig.rx_max_usec;
         }
         channelPulses[stickChannelIndex] = rxConfig.rx_max_usec + 1;
 
         // when
         for (uint8_t channelIndex = 0; channelIndex < MAX_SUPPORTED_RC_CHANNEL_COUNT; channelIndex++) {
-            rxCheckPulse(channelIndex, channelPulses[channelIndex]);
+            bool validPulse = isPulseValid(channelPulses[channelIndex]);
+            rxUpdateFlightChannelStatus(channelIndex, validPulse);
         }
 
         // then
-        EXPECT_EQ(0, CALL_COUNTER(COUNTER_FAILSAFE_ON_VALID_DATA_RECEIVED));
+        EXPECT_FALSE(rxHaveValidFlightChannels());
     }
 }
 
@@ -137,9 +132,7 @@ TEST(RxTest, TestFailsafeNotInformedOfValidDataWhenStickChannelsAreBad)
 
 extern "C" {
     void failsafeOnRxCycleStarted() {}
-    void failsafeOnValidDataReceived() {
-        callCounts[COUNTER_FAILSAFE_ON_VALID_DATA_RECEIVED]++;
-    }
+    void failsafeOnValidDataReceived() {}
 
     bool feature(uint32_t mask) {
         UNUSED(mask);
@@ -148,6 +141,10 @@ extern "C" {
 
     bool isPPMDataBeingReceived(void) {
         return testData.isPPMDataBeingReceived;
+    }
+
+    bool isPWMDataBeingReceived(void) {
+        return testData.isPWMDataBeingReceived;
     }
 
     void resetPPMDataReceivedState(void) {}

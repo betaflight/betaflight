@@ -3,7 +3,7 @@
 Building in Mac OS X can be accomplished in just a few steps:
 
 * Install general development tools (clang, make, git)
-* Install ARM GCC 4.8 series compiler
+* Install ARM GCC 4.9 series compiler
 * Checkout Cleanflight sourcecode through git
 * Build the code
 
@@ -35,22 +35,20 @@ installation, open up XCode and enter its preferences menu. Go to the "downloads
 
 [from the App Store]: https://itunes.apple.com/us/app/xcode/id497799835
 
-## Install ARM GCC 4.8 series compiler
+## Install ARM GCC 4.9 series compiler
 
-Cleanflight is built using the 4.8 series GCC compiler provided by the [GNU Tools for ARM Embedded Processors project][].
-The newest "4.9" series compiler produces builds that don't boot on CC3D and Sparky targets (and perhaps others), so it's
-better to use the older 4.8 compiler for the moment.
+Cleanflight is built using the 4.9 series GCC compiler provided by the [GNU Tools for ARM Embedded Processors project][].
 
 Hit the "all downloads" link on the right side of the GNU Tools for ARM page to view [the older releases][]. Grab the
-Mac installation tarball for the latest version in the 4.8 series (e.g. 4.8-2014-q3-update). Move it somewhere useful 
+Mac installation tarball for the latest version in the 4.9 series (e.g. 4.9-2015q2). Move it somewhere useful 
 such as a `~/development` folder (in your home directory) and double click it to unpack it. You should end up with a 
-folder called `~/development/gcc-arm-none-eabi-4_8-2014q3/`.
+folder called `~/development/gcc-arm-none-eabi-4_9-2015q2/`.
 
 Now you just need to add the `bin/` directory from inside the GCC directory to your system's path. Run `nano ~/.profile`. Add a
 new line at the end of the file which adds the path for the `bin/` folder to your path, like so:
 
 ```
-export PATH=$PATH:~/development/gcc-arm-none-eabi-4_8-2014q3/bin
+export PATH=$PATH:~/development/gcc-arm-none-eabi-4_9-2015q2/bin
 ```
 
 Press CTRL+X to exit nano, and answer "y" when prompted to save your changes.
@@ -64,8 +62,8 @@ arm-none-eabi-gcc --version
 You should get output similar to:
 
 ```
-arm-none-eabi-gcc (GNU Tools for ARM Embedded Processors) 4.8.4 20140725 (release) [ARM/embedded-4_8-branch revision 213147]
-Copyright (C) 2013 Free Software Foundation, Inc.
+arm-none-eabi-gcc.exe (GNU Tools for ARM Embedded Processors) 4.9.3 20150529 (release) [ARM/embedded-4_9-branch revision 224288]
+Copyright (C) 2014 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```

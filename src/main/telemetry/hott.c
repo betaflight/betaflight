@@ -217,9 +217,12 @@ static bool shouldTriggerBatteryAlarmNow(void)
 
 static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 {
+    batteryState_e batteryState;
+
     if (shouldTriggerBatteryAlarmNow()){
         lastHottAlarmSoundTime = millis();
-        if (vbat <= batteryWarningVoltage){
+        batteryState = getBatteryState();
+        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL){
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
         }
@@ -423,7 +426,10 @@ static void hottCheckSerialData(uint32_t currentMicros)
 static void hottSendTelemetryData(void) {
     if (!hottIsSending) {
         hottIsSending = true;
-        serialSetMode(hottPort, MODE_TX);
+        // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
+        //serialSetMode(hottPort, MODE_TX);
+        closeSerialPort(hottPort);
+        hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, MODE_TX, SERIAL_NOT_INVERTED);
         hottMsgCrc = 0;
         return;
     }
@@ -432,7 +438,10 @@ static void hottSendTelemetryData(void) {
         hottMsg = NULL;
         hottIsSending = false;
 
-        serialSetMode(hottPort, MODE_RX);
+        // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
+        //serialSetMode(hottPort, MODE_RX);
+        closeSerialPort(hottPort);
+        hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
         flushHottRxBuffer();
         return;
     }

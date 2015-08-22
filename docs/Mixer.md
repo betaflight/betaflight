@@ -81,7 +81,7 @@ Steps to configure custom mixer in the CLI:
 2. Use `mmix reset` to erase the any existing custom mixing. 
 3. Issue a `mmix` statement for each motor. 
 
-The cmix statement has the following syntax: `cmix n THROTTLE ROLL PITCH YAW` 
+The mmix statement has the following syntax: `mmix n THROTTLE ROLL PITCH YAW` 
 
 | Mixing table parameter | Definition | 
 | ---------------------- | ---------- |
@@ -149,7 +149,7 @@ KK2.0 Motor Layout
 
 ### Example 2: A HEX-U Copter 
 
-Here is an example of a U-shaped hex; probably good for herding giraffes in the Sahara. Because the 1 and 6 motors are closer to the roll axis, they impart much more force than the motors mounted twice as far from the FC CG. The effect they have on pitch is the same as the forward motors because they are the same distance from the FC CG. The 2 and 5 motors do not contribute anything to pitch because speeding them up and slowing them down has no effect on the forward/back pitch of the FC. 
+Here is an example of a U-shaped hex; probably good for herding giraffes in the Sahara. Because the 1 and 6 motors are closer to the roll axis, they impart much less force than the motors mounted twice as far from the FC CG. The effect they have on pitch is the same as the forward motors because they are the same distance from the FC CG. The 2 and 5 motors do not contribute anything to pitch because speeding them up and slowing them down has no effect on the forward/back pitch of the FC. 
 
 ``` 
 HEX6-U
@@ -163,7 +163,7 @@ HEX6-U
 
 |Command| Roll | Pitch | Yaw |
 | ----- | ---- | ----- | --- | 
-| Use `mmix 1 1.0, -0.5,  1.0, -1.0` | half negative | full positive | CW |
+| Use `mmix 0 1.0, -0.5,  1.0, -1.0` | half negative | full positive | CW |
 | Use `mmix 1 1.0, -1.0,  0.0,  1.0` | full negative | none | CCW | 
 | Use `mmix 2 1.0, -1.0, -1.0, -1.0` | full negative | full negative | CW | 
 | Use `mmix 3 1.0,  1.0, -1.0,  1.0` | full positive | full negative | CCW  | 
