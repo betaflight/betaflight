@@ -110,6 +110,19 @@ sending this message for all adjustment range slots.
 | adjustmentFunction | uint8 | See below |
 | auxSwitchChannelIndex | uint8 | The Aux channel number used to perform the function (indexed from 0) |
 
+### MSP\_SET\_1WIRE
+
+The MSP\_SET\_1WIRE is used to enable serial1wire passthrough
+note: it would be ideal to disable this when armed
+
+| Command | Msg Id | Direction |
+|---------|--------|-----------|
+| MSP\_SET\_1WIRE  | 243 | to FC |
+
+| Data | Type | Notes |
+|------|------|-------|
+| esc id | uint8 | A monotonically increasing ID, from 0 to the number of escs -1 |
+
 #### AdjustmentIndex
 
 The FC maintains internal state for each adjustmentStateIndex, currently 4 simultaneous adjustment states are maintained.  Multiple adjustment ranges

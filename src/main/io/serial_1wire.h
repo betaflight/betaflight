@@ -27,5 +27,6 @@ typedef struct {
   uint32_t pinpos;
 } escHardware_t;
 
+void usb1WireInitialize();
 void usb1WirePassthrough(int8_t escIndex);
 #endif
