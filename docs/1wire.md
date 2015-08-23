@@ -16,53 +16,31 @@ Currently supported on the SPRACINGF3, STM32F3DISCOVERY, NAZE32 (including clone
 
   - For the CC3D, connect [a USB to UART adapter](http://bit.ly/cf-cp2102) to the main port. If you need one, I prefer the [CP2102](http://bit.ly/cf-cp2102) as it is cheap and [the driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) is readily available.
 
-    - This is how you plug in the USB/UART adapter on the CC3D. Be sure to also plug in the normal USB cable as well.
-
-    ![Flashing BlHeli Bootloader](assets/images/serial1wire-cc3d-wiring.jpg)
-
   - In the case that your board does not power on fully without a battery attached, it is OK to attach the battery before following the steps below. However, it may not be necessary in all cases.
 
 ## Usage
 
-How to for the CC3D: [https://youtu.be/fmUPL1lRcss](https://youtu.be/fmUPL1lRcss)
-
   - Plug in the USB cable and connect to your board with the CleanFlight configurator.
 
-  - Open the CLI tab, then run: `1wire <esc index>`
+    - For boards without a built in USB/UART adapter, you'll need to plug an external one in. Here is how you wire up the CC3D. Plug your USB/UART adapter into the Flexi port:
 
-    E.g. to connect to the ESC on your flight controller's port #1, run the command:
-
-    ```
-    1wire 1
-    ```
-
-  - Click "Disconnect" in the CleanFlight configurator. Do not power down your board.
-
-    - Note, in the future it may be possible to configure your ESCs directly in CleanFlight.
+      ![Flashing BlHeli Bootloader](assets/images/serial1wire-cc3d-wiring.jpg)
 
   - Open the BlHeli Suite.
 
-  - Ensure you have selected the correct Atmel or SILABS "(USB/Com)" option under the "Select ATMEL / SILABS Interface" menu option.
+  - Ensure you have selected the correct Atmel or SILABS "Cleanflight" option under the "Select ATMEL / SILABS Interface" menu option.
 
-  - Ensure you have the correct port selected.
-
-    - On the NAZE, this port will be the same COM port used by the CleanFlight configurator.
-
-    - On the CC3D, this port will be your USB to UART serial adapter.
+  - Ensure you have port for your external USB/UART adapter selected, if you're using one, otherwise pick the same COM port that you normally use for Cleanflight.
 
   - Click "Connect" and wait for the connection to complete. If you get a COM error, hit connect again. It will probably work.
+
+  - Use the boxes at the bottom to select the ESCs you have connected. Note that the boxes correspond directly to the ports on your flight controller. For example if you have motors on ports 1-4, pick boxes 1-4 or in the case of a tri-copter that uses motors on ports 3, 4 and 5, select those ports in BlHeli.
 
   - Click "Read Setup"
 
   - Use BlHeli suite as normal.
 
   - When you're finished with one ESC, click "Disconnect"
-
-  - Unplug the flight control board from Blheli.
-
-    - On the CC3D this means you can unplug just the USB/UART adapter, leaving the USB cable attached. The advantage is that Cleanflight will stay connected and you'll only have to reconnect BlHeli.
-
-    - On the NAZE you'll have to unplug USB cable and start over on the next ESC.
 
 ## Implementing and Configuring targets
 
@@ -106,8 +84,3 @@ The following parameters can be used to enable and configure this in the related
 ## Development Notes
 
 On the STM32F3DISCOVERY, an external pullup on the ESC line may be necessary. I needed a 3v, 4.7k pullup.
-
-## Todo
-
-Implement the BlHeli bootloader configuration protocol in the CleanFlight GUI
-

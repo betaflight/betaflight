@@ -25,7 +25,6 @@
 #ifdef USE_SERIAL_1WIRE
 
 #include "drivers/gpio.h"
-#include "drivers/inverter.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "io/serial_1wire.h"
@@ -172,11 +171,6 @@ void usb1WirePassthrough(int8_t escIndex)
   //Disable all interrupts
   disable_hardware_uart;
 
-  //Turn off the inverter, if necessary
-#if defined(INVERTER) && defined(SERIAL_1WIRE_USE_MAIN)
-  INVERTER_OFF;
-#endif
-
   // reset all the pins
   GPIO_ResetBits(S1W_RX_GPIO, S1W_RX_PIN);
   GPIO_ResetBits(S1W_TX_GPIO, S1W_TX_PIN);
@@ -217,9 +211,6 @@ void usb1WirePassthrough(int8_t escIndex)
         ESC_INPUT(escIndex);
         // Programmer TX
         gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
-#if defined(INVERTER) && defined(SERIAL_1WIRE_USE_MAIN)
-        INVERTER_ON;
-#endif
         // Enable Hardware UART
         enable_hardware_uart;
         // Wait a bit more (todo check if necessary...))
