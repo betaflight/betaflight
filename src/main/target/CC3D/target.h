@@ -116,12 +116,29 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#define USE_SERIAL_1WIRE
+// How many escs does this board support?
+#define ESC_COUNT 6
+
+// FlexPort (pin 21/22, TX/RX respectively):
+// Note, FlexPort has 10k pullups on both TX and RX
+// JST Pin3 TX - connect to external UART/USB RX
+#define S1W_TX_GPIO         GPIOB
+#define S1W_TX_PIN          GPIO_Pin_10
+// JST Pin4 RX - connect to external UART/USB TX
+#define S1W_RX_GPIO         GPIOB
+#define S1W_RX_PIN          GPIO_Pin_11
+
 #if defined(OPBL)
 // disabled some features for OPBL build due to code size.
 #undef AUTOTUNE
 #undef DISPLAY
 #undef SONAR
 #define SKIP_CLI_COMMAND_HELP
+#endif
+
+#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
+#undef DISPLAY
 #endif
 
 
